@@ -493,7 +493,7 @@ body.dash-mode .dash-fab { display: none; }
     <button class="burger-item" onclick="toggleBurger(); togglePwPanel()">Skift adgangskode</button>
     <button class="burger-item" onclick="toggleBurger(); openChat()">Kontakt Ida</button>
     <button class="burger-item" style="color:var(--red);" onclick="custLogout()">Log ud</button>
-    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 12. juli · 14</div>
+    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 12. juli · 15</div>
   </div>
 </div>
 <div class="plus-menu" id="plusMenu" onclick="if(event.target===this)togglePlus()">
@@ -1186,6 +1186,10 @@ body.dash-mode .dash-fab { display: none; }
         <button class="dbtn primary" style="flex-shrink:0;" onclick="dashHurtigIdeGem()">Gem idé</button>
       </div>
     </div>
+    <div class="ws-card" style="margin-bottom:24px;">
+      <div class="ws-head" style="display:flex;align-items:center;justify-content:space-between;gap:8px;">Dine streaks <button class="dbtn ghost" style="padding:5px 10px;font-size:10px;" onclick="vaneNy()">+ Ny vane</button></div>
+      <div id="vaneListe"></div>
+    </div>
     <div class="kpi-row" id="kpiRow"></div>
 
     <div class="ws-row">
@@ -1276,7 +1280,7 @@ body.dash-mode .dash-fab { display: none; }
     <div class="table-wrap" id="tableWrap"></div>
     </div>
     <div id="systemtjek" style="display:none;background:#fff;border:1px solid var(--border);border-radius:14px;padding:14px 16px;margin-top:16px;"></div>
-    <div style="text-align:center;font-size:10px;color:var(--gray3);padding:20px 0 10px;">Version 12. juli · 14
+    <div style="text-align:center;font-size:10px;color:var(--gray3);padding:20px 0 10px;">Version 12. juli · 15
       &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button>
     </div>
   </div>
@@ -3780,7 +3784,7 @@ function buildSideNav(def) {
     + item("", "Kontakt Ida", "openChat()")
     + item("", "Skift adgangskode", "togglePwPanel()")
     + item("", "Log ud", "custLogout()", " roed")
-    + '<div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0 12px;">Version 12. juli · 14</div>'
+    + '<div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0 12px;">Version 12. juli · 15</div>'
     + '</div>';
 }
 function markNav(k) {
@@ -5309,6 +5313,7 @@ function showMain() {
   if (kb) kb.textContent = visK ? "Skjul listen" : "Vis listen";
   document.getElementById("dashBurger").style.display = "inline-block";
   document.getElementById("btnDemo").style.display = sb ? "none" : "";  // demo-data kun i localStorage-tilstand
+  vaneHent();                                                            // streaks på forsiden
   setGreeting();
 }
 
@@ -6154,6 +6159,85 @@ function renderBudget() {
     + '<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:12.5px;font-family:Poppins,sans-serif;">'
     + '<tr><th style="' + th + 'text-align:left;">Måned</th><th style="' + th + 'text-align:right;">Ind</th><th style="' + th + 'text-align:right;">Ud</th><th style="' + th + 'text-align:right;">Netto</th></tr>'
     + rows + '</table></div>';
+}
+
+/* ---------- STREAKS (kun Ida): daglige vaner med kæde — "Op kl. 5" m.fl. ----------
+   Gemmes i skema_svar (kode ENERGIDA, navn Ida): 'vaner_liste' = [{id,navn}], 'vane_<id>' = { 'YYYY-MM-DD': true } */
+let VANER = [], VANE_DATOER = {};
+const VANE_STD = [{ id: "op5", navn: "Op kl. 5 🌅" }];
+function vaneIso(d) { return d.toISOString().slice(0, 10); }
+function vaneIdag() { return vaneIso(new Date()); }
+async function vaneRow(skema) {
+  if (!sb) return null;
+  try {
+    const { data } = await sb.from("skema_svar").select("svar").eq("kode", "ENERGIDA").eq("navn", "Ida").eq("skema", skema).maybeSingle();
+    return data ? data.svar : null;
+  } catch(e) { return null; }
+}
+async function vaneGemRow(skema, svar) {
+  try { localStorage.setItem("vane_" + skema, JSON.stringify(svar)); } catch(e) {}
+  if (!sb) return;
+  try {
+    const { data } = await sb.from("skema_svar").update({ svar: svar }).eq("kode", "ENERGIDA").eq("navn", "Ida").eq("skema", skema).select();
+    if (!data || !data.length) await sb.from("skema_svar").insert({ kode: "ENERGIDA", navn: "Ida", skema: skema, svar: svar });
+  } catch(e) {}
+}
+function vaneLocal(skema, fallback) { try { return JSON.parse(localStorage.getItem("vane_" + skema)) || fallback; } catch(e) { return fallback; } }
+async function vaneHent() {
+  VANER = (await vaneRow("vaner_liste")) || vaneLocal("vaner_liste", null) || VANE_STD.slice();
+  VANE_DATOER = {};
+  for (const v of VANER) VANE_DATOER[v.id] = (await vaneRow("vane_" + v.id)) || vaneLocal("vane_" + v.id, {});
+  renderVaner();
+}
+function vaneStreak(datoer) {
+  let n = 0; const d = new Date();
+  if (!datoer[vaneIso(d)]) d.setDate(d.getDate() - 1);   // i dag ikke tjekket endnu → kæden tælles til i går
+  while (datoer[vaneIso(d)]) { n++; d.setDate(d.getDate() - 1); }
+  return n;
+}
+async function vaneTjek(id) {
+  const datoer = VANE_DATOER[id] || {};
+  const idag = vaneIdag();
+  if (datoer[idag]) delete datoer[idag]; else datoer[idag] = true;
+  VANE_DATOER[id] = datoer;
+  renderVaner();
+  await vaneGemRow("vane_" + id, datoer);
+}
+async function vaneNy() {
+  const navn = prompt("Hvad hedder vanen? (fx Morgengåtur)");
+  if (!navn || !navn.trim()) return;
+  const id = "v" + Date.now();
+  VANER.push({ id: id, navn: navn.trim() });
+  VANE_DATOER[id] = {};
+  renderVaner();
+  await vaneGemRow("vaner_liste", VANER);
+}
+async function vaneSlet(id) {
+  if (!confirm("Slet vanen (og dens kæde)?")) return;
+  VANER = VANER.filter(v => v.id !== id);
+  renderVaner();
+  await vaneGemRow("vaner_liste", VANER);
+}
+function renderVaner() {
+  const el = document.getElementById("vaneListe"); if (!el) return;
+  const idag = vaneIdag();
+  el.innerHTML = (VANER.map(v => {
+    const datoer = VANE_DATOER[v.id] || {};
+    const streak = vaneStreak(datoer);
+    const tjekket = !!datoer[idag];
+    const uge = Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(); d.setDate(d.getDate() - (6 - i));
+      const on = !!datoer[vaneIso(d)];
+      return '<span title="' + vaneIso(d) + '" style="width:9px;height:9px;border-radius:50%;display:inline-block;background:' + (on ? 'var(--red)' : 'var(--border)') + ';"></span>';
+    }).join("");
+    return '<div class="idea-chip" style="align-items:center;">'
+      + '<div class="ic-txt"><b>' + esc(v.navn) + '</b>'
+      + '<span style="margin-left:8px;font-size:11px;color:' + (streak ? 'var(--red)' : 'var(--gray3)') + ';font-weight:700;">🔥 ' + streak + (streak === 1 ? ' dag' : ' dage') + '</span>'
+      + '<span style="display:inline-flex;gap:3px;margin-left:10px;vertical-align:middle;">' + uge + '</span></div>'
+      + '<button class="dbtn ' + (tjekket ? '' : 'primary') + '" style="padding:7px 12px;font-size:10px;flex-shrink:0;" onclick="vaneTjek(\'' + v.id + '\')">' + (tjekket ? 'I dag ✓' : 'Tjek af i dag') + '</button>'
+      + '<button class="ic-del" onclick="vaneSlet(\'' + v.id + '\')" title="Slet vanen">&#10005;</button>'
+      + '</div>';
+  }).join("")) || '<div class="ws-empty">Tilføj din første vane — fx "Op kl. 5".</div>';
 }
 
 /* ===================== RESET DIN ENERGI: 10-dages program (Forberedelse + dag 1-10) =====================
