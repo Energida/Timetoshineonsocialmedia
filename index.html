@@ -570,7 +570,7 @@ body.dash-mode .dash-fab { display: none; }
     <button class="burger-item" onclick="toggleBurger(); togglePwPanel()">Skift adgangskode</button>
     <button class="burger-item" onclick="toggleBurger(); openChat()">Kontakt Ida</button>
     <button class="burger-item" style="color:var(--red);" onclick="custLogout()">Log ud</button>
-    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 13. juli · 77</div>
+    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 13. juli · 78</div>
   </div>
 </div>
 <div class="plus-menu" id="plusMenu" onclick="if(event.target===this)togglePlus()">
@@ -1310,6 +1310,13 @@ body.dash-mode .dash-fab { display: none; }
       </div>
     </div>
 
+    <div id="dashFokusBlok" style="display:none;margin-bottom:24px;position:relative;z-index:1;min-width:0;">
+      <button class="bs-pil" id="dashFokusPilV" style="left:-14px;display:none;" onclick="deckScroll('dashFokusDeck',-1)">&lsaquo;</button>
+      <button class="bs-pil" id="dashFokusPilH" style="right:-14px;display:none;" onclick="deckScroll('dashFokusDeck',1)">&rsaquo;</button>
+      <div id="dashFokusDeck" style="display:flex;overflow-x:auto;scroll-snap-type:x mandatory;gap:12px;border-radius:20px;-webkit-overflow-scrolling:touch;scrollbar-width:none;"></div>
+      <div id="dashFokusDots" style="display:flex;justify-content:center;gap:6px;margin-top:10px;"></div>
+    </div>
+
     <div class="ws-card" style="margin-bottom:24px;position:relative;z-index:1;">
       <div class="ws-head">Hængepartier <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--gray3);">(det, der mangler at blive gjort)</span></div>
       <div style="display:flex;gap:8px;">
@@ -1544,7 +1551,7 @@ body.dash-mode .dash-fab { display: none; }
 
     <div id="systemtjek" style="display:none;background:#fff;border:1px solid var(--border);border-radius:14px;padding:14px 16px;margin-top:16px;"></div>
     <div id="dashFooter" style="display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--gray3);padding:22px 0 12px;border-top:1px solid var(--border);margin-top:10px;">
-      <div style="font-size:10px;margin-left:auto;">Version 13. juli · 77 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
+      <div style="font-size:10px;margin-left:auto;">Version 13. juli · 78 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
     </div>
   </div>
 </div>
@@ -4311,7 +4318,7 @@ function buildSideNav(def) {
     + item("", "Kontakt Ida", "openChat()")
     + item("", "Skift adgangskode", "togglePwPanel()")
     + item("", "Log ud", "custLogout()", " roed")
-    + '<div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0 12px;">Version 13. juli · 77</div>'
+    + '<div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0 12px;">Version 13. juli · 78</div>'
     + '</div>'
     + '<button class="sn-virk-knap" onclick="toggleVirkMenu()" title="' + esc((document.getElementById("shopTag") || {}).textContent || "Profil") + '" aria-label="Profil"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="3.6"/><path d="M4.5 20c1.2-3.6 4-5.4 7.5-5.4s6.3 1.8 7.5 5.4"/></svg></button>'
     + '<div id="virkMenu" style="display:none;position:fixed;right:20px;top:72px;width:230px;background:#fff;border:1px solid var(--border);border-radius:14px;box-shadow:0 16px 40px rgba(0,0,0,0.15);padding:8px;z-index:90;">'
@@ -6009,6 +6016,54 @@ function renderHaeng() {
     + (x.dato ? '<button class="row-btn view" style="font-weight:400;" onclick="haengIcs(\'' + x.id + '\')" title="Hent kalenderfil — så ligger den i din egen kalender">Læg i kalender</button>' : '')
     + '</div>').join("")
   : '<div class="ws-empty">Tomt — intet hænger. Sådan!</div>';
+  renderDashFokus();
+}
+
+/* ---------- Idas egen røde "Næste skridt"-boks: referater der mangler + forfaldne hængepartier ---------- */
+let DASH_FOKUS_ACTIONS = [];
+function dashFokusKlik(i) { if (DASH_FOKUS_ACTIONS[i]) DASH_FOKUS_ACTIONS[i](); }
+function renderDashFokus() {
+  const blok = document.getElementById("dashFokusBlok"), deck = document.getElementById("dashFokusDeck"), dots = document.getElementById("dashFokusDots");
+  if (!blok || !deck) return;
+  const nu = new Date();
+  const idagLok = nu.getFullYear() + "-" + String(nu.getMonth() + 1).padStart(2, "0") + "-" + String(nu.getDate()).padStart(2, "0");
+  const pkt = [];
+  (window.DASH_REFERATER || []).forEach(a => {
+    const navn = (VIRKSOMHEDSKODER[a.kode] && VIRKSOMHEDSKODER[a.kode].virksomhed) || a.kode;
+    pkt.push({
+      titel: "Skriv referatet af mødet",
+      sub: (a.titel || "Møde") + " · " + navn + " · afholdt " + dkDatoKort(a.dato) + (a.tid ? " kl. " + String(a.tid).slice(0, 5) : "") + " — skriv det i Mine noter på kundekortet.",
+      knap: "Åbn kundekortet", action: () => openKundeKort(a.kode),
+      knap2: "Klaret \u2713", action2: () => markReferatOk(a.id)
+    });
+  });
+  (HAENG || []).filter(x => x.dato && x.dato <= idagLok).forEach(x => {
+    pkt.push({
+      titel: x.t,
+      sub: "Hængeparti — du satte det til " + (x.dato === idagLok ? "i dag" : dkDatoKort(x.dato)) + (x.tid ? " kl. " + x.tid : "") + ".",
+      knap: "Markér klaret", action: () => haengKlar(x.id)
+    });
+  });
+  if (!pkt.length) { blok.style.display = "none"; return; }
+  blok.style.display = "block";
+  DASH_FOKUS_ACTIONS = [];
+  deck.innerHTML = pkt.map((x, i) => {
+    const ki = DASH_FOKUS_ACTIONS.length; DASH_FOKUS_ACTIONS.push(x.action);
+    let knapper = '<button class="dbtn" style="background:#fff;color:var(--red);margin-top:14px;padding:10px 20px;" onclick="dashFokusKlik(' + ki + ')">' + esc(x.knap) + '</button>';
+    if (x.knap2) { const k2 = DASH_FOKUS_ACTIONS.length; DASH_FOKUS_ACTIONS.push(x.action2); knapper += '<button class="dbtn" style="background:none;border:1px solid rgba(255,255,255,0.6);color:#fff;margin-top:14px;margin-left:10px;padding:10px 20px;" onclick="dashFokusKlik(' + k2 + ')">' + esc(x.knap2) + '</button>'; }
+    return '<div class="bs-slide" style="flex:0 0 100%;scroll-snap-align:start;background:var(--red);border-radius:20px;color:#fff;padding:24px 28px;box-sizing:border-box;min-height:0;display:block;border:none;">'
+      + '<div style="font-size:10px;font-weight:500;letter-spacing:2px;text-transform:uppercase;opacity:.85;">Næste skridt' + (pkt.length > 1 ? ' · ' + (i + 1) + ' af ' + pkt.length : '') + '</div>'
+      + '<div style="font-family:\'Didot\',\'Bodoni 72\',Georgia,serif;font-size:24px;line-height:1.25;margin:8px 0 2px;">' + esc(x.titel) + '</div>'
+      + '<div style="font-size:12px;opacity:.92;line-height:1.5;">' + esc(x.sub) + '</div>'
+      + knapper + '</div>';
+  }).join("");
+  if (dots) {
+    if (pkt.length > 1) { deckInit("dashFokusDeck", "dashFokusDots"); dots.style.display = "flex"; }
+    else { dots.innerHTML = ""; dots.style.display = "none"; }
+  }
+  const pv = document.getElementById("dashFokusPilV"), ph = document.getElementById("dashFokusPilH");
+  if (pv) pv.style.display = pkt.length > 1 ? "" : "none";
+  if (ph) ph.style.display = pkt.length > 1 ? "" : "none";
 }
 function dashFang(art) {
   const felt = document.getElementById("dashHurtigIde");
@@ -6771,7 +6826,8 @@ function renderNaesteAktiviteter() {
       const slut = String(a.tid_slut || a.tid || "23:59").slice(0, 5);
       return slut <= klNu;
     }).sort((x, y) => (x.dato < y.dato ? 1 : -1)).slice(0, 5);
-    emKort.style.display = afholdt.length ? "" : "none";
+    window.DASH_REFERATER = afholdt;
+    emKort.style.display = "none";   // referaterne bor nu i den røde Næste skridt-boks på Forsiden
     emListe.innerHTML = afholdt.map(a => {
       const navn = (VIRKSOMHEDSKODER[a.kode] && VIRKSOMHEDSKODER[a.kode].virksomhed) || a.kode;
       return '<div class="follow-item">'
@@ -6781,6 +6837,7 @@ function renderNaesteAktiviteter() {
         + '<button class="row-btn" style="font-weight:400;" onclick="markReferatOk(\'' + a.id + '\')" title="Referatet er skrevet">Klaret &#10003;</button>'
         + '</div>';
     }).join("");
+    renderDashFokus();
   }
 }
 
