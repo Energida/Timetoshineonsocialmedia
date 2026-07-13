@@ -593,7 +593,7 @@ body.dash-mode .dash-fab { display: none; }
     <button class="burger-item" onclick="toggleBurger(); togglePwPanel()">Skift adgangskode</button>
     <button class="burger-item" onclick="toggleBurger(); openChat()">Kontakt Ida</button>
     <button class="burger-item" style="color:var(--red);" onclick="custLogout()">Log ud</button>
-    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 13. juli · 100</div>
+    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 13. juli · 101</div>
   </div>
 </div>
 <div class="plus-menu" id="plusMenu" onclick="if(event.target===this)togglePlus()">
@@ -1589,7 +1589,7 @@ body.dash-mode .dash-fab { display: none; }
     <div id="systemtjek" style="display:none;background:#fff;border:1px solid var(--border);border-radius:14px;padding:14px 16px;margin-top:16px;"></div>
     <div id="dashFooter" style="display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--gray3);padding:22px 0 12px;border-top:1px solid var(--border);margin-top:10px;">
       <div style="font-size:10px;">© 2026 Energida · Alle rettigheder forbeholdes</div>
-      <div style="font-size:10px;margin-left:auto;">Version 13. juli · 100 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
+      <div style="font-size:10px;margin-left:auto;">Version 13. juli · 101 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
     </div>
   </div>
 </div>
@@ -2467,6 +2467,14 @@ function renderFokus(planFrem, target, idag) {
   const pkt = [];
   const laeg = (titel, sub, knap, action) => pkt.push({ titel, sub, knap, action });
 
+  // kursus-kunder: forløbet er altid det første skridt
+  if (CURRENT_DEF && CURRENT_DEF.type === "kursus") {
+    const nlek = typeof kursusNaesteLektion === "function" ? kursusNaesteLektion() : null;
+    laeg(nlek ? "Næste lektion: " + (nlek.titel || "") : "Forløbet er gennemført",
+        nlek ? "Din strategi bygges lektion for lektion — fortsæt, hvor du slap." : "Alle lektioner er i mål — resten af dit Content Studio er låst op.",
+        nlek ? "Fortsæt forløbet" : "Se forløbet", () => showTab(12));
+  }
+
   // 0) i morgen (eller i dag) er der optagedag — energien før strategien
   const iMorgen = new Date(); iMorgen.setDate(iMorgen.getDate() + 1);
   const iMorgenStr = iMorgen.toISOString().slice(0, 10);
@@ -2639,6 +2647,21 @@ async function lektionSet(id) {
   renderKursusHjem();
 }
 function kursusFaerdig() { return KURSUS_LEKTIONER.every(l => KURSUS_SET[l.id]); }
+const KURSUS_LAASTE_SIDER = { 1: 1, 2: 1, 5: 1, 6: 1, 8: 1, 9: 1, 10: 1 };
+function kursusLaasOverlay() {
+  const scr = document.querySelector(".screen.active"); if (!scr) return;
+  if (scr.querySelector(".kursus-laas")) return;
+  const ov = document.createElement("div");
+  ov.className = "kursus-laas";
+  ov.style.cssText = "position:absolute;inset:0;z-index:30;background:rgba(244,241,236,0.75);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);display:flex;align-items:flex-start;justify-content:center;padding:90px 20px 0;";
+  ov.innerHTML = '<div style="background:#fff;border:1px solid var(--border);border-radius:20px;padding:28px 30px;max-width:380px;text-align:center;box-shadow:0 20px 50px rgba(22,32,42,0.14);">'
+    + '<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="2" stroke-linecap="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>'
+    + '<div class="kort-titel" style="margin:10px 0 6px;">Låst endnu</div>'
+    + '<div style="font-size:12.5px;color:var(--gray3);line-height:1.6;margin-bottom:16px;">Denne del af dit Content Studio låser op, efterhånden som du kommer gennem forløbet. Lige nu er lektionerne vejen frem.</div>'
+    + '<button class="dbtn primary" style="padding:11px 22px;" onclick="showTab(12)">Til lektionerne</button>'
+    + '</div>';
+  scr.appendChild(ov);
+}
 function kursusNaesteLektion() { return KURSUS_LEKTIONER.find(l => !KURSUS_SET[l.id]) || null; }
 function kursusNaeste() {
   const l = kursusNaesteLektion();
@@ -2719,6 +2742,17 @@ function renderKursusHjem() {
   const ovelserDone = medOvelse.filter(l => KURSUS_SVAR[l.id]).length;
   const rl = document.getElementById("ringLektioner"); if (rl) rl.innerHTML = donutSvg(setAntal, KURSUS_LEKTIONER.length, "var(--red)");
   const ro = document.getElementById("ringOpgaver"); if (ro) ro.innerHTML = donutSvg(ovelserDone, medOvelse.length, "#5f7c96");
+  const sbK = document.getElementById("soejleBalance");
+  if (sbK && CURRENT_DEF && CURRENT_DEF.type === "kursus") {   // kursus-kunder: forløbets proces + opgaveproces på forsiden
+    sbK.style.display = "block";
+    sbK.innerHTML = '<div class="section-divider" style="margin:0 0 4px;">Dit forløb</div>'
+      + '<div style="font-size:11.5px;color:var(--gray3);margin-bottom:14px;">Lektioner og øvelser — din strategi bygges undervejs.</div>'
+      + '<div style="display:flex;gap:30px;align-items:center;flex-wrap:wrap;">'
+      + '<div style="text-align:center;">' + donutSvg(setAntal, KURSUS_LEKTIONER.length, "var(--red)") + '<div style="font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:1px;color:var(--gray3);margin-top:8px;">Lektioner</div></div>'
+      + '<div style="text-align:center;">' + donutSvg(ovelserDone, medOvelse.length, "#5f7c96") + '<div style="font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:1px;color:var(--gray3);margin-top:8px;">Øvelser</div></div>'
+      + '<button class="dbtn primary" style="padding:12px 22px;" onclick="showTab(12)">Fortsæt forløbet</button>'
+      + '</div>';
+  }
   const hilsen = document.getElementById("kursusHilsen");
   if (hilsen) hilsen.innerHTML = 'Velkommen' + (CURRENT_NAVN ? ' tilbage, <span style="color:var(--red);font-style:italic;">' + esc(CURRENT_NAVN) + '</span>' : '!');
   const naeste = kursusNaesteLektion();
@@ -4502,7 +4536,7 @@ function buildSideNav(def) {
     + item("", "Kontakt Ida", "openChat()")
     + item("", "Skift adgangskode", "togglePwPanel()")
     + item("", "Log ud", "custLogout()", " roed")
-    + '<div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0 12px;">Version 13. juli · 100</div>'
+    + '<div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0 12px;">Version 13. juli · 101</div>'
     + '</div>'
     + '<span style="display:inline-flex;flex-direction:column;align-items:center;gap:4px;flex-shrink:0;"><button class="sn-virk-knap" onclick="toggleVirkMenu()" title="' + esc(virkNavn) + '" aria-label="Profil"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="3.6"/><path d="M4.5 20c1.2-3.6 4-5.4 7.5-5.4s6.3 1.8 7.5 5.4"/></svg></button><span class="sn-tekst" style="color:var(--gray3);max-width:110px;overflow:hidden;text-overflow:ellipsis;">' + esc(virkNavn) + '</span></span>'
     + '<div id="virkMenu" style="display:none;position:fixed;right:20px;top:72px;width:230px;background:#fff;border:1px solid var(--border);border-radius:14px;box-shadow:0 16px 40px rgba(0,0,0,0.15);padding:8px;z-index:90;">'
@@ -5471,7 +5505,8 @@ const DEPLOY = (function () {
   const h = (location.hostname || "").toLowerCase();
   if (h.indexOf("admin") !== -1 || h.indexOf("crm") !== -1 || h.indexOf("dashboard") !== -1) return "crm";   // dit workspace (admin. — crm./dashboard. virker stadig under overgangen)
   if (h.indexOf("b2b") !== -1) return "app";
-  return "dev";
+  if (h === "localhost" || h === "127.0.0.1") return "dev";
+  return "app";   // åbnet som fil eller ukendt domæne: opfør dig som den rigtige app — aldrig prototype-tilstanden
 })();
 
 function goDash() { if (DEPLOY === "app") return; location.hash = "#admin"; }
@@ -6057,7 +6092,7 @@ async function enterApp() {
         showTab(13);                                   // Reset-kunder lander direkte i programmet
         resetHent();
       } else if (def && def.type === "kursus") {
-        showTab(12);                                   // kursusdeltagere lander på kursus-dashboardet
+        showTab(3);                                    // kursus-kunder får samme forside som forløbskunderne — lektionerne nås derfra
         kursusHent();
         refreshIdeer();
       } else if (def && def.type === "forloeb" && def.strategi) {
@@ -8280,6 +8315,17 @@ function closePrivacy() { document.getElementById("privacyBack").classList.remov
 route();
 applyDeployMode();
 initAuth();
+
+// kursus-kunder: de låste sider viser lås-overlayet, indtil forløbet er gennemført
+(function () {
+  const origShowTab = window.showTab;
+  window.showTab = function (n) {
+    origShowTab(n);
+    try {
+      if (CURRENT_DEF && CURRENT_DEF.type === "kursus" && !kursusFaerdig() && KURSUS_LAASTE_SIDER[n]) kursusLaasOverlay();
+    } catch (e) {}
+  };
+})();
 </script>
 </body>
 </html>
