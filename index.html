@@ -557,7 +557,7 @@ body.dash-mode .dash-fab { display: none; }
     <button class="burger-item" onclick="toggleBurger(); togglePwPanel()">Skift adgangskode</button>
     <button class="burger-item" onclick="toggleBurger(); openChat()">Kontakt Ida</button>
     <button class="burger-item" style="color:var(--red);" onclick="custLogout()">Log ud</button>
-    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 13. juli · 62</div>
+    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 13. juli · 63</div>
   </div>
 </div>
 <div class="plus-menu" id="plusMenu" onclick="if(event.target===this)togglePlus()">
@@ -1063,6 +1063,11 @@ body.dash-mode .dash-fab { display: none; }
       </div>
 
       <div class="post-card" style="flex-direction:column;align-items:stretch;">
+        <div style="font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:0.4px;color:var(--red);margin-bottom:6px;">Fast agenda — månedens performance-tjek</div>
+        <div id="perfAgenda" style="font-size:12.5px;line-height:1.6;"></div>
+      </div>
+
+      <div class="post-card" style="flex-direction:column;align-items:stretch;">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
           <div style="font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:0.4px;color:var(--red);">Jeres interaktionsrate</div>
           <button class="row-btn view" onclick="startRateWizard()">Ny måling</button>
@@ -1380,7 +1385,7 @@ body.dash-mode .dash-fab { display: none; }
     </div>
     <div class="ws-card" style="margin-bottom:24px;">
       <div id="projChips" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;"></div>
-      <div class="ws-add">
+      <div class="ws-add" id="ideaInputRow">
         <input type="text" id="ideaInput" placeholder="Ny idé — lander i det valgte projekt…" onkeydown="if(event.key==='Enter')addEnergidaIdea()">
         <button class="dbtn primary" onclick="addEnergidaIdea()">Tilføj</button>
       </div>
@@ -1400,6 +1405,11 @@ body.dash-mode .dash-fab { display: none; }
         <button onclick="budSkiftMd(1)" style="width:36px;height:36px;border-radius:50%;border:1px solid var(--border);background:#fff;cursor:pointer;font-size:16px;color:var(--black);font-family:Poppins,sans-serif;">&rsaquo;</button>
       </div>
     </div>
+    <div id="budSfChips" style="display:flex;gap:6px;margin-bottom:16px;">
+      <button type="button" class="chip-btn on" data-v="energida" onclick="budVisning('energida')">Energida</button>
+      <button type="button" class="chip-btn" data-v="privat" onclick="budVisning('privat')">Privat</button>
+      <button type="button" class="chip-btn" data-v="samlet" onclick="budVisning('samlet')">Samlet</button>
+    </div>
     <div class="kpi-row" id="budKpis" style="margin-bottom:18px;"></div>
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin-bottom:18px;align-items:start;">
       <div class="ws-card" style="grid-column:span 1;"><div class="ws-head">Indtægter vs. udgifter</div><div id="budBar"></div></div>
@@ -1412,6 +1422,10 @@ body.dash-mode .dash-fab { display: none; }
           <select id="bud_type" class="select-nice" style="flex:1;min-width:110px;">
             <option value="indtaegt">Indtægt</option>
             <option value="udgift">Udgift</option>
+          </select>
+          <select id="bud_sfaere" class="select-nice" style="flex:1;min-width:110px;">
+            <option value="energida">Energida</option>
+            <option value="privat">Privat</option>
           </select>
         </div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
@@ -1447,7 +1461,7 @@ body.dash-mode .dash-fab { display: none; }
 
     <div id="systemtjek" style="display:none;background:#fff;border:1px solid var(--border);border-radius:14px;padding:14px 16px;margin-top:16px;"></div>
     <div id="dashFooter" style="display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--gray3);padding:22px 0 12px;border-top:1px solid var(--border);margin-top:10px;">
-      <div style="font-size:10px;margin-left:auto;">Version 13. juli · 62 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
+      <div style="font-size:10px;margin-left:auto;">Version 13. juli · 63 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
     </div>
   </div>
 </div>
@@ -2005,6 +2019,18 @@ async function refreshMaalUge() {
 function openMaal() {
   const maal = (CURRENT_DEF && CURRENT_DEF.maal) || {};
   setTxt("maalSideTekst", maal.tekst || "Jeres målsætning sættes sammen med Energida — den lander her.");
+  const ag = document.getElementById("perfAgenda");
+  if (ag) {
+    const MDR12 = ["januar","februar","marts","april","maj","juni","juli","august","september","oktober","november","december"];
+    const nu2 = new Date();
+    const nmIx = (nu2.getMonth() + 1) % 12;
+    const nmAar = nu2.getFullYear() + (nmIx === 0 ? 1 : 0);
+    ag.innerHTML = '<ol style="padding-left:18px;margin:0;">'
+      + '<li style="margin-bottom:7px;">Opdater tallene fra Indblik — tag månedens måling nedenfor.</li>'
+      + '<li style="margin-bottom:7px;"><span style="font-weight:600;">Kig ind i ' + MDR12[nmIx] + ':</span> gå tilbage til ' + MDR12[nmIx] + ' <span style="font-weight:600;">sidste år</span> i jeres egne tal — hvad solgte I, hvilke varer rykkede, og hvilke uger var store?</li>'
+      + '<li>Planlæg ' + MDR12[nmIx] + ' ' + nmAar + '-content efter det, I VED der kommer — sæsonen gentager sig.</li>'
+      + '</ol>';
+  }
   const mf = document.getElementById("mfUge");
   if (mf) mf.value = maalUge();
   setTxt("mfMsg", "");
@@ -4096,7 +4122,7 @@ function buildSideNav(def) {
     + item("", "Kontakt Ida", "openChat()")
     + item("", "Skift adgangskode", "togglePwPanel()")
     + item("", "Log ud", "custLogout()", " roed")
-    + '<div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0 12px;">Version 13. juli · 62</div>'
+    + '<div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0 12px;">Version 13. juli · 63</div>'
     + '</div>'
     + '<button class="sn-virk-knap" onclick="toggleVirkMenu()" title="' + esc((document.getElementById("shopTag") || {}).textContent || "Profil") + '" aria-label="Profil"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="3.6"/><path d="M4.5 20c1.2-3.6 4-5.4 7.5-5.4s6.3 1.8 7.5 5.4"/></svg></button>'
     + '<div id="virkMenu" style="display:none;position:fixed;right:20px;top:72px;width:230px;background:#fff;border:1px solid var(--border);border-radius:14px;box-shadow:0 16px 40px rgba(0,0,0,0.15);padding:8px;z-index:90;">'
@@ -6672,12 +6698,16 @@ async function budNy() {
     maaned: frekvens === "engang" ? document.getElementById("bud_mdr").value : null
   };
   document.getElementById("bud_navn").value = ""; document.getElementById("bud_belob").value = "";
+  const sfEl = document.getElementById("bud_sfaere");
+  const sf = sfEl ? sfEl.value : "energida";
   if (sb) {
     try {
-      const { error } = await sb.from("budget_poster").insert(rec);
+      let { error } = await sb.from("budget_poster").insert(Object.assign({}, rec, { sfaere: sf }));
+      if (error) { const r2 = await sb.from("budget_poster").insert(rec); error = r2.error; }
       if (!error) { budHent(); return; }
     } catch(e) {}
   }
+  rec.sfaere = sf;
   rec.id = "b" + Date.now();
   BUDGET_POSTER.push(rec); budSaveLocal(); renderBudget();
 }
@@ -6687,6 +6717,12 @@ async function budSlet(id) {
   budSaveLocal(); renderBudget();
 }
 let BUD_VALGT = "2026-07";
+let BUD_VISNING = "energida";
+function budVisning(v) {
+  BUD_VISNING = v;
+  document.querySelectorAll("#budSfChips .chip-btn").forEach(b => b.classList.toggle("on", b.getAttribute("data-v") === v));
+  renderBudget();
+}
 function budSkiftMd(delta) {
   const i = BUD_MDR.indexOf(BUD_VALGT);
   const ny = BUD_MDR[Math.min(BUD_MDR.length - 1, Math.max(0, i + delta))];
@@ -6699,8 +6735,9 @@ function renderBudget() {
   const mdTekst = document.getElementById("budMdTekst");
   if (mdTekst) mdTekst.textContent = (BUD_MDR_NAVNE[BUD_VALGT] || "") + " 2026";
 
+  const P = BUD_VISNING === "samlet" ? BUDGET_POSTER : BUDGET_POSTER.filter(x => ((x.sfaere || "energida") === "privat") === (BUD_VISNING === "privat"));
   let ind = 0, fast = 0, engangs = 0;
-  BUDGET_POSTER.forEach(p => {
+  P.forEach(p => {
     const gaelder = p.frekvens === "md" || p.maaned === BUD_VALGT;
     if (!gaelder) return;
     const b = Number(p.belob) || 0;
@@ -6766,12 +6803,12 @@ function renderBudget() {
     + (p.frekvens === "md" ? "/md" : " (" + (BUD_MDR_NAVNE[p.maaned] || "engang") + ")") + '</div>'
     + '<span class="tag" style="' + (p.type === "indtaegt" ? "background:#EAF3EC;color:#2e6b3f;" : "background:#F4E9E7;color:var(--red);") + '">' + (p.type === "indtaegt" ? "Indtægt" : "Udgift") + '</span>'
     + '<button class="ic-del" onclick="budSlet(\'' + p.id + '\')" title="Slet">&#10005;</button></div>';
-  const faste = BUDGET_POSTER.filter(p => p.frekvens === "md");
-  const engangsListe = BUDGET_POSTER.filter(p => p.frekvens !== "md" && p.maaned === BUD_VALGT);
+  const faste = P.filter(p => p.frekvens === "md");
+  const engangsListe = P.filter(p => p.frekvens !== "md" && p.maaned === BUD_VALGT);
   const td = 'padding:8px 10px;border-bottom:1px solid var(--border);';
   const rows = BUD_MDR.map(m => {
     let mi = 0, mu = 0;
-    BUDGET_POSTER.forEach(p => {
+    P.forEach(p => {
       if (!(p.frekvens === "md" || p.maaned === m)) return;
       const b = Number(p.belob) || 0;
       if (p.type === "indtaegt") mi += b; else mu += b;
@@ -7160,9 +7197,13 @@ function renderEnergidaIdeas() {
   const grupper = [[IDA_PROJ, IDA_PROJ || "Idéer"]];               // valgt chip = kun dens idéer (Idas ønske 13/7)
   el.innerHTML = grupper.map(g => {
     const ideer = a.filter(x => (x.p || "") === g[0]);
-    return '<div style="font-size:10px;font-weight:400;text-transform:uppercase;letter-spacing:1px;color:var(--red);margin:10px 0 6px;">' + esc(g[1]) + '</div>'
+    return '<div style="font-size:10px;font-weight:400;text-transform:uppercase;letter-spacing:1px;color:var(--red);margin:10px 0 8px;">' + esc(g[1]) + '</div>'
+      + '<div id="ideaFlyt" style="margin-bottom:10px;"></div>'
       + (ideer.map(raekke).join("") || '<div style="font-size:11px;color:var(--gray3);">Tomt endnu — nye idéer lander her, mens projektet er valgt.</div>');
   }).join("");
+  const rowEl = document.getElementById("ideaInputRow");
+  const flyt = document.getElementById("ideaFlyt");
+  if (rowEl && flyt) flyt.appendChild(rowEl);                       // skriveboksen bor under den valgte kategori (Idas ønske 13/7)
 }
 
 function renderKpis() {
