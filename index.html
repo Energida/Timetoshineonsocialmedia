@@ -557,7 +557,7 @@ body.dash-mode .dash-fab { display: none; }
     <button class="burger-item" onclick="toggleBurger(); togglePwPanel()">Skift adgangskode</button>
     <button class="burger-item" onclick="toggleBurger(); openChat()">Kontakt Ida</button>
     <button class="burger-item" style="color:var(--red);" onclick="custLogout()">Log ud</button>
-    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 13. juli · 63</div>
+    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 13. juli · 64</div>
   </div>
 </div>
 <div class="plus-menu" id="plusMenu" onclick="if(event.target===this)togglePlus()">
@@ -1461,7 +1461,7 @@ body.dash-mode .dash-fab { display: none; }
 
     <div id="systemtjek" style="display:none;background:#fff;border:1px solid var(--border);border-radius:14px;padding:14px 16px;margin-top:16px;"></div>
     <div id="dashFooter" style="display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--gray3);padding:22px 0 12px;border-top:1px solid var(--border);margin-top:10px;">
-      <div style="font-size:10px;margin-left:auto;">Version 13. juli · 63 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
+      <div style="font-size:10px;margin-left:auto;">Version 13. juli · 64 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
     </div>
   </div>
 </div>
@@ -1953,9 +1953,48 @@ async function saveBrief(stille) {
 // { ikon, titel, tekst, link (valgfrit — åbner i ny fane) }
 const VAERKTOEJER = [];   // fyldes op, når kursets værktøjer er besluttet
 
-function renderVaerktoej() {
+let VK_CONFIG = {};
+async function vkKonfigHent() {
+  VK_CONFIG = {};
+  if (sb && currentKode) {
+    try {
+      const { data } = await sb.from("skema_svar").select("svar").eq("kode", currentKode).eq("navn", "vaerktoej").eq("skema", "vk_config").maybeSingle();
+      if (data && data.svar) VK_CONFIG = data.svar;
+    } catch(e) {}
+  }
+}
+async function vkNoterHent() {
+  if (!sb || !currentKode) return "";
+  try {
+    const { data } = await sb.from("skema_svar").select("svar").eq("kode", currentKode).eq("navn", "faelles").eq("skema", "vk_noter").maybeSingle();
+    return (data && data.svar && data.svar.tekst) || "";
+  } catch(e) { return ""; }
+}
+let VK_NOTER_TIMER = null;
+function vkNoterAuto() {
+  clearTimeout(VK_NOTER_TIMER);
+  VK_NOTER_TIMER = setTimeout(async () => {
+    const felt = document.getElementById("vkNoterFelt"); if (!felt || !sb || !currentKode) return;
+    const svar = { tekst: felt.value };
+    try {
+      const { data } = await sb.from("skema_svar").update({ svar: svar }).eq("kode", currentKode).eq("navn", "faelles").eq("skema", "vk_noter").select();
+      if (!data || !data.length) await sb.from("skema_svar").insert({ kode: currentKode, navn: "faelles", skema: "vk_noter", svar: svar });
+      const st = document.getElementById("vkNoterStatus");
+      if (st) { st.textContent = "Gemt ✓"; setTimeout(() => { if (st) st.textContent = "gemmer selv"; }, 2000); }
+    } catch(e) {}
+  }, 1200);
+}
+function vkKopier(knap, felt) {
+  const tekst = VK_CONFIG[felt] || "";
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(tekst).then(() => { knap.textContent = "Kopieret ✓"; setTimeout(() => { knap.textContent = "Kopiér"; }, 2000); }).catch(() => {});
+  }
+}
+async function renderVaerktoej() {
   const list = document.getElementById("vkList");
   if (!list) return;
+  await vkKonfigHent();
+  const noter = await vkNoterHent();
   const alle = VAERKTOEJER.slice();
   alle.unshift({
     titel: "Frigør telefonen — jeres content i Google Drive",
@@ -1969,21 +2008,38 @@ function renderVaerktoej() {
       action: "openKalenderGuide()", knap: "Åbn guiden"
     });
   }
-  if (!alle.length) {
-    list.innerHTML = '<div class="post-card" style="flex-direction:column;align-items:stretch;text-align:center;padding:34px 16px;">'
-      + '<div style="font-size:17px;font-weight:700;margin-bottom:4px;">Kommer snart</div>'
-      + '<div style="font-size:12px;color:var(--gray3);">Værktøjskassen fyldes op med guides, tutorials og skabeloner.</div>'
-      + '</div>';
-    return;
-  }
-  list.innerHTML = alle.map(v =>
+  const guideKort = v =>
     '<div class="post-card" style="flex-direction:column;align-items:stretch;">'
     + '<div class="post-title">' + (v.ikon ? v.ikon + ' ' : '') + esc(v.titel) + '</div>'
     + (v.tekst ? '<div style="font-size:12px;color:var(--gray3);margin-top:6px;line-height:1.5;">' + esc(v.tekst) + '</div>' : '')
     + (v.action ? '<div style="margin-top:10px;"><button class="row-btn view" onclick="' + v.action + '">' + esc(v.knap || "Åbn") + ' →</button></div>' : '')
     + (v.link ? '<div style="margin-top:10px;"><a class="row-btn view" style="text-decoration:none;display:inline-block;" href="' + v.link + '" target="_blank" rel="noopener">Åbn →</a></div>' : '')
-    + '</div>'
-  ).join("");
+    + '</div>';
+  const laasSvg = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--gray3)" stroke-width="2" stroke-linecap="round" style="flex-shrink:0;"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>';
+  const laastKort = titel =>
+    '<div class="post-card" style="flex-direction:column;align-items:stretch;opacity:0.75;">'
+    + '<div class="post-title" style="display:flex;align-items:center;gap:9px;">' + laasSvg + esc(titel) + '</div>'
+    + '<div style="font-size:12px;color:var(--gray3);margin-top:6px;line-height:1.5;">Låses op af Ida, når I når dertil i forløbet.</div>'
+    + '</div>';
+  const aabenKort = (titel, felt) =>
+    '<div class="post-card" style="flex-direction:column;align-items:stretch;">'
+    + '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;"><div class="post-title">' + esc(titel) + '</div>'
+    + '<button class="row-btn view" onclick="vkKopier(this,\'' + felt + '\')">Kopiér</button></div>'
+    + '<div style="font-size:12.5px;line-height:1.7;margin-top:8px;white-space:pre-wrap;word-break:break-word;">' + esc(VK_CONFIG[felt] || "") + '</div>'
+    + '</div>';
+  const hashtagsKort = (VK_CONFIG.hashtag_laast === false && VK_CONFIG.hashtags) ? aabenKort("Jeres hashtagbank", "hashtags") : laastKort("Jeres hashtagbank");
+  const promptKort = (VK_CONFIG.prompt_laast === false && VK_CONFIG.prompt) ? aabenKort("Jeres ChatGPT-prompt", "prompt") : laastKort("Jeres ChatGPT-prompt");
+  const noterKort =
+    '<div class="post-card" style="flex-direction:column;align-items:stretch;">'
+    + '<div style="display:flex;justify-content:space-between;align-items:center;"><div class="post-title">Jeres egne noter</div>'
+    + '<span id="vkNoterStatus" style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);">gemmer selv</span></div>'
+    + '<textarea id="vkNoterFelt" class="sk-input" oninput="vkNoterAuto()" placeholder="Jeres eget hjørne — idéer, aftaler, alt det, I vil have ved hånden…" style="min-height:90px;background:#fff;margin-top:8px;">' + esc(noter) + '</textarea>'
+    + '</div>';
+  list.innerHTML =
+    '<div class="section-divider">Guides fra Energida</div>'
+    + alle.map(guideKort).join("")
+    + '<div class="section-divider" style="margin-top:20px;">Jeres egen værktøjskasse</div>'
+    + hashtagsKort + promptKort + noterKort;
 }
 
 /* ---------- kunde-hjem: målsætning + fremdrift ---------- */
@@ -4122,7 +4178,7 @@ function buildSideNav(def) {
     + item("", "Kontakt Ida", "openChat()")
     + item("", "Skift adgangskode", "togglePwPanel()")
     + item("", "Log ud", "custLogout()", " roed")
-    + '<div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0 12px;">Version 13. juli · 63</div>'
+    + '<div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0 12px;">Version 13. juli · 64</div>'
     + '</div>'
     + '<button class="sn-virk-knap" onclick="toggleVirkMenu()" title="' + esc((document.getElementById("shopTag") || {}).textContent || "Profil") + '" aria-label="Profil"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="3.6"/><path d="M4.5 20c1.2-3.6 4-5.4 7.5-5.4s6.3 1.8 7.5 5.4"/></svg></button>'
     + '<div id="virkMenu" style="display:none;position:fixed;right:20px;top:72px;width:230px;background:#fff;border:1px solid var(--border);border-radius:14px;box-shadow:0 16px 40px rgba(0,0,0,0.15);padding:8px;z-index:90;">'
@@ -5904,12 +5960,21 @@ function renderKundeKort() {
     + '<div style="font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:0.4px;color:var(--red);margin:18px 0 6px;">Mine noter <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--gray3);">(private — kunden ser dem aldrig)</span></div>'
     + '<textarea id="kundeNoterFelt" class="sk-input" placeholder="Skriv løs — indfald, aftaler i luften, ting du vil huske om dem…" style="min-height:90px;background:#fff;"></textarea>'
     + '<div style="display:flex;align-items:center;gap:10px;margin-top:6px;"><button class="dbtn primary" onclick="gemKundeNoter()">Gem noter</button><span id="kundeNoterMsg" style="font-size:11px;color:var(--gray3);"></span></div>'
+    + '<div style="font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:0.4px;color:var(--red);margin:18px 0 6px;">Deres værktøjskasse <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--gray3);">(lås op, når de når dertil i forløbet)</span></div>'
+    + '<div style="font-size:12px;font-weight:500;margin:8px 0 4px;">Hashtagbanken</div>'
+    + '<textarea id="vkAdmHashtags" class="sk-input" placeholder="Deres hashtags — grupper dem gerne: faste · by · sæson…" style="min-height:64px;background:#fff;"></textarea>'
+    + '<label style="display:flex;align-items:center;gap:7px;font-size:11.5px;margin:6px 0 12px;cursor:pointer;color:var(--gray3);"><input type="checkbox" id="vkAdmHashLaas"> Låst for kunden</label>'
+    + '<div style="font-size:12px;font-weight:500;margin:0 0 4px;">Deres ChatGPT-prompt</div>'
+    + '<textarea id="vkAdmPrompt" class="sk-input" placeholder="Prompten, der er bygget på deres strategi og stemme…" style="min-height:64px;background:#fff;"></textarea>'
+    + '<label style="display:flex;align-items:center;gap:7px;font-size:11.5px;margin:6px 0 10px;cursor:pointer;color:var(--gray3);"><input type="checkbox" id="vkAdmPromptLaas"> Låst for kunden</label>'
+    + '<div style="display:flex;align-items:center;gap:10px;"><button class="dbtn primary" onclick="vkAdmGem()">Gem værktøjskassen</button><span id="vkAdmMsg" style="font-size:11px;color:var(--gray3);"></span></div>'
     + '<div style="font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:0.4px;color:var(--red);margin:18px 0 6px;">Strategi</div>'
     + '<button class="dbtn" onclick="kundeGenvej(\'strategi\')">Åbn strategi-editoren (søjler, serier & ugerytme)</button>'
     + (somSide ? '</div>' : '');
   if (noterFoer) { const f = document.getElementById("kundeNoterFelt"); if (f) f.value = noterFoer; }
   hentKundeNoter();
   hentMoedeNoter();
+  vkAdmHent();
 }
 
 /* Private kundenoter — gemmes under Idas egen kode (ENERGIDA), så kunden aldrig kan læse dem */
@@ -5969,6 +6034,38 @@ async function gemMoedeNoter() {
   renderNaesteAktiviteter();
   const msg = document.getElementById("moedeNoterMsg");
   if (msg) { msg.textContent = "Gemt — den venter på dig ved mødet."; setTimeout(() => { if (msg) msg.textContent = ""; }, 2500); }
+}
+
+async function vkAdmHent() {
+  if (!KUNDEKORT || !sb) return;
+  try {
+    const { data } = await sb.from("skema_svar").select("svar").eq("kode", KUNDEKORT.kode).eq("navn", "vaerktoej").eq("skema", "vk_config").maybeSingle();
+    const c = (data && data.svar) || {};
+    const h = document.getElementById("vkAdmHashtags"); if (h && !h.value) h.value = c.hashtags || "";
+    const pr = document.getElementById("vkAdmPrompt"); if (pr && !pr.value) pr.value = c.prompt || "";
+    const hl = document.getElementById("vkAdmHashLaas"); if (hl) hl.checked = c.hashtag_laast !== false;
+    const pl = document.getElementById("vkAdmPromptLaas"); if (pl) pl.checked = c.prompt_laast !== false;
+  } catch(e) {}
+}
+async function vkAdmGem() {
+  if (!KUNDEKORT || !sb) return;
+  const svar = {
+    hashtags: (document.getElementById("vkAdmHashtags") || {}).value || "",
+    prompt: (document.getElementById("vkAdmPrompt") || {}).value || "",
+    hashtag_laast: !!(document.getElementById("vkAdmHashLaas") || {}).checked,
+    prompt_laast: !!(document.getElementById("vkAdmPromptLaas") || {}).checked
+  };
+  const msg = document.getElementById("vkAdmMsg");
+  try {
+    const { data } = await sb.from("skema_svar").update({ svar: svar }).eq("kode", KUNDEKORT.kode).eq("navn", "vaerktoej").eq("skema", "vk_config").select();
+    if (!data || !data.length) {
+      const { error } = await sb.from("skema_svar").insert({ kode: KUNDEKORT.kode, navn: "vaerktoej", skema: "vk_config", svar: svar });
+      if (error) throw error;
+    }
+    if (msg) { msg.textContent = "Gemt ✓ — kunden ser det med det samme."; setTimeout(() => { if (msg) msg.textContent = ""; }, 3000); }
+  } catch(e) {
+    if (msg) msg.textContent = "Kunne ikke gemme — prøv igen.";
+  }
 }
 
 async function gemKundeTrin(i) {
