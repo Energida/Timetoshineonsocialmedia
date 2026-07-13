@@ -557,7 +557,7 @@ body.dash-mode .dash-fab { display: none; }
     <button class="burger-item" onclick="toggleBurger(); togglePwPanel()">Skift adgangskode</button>
     <button class="burger-item" onclick="toggleBurger(); openChat()">Kontakt Ida</button>
     <button class="burger-item" style="color:var(--red);" onclick="custLogout()">Log ud</button>
-    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 13. juli · 61</div>
+    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 13. juli · 62</div>
   </div>
 </div>
 <div class="plus-menu" id="plusMenu" onclick="if(event.target===this)togglePlus()">
@@ -1276,6 +1276,11 @@ body.dash-mode .dash-fab { display: none; }
       <div class="ws-head" style="justify-content:space-between;"><span style="display:inline-flex;align-items:center;gap:10px;"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M3 17l5.5-5.5 3.5 3L20 7"/><path d="M15.5 7H20v4.5"/></svg>Dine streaks</span> <button class="dbtn primary" style="width:34px;height:34px;border-radius:50%;padding:0;font-size:20px;font-weight:400;line-height:1;" onclick="vaneNy()" title="Ny vane">+</button></div>
       <div id="vaneListe"></div>
     </div>
+    <div class="ws-card" id="efterMoedeCard" style="display:none;margin-bottom:24px;">
+      <div class="ws-head"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M17 3.5l3.5 3.5L8 19.5 3.5 20.5 4.5 16 17 3.5z"/></svg>Efter mødet — skriv referatet</div>
+      <div id="efterMoedeListe" class="ws-list"></div>
+    </div>
+
     <div class="ws-card" style="margin-bottom:24px;">
       <div class="ws-head"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M16 3v4M8 3v4M3 10.5h18"/></svg>Næste aktiviteter</div>
       <div id="naesteAktListe" class="ws-list"></div>
@@ -1442,7 +1447,7 @@ body.dash-mode .dash-fab { display: none; }
 
     <div id="systemtjek" style="display:none;background:#fff;border:1px solid var(--border);border-radius:14px;padding:14px 16px;margin-top:16px;"></div>
     <div id="dashFooter" style="display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--gray3);padding:22px 0 12px;border-top:1px solid var(--border);margin-top:10px;">
-      <div style="font-size:10px;margin-left:auto;">Version 13. juli · 61 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
+      <div style="font-size:10px;margin-left:auto;">Version 13. juli · 62 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
     </div>
   </div>
 </div>
@@ -4091,7 +4096,7 @@ function buildSideNav(def) {
     + item("", "Kontakt Ida", "openChat()")
     + item("", "Skift adgangskode", "togglePwPanel()")
     + item("", "Log ud", "custLogout()", " roed")
-    + '<div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0 12px;">Version 13. juli · 61</div>'
+    + '<div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0 12px;">Version 13. juli · 62</div>'
     + '</div>'
     + '<button class="sn-virk-knap" onclick="toggleVirkMenu()" title="' + esc((document.getElementById("shopTag") || {}).textContent || "Profil") + '" aria-label="Profil"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="3.6"/><path d="M4.5 20c1.2-3.6 4-5.4 7.5-5.4s6.3 1.8 7.5 5.4"/></svg></button>'
     + '<div id="virkMenu" style="display:none;position:fixed;right:20px;top:72px;width:230px;background:#fff;border:1px solid var(--border);border-radius:14px;box-shadow:0 16px 40px rgba(0,0,0,0.15);padding:8px;z-index:90;">'
@@ -5897,8 +5902,18 @@ async function gemKundeNoter() {
 }
 
 let MOEDE_NOTER = {};
+let REFERAT_OK = {};
+async function markReferatOk(id) {
+  REFERAT_OK[id] = true;
+  vaneGemRow("aftale_referater", REFERAT_OK);
+  renderNaesteAktiviteter();
+}
 async function hentAlleMoedeNoter() {
   if (!sb) return;
+  try {
+    const rf = await vaneRow("aftale_referater");
+    if (rf) REFERAT_OK = rf;
+  } catch(e) {}
   try {
     const ks = await vaneRow("kal_tilfojet");
     if (ks) {
@@ -6306,6 +6321,35 @@ function renderNaesteAktiviteter() {
       + (kalSat[a.id] ? '' : '<button class="row-btn view" style="font-weight:400;background:none;border:1px solid rgba(252,36,4,0.4);color:var(--red);border-radius:999px;padding:9px 16px;display:inline-flex;align-items:center;gap:7px;" onclick="event.stopPropagation();aftaleTilKalenderKlik(\'' + a.id + '\')" title="Hent kalenderfil til din kalender"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M16 3v4M8 3v4M3 10.5h18"/></svg>Føj til kalender</button>')
       + '</div>';
   }).join("") : '<div class="ws-empty">Ingen kommende aftaler — læg dem på kundekortet.</div>';
+
+  // afholdte møder uden referat → opgave på forsiden (Idas ønske 13/7)
+  const emKort = document.getElementById("efterMoedeCard");
+  const emListe = document.getElementById("efterMoedeListe");
+  if (emKort && emListe) {
+    const nu = new Date();
+    const idagLok = nu.getFullYear() + "-" + String(nu.getMonth() + 1).padStart(2, "0") + "-" + String(nu.getDate()).padStart(2, "0");
+    const klNu = String(nu.getHours()).padStart(2, "0") + ":" + String(nu.getMinutes()).padStart(2, "0");
+    const graense = new Date(nu); graense.setDate(nu.getDate() - 21);
+    const graenseLok = graense.getFullYear() + "-" + String(graense.getMonth() + 1).padStart(2, "0") + "-" + String(graense.getDate()).padStart(2, "0");
+    const afholdt = CRM_AFTALER.filter(a => {
+      if (!a.dato || REFERAT_OK[a.id]) return false;
+      if (a.dato < graenseLok) return false;
+      if (a.dato < idagLok) return true;
+      if (a.dato > idagLok) return false;
+      const slut = String(a.tid_slut || a.tid || "23:59").slice(0, 5);
+      return slut <= klNu;
+    }).sort((x, y) => (x.dato < y.dato ? 1 : -1)).slice(0, 5);
+    emKort.style.display = afholdt.length ? "" : "none";
+    emListe.innerHTML = afholdt.map(a => {
+      const navn = (VIRKSOMHEDSKODER[a.kode] && VIRKSOMHEDSKODER[a.kode].virksomhed) || a.kode;
+      return '<div class="follow-item">'
+        + '<div class="fi-main" style="cursor:pointer;" onclick="openKundeKort(\'' + a.kode + '\')"><div class="fi-name" style="font-weight:500;">' + esc(a.titel || "Møde") + '</div>'
+        + '<div class="fi-why">' + esc(navn) + ' · afholdt ' + esc(dkDatoKort(a.dato)) + (a.tid ? ' kl. ' + esc(String(a.tid).slice(0, 5)) : '') + ' — skriv referat i Mine noter på kundekortet</div></div>'
+        + '<button class="row-btn view" style="font-weight:400;" onclick="openKundeKort(\'' + a.kode + '\')">Åbn kundekortet</button>'
+        + '<button class="row-btn" style="font-weight:400;" onclick="markReferatOk(\'' + a.id + '\')" title="Referatet er skrevet">Klaret &#10003;</button>'
+        + '</div>';
+    }).join("");
+  }
 }
 
 function aftaleTilKalenderKlik(id) {
