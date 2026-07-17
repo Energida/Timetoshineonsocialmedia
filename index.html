@@ -680,7 +680,7 @@ body.lek-open .burger-btn, body.lek-open .bottom-nav, body.lek-open .dash-fab { 
     <button class="burger-item" onclick="toggleBurger(); togglePwPanel()">Skift adgangskode</button>
     <button class="burger-item" onclick="toggleBurger(); openChat()">Kontakt Ida</button>
     <button class="burger-item" style="color:var(--red);" onclick="custLogout()">Log ud</button>
-    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 17. juli · 68</div>
+    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 17. juli · 69</div>
   </div>
 </div>
 <div class="plus-menu" id="plusMenu" onclick="if(event.target===this)togglePlus()">
@@ -1866,7 +1866,7 @@ body.lek-open .burger-btn, body.lek-open .bottom-nav, body.lek-open .dash-fab { 
     <div id="systemtjek" style="display:none;background:#fff;border:1px solid var(--border);border-radius:14px;padding:14px 16px;margin-top:16px;"></div>
     <div id="dashFooter" style="display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--gray3);padding:22px 0 12px;border-top:1px solid var(--border);margin-top:10px;">
       <div style="font-size:10px;">© 2026 Energida · Alle rettigheder forbeholdes</div>
-      <div style="font-size:10px;margin-left:auto;">Version 17. juli · 68 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
+      <div style="font-size:10px;margin-left:auto;">Version 17. juli · 69 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
     </div>
   </div>
 </div>
@@ -3539,8 +3539,50 @@ let KLIP_ER_IDA = false;    // true når Klipperummet åbnes fra CRM-dashboardet
 let KLIP_RET = null;
 let KLIP_MODUL_VALGT = null;
 let KLIP_FILTER = "alle";
+let KLIP_VISNING = "moduler";   // "moduler" (ringe) eller "liste" (tabellen fra ChatGPT-billedet)
 function klipModulVaelg(k) { KLIP_MODUL_VALGT = KLIP_MODUL_VALGT === k ? null : k; renderKlipperum(); }
 function klipFilterSaet(f) { KLIP_FILTER = f; renderKlipperum(); }
+function klipVisningSaet(v) { KLIP_VISNING = v; renderKlipperum(); }
+function klipAnsvarlig(st) { return st === "Råfiler klar" || st === "Rettelser" ? "Thomas" : st === "Godkendt" ? "—" : "Ida"; }
+function klipProdukt(modul) {
+  const m = String(modul || "").match(/modul\s*(\d+)/i);
+  if (!m) return "—";
+  return parseInt(m[1], 10) <= 4 ? "YOU GOT THIS + I GOT YOU" : "YOU GOT THIS";
+}
+function klipTabel(synlige) {
+  const th = t => '<th style="text-align:left;font-weight:500;font-size:10px;letter-spacing:1.4px;text-transform:uppercase;color:var(--red);padding:8px 10px;border-bottom:1px solid var(--border);white-space:nowrap;">' + t + '</th>';
+  const td = (t, ekstra) => '<td style="padding:9px 10px;border-bottom:1px solid var(--border);vertical-align:middle;font-size:12px;' + (ekstra || '') + '">' + t + '</td>';
+  const stChip = st => {
+    const stil = st === "Godkendt" ? 'background:var(--blue);color:#000;' : (st === "Klippet" ? 'background:var(--red);color:#fff;' : 'background:#FDE8E3;color:var(--red);');
+    return '<span style="border-radius:12px;padding:3px 10px;font-size:10px;white-space:nowrap;' + stil + '">' + esc(st === "Klippet" ? "Til din godkendelse" : (st === "Brief klar" ? "Venter på optagelse" : st || "—")) + '</span>';
+  };
+  const rk = synlige.map(o => {
+    const nrM = (o.titel || "").match(/^(\d+)\.(\d+)\s*·?\s*(.*)$/);
+    const modulNr = nrM ? "M" + nrM[1] : (String(o.modul || "").match(/\d+/) ? "M" + String(o.modul).match(/\d+/)[0] : "—");
+    const lekNr = nrM ? nrM[1] + "." + nrM[2] : "—";
+    const titel = nrM ? nrM[3] : (o.titel || "");
+    const m2 = String(o.modul || "").match(/modul\s*(\d+)/i);
+    const gruppe = m2 ? "Modul " + m2[1] : "Andet";
+    return '<tr onclick="klipListeAaben(\'' + esc(gruppe) + '\')" style="cursor:pointer;">'
+      + td('<span style="background:#E9F0F5;border:1px solid #C9DBE7;border-radius:8px;padding:2px 8px;font-size:10.5px;font-weight:500;">' + esc(modulNr) + '</span>')
+      + td(esc(lekNr))
+      + td(esc(titel), 'font-weight:500;min-width:160px;')
+      + td('<span style="background:#FDE8E3;color:var(--red);border-radius:12px;padding:3px 9px;font-size:9.5px;letter-spacing:.3px;text-transform:uppercase;white-space:nowrap;">' + esc(klipProdukt(o.modul)) + '</span>')
+      + td(stChip(o.status))
+      + td(esc(klipAnsvarlig(o.status)))
+      + td('<span style="color:var(--gray3);font-variant-numeric:tabular-nums;white-space:nowrap;">' + esc(fmtDate(o.updated_at || o.created_at)) + '</span>')
+      + '</tr>';
+  }).join("");
+  return '<div style="overflow-x:auto;background:#E9F0F5;border:1px solid #C9DBE7;border-radius:12px;padding:4px 8px;"><table style="width:100%;border-collapse:collapse;min-width:760px;">'
+    + '<tr>' + th("Modul") + th("Lektion") + th("Titel") + th("Produkt") + th("Status") + th("Ansvarlig") + th("Sidst opdateret") + '</tr>' + rk
+    + '</table></div><div style="font-size:11px;color:var(--gray3);margin-top:8px;">Klik på en række for at åbne videoen på tavlen.</div>';
+}
+function klipListeAaben(gruppe) {
+  KLIP_VISNING = "moduler";
+  KLIP_MODUL_VALGT = gruppe;
+  renderKlipperum();
+  setTimeout(() => { const d = document.getElementById("klipDetalje"); if (d) d.scrollIntoView({ behavior: "smooth", block: "start" }); }, 60);
+}
 function klipNaesteAaben() {   // hop direkte til den video, der venter på Idas godkendelse
   const o = KLIP_OPGAVER.find(x => x.status === "Klippet"); if (!o) return;
   KLIP_FILTER = "alle";
@@ -3793,7 +3835,13 @@ function renderKlipperum() {
     : '';
   const KLIP_FILTRE = [["alle", "Alle"], ["Brief klar", "Venter på optagelse"], ["thomas", "Hos Thomas"], ["Klippet", "Til din godkendelse"], ["Godkendt", "Godkendt"]];
   const filterChips = total
-    ? '<div style="margin:0 0 14px;">' + KLIP_FILTRE.map(f => '<button type="button" class="chip-btn' + (KLIP_FILTER === f[0] ? ' on' : '') + '" style="font-size:11px;padding:7px 13px;" onclick="klipFilterSaet(\'' + f[0] + '\')">' + f[1] + '</button>').join("") + '</div>'
+    ? '<div style="margin:0 0 14px;display:flex;flex-wrap:wrap;align-items:center;gap:0 4px;">' + KLIP_FILTRE.map(f => '<button type="button" class="chip-btn' + (KLIP_FILTER === f[0] ? ' on' : '') + '" style="font-size:11px;padding:7px 13px;" onclick="klipFilterSaet(\'' + f[0] + '\')">' + f[1] + '</button>').join("")
+      + (document.body.classList.contains("dash-nav")
+        ? '<span style="flex:1;"></span>'
+          + '<button type="button" class="chip-btn' + (KLIP_VISNING === "moduler" ? ' on' : '') + '" style="font-size:11px;padding:7px 13px;" onclick="klipVisningSaet(\'moduler\')">Moduler</button>'
+          + '<button type="button" class="chip-btn' + (KLIP_VISNING === "liste" ? ' on' : '') + '" style="font-size:11px;padding:7px 13px;" onclick="klipVisningSaet(\'liste\')">Liste</button>'
+        : '')
+      + '</div>'
     : '';
   const synlige = KLIP_OPGAVER.filter(o => KLIP_FILTER === "alle" ? true : (KLIP_FILTER === "thomas" ? (o.status === "Råfiler klar" || o.status === "Rettelser") : o.status === KLIP_FILTER));
   const grupperM = {};
@@ -3815,7 +3863,9 @@ function renderKlipperum() {
       + '</div>'
     : '';
   el.innerHTML = nyForm + naeste + samlet + filterChips
-    + (synlige.length
+    + (synlige.length && KLIP_VISNING === "liste" && document.body.classList.contains("dash-nav")
+      ? klipTabel(synlige.slice().sort((a, b) => String(a.titel).localeCompare(String(b.titel), "da", { numeric: true })))
+      : (synlige.length
       ? (function() {
           const kasser = noegler.map(k => {
             const arr = grupperM[k];
@@ -3846,7 +3896,7 @@ function renderKlipperum() {
           }
           return '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px;">' + kasser + '</div>' + detalje;
         })()
-      : '<div class="ws-empty" style="padding:14px 0;">' + (total ? 'Ingen videoer i denne status lige nu.' : 'Ingen videoer i produktion lige nu.') + '</div>');
+      : '<div class="ws-empty" style="padding:14px 0;">' + (total ? 'Ingen videoer i denne status lige nu.' : 'Ingen videoer i produktion lige nu.') + '</div>'));
 }
 
 /* ---------- kalender-guide: abonnér på jeres plan fra telefonen ---------- */
@@ -5353,7 +5403,7 @@ function buildSideNav(def) {
     + item("", "Kontakt Ida", "openChat()")
     + item("", "Skift adgangskode", "togglePwPanel()")
     + item("", "Log ud", "custLogout()", " roed")
-    + '<div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0 12px;">Version 17. juli · 68</div>'
+    + '<div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0 12px;">Version 17. juli · 69</div>'
     + '</div>'
     + '<span style="display:inline-flex;flex-direction:column;align-items:center;gap:4px;flex-shrink:0;"><button class="sn-virk-knap" onclick="toggleVirkMenu()" title="' + esc(virkNavn) + '" aria-label="Profil"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="3.6"/><path d="M4.5 20c1.2-3.6 4-5.4 7.5-5.4s6.3 1.8 7.5 5.4"/></svg></button><span class="sn-tekst" style="color:var(--gray3);max-width:110px;overflow:hidden;text-overflow:ellipsis;">' + esc(virkNavn) + '</span></span>'
     + '<div id="virkMenu" style="display:none;position:fixed;right:20px;top:72px;width:230px;background:#fff;border:1px solid var(--border);border-radius:14px;box-shadow:0 16px 40px rgba(0,0,0,0.15);padding:8px;z-index:90;">'
