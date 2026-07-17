@@ -680,7 +680,7 @@ body.lek-open .burger-btn, body.lek-open .bottom-nav, body.lek-open .dash-fab { 
     <button class="burger-item" onclick="toggleBurger(); togglePwPanel()">Skift adgangskode</button>
     <button class="burger-item" onclick="toggleBurger(); openChat()">Kontakt Ida</button>
     <button class="burger-item" style="color:var(--red);" onclick="custLogout()">Log ud</button>
-    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 17. juli · 64</div>
+    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 17. juli · 65</div>
   </div>
 </div>
 <div class="plus-menu" id="plusMenu" onclick="if(event.target===this)togglePlus()">
@@ -1866,7 +1866,7 @@ body.lek-open .burger-btn, body.lek-open .bottom-nav, body.lek-open .dash-fab { 
     <div id="systemtjek" style="display:none;background:#fff;border:1px solid var(--border);border-radius:14px;padding:14px 16px;margin-top:16px;"></div>
     <div id="dashFooter" style="display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--gray3);padding:22px 0 12px;border-top:1px solid var(--border);margin-top:10px;">
       <div style="font-size:10px;">© 2026 Energida · Alle rettigheder forbeholdes</div>
-      <div style="font-size:10px;margin-left:auto;">Version 17. juli · 64 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
+      <div style="font-size:10px;margin-left:auto;">Version 17. juli · 65 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
     </div>
   </div>
 </div>
@@ -3628,33 +3628,54 @@ function klipRaafilNavn(id, titel) {
     .replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
   return id + "-" + t + ".mp4";
 }
+/* Klippe-brief pr. lektion (Idas beslutning 17/7 — "briefs til hver lektion, ligesom i Content Studio").
+   Følger klippe-reglerne fra "Til Thomas": ren kerne + bookends og B-klip som separate filer. */
+function klipLektionsBrief(mod, l) {
+  const dele = l.id.split("-"), nr = l.id.replace("-", ".");
+  const ml = "M" + dele[0] + "-L" + dele[1];
+  const slug = klipRaafilNavn(l.id, l.titel).replace(/^[\d-]+-/, "").replace(".mp4", "");
+  const produkter = parseInt(dele[0], 10) <= 4
+    ? "YOU GOT THIS (kursister) + I GOT YOU (Business) — bookends klippes pr. produkt"
+    : "KUN YOU GOT THIS (kursister) — Business ser aldrig modul 5-6";
+  return "KLIPPE-BRIEF · Lektion " + nr + " · " + l.titel
+    + "\nModul: " + mod.titel
+    + "\nVises i: " + produkter
+    + "\nRåfil (optagelsen): " + klipRaafilNavn(l.id, l.titel)
+    + "\nKernen: " + ml + "-" + slug + "-v1.mp4 — klippes REN, ingen bookends eller B-klip bagt ind"
+    + "\nBookends: " + ml + "-bookend-{produkt}-v1.mp4 — separate filer, sættes for og bag kernen"
+    + "\nB-klip: " + ml + "-B1-v1.mp4, -B2 … — passagerne markeret som B-klip i manus (skal kunne swappes uden at røre kernen)"
+    + (l.tid && l.tid !== "00:00" ? "\nLængde-mål: " + l.tid : "")
+    + (l.ovelse ? "\nOBS: lektionen har " + l.ovelse.length + " øvelsesspørgsmål i appen — de skal IKKE med i videoen." : "")
+    + "\nIdas noter: —";
+}
 async function klipOpretKursusTavle() {
   const findes = {};
-  KLIP_OPGAVER.forEach(o => { const m = (o.titel || "").match(/^(\d+\.\d+)\s/); if (m) findes[m[1]] = 1; });
-  const rows = [];
+  KLIP_OPGAVER.forEach(o => { const m = (o.titel || "").match(/^(\d+\.\d+)\s/); if (m) findes[m[1]] = o; });
+  const rows = [], opgrader = [];
   KURSUS_MODULER.forEach(mod => mod.lektioner.forEach(l => {
     const nr = l.id.replace("-", ".");
-    if (findes[nr]) return;
-    rows.push({
-      titel: nr + " · " + l.titel,
-      modul: mod.titel,
-      brief: "Kursuslektion. Råfilens navn: " + klipRaafilNavn(l.id, l.titel)
-        + (l.ovelse ? " · Lektionen har " + l.ovelse.length + " øvelsesspørgsmål i appen (skal ikke med i videoen)." : ""),
-      status: "Brief klar",
-      kommentarer: [],
-      kode: "THOMAS2026"
-    });
+    const brief = klipLektionsBrief(mod, l);
+    const eksisterende = findes[nr];
+    if (eksisterende) {
+      const b = (eksisterende.brief || "").trim();   // kun tomme eller gamle auto-briefs opgraderes — Idas egne tekster fredes
+      if ((!b || b.indexOf("Kursuslektion. Råfilens navn:") === 0) && b !== brief) opgrader.push({ id: eksisterende.id, brief: brief });
+      return;
+    }
+    rows.push({ titel: nr + " · " + l.titel, modul: mod.titel, brief: brief, status: "Brief klar", kommentarer: [], kode: "THOMAS2026" });
   }));
-  if (!rows.length) { alert("Alle kursuslektioner ligger allerede i Klipperummet."); return; }
-  if (!confirm("Opret " + rows.length + " kursusvideoer som opgaver i Klipperummet?")) return;
+  if (!rows.length && !opgrader.length) { alert("Alle kursuslektioner ligger allerede i Klipperummet — med briefs."); return; }
+  const besked = [rows.length ? "Opret " + rows.length + " nye kursusvideoer" : "", opgrader.length ? "udfyld klippe-brief på " + opgrader.length + " eksisterende" : ""].filter(Boolean).join(" + ") + "?";
+  if (!confirm(besked)) return;
   rows.reverse();   // nyeste-først-sortering vender listen — så står 0.1 øverst
   if (sb) {
     try {
-      const { error } = await sb.from("video_opgaver").insert(rows);
-      if (!error) { klipHent(); return; }
+      if (rows.length) await sb.from("video_opgaver").insert(rows);
+      for (const o of opgrader) await sb.from("video_opgaver").update({ brief: o.brief }).eq("id", o.id);
+      klipHent(); return;
     } catch(e) {}
   }
   rows.forEach(r => { r.id = "v" + Date.now() + Math.floor(Math.random() * 10000); r.created_at = new Date().toISOString(); KLIP_OPGAVER.unshift(r); });
+  opgrader.forEach(o => { const k = KLIP_OPGAVER.find(x => String(x.id) === String(o.id)); if (k) k.brief = o.brief; });
   klipSaveLocal(); renderKlipperum();
 }
 
@@ -3756,7 +3777,7 @@ function renderKlipperum() {
       + '</div>'
       + '<textarea id="klip_ny_brief" placeholder="Briefen — hvad skal videoen, stemning, klipperytme, hvad skal med/ud…" style="width:100%;background:#fff;border:1px solid var(--border);border-radius:8px;padding:8px 10px;font-size:12px;font-family:Poppins,sans-serif;resize:vertical;min-height:60px;margin-bottom:6px;"></textarea>'
       + '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px;"><button class="dbtn primary" style="padding:11px 22px;" onclick="klipNy()">Læg i Klipperummet</button>'
-      + '<button class="row-btn" style="font-weight:400;" onclick="klipOpretKursusTavle()">Opret alle kursuslektioner som produktionstavle</button></div>'
+      + '<button class="row-btn" style="font-weight:400;" onclick="klipOpretKursusTavle()">Opret/opdatér produktionstavlen — klippe-brief på hver lektion</button></div>'
       + '</div>'
     : '';
   const total = KLIP_OPGAVER.length;
@@ -5332,7 +5353,7 @@ function buildSideNav(def) {
     + item("", "Kontakt Ida", "openChat()")
     + item("", "Skift adgangskode", "togglePwPanel()")
     + item("", "Log ud", "custLogout()", " roed")
-    + '<div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0 12px;">Version 17. juli · 64</div>'
+    + '<div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0 12px;">Version 17. juli · 65</div>'
     + '</div>'
     + '<span style="display:inline-flex;flex-direction:column;align-items:center;gap:4px;flex-shrink:0;"><button class="sn-virk-knap" onclick="toggleVirkMenu()" title="' + esc(virkNavn) + '" aria-label="Profil"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="3.6"/><path d="M4.5 20c1.2-3.6 4-5.4 7.5-5.4s6.3 1.8 7.5 5.4"/></svg></button><span class="sn-tekst" style="color:var(--gray3);max-width:110px;overflow:hidden;text-overflow:ellipsis;">' + esc(virkNavn) + '</span></span>'
     + '<div id="virkMenu" style="display:none;position:fixed;right:20px;top:72px;width:230px;background:#fff;border:1px solid var(--border);border-radius:14px;box-shadow:0 16px 40px rgba(0,0,0,0.15);padding:8px;z-index:90;">'
