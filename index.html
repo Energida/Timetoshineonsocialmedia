@@ -710,7 +710,7 @@ body.lek-open .burger-btn, body.lek-open .bottom-nav, body.lek-open .dash-fab { 
     <button class="burger-item" onclick="toggleBurger(); togglePwPanel()">Skift adgangskode</button>
     <button class="burger-item" onclick="toggleBurger(); openChat()">Kontakt Ida</button>
     <button class="burger-item" style="color:var(--red);" onclick="custLogout()">Log ud</button>
-    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 17. juli · 98</div>
+    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 17. juli · 99</div>
   </div>
 </div>
 <div class="plus-menu" id="plusMenu" onclick="if(event.target===this)togglePlus()">
@@ -1889,7 +1889,7 @@ body.lek-open .burger-btn, body.lek-open .bottom-nav, body.lek-open .dash-fab { 
     <div id="systemtjek" style="display:none;background:#fff;border:1px solid var(--border);border-radius:20px;padding:14px 16px;margin-top:16px;"></div>
     <div id="dashFooter" style="display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--gray3);padding:22px 0 12px;border-top:1px solid var(--border);margin-top:10px;">
       <div style="font-size:10px;">© 2026 Energida · Alle rettigheder forbeholdes</div>
-      <div style="font-size:10px;margin-left:auto;">Version 17. juli · 98 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
+      <div style="font-size:10px;margin-left:auto;">Version 17. juli · 99 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
     </div>
   </div>
 </div>
@@ -2133,6 +2133,7 @@ function briefChip(el, key, multi) {
     if (key === "format") { if (typeof saveBrief === "function") saveBrief(true); if (typeof openBriefSide === "function") { openBriefSide(BRIEF_ID); return; } }
   }
   if (typeof briefAutosavePlan === "function") briefAutosavePlan();
+  if (typeof raketOpdater === "function") raketOpdater();
 }
 
 let BRIEF_AUTOTIMER = null;
@@ -2150,7 +2151,7 @@ document.addEventListener("input", e => {
 });
 document.addEventListener("change", e => {
   const t = e.target;
-  if (t && t.closest && t.closest("#briefGrid")) briefAutosavePlan();
+  if (t && t.closest && t.closest("#briefGrid")) { briefAutosavePlan(); if (typeof raketOpdater === "function") raketOpdater(); }
 });
 /* ---------- KARRUSEL-SLIDES: byg tankerne slide for slide (Idas ønske 18/7) ---------- */
 function briefSlidesLaes() {   // gem hvad der står i felterne før en re-render
@@ -2187,6 +2188,45 @@ function briefSlideRerender() {
   document.querySelectorAll('[id^="bf_slide_"]').forEach(autoGro);
   if (typeof saveBrief === "function") saveBrief(true);
 }
+
+/* ---------- SUCCESRAKETTEN: Idas 3-trins content-model som processbar (18/7) ---------- */
+const RAKET = [
+  { nr: 1, navn: "Problemet", maal: "Over 60% ser videre efter 3 sek.", felter: ["beskrivelse", "vinkel", "hook", "thumb"] },
+  { nr: 2, navn: "Genkendelsen", maal: "Fasthold dem længst muligt", felter: ["loesning", "indhold"] },
+  { nr: 3, navn: "Vejen", maal: "Handling på din CTA", felter: ["maal", "caption", "cta"] }
+];
+function raketFelt(key) {
+  if (key === "cta") return !!BRIEF_STATE.cta;
+  if (key === "indhold" && BRIEF_STATE.format === "Karrusel") return (BRIEF_STATE.slides || []).filter(x => (x || "").trim()).length >= 2;
+  const el = document.getElementById("bf_" + key);
+  const v = el ? el.value : (BRIEF_STATE[key] || "");
+  return !!String(v || "").trim();
+}
+function raketStadie() {
+  return RAKET.map(t => {
+    const gjort = t.felter.filter(raketFelt).length;
+    return { nr: t.nr, navn: t.navn, maal: t.maal, gjort: gjort, total: t.felter.length, faerdig: gjort >= Math.max(1, t.felter.length - 1) };
+  });
+}
+function raketBarHtml() {
+  const st = raketStadie();
+  let nu = st.findIndex(x => !x.faerdig); if (nu === -1) nu = st.length - 1;
+  const led = st.map((x, i) => {
+    const done = x.faerdig, erNu = i === nu && !done;
+    const cirkel = done
+      ? '<span style="width:30px;height:30px;border-radius:50%;background:var(--red);border:2px solid var(--red);box-sizing:border-box;color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;position:relative;z-index:1;">&#10003;</span>'
+      : '<span style="width:30px;height:30px;border-radius:50%;background:' + (erNu ? 'var(--red)' : '#fff') + ';border:2px solid var(--red);box-sizing:border-box;color:' + (erNu ? '#fff' : 'var(--red)') + ';display:inline-flex;align-items:center;justify-content:center;font-size:13px;font-weight:500;flex-shrink:0;position:relative;z-index:1;' + (erNu ? 'box-shadow:0 0 0 4px rgba(252,36,4,.18);' : '') + '">' + x.nr + '</span>';
+    return '<div style="flex:1;text-align:center;position:relative;min-width:0;">'
+      + (i > 0 ? '<div style="position:absolute;top:15px;right:50%;width:100%;height:2px;background:var(--red);"></div>' : '')
+      + cirkel
+      + '<div style="font-size:11.5px;font-weight:500;margin-top:6px;' + (erNu ? 'color:var(--red);' : '') + '">' + x.navn + '</div>'
+      + '<div style="font-size:9.5px;color:var(--gray3);line-height:1.35;margin-top:1px;">' + x.maal + '</div></div>';
+  }).join("");
+  return '<div style="background:#fff;border:1px solid var(--border);border-radius:20px;padding:16px 18px;margin-bottom:16px;">'
+    + '<div style="font-size:10px;letter-spacing:1.8px;text-transform:uppercase;font-weight:500;color:var(--red);margin-bottom:12px;">Succesraketten <span style="letter-spacing:0;text-transform:none;font-weight:400;color:var(--gray3);">· hvor er du i opbygningen?</span></div>'
+    + '<div style="display:flex;align-items:flex-start;">' + led + '</div></div>';
+}
+function raketOpdater() { const el = document.getElementById("raketBar"); if (el) el.innerHTML = raketBarHtml(); }
 
 function openBriefSide(id) {
   const it = IDEER.find(x => x.id === id);
@@ -2241,7 +2281,8 @@ function openBriefSide(id) {
     + '</div>';
 
   document.getElementById("briefWrap").innerHTML =
-      trin(1, 'Stop scrollet', 'Overspringsfrekvens under 40 — de første 0-3 sekunder afgør alt.')
+      '<div id="raketBar">' + raketBarHtml() + '</div>'
+    + trin(1, '1 · Problemet', 'Kender du det? — de første 0-3 sek. afgør (mål: over 60% ser videre).')
     + q('Beskriv din idé', hint('Skriv idéen, som du ville fortælle den til en kollega — og nævn, hvilke produkter der evt. skal fremhæves.') + ta('beskrivelse', 'Beskriv idéen — og evt. hvilke produkter der skal fremhæves…', 90))
     + '<div class="sk-q" style="border:1.5px solid var(--red-line);background:linear-gradient(180deg,#fff,#FFF0EE);">'
       + '<div class="sk-label" style="color:var(--red);">Din content-kollega</div>'
@@ -2253,12 +2294,12 @@ function openBriefSide(id) {
     + q('Hvordan løser du det for målgruppen?', hint('Vinklen handler aldrig om produktet — den handler om personen, der ser med.') + ta('loesning', 'Beskriv løsningen — det, opslaget giver dem…'))
     + q('Hook — de første 0-3 sekunder', hint('Genkendelig situation, overraskende påstand eller et spørgsmål, der aldrig besvares i videoen.') + chips('hookStruktur', ["Hook kun i starten (1-3 sek.)","Hook hele vejen — caption er payoff"], false) + ta('hook', 'Skriv hook…'))
     + q('Coverbillede & thumbnail-tekst', hint('Skal virke i miniformat. Ansigt med udtryk performer bedst. Max 5-7 ord: stil et spørgsmål ELLER giv et løfte — aldrig begge.') + ta('thumb', 'Thumbnail-tekst (max 5-7 ord)'))
-    + trin(2, 'Hold på dem', (BRIEF_STATE.format === "Karrusel") ? 'Hvert slide skal have en grund til at swipe videre — byg tankerne slide for slide.' : 'Så lang visningstid som muligt — ingen steder at kede sig.')
+    + trin(2, '2 · Genkendelsen', (BRIEF_STATE.format === "Karrusel") ? 'Sæt ord på det, de føler — så swiper de videre, slide for slide (fasthold).' : 'Sæt ord på det, de føler — fasthold dem længst muligt.')
     + ((BRIEF_STATE.format === "Karrusel")
       ? briefSlidesHtml()
       : (q('Indhold', hint('Start med bevægelse, energi eller noget uventet — og klip, FØR det bliver kedeligt. Beskriv scenerne trin for trin.') + ta('indhold', 'Beskriv indholdet…', 90) + '<div style="font-size:12px;font-weight:500;margin:10px 0 4px;">Voiceover</div>' + ta('voiceover', 'Hvad siges der i voiceoveren? (tomt = ingen voiceover)'))
         + q('Lyd', hint('OBS: Brug KUN musik fra Instagrams erhvervs-bibliotek — privat musikkatalog er ikke lovligt for virksomheder, og musik fanges hurtigst af botterne.') + chips('lyd', ["Kun musik","Musik + voiceover","Tale til kameraet"], false) + '<div style="font-size:12px;font-weight:500;margin:10px 0 4px;">Hvilken musik skal på?</div>' + ta('musik', 'Skriv nummer/stemning — fx rolig akustisk, upbeat sommer…') + '<div style="font-size:12px;font-weight:500;margin:10px 0 4px;">Undertekster? <span style="font-weight:400;color:var(--gray3);">(mange ser uden lyd)</span></div>' + chips('undertekster', ["Ja","Nej"], false))))
-    + trin(3, 'Hvad vil vi gerne have de skal gøre?', 'Én stærk CTA — målgruppen skal gøre noget med det samme.')
+    + trin(3, '3 · Vejen', 'Vis løsningen + ét klart næste skridt — handling på din CTA.')
     + q('Målet — hvad skal opslaget gøre for butikken?', ta('maal', 'Fx flere ind ad døren lørdag · flere gem fra lokale · udsolgt af nyheden'))
     + q('Caption', hint('AIDA: Første linje trækker ind → uddyb ægte → giv værdi → ÉN klar handling. Skriv konkrete ord: by, anledning, produkttype — det gør jer søgbare. Kun 3-5 hashtags.') + ta('caption', 'Skriv caption… (3-5 hashtags til sidst)', 110))
     + q('Hvad skal kunderne gøre?', hint('Vælg kun én. Gem = "det vil jeg selv bruge senere". Send = "det skal en anden se". Behov → gem/kom ind. Relation → kommentér/skriv.') + chips('cta', ["Kommer ind i butikken","Gemmer opslaget","Sender til en ven","Kommenterer / skriver til jer"], false) + '<div style="font-size:12px;font-weight:500;margin:10px 0 4px;">I selve videoen (sidste 2-3 sek.):</div>' + ta('ctaVideo', 'CTA i videoen') + '<div style="font-size:12px;font-weight:500;margin:10px 0 4px;">I caption:</div>' + ta('ctaCaption', 'CTA i caption'))
@@ -5681,7 +5722,7 @@ function buildSideNav(def) {
     + item("", "Kontakt Ida", "openChat()")
     + item("", "Skift adgangskode", "togglePwPanel()")
     + item("", "Log ud", "custLogout()", " roed")
-    + '<div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0 12px;">Version 17. juli · 98</div>'
+    + '<div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0 12px;">Version 17. juli · 99</div>'
     + '</div>'
     + '<span style="display:inline-flex;flex-direction:column;align-items:center;gap:4px;flex-shrink:0;"><button class="sn-virk-knap" onclick="toggleVirkMenu()" title="' + esc(virkNavn) + '" aria-label="Profil"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="3.6"/><path d="M4.5 20c1.2-3.6 4-5.4 7.5-5.4s6.3 1.8 7.5 5.4"/></svg></button><span class="sn-tekst" style="color:var(--gray3);max-width:110px;overflow:hidden;text-overflow:ellipsis;">' + esc(virkNavn) + '</span></span>'
     + '<div id="virkMenu" style="display:none;position:fixed;right:20px;top:72px;width:230px;background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:0 16px 40px rgba(0,0,0,0.15);padding:8px;z-index:90;">'
