@@ -712,7 +712,7 @@ body.lek-open .burger-btn, body.lek-open .bottom-nav, body.lek-open .dash-fab { 
     <button class="burger-item" onclick="toggleBurger(); togglePwPanel()">Skift adgangskode</button>
     <button class="burger-item" onclick="toggleBurger(); openChat()">Kontakt Ida</button>
     <button class="burger-item" style="color:var(--red);" onclick="custLogout()">Log ud</button>
-    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 17. juli · 114</div>
+    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 17. juli · 115</div>
   </div>
 </div>
 <div class="plus-menu" id="plusMenu" onclick="if(event.target===this)togglePlus()">
@@ -1928,10 +1928,12 @@ WHERE manus_tekst LIKE &#x27;%Stop scrollet%&#x27; OR manus_tekst LIKE &#x27;%in
     <div id="systemtjek" style="display:none;background:#fff;border:1px solid var(--border);border-radius:20px;padding:14px 16px;margin-top:16px;"></div>
     <div id="dashFooter" style="display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--gray3);padding:22px 0 12px;border-top:1px solid var(--border);margin-top:10px;">
       <div style="font-size:10px;">© 2026 Energida · Alle rettigheder forbeholdes</div>
-      <div style="font-size:10px;margin-left:auto;">Version 17. juli · 114 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
+      <div style="font-size:10px;margin-left:auto;">Version 17. juli · 115 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
     </div>
   </div>
 </div>
+
+<div id="ttsPlay" style="display:none;position:fixed;inset:0;z-index:200;background:linear-gradient(165deg,#EAF0F6 0%,#DCE7F0 58%,#CFDEEA 100%);flex-direction:column;align-items:center;justify-content:center;padding:32px 22px;overflow-y:auto;font-family:Poppins,sans-serif;color:var(--black);"></div>
 
 <div class="modal-back" id="modalBack" onclick="if(event.target===this)closeModal()">
   <div class="modal" id="modalBody"></div>
@@ -5817,7 +5819,7 @@ function buildSideNav(def) {
     + item("", "Kontakt Ida", "openChat()")
     + item("", "Skift adgangskode", "togglePwPanel()")
     + item("", "Log ud", "custLogout()", " roed")
-    + '<div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0 12px;">Version 17. juli · 114</div>'
+    + '<div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0 12px;">Version 17. juli · 115</div>'
     + '</div>'
     + '<span style="display:inline-flex;flex-direction:column;align-items:center;gap:4px;flex-shrink:0;"><button class="sn-virk-knap" onclick="toggleVirkMenu()" title="' + esc(virkNavn) + '" aria-label="Profil"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="3.6"/><path d="M4.5 20c1.2-3.6 4-5.4 7.5-5.4s6.3 1.8 7.5 5.4"/></svg></button><span class="sn-tekst" style="color:var(--gray3);max-width:110px;overflow:hidden;text-overflow:ellipsis;">' + esc(virkNavn) + '</span></span>'
     + '<div id="virkMenu" style="display:none;position:fixed;right:20px;top:72px;width:230px;background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:0 16px 40px rgba(0,0,0,0.15);padding:8px;z-index:90;">'
@@ -7760,9 +7762,123 @@ function ttsForrige(oevelse, saetNr) {
 }
 function ttsStartSession(di) {
   const dag = TTS_PROGRAM.dage[di];
-  TTS_SESSION = { dag: dag.navn, oevelser: dag.oevelser.map(o => ({ navn: o.navn, pauseSek: o.pauseSek || 60, maal: o.reps + " reps · RIR " + o.rir + " · pause " + o.pause, antal: o.saet })) };
+  TTS_SESSION = {
+    dag: dag.navn, oi: 0, si: 0, fase: "oevelse", pauseRest: 0, pauseTotal: 0,
+    sideforskel: !!(TTS_PROGRAM.svar && TTS_PROGRAM.svar.sideforskel),
+    oevelser: dag.oevelser.map(o => ({ navn: o.navn, tempo: o.tempo || "Roligt og kontrolleret", reps: o.reps, rir: o.rir, pauseSek: o.pauseSek || 60, antal: o.saet, log: [] }))
+  };
+  const pl = document.getElementById("ttsPlay"); if (pl) pl.style.display = "flex";
+  ttsPlayRender();
+}
+let TTS_SIDE_SVAR = "";
+function ttsPlayLuk() { clearInterval(TTS_TIMER); const pl = document.getElementById("ttsPlay"); if (pl) pl.style.display = "none"; TTS_SESSION = null; TTS_SIDE_SVAR = ""; renderTts(); }
+function ttsPlayAfbryd() { if (TTS_SESSION && (TTS_SESSION.oi > 0 || TTS_SESSION.si > 0 || TTS_SESSION.fase === "faerdig")) { if (!confirm("Afbryd træningen? Det, du har lavet, gemmes ikke.")) return; } ttsPlayLuk(); }
+function ttsPlayRender() {
+  const se = TTS_SESSION, el = document.getElementById("ttsPlay"); if (!se || !el) return;
+  el.innerHTML = se.fase === "pause" ? ttsPlayPause() : (se.fase === "faerdig" ? ttsPlayFaerdig() : ttsPlayOevelse());
+}
+function ttsPlayHead(txt) {
+  return '<div style="width:100%;max-width:460px;display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">'
+    + '<span style="font-size:10px;letter-spacing:1.8px;text-transform:uppercase;font-weight:500;color:var(--red);">' + txt + '</span>'
+    + '<button onclick="ttsPlayAfbryd()" title="Afbryd" style="background:none;border:none;font-size:26px;line-height:1;color:var(--gray3);cursor:pointer;">&times;</button></div>';
+}
+function ttsPlayOevelse() {
+  const se = TTS_SESSION, o = se.oevelser[se.oi], forrige = ttsForrige(o.navn, se.si);
+  const inp = 'style="width:98px;border:1px solid var(--border);border-radius:12px;padding:13px 12px;font-size:17px;font-family:Poppins,sans-serif;background:#fff;text-align:center;outline:none;"';
+  return ttsPlayHead("Øvelse " + (se.oi + 1) + " af " + se.oevelser.length)
+    + '<div style="font-family:\'Didot\',\'Bodoni 72\',Georgia,serif;font-size:29px;line-height:1.12;text-align:center;max-width:460px;">' + esc(o.navn) + '</div>'
+    + '<div style="background:#FDE8E3;border-radius:16px;padding:14px 22px;margin:20px 0 8px;text-align:center;max-width:460px;width:100%;box-sizing:border-box;">'
+      + '<div style="font-size:10px;letter-spacing:1.8px;text-transform:uppercase;font-weight:500;color:var(--red);margin-bottom:3px;">Tempo</div>'
+      + '<div style="font-size:15px;color:var(--red);font-weight:500;line-height:1.35;">' + esc(o.tempo) + '</div></div>'
+    + '<div style="font-size:13px;color:var(--gray3);margin-bottom:22px;">Sæt ' + (se.si + 1) + ' af ' + o.antal + ' · ' + esc(o.reps) + ' reps · RIR ' + esc(o.rir) + '</div>'
+    + '<div style="display:flex;align-items:center;gap:10px;">'
+      + '<input type="text" inputmode="decimal" id="ttsPlayKg" placeholder="' + (forrige ? esc(forrige.split(" × ")[0]) : "kg") + '" ' + inp + '>'
+      + '<span style="color:var(--gray3);font-size:18px;">×</span>'
+      + '<input type="text" inputmode="numeric" id="ttsPlayReps" placeholder="' + (forrige ? esc(forrige.split(" × ")[1]) : "reps") + '" ' + inp + '></div>'
+    + (forrige ? '<div style="font-size:11.5px;color:var(--gray3);margin-top:9px;">Sidst: ' + esc(forrige) + '</div>' : '')
+    + '<button class="dbtn primary" style="width:100%;max-width:460px;padding:17px;font-size:15px;border-radius:16px;margin-top:26px;" onclick="ttsSaetFaerdig()">Sæt færdigt &#10003;</button>';
+}
+function ttsSaetFaerdig() {
+  const se = TTS_SESSION, o = se.oevelser[se.oi];
+  o.log.push({ kg: (document.getElementById("ttsPlayKg") || {}).value || "", reps: (document.getElementById("ttsPlayReps") || {}).value || "" });
+  const sidsteSaet = se.si + 1 >= o.antal, sidsteOevelse = se.oi + 1 >= se.oevelser.length;
+  if (sidsteSaet && sidsteOevelse) { clearInterval(TTS_TIMER); se.fase = "faerdig"; ttsPlayRender(); return; }
+  ttsPauseStart(o.pauseSek);
+}
+function ttsPauseStart(sek) {
+  clearInterval(TTS_TIMER);
+  const se = TTS_SESSION; se.pauseTotal = sek || 60; se.pauseRest = sek || 60; se.fase = "pause";
+  ttsPlayRender();
+  const C = 2 * Math.PI * 88;
+  TTS_TIMER = setInterval(() => {
+    se.pauseRest--;
+    const tal = document.getElementById("ttsPauseTal"); if (tal) tal.textContent = ttsPauseTekst(Math.max(0, se.pauseRest));
+    const arc = document.getElementById("ttsPauseArc"); if (arc) { const frac = Math.max(0, se.pauseRest) / se.pauseTotal; arc.setAttribute("stroke-dashoffset", (C * (1 - frac)).toFixed(1)); }
+    if (se.pauseRest <= 0) { clearInterval(TTS_TIMER); ttsPlayVidere(); }
+  }, 1000);
+}
+function ttsPlayPause() {
+  const se = TTS_SESSION, o = se.oevelser[se.oi];
+  const sidsteSaet = se.si + 1 >= o.antal;
+  const naeste = sidsteSaet ? (se.oi + 1 < se.oevelser.length ? "Næste øvelse: " + esc(se.oevelser[se.oi + 1].navn) : "Sidste øvelse færdig") : "Klar til sæt " + (se.si + 2) + " af " + o.antal;
+  const C = 2 * Math.PI * 88;
+  return ttsPlayHead("Pause")
+    + '<div style="position:relative;width:224px;height:224px;margin:4px 0 20px;">'
+      + '<svg width="224" height="224" viewBox="0 0 200 200"><circle cx="100" cy="100" r="88" fill="none" stroke="#A9BFD8" stroke-width="12" opacity="0.5"/>'
+      + '<circle id="ttsPauseArc" cx="100" cy="100" r="88" fill="none" stroke="var(--red)" stroke-width="12" stroke-linecap="round" stroke-dasharray="' + C.toFixed(1) + ' ' + C.toFixed(1) + '" stroke-dashoffset="0" transform="rotate(-90 100 100)"/></svg>'
+      + '<div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;">'
+        + '<div id="ttsPauseTal" style="font-size:46px;font-weight:300;font-variant-numeric:tabular-nums;line-height:1;">' + ttsPauseTekst(se.pauseRest) + '</div>'
+        + '<div style="font-size:11px;letter-spacing:1.8px;text-transform:uppercase;color:var(--gray3);margin-top:4px;">Hvil</div></div></div>'
+    + '<div style="font-size:14px;color:var(--gray3);margin-bottom:24px;text-align:center;max-width:420px;">' + naeste + '</div>'
+    + '<button class="dbtn primary" style="width:100%;max-width:460px;padding:16px;font-size:15px;border-radius:16px;" onclick="ttsPlayVidere()">Spring pausen over &#8250;</button>';
+}
+function ttsPlayVidere() {
+  clearInterval(TTS_TIMER);
+  const se = TTS_SESSION, o = se.oevelser[se.oi];
+  if (se.si + 1 >= o.antal) { se.oi++; se.si = 0; } else { se.si++; }
+  se.fase = "oevelse"; ttsPlayRender();
+}
+function ttsSideSvar(btn, v) { TTS_SIDE_SVAR = v; const par = btn.parentElement; [].slice.call(par.children).forEach(b => { const on = b === btn; b.style.background = on ? "var(--red)" : "#fff"; b.style.color = on ? "#fff" : "var(--red)"; }); }
+function ttsPlayFaerdig() {
+  const se = TTS_SESSION;
+  return ttsPlayHead("Færdig")
+    + '<div style="text-align:center;max-width:460px;">'
+    + '<div style="width:64px;height:64px;border-radius:50%;background:var(--red);display:flex;align-items:center;justify-content:center;margin:0 auto 18px;"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12.5l5 5 11-11"/></svg></div>'
+    + '<div style="font-family:\'Didot\',\'Bodoni 72\',Georgia,serif;font-size:28px;">Godt gået!</div>'
+    + '<div style="font-size:13.5px;color:var(--gray3);margin-top:6px;">Du gennemførte ' + esc(se.dag) + ' — ' + se.oevelser.length + ' øvelser.</div>'
+    + (se.sideforskel
+      ? '<div style="background:#fff;border:1px solid var(--border);border-radius:20px;padding:20px;margin-top:22px;text-align:left;">'
+        + '<div style="font-size:14px;font-weight:500;margin-bottom:12px;">Følte du, der var forskel på de to sider i dag?</div>'
+        + '<div style="display:flex;gap:8px;">'
+        + '<button class="row-btn" style="flex:1;justify-content:center;padding:12px;background:#fff;color:var(--red);" onclick="ttsSideSvar(this,\'Ja\')">Ja</button>'
+        + '<button class="row-btn" style="flex:1;justify-content:center;padding:12px;background:#fff;color:var(--red);" onclick="ttsSideSvar(this,\'Nej\')">Nej</button></div>'
+        + '<input type="text" id="ttsSideNote" placeholder="(valgfrit) hvad mærkede du?" style="width:100%;box-sizing:border-box;margin-top:10px;border:1px solid var(--border);border-radius:12px;padding:10px 12px;font-size:12.5px;font-family:Poppins,sans-serif;outline:none;"></div>'
+      : '')
+    + '<button class="dbtn primary" style="width:100%;padding:16px;font-size:15px;border-radius:16px;margin-top:20px;" onclick="ttsPlayGem()">Gem træningen</button>'
+    + '</div>';
+}
+async function ttsPlayGem() {
+  const se = TTS_SESSION; if (!se) return;
+  const gamleMax = {};
+  TTS_LOG.forEach(lg => (lg.oevelser || []).forEach(o => (o.saet || []).forEach(x => { const kg = parseFloat(String(x.kg).replace(",", ".")); if (kg && (!gamleMax[o.navn] || kg > gamleMax[o.navn])) gamleMax[o.navn] = kg; })));
+  const rec = { dato: fokusDagsDato(), dag: se.dag, oevelser: [] };
+  const rekorder = [];
+  se.oevelser.forEach(o => {
+    const saet = (o.log || []).filter(x => x.kg || x.reps);
+    if (saet.length) {
+      rec.oevelser.push({ navn: o.navn, saet: saet });
+      const bedste = Math.max.apply(null, saet.map(x => parseFloat(String(x.kg).replace(",", ".")) || 0));
+      if (bedste > 0 && bedste > (gamleMax[o.navn] || 0) && gamleMax[o.navn] !== undefined) rekorder.push(o.navn + " — " + bedste + " kg");
+    }
+  });
+  if (se.sideforskel) { rec.sideforskel = TTS_SIDE_SVAR || ""; const nt = (document.getElementById("ttsSideNote") || {}).value || ""; if (nt) rec.sideforskel_note = nt; }
+  if (rec.oevelser.length) { TTS_LOG.unshift(rec); TTS_LOG = TTS_LOG.slice(0, 60); }
+  TTS_REKORD_BESKED = rekorder; TTS_SIDE_SVAR = "";
+  clearInterval(TTS_TIMER);
+  const pl = document.getElementById("ttsPlay"); if (pl) pl.style.display = "none";
+  TTS_SESSION = null;
   renderTts();
-  window.scrollTo(0, 0);
+  try { await vaneGemRow("tts_log", TTS_LOG); } catch(e) {}
 }
 function ttsTimerStart(sek) {
   clearInterval(TTS_TIMER);
@@ -7847,7 +7963,6 @@ function ttsRekorderHtml() {
 function renderTts() {
   const el = document.getElementById("ttsWrap"); if (!el) return;
   if (TTS_WIZ) { el.innerHTML = ttsWizHtml(); return; }
-  if (TTS_SESSION) { el.innerHTML = ttsSessionHtml(); return; }
   if (!TTS_PROGRAM) {
     el.innerHTML = '<div class="ws-card" style="max-width:640px;">'
       + '<div class="ws-head">Dit individuelle program</div>'
