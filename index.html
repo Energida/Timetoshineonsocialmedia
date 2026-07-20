@@ -717,7 +717,7 @@ body.lek-open .burger-btn, body.lek-open .bottom-nav, body.lek-open .dash-fab { 
     <button class="burger-item" onclick="toggleBurger(); togglePwPanel()">Skift adgangskode</button>
     <button class="burger-item" onclick="toggleBurger(); openChat()">Kontakt Ida</button>
     <button class="burger-item" style="color:var(--red);" onclick="custLogout()">Log ud</button>
-    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 17. juli · 154</div>
+    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 17. juli · 155</div>
   </div>
 </div>
 <div class="plus-menu" id="plusMenu" onclick="if(event.target===this)togglePlus()">
@@ -2324,7 +2324,7 @@ select titel,
     <div id="systemtjek" style="display:none;background:#fff;border:1px solid var(--border);border-radius:20px;padding:14px 16px;margin-top:16px;"></div>
     <div id="dashFooter" style="display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--gray3);padding:22px 0 12px;border-top:1px solid var(--border);margin-top:10px;">
       <div style="font-size:10px;">© 2026 Energida · Alle rettigheder forbeholdes</div>
-      <div style="font-size:10px;margin-left:auto;">Version 17. juli · 154 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
+      <div style="font-size:10px;margin-left:auto;">Version 17. juli · 155 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
     </div>
   </div>
 </div>
@@ -4525,7 +4525,21 @@ function klipBriefRender() {
     : '<div style="font-size:11.5px;color:var(--gray3);">Ingen opgaver knyttet til denne lektion.</div>';
   body.innerHTML = '<button class="modal-close" onclick="klipBriefLuk()" title="Luk">&times;</button>'
     + '<div style="font-size:11px;font-weight:500;letter-spacing:2px;text-transform:uppercase;color:var(--red);">Briefen</div>'
-    + '<h2 style="font-family:&#39;Didot&#39;,&#39;Bodoni 72&#39;,Georgia,serif;font-weight:400;font-size:21px;margin:2px 0 2px;">' + esc(o.titel || "") + '</h2>'
+    + (function () {
+        /* Lektionsnummeret ("0.3 · ") holdes UDEN FOR redigering: det bruges til at
+           koble øvelser på lektionen, til at undgå dubletter på produktionstavlen
+           og til at sortere printet. Kun selve titlen kan rettes. */
+        const nm = String(o.titel || "").match(/^(\d+\.\d+)\s*·?\s*(.*)$/);
+        const nr = nm ? nm[1] : "";
+        const txt = nm ? nm[2] : (o.titel || "");
+        return '<h2 style="font-family:&#39;Didot&#39;,&#39;Bodoni 72&#39;,Georgia,serif;font-weight:400;font-size:21px;margin:2px 0 2px;">'
+          + (nr ? '<span style="color:var(--gray3);">' + esc(nr) + ' · </span>' : '')
+          + '<span id="kbTitel" data-nr="' + esc(nr) + '" contenteditable="plaintext-only" spellcheck="false"'
+          + ' onfocus="this.style.background=\'rgba(252,36,4,0.06)\'" onblur="kbTitelGem()"'
+          + ' onkeydown="if(event.key===&#39;Enter&#39;){event.preventDefault();this.blur();}"'
+          + ' title="Klik for at rette titlen"'
+          + ' style="outline:none;border-radius:6px;padding:0 3px;cursor:text;">' + esc(txt) + '</span></h2>';
+      })()
     + '<div style="font-size:11px;color:var(--gray3);">' + esc(o.modul || "") + (lek && lek.l.tid && lek.l.tid !== "00:00" ? ' · længde-mål ' + esc(lek.l.tid) : '') + '</div>'
     + '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:16px 0 0;">'
     + '<button class="dbtn primary" style="padding:11px 20px;" onclick="prompterAaben(&#39;' + o.id + '&#39;)">&#9654; Start optagelse</button>'
@@ -4605,6 +4619,12 @@ async function kbGemNu(luk) {
   const id = KLIP_BRIEF_ID; if (!id || KB_GEMMER) return;
   const felt = x => { const e = document.getElementById(x); return e ? e.value : null; };
   const patch = { manus_tekst: felt("kbManusTekst") || null, brief: felt("kbBrief") || "", brolls: kbBrollsGem() };
+  const tEl = document.getElementById("kbTitel");
+  if (tEl) {
+    const t = tEl.textContent.replace(/\s+/g, " ").trim();
+    const nr = tEl.getAttribute("data-nr");
+    if (t) patch.titel = (nr ? nr + " · " : "") + t;   // nummeret sættes altid tilbage
+  }
   KB_GEMMER = true;
   const o = KLIP_OPGAVER.find(x => String(x.id) === String(id));
   if (o) Object.assign(o, patch);
@@ -4764,6 +4784,12 @@ function klipBrollFjern(i) {
   KLIP_BRIEF_BROLLS.splice(i, 1);
   kbGemNu(false);
   klipBriefRender();
+}
+function kbTitelGem() {
+  const el = document.getElementById("kbTitel"); if (!el) return;
+  el.style.background = "";
+  kbGemNu(false);
+  try { renderKlipperum(); } catch(e) {}   // tavlen bagved skal vise den nye titel
 }
 function kbBrollVoks(el) { el.style.height = "auto"; el.style.height = el.scrollHeight + "px"; }
 function klipBrollTilfoej() {
@@ -7109,7 +7135,7 @@ function buildSideNav(def) {
     + item("", "Kontakt Ida", "openChat()")
     + item("", "Skift adgangskode", "togglePwPanel()")
     + item("", "Log ud", "custLogout()", " roed")
-    + '<div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0 12px;">Version 17. juli · 154</div>'
+    + '<div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0 12px;">Version 17. juli · 155</div>'
     + '</div>'
     + '<span style="display:inline-flex;flex-direction:column;align-items:center;gap:4px;flex-shrink:0;"><button class="sn-virk-knap" onclick="toggleVirkMenu()" title="' + esc(virkNavn) + '" aria-label="Profil"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="3.6"/><path d="M4.5 20c1.2-3.6 4-5.4 7.5-5.4s6.3 1.8 7.5 5.4"/></svg></button><span class="sn-tekst" style="color:var(--gray3);max-width:110px;overflow:hidden;text-overflow:ellipsis;">' + esc(virkNavn) + '</span></span>'
     + '<div id="virkMenu" style="display:none;position:fixed;right:20px;top:72px;width:230px;background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:0 16px 40px rgba(0,0,0,0.15);padding:8px;z-index:90;">'
