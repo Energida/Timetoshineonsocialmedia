@@ -713,7 +713,7 @@ body.lek-open .burger-btn, body.lek-open .bottom-nav, body.lek-open .dash-fab { 
     <button class="burger-item" onclick="toggleBurger(); togglePwPanel()">Skift adgangskode</button>
     <button class="burger-item" onclick="toggleBurger(); openChat()">Kontakt Ida</button>
     <button class="burger-item" style="color:var(--red);" onclick="custLogout()">Log ud</button>
-    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 17. juli · 140</div>
+    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 17. juli · 141</div>
   </div>
 </div>
 <div class="plus-menu" id="plusMenu" onclick="if(event.target===this)togglePlus()">
@@ -1881,7 +1881,7 @@ body.lek-open .burger-btn, body.lek-open .bottom-nav, body.lek-open .dash-fab { 
     <div id="systemtjek" style="display:none;background:#fff;border:1px solid var(--border);border-radius:20px;padding:14px 16px;margin-top:16px;"></div>
     <div id="dashFooter" style="display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--gray3);padding:22px 0 12px;border-top:1px solid var(--border);margin-top:10px;">
       <div style="font-size:10px;">© 2026 Energida · Alle rettigheder forbeholdes</div>
-      <div style="font-size:10px;margin-left:auto;">Version 17. juli · 140 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
+      <div style="font-size:10px;margin-left:auto;">Version 17. juli · 141 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
     </div>
   </div>
 </div>
@@ -3835,7 +3835,10 @@ function manusPrintOvelser(o) {
 function manusPrintArtikel(o, tekstOverstyr) {
   const dele = klipModtagere(o.modul || o.titel);
   const tekst = tekstOverstyr !== undefined && tekstOverstyr !== null ? tekstOverstyr : (o.manus_tekst || "");
-  const meta = [o.modul || "", dele.length ? dele.join(" + ") : ""].filter(Boolean).join(" · ");
+  const ord = klipOrdFor(o);
+  const laengde = klipLaengde(ord);
+  const meta = [o.modul || "", dele.length ? dele.join(" + ") : "",
+                ord ? ord + " ord" : "", laengde ? "ca. " + laengde : ""].filter(Boolean).join(" · ");
   return '<article>'
     + '<h2>' + esc(o.titel || "") + '</h2>'
     + (meta ? '<div class="meta">' + esc(meta) + '</div>' : '<div class="meta">&nbsp;</div>')
@@ -4059,6 +4062,7 @@ function klipBriefRender() {
     + '</div>'
     + label("Manus")
     + '<textarea id="kbManusTekst" placeholder="Manus til lektionen — skriv eller ret direkte her" oninput="kbAuto()" ' + felt.replace('style="', 'style="min-height:320px;margin-top:8px;resize:vertical;line-height:1.65;') + '>' + esc(o.manus_tekst || "") + '</textarea>'
+    + '<div id="kbOrdtal" style="font-size:11px;color:var(--gray3);margin-top:6px;"></div>'
     + label("Klippe-briefen")
     + '<textarea id="kbBrief" oninput="kbAuto()" ' + felt.replace('style="', 'style="min-height:130px;resize:vertical;') + '>' + esc(o.brief || "") + '</textarea>'
     + label("B-rolls — passager der klippes som separate filer")
@@ -4080,9 +4084,18 @@ function klipBriefRender() {
     + '</div>'
     + '<div style="display:flex;gap:12px;align-items:center;margin-top:18px;"><button class="dbtn primary" style="padding:11px 24px;" onclick="klipBriefLuk()">Færdig</button>'
     + '<span id="kbStatus" style="font-size:11.5px;color:var(--gray3);">Gemmer selv, mens du skriver</span></div>';
+  kbOrdtalOpdater();   // vis ordtal og længde med det samme, ikke først når der tastes
 }
 let KB_TIMER = null, KB_GEMMER = false;
+function kbOrdtalOpdater() {
+  const el = document.getElementById("kbOrdtal"); if (!el) return;
+  const felt = document.getElementById("kbManusTekst");
+  const ord = manusOrd(felt ? felt.value : "");
+  const laengde = klipLaengde(ord);
+  el.textContent = ord ? (ord + " ord" + (laengde ? " · ca. " + laengde + " video" : "")) : "";
+}
 function kbAuto() {
+  kbOrdtalOpdater();
   clearTimeout(KB_TIMER);
   const st = document.getElementById("kbStatus");
   if (st) { st.textContent = "Gemmer\u2026"; st.style.color = "var(--gray3)"; }
@@ -4366,6 +4379,19 @@ function klipTid(iso) {
   return d.getDate() + ". " + mm[d.getMonth()] + " kl. " + String(d.getHours()).padStart(2,"0") + ":" + String(d.getMinutes()).padStart(2,"0");
 }
 
+/* Ordtallet tælles nu automatisk fra manus. B-ROLL-linjer og pausestreger
+   tælles ikke med — de læses ikke op, så de påvirker ikke længden.
+   Det manuelt indtastede tal bruges kun som fallback på lektioner uden manus. */
+function manusOrd(tekst) {
+  const rent = String(tekst || "").split("\n")
+    .filter(function (l) { const r = l.trim(); return !/^B-?ROLL/i.test(r) && !/^-+$/.test(r); })
+    .join(" ");
+  return rent.split(/\s+/).filter(function (w) { return /[\wæøåÆØÅ]/.test(w); }).length;
+}
+function klipOrdFor(o) {
+  const t = String((o && o.manus_tekst) || "").trim();
+  return t ? manusOrd(t) : (parseInt(o && o.ord, 10) || 0);
+}
 function klipLaengde(ord) {
   const s = Math.round((parseInt(ord, 10) || 0) * 0.43);
   if (!s) return "";
@@ -4557,7 +4583,7 @@ function renderKlipperum() {
             const mTitel = (typeof KURSUS_MODULER !== "undefined" ? (KURSUS_MODULER.find(mm => String(mm.titel || "").indexOf(k) === 0) || {}).titel : "") || "";
             const modulNavn = mTitel.indexOf("·") >= 0 ? mTitel.split("·").slice(1).join("·").trim() : "";
             const valgt = KLIP_MODUL_VALGT === k;
-            const ordSum = arr.reduce((s, o) => s + (parseInt(o.ord, 10) || 0), 0);
+            const ordSum = arr.reduce((s, o) => s + klipOrdFor(o), 0);
             const rc = 16, romk = 2 * Math.PI * rc, rpc = arr.length ? g2 / arr.length : 0;
             const ring = '<svg width="44" height="44" viewBox="0 0 44 44" style="flex-shrink:0;">'
               + '<circle cx="22" cy="22" r="' + rc + '" fill="none" stroke="' + (valgt ? 'rgba(255,255,255,0.35)' : 'rgba(169,191,216,0.55)') + '" stroke-width="5"/>'
@@ -6569,7 +6595,7 @@ function buildSideNav(def) {
     + item("", "Kontakt Ida", "openChat()")
     + item("", "Skift adgangskode", "togglePwPanel()")
     + item("", "Log ud", "custLogout()", " roed")
-    + '<div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0 12px;">Version 17. juli · 140</div>'
+    + '<div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0 12px;">Version 17. juli · 141</div>'
     + '</div>'
     + '<span style="display:inline-flex;flex-direction:column;align-items:center;gap:4px;flex-shrink:0;"><button class="sn-virk-knap" onclick="toggleVirkMenu()" title="' + esc(virkNavn) + '" aria-label="Profil"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="3.6"/><path d="M4.5 20c1.2-3.6 4-5.4 7.5-5.4s6.3 1.8 7.5 5.4"/></svg></button><span class="sn-tekst" style="color:var(--gray3);max-width:110px;overflow:hidden;text-overflow:ellipsis;">' + esc(virkNavn) + '</span></span>'
     + '<div id="virkMenu" style="display:none;position:fixed;right:20px;top:72px;width:230px;background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:0 16px 40px rgba(0,0,0,0.15);padding:8px;z-index:90;">'
