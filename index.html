@@ -713,7 +713,7 @@ body.lek-open .burger-btn, body.lek-open .bottom-nav, body.lek-open .dash-fab { 
     <button class="burger-item" onclick="toggleBurger(); togglePwPanel()">Skift adgangskode</button>
     <button class="burger-item" onclick="toggleBurger(); openChat()">Kontakt Ida</button>
     <button class="burger-item" style="color:var(--red);" onclick="custLogout()">Log ud</button>
-    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 17. juli · 145</div>
+    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 17. juli · 146</div>
   </div>
 </div>
 <div class="plus-menu" id="plusMenu" onclick="if(event.target===this)togglePlus()">
@@ -1883,7 +1883,7 @@ body.lek-open .burger-btn, body.lek-open .bottom-nav, body.lek-open .dash-fab { 
     <div id="systemtjek" style="display:none;background:#fff;border:1px solid var(--border);border-radius:20px;padding:14px 16px;margin-top:16px;"></div>
     <div id="dashFooter" style="display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--gray3);padding:22px 0 12px;border-top:1px solid var(--border);margin-top:10px;">
       <div style="font-size:10px;">© 2026 Energida · Alle rettigheder forbeholdes</div>
-      <div style="font-size:10px;margin-left:auto;">Version 17. juli · 145 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
+      <div style="font-size:10px;margin-left:auto;">Version 17. juli · 146 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
     </div>
   </div>
 </div>
@@ -3907,6 +3907,19 @@ function printAlleManus() {
 function klipManusNyFane(id) { window.open(location.pathname + "#optag=" + encodeURIComponent(id), "_blank"); }
 /* ÉN kilde til hvem en lektion/modul er til. Modul-fliser OG lektionskort kalder
    den samme funktion, så de aldrig kan komme til at vise det i hvert sit format. */
+/* Gruppenavnet på produktionstavlen. Stod før tre steder og kunne kun genkende
+   "Modul N" — alt andet (fx Værktøjskassen) endte i en fælles pulje kaldet
+   "Andet". Nu bruges modulets eget navn. */
+function klipModulGruppe(modul) {
+  const m = String(modul || "").match(/modul\s*(\d+)/i);
+  if (m) return "Modul " + m[1];
+  const t = String(modul || "").trim();
+  return t || "Uden modul";
+}
+function klipModulSortNr(k) {
+  const m = String(k).match(/^Modul\s+(\d+)/i);
+  return m ? parseInt(m[1], 10) : 900;   // navngivne moduler efter de nummererede
+}
 function klipModtagere(kilde) {
   const t = String(kilde || "");
   /* Værktøjskassen er til begge, jf. "Hvem skal se hvad": kursister via
@@ -3945,8 +3958,6 @@ function klipTabel(synlige, filterControls) {
     const modulNr = nrM ? "M" + nrM[1] : (String(o.modul || "").match(/\d+/) ? "M" + String(o.modul).match(/\d+/)[0] : "—");
     const lekNr = nrM ? nrM[1] + "." + nrM[2] : "—";
     const titel = nrM ? nrM[3] : (o.titel || "");
-    const m2 = String(o.modul || "").match(/modul\s*(\d+)/i);
-    const gruppe = m2 ? "Modul " + m2[1] : "Andet";
     return '<tr>'
       + td('<span style="background:#E9F0F5;border-radius:10px;padding:3px 9px;font-size:10.5px;font-weight:500;color:var(--black);">' + esc(modulNr) + '</span>')
       + td(esc(lekNr))
@@ -3980,7 +3991,7 @@ function klipNaesteAaben() {   // hop direkte til den video, der venter på Idas
   const o = KLIP_OPGAVER.find(x => x.status === "Klippet"); if (!o) return;
   KLIP_FILTER = "alle";
   const m = String(o.modul || "").match(/modul\s*(\d+)/i);
-  KLIP_MODUL_VALGT = m ? "Modul " + m[1] : "Andet";
+  KLIP_MODUL_VALGT = klipModulGruppe(o.modul);
   renderKlipperum();
   setTimeout(() => { const d = document.getElementById("klipDetalje"); if (d) d.scrollIntoView({ behavior: "smooth", block: "start" }); }, 60);
 }
@@ -4560,15 +4571,15 @@ function renderKlipperum() {
   const grupperM = {};
   synlige.forEach(o => {
     const m = String(o.modul || "").match(/modul\s*(\d+)/i);
-    const k = m ? "Modul " + m[1] : "Andet";
+    const k = klipModulGruppe(o.modul);
     (grupperM[k] = grupperM[k] || []).push(o);
   });
   const lekNr = o => { const m = String(o.titel || "").match(/^(\d+)\.(\d+)/); return m ? parseInt(m[1], 10) * 100 + parseInt(m[2], 10) : 9999; };
   Object.keys(grupperM).forEach(k => grupperM[k].sort((a, b) => lekNr(a) - lekNr(b)));
   const noegler = Object.keys(grupperM).sort((x, y) => {
-    if (x === "Andet") return 1;
-    if (y === "Andet") return -1;
-    return parseInt(x.slice(6), 10) - parseInt(y.slice(6), 10);
+    const a = klipModulSortNr(x), b = klipModulSortNr(y);
+    if (a !== b) return a - b;
+    return String(x).localeCompare(String(y), "da");
   });
   const samlet = total
     ? '<div style="display:flex;align-items:center;gap:12px;margin:4px 0 16px;">'
@@ -4599,7 +4610,6 @@ function renderKlipperum() {
           const kasser = noegler.map(k => {
             const arr = grupperM[k];
             const g2 = arr.filter(o => o.status === "Godkendt").length;
-            const mnr = parseInt(String(k).replace(/\D/g, ""), 10);
             const mTitel = (typeof KURSUS_MODULER !== "undefined" ? (KURSUS_MODULER.find(mm => String(mm.titel || "").indexOf(k) === 0) || {}).titel : "") || "";
             const modulNavn = mTitel.indexOf("·") >= 0 ? mTitel.split("·").slice(1).join("·").trim() : "";
             const valgt = KLIP_MODUL_VALGT === k;
@@ -6615,7 +6625,7 @@ function buildSideNav(def) {
     + item("", "Kontakt Ida", "openChat()")
     + item("", "Skift adgangskode", "togglePwPanel()")
     + item("", "Log ud", "custLogout()", " roed")
-    + '<div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0 12px;">Version 17. juli · 145</div>'
+    + '<div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0 12px;">Version 17. juli · 146</div>'
     + '</div>'
     + '<span style="display:inline-flex;flex-direction:column;align-items:center;gap:4px;flex-shrink:0;"><button class="sn-virk-knap" onclick="toggleVirkMenu()" title="' + esc(virkNavn) + '" aria-label="Profil"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="3.6"/><path d="M4.5 20c1.2-3.6 4-5.4 7.5-5.4s6.3 1.8 7.5 5.4"/></svg></button><span class="sn-tekst" style="color:var(--gray3);max-width:110px;overflow:hidden;text-overflow:ellipsis;">' + esc(virkNavn) + '</span></span>'
     + '<div id="virkMenu" style="display:none;position:fixed;right:20px;top:72px;width:230px;background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:0 16px 40px rgba(0,0,0,0.15);padding:8px;z-index:90;">'
