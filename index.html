@@ -713,7 +713,7 @@ body.lek-open .burger-btn, body.lek-open .bottom-nav, body.lek-open .dash-fab { 
     <button class="burger-item" onclick="toggleBurger(); togglePwPanel()">Skift adgangskode</button>
     <button class="burger-item" onclick="toggleBurger(); openChat()">Kontakt Ida</button>
     <button class="burger-item" style="color:var(--red);" onclick="custLogout()">Log ud</button>
-    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 17. juli · 143</div>
+    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 17. juli · 144</div>
   </div>
 </div>
 <div class="plus-menu" id="plusMenu" onclick="if(event.target===this)togglePlus()">
@@ -1883,7 +1883,7 @@ body.lek-open .burger-btn, body.lek-open .bottom-nav, body.lek-open .dash-fab { 
     <div id="systemtjek" style="display:none;background:#fff;border:1px solid var(--border);border-radius:20px;padding:14px 16px;margin-top:16px;"></div>
     <div id="dashFooter" style="display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--gray3);padding:22px 0 12px;border-top:1px solid var(--border);margin-top:10px;">
       <div style="font-size:10px;">© 2026 Energida · Alle rettigheder forbeholdes</div>
-      <div style="font-size:10px;margin-left:auto;">Version 17. juli · 143 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
+      <div style="font-size:10px;margin-left:auto;">Version 17. juli · 144 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
     </div>
   </div>
 </div>
@@ -3775,10 +3775,11 @@ function visSyncFejl() {
 }
 
 /* ---------- KLIPPERUMMET: video-produktion sammen med klipperen ---------- */
-const KLIP_STATUSSER = ["Manus mangler", "Manus færdigt", "Brief klar", "Råfiler klar", "Klippet", "Rettelser", "Godkendt"];
-/* Etiketter: databasens værdi bevares (ingen migrering), men Ida ser den nye ordlyd. */
-const KLIP_STATUS_ETIKET = { "Manus mangler": "Manus ikke godkendt" };
-function klipStatusVis(st) { return KLIP_STATUS_ETIKET[st] || st; }
+const KLIP_STATUSSER = ["Manus ikke godkendt", "Manus færdigt", "Brief klar", "Råfiler klar", "Klippet", "Rettelser", "Godkendt"];
+/* Statussen hed før "Manus mangler". Gamle rækker rettes ved indlæsning, så der
+   kun findes ÉT navn i appen — også når man kigger i databasen. */
+function klipStatusNorm(st) { return st === "Manus mangler" ? "Manus ikke godkendt" : st; }
+function klipStatusVis(st) { return klipStatusNorm(st); }
 let KLIP_OPGAVER = [];
 let KLIP_ER_IDA = false;    // true når Tip Top Studio åbnes fra CRM-dashboardet
 let KLIP_RET = null;
@@ -3983,14 +3984,14 @@ function klipNaesteAaben() {   // hop direkte til den video, der venter på Idas
   renderKlipperum();
   setTimeout(() => { const d = document.getElementById("klipDetalje"); if (d) d.scrollIntoView({ behavior: "smooth", block: "start" }); }, 60);
 }
-function klipLocal() { try { return JSON.parse(localStorage.getItem("video_opgaver")) || []; } catch(e) { return []; } }
+function klipLocal() { try { return (JSON.parse(localStorage.getItem("video_opgaver")) || []).map(o => { o.status = klipStatusNorm(o.status); return o; }); } catch(e) { return []; } }
 function klipSaveLocal() { localStorage.setItem("video_opgaver", JSON.stringify(KLIP_OPGAVER)); }
 
 async function klipHent() {
   if (sb) {
     try {
       const { data, error } = await sb.from("video_opgaver").select("*").order("created_at", { ascending: false });
-      if (!error && data) { KLIP_OPGAVER = data; renderKlipperum(); return; }
+      if (!error && data) { KLIP_OPGAVER = data.map(o => { o.status = klipStatusNorm(o.status); return o; }); renderKlipperum(); return; }
     } catch(e) {}
   }
   KLIP_OPGAVER = klipLocal();
@@ -4455,7 +4456,7 @@ function klipKort(o) {
 function klipRing() {
   const c = st => KLIP_OPGAVER.filter(o => o.status === st).length;
   const segs = [
-    { v: c("Manus mangler") + c("Manus færdigt") + c("Brief klar"), col:"#A9BFD8", navn:"Klar / venter" },
+    { v: c("Manus ikke godkendt") + c("Manus færdigt") + c("Brief klar"), col:"#A9BFD8", navn:"Klar / venter" },
     { v: c("Råfiler klar") + c("Rettelser"), col:"#EFC0B5", navn:"Hos Thomas" },
     { v: c("Klippet"), col:"#FC2404", navn:"Til din godkendelse" },
     { v: c("Godkendt"), col:"#C9DBE7", navn:"Godkendt" }
@@ -6614,7 +6615,7 @@ function buildSideNav(def) {
     + item("", "Kontakt Ida", "openChat()")
     + item("", "Skift adgangskode", "togglePwPanel()")
     + item("", "Log ud", "custLogout()", " roed")
-    + '<div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0 12px;">Version 17. juli · 143</div>'
+    + '<div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0 12px;">Version 17. juli · 144</div>'
     + '</div>'
     + '<span style="display:inline-flex;flex-direction:column;align-items:center;gap:4px;flex-shrink:0;"><button class="sn-virk-knap" onclick="toggleVirkMenu()" title="' + esc(virkNavn) + '" aria-label="Profil"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="3.6"/><path d="M4.5 20c1.2-3.6 4-5.4 7.5-5.4s6.3 1.8 7.5 5.4"/></svg></button><span class="sn-tekst" style="color:var(--gray3);max-width:110px;overflow:hidden;text-overflow:ellipsis;">' + esc(virkNavn) + '</span></span>'
     + '<div id="virkMenu" style="display:none;position:fixed;right:20px;top:72px;width:230px;background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:0 16px 40px rgba(0,0,0,0.15);padding:8px;z-index:90;">'
