@@ -713,7 +713,7 @@ body.lek-open .burger-btn, body.lek-open .bottom-nav, body.lek-open .dash-fab { 
     <button class="burger-item" onclick="toggleBurger(); togglePwPanel()">Skift adgangskode</button>
     <button class="burger-item" onclick="toggleBurger(); openChat()">Kontakt Ida</button>
     <button class="burger-item" style="color:var(--red);" onclick="custLogout()">Log ud</button>
-    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 17. juli · 126</div>
+    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 17. juli · 127</div>
   </div>
 </div>
 <div class="plus-menu" id="plusMenu" onclick="if(event.target===this)togglePlus()">
@@ -1885,7 +1885,7 @@ body.lek-open .burger-btn, body.lek-open .bottom-nav, body.lek-open .dash-fab { 
     <div id="systemtjek" style="display:none;background:#fff;border:1px solid var(--border);border-radius:20px;padding:14px 16px;margin-top:16px;"></div>
     <div id="dashFooter" style="display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--gray3);padding:22px 0 12px;border-top:1px solid var(--border);margin-top:10px;">
       <div style="font-size:10px;">© 2026 Energida · Alle rettigheder forbeholdes</div>
-      <div style="font-size:10px;margin-left:auto;">Version 17. juli · 126 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
+      <div style="font-size:10px;margin-left:auto;">Version 17. juli · 127 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
     </div>
   </div>
 </div>
@@ -3771,7 +3771,16 @@ async function klipNy() {
 }
 
 /* ---------- BRIEF-POPUPPEN: manus + klippe-brief + B-rolls + lektionens oevelser (Idas oenske 17/7) ---------- */
-let KLIP_BRIEF_ID = null, KLIP_BRIEF_BROLLS = [];
+let KLIP_BRIEF_ID = null, KLIP_BRIEF_BROLLS = [], KLIP_BRIEF_INGEN = false;
+/* brolls gemmes som array (gammelt format) — eller {ingen:true,liste:[]} når Ida har sagt
+   "ingen B-rolls til denne lektion". Begge former læses, så intet gammelt data går tabt. */
+function kbBrollsGem() { return KLIP_BRIEF_INGEN ? { ingen: true, liste: [] } : KLIP_BRIEF_BROLLS; }
+function klipBrollIngen(v) {
+  KLIP_BRIEF_INGEN = !!v;
+  if (KLIP_BRIEF_INGEN) KLIP_BRIEF_BROLLS = [];
+  kbGemNu(false);
+  klipBriefRender();
+}
 function klipLektionFor(o) {
   const m = (o.titel || "").match(/^(\d+)\.(\d+)/);
   if (!m) return null;
@@ -3782,7 +3791,9 @@ function klipLektionFor(o) {
 function klipBriefAaben(id) {
   const o = KLIP_OPGAVER.find(x => String(x.id) === String(id)); if (!o) return;
   KLIP_BRIEF_ID = id;
-  KLIP_BRIEF_BROLLS = Array.isArray(o.brolls) ? o.brolls.slice() : [];
+  const _br = o.brolls;
+  KLIP_BRIEF_BROLLS = Array.isArray(_br) ? _br.slice() : ((_br && Array.isArray(_br.liste)) ? _br.liste.slice() : []);
+  KLIP_BRIEF_INGEN = !!(_br && !Array.isArray(_br) && _br.ingen);
   klipBriefRender();
   document.getElementById("modalBack").classList.add("on");
   if (!window.KLIP_ESC) {
@@ -3822,8 +3833,14 @@ function klipBriefRender() {
     + label("Klippe-briefen")
     + '<textarea id="kbBrief" oninput="kbAuto()" ' + felt.replace('style="', 'style="min-height:130px;resize:vertical;') + '>' + esc(o.brief || "") + '</textarea>'
     + label("B-rolls — passager der klippes som separate filer")
-    + brolls
-    + '<div style="display:flex;gap:8px;margin-top:4px;"><input type="text" id="kbBrollNy" placeholder="Fx: detail-eksemplet (fra 02:10 i manus)" onkeydown="if(event.key===&#39;Enter&#39;)klipBrollTilfoej()" ' + felt + '><button class="dbtn primary" style="padding:9px 16px;flex-shrink:0;" onclick="klipBrollTilfoej()">Tilføj</button></div>'
+    + (KLIP_BRIEF_INGEN
+      ? '<div style="display:flex;align-items:center;gap:11px;padding:12px 14px;border:1px solid var(--border);border-radius:12px;background:#fff;">'
+        + '<span style="color:var(--black);font-weight:700;flex-shrink:0;">&#10003;</span>'
+        + '<span style="flex:1;font-size:12.5px;">Ingen B-rolls til denne lektion</span>'
+        + '<button class="row-btn" style="flex-shrink:0;" onclick="klipBrollIngen(false)">Fortryd</button></div>'
+      : brolls
+        + '<div style="display:flex;gap:8px;margin-top:4px;"><input type="text" id="kbBrollNy" placeholder="Fx: detail-eksemplet (fra 02:10 i manus)" onkeydown="if(event.key===&#39;Enter&#39;)klipBrollTilfoej()" ' + felt + '><button class="dbtn primary" style="padding:9px 16px;flex-shrink:0;" onclick="klipBrollTilfoej()">Tilføj</button></div>'
+        + (KLIP_BRIEF_BROLLS.length ? '' : '<button type="button" onclick="klipBrollIngen(true)" style="background:none;border:none;color:var(--red);font-size:11.5px;font-family:Poppins,sans-serif;cursor:pointer;padding:9px 0 0;">Ingen B-rolls til denne lektion</button>'))
     + label("Opgaver i appen — hører til lektionen")
     + ovelser
     + label("Kommentarer & rettelser")
@@ -3846,7 +3863,7 @@ async function kbGemNu(luk) {
   clearTimeout(KB_TIMER);
   const id = KLIP_BRIEF_ID; if (!id || KB_GEMMER) return;
   const felt = x => { const e = document.getElementById(x); return e ? e.value : null; };
-  const patch = { manus_tekst: felt("kbManusTekst") || null, brief: felt("kbBrief") || "", brolls: KLIP_BRIEF_BROLLS };
+  const patch = { manus_tekst: felt("kbManusTekst") || null, brief: felt("kbBrief") || "", brolls: kbBrollsGem() };
   KB_GEMMER = true;
   const o = KLIP_OPGAVER.find(x => String(x.id) === String(id));
   if (o) Object.assign(o, patch);
@@ -3956,7 +3973,7 @@ async function klipBriefGem() {
   const patch = {
     manus_tekst: (document.getElementById("kbManusTekst") || {}).value || null,
     brief: (document.getElementById("kbBrief") || {}).value || "",
-    brolls: KLIP_BRIEF_BROLLS
+    brolls: kbBrollsGem()
   };
   closeModal();
   await klipOpdater(id, patch);
@@ -6272,7 +6289,7 @@ function buildSideNav(def) {
     + item("", "Kontakt Ida", "openChat()")
     + item("", "Skift adgangskode", "togglePwPanel()")
     + item("", "Log ud", "custLogout()", " roed")
-    + '<div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0 12px;">Version 17. juli · 126</div>'
+    + '<div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0 12px;">Version 17. juli · 127</div>'
     + '</div>'
     + '<span style="display:inline-flex;flex-direction:column;align-items:center;gap:4px;flex-shrink:0;"><button class="sn-virk-knap" onclick="toggleVirkMenu()" title="' + esc(virkNavn) + '" aria-label="Profil"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="3.6"/><path d="M4.5 20c1.2-3.6 4-5.4 7.5-5.4s6.3 1.8 7.5 5.4"/></svg></button><span class="sn-tekst" style="color:var(--gray3);max-width:110px;overflow:hidden;text-overflow:ellipsis;">' + esc(virkNavn) + '</span></span>'
     + '<div id="virkMenu" style="display:none;position:fixed;right:20px;top:72px;width:230px;background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:0 16px 40px rgba(0,0,0,0.15);padding:8px;z-index:90;">'
