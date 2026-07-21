@@ -759,7 +759,7 @@ body.lek-open .burger-btn, body.lek-open .bottom-nav, body.lek-open .dash-fab { 
     <button class="burger-item" onclick="toggleBurger(); togglePwPanel()">Skift adgangskode</button>
     <button class="burger-item" onclick="toggleBurger(); openChat()">Kontakt Ida</button>
     <button class="burger-item" style="color:var(--red);" onclick="custLogout()">Log ud</button>
-    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 21. juli · 256</div>
+    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 21. juli · 257</div>
   </div>
 </div>
 <div class="plus-menu" id="plusMenu" onclick="if(event.target===this)togglePlus()">
@@ -2781,7 +2781,7 @@ select titel,
     <div id="systemtjek" style="display:none;background:#fff;border:1px solid var(--border);border-radius:20px;padding:14px 16px;margin-top:16px;"></div>
     <div id="dashFooter" style="display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--gray3);padding:22px 0 12px;border-top:1px solid var(--border);margin-top:10px;">
       <div style="font-size:10px;">© 2026 Energida · Alle rettigheder forbeholdes</div>
-      <div style="font-size:10px;margin-left:auto;">Version 21. juli · 256 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
+      <div style="font-size:10px;margin-left:auto;">Version 21. juli · 257 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
     </div>
   </div>
 </div>
@@ -7878,7 +7878,7 @@ function buildSideNav(def) {
     + item("", "Kontakt Ida", "openChat()")
     + item("", "Skift adgangskode", "togglePwPanel()")
     + item("", "Log ud", "custLogout()", " roed")
-    + '<div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0 12px;">Version 21. juli · 256</div>'
+    + '<div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0 12px;">Version 21. juli · 257</div>'
     + '</div>'
     + '<button class="sn-virk-knap" onclick="toggleVirkMenu()" title="' + esc(virkNavn) + '" aria-label="Profil"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(virkNavn) + '</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="flex-shrink:0;"><path d="M6 9l6 6 6-6"/></svg></button>'
     + '<div id="virkMenu" style="display:none;position:fixed;right:20px;top:72px;width:230px;background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:0 16px 40px rgba(0,0,0,0.15);padding:8px;z-index:90;">'
@@ -10104,6 +10104,7 @@ async function initAuth() {
 }
 
 async function renderDash() {
+  try { document.title = "Energida Studio"; } catch(e) {}   // paraplyen (Ida 21/7)
   const logo = document.getElementById("dashLogo");
   if (logo && !logo.getAttribute("src")) logo.src = document.querySelector(".logo-img").src;
   if (sb) {
@@ -10380,6 +10381,56 @@ function ttsWizHtml() {
     + '</div></div>';
 }
 /* ---------- program-visning (skema-reglen) ---------- */
+function ttsUgensTraeninger() {
+  const d = new Date(); const dag = d.getDay(); d.setDate(d.getDate() - (dag === 0 ? 6 : dag - 1)); d.setHours(0,0,0,0);
+  return (TTS_LOG || []).filter(x => x.dato && new Date(x.dato) >= d).length;
+}
+function ttsStreakUger() {
+  /* uger i træk (bagud fra denne uge) med mindst én træning */
+  const uger = new Set((TTS_LOG || []).filter(x => x.dato).map(x => {
+    const dt = new Date(x.dato); const dg = dt.getDay(); dt.setDate(dt.getDate() - (dg === 0 ? 6 : dg - 1)); dt.setHours(0,0,0,0);
+    return dt.getTime();
+  }));
+  let streak = 0; const nu = new Date(); const dg = nu.getDay(); nu.setDate(nu.getDate() - (dg === 0 ? 6 : dg - 1)); nu.setHours(0,0,0,0);
+  let t = nu.getTime();
+  if (!uger.has(t)) t -= 7 * 864e5;   // ugen er ung — streaken tæller fra sidste uge
+  while (uger.has(t)) { streak++; t -= 7 * 864e5; }
+  return streak;
+}
+function ttsDashboardHtml() {
+  const pr = TTS_PROGRAM;
+  const maalDage = (pr.svar && pr.svar.dage ? pr.svar.dage.length : 0) || 1;
+  const gjort = ttsUgensTraeninger();
+  const uge = ttsUge();
+  const kpi = (tal, lbl, pth) => '<div style="position:relative;background:#fff;border:1px solid var(--border);border-radius:20px;padding:16px 18px;">'
+    + '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="position:absolute;top:14px;right:14px;">' + pth + '</svg>'
+    + '<div style="font-weight:300;font-size:30px;line-height:1.15;font-variant-numeric:tabular-nums;">' + tal + '</div>'
+    + '<div style="font-size:11px;color:var(--gray3);line-height:1.45;margin-top:2px;">' + lbl + '</div></div>';
+  let h = '<div style="background:#fff;border:1px solid var(--border);border-radius:20px;padding:20px 22px;margin-bottom:14px;display:flex;gap:22px;align-items:center;flex-wrap:wrap;">'
+    + '<div style="flex-shrink:0;">' + energidaRing(gjort, "af " + maalDage + " denne uge", Math.min(1, gjort / maalDage)) + '</div>'
+    + '<div style="flex:1;min-width:200px;">'
+    + '<div style="font-size:10px;font-weight:500;letter-spacing:1.8px;text-transform:uppercase;color:var(--red);margin-bottom:4px;">Uge ' + uge + (pr.navn ? ' \u00b7 ' + esc(pr.navn) : '') + '</div>'
+    + '<div style="font-family:\'Didot\',\'Bodoni 72\',Georgia,serif;font-size:24px;line-height:1.2;letter-spacing:-0.3px;margin-bottom:12px;">' + (gjort >= maalDage ? 'Ugen er i hus \u2014 st\u00e6rkt g\u00e5et.' : gjort > 0 ? 'Godt i gang \u2014 forts\u00e6t.' : 'Klar til at komme i gang?') + '</div>'
+    + '<button class="dbtn primary" style="padding:14px 30px;font-size:13px;" onclick="ttsHeroStart()">Start tr\u00e6ningen</button>'
+    + '</div></div>'
+    + '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:14px;">'
+    + kpi(TTS_LOG.length, "tr\u00e6ninger i alt", '<path d="M6.5 6.5h11v11h-11z"/><path d="M3 10v4M21 10v4"/>')
+    + kpi(gjort + " af " + maalDage, "denne uge", '<rect x="3" y="5" width="18" height="16" rx="3"/><path d="M16 3v4M8 3v4M3 10.5h18"/>')
+    + kpi(ttsStreakUger(), "uger i tr\u00e6k", '<path d="M13 2 4.5 14H11l-1 8 8.5-12H12l1-8z"/>')
+    + kpi("Uge " + uge, "af programmet", '<path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/>')
+    + '</div>'
+    + (pr.svar && pr.svar.hvorfor && pr.svar.hvorfor[0]
+      ? '<div style="background:#fff;border:1px solid var(--border);border-radius:20px;padding:17px 20px 19px;margin-bottom:14px;">'
+        + '<div style="font-size:10px;font-weight:500;letter-spacing:1.8px;text-transform:uppercase;color:var(--red);border-bottom:1px solid var(--border);padding-bottom:9px;margin-bottom:12px;">Dit hvorfor</div>'
+        + '<div style="font-family:\'Didot\',\'Bodoni 72\',Georgia,serif;font-size:22px;line-height:1.3;letter-spacing:-0.2px;color:var(--red);">\u201d' + esc(storStart(pr.svar.hvorfor[0])) + '\u201d</div></div>'
+      : '');
+  return h;
+}
+function ttsHeroStart() {
+  try { ttsStartSession(0); } catch(e) {}
+  const w = document.getElementById("ttsWrap");
+  if (w) w.scrollIntoView({ behavior: "smooth", block: "start" });
+}
 function ttsProgramHtml() {
   const pr = TTS_PROGRAM;
   const uge = ttsUge();
@@ -10702,7 +10753,7 @@ function renderTts() {
       + '</div>' + ttsLektionerHtml();
     return;
   }
-  el.innerHTML = ttsProgramHtml() + '<div style="height:16px;"></div>' + ttsRekorderHtml() + ttsLektionerHtml();
+  el.innerHTML = ttsDashboardHtml() + ttsProgramHtml() + '<div style="height:16px;"></div>' + ttsRekorderHtml() + ttsLektionerHtml();
   TTS_REKORD_BESKED = [];
 }
 
@@ -11199,17 +11250,20 @@ function studieVaelgerVis() {
   if (document.getElementById("studieVaelger")) return;
   const d = document.createElement("div");
   d.id = "studieVaelger";
-  d.style.cssText = "position:fixed;left:0;top:0;width:100vw;height:100vh;z-index:600;background:var(--blue);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:28px 22px;font-family:Poppins,sans-serif;";
+  d.style.cssText = "position:fixed;left:0;top:0;width:100vw;height:100vh;z-index:600;background:var(--blue);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:28px 22px;font-family:Poppins,sans-serif;overflow-y:auto;";
+  const logoEl = document.querySelector(".logo-img");
   const doer = (titel, sub, klik) =>
-    '<button type="button" onclick="' + klik + '" style="display:block;width:100%;max-width:360px;text-align:left;background:#fff;border:1px solid var(--border);border-radius:20px;padding:18px 20px;margin-bottom:12px;font-family:Poppins,sans-serif;cursor:pointer;">'
+    '<button type="button" onclick="' + klik + '" style="display:block;width:100%;max-width:360px;text-align:left;background:#fff;border:1px solid var(--border);border-radius:20px;padding:16px 20px;margin-bottom:11px;font-family:Poppins,sans-serif;cursor:pointer;">'
     + '<div style="font-size:16px;font-weight:500;color:var(--black);">' + titel + '</div>'
     + '<div style="font-size:11.5px;color:var(--gray3);margin-top:2px;">' + sub + '</div></button>';
   d.innerHTML =
     '<button onclick="studieVaelgerLuk()" style="position:absolute;top:18px;right:20px;background:none;border:none;font-size:26px;color:var(--gray3);cursor:pointer;line-height:1;" aria-label="Luk">&times;</button>'
-    + '<div style="font-family:\'Didot\',\'Bodoni 72\',Georgia,serif;font-size:27px;letter-spacing:-0.3px;color:var(--black);margin-bottom:4px;">Hej Ida</div>'
-    + '<div style="font-size:12.5px;color:var(--gray3);margin-bottom:22px;">Hvor skal du hen?</div>'
-    + doer("Content Studio", "Content, id\u00e9er og kalender", "studieVaelgerLuk();window.location.href=\'https://b2b.energida.dk\'")
+    + (logoEl ? '<img src="' + logoEl.src + '" alt="Energida" style="height:52px;width:auto;margin-bottom:14px;">' : '')
+    + '<div style="font-family:\'Didot\',\'Bodoni 72\',Georgia,serif;font-size:31px;letter-spacing:-0.4px;color:var(--black);margin-bottom:2px;">Energida <span style="color:var(--red);font-style:italic;">Studio</span></div>'
+    + '<div style="font-size:12.5px;color:var(--gray3);margin-bottom:22px;">Hej Ida — hvor skal du hen?</div>'
+    + doer("Content Studio", "Dit eget content-univers — id\u00e9er og kalender", "studieVaelgerLuk();window.location.href=window.location.pathname+\'#somkunde=ENERGIDA\';window.location.reload()")
     + doer("Workout Studio", "Din tr\u00e6ning", "studieVaelgerLuk();visDashSide(\'traening\')")
+    + doer("Tip Top Studio", "Videoer, briefs og publicering", "studieVaelgerLuk();visDashSide(\'klip\')")
     + doer("Admin Studio", "CRM, kunder og Maskinrummet", "studieVaelgerLuk()");
   document.body.appendChild(d);
   document.addEventListener("keydown", function ev(e) { if (e.key === "Escape") { studieVaelgerLuk(); document.removeEventListener("keydown", ev); } });
