@@ -739,7 +739,7 @@ body.lek-open .burger-btn, body.lek-open .bottom-nav, body.lek-open .dash-fab { 
     <button class="burger-item" onclick="toggleBurger(); togglePwPanel()">Skift adgangskode</button>
     <button class="burger-item" onclick="toggleBurger(); openChat()">Kontakt Ida</button>
     <button class="burger-item" style="color:var(--red);" onclick="custLogout()">Log ud</button>
-    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 21. juli · 222</div>
+    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 21. juli · 223</div>
   </div>
 </div>
 <div class="plus-menu" id="plusMenu" onclick="if(event.target===this)togglePlus()">
@@ -2666,7 +2666,7 @@ select titel,
     <div id="systemtjek" style="display:none;background:#fff;border:1px solid var(--border);border-radius:20px;padding:14px 16px;margin-top:16px;"></div>
     <div id="dashFooter" style="display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--gray3);padding:22px 0 12px;border-top:1px solid var(--border);margin-top:10px;">
       <div style="font-size:10px;">© 2026 Energida · Alle rettigheder forbeholdes</div>
-      <div style="font-size:10px;margin-left:auto;">Version 21. juli · 222 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
+      <div style="font-size:10px;margin-left:auto;">Version 21. juli · 223 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
     </div>
   </div>
 </div>
@@ -2927,6 +2927,12 @@ function briefChip(el, key, multi) {
       if (typeof saveBrief === "function") saveBrief(true);
       if (typeof openBriefSide === "function") { openBriefSide(BRIEF_ID); return; }
     }
+    if (key === "maalgruppe") {
+      const itM = IDEER.find(x => String(x.id) === String(BRIEF_ID));
+      if (itM) itM.brief = Object.assign({}, itM.brief, BRIEF_STATE);
+      if (typeof saveBrief === "function") saveBrief(true);
+      if (typeof openBriefSide === "function") { openBriefSide(BRIEF_ID); return; }
+    }
   }
   if (typeof briefAutosavePlan === "function") briefAutosavePlan();
   if (typeof raketOpdater === "function") raketOpdater();
@@ -3024,6 +3030,17 @@ function raketBarHtml() {
 }
 function raketOpdater() { briefRailByg(); }
 
+/* Søjlens art afgør, hvilke spørgsmål briefen stiller (byggepakke 3, Ida 21/7).
+   Aflæses på temaets navn/type — ikke kun type, for "Produktet" har type "behov" i data. */
+function briefSoejleArt(tema) {
+  if (!tema) return "";
+  const nm = (tema.navn || "").toLowerCase();
+  if (nm.indexOf("produkt") > -1) return "produkt";
+  if (nm.indexOf("people") > -1 || tema.type === "relation") return "relation";
+  if (tema.type === "branding") return "branding";
+  if (nm.indexOf("behov") > -1 || nm.indexOf("udfordring") > -1 || tema.type === "udfordring") return "behov";
+  return "";
+}
 function openBriefSide(id) {
   const it = IDEER.find(x => x.id === id);
   if (!it) return;
@@ -3055,6 +3072,30 @@ function openBriefSide(id) {
       + ((dnaTema.formaal || dnaTema.greb) ? '<div style="font-size:11px;color:var(--gray3);margin-top:4px;">' + (dnaTema.formaal ? 'Formålet: ' + esc(dnaTema.formaal.toLowerCase()) : '') + (dnaTema.greb ? (dnaTema.formaal ? ' · ' : '') + 'Fortælles typisk med: ' + esc(dnaTema.greb.toLowerCase()) : '') + '</div>' : '')
       + '</div>'
     : '';
+
+  // Adaptive spørgsmål: søjlens art + den valgte målgruppes navn (fra målgruppe-lektionen)
+  const briefArt = briefSoejleArt(dnaTema);
+  const stKunde = (CURRENT_DEF && CURRENT_DEF.strategi && CURRENT_DEF.strategi.kunde) || null;
+  const mgNavne = [];
+  if (stKunde && stKunde.navn) mgNavne.push(String(stKunde.navn).split(",")[0].trim().split(" ")[0]);
+  if (stKunde && stKunde.sekundaer) mgNavne.push(String(stKunde.sekundaer).split(",")[0].trim().split(" ")[0]);
+  if (mgNavne.length > 1 && !BRIEF_STATE.maalgruppe) BRIEF_STATE.maalgruppe = mgNavne[0];
+  const mgn = (BRIEF_STATE.maalgruppe && mgNavne.indexOf(BRIEF_STATE.maalgruppe) > -1 ? BRIEF_STATE.maalgruppe : mgNavne[0]) || "målgruppen";
+  const ADAPT = {
+    behov:    { vT: 'Hvilken udfordring løser du for ' + mgn + '?', vH: 'Testen: ville ' + mgn + ' sige "kender du det?!" Behovs-indhold skal være værd at GEMME eller SENDE videre — lav det, man vil bruge senere.',
+                lT: 'Hvordan løser du det for ' + mgn + '?', lH: 'Vinklen handler aldrig om produktet — den handler om personen, der ser med.' },
+    produkt:  { vT: 'Hvad ved I om produktet, som ' + mgn + ' ikke ved?', vH: 'Fagligheden er jeres fordel: egenskab → fordel → udbytte. Og husk: produktet skal understøtte jeres USP — det er derfor, det kun findes hos jer.',
+                lT: 'Hvorfor er det nice for ' + mgn + '?', lH: 'Frist — vis det nice, og fortæl hvorfor. Ikke "køb nu", men "gud hvor smart".' },
+    relation: { vT: 'Hvem eller hvad viser I — og hvorfor vil ' + mgn + ' kunne lide jer for det?', vH: 'People follow people: her skal jeres VÆRDIER frem — mennesker og holdninger, ikke varer.',
+                lT: 'Hvad skal ' + mgn + ' få lyst til at skrive i kommentarfeltet?', lH: 'Relations-indhold måles på svar: stil et spørgsmål, man ikke kan lade være med at svare på.' },
+    branding: { vT: 'Hvilket øjeblik fra hverdagen viser I?', vH: "Show it, don't tell it: vis hvordan visionen ser ud i praksis. Personlig — aldrig privat.",
+                lT: 'Hvad skal ' + mgn + ' mærke bag kulisserne?', lH: 'Råt og ægte slår poleret — det er nærværet, man følger med i.' }
+  };
+  const ax = ADAPT[briefArt] || { vT: 'Hvilken udfordring løser du for ' + mgn + '?', vH: 'Testen: ville ' + mgn + ' sige "kender du det?!"',
+    lT: 'Hvordan løser du det for ' + mgn + '?', lH: 'Vinklen handler aldrig om produktet — den handler om personen, der ser med.' };
+  const CTA_AUTO = { behov: "Gemmer opslaget", produkt: "Kommer ind i butikken", relation: "Kommenterer / skriver til jer", branding: "Kommenterer / skriver til jer" };
+  let ctaAuto = false;
+  if (!BRIEF_STATE.cta && CTA_AUTO[briefArt]) { BRIEF_STATE.cta = CTA_AUTO[briefArt]; ctaAuto = true; }
 
   const qm = (label, inner) => '<div style="margin-bottom:18px;"><div style="font-size:9.5px;font-weight:500;text-transform:uppercase;letter-spacing:1.8px;color:var(--red);margin-bottom:8px;">' + label + '</div>' + inner + '</div>';
   document.getElementById("briefMeta").innerHTML =
@@ -3088,9 +3129,10 @@ function openBriefSide(id) {
 
   document.getElementById("briefWrap").innerHTML =
       trin(1, '1 · Skab nysgerrighed', 'Kender du det? — de første 0-3 sek. skal vække nysgerrighed (mål: over 60% ser videre).')
+    + (mgNavne.length > 1 ? q('Hvem taler opslaget til?', hint('Fra målgruppe-lektionen: vælg, hvem netop dette opslag taler til — spørgsmålene nedenfor tilpasser sig.') + chips('maalgruppe', mgNavne, false)) : '')
     + q('Beskriv din idé', hint('Skriv idéen, som du ville fortælle den til en kollega — og nævn, hvilke produkter der evt. skal fremhæves.') + ta('beskrivelse', 'Beskriv idéen — og evt. hvilke produkter der skal fremhæves…', 90))
-    + q('Hvilken udfordring løser du for målgruppen?', hint('Testen: ville målgruppen sige "kender du det?!"') + ta('vinkel', 'Beskriv udfordringen…'))
-    + q('Hvordan løser du det for målgruppen?', hint('Vinklen handler aldrig om produktet — den handler om personen, der ser med.') + ta('loesning', 'Beskriv løsningen — det, opslaget giver dem…'))
+    + q(ax.vT, hint(ax.vH) + ta('vinkel', 'Beskriv det her…'))
+    + q(ax.lT, hint(ax.lH) + ta('loesning', 'Beskriv det — det, opslaget giver dem…'))
     + q('Hook — de første 0-3 sekunder', hint('Genkendelig situation, overraskende påstand eller et spørgsmål, der aldrig besvares i videoen.') + chips('hookStruktur', ["Hook kun i starten (1-3 sek.)","Hook hele vejen — caption er payoff"], false) + ta('hook', 'Skriv hook…'))
     + q('Coverbillede & thumbnail-tekst', hint('Skal virke i miniformat. Ansigt med udtryk performer bedst. Max 5-7 ord: stil et spørgsmål ELLER giv et løfte — aldrig begge.') + ta('thumb', 'Thumbnail-tekst (max 5-7 ord)'))
     + trin(2, '2 · Skab følelser', (BRIEF_STATE.format === "Karrusel") ? 'Sæt ord på det, de føler — så swiper de videre, slide for slide (fasthold).' : 'Sæt ord på det, de føler — folk køber på følelser (fasthold længst muligt).')
@@ -3101,7 +3143,7 @@ function openBriefSide(id) {
     + trin(3, '3 · Skab engagement', 'Vis vejen + ét klart næste skridt — de skal handle på din CTA.')
     + q('Målet — hvad skal opslaget gøre for butikken?', ta('maal', 'Fx flere ind ad døren lørdag · flere gem fra lokale · udsolgt af nyheden'))
     + q('Caption', hint('AIDA: Første linje trækker ind → uddyb ægte → giv værdi → ÉN klar handling. Skriv konkrete ord: by, anledning, produkttype — det gør jer søgbare. Kun 3-5 hashtags.') + ta('caption', 'Skriv caption… (3-5 hashtags til sidst)', 110))
-    + q('Hvad skal kunderne gøre?', hint('Vælg kun én. Gem = "det vil jeg selv bruge senere". Send = "det skal en anden se". Behov → gem/kom ind. Relation → kommentér/skriv.') + chips('cta', ["Kommer ind i butikken","Gemmer opslaget","Sender til en ven","Kommenterer / skriver til jer"], false) + '<div style="font-size:12px;font-weight:500;margin:10px 0 4px;">I selve videoen (sidste 2-3 sek.):</div>' + ta('ctaVideo', 'CTA i videoen') + '<div style="font-size:12px;font-weight:500;margin:10px 0 4px;">I caption:</div>' + ta('ctaCaption', 'CTA i caption'))
+    + q('Hvad skal kunderne gøre?', hint('Vælg kun én. Gem = "det vil jeg selv bruge senere". Send = "det skal en anden se". Behov → gem/kom ind. Relation → kommentér/skriv.') + chips('cta', ["Kommer ind i butikken","Gemmer opslaget","Sender til en ven","Kommenterer / skriver til jer"], false) + (ctaAuto ? '<div style="font-size:11px;color:var(--gray3);margin-top:5px;">Forudvalgt ud fra søjlens formål — vælg om, hvis opslaget vil noget andet.</div>' : '') + '<div style="font-size:12px;font-weight:500;margin:10px 0 4px;">I selve videoen (sidste 2-3 sek.):</div>' + ta('ctaVideo', 'CTA i videoen') + '<div style="font-size:12px;font-weight:500;margin:10px 0 4px;">I caption:</div>' + ta('ctaCaption', 'CTA i caption'))
     + '<div class="sk-q" style="counter-increment:none;">'
       + '<div style="font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:1.4px;color:var(--red);margin-bottom:10px;">Content makker</div>'
       + '<div style="font-size:11.5px;color:var(--gray3);line-height:1.5;margin-bottom:10px;">Har du beskrevet idéen ovenfor, foreslår din content makker hooks, cover-tekst og caption ud fra jeres søjle, formål og følelse.</div>'
@@ -7641,7 +7683,7 @@ function buildSideNav(def) {
     + item("", "Kontakt Ida", "openChat()")
     + item("", "Skift adgangskode", "togglePwPanel()")
     + item("", "Log ud", "custLogout()", " roed")
-    + '<div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0 12px;">Version 21. juli · 222</div>'
+    + '<div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0 12px;">Version 21. juli · 223</div>'
     + '</div>'
     + '<span style="display:inline-flex;flex-direction:column;align-items:center;gap:4px;flex-shrink:0;"><button class="sn-virk-knap" onclick="toggleVirkMenu()" title="' + esc(virkNavn) + '" aria-label="Profil"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="3.6"/><path d="M4.5 20c1.2-3.6 4-5.4 7.5-5.4s6.3 1.8 7.5 5.4"/></svg></button><span class="sn-tekst" style="color:var(--gray3);max-width:110px;overflow:hidden;text-overflow:ellipsis;">' + esc(virkNavn) + '</span></span>'
     + '<div id="virkMenu" style="display:none;position:fixed;right:20px;top:72px;width:230px;background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:0 16px 40px rgba(0,0,0,0.15);padding:8px;z-index:90;">'
@@ -8507,7 +8549,7 @@ async function quizGenerer() {
   } catch(e) {}
   const payload = {
     profil: profil,
-    brand: { why: (CURRENT_DEF && CURRENT_DEF.why) || "", usp: (CURRENT_DEF && CURRENT_DEF.usp) || "", analyse: (CURRENT_DEF && CURRENT_DEF.analyse) || "" },
+    brand: (function(){ const st = (CURRENT_DEF && CURRENT_DEF.strategi) || {}; return { why: st.why || "", usp: st.usp || "", analyse: st.analyse || "" }; })(),
     soejler: (STRATEGI_TEMAER || []).map(t => ({ navn: t.navn, serie: t.serie || "", formaal: t.formaal || "", foelelse: t.foelelse || "", type: t.type || "" })),
     svar: QUIZ_SVAR
   };
