@@ -740,7 +740,7 @@ body.lek-open .burger-btn, body.lek-open .bottom-nav, body.lek-open .dash-fab { 
     <button class="burger-item" onclick="toggleBurger(); togglePwPanel()">Skift adgangskode</button>
     <button class="burger-item" onclick="toggleBurger(); openChat()">Kontakt Ida</button>
     <button class="burger-item" style="color:var(--red);" onclick="custLogout()">Log ud</button>
-    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 21. juli · 212</div>
+    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 21. juli · 213</div>
   </div>
 </div>
 <div class="plus-menu" id="plusMenu" onclick="if(event.target===this)togglePlus()">
@@ -2553,7 +2553,7 @@ select titel,
     <div id="systemtjek" style="display:none;background:#fff;border:1px solid var(--border);border-radius:20px;padding:14px 16px;margin-top:16px;"></div>
     <div id="dashFooter" style="display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--gray3);padding:22px 0 12px;border-top:1px solid var(--border);margin-top:10px;">
       <div style="font-size:10px;">© 2026 Energida · Alle rettigheder forbeholdes</div>
-      <div style="font-size:10px;margin-left:auto;">Version 21. juli · 212 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
+      <div style="font-size:10px;margin-left:auto;">Version 21. juli · 213 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
     </div>
   </div>
 </div>
@@ -2998,7 +2998,12 @@ function openBriefSide(id) {
   showTab(7);
   window.scrollTo(0, 0);
   setTimeout(() => document.querySelectorAll("#briefGrid textarea").forEach(autoGro), 60);
-  briefRailByg();
+  if (BRIEF_SIDE_ID !== BRIEF_ID || BRIEF_SIDE == null) {
+    const st0 = raketStadie();
+    let f0 = st0.findIndex(x => !x.faerdig); if (f0 === -1) f0 = 0;
+    BRIEF_SIDE = f0; BRIEF_SIDE_ID = BRIEF_ID;
+  }
+  briefSideVis(BRIEF_SIDE);
   const scBR = document.querySelector(".content");
   if (scBR && !scBR.__briefRail) {
     scBR.__briefRail = 1;
@@ -3533,11 +3538,12 @@ function briefRailByg() {
   const rail = document.getElementById("briefRail"); if (!rail) return;
   const st = raketStadie();
   if (!st.length) { rail.innerHTML = ""; return; }
-  let nu = st.findIndex(x => !x.faerdig); if (nu === -1) nu = st.length - 1;
+  let nu = (BRIEF_SIDE != null) ? BRIEF_SIDE : st.findIndex(x => !x.faerdig);
+  if (nu === -1) nu = st.length - 1;
   rail.innerHTML = '<div style="position:sticky;top:20px;">'
     + '<div style="font-size:10px;letter-spacing:1.8px;text-transform:uppercase;font-weight:500;color:var(--red);margin-bottom:12px;">Succesraketten</div>'
     + st.map((x, i) => {
-        const done = x.faerdig, erNu = i === nu && !done;
+        const done = x.faerdig && i !== nu, erNu = i === nu;
         const cirkel = done
           ? '<span style="width:30px;height:30px;border-radius:50%;background:var(--red);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;">\u2713</span>'
           : '<span style="width:30px;height:30px;border-radius:50%;box-sizing:border-box;background:' + (erNu ? 'var(--red)' : '#fff') + ';border:2px solid var(--red);color:' + (erNu ? '#fff' : 'var(--red)') + ';display:inline-flex;align-items:center;justify-content:center;font-size:13px;font-weight:500;flex-shrink:0;' + (erNu ? 'box-shadow:0 0 0 4px rgba(252,36,4,0.16);' : '') + '">' + x.nr + '</span>';
@@ -3556,10 +3562,40 @@ function briefRailOpdater() {
      Scroll-lytteren kalder stadig herind — med vilje tom. Gentegning sker i
      raketOpdater()/briefRailByg(), når felter faktisk ændrer sig. */
 }
-function briefRailGaa(i) {
-  const t = document.querySelectorAll("#briefWrap .brief-trin")[i];
-  if (t) t.scrollIntoView({ behavior: "smooth", block: "start" });
+let BRIEF_SIDE = null, BRIEF_SIDE_ID = null;
+function briefSideVis(i) {
+  /* Briefen vises som TRE sider, der følger Succesraketten (Ida 21/7) — kun
+     felterne for det aktive trin er fremme. Grupperne afgrænses af de røde
+     trin-bannere; Content makker-kortet i bunden hører til side 3. */
+  const wrap = document.getElementById("briefWrap"); if (!wrap) return;
+  const st = raketStadie();
+  const grupper = []; let g = null;
+  [...wrap.children].forEach(b => {
+    if (b.id === "briefSideNav") return;
+    if (b.classList && b.classList.contains("brief-trin")) { g = []; grupper.push(g); }
+    if (!g) { g = []; grupper.push(g); }
+    g.push(b);
+  });
+  if (!grupper.length) return;
+  BRIEF_SIDE = Math.max(0, Math.min(grupper.length - 1, i));
+  grupper.forEach((gr, gi) => gr.forEach(el => { el.style.display = gi === BRIEF_SIDE ? "" : "none"; }));
+  const navn = ix => (st[ix] ? st[ix].nr + " \u00b7 " + st[ix].navn : "");
+  let nav = document.getElementById("briefSideNav");
+  if (!nav) { nav = document.createElement("div"); nav.id = "briefSideNav"; wrap.appendChild(nav); }
+  nav.style.cssText = "display:flex;justify-content:space-between;gap:10px;margin-top:6px;";
+  nav.innerHTML =
+    (BRIEF_SIDE > 0
+      ? '<button class="dbtn" style="background:#fff;border:1px solid var(--border);" onclick="briefSideVis(' + (BRIEF_SIDE - 1) + ')">&larr; ' + navn(BRIEF_SIDE - 1) + '</button>'
+      : '<span></span>')
+    + (BRIEF_SIDE < grupper.length - 1
+      ? '<button class="dbtn primary" onclick="briefSideVis(' + (BRIEF_SIDE + 1) + ')">' + navn(BRIEF_SIDE + 1) + ' &rarr;</button>'
+      : '');
+  try { briefRailByg(); } catch(e) {}
+  try { document.querySelectorAll("#briefWrap textarea").forEach(autoGro); } catch(e) {}
+  const sc = document.querySelector(".content");
+  if (sc) sc.scrollTo({ top: 0, behavior: "smooth" });
 }
+function briefRailGaa(i) { briefSideVis(i); }
 function briefInfoVis(knap) {
   const t = knap.getAttribute("data-info") || "";
   const bag = document.createElement("div");
@@ -7482,7 +7518,7 @@ function buildSideNav(def) {
     + item("", "Kontakt Ida", "openChat()")
     + item("", "Skift adgangskode", "togglePwPanel()")
     + item("", "Log ud", "custLogout()", " roed")
-    + '<div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0 12px;">Version 21. juli · 212</div>'
+    + '<div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0 12px;">Version 21. juli · 213</div>'
     + '</div>'
     + '<span style="display:inline-flex;flex-direction:column;align-items:center;gap:4px;flex-shrink:0;"><button class="sn-virk-knap" onclick="toggleVirkMenu()" title="' + esc(virkNavn) + '" aria-label="Profil"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="3.6"/><path d="M4.5 20c1.2-3.6 4-5.4 7.5-5.4s6.3 1.8 7.5 5.4"/></svg></button><span class="sn-tekst" style="color:var(--gray3);max-width:110px;overflow:hidden;text-overflow:ellipsis;">' + esc(virkNavn) + '</span></span>'
     + '<div id="virkMenu" style="display:none;position:fixed;right:20px;top:72px;width:230px;background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:0 16px 40px rgba(0,0,0,0.15);padding:8px;z-index:90;">'
