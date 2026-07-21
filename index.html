@@ -756,7 +756,7 @@ body.lek-open .burger-btn, body.lek-open .bottom-nav, body.lek-open .dash-fab { 
     <button class="burger-item" onclick="toggleBurger(); togglePwPanel()">Skift adgangskode</button>
     <button class="burger-item" onclick="toggleBurger(); openChat()">Kontakt Ida</button>
     <button class="burger-item" style="color:var(--red);" onclick="custLogout()">Log ud</button>
-    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 21. juli · 241</div>
+    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 21. juli · 243</div>
   </div>
 </div>
 <div class="plus-menu" id="plusMenu" onclick="if(event.target===this)togglePlus()">
@@ -2764,7 +2764,7 @@ select titel,
     <div id="systemtjek" style="display:none;background:#fff;border:1px solid var(--border);border-radius:20px;padding:14px 16px;margin-top:16px;"></div>
     <div id="dashFooter" style="display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--gray3);padding:22px 0 12px;border-top:1px solid var(--border);margin-top:10px;">
       <div style="font-size:10px;">© 2026 Energida · Alle rettigheder forbeholdes</div>
-      <div style="font-size:10px;margin-left:auto;">Version 21. juli · 241 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
+      <div style="font-size:10px;margin-left:auto;">Version 21. juli · 243 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
     </div>
   </div>
 </div>
@@ -3940,7 +3940,8 @@ let KURSUS_SET = {}, KURSUS_SVAR = {}, KURSUS_NOTER = {}, KURSUS_PREF = {}, KURS
 
    Porten er nu omvendt: er en lektion ikke udtrykkeligt publiceret, findes den ikke for
    kunden. Listen ligger i skema_svar (samme mønster som kunde_def) — ingen SQL nødvendig. */
-let PUBLICERET = null;      // Set med lektions-id'er
+let PUBLICERET = null;      // Set med lektions-id'er (porten for kunderne — uændret)
+let PUB_PRODUKTER = new Set();   // publicerede PRODUKTER — Ida publicerer pr. produkt (21/7)
 let PUB_HENTET = false;     // først når listen er hentet, tør vi vise noget
 
 async function pubHent() {
@@ -3953,6 +3954,7 @@ async function pubHent() {
         PUBLICERET = new Set(data.svar.lektioner);
         try { localStorage.setItem("energida_publicering", JSON.stringify(data.svar.lektioner)); } catch(e) {}
       }
+      if (data && data.svar && Array.isArray(data.svar.produkter)) PUB_PRODUKTER = new Set(data.svar.produkter);
     } catch(e) {}
   }
   PUB_HENTET = true;
@@ -3971,7 +3973,7 @@ async function pubGem(liste) {
   try { localStorage.setItem("energida_publicering", JSON.stringify(liste)); } catch(e) {}
   if (sb) {
     try {
-      const raekke = { kode: "ENERGIDA", navn: "config", skema: "publicering", svar: { lektioner: liste } };
+      const raekke = { kode: "ENERGIDA", navn: "config", skema: "publicering", svar: { lektioner: liste, produkter: Array.from(PUB_PRODUKTER) } };
       const eks = await sb.from("skema_svar").update({ svar: raekke.svar })
         .eq("kode", "ENERGIDA").eq("navn", "config").eq("skema", "publicering").select();
       if (!eks.data || !eks.data.length) await sb.from("skema_svar").insert(raekke);
@@ -3986,21 +3988,17 @@ function pubTaelling() {
   KURSUS_MODULER.forEach(m => m.lektioner.forEach(l => { alle++; if (PUBLICERET && PUBLICERET.has(l.id)) i++; }));
   return { publiceret: i, alle: alle };
 }
-function pubToggle(id) {
-  const liste = PUBLICERET ? Array.prototype.slice.call(PUBLICERET) : [];
-  const i = liste.indexOf(id);
-  if (i > -1) liste.splice(i, 1); else liste.push(id);
-  pubGem(liste);
+/* Publicering pr. PRODUKT (Ida 21/7): produkterne ER kurateringen — ét klik pr. produkt.
+   Kundeporten er stadig lektionslisten: den genberegnes som foreningen af alle
+   publicerede produkters lektioner (fra produkt_lektioner-koblingerne). */
+function pubProdLektioner(pid) {
+  return PROD_LEK.filter(l => PROD_KOBL.has(pid + "|" + l.id)).map(l => l.id);
 }
-function pubModul(modulTitel, slaaTil) {
-  const m = KURSUS_MODULER.find(x => x.titel === modulTitel); if (!m) return;
-  const liste = PUBLICERET ? Array.prototype.slice.call(PUBLICERET) : [];
-  m.lektioner.forEach(l => {
-    const i = liste.indexOf(l.id);
-    if (slaaTil && i === -1) liste.push(l.id);
-    if (!slaaTil && i > -1) liste.splice(i, 1);
-  });
-  pubGem(liste);
+function pubProdToggle(pid) {
+  if (PUB_PRODUKTER.has(pid)) PUB_PRODUKTER.delete(pid); else PUB_PRODUKTER.add(pid);
+  const union = new Set();
+  PUB_PRODUKTER.forEach(id => pubProdLektioner(id).forEach(x => union.add(x)));
+  pubGem(Array.from(union));   // OBS: slice.call på et Set giver [] — Array.from er den rigtige
 }
 /* ---------- PRODUKTER & INDHOLDSBANK (Idas Lumant-model, 21/7) ----------
    produkter · lektioner (indholdsbanken) · produkt_lektioner (afkrydsningen).
@@ -4034,6 +4032,7 @@ async function prodHent() {
     }
     if (!PROD_VALGT || !PROD_LISTE.some(x => x.id === PROD_VALGT)) PROD_VALGT = PROD_LISTE.length ? PROD_LISTE[0].id : null;
     prodRender();
+    try { pubPanelRender(); } catch(e) {}
   } catch(e) {
     el.innerHTML = '<div class="ws-empty">Kunne ikke hente produkterne — er "Indholdsbank + produkter"-koden kørt i Supabase?</div>';
   }
@@ -4122,33 +4121,33 @@ function prodNavnRet(el) {
 
 function pubPanelRender() {
   const el = document.getElementById("pubPanel"); if (!el) return;
+  if (!PROD_LISTE.length) { el.innerHTML = '<div class="ws-empty">Henter produkterne\u2026</div>'; return; }
   const t = pubTaelling();
-  const moduler = KURSUS_MODULER.map(m => {
-    const antal = m.lektioner.filter(l => PUBLICERET && PUBLICERET.has(l.id)).length;
-    const alle = antal === m.lektioner.length;
-    const raekker = m.lektioner.map(l => {
-      const paa = !!(PUBLICERET && PUBLICERET.has(l.id));
-      return '<button type="button" onclick="pubToggle(\'' + l.id + '\')" style="width:100%;text-align:left;background:none;border:none;border-top:1px solid var(--border);padding:9px 0;cursor:pointer;font-family:Poppins,sans-serif;display:flex;align-items:center;gap:11px;font-size:12.5px;">'
-        + '<span style="width:9px;height:9px;border-radius:50%;flex-shrink:0;background:' + (paa ? 'var(--lys-groen)' : 'var(--lys-roed)') + ';"></span>'
-        + '<span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(l.titel) + '</span>'
-        + '<span style="font-size:10.5px;color:' + (paa ? 'var(--black)' : 'var(--gray3)') + ';flex-shrink:0;">' + (paa ? 'Synlig' : 'Skjult') + '</span></button>';
-    }).join("");
-    const mid = "pubm" + m.titel.replace(/\W/g, "");
-    return '<div><button type="button" onclick="mrFold(\'' + mid + '\')" style="width:100%;text-align:left;background:none;border:none;border-top:1px solid var(--border);padding:13px 0;cursor:pointer;font-family:Poppins,sans-serif;display:flex;align-items:center;gap:10px;">'
-      + '<span style="flex:1;font-size:11px;letter-spacing:1.4px;text-transform:uppercase;font-weight:500;color:var(--red);">' + esc(m.titel) + '</span>'
-      + '<span style="width:9px;height:9px;border-radius:50%;flex-shrink:0;background:' + (antal === 0 ? 'var(--lys-roed)' : alle ? 'var(--lys-groen)' : 'var(--lys-gul)') + ';"></span>'
-      + '<span style="background:var(--gray);color:var(--gray3);border-radius:12px;padding:2px 10px;font-size:10.5px;font-weight:500;">' + antal + '/' + m.lektioner.length + '</span>'
-      + '<span id="' + mid + '_v" style="color:var(--gray3);font-size:11px;">&#9662;</span></button>'
-      + '<div id="' + mid + '" style="display:none;padding:0 0 10px;">'
-      + '<button type="button" onclick="pubModul(\'' + esc(m.titel).replace(/'/g, "\\'") + '\',' + (!alle) + ')" style="background:none;border:none;color:var(--red);font-size:11.5px;font-family:Poppins,sans-serif;cursor:pointer;padding:8px 0;">'
-      + (alle ? 'Skjul hele modulet' : 'Publicér hele modulet') + '</button>' + raekker + '</div></div>';
+  const raekker = PROD_LISTE.map(px => {
+    const lekIds = pubProdLektioner(px.id);
+    const antalPub = lekIds.filter(x => PUBLICERET && PUBLICERET.has(x)).length;
+    const paa = PUB_PRODUKTER.has(px.id);
+    const status = paa
+      ? '<span style="font-size:11px;color:var(--black);flex-shrink:0;">\u2713 Publiceret</span>'
+      : antalPub > 0
+        ? '<span style="display:inline-flex;align-items:center;gap:6px;font-size:11px;color:var(--gray3);flex-shrink:0;"><span style="width:9px;height:9px;border-radius:50%;background:var(--rosa,#EFC0B5);"></span>Delvist \u00b7 ' + antalPub + '/' + lekIds.length + '</span>'
+        : '<span style="display:inline-flex;align-items:center;gap:6px;font-size:11px;color:var(--gray3);flex-shrink:0;"><span style="width:9px;height:9px;border-radius:50%;background:#A9BFD8;"></span>Ikke publiceret</span>';
+    const knap = !lekIds.length
+      ? '<span style="font-size:10.5px;color:var(--gray3);flex-shrink:0;">Ingen lektioner koblet</span>'
+      : paa
+        ? '<button type="button" class="row-btn" onclick="pubProdToggle(\'' + px.id + '\')">Tr\u00e6k tilbage</button>'
+        : '<button type="button" class="dbtn primary" style="padding:7px 15px;" onclick="pubProdToggle(\'' + px.id + '\')">Public\u00e9r</button>';
+    return '<div style="display:flex;align-items:center;gap:12px;border-top:1px solid var(--border);padding:11px 0;">'
+      + '<div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:500;">' + esc(px.navn) + '</div>'
+      + '<div style="font-size:10.5px;color:var(--gray3);margin-top:1px;">' + lekIds.length + ' lektioner</div></div>'
+      + status + knap + '</div>';
   }).join("");
   el.innerHTML = '<div style="font-size:12.5px;line-height:1.6;margin-bottom:4px;">'
     + '<b style="font-weight:500;">' + t.publiceret + ' af ' + t.alle + '</b> lektioner er synlige for kunderne.'
     + (t.publiceret === 0 ? ' Ingen kunder kan se indhold lige nu.' : '')
     + '</div>'
-    + '<div style="font-size:11px;color:var(--gray3);line-height:1.55;margin-bottom:6px;">Intet er synligt, før du sætter det til her — uanset hvad kunden ellers har adgang til.</div>'
-    + moduler;
+    + '<div style="font-size:11px;color:var(--gray3);line-height:1.55;margin-bottom:10px;">Du publicerer pr. PRODUKT \u2014 kunderne ser pr\u00e6cis de lektioner, der er koblet til de publicerede produkter (og som de har adgang til). Kurateringen af produkterne sker nedenfor under Produkter &amp; indholdsbank.</div>'
+    + raekker;
 }
 
 function kursusAdgang() {
@@ -7843,7 +7842,7 @@ function buildSideNav(def) {
     + item("", "Kontakt Ida", "openChat()")
     + item("", "Skift adgangskode", "togglePwPanel()")
     + item("", "Log ud", "custLogout()", " roed")
-    + '<div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0 12px;">Version 21. juli · 241</div>'
+    + '<div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0 12px;">Version 21. juli · 243</div>'
     + '</div>'
     + '<button class="sn-virk-knap" onclick="toggleVirkMenu()" title="' + esc(virkNavn) + '" aria-label="Profil"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(virkNavn) + '</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="flex-shrink:0;"><path d="M6 9l6 6 6-6"/></svg></button>'
     + '<div id="virkMenu" style="display:none;position:fixed;right:20px;top:72px;width:230px;background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:0 16px 40px rgba(0,0,0,0.15);padding:8px;z-index:90;">'
