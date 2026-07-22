@@ -777,7 +777,7 @@ body.lek-open .burger-btn, body.lek-open .bottom-nav, body.lek-open .dash-fab { 
     <button class="burger-item" onclick="toggleBurger(); togglePwPanel()">Skift adgangskode</button>
     <button class="burger-item" onclick="toggleBurger(); openChat()">Kontakt Ida</button>
     <button class="burger-item" style="color:var(--red);" onclick="custLogout()">Log ud</button>
-    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 22. juli · 309</div>
+    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 22. juli · 310</div>
   </div>
 </div>
 <div class="plus-menu" id="plusMenu" onclick="if(event.target===this)togglePlus()">
@@ -2862,7 +2862,7 @@ select titel,
     <div id="systemtjek" style="display:none;background:#fff;border:1px solid var(--border);border-radius:20px;padding:14px 16px;margin-top:16px;"></div>
     <div id="dashFooter" style="display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--gray3);padding:22px 0 12px;border-top:1px solid var(--border);margin-top:10px;">
       <div style="font-size:10px;">© 2026 Energida · Alle rettigheder forbeholdes</div>
-      <div style="font-size:10px;margin-left:auto;">Version 22. juli · 309 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
+      <div style="font-size:10px;margin-left:auto;">Version 22. juli · 310 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
     </div>
   </div>
 </div>
@@ -8175,7 +8175,7 @@ function buildSideNav(def) {
     + item("", "Kontakt Ida", "openChat()")
     + item("", "Skift adgangskode", "togglePwPanel()")
     + item("", "Log ud", "custLogout()", " roed")
-    + '<div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0 12px;">Version 22. juli · 309</div>'
+    + '<div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0 12px;">Version 22. juli · 310</div>'
     + '</div>'
     + '<button class="sn-virk-knap" onclick="toggleVirkMenu()" title="' + esc(virkNavn) + '" aria-label="Profil"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(virkNavn) + '</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="flex-shrink:0;"><path d="M6 9l6 6 6-6"/></svg></button>'
     + '<div id="virkMenu" style="display:none;position:fixed;right:20px;top:72px;width:230px;background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:0 16px 40px rgba(0,0,0,0.15);padding:8px;z-index:90;">'
@@ -12257,6 +12257,7 @@ async function opretKunde() {
 
 function lukKundeKort() {
   kkFlush();                                           // gem alt, der venter, FØR kortet lukkes
+  try { stratCardHjem(); } catch(e) {}
   const kb = document.getElementById("kundeBack");
   if (kb) kb.classList.remove("on");
   const side = document.getElementById("dside-kunde");
@@ -12282,6 +12283,7 @@ async function openKundeKort(kode) {
       if (data && data.svar) kInfo = data.svar;
     } catch(e) {}
   }
+  try { stratCardHjem(); } catch(e) {}                 // skift af kunde: editoren må ikke hænge fast fra forrige kunde
   KK_FORLOEB_RET = false;
   KUNDEKORT = { kode: kode, trin: trin, plan: plan, info: kInfo, oprettet: (VIRKSOMHEDSKODER[kode] || {}).oprettet || null };
   if (document.getElementById("dside-kunde")) visDashSide("kunde");
@@ -12756,13 +12758,37 @@ async function gemKundeTrin(i) {
 }
 
 function kundeGenvej(hvad) {
+  /* Inde på en kunde forholder Ida sig KUN til den kunde (Ida 22/7) —
+     editoren flyttes ind på kundekortet og låses til kunden i stedet for at hoppe til CRM. */
   const kode = KUNDEKORT.kode;
-  lukKundeKort();
   if (hvad === "strategi") {
-    const kort = document.getElementById("stratCard"); if (kort) kort.style.display = "block";
-    const sel = document.getElementById("stTilKunde"); if (sel) { sel.value = kode; stratHent(); }
-    const h = document.getElementById("wsStrategi"); if (h) h.scrollIntoView({ behavior: "smooth", block: "start" });
+    const kort = document.getElementById("stratCard"); if (!kort) return;
+    const maal = document.getElementById("kundeSide") || document.getElementById("kundeBody");
+    if (maal && !maal.contains(kort)) {
+      if (!window.__STRAT_HJEM) window.__STRAT_HJEM = { p: kort.parentElement, s: kort.nextElementSibling };
+      maal.appendChild(kort);
+    }
+    kort.style.display = "block";
+    stratFyldValg();
+    const sel = document.getElementById("stTilKunde");
+    if (sel) {
+      if (![...sel.options].some(o => o.value === kode)) sel.innerHTML += '<option value="' + esc(kode) + '">' + esc((VIRKSOMHEDSKODER[kode] || {}).virksomhed || kode) + '</option>';
+      sel.value = kode;
+      sel.style.display = "none";                            // låst til den åbne kunde
+      const hentK = sel.nextElementSibling; if (hentK && hentK.textContent.indexOf("Hent strategi") > -1) hentK.style.display = "none";
+    }
+    stratHent();
+    kort.scrollIntoView({ behavior: "smooth", block: "start" });
   }
+}
+function stratCardHjem() {
+  /* Editoren tilbage til sin plads i CRM-workspacet, med kunde-vælgeren synlig igen. */
+  const kort = document.getElementById("stratCard"); if (!kort || !window.__STRAT_HJEM) return;
+  kort.style.display = "none";
+  const sel = document.getElementById("stTilKunde");
+  if (sel) { sel.style.display = ""; const hentK = sel.nextElementSibling; if (hentK) hentK.style.display = ""; }
+  const hj = window.__STRAT_HJEM;
+  try { if (hj.s && hj.s.parentElement === hj.p) hj.p.insertBefore(kort, hj.s); else hj.p.appendChild(kort); } catch(e) {}
 }
 
 /* ---------- standardopgaver: genbrug de samme opgaver til alle forløbskunder ---------- */
