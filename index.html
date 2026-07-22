@@ -767,7 +767,7 @@ body.lek-open .burger-btn, body.lek-open .bottom-nav, body.lek-open .dash-fab { 
     <button class="burger-item" onclick="toggleBurger(); togglePwPanel()">Skift adgangskode</button>
     <button class="burger-item" onclick="toggleBurger(); openChat()">Kontakt Ida</button>
     <button class="burger-item" style="color:var(--red);" onclick="custLogout()">Log ud</button>
-    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 22. juli · 279</div>
+    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 22. juli · 280</div>
   </div>
 </div>
 <div class="plus-menu" id="plusMenu" onclick="if(event.target===this)togglePlus()">
@@ -2846,7 +2846,7 @@ select titel,
     <div id="systemtjek" style="display:none;background:#fff;border:1px solid var(--border);border-radius:20px;padding:14px 16px;margin-top:16px;"></div>
     <div id="dashFooter" style="display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--gray3);padding:22px 0 12px;border-top:1px solid var(--border);margin-top:10px;">
       <div style="font-size:10px;">© 2026 Energida · Alle rettigheder forbeholdes</div>
-      <div style="font-size:10px;margin-left:auto;">Version 22. juli · 279 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
+      <div style="font-size:10px;margin-left:auto;">Version 22. juli · 280 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
     </div>
   </div>
 </div>
@@ -8117,7 +8117,7 @@ function buildSideNav(def) {
     + item("", "Kontakt Ida", "openChat()")
     + item("", "Skift adgangskode", "togglePwPanel()")
     + item("", "Log ud", "custLogout()", " roed")
-    + '<div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0 12px;">Version 22. juli · 279</div>'
+    + '<div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0 12px;">Version 22. juli · 280</div>'
     + '</div>'
     + '<button class="sn-virk-knap" onclick="toggleVirkMenu()" title="' + esc(virkNavn) + '" aria-label="Profil"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(virkNavn) + '</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="flex-shrink:0;"><path d="M6 9l6 6 6-6"/></svg></button>'
     + '<div id="virkMenu" style="display:none;position:fixed;right:20px;top:72px;width:230px;background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:0 16px 40px rgba(0,0,0,0.15);padding:8px;z-index:90;">'
@@ -12850,7 +12850,7 @@ function renderGameplanEditor() {
 function gpGemPlan() {
   clearTimeout(GP_TIMER);
   GP_TIMER = setTimeout(() => {
-    const arr = PLAN_MILEPAELE.map((m, i) => ({ d: m.d, t: m.t, kort: PLAN_KORTE[i] || "" }));
+    const arr = PLAN_MILEPAELE.map((m, i) => ({ d: m.d, t: m.t, kort: PLAN_KORTE[i] || "", delmaal: m.delmaal || [] }));
     vaneGemRow("gameplan", arr);
     renderPlanKort();
   }, 900);
@@ -14098,10 +14098,45 @@ let PLAN_MILEPAELE = [
   { d: "2026-09-01", t: "TTS + Reset din energi lancerer" }
 ];
 let PLAN_DONE = {};
+let GP_AABEN = null;
+function gpFold(i) { GP_AABEN = (GP_AABEN === i) ? null : i; renderPlanKort(); }
+function gpGemNu() {
+  const arr = PLAN_MILEPAELE.map((m, i) => ({ d: m.d, t: m.t, kort: PLAN_KORTE[i] || "", delmaal: m.delmaal || [] }));
+  try { vaneGemRow("gameplan", arr); } catch(e) {}
+}
+function gpDelTilfoej(i) {
+  const tf = document.getElementById("gp_dm_t" + i), df = document.getElementById("gp_dm_d" + i);
+  const t = tf ? tf.value.trim() : "";
+  if (!t) { if (tf) tf.focus(); return; }
+  if (!PLAN_MILEPAELE[i].delmaal) PLAN_MILEPAELE[i].delmaal = [];
+  PLAN_MILEPAELE[i].delmaal.push({ t: t, d: (df && df.value) || null, done: false });
+  gpGemNu(); renderPlanKort();
+}
+function gpDelToggle(i, j) {
+  const x = (PLAN_MILEPAELE[i].delmaal || [])[j]; if (!x) return;
+  x.done = !x.done;
+  gpGemNu(); renderPlanKort();
+}
+function gpDelSlet(i, j) {
+  (PLAN_MILEPAELE[i].delmaal || []).splice(j, 1);
+  gpGemNu(); renderPlanKort();
+}
+function gpDelIcs(i, j) {
+  const x = (PLAN_MILEPAELE[i].delmaal || [])[j]; if (!x || !x.d) return;
+  const linjer = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Energida//CRM//DA", "BEGIN:VEVENT",
+    "UID:gp-" + i + "-" + j + "-" + x.d + "@energida.dk",
+    "DTSTART;VALUE=DATE:" + String(x.d).replace(/-/g, ""),
+    "SUMMARY:" + String(x.t).replace(/[\n,;]/g, " "), "END:VEVENT", "END:VCALENDAR"];
+  const blob = new Blob([linjer.join("\r\n")], { type: "text/calendar" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "delmaal.ics";
+  a.click();
+}
 async function gameplanHent() {
   const g = (await vaneRow("gameplan")) || vaneLocal("gameplan", null);
   if (Array.isArray(g) && g.length) {
-    PLAN_MILEPAELE = g.map(x => ({ d: x.d, t: x.t || x.kort || "" }));
+    PLAN_MILEPAELE = g.map(x => ({ d: x.d, t: x.t || x.kort || "", delmaal: Array.isArray(x.delmaal) ? x.delmaal : [] }));
     PLAN_KORTE = g.map(x => x.kort || (x.t || "").split(" ")[0]);
   }
   renderPlanKort();
@@ -14127,6 +14162,8 @@ function renderPlanKort() {
     + PLAN_MILEPAELE.map((m, i) => {
         const done = !!PLAN_DONE[i];
         const erNaeste = i === naesteIdx;
+        const dm = m.delmaal || [];
+        const aaben = GP_AABEN === i;
         const dt = new Date((m.d || "") + "T00:00:00");
         const datoTxt = isNaN(dt) ? "" : dt.getDate() + ". " + MK[dt.getMonth()];
         const cirkel = done
@@ -14139,12 +14176,32 @@ function renderPlanKort() {
           : erNaeste
             ? '<span style="background:var(--red);color:#fff;border-radius:12px;padding:3px 10px;font-size:10.5px;white-space:nowrap;">Nu</span>'
             : '<span style="background:#FDE8E3;color:var(--red);border-radius:12px;padding:3px 10px;font-size:10.5px;white-space:nowrap;">Planlagt</span>';
-        return '<div onclick="planToggle(' + i + ')" title="Klik for at skifte flueben" style="display:flex;align-items:center;gap:13px;padding:8px 0;cursor:pointer;position:relative;">'
-          + cirkel
-          + '<div style="flex:1;min-width:0;"><div style="font-size:13px;line-height:1.3;' + (done ? 'color:var(--gray3);text-decoration:line-through;text-decoration-color:rgba(138,133,128,.5);' : '') + '">' + esc(m.t || "") + '</div>'
-          + (datoTxt ? '<div style="font-size:11px;color:var(--gray3);font-variant-numeric:tabular-nums;">' + datoTxt + '</div>' : '') + '</div>'
+        const delTal = dm.length ? dm.filter(x => x.done).length + '/' + dm.length : '';
+        return '<div onclick="gpFold(' + i + ')" title="Klik for at se delmålene" style="display:flex;align-items:center;gap:13px;padding:8px 0;cursor:pointer;position:relative;">'
+          + '<span onclick="event.stopPropagation();planToggle(' + i + ')" title="Klik for at skifte flueben" style="display:inline-flex;cursor:pointer;">' + cirkel + '</span>'
+          + '<div style="flex:1;min-width:0;">'
+          + (datoTxt ? '<div style="font-size:21px;font-weight:300;line-height:1.1;font-variant-numeric:tabular-nums;' + (done ? 'color:var(--gray3);' : '') + '">' + datoTxt + '</div>' : '')
+          + '<div style="font-size:12.5px;line-height:1.4;margin-top:1px;' + (done ? 'color:var(--gray3);text-decoration:line-through;text-decoration-color:rgba(138,133,128,.5);' : '') + '">' + esc(m.t || "") + (delTal ? ' <span style="color:var(--gray3);font-size:10.5px;text-decoration:none;display:inline-block;">\u00b7 ' + delTal + ' delm\u00e5l</span>' : '') + '</div></div>'
           + chip
-          + '</div>';
+          + '<span style="color:var(--gray3);font-size:15px;line-height:1;flex-shrink:0;transform:rotate(' + (aaben ? '90' : '0') + 'deg);transition:transform .15s;">&rsaquo;</span>'
+          + '</div>'
+          + (aaben
+            ? '<div onclick="event.stopPropagation()" style="margin:0 0 12px 40px;">'
+              + (dm.length ? dm.map((x, j) =>
+                  '<div style="display:flex;align-items:center;gap:9px;border-top:1px solid var(--gray);padding:7px 0;font-size:12.5px;">'
+                  + '<button type="button" onclick="gpDelToggle(' + i + ',' + j + ')" title="Klaret?" style="width:19px;height:19px;border-radius:50%;border:2px solid ' + (x.done ? 'var(--red);background:var(--red);color:#fff;' : 'var(--border);background:#fff;color:transparent;') + 'flex-shrink:0;cursor:pointer;font-size:10px;line-height:15px;text-align:center;padding:0;">\u2713</button>'
+                  + '<span style="flex:1;min-width:0;' + (x.done ? 'text-decoration:line-through;color:var(--gray3);' : '') + '">' + esc(x.t || "") + '</span>'
+                  + (x.d ? '<span style="font-size:10.5px;color:var(--gray3);white-space:nowrap;font-variant-numeric:tabular-nums;">' + esc(dkDatoKort(x.d)) + '</span>' : '')
+                  + (x.d ? '<button type="button" class="row-btn" onclick="gpDelIcs(' + i + ',' + j + ')" title="Hent kalenderfil til din kalender">Kalender</button>' : '')
+                  + '<button type="button" class="row-btn" onclick="gpDelSlet(' + i + ',' + j + ')">Slet</button>'
+                  + '</div>').join("")
+                : '<div style="font-size:11.5px;color:var(--gray3);padding:4px 0 6px;">Ingen delm\u00e5l endnu \u2014 skriv det f\u00f8rste herunder.</div>')
+              + '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px;">'
+              + '<input type="text" id="gp_dm_t' + i + '" placeholder="Delm\u00e5l \u2014 fx Book fotografen\u2026" onkeydown="if(event.key===\'Enter\')gpDelTilfoej(' + i + ')" style="flex:1;min-width:150px;border:1px solid var(--border);border-radius:12px;padding:8px 10px;font-size:12px;font-family:Poppins,sans-serif;background:#fff;outline:none;">'
+              + '<input type="date" id="gp_dm_d' + i + '" style="border:1px solid var(--border);border-radius:12px;padding:8px 10px;font-size:12px;font-family:Poppins,sans-serif;background:#fff;">'
+              + '<button type="button" class="dbtn primary" style="padding:8px 14px;" onclick="gpDelTilfoej(' + i + ')">Tilf\u00f8j</button>'
+              + '</div></div>'
+            : '');
       }).join("")
     + '</div>';
 }
