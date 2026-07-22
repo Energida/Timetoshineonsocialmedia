@@ -781,7 +781,7 @@ body.lek-open .burger-btn, body.lek-open .bottom-nav, body.lek-open .dash-fab { 
     <button class="burger-item" onclick="toggleBurger(); togglePwPanel()">Skift adgangskode</button>
     <button class="burger-item" onclick="toggleBurger(); openChat()">Kontakt Ida</button>
     <button class="burger-item" style="color:var(--red);" onclick="custLogout()">Log ud</button>
-    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 22. juli · 323</div>
+    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 22. juli · 324</div>
   </div>
 </div>
 <div class="plus-menu" id="plusMenu" onclick="if(event.target===this)togglePlus()">
@@ -2884,7 +2884,7 @@ select titel,
     <div id="systemtjek" style="display:none;background:#fff;border:1px solid var(--border);border-radius:20px;padding:14px 16px;margin-top:16px;"></div>
     <div id="dashFooter" style="display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--gray3);padding:22px 0 12px;border-top:1px solid var(--border);margin-top:10px;">
       <div style="font-size:10px;">© 2026 Energida · Alle rettigheder forbeholdes</div>
-      <div style="font-size:10px;margin-left:auto;">Version 22. juli · 323 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
+      <div style="font-size:10px;margin-left:auto;">Version 22. juli · 324 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
     </div>
   </div>
 </div>
@@ -8212,7 +8212,7 @@ function buildSideNav(def) {
     + item("", "Kontakt Ida", "openChat()")
     + item("", "Skift adgangskode", "togglePwPanel()")
     + item("", "Log ud", "custLogout()", " roed")
-    + '<div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0 12px;">Version 22. juli · 323</div>'
+    + '<div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0 12px;">Version 22. juli · 324</div>'
     + '</div>'
     + '<button class="sn-virk-knap" onclick="toggleVirkMenu()" title="' + esc(virkNavn) + '" aria-label="Profil"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(virkNavn) + '</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="flex-shrink:0;"><path d="M6 9l6 6 6-6"/></svg></button>'
     + '<div id="virkMenu" style="display:none;position:fixed;right:20px;top:72px;width:230px;background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:0 16px 40px rgba(0,0,0,0.15);padding:8px;z-index:90;">'
@@ -9604,6 +9604,10 @@ async function gemNyAdgangskode() {
   const m2 = document.getElementById("nyKodeMsg");
   if (v.length < 6) { m2.textContent = "Mindst 6 tegn."; return; }
   const { error } = await sb.auth.updateUser({ password: v });
+  if (!error && window.__SKIFT_KODE_TVUNGET) {
+    try { await sb.from("skema_svar").update({ svar: { skal: false } }).eq("kode", currentKode).eq("navn", window.__SKIFT_KODE_TVUNGET).eq("skema", "skift_kode"); } catch(e) {}
+    window.__SKIFT_KODE_TVUNGET = null;
+  }
   if (error) { m2.textContent = "Kunne ikke gemme: " + error.message; return; }
   m2.style.color = "#000000"; m2.textContent = "Gemt — du er logget ind.";
   setTimeout(() => { const b = document.getElementById("nyKodeBoks"); if (b) b.remove(); }, 1200);
@@ -10426,6 +10430,12 @@ async function enterApp() {
       currentKode = md.kode ? String(md.kode).toUpperCase() : "";
       CURRENT_NAVN = md.navn || "";                    // medarbejderens eget navn → bruges på skemasvar
       CURRENT_HILSEN = (md.hilsen || "").replace(/[^\p{L}\p{N}\s]/gu, "").trim();   // deres valgte hilsen, uden emoji
+      try {   // login oprettet af Ida: første gang SKAL kunden vælge sin egen adgangskode
+        if (!SOM_KUNDE && user && user.email && currentKode) {
+          const { data: skRow } = await sb.from("skema_svar").select("svar").eq("kode", currentKode).eq("navn", user.email).eq("skema", "skift_kode").maybeSingle();
+          if (skRow && skRow.svar && skRow.svar.skal) { window.__SKIFT_KODE_TVUNGET = user.email; visNyAdgangskode(); }
+        }
+      } catch(e) {}
       try { pulsStart(); } catch(e) {}
       if (md.virksomhed) document.getElementById("shopTag").textContent = md.virksomhed;
       if (md.virksomhed && DEPLOY !== "crm") document.title = md.virksomhed + " · Content Studio";   // fanen viser kundens navn efter login
@@ -13145,6 +13155,10 @@ async function kkOpretLogin() {
     try { resp = await kald("signup-med-kode-"); } catch(e2) {}
     if (!resp || resp.status === 404) resp = await kald("signup-med-kode");
     if (resp.ok) {
+      try {   // første login: kunden SKAL vælge sin egen adgangskode
+        const sk = await sb.from("skema_svar").update({ svar: { skal: true } }).eq("kode", KUNDEKORT.kode).eq("navn", bruger).eq("skema", "skift_kode").select();
+        if (!sk.data || !sk.data.length) await sb.from("skema_svar").insert({ kode: KUNDEKORT.kode, navn: bruger, skema: "skift_kode", svar: { skal: true } });
+      } catch(e) {}
       if ((document.getElementById("kkLoginMail") || {}).checked) { try { kkVelkomstMail(bruger, pass); } catch(e) {} }
       vis("\u2713 Login oprettet \u2014 bruger-id: " + bruger + " \u00b7 adgangskode: " + pass + ". Giv det til kunden (adgangskoden kan skiftes i appen).", "var(--black)");
       try { await sb.from("virksomhedskoder").update({ login_klar: true }).eq("kode", KUNDEKORT.kode); } catch(e2) {}
