@@ -795,7 +795,7 @@ body.lek-open .burger-btn, body.lek-open .bottom-nav, body.lek-open .dash-fab { 
     <button class="burger-item" onclick="toggleBurger(); togglePwPanel()">Skift adgangskode</button>
     <button class="burger-item" onclick="toggleBurger(); openChat()">Kontakt Ida</button>
     <button class="burger-item" style="color:var(--red);" onclick="custLogout()">Log ud</button>
-    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 22. juli · 340</div>
+    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 22. juli · 341</div>
   </div>
 </div>
 <div class="plus-menu" id="plusMenu" onclick="if(event.target===this)togglePlus()">
@@ -2910,7 +2910,7 @@ select titel,
     <div id="systemtjek" style="display:none;background:#fff;border:1px solid var(--border);border-radius:20px;padding:14px 16px;margin-top:16px;"></div>
     <div id="dashFooter" style="display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--gray3);padding:22px 0 12px;border-top:1px solid var(--border);margin-top:10px;">
       <div style="font-size:10px;">© 2026 Energida · Alle rettigheder forbeholdes</div>
-      <div style="font-size:10px;margin-left:auto;">Version 22. juli · 340 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
+      <div style="font-size:10px;margin-left:auto;">Version 22. juli · 341 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
     </div>
   </div>
 </div>
@@ -5830,7 +5830,7 @@ async function kbGemNu(luk) {
     if (sb) await sb.from("video_opgaver").update(patch).eq("id", id);
     else klipSaveLocal();
     const st = document.getElementById("kbStatus");
-    if (st && !luk) { st.textContent = "Gemt \u2713"; st.style.color = "var(--black)"; setTimeout(() => { const s2 = document.getElementById("kbStatus"); if (s2) { s2.textContent = "Gemmer selv, mens du skriver"; s2.style.color = "var(--gray3)"; } }, 1800); }
+    if (st && !luk) gemStatusVis(st, "gemt");
   } catch(e) {
     const st = document.getElementById("kbStatus");
     if (st) { st.textContent = "Kunne ikke gemme \u2014 prøv igen"; st.style.color = "var(--red)"; }
@@ -8280,7 +8280,7 @@ function buildSideNav(def) {
     + item("", "Kontakt Ida", "openChat()")
     + item("", "Skift adgangskode", "togglePwPanel()")
     + item("", "Log ud", "custLogout()", " roed")
-    + '<div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0 12px;">Version 22. juli · 340</div>'
+    + '<div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0 12px;">Version 22. juli · 341</div>'
     + '</div>'
     + '<button class="sn-virk-knap" onclick="toggleVirkMenu()" title="' + esc(virkNavn) + '" aria-label="Profil"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(virkNavn) + '</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="flex-shrink:0;"><path d="M6 9l6 6 6-6"/></svg></button>'
     + '<div id="virkMenu" style="display:none;position:fixed;right:20px;top:72px;width:230px;background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:0 16px 40px rgba(0,0,0,0.15);padding:8px;z-index:90;">'
@@ -12697,13 +12697,25 @@ async function kkAktivitetHent() {
 }
 
 let KK_TIMER = {}, KK_FN = {};
-const KK_MSG = { moede: "moedeNoterMsg", noter: "kundeNoterMsg", vk: "vkAdmMsg" };
+const KK_MSG = { moede: "moedeNoterMsg", noter: "kundeNoterMsg", vk: "vkAdmMsg", ufokus: "ugensFokusMsg", bprofil: "bpMsg", info: "kiMsg" };
+/* Synlig gemmestatus (Ida 22/7, beslutningsark 2 · 9B): Gemmer… → ✓ Gemt kl. HH.MM → rød besked ved fejl */
+function gemStempel() { const d = new Date(); return "\u2713 Gemt kl. " + String(d.getHours()).padStart(2, "0") + "." + String(d.getMinutes()).padStart(2, "0"); }
+function gemStatusVis(el, tilstand) {
+  if (!el) return;
+  if (tilstand === "gemmer") { el.textContent = "Gemmer…"; el.style.color = "var(--gray3)"; }
+  else if (tilstand === "gemt") { el.textContent = gemStempel(); el.style.color = "var(--black)"; }
+  else { el.textContent = "Kunne ikke gemme — prøv igen"; el.style.color = "var(--red)"; }
+}
 function kkAuto(navn, fn) {
   clearTimeout(KK_TIMER[navn]);
   KK_FN[navn] = fn;
-  KK_TIMER[navn] = setTimeout(() => { delete KK_FN[navn]; fn(); }, 1200);
-  const msg = document.getElementById(KK_MSG[navn]);   // vis med det samme, at der gemmes
-  if (msg) msg.textContent = "Gemmer…";
+  KK_TIMER[navn] = setTimeout(async () => {
+    delete KK_FN[navn];
+    const msg = document.getElementById(KK_MSG[navn]);
+    try { await fn(); gemStatusVis(msg, "gemt"); }
+    catch(e) { gemStatusVis(msg, "fejl"); }
+  }, 1200);
+  gemStatusVis(document.getElementById(KK_MSG[navn]), "gemmer");
 }
 function kkFlush() {   // fyr ventende autosaves af med det samme — intet går tabt, når kortet lukkes
   Object.keys(KK_TIMER).forEach(n => clearTimeout(KK_TIMER[n]));
@@ -13013,7 +13025,7 @@ async function kkGemAlt() {
   clearTimeout(KI_TIMER); clearTimeout(KN_TIMER);
   await kkInfoGemNu();
   await kkNavnGem();
-  const st = document.getElementById("kiMsg"); if (st) st.textContent = "Gemt \u2713";
+  gemStatusVis(document.getElementById("kiMsg"), "gemt");
 }
 async function kkInfoGemNu() {
   await (async () => {
@@ -13024,9 +13036,9 @@ async function kkInfoGemNu() {
     try {
       const { data } = await sb.from("skema_svar").update({ svar: info }).eq("kode", KUNDEKORT.kode).eq("navn", "config").eq("skema", "kunde_info").select();
       if (!data || !data.length) await sb.from("skema_svar").insert({ kode: KUNDEKORT.kode, navn: "config", skema: "kunde_info", svar: info });
-      const st = document.getElementById("kiMsg"); if (st) { st.textContent = "Gemt \u2713"; setTimeout(() => { if (st) st.textContent = "Gemmer selv, mens du skriver"; }, 2000); }
+      gemStatusVis(document.getElementById("kiMsg"), "gemt");
       const ab = document.getElementById("kiAlder"); if (ab) ab.textContent = kiAlderTekst(info.foedt);
-    } catch(e) {}
+    } catch(e) { gemStatusVis(document.getElementById("kiMsg"), "fejl"); }
   })();
 }
 async function kkDefPersist(kode) {
