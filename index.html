@@ -781,7 +781,7 @@ body.lek-open .burger-btn, body.lek-open .bottom-nav, body.lek-open .dash-fab { 
     <button class="burger-item" onclick="toggleBurger(); togglePwPanel()">Skift adgangskode</button>
     <button class="burger-item" onclick="toggleBurger(); openChat()">Kontakt Ida</button>
     <button class="burger-item" style="color:var(--red);" onclick="custLogout()">Log ud</button>
-    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 22. juli · 325</div>
+    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 22. juli · 326</div>
   </div>
 </div>
 <div class="plus-menu" id="plusMenu" onclick="if(event.target===this)togglePlus()">
@@ -2884,7 +2884,7 @@ select titel,
     <div id="systemtjek" style="display:none;background:#fff;border:1px solid var(--border);border-radius:20px;padding:14px 16px;margin-top:16px;"></div>
     <div id="dashFooter" style="display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--gray3);padding:22px 0 12px;border-top:1px solid var(--border);margin-top:10px;">
       <div style="font-size:10px;">© 2026 Energida · Alle rettigheder forbeholdes</div>
-      <div style="font-size:10px;margin-left:auto;">Version 22. juli · 325 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
+      <div style="font-size:10px;margin-left:auto;">Version 22. juli · 326 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
     </div>
   </div>
 </div>
@@ -8212,7 +8212,7 @@ function buildSideNav(def) {
     + item("", "Kontakt Ida", "openChat()")
     + item("", "Skift adgangskode", "togglePwPanel()")
     + item("", "Log ud", "custLogout()", " roed")
-    + '<div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0 12px;">Version 22. juli · 325</div>'
+    + '<div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0 12px;">Version 22. juli · 326</div>'
     + '</div>'
     + '<button class="sn-virk-knap" onclick="toggleVirkMenu()" title="' + esc(virkNavn) + '" aria-label="Profil"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(virkNavn) + '</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="flex-shrink:0;"><path d="M6 9l6 6 6-6"/></svg></button>'
     + '<div id="virkMenu" style="display:none;position:fixed;right:20px;top:72px;width:230px;background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:0 16px 40px rgba(0,0,0,0.15);padding:8px;z-index:90;">'
@@ -12390,6 +12390,7 @@ async function openKundeKort(kode) {
   renderKundeKort();
   kkHentOprettet();
   kkHentPuls();
+  kkHentSelvopret();
   refreshKundeOpgaver();
   refreshKundeAftaler();
   hentStandardOpgaver();
@@ -12451,6 +12452,9 @@ function renderKundeKort() {
     + '<div id="kkBpWrap" style="' + (KK_BPROFIL_VIS ? '' : 'display:none;') + 'margin-top:12px;">' + profilSek + '</div>'
     + '<div style="margin-top:12px;">' + iLab("Taler appen du eller I?")
     + '<select id="ki_tale" onchange="kkTaleGem()" ' + iFelt + '><option value="i"' + (def.ental ? '' : ' selected') + '>I — flere i virksomheden</option><option value="du"' + (def.ental ? ' selected' : '') + '>Du — én person</option></select></div>'
+    + '<div style="margin-top:12px;">' + iLab("Selvoprettelse med koden")
+    + '<select id="ki_selvopret" onchange="kkSelvopretGem()" ' + iFelt + '><option value="">Henter…</option></select>'
+    + '<div style="font-size:10.5px;color:var(--gray3);margin-top:4px;line-height:1.5;">Åben: kolleger kan selv oprette login med koden ' + esc(k.kode) + ' (fx Hinges). Lukket: kun logins, du opretter (fx én-mands-kunder). Lukkes automatisk, når du opretter et login — genåbn her, hvis flere skal på.</div></div>'
     + '<div style="margin-top:12px;">' + iLab("Lektionsadgang")
     + '<button type="button" class="row-btn" id="kkLekFoldBtn" onclick="kkLekFold()">Vis lektionerne</button>'
     + '<div id="kkLekWrap" style="display:none;margin-top:8px;"><div id="kkLekValg"></div>'
@@ -12982,6 +12986,24 @@ async function kkForloebGem() {
   if (KUNDEKORT.trin > trin.length) KUNDEKORT.trin = trin.length;
   KK_FORLOEB_RET = false;
   renderKundeKort();
+}
+async function kkHentSelvopret() {
+  const sel = document.getElementById("ki_selvopret"); if (!sel || !sb || !KUNDEKORT) return;
+  let lukket = false;
+  try {
+    const { data } = await sb.from("virksomhedskoder").select("login_klar").eq("kode", KUNDEKORT.kode).maybeSingle();
+    lukket = !!(data && data.login_klar);
+  } catch(e) {}
+  sel.innerHTML = '<option value="aaben"' + (lukket ? '' : ' selected') + '>Åben — de kan selv oprette sig med koden</option><option value="lukket"' + (lukket ? ' selected' : '') + '>Lukket — kun logins, du opretter</option>';
+}
+async function kkSelvopretGem() {
+  const sel = document.getElementById("ki_selvopret"); if (!sel || !sb || !KUNDEKORT || !sel.value) return;
+  const lukket = sel.value === "lukket";
+  const def = VIRKSOMHEDSKODER[KUNDEKORT.kode] || {};
+  try {
+    const r = await sb.from("virksomhedskoder").update({ login_klar: lukket }).eq("kode", KUNDEKORT.kode).select();
+    if (!r.data || !r.data.length) await sb.from("virksomhedskoder").insert({ kode: KUNDEKORT.kode, virksomhed: def.virksomhed || KUNDEKORT.kode, forloeb: def.forloeb || "Succesfuld Detaildrift", aktiv: true, login_klar: lukket });
+  } catch(e) {}
 }
 async function kkTaleGem() {
   const sel = document.getElementById("ki_tale"); if (!sel || !KUNDEKORT) return;
