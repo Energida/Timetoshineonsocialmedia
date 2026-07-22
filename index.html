@@ -781,7 +781,7 @@ body.lek-open .burger-btn, body.lek-open .bottom-nav, body.lek-open .dash-fab { 
     <button class="burger-item" onclick="toggleBurger(); togglePwPanel()">Skift adgangskode</button>
     <button class="burger-item" onclick="toggleBurger(); openChat()">Kontakt Ida</button>
     <button class="burger-item" style="color:var(--red);" onclick="custLogout()">Log ud</button>
-    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 22. juli · 329</div>
+    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 22. juli · 330</div>
   </div>
 </div>
 <div class="plus-menu" id="plusMenu" onclick="if(event.target===this)togglePlus()">
@@ -2884,7 +2884,7 @@ select titel,
     <div id="systemtjek" style="display:none;background:#fff;border:1px solid var(--border);border-radius:20px;padding:14px 16px;margin-top:16px;"></div>
     <div id="dashFooter" style="display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--gray3);padding:22px 0 12px;border-top:1px solid var(--border);margin-top:10px;">
       <div style="font-size:10px;">© 2026 Energida · Alle rettigheder forbeholdes</div>
-      <div style="font-size:10px;margin-left:auto;">Version 22. juli · 329 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
+      <div style="font-size:10px;margin-left:auto;">Version 22. juli · 330 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
     </div>
   </div>
 </div>
@@ -8213,7 +8213,7 @@ function buildSideNav(def) {
     + item("", "Kontakt Ida", "openChat()")
     + item("", "Skift adgangskode", "togglePwPanel()")
     + item("", "Log ud", "custLogout()", " roed")
-    + '<div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0 12px;">Version 22. juli · 329</div>'
+    + '<div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0 12px;">Version 22. juli · 330</div>'
     + '</div>'
     + '<button class="sn-virk-knap" onclick="toggleVirkMenu()" title="' + esc(virkNavn) + '" aria-label="Profil"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(virkNavn) + '</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="flex-shrink:0;"><path d="M6 9l6 6 6-6"/></svg></button>'
     + '<div id="virkMenu" style="display:none;position:fixed;right:20px;top:72px;width:230px;background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:0 16px 40px rgba(0,0,0,0.15);padding:8px;z-index:90;">'
@@ -10519,10 +10519,12 @@ function visManglerKode() {
 function authSkip() { document.getElementById("authGate").style.display = "none"; }
 
 async function initAuth() {
-  if (DEPLOY === "crm") return;                       // CRM har sit eget dashboard-login
+  /* CRM har sit eget dashboard-login — MEN "som kunde"-visningen skal altid igennem
+     kunde-indgangen (enterApp), ellers bliver den raa app-skal staaende (regel 16). */
+  if (DEPLOY === "crm" && !SOM_KUNDE) return;
   const gate = document.getElementById("authGate");
   if (!gate) return;
-  gate.style.display = "flex";
+  if (!SOM_KUNDE) gate.style.display = "flex";        // som kunde: route() styrer gaten — aldrig login-blink
   document.getElementById("authDev").style.display = (DEPLOY === "dev") ? "block" : "none";
   const lg = document.querySelector(".auth-logo"), src = document.querySelector(".logo-img");
   if (lg && src) lg.src = src.src;
@@ -10532,6 +10534,7 @@ async function initAuth() {
       if (session) { enterApp(); return; }
     } catch(e) {}
   }
+  if (SOM_KUNDE) return;   // ingen session: route() viser selv gaten med "Log ind foerst"-beskeden
   authShow("choose");
 }
 
@@ -12423,6 +12426,8 @@ function renderKundeKort() {
     + '<div style="display:flex;align-items:center;gap:10px;"><button class="dbtn primary" style="padding:8px 18px;" onclick="gemButiksprofil()">Gem</button><span id="bpMsg" style="font-size:11px;color:var(--gray3);"></span></div>'
     + '<div style="font-size:10.5px;color:var(--gray3);margin-top:8px;">Kernekunden hentes fra målgruppe-lektionen/strategien — den skal ikke skrives her.</div>';
 
+  const typeNavn = kundetypeNavn(def.type_vist || def.type) || def.forloeb || "";
+  const metaLinje = esc(typeNavn) + ' · kode: ' + esc(k.kode) + (k.oprettet ? ' · oprettet ' + kkOprettetTekst(k.oprettet) : '') + (k.sidstAktiv ? ' · sidst aktiv ' + kkTidSiden(k.sidstAktiv) : '');
   const infoSek = etiket("Kundeoplysninger")
     + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;">'
     + '<div style="grid-column:1/-1;">' + iLab("Kundenavn") + '<input type="text" id="ki_navn" value="' + ivv(def.virksomhed || k.kode) + '" onchange="kkNavnGem()" oninput="kkNavnAuto()" placeholder="Virksomhedens navn" ' + iFelt + '></div>'
@@ -12435,6 +12440,8 @@ function renderKundeKort() {
     + '<label style="grid-column:1/-1;display:flex;align-items:center;gap:9px;font-size:12.5px;cursor:pointer;margin-top:2px;"><input type="checkbox" id="ki_nyheds"' + (kInfo2.nyhedsbrev ? ' checked' : '') + ' onchange="kkInfoAuto()" style="accent-color:var(--red);width:16px;height:16px;flex-shrink:0;"> Tilmeldt nyhedsbrevet</label>'
     + '</div>'
     + '<div style="display:flex;align-items:center;gap:10px;margin-top:8px;"><span id="kiAlder" style="font-size:11.5px;color:var(--gray3);">' + kiAlderTekst(kInfo2.foedt) + '</span><span style="flex:1;"></span><span id="kiMsg" style="font-size:11px;color:var(--gray3);">Gemmer selv, mens du skriver</span><button class="dbtn primary" style="padding:8px 18px;" onclick="kkGemAlt()">Gem</button></div>'
+    + '<div style="height:1px;background:var(--border);margin:12px 0 10px;"></div>'
+    + '<div style="font-size:11px;color:var(--gray3);line-height:1.7;">' + metaLinje + '</div>'
 ;
   const loginSek = etiket("Kunde login")
     + '<input type="email" id="kkLoginBruger" placeholder="E-mail" value="' + ivv(kInfo2.mail || "") + '" style="width:100%;box-sizing:border-box;background:#fff;border:1px solid var(--border);border-radius:12px;padding:9px 11px;font-size:12.5px;font-family:Poppins,sans-serif;outline:none;margin-bottom:8px;">'
@@ -12526,10 +12533,8 @@ function renderKundeKort() {
     ? '<button class="dbtn primary" onclick="aabnKundensSide(\'' + esc(k.kode) + '\')" title="Åbner i ny fane. Du arbejder som dem — det du skriver, gemmes hos dem.">' + (def.type === "klipper" ? 'Se klipperens side &#8599;' : 'Vis kundens version &#8599;') + '</button>'
     : '';
 
-  const typeNavn = kundetypeNavn(def.type_vist || def.type) || def.forloeb || "";
   const hoved = '<div style="font-size:11px;font-weight:500;letter-spacing:2px;text-transform:uppercase;color:var(--red);">Kundekort</div>'
-    + '<h2 style="font-family:\'Didot\',\'Bodoni 72\',Georgia,serif;font-weight:400;font-size:34px;letter-spacing:1.5px;text-transform:uppercase;margin-top:2px;">' + esc(def.virksomhed || k.kode) + '</h2>'
-    + '<div class="msub">' + esc(typeNavn) + ' · kode: ' + esc(k.kode) + (k.oprettet ? ' · oprettet ' + kkOprettetTekst(k.oprettet) : '') + (k.sidstAktiv ? ' · sidst aktiv ' + kkTidSiden(k.sidstAktiv) : '') + '</div>';
+    + '<h2 style="font-family:\'Didot\',\'Bodoni 72\',Georgia,serif;font-weight:400;font-size:34px;letter-spacing:1.5px;text-transform:uppercase;margin-top:2px;">' + esc(def.virksomhed || k.kode) + '</h2>';
 
   if (somSide) {
     const KORT = (x, tone) => '<div class="ws-card" style="break-inside:avoid;margin:0 0 16px;' + (tone || '') + '">' + x + '</div>';
@@ -13265,7 +13270,7 @@ function kkOpgaveSektion(kode) {
       + (erIBib ? '' : '<button class="row-btn" onclick="gemSomStandard(\'' + o.id + '\')" title="Læg opgaven i standardbiblioteket — så ligger den klar til alle fremtidige kunder">Gem som standard</button>')
       + '<button class="row-btn" onclick="delKundeOpgave(\'' + o.id + '\')">Slet</button>'
       + '</div>';
-  }).join("") || '<div style="font-size:11px;color:var(--gray3);margin-bottom:6px;">Ingen opgaver endnu.</div>';
+  }).join("");   /* ingen opgaver = ingen tekst — feltet til en ny opgave taler for sig selv */
   h += '<div style="background:#fff;border:1px solid var(--border);border-radius:12px;padding:10px;margin-top:4px;">'
     + '<input type="text" id="kk_op_titel" placeholder="Ny opgave — fx Gennemgå hvilke profiler I følger" style="width:100%;background:#fff;border:1px solid var(--border);border-radius:12px;padding:8px 10px;font-size:12px;font-family:Poppins,sans-serif;margin-bottom:6px;">'
     + '<div style="display:flex;gap:6px;flex-wrap:wrap;">'
