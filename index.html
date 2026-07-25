@@ -803,7 +803,7 @@ body.lek-open .burger-btn, body.lek-open .bottom-nav, body.lek-open .dash-fab { 
     <button class="burger-item" onclick="toggleBurger(); togglePwPanel()">Skift adgangskode</button>
     <button class="burger-item" onclick="toggleBurger(); openChat()">Kontakt Ida</button>
     <button class="burger-item" style="color:var(--red);" onclick="custLogout()">Log ud</button>
-    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 22. juli · 397</div>
+    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 22. juli · 398</div>
   </div>
 </div>
 <div class="plus-menu" id="plusMenu" onclick="if(event.target===this)togglePlus()">
@@ -1859,6 +1859,14 @@ body.lek-open .burger-btn, body.lek-open .bottom-nav, body.lek-open .dash-fab { 
 
     <div class="klip-cols">
     <div class="klip-main" style="min-width:0;">
+    <div id="manusIdeCard" class="ws-card" style="margin-bottom:18px;display:none;">
+      <div class="ws-head" style="display:flex;align-items:center;gap:10px;">
+        <span style="flex:1;min-width:0;">Idéer til manus</span>
+        <button class="dbtn primary" onclick="manusIdeFang()" title="Ny idé til manus" aria-label="Ny idé til manus" style="width:36px;height:36px;border-radius:50%;padding:0;font-size:20px;font-weight:400;line-height:1;flex-shrink:0;">+</button>
+      </div>
+      <div style="font-size:11px;color:var(--gray3);line-height:1.55;padding:2px 0 6px;">Kun dig — Thomas ser dem ikke. Dine egne råidéer til manuskripter, samlet her til du er klar til at skrive dem ud.</div>
+      <div id="manusIdeListe"></div>
+    </div>
     <div class="ws-card" style="margin-bottom:18px;">
       <div class="ws-head">Produkter &amp; indholdsbank</div>
       <div id="prodPanel"></div>
@@ -2957,7 +2965,7 @@ select titel,
     <div id="systemtjek" style="display:none;background:#fff;border:1px solid var(--border);border-radius:20px;padding:14px 16px;margin-top:16px;"></div>
     <div id="dashFooter" style="display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--gray3);padding:22px 0 12px;border-top:1px solid var(--border);margin-top:10px;">
       <div style="font-size:10px;">© 2026 Energida · Alle rettigheder forbeholdes</div>
-      <div style="font-size:10px;margin-left:auto;">Version 22. juli · 397 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
+      <div style="font-size:10px;margin-left:auto;">Version 22. juli · 398 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
     </div>
   </div>
 </div>
@@ -6486,6 +6494,7 @@ function klipKort(o) {
 }
 
 function renderKlipperum() {
+  try { renderManusIdeer(); } catch(e) {}
   const badge = document.getElementById("klipCount");
   if (badge) badge.textContent = KLIP_OPGAVER.filter(o => o.status !== "Godkendt").length;
   const kpi = document.getElementById("klipKpi");
@@ -8624,7 +8633,7 @@ function buildSideNav(def) {
     + item("", "Kontakt Ida", "openChat()")
     + item("", "Skift adgangskode", "togglePwPanel()")
     + item("", "Log ud", "custLogout()", " roed")
-    + '<div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0 12px;">Version 22. juli · 397</div>'
+    + '<div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0 12px;">Version 22. juli · 398</div>'
     + '</div>'
     + '<button class="sn-virk-knap" onclick="toggleVirkMenu(event)" title="' + esc(virkNavn) + '" aria-label="Profil"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(virkNavn) + '</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="flex-shrink:0;"><path d="M6 9l6 6 6-6"/></svg></button>'
     + '<div id="virkMenu" style="display:none;position:fixed;right:20px;top:72px;width:230px;background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:0 16px 40px rgba(0,0,0,0.15);padding:8px;z-index:90;">'
@@ -12107,6 +12116,55 @@ async function appFunkHent() {
   appFunkRender();
 }
 function appFunkSlet(id) { APP_FUNK = APP_FUNK.filter(x => x.id !== id); vaneGemRow("app_funktioner", APP_FUNK); appFunkRender(); }
+/* ---------- IDÉ TIL MANUS (Ida 25/7) ----------
+   Idas egne råidéer til manuskripter. Fanges fra studie-vælgeren, lander i Tip Top
+   Studio — men KUN i hendes egen admin (crm). Thomas logger ind som somkunde og ser
+   dem aldrig. Gemmes på Idas egen skema_svar-række (kode ENERGIDA) — ingen ny tabel. */
+let MANUS_IDEER = [];
+async function manusIdeHent() {
+  try { MANUS_IDEER = (await vaneRow("manus_ideer")) || vaneLocal("manus_ideer", []) || []; } catch(e) { MANUS_IDEER = []; }
+  try { renderManusIdeer(); } catch(e) {}
+}
+function manusIdeFang() {
+  const body = document.getElementById("modalBody"); if (!body) return;
+  body.innerHTML = '<button class="modal-close" onclick="closeModal()">&times;</button>'
+    + '<h2 style="font-size:19px;margin:2px 0 4px;">Idé til manus</h2>'
+    + '<div style="font-size:11.5px;color:var(--gray3);line-height:1.55;margin-bottom:12px;">Lander i Tip Top Studio — kun hos dig. Thomas ser den ikke.</div>'
+    + '<textarea id="miTekst" placeholder="Skriv løs…" ' + DF_FELT.replace('style="', 'style="min-height:90px;') + '></textarea>'
+    + '<button class="dbtn primary" style="width:100%;margin-top:12px;" onclick="manusIdeGem()">Gem</button>';
+  document.getElementById("modalBack").classList.add("on");
+  setTimeout(() => { const t = document.getElementById("miTekst"); if (t) t.focus(); }, 100);
+}
+async function manusIdeGem() {
+  const el = document.getElementById("miTekst");
+  const t = (el ? el.value : "").trim();
+  if (!t) { if (el) el.focus(); return; }
+  MANUS_IDEER.unshift({ id: "mi" + Date.now(), t: t, dato: new Date().toISOString().slice(0, 10) });
+  try { await vaneGemRow("manus_ideer", MANUS_IDEER); } catch(e) {}
+  renderManusIdeer();
+  closeModal();
+}
+function manusIdeSlet(id) {
+  MANUS_IDEER = MANUS_IDEER.filter(x => x.id !== id);
+  vaneGemRow("manus_ideer", MANUS_IDEER);
+  renderManusIdeer();
+}
+function renderManusIdeer() {
+  const card = document.getElementById("manusIdeCard");
+  const liste = document.getElementById("manusIdeListe");
+  if (!card || !liste) return;
+  if (DEPLOY !== "crm" || SOM_KUNDE) { card.style.display = "none"; return; }   // aldrig Thomas
+  card.style.display = "block";
+  liste.innerHTML = MANUS_IDEER.length
+    ? MANUS_IDEER.map(r =>
+        '<div style="display:flex;gap:9px;align-items:flex-start;border-top:1px solid var(--gray);padding:9px 0;font-size:12.5px;">'
+        + '<span style="width:5px;height:5px;border-radius:50%;background:var(--red);flex-shrink:0;margin-top:7px;"></span>'
+        + '<span style="flex:1;min-width:0;line-height:1.5;">' + esc(r.t || "") + '</span>'
+        + (r.dato ? '<span style="font-size:10.5px;color:var(--gray3);flex-shrink:0;">' + esc(dkDatoKort(String(r.dato))) + '</span>' : '')
+        + '<button class="row-btn" onclick="manusIdeSlet(\'' + r.id + '\')">Slet</button>'
+        + '</div>').join("")
+    : '<div style="font-size:11.5px;color:var(--gray3);padding:5px 0;">Ingen idéer endnu — tryk + for at fange den første.</div>';
+}
 function appFunkKopier(knap) {
   if (!APP_FUNK.length) { if (knap) knap.textContent = "Ingen ønsker endnu"; return; }
   const tekst = "Mine app-ønsker (" + new Date().toLocaleDateString("da-DK") + "):\n" + APP_FUNK.map(x => "- " + x.t).join("\n");
@@ -12542,25 +12600,24 @@ function studieVaelgerVis() {
   if (document.getElementById("studieVaelger")) return;
   const d = document.createElement("div");
   d.id = "studieVaelger";
-  d.style.cssText = "position:fixed;inset:0;z-index:600;background:var(--blue);padding:34px 22px 26px;font-family:Poppins,sans-serif;overflow-y:auto;box-sizing:border-box;";
+  d.style.cssText = "position:fixed;inset:0;z-index:600;background:linear-gradient(170deg, var(--blue) 0%, #e9eff4 380px, var(--gray) 760px);padding:34px 22px 26px;font-family:Poppins,sans-serif;overflow-y:auto;overflow-x:hidden;box-sizing:border-box;";
   const logoEl = document.querySelector(".logo-img");
-  const knap = (titel, klik) =>
-    '<button type="button" onclick="' + klik + '" style="display:block;width:100%;text-align:center;background:#fff;border:1px solid var(--border);border-radius:20px;padding:15px 20px;margin:0 0 10px;font-family:Poppins,sans-serif;font-size:16px;font-weight:400;color:var(--black);cursor:pointer;">' + titel + '</button>';
+  const knap = (titel, klik, rod) =>
+    '<button type="button" onclick="' + klik + '" style="display:block;width:100%;text-align:center;background:' + (rod ? 'var(--red)' : '#fff') + ';border:1px solid ' + (rod ? 'var(--red)' : 'var(--border)') + ';border-radius:20px;padding:15px 20px;margin:0 0 10px;font-family:Poppins,sans-serif;font-size:16px;font-weight:400;color:' + (rod ? '#fff' : 'var(--black)') + ';cursor:pointer;">' + titel + '</button>';
   d.innerHTML =
-    '<button onclick="studieVaelgerLuk()" style="position:fixed;top:18px;right:20px;background:none;border:none;font-size:26px;color:var(--gray3);cursor:pointer;line-height:1;z-index:1;" aria-label="Luk">&times;</button>'
-    + '<div style="max-width:340px;min-height:calc(100vh - 60px);margin:0 auto;display:flex;flex-direction:column;text-align:center;">'
+    '<img class="hjerte-pynt" src="logo-hjerte-hvid.png" alt="" style="position:fixed;top:50%;right:2vw;transform:translateY(-50%);height:min(86vh,900px);width:auto;opacity:.55;z-index:0;">'
+    + '<button onclick="studieVaelgerLuk()" style="position:fixed;top:18px;right:20px;background:none;border:none;font-size:26px;color:var(--gray3);cursor:pointer;line-height:1;z-index:2;" aria-label="Luk">&times;</button>'
+    + '<div style="position:relative;z-index:1;max-width:340px;min-height:calc(100vh - 60px);margin:0 auto;display:flex;flex-direction:column;text-align:center;">'
     + '<div style="font-family:\'Didot\',\'Bodoni 72\',Georgia,serif;font-size:31px;letter-spacing:-0.4px;color:var(--black);margin:6px 0 24px;">Energida <span style="color:var(--red);font-style:italic;">Studio</span></div>'
     + '<div style="font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--red);margin-bottom:11px;">Tøm hovedet</div>'
-    + knap("God content-idé", "studieVaelgerLuk();dashFang('idé')")
-    + knap("Set noget fedt", "studieVaelgerLuk();dashFang('fedt')")
-    + knap("Skriv det ned", "studieVaelgerLuk();dashFang('note')")
+    + knap("Jeg skal bare skrive det ned", "studieVaelgerLuk();dashFang('note')")
+    + knap("Jeg har set noget fedt", "studieVaelgerLuk();dashFang('fedt')")
+    + knap("Jeg har en god content idé", "studieVaelgerLuk();dashFang('idé')")
     + knap("Hængepartier", "studieVaelgerLuk();haengModal()")
-    + knap("App-ønskelisten", "studieVaelgerLuk();dashFangApp()")
-    + '<div style="font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--red);margin:16px 0 11px;">Studioer</div>'
-    + knap("Content Studio", "studieVaelgerLuk();window.location.href=window.location.pathname+'#somkunde=ENERGIDA';window.location.reload()")
-    + knap("Workout Studio", "studieVaelgerLuk();visDashSide('traening')")
-    + knap("Tip Top Studio", "studieVaelgerLuk();visDashSide('klip')")
-    + knap("Admin Studio", "studieVaelgerLuk()")
+    + knap("App-ønsker", "studieVaelgerLuk();dashFangApp()")
+    + knap("Idé til manus", "studieVaelgerLuk();manusIdeFang()")
+    + '<div style="font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--red);margin:16px 0 11px;">Studio</div>'
+    + knap("Workout Studio", "studieVaelgerLuk();visDashSide('traening')", true)
     + (logoEl ? '<img src="' + logoEl.src + '" alt="Energida" style="height:46px;width:auto;margin:auto auto 0;padding-top:26px;">' : '')
     + '</div>';
   document.body.appendChild(d);
@@ -12622,6 +12679,7 @@ function showMain() {
   try { pubHent(); } catch(e) {}
   haengHent().then(() => { try { metaPaamindelse(); } catch(e) {} });
   try { rodebutikHent(); } catch(e) {}
+  try { manusIdeHent(); } catch(e) {}
   kundetyperHent().then(() => { try { kundetyperRender(); } catch(e) {} try { if (KUNDEKORT) renderKundeKort(); } catch(e) {} });
   try { refreshKundeOpgaver(); } catch(e) {}
   try { pulsHent(); if (!window.__PULS_ADM) window.__PULS_ADM = setInterval(pulsHent, 60000); } catch(e) {}
