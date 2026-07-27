@@ -829,7 +829,7 @@ body.lek-open .burger-btn, body.lek-open .bottom-nav, body.lek-open .dash-fab { 
     <button class="burger-item" onclick="toggleBurger(); togglePwPanel()">Skift adgangskode</button>
     <button class="burger-item" onclick="toggleBurger(); openChat()">Kontakt Ida</button>
     <button class="burger-item" style="color:var(--red);" onclick="custLogout()">Log ud</button>
-    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 26. juli · 636</div>
+    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 26. juli · 637</div>
   </div>
 </div>
 <div class="plus-menu" id="plusMenu" onclick="if(event.target===this)togglePlus()">
@@ -1794,6 +1794,10 @@ body.lek-open .burger-btn, body.lek-open .bottom-nav, body.lek-open .dash-fab { 
       <div class="ws-card" id="streakKort" style="margin:0;">
         <div class="ws-head" style="margin-bottom:6px;justify-content:space-between;"><span>Dine streaks <span id="vaneFoldStatus" class="ws-hint"></span></span></div>
         <div id="vaneListe"></div>
+      </div>
+      <div class="ws-card" id="godkKort" style="margin:0 0 16px;display:none;">
+        <div class="ws-head" style="justify-content:space-between;"><span style="display:flex;align-items:center;gap:9px;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M20 6 9 17l-5-5"/></svg><span>Til din godkendelse</span></span><span class="ws-count" id="godkAntal">0</span></div>
+        <div id="godkListe" style="font-size:12.5px;color:var(--gray3);">Henter…</div>
       </div>
       <div class="ws-card" id="pulsKort" style="margin:0;">
         <div class="ws-head" style="justify-content:space-between;"><span>Aktive brugere lige nu</span><span class="ws-count nul" id="pulsAntal">0</span></div>
@@ -3214,7 +3218,7 @@ select titel,
     <div id="systemtjek" style="display:none;background:#fff;border:1px solid var(--border);border-radius:20px;padding:14px 16px;margin-top:16px;"></div>
     <div id="dashFooter" style="display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--gray3);padding:22px 0 12px;border-top:1px solid var(--border);margin-top:10px;">
       <div style="font-size:10px;">© 2026 Energida · Alle rettigheder forbeholdes</div>
-      <div style="font-size:10px;margin-left:auto;">Version 26. juli · 636 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
+      <div style="font-size:10px;margin-left:auto;">Version 26. juli · 637 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
     </div>
   </div>
 </div>
@@ -5670,7 +5674,7 @@ async function lektionSet(id) {
   if (LEK_AABEN) renderLektionVis();
   try { const lRef = KURSUS_LEKTIONER.find(x => x.id === id); setTimeout(() => refleksionVis("lektion", id, lRef ? lRef.titel : ""), 400); } catch(e) {}
 }
-function kursusFaerdig() { return kursusLektionerAktive().every(l => KURSUS_SET[l.id]); }
+function kursusFaerdig() { const a = kursusLektionerAktive(); return a.length > 0 && a.every(l => KURSUS_SET[l.id]); }   /* tom liste = IKKE færdig (rod-årsagen til "Forløbet er gennemført"-buggen) */
 const KURSUS_LAASTE_SIDER = { 1: 1, 2: 1, 5: 1, 6: 1, 8: 1, 9: 1, 10: 1 };
 function kursusLaasOverlay() {
   const scr = document.querySelector(".screen.active"); if (!scr) return;
@@ -9247,7 +9251,12 @@ async function saveSkema() {
   if (sb && currentKode) {
     try { const { error } = await sb.from("skema_svar").insert(rec); saved = !error; } catch(e) {}
   }
-  if (!saved) localStorage.setItem("skema_" + SKEMA_KEY + "_" + (currentKode || "X"), JSON.stringify(rec));
+  if (!saved) {
+    localStorage.setItem("skema_" + SKEMA_KEY + "_" + (currentKode || "X"), JSON.stringify(rec));
+    msg.style.color = "var(--red)";
+    msg.textContent = "Svarene kunne ikke sendes til Energida lige nu — de er gemt på denne enhed. Prøv at trykke Send igen, når du er online.";
+    return;
+  }
   msg.style.color = "#000000";
   msg.textContent = "Tusind tak! Dine svar er sendt til Energida. ✓";
   setTimeout(() => { skemaBack(); refreshSkemaStatus(); }, 1200);
@@ -9515,8 +9524,10 @@ function openChat() {
     if (window.$crisp) {
       $crisp.push(["do", "chat:show"]);
       $crisp.push(["do", "chat:open"]);
+      return;
     }
   } catch(e) {}
+  try { location.href = "mailto:kontakt@energida.dk?subject=" + encodeURIComponent("Fra appen — " + ((CURRENT_DEF && CURRENT_DEF.virksomhed) || "")); } catch(e) {}   /* chat blokeret → mail i stedet */
 }
 const BN_ICONS = {
   hjem: '<svg viewBox="0 0 24 24" width="25" height="25" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 9.5V20h13V9.5"/><path d="M10 20v-5h4v5"/></svg>',
@@ -9661,7 +9672,7 @@ function buildSideNav(def) {
     + item("", "Kontakt Ida", "openChat()")
     + item("", "Skift adgangskode", "togglePwPanel()")
     + item("", "Log ud", "custLogout()", " roed")
-    + '<div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0 12px;">Version 26. juli · 636</div>'
+    + '<div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0 12px;">Version 26. juli · 637</div>'
     + '</div>'
     + '<button class="sn-virk-knap" onclick="toggleVirkMenu(event)" title="' + esc(virkNavn) + '" aria-label="Profil"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(virkNavn) + '</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="flex-shrink:0;"><path d="M6 9l6 6 6-6"/></svg></button>'
     + '<div id="virkMenu" style="display:none;position:fixed;right:20px;top:72px;width:230px;background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:0 16px 40px rgba(0,0,0,0.15);padding:8px;z-index:90;">'
@@ -9697,6 +9708,8 @@ function markNav(k) {
 let dept = "detail";
 let ciEnergi = 0, ciShine = 0, ciMood = "";
 const CI_KEY = "energi_checkins", UGE_KEY = "uge_tasks", BANK_KEY = "energibank_status";
+function nsKey(base) { return base + "_" + (currentKode || "X"); }   /* delte enheds-nøgler smittede mellem kunder (auditfund 27/7) */
+function nsMigrer(base) { try { if (!localStorage.getItem(nsKey(base)) && localStorage.getItem(base)) { localStorage.setItem(nsKey(base), localStorage.getItem(base)); localStorage.removeItem(base); } } catch(e) {} }
 
 function showModule(m) {
   dept = m;
@@ -9746,8 +9759,8 @@ function pickMood(el) {
   el.classList.add("on"); ciMood = el.textContent.trim();
 }
 
-function loadCheckins() { try { return JSON.parse(localStorage.getItem(CI_KEY)) || []; } catch(e) { return []; } }
-function saveCheckins(a) { localStorage.setItem(CI_KEY, JSON.stringify(a)); }
+function loadCheckins() { try { nsMigrer(CI_KEY); return JSON.parse(localStorage.getItem(nsKey(CI_KEY))) || []; } catch(e) { return []; } }
+function saveCheckins(a) { localStorage.setItem(nsKey(CI_KEY), JSON.stringify(a)); }
 /* Individuelle logins (#33): check-ins hentes fra databasen pr. kode, saa hele teamet
    og Ida ser det samme — localStorage er kun fallback, til tabellen er oprettet. */
 let CI_DB = null;
@@ -9812,8 +9825,8 @@ function renderEnergiChart() {
   }).join("");
   if (list) list.innerHTML = arr.slice().reverse().slice(0,8).map(r =>
     '<div class="ci-item"><div class="ci-top"><span class="ci-date">'+r.dato+(r.humoer?' · '+r.humoer:'')+'</span><span class="ci-score">Shine '+(r.shine||"–")+'/10</span></div>'+
-    (r.gav ? '<div class="ci-txt">'+r.gav+'</div>' : '')+
-    (r.ida ? '<div class="ci-txt" style="color:var(--red);margin-top:4px;">Til Ida: '+r.ida+'</div>' : '')+
+    (r.gav ? '<div class="ci-txt">'+esc(r.gav)+'</div>' : '')+
+    (r.ida ? '<div class="ci-txt" style="color:var(--red);margin-top:4px;">Til Ida: '+esc(r.ida)+'</div>' : '')+
     '</div>').join("");
 }
 
@@ -9823,7 +9836,7 @@ const UGE_DATA = [
   { t:" Happinezz", items:["Lav en energi-playliste til butikken","Brug tid i skoven — mærk hvad du har lyst til"] },
   { t:"Udtryk dig", items:["Brug what-why-how modellen","Fang tyven — hvad stjæler din energi?"] }
 ];
-function loadUge() { try { return JSON.parse(localStorage.getItem(UGE_KEY)) || {}; } catch(e) { return {}; } }
+function loadUge() { try { nsMigrer(UGE_KEY); return JSON.parse(localStorage.getItem(nsKey(UGE_KEY))) || {}; } catch(e) { return {}; } }
 function renderUge() {
   const done = loadUge();
   const wrap = document.getElementById("weekTasks");
@@ -9837,7 +9850,7 @@ function renderUge() {
   ).join("");
 }
 function toggleUge(key, el) {
-  const done = loadUge(); done[key] = !done[key]; localStorage.setItem(UGE_KEY, JSON.stringify(done));
+  const done = loadUge(); done[key] = !done[key]; localStorage.setItem(nsKey(UGE_KEY), JSON.stringify(done));
   el.classList.toggle("done", done[key]);
 }
 
@@ -9848,7 +9861,7 @@ const BANK_DATA = [
   { n:"What-why-how på et opslag", d:"Træn jeres udtryk" }
 ];
 const BANK_STATES = { 0:{c:"st-ok",t:"På sporet"}, 1:{c:"st-r1",t:"Rykker 1"}, 2:{c:"st-r2",t:"Rykker 2"}, 3:{c:"st-ink",t:"Inkasso"} };
-function loadBank() { try { return JSON.parse(localStorage.getItem(BANK_KEY)) || {}; } catch(e) { return {}; } }
+function loadBank() { try { nsMigrer(BANK_KEY); return JSON.parse(localStorage.getItem(nsKey(BANK_KEY))) || {}; } catch(e) { return {}; } }
 function renderBank() {
   const st = loadBank();
   const wrap = document.getElementById("bankList");
@@ -9864,7 +9877,7 @@ function renderBank() {
   document.getElementById("teamShine").textContent = avg;
 }
 function cycleBank(i) {
-  const st = loadBank(); st[i] = ((st[i]||0)+1) % 4; localStorage.setItem(BANK_KEY, JSON.stringify(st));
+  const st = loadBank(); st[i] = ((st[i]||0)+1) % 4; localStorage.setItem(nsKey(BANK_KEY), JSON.stringify(st));
   renderBank();
 }
 
@@ -10185,8 +10198,8 @@ function newId() { return "i" + Date.now() + Math.floor(Math.random()*1000); }
 const IDEA_TYPES = ["Reel","Kort-reel","Karrusel","Story"];
 function typeTag(t) { return (t === "Reel" || t === "Kort-reel") ? "tag-reel" : t === "Story" ? "tag-story" : "tag-karrusel"; }
 
-function loadLocalIdeer() { try { return JSON.parse(localStorage.getItem(IDEAS_KEY)) || []; } catch(e) { return []; } }
-function saveLocalIdeer() { localStorage.setItem(IDEAS_KEY, JSON.stringify(IDEER)); }
+function loadLocalIdeer() { try { nsMigrer(IDEAS_KEY); return JSON.parse(localStorage.getItem(nsKey(IDEAS_KEY))) || []; } catch(e) { return []; } }
+function saveLocalIdeer() { localStorage.setItem(nsKey(IDEAS_KEY), JSON.stringify(IDEER)); }
 function mapIdeRow(r) { return { id:r.id, titel:r.titel, type:r.type, soejle:r.soejle, status:r.status, dato:r.dato, brief:r.brief || null }; }
 
 /* Hent firmaets content house (delt via Supabase pr. kode) — fallback til localStorage hvis tabellen ikke findes endnu */
@@ -10603,7 +10616,12 @@ function kundeHaengListe() {
   (IDEER || []).forEach(it => {
     if (it.status === "Arkiveret") return;
     const titel = storStart(it.titel || "Uden titel");
-    if (it.status === "Klar til godkendelse") rows.push({ p: "roed", t: titel, grund: "Klar til din godkendelse", id: it.id, h: "Åbn briefen" });
+    if (it.status === "Klar til godkendelse") {
+      const venter = CUSTOMER_NAV && CURRENT_DEF && (erForloeb(CURRENT_DEF) || CURRENT_DEF.type === "contentplanner");
+      rows.push(venter
+        ? { p: "skifer", t: titel, grund: "Sendt til godkendelse — venter hos Ida", id: it.id, h: "Åbn briefen" }
+        : { p: "roed", t: titel, grund: "Klar til din godkendelse", id: it.id, h: "Åbn briefen" });
+    }
     else if (it.dato && it.dato < idag && it.status !== "Postet") rows.push({ p: "roed", t: titel, grund: "Dato overskredet", id: it.id, h: "Vælg ny dato" });
     else if (it.status === "Planlagt" && !it.dato) rows.push({ p: "skifer", t: titel, grund: "Mangler en dato", id: it.id, h: "Vælg dato" });
   });
@@ -11352,6 +11370,7 @@ function visNyAdgangskode() {
     + '<input type="password" id="nyKodeFelt" placeholder="Mindst 6 tegn" style="width:100%;background:#fff;border:1px solid var(--border);border-radius:12px;padding:12px 13px;font-size:14px;font-family:Poppins,sans-serif;">'
     + '<div id="nyKodeMsg" style="font-size:11px;font-weight:400;margin-top:6px;color:var(--red);"></div>'
     + '<button class="dbtn primary" style="width:100%;margin-top:12px;" onclick="gemNyAdgangskode()">Gem ny adgangskode</button>'
+    + '<button class="dbtn ghost" style="width:100%;margin-top:8px;" onclick="custLogout()">Log ud i stedet</button>'
     + '</div>';
   document.body.appendChild(d);
 }
@@ -12259,7 +12278,7 @@ async function enterApp() {
       const md = (user && user.user_metadata) || {};
       const am = (user && user.app_metadata) || {};
       if (am.kode) md.kode = am.kode;   // den serverlåste kode vinder (RLS-fixet) — user_metadata er kun fallback for brugere fra før migrationen
-      try { pubHent(); } catch(e) {}
+      try { await pubHent(); } catch(e) {}   /* nav må ikke bygges før publiceringslisten er landet (auditfund) */
       if (SOM_KUNDE) md.kode = SOM_KUNDE;   // admin åbner en forløbskundes side
       currentKode = md.kode ? String(md.kode).toUpperCase() : "";
       CURRENT_NAVN = md.navn || "";                    // medarbejderens eget navn → bruges på skemasvar
@@ -12317,6 +12336,7 @@ async function enterApp() {
         showTab(3);                                    // kursus-kunder får samme forside som forløbskunderne — lektionerne nås derfra
         kursusHent();
         refreshIdeer();
+        try { loadForloebStrategi(await hentStrategiOverride(md.kode, def.strategi || {}), md.kode); } catch(eS) {}   // Brandbogen fyldes af byggerens svar — også for kursister (auditfund 27/7)
       } else if (erForloeb(def) && def.strategi) {
         try { loadForloebStrategi(await hentStrategiOverride(md.kode, def.strategi), md.kode); }   // strategi fra workshoppen — evt. rettet i CRM'et
         catch(eS) { console.error("strategi-indlæsning fejlede:", eS); }                            // …men skærmen skifter ALTID (regel 16)
@@ -13609,6 +13629,31 @@ function pulsStart() {
   skriv();
   if (!PULS_TIMER) PULS_TIMER = setInterval(skriv, 180000);
 }
+/* IDAS GODKENDELSESKØ (auditfund 27/7): briefs sendt til godkendelse — på tværs af ALLE kunder */
+async function godkHent() {
+  const kort = document.getElementById("godkKort"), liste = document.getElementById("godkListe");
+  if (!kort || !liste || !sb) return;
+  try {
+    const { data } = await sb.from("content_ideer").select("id,kode,titel,status").eq("status", "Klar til godkendelse");
+    const rows = data || [];
+    const antal = document.getElementById("godkAntal");
+    if (antal) { antal.textContent = rows.length; antal.className = "ws-count" + (rows.length ? "" : " nul"); }
+    if (!rows.length) { kort.style.display = "none"; return; }
+    kort.style.display = "";
+    const navnFor = kode => (VIRKSOMHEDSKODER[kode] && VIRKSOMHEDSKODER[kode].virksomhed) || kode;
+    liste.innerHTML = rows.map(rk =>
+      '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;border-top:1px solid var(--gray);padding:9px 0;">'
+      + '<div style="flex:1;min-width:160px;color:var(--black);font-size:12.5px;">' + esc(storStart(rk.titel || "Uden titel")) + ' <span style="color:var(--gray3);font-size:11px;">&middot; ' + esc(navnFor(rk.kode)) + '</span></div>'
+      + '<button type="button" class="row-btn view" style="font-weight:400;" onclick="aabnKundensSideFane(\'' + esc(rk.kode) + '\', 8)">Se opslaget &#8599;</button>'
+      + '<button type="button" class="dbtn primary" style="padding:7px 15px;" onclick="godkGodkend(\'' + rk.id + '\', this)">Godkend &#10003;</button>'
+      + '</div>').join("");
+  } catch(e) { liste.textContent = "Kunne ikke hente køen lige nu."; }
+}
+async function godkGodkend(id, btn) {
+  if (btn) { btn.disabled = true; btn.style.opacity = ".55"; }
+  try { await sb.from("content_ideer").update({ status: "Godkendt" }).eq("id", id); } catch(e) {}
+  godkHent();
+}
 async function pulsHent() {
   const el = document.getElementById("pulsListe"); if (!el || !sb) return;
   try {
@@ -14134,6 +14179,7 @@ function showMain() {
   try { manusIdeHent(); } catch(e) {}
   kundetyperHent().then(() => { try { kundetyperRender(); } catch(e) {} try { if (KUNDEKORT) renderKundeKort(); } catch(e) {} });
   try { refreshKundeOpgaver(); } catch(e) {}
+  try { godkHent(); } catch(e) {}
   try { pulsHent(); if (!window.__PULS_ADM) window.__PULS_ADM = setInterval(pulsHent, 60000); } catch(e) {}
   gameplanHent();
   ovForside();
@@ -17786,6 +17832,6 @@ if ((location.hash || "").toLowerCase() === "#ole") {   // #ole = preview af Ole
 })();
 </script>
 <!-- Versions-mærke: synligt på ALLE sider, så Ida altid kan se hvilken version hun kigger på (27/7) -->
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 26. juli · 636</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 26. juli · 637</div>
 </body>
 </html>
