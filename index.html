@@ -813,7 +813,7 @@ body.lek-open .burger-btn, body.lek-open .bottom-nav, body.lek-open .dash-fab { 
     <button class="burger-item" onclick="toggleBurger(); togglePwPanel()">Skift adgangskode</button>
     <button class="burger-item" onclick="toggleBurger(); openChat()">Kontakt Ida</button>
     <button class="burger-item" style="color:var(--red);" onclick="custLogout()">Log ud</button>
-    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 26. juli · 619</div>
+    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 26. juli · 620</div>
   </div>
 </div>
 <div class="plus-menu" id="plusMenu" onclick="if(event.target===this)togglePlus()">
@@ -3169,7 +3169,7 @@ select titel,
     <div id="systemtjek" style="display:none;background:#fff;border:1px solid var(--border);border-radius:20px;padding:14px 16px;margin-top:16px;"></div>
     <div id="dashFooter" style="display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--gray3);padding:22px 0 12px;border-top:1px solid var(--border);margin-top:10px;">
       <div style="font-size:10px;">© 2026 Energida · Alle rettigheder forbeholdes</div>
-      <div style="font-size:10px;margin-left:auto;">Version 26. juli · 619 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
+      <div style="font-size:10px;margin-left:auto;">Version 26. juli · 620 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
     </div>
   </div>
 </div>
@@ -9510,7 +9510,7 @@ function buildSideNav(def) {
     + item("", "Kontakt Ida", "openChat()")
     + item("", "Skift adgangskode", "togglePwPanel()")
     + item("", "Log ud", "custLogout()", " roed")
-    + '<div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0 12px;">Version 26. juli · 619</div>'
+    + '<div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0 12px;">Version 26. juli · 620</div>'
     + '</div>'
     + '<button class="sn-virk-knap" onclick="toggleVirkMenu(event)" title="' + esc(virkNavn) + '" aria-label="Profil"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(virkNavn) + '</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="flex-shrink:0;"><path d="M6 9l6 6 6-6"/></svg></button>'
     + '<div id="virkMenu" style="display:none;position:fixed;right:20px;top:72px;width:230px;background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:0 16px 40px rgba(0,0,0,0.15);padding:8px;z-index:90;">'
@@ -10000,9 +10000,11 @@ Returner dette JSON-format:
     document.getElementById("aiAnalysis").textContent = j.analyse;
     if (j.energi_note) { const en = document.getElementById("energiNote"); if (en) en.textContent = j.energi_note; }
     ["p1","p2","p3"].forEach((p,i) => {
-      document.getElementById(p+"icon").textContent = j.pillars[i].icon;
-      document.getElementById(p+"name").textContent = j.pillars[i].name;
-      document.getElementById(p+"desc").textContent = j.pillars[i].desc;
+      const pl = (j.pillars && j.pillars[i]) || {};
+      const ic = document.getElementById(p+"icon"), nm = document.getElementById(p+"name"), de = document.getElementById(p+"desc");
+      if (ic) { ic.textContent = pl.icon || ""; ic.style.display = pl.icon ? "" : "none"; }
+      if (nm) nm.textContent = pl.name || "";
+      if (de) de.textContent = pl.desc || "";
     });
     document.getElementById("weekPlan").innerHTML = j.week.map(w =>
       `<div class="week-item"><strong>${w.day}</strong> &nbsp;${w.type}: ${w.idea}</div>`
@@ -11624,6 +11626,34 @@ async function hentStrategiOverride(kode, strategi) {
       if (data.forloeb_trin != null) CURRENT_FORLOEB_TRIN = data.forloeb_trin;   // hvor i forløbet kunden er — styres fra CRM'et
     }
   } catch(e) {}
+  /* KOBLINGEN (Ida 27/7): strategibyggerens svar fylder Brandbogens huller — det levende dokument.
+     Idas kuraterede workshop-strategi VINDER altid; byggeren udfylder kun tomme felter. */
+  try {
+    const { data: bg } = await sb.from("skema_svar").select("svar").eq("kode", String(kode).toUpperCase()).eq("navn", "config").eq("skema", "strategibygger").maybeSingle();
+    const a = (bg && bg.svar) || null;
+    if (a) {
+      strategi = Object.assign({}, strategi || {});
+      const t = v => typeof v === "string" ? v.trim() : (Array.isArray(v) ? v.filter(Boolean).join(" · ").trim() : "");
+      if (!t(strategi.why)) {
+        if (t(a.d7)) strategi.why = "Vi er her for at " + t(a.d7).replace(/^vi er her for at\s*/i, "").replace(/^\W+/, "");
+        else if (t(a.d1)) strategi.why = t(a.d1);
+      }
+      if (!t(strategi.usp)) {
+        if (t(a.u8)) strategi.usp = "Folk vælger os, fordi " + t(a.u8).replace(/^folk vælger os,?\s*fordi\s*/i, "").replace(/^\W+/, "");
+        else if (t(a.u5) || t(a.u3)) strategi.usp = t(a.u5) || t(a.u3);
+      }
+      if ((!strategi.pillars || !strategi.pillars.length) && t(a.v7)) {
+        const navne = t(a.v7).split(/[,\n·;]|\bog\b/).map(x => x.trim()).filter(x => x.length > 1).slice(0, 3);
+        if (navne.length) strategi.pillars = navne.map(nv => ({ name: nv.charAt(0).toUpperCase() + nv.slice(1), desc: t(a.v8) }));
+      }
+      if (!strategi.kunde && (t(a.m1) || t(a.m12))) {
+        strategi.kunde = {
+          tekst: [t(a.m1), t(a.m12) || t(a.m9)].filter(Boolean).join(" — "),
+          situationer: t(a.m5) ? t(a.m5).split(/[,\n·;]/).map(x => x.trim()).filter(Boolean).slice(0, 5) : []
+        };
+      }
+    }
+  } catch(e) {}
   return strategi;
 }
 
@@ -11660,9 +11690,9 @@ async function loadForloebStrategi(j, kode) {
     ["p1","p2","p3"].forEach((p,i) => {
       if (j.pillars && j.pillars[i]) {
         const ic=document.getElementById(p+"icon"), nm=document.getElementById(p+"name"), de=document.getElementById(p+"desc");
-        if (ic) ic.textContent = j.pillars[i].icon;
-        if (nm) nm.textContent = j.pillars[i].name;
-        if (de) de.textContent = j.pillars[i].desc;
+        if (ic) { ic.textContent = j.pillars[i].icon || ""; ic.style.display = j.pillars[i].icon ? "" : "none"; }
+        if (nm) nm.textContent = j.pillars[i].name || "";
+        if (de) de.textContent = j.pillars[i].desc || "";
       }
     });
     // temaer: den nye kerne — type, handling, serie og eksempler pr. tema
@@ -17574,6 +17604,6 @@ if ((location.hash || "").toLowerCase() === "#ole") {   // #ole = preview af Ole
 })();
 </script>
 <!-- Versions-mærke: synligt på ALLE sider, så Ida altid kan se hvilken version hun kigger på (27/7) -->
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 26. juli · 619</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 26. juli · 620</div>
 </body>
 </html>
