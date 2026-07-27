@@ -829,7 +829,7 @@ body.lek-open .burger-btn, body.lek-open .bottom-nav, body.lek-open .dash-fab { 
     <button class="burger-item" onclick="toggleBurger(); togglePwPanel()">Skift adgangskode</button>
     <button class="burger-item" onclick="toggleBurger(); openChat()">Kontakt Ida</button>
     <button class="burger-item" style="color:var(--red);" onclick="custLogout()">Log ud</button>
-    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 26. juli · 635</div>
+    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 26. juli · 636</div>
   </div>
 </div>
 <div class="plus-menu" id="plusMenu" onclick="if(event.target===this)togglePlus()">
@@ -1264,7 +1264,7 @@ body.lek-open .burger-btn, body.lek-open .bottom-nav, body.lek-open .dash-fab { 
             <div class="bs-h">Ét tema — hele måneden</div>
             <div class="bs-tekst" style="margin-bottom:14px;">Temaet binder månedens indhold sammen på tværs af de fire søjler — sæsonen, en mærkedag eller det, der fylder i butikken lige nu.</div>
             <div id="mtemaMaaned" style="font-size:10px;letter-spacing:1.6px;text-transform:uppercase;font-weight:400;color:var(--red);margin:0 0 6px;"></div>
-            <input type="text" id="mtemaFelt" placeholder="Fx Sommerklar · Skolestart · Julehygge" oninput="mtemaAuto()" style="width:100%;max-width:420px;background:#fff;border:1px solid var(--border);border-radius:12px;padding:12px 14px;font-size:13.5px;font-family:Poppins,sans-serif;outline:none;">
+            <input type="text" id="mtemaFelt" placeholder="Fx Sommerklar · Skolestart · Julehygge" oninput="mtemaAuto()" onblur="clearTimeout(MTEMA_TIMER);mtemaGem()" style="width:100%;max-width:420px;background:#fff;border:1px solid var(--border);border-radius:12px;padding:12px 14px;font-size:13.5px;font-family:Poppins,sans-serif;outline:none;">
             <div class="bs-tekst" style="margin-top:10px;color:var(--gray3);font-size:11.5px;">Hænger sammen med øvelsen i lektion 6-6 — og kan altid rettes her.</div>
           </section>
           <div id="temaCard" style="display:contents;"><div id="temaList" style="display:contents;"></div></div>
@@ -3214,7 +3214,7 @@ select titel,
     <div id="systemtjek" style="display:none;background:#fff;border:1px solid var(--border);border-radius:20px;padding:14px 16px;margin-top:16px;"></div>
     <div id="dashFooter" style="display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--gray3);padding:22px 0 12px;border-top:1px solid var(--border);margin-top:10px;">
       <div style="font-size:10px;">© 2026 Energida · Alle rettigheder forbeholdes</div>
-      <div style="font-size:10px;margin-left:auto;">Version 26. juli · 635 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
+      <div style="font-size:10px;margin-left:auto;">Version 26. juli · 636 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
     </div>
   </div>
 </div>
@@ -3462,8 +3462,8 @@ async function minProfilGem() {
   } catch(e) {}
   const hils = hf ? hf.value.trim() : "";
   if (hils && hils !== CURRENT_HILSEN) { try { await sb.auth.updateUser({ data: { hilsen: hils } }); CURRENT_HILSEN = hils; } catch(e) {} }
-  if (studio) { try { document.title = studio + (/studio$/i.test(studio) ? "" : " Studio"); } catch(e) {} }
-  if (CURRENT_DEF) CURRENT_DEF.studioNavn = studio || CURRENT_DEF.studioNavn;
+  if (CURRENT_DEF) CURRENT_DEF.studioNavn = studio;
+  try { document.title = studio ? studio + (/studio$/i.test(studio) ? "" : " Studio") : (typeof studioTitel === "function" ? studioTitel(CURRENT_DEF) : document.title); } catch(e) {}
   const m = document.getElementById("profilMsg"); if (m) { m.textContent = "Gemt \u2713"; setTimeout(() => { const b = document.getElementById("profilBack"); if (b) b.style.display = "none"; }, 700); }
 }
 async function profilStudioBoot() {
@@ -3492,7 +3492,7 @@ async function plejHent() {
   PLEJ_HENTET = true;
   try {
     const { data } = await sb.from("skema_svar").select("svar").eq("kode", currentKode).eq("navn", "config").eq("skema", "plej_butikken").maybeSingle();
-    if (data && data.svar) PLEJ = data.svar;
+    if (data && data.svar) PLEJ = PLEJ ? Object.assign({}, data.svar, PLEJ, { done: Object.assign({}, (data.svar.done || {}), (PLEJ.done || {})) }) : data.svar;   /* lokale klik vinder (auditfund 27/7) */
   } catch(e) {}
   if (!PLEJ || !PLEJ.dag) {   // forudfyld dagen fra strategibyggerens "Hvornår plejer I profilen?"-svar
     try {
@@ -3549,7 +3549,7 @@ function plejGuideAaben() {
 /* ENERGIEN for B2B-kunder (Ida 27/7, Trin 1): genbruger medarbejder-motorens skærme 1:1.
    Energien er PERSONLIG: kun logins med et navn ser den — fælles logins (fx Hinges) gør ikke,
    og den åbner af sig selv, den dag kunden deles op på personer (Ida 27/7). */
-function erPersonLogin() { return !!(CURRENT_NAVN || "").trim(); }
+function erPersonLogin() { if (typeof SOM_KUNDE !== "undefined" && SOM_KUNDE) return true; return !!(CURRENT_NAVN || "").trim(); }   /* somkunde: Ida skal kunne teste Energien (app-brug logges stadig ALDRIG) */
 function energiAaben() {
   if (CUSTOMER_NAV && CURRENT_DEF && CURRENT_DEF.type !== "medarbejder" && !erPersonLogin()) return;
   try { document.querySelectorAll("#sideNav .sn-item").forEach(b => b.classList.toggle("on", b.getAttribute("data-k") === "energi")); } catch(e) {}
@@ -3560,6 +3560,8 @@ function energiAaben() {
   window.scrollTo(0, 0);
 }
 function showTab(n) {
+  if (n === 10) { try { mtemaHent(); } catch(e) {} }          // Månedens tema loader ved direkte hop (auditfund 27/7)
+  if (n === 1) { try { saetBrandbogTitel(); } catch(e) {} }   // Brandbogens forside-navn ved direkte hop
   if (window.__ENERGI_AABEN) {   // på vej ud af Energien: ryd M-skærmene og fanebjælken
     document.querySelectorAll(".mscreen").forEach(sc => sc.classList.remove("active"));
     const te = document.getElementById("tabsEnergi"); if (te) te.style.display = "none";
@@ -9659,7 +9661,7 @@ function buildSideNav(def) {
     + item("", "Kontakt Ida", "openChat()")
     + item("", "Skift adgangskode", "togglePwPanel()")
     + item("", "Log ud", "custLogout()", " roed")
-    + '<div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0 12px;">Version 26. juli · 635</div>'
+    + '<div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0 12px;">Version 26. juli · 636</div>'
     + '</div>'
     + '<button class="sn-virk-knap" onclick="toggleVirkMenu(event)" title="' + esc(virkNavn) + '" aria-label="Profil"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(virkNavn) + '</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="flex-shrink:0;"><path d="M6 9l6 6 6-6"/></svg></button>'
     + '<div id="virkMenu" style="display:none;position:fixed;right:20px;top:72px;width:230px;background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:0 16px 40px rgba(0,0,0,0.15);padding:8px;z-index:90;">'
@@ -9894,6 +9896,7 @@ const SHINE_SPM = [
   { id: "tegn", spm: "Hvad er det FØRSTE tegn på, at din energi er på vej ned?", chips: ["Jeg udskyder småting", "Jeg bliver kort for hovedet", "Jeg glemmer at spise"] }
 ];
 let SHINE_SKALA = null, SHINE_BYG = null;
+function shineNavn() { const f = document.getElementById("ciNavn"); return ((f && f.value) || CURRENT_NAVN || "").trim(); }
 function shineUdsagnVis(v) {
   const el = document.getElementById("shineUdsagn"); if (!el) return;
   const u = (SHINE_SKALA && SHINE_SKALA.udsagn && SHINE_SKALA.udsagn[v]) || SHINE_STD_UDSAGN[v] || "";
@@ -9903,17 +9906,18 @@ function shineUdsagnVis(v) {
 async function shineSkalaHent() {
   if (!sb || !currentKode) return;
   try {
-    const { data } = await sb.from("skema_svar").select("svar").eq("kode", currentKode).eq("navn", CURRENT_NAVN || "").eq("skema", "shine_skala").maybeSingle();
+    const { data } = await sb.from("skema_svar").select("svar").eq("kode", currentKode).eq("navn", shineNavn()).eq("skema", "shine_skala").maybeSingle();
     if (data && data.svar) SHINE_SKALA = data.svar;
     const k = document.getElementById("shineBygKnap");
     if (k) k.textContent = (SHINE_SKALA && SHINE_SKALA.udsagn) ? "Ret din skala \u2192" : "Byg din egen skala \u2192";
+    try { const eb = document.getElementById("briefEnergiBox"); if (eb && SHINE_SKALA) eb.innerHTML = briefEnergiHtml(); } catch(e) {}
   } catch(e) {}
 }
 async function shineSkalaGem() {
   if (!sb || !currentKode || !SHINE_SKALA) return;
   try {
-    const eks = await sb.from("skema_svar").update({ svar: SHINE_SKALA }).eq("kode", currentKode).eq("navn", CURRENT_NAVN || "").eq("skema", "shine_skala").select();
-    if (!eks.data || !eks.data.length) await sb.from("skema_svar").insert({ kode: currentKode, navn: CURRENT_NAVN || "", skema: "shine_skala", svar: SHINE_SKALA });
+    const eks = await sb.from("skema_svar").update({ svar: SHINE_SKALA }).eq("kode", currentKode).eq("navn", shineNavn()).eq("skema", "shine_skala").select();
+    if (!eks.data || !eks.data.length) await sb.from("skema_svar").insert({ kode: currentKode, navn: shineNavn(), skema: "shine_skala", svar: SHINE_SKALA });
   } catch(e) {}
 }
 function shineByggerAaben() {
@@ -13865,12 +13869,11 @@ function taleToggle(feltId) {
   const rec = new SR();
   rec.lang = "da-DK"; rec.continuous = true; rec.interimResults = false;
   rec.onresult = ev => {
+    const f = document.getElementById(TALE_FELT);
+    if (!f) { try { rec.stop(); } catch(e) {} return; }   /* modalen lukket — stop lytningen */
     let ny = "";
     for (let i = ev.resultIndex; i < ev.results.length; i++) if (ev.results[i].isFinal) ny += ev.results[i][0].transcript;
-    if (ny.trim()) {
-      const f = document.getElementById(TALE_FELT);
-      if (f) { f.value = (f.value ? f.value.replace(/\s+$/, "") + " " : "") + ny.trim(); try { f.dispatchEvent(new Event("input")); } catch(e) {} }
-    }
+    if (ny.trim()) { f.value = (f.value ? f.value.replace(/\s+$/, "") + " " : "") + ny.trim(); try { f.dispatchEvent(new Event("input")); } catch(e) {} }
   };
   rec.onend = () => { TALE_REC = null; taleKnapVis(feltId, false); };
   rec.onerror = () => { try { rec.stop(); } catch(e) {} };
@@ -14806,6 +14809,7 @@ function renderKundeKort() {
       overblik: SPALTER(KORT(infoSek)
         + (erIgyKunde ? KORT(fokusSek) : '')
         + (erSporKunde ? KORT(nytSek) : '')
+        + (!erKursusKunde ? KORT(aktSek) : '')
         + (erKursusKunde ? KORT(aktSek) + (harVaerktoej ? KORT(vkSek) : '') + KORT(loginSek) + KORT(adgangSek) : '')),
       plan: erForloebKunde ? KORT(forloebSek) : tomTekst('Denne kundetype har ingen forløbsplan — planen bruges på I GOT YOU-forløbene.'),
       opgaver: KORT(kkOpgaveSektion(k.kode)),
@@ -14838,7 +14842,7 @@ function renderKundeKort() {
   vkAdmHent();
   kkNytHent();
   try { kkHuskeHent(); } catch(e) {}
-  if (erKursusKunde) kkAktivitetHent();
+  kkAktivitetHent();   // app-brug vises for ALLE kundetyper (auditfund 27/7)
   try { kkMtemaHent(); } catch(e) {}
 }
 /* ---------- Kursus-aktivitet: hvem er i gang, hvor langt, og hvad ses igen (Idas ønske 17/7) ---------- */
@@ -14850,7 +14854,7 @@ async function kkMtemaHent() {
       el.style.color = "var(--black)";
       el.textContent = data.svar.tema + (data.svar.maaned ? " · " + data.svar.maaned : "");
     } else {
-      el.textContent = "Ikke sat endnu — sættes i lektion 6-6 eller på kundens contentstrategi-side.";
+      el.textContent = "Ikke sat endnu — sættes på kundens contentstrategi-side.";
     }
   } catch(e) { el.textContent = "Kunne ikke hentes lige nu."; }
 }
@@ -17782,6 +17786,6 @@ if ((location.hash || "").toLowerCase() === "#ole") {   // #ole = preview af Ole
 })();
 </script>
 <!-- Versions-mærke: synligt på ALLE sider, så Ida altid kan se hvilken version hun kigger på (27/7) -->
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 26. juli · 635</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 26. juli · 636</div>
 </body>
 </html>
