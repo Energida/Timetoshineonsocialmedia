@@ -813,7 +813,7 @@ body.lek-open .burger-btn, body.lek-open .bottom-nav, body.lek-open .dash-fab { 
     <button class="burger-item" onclick="toggleBurger(); togglePwPanel()">Skift adgangskode</button>
     <button class="burger-item" onclick="toggleBurger(); openChat()">Kontakt Ida</button>
     <button class="burger-item" style="color:var(--red);" onclick="custLogout()">Log ud</button>
-    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 26. juli · 617</div>
+    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 26. juli · 618</div>
   </div>
 </div>
 <div class="plus-menu" id="plusMenu" onclick="if(event.target===this)togglePlus()">
@@ -1425,6 +1425,15 @@ body.lek-open .burger-btn, body.lek-open .bottom-nav, body.lek-open .dash-fab { 
       <div class="cal-grid" id="calGrid"></div>
       </div>
       
+      <div id="plejKort" style="display:none;background:#fff;border:1px solid var(--border);border-radius:20px;padding:17px 20px;margin:16px 0 0;">
+        <div style="display:flex;align-items:center;gap:9px;font-size:10px;font-weight:400;letter-spacing:1.8px;text-transform:uppercase;color:var(--red);border-bottom:1px solid var(--border);padding-bottom:9px;margin-bottom:10px;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M3 9.5 5 4h14l2 5.5"/><path d="M4 9.5h16v10a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-10z"/><path d="M9 20v-5h6v5"/></svg><span style="flex:1;min-width:0;">Plej butikken</span><span id="plejStatusChip"></span></div>
+        <div style="font-size:12.5px;color:var(--gray3);line-height:1.6;margin-bottom:10px;">Profilen er butiksvinduet — sæt fast tid af hver uge til at pleje algoritmen: tjek Udforsk, svar på kommentarer, og se om butikken står skarpt.</div>
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:4px;"><span style="font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--gray3);margin-right:4px;">Min faste dag</span><span id="plejDage"></span></div>
+        <div style="display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;margin-top:10px;">
+          <button type="button" class="row-btn view" style="font-weight:400;" onclick="plejGuideAaben()">Åbn guiden</button>
+          <button type="button" class="dbtn primary" id="plejDoneKnap" style="padding:9px 18px;" onclick="plejDone()">Butikken er plejet denne uge &#10003;</button>
+        </div>
+      </div>
       <div id="planlagtSection">
         <div class="section-divider" style="margin-top:24px;">Kommende opslag</div>
         <div id="postList" style="margin-bottom:20px;"></div>
@@ -3159,7 +3168,7 @@ select titel,
     <div id="systemtjek" style="display:none;background:#fff;border:1px solid var(--border);border-radius:20px;padding:14px 16px;margin-top:16px;"></div>
     <div id="dashFooter" style="display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--gray3);padding:22px 0 12px;border-top:1px solid var(--border);margin-top:10px;">
       <div style="font-size:10px;">© 2026 Energida · Alle rettigheder forbeholdes</div>
-      <div style="font-size:10px;margin-left:auto;">Version 26. juli · 617 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
+      <div style="font-size:10px;margin-left:auto;">Version 26. juli · 618 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
     </div>
   </div>
 </div>
@@ -3373,6 +3382,74 @@ window.addEventListener("popstate", e => {
   HIST_LAAS = false;
 });
 try { if (!history.state) history.replaceState({ t: "start" }, ""); } catch(e) {}
+/* ---------- PLEJ BUTIKKEN (Ida 27/7): fast ugentlig algoritme-pleje — dag forudfyldes fra strategibyggerens w8-svar ---------- */
+let PLEJ = null, PLEJ_HENTET = false;
+function plejUgeNoegle() {
+  const d = new Date(); const t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  const dagNr = (t.getUTCDay() + 6) % 7; t.setUTCDate(t.getUTCDate() - dagNr + 3);
+  const start = new Date(Date.UTC(t.getUTCFullYear(), 0, 4));
+  const uge = 1 + Math.round(((t - start) / 864e5 - 3 + ((start.getUTCDay() + 6) % 7)) / 7);
+  return t.getUTCFullYear() + "-U" + uge;
+}
+async function plejHent() {
+  if (!sb || !currentKode || PLEJ_HENTET) { plejVis(); return; }
+  PLEJ_HENTET = true;
+  try {
+    const { data } = await sb.from("skema_svar").select("svar").eq("kode", currentKode).eq("navn", "config").eq("skema", "plej_butikken").maybeSingle();
+    if (data && data.svar) PLEJ = data.svar;
+  } catch(e) {}
+  if (!PLEJ || !PLEJ.dag) {   // forudfyld dagen fra strategibyggerens "Hvornår plejer I profilen?"-svar
+    try {
+      const { data: sbyg } = await sb.from("skema_svar").select("svar").eq("kode", currentKode).eq("navn", "config").eq("skema", "strategibygger").maybeSingle();
+      const w8 = ((sbyg && sbyg.svar && sbyg.svar.w8) || "").toLowerCase();
+      const dage = ["mandag","tirsdag","onsdag","torsdag","fredag","lørdag","søndag"];
+      const fundet = dage.find(d => w8.indexOf(d) > -1);
+      if (fundet) { PLEJ = PLEJ || { done: {} }; PLEJ.dag = fundet.charAt(0).toUpperCase() + fundet.slice(1); }
+    } catch(e) {}
+  }
+  plejVis();
+}
+function plejVis() {
+  const kort = document.getElementById("plejKort"); if (!kort) return;
+  if (!CUSTOMER_NAV) { kort.style.display = "none"; return; }
+  kort.style.display = "";
+  const p = PLEJ || {};
+  const dage = ["Mandag","Tirsdag","Onsdag","Torsdag","Fredag","Lørdag","Søndag"];
+  const dg = document.getElementById("plejDage");
+  if (dg) dg.innerHTML = dage.map(d => '<button type="button" onclick="plejDagVaelg(\'' + d + '\')" style="background:' + (p.dag === d ? 'var(--red)' : '#fff') + ';color:' + (p.dag === d ? '#fff' : 'var(--black)') + ';border:1px solid ' + (p.dag === d ? 'var(--red)' : 'var(--border)') + ';border-radius:12px;padding:5px 10px;font-family:Poppins,sans-serif;font-size:11px;cursor:pointer;white-space:nowrap;">' + d.slice(0, 3) + '</button>').join(" ");
+  const gjort = !!(p.done && p.done[plejUgeNoegle()]);
+  const chip = document.getElementById("plejStatusChip");
+  if (chip) chip.innerHTML = gjort
+    ? '<span style="display:inline-flex;align-items:center;gap:6px;background:#fff;border:1px solid var(--border);border-radius:12px;padding:2px 10px;font-size:10px;letter-spacing:0.3px;text-transform:none;color:var(--black);">Plejet denne uge &#10003;</span>'
+    : '<span style="display:inline-flex;align-items:center;gap:6px;background:#FDE8E3;color:var(--red);border-radius:12px;padding:2px 10px;font-size:10px;letter-spacing:0.3px;text-transform:none;">Venter denne uge</span>';
+  const knap = document.getElementById("plejDoneKnap");
+  if (knap) { knap.style.display = gjort ? "none" : ""; }
+}
+async function plejGem() {
+  if (!sb || !currentKode || !PLEJ) return;
+  try {
+    const eks = await sb.from("skema_svar").update({ svar: PLEJ }).eq("kode", currentKode).eq("navn", "config").eq("skema", "plej_butikken").select();
+    if (!eks.data || !eks.data.length) await sb.from("skema_svar").insert({ kode: currentKode, navn: "config", skema: "plej_butikken", svar: PLEJ });
+  } catch(e) {}
+}
+function plejDagVaelg(d) { PLEJ = PLEJ || { done: {} }; PLEJ.dag = d; plejGem(); plejVis(); }
+function plejDone() { PLEJ = PLEJ || {}; PLEJ.done = PLEJ.done || {}; PLEJ.done[plejUgeNoegle()] = true; plejGem(); plejVis(); }
+function plejGuideAaben() {
+  let bag = document.getElementById("plejGuideBack");
+  if (!bag) { bag = document.createElement("div"); bag.id = "plejGuideBack"; bag.className = "modal-back"; document.body.appendChild(bag); }
+  bag.style.display = "flex";
+  const pkt = (nr, t, txt) => '<div style="display:flex;gap:10px;align-items:flex-start;border-top:1px solid var(--gray);padding:10px 0;"><span style="width:22px;height:22px;border-radius:50%;background:var(--red);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:10.5px;flex-shrink:0;">' + nr + '</span><div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:400;">' + t + '</div><div style="font-size:11.5px;color:var(--gray3);line-height:1.55;margin-top:2px;">' + txt + '</div></div></div>';
+  bag.innerHTML = '<div class="modal" style="max-width:480px;position:relative;">'
+    + '<button class="modal-close" style="position:absolute;top:12px;right:14px;" onclick="document.getElementById(\'plejGuideBack\').style.display=\'none\'">&times;</button>'
+    + '<div style="font-size:10px;letter-spacing:1.8px;text-transform:uppercase;font-weight:400;color:var(--red);border-bottom:1px solid var(--border);padding-bottom:9px;margin-bottom:12px;">Plej butikken</div>'
+    + '<div style="font-family:\'Didot\',\'Bodoni 72\',Georgia,serif;font-size:22px;line-height:1.2;margin-bottom:12px;">Ugens runde i butiksvinduet</div>'
+    + pkt(1, "Åbn Udforsk", "Hvad serverer algoritmen for dig lige nu? Ligner det jeres univers — eller er I gledet væk fra det, målgruppen får vist?")
+    + pkt(2, "Svar på alt", "Kommentarer og beskeder — algoritmen belønner samtale, og kunderne mærker, at der er nogen bag disken.")
+    + pkt(3, "Tjek butiksvinduet", "Bio, highlights og de seneste 9 opslag — står det skarpt, som var det din fysiske facade?")
+    + pkt(4, "Kig på tallene", "Er interaktionsraten faldet, så kig på sidste uges opslag: hvad fik folk til at reagere — og hvad gjorde ikke?")
+    + '<div style="display:flex;justify-content:flex-end;margin-top:14px;"><button class="dbtn primary" onclick="plejDone();document.getElementById(\'plejGuideBack\').style.display=\'none\'">Butikken er plejet &#10003;</button></div>'
+    + '</div>';
+}
 /* ENERGIEN for B2B-kunder (Ida 27/7, Trin 1): genbruger medarbejder-motorens skærme 1:1.
    Energien er PERSONLIG: kun logins med et navn ser den — fælles logins (fx Hinges) gør ikke,
    og den åbner af sig selv, den dag kunden deles op på personer (Ida 27/7). */
@@ -9435,7 +9512,7 @@ function buildSideNav(def) {
     + item("", "Kontakt Ida", "openChat()")
     + item("", "Skift adgangskode", "togglePwPanel()")
     + item("", "Log ud", "custLogout()", " roed")
-    + '<div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0 12px;">Version 26. juli · 617</div>'
+    + '<div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0 12px;">Version 26. juli · 618</div>'
     + '</div>'
     + '<button class="sn-virk-knap" onclick="toggleVirkMenu(event)" title="' + esc(virkNavn) + '" aria-label="Profil"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(virkNavn) + '</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="flex-shrink:0;"><path d="M6 9l6 6 6-6"/></svg></button>'
     + '<div id="virkMenu" style="display:none;position:fixed;right:20px;top:72px;width:230px;background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:0 16px 40px rgba(0,0,0,0.15);padding:8px;z-index:90;">'
@@ -11881,6 +11958,7 @@ function applyCustomerView(def) {
   try { appBrugLog(); } catch(e) {}
   try { const ek = document.getElementById("energiKort"); if (ek && def.type !== "medarbejder" && def.type !== "klipper" && erPersonLogin()) ek.style.display = ""; } catch(e) {}
   try { const be = document.getElementById("burgerEnergi"); if (be && !erPersonLogin()) be.style.display = "none"; } catch(e) {}
+  try { plejHent(); } catch(e) {}
   nytFraIdaHent();
   ER_ENTAL = !!def.ental;
   anvendTone();
@@ -17498,6 +17576,6 @@ if ((location.hash || "").toLowerCase() === "#ole") {   // #ole = preview af Ole
 })();
 </script>
 <!-- Versions-mærke: synligt på ALLE sider, så Ida altid kan se hvilken version hun kigger på (27/7) -->
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 26. juli · 617</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 26. juli · 618</div>
 </body>
 </html>
