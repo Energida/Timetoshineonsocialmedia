@@ -629,7 +629,13 @@ body.dash-mode .dash-fab { display: none; }
   #screen3 #homeName { font-size: 36px; margin: 8px 0 20px; }
   .cal-dots { display: none; }   /* prikken er overflødig på desktop — pill'en viser både farve og navn */
   .cal-mini { display: block; font-size: 9px; font-weight: 400; line-height: 1.35; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 2px 6px; margin-top: 3px; text-align: left; border-radius: 12px; }
-  .cal-cell { min-height: 104px; }   /* desktop: fast, rektangulær celle (aldrig kvadrat på brede skærme) */
+  /* Desktop-måned = SAMME visuelle sprog som ugen: én samlet hvid boks m. indre streger (Ida 27/7) */
+  .cal-grid { gap: 0; background: #fff; border: 1px solid var(--border); border-radius: 20px; overflow: hidden; }
+  .cal-cell { min-height: 104px; border: none; border-radius: 0; border-right: 1px solid var(--gray); border-bottom: 1px solid var(--gray); padding: 10px 8px 8px; align-items: stretch; }
+  .cal-cell:nth-child(7n) { border-right: none; }
+  .cal-cell.empty { background: #fff; }
+  .cal-cell.today { border-width: 0 1px 1px 0; border-radius: 16px; box-shadow: inset 0 0 0 2px var(--red); }
+  .cal-num { text-align: left; }
   .cal-mini.mt-behov { background: #FDE8E3; color: var(--red); }
   .cal-mini.mt-rel { background: var(--blue); color: var(--black); }
   /* Én hel side som admin — ingen ramme, skygge eller luft rundt om appen. */
@@ -805,7 +811,7 @@ body.lek-open .burger-btn, body.lek-open .bottom-nav, body.lek-open .dash-fab { 
     <button class="burger-item" onclick="toggleBurger(); togglePwPanel()">Skift adgangskode</button>
     <button class="burger-item" onclick="toggleBurger(); openChat()">Kontakt Ida</button>
     <button class="burger-item" style="color:var(--red);" onclick="custLogout()">Log ud</button>
-    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 26. juli · 461</div>
+    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 26. juli · 462</div>
   </div>
 </div>
 <div class="plus-menu" id="plusMenu" onclick="if(event.target===this)togglePlus()">
@@ -3122,7 +3128,7 @@ select titel,
     <div id="systemtjek" style="display:none;background:#fff;border:1px solid var(--border);border-radius:20px;padding:14px 16px;margin-top:16px;"></div>
     <div id="dashFooter" style="display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--gray3);padding:22px 0 12px;border-top:1px solid var(--border);margin-top:10px;">
       <div style="font-size:10px;">© 2026 Energida · Alle rettigheder forbeholdes</div>
-      <div style="font-size:10px;margin-left:auto;">Version 26. juli · 461 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
+      <div style="font-size:10px;margin-left:auto;">Version 26. juli · 462 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
     </div>
   </div>
 </div>
@@ -8914,7 +8920,7 @@ function buildSideNav(def) {
     + item("", "Kontakt Ida", "openChat()")
     + item("", "Skift adgangskode", "togglePwPanel()")
     + item("", "Log ud", "custLogout()", " roed")
-    + '<div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0 12px;">Version 26. juli · 461</div>'
+    + '<div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0 12px;">Version 26. juli · 462</div>'
     + '</div>'
     + '<button class="sn-virk-knap" onclick="toggleVirkMenu(event)" title="' + esc(virkNavn) + '" aria-label="Profil"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(virkNavn) + '</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="flex-shrink:0;"><path d="M6 9l6 6 6-6"/></svg></button>'
     + '<div id="virkMenu" style="display:none;position:fixed;right:20px;top:72px;width:230px;background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:0 16px 40px rgba(0,0,0,0.15);padding:8px;z-index:90;">'
@@ -10331,9 +10337,20 @@ function calVisning(v) {
 let KAL_OPRET_DATO = null;
 function kalIdag() {
   const nu = new Date();
-  if (CAL_VISNING === "uge") { const d = new Date(); const dag = d.getDay(); d.setDate(d.getDate() - (dag === 0 ? 6 : dag - 1)); calUgeStart = d; }
+  if (CAL_VISNING === "uge") { const d = new Date(); const dag = d.getDay(); d.setDate(d.getDate() - (dag === 0 ? 6 : dag - 1)); d.setHours(0,0,0,0); calUgeStart = d; }
   else { calMonth = nu.getMonth(); calYear = nu.getFullYear(); }
   renderCalendar();
+  /* Synlig kvittering: dagens celle blinker blødt, så knappen aldrig føles død */
+  setTimeout(() => {
+    const c = document.querySelector(".uge-dag.idag, .cal-cell.today");
+    if (!c) return;
+    if (c.scrollIntoView) c.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "nearest" });
+    c.style.transition = "box-shadow .25s";
+    const gl = "inset 0 0 0 2px var(--red), 0 0 0 6px rgba(252,36,4,.22)";
+    const foer = c.style.boxShadow;
+    c.style.boxShadow = gl;
+    setTimeout(() => { c.style.boxShadow = foer; }, 900);
+  }, 60);
 }
 function kalOpret(dato) {
   KAL_OPRET_DATO = dato;   // idéen får datoen og står som Planlagt, når den gemmes
@@ -16579,41 +16596,56 @@ function gsdFaste() { return deltErOle() ? OLE_FASTE : OLE_FASTE.filter(f => f.k
 function deltPartner() { try { return (typeof DEPLOY !== "undefined" && DEPLOY === "ole") ? "Ida" : "Ole"; } catch(e) { return "Ole"; } }
 function deltMe() { try { return (typeof DEPLOY !== "undefined" && DEPLOY === "ole") ? "ole" : "ida"; } catch(e) { return "ida"; } }
 let DELT_INDEX = null, DELT_ITEMS = [], DELT_AKTIV = null;
-async function deltSkemaHent(skema, fallback) {
-  const kode = deltKode();
+async function deltSkemaHent(skema, fallback, kodeOverride) {
+  const kode = kodeOverride || deltKode();
   if (sb) { try { const { data } = await sb.from("skema_svar").select("svar").eq("kode",kode).eq("navn","delt").eq("skema",skema).limit(1); if (data && data.length && data[0].svar != null) return data[0].svar; } catch(e) {} }
   try { const v = JSON.parse(localStorage.getItem("delt_"+kode+"_"+skema)); if (v != null) return v; } catch(e) {}
   return fallback;
 }
-async function deltSkemaGem(skema, svar) {
-  const kode = deltKode();
+async function deltSkemaGem(skema, svar, kodeOverride) {
+  const kode = kodeOverride || deltKode();
   try { localStorage.setItem("delt_"+kode+"_"+skema, JSON.stringify(svar)); } catch(e) {}
   if (sb) { try { const { data } = await sb.from("skema_svar").update({ svar: svar }).eq("kode",kode).eq("navn","delt").eq("skema",skema).select(); if (!data || !data.length) await sb.from("skema_svar").insert({ kode:kode, navn:"delt", skema:skema, svar:svar }); } catch(e) {} }
 }
 async function deltIndexHent() {
   DELT_INDEX = await deltSkemaHent("indkoeb_index", null);
   if (!Array.isArray(DELT_INDEX)) DELT_INDEX = [];
-  if (!DELT_INDEX.length && deltErOle()) { DELT_INDEX = [{ navn:"Finlandsgade", key:"finlandsgade", ejer:"ida", delt:true }]; await deltSkemaGem("indkoeb_index", DELT_INDEX); }
+  DELT_INDEX.forEach(l => { if (l) l._kode = deltKode(); });   // runtime-felt: hvilken kasse listen bor i (gemmes ikke)
+  if (!DELT_INDEX.length && deltErOle()) { DELT_INDEX = [{ navn:"Finlandsgade", key:"finlandsgade", ejer:"ida", delt:true, _kode:"OLE" }]; await deltSkemaGem("indkoeb_index", DELT_INDEX.map(({_kode, ...r}) => r)); }
   else if (DELT_INDEX.length && deltErOle()) {   // migrering: Oles lister lavet FØR delt-feltet var alle delte — bak-udfyld så de ikke forsvinder
     let aendret = false;
     DELT_INDEX.forEach(l => { if (l && l.delt === undefined) { l.delt = true; aendret = true; } });
-    if (aendret) { try { await deltSkemaGem("indkoeb_index", DELT_INDEX); } catch(e) {} }
+    if (aendret) { try { await deltSkemaGem("indkoeb_index", DELT_INDEX.map(({_kode, ...r}) => r)); } catch(e) {} }
+  }
+  /* Idas side (admin): flet Oles DELTE lister ind — de bor under kode OLE, og
+     Finlandsgade m.fl. skal kunne ses og redigeres fra begge sider (27/7). */
+  if (!deltErOle() && deltKode() === "ENERGIDA") {
+    try {
+      const oleIdx = await deltSkemaHent("indkoeb_index", null, "OLE");
+      if (Array.isArray(oleIdx)) oleIdx.filter(l => l && l.delt !== false).forEach(l => {
+        if (!DELT_INDEX.find(x => x && x.key === l.key)) DELT_INDEX.push(Object.assign({}, l, { _kode: "OLE" }));
+      });
+    } catch(e) {}
   }
   return DELT_INDEX;
 }
 function deltMetaFor(key) {
   const f = OLE_FASTE.find(x => x.key === key); if (f) return { navn:f.listenavn || f.titel, ph:f.ph, privat:!!f.privat };
-  const l = (DELT_INDEX || []).find(x => x.key === key); if (l) return { navn:l.navn, ph:"Tilføj vare…", privat: !deltErOle() || l.delt === false };
+  const l = (DELT_INDEX || []).find(x => x.key === key);
+  if (l) {
+    const erDelt = l.delt !== false && (deltErOle() || l._kode === "OLE");   // delt for begge: Oles delte lister
+    return { navn:l.navn, ph:"Tilføj vare…", privat: !erDelt, kode: l._kode };
+  }
   return { navn:key, ph:"Tilføj…", privat:true };
 }
 async function deltListeAaben(key) {
   if (!OLE_FASTE.find(x => x.key === key) && !(DELT_INDEX || []).find(x => x.key === key)) { try { await deltIndexHent(); } catch(e) {} }
-  const m = deltMetaFor(key); DELT_AKTIV = { key:key, navn:m.navn, ph:m.ph };
+  const m = deltMetaFor(key); DELT_AKTIV = { key:key, navn:m.navn, ph:m.ph, kode:m.kode || null };
   const o = document.getElementById("deltListe"); if (!o) return;
   const h = document.getElementById("deltListeHoved");
   if (h) h.innerHTML = '<div style="font-family:Poppins,sans-serif;font-weight:300;font-size:28px;color:var(--black);">'+esc(m.navn)+'</div>'+(m.privat ? '' : '<div style="font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--red);margin-top:4px;">deles med '+deltPartner()+'</div>');
   o.style.display = "block";
-  DELT_ITEMS = await deltSkemaHent("liste_"+key, []); if (!Array.isArray(DELT_ITEMS)) DELT_ITEMS = [];
+  DELT_ITEMS = await deltSkemaHent("liste_"+key, [], DELT_AKTIV.kode); if (!Array.isArray(DELT_ITEMS)) DELT_ITEMS = [];
   deltRender();
 }
 function deltListeLuk() { const o = document.getElementById("deltListe"); if (o) o.style.display = "none"; DELT_AKTIV = null; }
@@ -16628,9 +16660,9 @@ function deltRender() {
   w.innerHTML = '<div style="display:flex;gap:8px;margin-top:14px;"><input id="deltInp" placeholder="'+esc(DELT_AKTIV.ph)+'" onkeydown="if(event.key===\'Enter\')deltAdd()" style="flex:1;min-width:0;background:#fff;border:1px solid var(--border);border-radius:14px;padding:15px 16px;font-size:15px;font-family:Poppins,sans-serif;outline:none;color:var(--black);box-shadow:0 10px 24px -20px rgba(22,32,42,.4);"><button onclick="deltAdd()" class="dbtn primary" style="width:auto;padding:0 20px;font-size:22px;line-height:1;flex-shrink:0;">+</button></div>'
     + (items.length ? items.map((x,i)=>deltRaekke(x,i)).join("") : '<div style="font-size:13px;color:var(--gray3);padding:14px 2px;">Ingen endnu — tilføj den første.</div>');
 }
-function deltAdd() { const inp = document.getElementById("deltInp"); if (!inp || !DELT_AKTIV) return; const t=(inp.value||"").trim(); if(!t) return; DELT_ITEMS.push({t:t,done:false,ts:Date.now()}); inp.value=""; deltRender(); deltSkemaGem("liste_"+DELT_AKTIV.key, DELT_ITEMS); const ni=document.getElementById("deltInp"); if(ni)ni.focus(); }
-function deltToggle(i) { const it=DELT_ITEMS[i]; if(!it||!DELT_AKTIV) return; it.done=!it.done; deltRender(); deltSkemaGem("liste_"+DELT_AKTIV.key, DELT_ITEMS); }
-function deltSlet(i) { if(!DELT_AKTIV) return; DELT_ITEMS.splice(i,1); deltRender(); deltSkemaGem("liste_"+DELT_AKTIV.key, DELT_ITEMS); }
+function deltAdd() { const inp = document.getElementById("deltInp"); if (!inp || !DELT_AKTIV) return; const t=(inp.value||"").trim(); if(!t) return; DELT_ITEMS.push({t:t,done:false,ts:Date.now()}); inp.value=""; deltRender(); deltSkemaGem("liste_"+DELT_AKTIV.key, DELT_ITEMS, DELT_AKTIV.kode); const ni=document.getElementById("deltInp"); if(ni)ni.focus(); }
+function deltToggle(i) { const it=DELT_ITEMS[i]; if(!it||!DELT_AKTIV) return; it.done=!it.done; deltRender(); deltSkemaGem("liste_"+DELT_AKTIV.key, DELT_ITEMS, DELT_AKTIV.kode); }
+function deltSlet(i) { if(!DELT_AKTIV) return; DELT_ITEMS.splice(i,1); deltRender(); deltSkemaGem("liste_"+DELT_AKTIV.key, DELT_ITEMS, DELT_AKTIV.kode); }
 async function indkoebHubAaben() {
   const o = document.getElementById("indkoebHub"); if (!o) return;
   o.style.display = "block";
@@ -16639,7 +16671,7 @@ async function indkoebHubAaben() {
   const me = deltMe(), partner = deltPartner();
   const dl = document.getElementById("indkoebHubDelt"); if (dl) dl.style.display = "none";
   const synlige = deltErOle() ? idx.filter(l => (l.ejer === me) || (l.delt !== false)) : idx;
-  const raekke = (l) => { const sub = (deltErOle() && l.delt !== false) ? '<div style="font-size:9px;letter-spacing:1px;text-transform:uppercase;color:var(--red);margin-top:4px;">deles med '+partner+'</div>' : ''; return '<button type="button" onclick="indkoebHubLuk();deltListeAaben(\''+l.key+'\')" style="display:block;width:100%;text-align:center;background:#fff;border:1px solid var(--border);border-radius:20px;padding:18px 20px;margin:0 0 12px;font-family:Poppins,sans-serif;cursor:pointer;"><div style="font-size:16px;color:var(--black);">'+esc(l.navn)+'</div>'+sub+'</button>'; };
+  const raekke = (l) => { const erDelt = l.delt !== false && (deltErOle() || l._kode === "OLE"); const sub = erDelt ? '<div style="font-size:9px;letter-spacing:1px;text-transform:uppercase;color:var(--red);margin-top:4px;">deles med '+partner+'</div>' : ''; return '<button type="button" onclick="indkoebHubLuk();deltListeAaben(\''+l.key+'\')" style="display:block;width:100%;text-align:center;background:#fff;border:1px solid var(--border);border-radius:20px;padding:18px 20px;margin:0 0 12px;font-family:Poppins,sans-serif;cursor:pointer;"><div style="font-size:16px;color:var(--black);">'+esc(l.navn)+'</div>'+sub+'</button>'; };
   w.innerHTML = synlige.length ? synlige.map(raekke).join("") : '<div style="text-align:center;font-size:13px;color:var(--gray3);padding:8px 2px 18px;">Ingen lister endnu — tryk + ovenfor for at lave en.</div>';
 }
 function indkoebHubLuk() { const o = document.getElementById("indkoebHub"); if (o) o.style.display = "none"; }
@@ -16739,6 +16771,6 @@ if ((location.hash || "").toLowerCase() === "#ole") {   // #ole = preview af Ole
 })();
 </script>
 <!-- Versions-mærke: synligt på ALLE sider, så Ida altid kan se hvilken version hun kigger på (27/7) -->
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 26. juli · 461</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 26. juli · 462</div>
 </body>
 </html>
