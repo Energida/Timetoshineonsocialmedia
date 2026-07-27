@@ -187,6 +187,7 @@ body.preview-mobile .heart{right:-310px}
   <button id="mobileBtn" onclick="preview('mobile')">Mobil</button>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 const sections = [
 {
@@ -284,6 +285,36 @@ const sections = [
 
 let current=0;
 var SB_KODE=(new URLSearchParams(location.search).get('kode')||'demo').toUpperCase();
+/* Svar gemmes PR. KODE i Supabase (Ida 26/7-bug fixet 27/7) — localStorage er kun fallback/cache.
+   Klienten deler login-sessionen med appen (samme domæne). */
+var SB_DB = null, SB_DB_KLAR = false, SB_GEM_TIMER = null;
+try { SB_DB = window.supabase.createClient("https://eikcvvppuphnananxcvp.supabase.co", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVpa2N2dnBwdXBobmFuYW54Y3ZwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMyMzIxNjEsImV4cCI6MjA5ODgwODE2MX0.M435MA_fPlvP27UtX7LZLpGDFDl8Mi2CzewHhxbmDsI"); } catch(e) {}
+async function dbHent() {
+  if (!SB_DB || SB_KODE === 'DEMO') { SB_DB_KLAR = true; return; }
+  try {
+    var res = await SB_DB.from('skema_svar').select('svar').eq('kode', SB_KODE).eq('navn', 'config').eq('skema', 'strategibygger').maybeSingle();
+    if (res.data && res.data.svar && Object.keys(res.data.svar).length) {
+      answers = res.data.svar;
+      localStorage.setItem(SB_KEY, JSON.stringify(answers));
+      renderProgress(); renderSummary(); try { render(); } catch(e) {}
+    } else if (Object.keys(answers).length) {
+      dbGem();   // lokale svar fra før fixet skubbes op i databasen
+    }
+  } catch(e) {}
+  SB_DB_KLAR = true;
+}
+function dbGem() {
+  if (!SB_DB || SB_KODE === 'DEMO') return;
+  clearTimeout(SB_GEM_TIMER);
+  SB_GEM_TIMER = setTimeout(async function() {
+    try {
+      var eks = await SB_DB.from('skema_svar').update({ svar: answers }).eq('kode', SB_KODE).eq('navn', 'config').eq('skema', 'strategibygger').select();
+      if (!eks.data || !eks.data.length) await SB_DB.from('skema_svar').insert({ kode: SB_KODE, navn: 'config', skema: 'strategibygger', svar: answers });
+      var t = document.getElementById('saveTxt'); if (t) t.textContent = 'Gemt hos Energida';
+    } catch(e) {}
+  }, 900);
+}
+dbHent();
 var SB_KEY='energida_strategy_builder_'+SB_KODE;
 let answers={};
 try{answers=JSON.parse(localStorage.getItem(SB_KEY))||{}}catch(e){}
@@ -292,6 +323,7 @@ let qIndex=0;
 
 function save(){
   localStorage.setItem(SB_KEY,JSON.stringify(answers));
+  dbGem();
   const t=document.getElementById('saveTxt');t.textContent='Gemmer…';
   setTimeout(()=>t.textContent='Gemt',350);
   renderProgress();renderSummary();
