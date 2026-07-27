@@ -815,7 +815,7 @@ body.lek-open .burger-btn, body.lek-open .bottom-nav, body.lek-open .dash-fab { 
     <button class="burger-item" onclick="toggleBurger(); togglePwPanel()">Skift adgangskode</button>
     <button class="burger-item" onclick="toggleBurger(); openChat()">Kontakt Ida</button>
     <button class="burger-item" style="color:var(--red);" onclick="custLogout()">Log ud</button>
-    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 26. juli · 533</div>
+    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 26. juli · 534</div>
   </div>
 </div>
 <div class="plus-menu" id="plusMenu" onclick="if(event.target===this)togglePlus()">
@@ -3143,7 +3143,7 @@ select titel,
     <div id="systemtjek" style="display:none;background:#fff;border:1px solid var(--border);border-radius:20px;padding:14px 16px;margin-top:16px;"></div>
     <div id="dashFooter" style="display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--gray3);padding:22px 0 12px;border-top:1px solid var(--border);margin-top:10px;">
       <div style="font-size:10px;">© 2026 Energida · Alle rettigheder forbeholdes</div>
-      <div style="font-size:10px;margin-left:auto;">Version 26. juli · 533 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
+      <div style="font-size:10px;margin-left:auto;">Version 26. juli · 534 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
     </div>
   </div>
 </div>
@@ -3830,19 +3830,17 @@ async function briefBasisSoejle(navn) {
 function brandDelData(kode) {
   /* Hvad indholdet skal afspejle fra kundens EGEN brandbog (Ida 27/7): 2A=værdierne, 1B=USP, 1A=kernekunden, 2B=why/visionen */
   const st = (CURRENT_DEF && CURRENT_DEF.strategi) || {};
-  const rk = (t) => '<div style="margin-top:7px;font-size:13px;line-height:1.55;">' + t + '</div>';
-  if (kode === "2A") {
-    const p = (st.pillars || []).filter(x => x && x.name);
-    return { lbl: "jeres værdier", html: p.length ? p.map(x => rk('<b style="font-weight:400;">' + esc(x.name) + '</b>' + (x.desc ? ' — ' + esc(x.desc) : ''))).join("") : "" };
-  }
-  if (kode === "1B") return { lbl: "jeres USP", html: st.usp ? rk(esc(st.usp)) : "" };
+  if (kode === "2A") return { lbl: "jeres værdier", items: (st.pillars || []).filter(x => x && x.name).map(x => ({ t: x.name, d: x.desc || "" })) };
+  if (kode === "1B") return { lbl: "jeres USP", items: st.usp ? [{ t: "USP", d: st.usp }] : [] };
   if (kode === "1A") {
     const k = st.kunde || {};
-    const sit = (k.situationer || []).map(x => rk('&middot; ' + esc(x))).join("");
-    return { lbl: "jeres kernekunde og målgruppens situationer", html: (k.navn ? rk('<b style="font-weight:400;">' + esc(k.navn) + '</b>' + (k.tekst ? ' — ' + esc(k.tekst) : '')) : "") + sit };
+    const items = [];
+    if (k.navn) items.push({ t: k.navn, d: k.tekst || "" });
+    (k.situationer || []).forEach(x => items.push({ t: "", d: x }));
+    return { lbl: "jeres kernekunde og målgruppens situationer", items: items };
   }
-  if (kode === "2B") return { lbl: "jeres vision", html: st.why ? rk(esc(st.why)) : "" };
-  return { lbl: "", html: "" };
+  if (kode === "2B") return { lbl: "jeres vision", items: st.why ? [{ t: "Why", d: st.why }] : [] };
+  return { lbl: "", items: [] };
 }
 function briefRetningVis(trin) {
   /* RETNINGEN i 3 sider (Ida 27/7): Viben -> Følelsen -> Handlingen -> "Got it" -> Succesraketten.
@@ -3873,8 +3871,12 @@ function briefRetningVis(trin) {
       + '<div style="font-size:16px;font-style:italic;margin-top:10px;">&quot;' + esc(foelelse) + '&quot;</div>';
   } else if (trin === 0) {
     const bd = brandDelData(m.kode);
-    inder = '<div style="font-size:14.5px;line-height:1.6;margin-top:12px;">Indholdssøjlen er <b style="font-weight:400;">' + m.kode + ' &middot; ' + esc(soejleVis(it.soejle)) + '</b> — indholdet skal afspejle <b style="font-weight:400;">' + bd.lbl + '</b>:</div>'
-      + (bd.html ? '<div style="background:#fff;color:var(--red);border-radius:14px;padding:12px 14px;margin-top:12px;">' + bd.html + '</div>' : '<div style="font-size:13px;font-style:italic;margin-top:10px;opacity:.9;">(Udfyldes, når jeres brandstrategi er på plads)</div>');
+    const felt = x => '<div style="background:#fff;border-radius:14px;padding:11px 13px;margin-top:8px;text-align:left;">'
+      + (x.t ? '<div style="color:var(--red);font-size:13.5px;line-height:1.35;">' + esc(x.t) + '</div>' : '')
+      + (x.d ? '<div style="color:var(--gray3);font-size:12px;line-height:1.5;margin-top:2px;">' + esc(x.d) + '</div>' : '')
+      + '</div>';
+    inder = '<div style="font-size:14.5px;line-height:1.6;margin-top:12px;">Indholdet skal afspejle ' + bd.lbl + '.</div>'
+      + (bd.items.length ? bd.items.map(felt).join("") : '<div style="font-size:13px;font-style:italic;margin-top:10px;opacity:.9;">(Udfyldes, når jeres brandstrategi er på plads)</div>');
   } else {
     const opts = ["Kommer ind i butikken","Gemmer opslaget","Sender til en ven","Kommenterer / skriver til jer"];
     const cChips = opts.map(o => '<button type="button" data-cta="' + esc(o) + '" onclick="retningCta(this)" style="font-family:Poppins,sans-serif;font-size:12px;border-radius:999px;padding:8px 14px;margin:0 6px 6px 0;cursor:pointer;' + (BRIEF_STATE.cta === o ? 'background:#fff;color:var(--red);border:1.5px solid #fff;' : 'background:none;color:#fff;border:1.5px solid rgba(255,255,255,.75);') + '">' + esc(o) + '</button>').join("");
@@ -9299,7 +9301,7 @@ function buildSideNav(def) {
     + item("", "Kontakt Ida", "openChat()")
     + item("", "Skift adgangskode", "togglePwPanel()")
     + item("", "Log ud", "custLogout()", " roed")
-    + '<div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0 12px;">Version 26. juli · 533</div>'
+    + '<div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0 12px;">Version 26. juli · 534</div>'
     + '</div>'
     + '<button class="sn-virk-knap" onclick="toggleVirkMenu(event)" title="' + esc(virkNavn) + '" aria-label="Profil"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(virkNavn) + '</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="flex-shrink:0;"><path d="M6 9l6 6 6-6"/></svg></button>'
     + '<div id="virkMenu" style="display:none;position:fixed;right:20px;top:72px;width:230px;background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:0 16px 40px rgba(0,0,0,0.15);padding:8px;z-index:90;">'
@@ -17252,6 +17254,6 @@ if ((location.hash || "").toLowerCase() === "#ole") {   // #ole = preview af Ole
 })();
 </script>
 <!-- Versions-mærke: synligt på ALLE sider, så Ida altid kan se hvilken version hun kigger på (27/7) -->
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 26. juli · 533</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 26. juli · 534</div>
 </body>
 </html>
