@@ -804,7 +804,7 @@ body.lek-open .burger-btn, body.lek-open .bottom-nav, body.lek-open .dash-fab { 
     <button class="burger-item" onclick="toggleBurger(); togglePwPanel()">Skift adgangskode</button>
     <button class="burger-item" onclick="toggleBurger(); openChat()">Kontakt Ida</button>
     <button class="burger-item" style="color:var(--red);" onclick="custLogout()">Log ud</button>
-    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 26. juli · 447</div>
+    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 26. juli · 448</div>
   </div>
 </div>
 <div class="plus-menu" id="plusMenu" onclick="if(event.target===this)togglePlus()">
@@ -1909,6 +1909,8 @@ body.lek-open .burger-btn, body.lek-open .bottom-nav, body.lek-open .dash-fab { 
       <h2>Tip Top <span class="r">Studio</span></h2>
       <p id="klipStatusLinje">Briefs, links og status på alle videoer — delt med din klipper. Filerne bor i jeres delte mappe.</p>
     </div>
+
+    <div style="margin:0 0 18px;"><button class="row-btn view" style="font-weight:400;" onclick="manusEksport()">Eksportér alle manusser (til gennemgang)</button> <span id="manusEksportMsg" style="font-size:11px;color:var(--gray3);margin-left:8px;"></span></div>
 
     <div id="klipKpi" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:18px;"></div>
 
@@ -3085,7 +3087,7 @@ select titel,
     <div id="systemtjek" style="display:none;background:#fff;border:1px solid var(--border);border-radius:20px;padding:14px 16px;margin-top:16px;"></div>
     <div id="dashFooter" style="display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--gray3);padding:22px 0 12px;border-top:1px solid var(--border);margin-top:10px;">
       <div style="font-size:10px;">© 2026 Energida · Alle rettigheder forbeholdes</div>
-      <div style="font-size:10px;margin-left:auto;">Version 26. juli · 447 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
+      <div style="font-size:10px;margin-left:auto;">Version 26. juli · 448 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
     </div>
   </div>
 </div>
@@ -6064,6 +6066,34 @@ function klipNaesteAaben() {   // hop direkte til den video, der venter på Idas
 }
 function klipLocal() { try { return (JSON.parse(localStorage.getItem("video_opgaver")) || []).map(o => { o.status = klipStatusNorm(o.status); return o; }); } catch(e) { return []; } }
 function klipSaveLocal() { localStorage.setItem("video_opgaver", JSON.stringify(KLIP_OPGAVER)); }
+function manusEksport() {   // dumper alle live manusser (video_opgaver) til én fil — så Claude kan læse præcis det, der er i Tip Top Studio
+  const msg = document.getElementById("manusEksportMsg");
+  const rows = (typeof KLIP_OPGAVER !== "undefined" && Array.isArray(KLIP_OPGAVER)) ? KLIP_OPGAVER.slice() : [];
+  if (!rows.length) { if (msg) msg.textContent = "Ingen manusser indlæst — vent til siden er hentet, og prøv igen."; return; }
+  rows.sort((a,b) => String(a.modul||"").localeCompare(String(b.modul||""), "da", { numeric:true }) || String(a.titel||"").localeCompare(String(b.titel||""), "da"));
+  const d = new Date();
+  let out = "ENERGIDA — MANUS-EKSPORT (live fra Tip Top Studio)\n";
+  out += "Eksporteret: " + d.toLocaleDateString("da-DK") + " " + d.toLocaleTimeString("da-DK") + "\n";
+  out += "Antal videoer: " + rows.length + "\n";
+  rows.forEach(o => {
+    out += "\n\n════════════════════════════════════════════════════════\n";
+    out += "MODUL " + (o.modul != null && o.modul !== "" ? o.modul : "—") + "  ·  " + (o.titel || "(uden titel)") + "\n";
+    out += "Status: " + (o.status || "—") + "   ·   Kode: " + (o.kode || "—") + "\n";
+    out += "════════════════════════════════════════════════════════\n";
+    out += "\n----- MANUS -----\n" + ((o.manus_tekst || "").trim() || "(tomt)") + "\n";
+    out += "\n----- BRIEF / OPGAVE -----\n" + ((o.brief || "").trim() || "(tomt)") + "\n";
+    if (o.kommentarer && String(o.kommentarer).trim() && String(o.kommentarer).trim() !== "[]") out += "\n----- KOMMENTARER -----\n" + String(o.kommentarer).trim() + "\n";
+  });
+  try {
+    const blob = new Blob([out], { type: "text/plain;charset=utf-8" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "energida-manus-eksport.txt";
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 3000);
+    if (msg) msg.textContent = "Hentet — " + rows.length + " videoer. Filen ligger i din Overførsler-mappe.";
+  } catch(e) { if (msg) msg.textContent = "Kunne ikke hente filen: " + e.message; }
+}
 
 async function klipHent() {
   if (sb) {
@@ -8778,7 +8808,7 @@ function buildSideNav(def) {
     + item("", "Kontakt Ida", "openChat()")
     + item("", "Skift adgangskode", "togglePwPanel()")
     + item("", "Log ud", "custLogout()", " roed")
-    + '<div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0 12px;">Version 26. juli · 447</div>'
+    + '<div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0 12px;">Version 26. juli · 448</div>'
     + '</div>'
     + '<button class="sn-virk-knap" onclick="toggleVirkMenu(event)" title="' + esc(virkNavn) + '" aria-label="Profil"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(virkNavn) + '</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="flex-shrink:0;"><path d="M6 9l6 6 6-6"/></svg></button>'
     + '<div id="virkMenu" style="display:none;position:fixed;right:20px;top:72px;width:230px;background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:0 16px 40px rgba(0,0,0,0.15);padding:8px;z-index:90;">'
