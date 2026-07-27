@@ -816,7 +816,7 @@ body.lek-open .burger-btn, body.lek-open .bottom-nav, body.lek-open .dash-fab { 
     <button class="burger-item" onclick="toggleBurger(); togglePwPanel()">Skift adgangskode</button>
     <button class="burger-item" onclick="toggleBurger(); openChat()">Kontakt Ida</button>
     <button class="burger-item" style="color:var(--red);" onclick="custLogout()">Log ud</button>
-    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 26. juli · 491</div>
+    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 26. juli · 492</div>
   </div>
 </div>
 <div class="plus-menu" id="plusMenu" onclick="if(event.target===this)togglePlus()">
@@ -3142,7 +3142,7 @@ select titel,
     <div id="systemtjek" style="display:none;background:#fff;border:1px solid var(--border);border-radius:20px;padding:14px 16px;margin-top:16px;"></div>
     <div id="dashFooter" style="display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--gray3);padding:22px 0 12px;border-top:1px solid var(--border);margin-top:10px;">
       <div style="font-size:10px;">© 2026 Energida · Alle rettigheder forbeholdes</div>
-      <div style="font-size:10px;margin-left:auto;">Version 26. juli · 491 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
+      <div style="font-size:10px;margin-left:auto;">Version 26. juli · 492 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
     </div>
   </div>
 </div>
@@ -3751,8 +3751,10 @@ function basisSoejleValgBlokHtml() {
   const it = IDEER.find(x => x.id === BRIEF_ID) || {};
   const valgtType = BRIEF_STATE.indholdstype || (soejleModel(it.soejle || "") || {}).type || "";
   if (!valgtType) return "";
-  const alle = soejleSort((strategyPillars || []).filter(x => soejleModel(x)));
+  /* Story (2B) hører til i stories — vises ALDRIG som brief-valg. Kun ét feed-valg => punktet springes over (Ida 27/7). */
+  const alle = soejleSort((strategyPillars || []).filter(x => { const m = soejleModel(x); return m && m.kode !== "2B"; }));
   const vis = alle.filter(x => soejleModel(x).type === valgtType);
+  if (vis.length < 2) return "";
   const sChips = vis.map(x => {
     const m = soejleModel(x), on = it.soejle === x;
     return '<button type="button" class="chip-btn' + (on ? ' on' : '') + '" style="display:block;width:100%;text-align:left;margin:0 0 8px;" onclick="briefBasisSoejle(\'' + esc(x).replace(/'/g, "\\'") + '\')">'
@@ -3792,7 +3794,17 @@ function basisFordelingVis() {
   const escLuk = function(e) { if (e.key === "Escape") { bag.remove(); document.removeEventListener("keydown", escLuk); } };
   document.addEventListener("keydown", escLuk);
 }
-function briefBasisType(t) { BRIEF_STATE.indholdstype = t; try { saveBrief(true); } catch(e) {} openBriefSide(BRIEF_ID); }
+function briefBasisType(t) {
+  BRIEF_STATE.indholdstype = t;
+  /* Kun ét feed-valg i typen (fx Type 2 = 2A) => vælg den automatisk og gå direkte videre (Ida 27/7) */
+  const muligheder = soejleSort((strategyPillars || []).filter(x => { const m = soejleModel(x); return m && m.type === t && m.kode !== "2B"; }));
+  if (muligheder.length === 1) {
+    const it = IDEER.find(x => x.id === BRIEF_ID);
+    if (it && it.soejle !== muligheder[0]) { it.soejle = muligheder[0]; try { ideUpdate(BRIEF_ID, { soejle: muligheder[0] }); } catch(e) {} }
+  }
+  try { saveBrief(true); } catch(e) {}
+  openBriefSide(BRIEF_ID);
+}
 async function briefBasisSoejle(navn) {
   const it = IDEER.find(x => x.id === BRIEF_ID);
   if (it) { it.soejle = navn; try { await ideUpdate(BRIEF_ID, { soejle: navn }); } catch(e) {} }
@@ -9163,7 +9175,7 @@ function buildSideNav(def) {
     + item("", "Kontakt Ida", "openChat()")
     + item("", "Skift adgangskode", "togglePwPanel()")
     + item("", "Log ud", "custLogout()", " roed")
-    + '<div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0 12px;">Version 26. juli · 491</div>'
+    + '<div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0 12px;">Version 26. juli · 492</div>'
     + '</div>'
     + '<button class="sn-virk-knap" onclick="toggleVirkMenu(event)" title="' + esc(virkNavn) + '" aria-label="Profil"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(virkNavn) + '</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="flex-shrink:0;"><path d="M6 9l6 6 6-6"/></svg></button>'
     + '<div id="virkMenu" style="display:none;position:fixed;right:20px;top:72px;width:230px;background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:0 16px 40px rgba(0,0,0,0.15);padding:8px;z-index:90;">'
@@ -17101,6 +17113,6 @@ if ((location.hash || "").toLowerCase() === "#ole") {   // #ole = preview af Ole
 })();
 </script>
 <!-- Versions-mærke: synligt på ALLE sider, så Ida altid kan se hvilken version hun kigger på (27/7) -->
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 26. juli · 491</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 26. juli · 492</div>
 </body>
 </html>
