@@ -815,7 +815,7 @@ body.lek-open .burger-btn, body.lek-open .bottom-nav, body.lek-open .dash-fab { 
     <button class="burger-item" onclick="toggleBurger(); togglePwPanel()">Skift adgangskode</button>
     <button class="burger-item" onclick="toggleBurger(); openChat()">Kontakt Ida</button>
     <button class="burger-item" style="color:var(--red);" onclick="custLogout()">Log ud</button>
-    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 26. juli · 605</div>
+    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 26. juli · 606</div>
   </div>
 </div>
 <div class="plus-menu" id="plusMenu" onclick="if(event.target===this)togglePlus()">
@@ -3146,7 +3146,7 @@ select titel,
     <div id="systemtjek" style="display:none;background:#fff;border:1px solid var(--border);border-radius:20px;padding:14px 16px;margin-top:16px;"></div>
     <div id="dashFooter" style="display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--gray3);padding:22px 0 12px;border-top:1px solid var(--border);margin-top:10px;">
       <div style="font-size:10px;">© 2026 Energida · Alle rettigheder forbeholdes</div>
-      <div style="font-size:10px;margin-left:auto;">Version 26. juli · 605 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
+      <div style="font-size:10px;margin-left:auto;">Version 26. juli · 606 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
     </div>
   </div>
 </div>
@@ -3821,6 +3821,11 @@ async function briefBasisSoejle(navn) {
   if (window.BASIS_EDIT) delete window.BASIS_EDIT.soejle;
   const it = IDEER.find(x => x.id === BRIEF_ID);
   if (it) { it.soejle = navn; try { await ideUpdate(BRIEF_ID, { soejle: navn }); } catch(e) {} }
+  const m2 = soejleModel(navn);   /* CTA'et må ikke overleve et søjleskift, hvis det ikke findes under den nye søjle (auditfund 27/7) */
+  if (m2 && BRIEF_STATE && BRIEF_STATE.cta && (CTA_MAP_SOEJLE[m2.kode] || []).indexOf(BRIEF_STATE.cta) === -1) {
+    delete BRIEF_STATE.cta; delete BRIEF_STATE.ctaAuto;
+    try { await saveBrief(true); } catch(e) {}
+  }
   openBriefSide(BRIEF_ID);
 }
 function brandDelData(kode) {
@@ -3950,9 +3955,10 @@ function briefBasisSvarHtml() {
     + '<div style="font-family:Poppins,sans-serif;font-size:15px;font-weight:400;line-height:1.3;color:var(--black);">' + esc(storStart(it.titel || "")) + '</div>'
     + '</div>'
     + r('Idéen', BRIEF_STATE.beskrivelse ? esc(String(BRIEF_STATE.beskrivelse).slice(0, 140)) : '')
-    + r('Indholdstype', m ? 'Indholdstype ' + m.kode.charAt(0) + ' &middot; ' + esc(m.type) : '')
+    + r('Indholdstype', BRIEF_STATE.indholdstype ? 'Indholdstype ' + (BRIEF_STATE.indholdstype === 'Skabe behov' ? '1' : '2') + ' &middot; ' + esc(BRIEF_STATE.indholdstype) : (m ? 'Indholdstype ' + m.kode.charAt(0) + ' &middot; ' + esc(m.type) : ''))
     + r('Indholdssøjle', it.soejle ? (m ? m.kode + ' &middot; ' : '') + esc(soejleVis(it.soejle)) : '')
     + r('Format', BRIEF_STATE.format ? esc(BRIEF_STATE.format) : '')
+    + r('Hvem laver den', BRIEF_STATE.hvemLaver ? esc(BRIEF_STATE.hvemLaver) : '')
     + r('Målgruppe', BRIEF_STATE.maalgruppe ? esc(BRIEF_STATE.maalgruppe) : '')
     + r('Handling', (BRIEF_STATE.cta && !BRIEF_STATE.ctaAuto) ? esc(BRIEF_STATE.cta) : '')
     + r('Postes', dato ? esc(dkDatoKort(dato)) + (tid ? ' kl. ' + esc(String(tid).slice(0,5)) : '') : '')
@@ -4065,7 +4071,7 @@ function openBriefSide(id) {
       '<div class="sk-q" style="padding:6px 20px;"><div id="briefForsideResume">' + briefBasisSvarHtml() + '</div></div>'
     + '<div class="sk-q" style="counter-increment:none;">'
       + '<div style="font-size:11px;font-weight:400;text-transform:uppercase;letter-spacing:1.4px;color:var(--red);margin-bottom:10px;">Content makker</div>'
-      + '<div style="font-size:11.5px;color:var(--gray3);line-height:1.5;margin-bottom:10px;">Har du beskrevet idéen ovenfor, foreslår din content makker hooks, cover-tekst og caption ud fra ' + duI('din', 'jeres') + ' søjle, formål og følelse.</div>'
+      + '<div style="font-size:11.5px;color:var(--gray3);line-height:1.5;margin-bottom:10px;">Har du beskrevet idéen under The basics, foreslår din content makker hooks, cover-tekst og caption ud fra ' + duI('din', 'jeres') + ' søjle, formål og følelse.</div>'
       + '<button class="dbtn primary" style="width:100%;" onclick="aiKollegaForslag(this, \'side\')">Få idéer til hook, cover og caption</button>'
       + '<div id="koSideUd" style="margin-top:10px;"></div>'
     + '</div>'
@@ -4119,7 +4125,7 @@ function openBriefSide(id) {
       + '<div style="border-top:1px solid var(--gray);padding:8px 0;"><div style="font-size:8.5px;font-weight:400;letter-spacing:1.2px;text-transform:uppercase;color:var(--red);margin-bottom:2px;">3 · Få dem til at handle</div><div style="font-size:12px;color:var(--gray3);line-height:1.5;">Slut med ÉN klar handling' + (BRIEF_STATE.cta ? ' (' + esc(BRIEF_STATE.cta.charAt(0).toLowerCase() + BRIEF_STATE.cta.slice(1)) + ')' : '') + ' — og 3-5 hashtags.</div></div>'
       + '</div>'
       + ta('caption', 'Skriv caption… (3-5 hashtags til sidst)', 110))
-    + q('Handlingen i praksis', hint('Skriv hvordan handlingen siges i videoen og skrives i captionen.') + '<div style="font-size:12px;font-weight:400;margin:0 0 4px;">' + (BRIEF_STATE.format === "Karrusel" ? 'På sidste slide (CTA-sliden):' : 'I selve videoen (sidste 2-3 sek.):') + '</div>' + ta('ctaVideo', 'CTA i videoen') + '<div style="font-size:12px;font-weight:400;margin:10px 0 4px;">I caption:</div>' + ta('ctaCaption', 'CTA i caption'))
+    + q('Handlingen i praksis', hint('Skriv hvordan handlingen siges i videoen og skrives i captionen.') + '<div style="font-size:12px;font-weight:400;margin:0 0 4px;">' + (BRIEF_STATE.format === "Karrusel" ? 'På sidste slide (CTA-sliden):' : 'I selve videoen (sidste 2-3 sek.):') + '</div>' + ta('ctaVideo', BRIEF_STATE.format === 'Karrusel' ? 'CTA på sidste slide' : 'CTA i videoen') + '<div style="font-size:12px;font-weight:400;margin:10px 0 4px;">I caption:</div>' + ta('ctaCaption', 'CTA i caption'))
 
 
     + '<div class="brief-trin" data-kort="Planlæg" style="margin:20px 0 10px;padding:11px 14px;background:var(--red);border-radius:12px;color:#fff;"><div style="font-size:12px;font-weight:400;letter-spacing:1.2px;text-transform:uppercase;">Planlæg</div></div>'
@@ -4225,10 +4231,17 @@ function brugKo(key, idx) {
   const felt = key === "hooks" ? "hook" : key;
   BRIEF_STATE[felt] = tekst;
   const side = document.getElementById("bf_" + felt); if (side) side.value = tekst;
+  try { saveBrief(true); } catch(e) {}   /* forslaget skal også GEMMES — ikke kun stå i feltet (auditfund 27/7) */
 }
 
 function openBrief(id) {
-  openBriefSide(id);   // briefen udfyldes ét raket-trin ad gangen (briefSideVis) — wizard'en er slettet (Ida 21/7)
+  BRIEF_SIDE = 0; BRIEF_SIDE_ID = id;   // en brief ÅBNER altid på sin forside (auditfund 27/7)
+  if (!document.getElementById("briefAutoStatus")) {
+    const sp = document.createElement("span"); sp.id = "briefAutoStatus";
+    sp.style.cssText = "position:fixed;bottom:12px;left:50%;transform:translateX(-50%);font-size:11px;color:var(--gray3);z-index:70;pointer-events:none;";
+    document.body.appendChild(sp);
+  }
+  openBriefSide(id);
 }
 async function briefDone() {
   /* Hep ved Done (Ida 27/7): gem + "Godt gået!" m. selvvurdering */
@@ -4273,7 +4286,7 @@ async function saveBrief(stille) {
   await ideUpdate(BRIEF_ID, opdatering);
   if (stille) {
     const a = document.getElementById("briefAutoStatus");
-    if (a) { a.textContent = "Gemt ✓"; setTimeout(() => { if (a) a.textContent = "gemmer selv"; }, 2000); }
+    if (a) { a.textContent = "Gemt ✓"; setTimeout(() => { if (a) a.textContent = ""; }, 2000); }
     return;
   }
   const m = document.getElementById("briefMsg");
@@ -4726,7 +4739,7 @@ function raketTrinVis(i) {
     if (g === BRIEF_SIDE && el.classList && el.classList.contains("sk-q") && !el.querySelector("#koSideUd")) synlige.push(el);
   });
   if (!synlige.length) return;
-  if (RAKET_TRIN_SIDE !== BRIEF_SIDE) { RAKET_TRIN = 0; RAKET_TRIN_SIDE = BRIEF_SIDE; }
+  if (RAKET_TRIN_SIDE !== BRIEF_SIDE || window.RAKET_TRIN_BRIEF !== BRIEF_ID) { RAKET_TRIN = 0; RAKET_TRIN_SIDE = BRIEF_SIDE; window.RAKET_TRIN_BRIEF = BRIEF_ID; }
   RAKET_TRIN = Math.max(0, Math.min(synlige.length - 1, (i == null ? RAKET_TRIN : i)));
   synlige.forEach((el, ix) => { el.style.display = ix === RAKET_TRIN ? "" : "none"; });
   let bar = document.getElementById("basisTrinBar");
@@ -4736,7 +4749,7 @@ function raketTrinVis(i) {
   bar.innerHTML = '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:6px;">'
     + '<span></span>'
     + '<span style="display:flex;gap:8px;">'
-    + '<button type="button" class="dbtn" style="background:#fff;border:1px solid var(--border);" onclick="' + (RAKET_TRIN > 0 ? 'raketTrinVis(' + (RAKET_TRIN - 1) + ')' : 'briefSideVis(' + (BRIEF_SIDE === 2 ? 0 : BRIEF_SIDE - 1) + ')') + '">&larr; Tilbage</button>'
+    + '<button type="button" class="dbtn" style="background:#fff;border:1px solid var(--border);" onclick="' + (RAKET_TRIN > 0 ? 'raketTrinVis(' + (RAKET_TRIN - 1) + ')' : 'briefSideVis(' + (BRIEF_SIDE === 2 ? 1 : BRIEF_SIDE - 1) + ')') + '">&larr; Tilbage</button>'
     + (sidste
         ? '<button type="button" class="dbtn primary" onclick="briefDone()">Done</button>'
         : '<button type="button" class="dbtn primary" onclick="' + (RAKET_TRIN < synlige.length - 1 ? 'raketTrinVis(' + (RAKET_TRIN + 1) + ')' : 'briefSideVis(' + (BRIEF_SIDE + 1) + ')') + '">Næste &rarr;</button>')
@@ -9388,7 +9401,7 @@ function buildSideNav(def) {
     + item("", "Kontakt Ida", "openChat()")
     + item("", "Skift adgangskode", "togglePwPanel()")
     + item("", "Log ud", "custLogout()", " roed")
-    + '<div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0 12px;">Version 26. juli · 605</div>'
+    + '<div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0 12px;">Version 26. juli · 606</div>'
     + '</div>'
     + '<button class="sn-virk-knap" onclick="toggleVirkMenu(event)" title="' + esc(virkNavn) + '" aria-label="Profil"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(virkNavn) + '</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="flex-shrink:0;"><path d="M6 9l6 6 6-6"/></svg></button>'
     + '<div id="virkMenu" style="display:none;position:fixed;right:20px;top:72px;width:230px;background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:0 16px 40px rgba(0,0,0,0.15);padding:8px;z-index:90;">'
@@ -17318,6 +17331,6 @@ if ((location.hash || "").toLowerCase() === "#ole") {   // #ole = preview af Ole
 })();
 </script>
 <!-- Versions-mærke: synligt på ALLE sider, så Ida altid kan se hvilken version hun kigger på (27/7) -->
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 26. juli · 605</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 26. juli · 606</div>
 </body>
 </html>
