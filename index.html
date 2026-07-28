@@ -837,7 +837,7 @@ body.lek-open .burger-btn, body.lek-open .bottom-nav, body.lek-open .dash-fab { 
     <button class="burger-item" onclick="toggleBurger(); togglePwPanel()">Skift adgangskode</button>
     <button class="burger-item" onclick="toggleBurger(); openChat()">Kontakt Ida</button>
     <button class="burger-item" style="color:var(--red);" onclick="custLogout()">Log ud</button>
-    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 28. juli · 645</div>
+    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 28. juli · 646</div>
   </div>
 </div>
 <div class="plus-menu" id="plusMenu" onclick="if(event.target===this)togglePlus()">
@@ -3238,7 +3238,7 @@ select titel,
     <div id="systemtjek" style="display:none;background:#fff;border:1px solid var(--border);border-radius:20px;padding:14px 16px;margin-top:16px;"></div>
     <div id="dashFooter" style="display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--gray3);padding:22px 0 12px;border-top:1px solid var(--border);margin-top:10px;">
       <div style="font-size:10px;">© 2026 Energida · Alle rettigheder forbeholdes</div>
-      <div style="font-size:10px;margin-left:auto;">Version 28. juli · 645 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
+      <div style="font-size:10px;margin-left:auto;">Version 28. juli · 646 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
     </div>
   </div>
 </div>
@@ -5403,7 +5403,8 @@ function prodRender() {
         const paa = PROD_KOBL.has(valgt.id + "|" + l.id);
         return '<div style="display:flex;align-items:center;gap:10px;border-top:1px solid var(--border);padding:7px 0;">'
           + '<input type="checkbox"' + (paa ? ' checked' : '') + ' onchange="prodToggle(\'' + l.id + '\', this)" style="width:16px;height:16px;flex-shrink:0;cursor:pointer;">'
-          + '<span onclick="prodLekRet(\'' + l.id + '\', this)" title="Klik for at rette titlen" style="flex:1;min-width:0;font-size:12.5px;cursor:text;">' + esc(l.titel) + '</span>'
+          + '<span id="plek_' + l.id + '" onclick="prodSeLektion(\'' + l.id + '\')" title="Åbn lektionssiden" style="flex:1;min-width:0;font-size:12.5px;cursor:pointer;">' + esc(l.titel) + '</span>'
+          + '<button type="button" onclick="prodLekRet(\'' + l.id + '\', document.getElementById(\'plek_' + l.id + '\'))" title="Ret titlen" aria-label="Ret titlen" style="background:none;border:none;cursor:pointer;padding:2px 4px;line-height:0;color:var(--gray3);flex-shrink:0;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3.5l3.5 3.5L8 19.5 3.5 20.5 4.5 16 17 3.5z"/></svg></button>'
           + '</div>';
       }).join(""); }).join("");
 
@@ -5417,7 +5418,7 @@ function prodRender() {
     + ' <span style="color:var(--gray3);letter-spacing:0;text-transform:none;font-weight:400;">— ' + antalI(valgt.id) + ' af ' + PROD_LEK.length + ' valgt</span></div></div>'
     + (valgt.beskrivelse ? '<div style="font-size:11px;color:var(--gray3);margin-top:2px;">' + esc(valgt.beskrivelse) + '</div>' : '')
     + hoejre + '</div></div>'
-    + '<div style="font-size:10.5px;color:var(--gray3);margin-top:8px;">Kryds af, hvad produktet indeholder — gemmes med det samme. Klik på en titel eller produktnavnet for at rette det.</div>';
+    + '<div style="font-size:10.5px;color:var(--gray3);margin-top:8px;">Kryds af, hvad produktet indeholder — gemmes med det samme. Klik på en titel for at åbne lektionssiden, ret den med blyanten — og klik på produktnavnet for at omdøbe det.</div>';
 }
 function prodVaelg(id) { PROD_VALGT = id; prodRender(); }
 async function prodToggle(lekId, boks) {
@@ -5466,6 +5467,20 @@ function prodLekRet(id, el) {
     try { await sb.from("lektioner").update({ titel: ny }).eq("id", id); } catch(e) { return; }
     const l = PROD_LEK.find(x => x.id === id); if (l) l.titel = ny;
   });
+}
+/* Klik på en lektionstitel i indholdsbanken → åbn den samme lektionsside som under modulerne (Ida 28/7) */
+function prodSeLektion(lekId) {
+  const l = PROD_LEK.find(x => String(x.id) === String(lekId)); if (!l) return;
+  const t = String(l.titel || "").trim().toLowerCase();
+  const hit = KURSUS_LEKTIONER.find(x => String(x.titel).trim().toLowerCase() === t)
+    || (t.length > 3 ? KURSUS_LEKTIONER.find(x => String(x.titel).toLowerCase().indexOf(t.slice(0, 14)) > -1) : null);
+  if (!hit) { alert("Lektionen har ikke en lektionsside i kursusmotoren endnu — titlerne skal matche, før klikket kan lande rigtigt."); return; }
+  LEK_AABEN = hit.id;   // åbnes direkte — tæller ikke som kundevisning og kræver ikke kode-adgang
+  const lv = document.getElementById("lekVis"); if (!lv) return;
+  lv.classList.add("on");
+  document.body.classList.add("lek-open");
+  renderLektionVis();
+  lv.scrollTop = 0;
 }
 function prodNavnRet(el) {
   prodTekstRet(el, async ny => {
@@ -6263,6 +6278,28 @@ async function sqlKoertHent() {
       sqlKoerteFjern();
     }
   } catch(e) {}
+  try {   // Modtaget-listen på Claudes manus-feedback følger med på tværs af enheder
+    const { data } = await sb.from("skema_svar").select("svar")
+      .eq("kode", "ENERGIDA").eq("navn", "config").eq("skema", "manus_fb_ok").maybeSingle();
+    if (data && data.svar && Array.isArray(data.svar.lek)) localStorage.setItem("energida_manus_fb_ok", JSON.stringify(data.svar.lek));
+  } catch(e) {}
+}
+
+/* Claudes feedback-boks i manus-visningen: "Modtaget" fjerner boksen for den lektion (Ida 28/7) */
+function manusFbOk() { try { return JSON.parse(localStorage.getItem("energida_manus_fb_ok")) || []; } catch(e) { return []; } }
+async function manusFbModtaget(lekId, btn) {
+  if (btn) { btn.disabled = true; btn.textContent = "Modtaget ✓"; }
+  const liste = manusFbOk(); if (liste.indexOf(lekId) < 0) liste.push(lekId);
+  try { localStorage.setItem("energida_manus_fb_ok", JSON.stringify(liste)); } catch(e) {}
+  if (sb) {
+    try {
+      const raekke = { kode: "ENERGIDA", navn: "config", skema: "manus_fb_ok", svar: { lek: liste } };
+      const eks = await sb.from("skema_svar").update({ svar: raekke.svar })
+        .eq("kode", "ENERGIDA").eq("navn", "config").eq("skema", "manus_fb_ok").select();
+      if (!eks.data || !eks.data.length) await sb.from("skema_svar").insert(raekke);
+    } catch(e) {}
+  }
+  const boks = document.getElementById("fbBoks_" + lekId); if (boks) boks.style.display = "none";
 }
 
 /* ---------- MANGLER-LISTEN SOM QUIZ (Ida 21/7): tag stilling ét punkt ad gangen ---------- */
@@ -7102,9 +7139,9 @@ function klipBriefRender() {
     + '<button class="row-btn view" style="font-weight:400;" onclick="klipManusNyFane(&#39;' + o.id + '&#39;)">Åbn i ny fane &#8599;</button>'
     + '<button class="row-btn" style="font-weight:400;" onclick="printManus(&#39;' + o.id + '&#39;)">Print manus</button>'
     + '</div>'
-    + ((lek && lek.l && typeof KLIP_FEEDBACK !== "undefined" && KLIP_FEEDBACK[lek.l.id])
-      ? '<div style="background:#fff;border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-top:16px;">'
-        + '<div style="display:flex;align-items:center;gap:9px;font-size:10px;font-weight:400;letter-spacing:1.8px;text-transform:uppercase;color:var(--red);border-bottom:1px solid var(--border);padding-bottom:8px;margin-bottom:9px;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M21 11.5a8.5 8.5 0 0 1-8.5 8.5c-1.5 0-2.9-.4-4.1-1L3 21l2-5.4a8.5 8.5 0 1 1 16-4.1z"/></svg><span>Claudes feedback &middot; gennemgangen 27/7</span></div>'
+    + ((lek && lek.l && typeof KLIP_FEEDBACK !== "undefined" && KLIP_FEEDBACK[lek.l.id] && manusFbOk().indexOf(lek.l.id) < 0)
+      ? '<div id="fbBoks_' + lek.l.id + '" style="background:#fff;border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-top:16px;">'
+        + '<div style="display:flex;align-items:center;gap:9px;font-size:10px;font-weight:400;letter-spacing:1.8px;text-transform:uppercase;color:var(--red);border-bottom:1px solid var(--border);padding-bottom:8px;margin-bottom:9px;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M21 11.5a8.5 8.5 0 0 1-8.5 8.5c-1.5 0-2.9-.4-4.1-1L3 21l2-5.4a8.5 8.5 0 1 1 16-4.1z"/></svg><span style="flex:1;min-width:0;">Claudes feedback &middot; gennemgangen 27/7</span><button type="button" class="row-btn" style="font-weight:400;letter-spacing:0;text-transform:none;flex-shrink:0;" title="Fjern boksen — feedbacken er læst" onclick="manusFbModtaget(&#39;' + lek.l.id + '&#39;, this)">Modtaget</button></div>'
         + '<div style="font-size:12.5px;line-height:1.7;color:var(--black);">' + KLIP_FEEDBACK[lek.l.id] + '</div>'
         + '</div>'
       : '')
@@ -7682,13 +7719,15 @@ function renderKlipperum() {
   const colsEl = document.querySelector('#dside-klip .klip-cols');
   if (colsEl) colsEl.style.gridTemplateColumns = (isListe || isTavle) ? "1fr" : "";
   const iRail = !isListe && !isTavle && document.body.classList.contains("dash-nav") && document.getElementById("klipRail");
+  /* Højre side = Idéer til manus (Ida 28/7). Næste skridt-boksen er udgået — venter en video, vises dét kort øverst i listen. */
+  const micEl = document.getElementById("manusIdeCard"), railEl = document.getElementById("klipRail");
   if (iRail) {
-    const naesteKort = naeste || '<div class="ws-card" style="padding:18px 20px;"><div style="font-size:10px;letter-spacing:1.8px;text-transform:uppercase;font-weight:400;color:var(--red);">Næste skridt</div><div style="font-size:12.5px;color:var(--gray3);margin-top:8px;line-height:1.5;">Ingen videoer venter på dig lige nu — alt er ajour.</div></div>';
-    document.getElementById("klipRail").innerHTML = naesteKort;
-  } else if (document.getElementById("klipRail")) {
-    document.getElementById("klipRail").innerHTML = "";
+    if (micEl && railEl && micEl.parentElement !== railEl) railEl.appendChild(micEl);
+  } else if (railEl) {
+    const mainEl = document.querySelector('#dside-klip .klip-main');
+    if (micEl && mainEl && micEl.parentElement !== mainEl) mainEl.insertBefore(micEl, mainEl.firstChild);
   }
-  el.innerHTML = (iRail ? '' : naeste)
+  el.innerHTML = naeste
     + (isTavle
       ? filterChips + klipTavle(synlige)
       : isListe
@@ -9750,7 +9789,7 @@ function buildSideNav(def) {
     + item("", "Kontakt Ida", "openChat()")
     + item("", "Skift adgangskode", "togglePwPanel()")
     + item("", "Log ud", "custLogout()", " roed")
-    + '<div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0 12px;">Version 28. juli · 645</div>'
+    + '<div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0 12px;">Version 28. juli · 646</div>'
     + '</div>'
     + '<button class="sn-virk-knap" onclick="toggleVirkMenu(event)" title="' + esc(virkNavn) + '" aria-label="Profil"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(virkNavn) + '</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="flex-shrink:0;"><path d="M6 9l6 6 6-6"/></svg></button>'
     + '<div id="virkMenu" style="display:none;position:fixed;right:20px;top:72px;width:230px;background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:0 16px 40px rgba(0,0,0,0.15);padding:8px;z-index:90;">'
@@ -17915,6 +17954,6 @@ if ((location.hash || "").toLowerCase() === "#ole") {   // #ole = preview af Ole
 })();
 </script>
 <!-- Versions-mærke: synligt på ALLE sider, så Ida altid kan se hvilken version hun kigger på (27/7) -->
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 28. juli · 645</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 28. juli · 646</div>
 </body>
 </html>
