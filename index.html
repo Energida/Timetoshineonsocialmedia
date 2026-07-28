@@ -837,7 +837,7 @@ body.lek-open .burger-btn, body.lek-open .bottom-nav, body.lek-open .dash-fab { 
     <button class="burger-item" onclick="toggleBurger(); togglePwPanel()">Skift adgangskode</button>
     <button class="burger-item" onclick="toggleBurger(); openChat()">Kontakt Ida</button>
     <button class="burger-item" style="color:var(--red);" onclick="custLogout()">Log ud</button>
-    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 28. juli · 654</div>
+    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 28. juli · 655</div>
   </div>
 </div>
 <div class="plus-menu" id="plusMenu" onclick="if(event.target===this)togglePlus()">
@@ -1454,6 +1454,7 @@ body.lek-open .burger-btn, body.lek-open .bottom-nav, body.lek-open .dash-fab { 
     <div class="screen" id="screen8">
       <img class="hjerte-pynt" src="logo-hjerte-hvid.png" alt="" style="top:-20px;right:-50px;width:min(780px,55vw);opacity:.6;">
       <div class="screen-title" style="margin-bottom:10px;">Kalenderen</div>
+      <div id="mtemaContentKort" style="display:none;margin-bottom:14px;"></div>
       <div style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap;align-items:center;">
         <button type="button" class="chip-btn on" onclick="showTab(8)">Kalender</button>
         <button type="button" class="chip-btn" onclick="showTab(2)">Idébanken</button>
@@ -3248,7 +3249,7 @@ select titel,
     <div id="systemtjek" style="display:none;background:#fff;border:1px solid var(--border);border-radius:20px;padding:14px 16px;margin-top:16px;"></div>
     <div id="dashFooter" style="display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--gray3);padding:22px 0 12px;border-top:1px solid var(--border);margin-top:10px;">
       <div style="font-size:10px;">© 2026 Energida · Alle rettigheder forbeholdes</div>
-      <div style="font-size:10px;margin-left:auto;">Version 28. juli · 654 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
+      <div style="font-size:10px;margin-left:auto;">Version 28. juli · 655 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
     </div>
   </div>
 </div>
@@ -3615,6 +3616,7 @@ function energiAaben() {
 }
 function showTab(n) {
   if (n === 10) { try { mtemaHent(); } catch(e) {} }          // Månedens tema loader ved direkte hop (auditfund 27/7)
+  if (n === 8) { try { mtemaContentVis(); } catch(e) {} }     // Månedens tema-boksen på Content-siden (Ida 28/7)
   if (n === 1) { try { saetBrandbogTitel(); } catch(e) {} }   // Brandbogens forside-navn ved direkte hop
   if (window.__ENERGI_AABEN) {   // på vej ud af Energien: ryd M-skærmene og fanebjælken
     document.querySelectorAll(".mscreen").forEach(sc => sc.classList.remove("active"));
@@ -9871,7 +9873,7 @@ function buildSideNav(def) {
     + item("", "Kontakt Ida", "openChat()")
     + item("", "Skift adgangskode", "togglePwPanel()")
     + item("", "Log ud", "custLogout()", " roed")
-    + '<div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0 12px;">Version 28. juli · 654</div>'
+    + '<div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0 12px;">Version 28. juli · 655</div>'
     + '</div>'
     + '<button class="sn-virk-knap" onclick="toggleVirkMenu(event)" title="' + esc(knapNavn) + '" aria-label="Profil"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(knapNavn) + '</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="flex-shrink:0;"><path d="M6 9l6 6 6-6"/></svg></button>'
     + '<div id="virkMenu" style="display:none;position:fixed;right:20px;top:72px;width:230px;background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:0 16px 40px rgba(0,0,0,0.15);padding:8px;z-index:90;">'
@@ -12003,6 +12005,31 @@ async function mtemaHent() {
   } catch(e) {}
 }
 function mtemaAuto() { clearTimeout(MTEMA_TIMER); MTEMA_TIMER = setTimeout(mtemaGem, 1200); }
+/* Månedens tema-boks på Content-siden for ALLE kundetyper (Ida 28/7) — magen til Ugens fokus, m. måneden som underoverskrift */
+async function mtemaContentVis() {
+  const el = document.getElementById("mtemaContentKort");
+  if (!el || !sb || !currentKode) return;
+  let tema = "", mnd = "";
+  try {
+    const { data } = await sb.from("skema_svar").select("svar").eq("kode", currentKode).eq("navn", "config").eq("skema", "maanedens_tema").maybeSingle();
+    if (data && data.svar) { tema = data.svar.tema || ""; mnd = data.svar.maaned || ""; }
+  } catch(e) {}
+  const nuMnd = new Date().toISOString().slice(0, 7);
+  let mndNavn = "";
+  try { const s = new Date().toLocaleDateString("da-DK", { month: "long", year: "numeric" }); mndNavn = s.charAt(0).toUpperCase() + s.slice(1); } catch(e) {}
+  const aktuel = tema && mnd === nuMnd;
+  el.style.display = "block";
+  el.innerHTML = '<div style="background:#fff;border:1px solid var(--border);border-radius:20px;padding:17px 20px 19px;">'
+    + '<div style="display:flex;align-items:center;gap:9px;font-size:10px;font-weight:400;letter-spacing:1.8px;text-transform:uppercase;color:var(--red);border-bottom:1px solid var(--border);padding-bottom:9px;">'
+    + '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M16 3v4M8 3v4M3 10.5h18"/></svg>'
+    + '<span style="flex:1;min-width:0;">Månedens tema</span></div>'
+    + '<div style="font-size:10px;letter-spacing:1.6px;text-transform:uppercase;font-weight:400;color:var(--gray3);margin:8px 0 4px;">' + esc(mndNavn) + '</div>'
+    + (aktuel
+      ? '<div style="font-family:\'Didot\',\'Bodoni 72\',Georgia,serif;font-style:italic;font-size:24px;line-height:1.3;letter-spacing:-0.2px;color:var(--red);">' + esc(storStart(tema)) + '</div>'
+      : '<div style="font-size:12.5px;color:var(--gray3);line-height:1.6;">' + (tema ? 'Ny måned — tid til et nyt tema. ' : 'Intet tema valgt endnu. ')
+        + '<span onclick="showTab(10)" style="color:var(--red);cursor:pointer;">Vælg det i Energidas contentmodel &rarr;</span></div>')
+    + '</div>';
+}
 async function mtemaGem() {
   const f = document.getElementById("mtemaFelt"); if (!f || !sb || !currentKode) return;
   const svar = { tema: f.value.trim(), maaned: new Date().toISOString().slice(0, 7) };
@@ -12010,6 +12037,7 @@ async function mtemaGem() {
     const eks = await sb.from("skema_svar").update({ svar: svar }).eq("kode", currentKode).eq("navn", "config").eq("skema", "maanedens_tema").select();
     if (!eks.data || !eks.data.length) await sb.from("skema_svar").insert({ kode: currentKode, navn: "config", skema: "maanedens_tema", svar: svar });
   } catch(e) {}
+  try { mtemaContentVis(); } catch(e) {}   // boksen på Content-siden følger med det samme
 }
 async function hentStrategiOverride(kode, strategi) {
   if (!sb || !kode) return strategi;
@@ -18056,6 +18084,6 @@ if ((location.hash || "").toLowerCase() === "#ole") {   // #ole = preview af Ole
 })();
 </script>
 <!-- Versions-mærke: synligt på ALLE sider, så Ida altid kan se hvilken version hun kigger på (27/7) -->
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 28. juli · 654</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 28. juli · 655</div>
 </body>
 </html>
