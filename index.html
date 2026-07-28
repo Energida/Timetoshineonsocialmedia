@@ -837,7 +837,7 @@ body.lek-open .burger-btn, body.lek-open .bottom-nav, body.lek-open .dash-fab { 
     <button class="burger-item" onclick="toggleBurger(); togglePwPanel()">Skift adgangskode</button>
     <button class="burger-item" onclick="toggleBurger(); openChat()">Kontakt Ida</button>
     <button class="burger-item" style="color:var(--red);" onclick="custLogout()">Log ud</button>
-    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 28. juli · 656</div>
+    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 28. juli · 657</div>
   </div>
 </div>
 <div class="plus-menu" id="plusMenu" onclick="if(event.target===this)togglePlus()">
@@ -3250,7 +3250,7 @@ select titel,
     <div id="systemtjek" style="display:none;background:#fff;border:1px solid var(--border);border-radius:20px;padding:14px 16px;margin-top:16px;"></div>
     <div id="dashFooter" style="display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--gray3);padding:22px 0 12px;border-top:1px solid var(--border);margin-top:10px;">
       <div style="font-size:10px;">© 2026 Energida · Alle rettigheder forbeholdes</div>
-      <div style="font-size:10px;margin-left:auto;">Version 28. juli · 656 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
+      <div style="font-size:10px;margin-left:auto;">Version 28. juli · 657 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
     </div>
   </div>
 </div>
@@ -4031,7 +4031,8 @@ function basisSoejleValgBlokHtml() {
   /* Story (2B) hører til i stories — vises ALDRIG som brief-valg. Kun ét feed-valg => punktet springes over (Ida 27/7). */
   const alle = soejleSort((strategyPillars || []).filter(x => { const m = soejleModel(x); return m && m.kode !== "2B"; }));
   const vis = alle.filter(x => soejleModel(x).type === valgtType);
-  if (vis.length < 2) return "";
+  if (!vis.length) return "";
+  /* Vises OGSÅ ved kun ét valg (Ida 28/7) — søjlen skal altid kunne SES, selv når den vælger sig selv */
   const sChips = vis.map(x => {
     const m = soejleModel(x), on = it.soejle === x;
     return '<button type="button" class="chip-btn' + (on ? ' on' : '') + '" onclick="briefBasisSoejle(\'' + esc(x).replace(/'/g, "\\'") + '\')">'
@@ -4076,12 +4077,14 @@ function briefBasisType(t) {
   if (window.BASIS_EDIT) delete window.BASIS_EDIT.indholdstype;
   /* Kun ét feed-valg i typen (fx Type 2 = 2A) => vælg den automatisk og gå direkte videre (Ida 27/7) */
   const muligheder = soejleSort((strategyPillars || []).filter(x => { const m = soejleModel(x); return m && m.type === t && m.kode !== "2B"; }));
+  let autoValgt = null;
   if (muligheder.length === 1) {
     const it = IDEER.find(x => x.id === BRIEF_ID);
-    if (it && it.soejle !== muligheder[0]) { it.soejle = muligheder[0]; try { ideUpdate(BRIEF_ID, { soejle: muligheder[0] }); } catch(e) {} }
+    if (it && it.soejle !== muligheder[0]) { it.soejle = muligheder[0]; try { ideUpdate(BRIEF_ID, { soejle: muligheder[0] }); } catch(e) {} autoValgt = muligheder[0]; }
   }
   try { saveBrief(true); } catch(e) {}
   openBriefSide(BRIEF_ID);
+  if (autoValgt) try { soejleReminderVis(autoValgt); } catch(e) {}   /* popup'en også når søjlen vælger sig selv (Ida 28/7) */
 }
 async function briefBasisSoejle(navn) {
   if (window.BASIS_EDIT) delete window.BASIS_EDIT.soejle;
@@ -4093,6 +4096,44 @@ async function briefBasisSoejle(navn) {
     try { await saveBrief(true); } catch(e) {}
   }
   openBriefSide(BRIEF_ID);
+  try { soejleReminderVis(navn); } catch(e) {}   /* popup'en springer frem ved søjle-valget (Ida 28/7) */
+}
+/* "Du har valgt indholdssøjlen …" (Ida 28/7): ÉN samlet popup m. vibe, følelse, brandstrategi-del og CTA-valg */
+function soejleReminderVis(navn) {
+  const m = soejleModel(navn || ""); if (!m) return;
+  const tema = (STRATEGI_TEMAER || []).find(x => x.navn === navn) || {};
+  const VIBE = { "1A": "Uddannende", "1B": "Inspirerende", "2A": "Underholdende", "2B": "Underholdende — ægte og personligt" };
+  const FOELELSE = {
+    "1A": "Kender du det?!",
+    "1B": "Gud hvor smart — den vil jeg have!",
+    "2A": "Dem kan jeg godt lide — dem vil jeg være kunde hos.",
+    "2B": "Dem kender jeg — det er hyggeligt at følge med."
+  };
+  const foelelse = tema.foelelse || FOELELSE[m.kode] || "";
+  const bd = brandDelData(m.kode);
+  const felt = x => '<div style="background:#fff;border-radius:14px;padding:10px 13px;margin-top:8px;text-align:left;">'
+    + (x.t ? '<div style="color:var(--red);font-size:13px;line-height:1.35;">' + esc(x.t) + '</div>' : '')
+    + (x.d ? '<div style="color:var(--gray3);font-size:11.5px;line-height:1.5;margin-top:2px;">' + esc(x.d) + '</div>' : '')
+    + '</div>';
+  const ctas = (CTA_MAP_SOEJLE[m.kode] || []).map(o =>
+    '<button type="button" data-cta="' + esc(o) + '" onclick="retningCta(this)" style="display:inline-block;margin:6px 6px 0 0;background:' + (BRIEF_STATE && BRIEF_STATE.cta === o ? '#fff' : 'none') + ';color:' + (BRIEF_STATE && BRIEF_STATE.cta === o ? 'var(--red)' : '#fff') + ';border:1.5px solid #fff;border-radius:20px;padding:7px 14px;font-family:Poppins,sans-serif;font-size:12px;font-weight:400;cursor:pointer;">' + esc(o) + '</button>').join("");
+  const afsnit = (lbl, inner) => '<div style="margin-top:14px;"><div style="font-size:9.5px;letter-spacing:1.8px;text-transform:uppercase;opacity:.85;">' + lbl + '</div>' + inner + '</div>';
+  const bag = document.createElement("div");
+  bag.className = "modal-back on";
+  bag.style.zIndex = "965";
+  bag.innerHTML = '<div class="modal" style="max-width:440px;width:min(440px,92vw);background:var(--red);border-radius:20px;padding:22px 24px;color:#fff;position:relative;max-height:86vh;overflow-y:auto;overflow-x:hidden;">'
+    + '<img src="logo-hjerte-hvid.png" alt="" style="position:absolute;top:-24px;right:-40px;width:190px;opacity:.3;pointer-events:none;">'
+    + '<button class="modal-close" style="color:#fff;position:absolute;top:12px;right:14px;z-index:2;" onclick="this.closest(\'.modal-back\').remove()">&times;</button>'
+    + '<div style="font-size:9.5px;letter-spacing:1.8px;text-transform:uppercase;position:relative;z-index:1;">Du har valgt indholdssøjlen</div>'
+    + '<div style="font-family:\'Didot\',\'Bodoni 72\',Georgia,serif;font-size:22px;line-height:1.25;margin-top:6px;">' + m.kode + ' &middot; ' + esc(soejleVis(navn)) + '</div>'
+    + '<div style="height:1px;background:rgba(255,255,255,.55);margin:12px 0 0;"></div>'
+    + afsnit('Viben', '<div style="font-size:14px;margin-top:4px;">' + (VIBE[m.kode] || '') + '</div>')
+    + afsnit('Følelsen, målgruppen skal sidde med', '<div style="background:#fff;color:var(--red);border-radius:14px;padding:10px 13px;margin-top:6px;font-size:13.5px;font-style:italic;">&quot;' + esc(foelelse) + '&quot;</div>')
+    + afsnit('Fra ' + (bd.lbl ? bd.lbl.replace("jeres ", "jeres brandstrategi: ") : 'jeres brandstrategi'), bd.items.length ? bd.items.map(felt).join("") : '<div style="font-size:12px;font-style:italic;opacity:.9;margin-top:6px;">(Udfyldes, når jeres brandstrategi er på plads)</div>')
+    + afsnit('Handlingen — vælg den CTA, opslaget går efter', '<div>' + ctas + '</div>')
+    + '<button type="button" class="dbtn" style="width:100%;margin-top:18px;background:#fff;border:none;color:var(--red);padding:14px;font-size:13.5px;box-shadow:0 8px 20px rgba(0,0,0,.14);" onclick="this.closest(\'.modal-back\').remove()">Got it</button>'
+    + '</div>';
+  document.body.appendChild(bag);
 }
 function brandDelData(kode) {
   /* Hvad indholdet skal afspejle fra kundens EGEN brandbog (Ida 27/7): 2A=værdierne, 1B=USP, 1A=kernekunden, 2B=why/visionen */
@@ -4142,7 +4183,7 @@ function briefRetningVis(trin) {
       + (x.d ? '<div style="color:var(--gray3);font-size:12px;line-height:1.5;margin-top:2px;">' + esc(x.d) + '</div>' : '')
       + '</div>';
     inder = '<div style="font-size:11px;line-height:1.6;margin-top:12px;opacity:.8;">Du har valgt indholdstypen <i>' + esc(m.type) + '</i> og indholdssøjlen <i>' + esc(soejleVis(it.soejle)) + '</i></div>'
-      + '<div style="font-size:15.5px;line-height:1.5;margin-top:14px;">Dette indhold skal afspejle én eller flere af ' + bd.lbl + '.</div>'
+      + '<div style="font-size:15.5px;line-height:1.5;margin-top:14px;">Indholdet skal afspejle en eller flere af ' + bd.lbl + '.</div>'   /* Idas ordlyd 28/7 */
       + (bd.items.length ? bd.items.map(felt).join("") : '<div style="font-size:13px;font-style:italic;margin-top:10px;opacity:.9;">(Udfyldes, når jeres brandstrategi er på plads)</div>');
   } else if (trin === 1) {
     inder = '<div style="font-size:14.5px;line-height:1.6;margin-top:12px;">Denne type opslag har ofte en <b style="font-weight:400;font-style:italic;">' + vibe + '</b> vibe.'
@@ -4159,9 +4200,12 @@ function briefRetningVis(trin) {
   bag.className = "modal-back on";
   bag.style.zIndex = "965";
   /* Lukkes KUN med krydset (Ida 27/7) — klik udenfor og Escape lukker ikke */
-  bag.innerHTML = '<div class="modal" style="max-width:440px;width:min(440px,92vw);min-height:430px;background:var(--red);border-radius:20px;padding:22px 24px;color:#fff;position:relative;display:flex;flex-direction:column;">'
-    + '<button class="modal-close" style="color:#fff;position:absolute;top:12px;right:14px;" onclick="this.closest(\'.modal-back\').remove()">&times;</button>'
-    + '<div style="font-size:9.5px;letter-spacing:1.8px;text-transform:uppercase;">' + (trin + 1) + '/3</div>'
+  bag.innerHTML = '<div class="modal" style="max-width:440px;width:min(440px,92vw);min-height:430px;background:var(--red);border-radius:20px;padding:22px 24px;color:#fff;position:relative;display:flex;flex-direction:column;overflow:hidden;">'
+    + '<img src="logo-hjerte-hvid.png" alt="" style="position:absolute;top:-24px;right:-40px;width:190px;opacity:.3;pointer-events:none;">'   /* det hvide hjernehjerte som pynt (Ida 28/7) */
+    + '<button class="modal-close" style="color:#fff;position:absolute;top:12px;right:14px;z-index:2;" onclick="this.closest(\'.modal-back\').remove()">&times;</button>'
+    + '<div style="display:flex;align-items:center;gap:12px;position:relative;z-index:1;">'
+    + (trin > 0 ? '<button type="button" style="background:none;border:none;padding:0;color:#fff;font-family:Poppins,sans-serif;font-size:11px;cursor:pointer;display:inline-flex;align-items:center;gap:4px;" onclick="this.closest(\'.modal-back\').remove();briefRetningVis(' + (trin - 1) + ')">&#8592; Tilbage</button>' : '')
+    + '<span style="font-size:9.5px;letter-spacing:1.8px;text-transform:uppercase;">' + (trin + 1) + '/3</span></div>'
     + '<div style="height:1px;background:rgba(255,255,255,.55);margin:8px 0 0;"></div>'
     + inder + '<div style="flex:1;min-height:18px;"></div>' + knap
     + '<div style="text-align:center;margin-top:10px;"><span onclick="this.closest(\'.modal-back\').remove();briefSideVis(2)" style="color:#fff;font-size:12px;cursor:pointer;">Spring over</span></div>'
@@ -4381,7 +4425,7 @@ function openBriefSide(id) {
     + (mgNavne.length > 1 ? q('Hvem er opslaget til?', hint('Fra målgruppe-lektionen: vælg, hvem netop dette opslag taler til — spørgsmålene tilpasser sig.') + chips('maalgruppe', mgChips, false)) : '')
     /* Energi-punktet FJERNET fra The basics (Ida 28/7 — selvvurderingen i Done-heppet dækker det); koden (briefEnergiHtml) består */
     /* PLANLÆG/formalia bor på idéens DASHBOARD sammen med basis-valgene (Ida 27/7) */
-    + '<button type="button" class="dbtn primary" style="width:100%;padding:15px;font-size:14px;margin:6px 0 4px;" onclick="briefRetningVis()">Næste &rarr;</button>'
+    + '<div style="display:flex;justify-content:flex-end;margin:6px 0 4px;"><button type="button" class="dbtn primary" style="padding:13px 26px;font-size:13.5px;" onclick="briefRetningVis()">Næste &rarr;</button></div>'   /* alm. knap i højre side (Ida 28/7) — ikke fuld bredde */
     + trin(1, '1/3 · Skab nysgerrighed', 'Hooket — de første 0-3 sek. skal fange (mål: over 60% ser videre).')
     + q('Hook — hvad skal fange kunden de første sekunder?', hint('DERFOR ER HOOKET VIGTIGT: De første 0-3 sekunder afgør, om folk bliver — uden et hook bliver resten aldrig set (målet: over 60% ser videre). · VISUELT HOOK = det, øjet fanger: bevægelse, et uventet klip eller en genkendelig situation. Eksempler: to kolleger kigger direkte i kameraet og siger hver sit · en vare kastes ind i billedet · et før/efter-klip. · TEKST-HOOK = ordene på skærmen eller første linje: en overraskende påstand, et spørgsmål der ikke besvares, eller kender du det…. Eksempler: Hvem laver den flotteste latte art? · Det her vidste du ikke om kaffen · 3 fejl alle laver med jeans. · Stærkest er ofte BEGGE: noget at se og noget at læse.') + chips('hookStruktur', ["Visuelt hook","Tekst-hook","Begge"], false)
       + '<div style="font-size:12px;font-weight:400;margin:10px 0 4px;">' + (BRIEF_STATE.format === "Karrusel" ? 'Hvad ser vi på første slide?' : 'Hvad sker der i første klip?') + '</div>' + ta('hook', 'Beskriv det visuelle hook — det første, øjet fanger…')
@@ -9901,7 +9945,7 @@ function buildSideNav(def) {
     + item("", "Kontakt Ida", "openChat()")
     + item("", "Skift adgangskode", "togglePwPanel()")
     + item("", "Log ud", "custLogout()", " roed")
-    + '<div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0 12px;">Version 28. juli · 656</div>'
+    + '<div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0 12px;">Version 28. juli · 657</div>'
     + '</div>'
     + '<button class="sn-virk-knap" onclick="toggleVirkMenu(event)" title="' + esc(knapNavn) + '" aria-label="Profil"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(knapNavn) + '</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="flex-shrink:0;"><path d="M6 9l6 6 6-6"/></svg></button>'
     + '<div id="virkMenu" style="display:none;position:fixed;right:20px;top:72px;width:230px;background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:0 16px 40px rgba(0,0,0,0.15);padding:8px;z-index:90;">'
@@ -15000,6 +15044,7 @@ function renderKundeKort() {
   const typeNavn = kundetypeNavn(def.type_vist || def.type) || def.forloeb || "";
   const metaLinje = esc(typeNavn) + ' · kode: ' + esc(k.kode) + (k.oprettet ? ' · oprettet ' + kkOprettetTekst(k.oprettet) : '') + (k.sidstAktiv ? ' · sidst aktiv ' + kkTidSiden(k.sidstAktiv) : '');
   const infoSek = etiket("Kundeoplysninger")
+    + '<div style="font-size:11px;color:var(--gray3);line-height:1.6;margin-bottom:10px;">' + metaLinje + '</div>'   /* meta-linjen flyttet herned fra hovedet (Ida 28/7) */
     + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;">'
     + '<div style="grid-column:1/-1;">' + iLab("Kundenavn") + '<input type="text" id="ki_navn" value="' + ivv(def.virksomhed || k.kode) + '" onchange="kkNavnGem()" oninput="kkNavnAuto()" placeholder="Virksomhedens navn" ' + iFelt + '></div>'
     + '<div style="grid-column:1/-1;">' + iLab("Kontaktperson") + '<input type="text" id="ki_kontakt" value="' + ivv(kInfo2.kontakt) + '" oninput="kkInfoAuto()" placeholder="Fx Freja" ' + iFelt + '></div>'
@@ -15130,13 +15175,14 @@ function renderKundeKort() {
     /* YOU GOT THIS-kunder er simple: alt samlet på ét dashboard, ingen faner (Ida 27/7) */
     const KK_TABS = erKursusKunde
       ? [["overblik","Overblik"]]
-      : [["overblik","Overblik"],["plan","Forløbet"],["opgaver","Opgaver"],["aftaler","Aftaler"],["content","Content"],["laering","Læring"],["personer","Personer"],["adgang","Adgang"],["noter","Noter"]];
-    /* Personer-fanen (Ida 28/7, byggekø #30): alle logins på koden m. app-brug */
-    const personerSek = etiket("Personer", "(alle logins på koden)")
+      : [["overblik","Info"],["plan","Forløbet"],["opgaver","Opgaver"],["aftaler","Aftaler"],["content","Content"],["laering","Læring"],["adgang","Adgang"],["noter","Noter"]];
+    /* Brugere-kortet (Ida 28/7): alle logins på koden m. app-brug — bor på Info-fanen sammen med kundeoplysningerne */
+    const personerSek = etiket("Brugere", "(alle logins på koden)")
       + '<div id="kkPersonerListe" style="font-size:12px;color:var(--gray3);">Henter personerne…</div>'
       + '<div style="font-size:10.5px;color:var(--gray3);line-height:1.5;margin-top:10px;">Nye personer kommer til via delelinket på Adgang-fanen — hver person opretter sit eget login.</div>';
     const pane = {
       overblik: SPALTER(KORT(infoSek)
+        + KORT(personerSek)
         + (!erKursusKunde ? KORT(aktSek) : '')
         + (erKursusKunde ? KORT(aktSek) + (harVaerktoej ? KORT(vkSek) : '') + KORT(loginSek) + KORT(adgangSek) : '')),
       /* Forløbet-fanen (Ida 28/7): alt det, du sender ind i kundens forløb — Ugens fokus + Nyt fra Ida + forløbsplanen */
@@ -15148,7 +15194,6 @@ function renderKundeKort() {
       aftaler: KORT(kkAftaleSektion(k.kode)),
       content: KORT(stratSek),
       laering: SPALTER((erKursusKunde ? KORT(aktSek) : '') + (harVaerktoej ? KORT(vkSek) : '')),
-      personer: KORT(personerSek),
       adgang: SPALTER(KORT(loginSek) + KORT(adgangSek)),
       noter: erForloebKunde ? KORT(moedeSek) : tomTekst('Mødenoterne bruges på forløbskunderne — her er der ingen møder at forberede.')
     };
@@ -15156,7 +15201,6 @@ function renderKundeKort() {
     kundeMaal.innerHTML =
       '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:16px;"><button class="dbtn ghost" onclick="lukKundeKort()">&larr; Tilbage</button>' + visKnap + '</div>'
       + '<div style="margin-bottom:4px;">' + hoved + '</div>'
-      + '<div style="font-size:11px;color:var(--gray3);line-height:1.6;margin-bottom:6px;">' + metaLinje + '</div>'
       + (KK_TABS.length > 1
         ? '<div style="display:flex;gap:6px;flex-wrap:wrap;margin:12px 0 18px;border-bottom:1px solid var(--border);padding-bottom:12px;">'
           + KK_TABS.map(t => '<button type="button" class="kk-fane' + (KK_TAB === t[0] ? ' on' : '') + '" data-kktab="' + t[0] + '" onclick="kkTabVis(\'' + t[0] + '\')">' + t[1] + '</button>').join("")
@@ -18152,6 +18196,6 @@ if ((location.hash || "").toLowerCase() === "#ole") {   // #ole = preview af Ole
 })();
 </script>
 <!-- Versions-mærke: synligt på ALLE sider, så Ida altid kan se hvilken version hun kigger på (27/7) -->
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 28. juli · 656</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 28. juli · 657</div>
 </body>
 </html>
