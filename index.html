@@ -63,6 +63,7 @@ input[type="date"]::-webkit-calendar-picker-indicator, input[type="time"]::-webk
 /* ONBOARDING — FINAL-designet 11c/11d (Task 4b): tre skridt i stedet for tomme kort ved første login */
 #onboardKort { display:none; }
 #ugeWrap { display:none; }   /* de store Denne uge-ringe er afloest af FINAL 5b's smaa ringkort (kalRinge) — dublet-reglen */
+#soejleBalance { display:none !important; }   /* Indholdsfordelingen bor paa Performance nu (FINAL 5fb, Task 9.1) — dublet-reglen */
 #screen3.ob-on #onboardKort { display:block; position:relative; z-index:1; }
 #screen3.ob-on #hjemTop, #screen3.ob-on #opgaveSection, #screen3.ob-on #ringeSamling, #screen3.ob-on #skemaCard, #screen3.ob-on #nytFraIda { display:none !important; }
 .ob-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-bottom:16px; }
@@ -922,7 +923,7 @@ body.lek-open .burger-btn, body.lek-open .bottom-nav, body.lek-open .dash-fab { 
     <button class="burger-item" onclick="toggleBurger(); togglePwPanel()">Skift adgangskode</button>
     <button class="burger-item" onclick="toggleBurger(); openChat()">Kontakt Ida</button>
     <button class="burger-item" style="color:var(--red);" onclick="custLogout()">Log ud</button>
-    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 29. juli · 700</div>
+    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 29. juli · 701</div>
   </div>
 </div>
 <div class="plus-menu" id="plusMenu" onclick="if(event.target===this)togglePlus()">
@@ -1682,11 +1683,15 @@ if (/somkunde=/.test(location.hash)) {
 
     <div class="screen" id="screen9">
       <img class="hjerte-pynt" src="logo-hjerte-hvid.png" alt="" style="top:-20px;right:-50px;width:min(780px,55vw);opacity:.6;">
-      <div class="screen-title" style="margin-bottom:4px;">Performance</div>
-      <div style="font-family:'Didot','Bodoni 72',Georgia,serif;font-style:italic;font-size:17px;color:var(--gray3);line-height:1.45;margin-bottom:20px;">If you don’t test, you guess.</div>
-      <div id="shineHero"></div>
-      <div id="shineFokus"></div>
+      <!-- FINAL 5f (Task 9.1): label + roed Didot-titel + sub · ShineScore-UI PARKERET (Ida 29/7 — kun interaktionsraten) -->
+      <div class="ch-label" id="perfLabel">Performance</div>
+      <div class="ch-titel" style="margin-bottom:8px;">Performance</div>
+      <div style="font-size:13px;color:var(--gray3);margin-bottom:22px;">Ikke tal for tallenes skyld — men hvad de siger, I skal gøre mere af.</div>
+      <div id="shineHero" style="display:none;"></div>
+      <div id="shineFokus" style="display:none;"></div>
       <div id="perfKpis" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:18px;"></div>
+      <div id="perf5f" style="display:none;grid-template-columns:1.4fr 1fr;gap:16px;margin-bottom:18px;"></div>
+      <div id="perfFordeling" style="margin-bottom:18px;"></div>
 
       <div style="columns:400px;column-gap:18px;">
       <!-- "Jeres målsætning"-kortet er SLETTET (Ida 27/7) — maalTitel/maalSideTekst-koden er guarded og gør intet -->
@@ -3374,7 +3379,7 @@ select titel,
     <div id="systemtjek" style="display:none;background:#fff;border:1px solid var(--border);border-radius:20px;padding:14px 16px;margin-top:16px;"></div>
     <div id="dashFooter" style="position:fixed;left:0;right:0;bottom:0;z-index:60;display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--gray3);background:#fff;border-top:1px solid var(--border);padding:10px 26px;">
       <div style="font-size:10px;">© 2026 Energida · Alle rettigheder forbeholdes</div>
-      <div style="font-size:10px;margin-left:auto;">Version 29. juli · 700 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
+      <div style="font-size:10px;margin-left:auto;">Version 29. juli · 701 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
     </div>
   </div>
 </div>
@@ -9171,12 +9176,30 @@ function renderRate() {
     /* Trend kun mellem målinger med samme nævner — følger-målinger (før 28/7) og rækkevidde-målinger må ikke blandes */
     const trendT = MAALINGER.length > 1 && (MAALINGER[1].naevner || null) === (m0.naevner || null) ? Math.round((Number(m0.rate) - Number(MAALINGER[1].rate)) * 10) / 10 : null;
     const omK = naesteTjekDage(new Date().toISOString().slice(0, 10));
+    /* FINAL 5f (Task 9.1): KPI-raekken = interaktionsraten (kernen) + rapportens Indblik-tal */
+    const r0 = (typeof RAPPORTER !== "undefined" && RAPPORTER.length) ? (RAPPORTER[0].data || RAPPORTER[0]) : null;
+    const tal = v => (v == null || v === "" || isNaN(Number(v))) ? null : Number(v);
+    const fmtTal = v => v == null ? "&mdash;" : Number(v).toLocaleString("da-DK");
+    let ekstra = "";
+    if (r0) {
+      const fSlut = tal(r0.foelgere_slut), fStart = tal(r0.foelgere_start);
+      const gemt = (tal(r0.reels_gemte) || 0) + (tal(r0.opslag_gemte) || 0);
+      ekstra =
+        kpiKort("Følgere", fmtTal(fSlut), (fSlut != null && fStart != null) ? ((fSlut - fStart >= 0 ? "+" : "&minus;") + Math.abs(fSlut - fStart) + " i måneden") : "", "maal")
+        + kpiKort("Rækkevidde", fmtTal(tal(r0.eksponering)), "seneste 30 dage", "rate")
+        + kpiKort("Gemt", gemt ? fmtTal(gemt) : "&mdash;", "reels + opslag", "dato")
+        + kpiKort("Opslag i måneden", fmtTal(tal(r0.opslag_antal)), tal(r0.aktive_uger) != null ? tal(r0.aktive_uger) + " aktive uger" : "", "tjek");
+    } else {
+      ekstra =
+        kpiKort("Sidste måling", m0 ? kortDato(m0.dato) : "&mdash;", m0 ? "" : "tag " + duI("dit", "jeres") + " første", "dato")
+        + kpiKort("Næste tjek", omK === null ? "nu" : omK <= 0 ? "i dag" : "om " + omK + (omK === 1 ? " dag" : " dage"), "30 dage efter sidste måling", "tjek")
+        + kpiKort("Ugemålet", maalUge() + " opslag", "ét fra hver søjle", "maal");
+    }
     pk.innerHTML =
       kpiKort("Interaktionsrate", m0 ? Number(m0.rate).toFixed(1).replace(".", ",") + " %" : "&mdash;", trendT === null ? "" : (trendT > 0 ? "+" : "") + String(trendT).replace(".", ",").replace("-", "&minus;") + " point siden sidst", "rate")
-      + kpiKort("Sidste måling", m0 ? kortDato(m0.dato) : "&mdash;", m0 ? "" : "tag " + duI("dit", "jeres") + " første", "dato")
-      + kpiKort("Næste tjek", omK === null ? "nu" : omK <= 0 ? "i dag" : "om " + omK + (omK === 1 ? " dag" : " dage"), "30 dage efter sidste måling", "tjek")
-      + kpiKort("Ugemålet", maalUge() + " opslag", "ét fra hver søjle", "maal");
+      + ekstra;
   }
+  try { renderPerf5f(); renderPerfFordeling(); } catch(e) {}
   if (!MAALINGER.length) {
     el.textContent = "—";
     setTxt("rateSub", "Ingen måling endnu. Tryk “Tjek hvor meget I shiner” — så har I jeres udgangspunkt.");
@@ -9207,6 +9230,97 @@ function kortDato(d) {
   if (isNaN(dt)) return d || "";
   const mdr = ["januar","februar","marts","april","maj","juni","juli","august","september","oktober","november","december"];
   return dt.getDate() + ". " + mdr[dt.getMonth()] + " " + dt.getFullYear();
+}
+
+/* FINAL 5f (Task 9.1): raekkevidde-soejler pr. rapport + "Hvad virker"-boksen (kun aegte Indblik-tal) */
+function renderPerf5f() {
+  const el = document.getElementById("perf5f"); if (!el) return;
+  const raps = (typeof RAPPORTER !== "undefined" ? RAPPORTER : []).map(r => r.data || r);
+  const rk = raps.filter(r => r && r.eksponering != null && !isNaN(Number(r.eksponering))).slice(0, 5).reverse();
+  /* label i sidehovedet: "[maaned] · maalt [dato]" */
+  try {
+    const lbl = document.getElementById("perfLabel");
+    if (lbl) {
+      const m0 = (typeof MAALINGER !== "undefined" && MAALINGER[0]) || null;
+      lbl.textContent = m0 ? (function(){ const dt = new Date(m0.dato + "T00:00:00"); const mdr = ["januar","februar","marts","april","maj","juni","juli","august","september","oktober","november","december"]; return mdr[dt.getMonth()].charAt(0).toUpperCase() + mdr[dt.getMonth()].slice(1) + " · målt " + dt.getDate() + ". " + mdr[dt.getMonth()]; })() : "Performance";
+    }
+  } catch(e) {}
+  if (rk.length < 2) { el.style.display = "none"; el.innerHTML = ""; return; }
+  const maks = Math.max.apply(null, rk.map(r => Number(r.eksponering)));
+  const mdrK = ["jan","feb","mar","apr","maj","jun","jul","aug","sep","okt","nov","dec"];
+  const navn = r => { if (r.maaned) { const p = String(r.maaned).split("-"); if (p.length > 1) return mdrK[Number(p[1]) - 1] || ""; } return ""; };
+  const soejler = rk.map((r, i) => {
+    const sidste = i === rk.length - 1;
+    const h = Math.max(8, Math.round(Number(r.eksponering) / maks * 100));
+    return '<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:6px;">'
+      + '<div style="width:100%;height:' + h + '%;background:' + (sidste ? 'var(--red)' : '#A9BFD8') + ';border-radius:12px 12px 0 0;' + (sidste ? '' : 'opacity:.55;') + '"></div>'
+      + '<span style="font-size:9.5px;color:' + (sidste ? 'var(--red)' : 'var(--gray3)') + ';">' + (navn(r) || "&nbsp;") + '</span></div>';
+  }).join("");
+  /* Hvad virker: reels vs. opslag baaret af rapportens egne andele */
+  const r0 = raps[0];
+  const ra = r0 ? Number(r0.reels_andel) : NaN, oa = r0 ? Number(r0.opslag_andel) : NaN;
+  const virker = (!isNaN(ra) && !isNaN(oa))
+    ? (ra >= oa
+      ? 'Reels bærer ' + String(ra).replace(".", ",") + ' % af interaktionerne mod opslagenes ' + String(oa).replace(".", ",") + ' % — gør mere af det, der bærer.'
+      : 'Opslagene bærer ' + String(oa).replace(".", ",") + ' % af interaktionerne mod reels’ ' + String(ra).replace(".", ",") + ' % — gør mere af det, der bærer.')
+    : '';
+  el.innerHTML =
+    '<div style="background:#fff;border:1px solid var(--border);border-radius:20px;padding:20px 24px;">'
+    + '<div style="display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);padding-bottom:9px;margin-bottom:16px;">'
+    + '<span style="font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--red);">Rækkevidde måned for måned</span>'
+    + '<span style="font-size:10px;border:1px solid var(--border);border-radius:20px;padding:2px 9px;color:var(--gray3);">' + rk.length + ' målinger</span>'
+    + '</div>'
+    + '<div style="display:flex;align-items:flex-end;gap:14px;height:120px;">' + soejler + '</div>'
+    + '</div>'
+    + (virker
+      ? '<div style="background:var(--red);border-radius:20px;padding:20px 24px;color:#fff;">'
+        + '<div style="font-size:10px;letter-spacing:1.8px;text-transform:uppercase;border-bottom:1px solid rgba(255,255,255,0.55);padding-bottom:9px;margin-bottom:12px;">Hvad virker</div>'
+        + '<div style="font-size:13px;line-height:1.7;">' + virker + '</div>'
+        + '<div style="margin-top:14px;"><button type="button" onclick="try{visRapport(0)}catch(e){}" style="display:inline-block;background:#fff;color:var(--red);border:none;border-radius:999px;padding:10px 18px;font-size:12.5px;font-family:Poppins,sans-serif;font-weight:400;cursor:pointer;">Se hele målingen</button></div>'
+        + '</div>'
+      : '<div></div>');
+  el.style.display = "grid";
+}
+
+/* FINAL 5fb (Task 9.1): Indholdsfordelingen — typer-ringe + soejle-bars + hvad fordelingen siger.
+   Flyttet fra Content-siden hertil (5fb-referencen) — soejleBalance paa kalenderen er skjult. */
+function renderPerfFordeling() {
+  const el = document.getElementById("perfFordeling"); if (!el) return;
+  const postede = (IDEER || []).filter(x => x.status === "Postet" && x.soejle);
+  if (!postede.length || !(strategyPillars || []).length) { el.innerHTML = ""; return; }
+  const grupper = soejleSort(strategyPillars).map(n => ({ navn: n, antal: postede.filter(x => x.soejle === n).length, m: soejleModel(n) }));
+  const ialt = postede.length;
+  const type1 = grupper.filter(g => g.m && g.m.kode.charAt(0) === "1").reduce((s, g) => s + g.antal, 0);
+  const type2 = grupper.filter(g => g.m && g.m.kode.charAt(0) === "2").reduce((s, g) => s + g.antal, 0);
+  const p1 = Math.round(type1 / ialt * 100), p2 = Math.round(type2 / ialt * 100);
+  const ring = (pct, navn) => '<div style="text-align:center;"><svg width="92" height="92" viewBox="0 0 76 76"><circle cx="38" cy="38" r="32" fill="none" stroke="#A9BFD8" stroke-width="6" opacity=".45"/><circle cx="38" cy="38" r="32" fill="none" stroke="#FC2404" stroke-width="6" stroke-linecap="round" stroke-dasharray="' + Math.round(pct / 100 * 201) + ' 201" transform="rotate(-90 38 38)"/><text x="38" y="45" text-anchor="middle" font-size="17" font-weight="300" fill="#000" font-family="Poppins,sans-serif">' + pct + '%</text></svg><div style="font-size:11.5px;margin-top:8px;">' + navn + '</div></div>';
+  const maksA = Math.max.apply(null, grupper.map(g => g.antal)) || 1;
+  const bar = (g, sidste) => '<div style="padding:9px 0;' + (sidste ? '' : 'border-bottom:1px solid #F2F0ED;') + '">'
+    + '<div style="display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:5px;"><span>' + esc(soejleVis(g.navn)) + '</span><span style="color:var(--gray3);">' + g.antal + ' opslag</span></div>'
+    + '<div style="height:6px;border-radius:99px;background:#F2F0ED;overflow:hidden;"><div style="width:' + Math.round(g.antal / maksA * 100) + '%;height:100%;border-radius:99px;background:var(--red);"></div></div>'
+    + '</div>';
+  /* Hvad fordelingen siger — beregnede, aerlige indsigter */
+  const under = grupper.filter(g => g.antal === 0 || g.antal / ialt < 0.15).sort((a, b) => a.antal - b.antal)[0];
+  const indsigt = [];
+  if (under) indsigt.push('<div style="padding:8px 0;border-bottom:1px solid #F2F0ED;"><div style="font-size:9px;letter-spacing:1.2px;text-transform:uppercase;color:var(--red);margin-bottom:2px;">1 · ' + esc(soejleVis(under.navn)) + ' er underprioriteret</div><div style="font-size:12px;color:var(--gray3);line-height:1.5;">' + (under.antal === 0 ? 'Ingen af' : 'Kun ' + under.antal + ' af') + ' de ' + ialt + ' postede opslag — giv søjlen den næste idé.</div></div>');
+  indsigt.push('<div style="padding:8px 0;"><div style="font-size:9px;letter-spacing:1.2px;text-transform:uppercase;color:var(--red);margin-bottom:2px;">' + (indsigt.length + 1) + ' · Balancen mellem typerne</div><div style="font-size:12px;color:var(--gray3);line-height:1.5;">' + p1 + '/' + p2 + ' mod tommelfingerreglens 60/40' + (Math.abs(p1 - 60) <= 10 ? ' — hold rytmen.' : '.') + '</div></div>');
+  el.innerHTML =
+    '<div style="font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--red);margin-bottom:10px;">Indholdsfordelingen</div>'
+    + '<div style="display:grid;grid-template-columns:1fr 1.3fr;gap:16px;align-items:start;margin-bottom:14px;" class="bk-grid">'
+    + '<div style="background:#fff;border:1px solid var(--border);border-radius:20px;padding:20px 24px;">'
+    + '<div style="display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);padding-bottom:9px;margin-bottom:12px;"><span style="font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--red);">De to indholdstyper</span><span style="font-size:10px;border:1px solid var(--border);border-radius:20px;padding:2px 9px;color:var(--gray3);">' + ialt + ' opslag</span></div>'
+    + '<div style="display:flex;gap:24px;align-items:center;justify-content:space-around;padding:6px 0;">' + ring(p1, 'Skabe behov') + ring(p2, 'Danne relation') + '</div>'
+    + '<div style="font-size:11px;color:var(--gray3);margin-top:8px;">Tommelfingerregel: cirka 60/40.</div>'
+    + '</div>'
+    + '<div style="background:#fff;border:1px solid var(--border);border-radius:20px;padding:20px 24px;">'
+    + '<div style="border-bottom:1px solid var(--border);padding-bottom:9px;margin-bottom:12px;"><span style="font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--red);">De fire søjler</span></div>'
+    + grupper.map((g, i) => bar(g, i === grupper.length - 1)).join("")
+    + '</div>'
+    + '</div>'
+    + '<div style="background:#fff;border:1px solid var(--border);border-radius:20px;padding:16px 22px;">'
+    + '<div style="font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--red);border-bottom:1px solid var(--red);padding-bottom:9px;margin-bottom:8px;">Hvad fordelingen siger</div>'
+    + indsigt.join("")
+    + '</div>';
 }
 
 function renderRateHistorik() {
@@ -10727,7 +10841,7 @@ function buildSideNav(def) {
     + item("", "Kontakt Ida", "openChat()")
     + item("", "Skift adgangskode", "togglePwPanel()")
     + item("", "Log ud", "custLogout()", " roed")
-    + '<div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0 12px;">Version 29. juli · 700</div>'
+    + '<div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0 12px;">Version 29. juli · 701</div>'
     + '</div>'
     + '<button class="sn-virk-knap" onclick="toggleVirkMenu(event)" title="' + esc(knapNavn) + '" aria-label="Profil"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(knapNavn) + '</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="flex-shrink:0;"><path d="M6 9l6 6 6-6"/></svg></button>'
     + '<div id="virkMenu" style="display:none;position:fixed;right:20px;top:72px;width:230px;background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:0 16px 40px rgba(0,0,0,0.15);padding:8px;z-index:90;">'
@@ -19180,6 +19294,6 @@ if ((location.hash || "").toLowerCase() === "#ole") {   // #ole = preview af Ole
 })();
 </script>
 <!-- Versions-mærke: synligt på ALLE sider, så Ida altid kan se hvilken version hun kigger på (27/7) -->
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 29. juli · 700</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 29. juli · 701</div>
 </body>
 </html>
