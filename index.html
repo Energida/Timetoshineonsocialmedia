@@ -1106,7 +1106,7 @@ body.lek-open .burger-btn, body.lek-open .bottom-nav, body.lek-open .dash-fab { 
     <button class="burger-item" onclick="toggleBurger(); togglePwPanel()">Skift adgangskode</button>
     <button class="burger-item" onclick="toggleBurger(); openChat()">Kontakt Ida</button>
     <button class="burger-item" style="color:var(--red);" onclick="custLogout()">Log ud</button>
-    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 30. juli · 752</div>
+    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 30. juli · 753</div>
   </div>
 </div>
 <div class="plus-menu" id="plusMenu" onclick="if(event.target===this)togglePlus()">
@@ -2130,7 +2130,7 @@ if (/somkunde=/.test(location.hash)) {
     <!-- Foden bliver nederst — den er det ENESTE der skubbes ned (Ida 30/7) -->
     <div class="dsb-fod">
       <button class="dsb-konto" onclick="toggleDashMenu()" title="Ida"><span class="dsb-initial">I</span><span class="dsb-konto-navn">Ida</span><svg class="dsb-konto-pil" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></button>
-      <div class="dsb-version"><img id="dashNavLogo" alt="Energida"><span>Version 30. juli · 752</span></div>
+      <div class="dsb-version"><img id="dashNavLogo" alt="Energida"><span>Version 30. juli · 753</span></div>
     </div>
   </div>
 
@@ -3653,7 +3653,7 @@ select titel,
     <div id="systemtjek" style="display:none;background:#fff;border:1px solid var(--border);border-radius:20px;padding:14px 16px;margin-top:16px;"></div>
     <div id="dashFooter" style="position:fixed;left:0;right:0;bottom:0;z-index:50;display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--gray3);background:#fff;border-top:1px solid var(--border);padding:10px 26px;">
       <div style="font-size:10px;">© 2026 Energida · Alle rettigheder forbeholdes</div>
-      <div style="font-size:10px;margin-left:auto;">Version 30. juli · 752 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
+      <div style="font-size:10px;margin-left:auto;">Version 30. juli · 753 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
     </div>
   </div>
 </div>
@@ -8704,9 +8704,20 @@ function klipProd(o) { const p = o && o.produktion; return (p && typeof p === "o
 /* Hvem ligger bolden hos — UDLEDT af status, saa feltet aldrig kan komme ud af trit med tavlen.
    Roed prik = hos Ida · sort prik = hos Thomas · tom cirkel m. graa kant = venter paa optagedagen. */
 function klipBold(st) {
-  if (st === "Manus ikke godkendt" || st === "Klippet") return { tekst: "Bolden hos dig", farve: "var(--red)" };
-  if (st === "Råfiler klar" || st === "Rettelser") return { tekst: "Bolden hos Thomas", farve: "#000" };
+  /* ROED prik betyder ALTID "bolden ligger hos DIG, der kigger" — derfor vendes de to
+     perspektiver. Ida ser roedt paa manus og klip til godkendelse; Thomas ser roedt paa
+     det, der ligger og venter paa HAM. Ellers ville han sidde og se roede kort, som han
+     intet kan goere ved (designpakken 3a, Ida 30/7). */
+  const hosIda    = (st === "Manus ikke godkendt" || st === "Klippet");
+  const hosKlipper = (st === "Råfiler klar" || st === "Rettelser");
   if (st === "Manus færdigt") return { tekst: "Venter på optagedagen", tom: true };
+  if (KLIP_ER_IDA) {
+    if (hosIda)     return { tekst: "Bolden hos dig",     farve: "var(--red)" };
+    if (hosKlipper) return { tekst: "Bolden hos Thomas",  farve: "#000" };
+  } else {
+    if (hosKlipper) return { tekst: "Bolden hos dig",     farve: "var(--red)" };
+    if (hosIda)     return { tekst: "Bolden hos Ida",     farve: "#000" };
+  }
   return null;   /* Godkendt = bolden er i maal */
 }
 /* "siden i morges" · "siden i går" · "3 dage" — vises KUN naar der findes et aegte tidsstempel.
@@ -8828,11 +8839,20 @@ function klipTavle(arr) {
   /* Sporene er PRODUKTIONSTRIN (designpakken 30/7) — "bolden ligger hos" er flyttet fra at vaere
      kolonnen til at vaere et felt paa kortet, saa bolden kan ses uanset hvilket trin videoen staar paa.
      Alle seks statusser er daekket, saa ingen video kan falde ud af tavlen. */
-  const KOL = [
+  /* Klipperen har sine egne fire spor (designpakken 3a): det Ida kalder "Hos klipperen"
+     deler sig for ham i "I klip" (hans eget bord) og "Til gennemsyn" (afleveret, venter paa Ida).
+     Godkendt staar ikke som kort hos ham — de 28 publicerede ville drukne hans bord; tallet
+     staar i stedet oeverst som noegletal. */
+  const KOL = KLIP_ER_IDA ? [
     { t: "Manus", pass: o => o.status === "Manus ikke godkendt" },
     { t: "Klar til optagelse", pass: o => o.status === "Manus færdigt" },
     { t: "Hos klipperen", pass: o => o.status === "Råfiler klar" || o.status === "Rettelser" || o.status === "Klippet" },
     { t: "Publiceret", pass: o => o.status === "Godkendt" }
+  ] : [
+    { t: "Manus", pass: o => o.status === "Manus ikke godkendt" },
+    { t: "Klar til optagelse", pass: o => o.status === "Manus færdigt" },
+    { t: "I klip", pass: o => o.status === "Råfiler klar" || o.status === "Rettelser" },
+    { t: "Til gennemsyn", pass: o => o.status === "Klippet" }
   ];
   const lekNrT = o => { const m = String(o.titel || "").match(/^(\d+)\.(\d+)/); return m ? parseInt(m[1], 10) * 100 + parseInt(m[2], 10) : 9999; };
   return '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;align-items:start;">'
@@ -9053,12 +9073,18 @@ function renderKlipperum() {
     const kort = (tal, tekst, kraever) => '<div style="min-width:0;">'
       + '<div class="num" style="font-weight:300;font-size:30px;line-height:1;font-variant-numeric:tabular-nums;letter-spacing:-1px;color:' + (kraever && tal ? 'var(--red)' : 'var(--black)') + ';">' + tal + '</div>'
       + '<div style="font-size:10px;letter-spacing:.6px;color:' + (kraever && tal ? 'var(--red)' : 'var(--gray3)') + ';margin-top:5px;font-weight:400;">' + tekst + '</div></div>';
-        kpi.innerHTML = kort(KLIP_OPGAVER.length, "Videoer i alt")
-      + kort(antal("Manus ikke godkendt"), "Manus mangler", true)
-      + kort(antal("Manus færdigt"), "Venter på optagelse")
-      + kort(antal("Råfiler klar") + antal("Rettelser"), "Hos Thomas")
-      + kort(antal("Klippet"), "Til din godkendelse", true)
-      + kort(antal("Godkendt"), "Godkendt");
+        kpi.innerHTML = KLIP_ER_IDA
+      ? kort(KLIP_OPGAVER.length, "Videoer i alt")
+        + kort(antal("Manus ikke godkendt"), "Manus mangler", true)
+        + kort(antal("Manus færdigt"), "Venter på optagelse")
+        + kort(antal("Råfiler klar") + antal("Rettelser"), "Hos Thomas")
+        + kort(antal("Klippet"), "Til din godkendelse", true)
+        + kort(antal("Godkendt"), "Godkendt")
+      /* Klipperens fire tal (designpakken 3a) — hans eget bord foerst, roedt fordi det kraever ham */
+      : kort(antal("Råfiler klar") + antal("Rettelser"), "Bolden hos dig", true)
+        + kort(antal("Manus ikke godkendt") + antal("Klippet"), "Bolden hos Ida")
+        + kort(antal("Manus færdigt"), "Venter på optagelse")
+        + kort(antal("Godkendt"), "Godkendt");
   }
   const statusLinje = document.getElementById("klipStatusLinje");
   if (statusLinje) {
@@ -11548,7 +11574,7 @@ function buildSideNav(def) {
       + '<span style="opacity:.55;">' + ikon("", "Kalender", "laastBesked()", IK.kal) + '</span>'
       + '<span style="opacity:.55;">' + ikon("", "Værktøjskassen", "laastBesked()", IK.tools) + '</span>'
       + '<button class="sn-virk-knap" onclick="toggleVirkMenu(event)" title="' + esc(knapNavn) + '" aria-label="Profil" style="margin-left:auto;"><span class="sn-initial">' + esc((knapNavn || "?").trim().charAt(0).toUpperCase()) + '</span><span class="sn-virk-navn" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(knapNavn) + '</span><svg class="sn-virk-pil" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="flex-shrink:0;"><path d="M6 9l6 6 6-6"/></svg></button>'
-      + '<div class="sn-fod">' + fodLogo + '<span>Version 30. juli · 752</span></div>'
+      + '<div class="sn-fod">' + fodLogo + '<span>Version 30. juli · 753</span></div>'
       /* Ida 30/7: alle konto-punkter bor i profilmenuen — ingen streg/sn-bund */
       + '<div id="virkMenu" style="display:none;position:fixed;left:14px;bottom:96px;width:230px;background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:0 16px 40px rgba(0,0,0,0.15);padding:8px;z-index:90;">'
       + '<div style="padding:10px 12px 6px;font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--gray3);">' + esc(virkNavn) + '</div>'
@@ -11596,7 +11622,7 @@ function buildSideNav(def) {
         uPkt("", "Lektioner", "showTab(12)"))
     + '<button class="sn-virk-knap" onclick="toggleVirkMenu(event)" title="' + esc(knapNavn) + '" aria-label="Profil"><span class="sn-initial">' + esc((knapNavn || "?").trim().charAt(0).toUpperCase()) + '</span><span class="sn-virk-navn" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(knapNavn) + '</span><svg class="sn-virk-pil" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="flex-shrink:0;"><path d="M6 9l6 6 6-6"/></svg></button>'
     /* Ida 30/7: ingen streg — logo + version samlet i foden under profilknappen */
-    + '<div class="sn-fod">' + fodLogo + '<span>Version 30. juli · 752</span></div>'
+    + '<div class="sn-fod">' + fodLogo + '<span>Version 30. juli · 753</span></div>'
     /* Ida 30/7: menuen åbner VED knappen (nederst t.v.) — ikke i modsatte hjørne */
     + '<div id="virkMenu" style="display:none;position:fixed;left:14px;bottom:96px;width:230px;background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:0 16px 40px rgba(0,0,0,0.15);padding:8px;z-index:90;">'
     + '<div style="padding:10px 12px 6px;font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--gray3);">' + esc(virkNavn) + '</div>'
@@ -20266,6 +20292,6 @@ if ((location.hash || "").toLowerCase() === "#ole") {   // #ole = preview af Ole
 })();
 </script>
 <!-- Versions-mærke: synligt på ALLE sider, så Ida altid kan se hvilken version hun kigger på (27/7) -->
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 30. juli · 752</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 30. juli · 753</div>
 </body>
 </html>
