@@ -448,6 +448,9 @@ html, body { max-width:100%; }
 @media (prefers-reduced-motion: reduce) { .brief-info::after { transition:none; } }
 @media (hover:hover) { .brief-info:hover::after { opacity:1; } }
 #briefMeta { order:-1; }
+/* PAA TELEFON er hjaelpeboksene VAEK (Ida 31/7): de laa oeverst i fuld bredde og skubbede
+   selve briefen langt ned. Hjaelpen er der stadig — hvert spoergsmaal har sin egen ?-knap. */
+@media (max-width:899px) { #briefMeta { display:none !important; } }
 /* Basis-boksen: ÉN rød kasse m. hvide felter emne for emne — titel/format bor OGSÅ herinde (Ida 27/7) */
 .basis-svar { display:block; background:var(--red); color:#fff; border-radius:20px; padding:16px 18px; margin-bottom:14px; }
 @media (min-width: 900px) { .basis-svar { position:sticky; top:14px; } }
@@ -1058,6 +1061,10 @@ body.dash-mode .dash-fab { display: none; }
   .phone { width: 100%; height: 100vh; height: 100dvh; border-radius: 0; }
   .dash-topbar { display: none; }   /* undersiderne går direkte på — ingen logo-bane på mobil (Ida 21/7) */
   body.dash-mode .dash-burger-flyd { display: flex; }
+  /* ...men ALDRIG paa login-skaermen — der er ingen menu at aabne endnu (Idas fund 31/7) */
+  body.dash-mode.paa-login .dash-burger-flyd { display: none !important; }
+  /* Login-kortet staar lodret centreret paa telefon i stedet for klistret til toppen */
+  body.dash-mode.paa-login .dash-wrap { display: flex; align-items: center; min-height: 100vh; padding-top: 0; padding-bottom: 0; }
   .dash-wrap { padding: 18px 14px 50px; }
   .kpi-num { font-size: 26px; }
   .dash-fab { bottom: 16px; left: 16px; }
@@ -1198,7 +1205,7 @@ body.lek-open .burger-btn, body.lek-open .bottom-nav, body.lek-open .dash-fab, b
     <button class="burger-item" onclick="toggleBurger(); togglePwPanel()">Skift adgangskode</button>
     <button class="burger-item" onclick="toggleBurger(); openChat()">Kontakt Ida</button>
     <button class="burger-item" style="color:var(--red);" onclick="custLogout()">Log ud</button>
-    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 31. juli · 818</div>
+    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 31. juli · 819</div>
   </div>
 </div>
 <div class="plus-menu" id="plusMenu" onclick="if(event.target===this)togglePlus()">
@@ -2232,7 +2239,7 @@ if (/somkunde=/.test(location.hash)) {
     <!-- Foden bliver nederst — den er det ENESTE der skubbes ned (Ida 30/7) -->
     <div class="dsb-fod">
       <button class="dsb-konto" onclick="toggleDashMenu()" title="Ida"><span class="dsb-initial">I</span><span class="dsb-konto-navn">Ida</span><svg class="dsb-konto-pil" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></button>
-      <div class="dsb-version"><img id="dashNavLogo" alt="Energida"><span>Version 31. juli · 818</span></div>
+      <div class="dsb-version"><img id="dashNavLogo" alt="Energida"><span>Version 31. juli · 819</span></div>
     </div>
   </div>
 
@@ -3951,7 +3958,7 @@ select titel,
     <div id="systemtjek" style="display:none;background:#fff;border:1px solid var(--border);border-radius:20px;padding:14px 16px;margin-top:16px;"></div>
     <div id="dashFooter" style="position:fixed;left:0;right:0;bottom:0;z-index:50;display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--gray3);background:#fff;border-top:1px solid var(--border);padding:10px 26px;">
       <div style="font-size:10px;">© 2026 Energida · Alle rettigheder forbeholdes</div>
-      <div style="font-size:10px;margin-left:auto;">Version 31. juli · 818 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
+      <div style="font-size:10px;margin-left:auto;">Version 31. juli · 819 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
     </div>
   </div>
 </div>
@@ -4939,7 +4946,96 @@ function basisBrandBlokHtml() {
     + '</div>';
 }
 /* Fremdriftsring på briefen (Ida 28/7): % udfyldt af de 9 kernefelter — i ring-sproget */
-function briefPct() {
+/* ===================== EEN KILDE TIL "HVAD ER UDFYLDT" (Ida 31/7) =====================
+   Foer fandtes briefPct TO gange med hver sin feltliste, og skinnen udledte "faerdig" af
+   HVOR MAN STOD i stedet for hvad der var skrevet. Derfor stod raket-trinnene graa, selvom
+   de var udfyldt. Nu regnes det EET sted, og skinnen, ringen og mangler-listen laeser derfra.
+   Felter kan springes over (b.spring) — ikke alt er relevant paa hvert opslag. */
+const BRIEF_FELTER = [
+  { k: "beskrivelse", navn: "Idéen",                 trin: "fakta",  fyldt: (b, it) => !!b.beskrivelse },
+  { k: "soejle",      navn: "Indholdssøjlen",        trin: "fakta",  fyldt: (b, it) => !!it.soejle },
+  { k: "format",      navn: "Formatet",              trin: "fakta",  fyldt: (b) => !!b.format },
+  { k: "cta",         navn: "Handlingen de skal gøre", trin: "fakta", fyldt: (b) => !!(b.cta && !b.ctaAuto) },
+  { k: "dato",        navn: "Datoen",                trin: "fakta",  fyldt: (b, it) => !!it.dato },
+  { k: "hook",        navn: "Hooket",                trin: "raket0", fyldt: (b) => !!(b.hook || b.hookTekst) },
+  { k: "thumb",       navn: "Thumbnail-teksten",     trin: "raket0", fyldt: (b) => !!(b.thumb || b.thumbBillede) },
+  { k: "indhold",     navn: "Indholdets opbygning",  trin: "raket1", fyldt: (b) => !!(b.indhold || (Array.isArray(b.slides) && b.slides.some(Boolean))) },
+  { k: "ctaVideo",    navn: "Handlingen i videoen",  trin: "raket1", fyldt: (b) => !!b.ctaVideo },
+  { k: "caption",     navn: "Captionen",             trin: "raket2", fyldt: (b) => !!b.caption },
+  { k: "ctaCaption",  navn: "Handlingen i captionen", trin: "raket2", fyldt: (b) => !!b.ctaCaption },
+  { k: "energitjek",  navn: "Energitjekket",         trin: "plan",   fyldt: (b) => b.energitjek != null }
+];
+function briefStatus() {
+  const b = BRIEF_STATE || {};
+  const it = IDEER.find(x => x.id === BRIEF_ID) || {};
+  const spring = Array.isArray(b.spring) ? b.spring : [];
+  const felter = BRIEF_FELTER.map(f => {
+    const sprunget = spring.indexOf(f.k) > -1;
+    let fyldt = false;
+    try { fyldt = !!f.fyldt(b, it); } catch(e) {}
+    return { k: f.k, navn: f.navn, trin: f.trin, fyldt: fyldt, sprunget: sprunget, ok: fyldt || sprunget };
+  });
+  return {
+    felter: felter,
+    mangler: felter.filter(x => !x.ok),
+    pct: Math.round(felter.filter(x => x.ok).length / felter.length * 100),
+    trinOk: t => { const d = felter.filter(x => x.trin === t); return d.length ? d.every(x => x.ok) : false; }
+  };
+}
+/* Spring et felt over — eller fortryd. Gemmes med briefen. */
+async function briefSpring(key) {
+  const b = BRIEF_STATE || {};
+  const liste = Array.isArray(b.spring) ? b.spring.slice() : [];
+  const i = liste.indexOf(key);
+  if (i > -1) liste.splice(i, 1); else liste.push(key);
+  BRIEF_STATE.spring = liste;
+  try { await saveBrief(true); } catch(e) {}
+  try { briefManglerVis(); } catch(e) {}
+  try { briefHovedOpdater(); } catch(e) {}
+  try { briefRailByg(); } catch(e) {}
+}
+/* HVAD MANGLER? (Ida 31/7) — klik paa procent-ringen. Hvert manglende felt kan enten
+   udfyldes eller markeres "ikke relevant", saa ringen kan naa 100 %. */
+function briefManglerLuk() { const b = document.getElementById("briefManglerBack"); if (b) b.remove(); }
+function briefManglerVis() {
+  const st = briefStatus();
+  let bag = document.getElementById("briefManglerBack");
+  if (!bag) {
+    bag = document.createElement("div");
+    bag.id = "briefManglerBack";
+    bag.className = "modal-back on";
+    bag.style.zIndex = "960";
+    bag.addEventListener("click", e => { if (e.target === bag) briefManglerLuk(); });
+    document.body.appendChild(bag);
+  }
+  const raekke = f => '<div style="display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid #F2F0ED;flex-wrap:wrap;">'
+    + '<span style="flex:1;min-width:150px;font-size:13px;' + (f.ok ? 'color:var(--gray3);' : '') + '">'
+      + (f.ok ? energidaFlueben(15) + ' ' : '') + esc(f.navn)
+      + (f.sprunget ? '<span style="display:block;font-size:11px;color:var(--gray3);">Markeret ikke relevant</span>' : '') + '</span>'
+    + (f.fyldt ? ''
+      : '<button type="button" class="row-btn" style="font-weight:400;" onclick="briefGaaTilFelt(\'' + f.trin + '\')">Udfyld</button>'
+        + '<button type="button" style="background:none;border:none;padding:0 2px;font-family:Poppins,sans-serif;font-size:11.5px;font-weight:400;color:var(--red);cursor:pointer;white-space:nowrap;" onclick="briefSpring(\'' + f.k + '\')">'
+        + (f.sprunget ? 'Fortryd' : 'Ikke relevant') + '</button>')
+    + '</div>';
+  bag.innerHTML = '<div class="modal" style="max-width:440px;">'
+    + '<div style="font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--red);border-bottom:1px solid var(--border);padding-bottom:9px;margin-bottom:4px;">Briefen er ' + st.pct + ' % udfyldt</div>'
+    + (st.mangler.length
+      ? '<div style="font-size:12.5px;color:var(--gray3);line-height:1.6;margin:8px 0 4px;">Det her mangler. Er noget ikke relevant på netop dette opslag, kan du krydse det væk.</div>'
+      : '<div style="font-size:12.5px;color:var(--gray3);line-height:1.6;margin:8px 0 4px;">Alt er udfyldt. Godt gået.</div>')
+    + st.felter.map(raekke).join("")
+    + '</div>';
+}function briefGaaTilFelt(trin) {
+  const wrap = document.getElementById("briefWrap"); if (!wrap) return;
+  const G = briefGrupper(wrap);
+  if (trin === "fakta") briefSideVis(G.basisIx > -1 ? G.basisIx : 0);
+  else if (trin === "plan") briefSideVis(G.planIx > -1 ? G.planIx : G.grupper.length - 1);
+  else {
+    const nr = parseInt(String(trin).replace("raket", ""), 10) || 0;
+    if (G.raketIxs[nr] != null) briefSideVis(G.raketIxs[nr]);
+  }
+  try { briefManglerLuk(); } catch(e) {}
+}
+function briefPctGammel() {
   const it = IDEER.find(x => x.id === BRIEF_ID) || {};
   const felter = [
     BRIEF_STATE.beskrivelse, it.soejle, BRIEF_STATE.format,
@@ -6349,7 +6445,10 @@ function briefRailByg() {
     + '<div style="font-size:12.5px;color:' + (roed ? 'var(--red)' : 'var(--gray3)') + ';line-height:1.3;">' + navn + '</div>'
     + (sub ? '<div style="font-size:10.5px;color:var(--gray3);margin-top:1px;line-height:1.35;">' + sub + '</div>' : '')
     + '</div></div>';
-  const faktaAktiv = side === fIx, faktaDone = side > fIx;
+  /* FAERDIG AFLAESES AF DATA (Ida 31/7: "succesraketten er udfyldt men ikke synkroniseret").
+     Foer stod trinnene graa, indtil man var gaaet FORBI dem — uanset hvad der var skrevet. */
+  const ST = briefStatus();
+  const faktaAktiv = side === fIx, faktaDone = ST.trinOk("fakta");
   const kortFakta = kort(rk(
     faktaDone ? cDone : cAktiv(blyant),
     'Fakta', faktaAktiv ? 'Idé, format og datoer' : '', faktaAktiv, 'briefRailGaa(' + fIx + ')', ''));
@@ -6361,7 +6460,7 @@ function briefRailByg() {
   const kortRaket = kort(
     '<div style="font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--red);border-bottom:1px solid var(--border);padding-bottom:9px;margin-bottom:12px;">Succesraketten</div>'
     + TRIN.map((x, i) => {
-        const done = side > x.side, erNu = side === x.side;
+        const done = ST.trinOk("raket" + i), erNu = side === x.side;
         const cirkel = done ? cDone : erNu ? cAktiv(raketIkon) : cKommer(i + 1);
         const streg = i < TRIN.length - 1 ? (done ? "roed" : "graa") : "";
         return rk(cirkel, x.navn, (side <= fIx || erNu) ? x.sub : '', erNu, 'briefRailGaa(' + x.side + ')', streg);
@@ -6370,7 +6469,7 @@ function briefRailByg() {
      andre — det skal aflaeses af SVARET. Foer stod det graat, ogsaa naar man havde svaret
      (Idas fund 31/7). */
   const energiSvar = BRIEF_STATE.energitjek;
-  const energiDone = !!(energiSvar || energiSvar === 0);
+  const energiDone = ST.trinOk("plan");
   const energiAktiv = side === pIx;
   const kortEnergi = kort(rk(
     energiDone ? cDone : (energiAktiv ? cAktiv(trofae('#fff')) : cKommer(trofae('#9A9590'))),
@@ -6469,7 +6568,10 @@ function briefSideVis(i) {
   if (bsBoks) bsBoks.style.display = "none";   /* den røde Basis-boks er UDGÅET i raketten (Ida 28/7) — den fyldte uden at hjælpe */
   try { briefHookLaastVis(); } catch(e) {}
   try { briefRailByg(); } catch(e) {}
+  /* to gange: med det samme, og igen naar layoutet har sat sig — ellers maales et felt,
+     der lige er blevet synligt, foer browseren har givet det hoejde */
   try { document.querySelectorAll("#briefWrap textarea").forEach(autoGro); } catch(e) {}
+  try { requestAnimationFrame(() => document.querySelectorAll("#briefWrap textarea").forEach(el => { if (el.offsetParent) autoGro(el); })); } catch(e) {}
   const sc = document.querySelector(".content");
   if (sc) sc.scrollTo({ top: 0, behavior: "smooth" });
 }
@@ -6527,12 +6629,7 @@ function briefRingSvg(pct) {
   const c = 201, on = Math.round(Math.max(0, Math.min(1, pct || 0)) * c);
   return '<svg width="54" height="54" viewBox="0 0 76 76"><circle cx="38" cy="38" r="32" fill="none" stroke="#A9BFD8" stroke-width="5" opacity=".45"/><circle cx="38" cy="38" r="32" fill="none" stroke="#FC2404" stroke-width="5" stroke-linecap="round" stroke-dasharray="' + on + ' ' + c + '" transform="rotate(-90 38 38)"/><text x="38" y="43" text-anchor="middle" font-size="15" font-weight="300" fill="#000" font-family="Poppins,sans-serif">' + Math.round((pct || 0) * 100) + '%</text></svg>';
 }
-function briefPct() {
-  const b = BRIEF_STATE || {};
-  const it = IDEER.find(x => x.id === BRIEF_ID) || {};
-  const felter = [b.beskrivelse, b.format, (b.cta && !b.ctaAuto), (b.hook || b.hookTekst), (b.indhold || (Array.isArray(b.slides) && b.slides.some(s => s))), b.caption, b.optagedag, it.dato];
-  return felter.filter(Boolean).length / felter.length;
-}
+function briefPct() { return briefStatus().pct / 100; }   /* EEN kilde (Ida 31/7) */
 function briefHovedOpdater() {
   const it = IDEER.find(x => x.id === BRIEF_ID) || {};
   const l = document.getElementById("briefHovedLabel");
@@ -6540,7 +6637,12 @@ function briefHovedOpdater() {
   const t = document.getElementById("briefHovedTitel");
   if (t) t.textContent = storStart(it.titel || "Nyt opslag");   /* blankt opslag hedder "Nyt opslag", til idéen er skrevet (Ida 30/7) */
   const r = document.getElementById("briefHovedRing");
-  if (r) r.innerHTML = briefRingSvg(briefPct());
+  if (r) {
+    r.innerHTML = briefRingSvg(briefPct());
+    r.style.cursor = "pointer";
+    r.title = "Se hvad der mangler";
+    r.onclick = briefManglerVis;
+  }
 }
 /* FINAL 8a-8d (Task 7.2): hoejre-skinnen — hjaelpekasser pr. side. Hvide kort m. roed label
    og FULD ROED haarstreg (blaa bokse afskaffet 29/7); kun "Opslagets roede traad" er roed. */
@@ -6680,6 +6782,10 @@ function raketTrinVis(i) {
   if (RAKET_TRIN_SIDE !== BRIEF_SIDE || window.RAKET_TRIN_BRIEF !== BRIEF_ID) { RAKET_TRIN = 0; RAKET_TRIN_SIDE = BRIEF_SIDE; window.RAKET_TRIN_BRIEF = BRIEF_ID; }
   RAKET_TRIN = Math.max(0, Math.min(synlige.length - 1, (i == null ? RAKET_TRIN : i)));
   synlige.forEach((el, ix) => { el.style.display = ix === RAKET_TRIN ? "" : "none"; });
+  /* Felterne skal maales, EFTER de er blevet synlige (Ida 31/7: "man skal altid kunne se
+     hele feltet"). Et skjult textarea har scrollHeight 0, saa hoejden blev sat forkert og
+     teksten klippet. */
+  try { synlige[RAKET_TRIN] && synlige[RAKET_TRIN].querySelectorAll("textarea").forEach(autoGro); } catch(e) {}
   let bar = document.getElementById("basisTrinBar");
   if (!bar) { bar = document.createElement("div"); bar.id = "basisTrinBar"; const nav = document.getElementById("briefSideNav"); wrap.insertBefore(bar, nav || null); }
   bar.style.display = "";
@@ -12799,7 +12905,7 @@ function buildSideNav(def) {
       + '<span style="opacity:.55;">' + ikon("", "Kalender", "laastBesked()", IK.kal) + '</span>'
       + '<span style="opacity:.55;">' + ikon("", "Værktøjskassen", "laastBesked()", IK.tools) + '</span>'
       + '<button class="sn-virk-knap" onclick="toggleVirkMenu(event)" title="' + esc(knapNavn) + '" aria-label="Profil" style="margin-left:auto;"><span class="sn-initial">' + esc((knapNavn || "?").trim().charAt(0).toUpperCase()) + '</span><span class="sn-virk-navn" style="white-space:normal;overflow-wrap:anywhere;">' + esc(knapNavn) + '</span><svg class="sn-virk-pil" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="flex-shrink:0;"><path d="M6 9l6 6 6-6"/></svg></button>'
-      + '<div class="sn-fod">' + fodLogo + '<span>Version 31. juli · 818</span></div>'
+      + '<div class="sn-fod">' + fodLogo + '<span>Version 31. juli · 819</span></div>'
       /* Ida 30/7: alle konto-punkter bor i profilmenuen — ingen streg/sn-bund */
       + '<div id="virkMenu" style="display:none;position:fixed;left:14px;bottom:96px;width:230px;background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:0 16px 40px rgba(0,0,0,0.15);padding:8px;z-index:90;">'
       + '<div style="padding:10px 12px 6px;font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--gray3);">' + esc(virkNavn) + '</div>'
@@ -12852,7 +12958,7 @@ function buildSideNav(def) {
         uPkt("", "Lektioner", "showTab(12)")))
     + '<button class="sn-virk-knap" onclick="toggleVirkMenu(event)" title="' + esc(knapNavn) + '" aria-label="Profil"><span class="sn-initial">' + esc((knapNavn || "?").trim().charAt(0).toUpperCase()) + '</span><span class="sn-virk-navn" style="white-space:normal;overflow-wrap:anywhere;">' + esc(knapNavn) + '</span><svg class="sn-virk-pil" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="flex-shrink:0;"><path d="M6 9l6 6 6-6"/></svg></button>'
     /* Ida 30/7: ingen streg — logo + version samlet i foden under profilknappen */
-    + '<div class="sn-fod">' + fodLogo + '<span>Version 31. juli · 818</span></div>'
+    + '<div class="sn-fod">' + fodLogo + '<span>Version 31. juli · 819</span></div>'
     /* Ida 30/7: menuen åbner VED knappen (nederst t.v.) — ikke i modsatte hjørne */
     + '<div id="virkMenu" style="display:none;position:fixed;left:14px;bottom:96px;width:230px;background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:0 16px 40px rgba(0,0,0,0.15);padding:8px;z-index:90;">'
     + '<div style="padding:10px 12px 6px;font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--gray3);">' + esc(virkNavn) + '</div>'
@@ -14934,7 +15040,7 @@ function somKundeFejl(kode) {
      kun for det RIGTIGE fejltilfælde (se-som-kunde uden læseadgang). */
   if (!kode && !SOM_KUNDE && /(^|\.)b2b\./.test(location.hostname)) { location.replace("https://admin.energida.dk"); return; }
   const d = document.createElement("div");
-  d.style.cssText = "position:fixed;inset:0;z-index:500;background:var(--gray);display:flex;align-items:center;justify-content:center;padding:24px;font-family:Poppins,sans-serif;";
+  d.style.cssText = "position:fixed;inset:0;z-index:500;background:var(--app-bg-mobil);display:flex;align-items:center;justify-content:center;padding:24px;font-family:Poppins,sans-serif;";
   const utenKode = !kode;   // typisk: admin-brugeren er logget ind paa kunde-appen (b2b) — den har ingen kundekode
   const titel = utenKode ? "Opsætningen kunne ikke hentes" : esc(kode) + "s opsætning kunne ikke hentes";
   const tekst = utenKode
@@ -14950,16 +15056,27 @@ function somKundeFejl(kode) {
     + knap + '</div>';
   document.body.appendChild(d);
 }
+function somKundeBannerSkjul() {
+  const b = document.getElementById("somKundeBar");
+  if (b) b.remove();
+  document.body.style.paddingTop = "";
+  try { sessionStorage.setItem("somkunde_bar_skjult", "1"); } catch(e) {}
+}
 function somKundeBanner() {
+  try { if (sessionStorage.getItem("somkunde_bar_skjult") === "1") return; } catch(e) {}
   if (!SOM_KUNDE || document.getElementById("somKundeBar")) return;
   const b = document.createElement("div");
   b.id = "somKundeBar";
   /* fixed, IKKE i flow: body er display:flex, saa et almindeligt element blev en venstre-kolonne og skubbede hele appen til hoejre */
-  b.style.cssText = "position:fixed;left:0;right:0;bottom:0;z-index:400;background:var(--red);color:#fff;padding:11px 18px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;font-family:Poppins,sans-serif;font-size:12px;line-height:1.5;box-shadow:0 -4px 18px rgba(0,0,0,0.12);";
-  document.body.style.paddingBottom = "60px";
+  /* Banneret laa i BUNDEN og daekkede mobilens bundnavigation (Idas fund 31/7).
+     Nu ligger det i toppen og kan lukkes, naar man har set det — valget huskes for
+     denne fane, saa det ikke kommer igen ved hvert sideskift. */
+  b.style.cssText = "position:fixed;left:0;right:0;top:0;z-index:400;background:var(--red);color:#fff;padding:11px 18px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;font-family:Poppins,sans-serif;font-size:12px;line-height:1.5;box-shadow:0 4px 18px rgba(0,0,0,0.12);";
+  document.body.style.paddingTop = "56px";
   b.innerHTML = '<span style="flex:1;min-width:220px;">Du arbejder i <b style="font-weight:400;">' + esc(SOM_KUNDE)
     + '</b>s Content Studio &mdash; det du skriver her, gemmes hos kunden.</span>'
-    + '<button onclick="somKundeLuk()" style="background:#fff;color:var(--red);border:none;border-radius:12px;padding:8px 15px;font-family:Poppins,sans-serif;font-size:11px;font-weight:400;cursor:pointer;flex-shrink:0;">Tilbage til CRM</button>';
+    + '<button onclick="somKundeLuk()" style="background:#fff;color:var(--red);border:none;border-radius:12px;padding:8px 15px;font-family:Poppins,sans-serif;font-size:11px;font-weight:400;cursor:pointer;flex-shrink:0;">Tilbage til CRM</button>'
+    + '<button onclick="somKundeBannerSkjul()" title="Skjul beskeden" aria-label="Skjul beskeden" style="background:none;border:none;color:#fff;font-size:20px;line-height:1;padding:0 2px;cursor:pointer;flex-shrink:0;opacity:.85;">&times;</button>';
   document.body.insertBefore(b, document.body.firstChild);
 }
 function route() {
@@ -15924,7 +16041,7 @@ async function enterApp() {
 function visManglerKode() {
   const d = document.createElement("div");
   d.id = "manglerKode";
-  d.style.cssText = "position:fixed;inset:0;z-index:190;background:var(--gray);display:flex;align-items:center;justify-content:center;padding:24px;";
+  d.style.cssText = "position:fixed;inset:0;z-index:190;background:var(--app-bg-mobil);display:flex;align-items:center;justify-content:center;padding:24px;";
   d.innerHTML = '<div style="background:#fff;border-radius:20px;box-shadow:0 30px 70px rgba(22,32,42,0.18);padding:44px 40px;max-width:420px;text-align:center;">'
     + '<div style="font-family:\'Didot\',\'Bodoni 72\',Georgia,serif;font-size:26px;margin-bottom:10px;">Velkommen!</div>'
     + '<div style="font-size:13px;color:var(--gray3);line-height:1.7;margin-bottom:20px;">Din konto er oprettet — men den mangler en virksomhedskode, før dit Content House kan åbne.<br><br>Skriv til <b style="color:var(--black);">kontakt@energida.dk</b>, så sætter Ida dig op.</div>'
@@ -15984,6 +16101,7 @@ async function renderDash() {
 }
 
 function visDashSide(side) {
+  document.body.classList.remove("paa-login");   /* logget ind: burgeren maa gerne vises igen */
   if (side === "forretning") side = "maskinrum";   // rummene er slaaet sammen (Idas beslutning 17/7)
   if (side === "overblik") setTimeout(() => { try { ovForside(); } catch(e) {} }, 0);
   /* CRM-tabellens tal hentes samlet, saa der ikke laves eet kald pr. raekke (designpakken 1c) */
@@ -16026,7 +16144,10 @@ function showLogin() {
   document.getElementById("dashLogin").style.display = "block";
   document.getElementById("dashMain").style.display = "none";
   document.body.classList.remove("dash-nav");
-  ["btnDemo","dashBurger"].forEach(id => document.getElementById(id).style.display = "none");
+  /* paa-login skjuler den FLYDENDE burger og centrerer kortet paa telefon (Ida 31/7):
+     paa login er der ingen menu at aabne, og kortet klistrede til toppen. */
+  document.body.classList.add("paa-login");
+  ["btnDemo","dashBurger"].forEach(id => { const e = document.getElementById(id); if (e) e.style.display = "none"; });
   const dm = document.getElementById("dashMenu"); if (dm) dm.style.display = "none";
 }
 function klokkeKlik() {
@@ -17779,7 +17900,7 @@ function studieVaelgerVis() {
   try { if (window.$crisp) { $crisp.push(["do", "chat:hide"]); $crisp.push(["on", "chat:closed", function() { $crisp.push(["do", "chat:hide"]); }]); } } catch(e) {}
   const d = document.createElement("div");
   d.id = "studieVaelger";
-  d.style.cssText = "position:fixed;inset:0;z-index:600;background:var(--gray);padding:34px 22px 26px;font-family:Poppins,sans-serif;overflow-y:auto;overflow-x:hidden;box-sizing:border-box;";
+  d.style.cssText = "position:fixed;inset:0;z-index:600;background:var(--app-bg-mobil);padding:34px 22px 26px;font-family:Poppins,sans-serif;overflow-y:auto;overflow-x:hidden;box-sizing:border-box;";
   const logoEl = document.querySelector(".logo-img");
   const knap = (titel, klik, rod) =>
     '<button type="button" onclick="' + klik + '" style="display:block;width:100%;text-align:center;background:' + (rod ? 'var(--red)' : '#fff') + ';border:1px solid ' + (rod ? 'var(--red)' : 'var(--border)') + ';border-radius:20px;padding:15px 20px;margin:0 0 10px;font-family:Poppins,sans-serif;font-size:16px;font-weight:400;color:' + (rod ? '#fff' : 'var(--black)') + ';cursor:pointer;">' + titel + '</button>';
@@ -22151,6 +22272,6 @@ if ((location.hash || "").toLowerCase() === "#ole") {   // #ole = preview af Ole
 })();
 </script>
 <!-- Versions-mærke: synligt på ALLE sider, så Ida altid kan se hvilken version hun kigger på (27/7) -->
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 31. juli · 818</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 31. juli · 819</div>
 </body>
 </html>
