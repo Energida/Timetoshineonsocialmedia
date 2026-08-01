@@ -1519,7 +1519,7 @@ body.lek-open .burger-btn, body.lek-open .bottom-nav, body.lek-open .dash-fab, b
     <button class="burger-item" onclick="toggleBurger(); togglePwPanel()">Skift adgangskode</button>
     <button class="burger-item" onclick="toggleBurger(); openChat()">Kontakt Ida</button>
     <button class="burger-item" style="color:var(--red);" onclick="custLogout()">Log ud</button>
-    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 1. august · 863</div>
+    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 1. august · 864</div>
   </div>
 </div>
 <div class="plus-menu" id="plusMenu" onclick="if(event.target===this)togglePlus()">
@@ -2591,7 +2591,7 @@ if (/somkunde=/.test(location.hash)) {
     <!-- Foden bliver nederst — den er det ENESTE der skubbes ned (Ida 30/7) -->
     <div class="dsb-fod">
       <button class="dsb-konto" onclick="toggleDashMenu()" title="Ida"><span class="dsb-initial">I</span><span class="dsb-konto-navn">Ida</span><svg class="dsb-konto-pil" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></button>
-      <div class="dsb-version"><img id="dashNavLogo" alt="Energida"><span>Version 1. august · 863</span></div>
+      <div class="dsb-version"><img id="dashNavLogo" alt="Energida"><span>Version 1. august · 864</span></div>
     </div>
   </div>
 
@@ -5435,7 +5435,7 @@ select titel,
          staa fast paa telefon. De hoerer i arket (samme fejl som "left" 31/7). -->
     <div id="dashFooter" style="z-index:50;display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--gray3);background:#fff;border-top:1px solid var(--border);padding:10px 26px;">
       <div style="font-size:10px;">© 2026 Energida · Alle rettigheder forbeholdes</div>
-      <div style="font-size:10px;margin-left:auto;">Version 1. august · 863 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
+      <div style="font-size:10px;margin-left:auto;">Version 1. august · 864 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
     </div>
   </div>
 </div>
@@ -12178,7 +12178,13 @@ function mqForslagInput(fid) {
 }
 async function mqForslagGem(fid, patch) {
   if (!sb) return true;
-  try { const r = await sb.from("manus_forslag").update(patch).eq("id", fid); return !r.error; } catch (e) { return false; }
+  /* .select("id") ER kvitteringen. Uden den melder en RLS-afvist opdatering SUCCESS:
+     Postgres opdaterer nul raekker, og Supabase returnerer ingen fejl. Saa sagde skaermen
+     "gemt", mens basen aldrig havde set det. Vi kraever en raekke retur. (Ida 1/8) */
+  try {
+    const r = await sb.from("manus_forslag").update(patch).eq("id", fid).select("id");
+    return !r.error && Array.isArray(r.data) && r.data.length > 0;
+  } catch (e) { return false; }
 }
 
 /* KOMMENTARER (Ida 1/8): en note pr. forslag — "faar kildehenvisningerne lavet senere".
@@ -12479,8 +12485,19 @@ async function mqNyLektion(f) {
 
 async function mqSaetStatus(f, status) {
   if (!mqErIda()) return;
+  /* SKRIVNINGEN SKAL KVITTERE (Ida 1/8). Foer stod svaret fra mqForslagGem ubrugt hen:
+     fejlede skrivningen, sagde skaermen alligevel "gemt", og valget var vaek ved naeste
+     genindlaesning. Nu rulles den lokale status tilbage, og hun faar det at vide.
+     Samme princip som historik-nettet: intet input maa gaa tabt i stilhed. */
+  const foer = f.status, foerTid = f.behandlet;
   f.status = status; f.behandlet = new Date().toISOString();
-  await mqForslagGem(f.id, { status: status, behandlet: f.behandlet, idas_tekst: f.idas_tekst || null });
+  const ok = await mqForslagGem(f.id, { status: status, behandlet: f.behandlet, idas_tekst: f.idas_tekst || null });
+  if (!ok) {
+    f.status = foer; f.behandlet = foerTid;
+    MQ_BESKED = "Kunne ikke gemme det lige nu — dit valg er IKKE registreret. Tjek forbindelsen og prøv igen.";
+    renderKlipperum();
+    return;
+  }
   /* Idas beslutning 1/8: er det sidste forslag paa lektionen implementeret, er lektionen godkendt */
   const o = mqAktuel();
   if (status === "implementeret" && o && !o.__ny) {
@@ -15515,7 +15532,7 @@ function buildSideNav(def) {
       + '<span style="opacity:.55;">' + ikon("", "Kalender", "laastBesked()", IK.kal) + '</span>'
       + '<span style="opacity:.55;">' + ikon("", "Værktøjskassen", "laastBesked()", IK.tools) + '</span>'
       + '<button class="sn-virk-knap" onclick="toggleVirkMenu(event)" title="' + esc(knapNavn) + '" aria-label="Profil" style="margin-left:auto;"><span class="sn-initial">' + esc((knapNavn || "?").trim().charAt(0).toUpperCase()) + '</span><span class="sn-virk-navn" style="white-space:normal;overflow-wrap:anywhere;">' + esc(knapNavn) + '</span><svg class="sn-virk-pil" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="flex-shrink:0;"><path d="M6 9l6 6 6-6"/></svg></button>'
-      + fodBagud + '<div class="sn-fod">' + fodLogo + '<span>Version 1. august · 863</span></div>'
+      + fodBagud + '<div class="sn-fod">' + fodLogo + '<span>Version 1. august · 864</span></div>'
       /* Ida 30/7: alle konto-punkter bor i profilmenuen — ingen streg/sn-bund */
       + '<div id="virkMenu" style="display:none;position:fixed;left:14px;bottom:96px;width:230px;background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:0 16px 40px rgba(0,0,0,0.15);padding:8px;z-index:90;">'
       + '<div style="padding:10px 12px 6px;font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--gray3);">' + esc(virkNavn) + '</div>'
@@ -15568,7 +15585,7 @@ function buildSideNav(def) {
         uPkt("", "Lektioner", "showTab(12)")))
     + '<button class="sn-virk-knap" onclick="toggleVirkMenu(event)" title="' + esc(knapNavn) + '" aria-label="Profil"><span class="sn-initial">' + esc((knapNavn || "?").trim().charAt(0).toUpperCase()) + '</span><span class="sn-virk-navn" style="white-space:normal;overflow-wrap:anywhere;">' + esc(knapNavn) + '</span><svg class="sn-virk-pil" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="flex-shrink:0;"><path d="M6 9l6 6 6-6"/></svg></button>'
     /* Ida 30/7: ingen streg — logo + version samlet i foden under profilknappen */
-    + fodBagud + '<div class="sn-fod">' + fodLogo + '<span>Version 1. august · 863</span></div>'
+    + fodBagud + '<div class="sn-fod">' + fodLogo + '<span>Version 1. august · 864</span></div>'
     /* Ida 30/7: menuen åbner VED knappen (nederst t.v.) — ikke i modsatte hjørne */
     + '<div id="virkMenu" style="display:none;position:fixed;left:14px;bottom:96px;width:230px;background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:0 16px 40px rgba(0,0,0,0.15);padding:8px;z-index:90;">'
     + '<div style="padding:10px 12px 6px;font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--gray3);">' + esc(virkNavn) + '</div>'
@@ -25514,6 +25531,6 @@ if ((location.hash || "").toLowerCase() === "#ole") {   // #ole = preview af Ole
      Laa den inde i #dashboard, ville kunderne aldrig se den (synk-reglen, Ida 31/7). -->
 <div id="dashBundnav" role="navigation" aria-label="Backstage"></div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 1. august · 863</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 1. august · 864</div>
 </body>
 </html>
