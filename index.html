@@ -1516,7 +1516,7 @@ body.lek-open .burger-btn, body.lek-open .bottom-nav, body.lek-open .dash-fab, b
     <button class="burger-item" onclick="toggleBurger(); togglePwPanel()">Skift adgangskode</button>
     <button class="burger-item" onclick="toggleBurger(); openChat()">Kontakt Ida</button>
     <button class="burger-item" style="color:var(--red);" onclick="custLogout()">Log ud</button>
-    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 1. august · 853</div>
+    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 1. august · 854</div>
   </div>
 </div>
 <div class="plus-menu" id="plusMenu" onclick="if(event.target===this)togglePlus()">
@@ -2583,7 +2583,7 @@ if (/somkunde=/.test(location.hash)) {
     <!-- Foden bliver nederst — den er det ENESTE der skubbes ned (Ida 30/7) -->
     <div class="dsb-fod">
       <button class="dsb-konto" onclick="toggleDashMenu()" title="Ida"><span class="dsb-initial">I</span><span class="dsb-konto-navn">Ida</span><svg class="dsb-konto-pil" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></button>
-      <div class="dsb-version"><img id="dashNavLogo" alt="Energida"><span>Version 1. august · 853</span></div>
+      <div class="dsb-version"><img id="dashNavLogo" alt="Energida"><span>Version 1. august · 854</span></div>
     </div>
   </div>
 
@@ -4991,7 +4991,7 @@ select titel,
          staa fast paa telefon. De hoerer i arket (samme fejl som "left" 31/7). -->
     <div id="dashFooter" style="z-index:50;display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--gray3);background:#fff;border-top:1px solid var(--border);padding:10px 26px;">
       <div style="font-size:10px;">© 2026 Energida · Alle rettigheder forbeholdes</div>
-      <div style="font-size:10px;margin-left:auto;">Version 1. august · 853 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
+      <div style="font-size:10px;margin-left:auto;">Version 1. august · 854 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
     </div>
   </div>
 </div>
@@ -9348,61 +9348,121 @@ function oevChip(tekst, roed) {
     + (roed ? 'var(--red)' : 'var(--gray3)') + ';border:1px solid currentColor;border-radius:12px;padding:1px 7px;flex-shrink:0;">'
     + esc(tekst) + '</span>';
 }
-function visAlleOevelser() {
+/* Foldet pr. modul, ikke en mur. Idas regel 31/7: lange kolonner foldes pr. gruppe —
+   modulet er raekken, og den folder ud ved klik. Foerste udgave viste alle 49
+   spoergsmaal paa en gang (3.390 px) og var ikke et overblik, men en liste. */
+let OEVO_AABEN = "", OEVO_FILTER = "alle";
+function oevoModulNr(id) { return String(id || "").split("-")[0]; }
+/* Modulerne bygges af BAADE lektionerne og hullerne — et hul kan pege paa en lektion,
+   der ikke findes endnu (5.7), og maa alligevel staa i sit modul. */
+function oevoModuler() {
+  const ud = KURSUS_MODULER.map(m => {
+    const lek = (m.lektioner || []).filter(l => l.ovelse && l.ovelse.length)
+      .map(l => ({ id: l.id, titel: l.titel, ovelse: l.ovelse, dreje: DREJEBOG_LEKTIONER.indexOf(l.id) > -1 }));
+    const nr = oevoModulNr((m.lektioner && m.lektioner.length) ? m.lektioner[0].id : "");
+    const huller = DREJEBOG_HULLER.filter(h => oevoModulNr(h.lek) === nr);
+    return { titel: m.titel, nr: nr, lektioner: lek, huller: huller,
+             bygget: lek.reduce((n, l) => n + l.ovelse.length, 0) };
+  }).filter(m => m.lektioner.length || m.huller.length);
+  return ud;
+}
+function oevoFold(t) { OEVO_AABEN = (OEVO_AABEN === t ? "" : t); oevoRender(); }
+function oevoFilter(v) { OEVO_FILTER = v; OEVO_AABEN = ""; oevoRender(); }
+function oevoTal(tal, label, roed) {
+  return '<div style="flex:1 1 90px;min-width:84px;">'
+    + '<div style="font-size:26px;font-weight:300;line-height:1.1;color:' + (roed ? 'var(--red)' : 'var(--black)') + ';">' + tal + '</div>'
+    + '<div style="font-size:10px;letter-spacing:1.2px;text-transform:uppercase;color:var(--gray3);margin-top:2px;">' + esc(label) + '</div></div>';
+}
+function oevoSpmRaekke(nr, tekst, roed) {
+  return '<div style="display:flex;gap:9px;align-items:baseline;padding:4px 0 4px 2px;">'
+    + '<span style="flex-shrink:0;font-size:11px;color:var(--red);font-variant-numeric:tabular-nums;">' + nr + '</span>'
+    + '<span style="flex:1;font-size:12px;color:' + (roed ? 'var(--black)' : 'var(--gray3)') + ';line-height:1.55;">' + esc(tekst) + '</span></div>';
+}
+function oevoHulRaekke(h, n) {
+  return '<div style="display:flex;gap:9px;align-items:baseline;padding:7px 0;border-top:1px solid var(--gray);">'
+    + '<span style="flex-shrink:0;font-size:11px;color:var(--red);font-variant-numeric:tabular-nums;">' + n + '</span>'
+    + '<div style="flex:1;min-width:0;">'
+      + '<div style="font-size:12.5px;line-height:1.5;">' + esc(h.spm) + '</div>'
+      + '<div style="display:flex;gap:7px;align-items:center;flex-wrap:wrap;margin-top:5px;">'
+        + oevChip("Lektion " + h.lek.replace("-", "."), !!h.ny)
+        + oevChip(h.side, false)
+        + (h.vigtig ? oevChip("Vigtigst", true) : "")
+        + (h.ny ? oevChip("Ny lektion — skal optages", true) : "")
+      + '</div></div></div>';
+}
+function oevoRender() {
   const mb = document.getElementById("modalBody"); if (!mb) return;
-  const medOvelse = KURSUS_LEKTIONER.filter(l => l.ovelse && l.ovelse.length);
-  const spmIalt = medOvelse.reduce((n, l) => n + l.ovelse.length, 0);
-  const drejeSpm = medOvelse.filter(l => DREJEBOG_LEKTIONER.indexOf(l.id) > -1).reduce((n, l) => n + l.ovelse.length, 0);
-  /* Kun moduler, der FAKTISK har en oevelse — tomme modulkort siger ingenting */
-  const moduler = KURSUS_MODULER
-    .map(m => ({ titel: m.titel, lektioner: (m.lektioner || []).filter(l => l.ovelse && l.ovelse.length) }))
-    .filter(m => m.lektioner.length);
+  const moduler = oevoModuler();
+  const byggetIalt = moduler.reduce((n, m) => n + m.bygget, 0);
+  const manglerIalt = DREJEBOG_HULLER.length;
+  const drejeIalt = moduler.reduce((n, m) => n + m.lektioner.filter(l => l.dreje).reduce((k, l) => k + l.ovelse.length, 0), 0);
+  const f = OEVO_FILTER;
+  const chip = (v, tekst) => '<button type="button" class="chip-btn' + (f === v ? ' on' : '') + '" onclick="oevoFilter(\'' + v + '\')">' + tekst + '</button>';
+
+  let krop = "";
+  if (f === "mangler") {
+    /* Kun 10 punkter — de staar aabne, for der er intet at folde vaek */
+    krop = '<div style="background:#fff;border:1px solid var(--border);border-radius:20px;padding:14px 16px;">'
+      + '<div style="font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--red);border-bottom:1px solid var(--red-line);padding-bottom:9px;margin-bottom:4px;">Det, der mangler</div>'
+      + DREJEBOG_HULLER.map((h, n) => oevoHulRaekke(h, n + 1)).join("")
+      + '</div>';
+  } else {
+    krop = moduler.map(m => {
+      const lek = m.lektioner.filter(l => f === "alle" || (f === "dreje" ? l.dreje : !l.dreje));
+      const huller = (f === "energi") ? [] : m.huller;
+      if (!lek.length && !huller.length) return "";
+      const spm = lek.reduce((n, l) => n + l.ovelse.length, 0);
+      const aaben = OEVO_AABEN === m.titel;
+      const ialt = spm + huller.length;
+      const pct = ialt ? Math.round(spm / ialt * 100) : 100;
+      return '<div style="background:#fff;border:1px solid var(--border);border-radius:20px;padding:13px 16px;margin-bottom:8px;">'
+        /* Fold-baren ER overskriften — gentages aldrig inde i folden */
+        + '<div onclick="oevoFold(\'' + esc(m.titel).replace(/'/g, "\\'") + '\')" style="cursor:pointer;">'
+          + '<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">'
+            + '<span style="flex:1;min-width:150px;font-size:13px;">' + esc(m.titel) + '</span>'
+            + (huller.length ? oevChip(huller.length + " mangler", true) : "")
+            + '<span style="font-size:11px;color:var(--gray3);flex-shrink:0;">' + spm + ' spørgsmål</span>'
+            + '<span style="font-size:11px;color:var(--red);flex-shrink:0;">' + (aaben ? 'Luk' : 'Åbn') + '</span>'
+          + '</div>'
+          + '<div style="height:5px;border-radius:99px;background:#F2F0ED;margin-top:9px;overflow:hidden;">'
+            + '<div style="height:100%;width:' + pct + '%;background:var(--red);border-radius:99px;"></div></div>'
+        + '</div>'
+        + (aaben
+          ? lek.map(l => '<div style="padding:9px 0;border-top:1px solid var(--gray);margin-top:9px;">'
+              + '<div style="display:flex;gap:10px;align-items:center;font-size:12.5px;margin-bottom:5px;">'
+                + '<span style="flex-shrink:0;color:var(--gray3);font-variant-numeric:tabular-nums;">' + l.id.replace("-", ".") + '</span>'
+                + '<span style="flex:1;">' + esc(l.titel) + '</span>'
+                + oevChip(l.dreje ? "Drejebogen" : "Energien", l.dreje)
+              + '</div>'
+              + l.ovelse.map((q, n) => oevoSpmRaekke(n + 1, q, false)).join("")
+              + '</div>').join("")
+            + (huller.length
+              ? '<div style="margin-top:11px;padding-top:11px;border-top:1px solid var(--red-line);">'
+                + '<div style="font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--red);margin-bottom:2px;">Mangler i dette modul</div>'
+                + huller.map((h, n) => oevoHulRaekke(h, n + 1)).join("")
+                + '</div>'
+              : "")
+          : "")
+        + '</div>';
+    }).join("");
+  }
 
   mb.innerHTML = '<button class="modal-close" onclick="closeModal()">&times;</button>'
-    + '<div style="font-family:\'Didot\',\'Bodoni 72\',Georgia,serif;font-size:24px;font-weight:400;color:var(--black);border-bottom:1px solid var(--border);padding-bottom:10px;margin-bottom:10px;">Alle øvelserne</div>'
-    + '<div style="font-size:12px;color:var(--gray3);line-height:1.6;margin-bottom:14px;">'
-      + medOvelse.length + ' af ' + KURSUS_LEKTIONER.length + ' lektioner har en øvelse · ' + spmIalt + ' spørgsmål i alt. '
-      + 'Heraf bygger ' + drejeSpm + ' Drejebogen — resten bygger energidelen. '
-      + 'Kundens svar gemmes pr. lektion og kan læses igen, når motoren skal skrive Drejebogen.</div>'
-
-    + moduler.map(m => '<div style="background:#fff;border:1px solid var(--border);border-radius:20px;padding:12px 16px;margin-bottom:8px;">'
-      + '<div class="kort-titel" style="margin-bottom:6px;">' + esc(m.titel)
-        + ' <span class="ws-hint">· ' + m.lektioner.reduce((n, l) => n + l.ovelse.length, 0) + ' spørgsmål</span></div>'
-      + m.lektioner.map(l => {
-          const dreje = DREJEBOG_LEKTIONER.indexOf(l.id) > -1;
-          return '<div style="padding:9px 0;border-top:1px solid var(--gray);">'
-            + '<div style="display:flex;gap:10px;align-items:center;font-size:12.5px;margin-bottom:6px;">'
-              + '<span style="flex-shrink:0;font-weight:400;color:var(--gray3);font-variant-numeric:tabular-nums;">' + l.id.replace("-", ".") + '</span>'
-              + '<span style="flex:1;">' + esc(l.titel) + '</span>'
-              + oevChip(dreje ? "Drejebogen" : "Energien", dreje)
-            + '</div>'
-            + l.ovelse.map((q, n) => '<div style="display:flex;gap:9px;align-items:baseline;padding:3px 0 3px 2px;">'
-              + '<span style="flex-shrink:0;font-size:11px;color:var(--red);font-variant-numeric:tabular-nums;">' + (n + 1) + '</span>'
-              + '<span style="flex:1;font-size:12px;color:var(--gray3);line-height:1.55;">' + esc(q) + '</span>'
-              + '</div>').join("")
-            + '</div>';
-        }).join("")
-      + '</div>').join("")
-
-    /* Hullerne staar SIDST og i rødt: det er dem, der kraever en beslutning */
-    + '<div style="background:#fff;border:1px solid var(--border);border-radius:20px;padding:14px 16px;margin-bottom:8px;">'
-      + '<div style="font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--red);border-bottom:1px solid var(--red-line);padding-bottom:9px;margin-bottom:11px;">Spørgsmål, der mangler, før Drejebogen kan skrives færdig</div>'
-      + '<div style="font-size:12px;color:var(--gray3);line-height:1.6;margin-bottom:12px;">'
-        + 'Cirka halvdelen af Drejebogens felter har en kilde i dag. De ' + DREJEBOG_HULLER.length + ' spørgsmål herunder er dem, der mangler. '
-        + 'De tre vigtigste er missionen, "ses i praksis" og tonen — uden dem kan side 04, 06 og 21 ikke skrives. '
-        + 'Ingen af dem er bygget endnu.</div>'
-      + DREJEBOG_HULLER.map((h, n) => '<div style="display:flex;gap:10px;align-items:baseline;padding:7px 0;border-top:1px solid var(--gray);">'
-        + '<span style="flex-shrink:0;font-size:11px;color:var(--red);font-variant-numeric:tabular-nums;">' + (n + 1) + '</span>'
-        + '<div style="flex:1;min-width:0;">'
-          + '<div style="font-size:12.5px;line-height:1.5;">' + esc(h.spm) + '</div>'
-          + '<div style="display:flex;gap:7px;align-items:center;flex-wrap:wrap;margin-top:5px;">'
-            + oevChip("Lektion " + h.lek.replace("-", "."), !!h.ny)
-            + oevChip(h.side, false)
-            + (h.vigtig ? oevChip("Vigtigst", true) : "")
-            + (h.ny ? oevChip("Ny lektion — skal optages", true) : "")
-          + '</div>'
-        + '</div></div>').join("")
-    + '</div>';
+    + '<div style="font-family:\'Didot\',\'Bodoni 72\',Georgia,serif;font-size:24px;font-weight:400;color:var(--black);border-bottom:1px solid var(--border);padding-bottom:10px;margin-bottom:12px;">Alle øvelserne</div>'
+    + '<div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:14px;">'
+      + oevoTal(byggetIalt, "Spørgsmål i dag", false)
+      + oevoTal(drejeIalt, "Bygger Drejebogen", false)
+      + oevoTal(manglerIalt, "Mangler", true)
+    + '</div>'
+    + '<div style="display:flex;flex-wrap:wrap;margin-bottom:12px;">'
+      + chip("alle", "Alle") + chip("dreje", "Drejebogen") + chip("energi", "Energien") + chip("mangler", "Det, der mangler")
+    + '</div>'
+    + '<div style="font-size:11.5px;color:var(--gray3);line-height:1.6;margin-bottom:12px;">Ét modul ad gangen — klik for at folde ud. Kundens svar gemmes pr. lektion og kan læses igen, når motoren skal skrive Drejebogen.</div>'
+    + krop;
+}
+function visAlleOevelser() {
+  OEVO_AABEN = ""; OEVO_FILTER = "alle";
+  oevoRender();
   document.getElementById("modalBack").classList.add("on");
 }
 
@@ -14963,7 +15023,7 @@ function buildSideNav(def) {
       + '<span style="opacity:.55;">' + ikon("", "Kalender", "laastBesked()", IK.kal) + '</span>'
       + '<span style="opacity:.55;">' + ikon("", "Værktøjskassen", "laastBesked()", IK.tools) + '</span>'
       + '<button class="sn-virk-knap" onclick="toggleVirkMenu(event)" title="' + esc(knapNavn) + '" aria-label="Profil" style="margin-left:auto;"><span class="sn-initial">' + esc((knapNavn || "?").trim().charAt(0).toUpperCase()) + '</span><span class="sn-virk-navn" style="white-space:normal;overflow-wrap:anywhere;">' + esc(knapNavn) + '</span><svg class="sn-virk-pil" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="flex-shrink:0;"><path d="M6 9l6 6 6-6"/></svg></button>'
-      + fodBagud + '<div class="sn-fod">' + fodLogo + '<span>Version 1. august · 853</span></div>'
+      + fodBagud + '<div class="sn-fod">' + fodLogo + '<span>Version 1. august · 854</span></div>'
       /* Ida 30/7: alle konto-punkter bor i profilmenuen — ingen streg/sn-bund */
       + '<div id="virkMenu" style="display:none;position:fixed;left:14px;bottom:96px;width:230px;background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:0 16px 40px rgba(0,0,0,0.15);padding:8px;z-index:90;">'
       + '<div style="padding:10px 12px 6px;font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--gray3);">' + esc(virkNavn) + '</div>'
@@ -15016,7 +15076,7 @@ function buildSideNav(def) {
         uPkt("", "Lektioner", "showTab(12)")))
     + '<button class="sn-virk-knap" onclick="toggleVirkMenu(event)" title="' + esc(knapNavn) + '" aria-label="Profil"><span class="sn-initial">' + esc((knapNavn || "?").trim().charAt(0).toUpperCase()) + '</span><span class="sn-virk-navn" style="white-space:normal;overflow-wrap:anywhere;">' + esc(knapNavn) + '</span><svg class="sn-virk-pil" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="flex-shrink:0;"><path d="M6 9l6 6 6-6"/></svg></button>'
     /* Ida 30/7: ingen streg — logo + version samlet i foden under profilknappen */
-    + fodBagud + '<div class="sn-fod">' + fodLogo + '<span>Version 1. august · 853</span></div>'
+    + fodBagud + '<div class="sn-fod">' + fodLogo + '<span>Version 1. august · 854</span></div>'
     /* Ida 30/7: menuen åbner VED knappen (nederst t.v.) — ikke i modsatte hjørne */
     + '<div id="virkMenu" style="display:none;position:fixed;left:14px;bottom:96px;width:230px;background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:0 16px 40px rgba(0,0,0,0.15);padding:8px;z-index:90;">'
     + '<div style="padding:10px 12px 6px;font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--gray3);">' + esc(virkNavn) + '</div>'
@@ -24969,6 +25029,6 @@ if ((location.hash || "").toLowerCase() === "#ole") {   // #ole = preview af Ole
      Laa den inde i #dashboard, ville kunderne aldrig se den (synk-reglen, Ida 31/7). -->
 <div id="dashBundnav" role="navigation" aria-label="Backstage"></div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 1. august · 853</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 1. august · 854</div>
 </body>
 </html>
