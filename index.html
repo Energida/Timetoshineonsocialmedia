@@ -1471,7 +1471,7 @@ body.lek-open .burger-btn, body.lek-open .bottom-nav, body.lek-open .dash-fab, b
     <button class="burger-item" onclick="toggleBurger(); togglePwPanel()">Skift adgangskode</button>
     <button class="burger-item" onclick="toggleBurger(); openChat()">Kontakt Ida</button>
     <button class="burger-item" style="color:var(--red);" onclick="custLogout()">Log ud</button>
-    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 1. august · 850</div>
+    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 1. august · 851</div>
   </div>
 </div>
 <div class="plus-menu" id="plusMenu" onclick="if(event.target===this)togglePlus()">
@@ -2524,7 +2524,7 @@ if (/somkunde=/.test(location.hash)) {
     <!-- Foden bliver nederst — den er det ENESTE der skubbes ned (Ida 30/7) -->
     <div class="dsb-fod">
       <button class="dsb-konto" onclick="toggleDashMenu()" title="Ida"><span class="dsb-initial">I</span><span class="dsb-konto-navn">Ida</span><svg class="dsb-konto-pil" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></button>
-      <div class="dsb-version"><img id="dashNavLogo" alt="Energida"><span>Version 1. august · 850</span></div>
+      <div class="dsb-version"><img id="dashNavLogo" alt="Energida"><span>Version 1. august · 851</span></div>
     </div>
   </div>
 
@@ -4927,7 +4927,7 @@ select titel,
          staa fast paa telefon. De hoerer i arket (samme fejl som "left" 31/7). -->
     <div id="dashFooter" style="z-index:50;display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--gray3);background:#fff;border-top:1px solid var(--border);padding:10px 26px;">
       <div style="font-size:10px;">© 2026 Energida · Alle rettigheder forbeholdes</div>
-      <div style="font-size:10px;margin-left:auto;">Version 1. august · 850 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
+      <div style="font-size:10px;margin-left:auto;">Version 1. august · 851 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
     </div>
   </div>
 </div>
@@ -11673,6 +11673,36 @@ function mqSvarLuk(fid) {
   delete MQ_SPOERG[fid]; renderKlipperum();
 }
 
+/* REST-LISTEN (Ida 1/8): "gem sætning — placér senere". Hun kan vaere uenig i, at en
+   saetning hoerer til i NETOP den lektion, uden at ville miste den. Status 'gemt' loesner
+   forslaget fra sin lektion og laegger det paa en liste, hun kan gaa igennem til sidst —
+   og derfra flytte det til den lektion, hvor det hoerer hjemme.
+   Forskellen paa de tre nej'er:
+     Behold nuvaerende = nej tak, teksten er ude.
+     Ikke nu           = samme lektion, senere.
+     Gem saetningen    = ikke her, men teksten skal ikke gaa tabt. */
+let MQ_RESTLISTE = false;
+function mqRestliste(vis) { MQ_RESTLISTE = !!vis; MQ_BESKED = ""; renderKlipperum();
+  try { window.scrollTo({ top: 0, behavior: "smooth" }); } catch (e) {} }
+function mqGemte() {
+  return MQ_FORSLAG.filter(function (f) { return f.status === "gemt"; })
+    .sort(function (a, b) { return mqNrAfId(a.lektion_id) - mqNrAfId(b.lektion_id) || (a.sortering || 0) - (b.sortering || 0); });
+}
+async function mqFlytTil(fid, lid) {
+  const f = MQ_FORSLAG.find(function (x) { return String(x.id) === String(fid); }); if (!f || !lid) return;
+  /* Ankeret hoerte til det GAMLE manuskript — det ville pege ud i den blaa luft i et nyt.
+     Derfor ryger det med, og forslaget bliver et, hun placerer selv. */
+  f.lektion_id = String(lid); f.anker_foer = null; f.anker_efter = null;
+  f.status = "venter"; f.behandlet = null;
+  await mqForslagGem(fid, { lektion_id: f.lektion_id, anker_foer: null, anker_efter: null, status: "venter", behandlet: null });
+  const maal = mqLektioner().find(function (o) { return (o.__ny ? o.__lid : mqLekId(o)) === String(lid); });
+  MQ_RESTLISTE = false;
+  if (maal) MQ_LEKTION = maal.id;
+  MQ_BESKED = "Flyttet til " + ((maal && maal.titel) || lid.replace("-", ".")) + ". Sæt markøren, hvor den skal ind.";
+  renderKlipperum();
+  try { window.scrollTo({ top: 0, behavior: "smooth" }); } catch (e) {}
+}
+
 /* Hop til det foerste forslag, hun har lagt til side — ellers er "ikke nu" en blindgyde */
 function mqTilSide() {
   const f = MQ_FORSLAG.filter(function (x) { return x.status === "sprunget"; })
@@ -11803,6 +11833,8 @@ const MQ_CHIP = "display:inline-block;font-size:9px;letter-spacing:1px;text-tran
 const MQ_TXT = "width:100%;background:#fff;border:1px solid var(--border);border-radius:12px;padding:11px 13px;font-size:12.5px;font-family:Poppins,sans-serif;line-height:1.65;outline:none;resize:vertical;color:var(--black);";
 const MQ_NAV = "background:none;border:none;padding:0;font-family:Poppins,sans-serif;font-size:12px;font-weight:400;cursor:pointer;white-space:nowrap;";
 const MQ_TYPER = { tilfoejelse: "Tilføjelse", rettelse: "Rettelse", ny_lektion: "Ny lektion", beslutning: "Beslutning" };
+/* Energida-vaelger, ikke browserens graa native (haard regel) — samme stil som Tip Tops filtre */
+const MQ_SEL = "background:#fff;color:var(--black);border:1px solid var(--border);border-radius:12px;padding:8px 30px 8px 13px;font-size:11.5px;font-weight:400;font-family:Poppins,sans-serif;cursor:pointer;outline:none;-webkit-appearance:none;appearance:none;max-width:100%;background-image:url('data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 width=%2212%22 height=%2212%22 fill=%22none%22 stroke=%22%239A9590%22 stroke-width=%222.5%22 stroke-linecap=%22round%22><path d=%22M4 7l4 4 4-4%22/></svg>');background-repeat:no-repeat;background-position:right 11px center;";
 
 function mqSide() {
   if (!mqErIda()) return "";                      /* LAG 2 — intet, heller ikke en ramme */
@@ -11813,6 +11845,7 @@ function mqSide() {
   const pct = totalL ? Math.round(gjort / totalL * 100) : 0;
   const venter = MQ_FORSLAG.filter(function (f) { return f.status === "venter"; }).length;
   const tilSide = MQ_FORSLAG.filter(function (f) { return f.status === "sprunget"; }).length;
+  const gemte = mqGemte().length;
   const i = o ? alle.findIndex(function (x) { return String(x.id) === String(o.id); }) : -1;
   const navBtn = function (lbl, ret, kan) {
     return '<button type="button"' + (kan ? '' : ' disabled') + ' style="' + MQ_NAV + (kan ? 'color:var(--red);' : 'color:var(--gray3);cursor:default;') + '"'
@@ -11833,6 +11866,11 @@ function mqSide() {
         ? '<span style="font-size:12px;color:var(--gray3);">' + tilSide + ' lagt til side</span>'
           + '<button type="button" style="' + MQ_NAV + 'color:var(--red);" onclick="mqTilSide()">Tag den første frem</button>'
         : '')
+      + (gemte
+        ? '<span style="font-size:12px;color:var(--gray3);">' + gemte + ' gemt til senere</span>'
+          + '<button type="button" style="' + MQ_NAV + 'color:var(--red);" onclick="mqRestliste(' + (MQ_RESTLISTE ? 'false' : 'true') + ')">'
+          + (MQ_RESTLISTE ? 'Tilbage til lektionerne' : 'Se rest-listen') + '</button>'
+        : '')
     + '</div>'
     + '<div style="display:flex;justify-content:flex-end;gap:18px;margin-top:13px;flex-wrap:wrap;">'
       + navBtn("Forrige lektion", -1, i > 0) + navBtn("Næste lektion", 1, i > -1 && i < alle.length - 1)
@@ -11846,6 +11884,43 @@ function mqSide() {
   if (MQ_BESKED) {
     ud += '<div style="background:#FDE8E3;border:1px solid var(--red-line);border-radius:20px;padding:14px 18px;margin-bottom:16px;font-size:12px;line-height:1.6;color:var(--black);">' + esc(MQ_BESKED) + '</div>';
   }
+  /* Rest-listen: sætningerne der ikke hørte til dér, hvor de blev foreslået */
+  if (MQ_RESTLISTE) {
+    ud += '<div style="background:#fff;border:1px solid var(--border);border-radius:20px;padding:18px 20px;margin-bottom:16px;">'
+      + '<div style="font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--red);border-bottom:1px solid var(--red-line);padding-bottom:9px;margin-bottom:12px;">Rest-listen</div>'
+      + '<div style="font-size:11.5px;color:var(--gray3);line-height:1.6;">Sætninger, du har gemt, fordi de ikke hørte til dér, hvor de blev foreslået. Ingen af dem er væk. Vælg den lektion, hver enkelt hører hjemme i — eller læg den tilbage, hvor den kom fra.</div>'
+      + '</div>';
+    const g = mqGemte();
+    if (!g.length) {
+      ud += '<div style="background:#fff;border:1px solid var(--border);border-radius:20px;padding:16px 20px;font-size:12px;color:var(--gray3);">Der er ikke gemt nogen sætninger endnu.</div>';
+      return ud;
+    }
+    const valg = mqLektioner().map(function (x) {
+      return '<option value="' + esc(x.__ny ? x.__lid : mqLekId(x)) + '">' + esc(x.titel) + '</option>';
+    }).join("");
+    g.forEach(function (f) {
+      const fid = esc(String(f.id));
+      const fra = mqLektioner().find(function (x) { return (x.__ny ? x.__lid : mqLekId(x)) === String(f.lektion_id); });
+      ud += '<div style="background:#fff;border:1px solid var(--border);border-radius:20px;padding:16px 18px;margin-bottom:12px;">'
+        + '<div style="display:flex;gap:7px;flex-wrap:wrap;align-items:center;margin-bottom:9px;">'
+          + '<span style="' + MQ_CHIP + 'color:var(--gray3);border:1px solid var(--border);">' + esc(MQ_TYPER[f.type] || f.type || "") + '</span>'
+          + (String(f.kilde || "") === "idas_ord"
+            ? '<span style="' + MQ_CHIP + 'color:var(--red);border:1px solid var(--red-line);">Dine egne ord</span>'
+            : '<span style="' + MQ_CHIP + 'color:var(--gray3);border:1px solid var(--border);">Mit forslag</span>')
+        + '</div>'
+        + '<div style="font-size:14px;font-weight:400;line-height:1.35;">' + esc(f.overskrift || "") + '</div>'
+        + '<div style="font-size:11px;color:var(--gray3);margin-top:3px;">Foreslået til ' + esc((fra && fra.titel) || String(f.lektion_id).replace("-", ".")) + '</div>'
+        + '<div style="background:#FDE8E3;border:1px solid var(--red-line);border-radius:12px;padding:11px 13px;margin:10px 0 0;font-size:12.5px;line-height:1.6;color:var(--black);white-space:pre-wrap;">' + esc(mqUdkast(f)) + '</div>'
+        + (String(f.kommentar || "").trim() ? '<div style="font-size:11.5px;color:var(--gray3);line-height:1.6;margin-top:9px;">Din note: ' + esc(f.kommentar) + '</div>' : '')
+        + (String(f.svar || "").trim() ? '<div style="font-size:11.5px;color:var(--gray3);line-height:1.6;margin-top:6px;white-space:pre-wrap;">Mit svar: ' + esc(f.svar) + '</div>' : '')
+        + '<div style="display:flex;justify-content:flex-end;align-items:center;gap:8px;flex-wrap:wrap;margin-top:12px;">'
+          + '<select id="mqflyt_' + fid + '" style="' + MQ_SEL + '">' + valg + '</select>'
+          + '<button type="button" class="dbtn primary" style="padding:9px 16px;white-space:nowrap;" onclick="mqFlytTil(\'' + fid + '\', document.getElementById(\'mqflyt_' + fid + '\').value)">Læg den her</button>'
+        + '</div></div>';
+    });
+    return ud;
+  }
+
   if (!o) {
     ud += '<div style="background:#fff;border:1px solid var(--border);border-radius:20px;padding:18px 20px;font-size:12px;color:var(--gray3);">Der er ingen lektioner på tavlen endnu.</div>';
     return ud;
@@ -11920,7 +11995,8 @@ function mqForslagKort(f, o) {
     ? '<span style="' + MQ_CHIP + 'color:var(--red);border:1px solid var(--red-line);">Dine egne ord</span>'
     : '<span style="' + MQ_CHIP + 'color:var(--gray3);border:1px solid var(--border);">Mit forslag</span>';
   const statusChip = behandlet
-    ? '<span style="' + MQ_CHIP + (f.status === "sprunget" ? 'color:var(--red);border:1px solid var(--red-line);' : 'color:var(--gray3);border:1px solid var(--border);') + '">' + esc(f.status === "implementeret" ? "Implementeret" : f.status === "sprunget" ? "Lagt til side" : "Nuværende beholdt") + '</span>'
+    ? '<span style="' + MQ_CHIP + (f.status === "sprunget" || f.status === "gemt" ? 'color:var(--red);border:1px solid var(--red-line);' : 'color:var(--gray3);border:1px solid var(--border);') + '">'
+      + esc(f.status === "implementeret" ? "Implementeret" : f.status === "sprunget" ? "Lagt til side" : f.status === "gemt" ? "Gemt til rest-listen" : "Nuværende beholdt") + '</span>'
     : '';
 
   let ud = '<div style="background:#fff;border:1px solid var(--border);border-radius:20px;padding:16px 18px;margin-bottom:12px;">'
@@ -12034,6 +12110,10 @@ function mqForslagKort(f, o) {
       /* "Spring over" lyder endeligt. "Ikke nu" siger, hvad den er: lagt til side, og
          den kan hentes frem igen — der er en genvej til dem oeverst paa siden. (Ida 1/8) */
       + '<button type="button" class="row-btn" style="font-weight:400;" title="Lagt til side — du kan tage den frem igen" onclick="mqSaetStatus(MQ_FORSLAG.find(function(x){return String(x.id)===\'' + fid + '\';}),\'sprunget\')">Ikke nu</button>'
+      /* Uenig i placeringen, men saetningen maa ikke gaa tabt (Ida 1/8) */
+      + (f.type !== "beslutning"
+        ? '<button type="button" class="row-btn" style="font-weight:400;" title="Ryger på rest-listen — du placerer den, når du har set alle modulerne" onclick="mqSaetStatus(MQ_FORSLAG.find(function(x){return String(x.id)===\'' + fid + '\';}),\'gemt\')">Gem sætningen</button>'
+        : '')
       + '<button type="button" class="dbtn primary" style="padding:9px 18px;white-space:nowrap;" onclick="mqImplementer(\'' + fid + '\',' + vedMarkoer + ')">' + primaerTekst + '</button>';
   }
   ud += '</div></div></div>';
@@ -14736,7 +14816,7 @@ function buildSideNav(def) {
       + '<span style="opacity:.55;">' + ikon("", "Kalender", "laastBesked()", IK.kal) + '</span>'
       + '<span style="opacity:.55;">' + ikon("", "Værktøjskassen", "laastBesked()", IK.tools) + '</span>'
       + '<button class="sn-virk-knap" onclick="toggleVirkMenu(event)" title="' + esc(knapNavn) + '" aria-label="Profil" style="margin-left:auto;"><span class="sn-initial">' + esc((knapNavn || "?").trim().charAt(0).toUpperCase()) + '</span><span class="sn-virk-navn" style="white-space:normal;overflow-wrap:anywhere;">' + esc(knapNavn) + '</span><svg class="sn-virk-pil" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="flex-shrink:0;"><path d="M6 9l6 6 6-6"/></svg></button>'
-      + fodBagud + '<div class="sn-fod">' + fodLogo + '<span>Version 1. august · 850</span></div>'
+      + fodBagud + '<div class="sn-fod">' + fodLogo + '<span>Version 1. august · 851</span></div>'
       /* Ida 30/7: alle konto-punkter bor i profilmenuen — ingen streg/sn-bund */
       + '<div id="virkMenu" style="display:none;position:fixed;left:14px;bottom:96px;width:230px;background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:0 16px 40px rgba(0,0,0,0.15);padding:8px;z-index:90;">'
       + '<div style="padding:10px 12px 6px;font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--gray3);">' + esc(virkNavn) + '</div>'
@@ -14789,7 +14869,7 @@ function buildSideNav(def) {
         uPkt("", "Lektioner", "showTab(12)")))
     + '<button class="sn-virk-knap" onclick="toggleVirkMenu(event)" title="' + esc(knapNavn) + '" aria-label="Profil"><span class="sn-initial">' + esc((knapNavn || "?").trim().charAt(0).toUpperCase()) + '</span><span class="sn-virk-navn" style="white-space:normal;overflow-wrap:anywhere;">' + esc(knapNavn) + '</span><svg class="sn-virk-pil" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="flex-shrink:0;"><path d="M6 9l6 6 6-6"/></svg></button>'
     /* Ida 30/7: ingen streg — logo + version samlet i foden under profilknappen */
-    + fodBagud + '<div class="sn-fod">' + fodLogo + '<span>Version 1. august · 850</span></div>'
+    + fodBagud + '<div class="sn-fod">' + fodLogo + '<span>Version 1. august · 851</span></div>'
     /* Ida 30/7: menuen åbner VED knappen (nederst t.v.) — ikke i modsatte hjørne */
     + '<div id="virkMenu" style="display:none;position:fixed;left:14px;bottom:96px;width:230px;background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:0 16px 40px rgba(0,0,0,0.15);padding:8px;z-index:90;">'
     + '<div style="padding:10px 12px 6px;font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--gray3);">' + esc(virkNavn) + '</div>'
@@ -24714,6 +24794,6 @@ if ((location.hash || "").toLowerCase() === "#ole") {   // #ole = preview af Ole
      Laa den inde i #dashboard, ville kunderne aldrig se den (synk-reglen, Ida 31/7). -->
 <div id="dashBundnav" role="navigation" aria-label="Backstage"></div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 1. august · 850</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 1. august · 851</div>
 </body>
 </html>
