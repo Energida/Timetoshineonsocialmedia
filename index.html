@@ -1563,7 +1563,7 @@ body.lek-open .burger-btn, body.lek-open .bottom-nav, body.lek-open .dash-fab, b
     <button class="burger-item" onclick="toggleBurger(); togglePwPanel()">Skift adgangskode</button>
     <button class="burger-item" onclick="toggleBurger(); openChat()">Kontakt Ida</button>
     <button class="burger-item" style="color:var(--red);" onclick="custLogout()">Log ud</button>
-    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 2. august · 881</div>
+    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 2. august · 882</div>
   </div>
 </div>
 <div class="plus-menu" id="plusMenu" onclick="if(event.target===this)togglePlus()">
@@ -2640,7 +2640,7 @@ if (/somkunde=/.test(location.hash)) {
     <!-- Foden bliver nederst — den er det ENESTE der skubbes ned (Ida 30/7) -->
     <div class="dsb-fod">
       <button class="dsb-konto" onclick="dashKontoMenu()" title="Ida"><span class="dsb-initial">I</span><span class="dsb-konto-navn">Ida</span><svg class="dsb-konto-pil" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></button>
-      <div class="dsb-version"><img id="dashNavLogo" alt="Energida"><span>Version 2. august · 881</span></div>
+      <div class="dsb-version"><img id="dashNavLogo" alt="Energida"><span>Version 2. august · 882</span></div>
     </div>
   </div>
 
@@ -5552,7 +5552,7 @@ select titel,
          staa fast paa telefon. De hoerer i arket (samme fejl som "left" 31/7). -->
     <div id="dashFooter" style="z-index:50;display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--gray3);background:#fff;border-top:1px solid var(--border);padding:10px 26px;">
       <div style="font-size:10px;">© 2026 Energida · Alle rettigheder forbeholdes</div>
-      <div style="font-size:10px;margin-left:auto;">Version 2. august · 881 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
+      <div style="font-size:10px;margin-left:auto;">Version 2. august · 882 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
     </div>
   </div>
 </div>
@@ -11248,8 +11248,8 @@ function kbHLHtml(tekst) {
 }
 /* Vaerktoejslinjens chips saetter markoerer ind ved skrivemarkoeren. B-roll og pause faar deres
    EGEN linje — den syntaks appen allerede bruger, saa gamle manus stadig laeses rigtigt. */
-function kbIndsaet(type) {
-  const t = document.getElementById("kbManusTekst"); if (!t) return;
+function kbIndsaet(type, feltId) {
+  const t = document.getElementById(feltId || "kbManusTekst"); if (!t) return;
   const v = t.value, a = t.selectionStart, b = t.selectionEnd;
   let ind, markStart, markSlut;
   if (type === "betoning") {
@@ -11266,7 +11266,8 @@ function kbIndsaet(type) {
   t.value = v.slice(0, a) + ind + v.slice(b);
   t.focus();
   t.setSelectionRange(markStart, markSlut);
-  kbAuto();
+  /* Samme chips virker i BEGGE manus-felter (Ida 2/8) — kun gemme-vejen er forskellig */
+  if (t.id === "mqManus") { mqManusInput(); } else { kbAuto(); }
 }
 /* Teleprompterens hastighed og tekststoerrelse styres fra briefen — SAMME variabler som
    prompteren selv bruger (PR_FART/PR_SKRIFT), saa de to aldrig kan komme ud af trit. */
@@ -12514,14 +12515,24 @@ function mqSoegAaben(v, ord) {
    anfoerselstegn vinder; ellers foerste ord over fire bogstaver, der ikke er et fyldord.
    Buddet er et udgangspunkt — feltet er redigerbart, saa hun retter det paa et sekund. */
 function mqSoegBud(f) {
-  const kilde = String((f && (f.overskrift || "")) + " " + (f && (f.hvorfor || ""))).trim();
-  /* 1) Staar ordet i anfoerselstegn, er det dét, forslaget handler om. */
-  const cit = kilde.match(/[""„»]([^""„«»]{2,40})[""«]/);
-  if (cit) return cit[1].trim();
-  /* 2) "Der bruges hun, hende, veninde…" eller "Ordet serie står 24 gange" —
-        tag det foerste ord i opremsningen. */
-  const liste = kilde.match(/\b(?:bruges|ordet|ordene|hedder)\s+([A-Za-zÆØÅæøå]{2,20})/i);
-  if (liste) return liste[1];
+  /* IDAS EGET SVAR VEJER TUNGEST paa en beslutning (Ida 2/8). Det er DÉR, hun skriver
+     de faktiske ord — "brug IDÉ TIL B-ROLL: ikke mere" — mens overskriften kun beskriver
+     problemet. Kun paa beslutninger: paa en tilfoejelse ER idas_tekst selve den nye
+     saetning, og saa ville et citat derfra pege det forkerte sted hen. */
+  const erBeslutning = f && f.type === "beslutning";
+  const kilder = [];
+  if (erBeslutning && String((f && f.idas_tekst) || "").trim()) kilder.push(String(f.idas_tekst));
+  kilder.push(String((f && (f.overskrift || "")) + " " + (f && (f.hvorfor || ""))).trim());
+  for (const kilde of kilder) {
+    /* 1) Staar ordet i anfoerselstegn, er det dét, forslaget handler om.
+          Baade typografiske og almindelige anfoerselstegn — hun skriver paa telefon. */
+    const cit = kilde.match(/[""„»"]([^""„«»"]{2,40})[""«"]/);
+    if (cit && cit[1].trim()) return cit[1].trim();
+    /* 2) "Der bruges hun, hende, veninde…" eller "Ordet serie står 24 gange" —
+          tag det foerste ord i opremsningen. */
+    const liste = kilde.match(/\b(?:bruges|ordet|ordene|hedder)\s+([A-Za-zÆØÅæøå]{2,20})/i);
+    if (liste) return liste[1];
+  }
   /* 3) Kan vi ikke ramme praecist, saa gaetter vi IKKE. Et forkert bud skal ryddes,
         foer hun kan skrive — et tomt felt er hurtigere. */
   return "";
@@ -12599,20 +12610,48 @@ function mqSoegPanel() {
       success, fordi Postgres bare opdaterer nul raekker.
    3) rapporten til sidst siger hvad der faktisk skete, lektion for lektion. */
 let MQ_KOER = null;
-function mqKoerAaben(fid) {
+function mqKoerAaben(fid, koe) {
   const f = MQ_FORSLAG.find(function (x) { return String(x.id) === String(fid); }); if (!f) return;
-  MQ_KOER = { fid: String(fid), soeg: mqSoegBud(f) || "", erstat: "", fra: {}, rapport: null, koerer: false };
-  MQ_SOEG_AABEN = false;
+  MQ_KOER = { fid: String(fid), soeg: mqSoegBud(f) || "", erstat: "", fra: {}, ret: {}, rapport: null, koerer: false,
+    /* ETAPER (Ida 2/8: "vi tager det i etaper når jeg siger kør godkendte forslag").
+       koe = de beslutninger, der er tilbage EFTER denne. Er den tom, er det en enkelt koersel. */
+    koe: Array.isArray(koe) ? koe.slice() : [], koeIalt: Array.isArray(koe) ? koe.length + 1 : 0 };
+  MQ_SOEG_AABEN = false; MQ_BESLUTNINGER = false;
   renderKlipperum();
   try { window.scrollTo({ top: 0, behavior: "smooth" }); } catch (e) {}
+}
+/* Naeste etape: samme koe, naeste beslutning. Er koeen tom, lukkes koerslen. */
+function mqKoerNaeste() {
+  if (!MQ_KOER || !MQ_KOER.koe.length) { mqKoerLuk(); return; }
+  const resten = MQ_KOER.koe.slice();
+  const naeste = resten.shift();
+  const ialt = MQ_KOER.koeIalt;
+  mqKoerAaben(naeste, resten);
+  if (MQ_KOER) MQ_KOER.koeIalt = ialt;   /* "3 af 12" skal blive ved med at taelle det samme */
 }
 function mqKoerLuk() { MQ_KOER = null; renderKlipperum(); }
 function mqKoerSaet(hvad, v) {
   if (!MQ_KOER) return;
   MQ_KOER[hvad] = String(v == null ? "" : v);
-  MQ_KOER.fra = {};          /* nyt soegeord = ny liste; gamle fravalg passer ikke laengere */
+  /* nyt soegeord = ny liste; gamle fravalg OG gamle haandrettelser passer ikke laengere */
+  MQ_KOER.fra = {}; MQ_KOER.ret = {};
   MQ_KOER.rapport = null;
   renderKlipperum();
+}
+/* HÅNDRETTELSE PR. STED (Ida 2/8: "jeg kan godkende, vælge og tilpasse hver eneste
+   ændring"). Erstatningen i toppen gaelder alle steder — her kan et enkelt sted faa sin
+   egen ordlyd, uden at de andre roeres. Gemmes lokalt, til kørslen udfoeres. */
+function mqKoerRet(noegle, v) {
+  if (!MQ_KOER) return;
+  MQ_KOER.ret[noegle] = String(v == null ? "" : v);
+  MQ_KOER.rapport = null;
+}
+/* Hvilket sted er aabent til rettelse. Kun eet ad gangen. */
+function mqKoerAabenSted(noegle) {
+  if (!MQ_KOER) return;
+  MQ_KOER.aaben = noegle || null;
+  renderKlipperum();
+  if (noegle) { try { const el = document.getElementById("mqkr_" + String(noegle).replace(/[^A-Za-z0-9_]/g, "_")); if (el) { el.focus(); el.select(); } } catch (e) {} }
 }
 /* Erstatningen rammer ALLE forekomster paa linjen — ogsaa naar de staar med andre
    store/smaa bogstaver, for det er praecis dem, en konventions-beslutning handler om. */
@@ -12628,8 +12667,11 @@ function mqKoerTraef() {
   if (!MQ_KOER) return [];
   return mqSoegResultat(MQ_KOER.soeg).map(function (r) {
     return { o: r.o, traef: r.traef.map(function (t) {
-      const ny = mqKoerNyLinje(t.tekst, MQ_KOER.soeg, MQ_KOER.erstat);
-      return { nr: t.nr, tekst: t.tekst, ny: ny, slettes: mqKoerSletter(ny), noegle: r.o.id + ":" + t.nr };
+      const noegle = r.o.id + ":" + t.nr;
+      /* Har hun rettet netop DETTE sted i haanden, vinder hendes ordlyd over erstatningen */
+      const haand = MQ_KOER.ret[noegle];
+      const ny = (haand != null) ? haand : mqKoerNyLinje(t.tekst, MQ_KOER.soeg, MQ_KOER.erstat);
+      return { nr: t.nr, tekst: t.tekst, ny: ny, rettet: haand != null, slettes: mqKoerSletter(ny), noegle: noegle };
     }) };
   });
 }
@@ -12673,7 +12715,9 @@ async function mqKoerUdfoer() {
          i noget, hun ikke har set. Sammenligningen er paa den trimmede tekst, fordi
          soegningen ogsaa trimmer. */
       if (linjer[i].trim() !== t.tekst) { rapport.fejl.push(g.o.titel + " · linje " + t.nr + ": teksten er ændret, siden listen blev vist — den er sprunget over"); return; }
-      const ny = mqKoerNyLinje(linjer[i], MQ_KOER.soeg, MQ_KOER.erstat);
+      /* t.ny ER det, hun saa i listen — inkl. en eventuel haandrettelse. Regner vi
+         erstatningen ud igen her, ville hendes egen ordlyd blive smidt vaek. */
+      const ny = t.ny;
       if (mqKoerSletter(ny)) slet[i] = true; else linjer[i] = ny;
       roert++;
     });
@@ -12724,7 +12768,13 @@ function mqKoerPanel() {
       + '<span style="flex:1;min-width:180px;font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--red);">Gennemfør i alle manuskripter</span>'
       + '<button type="button" style="' + MQ_NAV + 'color:var(--red);" onclick="mqKoerLuk()">Luk kørslen</button>'
     + '</div>'
+    + (MQ_KOER.koeIalt
+      ? '<div style="font-size:11px;color:var(--gray3);margin-bottom:5px;">Beslutning ' + (MQ_KOER.koeIalt - MQ_KOER.koe.length) + ' af ' + MQ_KOER.koeIalt + '</div>'
+      : '')
     + (f ? '<div style="font-size:12.5px;line-height:1.4;margin-bottom:3px;">' + esc(f.overskrift || "") + '</div>' : '')
+    + (f && String(f.idas_tekst || "").trim()
+      ? '<div style="background:#FDE8E3;border:1px solid var(--red-line);border-radius:12px;padding:10px 12px;margin:7px 0 10px;font-size:12px;line-height:1.6;white-space:pre-wrap;">' + esc(f.idas_tekst) + '</div>'
+      : '')
     + '<div style="font-size:11.5px;color:var(--gray3);line-height:1.6;margin-bottom:12px;">Skriv hvad der skal findes, og hvad det skal blive til. Du ser hvert eneste sted, før der rettes — og du bestemmer selv, hvilke der er med. Den gamle tekst gemmes i manus_historik, før noget røres.</div>'
     + '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:9px;">'
       + '<input type="text" id="mqKoerSoeg" value="' + esc(MQ_KOER.soeg).replace(/"/g, "&quot;") + '" placeholder="Find dette — fx IDÉ TIL B-ROLL:"'
@@ -12742,6 +12792,13 @@ function mqKoerPanel() {
       + (r.fejl.length
         ? '<div style="margin-top:9px;font-size:11.5px;color:var(--gray3);line-height:1.6;">' + r.fejl.map(function (x) { return esc(x); }).join("<br>") + '</div>'
         : '')
+      /* Etaperne: naar en beslutning er koert, foerer knappen videre til den naeste —
+         ellers skulle hun selv finde tilbage til listen hver gang (Ida 2/8). */
+      + '<div style="display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;margin-top:11px;">'
+        + (MQ_KOER.koe.length
+          ? '<button type="button" class="dbtn primary" style="padding:10px 20px;white-space:nowrap;" onclick="mqKoerNaeste()">Næste beslutning · ' + MQ_KOER.koe.length + ' tilbage</button>'
+          : '<button type="button" class="row-btn mq-tap" style="font-weight:400;" onclick="mqKoerLuk()">Færdig</button>')
+      + '</div>'
       + '</div>';
   }
 
@@ -12766,12 +12823,26 @@ function mqKoerPanel() {
       + '<div style="font-size:12.5px;margin-bottom:6px;">' + esc(r.o.titel || "") + '</div>'
       + r.traef.map(function (t) {
           const paa = mqKoerValgt(t.noegle);
-          return '<div style="display:flex;gap:10px;align-items:flex-start;padding:6px 0;">'
+          const felt = "mqkr_" + String(t.noegle).replace(/[^A-Za-z0-9_]/g, "_");
+          return '<div style="display:flex;gap:10px;align-items:flex-start;padding:8px 0;">'
             + '<div style="flex:1;min-width:0;">'
               + '<div style="font-size:12px;color:var(--gray3);line-height:1.6;' + (paa ? 'text-decoration:line-through;' : '') + '">' + frem(t.tekst.slice(0, 220), MQ_KOER.soeg) + '</div>'
+              /* SÅDAN BLIVER DEN — og hun kan rette netop DETTE sted (Ida 2/8).
+                 Feltet er hendes; erstatningen i toppen er kun et udgangspunkt. */
               + (paa
-                ? '<div style="font-size:12px;line-height:1.6;color:' + (t.slettes ? 'var(--gray3)' : 'var(--black)') + ';padding-top:2px;">'
-                    + (t.slettes ? 'Linjen fjernes.' : esc(t.ny.slice(0, 220))) + '</div>'
+                ? (MQ_KOER.aaben === t.noegle
+                  /* KUN det sted, hun har klikket paa, er et felt. 49 felter paa een gang
+                     er ikke et overblik — hendes ord: "keep it simple". (Ida 2/8) */
+                  ? '<input type="text" id="' + felt + '" value="' + esc(t.slettes ? "" : t.ny).replace(/"/g, "&quot;") + '" placeholder="Tom = linjen fjernes"'
+                      + ' oninput="mqKoerRet(\'' + esc(t.noegle) + '\', this.value)"'
+                      + ' onkeydown="if(event.key===&#39;Enter&#39;||event.key===&#39;Escape&#39;)mqKoerAabenSted(null)"'
+                      + ' onblur="mqKoerAabenSted(null)"'
+                      + ' style="width:100%;margin-top:5px;background:#fff;border:1px solid var(--red-line);border-radius:12px;padding:8px 11px;font-size:12px;font-family:Poppins,sans-serif;color:var(--black);outline:none;">'
+                  : '<div onclick="mqKoerAabenSted(\'' + esc(t.noegle) + '\')" title="Klik for at rette netop dette sted" style="font-size:12px;line-height:1.6;cursor:text;padding-top:2px;color:'
+                      + (t.slettes ? 'var(--gray3)' : 'var(--black)') + ';">'
+                      + (t.slettes ? 'Linjen fjernes.' : esc(t.ny.slice(0, 220)))
+                      + (t.rettet ? ' <span style="font-size:10.5px;color:var(--red);">· rettet</span>' : '')
+                    + '</div>')
                 : '<div style="font-size:11px;color:var(--gray3);padding-top:2px;">Ikke med i kørslen.</div>')
             + '</div>'
             /* Handlings-klikket sidder til HOEJRE for teksten, aldrig foran (regel 27/7) */
@@ -12783,12 +12854,79 @@ function mqKoerPanel() {
       + '</div>';
   }).join("");
 
-  ud += '<div style="display:flex;justify-content:flex-end;align-items:center;gap:12px;flex-wrap:wrap;margin-top:14px;">'
+  ud += '<div style="display:flex;justify-content:flex-end;align-items:center;gap:8px;flex-wrap:wrap;margin-top:14px;">'
     + (MQ_KOER.koerer
       ? '<span style="font-size:12px;color:var(--gray3);">Retter …</span>'
-      : '<button type="button" class="dbtn primary" style="padding:11px 22px;white-space:nowrap;"' + (valgt ? '' : ' disabled')
-        + ' onclick="mqKoerUdfoer()">Ret de ' + valgt + ' valgte steder</button>')
+      : (MQ_KOER.koe.length
+          ? '<button type="button" class="row-btn mq-tap" style="font-weight:400;" onclick="mqKoerNaeste()">Spring over</button>' : '')
+        + '<button type="button" class="dbtn primary" style="padding:11px 22px;white-space:nowrap;"' + (valgt ? '' : ' disabled')
+          + ' onclick="mqKoerUdfoer()">Ret de ' + valgt + ' valgte steder</button>')
     + '</div></div>';
+  return ud;
+}
+
+/* ===== ALLE DINE SVAR ÉT STED (Ida 2/8) =====
+   "alle mine svar bliver gemt ét sted og så tager vi det i etaper når jeg siger kør
+   godkendte forslag." Foer laa svarene spredt paa hver sin lektion, og der fandtes ingen
+   samlet visning — hun kunne ikke se, hvad hun havde besluttet, uden at gaa 49 lektioner
+   igennem. Siden er OGSAA gennemgangen: den taeller selv, hvor mange steder hvert svar
+   rammer, saa det gaelder de svar, hun giver i morgen. */
+let MQ_BESLUTNINGER = false;
+function mqBeslutninger(vis) { MQ_BESLUTNINGER = !!vis; MQ_KOER = null; MQ_BESKED = ""; renderKlipperum();
+  try { window.scrollTo({ top: 0, behavior: "smooth" }); } catch (e) {} }
+/* De besvarede beslutninger, i lektionsraekkefoelge */
+function mqSvarListe() {
+  return MQ_FORSLAG.filter(function (f) {
+    return f.type === "beslutning" && f.status === "implementeret" && String(f.idas_tekst || "").trim();
+  }).sort(function (a, b) { return mqNrAfId(a.lektion_id) - mqNrAfId(b.lektion_id) || (a.sortering || 0) - (b.sortering || 0); });
+}
+/* Kør dem alle — een ad gangen, med gennemsyn hver gang */
+function mqKoerKoeStart() {
+  const liste = mqSvarListe().map(function (f) { return String(f.id); });
+  if (!liste.length) return;
+  const foerste = liste.shift();
+  mqKoerAaben(foerste, liste);
+}
+function mqBeslutningerHtml() {
+  const liste = mqSvarListe();
+  let ud = '<div style="background:#fff;border:1px solid var(--border);border-radius:20px;padding:18px 20px;margin-bottom:16px;">'
+    + '<div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;border-bottom:1px solid var(--red-line);padding-bottom:9px;margin-bottom:12px;">'
+      + '<span style="flex:1;min-width:150px;font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--red);">Alle dine svar</span>'
+      + '<button type="button" style="' + MQ_NAV + 'color:var(--red);" onclick="mqBeslutninger(false)">Tilbage til lektionerne</button>'
+    + '</div>';
+  if (!liste.length) {
+    return ud + '<div style="font-size:12.5px;color:var(--gray3);line-height:1.6;">Du har ikke gemt nogen beslutninger endnu. Tryk <b style="font-weight:400;color:var(--black);">Gem svaret</b> på en beslutning, så står den her.</div></div>';
+  }
+  ud += '<div style="font-size:11.5px;color:var(--gray3);line-height:1.6;margin-bottom:12px;">'
+    + liste.length + ' beslutninger, du har svaret på. For hver står, hvor mange steder den rammer i de ' + KLIP_OPGAVER.length + ' manuskripter — så du kan se, hvad en kørsel vil gøre, før du starter den.</div>'
+    + '<div style="display:flex;justify-content:flex-end;">'
+      + '<button type="button" class="dbtn primary" style="padding:11px 22px;white-space:nowrap;" onclick="mqKoerKoeStart()">Kør godkendte forslag · ' + liste.length + '</button>'
+    + '</div></div>';
+
+  ud += liste.map(function (f) {
+    const fid = esc(String(f.id));
+    const bud = mqSoegBud(f);
+    const res = bud ? mqSoegResultat(bud) : [];
+    const steder = res.reduce(function (s, r) { return s + r.traef.length; }, 0);
+    const fra = mqLektioner().find(function (x) { return (x.__ny ? x.__lid : mqLekId(x)) === String(f.lektion_id); });
+    /* Gennemgangen, Ida bad om — men regnet af appen, ikke skrevet i haanden:
+       rammer buddet noget, kan den koeres som den staar; ellers skal hun selv
+       skrive soegeordet, og det siger vi rent ud i stedet for at lade hende opdage det. */
+    const dom = !bud
+      ? { t: "Du skal selv skrive, hvad der skal findes", roed: true }
+      : (!steder
+        ? { t: '„' + bud + '“ findes ikke i manuskripterne — skriv selv søgeordet', roed: true }
+        : { t: "Rammer " + steder + (steder === 1 ? " sted" : " steder") + " i " + res.length + (res.length === 1 ? " lektion" : " lektioner"), roed: false });
+    return '<div style="background:#fff;border:1px solid var(--border);border-radius:20px;padding:16px 18px;margin-bottom:12px;">'
+      + '<div style="font-size:13.5px;font-weight:400;line-height:1.35;">' + esc(f.overskrift || "") + '</div>'
+      + '<div style="font-size:11px;color:var(--gray3);margin-top:3px;">Fra ' + esc((fra && fra.titel) || String(f.lektion_id).replace("-", ".")) + '</div>'
+      + '<div style="background:#FDE8E3;border:1px solid var(--red-line);border-radius:12px;padding:11px 13px;margin:9px 0 0;font-size:12.5px;line-height:1.6;white-space:pre-wrap;">' + esc(f.idas_tekst) + '</div>'
+      + '<div style="font-size:11.5px;color:' + (dom.roed ? 'var(--red)' : 'var(--gray3)') + ';line-height:1.6;margin-top:9px;">' + esc(dom.t) + '</div>'
+      + '<div style="display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;margin-top:11px;">'
+        + '<button type="button" class="row-btn mq-tap" style="font-weight:400;" onclick="mqSoegAabnLektion(\'' + esc(String((fra && fra.id) || "")) + '\')">Åbn lektionen</button>'
+        + '<button type="button" class="row-btn mq-tap" style="font-weight:400;" onclick="mqKoerAaben(\'' + fid + '\')">Gennemfør</button>'
+      + '</div></div>';
+  }).join("");
   return ud;
 }
 
@@ -13272,6 +13410,7 @@ function mqSide() {
   const venter = MQ_FORSLAG.filter(function (f) { return f.status === "venter"; }).length;
   const tilSide = MQ_FORSLAG.filter(function (f) { return f.status === "sprunget"; }).length;
   const gemte = mqGemte().length;
+  const svarIalt = mqSvarListe().length;
   /* HOVEDET ER SKAARET IND TIL BENET (Ida 2/8: "kan du ikke fjerne denne kasse og samle
      alle knapperne på en meget mere brugervenlig måde").
      Ude: forklaringsteksten (hun har laest den 100 gange), labelen MANUS-QUIZZEN (fanen
@@ -13303,7 +13442,13 @@ function mqSide() {
       + (tilSide ? '<button type="button" class="row-btn mq-tap" style="font-weight:400;" onclick="mqTilSide()">Tag den første frem</button>' : '')
       + (gemte ? '<button type="button" class="row-btn mq-tap" style="font-weight:400;" onclick="mqRestliste(' + (MQ_RESTLISTE ? 'false' : 'true') + ')">'
           + (MQ_RESTLISTE ? 'Tilbage til lektionerne' : 'Se rest-listen') + '</button>' : '')
+      /* Vejen til alle svar samlet. Staar kun der, naar der ER svar — ingen knap uden
+         noget bag sig (Ida 30/7). */
+      + (svarIalt ? '<button type="button" class="row-btn mq-tap" style="font-weight:400;" onclick="mqBeslutninger(true)">Alle dine svar · ' + svarIalt + '</button>' : '')
     + '</div></div>';
+
+  /* Alle-svar-siden erstatter lektionen, ligesom rest-listen goer det */
+  if (MQ_BESLUTNINGER) return ud + mqBeslutningerHtml();
 
   if (MQ_FEJL) {
     ud += '<div style="background:#fff;border:1px solid var(--red-line);border-radius:20px;padding:16px 18px;margin-bottom:16px;">'
@@ -13405,7 +13550,18 @@ function mqSide() {
       /* Farvelaget ligger UNDER et gennemsigtigt felt — samme greb som klippekortets
          manus-editor, og samme motor (kbHLHtml). Skrift, linjehoejde og padding skal
          derfor vaere ens i begge lag, ellers glider markoeren fra teksten. */
-      ud += '<div style="position:relative;">'
+      /* INDSÆT-CHIPS I QUIZZEN OGSÅ (Ida 2/8: "har jeg indsæt B-roll og pauser på
+         mobilfunktionen?"). De sad kun i klippekortets editor, saa i quizzen skulle
+         hun skrive "B-ROLL:" i haanden. Samme funktion (kbIndsaet), bare med quizzens
+         felt som maal — to ens ting maa ikke se forskellige ud. */
+      ud += '<div style="display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-bottom:9px;">'
+        + '<span style="font-size:10px;letter-spacing:1.4px;text-transform:uppercase;color:var(--gray3);">Indsæt</span>'
+        + ["broll:B-roll", "pause:Pause", "betoning:Betoning"].map(function (x) {
+            const d = x.split(":");
+            return '<button type="button" class="mq-tap" onclick="kbIndsaet(\'' + d[0] + '\', \'mqManus\')" style="background:var(--rosa);color:var(--red);border:1px solid var(--red-line);border-radius:99px;padding:5px 13px;font-family:Poppins,sans-serif;font-size:11.5px;font-weight:400;cursor:pointer;white-space:nowrap;">' + d[1] + '</button>';
+          }).join("")
+        + '</div>'
+        + '<div style="position:relative;">'
         + '<div id="mqManusHL" aria-hidden="true"></div>'
         + '<textarea id="mqManus" oninput="mqManusInput()" onscroll="mqHLSync()" placeholder="Manus til lektionen — skriv eller ret direkte her" style="' + MQ_TXT + 'min-height:340px;display:block;position:relative;z-index:1;background:transparent;color:transparent;caret-color:var(--black);overflow-y:auto;scrollbar-gutter:stable;">' + esc(o.manus_tekst || "") + '</textarea>'
         + '</div>'
@@ -16365,7 +16521,7 @@ function buildSideNav(def) {
       + '<span style="opacity:.55;">' + ikon("", "Kalender", "laastBesked()", IK.kal) + '</span>'
       + '<span style="opacity:.55;">' + ikon("", "Værktøjskassen", "laastBesked()", IK.tools) + '</span>'
       + '<button class="sn-virk-knap" onclick="toggleVirkMenu(event)" title="' + esc(knapNavn) + '" aria-label="Profil" style="margin-left:auto;"><span class="sn-initial">' + esc((knapNavn || "?").trim().charAt(0).toUpperCase()) + '</span><span class="sn-virk-navn" style="white-space:normal;overflow-wrap:anywhere;">' + esc(knapNavn) + '</span><svg class="sn-virk-pil" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="flex-shrink:0;"><path d="M6 9l6 6 6-6"/></svg></button>'
-      + fodBagud + '<div class="sn-fod">' + fodLogo + '<span>Version 2. august · 881</span></div>'
+      + fodBagud + '<div class="sn-fod">' + fodLogo + '<span>Version 2. august · 882</span></div>'
       /* Ida 30/7: alle konto-punkter bor i profilmenuen — ingen streg/sn-bund */
       + '<div id="virkMenu" style="display:none;position:fixed;left:14px;bottom:96px;width:230px;background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:0 16px 40px rgba(0,0,0,0.15);padding:8px;z-index:90;">'
       + '<div style="padding:10px 12px 6px;font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--gray3);">' + esc(virkNavn) + '</div>'
@@ -16418,7 +16574,7 @@ function buildSideNav(def) {
         uPkt("", "Lektioner", "showTab(12)")))
     + '<button class="sn-virk-knap" onclick="toggleVirkMenu(event)" title="' + esc(knapNavn) + '" aria-label="Profil"><span class="sn-initial">' + esc((knapNavn || "?").trim().charAt(0).toUpperCase()) + '</span><span class="sn-virk-navn" style="white-space:normal;overflow-wrap:anywhere;">' + esc(knapNavn) + '</span><svg class="sn-virk-pil" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="flex-shrink:0;"><path d="M6 9l6 6 6-6"/></svg></button>'
     /* Ida 30/7: ingen streg — logo + version samlet i foden under profilknappen */
-    + fodBagud + '<div class="sn-fod">' + fodLogo + '<span>Version 2. august · 881</span></div>'
+    + fodBagud + '<div class="sn-fod">' + fodLogo + '<span>Version 2. august · 882</span></div>'
     /* Ida 30/7: menuen åbner VED knappen (nederst t.v.) — ikke i modsatte hjørne */
     + '<div id="virkMenu" style="display:none;position:fixed;left:14px;bottom:96px;width:230px;background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:0 16px 40px rgba(0,0,0,0.15);padding:8px;z-index:90;">'
     + '<div style="padding:10px 12px 6px;font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--gray3);">' + esc(virkNavn) + '</div>'
@@ -26376,6 +26532,6 @@ if ((location.hash || "").toLowerCase() === "#ole") {   // #ole = preview af Ole
      Laa den inde i #dashboard, ville kunderne aldrig se den (synk-reglen, Ida 31/7). -->
 <div id="dashBundnav" role="navigation" aria-label="Backstage"></div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 2. august · 881</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 2. august · 882</div>
 </body>
 </html>
