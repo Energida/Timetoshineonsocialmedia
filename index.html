@@ -1549,7 +1549,7 @@ body.lek-open .burger-btn, body.lek-open .bottom-nav, body.lek-open .dash-fab, b
     <button class="burger-item" onclick="toggleBurger(); togglePwPanel()">Skift adgangskode</button>
     <button class="burger-item" onclick="toggleBurger(); openChat()">Kontakt Ida</button>
     <button class="burger-item" style="color:var(--red);" onclick="custLogout()">Log ud</button>
-    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 2. august · 878</div>
+    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 2. august · 879</div>
   </div>
 </div>
 <div class="plus-menu" id="plusMenu" onclick="if(event.target===this)togglePlus()">
@@ -2621,7 +2621,7 @@ if (/somkunde=/.test(location.hash)) {
     <!-- Foden bliver nederst — den er det ENESTE der skubbes ned (Ida 30/7) -->
     <div class="dsb-fod">
       <button class="dsb-konto" onclick="toggleDashMenu()" title="Ida"><span class="dsb-initial">I</span><span class="dsb-konto-navn">Ida</span><svg class="dsb-konto-pil" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></button>
-      <div class="dsb-version"><img id="dashNavLogo" alt="Energida"><span>Version 2. august · 878</span></div>
+      <div class="dsb-version"><img id="dashNavLogo" alt="Energida"><span>Version 2. august · 879</span></div>
     </div>
   </div>
 
@@ -5531,7 +5531,7 @@ select titel,
          staa fast paa telefon. De hoerer i arket (samme fejl som "left" 31/7). -->
     <div id="dashFooter" style="z-index:50;display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--gray3);background:#fff;border-top:1px solid var(--border);padding:10px 26px;">
       <div style="font-size:10px;">© 2026 Energida · Alle rettigheder forbeholdes</div>
-      <div style="font-size:10px;margin-left:auto;">Version 2. august · 878 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
+      <div style="font-size:10px;margin-left:auto;">Version 2. august · 879 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
     </div>
   </div>
 </div>
@@ -10875,6 +10875,10 @@ function klipProdukt(modul) {   // samme kilde som chippene — ikke en kopi
   const d = klipModtagere(modul);
   return d.length ? d.join(" · ") : "—";
 }
+/* Hvilke moduler er foldet ud i liste-visningen. Lukket fra start — 49 raekker
+   paa een gang er ikke et overblik (Ida 2/8, kanban-reglen 31/7). */
+let KLIP_LISTE_FOLD = {};
+function klipListeFold(k) { KLIP_LISTE_FOLD[k] = !KLIP_LISTE_FOLD[k]; renderKlipperum(); }
 function klipTabel(synlige, filterControls) {
   const th = t => '<th style="text-align:left;font-weight:400;font-size:10px;letter-spacing:1.4px;text-transform:uppercase;color:var(--red);padding:0 12px 11px;border-bottom:1px solid var(--border);white-space:nowrap;vertical-align:bottom;">' + t + '</th>';
   /* data-l baerer kolonnens navn med ned i raekken. Paa telefon foldes tabellen ud til
@@ -10888,32 +10892,76 @@ function klipTabel(synlige, filterControls) {
     const label = st === "Klippet" ? "Til din godkendelse" : ((st === "Råfiler klar" || st === "Rettelser") ? "Hos Thomas" : (klipStatusVis(st) || "—"));
     return '<span style="display:inline-flex;align-items:center;gap:7px;white-space:nowrap;background:#fff;border:1px solid var(--border);border-radius:12px;padding:3px 10px;font-size:10.5px;"><span style="width:8px;height:8px;border-radius:50%;background:' + col + ';display:inline-block;flex-shrink:0;"></span>' + esc(label) + '</span>';
   };
-  const rk = synlige.map(o => {
+  /* ÉN SANDHED: har NOGEN af de synlige et aegte tidsstempel? Ellers staar kolonnen
+     med en tankestreg paa hver eneste raekke — 49 linjer der aldrig siger noget.
+     Samme princip som "byg aldrig en knap i rammen uden data bag sig" (Ida 30/7). */
+  const harDato = synlige.some(o => o.updated_at || o.created_at);
+  /* ANSVARLIG er UDE (Ida 2/8). klipAnsvarlig() udleder navnet af statussen, saa
+     "Hos Thomas" og "Thomas" stod side om side paa samme raekke — en dublet pr.
+     definition, og dublet-reglen (27/7) gaelder ogsaa her. Statussen siger det. */
+  const raekke = o => {
     const nrM = (o.titel || "").match(/^(\d+)\.(\d+)\s*·?\s*(.*)$/);
-    const modulNr = nrM ? "M" + nrM[1] : (String(o.modul || "").match(/\d+/) ? "M" + String(o.modul).match(/\d+/)[0] : "—");
     const lekNr = nrM ? nrM[1] + "." + nrM[2] : "—";
     const titel = nrM ? nrM[3] : (o.titel || "");
     return '<tr>'
-      + td('<span style="background:#fff;border:1px solid #DEDAD4;border-radius:12px;padding:3px 9px;font-size:10.5px;font-weight:400;color:var(--black);">' + esc(modulNr) + '</span>', '', 'Modul')
       + td(esc(lekNr), '', 'Lektion')
       + td('<span onclick="klipBriefAaben(&#39;' + o.id + '&#39;)" title="Åbn manus" style="cursor:pointer;">' + esc(titel) + '</span>', 'font-weight:400;', 'Titel')
       + td('<span style="display:inline-flex;gap:4px;flex-wrap:wrap;">' + klipModtagerChips(o.modul, false) + '</span>', '', 'Produkt')
       + td(stChip(o.status), '', 'Status')
-      + td(esc(klipAnsvarlig(o.status)), '', 'Ansvarlig')
-      + td('<span style="color:var(--gray3);font-variant-numeric:tabular-nums;white-space:nowrap;">' + esc(fmtDate(o.updated_at || o.created_at)) + '</span>', '', 'Sidst opdateret')
+      + (harDato ? td('<span style="color:var(--gray3);font-variant-numeric:tabular-nums;white-space:nowrap;">' + esc(fmtDate(o.updated_at || o.created_at)) + '</span>', '', 'Sidst opdateret') : '')
       + td('<button style="font-family:Poppins,sans-serif;font-size:11px;font-weight:400;border-radius:12px;padding:6px 15px;border:1px solid var(--red);background:#fff;color:var(--red);cursor:pointer;white-space:nowrap;" onclick="klipBriefAaben(&#39;' + o.id + '&#39;)">Åben</button>', 'text-align:right;', '')
       + '</tr>';
+  };
+  const tabel = liste => '<div style="overflow-x:auto;"><table class="klip-tabel" style="width:100%;border-collapse:collapse;">'
+    + '<tr>' + th("Lektion") + th("Titel") + th("Produkt") + th("Status") + (harDato ? th("Sidst opdateret") : '') + th("") + '</tr>'
+    + liste.map(raekke).join("") + '</table></div>';
+
+  /* FOLDET PR. MODUL (Idas valg A, 2/8). 49 raekker var 13.333 px paa telefon — 16
+     skaermfulde at rulle igennem. Nu staar produktionen som otte raekker, der folder ud.
+     Samme greb og samme sprog som moduloversigten og tavlens spor: navn, antal,
+     fremdriftsbar, "N af M godkendt" (kanban-reglen 31/7). Lukket fra start. */
+  const grupper = {}, orden = [];
+  synlige.forEach(o => {
+    const m = (o.titel || "").match(/^(\d+)\./);
+    const k = m ? "Modul " + m[1] : (String(o.modul || "").match(/\d+/) ? "Modul " + String(o.modul).match(/\d+/)[0] : "Uden modul");
+    if (!grupper[k]) { grupper[k] = []; orden.push(k); }
+    grupper[k].push(o);
+  });
+  orden.sort((a, b) => (parseInt((a.match(/\d+/) || [99])[0], 10)) - (parseInt((b.match(/\d+/) || [99])[0], 10)));
+  const folder = orden.map(k => {
+    const arr = grupper[k];
+    const godk = arr.filter(o => o.status === "Godkendt").length;
+    const pct = arr.length ? Math.round(godk / arr.length * 100) : 0;
+    const aaben = !!KLIP_LISTE_FOLD[k];
+    const mT = (typeof KURSUS_MODULER !== "undefined" ? (KURSUS_MODULER.find(mm => String(mm.titel || "").indexOf(k) === 0) || {}).titel : "") || "";
+    const mN = mT.indexOf("·") >= 0 ? mT.split("·").slice(1).join("·").trim() : "";
+    return '<div style="border-top:1px solid #F2F0ED;">'
+      /* To faste linjer, ikke een der ombryder: navnet og pilen staar ALTID sammen
+         oeverst, tallene altid under. Ombrudt lagde pilen sig midt i tallene. */
+      + '<button type="button" onclick="klipListeFold(&#39;' + esc(k) + '&#39;)" style="width:100%;background:none;border:none;padding:14px 0;cursor:pointer;font-family:Poppins,sans-serif;text-align:left;display:block;">'
+        + '<span style="display:flex;align-items:center;gap:12px;">'
+          + '<span style="flex:1;min-width:0;font-size:12.5px;font-weight:400;color:var(--black);white-space:normal;">' + esc(k) + (mN ? ' · ' + esc(mN) : '') + '</span>'
+          + '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--gray3)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;transform:rotate(' + (aaben ? 180 : 0) + 'deg);"><path d="m6 9 6 6 6-6"/></svg>'
+        + '</span>'
+        + '<span style="display:flex;align-items:center;gap:10px;margin-top:6px;">'
+          + '<span style="font-size:11px;color:var(--gray3);white-space:nowrap;">' + arr.length + (arr.length === 1 ? ' video' : ' videoer') + '</span>'
+          + '<span style="flex:1;min-width:40px;height:5px;border-radius:99px;background:#F2F0ED;overflow:hidden;"><span style="display:block;width:' + pct + '%;height:100%;border-radius:99px;background:var(--red);"></span></span>'
+          + '<span style="font-size:11px;color:var(--gray3);white-space:nowrap;">' + godk + ' af ' + arr.length + ' godkendt</span>'
+        + '</span>'
+      + '</button>'
+      + (aaben ? '<div style="padding:0 0 14px;">' + tabel(arr) + '</div>' : '')
+      + '</div>';
   }).join("");
+
   return '<div class="ws-card" style="padding:24px 26px;">'
     + '<div class="ws-head" style="flex-wrap:wrap;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 8-6 4 6 4V8Z"/><rect width="14" height="12" x="2" y="6" rx="2"/></svg><span style="flex:1;min-width:140px;">Alle videoer</span><span class="klip-filtre" style="display:inline-flex;gap:6px;flex-wrap:wrap;align-items:center;text-transform:none;letter-spacing:0;">'
     + (filterControls || '') + '</span>'
     + '</div>'
     /* Ingen ekstra streg her: .ws-head har allerede sin egen fulde streg under sig
        (streg-reglen). To streger lige under hinanden er en dublet — Ida 2/8. */
-    + '<div style="overflow-x:auto;"><table class="klip-tabel" style="width:100%;border-collapse:collapse;">'
-    + '<tr>' + th("Modul") + th("Lektion") + th("Titel") + th("Produkt") + th("Status") + th("Ansvarlig") + th("Sidst opdateret") + th("") + '</tr>' + rk
-    + '</table></div>'
-    + '<div style="font-size:11px;color:var(--gray3);margin-top:14px;">Klik på titlen eller "Åben" for at se videoen, briefen og manus.</div>'
+    + (synlige.length
+      ? folder + '<div style="font-size:11px;color:var(--gray3);margin-top:14px;">Klik på et modul for at folde videoerne ud. Klik derefter på titlen eller "Åben" for at se briefen og manus.</div>'
+      : '<div class="ws-empty" style="padding:14px 0;">Ingen videoer i denne status lige nu.</div>')
     + '</div>';
 }
 function klipListeAaben(gruppe) {
@@ -16266,7 +16314,7 @@ function buildSideNav(def) {
       + '<span style="opacity:.55;">' + ikon("", "Kalender", "laastBesked()", IK.kal) + '</span>'
       + '<span style="opacity:.55;">' + ikon("", "Værktøjskassen", "laastBesked()", IK.tools) + '</span>'
       + '<button class="sn-virk-knap" onclick="toggleVirkMenu(event)" title="' + esc(knapNavn) + '" aria-label="Profil" style="margin-left:auto;"><span class="sn-initial">' + esc((knapNavn || "?").trim().charAt(0).toUpperCase()) + '</span><span class="sn-virk-navn" style="white-space:normal;overflow-wrap:anywhere;">' + esc(knapNavn) + '</span><svg class="sn-virk-pil" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="flex-shrink:0;"><path d="M6 9l6 6 6-6"/></svg></button>'
-      + fodBagud + '<div class="sn-fod">' + fodLogo + '<span>Version 2. august · 878</span></div>'
+      + fodBagud + '<div class="sn-fod">' + fodLogo + '<span>Version 2. august · 879</span></div>'
       /* Ida 30/7: alle konto-punkter bor i profilmenuen — ingen streg/sn-bund */
       + '<div id="virkMenu" style="display:none;position:fixed;left:14px;bottom:96px;width:230px;background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:0 16px 40px rgba(0,0,0,0.15);padding:8px;z-index:90;">'
       + '<div style="padding:10px 12px 6px;font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--gray3);">' + esc(virkNavn) + '</div>'
@@ -16319,7 +16367,7 @@ function buildSideNav(def) {
         uPkt("", "Lektioner", "showTab(12)")))
     + '<button class="sn-virk-knap" onclick="toggleVirkMenu(event)" title="' + esc(knapNavn) + '" aria-label="Profil"><span class="sn-initial">' + esc((knapNavn || "?").trim().charAt(0).toUpperCase()) + '</span><span class="sn-virk-navn" style="white-space:normal;overflow-wrap:anywhere;">' + esc(knapNavn) + '</span><svg class="sn-virk-pil" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="flex-shrink:0;"><path d="M6 9l6 6 6-6"/></svg></button>'
     /* Ida 30/7: ingen streg — logo + version samlet i foden under profilknappen */
-    + fodBagud + '<div class="sn-fod">' + fodLogo + '<span>Version 2. august · 878</span></div>'
+    + fodBagud + '<div class="sn-fod">' + fodLogo + '<span>Version 2. august · 879</span></div>'
     /* Ida 30/7: menuen åbner VED knappen (nederst t.v.) — ikke i modsatte hjørne */
     + '<div id="virkMenu" style="display:none;position:fixed;left:14px;bottom:96px;width:230px;background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:0 16px 40px rgba(0,0,0,0.15);padding:8px;z-index:90;">'
     + '<div style="padding:10px 12px 6px;font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--gray3);">' + esc(virkNavn) + '</div>'
@@ -26268,6 +26316,6 @@ if ((location.hash || "").toLowerCase() === "#ole") {   // #ole = preview af Ole
      Laa den inde i #dashboard, ville kunderne aldrig se den (synk-reglen, Ida 31/7). -->
 <div id="dashBundnav" role="navigation" aria-label="Backstage"></div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 2. august · 878</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 2. august · 879</div>
 </body>
 </html>
