@@ -1521,7 +1521,7 @@ body.lek-open .burger-btn, body.lek-open .bottom-nav, body.lek-open .dash-fab, b
     <button class="burger-item" onclick="toggleBurger(); togglePwPanel()">Skift adgangskode</button>
     <button class="burger-item" onclick="toggleBurger(); openChat()">Kontakt Ida</button>
     <button class="burger-item" style="color:var(--red);" onclick="custLogout()">Log ud</button>
-    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 2. august · 867</div>
+    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 2. august · 868</div>
   </div>
 </div>
 <div class="plus-menu" id="plusMenu" onclick="if(event.target===this)togglePlus()">
@@ -2593,7 +2593,7 @@ if (/somkunde=/.test(location.hash)) {
     <!-- Foden bliver nederst — den er det ENESTE der skubbes ned (Ida 30/7) -->
     <div class="dsb-fod">
       <button class="dsb-konto" onclick="toggleDashMenu()" title="Ida"><span class="dsb-initial">I</span><span class="dsb-konto-navn">Ida</span><svg class="dsb-konto-pil" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></button>
-      <div class="dsb-version"><img id="dashNavLogo" alt="Energida"><span>Version 2. august · 867</span></div>
+      <div class="dsb-version"><img id="dashNavLogo" alt="Energida"><span>Version 2. august · 868</span></div>
     </div>
   </div>
 
@@ -5474,7 +5474,7 @@ select titel,
          staa fast paa telefon. De hoerer i arket (samme fejl som "left" 31/7). -->
     <div id="dashFooter" style="z-index:50;display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--gray3);background:#fff;border-top:1px solid var(--border);padding:10px 26px;">
       <div style="font-size:10px;">© 2026 Energida · Alle rettigheder forbeholdes</div>
-      <div style="font-size:10px;margin-left:auto;">Version 2. august · 867 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
+      <div style="font-size:10px;margin-left:auto;">Version 2. august · 868 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
     </div>
   </div>
 </div>
@@ -9994,6 +9994,34 @@ async function sqlKortNulstil() {
   location.reload();
 }
 
+/* INPUT FRA MANUS-QUIZZEN (Ida 2/8). Hun trykker "Gem svaret" paa en beslutning — og saa
+   forsvandt svaret ned i basen uden at dukke op nogen steder. Hendes ord: "så sker der
+   intet og det fremgår ikke i lektionen". Nu staar det i briefen ved siden af manuskriptet,
+   samme sted og samme form som Claudes feedback — og kan saettes direkte ind. */
+function mqInputFor(lekId) {
+  if (typeof MQ_FORSLAG === "undefined" || !Array.isArray(MQ_FORSLAG) || !lekId) return [];
+  return MQ_FORSLAG.filter(function (f) {
+    return String(f.lektion_id) === String(lekId)
+        && f.type === "beslutning"
+        && f.status === "implementeret"
+        && String(f.idas_tekst || "").trim();
+  }).sort(function (a, b) { return (a.sortering || 0) - (b.sortering || 0); });
+}
+/* Saettes ind DER hvor markoeren staar — aldrig blindt i enden. Autosave staar for resten. */
+function mqInputSaetInd(fid) {
+  const f = (typeof MQ_FORSLAG !== "undefined" ? MQ_FORSLAG : []).find(function (x) { return String(x.id) === String(fid); });
+  const t = document.getElementById("kbManusTekst");
+  if (!f || !t) return;
+  const tekst = String(f.idas_tekst || "").trim(); if (!tekst) return;
+  const pos = (t.selectionStart != null) ? t.selectionStart : t.value.length;
+  const foer = t.value.slice(0, pos).replace(/\s+$/, "");
+  const efter = t.value.slice(pos).replace(/^\s+/, "");
+  t.value = foer + (foer ? "\n\n" : "") + tekst + (efter ? "\n\n" : "") + efter;
+  const ny = (foer ? foer.length + 2 : 0) + tekst.length;
+  try { t.focus(); t.setSelectionRange(ny, ny); } catch (e) {}
+  kbAuto();
+}
+
 /* Claudes feedback-boks i manus-visningen: "Modtaget" fjerner boksen for den lektion (Ida 28/7) */
 function manusFbOk() { try { return JSON.parse(localStorage.getItem("energida_manus_fb_ok")) || []; } catch(e) { return []; } }
 async function manusFbModtaget(lekId, btn) {
@@ -12185,15 +12213,33 @@ async function mqHent() {
   MQ_HENTET = true; renderKlipperum();
 }
 
-function mqSpring(retning) {
-  const alle = mqLektioner(); const nu = mqAktuel(); if (!nu) return;
+/* Har lektionen noget, hun endnu ikke har taget stilling til? */
+function mqVenterFor(o) {
+  return mqForslagFor(o).filter(function (f) { return f.status === "venter"; });
+}
+/* Naeste lektion DER VENTER — ikke bare nabolektionen (Ida 2/8: "så skal jeg bladre
+   gennem alle lektioner og alle tidligere svar"). Med 49 lektioner og de fleste
+   behandlede blev Forrige/Naeste en tur gennem tomme sider. */
+function mqNaesteMedVenter(retning) {
+  const alle = mqLektioner(); const nu = mqAktuel(); if (!nu) return -1;
   const i = alle.findIndex(function (x) { return String(x.id) === String(nu.id); });
-  const j = i + retning;
-  if (j < 0 || j >= alle.length) return;
-  MQ_LEKTION = alle[j].id; MQ_BESKED = ""; MQ_MANGLER = {};
+  for (let j = i + retning; j >= 0 && j < alle.length; j += retning) {
+    if (mqVenterFor(alle[j]).length) return j;
+  }
+  return -1;
+}
+function mqSpring(retning) {
+  const alle = mqLektioner();
+  const j = mqNaesteMedVenter(retning);
+  if (j < 0) return;
+  MQ_LEKTION = alle[j].id; MQ_BESKED = ""; MQ_MANGLER = {}; MQ_VIS_BEHANDLET = false;
   renderKlipperum();
   try { window.scrollTo({ top: 0, behavior: "smooth" }); } catch (e) {}
 }
+/* De behandlede foldes vaek. De er ikke slettet — de fylder bare ikke,
+   naar man er i gang med at komme igennem resten. */
+let MQ_VIS_BEHANDLET = false;
+function mqVisBehandlet(v) { MQ_VIS_BEHANDLET = !!v; renderKlipperum(); }
 
 /* Autosave paa manuskriptet — men ingen "gemmer selv"-tekst (regel 27/7) */
 function mqManusInput() {
@@ -12620,7 +12666,8 @@ function mqSide() {
         : '')
     + '</div>'
     + '<div style="display:flex;justify-content:flex-end;gap:18px;margin-top:13px;flex-wrap:wrap;">'
-      + navBtn("Forrige lektion", -1, i > 0) + navBtn("Næste lektion", 1, i > -1 && i < alle.length - 1)
+      /* Springer til naeste lektion DER VENTER — ikke bare nabolektionen (Ida 2/8) */
+      + navBtn("Forrige der venter", -1, mqNaesteMedVenter(-1) > -1) + navBtn("Næste der venter", 1, mqNaesteMedVenter(1) > -1)
     + '</div></div>';
 
   if (MQ_FEJL) {
@@ -12711,8 +12758,22 @@ function mqSide() {
   }
 
   /* 2 · Forslagene til netop den lektion */
-  const forslag = mqForslagFor(o);
-  if (!forslag.length) {
+  /* KUN DET DER VENTER (Ida 2/8: "kan man lave sådan at jeg KUN ser det jeg skal tage
+     stilling til"). De behandlede er ikke vaek — de ligger bag en fold, saa man kan
+     gaa tilbage og se, hvad man svarede. */
+  const alleF = mqForslagFor(o);
+  const behandlet = alleF.filter(function (f) { return f.status && f.status !== "venter"; });
+  const forslag = MQ_VIS_BEHANDLET ? alleF : alleF.filter(function (f) { return f.status === "venter"; });
+  if (behandlet.length) {
+    ud += '<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:0 0 12px;">'
+      + '<span style="font-size:12px;color:var(--gray3);">' + behandlet.length + ' behandlet på denne lektion</span>'
+      + '<button type="button" style="' + MQ_NAV + 'color:var(--red);" onclick="mqVisBehandlet(' + (MQ_VIS_BEHANDLET ? 'false' : 'true') + ')">'
+      + (MQ_VIS_BEHANDLET ? 'Skjul dem igen' : 'Vis dem') + '</button></div>';
+  }
+  if (!forslag.length && behandlet.length && !MQ_VIS_BEHANDLET) {
+    ud += '<div style="background:#fff;border:1px solid var(--border);border-radius:20px;padding:16px 20px;margin-bottom:16px;font-size:12.5px;color:var(--gray3);">'
+      + 'Du har taget stilling til alt på denne lektion. Brug <b style="font-weight:400;color:var(--black);">Næste der venter</b> for at komme videre.</div>';
+  } else if (!alleF.length) {
     ud += '<div style="background:#fff;border:1px solid var(--border);border-radius:20px;padding:16px 20px;margin-bottom:16px;font-size:12px;color:var(--gray3);">Ingen forslag til denne lektion. Læs den igennem, ret hvad du vil — og godkend den nedenfor.</div>';
   } else {
     forslag.forEach(function (f) { ud += mqForslagKort(f, o); });
@@ -15585,7 +15646,7 @@ function buildSideNav(def) {
       + '<span style="opacity:.55;">' + ikon("", "Kalender", "laastBesked()", IK.kal) + '</span>'
       + '<span style="opacity:.55;">' + ikon("", "Værktøjskassen", "laastBesked()", IK.tools) + '</span>'
       + '<button class="sn-virk-knap" onclick="toggleVirkMenu(event)" title="' + esc(knapNavn) + '" aria-label="Profil" style="margin-left:auto;"><span class="sn-initial">' + esc((knapNavn || "?").trim().charAt(0).toUpperCase()) + '</span><span class="sn-virk-navn" style="white-space:normal;overflow-wrap:anywhere;">' + esc(knapNavn) + '</span><svg class="sn-virk-pil" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="flex-shrink:0;"><path d="M6 9l6 6 6-6"/></svg></button>'
-      + fodBagud + '<div class="sn-fod">' + fodLogo + '<span>Version 2. august · 867</span></div>'
+      + fodBagud + '<div class="sn-fod">' + fodLogo + '<span>Version 2. august · 868</span></div>'
       /* Ida 30/7: alle konto-punkter bor i profilmenuen — ingen streg/sn-bund */
       + '<div id="virkMenu" style="display:none;position:fixed;left:14px;bottom:96px;width:230px;background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:0 16px 40px rgba(0,0,0,0.15);padding:8px;z-index:90;">'
       + '<div style="padding:10px 12px 6px;font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--gray3);">' + esc(virkNavn) + '</div>'
@@ -15638,7 +15699,7 @@ function buildSideNav(def) {
         uPkt("", "Lektioner", "showTab(12)")))
     + '<button class="sn-virk-knap" onclick="toggleVirkMenu(event)" title="' + esc(knapNavn) + '" aria-label="Profil"><span class="sn-initial">' + esc((knapNavn || "?").trim().charAt(0).toUpperCase()) + '</span><span class="sn-virk-navn" style="white-space:normal;overflow-wrap:anywhere;">' + esc(knapNavn) + '</span><svg class="sn-virk-pil" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="flex-shrink:0;"><path d="M6 9l6 6 6-6"/></svg></button>'
     /* Ida 30/7: ingen streg — logo + version samlet i foden under profilknappen */
-    + fodBagud + '<div class="sn-fod">' + fodLogo + '<span>Version 2. august · 867</span></div>'
+    + fodBagud + '<div class="sn-fod">' + fodLogo + '<span>Version 2. august · 868</span></div>'
     /* Ida 30/7: menuen åbner VED knappen (nederst t.v.) — ikke i modsatte hjørne */
     + '<div id="virkMenu" style="display:none;position:fixed;left:14px;bottom:96px;width:230px;background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:0 16px 40px rgba(0,0,0,0.15);padding:8px;z-index:90;">'
     + '<div style="padding:10px 12px 6px;font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--gray3);">' + esc(virkNavn) + '</div>'
@@ -25584,6 +25645,6 @@ if ((location.hash || "").toLowerCase() === "#ole") {   // #ole = preview af Ole
      Laa den inde i #dashboard, ville kunderne aldrig se den (synk-reglen, Ida 31/7). -->
 <div id="dashBundnav" role="navigation" aria-label="Backstage"></div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 2. august · 867</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 2. august · 868</div>
 </body>
 </html>
