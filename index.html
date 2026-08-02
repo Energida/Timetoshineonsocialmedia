@@ -1521,7 +1521,7 @@ body.lek-open .burger-btn, body.lek-open .bottom-nav, body.lek-open .dash-fab, b
     <button class="burger-item" onclick="toggleBurger(); togglePwPanel()">Skift adgangskode</button>
     <button class="burger-item" onclick="toggleBurger(); openChat()">Kontakt Ida</button>
     <button class="burger-item" style="color:var(--red);" onclick="custLogout()">Log ud</button>
-    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 2. august · 868</div>
+    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 2. august · 869</div>
   </div>
 </div>
 <div class="plus-menu" id="plusMenu" onclick="if(event.target===this)togglePlus()">
@@ -2593,7 +2593,7 @@ if (/somkunde=/.test(location.hash)) {
     <!-- Foden bliver nederst — den er det ENESTE der skubbes ned (Ida 30/7) -->
     <div class="dsb-fod">
       <button class="dsb-konto" onclick="toggleDashMenu()" title="Ida"><span class="dsb-initial">I</span><span class="dsb-konto-navn">Ida</span><svg class="dsb-konto-pil" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></button>
-      <div class="dsb-version"><img id="dashNavLogo" alt="Energida"><span>Version 2. august · 868</span></div>
+      <div class="dsb-version"><img id="dashNavLogo" alt="Energida"><span>Version 2. august · 869</span></div>
     </div>
   </div>
 
@@ -5474,7 +5474,7 @@ select titel,
          staa fast paa telefon. De hoerer i arket (samme fejl som "left" 31/7). -->
     <div id="dashFooter" style="z-index:50;display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--gray3);background:#fff;border-top:1px solid var(--border);padding:10px 26px;">
       <div style="font-size:10px;">© 2026 Energida · Alle rettigheder forbeholdes</div>
-      <div style="font-size:10px;margin-left:auto;">Version 2. august · 868 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
+      <div style="font-size:10px;margin-left:auto;">Version 2. august · 869 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
     </div>
   </div>
 </div>
@@ -10954,7 +10954,9 @@ function klipBriefRender() {
     + '<input type="text" id="klip_ko_' + o.id + '" placeholder="Skriv en kommentar eller rettelse…" onkeydown="if(event.key===&#39;Enter&#39;)klipKommentar(&#39;' + o.id + '&#39;)" style="flex:1;min-width:0;background:#fff;border:1px solid var(--border);border-radius:12px;padding:9px 11px;font-size:12.5px;font-family:Poppins,sans-serif;outline:none;">'
     + '<button class="dbtn primary" style="padding:9px 16px;flex-shrink:0;" onclick="klipKommentar(&#39;' + o.id + '&#39;)">Send</button>'
     + '</div>'
-    + '<div style="display:flex;gap:12px;align-items:center;margin-top:18px;"><button class="dbtn primary" style="padding:11px 24px;" onclick="klipBriefLuk()">Færdig</button>'
+    /* "Gem", ikke "Faerdig" (Ida 2/8): at hun har rettet i manuskriptet betyder ikke,
+       at det er faerdigt. Statussen afgoer hun selv med chippen paa kortet. */
+    + '<div style="display:flex;gap:12px;align-items:center;margin-top:18px;"><button class="dbtn primary" style="padding:11px 24px;" onclick="klipBriefLuk()">Gem</button>'
     + '<span id="kbStatus" style="font-size:11.5px;color:var(--gray3);"></span></div>';
   kbHLOpdater();
   try { kbPrompterVis(); } catch(e) {}
@@ -12213,6 +12215,95 @@ async function mqHent() {
   MQ_HENTET = true; renderKlipperum();
 }
 
+/* ============ SØG I ALLE MANUSKRIPTER (Ida 2/8) ============
+   To behov, samme motor: "hvis jeg skriver shinebarometer - at jeg så kan se alle
+   lektioner hvor dette optræder", og "vis mig hvor dette optræder" fra et forslag,
+   saa hun kan rette alle steder og have overblik. */
+let MQ_SOEG = "", MQ_SOEG_AABEN = false;
+function mqSoegSaet(v) { MQ_SOEG = String(v || ""); renderKlipperum(); }
+function mqSoegAaben(v, ord) {
+  MQ_SOEG_AABEN = !!v;
+  if (ord != null) MQ_SOEG = String(ord);
+  renderKlipperum();
+  if (v) setTimeout(function () { const i = document.getElementById("mqSoegFelt"); if (i) { i.focus(); i.select(); } }, 40);
+}
+/* Et BUD paa hvad der skal soeges efter, ud fra forslagets egen tekst. Foerste ord i
+   anfoerselstegn vinder; ellers foerste ord over fire bogstaver, der ikke er et fyldord.
+   Buddet er et udgangspunkt — feltet er redigerbart, saa hun retter det paa et sekund. */
+function mqSoegBud(f) {
+  const kilde = String((f && (f.overskrift || "")) + " " + (f && (f.hvorfor || ""))).trim();
+  /* 1) Staar ordet i anfoerselstegn, er det dét, forslaget handler om. */
+  const cit = kilde.match(/[""„»]([^""„«»]{2,40})[""«]/);
+  if (cit) return cit[1].trim();
+  /* 2) "Der bruges hun, hende, veninde…" eller "Ordet serie står 24 gange" —
+        tag det foerste ord i opremsningen. */
+  const liste = kilde.match(/\b(?:bruges|ordet|ordene|hedder)\s+([A-Za-zÆØÅæøå]{2,20})/i);
+  if (liste) return liste[1];
+  /* 3) Kan vi ikke ramme praecist, saa gaetter vi IKKE. Et forkert bud skal ryddes,
+        foer hun kan skrive — et tomt felt er hurtigere. */
+  return "";
+}
+/* Alle steder ordet staar — pr. lektion, med linjen omkring saa hun kan se sammenhaengen. */
+function mqSoegResultat(ord) {
+  const n = String(ord || "").trim().toLowerCase();
+  if (n.length < 2) return [];
+  const ud = [];
+  (typeof KLIP_OPGAVER !== "undefined" ? KLIP_OPGAVER : []).forEach(function (o) {
+    const m = String(o.manus_tekst || ""); if (!m) return;
+    const linjer = m.split("\n"), traef = [];
+    linjer.forEach(function (l, i) {
+      if (l.toLowerCase().indexOf(n) > -1) traef.push({ nr: i + 1, tekst: l.trim() });
+    });
+    if (traef.length) ud.push({ o: o, traef: traef });
+  });
+  return ud.sort(function (a, b) { return mqLekNr(a.o) - mqLekNr(b.o); });
+}
+function mqSoegAabnLektion(id) {
+  MQ_SOEG_AABEN = false;
+  const o = (typeof KLIP_OPGAVER !== "undefined" ? KLIP_OPGAVER : []).find(function (x) { return String(x.id) === String(id); });
+  if (!o) return;
+  if (KLIP_VISNING === "quiz") { MQ_LEKTION = o.id; MQ_VIS_BEHANDLET = false; renderKlipperum(); }
+  else klipBriefAaben(o.id);
+  try { window.scrollTo({ top: 0, behavior: "smooth" }); } catch (e) {}
+}
+function mqSoegPanel() {
+  if (!MQ_SOEG_AABEN) return "";
+  const res = mqSoegResultat(MQ_SOEG);
+  const antal = res.reduce(function (s, r) { return s + r.traef.length; }, 0);
+  const frem = function (l) {
+    const n = MQ_SOEG.trim(); if (!n) return esc(l);
+    const i = l.toLowerCase().indexOf(n.toLowerCase()); if (i < 0) return esc(l);
+    return esc(l.slice(0, i)) + '<mark style="background:#FDE8E3;color:var(--red);border-radius:4px;">' + esc(l.slice(i, i + n.length)) + '</mark>' + esc(l.slice(i + n.length));
+  };
+  return '<div style="background:#fff;border:1px solid var(--border);border-radius:20px;padding:18px 20px;margin-bottom:16px;">'
+    + '<div style="font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--red);border-bottom:1px solid var(--red-line);padding-bottom:9px;margin-bottom:12px;">Søg i alle manuskripter</div>'
+    + '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px;">'
+      + '<input type="text" id="mqSoegFelt" value="' + esc(MQ_SOEG).replace(/"/g, "&quot;") + '" placeholder="Fx Shinebarometeret"'
+      + ' oninput="clearTimeout(window.__soegT);window.__soegT=setTimeout(function(){mqSoegSaet(document.getElementById(\'mqSoegFelt\').value)},250)"'
+      + ' style="flex:1;min-width:200px;background:#fff;border:1px solid var(--border);border-radius:12px;padding:10px 13px;font-size:13px;font-family:Poppins,sans-serif;color:var(--black);outline:none;">'
+      + '<button type="button" style="' + MQ_NAV + 'color:var(--red);" onclick="mqSoegAaben(false)">Luk søgningen</button>'
+    + '</div>'
+    + (String(MQ_SOEG).trim().length < 2
+        ? '<div style="font-size:12.5px;color:var(--gray3);">Skriv mindst to tegn.</div>'
+        : (!res.length
+            ? '<div style="font-size:12.5px;color:var(--gray3);">Ingen steder i manuskripterne indeholder <b style="font-weight:400;color:var(--black);">' + esc(MQ_SOEG) + '</b>.</div>'
+            : '<div style="font-size:12.5px;color:var(--gray3);margin-bottom:10px;">' + antal + ' sted' + (antal === 1 ? "" : "er") + ' i ' + res.length + ' lektion' + (res.length === 1 ? "" : "er") + '.</div>'
+              + res.map(function (r) {
+                  return '<div style="border-top:1px solid #F2F0ED;padding:11px 0;">'
+                    + '<div style="display:flex;gap:10px;align-items:baseline;flex-wrap:wrap;">'
+                      + '<span style="flex:1;min-width:0;font-size:12.5px;">' + esc(r.o.titel || "") + '</span>'
+                      + '<span style="font-size:11px;color:var(--gray3);white-space:nowrap;">' + r.traef.length + ' sted' + (r.traef.length === 1 ? "" : "er") + '</span>'
+                      + '<button type="button" class="row-btn" style="font-weight:400;" onclick="mqSoegAabnLektion(\'' + r.o.id + '\')">Åbn lektionen</button>'
+                    + '</div>'
+                    + r.traef.slice(0, 4).map(function (t) {
+                        return '<div style="font-size:12px;color:var(--gray3);line-height:1.6;padding:3px 0 0 2px;">' + frem(t.tekst.slice(0, 190)) + '</div>';
+                      }).join("")
+                    + (r.traef.length > 4 ? '<div style="font-size:11px;color:var(--gray3);padding-top:3px;">… og ' + (r.traef.length - 4) + ' mere i denne lektion</div>' : '')
+                    + '</div>';
+                }).join("")))
+    + '</div>';
+}
+
 /* Har lektionen noget, hun endnu ikke har taget stilling til? */
 function mqVenterFor(o) {
   return mqForslagFor(o).filter(function (f) { return f.status === "venter"; });
@@ -12886,6 +12977,10 @@ function mqForslagKort(f, o) {
             + '<div style="display:flex;justify-content:flex-end;margin-top:10px;"><button type="button" class="row-btn" style="font-weight:400;" onclick="mqSvarLuk(\'' + fid + '\')">Ryd svaret</button></div></div>'
           : '')
       : '<button type="button" class="row-btn" style="font-weight:400;" onclick="mqKommentarAaben(\'' + fid + '\')">Skriv til mig</button>')
+    /* "Vis mig hvor dette optræder" (Ida 2/8, bedt om tre gange). Aabner soegningen
+       med et bud paa ordet — hun retter det selv, hvis buddet er skaevt. Uden den
+       skulle hun selv lede efter, hvor mange steder en beslutning faktisk rammer. */
+    + '<button type="button" class="row-btn" style="font-weight:400;" onclick="mqSoegAaben(true, \'' + esc(mqSoegBud(f)).replace(/'/g, "\\'") + '\')">Vis hvor dette optræder</button>'
     + '</div>';
 
   /* Handlinger nederst til hoejre */
@@ -13142,7 +13237,9 @@ function renderKlipperum() {
      hvor lektionerne er. Knappen er FLYTTET, ikke kopieret — samme oversigt to steder
      ville drive fra hinanden (dublet-reglen). Aabner visAlleOevelser() som popup. */
   const opgKnap = '<button type="button" onclick="visAlleOevelser()" title="Alle opgaver, lektion for lektion" style="font-family:Poppins,sans-serif;font-size:11px;font-weight:400;border-radius:20px;padding:7px 14px;cursor:pointer;background:#fff;color:var(--gray3);border:1px solid var(--border);">Opgaver</button>';
-  const tgl = document.body.classList.contains("dash-nav") ? (tglBtn("moduler", "Moduler") + tglBtn("tavle", "Tavle") + tglBtn("liste", "Liste") + tglBtn("produkter", "Produkter") + quizFane + opgKnap + printKnap) : '';
+  /* Soeg i alle manuskripter (Ida 2/8) — samme motor som "vis hvor dette optraeder". */
+  const soegKnap = '<button type="button" onclick="mqSoegAaben(true)" title="Søg i alle 49 manuskripter" style="font-family:Poppins,sans-serif;font-size:11px;font-weight:400;border-radius:20px;padding:7px 14px;cursor:pointer;background:' + (MQ_SOEG_AABEN ? 'var(--red);color:#fff;border:1px solid var(--red);' : '#fff;color:var(--gray3);border:1px solid var(--border);') + '">Søg i manus</button>';
+  const tgl = document.body.classList.contains("dash-nav") ? (tglBtn("moduler", "Moduler") + tglBtn("tavle", "Tavle") + tglBtn("liste", "Liste") + tglBtn("produkter", "Produkter") + quizFane + opgKnap + soegKnap + printKnap) : '';
   const fltInner = '<span style="font-size:10.5px;color:var(--gray3);">Status</span>'
     + '<select onchange="klipFilterSaet(this.value)" style="' + fltSel + '">' + KLIP_FILTRE.map(f => '<option value="' + f[0] + '"' + (KLIP_FILTER === f[0] ? ' selected' : '') + '>' + f[1] + '</option>').join("") + '</select>'
     + '<span style="font-size:10.5px;color:var(--gray3);margin-left:4px;">Produkt</span>'
@@ -13209,7 +13306,10 @@ function renderKlipperum() {
   /* Quizzen er en laesevisning: Idé-kortet og filtrene har intet at goere dér, og
      "Naeste skridt"-boksen hoerer til produktionen, ikke til gennemlaesningen. */
   try { if (micEl) { if (isQuiz) micEl.style.display = "none"; else if (typeof renderManusIdeer === "function") renderManusIdeer(); } } catch(e) {}
-  el.innerHTML = (isQuiz ? "" : naeste)
+  /* Soegepanelet staar OEVERST og gaelder alle faner — hun skal kunne finde
+     "shinebarometer" uanset hvor i studiet hun staar (Ida 2/8). */
+  el.innerHTML = (typeof mqSoegPanel === "function" ? mqSoegPanel() : "")
+    + (isQuiz ? "" : naeste)
     + (isQuiz
       ? mqSide()
       : isUploads
@@ -15646,7 +15746,7 @@ function buildSideNav(def) {
       + '<span style="opacity:.55;">' + ikon("", "Kalender", "laastBesked()", IK.kal) + '</span>'
       + '<span style="opacity:.55;">' + ikon("", "Værktøjskassen", "laastBesked()", IK.tools) + '</span>'
       + '<button class="sn-virk-knap" onclick="toggleVirkMenu(event)" title="' + esc(knapNavn) + '" aria-label="Profil" style="margin-left:auto;"><span class="sn-initial">' + esc((knapNavn || "?").trim().charAt(0).toUpperCase()) + '</span><span class="sn-virk-navn" style="white-space:normal;overflow-wrap:anywhere;">' + esc(knapNavn) + '</span><svg class="sn-virk-pil" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="flex-shrink:0;"><path d="M6 9l6 6 6-6"/></svg></button>'
-      + fodBagud + '<div class="sn-fod">' + fodLogo + '<span>Version 2. august · 868</span></div>'
+      + fodBagud + '<div class="sn-fod">' + fodLogo + '<span>Version 2. august · 869</span></div>'
       /* Ida 30/7: alle konto-punkter bor i profilmenuen — ingen streg/sn-bund */
       + '<div id="virkMenu" style="display:none;position:fixed;left:14px;bottom:96px;width:230px;background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:0 16px 40px rgba(0,0,0,0.15);padding:8px;z-index:90;">'
       + '<div style="padding:10px 12px 6px;font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--gray3);">' + esc(virkNavn) + '</div>'
@@ -15699,7 +15799,7 @@ function buildSideNav(def) {
         uPkt("", "Lektioner", "showTab(12)")))
     + '<button class="sn-virk-knap" onclick="toggleVirkMenu(event)" title="' + esc(knapNavn) + '" aria-label="Profil"><span class="sn-initial">' + esc((knapNavn || "?").trim().charAt(0).toUpperCase()) + '</span><span class="sn-virk-navn" style="white-space:normal;overflow-wrap:anywhere;">' + esc(knapNavn) + '</span><svg class="sn-virk-pil" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="flex-shrink:0;"><path d="M6 9l6 6 6-6"/></svg></button>'
     /* Ida 30/7: ingen streg — logo + version samlet i foden under profilknappen */
-    + fodBagud + '<div class="sn-fod">' + fodLogo + '<span>Version 2. august · 868</span></div>'
+    + fodBagud + '<div class="sn-fod">' + fodLogo + '<span>Version 2. august · 869</span></div>'
     /* Ida 30/7: menuen åbner VED knappen (nederst t.v.) — ikke i modsatte hjørne */
     + '<div id="virkMenu" style="display:none;position:fixed;left:14px;bottom:96px;width:230px;background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:0 16px 40px rgba(0,0,0,0.15);padding:8px;z-index:90;">'
     + '<div style="padding:10px 12px 6px;font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--gray3);">' + esc(virkNavn) + '</div>'
@@ -25645,6 +25745,6 @@ if ((location.hash || "").toLowerCase() === "#ole") {   // #ole = preview af Ole
      Laa den inde i #dashboard, ville kunderne aldrig se den (synk-reglen, Ida 31/7). -->
 <div id="dashBundnav" role="navigation" aria-label="Backstage"></div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 2. august · 868</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 2. august · 869</div>
 </body>
 </html>
