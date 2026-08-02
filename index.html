@@ -1544,7 +1544,7 @@ body.lek-open .burger-btn, body.lek-open .bottom-nav, body.lek-open .dash-fab, b
     <button class="burger-item" onclick="toggleBurger(); togglePwPanel()">Skift adgangskode</button>
     <button class="burger-item" onclick="toggleBurger(); openChat()">Kontakt Ida</button>
     <button class="burger-item" style="color:var(--red);" onclick="custLogout()">Log ud</button>
-    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 2. august · 876</div>
+    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 2. august · 877</div>
   </div>
 </div>
 <div class="plus-menu" id="plusMenu" onclick="if(event.target===this)togglePlus()">
@@ -2616,7 +2616,7 @@ if (/somkunde=/.test(location.hash)) {
     <!-- Foden bliver nederst — den er det ENESTE der skubbes ned (Ida 30/7) -->
     <div class="dsb-fod">
       <button class="dsb-konto" onclick="toggleDashMenu()" title="Ida"><span class="dsb-initial">I</span><span class="dsb-konto-navn">Ida</span><svg class="dsb-konto-pil" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></button>
-      <div class="dsb-version"><img id="dashNavLogo" alt="Energida"><span>Version 2. august · 876</span></div>
+      <div class="dsb-version"><img id="dashNavLogo" alt="Energida"><span>Version 2. august · 877</span></div>
     </div>
   </div>
 
@@ -5526,7 +5526,7 @@ select titel,
          staa fast paa telefon. De hoerer i arket (samme fejl som "left" 31/7). -->
     <div id="dashFooter" style="z-index:50;display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--gray3);background:#fff;border-top:1px solid var(--border);padding:10px 26px;">
       <div style="font-size:10px;">© 2026 Energida · Alle rettigheder forbeholdes</div>
-      <div style="font-size:10px;margin-left:auto;">Version 2. august · 876 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
+      <div style="font-size:10px;margin-left:auto;">Version 2. august · 877 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
     </div>
   </div>
 </div>
@@ -12503,6 +12503,211 @@ function mqSoegPanel() {
     + '</div>';
 }
 
+/* ===== GENNEMFØR EN BESLUTNING I ALLE MANUSKRIPTER (Ida 2/8) =====
+   Hendes ord: "der ville jeg jo gerne at den automatisk retter alle steder" og "kunne man
+   samle ordrerne og via een koersel implementere alle aendringer". Foer gjorde "Gem svaret"
+   INTET ved teksten — beslutningen blev registreret, og saa laa den der.
+   Idas valg (A, 2/8): hun skal SE alle steder foer der rettes. Derfor: soeg → liste med
+   foer/efter og flueben pr. sted → EEN knap.
+   Sikkerhedsnettene er de samme som paa Implementer, og de er ikke til pynt:
+   1) manus_historik skrives FOER hver lektion roeres — fejler den, roeres lektionen ikke.
+   2) hver update kraever en raekke retur (.select) — en RLS-afvist skrivning melder ellers
+      success, fordi Postgres bare opdaterer nul raekker.
+   3) rapporten til sidst siger hvad der faktisk skete, lektion for lektion. */
+let MQ_KOER = null;
+function mqKoerAaben(fid) {
+  const f = MQ_FORSLAG.find(function (x) { return String(x.id) === String(fid); }); if (!f) return;
+  MQ_KOER = { fid: String(fid), soeg: mqSoegBud(f) || "", erstat: "", fra: {}, rapport: null, koerer: false };
+  MQ_SOEG_AABEN = false;
+  renderKlipperum();
+  try { window.scrollTo({ top: 0, behavior: "smooth" }); } catch (e) {}
+}
+function mqKoerLuk() { MQ_KOER = null; renderKlipperum(); }
+function mqKoerSaet(hvad, v) {
+  if (!MQ_KOER) return;
+  MQ_KOER[hvad] = String(v == null ? "" : v);
+  MQ_KOER.fra = {};          /* nyt soegeord = ny liste; gamle fravalg passer ikke laengere */
+  MQ_KOER.rapport = null;
+  renderKlipperum();
+}
+/* Erstatningen rammer ALLE forekomster paa linjen — ogsaa naar de staar med andre
+   store/smaa bogstaver, for det er praecis dem, en konventions-beslutning handler om. */
+function mqKoerNyLinje(linje, soeg, erstat) {
+  const n = String(soeg || "").trim(); if (!n) return linje;
+  const re = new RegExp(n.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "gi");
+  return String(linje).replace(re, String(erstat == null ? "" : erstat));
+}
+/* Bliver der kun mellemrum tilbage, skal LINJEN vaek — ellers efterlader en sletning
+   et hul i manuskriptet, og saa har man byttet et problem ud med et andet. */
+function mqKoerSletter(nyLinje) { return !String(nyLinje).trim(); }
+function mqKoerTraef() {
+  if (!MQ_KOER) return [];
+  return mqSoegResultat(MQ_KOER.soeg).map(function (r) {
+    return { o: r.o, traef: r.traef.map(function (t) {
+      const ny = mqKoerNyLinje(t.tekst, MQ_KOER.soeg, MQ_KOER.erstat);
+      return { nr: t.nr, tekst: t.tekst, ny: ny, slettes: mqKoerSletter(ny), noegle: r.o.id + ":" + t.nr };
+    }) };
+  });
+}
+function mqKoerValgt(noegle) { return !(MQ_KOER && MQ_KOER.fra[noegle]); }
+function mqKoerTjek(noegle) {
+  if (!MQ_KOER) return;
+  if (MQ_KOER.fra[noegle]) delete MQ_KOER.fra[noegle]; else MQ_KOER.fra[noegle] = true;
+  MQ_KOER.rapport = null;
+  renderKlipperum();
+}
+function mqKoerAlle(paa) {
+  if (!MQ_KOER) return;
+  MQ_KOER.fra = {};
+  if (!paa) mqKoerTraef().forEach(function (r) { r.traef.forEach(function (t) { MQ_KOER.fra[t.noegle] = true; }); });
+  MQ_KOER.rapport = null;
+  renderKlipperum();
+}
+function mqKoerAntal() {
+  let n = 0;
+  mqKoerTraef().forEach(function (r) { r.traef.forEach(function (t) { if (mqKoerValgt(t.noegle)) n++; }); });
+  return n;
+}
+async function mqKoerUdfoer() {
+  if (!mqErIda() || !MQ_KOER || MQ_KOER.koerer) return;
+  const grupper = mqKoerTraef().map(function (r) {
+    return { o: r.o, traef: r.traef.filter(function (t) { return mqKoerValgt(t.noegle); }) };
+  }).filter(function (r) { return r.traef.length; });
+  if (!grupper.length) return;
+  MQ_KOER.koerer = true; MQ_KOER.rapport = null; renderKlipperum();
+
+  const rapport = { rettet: 0, lektioner: 0, fejl: [] };
+  for (const g of grupper) {
+    const gammel = String(g.o.manus_tekst || "");
+    const linjer = gammel.split("\n");
+    const slet = {};
+    let roert = 0;
+    g.traef.forEach(function (t) {
+      const i = t.nr - 1;
+      if (i < 0 || i >= linjer.length) return;
+      /* Er linjen aendret siden listen blev tegnet, springes den over — vi retter aldrig
+         i noget, hun ikke har set. Sammenligningen er paa den trimmede tekst, fordi
+         soegningen ogsaa trimmer. */
+      if (linjer[i].trim() !== t.tekst) { rapport.fejl.push(g.o.titel + " · linje " + t.nr + ": teksten er ændret, siden listen blev vist — den er sprunget over"); return; }
+      const ny = mqKoerNyLinje(linjer[i], MQ_KOER.soeg, MQ_KOER.erstat);
+      if (mqKoerSletter(ny)) slet[i] = true; else linjer[i] = ny;
+      roert++;
+    });
+    if (!roert) continue;
+    const nyTekst = linjer.filter(function (_, i) { return !slet[i]; }).join("\n").replace(/\n{3,}/g, "\n\n");
+
+    const ok = await mqHistorik(g.o.id, gammel, MQ_KOER.fid);
+    if (!ok) { rapport.fejl.push(g.o.titel + ": den gamle tekst kunne ikke gemmes i manus_historik — lektionen er IKKE rettet"); continue; }
+    let skrevet = false;
+    if (sb) {
+      try {
+        const r = await sb.from("video_opgaver").update({ manus_tekst: nyTekst }).eq("id", g.o.id).select("id");
+        skrevet = !r.error && Array.isArray(r.data) && r.data.length > 0;
+      } catch (e) { skrevet = false; }
+    } else { skrevet = true; }
+    if (!skrevet) { rapport.fejl.push(g.o.titel + ": kunne IKKE skrives — den gamle tekst ligger i manus_historik, så intet er gået tabt"); continue; }
+    g.o.manus_tekst = nyTekst;
+    rapport.rettet += roert; rapport.lektioner++;
+  }
+  if (!sb) { try { klipSaveLocal(); } catch (e) {} }
+  MQ_KOER.koerer = false;
+  MQ_KOER.rapport = rapport;
+  MQ_KOER.fra = {};
+  renderKlipperum();
+}
+function mqKoerPanel() {
+  if (!MQ_KOER || !mqErIda()) return "";
+  const f = MQ_FORSLAG.find(function (x) { return String(x.id) === String(MQ_KOER.fid); });
+  const felt = "flex:1;min-width:190px;background:#fff;border:1px solid var(--border);border-radius:12px;padding:10px 13px;font-size:13px;font-family:Poppins,sans-serif;color:var(--black);outline:none;";
+  const res = mqKoerTraef();
+  const ialt = res.reduce(function (s, r) { return s + r.traef.length; }, 0);
+  const valgt = mqKoerAntal();
+  const sletter = !String(MQ_KOER.erstat || "").trim();
+  const frem = function (l, ord) {
+    const n = String(ord || "").trim(); if (!n) return esc(l);
+    const re = new RegExp(n.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "gi");
+    let ud = "", sidst = 0, m;
+    while ((m = re.exec(l)) !== null) {
+      ud += esc(l.slice(sidst, m.index)) + '<mark style="background:#FDE8E3;color:var(--red);border-radius:4px;">' + esc(m[0]) + '</mark>';
+      sidst = m.index + m[0].length;
+      if (m[0] === "") re.lastIndex++;
+    }
+    return ud + esc(l.slice(sidst));
+  };
+
+  let ud = '<div style="background:#fff;border:1px solid var(--border);border-radius:20px;padding:18px 20px;margin-bottom:16px;">'
+    + '<div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;border-bottom:1px solid var(--red-line);padding-bottom:9px;margin-bottom:12px;">'
+      + '<span style="flex:1;min-width:180px;font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--red);">Gennemfør i alle manuskripter</span>'
+      + '<button type="button" style="' + MQ_NAV + 'color:var(--red);" onclick="mqKoerLuk()">Luk kørslen</button>'
+    + '</div>'
+    + (f ? '<div style="font-size:12.5px;line-height:1.4;margin-bottom:3px;">' + esc(f.overskrift || "") + '</div>' : '')
+    + '<div style="font-size:11.5px;color:var(--gray3);line-height:1.6;margin-bottom:12px;">Skriv hvad der skal findes, og hvad det skal blive til. Du ser hvert eneste sted, før der rettes — og du bestemmer selv, hvilke der er med. Den gamle tekst gemmes i manus_historik, før noget røres.</div>'
+    + '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:9px;">'
+      + '<input type="text" id="mqKoerSoeg" value="' + esc(MQ_KOER.soeg).replace(/"/g, "&quot;") + '" placeholder="Find dette — fx IDÉ TIL B-ROLL:"'
+        + ' oninput="clearTimeout(window.__koerT);window.__koerT=setTimeout(function(){mqKoerSaet(\'soeg\', document.getElementById(\'mqKoerSoeg\').value)},300)" style="' + felt + '">'
+      + '<input type="text" id="mqKoerErstat" value="' + esc(MQ_KOER.erstat).replace(/"/g, "&quot;") + '" placeholder="Erstat med — fx B-ROLL:"'
+        + ' oninput="clearTimeout(window.__koerT2);window.__koerT2=setTimeout(function(){mqKoerSaet(\'erstat\', document.getElementById(\'mqKoerErstat\').value)},300)" style="' + felt + '">'
+    + '</div>';
+
+  if (MQ_KOER.rapport) {
+    const r = MQ_KOER.rapport;
+    ud += '<div style="background:#FDE8E3;border:1px solid var(--red-line);border-radius:12px;padding:13px 15px;margin-bottom:12px;font-size:12.5px;line-height:1.6;color:var(--black);">'
+      + (r.rettet
+        ? r.rettet + ' sted' + (r.rettet === 1 ? "" : "er") + ' rettet i ' + r.lektioner + ' lektion' + (r.lektioner === 1 ? "" : "er") + '.'
+        : 'Der blev ikke rettet noget.')
+      + (r.fejl.length
+        ? '<div style="margin-top:9px;font-size:11.5px;color:var(--gray3);line-height:1.6;">' + r.fejl.map(function (x) { return esc(x); }).join("<br>") + '</div>'
+        : '')
+      + '</div>';
+  }
+
+  if (String(MQ_KOER.soeg || "").trim().length < 2) {
+    ud += '<div style="font-size:12.5px;color:var(--gray3);">Skriv mindst to tegn i det første felt.</div></div>';
+    return ud;
+  }
+  if (!ialt) {
+    ud += '<div style="font-size:12.5px;color:var(--gray3);">Ingen steder i manuskripterne indeholder <b style="font-weight:400;color:var(--black);">' + esc(MQ_KOER.soeg) + '</b>.</div></div>';
+    return ud;
+  }
+
+  ud += '<div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:4px;">'
+    + '<span style="flex:1;min-width:150px;font-size:12px;color:var(--gray3);"><span style="color:var(--black);">' + valgt + '</span> af ' + ialt + ' steder valgt · ' + res.length + ' lektion' + (res.length === 1 ? "" : "er") + '</span>'
+    + '<button type="button" style="' + MQ_NAV + 'color:var(--red);" onclick="mqKoerAlle(true)">Vælg alle</button>'
+    + '<button type="button" style="' + MQ_NAV + 'color:var(--red);" onclick="mqKoerAlle(false)">Fravælg alle</button>'
+    + '</div>'
+    + (sletter ? '<div style="font-size:11.5px;color:var(--red);line-height:1.6;margin-bottom:4px;">Feltet «Erstat med» er tomt — de valgte steder bliver <b style="font-weight:400;">slettet</b> fra manuskriptet.</div>' : '');
+
+  ud += res.map(function (r) {
+    return '<div style="border-top:1px solid #F2F0ED;padding:12px 0 4px;">'
+      + '<div style="font-size:12.5px;margin-bottom:6px;">' + esc(r.o.titel || "") + '</div>'
+      + r.traef.map(function (t) {
+          const paa = mqKoerValgt(t.noegle);
+          return '<div style="display:flex;gap:10px;align-items:flex-start;padding:6px 0;">'
+            + '<div style="flex:1;min-width:0;">'
+              + '<div style="font-size:12px;color:var(--gray3);line-height:1.6;' + (paa ? 'text-decoration:line-through;' : '') + '">' + frem(t.tekst.slice(0, 220), MQ_KOER.soeg) + '</div>'
+              + (paa
+                ? '<div style="font-size:12px;line-height:1.6;color:' + (t.slettes ? 'var(--gray3)' : 'var(--black)') + ';padding-top:2px;">'
+                    + (t.slettes ? 'Linjen fjernes.' : esc(t.ny.slice(0, 220))) + '</div>'
+                : '<div style="font-size:11px;color:var(--gray3);padding-top:2px;">Ikke med i kørslen.</div>')
+            + '</div>'
+            /* Handlings-klikket sidder til HOEJRE for teksten, aldrig foran (regel 27/7) */
+            + '<button type="button" title="' + (paa ? "Tag den ud af kørslen" : "Tag den med i kørslen") + '" onclick="mqKoerTjek(\'' + esc(t.noegle) + '\')" style="background:none;border:none;padding:2px;cursor:pointer;flex-shrink:0;line-height:0;">'
+              + (paa ? energidaFlueben(17) : '<span style="width:17px;height:17px;border-radius:50%;display:inline-block;box-shadow:inset 0 0 0 1.5px var(--border);"></span>')
+            + '</button>'
+            + '</div>';
+        }).join("")
+      + '</div>';
+  }).join("");
+
+  ud += '<div style="display:flex;justify-content:flex-end;align-items:center;gap:12px;flex-wrap:wrap;margin-top:14px;">'
+    + (MQ_KOER.koerer
+      ? '<span style="font-size:12px;color:var(--gray3);">Retter …</span>'
+      : '<button type="button" class="dbtn primary" style="padding:11px 22px;white-space:nowrap;"' + (valgt ? '' : ' disabled')
+        + ' onclick="mqKoerUdfoer()">Ret de ' + valgt + ' valgte steder</button>')
+    + '</div></div>';
+  return ud;
+}
+
 /* Har lektionen noget, hun endnu ikke har taget stilling til? */
 function mqVenterFor(o) {
   return mqForslagFor(o).filter(function (f) { return f.status === "venter"; });
@@ -13173,7 +13378,7 @@ function mqSvarKortHtml(o) {
           + '<div style="font-size:12.5px;font-weight:400;line-height:1.35;">' + esc(f.overskrift || "") + '</div>'
           + '<div style="background:#FDE8E3;border:1px solid var(--red-line);border-radius:12px;padding:11px 13px;margin:8px 0 0;font-size:12.5px;line-height:1.6;color:var(--black);white-space:pre-wrap;">' + esc(mqUdkast(f)) + '</div>'
           + '<div style="display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;margin-top:10px;">'
-            + '<button type="button" class="row-btn" style="font-weight:400;" onclick="mqSoegAaben(true, \'' + esc(mqSoegBud(f)).replace(/'/g, "\\'") + '\')">Vis hvor dette optræder</button>'
+            + '<button type="button" class="row-btn" style="font-weight:400;" onclick="mqKoerAaben(\'' + fid + '\')">Gennemfør i alle manuskripter</button>'
             + '<button type="button" class="row-btn" style="font-weight:400;"' + (laesevisning ? ' disabled title="Luk læsevisningen ovenfor først"' : '')
               + ' onclick="mqInputSaetInd(\'' + fid + '\', \'mqManus\')">Sæt ind, hvor markøren står</button>'
           + '</div></div>';
@@ -13279,6 +13484,9 @@ function mqForslagKort(f, o) {
        med et bud paa ordet — hun retter det selv, hvis buddet er skaevt. Uden den
        skulle hun selv lede efter, hvor mange steder en beslutning faktisk rammer. */
     + '<button type="button" class="row-btn" style="font-weight:400;" onclick="mqSoegAaben(true, \'' + esc(mqSoegBud(f)).replace(/'/g, "\\'") + '\')">Vis hvor dette optræder</button>'
+    /* En BESLUTNING gaelder som regel alle 49 manuskripter, ikke bare denne lektion.
+       Uden denne knap blev "Gem svaret" en registrering uden virkning (Ida 2/8). */
+    + (f.type === "beslutning" ? '<button type="button" class="row-btn" style="font-weight:400;" title="Find alle steder beslutningen rammer — og ret dem i én kørsel" onclick="mqKoerAaben(\'' + fid + '\')">Gennemfør i alle manuskripter</button>' : '')
     + '</div>';
 
   /* Handlinger nederst til hoejre */
@@ -13607,6 +13815,7 @@ function renderKlipperum() {
   /* Soegepanelet staar OEVERST og gaelder alle faner — hun skal kunne finde
      "shinebarometer" uanset hvor i studiet hun staar (Ida 2/8). */
   el.innerHTML = (typeof mqSoegPanel === "function" ? mqSoegPanel() : "")
+    + (typeof mqKoerPanel === "function" ? mqKoerPanel() : "")
     + (isQuiz ? "" : naeste)
     + (isQuiz
       ? mqSide()
@@ -16051,7 +16260,7 @@ function buildSideNav(def) {
       + '<span style="opacity:.55;">' + ikon("", "Kalender", "laastBesked()", IK.kal) + '</span>'
       + '<span style="opacity:.55;">' + ikon("", "Værktøjskassen", "laastBesked()", IK.tools) + '</span>'
       + '<button class="sn-virk-knap" onclick="toggleVirkMenu(event)" title="' + esc(knapNavn) + '" aria-label="Profil" style="margin-left:auto;"><span class="sn-initial">' + esc((knapNavn || "?").trim().charAt(0).toUpperCase()) + '</span><span class="sn-virk-navn" style="white-space:normal;overflow-wrap:anywhere;">' + esc(knapNavn) + '</span><svg class="sn-virk-pil" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="flex-shrink:0;"><path d="M6 9l6 6 6-6"/></svg></button>'
-      + fodBagud + '<div class="sn-fod">' + fodLogo + '<span>Version 2. august · 876</span></div>'
+      + fodBagud + '<div class="sn-fod">' + fodLogo + '<span>Version 2. august · 877</span></div>'
       /* Ida 30/7: alle konto-punkter bor i profilmenuen — ingen streg/sn-bund */
       + '<div id="virkMenu" style="display:none;position:fixed;left:14px;bottom:96px;width:230px;background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:0 16px 40px rgba(0,0,0,0.15);padding:8px;z-index:90;">'
       + '<div style="padding:10px 12px 6px;font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--gray3);">' + esc(virkNavn) + '</div>'
@@ -16104,7 +16313,7 @@ function buildSideNav(def) {
         uPkt("", "Lektioner", "showTab(12)")))
     + '<button class="sn-virk-knap" onclick="toggleVirkMenu(event)" title="' + esc(knapNavn) + '" aria-label="Profil"><span class="sn-initial">' + esc((knapNavn || "?").trim().charAt(0).toUpperCase()) + '</span><span class="sn-virk-navn" style="white-space:normal;overflow-wrap:anywhere;">' + esc(knapNavn) + '</span><svg class="sn-virk-pil" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="flex-shrink:0;"><path d="M6 9l6 6 6-6"/></svg></button>'
     /* Ida 30/7: ingen streg — logo + version samlet i foden under profilknappen */
-    + fodBagud + '<div class="sn-fod">' + fodLogo + '<span>Version 2. august · 876</span></div>'
+    + fodBagud + '<div class="sn-fod">' + fodLogo + '<span>Version 2. august · 877</span></div>'
     /* Ida 30/7: menuen åbner VED knappen (nederst t.v.) — ikke i modsatte hjørne */
     + '<div id="virkMenu" style="display:none;position:fixed;left:14px;bottom:96px;width:230px;background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:0 16px 40px rgba(0,0,0,0.15);padding:8px;z-index:90;">'
     + '<div style="padding:10px 12px 6px;font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--gray3);">' + esc(virkNavn) + '</div>'
@@ -26053,6 +26262,6 @@ if ((location.hash || "").toLowerCase() === "#ole") {   // #ole = preview af Ole
      Laa den inde i #dashboard, ville kunderne aldrig se den (synk-reglen, Ida 31/7). -->
 <div id="dashBundnav" role="navigation" aria-label="Backstage"></div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 2. august · 876</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 2. august · 877</div>
 </body>
 </html>
