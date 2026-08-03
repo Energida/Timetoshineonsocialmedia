@@ -1648,7 +1648,7 @@ body.modul-open .burger-btn, body.modul-open .bottom-nav, body.modul-open .dash-
     <button class="burger-item" onclick="toggleBurger(); togglePwPanel()">Skift adgangskode</button>
     <button class="burger-item" onclick="toggleBurger(); openChat()">Kontakt Ida</button>
     <button class="burger-item" style="color:var(--red);" onclick="custLogout()">Log ud</button>
-    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 3. august · 903</div>
+    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 3. august · 904</div>
   </div>
 </div>
 <div class="plus-menu" id="plusMenu" onclick="if(event.target===this)togglePlus()">
@@ -2736,7 +2736,7 @@ if (/somkunde=/.test(location.hash)) {
     <!-- Foden bliver nederst — den er det ENESTE der skubbes ned (Ida 30/7) -->
     <div class="dsb-fod">
       <button class="dsb-konto" onclick="dashKontoMenu()" title="Ida"><span class="dsb-initial">I</span><span class="dsb-konto-navn">Ida</span><svg class="dsb-konto-pil" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></button>
-      <div class="dsb-version"><img id="dashNavLogo" alt="Energida"><span>Version 3. august · 903</span></div>
+      <div class="dsb-version"><img id="dashNavLogo" alt="Energida"><span>Version 3. august · 904</span></div>
     </div>
   </div>
 
@@ -6114,7 +6114,7 @@ select titel,
          staa fast paa telefon. De hoerer i arket (samme fejl som "left" 31/7). -->
     <div id="dashFooter" style="z-index:50;display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--gray3);background:#fff;border-top:1px solid var(--border);padding:10px 26px;">
       <div style="font-size:10px;">© 2026 Energida · Alle rettigheder forbeholdes</div>
-      <div style="font-size:10px;margin-left:auto;">Version 3. august · 903 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
+      <div style="font-size:10px;margin-left:auto;">Version 3. august · 904 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
     </div>
   </div>
 </div>
@@ -11669,6 +11669,46 @@ const SYSTEMTJEK = [
   ["video_opgaver", "id", "Tip Top Studio"],
   ["budget_poster", "id", "Budget"]
 ];
+
+/* SKRIVETJEKKET (Ida 3/8: "skal slet ikke have sådan noget utryghed").
+   Tjekket ovenfor LÆSER kun — og det er derfor det kunne sige "Alt er forbundet",
+   mens appen ikke måtte skrive en eneste af de rækker, kunderne skulle logge ind med.
+   3. august kostede den ene fejl fem ting: manuskripterne, listen over kørte SQL-kort,
+   ELS' adgang, Oles dør og publiceringslisten. Basen afviser nemlig i tavshed —
+   Postgres rammer nul rækker, og Supabase svarer error = null.
+
+   Derfor prøver tjekket nu at SKRIVE: en tydeligt mærket prøverække lægges ind og
+   fjernes igen med det samme. Bliver den afvist, bliver der intet skrevet — og du får
+   det at vide her i stedet for gennem et opkald fra en kunde.
+
+   Rækkerne bærer kode ZZ_SYSTEMTJEK, så de aldrig kan forveksles med rigtige data. */
+const SYSTEMTJEK_SKRIV = [
+  ["skema_svar", "Kundeadgange, fremdrift og delte lister", () => ({ kode: "ZZ_SYSTEMTJEK", navn: "systemtjek", skema: "skrivetest", svar: { proeve: true } })],
+  ["virksomhedskoder", "Oprettelse af nye kunder", () => ({ kode: "ZZ_SYSTEMTJEK", virksomhed: "Systemtjek", forloeb: "Prøve", aktiv: false })],
+  ["moduler", "Modul-forsiderne", () => ({ nr: -999, titel: "Systemtjek", beskrivelse: "" })]
+];
+async function systemtjekSkriv() {
+  const ud = [];
+  for (const [tabel, navn, byg] of SYSTEMTJEK_SKRIV) {
+    let ok = false, besked = "", rest = false;
+    try {
+      const r = await sb.from(tabel).insert(byg()).select();
+      if (r.error) besked = r.error.message;
+      else if (!r.data || !r.data.length) besked = "Basen tog ikke imod — og sagde det ikke.";
+      else {
+        ok = true;
+        /* Ryd op med det samme. Lykkes oprydningen ikke, SIG det — en glemt proeveraekke
+           er bedre kendt end skjult. */
+        const kolonne = tabel === "moduler" ? "nr" : "kode";
+        const vaerdi = tabel === "moduler" ? -999 : "ZZ_SYSTEMTJEK";
+        const d = await sb.from(tabel).delete().eq(kolonne, vaerdi).select();
+        if (!d.data || !d.data.length) rest = true;
+      }
+    } catch(e) { besked = String(e && e.message ? e.message : e); }
+    ud.push({ tabel, navn, ok, besked, rest });
+  }
+  return ud;
+}
 async function koerSystemtjek() {
   const boks = document.getElementById("systemtjek"); if (!boks) return;
   boks.style.display = "block";
@@ -11689,9 +11729,35 @@ async function koerSystemtjek() {
       + (besked ? '<span style="font-size:10px;color:var(--red);">' + esc(besked).slice(0, 60) + '</span>' : '')
       + '</div>');
   }
+  /* SKRIVETJEKKET (Ida 3/8). "Alt er forbundet" maatte kun handle om at LÆSE — og netop
+     derfor kunne den sætning staa, mens ingen kunde kunne logge ind. Nu prøver tjekket
+     ogsaa at skrive, og overskriften daekker begge dele. */
+  const skriv = await systemtjekSkriv();
+  const skrivFejl = skriv.filter(s => !s.ok).length;
+  const rester = skriv.filter(s => s.rest);
+  const skrivRaekker = skriv.map(s =>
+    '<div style="display:flex;gap:8px;align-items:baseline;padding:4px 0;border-top:1px solid var(--gray);font-size:12px;">'
+    + '<span style="font-weight:400;color:' + (s.ok ? 'var(--black)' : 'var(--red)') + ';flex-shrink:0;">' + (s.ok ? '&#10003;' : '&#10007;') + '</span>'
+    + '<span style="flex:1;">' + esc(s.navn) + ' <span style="color:var(--gray3);font-size:10px;">(' + esc(s.tabel) + ')</span></span>'
+    + (s.besked ? '<span style="font-size:10px;color:var(--red);">' + esc(s.besked).slice(0, 60) + '</span>' : '')
+    + '</div>').join("");
+
+  const ialt = fejl + skrivFejl;
   boks.innerHTML = '<div style="font-size:11px;font-weight:400;text-transform:uppercase;letter-spacing:0.4px;color:var(--red);margin-bottom:8px;">Systemtjek</div>'
-    + '<div style="font-size:12.5px;margin-bottom:8px;font-weight:400;">' + (fejl === 0 ? 'Alt er forbundet — ' + SYSTEMTJEK.length + ' af ' + SYSTEMTJEK.length + ' tjek bestået.' : fejl + ' problem' + (fejl > 1 ? 'er' : '') + ' fundet — send et screenshot til Claude, så laver vi SQL-fixet.') + '</div>'
-    + raekker.join("");
+    + '<div style="font-size:12.5px;margin-bottom:8px;font-weight:400;">'
+      + (ialt === 0
+          ? 'Appen kan både læse og skrive — ' + (SYSTEMTJEK.length + skriv.length) + ' af ' + (SYSTEMTJEK.length + skriv.length) + ' tjek bestået.'
+          : ialt + ' problem' + (ialt > 1 ? 'er' : '') + ' fundet' + (skrivFejl ? ' — heraf ' + skrivFejl + ', hvor basen ikke tager imod det, appen skriver' : '') + '. Send et screenshot til Claude.')
+      + '</div>'
+    + '<div style="font-size:10px;letter-spacing:1.4px;text-transform:uppercase;color:var(--gray3);margin:10px 0 2px;">Kan appen læse</div>'
+    + raekker.join("")
+    + '<div style="font-size:10px;letter-spacing:1.4px;text-transform:uppercase;color:var(--gray3);margin:14px 0 2px;">Kan appen skrive</div>'
+    + skrivRaekker
+    + (rester.length
+        ? '<div style="margin-top:10px;font-size:11px;line-height:1.6;color:var(--black);background:#FFF1EE;border:1px solid var(--red-line);border-radius:12px;padding:9px 12px;">'
+          + '<b style="font-weight:400;color:var(--red);">En prøverække blev ikke ryddet op.</b> Den hedder ZZ_SYSTEMTJEK og står i '
+          + rester.map(s => esc(s.tabel)).join(" · ") + '. Sig til, så fjerner jeg den.</div>'
+        : '');
 }
 
 /* ---------- sync-advarsel: en gemning nåede ikke databasen ---------- */
@@ -12263,13 +12329,25 @@ let KB_TIMER = null, KB_GEMMER = false;
    ingen padding, ingen fed skrift, ingen text-transform. Rund baggrund + inset-haarstreg
    paavirker ikke layoutet, saa pillen kan tegnes uden at flytte noget. */
 const KB_PILLE = 'background:var(--rosa);color:var(--red);border-radius:99px;box-shadow:inset 0 0 0 1px var(--red-line);';
+/* OVERSKRIFTEN ER FED IGEN (Ida 3/8: "denne funktion er fjernet nu?").
+   Den BLEV bygget fed i v14.156 og blev slaaet ihjel af Poppins-sweepet (11B), der
+   satte alle 500/600/700 til 400 i hele filen — manus-overskriften var utilsigtet
+   sidegevinst, ikke en beslutning om manus.
+
+   MEN den maa ikke saettes tilbage med font-weight. Det, Ida ser her, er IKKE
+   tekstfeltet: textarea'en er gennemsigtig og ligger OVENPAA, og denne kopi under
+   den er den synlige tekst. Aendrer vi tegnbredden i kopien, passer den ikke laengere
+   med feltet ovenpaa — og saa lander markoeren et andet sted, end der hvor hun skriver.
+
+   text-shadow tykner glyfferne UDEN at roere deres bredde. Overskriften ser fed ud,
+   og markoeren staar praecis, hvor den skal. Skift den ALDRIG til font-weight her. */
+const KB_OVERSKRIFT = "color:var(--black);text-shadow:0 0 0.45px currentColor,0 0 0.45px currentColor;";
 function kbHLHtml(tekst) {
-  /* Betoning: *ord* faar roed tekst. Aldrig fed — Poppins maa ALDRIG vaere fed,
-     og fed skrift ville desuden aendre tegnbredden og flytte markoeren. */
+  /* Betoning: *ord* faar roed tekst — samme grund som ovenfor: aldrig noget der flytter bredden. */
   const betoning = s => s.replace(/\*([^*\n]+)\*/g, '<span style="color:var(--red);">*$1*</span>');
   return String(tekst || "").split("\n").map(function (l) {
     const r = l.trim();
-    if (/^#{1,3}\s+/.test(r)) return '<span style="font-weight:400;color:var(--black);">' + esc(l) + '</span>';
+    if (/^#{1,3}\s+/.test(r)) return '<span style="' + KB_OVERSKRIFT + '">' + esc(l) + '</span>';
     if (/^B-?ROLL/i.test(r)) return '<span style="' + KB_PILLE + '">' + esc(l) + '</span>';
     if (/^PAUSE/i.test(r)) return '<span style="' + KB_PILLE + '">' + esc(l) + '</span>';
     if (/^-+$/.test(r)) return '<span style="' + KB_PILLE + '">' + esc(l) + '</span>';
@@ -17630,7 +17708,7 @@ function buildSideNav(def) {
       + '<span style="opacity:.55;">' + ikon("", "Kalender", "laastBesked()", IK.kal) + '</span>'
       + '<span style="opacity:.55;">' + ikon("", "Værktøjskassen", "laastBesked()", IK.tools) + '</span>'
       + '<button class="sn-virk-knap" onclick="toggleVirkMenu(event)" title="' + esc(knapNavn) + '" aria-label="Profil" style="margin-left:auto;"><span class="sn-initial">' + esc((knapNavn || "?").trim().charAt(0).toUpperCase()) + '</span><span class="sn-virk-navn" style="white-space:normal;overflow-wrap:anywhere;">' + esc(knapNavn) + '</span><svg class="sn-virk-pil" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="flex-shrink:0;"><path d="M6 9l6 6 6-6"/></svg></button>'
-      + fodBagud + '<div class="sn-fod">' + fodLogo + '<span>Version 3. august · 903</span></div>'
+      + fodBagud + '<div class="sn-fod">' + fodLogo + '<span>Version 3. august · 904</span></div>'
       /* Ida 30/7: alle konto-punkter bor i profilmenuen — ingen streg/sn-bund */
       + '<div id="virkMenu" style="display:none;position:fixed;left:14px;bottom:96px;width:230px;background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:0 16px 40px rgba(0,0,0,0.15);padding:8px;z-index:90;">'
       + '<div style="padding:10px 12px 6px;font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--gray3);">' + esc(virkNavn) + '</div>'
@@ -17683,7 +17761,7 @@ function buildSideNav(def) {
         uPkt("", "Lektioner", "showTab(12)")))
     + '<button class="sn-virk-knap" onclick="toggleVirkMenu(event)" title="' + esc(knapNavn) + '" aria-label="Profil"><span class="sn-initial">' + esc((knapNavn || "?").trim().charAt(0).toUpperCase()) + '</span><span class="sn-virk-navn" style="white-space:normal;overflow-wrap:anywhere;">' + esc(knapNavn) + '</span><svg class="sn-virk-pil" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="flex-shrink:0;"><path d="M6 9l6 6 6-6"/></svg></button>'
     /* Ida 30/7: ingen streg — logo + version samlet i foden under profilknappen */
-    + fodBagud + '<div class="sn-fod">' + fodLogo + '<span>Version 3. august · 903</span></div>'
+    + fodBagud + '<div class="sn-fod">' + fodLogo + '<span>Version 3. august · 904</span></div>'
     /* Ida 30/7: menuen åbner VED knappen (nederst t.v.) — ikke i modsatte hjørne */
     + '<div id="virkMenu" style="display:none;position:fixed;left:14px;bottom:96px;width:230px;background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:0 16px 40px rgba(0,0,0,0.15);padding:8px;z-index:90;">'
     + '<div style="padding:10px 12px 6px;font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--gray3);">' + esc(virkNavn) + '</div>'
@@ -27783,6 +27861,6 @@ if ((location.hash || "").toLowerCase() === "#ole") {   // #ole = preview af Ole
      Laa den inde i #dashboard, ville kunderne aldrig se den (synk-reglen, Ida 31/7). -->
 <div id="dashBundnav" role="navigation" aria-label="Backstage"></div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 3. august · 903</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 3. august · 904</div>
 </body>
 </html>
