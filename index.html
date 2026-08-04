@@ -1666,7 +1666,7 @@ body.modul-open .burger-btn, body.modul-open .bottom-nav, body.modul-open .dash-
     <button class="burger-item" onclick="toggleBurger(); togglePwPanel()">Skift adgangskode</button>
     <button class="burger-item" onclick="toggleBurger(); openChat()">Kontakt Ida</button>
     <button class="burger-item" style="color:var(--red);" onclick="custLogout()">Log ud</button>
-    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 4. august · 940</div>
+    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 4. august · 941</div>
   </div>
 </div>
 <div class="plus-menu" id="plusMenu" onclick="if(event.target===this)togglePlus()">
@@ -2754,7 +2754,7 @@ if (/somkunde=/.test(location.hash)) {
     <!-- Foden bliver nederst — den er det ENESTE der skubbes ned (Ida 30/7) -->
     <div class="dsb-fod">
       <button class="dsb-konto" onclick="dashKontoMenu()" title="Ida"><span class="dsb-initial">I</span><span class="dsb-konto-navn">Ida</span><svg class="dsb-konto-pil" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></button>
-      <div class="dsb-version"><span>Version 4. august · 940</span></div>
+      <div class="dsb-version"><span>Version 4. august · 941</span></div>
     </div>
   </div>
 
@@ -6303,7 +6303,7 @@ select titel,
          staa fast paa telefon. De hoerer i arket (samme fejl som "left" 31/7). -->
     <div id="dashFooter" style="z-index:50;display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--gray3);background:#fff;border-top:1px solid var(--border);padding:10px 26px;">
       <div style="font-size:10px;">© 2026 Energida · Alle rettigheder forbeholdes</div>
-      <div style="font-size:10px;margin-left:auto;">Version 4. august · 940 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
+      <div style="font-size:10px;margin-left:auto;">Version 4. august · 941 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
     </div>
   </div>
 </div>
@@ -13002,23 +13002,57 @@ function kbVaerktoejHtml() {
     + '</span>'
     + '</div>';
 }
+/* B-ROLLENE LÆSES UD AF MANUS (Idas fund 4/8: "når jeg står på en lektion og der faktisk
+   findes B-rolls i manus — hvorfor kommer de ikke frem her så?").
+   Kassen lovede ordret "Skriv B-ROLL: i manus, så samles de her" — men den viste kun det
+   gamle brolls-felt i basen, som ikke er blevet redigeret, siden B-rollene flyttede ind i
+   manuskriptet. Den samlede altså aldrig noget. Nu læses de dér, hvor de står.
+   SAMME MØNSTER som farvelægningen i manus-feltet (kbHLHtml) — én regel, så en linje ikke
+   kan blive farvet rød uden at komme med i kassen. */
+function kbBrollsFraManus(tekst) {
+  return String(tekst || "").split("\n")
+    .map(function (l) { return l.trim(); })
+    .filter(function (r) { return /^B-?ROLL/i.test(r); })
+    .map(function (r) { return r.replace(/^B-?ROLL\s*:?\s*/i, "").trim(); })
+    .filter(Boolean);
+}
+function kbBrollListeHtml(br) {
+  if (!br.length) {
+    return '<div style="padding:12px 16px;font-size:11.5px;color:var(--gray3);">' + (KLIP_BRIEF_INGEN ? "Ingen B-rolls til denne lektion." : "Skriv B-ROLL: i manus, så samles de her.") + '</div>';
+  }
+  return br.map(function (x, i) {
+    const navn = typeof x === "string" ? x : (x.navn || x.tekst || "");
+    const detalje = typeof x === "string" ? "" : [x.hvor, x.varighed].filter(Boolean).join(" · ");
+    return '<div style="display:flex;gap:9px;padding:12px 16px;' + (i < br.length - 1 ? 'border-bottom:1px solid #F2F0ED;' : '') + '">'
+      + '<span style="flex-shrink:0;font-size:11px;color:var(--red);font-variant-numeric:tabular-nums;">' + (i + 1) + '</span>'
+      + '<span style="flex:1;min-width:0;">'
+        + '<span style="display:block;font-size:12.5px;line-height:1.4;">' + esc(navn) + '</span>'
+        + (detalje ? '<span style="display:block;font-size:11px;color:var(--gray3);margin-top:2px;">' + esc(detalje) + '</span>' : '')
+      + '</span></div>';
+  }).join("");
+}
+/* Kassen følger med, mens der skrives — kaldes fra kbAuto ved hvert tastetryk. */
+function kbBrollOpdater() {
+  const t = document.getElementById("kbManusTekst");
+  const inder = document.getElementById("kbBrollInder"), antalEl = document.getElementById("kbBrollAntal");
+  if (!t || !inder) return;
+  const fraManus = kbBrollsFraManus(t.value);
+  const br = fraManus.length ? fraManus : (Array.isArray(KLIP_BRIEF_BROLLS) ? KLIP_BRIEF_BROLLS : []);
+  inder.innerHTML = kbBrollListeHtml(br);
+  if (antalEl) antalEl.textContent = br.length || "";
+}
 /* De to kort under manus: B-rollene i lektionen og hvilke produkter manusset rammer */
 function kbUnderKortHtml(o) {
-  const br = Array.isArray(KLIP_BRIEF_BROLLS) ? KLIP_BRIEF_BROLLS : [];
-  const kort = (label, antal, inder) => '<div style="background:#fff;border:1px solid var(--border);border-radius:20px;overflow:hidden;">'
+  /* Manuskriptet er kilden; det gamle felt bruges kun, hvis manus intet siger — saa
+     forsvinder gammelt indtastet data ikke for de lektioner, der stadig har det. */
+  const fraManus = kbBrollsFraManus(o.manus_tekst);
+  const br = fraManus.length ? fraManus : (Array.isArray(KLIP_BRIEF_BROLLS) ? KLIP_BRIEF_BROLLS : []);
+  const kort = (label, antal, inder, idAntal, idInder) => '<div style="background:#fff;border:1px solid var(--border);border-radius:20px;overflow:hidden;">'
     + '<div style="display:flex;align-items:center;gap:8px;padding:13px 16px;border-bottom:1px solid #F2F0ED;">'
       + '<span style="flex:1;min-width:0;font-size:10px;letter-spacing:1.4px;text-transform:uppercase;color:var(--red);">' + label + '</span>'
-      + '<span style="flex-shrink:0;font-size:10.5px;color:var(--gray3);">' + antal + '</span></div>' + inder + '</div>';
-  const brInder = br.length
-    ? br.map((x, i) => {
-        const navn = typeof x === "string" ? x : (x.navn || x.tekst || "");
-        const detalje = typeof x === "string" ? "" : [x.hvor, x.varighed].filter(Boolean).join(" · ");
-        return '<div style="padding:12px 16px;' + (i < br.length - 1 ? 'border-bottom:1px solid #F2F0ED;' : '') + '">'
-          + '<div style="font-size:12.5px;line-height:1.4;">' + esc(navn) + '</div>'
-          + (detalje ? '<div style="font-size:11px;color:var(--gray3);margin-top:2px;">' + esc(detalje) + '</div>' : '')
-          + '</div>';
-      }).join("")
-    : '<div style="padding:12px 16px;font-size:11.5px;color:var(--gray3);">' + (KLIP_BRIEF_INGEN ? "Ingen B-rolls til denne lektion." : "Skriv B-ROLL: i manus, så samles de her.") + '</div>';
+      + '<span' + (idAntal ? ' id="' + idAntal + '"' : '') + ' style="flex-shrink:0;font-size:10.5px;color:var(--gray3);">' + antal + '</span></div>'
+    + (idInder ? '<div id="' + idInder + '">' + inder + '</div>' : inder) + '</div>';
+  const brInder = kbBrollListeHtml(br);
   const prod = klipProdukterFor(o);
   const prodInder = '<div style="padding:13px 16px;">'
     + (prod.length
@@ -13027,7 +13061,7 @@ function kbUnderKortHtml(o) {
     + (prod.length > 1 ? '<div style="font-size:11px;color:var(--gray3);line-height:1.5;margin-top:9px;">Retter du manus her, retter du det for alle ' + prod.length + '.</div>' : '')
     + '</div>';
   return '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;margin-top:16px;">'
-    + kort("B-roll i denne lektion", br.length || "", brInder)
+    + kort("B-roll i denne lektion", br.length || "", brInder, "kbBrollAntal", "kbBrollInder")
     + kort("Hører til", prod.length ? prod.length + (prod.length === 1 ? " produkt" : " produkter") : "", prodInder)
     + '</div>';
 }
@@ -13071,6 +13105,7 @@ function kbAuto() {
   kbHLOpdater();
   kbHoejde();
   kbOrdtalOpdater();
+  try { kbBrollOpdater(); } catch(e) {}   /* B-roll-kassen samler dem, mens der skrives (Ida 4/8) */
   clearTimeout(KB_TIMER);
   const st = document.getElementById("kbStatus");
   if (st) { st.textContent = "Gemmer\u2026"; st.style.color = "var(--gray3)"; }
@@ -18475,7 +18510,7 @@ function buildSideNav(def) {
       + '<span style="opacity:.55;">' + ikon("", "Kalender", "laastBesked()", IK.kal) + '</span>'
       + '<span style="opacity:.55;">' + ikon("", "Værktøjskassen", "laastBesked()", IK.tools) + '</span>'
       + '<button class="sn-virk-knap" onclick="toggleVirkMenu(event)" title="' + esc(knapNavn) + '" aria-label="Profil" style="margin-left:auto;"><span class="sn-initial">' + esc((knapNavn || "?").trim().charAt(0).toUpperCase()) + '</span><span class="sn-virk-navn" style="white-space:normal;overflow-wrap:anywhere;">' + esc(knapNavn) + '</span><svg class="sn-virk-pil" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="flex-shrink:0;"><path d="M6 9l6 6 6-6"/></svg></button>'
-      + fodBagud + '<div class="sn-fod"><span>Version 4. august · 940</span></div>'
+      + fodBagud + '<div class="sn-fod"><span>Version 4. august · 941</span></div>'
       /* Ida 30/7: alle konto-punkter bor i profilmenuen — ingen streg/sn-bund */
       + '<div id="virkMenu" style="display:none;position:fixed;left:14px;bottom:96px;width:230px;background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:0 16px 40px rgba(0,0,0,0.15);padding:8px;z-index:90;">'
       + '<div style="padding:10px 12px 6px;font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--gray3);">' + esc(virkNavn) + '</div>'
@@ -18532,7 +18567,7 @@ function buildSideNav(def) {
         uPkt("", "Lektioner", "showTab(12)")))
     + '<button class="sn-virk-knap" onclick="toggleVirkMenu(event)" title="' + esc(knapNavn) + '" aria-label="Profil"><span class="sn-initial">' + esc((knapNavn || "?").trim().charAt(0).toUpperCase()) + '</span><span class="sn-virk-navn" style="white-space:normal;overflow-wrap:anywhere;">' + esc(knapNavn) + '</span><svg class="sn-virk-pil" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="flex-shrink:0;"><path d="M6 9l6 6 6-6"/></svg></button>'
     /* Ida 30/7: ingen streg — logo + version samlet i foden under profilknappen */
-    + fodBagud + '<div class="sn-fod"><span>Version 4. august · 940</span></div>'
+    + fodBagud + '<div class="sn-fod"><span>Version 4. august · 941</span></div>'
     /* Ida 30/7: menuen åbner VED knappen (nederst t.v.) — ikke i modsatte hjørne */
     + '<div id="virkMenu" style="display:none;position:fixed;left:14px;bottom:96px;width:230px;background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:0 16px 40px rgba(0,0,0,0.15);padding:8px;z-index:90;">'
     + '<div style="padding:10px 12px 6px;font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--gray3);">' + esc(virkNavn) + '</div>'
@@ -28808,6 +28843,6 @@ if ((location.hash || "").toLowerCase() === "#ole") {   // #ole = preview af Ole
      Laa den inde i #dashboard, ville kunderne aldrig se den (synk-reglen, Ida 31/7). -->
 <div id="dashBundnav" role="navigation" aria-label="Backstage"></div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 4. august · 940</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 4. august · 941</div>
 </body>
 </html>
