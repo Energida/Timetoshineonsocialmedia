@@ -1671,7 +1671,7 @@ body.modul-open .burger-btn, body.modul-open .bottom-nav, body.modul-open .dash-
     <button class="burger-item" onclick="toggleBurger(); togglePwPanel()">Skift adgangskode</button>
     <button class="burger-item" onclick="toggleBurger(); openChat()">Kontakt Ida</button>
     <button class="burger-item" style="color:var(--red);" onclick="custLogout()">Log ud</button>
-    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 4. august · 942</div>
+    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 4. august · 943</div>
   </div>
 </div>
 <div class="plus-menu" id="plusMenu" onclick="if(event.target===this)togglePlus()">
@@ -2759,7 +2759,7 @@ if (/somkunde=/.test(location.hash)) {
     <!-- Foden bliver nederst — den er det ENESTE der skubbes ned (Ida 30/7) -->
     <div class="dsb-fod">
       <button class="dsb-konto" onclick="dashKontoMenu()" title="Ida"><span class="dsb-initial">I</span><span class="dsb-konto-navn">Ida</span><svg class="dsb-konto-pil" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></button>
-      <div class="dsb-version"><span>Version 4. august · 942</span></div>
+      <div class="dsb-version"><span>Version 4. august · 943</span></div>
     </div>
   </div>
 
@@ -6308,7 +6308,7 @@ select titel,
          staa fast paa telefon. De hoerer i arket (samme fejl som "left" 31/7). -->
     <div id="dashFooter" style="z-index:50;display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--gray3);background:#fff;border-top:1px solid var(--border);padding:10px 26px;">
       <div style="font-size:10px;">© 2026 Energida · Alle rettigheder forbeholdes</div>
-      <div style="font-size:10px;margin-left:auto;">Version 4. august · 942 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
+      <div style="font-size:10px;margin-left:auto;">Version 4. august · 943 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
     </div>
   </div>
 </div>
@@ -12733,6 +12733,14 @@ function brollAaben() {   // samler ALLE B-roll-noter fra manusserne ét sted �
 }
 
 async function klipHent() {
+  /* OPGAVERNE SKAL OGSÅ HENTES HER (Idas fund 4/8: "jeg havde rettet øvelserne i 5.2, og
+     da jeg printede manus var det de gamle der stod").
+     oevelserHent() blev KUN kaldt fra kursusHent() — kundens vej ind i forløbet. Aabnede
+     man Tip Top Studio fra Backstage, blev de rettede opgaver aldrig hentet, og
+     KURSUS_MODULER stod tilbage med kodens gamle liste. Derfor viste printet de gamle.
+     VÆRRE END VISNINGEN: editoren fyldte sit udkast fra samme gamle liste, saa et tryk
+     paa Gem ville have skrevet de gamle spoergsmaal hen over de rettede. */
+  try { await oevelserHent(); } catch(e) {}
   if (sb) {
     try {
       const { data, error } = await sb.from("video_opgaver").select("*").order("created_at", { ascending: false });
@@ -13124,6 +13132,14 @@ async function kbGemNu(luk) {
   clearTimeout(KB_TIMER);
   const id = KLIP_BRIEF_ID; if (!id || KB_GEMMER) return;
   const felt = x => { const e = document.getElementById(x); return e ? e.value : null; };
+  /* ET MANUS MÅ ALDRIG SLETTES AF EN GEMNING, DER IKKE KAN SE FELTET (Ida 4/8:
+     "den anden dag fandt jeg en lektion hvor manus helt var slettet").
+     Patchen satte manus_tekst til feltets vaerdi ELLER null. Findes feltet ikke — fordi
+     briefen er lukket, eller fordi en anden popup har overtaget modalen, mens autosaven
+     stod og ventede i 1,2 sekunder — blev der skrevet null. Og null over et manus er en
+     sletning. Vi kan ikke gemme det, vi ikke kan laese: saa gemmer vi ingenting.
+     En TOM tekst er stadig et gyldigt gem — det er kun det MANGLENDE felt, der stopper. */
+  if (!document.getElementById("kbManusTekst")) return;
   /* brief og brolls redigeres ikke længere i briefen (B-ROLL står i manus).
      De må IKKE med i patchen — felterne findes ikke, så de ville gemme tomt
      oveni det, der allerede ligger i databasen. */
@@ -13306,7 +13322,11 @@ function kbTitelGem() {
 }
 async function klipBriefGem() {
   const id = KLIP_BRIEF_ID; if (!id) return;
-  const patch = { manus_tekst: (document.getElementById("kbManusTekst") || {}).value || null };
+  /* SAMME VAGT som i kbGemNu (Ida 4/8): findes feltet ikke, gemmes der ingenting.
+     Funktionen har i dag ingen kaldere, men den maa ikke kunne slette et manus,
+     hvis nogen kobler en knap paa den i morgen. */
+  const mEl = document.getElementById("kbManusTekst"); if (!mEl) return;
+  const patch = { manus_tekst: mEl.value || null };
   closeModal();
   await klipOpdater(id, patch);
 }
@@ -18519,7 +18539,7 @@ function buildSideNav(def) {
       + '<span style="opacity:.55;">' + ikon("", "Kalender", "laastBesked()", IK.kal) + '</span>'
       + '<span style="opacity:.55;">' + ikon("", "Værktøjskassen", "laastBesked()", IK.tools) + '</span>'
       + '<button class="sn-virk-knap" onclick="toggleVirkMenu(event)" title="' + esc(knapNavn) + '" aria-label="Profil" style="margin-left:auto;"><span class="sn-initial">' + esc((knapNavn || "?").trim().charAt(0).toUpperCase()) + '</span><span class="sn-virk-navn" style="white-space:normal;overflow-wrap:anywhere;">' + esc(knapNavn) + '</span><svg class="sn-virk-pil" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="flex-shrink:0;"><path d="M6 9l6 6 6-6"/></svg></button>'
-      + fodBagud + '<div class="sn-fod"><span>Version 4. august · 942</span></div>'
+      + fodBagud + '<div class="sn-fod"><span>Version 4. august · 943</span></div>'
       /* Ida 30/7: alle konto-punkter bor i profilmenuen — ingen streg/sn-bund */
       + '<div id="virkMenu" style="display:none;position:fixed;left:14px;bottom:96px;width:230px;background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:0 16px 40px rgba(0,0,0,0.15);padding:8px;z-index:90;">'
       + '<div style="padding:10px 12px 6px;font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--gray3);">' + esc(virkNavn) + '</div>'
@@ -18576,7 +18596,7 @@ function buildSideNav(def) {
         uPkt("", "Lektioner", "showTab(12)")))
     + '<button class="sn-virk-knap" onclick="toggleVirkMenu(event)" title="' + esc(knapNavn) + '" aria-label="Profil"><span class="sn-initial">' + esc((knapNavn || "?").trim().charAt(0).toUpperCase()) + '</span><span class="sn-virk-navn" style="white-space:normal;overflow-wrap:anywhere;">' + esc(knapNavn) + '</span><svg class="sn-virk-pil" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="flex-shrink:0;"><path d="M6 9l6 6 6-6"/></svg></button>'
     /* Ida 30/7: ingen streg — logo + version samlet i foden under profilknappen */
-    + fodBagud + '<div class="sn-fod"><span>Version 4. august · 942</span></div>'
+    + fodBagud + '<div class="sn-fod"><span>Version 4. august · 943</span></div>'
     /* Ida 30/7: menuen åbner VED knappen (nederst t.v.) — ikke i modsatte hjørne */
     + '<div id="virkMenu" style="display:none;position:fixed;left:14px;bottom:96px;width:230px;background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:0 16px 40px rgba(0,0,0,0.15);padding:8px;z-index:90;">'
     + '<div style="padding:10px 12px 6px;font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--gray3);">' + esc(virkNavn) + '</div>'
@@ -28852,6 +28872,6 @@ if ((location.hash || "").toLowerCase() === "#ole") {   // #ole = preview af Ole
      Laa den inde i #dashboard, ville kunderne aldrig se den (synk-reglen, Ida 31/7). -->
 <div id="dashBundnav" role="navigation" aria-label="Backstage"></div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 4. august · 942</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 4. august · 943</div>
 </body>
 </html>
