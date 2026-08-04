@@ -1649,7 +1649,7 @@ body.modul-open .burger-btn, body.modul-open .bottom-nav, body.modul-open .dash-
     <button class="burger-item" onclick="toggleBurger(); togglePwPanel()">Skift adgangskode</button>
     <button class="burger-item" onclick="toggleBurger(); openChat()">Kontakt Ida</button>
     <button class="burger-item" style="color:var(--red);" onclick="custLogout()">Log ud</button>
-    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 4. august · 926</div>
+    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 4. august · 927</div>
   </div>
 </div>
 <div class="plus-menu" id="plusMenu" onclick="if(event.target===this)togglePlus()">
@@ -2737,7 +2737,7 @@ if (/somkunde=/.test(location.hash)) {
     <!-- Foden bliver nederst — den er det ENESTE der skubbes ned (Ida 30/7) -->
     <div class="dsb-fod">
       <button class="dsb-konto" onclick="dashKontoMenu()" title="Ida"><span class="dsb-initial">I</span><span class="dsb-konto-navn">Ida</span><svg class="dsb-konto-pil" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></button>
-      <div class="dsb-version"><span>Version 4. august · 926</span></div>
+      <div class="dsb-version"><span>Version 4. august · 927</span></div>
     </div>
   </div>
 
@@ -6258,7 +6258,7 @@ select titel,
          staa fast paa telefon. De hoerer i arket (samme fejl som "left" 31/7). -->
     <div id="dashFooter" style="z-index:50;display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--gray3);background:#fff;border-top:1px solid var(--border);padding:10px 26px;">
       <div style="font-size:10px;">© 2026 Energida · Alle rettigheder forbeholdes</div>
-      <div style="font-size:10px;margin-left:auto;">Version 4. august · 926 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
+      <div style="font-size:10px;margin-left:auto;">Version 4. august · 927 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
     </div>
   </div>
 </div>
@@ -7417,23 +7417,25 @@ let BRIEF_FRA = null;   /* fanen man kom fra — så ← Tilbage lander rigtigt 
    kvitterer, og foerst DEREFTER forlader den siden. Er der intet at gemme (briefen er
    ikke aabnet endnu), opfoerer den sig som foer. */
 async function briefTilbage() {
+  /* KNAPPEN SKIFTER IKKE LAENGERE TIL "GEMT" (Ida 4/8). Den hedder det, den GOER, hele
+     vejen — og kvitteringen for et gem bor nu paa Gem-knappen i Fakta-hovedet, hvor man
+     selv har bedt om den. Der gemmes stadig, foer man forlader siden.
+     GAAR det galt, bliver man staaende: en afvist skrivning maa aldrig kunne overses. */
+  const tilbage = function () {
+    document.body.classList.remove("brief-igang");
+    showTab((BRIEF_FRA != null && BRIEF_FRA !== 7) ? BRIEF_FRA : 2);
+  };
+  if (!BRIEF_ID) { tilbage(); return; }
   const knap = document.getElementById("briefKladdeKnap");
-  const gammel = knap ? knap.textContent : "";
-  if (knap) { knap.disabled = true; knap.textContent = "Gemmer …"; }
-  let ok = true;
-  try { await saveBrief(true); } catch (e) { ok = false; }
+  let ok = false;
+  try { ok = await saveBrief(true); } catch (e) { ok = false; }
   if (!ok) {
-    if (knap) { knap.disabled = false; knap.textContent = "Kunne ikke gemme — prøv igen"; knap.style.color = "var(--red)"; }
+    if (knap) { knap.textContent = "Kunne ikke gemme — prøv igen"; knap.style.color = "var(--red)"; }
     return;
   }
-  if (knap) { knap.innerHTML = "Gemt " + energidaFlueben(13); }
-  /* Kort kvittering, saa hun NAAR at se den — ellers ved man ikke, om det blev gemt */
-  setTimeout(function () {
-    if (knap) { knap.disabled = false; knap.textContent = gammel || "Tilbage til oversigten";   /* Ida 4/8: knappen hedder det, den GOER — den gemmer stadig undervejs */ knap.style.color = ""; }
-    document.body.classList.remove("brief-igang");
-    const m = (BRIEF_FRA != null && BRIEF_FRA !== 7) ? BRIEF_FRA : 2;
-    showTab(m);
-  }, 650);
+  /* stod der en fejlbesked fra sidste forsoeg, skal knappen hedde sig selv igen */
+  if (knap) { knap.textContent = "Tilbage til oversigten"; knap.style.color = ""; }
+  tilbage();
 }
 function openBriefSide(id) {
   /* Gentegner vi SAMME brief (fx naar man vaelger indholdstype eller soejle), skal siden
@@ -9227,22 +9229,35 @@ function briefMetaByg() {
       };
       const foelelse = tema.foelelse || FOELELSE[m.kode] || "";
       const bd = brandDelData(m.kode);
-      const rk = (lbl, v) => v ? '<div style="font-size:11.5px;line-height:1.55;display:flex;gap:10px;padding:8px 0;border-top:1px solid rgba(255,255,255,0.35);"><span style="opacity:.8;width:70px;flex-shrink:0;">' + lbl + '</span><span>' + esc(v) + '</span></div>' : '';
-      const felt = x => '<div style="background:#fff;border-radius:12px;padding:10px 13px;margin-top:8px;">'
-        + (x.t ? '<div style="color:var(--red);font-size:13px;line-height:1.35;">' + esc(x.t) + '</div>' : '')
-        + (x.d ? '<div style="color:var(--gray3);font-size:11.5px;line-height:1.5;margin-top:2px;">' + esc(x.d) + '</div>' : '')
+      /* SKINNEN ER LETTET OG DELT OP (Ida 4/8: "skal stå meget bedre visuelt opdelt og ikke
+         dette tungt"). Foer stod hele skinnen som EEN roed flade med hvide kort inden i, og
+         brandstrategiens afsnit laa nederst i samme slab — man kunne ikke se, hvor det ene
+         stoppede og det andet begyndte. Nu er det to selvstaendige hjaelpekort efter
+         manualens standard (hvidt kort, graa kant, roedt versal-label m. fuld roed haarstreg),
+         og raekkerne skilles af haarfine streger i stedet for af farve.
+         Den store roede flade er dermed UDE af skinnen: manualen giver kun een stor roed
+         flade, naar fladen har PRAECIS EEN primaer handling — en hjaelpeboks har ingen. */
+      const rk = (lbl, v) => v ? '<div style="display:flex;gap:12px;padding:9px 0;border-top:1px solid #F2F0ED;font-size:12px;line-height:1.5;"><span style="color:var(--gray3);width:74px;flex-shrink:0;">' + lbl + '</span><span style="color:var(--black);">' + esc(v) + '</span></div>' : '';
+      const felt = (x, i) => '<div style="padding:9px 0;' + (i ? 'border-top:1px solid #F2F0ED;' : '') + '">'
+        + (x.t ? '<div style="color:var(--red);font-size:12.5px;line-height:1.4;">' + esc(x.t) + '</div>' : '')
+        + (x.d ? '<div style="color:var(--gray3);font-size:11.5px;line-height:1.55;' + (x.t ? 'margin-top:3px;' : '') + '">' + esc(x.d) + '</div>' : '')
         + '</div>';
-      const afsnit = (lbl, inner) => '<div style="margin-top:14px;"><div style="font-size:9.5px;letter-spacing:1.8px;text-transform:uppercase;opacity:.85;">' + lbl + '</div>' + inner + '</div>';
-      html += '<div style="background:var(--red);border-radius:20px;padding:18px 22px;color:#fff;margin-bottom:14px;position:relative;overflow:hidden;">'
-        + '<div style="font-size:10px;letter-spacing:1.8px;text-transform:uppercase;border-bottom:1px solid rgba(255,255,255,0.55);padding-bottom:9px;margin-bottom:12px;position:relative;z-index:1;">Du har valgt indholdssøjlen</div>'
-        + '<div style="position:relative;z-index:1;">'
-        + '<div style="font-size:19px;font-weight:500;line-height:1.3;">' + (m.kode ? m.kode + ' &middot; ' : '') + esc(soejleVis(it.soejle)) + '</div>'
+      html += hvid('Du har valgt indholdssøjlen',
+          '<div style="font-size:17px;color:var(--red);line-height:1.3;padding-bottom:3px;">' + (m.kode ? m.kode + ' &middot; ' : '') + esc(soejleVis(it.soejle)) + '</div>'
         + rk('Viben', VIBE[m.kode] || '')
         + rk('Værdien', tema.formaal || '')
         + rk('Handlingen', BRIEF_STATE.cta || tema.handling || '')
-        + (foelelse ? afsnit('Følelsen, målgruppen skal sidde med', '<div style="background:#fff;color:var(--red);border-radius:12px;padding:10px 13px;margin-top:6px;font-size:13.5px;font-style:italic;">"' + esc(foelelse) + '"</div>') : '')
-        + afsnit('Fra ' + (bd.lbl ? bd.lbl.replace("jeres ", "jeres brandstrategi: ") : 'jeres brandstrategi'), bd.items.length ? bd.items.map(felt).join("") : '<div style="font-size:12px;font-style:italic;opacity:.9;margin-top:6px;">(Udfyldes, når jeres brandstrategi er på plads)</div>')
-        + '</div></div>';
+        + (foelelse
+            ? '<div style="margin-top:13px;background:var(--rosa);border-radius:12px;padding:11px 14px;">'
+              + '<div style="font-size:9px;letter-spacing:1.4px;text-transform:uppercase;color:var(--red);margin-bottom:5px;">Følelsen, målgruppen skal sidde med</div>'
+              /* citat = Didot kursiv UDEN anfoerselstegn (manualen 27/7) */
+              + '<div style="font-family:\'Didot\',\'Bodoni 72\',Georgia,serif;font-style:italic;color:var(--red);font-size:15px;line-height:1.4;">' + esc(storStart(foelelse)) + '</div>'
+              + '</div>'
+            : ''));
+      html += hvid('Fra brandstrategien' + (bd.lbl ? ': ' + bd.lbl.replace(/^jeres /, "") : ''),
+        bd.items.length
+          ? bd.items.map(felt).join("")
+          : '<div style="font-size:12px;color:var(--gray3);line-height:1.55;font-style:italic;">(Udfyldes, når brandstrategien er på plads)</div>');
     }
     /* Tidligere opslag fra soejlen — AEGTE data fra Arkivet */
     const tidligere = (IDEER || []).filter(x => x.status === "Postet" && x.soejle === it.soejle && x.id !== it.id).slice(0, 3);
@@ -18143,7 +18158,7 @@ function buildSideNav(def) {
       + '<span style="opacity:.55;">' + ikon("", "Kalender", "laastBesked()", IK.kal) + '</span>'
       + '<span style="opacity:.55;">' + ikon("", "Værktøjskassen", "laastBesked()", IK.tools) + '</span>'
       + '<button class="sn-virk-knap" onclick="toggleVirkMenu(event)" title="' + esc(knapNavn) + '" aria-label="Profil" style="margin-left:auto;"><span class="sn-initial">' + esc((knapNavn || "?").trim().charAt(0).toUpperCase()) + '</span><span class="sn-virk-navn" style="white-space:normal;overflow-wrap:anywhere;">' + esc(knapNavn) + '</span><svg class="sn-virk-pil" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="flex-shrink:0;"><path d="M6 9l6 6 6-6"/></svg></button>'
-      + fodBagud + '<div class="sn-fod"><span>Version 4. august · 926</span></div>'
+      + fodBagud + '<div class="sn-fod"><span>Version 4. august · 927</span></div>'
       /* Ida 30/7: alle konto-punkter bor i profilmenuen — ingen streg/sn-bund */
       + '<div id="virkMenu" style="display:none;position:fixed;left:14px;bottom:96px;width:230px;background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:0 16px 40px rgba(0,0,0,0.15);padding:8px;z-index:90;">'
       + '<div style="padding:10px 12px 6px;font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--gray3);">' + esc(virkNavn) + '</div>'
@@ -18200,7 +18215,7 @@ function buildSideNav(def) {
         uPkt("", "Lektioner", "showTab(12)")))
     + '<button class="sn-virk-knap" onclick="toggleVirkMenu(event)" title="' + esc(knapNavn) + '" aria-label="Profil"><span class="sn-initial">' + esc((knapNavn || "?").trim().charAt(0).toUpperCase()) + '</span><span class="sn-virk-navn" style="white-space:normal;overflow-wrap:anywhere;">' + esc(knapNavn) + '</span><svg class="sn-virk-pil" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="flex-shrink:0;"><path d="M6 9l6 6 6-6"/></svg></button>'
     /* Ida 30/7: ingen streg — logo + version samlet i foden under profilknappen */
-    + fodBagud + '<div class="sn-fod"><span>Version 4. august · 926</span></div>'
+    + fodBagud + '<div class="sn-fod"><span>Version 4. august · 927</span></div>'
     /* Ida 30/7: menuen åbner VED knappen (nederst t.v.) — ikke i modsatte hjørne */
     + '<div id="virkMenu" style="display:none;position:fixed;left:14px;bottom:96px;width:230px;background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:0 16px 40px rgba(0,0,0,0.15);padding:8px;z-index:90;">'
     + '<div style="padding:10px 12px 6px;font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--gray3);">' + esc(virkNavn) + '</div>'
@@ -19271,7 +19286,10 @@ function tidligereToggle() {
    Godkendelses-trinnene findes KUN for I GOT YOU (type "forloeb") — alle andre springer dem over.
    Datoen ændrer ALDRIG status — de to lever hver for sig. */
 function harGodkendelse() { try { return !!(CURRENT_DEF && CURRENT_DEF.type === "forloeb"); } catch(e) { return false; } }
-function statusVisNavn(st) { if (st === "Postet") return "Publiceret"; if (st === "Målt") return "Indblik"; return st || "Idé"; }
+/* STATUSSEN HEDDER "POSTET" (Ida 4/8) — visningsnavnet "Publiceret" er ude. Datanoeglen
+   har hele tiden vaeret "Postet", saa intet i basen roeres; det var kun etiketten, der
+   sagde noget andet end resten af appen. "Maalt" hedder fortsat "Indblik". */
+function statusVisNavn(st) { if (st === "Målt") return "Indblik"; return st || "Idé"; }
 /* Prikken alene (3B-farverne) — delt mellem chip-visningen og kalenderkortene, så de aldrig glider fra hinanden */
 function statusPrikDot(st) {
   const t = st || "Idé";
@@ -19338,8 +19356,9 @@ function renderKundeHaeng() {
 /* Opslagets rejse: kundens statustrin som milepæls-bar (kun de trin, kundens type har) */
 function statusFlowBarHtml() {
   const trin = harGodkendelse()
-    ? ["Idé", "Brief i gang", "Klar til godk.", "Godkendt", "Planlagt", "Publiceret", "Indblik"]
-    : ["Idé", "Brief i gang", "Planlagt", "Publiceret", "Indblik"];
+    /* samme etiket som statusvaelgeren (Ida 4/8): "Postet", ikke "Publiceret" */
+    ? ["Idé", "Brief i gang", "Klar til godk.", "Godkendt", "Planlagt", "Postet", "Indblik"]
+    : ["Idé", "Brief i gang", "Planlagt", "Postet", "Indblik"];
   return '<div style="height:1px;background:var(--border);margin:12px 0 10px;"></div>'
     + '<div style="font-size:9.5px;letter-spacing:1.4px;text-transform:uppercase;color:var(--red);margin-bottom:8px;">Opslagets rejse</div>'
     + '<div style="display:flex;align-items:flex-start;">'
@@ -19544,6 +19563,7 @@ async function ugeDrop(e, dato) {
   await ideUpdate(id, { dato: dato });   // traek-og-slip flytter KUN datoen — status roeres ikke (2C)
   try { renderCalendar(); } catch(x) {}
   try { renderIdeas(); } catch(x) {}
+  try { renderUgenKort(); } catch(x) {}   /* forsidens "Denne uge" tegnes af sin egen funktion (Ida 4/8) */
 }
 
 /* ---------- IDÉ-QUIZZEN: "Jeg ved ikke, hvad jeg skal poste" (Ida 21/7) ----------
@@ -20009,7 +20029,11 @@ function energidaUgeGrid(mandag, o) {
           + (person ? '<span class="uge-chip behov">' + esc(person) + '</span>' : '')
           + '</div>'
         : '';
-      return '<div class="uge-op"' + (o.kompakt ? '' : ' draggable="true" ondragstart="ugeDrag(event,\'' + h.id + '\')"') + ' onclick="event.stopPropagation();openBriefSide(\'' + h.id + '\')" style="cursor:pointer;">'
+      /* TRAEK VIRKER OGSAA I "DENNE UGE" PAA FORSIDEN (Ida 4/8). Kompakt-visningen var
+         undtaget, saa et forsoeg paa at flytte et kort dér bare markerede teksten blaa.
+         Kalender-standarden: ALLE kalenderflader tegnes af denne ene motor og skal derfor
+         ogsaa kunne det samme — to ens ting maa ikke opfoere sig forskelligt. */
+      return '<div class="uge-op" draggable="true" ondragstart="ugeDrag(event,\'' + h.id + '\')" onclick="event.stopPropagation();openBriefSide(\'' + h.id + '\')" style="cursor:pointer;">'
         + '<div class="t">' + esc(storStart(h.titel || "Uden titel")) + '</div>'
         + statuslinje
         + chipRaekke
@@ -20030,7 +20054,7 @@ function energidaUgeGrid(mandag, o) {
     const blivKlar = blivKlarIde
       ? '<div onclick="event.stopPropagation();blivKlarAaben(\'' + blivKlarIde.id + '\')" style="border:1px dashed var(--border);border-radius:12px;padding:7px 9px;font-size:10.5px;color:var(--gray3);line-height:1.4;margin-bottom:10px;cursor:pointer;">Bliv klar til at optage i morgen</div>'
       : '';
-    const traek = o.kompakt ? '' : ' ondragover="event.preventDefault();this.classList.add(\'trakover\')" ondragleave="this.classList.remove(\'trakover\')" ondrop="ugeDrop(event,\'' + dateStr + '\')"';
+    const traek = ' ondragover="event.preventDefault();this.classList.add(\'trakover\')" ondragleave="this.classList.remove(\'trakover\')" ondrop="ugeDrop(event,\'' + dateStr + '\')"';
     /* DAGEN SELV ER IKKE LAENGERE KLIKBAR (Ida 30/7). Hele dagen aabnede foer en popup, der bare
        listede dagens opslag — og da dagen er 250 px hoej med smaa kort, ramte man som regel den
        tomme flade og fik popup'en i stedet for at komme videre. Kortene fører selv direkte ind i
@@ -28450,6 +28474,6 @@ if ((location.hash || "").toLowerCase() === "#ole") {   // #ole = preview af Ole
      Laa den inde i #dashboard, ville kunderne aldrig se den (synk-reglen, Ida 31/7). -->
 <div id="dashBundnav" role="navigation" aria-label="Backstage"></div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 4. august · 926</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 4. august · 927</div>
 </body>
 </html>
