@@ -1605,8 +1605,6 @@ body.modul-open .burger-btn, body.modul-open .bottom-nav, body.modul-open .dash-
 /* "Se brief" er en LÆSE-visning med mange raekker og skal have mere bredde end en
    almindelig popup (Ida 4/8). Kortet vokser; selve rullen ligger paa en INDRE beholder,
    saa krydset bliver staaende i hjoernet i stedet for at rulle ud af syne. */
-#modalBody.brief-samlet { max-width: 560px; }
-.brief-samlet-rul { max-height: 68vh; overflow-y: auto; margin-top: 4px; padding-right: 4px; }
 .lek-side-raekke { display:flex; gap:9px; align-items:center; padding:7px 4px; border-top:1px solid var(--gray); cursor:pointer; border-radius:12px; }
 .lek-side-raekke:hover { background:var(--gray); }
 .lek-side-raekke.aktiv { background:#FDE8E3; }
@@ -1676,7 +1674,7 @@ body.modul-open .burger-btn, body.modul-open .bottom-nav, body.modul-open .dash-
     <button class="burger-item" onclick="toggleBurger(); togglePwPanel()">Skift adgangskode</button>
     <button class="burger-item" onclick="toggleBurger(); openChat()">Kontakt Ida</button>
     <button class="burger-item" style="color:var(--red);" onclick="custLogout()">Log ud</button>
-    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 4. august · 945</div>
+    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 4. august · 946</div>
   </div>
 </div>
 <div class="plus-menu" id="plusMenu" onclick="if(event.target===this)togglePlus()">
@@ -2381,6 +2379,8 @@ if (/somkunde=/.test(location.hash)) {
       <div id="briefGrid">
         <div id="briefRail"></div>
         <div id="briefWrap"></div>
+        <!-- Er briefen udfyldt, aabner den som OVERBLIK i stedet for paa Fakta (Ida 4/8) -->
+        <div id="briefSamlet" style="display:none;"></div>
         <div id="briefMeta"></div>
       </div>
       <div id="briefMsg" style="font-size:12px;margin-top:8px;display:none;"></div>
@@ -2766,7 +2766,7 @@ if (/somkunde=/.test(location.hash)) {
     <!-- Foden bliver nederst — den er det ENESTE der skubbes ned (Ida 30/7) -->
     <div class="dsb-fod">
       <button class="dsb-konto" onclick="dashKontoMenu()" title="Ida"><span class="dsb-initial">I</span><span class="dsb-konto-navn">Ida</span><svg class="dsb-konto-pil" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></button>
-      <div class="dsb-version"><span>Version 4. august · 945</span></div>
+      <div class="dsb-version"><span>Version 4. august · 946</span></div>
     </div>
   </div>
 
@@ -6315,7 +6315,7 @@ select titel,
          staa fast paa telefon. De hoerer i arket (samme fejl som "left" 31/7). -->
     <div id="dashFooter" style="z-index:50;display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--gray3);background:#fff;border-top:1px solid var(--border);padding:10px 26px;">
       <div style="font-size:10px;">© 2026 Energida · Alle rettigheder forbeholdes</div>
-      <div style="font-size:10px;margin-left:auto;">Version 4. august · 945 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
+      <div style="font-size:10px;margin-left:auto;">Version 4. august · 946 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
     </div>
   </div>
 </div>
@@ -7887,6 +7887,10 @@ function openBriefSide(id) {
     });
   })();
   briefSideVis(BRIEF_SIDE);
+  /* ER DEN UDFYLDT, MØDER DEN DIG SOM OVERBLIK (Idas valg 4/8) — men KUN ved en frisk
+     aabning. openBriefSide kaldes ogsaa hver gang man vaelger en soejle eller en type,
+     og dér ville et spring til overblikket rive een ud af det, man var i gang med. */
+  if (!sammeBrief && briefErUdfyldt()) briefSamletVis(); else briefSamletSkjul();
   try { briefPersonerFyld(); } catch(e) {}
   const scBR = document.querySelector(".content");
   if (scBR && !scBR.__briefRail) {
@@ -9251,8 +9255,36 @@ function briefSeVaerdi(v) {
   if (Array.isArray(v)) v = v.filter(Boolean).join(" · ");
   return String(v == null ? "" : v).trim();
 }
-function briefSeBrief() {
-  const it = IDEER.find(x => x.id === BRIEF_ID); if (!it) return;
+/* ER BRIEFEN UDFYLDT? Samme maalestok som raket-banneret bruger: der er et hook, der er
+   et indhold, og der er en caption. Er de tre på plads, er opslaget klar — og saa er det
+   OVERBLIKKET, man kommer efter, ikke Fakta-siden. */
+function briefErUdfyldt() {
+  const S = BRIEF_STATE || {};
+  const harHook = !!(S.hook || S.hookTekst);
+  const harIndhold = !!(S.indhold || (Array.isArray(S.slides) && S.slides.filter(x => String(x || "").trim()).length >= 2));
+  return !!(harHook && harIndhold && S.caption);
+}
+/* Overblikket er en SIDE, ikke en popup (Idas valg 4/8). Samme visning tegnes af ÉN
+   funktion, saa "Se brief"-knappen og den automatiske aabning aldrig kan vise hver sit. */
+function briefSamletVis() {
+  const el = document.getElementById("briefSamlet"); if (!el) return;
+  el.innerHTML = briefSamletHtml(); if (!el.innerHTML) return;
+  el.style.display = "";
+  ["briefWrap", "briefSideNav", "basisTrinBar", "briefRail", "briefMeta"].forEach(function (id) {
+    const x = document.getElementById(id); if (x) x.style.display = "none";
+  });
+  try { document.body.classList.remove("brief-igang"); } catch(e) {}
+  const sc = document.querySelector(".content"); if (sc) sc.scrollTo({ top: 0, behavior: "smooth" });
+}
+function briefSamletSkjul() {
+  const el = document.getElementById("briefSamlet"); if (el) { el.style.display = "none"; el.innerHTML = ""; }
+  const w = document.getElementById("briefWrap"); if (w) w.style.display = "";
+  /* rail og skinne styres af deres egne medieregler — de maa ikke laases med inline stil */
+  ["briefRail", "briefMeta"].forEach(function (id) { const x = document.getElementById(id); if (x) x.style.display = ""; });
+}
+function briefSeBrief() { briefSamletVis(); }
+function briefSamletHtml() {
+  const it = IDEER.find(x => x.id === BRIEF_ID); if (!it) return "";
   const S = BRIEF_STATE || {};
   const erKarrusel = S.format === "Karrusel";
   const raekke = (lbl, v) => {
@@ -9271,11 +9303,10 @@ function briefSeBrief() {
   const dat = (d, t) => d ? (dkDatoKort(d) + (t ? " · " + dkTid(t) : "")) : "";
   const soejle = (function () { const m = soejleModel(it.soejle || ""); return it.soejle ? ((m && m.kode ? m.kode + " · " : "") + soejleVis(it.soejle)) : ""; })();
   const slides = (Array.isArray(S.slides) ? S.slides : []).filter(x => String(x || "").trim());
-  const html = '<div class="ch-label" style="margin-bottom:2px;">Briefen samlet</div>'
-    + '<div style="font-family:\'Didot\',\'Bodoni 72\',Georgia,serif;font-size:24px;line-height:1.2;color:var(--red);margin-bottom:2px;">' + esc(storStart(it.titel || "Uden titel")) + '</div>'
+  return '<div style="background:#fff;border:1px solid var(--border);border-radius:20px;padding:22px 26px;">'
+    + '<div style="font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--red);margin-bottom:3px;">Briefen samlet</div>'
+    + '<div style="font-family:\'Didot\',\'Bodoni 72\',Georgia,serif;font-size:26px;line-height:1.2;color:var(--red);">' + esc(storStart(it.titel || "Uden titel")) + '</div>'
     + '<div style="font-size:11.5px;color:var(--gray3);">' + esc([S.format, soejle].filter(Boolean).join(" · ") || "Ikke sat endnu") + '</div>'
-    /* hovedet staar stille — kun raekkerne ruller, saa krydset altid kan naas */
-    + '<div class="brief-samlet-rul">'
     + sek("Fakta", "fakta",
         raekke("Idéen", S.beskrivelse)
         + raekke("Søjle", soejle)
@@ -9304,18 +9335,14 @@ function briefSeBrief() {
     + sek("Planlæg", "plan",
         raekke("Med i indholdet", S.medIIndhold)
         + raekke("Hvor", S.hvorLaves))
-    + '</div>';   /* /brief-samlet-rul */
-  /* IKKE lekPop (Idas fund 4/8: "der sker ikke noget når jeg klikker"). lekPop-vinduet
-     ligger INDE i lektionsvisningen, som er skjult, naar man staar i briefen — saa blev
-     popup'en aabnet inde i noget usynligt. modalBack ligger frit og er desuden en
-     .modal-back, saa popupVagt() lægger hjerte og vej-ud paa den af sig selv. */
-  const body = document.getElementById("modalBody"); if (!body) return;
-  body.classList.add("brief-samlet");
-  body.innerHTML = '<button class="modal-close" onclick="closeModal()" title="Luk">&times;</button>' + html;
-  document.getElementById("modalBack").classList.add("on");
+    /* Vejen ind i redigering staar nederst til hoejre, som alle handlingsknapper */
+    + '<div style="display:flex;justify-content:flex-end;gap:10px;margin-top:22px;">'
+      + '<button type="button" class="dbtn primary" style="padding:12px 24px;" onclick="briefSeRet(\'fakta\')">Rediger briefen</button>'
+    + '</div>'
+    + '</div>';
 }
 function briefSeRet(hvor) {
-  try { closeModal(); } catch(e) {}
+  briefSamletSkjul();
   const wrap = document.getElementById("briefWrap"); if (!wrap) return;
   const G = briefGrupper(wrap);
   if (hvor === "fakta") { briefSideVis(G.basisIx > -1 ? G.basisIx : 0); return; }
@@ -18628,7 +18655,7 @@ function buildSideNav(def) {
       + '<span style="opacity:.55;">' + ikon("", "Kalender", "laastBesked()", IK.kal) + '</span>'
       + '<span style="opacity:.55;">' + ikon("", "Værktøjskassen", "laastBesked()", IK.tools) + '</span>'
       + '<button class="sn-virk-knap" onclick="toggleVirkMenu(event)" title="' + esc(knapNavn) + '" aria-label="Profil" style="margin-left:auto;"><span class="sn-initial">' + esc((knapNavn || "?").trim().charAt(0).toUpperCase()) + '</span><span class="sn-virk-navn" style="white-space:normal;overflow-wrap:anywhere;">' + esc(knapNavn) + '</span><svg class="sn-virk-pil" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="flex-shrink:0;"><path d="M6 9l6 6 6-6"/></svg></button>'
-      + fodBagud + '<div class="sn-fod"><span>Version 4. august · 945</span></div>'
+      + fodBagud + '<div class="sn-fod"><span>Version 4. august · 946</span></div>'
       /* Ida 30/7: alle konto-punkter bor i profilmenuen — ingen streg/sn-bund */
       + '<div id="virkMenu" style="display:none;position:fixed;left:14px;bottom:96px;width:230px;background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:0 16px 40px rgba(0,0,0,0.15);padding:8px;z-index:90;">'
       + '<div style="padding:10px 12px 6px;font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--gray3);">' + esc(virkNavn) + '</div>'
@@ -18685,7 +18712,7 @@ function buildSideNav(def) {
         uPkt("", "Lektioner", "showTab(12)")))
     + '<button class="sn-virk-knap" onclick="toggleVirkMenu(event)" title="' + esc(knapNavn) + '" aria-label="Profil"><span class="sn-initial">' + esc((knapNavn || "?").trim().charAt(0).toUpperCase()) + '</span><span class="sn-virk-navn" style="white-space:normal;overflow-wrap:anywhere;">' + esc(knapNavn) + '</span><svg class="sn-virk-pil" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="flex-shrink:0;"><path d="M6 9l6 6 6-6"/></svg></button>'
     /* Ida 30/7: ingen streg — logo + version samlet i foden under profilknappen */
-    + fodBagud + '<div class="sn-fod"><span>Version 4. august · 945</span></div>'
+    + fodBagud + '<div class="sn-fod"><span>Version 4. august · 946</span></div>'
     /* Ida 30/7: menuen åbner VED knappen (nederst t.v.) — ikke i modsatte hjørne */
     + '<div id="virkMenu" style="display:none;position:fixed;left:14px;bottom:96px;width:230px;background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:0 16px 40px rgba(0,0,0,0.15);padding:8px;z-index:90;">'
     + '<div style="padding:10px 12px 6px;font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--gray3);">' + esc(virkNavn) + '</div>'
@@ -28633,8 +28660,6 @@ function closeModal() {
   document.getElementById("modalBack").classList.remove("on");
   /* Kun briefen er bred — naeste popup skal ikke arve stoerrelsen (Ida 2/8) */
   try { document.getElementById("modalBody").classList.remove("bred"); } catch(e) {}
-  /* "Se brief"-bredden maa heller ikke arves af naeste popup (Ida 4/8) */
-  try { document.getElementById("modalBody").classList.remove("brief-samlet"); } catch(e) {}
   try { studieVaelgerRetur(); } catch(e) {}
 }
 
@@ -28963,6 +28988,6 @@ if ((location.hash || "").toLowerCase() === "#ole") {   // #ole = preview af Ole
      Laa den inde i #dashboard, ville kunderne aldrig se den (synk-reglen, Ida 31/7). -->
 <div id="dashBundnav" role="navigation" aria-label="Backstage"></div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 4. august · 945</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 4. august · 946</div>
 </body>
 </html>
