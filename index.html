@@ -1659,7 +1659,7 @@ body.modul-open .burger-btn, body.modul-open .bottom-nav, body.modul-open .dash-
     <button class="burger-item" onclick="toggleBurger(); togglePwPanel()">Skift adgangskode</button>
     <button class="burger-item" onclick="toggleBurger(); openChat()">Kontakt Ida</button>
     <button class="burger-item" style="color:var(--red);" onclick="custLogout()">Log ud</button>
-    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 4. august · 935</div>
+    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 4. august · 936</div>
   </div>
 </div>
 <div class="plus-menu" id="plusMenu" onclick="if(event.target===this)togglePlus()">
@@ -2747,7 +2747,7 @@ if (/somkunde=/.test(location.hash)) {
     <!-- Foden bliver nederst — den er det ENESTE der skubbes ned (Ida 30/7) -->
     <div class="dsb-fod">
       <button class="dsb-konto" onclick="dashKontoMenu()" title="Ida"><span class="dsb-initial">I</span><span class="dsb-konto-navn">Ida</span><svg class="dsb-konto-pil" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></button>
-      <div class="dsb-version"><span>Version 4. august · 935</span></div>
+      <div class="dsb-version"><span>Version 4. august · 936</span></div>
     </div>
   </div>
 
@@ -6296,7 +6296,7 @@ select titel,
          staa fast paa telefon. De hoerer i arket (samme fejl som "left" 31/7). -->
     <div id="dashFooter" style="z-index:50;display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--gray3);background:#fff;border-top:1px solid var(--border);padding:10px 26px;">
       <div style="font-size:10px;">© 2026 Energida · Alle rettigheder forbeholdes</div>
-      <div style="font-size:10px;margin-left:auto;">Version 4. august · 935 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
+      <div style="font-size:10px;margin-left:auto;">Version 4. august · 936 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
     </div>
   </div>
 </div>
@@ -10254,6 +10254,23 @@ async function modulerHent() {
    De flettes IND i KURSUS_MODULER, saa hvert eneste sted der i forvejen laeser
    l.ovelse — lektionssiden, Dit forloeb, Tip Top Studio, oevelses-oversigten — virker
    uaendret. Har en lektion ingen raekke i basen, staar kodens liste uroert. */
+/* EN OPGAVE HAR ET SPØRGSMÅL OG EN BESKRIVELSE (Ida 4/8).
+   En opgave gemmes enten som en ren STRENG (kun spørgsmålet, som hidtil) eller som et
+   OBJEKT {spm, besk}. Objekt-formen fandtes allerede til dag-vælgeren ({type:"dage"}),
+   saa basen skal ikke aendres — spm er jsonb og tager begge dele.
+   ALT, der laeser en opgave, gaar gennem disse to — saa kan en opgave aldrig komme til
+   at staa som "[object Object]" et sted, nogen glemte at rette. */
+function ovSpm(x) { return (x && typeof x === "object") ? String(x.spm || "") : String(x || ""); }
+function ovBesk(x) { return (x && typeof x === "object") ? String(x.besk || "") : ""; }
+/* Én normalisering, brugt baade naar der hentes og naar der gemmes: tom beskrivelse
+   giver en ren streng, saa basen ikke fyldes med {spm:"…",besk:""}. */
+function ovNorm(x) {
+  const q = ovSpm(x).trim(); if (!q) return null;
+  const b = ovBesk(x).trim();
+  const erObj = !!(x && typeof x === "object");
+  if (!b && !(erObj && x.type)) return q;
+  return Object.assign({}, erObj ? x : {}, { spm: q, besk: b });
+}
 let OEVELSER_DB = {};
 async function oevelserHent() {
   if (typeof sb === "undefined" || !sb) return false;
@@ -10262,8 +10279,11 @@ async function oevelserHent() {
     if (error || !data) return false;   /* tabellen findes ikke endnu — SQL-kortet er ikke koert, og intet gaar i stykker */
     OEVELSER_DB = {};
     data.forEach(function (r) {
+      /* FOER blev hver opgave tvunget gennem String() — et objekt blev til
+         "[object Object]". Derfor kunne basen kun rumme rene spoergsmaal. Nu bevares
+         formen, saa beskrivelsen overlever en hentning. */
       OEVELSER_DB[String(r.lektion_id)] = Array.isArray(r.spm)
-        ? r.spm.map(function (x) { return String(x || "").trim(); }).filter(Boolean) : [];
+        ? r.spm.map(ovNorm).filter(Boolean) : [];
     });
     oevelserFlet();
     return true;
@@ -11003,11 +11023,13 @@ function renderOvelse() {
   const o = OVELSE, l = KURSUS_LEKTIONER.find(x => x.id === o.id);
   const body = document.getElementById("ideBody");
   const item = l.ovelse[o.i];
-  const spm = typeof item === "string" ? item : item.spm;
+  const spm = ovSpm(item);
+  const besk = ovBesk(item);   /* beskrivelsen af spoergsmaalet (Ida 4/8) — valgfri */
   const erDage = typeof item === "object" && item.type === "dage";
   body.innerHTML = '<button class="modal-close" onclick="closeIdeaWizard()">&times;</button>'
     + '<div style="font-size:11px;font-weight:400;letter-spacing:1.8px;text-transform:uppercase;color:var(--red);">' + esc(l.titel) + '</div>'
     + '<h2 style="font-size:17px;margin-top:2px;">' + esc(spm) + '</h2>'
+    + (besk ? '<div style="font-size:12.5px;color:var(--gray3);line-height:1.6;margin:5px 0 2px;">' + esc(besk) + '</div>' : '')
     + '<div class="msub">Spørgsmål ' + (o.i + 1) + ' af ' + l.ovelse.length + '</div>'
     + (erEjerOevelse(l.id) ? '<div class="msub" style="margin-top:-4px;color:var(--red);">Ejerens øvelse — ét fælles svar for forretningen' + (erEjer() ? '' : '. Kig med her, og lad ejeren skrive svaret') + '.</div>' : '')
     + '<div style="display:flex;gap:4px;margin-bottom:14px;">' + l.ovelse.map((_, n) => '<div style="flex:1;height:4px;border-radius:12px;background:' + (n < o.i ? 'var(--red)' : 'var(--border)') + ';"></div>').join("") + '</div>'
@@ -11297,9 +11319,13 @@ function oevoTal(tal, label, roed) {
     + '<div style="font-size:10px;letter-spacing:1.2px;text-transform:uppercase;color:var(--gray3);margin-top:2px;">' + esc(label) + '</div></div>';
 }
 function oevoSpmRaekke(nr, tekst, roed) {
+  /* tager baade en ren streng og en opgave med beskrivelse (Ida 4/8) */
+  const q = ovSpm(tekst), b = ovBesk(tekst);
   return '<div style="display:flex;gap:9px;align-items:baseline;padding:4px 0 4px 2px;">'
     + '<span style="flex-shrink:0;font-size:11px;color:var(--red);font-variant-numeric:tabular-nums;">' + nr + '</span>'
-    + '<span style="flex:1;font-size:12px;color:' + (roed ? 'var(--black)' : 'var(--gray3)') + ';line-height:1.55;">' + esc(tekst) + '</span></div>';
+    + '<span style="flex:1;font-size:12px;color:' + (roed ? 'var(--black)' : 'var(--gray3)') + ';line-height:1.55;">' + esc(q)
+      + (b ? '<span style="display:block;font-size:11px;color:var(--gray3);opacity:.85;line-height:1.5;margin-top:2px;">' + esc(b) + '</span>' : '')
+    + '</span></div>';
 }
 function oevoHulRaekke(h, n) {
   return '<div style="display:flex;gap:9px;align-items:baseline;padding:7px 0;border-top:1px solid var(--gray);">'
@@ -12268,7 +12294,10 @@ function manusPrintOvelser(o) {
   try { lek = klipLektionFor(o); } catch(e) {}
   const ov = (lek && lek.l && Array.isArray(lek.l.ovelse)) ? lek.l.ovelse : [];
   if (!ov.length) return "";
-  const punkt = function (q) { return '<li>' + esc(typeof q === "string" ? q : (q && q.spm ? q.spm : "")) + '</li>'; };
+  const punkt = function (q) {
+    const b = ovBesk(q);
+    return '<li>' + esc(ovSpm(q)) + (b ? '<br><span style="color:#6F6B66;">' + esc(b) + '</span>' : '') + '</li>';
+  };
   return '<div class="sek"><div class="seklabel">Øvelser i appen (' + ov.length + ')</div>'
     + '<ol>' + ov.map(punkt).join("") + '</ol>'
     + '<div class="ovnote">Opgaverne bor i appen — de skal ikke med i videoen.</div></div>';
@@ -13820,11 +13849,17 @@ function klipOpgaver(o) {
 }
 function klipOpgRetHtml(lekId, liste) {
   const u = klipOpgUdkastFor(lekId, liste);
-  const felt = (t, i) => '<div style="display:flex;gap:9px;align-items:flex-start;padding:7px 0;border-top:1px solid var(--gray);">'
+  /* TO FELTER PR. OPGAVE (Ida 4/8): selve spoergsmaalet, og en beskrivelse under det.
+     Beskrivelsen er valgfri — er den tom, gemmes opgaven praecis som foer. */
+  const txt = "width:100%;box-sizing:border-box;font-family:Poppins,sans-serif;line-height:1.55;background:#fff;border:1px solid var(--border);border-radius:12px;padding:9px 11px;resize:vertical;";
+  const felt = (x, i) => '<div style="display:flex;gap:9px;align-items:flex-start;padding:9px 0;border-top:1px solid var(--gray);">'
     + '<span style="flex-shrink:0;font-size:11px;color:var(--red);font-variant-numeric:tabular-nums;padding-top:11px;min-width:12px;">' + (i + 1) + '</span>'
-    + '<textarea oninput="klipOpgAendre(' + i + ', this.value)" rows="2" placeholder="Skriv spørgsmålet…"'
-      + ' style="flex:1;min-width:0;font-family:Poppins,sans-serif;font-size:12.5px;line-height:1.55;color:var(--black);background:#fff;border:1px solid var(--border);border-radius:12px;padding:9px 11px;resize:vertical;">'
-      + esc(t) + '</textarea>'
+    + '<div style="flex:1;min-width:0;">'
+      + '<textarea oninput="klipOpgAendre(' + i + ', this.value)" rows="2" placeholder="Skriv spørgsmålet"'
+        + ' style="' + txt + 'font-size:12.5px;color:var(--black);">' + esc(ovSpm(x)) + '</textarea>'
+      + '<textarea oninput="klipOpgBeskAendre(' + i + ', this.value)" rows="2" placeholder="Beskriv spørgsmålet — hvad skal de tænke over? (valgfrit)"'
+        + ' style="' + txt + 'font-size:12px;color:var(--gray3);margin-top:6px;">' + esc(ovBesk(x)) + '</textarea>'
+    + '</div>'
     + '<button type="button" class="row-btn" style="flex-shrink:0;min-height:44px;" onclick="klipOpgFjern(\'' + esc(lekId) + '\',' + i + ')">Fjern</button></div>';
   return '<div style="padding:2px 0 10px;">'
     + (u.spm.length ? u.spm.map(felt).join("") : '<div style="font-size:12px;color:var(--gray3);padding:9px 2px;">Ingen spørgsmål endnu.</div>')
@@ -13834,8 +13869,21 @@ function klipOpgRetHtml(lekId, liste) {
       + '<button type="button" class="dbtn primary" style="min-height:44px;padding:10px 18px;" onclick="klipOpgGem(\'' + esc(lekId) + '\')">Gem øvelsen</button>'
     + '</div></div>';
 }
-/* Kun udkastet opdateres mens hun skriver — en gentegning her ville tage fokus fra feltet. */
-function klipOpgAendre(i, v) { if (KLIP_OPG_UDKAST && KLIP_OPG_UDKAST.spm[i] !== undefined) KLIP_OPG_UDKAST.spm[i] = v; }
+/* Kun udkastet opdateres mens hun skriver — en gentegning her ville tage fokus fra feltet.
+   En opgave uden beskrivelse bliver ved med at vaere en ren streng; foerst naar der SKRIVES
+   en beskrivelse, bliver den et objekt. Saa ser gamle opgaver uaendrede ud i basen. */
+function klipOpgAendre(i, v) {
+  const u = KLIP_OPG_UDKAST; if (!u || u.spm[i] === undefined) return;
+  const x = u.spm[i];
+  if (x && typeof x === "object") x.spm = v;
+  else u.spm[i] = v;
+}
+function klipOpgBeskAendre(i, v) {
+  const u = KLIP_OPG_UDKAST; if (!u || u.spm[i] === undefined) return;
+  const x = u.spm[i];
+  if (x && typeof x === "object") x.besk = v;
+  else u.spm[i] = { spm: String(x || ""), besk: v };
+}
 /* Lektionen kan staa aaben BAADE i briefen og paa tavlekortet bagved. Begge tegnes om,
    saa de aldrig kan vise hver sin udgave af de samme spoergsmaal. */
 function klipOpgVaerter(lekId) {
@@ -13858,7 +13906,7 @@ function klipOpgFjern(lekId, i) {
 }
 async function klipOpgGem(lekId) {
   const u = klipOpgUdkastFor(lekId, []);
-  const spm = u.spm.map(function (t) { return String(t || "").trim(); }).filter(Boolean);
+  const spm = u.spm.map(ovNorm).filter(Boolean);
   const ok = await oevelserGem(lekId, spm);
   if (!ok) klipOpgBesked(lekId, false, spm.length);
   /* FOER: renderKlipperum() her toerrede kvitteringen vaek i samme oejeblik den var skrevet
@@ -18351,7 +18399,7 @@ function buildSideNav(def) {
       + '<span style="opacity:.55;">' + ikon("", "Kalender", "laastBesked()", IK.kal) + '</span>'
       + '<span style="opacity:.55;">' + ikon("", "Værktøjskassen", "laastBesked()", IK.tools) + '</span>'
       + '<button class="sn-virk-knap" onclick="toggleVirkMenu(event)" title="' + esc(knapNavn) + '" aria-label="Profil" style="margin-left:auto;"><span class="sn-initial">' + esc((knapNavn || "?").trim().charAt(0).toUpperCase()) + '</span><span class="sn-virk-navn" style="white-space:normal;overflow-wrap:anywhere;">' + esc(knapNavn) + '</span><svg class="sn-virk-pil" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="flex-shrink:0;"><path d="M6 9l6 6 6-6"/></svg></button>'
-      + fodBagud + '<div class="sn-fod"><span>Version 4. august · 935</span></div>'
+      + fodBagud + '<div class="sn-fod"><span>Version 4. august · 936</span></div>'
       /* Ida 30/7: alle konto-punkter bor i profilmenuen — ingen streg/sn-bund */
       + '<div id="virkMenu" style="display:none;position:fixed;left:14px;bottom:96px;width:230px;background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:0 16px 40px rgba(0,0,0,0.15);padding:8px;z-index:90;">'
       + '<div style="padding:10px 12px 6px;font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--gray3);">' + esc(virkNavn) + '</div>'
@@ -18408,7 +18456,7 @@ function buildSideNav(def) {
         uPkt("", "Lektioner", "showTab(12)")))
     + '<button class="sn-virk-knap" onclick="toggleVirkMenu(event)" title="' + esc(knapNavn) + '" aria-label="Profil"><span class="sn-initial">' + esc((knapNavn || "?").trim().charAt(0).toUpperCase()) + '</span><span class="sn-virk-navn" style="white-space:normal;overflow-wrap:anywhere;">' + esc(knapNavn) + '</span><svg class="sn-virk-pil" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="flex-shrink:0;"><path d="M6 9l6 6 6-6"/></svg></button>'
     /* Ida 30/7: ingen streg — logo + version samlet i foden under profilknappen */
-    + fodBagud + '<div class="sn-fod"><span>Version 4. august · 935</span></div>'
+    + fodBagud + '<div class="sn-fod"><span>Version 4. august · 936</span></div>'
     /* Ida 30/7: menuen åbner VED knappen (nederst t.v.) — ikke i modsatte hjørne */
     + '<div id="virkMenu" style="display:none;position:fixed;left:14px;bottom:96px;width:230px;background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:0 16px 40px rgba(0,0,0,0.15);padding:8px;z-index:90;">'
     + '<div style="padding:10px 12px 6px;font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--gray3);">' + esc(virkNavn) + '</div>'
@@ -28684,6 +28732,6 @@ if ((location.hash || "").toLowerCase() === "#ole") {   // #ole = preview af Ole
      Laa den inde i #dashboard, ville kunderne aldrig se den (synk-reglen, Ida 31/7). -->
 <div id="dashBundnav" role="navigation" aria-label="Backstage"></div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 4. august · 935</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 4. august · 936</div>
 </body>
 </html>
