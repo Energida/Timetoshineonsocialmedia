@@ -1714,7 +1714,7 @@ body.modul-open .burger-btn, body.modul-open .bottom-nav, body.modul-open .dash-
     <button class="burger-item" onclick="toggleBurger(); togglePwPanel()">Skift adgangskode</button>
     <button class="burger-item" onclick="toggleBurger(); openChat()">Kontakt Ida</button>
     <button class="burger-item" style="color:var(--red);" onclick="custLogout()">Log ud</button>
-    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 5. august · 953</div>
+    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 5. august · 954</div>
   </div>
 </div>
 <div class="plus-menu" id="plusMenu" onclick="if(event.target===this)togglePlus()">
@@ -2806,7 +2806,7 @@ if (/somkunde=/.test(location.hash)) {
     <!-- Foden bliver nederst — den er det ENESTE der skubbes ned (Ida 30/7) -->
     <div class="dsb-fod">
       <button class="dsb-konto" onclick="dashKontoMenu()" title="Ida"><span class="dsb-initial">I</span><span class="dsb-konto-navn">Ida</span><svg class="dsb-konto-pil" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></button>
-      <div class="dsb-version"><span>Version 5. august · 953</span></div>
+      <div class="dsb-version"><span>Version 5. august · 954</span></div>
     </div>
   </div>
 
@@ -6355,7 +6355,7 @@ select titel,
          staa fast paa telefon. De hoerer i arket (samme fejl som "left" 31/7). -->
     <div id="dashFooter" style="z-index:50;display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--gray3);background:#fff;border-top:1px solid var(--border);padding:10px 26px;">
       <div style="font-size:10px;">© 2026 Energida · Alle rettigheder forbeholdes</div>
-      <div style="font-size:10px;margin-left:auto;">Version 5. august · 953 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
+      <div style="font-size:10px;margin-left:auto;">Version 5. august · 954 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
     </div>
   </div>
 </div>
@@ -10098,7 +10098,12 @@ function kursusSynkFraTavlen() {
       const gl = ekstra[x.n.id] || {};
       const ny = { id: x.n.id, titel: titel || gl.titel || x.n.id };
       if (gl.ovelse) ny.ovelse = gl.ovelse;
-      if (gl.video) ny.video = gl.video;
+      /* VIDEOLINKET KOMMER FRA TAVLEN (Ida 5/8). Foer blev l.video KUN baaret videre fra
+         det, koden allerede havde — og da ingen lektion har et link i koden, naaede tavlens
+         video_link aldrig frem. Uden det her ville "skjul til videoen er klar" vaere en doer,
+         der aldrig kunne aabne igen. */
+      if (String(x.o.video_link || "").trim()) ny.video = String(x.o.video_link).trim();
+      else if (gl.video) ny.video = gl.video;
       if (gl.tid) ny.tid = gl.tid;
       if (!grupper.has(modul)) grupper.set(modul, []);
       grupper.get(modul).push(ny);
@@ -10135,7 +10140,9 @@ async function kursusHentLektioner() {
     const gl = ekstra[r.id] || {};
     const ny = { id: r.id, titel: String(r.titel || "").trim() || gl.titel || r.id };
     if (gl.ovelse) ny.ovelse = gl.ovelse;
-    if (gl.video) ny.video = gl.video;
+    /* samme kilde som ovenfor: tavlens videolink vinder over kodens (Ida 5/8) */
+    if (String(r.video_link || "").trim()) ny.video = String(r.video_link).trim();
+    else if (gl.video) ny.video = gl.video;
     if (gl.tid) ny.tid = gl.tid;
     if (!grupper.has(modul)) grupper.set(modul, []);
     grupper.get(modul).push(ny);
@@ -10428,14 +10435,20 @@ function kursusAdgang() {
   const a = CURRENT_DEF && CURRENT_DEF.lektion_adgang;
   return (Array.isArray(a) && a.length) ? new Set(a) : null;
 }
+/* EN LEKTION UDEN VIDEO VISES IKKE (Ida 5/8: "lektionerne skal skjules indtil jeg har
+   videoerne klar"). Annette stod i en lektion, der kun sagde "Videoen er på vej" — en
+   kunde skal ikke betale for at kigge paa en tom plads.
+   Ida selv ser stadig alt (pubErPubliceret slipper KLIP_ER_IDA igennem), saa hun kan
+   arbejde videre i sin egen admin. */
+function lekHarVideo(l) { return !!String((l && l.video) || "").trim(); }
 function kursusModulerAktive() {
   const adg = kursusAdgang();
-  /* To porte, begge skal være åbne: lektionen skal være PUBLICERET (Idas knap),
-     og kunden skal have adgang til den. Uden publicering er der intet at se —
-     tidligere betød "ingen adgangsliste" at kunden så ALT. */
+  /* TRE porte, alle skal være åbne: lektionen skal være PUBLICERET (Idas knap), kunden
+     skal have adgang til den, og der skal ligge en VIDEO. Uden publicering er der intet
+     at se — tidligere betød "ingen adgangsliste" at kunden så ALT. */
   return KURSUS_MODULER
     .map(m => {
-      const lek = m.lektioner.filter(l => pubErPubliceret(l.id) && (!adg || adg.has(l.id)));
+      const lek = m.lektioner.filter(l => pubErPubliceret(l.id) && (!adg || adg.has(l.id)) && (KLIP_ER_IDA || lekHarVideo(l)));
       /* Nummeret laeses af lektions-id'et ("2-1" -> "2") og BAERER modulet. Titlen kan
          derfor overskrives fra Maskinrummet uden at grupperingen roeres — se
          MODUL-FORSIDER nedenfor. Findes ingen tekst, staar tavlens navn uroert. */
@@ -11461,6 +11474,17 @@ function renderKursusHjem() {
   if (hilsen) hilsen.innerHTML = 'Velkommen' + (CURRENT_NAVN ? ' tilbage, <span style="color:var(--red);font-style:italic;">' + esc(CURRENT_NAVN) + '</span>' : '!');
   const naeste = kursusNaesteLektion();
   const st = document.getElementById("kursusStartTitel"), ss = document.getElementById("kursusStartSub"), sk = document.getElementById("kursusStartKnap");
+  /* INGEN LEKTIONER ENDNU (Ida 5/8). Naar videoerne ikke er klar, er der intet forloeb at
+     gaa i gang med — og saa maa der ikke staa "Lad os komme i gang" med en knap, der
+     ikke foerer nogen steder hen. En knap uden data bag sig er en blindgyde (30/7).
+     Vi siger det, som det er, og lader knappen gaa. */
+  if (!AKTIVE.length) {
+    if (st) st.textContent = "Forløbet er på vej";
+    if (ss) ss.textContent = "Ida optager lektionerne i øjeblikket. Så snart de første er klippet, dukker de op her — og du får besked.";
+    if (sk) { sk.style.display = "none"; sk.onclick = null; }
+    return;
+  }
+  if (sk) sk.style.display = "";
   if (kursusFaerdig()) {
     if (st) st.textContent = "Du er igennem — hele appen er din";
     if (ss) ss.textContent = "Alle lektioner er gennemført. Idébanken, kalenderen og strategien er låst op.";
@@ -11469,6 +11493,13 @@ function renderKursusHjem() {
     if (st) st.textContent = 'Fortsæt med: ' + (naeste ? naeste.titel : '');
     if (ss) ss.textContent = "Du er " + setAntal + " af " + AKTIVE.length + " lektioner inde — bliv ved, det bygger din strategi.";
     if (sk) sk.textContent = "Fortsæt forløbet";
+  } else {
+    /* IKKE BEGYNDT ENDNU. Teksten skrives EKSPLICIT — den blev foer arvet fra HTML'ens
+       standard, og saa blev "Forløbet er på vej" haengende, naar den foerste video landede.
+       En tilstand, der kun gaelder fordi ingen har skrevet noget andet, er ikke en tilstand. */
+    if (st) st.textContent = "Lad os komme i gang";
+    if (ss) ss.textContent = "Se første lektion — resten af appen låser op, efterhånden som du gennemfører forløbet.";
+    if (sk) { sk.textContent = "Lad os komme i gang"; sk.onclick = () => kursusNaeste(); }
   }
   renderUdsat();
   renderNotesbog();
@@ -18795,7 +18826,7 @@ function buildSideNav(def) {
       + '<span style="opacity:.55;">' + ikon("", "Kalender", "laastBesked()", IK.kal) + '</span>'
       + '<span style="opacity:.55;">' + ikon("", "Værktøjskassen", "laastBesked()", IK.tools) + '</span>'
       + '<button class="sn-virk-knap" onclick="toggleVirkMenu(event)" title="' + esc(knapNavn) + '" aria-label="Profil" style="margin-left:auto;"><span class="sn-initial">' + esc((knapNavn || "?").trim().charAt(0).toUpperCase()) + '</span><span class="sn-virk-navn" style="white-space:normal;overflow-wrap:anywhere;">' + esc(knapNavn) + '</span><svg class="sn-virk-pil" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="flex-shrink:0;"><path d="M6 9l6 6 6-6"/></svg></button>'
-      + fodBagud + '<div class="sn-fod"><span>Version 5. august · 953</span></div>'
+      + fodBagud + '<div class="sn-fod"><span>Version 5. august · 954</span></div>'
       /* Ida 30/7: alle konto-punkter bor i profilmenuen — ingen streg/sn-bund */
       + '<div id="virkMenu" style="display:none;position:fixed;left:14px;bottom:96px;width:230px;background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:0 16px 40px rgba(0,0,0,0.15);padding:8px;z-index:90;">'
       + '<div style="padding:10px 12px 6px;font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--gray3);">' + esc(virkNavn) + '</div>'
@@ -18852,7 +18883,7 @@ function buildSideNav(def) {
         uPkt("", "Lektioner", "showTab(12)")))
     + '<button class="sn-virk-knap" onclick="toggleVirkMenu(event)" title="' + esc(knapNavn) + '" aria-label="Profil"><span class="sn-initial">' + esc((knapNavn || "?").trim().charAt(0).toUpperCase()) + '</span><span class="sn-virk-navn" style="white-space:normal;overflow-wrap:anywhere;">' + esc(knapNavn) + '</span><svg class="sn-virk-pil" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="flex-shrink:0;"><path d="M6 9l6 6 6-6"/></svg></button>'
     /* Ida 30/7: ingen streg — logo + version samlet i foden under profilknappen */
-    + fodBagud + '<div class="sn-fod"><span>Version 5. august · 953</span></div>'
+    + fodBagud + '<div class="sn-fod"><span>Version 5. august · 954</span></div>'
     /* Ida 30/7: menuen åbner VED knappen (nederst t.v.) — ikke i modsatte hjørne */
     + '<div id="virkMenu" style="display:none;position:fixed;left:14px;bottom:96px;width:230px;background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:0 16px 40px rgba(0,0,0,0.15);padding:8px;z-index:90;">'
     + '<div style="padding:10px 12px 6px;font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--gray3);">' + esc(virkNavn) + '</div>'
@@ -29128,6 +29159,6 @@ if ((location.hash || "").toLowerCase() === "#ole") {   // #ole = preview af Ole
      Laa den inde i #dashboard, ville kunderne aldrig se den (synk-reglen, Ida 31/7). -->
 <div id="dashBundnav" role="navigation" aria-label="Backstage"></div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 5. august · 953</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 5. august · 954</div>
 </body>
 </html>
