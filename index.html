@@ -1714,7 +1714,7 @@ body.modul-open .burger-btn, body.modul-open .bottom-nav, body.modul-open .dash-
     <button class="burger-item" onclick="toggleBurger(); togglePwPanel()">Skift adgangskode</button>
     <button class="burger-item" onclick="toggleBurger(); openChat()">Kontakt Ida</button>
     <button class="burger-item" style="color:var(--red);" onclick="custLogout()">Log ud</button>
-    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 5. august · 955</div>
+    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 5. august · 956</div>
   </div>
 </div>
 <div class="plus-menu" id="plusMenu" onclick="if(event.target===this)togglePlus()">
@@ -2416,6 +2416,8 @@ if (/somkunde=/.test(location.hash)) {
           <span style="font-size:11px;color:var(--gray3);text-transform:uppercase;letter-spacing:1px;white-space:nowrap;">Udfyldt</span>
         </div>
       </div>
+      <!-- GODKENDELSE (Ida 5/8): baaret af briefen selv, saa den staar oeverst uanset hvilken side man er paa -->
+      <div id="briefGodkBar" style="display:none;"></div>
       <div id="briefGrid">
         <div id="briefRail"></div>
         <div id="briefWrap"></div>
@@ -2806,7 +2808,7 @@ if (/somkunde=/.test(location.hash)) {
     <!-- Foden bliver nederst — den er det ENESTE der skubbes ned (Ida 30/7) -->
     <div class="dsb-fod">
       <button class="dsb-konto" onclick="dashKontoMenu()" title="Ida"><span class="dsb-initial">I</span><span class="dsb-konto-navn">Ida</span><svg class="dsb-konto-pil" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></button>
-      <div class="dsb-version"><span>Version 5. august · 955</span></div>
+      <div class="dsb-version"><span>Version 5. august · 956</span></div>
     </div>
   </div>
 
@@ -6355,7 +6357,7 @@ select titel,
          staa fast paa telefon. De hoerer i arket (samme fejl som "left" 31/7). -->
     <div id="dashFooter" style="z-index:50;display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--gray3);background:#fff;border-top:1px solid var(--border);padding:10px 26px;">
       <div style="font-size:10px;">© 2026 Energida · Alle rettigheder forbeholdes</div>
-      <div style="font-size:10px;margin-left:auto;">Version 5. august · 955 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
+      <div style="font-size:10px;margin-left:auto;">Version 5. august · 956 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
     </div>
   </div>
 </div>
@@ -7995,7 +7997,8 @@ function openBriefSide(id) {
     + q('Hvem eller hvad skal med i indholdet?', hint('Klargøring: personer, produkter, rekvisitter — så alt er klar, før kameraet tændes.') + ta('medIIndhold', 'Fx to fra teamet + efterårsnyhederne…'))
     + q('Hvor skal det laves?', ta('hvorLaves', 'Fx i butikken ved vinduet · på lageret · udenfor…'))
     + (CUSTOMER_NAV && CURRENT_DEF && (erForloeb(CURRENT_DEF) || CURRENT_DEF.type === "contentplanner")
-      ? '<div style="display:flex;justify-content:flex-end;align-items:center;gap:10px;margin-top:14px;"><span id="briefGodkMsg" style="font-size:11px;color:var(--gray3);">' + ((IDEER.find(x => x.id === BRIEF_ID) || {}).status === "Klar til godkendelse" ? 'Sendt til godkendelse \u2713' : '') + '</span><button type="button" class="dbtn primary" onclick="briefTilGodkendelse(this)">Send til godkendelse hos Ida</button></div>'
+      ? '<div style="display:flex;justify-content:flex-end;align-items:center;gap:10px;margin-top:14px;"><span id="briefGodkMsg" style="font-size:11px;color:var(--gray3);">' + ((IDEER.find(x => x.id === BRIEF_ID) || {}).status === "Klar til godkendelse" ? 'Sendt til godkendelse \u2713' : '') + '</span><button type="button" class="dbtn primary" onclick="briefTilGodkendelse(this)">Send til godkendelse</button></div>'
+      + '<div id="briefGodkVaelg" style="display:none;background:#fff;border:1px solid var(--border);border-radius:20px;padding:16px 20px;margin-top:10px;"></div>'
       : '')
     /* Råfiler/Færdigt materiale er fjernet fra briefen (Ida 27/7) — Drive-linket bor på kundens dashboard */
     ;
@@ -8028,6 +8031,7 @@ function openBriefSide(id) {
      og dér ville et spring til overblikket rive een ud af det, man var i gang med. */
   if (!sammeBrief && briefErUdfyldt()) briefSamletVis(); else briefSamletSkjul();
   try { briefPersonerFyld(); } catch(e) {}
+  try { briefGodkBarVis(); } catch(e) {}   /* godkendelses-baren oeverst (Ida 5/8) */
   const scBR = document.querySelector(".content");
   if (scBR && !scBR.__briefRail) {
     scBR.__briefRail = 1;
@@ -8513,14 +8517,130 @@ function openBrief(id) {
   }
   openBriefSide(id);
 }
+/* ============ GODKENDELSE AF EN BRIEF (Ida 5/8) ============
+   Den gaar BEGGE veje, og det var dét, der manglede:
+   · I GOT YOU / forloeb: KUNDEN skriver briefen og sender den til Ida.
+   · CONTENT PLANNER: IDA skriver briefene og sender dem til kunden — "send til godkendelse
+     til @Annette". Den retning fandtes slet ikke i appen.
+   Derfor er modtageren en NAVNGIVEN person, ikke "den anden part". Alt bor i briefens eget
+   datafelt (content_ideer.brief), saa der skal ingen SQL til.
+     brief.godk = { til, fra, sendt, note }   — hvem venter vi paa, og hvad skal de kigge efter
+     brief.svar = { af, dato, valg, note }    — hvad de svarede, og hvad de rettede
+   Den, der ikke selv har sendt, er modtager. Enkel regel, og den holder begge veje. */
+function godkMig() {
+  try { if (CURRENT_NAVN && String(CURRENT_NAVN).trim()) return String(CURRENT_NAVN).trim(); } catch(e) {}
+  try { if (KLIP_ER_IDA) return "Ida"; } catch(e) {}
+  return "";
+}
+function godkModtagere() {
+  /* Er jeg Ida, sender jeg til kundens folk. Er jeg kunden, sender jeg til Ida. */
+  const mig = godkMig();
+  const folk = (Array.isArray(BRIEF_PERSONER) ? BRIEF_PERSONER : []).filter(n => n && n !== mig);
+  if (mig === "Ida") return folk;
+  return ["Ida"];
+}
+function briefGodkPanelVis() {
+  const modt = godkModtagere();
+  const v = document.getElementById("briefGodkVaelg"); if (!v) return;
+  if (!modt.length) {
+    v.innerHTML = '<div style="font-size:11.5px;color:var(--gray3);line-height:1.6;">Der er ingen personer på denne kode endnu. Kunden opretter sit eget login via delelinket på Adgang-fanen — så kan briefen sendes til dem.</div>';
+    v.style.display = "block"; return;
+  }
+  v.innerHTML = '<div style="font-size:10px;letter-spacing:1.4px;text-transform:uppercase;color:var(--red);margin-bottom:7px;">Send til</div>'
+    + '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:9px;">'
+    + modt.map((n, i) => '<button type="button" class="chip-btn' + (i === 0 ? ' on' : '') + '" data-godkperson="' + esc(n) + '" onclick="[...this.parentElement.children].forEach(b=>b.classList.remove(\'on\'));this.classList.add(\'on\');">' + esc(n) + '</button>').join("")
+    + '</div>'
+    + '<textarea id="briefGodkNote" class="sk-input" style="min-height:64px;" placeholder="Hvad skal de kigge efter? (valgfrit)"></textarea>'
+    + '<div style="display:flex;justify-content:flex-end;gap:8px;margin-top:9px;">'
+    + '<button type="button" class="row-btn" onclick="document.getElementById(\'briefGodkVaelg\').style.display=\'none\';">Fortryd</button>'
+    + '<button type="button" class="dbtn primary" style="padding:10px 18px;" onclick="briefGodkSend(this)">Send til godkendelse</button>'
+    + '</div>';
+  v.style.display = "block";
+}
+async function briefGodkSend(btn) {
+  if (!BRIEF_ID) return;
+  const valgt = document.querySelector("#briefGodkVaelg [data-godkperson].on");
+  const til = valgt ? valgt.getAttribute("data-godkperson") : "";
+  if (!til) return;
+  const nEl = document.getElementById("briefGodkNote");
+  if (btn) { btn.disabled = true; btn.textContent = "Sender…"; }
+  BRIEF_STATE.godk = { til: til, fra: godkMig(), sendt: new Date().toISOString(), note: nEl ? nEl.value.trim() : "" };
+  delete BRIEF_STATE.svar;   /* en ny runde starter forfra — det gamle svar hoerer til den forrige */
+  try { await saveBrief(true); } catch(e) {}
+  const ok = await ideUpdate(BRIEF_ID, { status: "Klar til godkendelse" });
+  const it = IDEER.find(x => x.id === BRIEF_ID); if (it) it.status = "Klar til godkendelse";
+  const v = document.getElementById("briefGodkVaelg"); if (v) v.style.display = "none";
+  const msg = document.getElementById("briefGodkMsg");
+  if (msg) msg.textContent = ok ? ("Sendt til " + til) : "Kunne IKKE sendes — prøv igen";
+  briefGodkBarVis();
+}
+async function briefGodkSvar(valg, btn) {
+  if (!BRIEF_ID) return;
+  const nEl = document.getElementById("briefSvarNote");
+  const note = nEl ? nEl.value.trim() : "";
+  if (btn) { btn.disabled = true; btn.textContent = "Gemmer…"; }
+  BRIEF_STATE.svar = { af: godkMig(), dato: new Date().toISOString(), valg: valg, note: note };
+  /* Modtagerens rettelser i felterne gemmes i SAMME kald som svaret — de hoerer sammen
+     og maa aldrig kunne komme fra hinanden. */
+  try { await saveBrief(true); } catch(e) {}
+  const nyStatus = valg === "godkendt" ? "Godkendt" : "Brief i gang";
+  const ok = await ideUpdate(BRIEF_ID, { status: nyStatus });
+  const it = IDEER.find(x => x.id === BRIEF_ID); if (it) it.status = nyStatus;
+  if (!ok) { if (btn) { btn.disabled = false; btn.textContent = "Prøv igen"; } return; }
+  briefGodkBarVis();
+  try { renderIndbakke(); } catch(e) {}
+}
+function briefGodkBarVis() {
+  const bar = document.getElementById("briefGodkBar"); if (!bar) return;
+  const it = IDEER.find(x => x.id === BRIEF_ID) || {};
+  const g = BRIEF_STATE.godk, sv = BRIEF_STATE.svar, mig = godkMig();
+  const kort = (kant, inder) => '<div style="background:#fff;border:1px solid ' + kant + ';border-radius:20px;padding:16px 20px;margin-bottom:16px;">' + inder + '</div>';
+  const label = t => '<div style="font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--red);border-bottom:1px solid var(--red);padding-bottom:8px;margin-bottom:11px;">' + t + '</div>';
+  if (sv && sv.valg) {
+    const godkendt = sv.valg === "godkendt";
+    bar.innerHTML = kort(godkendt ? "var(--border)" : "var(--red-line)",
+      label(godkendt ? ("Godkendt af " + esc(sv.af || "")) : ("Sendt retur af " + esc(sv.af || "")))
+      + (sv.note ? '<div style="font-size:12.5px;line-height:1.6;">' + esc(sv.note) + '</div>' : '<div style="font-size:12px;color:var(--gray3);">Ingen kommentar.</div>')
+      + (godkendt && !it.dato ? '<div style="display:flex;justify-content:flex-end;margin-top:12px;"><button type="button" class="dbtn primary" style="padding:10px 18px;" onclick="showPlanDate(\'" + it.id + "\')">Vælg dato</button></div>' : ''));
+    bar.style.display = "block"; return;
+  }
+  if (g && g.til && it.status === "Klar til godkendelse") {
+    const erModtager = String(g.fra || "") !== mig;
+    if (erModtager) {
+      bar.innerHTML = kort("var(--red)",
+        label(esc(g.fra || "") + " har sendt den til din godkendelse")
+        + (g.note ? '<div style="font-size:12.5px;line-height:1.6;margin-bottom:12px;">' + esc(g.note) + '</div>' : '')
+        + '<div style="font-size:11.5px;color:var(--gray3);line-height:1.6;margin-bottom:10px;">Ret det, du vil have anderledes, direkte i briefen — og skriv gerne hvad du har ændret.</div>'
+        + '<textarea id="briefSvarNote" class="sk-input" style="min-height:70px;" placeholder="Din kommentar — fx hvad du har rettet"></textarea>'
+        + '<div style="display:flex;justify-content:flex-end;gap:8px;margin-top:10px;">'
+        + '<button type="button" class="dbtn" style="background:#fff;" onclick="briefGodkSvar(\'retur\', this)">Send retur</button>'
+        + '<button type="button" class="dbtn primary" style="padding:10px 18px;" onclick="briefGodkSvar(\'godkendt\', this)">Godkend</button>'
+        + '</div>');
+    } else {
+      bar.innerHTML = kort("var(--border)",
+        label("Venter på " + esc(g.til))
+        + '<div style="font-size:12px;color:var(--gray3);line-height:1.6;">Sendt ' + esc(godkNaar(g.sendt)) + (g.note ? ' · ' + esc(g.note) : '') + '</div>');
+    }
+    bar.style.display = "block"; return;
+  }
+  bar.style.display = "none";
+}
+function godkNaar(iso) {
+  if (!iso) return "";
+  try {
+    const d = new Date(iso), nu = new Date();
+    const dage = Math.floor((nu - d) / 86400000);
+    if (dage <= 0) return "i dag";
+    if (dage === 1) return "i går";
+    return "for " + dage + " dage siden";
+  } catch(e) { return ""; }
+}
 async function briefTilGodkendelse(btn) {
-  /* I GOT YOU/planner-processen (Ida 27/7): kunden sender briefen til Idas godkendelse — status bærer flowet */
+  /* Knappen AABNER nu valget af person i stedet for at sende blindt (Ida 5/8) */
   if (!BRIEF_ID) return;
   try { await saveBrief(true); } catch(e) {}
-  try { await ideUpdate(BRIEF_ID, { status: "Klar til godkendelse" }); } catch(e) {}
-  const it = IDEER.find(x => x.id === BRIEF_ID); if (it) it.status = "Klar til godkendelse";
-  const m = document.getElementById("briefGodkMsg"); if (m) m.textContent = "Sendt til godkendelse \u2713";
-  if (btn) { btn.disabled = true; btn.style.opacity = ".55"; }
+  try { await briefPersonerFyld(); } catch(e) {}
+  briefGodkPanelVis();
 }
 function energidaKonfetti() {
   try {
@@ -9937,9 +10057,25 @@ function indbakkeRegn() {
   const nu = new Date();
   const idagL = nu.getFullYear() + "-" + String(nu.getMonth() + 1).padStart(2, "0") + "-" + String(nu.getDate()).padStart(2, "0");
   const handling = [];
+  /* VENTER PÅ MIG (Ida 5/8) — øverst, for det er det eneste, en anden sidder og venter på.
+     "Mig" er den, briefen er sendt TIL. Har jeg selv sendt den, er den ikke min opgave. */
+  const migNu = (typeof godkMig === "function") ? godkMig() : "";
+  (IDEER || []).filter(x => {
+    const g = x.brief && x.brief.godk;
+    return x.status === "Klar til godkendelse" && g && g.til && String(g.til) === migNu && String(g.fra || "") !== migNu;
+  }).forEach(x => {
+    const g = x.brief.godk;
+    handling.push({
+      t: esc(String(g.fra || "")) + ' har sendt "' + esc(storStart(x.titel || "Uden titel")) + '" til din godkendelse',
+      s: (g.note ? esc(g.note) : 'Ret det, du vil have anderledes — og skriv hvad du har ændret') + ' · sendt ' + esc(typeof godkNaar === "function" ? godkNaar(g.sendt) : ""),
+      knap: 'Åbn briefen', klik: "openBriefSide('" + x.id + "')",
+      aabn: "openBriefSide('" + x.id + "')"
+    });
+  });
   (IDEER || []).filter(x => x.status === "Godkendt" && !x.dato).forEach(x => handling.push({
-    t: 'Ida har godkendt "' + esc(storStart(x.titel || "Uden titel")) + '"',
-    s: 'Vælg dato og planlæg den',
+    /* Navnet aflaeses af svaret — det er ikke altid Ida, der godkender (Ida 5/8) */
+    t: esc(String((x.brief && x.brief.svar && x.brief.svar.af) || "Ida")) + ' har godkendt "' + esc(storStart(x.titel || "Uden titel")) + '"',
+    s: (x.brief && x.brief.svar && x.brief.svar.note) ? esc(x.brief.svar.note) : 'Vælg dato og planlæg den',
     knap: 'Planlæg den', klik: "showPlanDate('" + x.id + "')",
     aabn: "openBriefSide('" + x.id + "')"
   }));
@@ -18826,7 +18962,7 @@ function buildSideNav(def) {
       + '<span style="opacity:.55;">' + ikon("", "Kalender", "laastBesked()", IK.kal) + '</span>'
       + '<span style="opacity:.55;">' + ikon("", "Værktøjskassen", "laastBesked()", IK.tools) + '</span>'
       + '<button class="sn-virk-knap" onclick="toggleVirkMenu(event)" title="' + esc(knapNavn) + '" aria-label="Profil" style="margin-left:auto;"><span class="sn-initial">' + esc((knapNavn || "?").trim().charAt(0).toUpperCase()) + '</span><span class="sn-virk-navn" style="white-space:normal;overflow-wrap:anywhere;">' + esc(knapNavn) + '</span><svg class="sn-virk-pil" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="flex-shrink:0;"><path d="M6 9l6 6 6-6"/></svg></button>'
-      + fodBagud + '<div class="sn-fod"><span>Version 5. august · 955</span></div>'
+      + fodBagud + '<div class="sn-fod"><span>Version 5. august · 956</span></div>'
       /* Ida 30/7: alle konto-punkter bor i profilmenuen — ingen streg/sn-bund */
       + '<div id="virkMenu" style="display:none;position:fixed;left:14px;bottom:96px;width:230px;background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:0 16px 40px rgba(0,0,0,0.15);padding:8px;z-index:90;">'
       + '<div style="padding:10px 12px 6px;font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--gray3);">' + esc(virkNavn) + '</div>'
@@ -18883,7 +19019,7 @@ function buildSideNav(def) {
         uPkt("", "Lektioner", "showTab(12)")))
     + '<button class="sn-virk-knap" onclick="toggleVirkMenu(event)" title="' + esc(knapNavn) + '" aria-label="Profil"><span class="sn-initial">' + esc((knapNavn || "?").trim().charAt(0).toUpperCase()) + '</span><span class="sn-virk-navn" style="white-space:normal;overflow-wrap:anywhere;">' + esc(knapNavn) + '</span><svg class="sn-virk-pil" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="flex-shrink:0;"><path d="M6 9l6 6 6-6"/></svg></button>'
     /* Ida 30/7: ingen streg — logo + version samlet i foden under profilknappen */
-    + fodBagud + '<div class="sn-fod"><span>Version 5. august · 955</span></div>'
+    + fodBagud + '<div class="sn-fod"><span>Version 5. august · 956</span></div>'
     /* Ida 30/7: menuen åbner VED knappen (nederst t.v.) — ikke i modsatte hjørne */
     + '<div id="virkMenu" style="display:none;position:fixed;left:14px;bottom:96px;width:230px;background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:0 16px 40px rgba(0,0,0,0.15);padding:8px;z-index:90;">'
     + '<div style="padding:10px 12px 6px;font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--gray3);">' + esc(virkNavn) + '</div>'
@@ -19953,7 +20089,10 @@ function tidligereToggle() {
    7 trin: Idé → Brief i gang → Klar til godkendelse → Godkendt → Planlagt → Publiceret (gemmes som "Postet") → Målt.
    Godkendelses-trinnene findes KUN for I GOT YOU (type "forloeb") — alle andre springer dem over.
    Datoen ændrer ALDRIG status — de to lever hver for sig. */
-function harGodkendelse() { try { return !!(CURRENT_DEF && CURRENT_DEF.type === "forloeb"); } catch(e) { return false; } }
+/* Godkendelse gaelder BEGGE kundetyper (Ida 5/8): forloeb sender til Ida, content-planner
+   faar briefene FRA Ida og skal kunne godkende dem. Foer var trinnet kun taendt for forloeb,
+   saa planner-kunder havde slet ikke "Klar til godkendelse" i deres statusliste. */
+function harGodkendelse() { try { return !!(CURRENT_DEF && (CURRENT_DEF.type === "forloeb" || CURRENT_DEF.type === "contentplanner")); } catch(e) { return false; } }
 /* STATUSSEN HEDDER "POSTET" (Ida 4/8) — visningsnavnet "Publiceret" er ude. Datanoeglen
    har hele tiden vaeret "Postet", saa intet i basen roeres; det var kun etiketten, der
    sagde noget andet end resten af appen. "Maalt" hedder fortsat "Indblik". */
@@ -29193,6 +29332,6 @@ if ((location.hash || "").toLowerCase() === "#ole") {   // #ole = preview af Ole
      Laa den inde i #dashboard, ville kunderne aldrig se den (synk-reglen, Ida 31/7). -->
 <div id="dashBundnav" role="navigation" aria-label="Backstage"></div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 5. august · 955</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 5. august · 956</div>
 </body>
 </html>
