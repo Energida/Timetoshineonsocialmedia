@@ -1578,6 +1578,11 @@ body.has-nav .phone, body.dash-mode .phone, .phone { background: var(--app-bg) !
 </script>
 <style id="printcss">
 /* ---------- LEKTIONSSIDEN (kursusmotoren): fuldskærm, video + noter; desktop = to spor ---------- */
+/* MENUEN LIGGER ALTID OVER LEKTIONSVISNINGEN (Ida 5/8). #lekVis er en fuldskaermsflade
+   med z-index 56, mens venstremenuen stod paa "auto" — saa snart en browser stablede dem
+   i den raekkefoelge, laa menuen BAG fladen og kunne ikke klikkes, selvom man kunne se den.
+   Menuen er vejen ud af alt; den skal aldrig kunne daekkes. */
+body.has-nav #sideNav { position: relative; z-index: 57; }
 #lekVis { display:none; position:fixed; inset:0; z-index:56; background:var(--gray); overflow-y:auto; -webkit-overflow-scrolling:touch; font-family:"Poppins",sans-serif; }
 #lekVis.on { display:block; }
 body.lek-open .burger-btn, body.lek-open .bottom-nav, body.lek-open .dash-fab, body.lek-open .klip-topbar,
@@ -1709,7 +1714,7 @@ body.modul-open .burger-btn, body.modul-open .bottom-nav, body.modul-open .dash-
     <button class="burger-item" onclick="toggleBurger(); togglePwPanel()">Skift adgangskode</button>
     <button class="burger-item" onclick="toggleBurger(); openChat()">Kontakt Ida</button>
     <button class="burger-item" style="color:var(--red);" onclick="custLogout()">Log ud</button>
-    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 5. august · 950</div>
+    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 5. august · 951</div>
   </div>
 </div>
 <div class="plus-menu" id="plusMenu" onclick="if(event.target===this)togglePlus()">
@@ -2801,7 +2806,7 @@ if (/somkunde=/.test(location.hash)) {
     <!-- Foden bliver nederst — den er det ENESTE der skubbes ned (Ida 30/7) -->
     <div class="dsb-fod">
       <button class="dsb-konto" onclick="dashKontoMenu()" title="Ida"><span class="dsb-initial">I</span><span class="dsb-konto-navn">Ida</span><svg class="dsb-konto-pil" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></button>
-      <div class="dsb-version"><span>Version 5. august · 950</span></div>
+      <div class="dsb-version"><span>Version 5. august · 951</span></div>
     </div>
   </div>
 
@@ -6350,7 +6355,7 @@ select titel,
          staa fast paa telefon. De hoerer i arket (samme fejl som "left" 31/7). -->
     <div id="dashFooter" style="z-index:50;display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--gray3);background:#fff;border-top:1px solid var(--border);padding:10px 26px;">
       <div style="font-size:10px;">© 2026 Energida · Alle rettigheder forbeholdes</div>
-      <div style="font-size:10px;margin-left:auto;">Version 5. august · 950 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
+      <div style="font-size:10px;margin-left:auto;">Version 5. august · 951 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
     </div>
   </div>
 </div>
@@ -10835,13 +10840,21 @@ function visLektion(id) {
   renderLektionVis();
   lv.scrollTop = 0;
 }
+/* MAN MÅ ALDRIG KUNNE BLIVE LÅST INDE I EN LEKTION (Ida 5/8: "jeg kan hverken klikke på
+   knappen (tilbage til oversigten) eller klikke på nogle punkter i menuen. den låser HELT").
+   FOER stod de tre linjer, der faktisk LUKKER, efter to kald der kan kaste (lukNotePanel og
+   WORKOUT-grenen). Kastede eet af dem, naaede funktionen aldrig frem til at fjerne .on —
+   og saa skete der bogstaveligt talt ingenting, naar man trykkede.
+   Nu lukkes der FOERST, og oprydningen sker bagefter, hver ting for sig. En fejl i
+   oprydningen kan ikke laengere holde nogen fanget. */
 function lukLektion() {
-  if (WORKOUT_LEK_AABEN) { WORKOUT_LEK_AABEN = null; const lv = document.getElementById("lekVis"); if (lv) lv.classList.remove("on"); document.body.classList.remove("lek-open"); renderTts(); return; }
-  lukNotePanel(true);
-  LEK_AABEN = null;
-  document.getElementById("lekVis").classList.remove("on");
+  const lv = document.getElementById("lekVis");
+  if (lv) lv.classList.remove("on");
   document.body.classList.remove("lek-open");
-  renderKursusHjem();
+  LEK_AABEN = null;
+  try { WORKOUT_LEK_AABEN = null; } catch(e) {}
+  try { lukNotePanel(true); } catch(e) {}
+  try { renderKursusHjem(); } catch(e) {}
 }
 function lekModulFor(id) { return kursusModulerAktive().find(m => m.lektioner.some(x => x.id === id)) || null; }
 
@@ -11113,7 +11126,18 @@ function lekSideHtml(aktivId, aktive, setAntal) {
 /* ---------- pop-ups på lektionssiden (notevalg, opgave-valg, "Lover du det?") ---------- */
 function lekPop(html) { const p = document.getElementById("lekPop"); document.getElementById("lekPopKort").innerHTML ='<button class="modal-close" onclick="lukLekPop()" title="Luk">&times;</button>' + html; p.classList.add("on"); }   // krydset følger ALLE popups (Idas regel 16/7)
 function lukLekPop() { const p = document.getElementById("lekPop"); if (p) p.classList.remove("on"); }
-document.addEventListener("keydown", e => { if (e.key === "Escape") { const p = document.getElementById("lekPop"); if (p && p.classList.contains("on")) lukLekPop(); } });   // Escape = altid en vej ud af popups
+document.addEventListener("keydown", e => { if (e.key === "Escape") { const p = document.getElementById("lekPop"); if (p && p.classList.contains("on")) lukLekPop(); } });   // Escape = altid
+/* ESCAPE LUKKER OGSÅ SELVE LEKTIONEN (Ida 5/8). Lektionsvisningen er en fuldskaermsflade,
+   og den havde KUN een vej ud: "Til oversigten". Var den knap af en eller anden grund doed,
+   var man fanget. En fuldskaermsflade skal altid have to veje ud — jf. reglen om at ingen
+   skaerm maa vaere en blindgyde (30/7). Popup'en inde i lektionen lukkes foerst. */
+document.addEventListener("keydown", e => {
+  if (e.key !== "Escape") return;
+  const p = document.getElementById("lekPop");
+  if (p && p.classList.contains("on")) return;   /* popup'en tager foerst — een ting ad gangen */
+  const lv = document.getElementById("lekVis");
+  if (lv && lv.classList.contains("on")) { try { lukLektion(); } catch(err) { lv.classList.remove("on"); document.body.classList.remove("lek-open"); } }
+});
 
 /* ---------- noter: engangsvalg (pause/kør videre) + noteliste pr. lektion ---------- */
 function lekNoteKlik() {
@@ -18749,7 +18773,7 @@ function buildSideNav(def) {
       + '<span style="opacity:.55;">' + ikon("", "Kalender", "laastBesked()", IK.kal) + '</span>'
       + '<span style="opacity:.55;">' + ikon("", "Værktøjskassen", "laastBesked()", IK.tools) + '</span>'
       + '<button class="sn-virk-knap" onclick="toggleVirkMenu(event)" title="' + esc(knapNavn) + '" aria-label="Profil" style="margin-left:auto;"><span class="sn-initial">' + esc((knapNavn || "?").trim().charAt(0).toUpperCase()) + '</span><span class="sn-virk-navn" style="white-space:normal;overflow-wrap:anywhere;">' + esc(knapNavn) + '</span><svg class="sn-virk-pil" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="flex-shrink:0;"><path d="M6 9l6 6 6-6"/></svg></button>'
-      + fodBagud + '<div class="sn-fod"><span>Version 5. august · 950</span></div>'
+      + fodBagud + '<div class="sn-fod"><span>Version 5. august · 951</span></div>'
       /* Ida 30/7: alle konto-punkter bor i profilmenuen — ingen streg/sn-bund */
       + '<div id="virkMenu" style="display:none;position:fixed;left:14px;bottom:96px;width:230px;background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:0 16px 40px rgba(0,0,0,0.15);padding:8px;z-index:90;">'
       + '<div style="padding:10px 12px 6px;font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--gray3);">' + esc(virkNavn) + '</div>'
@@ -18806,7 +18830,7 @@ function buildSideNav(def) {
         uPkt("", "Lektioner", "showTab(12)")))
     + '<button class="sn-virk-knap" onclick="toggleVirkMenu(event)" title="' + esc(knapNavn) + '" aria-label="Profil"><span class="sn-initial">' + esc((knapNavn || "?").trim().charAt(0).toUpperCase()) + '</span><span class="sn-virk-navn" style="white-space:normal;overflow-wrap:anywhere;">' + esc(knapNavn) + '</span><svg class="sn-virk-pil" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="flex-shrink:0;"><path d="M6 9l6 6 6-6"/></svg></button>'
     /* Ida 30/7: ingen streg — logo + version samlet i foden under profilknappen */
-    + fodBagud + '<div class="sn-fod"><span>Version 5. august · 950</span></div>'
+    + fodBagud + '<div class="sn-fod"><span>Version 5. august · 951</span></div>'
     /* Ida 30/7: menuen åbner VED knappen (nederst t.v.) — ikke i modsatte hjørne */
     + '<div id="virkMenu" style="display:none;position:fixed;left:14px;bottom:96px;width:230px;background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:0 16px 40px rgba(0,0,0,0.15);padding:8px;z-index:90;">'
     + '<div style="padding:10px 12px 6px;font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--gray3);">' + esc(virkNavn) + '</div>'
@@ -29082,6 +29106,6 @@ if ((location.hash || "").toLowerCase() === "#ole") {   // #ole = preview af Ole
      Laa den inde i #dashboard, ville kunderne aldrig se den (synk-reglen, Ida 31/7). -->
 <div id="dashBundnav" role="navigation" aria-label="Backstage"></div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 5. august · 950</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 5. august · 951</div>
 </body>
 </html>
