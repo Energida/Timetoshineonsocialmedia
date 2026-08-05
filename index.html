@@ -1750,7 +1750,7 @@ body.modul-open .burger-btn, body.modul-open .bottom-nav, body.modul-open .dash-
     <button class="burger-item" onclick="toggleBurger(); togglePwPanel()">Skift adgangskode</button>
     <button class="burger-item" onclick="toggleBurger(); openChat()">Kontakt Ida</button>
     <button class="burger-item" style="color:var(--red);" onclick="custLogout()">Log ud</button>
-    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 5. august · 977</div>
+    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 5. august · 978</div>
   </div>
 </div>
 <div class="plus-menu" id="plusMenu" onclick="if(event.target===this)togglePlus()">
@@ -2848,7 +2848,7 @@ if (/somkunde=/.test(location.hash)) {
     <!-- Foden bliver nederst — den er det ENESTE der skubbes ned (Ida 30/7) -->
     <div class="dsb-fod">
       <button class="dsb-konto" onclick="dashKontoMenu()" title="Ida"><span class="dsb-initial">I</span><span class="dsb-konto-navn">Ida</span><svg class="dsb-konto-pil" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></button>
-      <div class="dsb-version"><span>Version 5. august · 977</span></div>
+      <div class="dsb-version"><span>Version 5. august · 978</span></div>
     </div>
   </div>
 
@@ -6409,7 +6409,7 @@ select titel,
          staa fast paa telefon. De hoerer i arket (samme fejl som "left" 31/7). -->
     <div id="dashFooter" style="z-index:50;display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--gray3);background:#fff;border-top:1px solid var(--border);padding:10px 26px;">
       <div style="font-size:10px;">© 2026 Energida · Alle rettigheder forbeholdes</div>
-      <div style="font-size:10px;margin-left:auto;">Version 5. august · 977 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
+      <div style="font-size:10px;margin-left:auto;">Version 5. august · 978 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
     </div>
   </div>
 </div>
@@ -12972,12 +12972,17 @@ let KLIP_MODUL_NY = false;    /* staar "opret modul"-feltet aabent? */
 async function modulTitlerHent() {
   if (MODUL_TITLER) return MODUL_TITLER;
   MODUL_TITLER = {};
-  if (!sb || !currentKode) return MODUL_TITLER;
+  /* MODULNAVNE ER IDAS EGNE — IKKE EN KUNDES (rettet 5/8 foer foerste brug).
+     Foerste udgave skrev paa currentKode. Men Idas admin-login baerer INGEN kode (rollen
+     er admin), saa baade hentning og gem ville stille og roligt fejle med "Kan ikke
+     gemmes". Modulerne hoerer til Tip Top Studio, ikke til en kunde, saa de bor samme
+     sted som appens oevrige admin-indstillinger: vaneRow/vaneGemRow, der laaser paa den
+     faste ENERGIDA/Ida-raekke og allerede har sin kvittering. Een motor, ikke to. */
   try {
-    const { data } = await sb.from("skema_svar").select("svar").eq("kode", currentKode).eq("navn", "config").eq("skema", "modul_titler").maybeSingle();
-    if (data && data.svar) {
-      MODUL_TITLER = data.svar.navne || data.svar;      /* baade nyt og gammelt format */
-      MODUL_EKSTRA = data.svar.ekstra || [];
+    const r = await vaneRow("modul_titler");
+    if (r && typeof r === "object") {
+      MODUL_TITLER = r.navne || {};
+      MODUL_EKSTRA = Array.isArray(r.ekstra) ? r.ekstra : [];
     }
   } catch(e) {}
   try { renderKlipperum(); } catch(e) {}
@@ -13007,17 +13012,12 @@ function modulNaesteNr() {
 }
 /* Fælles skrivning — ÉT sted, saa navne og nye moduler ikke kan komme ud af trit */
 async function modulOverlayGem(navne, ekstra, sig) {
-  if (!sb || !currentKode) { if (sig) sig("Kan ikke gemme uden forbindelse."); return false; }
-  const svar = { navne: navne, ekstra: ekstra };
-  /* KVITTERING — uden .select() og et tjek paa raekker lyver et gem (haard regel) */
-  try {
-    const u = await sb.from("skema_svar").update({ svar: svar }).eq("kode", currentKode).eq("navn", "config").eq("skema", "modul_titler").select();
-    if (u.data && u.data.length) return true;
-    const n2 = await sb.from("skema_svar").insert({ kode: currentKode, navn: "config", skema: "modul_titler", svar: svar }).select();
-    if (n2.data && n2.data.length) return true;
-  } catch(e) {}
-  if (sig) sig("Kunne ikke gemmes \u2014 pr\u00f8v igen.");
-  return false;
+  if (!sb) { if (sig) sig("Kan ikke gemme uden forbindelse."); return false; }
+  /* vaneGemRow har kvitteringen indbygget: den svarer KUN true, naar basen har svaret
+     med en raekke. Et afvist gem kan altsaa ikke se ud som et vellykket. */
+  const gemt = await vaneGemRow("modul_titler", { navne: navne, ekstra: ekstra });
+  if (!gemt && sig) sig("Kunne ikke gemmes \u2014 pr\u00f8v igen.");
+  return gemt;
 }
 async function modulTitelGem(k) {
   const felt = document.getElementById("modulNavnFelt"); if (!felt) return;
@@ -14179,8 +14179,10 @@ function klipProdukterFane(arr) {
   const grupper = {};
   arr.forEach(o => { const k = klipModulGruppe(o.modul); (grupper[k] = grupper[k] || []).push(o); });
   /* Et NYOPRETTET modul har endnu ingen videoer — uden dette ville det forsvinde igen,
-     saa snart siden blev tegnet om, og man kunne aldrig laegge den foerste video i det. */
-  (MODUL_EKSTRA || []).forEach(k => { if (!grupperM[k]) grupperM[k] = []; });
+     saa snart siden blev tegnet om, og man kunne aldrig laegge den foerste video i det.
+     OBS: gruppen hedder "grupper" HER og "grupperM" i moduloversigten — samme idé, to
+     variabelnavne. Den forkerte kastede en ReferenceError, hver gang listen blev tegnet. */
+  (MODUL_EKSTRA || []).forEach(k => { if (!grupper[k]) grupper[k] = []; });
   const lekNr = o => { const m = String(o.titel || "").match(/^(\d+)\.(\d+)/); return m ? parseInt(m[1], 10) * 100 + parseInt(m[2], 10) : 9999; };
   Object.keys(grupper).forEach(k => grupper[k].sort((a, b) => lekNr(a) - lekNr(b)));
   const noegler = Object.keys(grupper).sort((x, y) => {
@@ -16701,6 +16703,8 @@ function renderKlipperum() {
     const k = klipModulGruppe(o.modul);
     (grupperM[k] = grupperM[k] || []).push(o);
   });
+  /* Nyoprettede moduler staar frem, ogsaa foer de har faaet deres foerste video */
+  (MODUL_EKSTRA || []).forEach(k => { if (!grupperM[k]) grupperM[k] = []; });
   const lekNr = o => { const m = String(o.titel || "").match(/^(\d+)\.(\d+)/); return m ? parseInt(m[1], 10) * 100 + parseInt(m[2], 10) : 9999; };
   Object.keys(grupperM).forEach(k => grupperM[k].sort((a, b) => lekNr(a) - lekNr(b)));
   const noegler = Object.keys(grupperM).sort((x, y) => {
@@ -19280,7 +19284,7 @@ function buildSideNav(def) {
       + '<span style="opacity:.55;">' + ikon("", "Kalender", "laastBesked()", IK.kal) + '</span>'
       + '<span style="opacity:.55;">' + ikon("", "Værktøjskassen", "laastBesked()", IK.tools) + '</span>'
       + '<button class="sn-virk-knap" onclick="toggleVirkMenu(event)" title="' + esc(knapNavn) + '" aria-label="Profil" style="margin-left:auto;"><span class="sn-initial">' + esc((knapNavn || "?").trim().charAt(0).toUpperCase()) + '</span><span class="sn-virk-navn" style="white-space:normal;overflow-wrap:anywhere;">' + esc(knapNavn) + '</span><svg class="sn-virk-pil" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="flex-shrink:0;"><path d="M6 9l6 6 6-6"/></svg></button>'
-      + fodBagud + '<div class="sn-fod"><span>Version 5. august · 977</span></div>'
+      + fodBagud + '<div class="sn-fod"><span>Version 5. august · 978</span></div>'
       /* Ida 30/7: alle konto-punkter bor i profilmenuen — ingen streg/sn-bund */
       + '<div id="virkMenu" style="display:none;position:fixed;left:14px;bottom:96px;width:230px;background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:0 16px 40px rgba(0,0,0,0.15);padding:8px;z-index:90;">'
       + '<div style="padding:10px 12px 6px;font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--gray3);">' + esc(virkNavn) + '</div>'
@@ -19340,7 +19344,7 @@ function buildSideNav(def) {
         uPkt("", "Lektioner", "showTab(12)")))
     + '<button class="sn-virk-knap" onclick="toggleVirkMenu(event)" title="' + esc(knapNavn) + '" aria-label="Profil"><span class="sn-initial">' + esc((knapNavn || "?").trim().charAt(0).toUpperCase()) + '</span><span class="sn-virk-navn" style="white-space:normal;overflow-wrap:anywhere;">' + esc(knapNavn) + '</span><svg class="sn-virk-pil" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="flex-shrink:0;"><path d="M6 9l6 6 6-6"/></svg></button>'
     /* Ida 30/7: ingen streg — logo + version samlet i foden under profilknappen */
-    + fodBagud + '<div class="sn-fod"><span>Version 5. august · 977</span></div>'
+    + fodBagud + '<div class="sn-fod"><span>Version 5. august · 978</span></div>'
     /* Ida 30/7: menuen åbner VED knappen (nederst t.v.) — ikke i modsatte hjørne */
     + '<div id="virkMenu" style="display:none;position:fixed;left:14px;bottom:96px;width:230px;background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:0 16px 40px rgba(0,0,0,0.15);padding:8px;z-index:90;">'
     + '<div style="padding:10px 12px 6px;font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--gray3);">' + esc(virkNavn) + '</div>'
@@ -30145,6 +30149,6 @@ if ((location.hash || "").toLowerCase() === "#ole") {   // #ole = preview af Ole
      Laa den inde i #dashboard, ville kunderne aldrig se den (synk-reglen, Ida 31/7). -->
 <div id="dashBundnav" role="navigation" aria-label="Backstage"></div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 5. august · 977</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 5. august · 978</div>
 </body>
 </html>
