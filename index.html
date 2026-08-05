@@ -1750,7 +1750,7 @@ body.modul-open .burger-btn, body.modul-open .bottom-nav, body.modul-open .dash-
     <button class="burger-item" onclick="toggleBurger(); togglePwPanel()">Skift adgangskode</button>
     <button class="burger-item" onclick="toggleBurger(); openChat()">Kontakt Ida</button>
     <button class="burger-item" style="color:var(--red);" onclick="custLogout()">Log ud</button>
-    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 5. august · 979</div>
+    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 5. august · 980</div>
   </div>
 </div>
 <div class="plus-menu" id="plusMenu" onclick="if(event.target===this)togglePlus()">
@@ -2848,7 +2848,7 @@ if (/somkunde=/.test(location.hash)) {
     <!-- Foden bliver nederst — den er det ENESTE der skubbes ned (Ida 30/7) -->
     <div class="dsb-fod">
       <button class="dsb-konto" onclick="dashKontoMenu()" title="Ida"><span class="dsb-initial">I</span><span class="dsb-konto-navn">Ida</span><svg class="dsb-konto-pil" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></button>
-      <div class="dsb-version"><span>Version 5. august · 979</span></div>
+      <div class="dsb-version"><span>Version 5. august · 980</span></div>
     </div>
   </div>
 
@@ -6409,7 +6409,7 @@ select titel,
          staa fast paa telefon. De hoerer i arket (samme fejl som "left" 31/7). -->
     <div id="dashFooter" style="z-index:50;display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--gray3);background:#fff;border-top:1px solid var(--border);padding:10px 26px;">
       <div style="font-size:10px;">© 2026 Energida · Alle rettigheder forbeholdes</div>
-      <div style="font-size:10px;margin-left:auto;">Version 5. august · 979 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
+      <div style="font-size:10px;margin-left:auto;">Version 5. august · 980 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
     </div>
   </div>
 </div>
@@ -13032,24 +13032,58 @@ async function modulOverlayGem(navne, ekstra, sig) {
   if (!gemt && sig) sig("Kunne ikke gemmes \u2014 pr\u00f8v igen.");
   return gemt;
 }
+/* Modulets NUMMER kan ogsaa rettes (Ida 5/8: "jeg skal kunne redigere modulnummeret
+   også. denne skal fx være den nye 6"). Et nummerskift er ikke en omdoebning — det
+   flytter modulets identitet, og tre ting skal foelge med:
+     1) overlayet (navnet og "er oprettet af Ida"-mærket),
+     2) modul-teksten paa hver eneste video i modulet,
+     3) evt. lektionsnumrene i videotitlerne (7.1 -> 6.1) — men KUN hvis Ida saetter
+        fluebenet, for titlerne er hendes tekst.
+   Er nummeret allerede taget, gemmes der INTET: to moduler med samme nummer ville
+   smelte sammen til eet, og de videoer kunne ikke skilles ad igen. */
 async function modulTitelGem(k) {
   const felt = document.getElementById("modulNavnFelt"); if (!felt) return;
   const nyt = felt.value.trim();
   const msg = document.getElementById("modulNavnMsg");
   const sig = t => { if (msg) msg.textContent = t; };
+  const nrFelt = document.getElementById("modulNrFelt");
+  const gammeltNr = (String(k).match(/(\d+)/) || [])[1];
+  let nyK = k;
+  if (nrFelt && gammeltNr != null) {
+    const raa = String(nrFelt.value).trim();
+    if (!/^\d+$/.test(raa)) { sig("Nummeret skal v\u00e6re et helt tal."); return; }
+    nyK = "Modul " + parseInt(raa, 10);
+    if (nyK !== k && modulAlleNoegler().indexOf(nyK) > -1) {
+      sig(nyK + " findes allerede \u2014 giv den et andet nummer f\u00f8rst.");
+      return;
+    }
+  }
   sig("Gemmer\u2026");
   await modulTitlerHent();
-  const navne = Object.assign({}, MODUL_TITLER); navne[k] = nyt;
-  if (!await modulOverlayGem(navne, MODUL_EKSTRA, sig)) return;
-  MODUL_TITLER = navne;
+  const navne = Object.assign({}, MODUL_TITLER);
+  if (nyK !== k) delete navne[k];
+  navne[nyK] = nyt;
+  const ekstra = (MODUL_EKSTRA || []).map(x => (x === k ? nyK : x));
+  if (!await modulOverlayGem(navne, ekstra, sig)) return;
+  MODUL_TITLER = navne; MODUL_EKSTRA = ekstra;
   /* Videoerne skal sige det samme som kortet — ellers lyver print og eksport */
-  const fuld = nyt ? k + " \u00b7 " + nyt : k;
-  for (const o of (KLIP_OPGAVER || []).filter(o => klipModulGruppe(o.modul) === k && String(o.modul || "") !== fuld)) {
+  const fuld = nyt ? nyK + " \u00b7 " + nyt : nyK;
+  const nytNr = (String(nyK).match(/(\d+)/) || [])[1];
+  const retTitler = !!(document.getElementById("modulNrTitler") && document.getElementById("modulNrTitler").checked);
+  for (const o of (KLIP_OPGAVER || []).filter(o => klipModulGruppe(o.modul) === k)) {
+    const patch = {};
+    if (String(o.modul || "") !== fuld) patch.modul = fuld;
+    if (retTitler && nytNr != null && gammeltNr != null && nytNr !== gammeltNr) {
+      const m = String(o.titel || "").match(/^(\d+)\.(\d+)(.*)$/);
+      if (m && m[1] === gammeltNr) patch.titel = nytNr + "." + m[2] + m[3];
+    }
+    if (!Object.keys(patch).length) continue;
     try {
-      const r = await sb.from("video_opgaver").update({ modul: fuld }).eq("id", o.id).select();
-      if (r.data && r.data.length) o.modul = fuld;
+      const r = await sb.from("video_opgaver").update(patch).eq("id", o.id).select();
+      if (r.data && r.data.length) Object.assign(o, patch);
     } catch(e) {}
   }
+  if (KLIP_MODUL_VALGT === k) KLIP_MODUL_VALGT = nyK;
   KLIP_MODUL_RET = null;
   renderKlipperum();
 }
@@ -16889,9 +16923,33 @@ function renderKlipperum() {
                      og en knap inde i en knap kan ikke klikkes paalideligt. */
                   if (KLIP_MODUL_RET === KLIP_MODUL_VALGT) {
                     return '<div style="background:#fff;border:1.5px solid var(--red);border-radius:12px;padding:14px 16px;margin-bottom:12px;">'
-                      + '<div style="font-size:10px;letter-spacing:1.4px;text-transform:uppercase;color:var(--red);border-bottom:1px solid var(--border);padding-bottom:9px;margin-bottom:11px;">' + esc(KLIP_MODUL_VALGT) + ' \u2014 navn</div>'
-                      + '<input type="text" id="modulNavnFelt" value="' + esc(mN).replace(/"/g, "&quot;") + '" placeholder="Fx Content-strategien" style="width:100%;background:#fff;border:1px solid var(--border);border-radius:12px;padding:10px 12px;font-size:13px;font-family:Poppins,sans-serif;box-sizing:border-box;">'
-                      + '<div style="font-size:10.5px;color:var(--gray3);line-height:1.55;margin-top:7px;">Nummeret bliver st\u00e5ende. Navnet sl\u00e5r igennem p\u00e5 modulkortet, p\u00e5 videoerne og i printet.</div>'
+                      + '<div style="font-size:10px;letter-spacing:1.4px;text-transform:uppercase;color:var(--red);border-bottom:1px solid var(--border);padding-bottom:9px;margin-bottom:11px;">' + esc(KLIP_MODUL_VALGT) + ' \u2014 rediger</div>'
+                      + (function () {
+                          const nr = (String(KLIP_MODUL_VALGT).match(/(\d+)/) || [])[1];
+                          const lbl = "font-size:9.5px;letter-spacing:1.4px;text-transform:uppercase;color:var(--gray3);margin:0 0 5px;";
+                          const inp = "background:#fff;border:1px solid var(--border);border-radius:12px;padding:10px 12px;font-size:13px;font-family:Poppins,sans-serif;box-sizing:border-box;";
+                          /* Numret staar FOERST — det er modulets identitet. Har modulet
+                             intet nummer (Vaerktoejskassen), vises feltet slet ikke. */
+                          return '<div style="display:flex;gap:10px;flex-wrap:wrap;">'
+                            + (nr != null ? '<div style="flex:0 0 auto;"><div style="' + lbl + '">Nummer</div>'
+                                + '<input type="number" id="modulNrFelt" min="0" step="1" value="' + esc(nr) + '" style="' + inp + 'width:92px;"></div>' : '')
+                            + '<div style="flex:1;min-width:200px;"><div style="' + lbl + '">Navn</div>'
+                              + '<input type="text" id="modulNavnFelt" value="' + esc(mN).replace(/"/g, "&quot;") + '" placeholder="Fx Content-strategien" style="' + inp + 'width:100%;"></div>'
+                            + '</div>';
+                        })()
+                      /* Fluebenet vises KUN, naar der FAKTISK er titler, der begynder med
+                         modulets nummer — ellers lover det noget, det ikke kan holde. */
+                      + (function () {
+                          const nr = (String(KLIP_MODUL_VALGT).match(/(\d+)/) || [])[1];
+                          if (nr == null) return '';
+                          const antal = (KLIP_OPGAVER || []).filter(o => klipModulGruppe(o.modul) === KLIP_MODUL_VALGT
+                            && (String(o.titel || "").match(/^(\d+)\./) || [])[1] === nr).length;
+                          if (!antal) return '';
+                          return '<label style="display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--gray3);margin-top:10px;cursor:pointer;line-height:1.5;">'
+                            + '<input type="checkbox" id="modulNrTitler" checked style="accent-color:var(--red);width:15px;height:15px;flex-shrink:0;">'
+                            + 'Ret ogs\u00e5 lektionsnumrene i de ' + antal + ' videoer (' + esc(nr) + '.1 bliver til det nye nummer)</label>';
+                        })()
+                      + '<div style="font-size:10.5px;color:var(--gray3);line-height:1.55;margin-top:7px;">Navn og nummer sl\u00e5r igennem p\u00e5 modulkortet, p\u00e5 videoerne og i printet. Er nummeret optaget, gemmes der ingenting.</div>'
                       + '<div style="display:flex;align-items:center;gap:10px;justify-content:flex-end;margin-top:12px;flex-wrap:wrap;">'
                         + '<span id="modulNavnMsg" style="flex:1;min-width:0;font-size:11px;color:var(--gray3);"></span>'
                         + '<button type="button" class="row-btn" onclick="modulRetLuk()">Annull\u00e9r</button>'
@@ -19316,7 +19374,7 @@ function buildSideNav(def) {
       + '<span style="opacity:.55;">' + ikon("", "Kalender", "laastBesked()", IK.kal) + '</span>'
       + '<span style="opacity:.55;">' + ikon("", "Værktøjskassen", "laastBesked()", IK.tools) + '</span>'
       + '<button class="sn-virk-knap" onclick="toggleVirkMenu(event)" title="' + esc(knapNavn) + '" aria-label="Profil" style="margin-left:auto;"><span class="sn-initial">' + esc((knapNavn || "?").trim().charAt(0).toUpperCase()) + '</span><span class="sn-virk-navn" style="white-space:normal;overflow-wrap:anywhere;">' + esc(knapNavn) + '</span><svg class="sn-virk-pil" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="flex-shrink:0;"><path d="M6 9l6 6 6-6"/></svg></button>'
-      + fodBagud + '<div class="sn-fod"><span>Version 5. august · 979</span></div>'
+      + fodBagud + '<div class="sn-fod"><span>Version 5. august · 980</span></div>'
       /* Ida 30/7: alle konto-punkter bor i profilmenuen — ingen streg/sn-bund */
       + '<div id="virkMenu" style="display:none;position:fixed;left:14px;bottom:96px;width:230px;background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:0 16px 40px rgba(0,0,0,0.15);padding:8px;z-index:90;">'
       + '<div style="padding:10px 12px 6px;font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--gray3);">' + esc(virkNavn) + '</div>'
@@ -19376,7 +19434,7 @@ function buildSideNav(def) {
         uPkt("", "Lektioner", "showTab(12)")))
     + '<button class="sn-virk-knap" onclick="toggleVirkMenu(event)" title="' + esc(knapNavn) + '" aria-label="Profil"><span class="sn-initial">' + esc((knapNavn || "?").trim().charAt(0).toUpperCase()) + '</span><span class="sn-virk-navn" style="white-space:normal;overflow-wrap:anywhere;">' + esc(knapNavn) + '</span><svg class="sn-virk-pil" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="flex-shrink:0;"><path d="M6 9l6 6 6-6"/></svg></button>'
     /* Ida 30/7: ingen streg — logo + version samlet i foden under profilknappen */
-    + fodBagud + '<div class="sn-fod"><span>Version 5. august · 979</span></div>'
+    + fodBagud + '<div class="sn-fod"><span>Version 5. august · 980</span></div>'
     /* Ida 30/7: menuen åbner VED knappen (nederst t.v.) — ikke i modsatte hjørne */
     + '<div id="virkMenu" style="display:none;position:fixed;left:14px;bottom:96px;width:230px;background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:0 16px 40px rgba(0,0,0,0.15);padding:8px;z-index:90;">'
     + '<div style="padding:10px 12px 6px;font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--gray3);">' + esc(virkNavn) + '</div>'
@@ -30181,6 +30239,6 @@ if ((location.hash || "").toLowerCase() === "#ole") {   // #ole = preview af Ole
      Laa den inde i #dashboard, ville kunderne aldrig se den (synk-reglen, Ida 31/7). -->
 <div id="dashBundnav" role="navigation" aria-label="Backstage"></div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 5. august · 979</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 5. august · 980</div>
 </body>
 </html>
