@@ -1730,7 +1730,7 @@ body.modul-open .burger-btn, body.modul-open .bottom-nav, body.modul-open .dash-
     <button class="burger-item" onclick="toggleBurger(); togglePwPanel()">Skift adgangskode</button>
     <button class="burger-item" onclick="toggleBurger(); openChat()">Kontakt Ida</button>
     <button class="burger-item" style="color:var(--red);" onclick="custLogout()">Log ud</button>
-    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 5. august · 972</div>
+    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 5. august · 973</div>
   </div>
 </div>
 <div class="plus-menu" id="plusMenu" onclick="if(event.target===this)togglePlus()">
@@ -2826,7 +2826,7 @@ if (/somkunde=/.test(location.hash)) {
     <!-- Foden bliver nederst — den er det ENESTE der skubbes ned (Ida 30/7) -->
     <div class="dsb-fod">
       <button class="dsb-konto" onclick="dashKontoMenu()" title="Ida"><span class="dsb-initial">I</span><span class="dsb-konto-navn">Ida</span><svg class="dsb-konto-pil" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></button>
-      <div class="dsb-version"><span>Version 5. august · 972</span></div>
+      <div class="dsb-version"><span>Version 5. august · 973</span></div>
     </div>
   </div>
 
@@ -6375,7 +6375,7 @@ select titel,
          staa fast paa telefon. De hoerer i arket (samme fejl som "left" 31/7). -->
     <div id="dashFooter" style="z-index:50;display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--gray3);background:#fff;border-top:1px solid var(--border);padding:10px 26px;">
       <div style="font-size:10px;">© 2026 Energida · Alle rettigheder forbeholdes</div>
-      <div style="font-size:10px;margin-left:auto;">Version 5. august · 972 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
+      <div style="font-size:10px;margin-left:auto;">Version 5. august · 973 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
     </div>
   </div>
 </div>
@@ -12917,6 +12917,105 @@ function klipManusNyFane(id) { window.open(location.pathname + "#optag=" + encod
 /* Gruppenavnet på produktionstavlen. Stod før tre steder og kunne kun genkende
    "Modul N" — alt andet (fx Værktøjskassen) endte i en fælles pulje kaldet
    "Andet". Nu bruges modulets eget navn. */
+/* MODULERNE KAN OMDØBES OG OPRETTES (Ida 5/8: "hvor kan jeg redigere navnene på
+   modulerne?" og "kan faktisk slet ikke oprette moduler?"). Ingen af delene kunne lade
+   sig gøre: navnene stod i KURSUS_MODULER i selve koden, og et modul fandtes kun, hvis
+   der allerede laa en video i det.
+   Begge dele loeses med ÉT overlay (kode + skema "modul_titler"), ikke ved at skrive i
+   listen: lektionerne og deres id'er skal blive praecis hvor de er, og et overlay kan
+   rulles tilbage ved at slette een raekke. Nyoprettede moduler bor samme sted, saa et
+   tomt modul kan staa paa tavlen og tage imod sin foerste video. */
+let MODUL_TITLER = null;      /* null = ikke hentet endnu */
+let MODUL_EKSTRA = [];        /* moduler Ida selv har oprettet, fx "Modul 7" */
+let KLIP_MODUL_RET = null;    /* hvilket modul der redigeres lige nu */
+let KLIP_MODUL_NY = false;    /* staar "opret modul"-feltet aabent? */
+async function modulTitlerHent() {
+  if (MODUL_TITLER) return MODUL_TITLER;
+  MODUL_TITLER = {};
+  if (!sb || !currentKode) return MODUL_TITLER;
+  try {
+    const { data } = await sb.from("skema_svar").select("svar").eq("kode", currentKode).eq("navn", "config").eq("skema", "modul_titler").maybeSingle();
+    if (data && data.svar) {
+      MODUL_TITLER = data.svar.navne || data.svar;      /* baade nyt og gammelt format */
+      MODUL_EKSTRA = data.svar.ekstra || [];
+    }
+  } catch(e) {}
+  try { renderKlipperum(); } catch(e) {}
+  return MODUL_TITLER;
+}
+/* Modulets navn UDEN "Modul N ·" foran — det, der staar som underoverskrift */
+function modulNavnVis(k) {
+  if (MODUL_TITLER && MODUL_TITLER[k] != null) return String(MODUL_TITLER[k]);
+  const t = (typeof KURSUS_MODULER !== "undefined" ? (KURSUS_MODULER.find(mm => String(mm.titel || "").indexOf(k) === 0) || {}).titel : "") || "";
+  return t.indexOf("\u00b7") >= 0 ? t.split("\u00b7").slice(1).join("\u00b7").trim() : "";
+}
+function modulFuldTitel(k) {
+  const n = modulNavnVis(k);
+  return n ? k + " \u00b7 " + n : k;
+}
+function modulRetAaben(k) { KLIP_MODUL_RET = k; KLIP_MODUL_NY = false; renderKlipperum(); }
+function modulRetLuk() { KLIP_MODUL_RET = null; KLIP_MODUL_NY = false; renderKlipperum(); }
+function modulNyAaben() { KLIP_MODUL_NY = true; KLIP_MODUL_RET = null; renderKlipperum(); }
+/* Naeste ledige nummer — saa "Modul 7" ikke kan lande oven i et der findes */
+function modulNaesteNr() {
+  let hoejest = -1;
+  const kig = t => { const m = String(t || "").match(/modul\s*(\d+)/i); if (m) hoejest = Math.max(hoejest, parseInt(m[1], 10)); };
+  (KLIP_OPGAVER || []).forEach(o => kig(o.modul));
+  (typeof KURSUS_MODULER !== "undefined" ? KURSUS_MODULER : []).forEach(m => kig(m.titel));
+  (MODUL_EKSTRA || []).forEach(kig);
+  return hoejest + 1;
+}
+/* Fælles skrivning — ÉT sted, saa navne og nye moduler ikke kan komme ud af trit */
+async function modulOverlayGem(navne, ekstra, sig) {
+  if (!sb || !currentKode) { if (sig) sig("Kan ikke gemme uden forbindelse."); return false; }
+  const svar = { navne: navne, ekstra: ekstra };
+  /* KVITTERING — uden .select() og et tjek paa raekker lyver et gem (haard regel) */
+  try {
+    const u = await sb.from("skema_svar").update({ svar: svar }).eq("kode", currentKode).eq("navn", "config").eq("skema", "modul_titler").select();
+    if (u.data && u.data.length) return true;
+    const n2 = await sb.from("skema_svar").insert({ kode: currentKode, navn: "config", skema: "modul_titler", svar: svar }).select();
+    if (n2.data && n2.data.length) return true;
+  } catch(e) {}
+  if (sig) sig("Kunne ikke gemmes \u2014 pr\u00f8v igen.");
+  return false;
+}
+async function modulTitelGem(k) {
+  const felt = document.getElementById("modulNavnFelt"); if (!felt) return;
+  const nyt = felt.value.trim();
+  const msg = document.getElementById("modulNavnMsg");
+  const sig = t => { if (msg) msg.textContent = t; };
+  sig("Gemmer\u2026");
+  await modulTitlerHent();
+  const navne = Object.assign({}, MODUL_TITLER); navne[k] = nyt;
+  if (!await modulOverlayGem(navne, MODUL_EKSTRA, sig)) return;
+  MODUL_TITLER = navne;
+  /* Videoerne skal sige det samme som kortet — ellers lyver print og eksport */
+  const fuld = nyt ? k + " \u00b7 " + nyt : k;
+  for (const o of (KLIP_OPGAVER || []).filter(o => klipModulGruppe(o.modul) === k && String(o.modul || "") !== fuld)) {
+    try {
+      const r = await sb.from("video_opgaver").update({ modul: fuld }).eq("id", o.id).select();
+      if (r.data && r.data.length) o.modul = fuld;
+    } catch(e) {}
+  }
+  KLIP_MODUL_RET = null;
+  renderKlipperum();
+}
+async function modulOpret() {
+  const felt = document.getElementById("modulNyFelt"); if (!felt) return;
+  const navn = felt.value.trim();
+  const msg = document.getElementById("modulNyMsg");
+  const sig = t => { if (msg) msg.textContent = t; };
+  sig("Opretter\u2026");
+  await modulTitlerHent();
+  const k = "Modul " + modulNaesteNr();
+  const navne = Object.assign({}, MODUL_TITLER); navne[k] = navn;
+  const ekstra = (MODUL_EKSTRA || []).concat([k]);
+  if (!await modulOverlayGem(navne, ekstra, sig)) return;
+  MODUL_TITLER = navne; MODUL_EKSTRA = ekstra;
+  KLIP_MODUL_NY = false;
+  KLIP_MODUL_VALGT = k;      /* aabn det med det samme, saa foerste video kan laegges ind */
+  renderKlipperum();
+}
 function klipModulGruppe(modul) {
   const m = String(modul || "").match(/modul\s*(\d+)/i);
   if (m) return "Modul " + m[1];
@@ -14039,6 +14138,9 @@ function klipProdukterFane(arr) {
   /* Lektionerne grupperet pr. modul — samme gruppering og sortering som resten af Tip Top */
   const grupper = {};
   arr.forEach(o => { const k = klipModulGruppe(o.modul); (grupper[k] = grupper[k] || []).push(o); });
+  /* Et NYOPRETTET modul har endnu ingen videoer — uden dette ville det forsvinde igen,
+     saa snart siden blev tegnet om, og man kunne aldrig laegge den foerste video i det. */
+  (MODUL_EKSTRA || []).forEach(k => { if (!grupperM[k]) grupperM[k] = []; });
   const lekNr = o => { const m = String(o.titel || "").match(/^(\d+)\.(\d+)/); return m ? parseInt(m[1], 10) * 100 + parseInt(m[2], 10) : 9999; };
   Object.keys(grupper).forEach(k => grupper[k].sort((a, b) => lekNr(a) - lekNr(b)));
   const noegler = Object.keys(grupper).sort((x, y) => {
@@ -16548,6 +16650,11 @@ function renderKlipperum() {
   /* Klipperens produkt-piller filtrerer hans egen tavle (designpakke 3a) */
   const synligeK = (!KLIP_ER_IDA && KLIP_PROD_FILTER) ? synlige.filter(o => klipProdukterFor(o).indexOf(KLIP_PROD_FILTER) > -1) : synlige;
   KLIP_SYNLIGE = synlige;
+  /* Navne-overlayet hentes ved foerste tegning (Ida 5/8). Funktionen saetter MODUL_TITLER
+     med det samme, saa den ikke kan kalde sig selv i ring — og tegner om, naar svaret er
+     hjemme. Uden dette kald ville Idas egne modulnavne kun dukke op ved et tilfaeldigt
+     senere gentegn. */
+  if (MODUL_TITLER === null) { try { modulTitlerHent(); } catch(e) {} }
   const grupperM = {};
   synligeK.forEach(o => {   /* synligeK = synlige, naar der ikke er et produkt-filter (admin) */
     const m = String(o.modul || "").match(/modul\s*(\d+)/i);
@@ -16625,8 +16732,7 @@ function renderKlipperum() {
           const kasser = noegler.map(k => {
             const arr = grupperM[k];
             const g2 = arr.filter(o => o.status === "Godkendt").length;
-            const mTitel = (typeof KURSUS_MODULER !== "undefined" ? (KURSUS_MODULER.find(mm => String(mm.titel || "").indexOf(k) === 0) || {}).titel : "") || "";
-            const modulNavn = mTitel.indexOf("·") >= 0 ? mTitel.split("·").slice(1).join("·").trim() : "";
+            const modulNavn = modulNavnVis(k);   /* Idas egen omdoebning vinder (5/8) */
             const valgt = KLIP_MODUL_VALGT === k;
             const ordSum = arr.reduce((s, o) => s + klipOrdFor(o), 0);
             /* "Manus ikke godkendt" er den eneste status hvor manus mangler */
@@ -16702,11 +16808,24 @@ function renderKlipperum() {
               /* Modulets titel skal staa ud for nummeret (Ida 30/7) — "Modul 4 · Kulturen" siger
                  mere end "Modul 4". Titlen hentes samme sted som paa modulkortet. */
               + (function(){
-                  const mT = (typeof KURSUS_MODULER !== "undefined" ? (KURSUS_MODULER.find(mm => String(mm.titel || "").indexOf(KLIP_MODUL_VALGT) === 0) || {}).titel : "") || "";
-                  const mN = mT.indexOf("\u00b7") >= 0 ? mT.split("\u00b7").slice(1).join("\u00b7").trim() : "";
+                  const mN = modulNavnVis(KLIP_MODUL_VALGT);
+                  /* Rettefeltet staar HER og ikke paa selve modulkortet: kortet ER en knap,
+                     og en knap inde i en knap kan ikke klikkes paalideligt. */
+                  if (KLIP_MODUL_RET === KLIP_MODUL_VALGT) {
+                    return '<div style="background:#fff;border:1.5px solid var(--red);border-radius:12px;padding:14px 16px;margin-bottom:12px;">'
+                      + '<div style="font-size:10px;letter-spacing:1.4px;text-transform:uppercase;color:var(--red);border-bottom:1px solid var(--border);padding-bottom:9px;margin-bottom:11px;">' + esc(KLIP_MODUL_VALGT) + ' \u2014 navn</div>'
+                      + '<input type="text" id="modulNavnFelt" value="' + esc(mN).replace(/"/g, "&quot;") + '" placeholder="Fx Content-strategien" style="width:100%;background:#fff;border:1px solid var(--border);border-radius:12px;padding:10px 12px;font-size:13px;font-family:Poppins,sans-serif;box-sizing:border-box;">'
+                      + '<div style="font-size:10.5px;color:var(--gray3);line-height:1.55;margin-top:7px;">Nummeret bliver st\u00e5ende. Navnet sl\u00e5r igennem p\u00e5 modulkortet, p\u00e5 videoerne og i printet.</div>'
+                      + '<div style="display:flex;align-items:center;gap:10px;justify-content:flex-end;margin-top:12px;flex-wrap:wrap;">'
+                        + '<span id="modulNavnMsg" style="flex:1;min-width:0;font-size:11px;color:var(--gray3);"></span>'
+                        + '<button type="button" class="row-btn" onclick="modulRetLuk()">Annull\u00e9r</button>'
+                        + '<button type="button" class="dbtn primary" style="padding:8px 16px;" onclick="modulTitelGem(&#39;' + esc(KLIP_MODUL_VALGT) + '&#39;)">Gem</button>'
+                      + '</div></div>';
+                  }
                   /* Print MODUL for modul (Ida 2/8) — knappen sidder dér, hvor modulet er valgt. */
                   return '<div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:10px;">'
                     + '<span class="kort-titel" style="flex:1;min-width:0;">' + esc(KLIP_MODUL_VALGT) + (mN ? ' \u00b7 ' + esc(mN) : '') + ' — videoerne</span>'
+                    + '<button type="button" class="row-btn" style="font-weight:400;" onclick="modulRetAaben(&#39;' + esc(KLIP_MODUL_VALGT) + '&#39;)">Rediger modul</button>'
                     + '<button type="button" class="row-btn" style="font-weight:400;" onclick="printModul(&#39;' + esc(KLIP_MODUL_VALGT) + '&#39;)">Print dette modul</button>'
                     + '</div>';
                 })()
@@ -16714,13 +16833,25 @@ function renderKlipperum() {
               /* "+ TILFØJ VIDEO" STÅR DÉR, HVOR MODULET ER VALGT (Ida 4/8: "der er stadig
                  ikke sket noget her?"). Knappen laa kun i Liste-fanen, men det er HER, man
                  staar "inde paa et modul". Modulet udfyldes af sig selv — intet modul-felt. */
-              + klipNyModulHtml(KLIP_MODUL_VALGT, (function(){
-                  const t = (typeof KURSUS_MODULER !== "undefined" ? (KURSUS_MODULER.find(mm => String(mm.titel || "").indexOf(KLIP_MODUL_VALGT) === 0) || {}).titel : "") || "";
-                  return t || KLIP_MODUL_VALGT;
-                })())
+              + klipNyModulHtml(KLIP_MODUL_VALGT, modulFuldTitel(KLIP_MODUL_VALGT))
               + '</div>';
           }
-          return hjaelp + '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:16px;align-items:start;">' + kasser + '</div>' + detalje;
+          /* OPRET MODUL (Ida 5/8: "kan faktisk slet ikke oprette moduler?").
+             Flisen staar SIDST i raekken af moduler — samme sted som kalenderens
+             stiplede plus-kasse, saa "her kan der komme et mere" siger sig selv.
+             Stiplet kant efter tom-tilstands-standarden (#DEDAD4). */
+          const opretFlise = KLIP_MODUL_NY
+            ? '<div style="background:#fff;border:1.5px solid var(--red);border-radius:20px;padding:20px 22px;box-sizing:border-box;">'
+              + '<div style="font-size:10px;letter-spacing:1.4px;text-transform:uppercase;color:var(--red);border-bottom:1px solid var(--border);padding-bottom:9px;margin-bottom:11px;">Nyt modul \u00b7 ' + esc("Modul " + modulNaesteNr()) + '</div>'
+              + '<input type="text" id="modulNyFelt" placeholder="Modulets navn \u2014 fx Kulturen" style="width:100%;background:#fff;border:1px solid var(--border);border-radius:12px;padding:10px 12px;font-size:13px;font-family:Poppins,sans-serif;box-sizing:border-box;">'
+              + '<div style="font-size:10.5px;color:var(--gray3);line-height:1.55;margin-top:7px;">Nummeret s\u00e6ttes automatisk. Modulet st\u00e5r tomt, til du l\u00e6gger den f\u00f8rste video i det.</div>'
+              + '<div style="display:flex;align-items:center;gap:10px;justify-content:flex-end;margin-top:12px;flex-wrap:wrap;">'
+                + '<span id="modulNyMsg" style="flex:1;min-width:0;font-size:11px;color:var(--gray3);"></span>'
+                + '<button type="button" class="row-btn" onclick="modulRetLuk()">Annull\u00e9r</button>'
+                + '<button type="button" class="dbtn primary" style="padding:8px 16px;" onclick="modulOpret()">Opret</button>'
+              + '</div></div>'
+            : '<button type="button" onclick="modulNyAaben()" style="background:none;border:1.5px dashed var(--border);border-radius:20px;padding:20px 22px;cursor:pointer;font-family:Poppins,sans-serif;color:var(--red);font-size:13px;min-height:120px;display:flex;align-items:center;justify-content:center;box-sizing:border-box;">+ Opret modul</button>';
+          return hjaelp + '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:16px;align-items:start;">' + kasser + opretFlise + '</div>' + detalje;
         })()
       : '<div class="ws-empty" style="padding:14px 0;">' + (total ? 'Ingen videoer i denne status lige nu.' : 'Ingen videoer i produktion lige nu.') + '</div>'))
     /* "Ny video"-plusset hoerer til PRODUKTIONEN — ikke til gennemlaesningen (quizzen) og
@@ -19109,7 +19240,7 @@ function buildSideNav(def) {
       + '<span style="opacity:.55;">' + ikon("", "Kalender", "laastBesked()", IK.kal) + '</span>'
       + '<span style="opacity:.55;">' + ikon("", "Værktøjskassen", "laastBesked()", IK.tools) + '</span>'
       + '<button class="sn-virk-knap" onclick="toggleVirkMenu(event)" title="' + esc(knapNavn) + '" aria-label="Profil" style="margin-left:auto;"><span class="sn-initial">' + esc((knapNavn || "?").trim().charAt(0).toUpperCase()) + '</span><span class="sn-virk-navn" style="white-space:normal;overflow-wrap:anywhere;">' + esc(knapNavn) + '</span><svg class="sn-virk-pil" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="flex-shrink:0;"><path d="M6 9l6 6 6-6"/></svg></button>'
-      + fodBagud + '<div class="sn-fod"><span>Version 5. august · 972</span></div>'
+      + fodBagud + '<div class="sn-fod"><span>Version 5. august · 973</span></div>'
       /* Ida 30/7: alle konto-punkter bor i profilmenuen — ingen streg/sn-bund */
       + '<div id="virkMenu" style="display:none;position:fixed;left:14px;bottom:96px;width:230px;background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:0 16px 40px rgba(0,0,0,0.15);padding:8px;z-index:90;">'
       + '<div style="padding:10px 12px 6px;font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--gray3);">' + esc(virkNavn) + '</div>'
@@ -19169,7 +19300,7 @@ function buildSideNav(def) {
         uPkt("", "Lektioner", "showTab(12)")))
     + '<button class="sn-virk-knap" onclick="toggleVirkMenu(event)" title="' + esc(knapNavn) + '" aria-label="Profil"><span class="sn-initial">' + esc((knapNavn || "?").trim().charAt(0).toUpperCase()) + '</span><span class="sn-virk-navn" style="white-space:normal;overflow-wrap:anywhere;">' + esc(knapNavn) + '</span><svg class="sn-virk-pil" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="flex-shrink:0;"><path d="M6 9l6 6 6-6"/></svg></button>'
     /* Ida 30/7: ingen streg — logo + version samlet i foden under profilknappen */
-    + fodBagud + '<div class="sn-fod"><span>Version 5. august · 972</span></div>'
+    + fodBagud + '<div class="sn-fod"><span>Version 5. august · 973</span></div>'
     /* Ida 30/7: menuen åbner VED knappen (nederst t.v.) — ikke i modsatte hjørne */
     + '<div id="virkMenu" style="display:none;position:fixed;left:14px;bottom:96px;width:230px;background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:0 16px 40px rgba(0,0,0,0.15);padding:8px;z-index:90;">'
     + '<div style="padding:10px 12px 6px;font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--gray3);">' + esc(virkNavn) + '</div>'
@@ -29721,6 +29852,6 @@ if ((location.hash || "").toLowerCase() === "#ole") {   // #ole = preview af Ole
      Laa den inde i #dashboard, ville kunderne aldrig se den (synk-reglen, Ida 31/7). -->
 <div id="dashBundnav" role="navigation" aria-label="Backstage"></div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 5. august · 972</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 5. august · 973</div>
 </body>
 </html>
