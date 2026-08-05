@@ -1725,7 +1725,7 @@ body.modul-open .burger-btn, body.modul-open .bottom-nav, body.modul-open .dash-
     <button class="burger-item" onclick="toggleBurger(); togglePwPanel()">Skift adgangskode</button>
     <button class="burger-item" onclick="toggleBurger(); openChat()">Kontakt Ida</button>
     <button class="burger-item" style="color:var(--red);" onclick="custLogout()">Log ud</button>
-    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 5. august · 966</div>
+    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 5. august · 967</div>
   </div>
 </div>
 <div class="plus-menu" id="plusMenu" onclick="if(event.target===this)togglePlus()">
@@ -2332,6 +2332,8 @@ if (/somkunde=/.test(location.hash)) {
       </div>
       <div id="dagsProgramKort" style="display:none;margin-bottom:14px;"></div>
       <div id="kundeHaengKort" style="display:none;margin-bottom:14px;"></div>
+      <!-- Opgaver-kassen (Ida 5/8) — Energidas opgaver, kun til den person de er stilet til -->
+      <div id="kundeOpgaverKort" style="display:none;margin-bottom:14px;"></div>
       </div>
       </div>
 
@@ -2817,7 +2819,7 @@ if (/somkunde=/.test(location.hash)) {
     <!-- Foden bliver nederst — den er det ENESTE der skubbes ned (Ida 30/7) -->
     <div class="dsb-fod">
       <button class="dsb-konto" onclick="dashKontoMenu()" title="Ida"><span class="dsb-initial">I</span><span class="dsb-konto-navn">Ida</span><svg class="dsb-konto-pil" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></button>
-      <div class="dsb-version"><span>Version 5. august · 966</span></div>
+      <div class="dsb-version"><span>Version 5. august · 967</span></div>
     </div>
   </div>
 
@@ -6366,7 +6368,7 @@ select titel,
          staa fast paa telefon. De hoerer i arket (samme fejl som "left" 31/7). -->
     <div id="dashFooter" style="z-index:50;display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--gray3);background:#fff;border-top:1px solid var(--border);padding:10px 26px;">
       <div style="font-size:10px;">© 2026 Energida · Alle rettigheder forbeholdes</div>
-      <div style="font-size:10px;margin-left:auto;">Version 5. august · 966 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
+      <div style="font-size:10px;margin-left:auto;">Version 5. august · 967 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
     </div>
   </div>
 </div>
@@ -10033,13 +10035,15 @@ function renderFokus(planFrem, target, idag) {
         planFrem + " af " + target + " er planlagt — giv en idé en dato, så ruller planen.",
         "Åbn idébanken", () => showTab(2));
   }
-  // 3) en åben opgave fra Energida
-  const opgave = (OPGAVER || []).find(o => !o.done);
-  if (opgave) {
-    laeg((opgave.titel || "").slice(0, 70),
-        "Fra checklisten" + (opgave.deadline ? " — senest " + dkDatoKort(String(opgave.deadline)) : "") + (opgave.note ? " · " + String(opgave.note).slice(0, 80) : "") + ".",
-        "Markér klaret", async () => { await toggleOpgave(opgave.id); renderHome(); });
-  }
+  /* OPGAVERNE ER FLYTTET UD I DERES EGEN KASSE (Ida 5/8: "disse opgaver skal ikke være
+     under i dag - men skal være under en kasse der skal oprettes der skal hedde
+     Opgaver"). I dag handler om dét, der skal ske I DAG; en opgave uden frist i dag er
+     ikke en dagsaktivitet. Kassen tegnes af renderKundeOpgaver().
+     HÆNGEPARTIERNE KOM TIL GENGÆLD IND ("Hængepartier skal tilgengæld flyttes til i
+     dag") — et opslag, der er skredet eller venter paa en dato, ER dagens arbejde. */
+  try {
+    kundeHaengListe().forEach(r => laeg(r.t, r.grund, r.h, () => openBriefSide(r.id)));
+  } catch(e) {}
 
   /* Dublet-reglen: staar den naeste lektion allerede som et dagsprogram-punkt, skal
      I dag-kortets egen "Naeste lektion"-linje ikke gentage den. */
@@ -18693,6 +18697,10 @@ async function refreshOpgaver() {
 }
 let OPG_OPEN = null;
 function renderOpgaver() {
+  /* Opgaver-kassen tegnes ogsaa HER (Ida 5/8). Opgaverne hentes asynkront, og uden
+     dette kald stod kassen tom, til noget andet tilfaeldigvis kaldte renderKundeHaeng.
+     En hentefunktion skal tegne alt det, den henter — paa alle veje ind. */
+  try { renderKundeOpgaver(); } catch(e) {}
   const sec = document.getElementById("opgaveSection");
   if (sec) { sec.style.display = "none"; return; }   // Checkliste-sektionen er pensioneret på forsiden (Idas beslutning 13/7) — opgaverne bor i Dit næste skridt
   if (!sec) return;
@@ -19063,7 +19071,7 @@ function buildSideNav(def) {
       + '<span style="opacity:.55;">' + ikon("", "Kalender", "laastBesked()", IK.kal) + '</span>'
       + '<span style="opacity:.55;">' + ikon("", "Værktøjskassen", "laastBesked()", IK.tools) + '</span>'
       + '<button class="sn-virk-knap" onclick="toggleVirkMenu(event)" title="' + esc(knapNavn) + '" aria-label="Profil" style="margin-left:auto;"><span class="sn-initial">' + esc((knapNavn || "?").trim().charAt(0).toUpperCase()) + '</span><span class="sn-virk-navn" style="white-space:normal;overflow-wrap:anywhere;">' + esc(knapNavn) + '</span><svg class="sn-virk-pil" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="flex-shrink:0;"><path d="M6 9l6 6 6-6"/></svg></button>'
-      + fodBagud + '<div class="sn-fod"><span>Version 5. august · 966</span></div>'
+      + fodBagud + '<div class="sn-fod"><span>Version 5. august · 967</span></div>'
       /* Ida 30/7: alle konto-punkter bor i profilmenuen — ingen streg/sn-bund */
       + '<div id="virkMenu" style="display:none;position:fixed;left:14px;bottom:96px;width:230px;background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:0 16px 40px rgba(0,0,0,0.15);padding:8px;z-index:90;">'
       + '<div style="padding:10px 12px 6px;font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--gray3);">' + esc(virkNavn) + '</div>'
@@ -19123,7 +19131,7 @@ function buildSideNav(def) {
         uPkt("", "Lektioner", "showTab(12)")))
     + '<button class="sn-virk-knap" onclick="toggleVirkMenu(event)" title="' + esc(knapNavn) + '" aria-label="Profil"><span class="sn-initial">' + esc((knapNavn || "?").trim().charAt(0).toUpperCase()) + '</span><span class="sn-virk-navn" style="white-space:normal;overflow-wrap:anywhere;">' + esc(knapNavn) + '</span><svg class="sn-virk-pil" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="flex-shrink:0;"><path d="M6 9l6 6 6-6"/></svg></button>'
     /* Ida 30/7: ingen streg — logo + version samlet i foden under profilknappen */
-    + fodBagud + '<div class="sn-fod"><span>Version 5. august · 966</span></div>'
+    + fodBagud + '<div class="sn-fod"><span>Version 5. august · 967</span></div>'
     /* Ida 30/7: menuen åbner VED knappen (nederst t.v.) — ikke i modsatte hjørne */
     + '<div id="virkMenu" style="display:none;position:fixed;left:14px;bottom:96px;width:230px;background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:0 16px 40px rgba(0,0,0,0.15);padding:8px;z-index:90;">'
     + '<div style="padding:10px 12px 6px;font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--gray3);">' + esc(virkNavn) + '</div>'
@@ -20248,7 +20256,16 @@ function kundeHaengListe() {
   });
   return rows;
 }
+/* Kortet er pensioneret (Ida 5/8) — raekkerne staar nu i I dag-kortet, og to steder med
+   samme punkter er dublet-reglen. Funktionen bliver staaende og skjuler sit kort, saa
+   de mange kaldere rundt i appen ikke skal roeres. */
 function renderKundeHaeng() {
+  const el = document.getElementById("kundeHaengKort");
+  if (el) { el.style.display = "none"; el.innerHTML = ""; }
+  try { renderKundeOpgaver(); } catch(e) {}
+  return;
+}
+function renderKundeHaengGammel() {
   const el = document.getElementById("kundeHaengKort"); if (!el) return;
   const rows = kundeHaengListe();
   if (!rows.length) { el.style.display = "none"; el.innerHTML = ""; return; }
@@ -20273,6 +20290,41 @@ function renderKundeHaeng() {
           + '</div>';
       }).join("")
     + (rows.length > 6 ? '<div style="font-size:11px;color:var(--gray3);padding-top:6px;">+ ' + (rows.length - 6) + ' mere</div>' : '')
+    + '</div>';
+}
+/* OPGAVER-KASSEN (Ida 5/8). Energidas opgaver til kunden — dem Ida skriver paa
+   kundekortet. To regler:
+   1) De staar her, ikke i I dag — de har sjaeldent noget med netop i dag at goere.
+   2) Er der valgt en PERSON paa opgaven, er det kun hende, der ser den ("det er kun den
+      person som skal have dem op ... på deres dashboard"). Uden person gaelder den alle.
+   "Ida (mig)" er Idas egen huskeseddel og hoerer aldrig hjemme paa kundens side. */
+function opgaveErTilMig(o) {
+  const a = String((o && o.ansvarlig) || "").trim();
+  if (!a) return true;                                  /* ingen person valgt = til alle */
+  if (/^ida/i.test(a)) return false;                  /* Idas egen — ikke kundens */
+  const mig = String((typeof CURRENT_NAVN !== "undefined" && CURRENT_NAVN) || "").trim();
+  if (!mig) return false;
+  return a.toLowerCase() === mig.toLowerCase();
+}
+function renderKundeOpgaver() {
+  const el = document.getElementById("kundeOpgaverKort"); if (!el) return;
+  const rows = (OPGAVER || []).filter(o => !o.done && o.aktiv !== false && opgaveErTilMig(o));
+  if (!rows.length) { el.style.display = "none"; el.innerHTML = ""; return; }
+  el.style.display = "";
+  el.innerHTML = '<div style="background:#fff;border:1px solid var(--border);border-radius:20px;padding:17px 20px 12px;margin:0;">'
+    + '<div style="display:flex;align-items:center;gap:9px;font-size:10px;font-weight:400;letter-spacing:1.8px;text-transform:uppercase;color:var(--red);border-bottom:1px solid var(--border);padding-bottom:9px;margin-bottom:4px;">'
+    + '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>'
+    + '<span style="flex:1;min-width:0;">Opgaver</span><span class="ws-count">' + rows.length + '</span></div>'
+    + rows.map(o => {
+        const frist = o.deadline ? dkDatoKort(String(o.deadline)) : "";
+        return '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;border-top:1px solid var(--gray);padding:11px 0;">'
+          + '<div style="flex:1;min-width:140px;font-size:12.5px;line-height:1.45;">' + esc(storStart(o.titel || "Opgave"))
+          + (o.beskrivelse ? '<div style="font-size:11px;color:var(--gray3);line-height:1.5;">' + esc(o.beskrivelse) + '</div>' : '')
+          + '</div>'
+          + (frist ? '<span style="display:inline-block;background:#fff;color:var(--gray3);border:1px solid var(--border);border-radius:12px;padding:2px 9px;font-size:10px;">senest ' + esc(frist) + '</span>' : '')
+          + '<button type="button" onclick="toggleOpgave(\'' + o.id + '\').then(function(){ renderHome(); })" style="background:none;border:none;color:var(--red);font-family:Poppins,sans-serif;font-size:11.5px;cursor:pointer;padding:0;white-space:nowrap;">Markér klaret</button>'
+          + '</div>';
+      }).join("")
     + '</div>';
 }
 /* Opslagets rejse: kundens statustrin som milepæls-bar (kun de trin, kundens type har) */
@@ -27277,7 +27329,16 @@ function kkOpgaveSektion(kode) {
     return '<div style="display:flex;gap:8px;align-items:center;background:#fff;border:1px ' + (kladde ? 'dashed' : 'solid') + ' var(--border);border-radius:12px;padding:10px 12px;margin-bottom:6px;' + (kladde ? 'opacity:0.8;' : '') + '">'
       + '<div style="flex:1;min-width:0;cursor:pointer;" onclick="CRM_OPG_RET=\'' + o.id + '\';renderKundeKort()" title="Klik for at rette">'
       + '<div style="font-size:12px;font-weight:400;' + (o.done ? 'text-decoration:line-through;color:var(--gray3);' : '') + '">' + (kladde ? '<span style="font-size:9px;font-weight:400;letter-spacing:0.5px;text-transform:uppercase;color:var(--red);border:1px solid var(--red);border-radius:12px;padding:1px 6px;margin-right:6px;">Ikke publiceret</span>' : '') + esc(o.titel || "") + '</div>'
-      + '<div style="font-size:10px;color:var(--gray3);">' + (o.ansvarlig ? 'til: ' + esc(o.ansvarlig) : 'til: alle') + (o.deadline ? ' · senest ' + esc(String(o.deadline)) : '') + (o.done ? ' · ✓ klaret' : '') + ' · klik for at rette</div>'
+      /* PERSONEN SKAL KUNNE SES (Ida 5/8: "den person der er valgt på opgaven skal
+         fremgå her på kortet også"). Den stod som graa smaatekst mellem alt det andet —
+         nu er den en chip, fordi det er dén, der afgoer, hvem der overhovedet ser
+         opgaven paa sit dashboard. */
+      + '<div style="font-size:10px;color:var(--gray3);display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:3px;">'
+        + (o.ansvarlig
+            ? '<span style="background:#FDE8E3;color:var(--red);border-radius:12px;padding:2px 9px;font-size:10px;">' + esc(o.ansvarlig) + '</span>'
+            : '<span style="border:1px solid var(--border);border-radius:12px;padding:2px 9px;font-size:10px;">Alle</span>')
+        + '<span>' + (o.deadline ? 'senest ' + esc(String(o.deadline)) + ' · ' : '') + (o.done ? '✓ klaret · ' : '') + 'klik for at rette</span>'
+      + '</div>'
       + '</div>'
       + (kladde ? '<button class="row-btn view" onclick="aktiverKundeOpgave(\'' + o.id + '\')">Publicér</button>' : '')
       + '<button class="row-btn" onclick="delKundeOpgave(\'' + o.id + '\')">Slet</button>'
@@ -29605,6 +29666,6 @@ if ((location.hash || "").toLowerCase() === "#ole") {   // #ole = preview af Ole
      Laa den inde i #dashboard, ville kunderne aldrig se den (synk-reglen, Ida 31/7). -->
 <div id="dashBundnav" role="navigation" aria-label="Backstage"></div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 5. august · 966</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 5. august · 967</div>
 </body>
 </html>
