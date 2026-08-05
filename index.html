@@ -254,6 +254,16 @@ textarea { resize: none; height: 72px; }
 
 /* ===================== KUNDE-LOGIN (forside på b2b) ===================== */
 @keyframes hjertePuls { 0%, 100% { transform: scale(1); opacity: .9; } 50% { transform: scale(1.18); opacity: 1; } }
+/* SPØGELSESSIDEN MÅ ALDRIG SES (HÅRD, Ida 5/8: "den side må ALDRIG komme frem").
+   Den raa skal — knapper og kasser uden styling — blev synlig ved enhver langsom
+   indlaesning, fordi kun kundevisningen havde en ventesk\u00e6rm. Nu daekker ventesiden
+   fra FOERSTE maling: reglen staar i arket (ikke i JS), saa den gaelder allerede foer
+   det foerste script er hentet. Den fjernes igen af body.app-klar. */
+#appLoader { position:fixed; inset:0; z-index:10000; background:var(--app-bg-mobil); display:flex; align-items:center; justify-content:center; flex-direction:column; gap:18px; }
+#appLoader img { width:110px; height:auto; animation: hjertePuls 1.6s ease-in-out infinite; }
+#appLoader div { font-family:'Poppins',sans-serif; font-size:11px; letter-spacing:2px; text-transform:uppercase; color:var(--gray3); }
+body.app-klar #appLoader { display:none; }
+@media print { #appLoader { display:none !important; } }
 #somkundeLoader { display:none; position:fixed; inset:0; z-index:9999; background:var(--blue); align-items:center; justify-content:center; flex-direction:column; gap:18px; }
 #somkundeLoader img { width:110px; height:auto; animation: hjertePuls 1.6s ease-in-out infinite; }
 #somkundeLoader div { font-family:'Poppins',sans-serif; font-size:11px; letter-spacing:2px; text-transform:uppercase; color:var(--gray3); }
@@ -573,10 +583,18 @@ html, body { max-width:100%; }
 #briefWrap .basis-bund { display:flex; justify-content:flex-end; gap:10px; padding:14px 22px; }
 /* ENKEL BRIEF (Ida 30/7): er det bare en idé, skal man KUN forholde sig til idéen.
    Resten af briefen er der stadig — den er bare foldet vaek, til man trykker "Planlæg den nu". */
-#briefWrap.brief-enkel .basis-kort > .sk-q:not(.sk-enkel),
-#briefWrap.brief-enkel .basis-dobbelt,
-#briefWrap.brief-enkel .brief-trin:not(.basis-kort),
-#briefWrap.brief-enkel .basis-hoved .row-btn { display:none; }   /* Planlæg + Næste side om side, nederst th. (Ida 30/7) */
+/* GRÆNSEN STÅR I SELVE REGLEN (Ida 5/8). Klassen saettes af JS, og JS kan naa at
+   efterlade den: er briefen een gang tegnet smalt (telefon, eller et vindue der har
+   vaeret smalt), bliver klassen liggende, til briefen tegnes HELT forfra — og saa
+   moeder man den enkle brief paa computeren. Manualens lektie fra 4/8: en rettelse lavet
+   FOR telefonen skal ogsaa kun GAELDE paa telefonen. Nu kan klassen ikke goere skade
+   over 760 px, uanset hvordan den er havnet der. */
+@media (max-width:760px) {
+  #briefWrap.brief-enkel .basis-kort > .sk-q:not(.sk-enkel),
+  #briefWrap.brief-enkel .basis-dobbelt,
+  #briefWrap.brief-enkel .brief-trin:not(.basis-kort),
+  #briefWrap.brief-enkel .basis-hoved .row-btn { display:none; }   /* Planlæg + Næste side om side, nederst th. (Ida 30/7) */
+}
 /* ===== BRIEFEN PAA TELEFON (mobiltjek 2/8) =====
    1) VEJEN VIDERE MAA ALDRIG FORSVINDE. Maalt paa 390 px: paa Caption-trinnet laa
       "Naeste" 361 px UNDER skaermkanten — netop dér, hvor man skriver mest. Alle
@@ -1708,6 +1726,34 @@ body.modul-open .burger-btn, body.modul-open .bottom-nav, body.modul-open .dash-
 </style>
 </head>
 <body>
+<!-- Ventesiden. Staar FOERST i body, saa den daekker skallen, fra det foerste der males. -->
+<div id="appLoader"><img src="logo-hjerte.png" alt="" onerror="this.style.display='none'"><div>Et &oslash;jeblik&hellip;</div></div>
+<script>/* VENTESIDEN SLUKKES, NAAR APPEN ER DER (Ida 5/8).
+   Tre veje ud, saa den aldrig kan blive haengende:
+     1) appen viser noget aegte — login-porten eller en indlogget flade,
+     2) siden er faerdig med at loade (window load) plus et lille pusterum,
+     3) en haard graense paa 9 sekunder: sidder noget fast, er en halvfaerdig app
+        stadig bedre end en ventesk\u00e6rm, man ikke kan komme ud af.
+   Vagten er inline og uden afhaengigheder — den skal virke, ogsaa hvis resten fejler. */
+(function () {
+  var slukket = false;
+  function sluk() {
+    if (slukket) return; slukket = true;
+    try { document.body.classList.add("app-klar"); } catch (e) {}
+  }
+  window.appLoaderSluk = sluk;
+  function erAppenDer() {
+    var b = document.body; if (!b) return false;
+    if (b.classList.contains("has-nav") || b.classList.contains("dash-mode") || b.classList.contains("dash-nav")) return true;
+    var g = document.getElementById("authGate");
+    if (g && getComputedStyle(g).display !== "none") return true;   /* login-porten ER en aegte flade */
+    return false;
+  }
+  var tjek = setInterval(function () { if (erAppenDer()) { clearInterval(tjek); sluk(); } }, 80);
+  window.addEventListener("load", function () { setTimeout(function () { clearInterval(tjek); sluk(); }, 300); });
+  setTimeout(function () { clearInterval(tjek); sluk(); }, 9000);
+})();
+</script>
 
 <button class="cust-logout" id="custLogout" onclick="custLogout()">Log ud</button>
 <button class="cust-logout" id="custPwBtn" onclick="togglePwPanel()" style="top:52px;">Skift adgangskode</button>
@@ -1750,7 +1796,7 @@ body.modul-open .burger-btn, body.modul-open .bottom-nav, body.modul-open .dash-
     <button class="burger-item" onclick="toggleBurger(); togglePwPanel()">Skift adgangskode</button>
     <button class="burger-item" onclick="toggleBurger(); openChat()">Kontakt Ida</button>
     <button class="burger-item" style="color:var(--red);" onclick="custLogout()">Log ud</button>
-    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 5. august · 980</div>
+    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 5. august · 981</div>
   </div>
 </div>
 <div class="plus-menu" id="plusMenu" onclick="if(event.target===this)togglePlus()">
@@ -2848,7 +2894,7 @@ if (/somkunde=/.test(location.hash)) {
     <!-- Foden bliver nederst — den er det ENESTE der skubbes ned (Ida 30/7) -->
     <div class="dsb-fod">
       <button class="dsb-konto" onclick="dashKontoMenu()" title="Ida"><span class="dsb-initial">I</span><span class="dsb-konto-navn">Ida</span><svg class="dsb-konto-pil" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></button>
-      <div class="dsb-version"><span>Version 5. august · 980</span></div>
+      <div class="dsb-version"><span>Version 5. august · 981</span></div>
     </div>
   </div>
 
@@ -6409,7 +6455,7 @@ select titel,
          staa fast paa telefon. De hoerer i arket (samme fejl som "left" 31/7). -->
     <div id="dashFooter" style="z-index:50;display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--gray3);background:#fff;border-top:1px solid var(--border);padding:10px 26px;">
       <div style="font-size:10px;">© 2026 Energida · Alle rettigheder forbeholdes</div>
-      <div style="font-size:10px;margin-left:auto;">Version 5. august · 980 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
+      <div style="font-size:10px;margin-left:auto;">Version 5. august · 981 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
     </div>
   </div>
 </div>
@@ -7918,6 +7964,14 @@ function openBriefSide(id) {
        nederst til hoejre som en knap for sig. Gem bliver staaende her, hvor Ida bad om den. */
     + '<button type="button" class="row-btn" style="font-weight:400;" onclick="briefGemNu(this)">Gem</button>'
     + '</div>'
+    /* RÆKKEFØLGEN (Ida 5/8): indholdstype → indholdssøjle → intern titel → idé →
+       udbytte → format. Hendes ord: "briefen skal starte med at spørge hvilken
+       indholdstype". Det giver sig selv, naar man ser modellen: typen afgoer, HVILKE
+       søjler der overhovedet kan vaelges, og søjlen afgoer, hvilke CTA-er der anbefales.
+       Foer stod titlen og idéen foerst, og saa svarede man paa modellen bagefter — man
+       skrev altsaa idéen, foer man havde besluttet, hvad den skulle gøre. */
+    + basisFormaalBlokHtml()
+    + basisSoejleValgBlokHtml()
     /* Titel-boks (Ida 30/7) — foer var titlen kun noget appen gaettede ud fra idéens foerste linje */
     /* "Intern titel" (Ida 31/7): titlen er jeres eget arbejdsnavn — den staar aldrig i opslaget */
     + qE('Intern titel', '<input type="text" class="sk-input" id="bf_titel" value="' + esc(it.titel || "") + '" placeholder="Giv opslaget en kort titel…" style="width:100%;">')
@@ -7927,8 +7981,6 @@ function openBriefSide(id) {
        hvad DE gaar derfra med. Valgfrit: det taeller ikke med i fremdriften, saa
        igangvaerende briefs ikke pludselig falder under 100 %. */
     + q('Hvad vil vi gerne have, at kunden får ud af opslaget?', hint('Tænk på modtageren, ikke på os: hvad ved, føler eller kan de bagefter, som de ikke kunne før? Det er dét, opslaget skal måles på.') + ta('udbytte', 'Fx: de ved, hvilke tre fejl de selv laver — og hvad de gør i stedet…', 70))
-    + basisFormaalBlokHtml()
-    + basisSoejleValgBlokHtml()
     + '<div class="basis-dobbelt">'
     + q('Hvilket format?', chips('format', ["Reel","Kort-reel","Karrusel"], false))   /* Story udgået af briefen (Ida 28/7) — 2B/stories briefes ikke */
     /* Hvem laver den? (Ida 29/7): Content Planner = Vi/Ida · andre = firmaets brugere · under 2 brugere = skjult */
@@ -19374,7 +19426,7 @@ function buildSideNav(def) {
       + '<span style="opacity:.55;">' + ikon("", "Kalender", "laastBesked()", IK.kal) + '</span>'
       + '<span style="opacity:.55;">' + ikon("", "Værktøjskassen", "laastBesked()", IK.tools) + '</span>'
       + '<button class="sn-virk-knap" onclick="toggleVirkMenu(event)" title="' + esc(knapNavn) + '" aria-label="Profil" style="margin-left:auto;"><span class="sn-initial">' + esc((knapNavn || "?").trim().charAt(0).toUpperCase()) + '</span><span class="sn-virk-navn" style="white-space:normal;overflow-wrap:anywhere;">' + esc(knapNavn) + '</span><svg class="sn-virk-pil" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="flex-shrink:0;"><path d="M6 9l6 6 6-6"/></svg></button>'
-      + fodBagud + '<div class="sn-fod"><span>Version 5. august · 980</span></div>'
+      + fodBagud + '<div class="sn-fod"><span>Version 5. august · 981</span></div>'
       /* Ida 30/7: alle konto-punkter bor i profilmenuen — ingen streg/sn-bund */
       + '<div id="virkMenu" style="display:none;position:fixed;left:14px;bottom:96px;width:230px;background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:0 16px 40px rgba(0,0,0,0.15);padding:8px;z-index:90;">'
       + '<div style="padding:10px 12px 6px;font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--gray3);">' + esc(virkNavn) + '</div>'
@@ -19434,7 +19486,7 @@ function buildSideNav(def) {
         uPkt("", "Lektioner", "showTab(12)")))
     + '<button class="sn-virk-knap" onclick="toggleVirkMenu(event)" title="' + esc(knapNavn) + '" aria-label="Profil"><span class="sn-initial">' + esc((knapNavn || "?").trim().charAt(0).toUpperCase()) + '</span><span class="sn-virk-navn" style="white-space:normal;overflow-wrap:anywhere;">' + esc(knapNavn) + '</span><svg class="sn-virk-pil" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="flex-shrink:0;"><path d="M6 9l6 6 6-6"/></svg></button>'
     /* Ida 30/7: ingen streg — logo + version samlet i foden under profilknappen */
-    + fodBagud + '<div class="sn-fod"><span>Version 5. august · 980</span></div>'
+    + fodBagud + '<div class="sn-fod"><span>Version 5. august · 981</span></div>'
     /* Ida 30/7: menuen åbner VED knappen (nederst t.v.) — ikke i modsatte hjørne */
     + '<div id="virkMenu" style="display:none;position:fixed;left:14px;bottom:96px;width:230px;background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:0 16px 40px rgba(0,0,0,0.15);padding:8px;z-index:90;">'
     + '<div style="padding:10px 12px 6px;font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--gray3);">' + esc(virkNavn) + '</div>'
@@ -30239,6 +30291,6 @@ if ((location.hash || "").toLowerCase() === "#ole") {   // #ole = preview af Ole
      Laa den inde i #dashboard, ville kunderne aldrig se den (synk-reglen, Ida 31/7). -->
 <div id="dashBundnav" role="navigation" aria-label="Backstage"></div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 5. august · 980</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 5. august · 981</div>
 </body>
 </html>
