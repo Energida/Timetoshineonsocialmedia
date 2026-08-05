@@ -1714,7 +1714,7 @@ body.modul-open .burger-btn, body.modul-open .bottom-nav, body.modul-open .dash-
     <button class="burger-item" onclick="toggleBurger(); togglePwPanel()">Skift adgangskode</button>
     <button class="burger-item" onclick="toggleBurger(); openChat()">Kontakt Ida</button>
     <button class="burger-item" style="color:var(--red);" onclick="custLogout()">Log ud</button>
-    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 5. august · 951</div>
+    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 5. august · 952</div>
   </div>
 </div>
 <div class="plus-menu" id="plusMenu" onclick="if(event.target===this)togglePlus()">
@@ -2806,7 +2806,7 @@ if (/somkunde=/.test(location.hash)) {
     <!-- Foden bliver nederst — den er det ENESTE der skubbes ned (Ida 30/7) -->
     <div class="dsb-fod">
       <button class="dsb-konto" onclick="dashKontoMenu()" title="Ida"><span class="dsb-initial">I</span><span class="dsb-konto-navn">Ida</span><svg class="dsb-konto-pil" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></button>
-      <div class="dsb-version"><span>Version 5. august · 951</span></div>
+      <div class="dsb-version"><span>Version 5. august · 952</span></div>
     </div>
   </div>
 
@@ -6355,7 +6355,7 @@ select titel,
          staa fast paa telefon. De hoerer i arket (samme fejl som "left" 31/7). -->
     <div id="dashFooter" style="z-index:50;display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--gray3);background:#fff;border-top:1px solid var(--border);padding:10px 26px;">
       <div style="font-size:10px;">© 2026 Energida · Alle rettigheder forbeholdes</div>
-      <div style="font-size:10px;margin-left:auto;">Version 5. august · 951 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
+      <div style="font-size:10px;margin-left:auto;">Version 5. august · 952 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
     </div>
   </div>
 </div>
@@ -6947,9 +6947,11 @@ document.addEventListener("click", e => {
   const vaelgPop = document.getElementById("eVaelgPop");
   if (vaelgPop && !vaelgPop.contains(t) && !(t && t.closest && t.closest("#eVaelgPop")) && !(t && t.tagName === "SELECT")) eVaelgLuk();
   if (!t || t.tagName !== "INPUT") return;
+  /* Paa computer aabnes dato og tid nu fra MOUSEDOWN (Ida 5/8), hvor browserens egen
+     vaelger kan stoppes foerst. Aabnede vi ogsaa herfra, kom vores to gange. Tilbage
+     staar KUN telefonens vej: dér er den native rigtig, og den skal have et skub. */
   const desktopVaelger = window.matchMedia && matchMedia("(min-width: 761px)").matches;
-  if (t.type === "date" && desktopVaelger) { eDatoVis(t); return; }
-  if (t.type === "time" && desktopVaelger) { eTidVis(t); return; }
+  if (desktopVaelger && (t.type === "date" || t.type === "time")) return;
   if ((t.type === "date" || t.type === "time") && typeof t.showPicker === "function") {
     try { t.showPicker(); } catch(err) {}
   }
@@ -6962,12 +6964,27 @@ document.addEventListener("keydown", e => { if (e.key === "Escape") { eDatoLuk()
    Telefonen beholder sin native: den er bygget til fingeren og staar fast i bunden. */
 document.addEventListener("mousedown", e => {
   const t = e.target;
-  if (!t || t.tagName !== "SELECT" || t.multiple || t.size > 1 || t.disabled) return;
-  if (t.dataset && t.dataset.frit !== undefined) return;   /* undtag med data-frit, hvis en select skal beholde sin native */
+  if (!t || t.disabled) return;
+  if (t.dataset && t.dataset.frit !== undefined) return;   /* undtag med data-frit, hvis et felt skal beholde sin native */
   if (!(window.matchMedia && matchMedia("(min-width: 761px)").matches)) return;
-  e.preventDefault();
-  try { t.blur(); } catch(err) {}
-  eVaelgVis(t);
+  /* DROPDOWN */
+  if (t.tagName === "SELECT" && !t.multiple && !(t.size > 1)) {
+    e.preventDefault();
+    try { t.blur(); } catch(err) {}
+    eVaelgVis(t);
+    return;
+  }
+  /* DATO OG TID — TO KALENDERE PÅ ÉN GANG (Idas fund 5/8).
+     Energida-vaelgeren blev lagt OVEN PAA feltet 22/7, men der blev aldrig sat en stopper
+     for browserens egen. Begge aabnede altsaa: vores paa klik, browserens paa sin egen
+     standardopfoersel. Om man saa det afhang af browseren — Safari aabner sin, saa snart
+     man roerer feltet; Chrome foerst ved kalender-ikonet.
+     Nu stoppes standarden foerst, og saa aabner kun vores. */
+  if (t.tagName === "INPUT" && (t.type === "date" || t.type === "time")) {
+    e.preventDefault();
+    try { t.blur(); } catch(err) {}
+    if (t.type === "date") eDatoVis(t); else eTidVis(t);
+  }
 });
 /* Første bogstav rettes altid til stort, mens der skrives (Ida 22/7).
    Undtaget: e-mail/url/tel-felter, @-handles, links og felter markeret data-frit. */
@@ -18773,7 +18790,7 @@ function buildSideNav(def) {
       + '<span style="opacity:.55;">' + ikon("", "Kalender", "laastBesked()", IK.kal) + '</span>'
       + '<span style="opacity:.55;">' + ikon("", "Værktøjskassen", "laastBesked()", IK.tools) + '</span>'
       + '<button class="sn-virk-knap" onclick="toggleVirkMenu(event)" title="' + esc(knapNavn) + '" aria-label="Profil" style="margin-left:auto;"><span class="sn-initial">' + esc((knapNavn || "?").trim().charAt(0).toUpperCase()) + '</span><span class="sn-virk-navn" style="white-space:normal;overflow-wrap:anywhere;">' + esc(knapNavn) + '</span><svg class="sn-virk-pil" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="flex-shrink:0;"><path d="M6 9l6 6 6-6"/></svg></button>'
-      + fodBagud + '<div class="sn-fod"><span>Version 5. august · 951</span></div>'
+      + fodBagud + '<div class="sn-fod"><span>Version 5. august · 952</span></div>'
       /* Ida 30/7: alle konto-punkter bor i profilmenuen — ingen streg/sn-bund */
       + '<div id="virkMenu" style="display:none;position:fixed;left:14px;bottom:96px;width:230px;background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:0 16px 40px rgba(0,0,0,0.15);padding:8px;z-index:90;">'
       + '<div style="padding:10px 12px 6px;font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--gray3);">' + esc(virkNavn) + '</div>'
@@ -18830,7 +18847,7 @@ function buildSideNav(def) {
         uPkt("", "Lektioner", "showTab(12)")))
     + '<button class="sn-virk-knap" onclick="toggleVirkMenu(event)" title="' + esc(knapNavn) + '" aria-label="Profil"><span class="sn-initial">' + esc((knapNavn || "?").trim().charAt(0).toUpperCase()) + '</span><span class="sn-virk-navn" style="white-space:normal;overflow-wrap:anywhere;">' + esc(knapNavn) + '</span><svg class="sn-virk-pil" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="flex-shrink:0;"><path d="M6 9l6 6 6-6"/></svg></button>'
     /* Ida 30/7: ingen streg — logo + version samlet i foden under profilknappen */
-    + fodBagud + '<div class="sn-fod"><span>Version 5. august · 951</span></div>'
+    + fodBagud + '<div class="sn-fod"><span>Version 5. august · 952</span></div>'
     /* Ida 30/7: menuen åbner VED knappen (nederst t.v.) — ikke i modsatte hjørne */
     + '<div id="virkMenu" style="display:none;position:fixed;left:14px;bottom:96px;width:230px;background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:0 16px 40px rgba(0,0,0,0.15);padding:8px;z-index:90;">'
     + '<div style="padding:10px 12px 6px;font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--gray3);">' + esc(virkNavn) + '</div>'
@@ -29106,6 +29123,6 @@ if ((location.hash || "").toLowerCase() === "#ole") {   // #ole = preview af Ole
      Laa den inde i #dashboard, ville kunderne aldrig se den (synk-reglen, Ida 31/7). -->
 <div id="dashBundnav" role="navigation" aria-label="Backstage"></div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 5. august · 951</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 5. august · 952</div>
 </body>
 </html>
