@@ -1725,7 +1725,7 @@ body.modul-open .burger-btn, body.modul-open .bottom-nav, body.modul-open .dash-
     <button class="burger-item" onclick="toggleBurger(); togglePwPanel()">Skift adgangskode</button>
     <button class="burger-item" onclick="toggleBurger(); openChat()">Kontakt Ida</button>
     <button class="burger-item" style="color:var(--red);" onclick="custLogout()">Log ud</button>
-    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 5. august · 967</div>
+    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 5. august · 968</div>
   </div>
 </div>
 <div class="plus-menu" id="plusMenu" onclick="if(event.target===this)togglePlus()">
@@ -2819,7 +2819,7 @@ if (/somkunde=/.test(location.hash)) {
     <!-- Foden bliver nederst — den er det ENESTE der skubbes ned (Ida 30/7) -->
     <div class="dsb-fod">
       <button class="dsb-konto" onclick="dashKontoMenu()" title="Ida"><span class="dsb-initial">I</span><span class="dsb-konto-navn">Ida</span><svg class="dsb-konto-pil" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></button>
-      <div class="dsb-version"><span>Version 5. august · 967</span></div>
+      <div class="dsb-version"><span>Version 5. august · 968</span></div>
     </div>
   </div>
 
@@ -6368,7 +6368,7 @@ select titel,
          staa fast paa telefon. De hoerer i arket (samme fejl som "left" 31/7). -->
     <div id="dashFooter" style="z-index:50;display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--gray3);background:#fff;border-top:1px solid var(--border);padding:10px 26px;">
       <div style="font-size:10px;">© 2026 Energida · Alle rettigheder forbeholdes</div>
-      <div style="font-size:10px;margin-left:auto;">Version 5. august · 967 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
+      <div style="font-size:10px;margin-left:auto;">Version 5. august · 968 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
     </div>
   </div>
 </div>
@@ -17517,14 +17517,26 @@ function renderPerf5f() {
    Flyttet fra Content-siden hertil (5fb-referencen) — soejleBalance paa kalenderen er skjult. */
 function renderPerfFordeling() {
   const el = document.getElementById("perfFordeling"); if (!el) return;
-  const postede = (IDEER || []).filter(x => x.status === "Postet" && x.soejle);
+  /* SAMME GRUNDLAG SOM RESTEN AF APPEN (Ida 5/8: "performancesiden synkroniserer slet
+     heller ikke med noget som helst"). To ting skred:
+     1) Kun status "Postet" taltes med — saa i det sekund et opslag fik sit Indblik og
+        blev "Målt", faldt det UD af performance, mens forsidens ring blev ved at taelle
+        det. Samme opslag, to tal. Nu taeller begge, praecis som fordelingsringen.
+     2) Søjlen blev matchet paa navnets bogstaver. Staver strategien "udfordring eller
+        behov" og opslaget "behov eller udfordring", er det den samme søjle for et
+        menneske og to forskellige for koden. soejlePasser() afgoer det paa koden. */
+  const postede = (IDEER || []).filter(x => (x.status === "Postet" || x.status === "Målt") && x.soejle);
   if (!postede.length || !(strategyPillars || []).length) { el.innerHTML = ""; return; }
-  const grupper = soejleSort(strategyPillars).map(n => ({ navn: n, antal: postede.filter(x => x.soejle === n).length, m: soejleModel(n) }));
+  const grupper = soejleSort(strategyPillars).map(n => ({ navn: n, antal: postede.filter(x => soejlePasser(x.soejle, n)).length, m: soejleModel(n) }));
   const ialt = postede.length;
   const type1 = grupper.filter(g => g.m && g.m.kode.charAt(0) === "1").reduce((s, g) => s + g.antal, 0);
   const type2 = grupper.filter(g => g.m && g.m.kode.charAt(0) === "2").reduce((s, g) => s + g.antal, 0);
   const p1 = Math.round(type1 / ialt * 100), p2 = Math.round(type2 / ialt * 100);
-  const ring = (pct, navn) => '<div style="text-align:center;"><svg width="92" height="92" viewBox="0 0 76 76"><circle cx="38" cy="38" r="32" fill="none" stroke="#A9BFD8" stroke-width="6" opacity=".45"/><circle cx="38" cy="38" r="32" fill="none" stroke="#FC2404" stroke-width="6" stroke-linecap="round" stroke-dasharray="' + Math.round(pct / 100 * 201) + ' 201" transform="rotate(-90 38 38)"/><text x="38" y="45" text-anchor="middle" font-size="17" font-weight="300" fill="#000" font-family="Poppins,sans-serif">' + pct + '%</text></svg><div style="font-size:11.5px;margin-top:8px;">' + navn + '</div></div>';
+  /* ÉN RING-MOTOR. Denne side tegnede sin egen ring med egne maal og en haardkodet
+     blaa — energidaRing() er appens standard, og to ringe, der ikke ligner hinanden,
+     ser ud som to forskellige slags tal. */
+  const ring = (pct, navn) => '<div style="text-align:center;">' + energidaRing(pct + "%", "", pct / 100)
+    + '<div style="font-size:11.5px;margin-top:8px;">' + navn + '</div></div>';
   const maksA = Math.max.apply(null, grupper.map(g => g.antal)) || 1;
   const bar = (g, sidste) => '<div style="padding:9px 0;' + (sidste ? '' : 'border-bottom:1px solid #F2F0ED;') + '">'
     + '<div style="display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:5px;"><span>' + esc(soejleVis(g.navn)) + '</span><span style="color:var(--gray3);">' + g.antal + ' opslag</span></div>'
@@ -19071,7 +19083,7 @@ function buildSideNav(def) {
       + '<span style="opacity:.55;">' + ikon("", "Kalender", "laastBesked()", IK.kal) + '</span>'
       + '<span style="opacity:.55;">' + ikon("", "Værktøjskassen", "laastBesked()", IK.tools) + '</span>'
       + '<button class="sn-virk-knap" onclick="toggleVirkMenu(event)" title="' + esc(knapNavn) + '" aria-label="Profil" style="margin-left:auto;"><span class="sn-initial">' + esc((knapNavn || "?").trim().charAt(0).toUpperCase()) + '</span><span class="sn-virk-navn" style="white-space:normal;overflow-wrap:anywhere;">' + esc(knapNavn) + '</span><svg class="sn-virk-pil" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="flex-shrink:0;"><path d="M6 9l6 6 6-6"/></svg></button>'
-      + fodBagud + '<div class="sn-fod"><span>Version 5. august · 967</span></div>'
+      + fodBagud + '<div class="sn-fod"><span>Version 5. august · 968</span></div>'
       /* Ida 30/7: alle konto-punkter bor i profilmenuen — ingen streg/sn-bund */
       + '<div id="virkMenu" style="display:none;position:fixed;left:14px;bottom:96px;width:230px;background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:0 16px 40px rgba(0,0,0,0.15);padding:8px;z-index:90;">'
       + '<div style="padding:10px 12px 6px;font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--gray3);">' + esc(virkNavn) + '</div>'
@@ -19131,7 +19143,7 @@ function buildSideNav(def) {
         uPkt("", "Lektioner", "showTab(12)")))
     + '<button class="sn-virk-knap" onclick="toggleVirkMenu(event)" title="' + esc(knapNavn) + '" aria-label="Profil"><span class="sn-initial">' + esc((knapNavn || "?").trim().charAt(0).toUpperCase()) + '</span><span class="sn-virk-navn" style="white-space:normal;overflow-wrap:anywhere;">' + esc(knapNavn) + '</span><svg class="sn-virk-pil" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="flex-shrink:0;"><path d="M6 9l6 6 6-6"/></svg></button>'
     /* Ida 30/7: ingen streg — logo + version samlet i foden under profilknappen */
-    + fodBagud + '<div class="sn-fod"><span>Version 5. august · 967</span></div>'
+    + fodBagud + '<div class="sn-fod"><span>Version 5. august · 968</span></div>'
     /* Ida 30/7: menuen åbner VED knappen (nederst t.v.) — ikke i modsatte hjørne */
     + '<div id="virkMenu" style="display:none;position:fixed;left:14px;bottom:96px;width:230px;background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:0 16px 40px rgba(0,0,0,0.15);padding:8px;z-index:90;">'
     + '<div style="padding:10px 12px 6px;font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--gray3);">' + esc(virkNavn) + '</div>'
@@ -29666,6 +29678,6 @@ if ((location.hash || "").toLowerCase() === "#ole") {   // #ole = preview af Ole
      Laa den inde i #dashboard, ville kunderne aldrig se den (synk-reglen, Ida 31/7). -->
 <div id="dashBundnav" role="navigation" aria-label="Backstage"></div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 5. august · 967</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 5. august · 968</div>
 </body>
 </html>
