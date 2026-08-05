@@ -1730,7 +1730,7 @@ body.modul-open .burger-btn, body.modul-open .bottom-nav, body.modul-open .dash-
     <button class="burger-item" onclick="toggleBurger(); togglePwPanel()">Skift adgangskode</button>
     <button class="burger-item" onclick="toggleBurger(); openChat()">Kontakt Ida</button>
     <button class="burger-item" style="color:var(--red);" onclick="custLogout()">Log ud</button>
-    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 5. august · 970</div>
+    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 5. august · 971</div>
   </div>
 </div>
 <div class="plus-menu" id="plusMenu" onclick="if(event.target===this)togglePlus()">
@@ -2826,7 +2826,7 @@ if (/somkunde=/.test(location.hash)) {
     <!-- Foden bliver nederst — den er det ENESTE der skubbes ned (Ida 30/7) -->
     <div class="dsb-fod">
       <button class="dsb-konto" onclick="dashKontoMenu()" title="Ida"><span class="dsb-initial">I</span><span class="dsb-konto-navn">Ida</span><svg class="dsb-konto-pil" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></button>
-      <div class="dsb-version"><span>Version 5. august · 970</span></div>
+      <div class="dsb-version"><span>Version 5. august · 971</span></div>
     </div>
   </div>
 
@@ -6375,7 +6375,7 @@ select titel,
          staa fast paa telefon. De hoerer i arket (samme fejl som "left" 31/7). -->
     <div id="dashFooter" style="z-index:50;display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--gray3);background:#fff;border-top:1px solid var(--border);padding:10px 26px;">
       <div style="font-size:10px;">© 2026 Energida · Alle rettigheder forbeholdes</div>
-      <div style="font-size:10px;margin-left:auto;">Version 5. august · 970 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
+      <div style="font-size:10px;margin-left:auto;">Version 5. august · 971 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
     </div>
   </div>
 </div>
@@ -10037,7 +10037,11 @@ function renderFokus(planFrem, target, idag) {
     }
   }
   // 2) der er ikke planlagt nok frem
-  if (pdato !== idag && planFrem < target) {
+  /* CONTENT PLANNER PLANLAEGGER IKKE SELV (Ida 5/8: "den skal fjernes fra contentplanner
+     kunder - det gør vi sammen uge for uge"). Punktet beder kunden om noget, hun og Ida
+     laver sammen paa ugemoedet — og en opfordring til noget, man ikke selv skal goere,
+     er stoej paa forsiden. */
+  if (pdato !== idag && planFrem < target && !(CURRENT_DEF && CURRENT_DEF.type === "contentplanner")) {
     laeg("Planlæg ugens næste opslag",
         planFrem + " af " + target + " er planlagt — giv en idé en dato, så ruller planen.",
         "Åbn idébanken", () => showTab(2));
@@ -10155,14 +10159,16 @@ function indbakkeRegn() {
       aabn: "openBriefSide('" + x.id + "')"
     });
   });
-  (IDEER || []).filter(x => x.status === "Godkendt" && !x.dato).forEach(x => handling.push({
+  /* SAMME PERSON-FILTER SOM FORSIDEN (Ida 5/8): er opslaget tagget en anden, hoerer det
+     hjemme i HENDES indbakke — ikke i alles. */
+  (IDEER || []).filter(x => x.status === "Godkendt" && !x.dato && opslagErTilMig(x)).forEach(x => handling.push({
     /* Navnet aflaeses af svaret — det er ikke altid Ida, der godkender (Ida 5/8) */
     t: esc(String((x.brief && x.brief.svar && x.brief.svar.af) || "Ida")) + ' har godkendt "' + esc(storStart(x.titel || "Uden titel")) + '"',
     s: (x.brief && x.brief.svar && x.brief.svar.note) ? esc(x.brief.svar.note) : 'Vælg dato og planlæg den',
     knap: 'Planlæg den', klik: "showPlanDate('" + x.id + "')",
     aabn: "openBriefSide('" + x.id + "')"
   }));
-  (IDEER || []).filter(x => x.status === "Planlagt" && x.dato && x.dato < idagL)
+  (IDEER || []).filter(x => x.status === "Planlagt" && x.dato && x.dato < idagL && opslagErTilMig(x))
     .sort((a, b) => a.dato.localeCompare(b.dato)).forEach(x => handling.push({
     t: '"' + esc(storStart(x.titel || "Uden titel")) + '" er ikke postet endnu',
     s: 'Planlagt til ' + esc(dkDatoKort(x.dato)),
@@ -13946,9 +13952,16 @@ function klipProd(o) { const p = o && o.produktion; return (p && typeof p === "o
    Roed prik = hos Ida · sort prik = hos Thomas · tom cirkel m. graa kant = venter paa optagedagen. */
 /* Klipperens fornavn bruges i stedet for "dig" (Ida 30/7) — saa staar der det samme,
    uanset om det er Ida eller ham selv, der kigger paa hans tavle. */
+/* KLIPPEREN HEDDER THOMAS (Ida 5/8: "vil du ændre klipperen alle steder til Thomas?").
+   Navnet staar ÉT sted — skifter klipperen en dag, rettes kun denne linje. */
+const KLIPPER_NAVN = "Thomas";
 function klipperNavn() {
+  /* Navnet paa KLIPPEREN — ikke paa den, der kigger. Foer blev den indloggedes fornavn
+     brugt, og saa stod der "klipperen" paa Idas skaerm (hendes admin-login baerer intet
+     navn) — og havde det baaret et, havde der staaet "Hos Ida" om Thomas' bunke. */
+  try { if (KLIP_ER_IDA) return KLIPPER_NAVN; } catch(e) {}
   const n = ((typeof CURRENT_NAVN !== "undefined" && CURRENT_NAVN) || "").trim();
-  return n ? n.split(/\s+/)[0] : "klipperen";
+  return n ? n.split(/\s+/)[0] : KLIPPER_NAVN;
 }
 /* Hilsenen bruger KALDENAVNET, hvis der er sat et ("Tip Top Thomas") — samme kilde som alle
    andre forsider bruger, saa navnet kun skal skrives eet sted. Ellers fornavnet. (Ida 30/7) */
@@ -14092,7 +14105,7 @@ function klipTavle(arr) {
   const KOL = KLIP_ER_IDA ? [
     { t: "Manus", en: true, pass: o => o.status === "Manus ikke godkendt" },
     { t: "Klar til optagelse", en: true, pass: o => o.status === "Manus godkendt" },
-    { t: "Hos klipperen", en: false, pass: o => o.status === "Råfiler klar" || o.status === "Rettelser" || o.status === "Klippet" },
+    { t: "Hos " + klipperNavn(), en: false, pass: o => o.status === "Råfiler klar" || o.status === "Rettelser" || o.status === "Klippet" },
     { t: "Publiceret", en: true, pass: o => o.status === "Godkendt" }
   ] : [
     { t: "Manus", en: true, pass: o => o.status === "Manus ikke godkendt" },
@@ -14350,7 +14363,7 @@ function klipKort(o) {
     return '<div style="background:#fff;border:1.5px solid var(--red);border-radius:20px;padding:16px;margin-bottom:10px;">'
       + felt("titel", o.titel, "Videoens titel")
       + felt("modul", o.modul, "Modul — fx Modul 2, video 3")
-      + '<textarea id="klip_r_brief" placeholder="Briefen — hvad skal videoen, og hvad skal klipperen vide?" style="width:100%;background:#fff;border:1px solid var(--border);border-radius:12px;padding:8px 10px;font-size:12px;font-family:Poppins,sans-serif;resize:vertical;min-height:70px;margin-bottom:6px;">' + esc(o.brief || "") + '</textarea>'
+      + '<textarea id="klip_r_brief" placeholder="Briefen — hvad skal videoen, og hvad skal Thomas vide?" style="width:100%;background:#fff;border:1px solid var(--border);border-radius:12px;padding:8px 10px;font-size:12px;font-family:Poppins,sans-serif;resize:vertical;min-height:70px;margin-bottom:6px;">' + esc(o.brief || "") + '</textarea>'
       + felt("ord", o.ord, "Antal ord i manus — så beregnes videolængden (ord × 0,43 sek.)")
       + felt("raafiler", o.raafiler_link, "Link til råfilerne (Dropbox/Drive)")
       + felt("video", o.video_link, "Link til den færdige video")
@@ -19093,7 +19106,7 @@ function buildSideNav(def) {
       + '<span style="opacity:.55;">' + ikon("", "Kalender", "laastBesked()", IK.kal) + '</span>'
       + '<span style="opacity:.55;">' + ikon("", "Værktøjskassen", "laastBesked()", IK.tools) + '</span>'
       + '<button class="sn-virk-knap" onclick="toggleVirkMenu(event)" title="' + esc(knapNavn) + '" aria-label="Profil" style="margin-left:auto;"><span class="sn-initial">' + esc((knapNavn || "?").trim().charAt(0).toUpperCase()) + '</span><span class="sn-virk-navn" style="white-space:normal;overflow-wrap:anywhere;">' + esc(knapNavn) + '</span><svg class="sn-virk-pil" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="flex-shrink:0;"><path d="M6 9l6 6 6-6"/></svg></button>'
-      + fodBagud + '<div class="sn-fod"><span>Version 5. august · 970</span></div>'
+      + fodBagud + '<div class="sn-fod"><span>Version 5. august · 971</span></div>'
       /* Ida 30/7: alle konto-punkter bor i profilmenuen — ingen streg/sn-bund */
       + '<div id="virkMenu" style="display:none;position:fixed;left:14px;bottom:96px;width:230px;background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:0 16px 40px rgba(0,0,0,0.15);padding:8px;z-index:90;">'
       + '<div style="padding:10px 12px 6px;font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--gray3);">' + esc(virkNavn) + '</div>'
@@ -19153,7 +19166,7 @@ function buildSideNav(def) {
         uPkt("", "Lektioner", "showTab(12)")))
     + '<button class="sn-virk-knap" onclick="toggleVirkMenu(event)" title="' + esc(knapNavn) + '" aria-label="Profil"><span class="sn-initial">' + esc((knapNavn || "?").trim().charAt(0).toUpperCase()) + '</span><span class="sn-virk-navn" style="white-space:normal;overflow-wrap:anywhere;">' + esc(knapNavn) + '</span><svg class="sn-virk-pil" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="flex-shrink:0;"><path d="M6 9l6 6 6-6"/></svg></button>'
     /* Ida 30/7: ingen streg — logo + version samlet i foden under profilknappen */
-    + fodBagud + '<div class="sn-fod"><span>Version 5. august · 970</span></div>'
+    + fodBagud + '<div class="sn-fod"><span>Version 5. august · 971</span></div>'
     /* Ida 30/7: menuen åbner VED knappen (nederst t.v.) — ikke i modsatte hjørne */
     + '<div id="virkMenu" style="display:none;position:fixed;left:14px;bottom:96px;width:230px;background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:0 16px 40px rgba(0,0,0,0.15);padding:8px;z-index:90;">'
     + '<div style="padding:10px 12px 6px;font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--gray3);">' + esc(virkNavn) + '</div>'
@@ -20252,11 +20265,28 @@ function statusPrikHtml(st, ekstra) {
 }
 /* Kundens HÆNGEPARTIER (Idas navn, 4B): alt der venter på kunden — godkendelser (kun I GOT YOU),
    overskredne datoer og planlagte opslag uden dato. Tomt = kortet vises slet ikke. */
+/* HVEM ER OPSLAGET TAGGET? (Ida 5/8: "de ting hvor det er mig der er tagget på skal kun
+   komme op hos mig - i min indbakke").
+   Briefens "Hvem laver den?" gemmes som brief.hvemPerson (eller hvemLaver = "Ida laver
+   den"). Er der sat en person paa, er det HENDES arbejde — og saa skal det ikke ligge og
+   fylde paa alle andres forside. Uden en person gaelder opslaget alle paa koden. */
+function opslagErTilMig(it) {
+  const b = (it && it.brief) || {};
+  let p = String(b.hvemPerson || "").trim();
+  if (!p && b.hvemLaver === "Ida laver den") p = "Ida";
+  if (!p) return true;                                   /* ingen tagget = alles */
+  /* Idas egne opgaver hoerer i HENDES indbakke — ikke paa kundens dashboard */
+  if (/^ida\b/i.test(p)) return !CUSTOMER_NAV;
+  const mig = String((typeof CURRENT_NAVN !== "undefined" && CURRENT_NAVN) || "").trim();
+  if (!mig) return true;                                 /* ved vi ikke hvem der kigger, skjuler vi intet */
+  return p.toLowerCase() === mig.toLowerCase();
+}
 function kundeHaengListe() {
   const idag = datoDK();
   const rows = [];
   (IDEER || []).forEach(it => {
     if (it.status === "Arkiveret") return;
+    if (!opslagErTilMig(it)) return;
     const titel = storStart(it.titel || "Uden titel");
     if (it.status === "Klar til godkendelse") {
       const venter = CUSTOMER_NAV && CURRENT_DEF && (erForloeb(CURRENT_DEF) || CURRENT_DEF.type === "contentplanner");
@@ -26172,7 +26202,7 @@ function renderKundeKort() {
     + '<button class="row-btn view" style="font-weight:400;" title="Åbner kundens version i ny fane — direkte på Brandstrategi" onclick="aabnKundensSideFane(\'' + esc(k.kode) + '\', 1)">Se kundens brandstrategi</button>'
     + '</div>';
   const visKnap = (erForloeb(def) || def.type === "klipper")
-    ? '<button class="dbtn primary" onclick="aabnKundensSide(\'' + esc(k.kode) + '\')" title="Åbner i ny fane. Du arbejder som dem — det du skriver, gemmes hos dem.">' + (def.type === "klipper" ? 'Se klipperens side' : 'Vis kundens version') + '</button>'
+    ? '<button class="dbtn primary" onclick="aabnKundensSide(\'' + esc(k.kode) + '\')" title="Åbner i ny fane. Du arbejder som dem — det du skriver, gemmes hos dem.">' + (def.type === "klipper" ? 'Se ' + klipperNavn() + 's side' : 'Vis kundens version') + '</button>'
     : '';
 
   /* Broedkrumme + navnet i ROED Didot (designpakken 1d, Ida 31/7) — afloeser "KUNDEKORT"-
@@ -29688,6 +29718,6 @@ if ((location.hash || "").toLowerCase() === "#ole") {   // #ole = preview af Ole
      Laa den inde i #dashboard, ville kunderne aldrig se den (synk-reglen, Ida 31/7). -->
 <div id="dashBundnav" role="navigation" aria-label="Backstage"></div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 5. august · 970</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 5. august · 971</div>
 </body>
 </html>
