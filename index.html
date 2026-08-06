@@ -1810,7 +1810,7 @@ body.modul-open .burger-btn, body.modul-open .bottom-nav, body.modul-open .dash-
     <button class="burger-item" onclick="toggleBurger(); togglePwPanel()">Skift adgangskode</button>
     <button class="burger-item" onclick="toggleBurger(); openChat()">Kontakt Ida</button>
     <button class="burger-item" style="color:var(--red);" onclick="custLogout()">Log ud</button>
-    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 5. august · 984</div>
+    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 5. august · 985</div>
   </div>
 </div>
 <div class="plus-menu" id="plusMenu" onclick="if(event.target===this)togglePlus()">
@@ -2908,7 +2908,7 @@ if (/somkunde=/.test(location.hash)) {
     <!-- Foden bliver nederst — den er det ENESTE der skubbes ned (Ida 30/7) -->
     <div class="dsb-fod">
       <button class="dsb-konto" onclick="dashKontoMenu()" title="Ida"><span class="dsb-initial">I</span><span class="dsb-konto-navn">Ida</span><svg class="dsb-konto-pil" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></button>
-      <div class="dsb-version"><span>Version 5. august · 984</span></div>
+      <div class="dsb-version"><span>Version 5. august · 985</span></div>
     </div>
   </div>
 
@@ -6469,7 +6469,7 @@ select titel,
          staa fast paa telefon. De hoerer i arket (samme fejl som "left" 31/7). -->
     <div id="dashFooter" style="z-index:50;display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--gray3);background:#fff;border-top:1px solid var(--border);padding:10px 26px;">
       <div style="font-size:10px;">© 2026 Energida · Alle rettigheder forbeholdes</div>
-      <div style="font-size:10px;margin-left:auto;">Version 5. august · 984 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
+      <div style="font-size:10px;margin-left:auto;">Version 5. august · 985 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
     </div>
   </div>
 </div>
@@ -10907,6 +10907,47 @@ async function oevelserGem(lekId, spm) {
     return true;
   } catch(e) { return false; }
 }
+/* ALT INDHOLD FØLGER MED LEKTIONEN (Ida 5/8: "når jeg ændrer og flytter rundt er det jo
+   ALT indholdet på modulet der skal følge med!").
+   Lektionens id UDLEDES af nummeret i videotitlen ("6.1 …" -> "6-1"). Derfor skifter id-et,
+   saa snart nummeret aendres — og alt, der er noeglet paa id-et, blev staaende paa det
+   GAMLE id. Opgaverne var ikke slettet; de var usynlige, fordi lektionen ledte det
+   forkerte sted. Omnummereringen af moduler (v980) gjorde det let at udloese.
+   Her flyttes de ting, der hoerer til selve LEKTIONEN og som appen kan naa:
+     · oevelserne (lektion_oevelser paa serveren)
+     · publiceringen (er lektionen sluppet ud til kunderne)
+   Skrivningen kvitteres FOER den gamle raekke slettes — ellers kunne en afvist skrivning
+   koste opgaverne helt. */
+async function lektionFlyt(fra, til) {
+  fra = String(fra || ""); til = String(til || "");
+  if (!fra || !til || fra === til) return true;
+  let alt = true;
+  /* 1 · oevelserne */
+  const spm = OEVELSER_DB[fra];
+  if (spm && spm.length) {
+    const gemt = await oevelserGem(til, spm);
+    if (gemt) {
+      try { if (sb) await sb.from("lektion_oevelser").delete().eq("lektion_id", fra); } catch(e) {}
+      delete OEVELSER_DB[fra];
+    } else alt = false;                       /* kunne ikke skrives — saa roerer vi ikke den gamle */
+  }
+  /* 2 · publiceringen */
+  try {
+    if (PUBLICERET && PUBLICERET.has(fra)) {
+      const liste = Array.from(PUBLICERET).filter(x => x !== fra);
+      if (liste.indexOf(til) < 0) liste.push(til);
+      await pubGem(liste);
+    }
+  } catch(e) {}
+  try { oevelserFlet(); } catch(e) {}
+  return alt;
+}
+/* Lektions-id ud af en videotitel — samme regel som kursusSynkFraTavlen bruger, saa de to
+   aldrig kan blive uenige om, hvad en lektion hedder. */
+function lektionIdAfTitel(t) {
+  const m = String(t || "").match(/^(\d+)\.(\d+)/);
+  return m ? m[1] + "-" + m[2] : null;
+}
 function modulSetKey() { return "modulforsider_" + (currentKode || "X") + "_" + (CURRENT_NAVN || "X"); }
 /* Kunder, der allerede er i gang, maa ikke pludselig blive stoppet af forsider paa moduler,
    de forlaengst er forbi. Alt, hvor mindst een lektion er gennemfoert, taeller som set. */
@@ -13144,9 +13185,15 @@ async function modulTitelGem(k) {
       if (m && m[1] === gammeltNr) patch.titel = nytNr + "." + m[2] + m[3];
     }
     if (!Object.keys(patch).length) continue;
+    const foerId = lektionIdAfTitel(o.titel);
     try {
       const r = await sb.from("video_opgaver").update(patch).eq("id", o.id).select();
-      if (r.data && r.data.length) Object.assign(o, patch);
+      if (r.data && r.data.length) {
+        Object.assign(o, patch);
+        /* Skiftede lektionens NUMMER, skal opgaver og publicering med over (Ida 5/8) */
+        const efterId = lektionIdAfTitel(o.titel);
+        if (foerId && efterId && foerId !== efterId) { try { await lektionFlyt(foerId, efterId); } catch(e) {} }
+      }
     } catch(e) {}
   }
   if (KLIP_MODUL_VALGT === k) KLIP_MODUL_VALGT = nyK;
@@ -14494,7 +14541,15 @@ function rowsHtml(o, ix, antal, kol) {
 async function klipGemRet(id) {
   const v = k => { const el = document.getElementById("klip_r_" + k); return el ? (el.value.trim() || null) : null; };
   KLIP_RET = null;
-  klipOpdater(id, { titel: v("titel") || "Uden titel", modul: v("modul"), brief: v("brief"), ord: v("ord") ? parseInt(v("ord"), 10) : null, raafiler_link: v("raafiler"), video_link: v("video") });
+  /* Aendrer hun selv nummeret i titlen ("6.1" -> "7.1"), skifter lektionens id — og saa
+     skal opgaverne og publiceringen med. Samme regel som ved modulets omnummerering;
+     det er kun vejen dertil, der er en anden (Ida 5/8). */
+  const gl = (KLIP_OPGAVER || []).find(x => String(x.id) === String(id));
+  const foerId = gl ? lektionIdAfTitel(gl.titel) : null;
+  const nyTitel = v("titel") || "Uden titel";
+  await klipOpdater(id, { titel: nyTitel, modul: v("modul"), brief: v("brief"), ord: v("ord") ? parseInt(v("ord"), 10) : null, raafiler_link: v("raafiler"), video_link: v("video") });
+  const efterId = lektionIdAfTitel(nyTitel);
+  if (foerId && efterId && foerId !== efterId) { try { await lektionFlyt(foerId, efterId); } catch(e) {} }
 }
 
 async function klipKommentar(id) {
@@ -19440,7 +19495,7 @@ function buildSideNav(def) {
       + '<span style="opacity:.55;">' + ikon("", "Kalender", "laastBesked()", IK.kal) + '</span>'
       + '<span style="opacity:.55;">' + ikon("", "Værktøjskassen", "laastBesked()", IK.tools) + '</span>'
       + '<button class="sn-virk-knap" onclick="toggleVirkMenu(event)" title="' + esc(knapNavn) + '" aria-label="Profil" style="margin-left:auto;"><span class="sn-initial">' + esc((knapNavn || "?").trim().charAt(0).toUpperCase()) + '</span><span class="sn-virk-navn" style="white-space:normal;overflow-wrap:anywhere;">' + esc(knapNavn) + '</span><svg class="sn-virk-pil" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="flex-shrink:0;"><path d="M6 9l6 6 6-6"/></svg></button>'
-      + fodBagud + '<div class="sn-fod"><span>Version 5. august · 984</span></div>'
+      + fodBagud + '<div class="sn-fod"><span>Version 5. august · 985</span></div>'
       /* Ida 30/7: alle konto-punkter bor i profilmenuen — ingen streg/sn-bund */
       + '<div id="virkMenu" style="display:none;position:fixed;left:14px;bottom:96px;width:230px;background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:0 16px 40px rgba(0,0,0,0.15);padding:8px;z-index:90;">'
       + '<div style="padding:10px 12px 6px;font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--gray3);">' + esc(virkNavn) + '</div>'
@@ -19500,7 +19555,7 @@ function buildSideNav(def) {
         uPkt("", "Lektioner", "showTab(12)")))
     + '<button class="sn-virk-knap" onclick="toggleVirkMenu(event)" title="' + esc(knapNavn) + '" aria-label="Profil"><span class="sn-initial">' + esc((knapNavn || "?").trim().charAt(0).toUpperCase()) + '</span><span class="sn-virk-navn" style="white-space:normal;overflow-wrap:anywhere;">' + esc(knapNavn) + '</span><svg class="sn-virk-pil" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="flex-shrink:0;"><path d="M6 9l6 6 6-6"/></svg></button>'
     /* Ida 30/7: ingen streg — logo + version samlet i foden under profilknappen */
-    + fodBagud + '<div class="sn-fod"><span>Version 5. august · 984</span></div>'
+    + fodBagud + '<div class="sn-fod"><span>Version 5. august · 985</span></div>'
     /* Ida 30/7: menuen åbner VED knappen (nederst t.v.) — ikke i modsatte hjørne */
     + '<div id="virkMenu" style="display:none;position:fixed;left:14px;bottom:96px;width:230px;background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:0 16px 40px rgba(0,0,0,0.15);padding:8px;z-index:90;">'
     + '<div style="padding:10px 12px 6px;font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--gray3);">' + esc(virkNavn) + '</div>'
@@ -20661,7 +20716,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "984";
+const APP_VERSION = "985";
 let NY_VERSION_KLAR = false;
 function nyVersionSkjul() { const e = document.getElementById("nyVersion"); if (e) e.style.display = "none"; }
 function nyVersionHent() { try { location.reload(); } catch(e) {} }
@@ -30457,6 +30512,6 @@ if ((location.hash || "").toLowerCase() === "#ole") {   // #ole = preview af Ole
      Laa den inde i #dashboard, ville kunderne aldrig se den (synk-reglen, Ida 31/7). -->
 <div id="dashBundnav" role="navigation" aria-label="Backstage"></div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 5. august · 984</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 5. august · 985</div>
 </body>
 </html>
