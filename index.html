@@ -1810,7 +1810,7 @@ body.modul-open .burger-btn, body.modul-open .bottom-nav, body.modul-open .dash-
     <button class="burger-item" onclick="toggleBurger(); togglePwPanel()">Skift adgangskode</button>
     <button class="burger-item" onclick="toggleBurger(); openChat()">Kontakt Ida</button>
     <button class="burger-item" style="color:var(--red);" onclick="custLogout()">Log ud</button>
-    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 6. august · 992</div>
+    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 6. august · 993</div>
   </div>
 </div>
 <div class="plus-menu" id="plusMenu" onclick="if(event.target===this)togglePlus()">
@@ -2908,7 +2908,7 @@ if (/somkunde=/.test(location.hash)) {
     <!-- Foden bliver nederst — den er det ENESTE der skubbes ned (Ida 30/7) -->
     <div class="dsb-fod">
       <button class="dsb-konto" onclick="dashKontoMenu()" title="Ida"><span class="dsb-initial">I</span><span class="dsb-konto-navn">Ida</span><svg class="dsb-konto-pil" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></button>
-      <div class="dsb-version"><span>Version 6. august · 992</span></div>
+      <div class="dsb-version"><span>Version 6. august · 993</span></div>
     </div>
   </div>
 
@@ -6469,7 +6469,7 @@ select titel,
          staa fast paa telefon. De hoerer i arket (samme fejl som "left" 31/7). -->
     <div id="dashFooter" style="z-index:50;display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--gray3);background:#fff;border-top:1px solid var(--border);padding:10px 26px;">
       <div style="font-size:10px;">© 2026 Energida · Alle rettigheder forbeholdes</div>
-      <div style="font-size:10px;margin-left:auto;">Version 6. august · 992 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
+      <div style="font-size:10px;margin-left:auto;">Version 6. august · 993 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
     </div>
   </div>
 </div>
@@ -10855,13 +10855,58 @@ function ovSpm(x) { return (x && typeof x === "object") ? String(x.spm || "") : 
 function ovBesk(x) { return (x && typeof x === "object") ? String(x.besk || "") : ""; }
 /* Én normalisering, brugt baade naar der hentes og naar der gemmes: tom beskrivelse
    giver en ren streng, saa basen ikke fyldes med {spm:"…",besk:""}. */
+/* OPGAVEN FÅR ET PERMANENT ID (Ida 6/8, fase 1).
+   En opgave kendtes foer UDELUKKENDE paa sin plads i listen — og svarene blev gemt paa
+   samme plads (svar[0], svar[1] …). Traek-og-slip i opgavepanelet flyttede derfor ogsaa,
+   hvilket spoergsmaal et gemt svar hoerte til, uden at nogen kunne se det.
+   Nu baerer opgaven sit eget id. Objekt-formen fandtes allerede (beskrivelse, dag-vaelger),
+   saa basen skal ikke aendres — spm er jsonb og tager begge dele.
+   BYGGET NU, fordi der i dag er NUL gemte kundesvar paa opgaver. Fra den foerste kunde
+   svarer, er den samme aendring et migreringsprojekt i data, admin ikke kan skrive i. */
+function ovId(x) { return (x && typeof x === "object" && x.id) ? String(x.id) : ""; }
+/* Kort, laesbart og uden ydre afhaengigheder — tid + tilfaeldighed raekker rigeligt til den
+   maengde opgaver, der nogensinde kommer til at findes. */
+function ovNytId() { return "o" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
 function ovNorm(x) {
   const q = ovSpm(x).trim(); if (!q) return null;
   const b = ovBesk(x).trim();
   const erObj = !!(x && typeof x === "object");
-  if (!b && !(erObj && x.type)) return q;
+  const id = erObj ? String(x.id || "") : "";
+  /* Uden id, uden beskrivelse og uden type er en opgave stadig bare sit spoergsmaal — saa
+     fyldes basen ikke med tomme felter. Har den et id, ER den et objekt, og id'et maa
+     ALDRIG falde af her: saa ville normaliseringen selv rive svaret loes fra spoergsmaalet. */
+  if (!b && !id && !(erObj && x.type)) return q;
   return Object.assign({}, erObj ? x : {}, { spm: q, besk: b });
 }
+/* KODENS EGNE OPGAVER FÅR OGSÅ ET ID (6/8).
+   De 30 opgaver, Ida aldrig har rettet, staar i appens kode og har derfor ingen raekke i
+   basen at gemme et id i. De faar et STABILT id, udregnet af lektion + plads. Det udregnes
+   EEN gang, ved indlaesningen, og er ens paa alle enheder — to telefoner kan ikke komme til
+   at kalde det samme spoergsmaal noget forskelligt.
+   AERLIGT FORBEHOLD: det id er udledt af pladsen, saa laenge opgaven kun findes i koden.
+   Bytter man om paa to spoergsmaal I KODEN, bytter deres id'er ogsaa. Det sker kun ved en
+   ny udgave af appen, aldrig ved Idas traek-og-slip — og i samme oejeblik hun retter
+   lektionen, skrives id'erne med ind i lektion_oevelser og holder op med at vaere udledt. */
+function ovKodeId(lekId, i) { return "k" + String(lekId).replace(/-/g, "") + "_" + i; }
+function oevelserStemplKoden() {
+  if (typeof KURSUS_MODULER === "undefined") return;
+  KURSUS_MODULER.forEach(function (m) {
+    (m.lektioner || []).forEach(function (l) {
+      if (!Array.isArray(l.ovelse)) return;
+      l.ovelse = l.ovelse.map(function (x, i) {
+        if (ovId(x)) return x;
+        const n = ovNorm(x); if (!n) return x;
+        const o = (typeof n === "object") ? n : { spm: n, besk: "" };
+        return Object.assign({}, o, { id: ovKodeId(l.id, i) });
+      });
+    });
+  });
+  try { KURSUS_LEKTIONER = KURSUS_MODULER.flatMap(function (m) { return m.lektioner; }); } catch(e) {}
+}
+/* Stemples med det samme — IKKE kun inde i oevelserHent(). Den vender om paa doerstokken,
+   naar der ingen base er, og saa ville kodens opgaver staa uden id paa netop de enheder,
+   hvor der ikke er noget sikkerhedsnet. (Samme faelde som ugeHentServer, 5/8.) */
+oevelserStemplKoden();
 let OEVELSER_DB = {};
 async function oevelserHent() {
   if (typeof sb === "undefined" || !sb) return false;
@@ -10873,8 +10918,21 @@ async function oevelserHent() {
       /* FOER blev hver opgave tvunget gennem String() — et objekt blev til
          "[object Object]". Derfor kunne basen kun rumme rene spoergsmaal. Nu bevares
          formen, saa beskrivelsen overlever en hentning. */
-      OEVELSER_DB[String(r.lektion_id)] = Array.isArray(r.spm)
-        ? r.spm.map(ovNorm).filter(Boolean) : [];
+      /* OGSÅ BASENS OPGAVER FÅR ET ID (6/8) — uden en eneste skrivning.
+         De 34 opgaver, Ida har rettet, ligger i basen uden id. De faar det SAMME stabile
+         id, som kodens opgaver faar: udregnet af lektion + plads, ens paa alle enheder.
+         Der skrives ingenting her; id'et er bare regnet ud. Foerste gang hun trykker Gem
+         paa lektionen, foelger id'erne med ned i basen (ovNorm bevarer dem) og holder op
+         med at vaere udledt. Derfor kan et traek-og-slip aldrig naa at flytte et svar:
+         id'erne staar fast, FOER panelet tegnes. */
+      const lid = String(r.lektion_id);
+      OEVELSER_DB[lid] = Array.isArray(r.spm)
+        ? r.spm.map(ovNorm).filter(Boolean).map(function (x, i) {
+            if (ovId(x)) return x;
+            const o = (typeof x === "object") ? x : { spm: x, besk: "" };
+            return Object.assign({}, o, { id: ovKodeId(lid, i) });
+          })
+        : [];
     });
     oevelserFlet();
     return true;
@@ -10882,6 +10940,7 @@ async function oevelserHent() {
 }
 function oevelserFlet() {
   if (typeof KURSUS_MODULER === "undefined") return;
+  oevelserStemplKoden();   /* stemplingen skal vaere sket, FOER noget laeser et opgave-id */
   KURSUS_MODULER.forEach(function (m) {
     (m.lektioner || []).forEach(function (l) {
       const spm = OEVELSER_DB[l.id];
@@ -11763,6 +11822,18 @@ function lekNaeste() {
   if (n) visLektion(n.id); else lukLektion();
 }
 let OVELSE = null;
+/* ÉN funktion afgør, hvad et svar hedder. Har opgaven et permanent id, er DET nøglen;
+   ellers falder vi tilbage på positionen, præcis som før. */
+function ovNoegle(l, i) { return ovId(((l && l.ovelse) || [])[i]) || String(i); }
+/* DOBBELT LÆSNING: et nyt svar står på opgavens id, et gammelt står på positionen.
+   Begge læses, så intet svar bliver usynligt i overgangen. Den bliver stående, til en
+   optælling viser nul svar på de gamle nøgler — kundernes rækker kan admin ikke skrive i. */
+function ovSvarFor(o, l, i) {
+  if (!o || !o.svar) return "";
+  const n = ovNoegle(l, i);
+  if (o.svar[n] !== undefined) return o.svar[n];
+  return o.svar[String(i)] !== undefined ? o.svar[String(i)] : "";
+}
 function startOvelse(id) {
   const l = KURSUS_LEKTIONER.find(x => x.id === id); if (!l || !l.ovelse) return;
   OVELSE = { id: id, i: 0, svar: Object.assign({}, KURSUS_SVAR[id] || {}) };
@@ -11783,8 +11854,8 @@ function renderOvelse() {
     + (erEjerOevelse(l.id) ? '<div class="msub" style="margin-top:-4px;color:var(--red);">Ejerens øvelse — ét fælles svar for forretningen' + (erEjer() ? '' : '. Kig med her, og lad ejeren skrive svaret') + '.</div>' : '')
     + '<div style="display:flex;gap:4px;margin-bottom:14px;">' + l.ovelse.map((_, n) => '<div style="flex:1;height:4px;border-radius:12px;background:' + (n < o.i ? 'var(--red)' : 'var(--border)') + ';"></div>').join("") + '</div>'
     + (erDage
-        ? '<div id="ovelseDage">' + ovelseDageHtml(o.svar[o.i] || "") + '</div>'
-        : '<textarea id="ovelseSvar" class="sk-input" style="min-height:90px;background:#fff;" placeholder="Skriv dit svar…">' + esc(o.svar[o.i] || "") + '</textarea>')
+        ? '<div id="ovelseDage">' + ovelseDageHtml(ovSvarFor(o, l, o.i) || "") + '</div>'
+        : '<textarea id="ovelseSvar" class="sk-input" style="min-height:90px;background:#fff;" placeholder="Skriv dit svar…">' + esc(ovSvarFor(o, l, o.i) || "") + '</textarea>')
     + '<div style="display:flex;gap:8px;margin-top:14px;">'
     + (o.i > 0 ? '<button class="dbtn" style="flex:1;" onclick="ovelseGem();OVELSE.i--;renderOvelse()">Tilbage</button>' : '')
     + '<button class="dbtn primary" style="flex:2;" onclick="ovelseNaeste()">' + (o.i === l.ovelse.length - 1 ? 'Færdig' : 'Næste') + '</button>'
@@ -11826,18 +11897,38 @@ function ovelseDageHtml(svar) {
 }
 function ovelseDagToggle(dag) {
   const o = OVELSE; if (!o) return;
-  let valgte = ovelseDageValgte(o.svar[o.i]);
+  const l = KURSUS_LEKTIONER.find(x => x.id === o.id); if (!l) return;
+  const n = ovNoegle(l, o.i);                       /* opgavens id, ikke dens plads (6/8) */
+  let valgte = ovelseDageValgte(ovSvarFor(o, l, o.i));
   valgte = valgte.indexOf(dag) > -1 ? valgte.filter(d => d !== dag) : OVELSE_DAGE.filter(d => valgte.indexOf(d) > -1 || d === dag);
-  o.svar[o.i] = valgte.join(", ");
+  o.svar[n] = valgte.join(", ");
   const el = document.getElementById("ovelseDage");
-  if (el) el.innerHTML = ovelseDageHtml(o.svar[o.i]);
+  if (el) el.innerHTML = ovelseDageHtml(o.svar[n]);
 }
 function ovelseGem() {
   const ta = document.getElementById("ovelseSvar");
-  if (ta) OVELSE.svar[OVELSE.i] = ta.value.trim();
+  if (!ta || !OVELSE) return;
+  const l = KURSUS_LEKTIONER.find(x => x.id === OVELSE.id); if (!l) return;
+  OVELSE.svar[ovNoegle(l, OVELSE.i)] = ta.value.trim();
+}
+/* Øvelsen nåede ikke serveren. Vinduet bliver stående, og beskeden siger det, den VED:
+   svarene ligger på enheden, men ikke i basen. En knap, der prøver igen, i stedet for
+   en lukket popup og en kunde, der tror, hun er færdig. */
+function ovelseGemFejl() {
+  const body = document.getElementById("ideBody"); if (!body) return;
+  let b = document.getElementById("ovelseFejl");
+  if (!b) {
+    b = document.createElement("div"); b.id = "ovelseFejl";
+    body.appendChild(b);
+  }
+  b.style.cssText = "margin-top:12px;font-size:11.5px;line-height:1.6;border-radius:12px;padding:10px 12px;background:#FFF1EE;border:1px solid var(--red-line);color:var(--black);";
+  b.innerHTML = '<b style="font-weight:400;color:var(--red);">Dine svar nåede ikke frem.</b> De er gemt her på din telefon, så intet er tabt — men de ligger ikke på serveren endnu.'
+    + '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:10px;flex-wrap:wrap;">'
+    + '<button type="button" class="dbtn primary" style="min-height:44px;padding:10px 18px;" onclick="ovelseNaeste()">Prøv igen</button></div>';
 }
 async function ovelseNaeste() {
   ovelseGem();
+  try { const gl = document.getElementById("ovelseFejl"); if (gl) gl.remove(); } catch(e) {}
   const l = KURSUS_LEKTIONER.find(x => x.id === OVELSE.id);
   if (OVELSE.i < l.ovelse.length - 1) { OVELSE.i++; renderOvelse(); return; }
   KURSUS_SVAR[OVELSE.id] = OVELSE.svar;
@@ -11847,7 +11938,7 @@ async function ovelseNaeste() {
   // ugerytme-svaret skriver direkte i ugemålet (kunde_maal.opslag_uge) — øvelsen ER målsætningen
   const dageIx = l.ovelse.findIndex(q => typeof q === "object" && q.type === "dage");
   if (dageIx > -1) {
-    const antalDage = ovelseDageValgte(OVELSE.svar[dageIx]).length;
+    const antalDage = ovelseDageValgte(ovSvarFor(OVELSE, l, dageIx)).length;
     if (antalDage) {
       MAAL_UGE = antalDage;
       try { localStorage.setItem("maal_" + currentKode, antalDage); } catch(e) {}
@@ -11855,8 +11946,13 @@ async function ovelseNaeste() {
     }
   }
   if (sb && currentKode) {
-    try { await sb.from("skema_svar").insert({ kode: currentKode, navn: CURRENT_NAVN || "", skema: "lektion_svar_" + OVELSE.id, svar: OVELSE.svar }); } catch(e) {}
+    /* Kvittering: en RLS-afvist skrivning kaster ikke — den rammer nul raekker og saa
+       praecis ud som en vellykket. Nu siger appen det, hvis oevelsen ikke naaede frem. */
+    const gemt = await skemaSvarSkriv("lektion_svar_" + OVELSE.id, OVELSE.svar);
     try { await sb.from("skema_svar").insert({ kode: currentKode, navn: CURRENT_NAVN || "", skema: "lektion_set_" + OVELSE.id, svar: { set: true } }); } catch(e) {}
+    /* Naaede svarene ikke serveren, bliver vinduet staaende. De ER gemt her paa enheden
+       (kursusGemLocal ovenfor), saa beskeden siger praecis det — hverken mere eller mindre. */
+    if (!gemt) { ovelseGemFejl(); return; }
   }
   closeIdeaWizard();
   renderKursusHjem();
@@ -14974,7 +15070,7 @@ function klipOpgTraekSlip(e, lekId, til) {
 }
 function klipOpgTilfoej(lekId) {
   const u = klipOpgUdkastFor(lekId, []);
-  u.spm.push("");
+  u.spm.push({ id: ovNytId(), spm: "", besk: "" });   /* en ny opgave foedes med sit id (6/8) */
   klipOpgTegn(lekId);
 }
 function klipOpgFjern(lekId, i) {
@@ -19648,7 +19744,7 @@ function buildSideNav(def) {
       + '<span style="opacity:.55;">' + ikon("", "Kalender", "laastBesked()", IK.kal) + '</span>'
       + '<span style="opacity:.55;">' + ikon("", "Værktøjskassen", "laastBesked()", IK.tools) + '</span>'
       + '<button class="sn-virk-knap" onclick="toggleVirkMenu(event)" title="' + esc(knapNavn) + '" aria-label="Profil" style="margin-left:auto;"><span class="sn-initial">' + esc((knapNavn || "?").trim().charAt(0).toUpperCase()) + '</span><span class="sn-virk-navn" style="white-space:normal;overflow-wrap:anywhere;">' + esc(knapNavn) + '</span><svg class="sn-virk-pil" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="flex-shrink:0;"><path d="M6 9l6 6 6-6"/></svg></button>'
-      + fodBagud + '<div class="sn-fod"><span>Version 6. august · 992</span></div>'
+      + fodBagud + '<div class="sn-fod"><span>Version 6. august · 993</span></div>'
       /* Ida 30/7: alle konto-punkter bor i profilmenuen — ingen streg/sn-bund */
       + '<div id="virkMenu" style="display:none;position:fixed;left:14px;bottom:96px;width:230px;background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:0 16px 40px rgba(0,0,0,0.15);padding:8px;z-index:90;">'
       + '<div style="padding:10px 12px 6px;font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--gray3);">' + esc(virkNavn) + '</div>'
@@ -19708,7 +19804,7 @@ function buildSideNav(def) {
         uPkt("", "Lektioner", "showTab(12)")))
     + '<button class="sn-virk-knap" onclick="toggleVirkMenu(event)" title="' + esc(knapNavn) + '" aria-label="Profil"><span class="sn-initial">' + esc((knapNavn || "?").trim().charAt(0).toUpperCase()) + '</span><span class="sn-virk-navn" style="white-space:normal;overflow-wrap:anywhere;">' + esc(knapNavn) + '</span><svg class="sn-virk-pil" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="flex-shrink:0;"><path d="M6 9l6 6 6-6"/></svg></button>'
     /* Ida 30/7: ingen streg — logo + version samlet i foden under profilknappen */
-    + fodBagud + '<div class="sn-fod"><span>Version 6. august · 992</span></div>'
+    + fodBagud + '<div class="sn-fod"><span>Version 6. august · 993</span></div>'
     /* Ida 30/7: menuen åbner VED knappen (nederst t.v.) — ikke i modsatte hjørne */
     + '<div id="virkMenu" style="display:none;position:fixed;left:14px;bottom:96px;width:230px;background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:0 16px 40px rgba(0,0,0,0.15);padding:8px;z-index:90;">'
     + '<div style="padding:10px 12px 6px;font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--gray3);">' + esc(virkNavn) + '</div>'
@@ -20876,7 +20972,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "992";
+const APP_VERSION = "993";
 let NY_VERSION_KLAR = false;
 function nyVersionSkjul() { const e = document.getElementById("nyVersion"); if (e) e.style.display = "none"; }
 function nyVersionHent() { try { location.reload(); } catch(e) {} }
@@ -30674,6 +30770,6 @@ if ((location.hash || "").toLowerCase() === "#ole") {   // #ole = preview af Ole
      Laa den inde i #dashboard, ville kunderne aldrig se den (synk-reglen, Ida 31/7). -->
 <div id="dashBundnav" role="navigation" aria-label="Backstage"></div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 6. august · 992</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 6. august · 993</div>
 </body>
 </html>
