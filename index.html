@@ -1810,7 +1810,7 @@ body.modul-open .burger-btn, body.modul-open .bottom-nav, body.modul-open .dash-
     <button class="burger-item" onclick="toggleBurger(); togglePwPanel()">Skift adgangskode</button>
     <button class="burger-item" onclick="toggleBurger(); openChat()">Kontakt Ida</button>
     <button class="burger-item" style="color:var(--red);" onclick="custLogout()">Log ud</button>
-    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 5. august · 990</div>
+    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 6. august · 991</div>
   </div>
 </div>
 <div class="plus-menu" id="plusMenu" onclick="if(event.target===this)togglePlus()">
@@ -2908,7 +2908,7 @@ if (/somkunde=/.test(location.hash)) {
     <!-- Foden bliver nederst — den er det ENESTE der skubbes ned (Ida 30/7) -->
     <div class="dsb-fod">
       <button class="dsb-konto" onclick="dashKontoMenu()" title="Ida"><span class="dsb-initial">I</span><span class="dsb-konto-navn">Ida</span><svg class="dsb-konto-pil" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></button>
-      <div class="dsb-version"><span>Version 5. august · 990</span></div>
+      <div class="dsb-version"><span>Version 6. august · 991</span></div>
     </div>
   </div>
 
@@ -6469,7 +6469,7 @@ select titel,
          staa fast paa telefon. De hoerer i arket (samme fejl som "left" 31/7). -->
     <div id="dashFooter" style="z-index:50;display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--gray3);background:#fff;border-top:1px solid var(--border);padding:10px 26px;">
       <div style="font-size:10px;">© 2026 Energida · Alle rettigheder forbeholdes</div>
-      <div style="font-size:10px;margin-left:auto;">Version 5. august · 990 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
+      <div style="font-size:10px;margin-left:auto;">Version 6. august · 991 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
     </div>
   </div>
 </div>
@@ -10892,20 +10892,50 @@ function oevelserFlet() {
   });
   KURSUS_LEKTIONER = KURSUS_MODULER.flatMap(function (m) { return m.lektioner; });
 }
-/* Kvittering fra foerste dag — den her funktion er ny, og den skal ikke arve dagens fejl. */
-async function oevelserGem(lekId, spm) {
-  if (typeof sb === "undefined" || !sb) return false;
+/* EN TOM LISTE MÅ ALDRIG KUNNE SLETTE ET SÆT, DER FINDES (Ida 5/8: "spær for det").
+   5-1, 6-3 og 6-4 stod med nul opgaver, fordi et TOMT panel blev gemt hen over dem — og en
+   tom liste betyder i appen "Ida har fjernet alle spoergsmaal", saa kodens oprindelige liste
+   skjules ogsaa. Det saa ud som om opgaverne var vaek for altid.
+   Panelet er tomt af to vidt forskellige grunde, og de foeles ens paa skaermen:
+     · hentningen naaede ikke frem (browserens billede er forkert) → et gem SLETTER
+     · hun har selv fjernet spoergsmaalene (browserens billede er rigtigt) → det SKAL kunne gemmes
+   Derfor spoerges SERVEREN, ikke browserens egen OEVELSER_DB — den er jo netop den, der kan
+   vaere tom af den forkerte grund. Findes der raekker, spaerres skrivningen, og Ida faar at
+   vide HVOR mange der ligger. Vil hun alligevel toemme, siger hun det med et tryk mere.
+   Kan serveren ikke svare, spaerres der ogsaa: uden svar ved vi ikke, om noget gaar tabt.
+   Kvittering fra foerste dag — den her funktion er ny, og den skal ikke arve dagens fejl.
+   Svaret er et OBJEKT, ikke true/false: en spaerring er hverken "gemt" eller "gik galt", og
+   de to kaldesteder skal kunne skelne. */
+async function oevelserGem(lekId, spm, tomOK) {
+  if (typeof sb === "undefined" || !sb) return { ok: false, grund: "fejl" };
   const id = String(lekId), nu = new Date().toISOString();
+  const liste = Array.isArray(spm) ? spm : [];
+  if (!liste.length && !tomOK) {
+    const findes = await oevelserFindesPaaServer(id);
+    if (findes.fejl) return { ok: false, grund: "utjekket" };
+    if (findes.antal) return { ok: false, grund: "spaerret", antal: findes.antal };
+  }
   try {
-    const u = await sb.from("lektion_oevelser").update({ spm: spm, opdateret: nu }).eq("lektion_id", id).select();
+    const u = await sb.from("lektion_oevelser").update({ spm: liste, opdateret: nu }).eq("lektion_id", id).select();
     if (!(u.data && u.data.length)) {
-      const n = await sb.from("lektion_oevelser").insert({ lektion_id: id, spm: spm, opdateret: nu }).select();
-      if (!(n.data && n.data.length)) return false;
+      const n = await sb.from("lektion_oevelser").insert({ lektion_id: id, spm: liste, opdateret: nu }).select();
+      if (!(n.data && n.data.length)) return { ok: false, grund: "fejl" };
     }
-    OEVELSER_DB[id] = spm;
+    OEVELSER_DB[id] = liste;
     oevelserFlet();
-    return true;
-  } catch(e) { return false; }
+    return { ok: true };
+  } catch(e) { return { ok: false, grund: "fejl" }; }
+}
+/* Hvad ligger der PAA SERVEREN for den her lektion, lige nu? Bruges kun af spaerren.
+   En fejl svarer aldrig "0" — den svarer "det ved jeg ikke", og saa skrives der ikke. */
+async function oevelserFindesPaaServer(id) {
+  try {
+    const { data, error } = await sb.from("lektion_oevelser").select("spm").eq("lektion_id", String(id));
+    if (error) return { fejl: true, antal: 0 };
+    if (!data || !data.length) return { fejl: false, antal: 0 };   /* ingen raekke — der er intet at miste */
+    const spm = Array.isArray(data[0].spm) ? data[0].spm.map(ovNorm).filter(Boolean) : [];
+    return { fejl: false, antal: spm.length };
+  } catch(e) { return { fejl: true, antal: 0 }; }
 }
 /* ALT INDHOLD FØLGER MED LEKTIONEN (Ida 5/8: "når jeg ændrer og flytter rundt er det jo
    ALT indholdet på modulet der skal følge med!").
@@ -10926,7 +10956,7 @@ async function lektionFlyt(fra, til) {
   const spm = OEVELSER_DB[fra];
   if (spm && spm.length) {
     const gemt = await oevelserGem(til, spm);
-    if (gemt) {
+    if (gemt && gemt.ok) {
       try { if (sb) await sb.from("lektion_oevelser").delete().eq("lektion_id", fra); } catch(e) {}
       delete OEVELSER_DB[fra];
     } else alt = false;                       /* kunne ikke skrives — saa roerer vi ikke den gamle */
@@ -14884,10 +14914,16 @@ function klipOpgFjern(lekId, i) {
   u.spm.splice(i, 1);
   klipOpgTegn(lekId);
 }
-async function klipOpgGem(lekId) {
-  const u = klipOpgUdkastFor(lekId, []);
+async function klipOpgGem(lekId, tomOK) {
+  /* FOER stod her klipOpgUdkastFor(lekId, []) — den DIGTER et tomt udkast, hvis der ikke
+     findes et. Er udkastet blevet nulstillet (fx af en luk et andet sted), skrev et tryk paa
+     Gem altsaa en tom liste, som ingen havde skrevet. Findes udkastet ikke, gemmes der ikke. */
+  const u = KLIP_OPG_UDKAST;
+  if (!u || u.id !== String(lekId) || !Array.isArray(u.spm)) { klipOpgSpaerret(lekId, 0, "udkast"); return; }
   const spm = u.spm.map(ovNorm).filter(Boolean);
-  const ok = await oevelserGem(lekId, spm);
+  const svar = await oevelserGem(lekId, spm, tomOK);
+  const ok = !!(svar && svar.ok);
+  if (svar && (svar.grund === "spaerret" || svar.grund === "utjekket")) { klipOpgSpaerret(lekId, svar.antal || 0, svar.grund); return; }
   if (!ok) klipOpgBesked(lekId, false, spm.length);
   /* FOER: renderKlipperum() her toerrede kvitteringen vaek i samme oejeblik den var skrevet
      (Ida 3/8: "naar jeg klikke gem oevelsen bekraefter den ikke med gemt"). Gemningen
@@ -14909,6 +14945,55 @@ function klipOpgBesked(lekId, ok, antal) {
       ? esc(antal ? antal + (antal === 1 ? " spørgsmål gemt" : " spørgsmål gemt") : "Øvelsen er tømt") + " — kunderne ser det med det samme."
       : '<b style="font-weight:400;color:var(--red);">Det blev ikke gemt.</b> Har du kørt SQL-kortet <b style="font-weight:400;color:var(--black);">„Øvelserne kan rettes“</b> i Maskinrummet? Uden det findes tabellen ikke endnu.';
   });
+}
+/* SPÆRREN SET FRA SKÆRMEN (Ida 5/8).
+   Beskeden skal kunne svare på det ene spørgsmål, hun står med: "er mine opgaver væk?".
+   Derfor står ANTALLET fra serveren i sætningen — ikke et "noget gik galt".
+   To veje ud, begge nederst til højre efter knap-reglen: den sikre er en almindelig
+   row-btn, og tømningen er en rød knap for sig (destruktiv handling). */
+function klipOpgSpaerret(lekId, antal, grund) {
+  klipOpgVaerter(lekId).forEach(function (v) {
+    const b = v.querySelector(".opg-besked"); if (!b) return;
+    b.style.cssText = "display:block;margin-top:10px;font-size:11.5px;line-height:1.6;border-radius:12px;padding:10px 12px;background:#FFF1EE;border:1px solid var(--red-line);color:var(--black);";
+    let tekst, knapper;
+    if (grund === "utjekket") {
+      tekst = '<b style="font-weight:400;color:var(--red);">Der blev ikke gemt noget.</b> Serveren svarede ikke, da der blev spurgt, om lektionen har opgaver gemt — og så tømmes den ikke på et gæt.';
+      knapper = '<button type="button" class="row-btn" style="min-height:44px;" onclick="klipOpgGem(\'' + esc(lekId) + '\')">Prøv igen</button>';
+    } else if (grund === "hentfejl") {
+      tekst = '<b style="font-weight:400;color:var(--red);">Opgaverne kunne ikke hentes.</b> Felterne herunder viser derfor ikke, hvad der ligger på serveren — gem ikke, før hentningen er lykkedes.';
+      knapper = '<button type="button" class="row-btn" style="min-height:44px;" onclick="klipOpgHentIgen(\'' + esc(lekId) + '\')">Prøv igen</button>';
+    } else if (grund === "udkast") {
+      tekst = '<b style="font-weight:400;color:var(--red);">Der blev ikke gemt noget.</b> Felterne blev nulstillet, mens boksen stod åben, så der var ingen liste at gemme.';
+      knapper = '<button type="button" class="row-btn" style="min-height:44px;" onclick="klipOpgHentIgen(\'' + esc(lekId) + '\')">Hent opgaverne igen</button>';
+    } else {
+      tekst = '<b style="font-weight:400;color:var(--red);">Der blev ikke gemt noget — og intet er slettet.</b> Panelet her er tomt, men lektionen har '
+        + antal + (antal === 1 ? ' opgave' : ' opgaver') + ' gemt på serveren. Er de bare ikke hentet frem, ville et gem have slettet dem.';
+      knapper = '<button type="button" class="row-btn" style="min-height:44px;" onclick="klipOpgHentIgen(\'' + esc(lekId) + '\')">Hent opgaverne igen</button>'
+        + '<button type="button" class="dbtn primary" style="min-height:44px;padding:10px 18px;" onclick="klipOpgGem(\'' + esc(lekId) + '\', true)">Tøm lektionen alligevel</button>';
+    }
+    b.innerHTML = tekst
+      + '<div style="display:flex;gap:8px;justify-content:flex-end;align-items:center;margin-top:10px;flex-wrap:wrap;">' + knapper + '</div>';
+  });
+}
+/* Vejen tilbage, når panelet stod tomt af den forkerte grund: hent listen forfra og tegn
+   felterne med det, der faktisk ligger. Udkastet nulstilles FØRST — ellers ville det gamle
+   (tomme) udkast vinde, fordi klipOpgUdkastFor kun bygger et nyt, når der ikke er et. */
+async function klipOpgHentIgen(lekId) {
+  const id = String(lekId);
+  let hentet = false;
+  try { hentet = await oevelserHent(); } catch(e) { hentet = false; }
+  let liste = [];
+  try {
+    const l = (typeof KURSUS_LEKTIONER !== "undefined" ? KURSUS_LEKTIONER : []).find(function (x) { return String(x.id) === id; });
+    liste = (l && Array.isArray(l.ovelse)) ? l.ovelse : (Array.isArray(OEVELSER_DB[id]) ? OEVELSER_DB[id] : []);
+  } catch(e) {}
+  KLIP_OPG_UDKAST = null;
+  klipOpgVaerter(lekId).forEach(function (v) { v.innerHTML = klipOpgRetHtml(lekId, liste); });
+  klipOpgAntalOpdater(lekId);
+  /* Lykkedes hentningen, taler panelet selv — enten står spørgsmålene der, eller også står
+     der "Ingen spørgsmål endnu.", og det ER svaret. Der skrives ingen sætning oven på det.
+     Fejlede den, skal det siges rent ud: felterne viser IKKE, hvad der ligger på serveren. */
+  if (!hentet) klipOpgSpaerret(lekId, 0, "hentfejl");
 }
 /* ---------- KLIPPERENS RAMME (designpakke 3a) ----------
    Topbaren baerer det, en venstremenu ellers ville baere: hvor man er, hvem man er, og vejen ud.
@@ -19495,7 +19580,7 @@ function buildSideNav(def) {
       + '<span style="opacity:.55;">' + ikon("", "Kalender", "laastBesked()", IK.kal) + '</span>'
       + '<span style="opacity:.55;">' + ikon("", "Værktøjskassen", "laastBesked()", IK.tools) + '</span>'
       + '<button class="sn-virk-knap" onclick="toggleVirkMenu(event)" title="' + esc(knapNavn) + '" aria-label="Profil" style="margin-left:auto;"><span class="sn-initial">' + esc((knapNavn || "?").trim().charAt(0).toUpperCase()) + '</span><span class="sn-virk-navn" style="white-space:normal;overflow-wrap:anywhere;">' + esc(knapNavn) + '</span><svg class="sn-virk-pil" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="flex-shrink:0;"><path d="M6 9l6 6 6-6"/></svg></button>'
-      + fodBagud + '<div class="sn-fod"><span>Version 5. august · 990</span></div>'
+      + fodBagud + '<div class="sn-fod"><span>Version 6. august · 991</span></div>'
       /* Ida 30/7: alle konto-punkter bor i profilmenuen — ingen streg/sn-bund */
       + '<div id="virkMenu" style="display:none;position:fixed;left:14px;bottom:96px;width:230px;background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:0 16px 40px rgba(0,0,0,0.15);padding:8px;z-index:90;">'
       + '<div style="padding:10px 12px 6px;font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--gray3);">' + esc(virkNavn) + '</div>'
@@ -19555,7 +19640,7 @@ function buildSideNav(def) {
         uPkt("", "Lektioner", "showTab(12)")))
     + '<button class="sn-virk-knap" onclick="toggleVirkMenu(event)" title="' + esc(knapNavn) + '" aria-label="Profil"><span class="sn-initial">' + esc((knapNavn || "?").trim().charAt(0).toUpperCase()) + '</span><span class="sn-virk-navn" style="white-space:normal;overflow-wrap:anywhere;">' + esc(knapNavn) + '</span><svg class="sn-virk-pil" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="flex-shrink:0;"><path d="M6 9l6 6 6-6"/></svg></button>'
     /* Ida 30/7: ingen streg — logo + version samlet i foden under profilknappen */
-    + fodBagud + '<div class="sn-fod"><span>Version 5. august · 990</span></div>'
+    + fodBagud + '<div class="sn-fod"><span>Version 6. august · 991</span></div>'
     /* Ida 30/7: menuen åbner VED knappen (nederst t.v.) — ikke i modsatte hjørne */
     + '<div id="virkMenu" style="display:none;position:fixed;left:14px;bottom:96px;width:230px;background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:0 16px 40px rgba(0,0,0,0.15);padding:8px;z-index:90;">'
     + '<div style="padding:10px 12px 6px;font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--gray3);">' + esc(virkNavn) + '</div>'
@@ -20716,7 +20801,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "990";
+const APP_VERSION = "991";
 let NY_VERSION_KLAR = false;
 function nyVersionSkjul() { const e = document.getElementById("nyVersion"); if (e) e.style.display = "none"; }
 function nyVersionHent() { try { location.reload(); } catch(e) {} }
@@ -30513,6 +30598,6 @@ if ((location.hash || "").toLowerCase() === "#ole") {   // #ole = preview af Ole
      Laa den inde i #dashboard, ville kunderne aldrig se den (synk-reglen, Ida 31/7). -->
 <div id="dashBundnav" role="navigation" aria-label="Backstage"></div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 5. august · 990</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 6. august · 991</div>
 </body>
 </html>
