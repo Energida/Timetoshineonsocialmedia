@@ -1,3 +1,6 @@
+> **Rører din ændring database, auth, storage eller Edge Functions?
+> Læs `ENERGIDA SECURITY CONTRACT.md` i denne mappe FØRST. Den er bindende.**
+
 # DEPLOY- OG COMMITLÅS — AKTIV (HÅRD, Ida 7. august 2026)
 
 **Denne fil ligger i repo-roden, fordi en tråd, der starter direkte her, ikke nødvendigvis indlæser `../CLAUDE.md` i projektmappen ovenover. Den fil gælder stadig — læs den også. Ved konflikt vinder den strengeste.**
@@ -41,3 +44,13 @@ En lås på push alene var ikke nok. Den 7. august kl. 16.50 committede en anden
 Der kører en RLS-sikkerhedsmigrering. En åben database blev fundet 6. august, og arbejdet med at lukke den er ikke afsluttet. Under det arbejde deployede andre tråde **tre gange** midt i migreringen — v1009, v1011 og et genbrug af v1012 — og committede en fjerde gang lokalt.
 
 Hele forløbet står i `../HÆNDELSESLOG - RLS (6.-7. august).md`. Rækkefølgen for det resterende arbejde står i `../MASTERPLAN - vejen til strategibyggeren.md`.
+
+---
+
+## Når låsen ophæves
+
+**Slet IKKE denne fil.** Den indlæses automatisk af enhver tråd, der starter i repomappen, og den bærer henvisningen til `ENERGIDA SECURITY CONTRACT.md`.
+
+Når deploylåsen ophæves, **erstattes indholdet** af henvisningen øverst — filen bliver stående som pegepind.
+
+**Kontrakten gælder uændret, når låsen er væk.** Den står også som punkt 0 i `../CLAUDE.md`, som er den permanente henvisning.
