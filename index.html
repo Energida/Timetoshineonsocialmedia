@@ -1823,7 +1823,7 @@ body.modul-open .burger-btn, body.modul-open .bottom-nav, body.modul-open .dash-
     <button class="burger-item" onclick="toggleBurger(); togglePwPanel()">Skift adgangskode</button>
     <button class="burger-item" onclick="toggleBurger(); openChat()">Kontakt Ida</button>
     <button class="burger-item" style="color:var(--red);" onclick="custLogout()">Log ud</button>
-    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 10. august · 1022</div>
+    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 10. august · 1023</div>
   </div>
 </div>
 <div class="plus-menu" id="plusMenu" onclick="if(event.target===this)togglePlus()">
@@ -2926,7 +2926,7 @@ if (/somkunde=/.test(location.hash)) {
     <!-- Foden bliver nederst — den er det ENESTE der skubbes ned (Ida 30/7) -->
     <div class="dsb-fod">
       <button class="dsb-konto" onclick="dashKontoMenu()" title="Ida"><span class="dsb-initial">I</span><span class="dsb-konto-navn">Ida</span><svg class="dsb-konto-pil" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></button>
-      <div class="dsb-version"><span>Version 10. august · 1022</span></div>
+      <div class="dsb-version"><span>Version 10. august · 1023</span></div>
     </div>
   </div>
 
@@ -6538,7 +6538,7 @@ select titel,
          staa fast paa telefon. De hoerer i arket (samme fejl som "left" 31/7). -->
     <div id="dashFooter" style="z-index:50;display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--gray3);background:#fff;border-top:1px solid var(--border);padding:10px 26px;">
       <div style="font-size:10px;">© 2026 Energida · Alle rettigheder forbeholdes</div>
-      <div style="font-size:10px;margin-left:auto;">Version 10. august · 1022 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
+      <div style="font-size:10px;margin-left:auto;">Version 10. august · 1023 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
     </div>
   </div>
 </div>
@@ -7360,6 +7360,105 @@ document.addEventListener("change", e => {
   if (t && t.closest && t.closest("#briefGrid")) { briefAutosavePlan(); if (typeof raketOpdater === "function") raketOpdater(); }
 });
 /* ---------- KARRUSEL-SLIDES: byg tankerne slide for slide (Idas ønske 18/7) ---------- */
+/* ---------- KLIPPENE: briefens "Indholdets opbygning" som kort (Ida 10/8) ----------
+   Foer var trinnet ÉT tomt felt: "Beskriv klippene i raekkefoelge...". Karrusel-formatet
+   havde laenge kort pr. slide; video fik aldrig det samme. Nu har de samme motor.
+   MODEL C (Idas valg 10/8): klippet starter med ÉT felt — hvad ser man. To smaa knapper
+   tilfoejer "Tekst paa skaermen" og "Hvad siger du?", men KUN naar kunden har brug for
+   dem. Maalgruppen er butiksejere uden contenterfaring: faerre felter ved start giver
+   stoerre chance for, at briefen bliver udfyldt.
+   MIGRERING: har en gammel brief tekst i brief.indhold, og ingen klip, bliver teksten
+   klip 1. brief.indhold SLETTES ALDRIG — den bliver staaende som historisk spor, praecis
+   som kode-kolonnen i databasemigreringen. Gaar noget galt, er intet tabt. */
+function briefKlipListe() {
+  if (!Array.isArray(BRIEF_STATE.klip) || !BRIEF_STATE.klip.length) {
+    const gl = (BRIEF_STATE.indhold || "").trim();
+    BRIEF_STATE.klip = gl ? [{ ser: gl }] : [{ ser: "" }];
+  }
+  return BRIEF_STATE.klip;
+}
+function briefKlipLaes() {   // gem hvad der staar i felterne foer en re-render
+  const liste = briefKlipListe();
+  liste.forEach(function (k, i) {
+    ["ser", "siger", "tekst"].forEach(function (f) {
+      const el = document.getElementById("bf_klip_" + i + "_" + f);
+      if (el) k[f] = el.value;
+    });
+  });
+}
+function briefKlipHtml() {
+  const liste = briefKlipListe();
+  const felt = function (i, f, label, ph) {
+    return '<div style="margin-top:10px;">'
+      + '<div style="font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--red);margin-bottom:4px;">' + label + '</div>'
+      + '<textarea class="sk-input" id="bf_klip_' + i + '_' + f + '" placeholder="' + ph + '" style="min-height:40px;">'
+      + esc(liste[i][f] || "") + '</textarea></div>';
+  };
+  const kort = liste.map(function (k, i) {
+    const harSiger = (k.siger || "").length > 0 || k.siger === "";
+    const visSiger = k.siger != null;
+    const visTekst = k.tekst != null;
+    let ekstra = "";
+    if (visTekst) ekstra += felt(i, "tekst", "Tekst på skærmen", "Det der står ovenpå videoen…");
+    if (visSiger) ekstra += felt(i, "siger", "Hvad siger du?", "Det du siger i klippet…");
+    let tilfoej = "";
+    if (!visTekst) tilfoej += '<button type="button" class="row-btn mq-tap" style="font-weight:400;" onclick="briefKlipFelt(' + i + ',\'tekst\')">+ Tekst på skærmen</button>';
+    if (!visSiger) tilfoej += '<button type="button" class="row-btn mq-tap" style="font-weight:400;" onclick="briefKlipFelt(' + i + ',\'siger\')">+ Hvad siger du?</button>';
+    return '<div style="background:#fff;border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:10px;">'
+      + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">'
+      + '<span style="width:26px;height:26px;border-radius:50%;background:var(--red);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:400;flex-shrink:0;">' + (i + 1) + '</span>'
+      + '<span style="flex:1;font-size:11px;font-weight:400;letter-spacing:1px;text-transform:uppercase;color:var(--gray3);">Klip ' + (i + 1) + ' af ' + liste.length + '</span>'
+      + (i > 0 ? '<button type="button" class="row-btn" title="Flyt op" onclick="briefKlipFlyt(' + i + ',-1)">&#8593;</button>' : '')
+      + (i < liste.length - 1 ? '<button type="button" class="row-btn" title="Flyt ned" onclick="briefKlipFlyt(' + i + ',1)">&#8595;</button>' : '')
+      + (liste.length > 1 ? '<button type="button" class="row-btn" title="Fjern klippet" onclick="briefKlipSlet(' + i + ')">&#10005;</button>' : '')
+      + '</div>'
+      + '<textarea class="sk-input" id="bf_klip_' + i + '_ser" placeholder="' + (i === 0 ? 'Hvad sker der lige efter hooket?' : 'Hvad ser man i dette klip?') + '" style="min-height:44px;">' + esc(k.ser || "") + '</textarea>'
+      + ekstra
+      + (tilfoej ? '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;">' + tilfoej + '</div>' : '')
+      + '</div>';
+  }).join("");
+  const foersteTomme = liste.findIndex(function (k) { return !(k.ser || "").trim(); });
+  const bar = '<div style="display:flex;gap:6px;margin-bottom:14px;">'
+    + liste.map(function (k, i) {
+        return '<span style="flex:1;height:6px;border-radius:99px;background:'
+          + ((k.ser || "").trim() ? 'var(--red)' : 'var(--gray)') + ';'
+          + (i === foersteTomme ? 'box-shadow:0 0 0 2px rgba(252,36,4,0.18);' : '') + '"></span>';
+      }).join("")
+    + '</div>';
+  return '<div id="briefKlipHolder">' + bar
+    + '<div id="briefKlip">' + kort + '</div>'
+    + '<button type="button" class="dbtn primary" style="width:100%;margin-top:4px;" onclick="briefKlipNy()">+ Tilføj klip</button>'
+    + '</div>';
+}
+function briefKlipFelt(i, f) { briefKlipLaes(); briefKlipListe()[i][f] = ""; briefKlipRerender(); }
+function briefKlipNy() { briefKlipLaes(); briefKlipListe().push({ ser: "" }); briefKlipRerender(); }
+function briefKlipSlet(i) {
+  if (!confirm("Fjern dette klip fra briefen?")) return;
+  briefKlipLaes(); BRIEF_STATE.klip.splice(i, 1); briefKlipRerender();
+}
+function briefKlipFlyt(i, d) {
+  briefKlipLaes();
+  const a = BRIEF_STATE.klip, j = i + d;
+  if (j < 0 || j >= a.length) return;
+  const t = a[i]; a[i] = a[j]; a[j] = t; briefKlipRerender();
+}
+function briefKlipRerender() {
+  const holder = document.getElementById("briefKlipHolder"); if (!holder) return;
+  holder.outerHTML = briefKlipHtml();
+  document.querySelectorAll('[id^="bf_klip_"]').forEach(autoGro);
+  if (typeof saveBrief === "function") saveBrief(true);
+}
+/* Klippene som ren tekst — til briefens overblik og alle steder, der foer laeste
+   brief.indhold. Tom streng, hvis intet er skrevet, saa "fyldt"-tjek virker som foer. */
+function briefKlipTekst() {
+  const liste = Array.isArray(BRIEF_STATE.klip) ? BRIEF_STATE.klip : [];
+  return liste.map(function (k, i) {
+    const d = [(k.ser || "").trim()];
+    if ((k.tekst || "").trim()) d.push("Tekst på skærmen: " + k.tekst.trim());
+    if ((k.siger || "").trim()) d.push("Siger: " + k.siger.trim());
+    return d.filter(Boolean).length ? (i + 1) + ". " + d.join(" · ") : "";
+  }).filter(Boolean).join("\n");
+}
 function briefSlidesLaes() {   // gem hvad der står i felterne før en re-render
   const els = document.querySelectorAll('[id^="bf_slide_"]');
   if (els.length) BRIEF_STATE.slides = Array.from(els).map(el => el.value);
@@ -7703,7 +7802,7 @@ const BRIEF_FELTER = [
   { k: "dato",        navn: "Datoen",                trin: "fakta",  fyldt: (b, it) => !!it.dato },
   { k: "hook",        navn: "Hooket",                trin: "raket0", fyldt: (b) => !!(b.hook || b.hookTekst) },
   { k: "thumb",       navn: "Thumbnail-teksten",     trin: "raket0", fyldt: (b) => !!(b.thumb || b.thumbBillede) },
-  { k: "indhold",     navn: "Indholdets opbygning",  trin: "raket1", fyldt: (b) => !!(b.indhold || (Array.isArray(b.slides) && b.slides.some(Boolean))) },
+  { k: "indhold",     navn: "Indholdets opbygning",  trin: "raket1", fyldt: (b) => !!(b.indhold || (Array.isArray(b.klip) && b.klip.some(k => (k && k.ser || "").trim())) || (Array.isArray(b.slides) && b.slides.some(Boolean))) },
   /* GÆLDER KUN KARRUSEL (UX-politiet 4/8). Feltet "Handlingen på sidste slide" VISES kun,
      naar formatet er Karrusel — men det blev talt med paa alle opslag. Paa en reel blev man
      altsaa maalt paa noget, man aldrig fik lov at svare paa: "Fasthold dem" kunne ALDRIG
@@ -7792,7 +7891,7 @@ function briefPctGammel() {
     BRIEF_STATE.cta && !BRIEF_STATE.ctaAuto,
     BRIEF_STATE.hook || BRIEF_STATE.hookTekst,
     BRIEF_STATE.thumb || BRIEF_STATE.thumbBillede,
-    BRIEF_STATE.indhold || (BRIEF_STATE.slides && BRIEF_STATE.slides.length),
+    BRIEF_STATE.indhold || (Array.isArray(BRIEF_STATE.klip) && BRIEF_STATE.klip.some(k => (k && k.ser || "").trim())) || (BRIEF_STATE.slides && BRIEF_STATE.slides.length),
     BRIEF_STATE.caption, it.dato
   ];
   return Math.round(felter.filter(Boolean).length / felter.length * 100);
@@ -7984,7 +8083,7 @@ function openBriefSide(id) {
   const ctaAuto = !!BRIEF_STATE.ctaAuto;   // forudvalgt tæller IKKE som udfyldt i raketten
 
   const qm = (label, inner) => '<div style="margin-bottom:18px;"><div style="font-size:9.5px;font-weight:400;text-transform:uppercase;letter-spacing:1.8px;color:var(--red);margin-bottom:8px;">' + label + '</div>' + inner + '</div>';
-  const visPlan = !!(BRIEF_STATE.hook || BRIEF_STATE.indhold || BRIEF_STATE.caption || it.dato);   // planlæg = efterproduktion (Ida 27/7)
+  const visPlan = !!(BRIEF_STATE.hook || BRIEF_STATE.indhold || (Array.isArray(BRIEF_STATE.klip) && BRIEF_STATE.klip.some(k => (k && k.ser || "").trim())) || BRIEF_STATE.caption || it.dato);   // planlæg = efterproduktion (Ida 27/7)
   /* FINAL 8a-8d (Task 7.2): hoejre-skinnen bygges pr. side af briefMetaByg — den gamle basis-svar-boks er afloest */
   try { briefMetaByg(); } catch(e) {}
 
@@ -8151,7 +8250,7 @@ function openBriefSide(id) {
            altsaa FOER hooket er skrevet — saa den var altid tom. Nu har den et fast id og
            fyldes af briefHookLaastVis() hver gang man skifter side (Ida 31/7). */
         + '<div id="bfHookLaast"></div>'
-        + ta('indhold', 'Hvad sker der efter hooket? Beskriv klippene i rækkefølge…', 90)
+        + briefKlipHtml()
         /* CTA'en i videoen hoerer HER, hvor klippene beskrives (Ida 31/7) — den stod foer paa
            en side for sig ("Handlingen i praksis"), langt fra det, den handler om. */
         /* HJAELP PAA DET SVAERESTE SPOERGSMAAL (mobiltjek 2/8). "Fang dem" har fem trin,
@@ -8210,7 +8309,7 @@ function openBriefSide(id) {
     + (function () {
         /* FINAL 8d (Task 7.2): naar raketten ER bygget, fejrer banneret det — ellers roligt Planlaeg-banner */
         const raketBygget = !!((BRIEF_STATE.hook || BRIEF_STATE.hookTekst)
-          && (BRIEF_STATE.indhold || (Array.isArray(BRIEF_STATE.slides) && BRIEF_STATE.slides.filter(s => (s || "").trim()).length >= 2))
+          && (BRIEF_STATE.indhold || (Array.isArray(BRIEF_STATE.klip) && BRIEF_STATE.klip.filter(k => (k && k.ser || "").trim()).length >= 2) || (Array.isArray(BRIEF_STATE.slides) && BRIEF_STATE.slides.filter(s => (s || "").trim()).length >= 2))
           && BRIEF_STATE.caption);
         const rkIkon = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="M12 15l-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/></svg>';
         const hvidCirkel = '<span style="width:26px;height:26px;border-radius:50%;background:#fff;color:var(--red);display:inline-flex;align-items:center;justify-content:center;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>';
@@ -8986,6 +9085,9 @@ async function saveBrief(stille) {
   });
   const slideEls = document.querySelectorAll('[id^="bf_slide_"]');
   if (slideEls.length) BRIEF_STATE.slides = Array.from(slideEls).map(el => el.value);
+  /* Klippene laeses som slides — men KUN naar felterne findes paa skaermen, saa et gem
+     fra en anden side aldrig kan tomme dem (samme "if (el)"-beskyttelse som resten). */
+  if (document.querySelector('[id^="bf_klip_"]')) { try { briefKlipLaes(); } catch(e) {} }
   const datoEl = document.getElementById("bf_dato");
   const nyDato = datoEl ? (datoEl.value || null) : null;
   const tidEl = document.getElementById("bf_tid");
@@ -9873,7 +9975,14 @@ function briefSamletHtml() {
         (erKarrusel
           ? raekke("Slides", slides.length ? slides.map((s, i) => (i + 1) + ". " + s).join("\n") : "")
             + raekke("CTA-slide", S.ctaVideo)
-          : raekke("Opbygning", S.indhold))
+          : raekke("Opbygning", (Array.isArray(S.klip) && S.klip.some(k => (k && k.ser || "").trim()))
+              ? S.klip.map((k, i) => {
+                  const d = [(k.ser || "").trim()];
+                  if ((k.tekst || "").trim()) d.push("Tekst på skærmen: " + k.tekst.trim());
+                  if ((k.siger || "").trim()) d.push("Siger: " + k.siger.trim());
+                  return d.filter(Boolean).length ? (i + 1) + ". " + d.join(" · ") : "";
+                }).filter(Boolean).join("\n")
+              : S.indhold))
         + raekke("Manus", S.voiceover))
     + sek("3 · Få dem til at interagere", "2",
         /* "Vinklen" er fjernet fra briefen 10/8, men raekken bliver staaende for de
@@ -20009,7 +20118,7 @@ function buildSideNav(def) {
       + '<span style="opacity:.55;">' + ikon("", "Kalender", "laastBesked()", IK.kal) + '</span>'
       + '<span style="opacity:.55;">' + ikon("", "Værktøjskassen", "laastBesked()", IK.tools) + '</span>'
       + '<button class="sn-virk-knap" onclick="toggleVirkMenu(event)" title="' + esc(knapNavn) + '" aria-label="Profil" style="margin-left:auto;"><span class="sn-initial">' + esc((knapNavn || "?").trim().charAt(0).toUpperCase()) + '</span><span class="sn-virk-navn" style="white-space:normal;overflow-wrap:anywhere;">' + esc(knapNavn) + '</span><svg class="sn-virk-pil" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="flex-shrink:0;"><path d="M6 9l6 6 6-6"/></svg></button>'
-      + fodBagud + '<div class="sn-fod"><span>Version 10. august · 1022</span></div>'
+      + fodBagud + '<div class="sn-fod"><span>Version 10. august · 1023</span></div>'
       /* Ida 30/7: alle konto-punkter bor i profilmenuen — ingen streg/sn-bund */
       + '<div id="virkMenu" style="display:none;position:fixed;left:14px;bottom:96px;width:230px;background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:0 16px 40px rgba(0,0,0,0.15);padding:8px;z-index:90;">'
       + '<div style="padding:10px 12px 6px;font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--gray3);">' + esc(virkNavn) + '</div>'
@@ -20069,7 +20178,7 @@ function buildSideNav(def) {
         uPkt("", "Lektioner", "showTab(12)")))
     + '<button class="sn-virk-knap" onclick="toggleVirkMenu(event)" title="' + esc(knapNavn) + '" aria-label="Profil"><span class="sn-initial">' + esc((knapNavn || "?").trim().charAt(0).toUpperCase()) + '</span><span class="sn-virk-navn" style="white-space:normal;overflow-wrap:anywhere;">' + esc(knapNavn) + '</span><svg class="sn-virk-pil" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="flex-shrink:0;"><path d="M6 9l6 6 6-6"/></svg></button>'
     /* Ida 30/7: ingen streg — logo + version samlet i foden under profilknappen */
-    + fodBagud + '<div class="sn-fod"><span>Version 10. august · 1022</span></div>'
+    + fodBagud + '<div class="sn-fod"><span>Version 10. august · 1023</span></div>'
     /* Ida 30/7: menuen åbner VED knappen (nederst t.v.) — ikke i modsatte hjørne */
     + '<div id="virkMenu" style="display:none;position:fixed;left:14px;bottom:96px;width:230px;background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:0 16px 40px rgba(0,0,0,0.15);padding:8px;z-index:90;">'
     + '<div style="padding:10px 12px 6px;font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--gray3);">' + esc(virkNavn) + '</div>'
@@ -21237,7 +21346,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "1022";
+const APP_VERSION = "1023";
 let NY_VERSION_KLAR = false;
 function nyVersionSkjul() { const e = document.getElementById("nyVersion"); if (e) e.style.display = "none"; }
 function nyVersionHent() { try { location.reload(); } catch(e) {} }
@@ -31634,6 +31743,6 @@ if ((location.hash || "").toLowerCase() === "#ole") {   // #ole = preview af Ole
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 10. august · 1022</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 10. august · 1023</div>
 </body>
 </html>
