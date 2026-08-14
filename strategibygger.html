@@ -588,6 +588,32 @@ function skiftAktivMg(){ var m=mg(); m.aktiv=(m.aktiv===false); gemMg(); render(
 function mgNavn(m,i){ return String(m.navn||'').trim()||('Drømmekunde '+(i+1)) }
 
 /* ---------- visning ---------- */
+/* ---------- NAVNE I SPOERGSMAALENE (Ida 14/8) ----------
+   Samme mekanik som ovSpm/ovBesk i appen: lektion_oevelser deles af alle kunder,
+   saa navnene staar som {virksomhed} og {persona} og flettes ind ved visning.
+   Personanavnet er kundens eget svar paa audience_identity — slaaet op paa
+   question_key, aldrig paa et hardkodet kilde-id. */
+function virksomhedsnavn(){
+  var n=(new URLSearchParams(location.search).get('navn')||'').trim();
+  if(n) return n;
+  return SB_KODE && SB_KODE!=='DEMO' ? SB_KODE : 'virksomheden';
+}
+function personaNavn(){
+  try{
+    var q=(M5.audiences||[]).filter(function(x){return x.k==='audience_identity'})[0];
+    if(!q) return 'drømmekunden';
+    var m=MG.filter(function(x){return x.aktiv!==false})[0];
+    var o=m?(SVAR[skemaFor('audiences',MG.indexOf(m))]||{}):{};
+    var raa=String(o[q.src]||'').trim();
+    return raa.split(/[\s,.;:]+/)[0]||'drømmekunden';
+  }catch(e){ return 'drømmekunden' }
+}
+function fletNavne(t){
+  var s=String(t==null?'':t);
+  if(s.indexOf('{')<0) return s;
+  return s.replace(/\{virksomhed\}/g,virksomhedsnavn()).replace(/\{persona\}/g,personaNavn());
+}
+
 function erMobil(){ return window.matchMedia('(max-width:760px)').matches }
 function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]}) }
 
@@ -633,8 +659,8 @@ function felt(sec,q,nr,ialt){
   var v=hent(sec,q.src);
   return '<div class="q-blok">'+
     '<div class="q-nr">Spørgsmål '+nr+' af '+ialt+'</div>'+
-    '<h3 class="question">'+esc(q.q)+'</h3>'+
-    (q.h?'<div class="help">'+esc(q.h)+'</div>':'')+
+    '<h3 class="question">'+esc(fletNavne(q.q))+'</h3>'+
+    (q.h?'<div class="help">'+esc(fletNavne(q.h))+'</div>':'')+
     '<textarea data-sec="'+sec+'" data-key="'+q.src+'" data-noegle="'+q.k+'" placeholder="Skriv svaret her…" '+
     'oninput="saet(\''+sec+'\',\''+q.src+'\',this.value)">'+esc(v)+'</textarea>'+
   '</div>';

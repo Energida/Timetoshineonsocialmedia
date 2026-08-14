@@ -1856,7 +1856,7 @@ body.modul-open .burger-btn, body.modul-open .bottom-nav, body.modul-open .dash-
     <button class="burger-item" onclick="toggleBurger(); togglePwPanel()">Skift adgangskode</button>
     <button class="burger-item" onclick="toggleBurger(); openChat()">Kontakt Ida</button>
     <button class="burger-item" style="color:var(--red);" onclick="custLogout()">Log ud</button>
-    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 14. august · 1039</div>
+    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 14. august · 1040</div>
   </div>
 </div>
 <div class="plus-menu" id="plusMenu" onclick="if(event.target===this)togglePlus()">
@@ -2959,7 +2959,7 @@ if (/somkunde=/.test(location.hash)) {
     <!-- Foden bliver nederst — den er det ENESTE der skubbes ned (Ida 30/7) -->
     <div class="dsb-fod">
       <button class="dsb-konto" onclick="dashKontoMenu()" title="Ida"><span class="dsb-initial">I</span><span class="dsb-konto-navn">Ida</span><svg class="dsb-konto-pil" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></button>
-      <div class="dsb-version"><span>Version 14. august · 1039</span></div>
+      <div class="dsb-version"><span>Version 14. august · 1040</span></div>
     </div>
   </div>
 
@@ -6577,7 +6577,7 @@ select titel,
          staa fast paa telefon. De hoerer i arket (samme fejl som "left" 31/7). -->
     <div id="dashFooter" style="z-index:50;display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--gray3);background:#fff;border-top:1px solid var(--border);padding:10px 26px;">
       <div style="font-size:10px;">© 2026 Energida · Alle rettigheder forbeholdes</div>
-      <div style="font-size:10px;margin-left:auto;">Version 14. august · 1039 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
+      <div style="font-size:10px;margin-left:auto;">Version 14. august · 1040 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
     </div>
   </div>
 </div>
@@ -11250,8 +11250,46 @@ async function modulerHent() {
    saa basen skal ikke aendres — spm er jsonb og tager begge dele.
    ALT, der laeser en opgave, gaar gennem disse to — saa kan en opgave aldrig komme til
    at staa som "[object Object]" et sted, nogen glemte at rette. */
-function ovSpm(x) { return (x && typeof x === "object") ? String(x.spm || "") : String(x || ""); }
-function ovBesk(x) { return (x && typeof x === "object") ? String(x.besk || "") : ""; }
+/* ========== NAVNE I SPOERGSMAALENE (Ida 14/8) ==========
+   Specifikationen kraever, at spoergsmaalene siger "Hvad skal Acorns.dk …?" og
+   "Hvorfor vaelger Charlotte …?" i stedet for "din forretning" og "kunden".
+   Men lektion_oevelser er EEN tabel, alle kunder deler — navnene kan derfor ikke
+   staa i teksten. De staar som {virksomhed} og {persona} og flettes ind VED VISNING.
+
+   Flettet ET sted, i ovSpm/ovBesk, som alt der viser en opgave gaar igennem. Saa
+   arver enhver ny visning det automatisk, og ingen kan komme til at vise en raa
+   pladsholder. Samme princip som ring-standarden og kalender-motoren.
+
+   Personanavnet er kundens EGET svar paa audience_identity — slaaet op via
+   registrets question_key, aldrig via et hardkodet kilde-id. */
+function ovVirksomhedsnavn() {
+  try {
+    const n = (typeof bsNavnFor === "function" && typeof currentKode !== "undefined")
+      ? bsNavnFor(currentKode) : "";
+    return String(n || "").trim() || "virksomheden";
+  } catch (e) { return "virksomheden"; }
+}
+function ovPersonaNavn() {
+  try {
+    const r = (typeof BS_REGISTER !== "undefined" ? BS_REGISTER : [])
+      .filter(function (x) { return x.k === "audience_identity"; })[0];
+    if (!r) return "drømmekunden";
+    const svar = (typeof KURSUS_SVAR !== "undefined" && KURSUS_SVAR[r.lek]) || {};
+    /* Foerste ord af svaret: kunden skriver "Charlotte", men kan skrive
+       "Charlotte, 42" eller en hel saetning. Uden et navn falder vi tilbage. */
+    const raa = String(svar[r.id] || "").trim();
+    const navn = raa.split(/[\s,.;:]+/)[0];
+    return navn || "drømmekunden";
+  } catch (e) { return "drømmekunden"; }
+}
+function ovFletNavne(t) {
+  const s = String(t || "");
+  if (s.indexOf("{") < 0) return s;                 /* langt de fleste har ingen */
+  return s.replace(/\{virksomhed\}/g, ovVirksomhedsnavn())
+          .replace(/\{persona\}/g, ovPersonaNavn());
+}
+function ovSpm(x) { return ovFletNavne((x && typeof x === "object") ? String(x.spm || "") : String(x || "")); }
+function ovBesk(x) { return ovFletNavne((x && typeof x === "object") ? String(x.besk || "") : ""); }
 /* Én normalisering, brugt baade naar der hentes og naar der gemmes: tom beskrivelse
    giver en ren streng, saa basen ikke fyldes med {spm:"…",besk:""}. */
 /* OPGAVEN FÅR ET PERMANENT ID (Ida 6/8, fase 1).
@@ -12694,7 +12732,7 @@ function oevoHulRaekke(h, n) {
   return '<div style="display:flex;gap:9px;align-items:baseline;padding:7px 0;border-top:1px solid var(--gray);">'
     + '<span style="flex-shrink:0;font-size:11px;color:var(--red);font-variant-numeric:tabular-nums;">' + n + '</span>'
     + '<div style="flex:1;min-width:0;">'
-      + '<div style="font-size:12.5px;line-height:1.5;">' + esc(h.spm) + '</div>'
+      + '<div style="font-size:12.5px;line-height:1.5;">' + esc(ovSpm(h.spm)) + '</div>'
       + '<div style="display:flex;gap:7px;align-items:center;flex-wrap:wrap;margin-top:5px;">'
         + oevChip("Lektion " + h.lek.replace("-", "."), !!h.ny)
         + oevChip(h.side, false)
@@ -20641,7 +20679,7 @@ function buildSideNav(def) {
       + '<span style="opacity:.55;">' + ikon("", "Kalender", "laastBesked()", IK.kal) + '</span>'
       + '<span style="opacity:.55;">' + ikon("", "Værktøjskassen", "laastBesked()", IK.tools) + '</span>'
       + '<button class="sn-virk-knap" onclick="toggleVirkMenu(event)" title="' + esc(knapNavn) + '" aria-label="Profil" style="margin-left:auto;"><span class="sn-initial">' + esc((knapNavn || "?").trim().charAt(0).toUpperCase()) + '</span><span class="sn-virk-navn" style="white-space:normal;overflow-wrap:anywhere;">' + esc(knapNavn) + '</span><svg class="sn-virk-pil" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="flex-shrink:0;"><path d="M6 9l6 6 6-6"/></svg></button>'
-      + fodBagud + '<div class="sn-fod"><span>Version 14. august · 1039</span></div>'
+      + fodBagud + '<div class="sn-fod"><span>Version 14. august · 1040</span></div>'
       /* Ida 30/7: alle konto-punkter bor i profilmenuen — ingen streg/sn-bund */
       + '<div id="virkMenu" style="display:none;position:fixed;left:14px;bottom:96px;width:230px;background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:0 16px 40px rgba(0,0,0,0.15);padding:8px;z-index:90;">'
       + '<div style="padding:10px 12px 6px;font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--gray3);">' + esc(virkNavn) + '</div>'
@@ -20701,7 +20739,7 @@ function buildSideNav(def) {
         uPkt("", "Lektioner", "showTab(12)")))
     + '<button class="sn-virk-knap" onclick="toggleVirkMenu(event)" title="' + esc(knapNavn) + '" aria-label="Profil"><span class="sn-initial">' + esc((knapNavn || "?").trim().charAt(0).toUpperCase()) + '</span><span class="sn-virk-navn" style="white-space:normal;overflow-wrap:anywhere;">' + esc(knapNavn) + '</span><svg class="sn-virk-pil" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="flex-shrink:0;"><path d="M6 9l6 6 6-6"/></svg></button>'
     /* Ida 30/7: ingen streg — logo + version samlet i foden under profilknappen */
-    + fodBagud + '<div class="sn-fod"><span>Version 14. august · 1039</span></div>'
+    + fodBagud + '<div class="sn-fod"><span>Version 14. august · 1040</span></div>'
     /* Ida 30/7: menuen åbner VED knappen (nederst t.v.) — ikke i modsatte hjørne */
     + '<div id="virkMenu" style="display:none;position:fixed;left:14px;bottom:96px;width:230px;background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:0 16px 40px rgba(0,0,0,0.15);padding:8px;z-index:90;">'
     + '<div style="padding:10px 12px 6px;font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--gray3);">' + esc(virkNavn) + '</div>'
@@ -22389,7 +22427,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "1039";
+const APP_VERSION = "1040";
 let NY_VERSION_KLAR = false;
 function nyVersionSkjul() { const e = document.getElementById("nyVersion"); if (e) e.style.display = "none"; }
 function nyVersionHent() { try { location.reload(); } catch(e) {} }
@@ -32974,6 +33012,6 @@ if ((location.hash || "").toLowerCase() === "#ole") {   // #ole = preview af Ole
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 14. august · 1039</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 14. august · 1040</div>
 </body>
 </html>
