@@ -1856,7 +1856,7 @@ body.modul-open .burger-btn, body.modul-open .bottom-nav, body.modul-open .dash-
     <button class="burger-item" onclick="toggleBurger(); togglePwPanel()">Skift adgangskode</button>
     <button class="burger-item" onclick="toggleBurger(); openChat()">Kontakt Ida</button>
     <button class="burger-item" style="color:var(--red);" onclick="custLogout()">Log ud</button>
-    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 14. august · 1037</div>
+    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 14. august · 1038</div>
   </div>
 </div>
 <div class="plus-menu" id="plusMenu" onclick="if(event.target===this)togglePlus()">
@@ -2959,7 +2959,7 @@ if (/somkunde=/.test(location.hash)) {
     <!-- Foden bliver nederst — den er det ENESTE der skubbes ned (Ida 30/7) -->
     <div class="dsb-fod">
       <button class="dsb-konto" onclick="dashKontoMenu()" title="Ida"><span class="dsb-initial">I</span><span class="dsb-konto-navn">Ida</span><svg class="dsb-konto-pil" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></button>
-      <div class="dsb-version"><span>Version 14. august · 1037</span></div>
+      <div class="dsb-version"><span>Version 14. august · 1038</span></div>
     </div>
   </div>
 
@@ -6577,7 +6577,7 @@ select titel,
          staa fast paa telefon. De hoerer i arket (samme fejl som "left" 31/7). -->
     <div id="dashFooter" style="z-index:50;display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--gray3);background:#fff;border-top:1px solid var(--border);padding:10px 26px;">
       <div style="font-size:10px;">© 2026 Energida · Alle rettigheder forbeholdes</div>
-      <div style="font-size:10px;margin-left:auto;">Version 14. august · 1037 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
+      <div style="font-size:10px;margin-left:auto;">Version 14. august · 1038 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
     </div>
   </div>
 </div>
@@ -12017,8 +12017,12 @@ function renderLektionVis() {
     + '<h2 style="font-size:21px;font-weight:400;line-height:1.3;margin:2px 0 0;">' + esc(l.titel) + '</h2>'
     + '<div class="lek-knapper">'
     + '<button class="dbtn ghost" style="background:#fff;" onclick="lekNoteKlik()">' + NOTE_SVG + 'Skriv note</button>'
-    + (l.ovelse ? '<button class="dbtn' + (KURSUS_SVAR[id] ? ' ghost" style="background:#fff;"' : ' primary"') + ' onclick="startOvelse(\'' + id + '\')">' + (KURSUS_SVAR[id] ? 'Ret dine øvelsessvar' : 'Tag øvelsen (' + l.ovelse.length + ' spørgsmål — ét ad gangen)') + '</button>' : '')
+    /* MÅLGRUPPE-LEKTIONEN faar en RAEKKE pr. maalgruppe i stedet for een knap (Ida 13/8).
+       Alle andre lektioner er uroerte — de har een oevelse og een knap som altid. */
+    + (l.ovelse && mgErGentagelig(id) ? '' :
+       (l.ovelse ? '<button class="dbtn' + (KURSUS_SVAR[id] ? ' ghost" style="background:#fff;"' : ' primary"') + ' onclick="startOvelse(\'' + id + '\')">' + (KURSUS_SVAR[id] ? 'Ret dine øvelsessvar' : 'Tag øvelsen (' + l.ovelse.length + ' spørgsmål — ét ad gangen)') + '</button>' : ''))
     + '</div>'
+    + (l.ovelse && mgErGentagelig(id) ? mgKortHtml() : '')
     + '<div class="lek-kort" id="lekNotePanel" style="display:none;">'
     + '<div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:8px;">'
     + '<div class="kort-titel" style="margin-bottom:0;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M17 3.5l3.5 3.5L8 19.5 3.5 20.5 4.5 16 17 3.5z"/></svg>Dine noter til lektionen</div>'
@@ -12221,13 +12225,120 @@ function ovSvarFor(o, l, i) {
   if (o.svar[n] !== undefined) return o.svar[n];
   return o.svar[String(i)] !== undefined ? o.svar[String(i)] : "";
 }
+/* ========== GENTAGELIGE MÅLGRUPPER (byggebriefen, Ida 13/8) ==========
+   Briefen er ufravigelig paa dette punkt: "En maalgruppe er et gentageligt, selvstaendigt
+   record med sit eget komplette svar- og strategiobjekt." Generatoren maa ALDRIG blande
+   egenskaber mellem records, og to maalgrupper maa aldrig dedupliceres automatisk.
+
+   HVORDAN DET ER LOEST — og hvorfor der hverken er ny tabel eller migrering:
+   Et oevelsessvar gemmes i forvejen paa "lektion_svar_<lektionsId>". Hver maalgruppe faar
+   derfor sit eget VIRTUELLE lektions-id: "5-3" for den foerste, "5-3__<mgId>" for de naeste.
+   Saa bruger de praecis samme gemme-maskineri, faar hver deres raekke i skema_svar, og de
+   svar, der ALLEREDE ligger paa "5-3", bliver maalgruppe nr. 1 uden at flytte sig.
+
+   SPOERGSMAALENE hentes altid paa BASIS-id'et, saa alle records deler de samme elleve
+   spoergsmaal og de samme stabile noegler. Kun svarene er adskilte.
+
+   LEKTIONEN ER IKKE HAARDKODET. Hvilken lektion der er gentagelig, laeses ud af registret
+   (sektionen "audiences") — flyttes Brandstrategien til Modul 4, foelger den med. */
+function mgLektionId() {
+  try { const r = (BS_REGISTER || []).find(function (x) { return x.s === "audiences"; }); return r ? r.lek : ""; }
+  catch (e) { return ""; }
+}
+function mgBasisId(id) { return String(id || "").split("__")[0]; }
+function mgErGentagelig(id) { const b = mgLektionId(); return !!b && mgBasisId(id) === b; }
+function mgSvarId(mg) { return (!mg || mg.id === "1") ? mgLektionId() : mgLektionId() + "__" + mg.id; }
+
+/* Listen bor som sin egen skema_svar-raekke pr. kode — samme RLS, samme motor, intet nyt.
+   Findes den ikke, ER der én maalgruppe: den, hvis svar allerede ligger paa basis-id'et. */
+let MAALGRUPPER = null;
+function mgListe() {
+  if (!Array.isArray(MAALGRUPPER) || !MAALGRUPPER.length) return [{ id: "1", navn: "", sortering: 1, aktiv: true }];
+  return MAALGRUPPER.slice().sort(function (a, b) { return (a.sortering || 0) - (b.sortering || 0); });
+}
+function mgAktive() { return mgListe().filter(function (m) { return m.aktiv !== false; }); }
+/* Navnet er kundens EGET foerste svar — drømmekundens navn. Staar det ikke der endnu,
+   siges det ligeud i stedet for at opfinde et. */
+function mgNavn(mg) {
+  if (mg && mg.navn) return mg.navn;
+  const svar = KURSUS_SVAR[mgSvarId(mg)] || {};
+  const l = KURSUS_LEKTIONER.find(function (x) { return x.id === mgLektionId(); });
+  const foerste = (l && l.ovelse && l.ovelse[0]) ? ovId(l.ovelse[0]) : null;
+  const t = foerste ? String(svar[foerste] || "").trim() : "";
+  return t ? t.split(/[,.\n]/)[0].trim().slice(0, 40) : "";
+}
+function mgUdfyldt(mg) {
+  const svar = KURSUS_SVAR[mgSvarId(mg)] || {};
+  return Object.values(svar).filter(function (x) { return String(x || "").trim(); }).length;
+}
+async function mgGem() {
+  MAALGRUPPER = mgListe();
+  try { if (sb && currentKode) await skemaSvarSkriv("maalgrupper", { liste: MAALGRUPPER }); } catch (e) {}
+}
+async function mgTilfoej() {
+  const l = mgListe().slice();
+  const nyt = { id: "mg" + Math.random().toString(36).slice(2, 9), navn: "", sortering: l.length + 1, aktiv: true };
+  MAALGRUPPER = l.concat([nyt]);
+  await mgGem();
+  if (typeof renderLektionVis === "function" && LEK_AABEN) renderLektionVis();
+  startOvelse(mgSvarId(nyt));
+}
+/* SLETTES ALDRIG. Briefen: "Maalgruppe slettet/deaktiveret: bevar historik; udelad fra
+   naeste aktive generation." Svarrækken bliver liggende, saa den kan taendes igen. */
+async function mgSlukTaend(mgId) {
+  const l = mgListe().slice();
+  const m = l.find(function (x) { return String(x.id) === String(mgId); });
+  if (!m || String(mgId) === "1") return;
+  m.aktiv = m.aktiv === false;
+  MAALGRUPPER = l;
+  await mgGem();
+  if (typeof renderLektionVis === "function" && LEK_AABEN) renderLektionVis();
+}
+
+/* KORTET MED MÅLGRUPPERNE. Een raekke pr. record, hver med sit eget saet svar.
+   Briefen: brugeren skal kunne tilfoeje, redigere, sortere og deaktivere maalgrupper UDEN
+   at overskrive andre — og en deaktiveret maalgruppe skal bevare sin historik. Derfor
+   slettes intet her; en slukket maalgruppe kan taendes igen, og svarene bliver liggende. */
+function mgKortHtml() {
+  const alle = mgListe();
+  const i_alt = (function () {
+    const l = KURSUS_LEKTIONER.find(function (x) { return x.id === mgLektionId(); });
+    return (l && l.ovelse) ? l.ovelse.length : 0;
+  })();
+  const raekke = function (m, sidste) {
+    const navn = mgNavn(m);
+    const n = mgUdfyldt(m);
+    const slukket = m.aktiv === false;
+    const foerste = String(m.id) === "1";
+    return '<div style="display:flex;gap:10px;align-items:center;padding:11px 0;' + (sidste ? '' : 'border-bottom:1px solid #F2F0ED;') + (slukket ? 'opacity:.55;' : '') + '">'
+      + '<div style="flex:1;min-width:0;">'
+        + '<div style="font-size:12.5px;line-height:1.4;">' + (navn ? esc(navn) : '<span style="color:var(--gray3);">Ikke navngivet endnu</span>') + '</div>'
+        + '<div style="font-size:11px;color:var(--gray3);margin-top:2px;">' + (n ? n + ' af ' + i_alt + ' besvaret' : 'Ingen svar endnu') + (slukket ? ' &middot; slukket' : '') + '</div>'
+      + '</div>'
+      + (foerste ? '' : '<button type="button" class="row-btn" style="font-weight:400;flex-shrink:0;" onclick="mgSlukTaend(&#39;' + esc(m.id) + '&#39;)">' + (slukket ? 'Tænd igen' : 'Sluk') + '</button>')
+      /* En SLUKKET maalgruppe inviterer ikke til at blive udfyldt — den skal taendes foerst.
+         Svarene ligger der stadig; knappen er bare vaek, saa raden ikke siger to ting. */
+      + (slukket ? '' : '<button type="button" class="' + (n ? 'row-btn' : 'dbtn primary') + '" style="font-weight:400;flex-shrink:0;' + (n ? '' : 'padding:8px 15px;') + '" onclick="startOvelse(&#39;' + esc(mgSvarId(m)) + '&#39;)">' + (n ? 'Ret svarene' : 'Udfyld') + '</button>')
+      + '</div>';
+  };
+  return '<div class="lek-kort" style="margin-top:16px;">'
+    + '<div style="font-size:10px;letter-spacing:1.6px;text-transform:uppercase;color:var(--red);margin-bottom:4px;">Jeres målgrupper</div>'
+    + '<div style="font-size:11.5px;color:var(--gray3);line-height:1.6;margin-bottom:6px;">Har I flere slags kunder, får hver sin egen beskrivelse. De blandes aldrig sammen — hver målgruppe har sit eget sæt svar og sin egen plads i Drejebogen.</div>'
+    + alle.map(function (m, i) { return raekke(m, i === alle.length - 1); }).join("")
+    + '<div style="display:flex;justify-content:flex-end;margin-top:12px;">'
+    + '<button type="button" class="row-btn" style="font-weight:400;" onclick="mgTilfoej()">Tilføj en målgruppe</button>'
+    + '</div></div>';
+}
+
 function startOvelse(id) {
-  const l = KURSUS_LEKTIONER.find(x => x.id === id); if (!l || !l.ovelse) return;
+  /* Spoergsmaalene hentes paa BASIS-id'et, svarene paa det virtuelle. Saa deler alle
+     maalgrupper de samme elleve spoergsmaal og de samme stabile noegler. */
+  const l = KURSUS_LEKTIONER.find(x => x.id === mgBasisId(id)); if (!l || !l.ovelse) return;
   OVELSE = { id: id, i: 0, svar: Object.assign({}, KURSUS_SVAR[id] || {}) };
   renderOvelse();
 }
 function renderOvelse() {
-  const o = OVELSE, l = KURSUS_LEKTIONER.find(x => x.id === o.id);
+  const o = OVELSE, l = KURSUS_LEKTIONER.find(x => x.id === mgBasisId(o.id));
   const body = document.getElementById("ideBody");
   const item = l.ovelse[o.i];
   const spm = ovSpm(item);
@@ -12295,7 +12406,7 @@ function ovelseDagToggle(dag) {
 function ovelseGem() {
   const ta = document.getElementById("ovelseSvar");
   if (!ta || !OVELSE) return;
-  const l = KURSUS_LEKTIONER.find(x => x.id === OVELSE.id); if (!l) return;
+  const l = KURSUS_LEKTIONER.find(x => x.id === mgBasisId(OVELSE.id)); if (!l) return;
   OVELSE.svar[ovNoegle(l, OVELSE.i)] = ta.value.trim();
 }
 /* Øvelsen nåede ikke serveren. Vinduet bliver stående, og beskeden siger det, den VED:
@@ -12316,11 +12427,13 @@ function ovelseGemFejl() {
 async function ovelseNaeste() {
   ovelseGem();
   try { const gl = document.getElementById("ovelseFejl"); if (gl) gl.remove(); } catch(e) {}
-  const l = KURSUS_LEKTIONER.find(x => x.id === OVELSE.id);
+  const l = KURSUS_LEKTIONER.find(x => x.id === mgBasisId(OVELSE.id));
   if (OVELSE.i < l.ovelse.length - 1) { OVELSE.i++; renderOvelse(); return; }
   KURSUS_SVAR[OVELSE.id] = OVELSE.svar;
-  KURSUS_SET[OVELSE.id] = true;                        // en gennemført øvelse tæller også som set lektion
-  delete KURSUS_UDSAT[OVELSE.id];                      // og fjerner "øvelse venter"-mærket
+  /* "Set" og "venter" hoerer til LEKTIONEN, ikke til den enkelte maalgruppe — ellers saa
+     lektionen ugennemfoert ud, saa snart man tilfoejede en maalgruppe mere. */
+  KURSUS_SET[mgBasisId(OVELSE.id)] = true;                        // en gennemført øvelse tæller også som set lektion
+  delete KURSUS_UDSAT[mgBasisId(OVELSE.id)];                      // og fjerner "øvelse venter"-mærket
   kursusGemLocal();
   // ugerytme-svaret skriver direkte i ugemålet (kunde_maal.opslag_uge) — øvelsen ER målsætningen
   const dageIx = l.ovelse.findIndex(q => typeof q === "object" && q.type === "dage");
@@ -12336,7 +12449,7 @@ async function ovelseNaeste() {
     /* Kvittering: en RLS-afvist skrivning kaster ikke — den rammer nul raekker og saa
        praecis ud som en vellykket. Nu siger appen det, hvis oevelsen ikke naaede frem. */
     const gemt = await skemaSvarSkriv("lektion_svar_" + OVELSE.id, OVELSE.svar);
-    try { await sb.from("skema_svar").insert({ kode: currentKode, navn: CURRENT_NAVN || "", skema: "lektion_set_" + OVELSE.id, svar: { set: true } }); } catch(e) {}
+    try { await sb.from("skema_svar").insert({ kode: currentKode, navn: CURRENT_NAVN || "", skema: "lektion_set_" + mgBasisId(OVELSE.id), svar: { set: true } }); } catch(e) {}
     /* Naaede svarene ikke serveren, bliver vinduet staaende. De ER gemt her paa enheden
        (kursusGemLocal ovenfor), saa beskeden siger praecis det — hverken mere eller mindre. */
     if (!gemt) { ovelseGemFejl(); return; }
@@ -20528,7 +20641,7 @@ function buildSideNav(def) {
       + '<span style="opacity:.55;">' + ikon("", "Kalender", "laastBesked()", IK.kal) + '</span>'
       + '<span style="opacity:.55;">' + ikon("", "Værktøjskassen", "laastBesked()", IK.tools) + '</span>'
       + '<button class="sn-virk-knap" onclick="toggleVirkMenu(event)" title="' + esc(knapNavn) + '" aria-label="Profil" style="margin-left:auto;"><span class="sn-initial">' + esc((knapNavn || "?").trim().charAt(0).toUpperCase()) + '</span><span class="sn-virk-navn" style="white-space:normal;overflow-wrap:anywhere;">' + esc(knapNavn) + '</span><svg class="sn-virk-pil" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="flex-shrink:0;"><path d="M6 9l6 6 6-6"/></svg></button>'
-      + fodBagud + '<div class="sn-fod"><span>Version 14. august · 1037</span></div>'
+      + fodBagud + '<div class="sn-fod"><span>Version 14. august · 1038</span></div>'
       /* Ida 30/7: alle konto-punkter bor i profilmenuen — ingen streg/sn-bund */
       + '<div id="virkMenu" style="display:none;position:fixed;left:14px;bottom:96px;width:230px;background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:0 16px 40px rgba(0,0,0,0.15);padding:8px;z-index:90;">'
       + '<div style="padding:10px 12px 6px;font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--gray3);">' + esc(virkNavn) + '</div>'
@@ -20588,7 +20701,7 @@ function buildSideNav(def) {
         uPkt("", "Lektioner", "showTab(12)")))
     + '<button class="sn-virk-knap" onclick="toggleVirkMenu(event)" title="' + esc(knapNavn) + '" aria-label="Profil"><span class="sn-initial">' + esc((knapNavn || "?").trim().charAt(0).toUpperCase()) + '</span><span class="sn-virk-navn" style="white-space:normal;overflow-wrap:anywhere;">' + esc(knapNavn) + '</span><svg class="sn-virk-pil" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="flex-shrink:0;"><path d="M6 9l6 6 6-6"/></svg></button>'
     /* Ida 30/7: ingen streg — logo + version samlet i foden under profilknappen */
-    + fodBagud + '<div class="sn-fod"><span>Version 14. august · 1037</span></div>'
+    + fodBagud + '<div class="sn-fod"><span>Version 14. august · 1038</span></div>'
     /* Ida 30/7: menuen åbner VED knappen (nederst t.v.) — ikke i modsatte hjørne */
     + '<div id="virkMenu" style="display:none;position:fixed;left:14px;bottom:96px;width:230px;background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:0 16px 40px rgba(0,0,0,0.15);padding:8px;z-index:90;">'
     + '<div style="padding:10px 12px 6px;font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--gray3);">' + esc(virkNavn) + '</div>'
@@ -20744,11 +20857,23 @@ async function bsVirksomhedId(kode) {
    raekke med flest udfyldte felter — og det siges hoejt i advarslerne. */
 async function bsSvarFor(kode) {
   const lektioner = [...new Set(BS_REGISTER.map(x => x.lek))];
-  const skemaer = lektioner.map(l => "lektion_svar_" + l);
-  const [sv, ov] = await Promise.all([
-    sb.from("skema_svar").select("skema,navn,svar").eq("kode", kode).in("skema", skemaer),
-    sb.from("lektion_oevelser").select("lektion_id,spm").in("lektion_id", lektioner)
+  /* HENTER PAA PRAEFIKS, ikke paa en liste. Maalgruppe nr. 2 bor paa "lektion_svar_5-3__mgB",
+     og en fast liste ville aldrig se den. Filtreres bagefter paa de lektioner, registret
+     faktisk kender — saa en fremmed raekke ikke kan liste sig ind. */
+  const [sv, ov, mgr] = await Promise.all([
+    sb.from("skema_svar").select("skema,navn,svar").eq("kode", kode).like("skema", "lektion_svar_%"),
+    sb.from("lektion_oevelser").select("lektion_id,spm").in("lektion_id", lektioner),
+    /* KUNDENS egen maalgruppeliste — ikke den, der tilfaeldigvis ligger i min session. */
+    sb.from("skema_svar").select("svar").eq("kode", kode).eq("skema", "maalgrupper").limit(1)
   ]);
+  const mgListeKunde = (function () {
+    try {
+      const r = (mgr && mgr.data || [])[0];
+      const l = r && r.svar && Array.isArray(r.svar.liste) ? r.svar.liste : null;
+      const aktive = l ? l.filter(function (m) { return m.aktiv !== false; }) : null;
+      return (aktive && aktive.length) ? aktive : [{ id: "1", navn: "", sortering: 1, aktiv: true }];
+    } catch (e) { return [{ id: "1", navn: "", sortering: 1, aktiv: true }]; }
+  })();
   if (sv.error) throw new Error("Kunne ikke hente svarene: " + sv.error.message);
 
   /* ORDLYDEN kommer fra den autoritative kilde, ikke herfra. */
@@ -20759,22 +20884,35 @@ async function bsSvarFor(kode) {
 
   const bedste = {}, flere = [];
   (sv.data || []).forEach(r => {
+    if (lektioner.indexOf(mgBasisId(String(r.skema).slice(13))) < 0) return;   /* fremmede lektioner ud */
     const antal = Object.values(r.svar || {}).filter(x => String(x || "").trim()).length;
     const nu = bedste[r.skema];
     if (nu && nu.navn !== r.navn) flere.push(r.skema.slice(13));
     if (!nu || antal > nu.antal) bedste[r.skema] = { navn: r.navn, antal: antal, svar: r.svar || {} };
   });
 
-  const ud = BS_REGISTER.map(x => {
-    const raekke = bedste["lektion_svar_" + x.lek];
-    const tekst = raekke ? String((raekke.svar || {})[x.id] || "").trim() : "";
-    return {
-      section_key: x.s, question_key: x.k, kilde_id: x.id,
-      spoergsmaal: (ordlyd[x.id] || {}).spm || "",
-      svar: tekst, besvaret: !!tekst, lektion: x.lek
-    };
+  /* GENTAGELIGE MÅLGRUPPER (briefen): hvert record faar sine EGNE elleve svar, og de maa
+     aldrig blandes. Svarene ligger paa lektionens virtuelle id — "5-3" for den foerste,
+     "5-3__<mgId>" for de naeste — saa hver maalgruppe laeses for sig og faar sit eget
+     entitet-id med. Generatoren kan derfor holde dem adskilt hele vejen. */
+  const mg = mgListeKunde;
+  const ud = [];
+  BS_REGISTER.forEach(x => {
+    const gentagelig = mgErGentagelig(x.lek);
+    (gentagelig ? mg : [null]).forEach(m => {
+      const skema = "lektion_svar_" + (m ? mgSvarId(m) : x.lek);
+      const raekke = bedste[skema];
+      const tekst = raekke ? String((raekke.svar || {})[x.id] || "").trim() : "";
+      ud.push({
+        section_key: x.s, question_key: x.k, kilde_id: x.id,
+        spoergsmaal: (ordlyd[x.id] || {}).spm || "",
+        svar: tekst, besvaret: !!tekst, lektion: x.lek,
+        entitet_type: gentagelig ? "maalgruppe" : null,
+        entitet_id: m ? String(m.id) : null
+      });
+    });
   });
-  return { svar: ud, flere_svarere: [...new Set(flere)] };
+  return { svar: ud, flere_svarere: [...new Set(flere)], maalgrupper: mg.length };
 }
 
 /* BEREDSKAB pr. sektion. Fladen maa forklare hvad der mangler — den maa ALDRIG udfylde det. */
@@ -22251,7 +22389,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "1037";
+const APP_VERSION = "1038";
 let NY_VERSION_KLAR = false;
 function nyVersionSkjul() { const e = document.getElementById("nyVersion"); if (e) e.style.display = "none"; }
 function nyVersionHent() { try { location.reload(); } catch(e) {} }
@@ -32836,6 +32974,6 @@ if ((location.hash || "").toLowerCase() === "#ole") {   // #ole = preview af Ole
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 14. august · 1037</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 14. august · 1038</div>
 </body>
 </html>
