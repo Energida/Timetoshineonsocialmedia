@@ -25,6 +25,9 @@ button{cursor:pointer}
 .progress{flex:1;height:5px;background:var(--gray);border-radius:99px;overflow:hidden;min-width:60px}
 .progress span{display:block;width:0;height:100%;background:var(--red);border-radius:99px;transition:.2s}
 .progress-txt,.save{font-size:11px;color:var(--muted);white-space:nowrap}
+/* Gaar gemmet ikke igennem, maa det ikke staa som en rolig graa linje —
+   det er den eneste besked, der fortaeller at arbejdet ikke er i sikkerhed. */
+.save.advarsel{color:var(--red);border:1px solid var(--red);border-radius:999px;padding:4px 11px;white-space:normal}
 
 .layout{max-width:1240px;margin:auto;padding:34px 24px 90px;display:grid;grid-template-columns:246px minmax(0,1fr) 290px;gap:22px;position:relative;z-index:2;align-items:start}
 .left{position:sticky;top:92px;align-self:start}
@@ -497,7 +500,11 @@ async function dbHent(){
     if(mr&&mr.svar&&Array.isArray(mr.svar.liste)&&mr.svar.liste.length){ MG=mr.svar.liste; MG_NAVN=mr.navn||''; }
 
     SB_KLAR=true; lokaltGem(); render();
-    saveTxt(Object.keys(bedste).length?'Hentet fra Energida':'Klar');
+    /* IKKE "Klar" — en laesning, der intet finder, ser praecis ud som en laesning
+       fra en bruger uden login: RLS filtrerer raekkerne vaek i stedet for at
+       afvise kaldet. Kun et GEM kan afgoere, om der er skriveadgang, saa der
+       loves ingenting her. */
+    saveTxt(Object.keys(bedste).length?'Hentet fra Energida':'Skriv et svar for at se, om det gemmes');
   }catch(e){ SB_KLAR=true; saveTxt('Kun gemt lokalt — er du logget ind?'); }
 }
 
@@ -531,7 +538,11 @@ function gemMg(){
     try{ await skriv('maalgrupper',{liste:MG},MG_NAVN); }catch(e){}
   },900);
 }
-function saveTxt(t){ var e=document.getElementById('saveTxt'); if(e) e.textContent=t }
+function saveTxt(t){
+  var e=document.getElementById('saveTxt'); if(!e) return;
+  e.textContent=t;
+  e.className='save'+(/lokalt/.test(t)?' advarsel':'');
+}
 
 /* ---------- svar-adgang (kilde-id er noeglen, aldrig positionen) ---------- */
 function mg(){ return MG[Math.min(mgAktiv,MG.length-1)]||MG[0] }
@@ -541,7 +552,16 @@ function saet(sec,src,val){
   if(!SVAR[s]) SVAR[s]={};
   SVAR[s][src]=val;
   gemSkema(s);
-  renderProgress(); renderSummary(); renderSteps();
+  renderProgress(); renderSummary(); renderSteps(); opdaterTal();
+}
+/* Kortets "N af M udfyldt" tegnes kun i render(), saa den stod stille, mens man
+   skrev — og saa ligner et gem, der virker, et gem, der er gaaet i staa. */
+function opdaterTal(){
+  if(current<0||erMobil()) return;              /* mobil viser positionen, ikke antallet */
+  var el=document.querySelector('#screen .kort-hoved .tal');
+  if(!el) return;
+  var s=SECTIONS[current];
+  el.textContent=sekDone(current)+' af '+M5[s.key].length+' udfyldt';
 }
 function sekDone(i){
   var s=SECTIONS[i], qs=M5[s.key];
