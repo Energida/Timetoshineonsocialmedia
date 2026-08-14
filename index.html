@@ -1856,7 +1856,7 @@ body.modul-open .burger-btn, body.modul-open .bottom-nav, body.modul-open .dash-
     <button class="burger-item" onclick="toggleBurger(); togglePwPanel()">Skift adgangskode</button>
     <button class="burger-item" onclick="toggleBurger(); openChat()">Kontakt Ida</button>
     <button class="burger-item" style="color:var(--red);" onclick="custLogout()">Log ud</button>
-    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 13. august · 1035</div>
+    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 13. august · 1036</div>
   </div>
 </div>
 <div class="plus-menu" id="plusMenu" onclick="if(event.target===this)togglePlus()">
@@ -2959,7 +2959,7 @@ if (/somkunde=/.test(location.hash)) {
     <!-- Foden bliver nederst — den er det ENESTE der skubbes ned (Ida 30/7) -->
     <div class="dsb-fod">
       <button class="dsb-konto" onclick="dashKontoMenu()" title="Ida"><span class="dsb-initial">I</span><span class="dsb-konto-navn">Ida</span><svg class="dsb-konto-pil" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></button>
-      <div class="dsb-version"><span>Version 13. august · 1035</span></div>
+      <div class="dsb-version"><span>Version 13. august · 1036</span></div>
     </div>
   </div>
 
@@ -6577,7 +6577,7 @@ select titel,
          staa fast paa telefon. De hoerer i arket (samme fejl som "left" 31/7). -->
     <div id="dashFooter" style="z-index:50;display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--gray3);background:#fff;border-top:1px solid var(--border);padding:10px 26px;">
       <div style="font-size:10px;">© 2026 Energida · Alle rettigheder forbeholdes</div>
-      <div style="font-size:10px;margin-left:auto;">Version 13. august · 1035 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
+      <div style="font-size:10px;margin-left:auto;">Version 13. august · 1036 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
     </div>
   </div>
 </div>
@@ -15566,7 +15566,12 @@ function klipStatusFold(id) { KLIP_STATUS_AABEN = (String(KLIP_STATUS_AABEN) ===
 let KLIP_OPG_AABEN = null;
 /* Overskriften AABNER kun — krydset er den eneste vej ud (Ida 3/8). */
 function klipOpgAaben(id) { if (String(KLIP_OPG_AABEN) === String(id)) return; KLIP_OPG_AABEN = String(id); renderKlipperum(); }
-function klipOpgLuk(id) { if (String(KLIP_OPG_AABEN) !== String(id)) return; KLIP_OPG_AABEN = null; KLIP_OPG_UDKAST = null; renderKlipperum(); }
+function klipOpgLuk(id) {
+  if (String(KLIP_OPG_AABEN) !== String(id)) return;
+  /* Lukkes der inden for autosavens 1,2 sek., skal det sidste tastetryk stadig med ned. */
+  try { const p = klipLektionFor((KLIP_OPGAVER || []).find(function (x) { return String(x.id) === String(id); })); if (p && p.l) klipOpgFlush(p.l.id); } catch(e) {}
+  KLIP_OPG_AABEN = null; KLIP_OPG_UDKAST = null; renderKlipperum();
+}
 function klipOpgFold(id) { KLIP_OPG_AABEN = (String(KLIP_OPG_AABEN) === String(id)) ? null : String(id); renderKlipperum(); }
 function klipStatusVaelg(id, st) { KLIP_STATUS_AABEN = null; klipStatus(id, st); renderKlipperum(); }
 function klipKort(o) {
@@ -15652,12 +15657,44 @@ function klipKort(o) {
    med tilfoej og fjern — og en gemning, der kun siger god, naar basen svarer med en raekke.
    Panelet vises ogsaa naar lektionen INGEN spoergsmaal har; ellers var der ingen vej til at
    lave det foerste. */
-let KLIP_OPG_UDKAST = null;   /* { id, spm: [] } — det, der staar i felterne lige nu */
+/* ET UDKAST PR. LEKTION (Ida 13/8) — og det gemmer sig selv.
+   FOER var der EET globalt udkast. Aabnede man lektion B, blev A's udkast smidt vaek — men
+   teksten blev staaende i A's felter, fordi det bare er tekstfelter paa skaermen. Trykkede
+   man saa Gem i A, sagde koden nej, og arbejdet var vaek uden at nogen havde sagt noget.
+   Det skete for Ida TRE gange paa én formiddag, og hun troede med rette, at det havde gemt:
+   resten af appen gemmer selv (manus-briefen, quizzen, Maanedens tema, noterne), og
+   designreglen siger, at autosave aldrig forklares i UI'et. Panelet her var undtagelsen.
+   Nu: eet udkast pr. lektion, og de skriver sig selv til basen 1,2 sek. efter sidste tast —
+   samme moenster og samme kvitteringskrav som manus-feltet. */
+let KLIP_OPG_UDKAST_ALLE = {};   /* lekId -> { id, spm: [] } */
+let KLIP_OPG_UDKAST = null;      /* peger paa den lektion, der sidst blev roert */
+let KLIP_OPG_TIMER = null;
 function klipOpgUdkastFor(lekId, liste) {
-  if (!KLIP_OPG_UDKAST || KLIP_OPG_UDKAST.id !== String(lekId)) {
-    KLIP_OPG_UDKAST = { id: String(lekId), spm: (liste || []).slice() };
-  }
+  const k = String(lekId);
+  if (!KLIP_OPG_UDKAST_ALLE[k]) KLIP_OPG_UDKAST_ALLE[k] = { id: k, spm: (liste || []).slice() };
+  KLIP_OPG_UDKAST = KLIP_OPG_UDKAST_ALLE[k];
   return KLIP_OPG_UDKAST;
+}
+function klipOpgUdkast(lekId) { return KLIP_OPG_UDKAST_ALLE[String(lekId)] || null; }
+/* AUTOSAVEN. Skriver ALDRIG en tom liste af sig selv — spaerren fra v991 findes, fordi et
+   tomt panel engang slettede et helt opgavesaet. Skal alt vaek, er det et bevidst tryk paa
+   Gem, ikke noget en tastning maa udloese. */
+function klipOpgAuto(lekId) {
+  const id = String(lekId);
+  clearTimeout(KLIP_OPG_TIMER);
+  const u = klipOpgUdkast(id);
+  if (!u || !u.spm.map(ovNorm).filter(Boolean).length) return;
+  klipOpgVaerter(id).forEach(function (v) {
+    const b = v.querySelector(".opg-besked");
+    if (b) { b.style.display = ""; b.textContent = "Gemmer…"; b.style.color = "var(--gray3)"; }
+  });
+  KLIP_OPG_TIMER = setTimeout(function () { klipOpgGem(id); }, 1200);
+}
+/* Lukkes panelet inden for de 1,2 sekunder, skal det sidste tastetryk stadig med. */
+function klipOpgFlush(lekId) {
+  if (!KLIP_OPG_TIMER) return;
+  clearTimeout(KLIP_OPG_TIMER); KLIP_OPG_TIMER = null;
+  try { klipOpgGem(lekId); } catch(e) {}
 }
 function klipOpgaver(o) {
   const par = (typeof klipLektionFor === "function") ? klipLektionFor(o) : null;
@@ -15712,9 +15749,9 @@ function klipOpgRetHtml(lekId, liste) {
     + ' style="display:flex;gap:9px;align-items:flex-start;padding:9px 0;border-top:1px solid var(--gray);">'
     + '<span draggable="true" ondragstart="klipOpgTraekStart(event,' + i + ')" title="Træk for at flytte spørgsmålet" style="flex-shrink:0;font-size:11px;color:var(--red);font-variant-numeric:tabular-nums;padding-top:11px;min-width:12px;cursor:grab;">' + (i + 1) + '</span>'
     + '<div style="flex:1;min-width:0;">'
-      + '<textarea oninput="klipOpgAendre(' + i + ', this.value)" rows="2" placeholder="Skriv spørgsmålet"'
+      + '<textarea oninput="klipOpgAendre(&#39;' + esc(lekId) + '&#39;, ' + i + ', this.value)" rows="2" placeholder="Skriv spørgsmålet"'
         + ' style="' + txt + 'font-size:12.5px;color:var(--black);">' + esc(ovSpm(x)) + '</textarea>'
-      + '<textarea oninput="klipOpgBeskAendre(' + i + ', this.value)" rows="2" placeholder="Beskriv spørgsmålet — hvad skal de tænke over? (valgfrit)"'
+      + '<textarea oninput="klipOpgBeskAendre(&#39;' + esc(lekId) + '&#39;, ' + i + ', this.value)" rows="2" placeholder="Beskriv spørgsmålet — hvad skal de tænke over? (valgfrit)"'
         + ' style="' + txt + 'font-size:12px;color:var(--gray3);margin-top:6px;">' + esc(ovBesk(x)) + '</textarea>'
     + '</div>'
     + '<button type="button" class="row-btn" style="flex-shrink:0;min-height:44px;" onclick="klipOpgFjern(\'' + esc(lekId) + '\',' + i + ')">Fjern</button></div>';
@@ -15729,17 +15766,21 @@ function klipOpgRetHtml(lekId, liste) {
 /* Kun udkastet opdateres mens hun skriver — en gentegning her ville tage fokus fra feltet.
    En opgave uden beskrivelse bliver ved med at vaere en ren streng; foerst naar der SKRIVES
    en beskrivelse, bliver den et objekt. Saa ser gamle opgaver uaendrede ud i basen. */
-function klipOpgAendre(i, v) {
-  const u = KLIP_OPG_UDKAST; if (!u || u.spm[i] === undefined) return;
+/* LEKTIONEN SKAL MED IND (13/8). Foer skrev de to i "det aktive udkast" — og staar to
+   paneler aabne, er det aktive ikke noedvendigvis det, fingrene er i. */
+function klipOpgAendre(lekId, i, v) {
+  const u = klipOpgUdkast(lekId); if (!u || u.spm[i] === undefined) return;
   const x = u.spm[i];
   if (x && typeof x === "object") x.spm = v;
   else u.spm[i] = v;
+  klipOpgAuto(lekId);
 }
-function klipOpgBeskAendre(i, v) {
-  const u = KLIP_OPG_UDKAST; if (!u || u.spm[i] === undefined) return;
+function klipOpgBeskAendre(lekId, i, v) {
+  const u = klipOpgUdkast(lekId); if (!u || u.spm[i] === undefined) return;
   const x = u.spm[i];
   if (x && typeof x === "object") x.besk = v;
   else u.spm[i] = { spm: String(x || ""), besk: v };
+  klipOpgAuto(lekId);
 }
 /* Lektionen kan staa aaben BAADE i briefen og paa tavlekortet bagved. Begge tegnes om,
    saa de aldrig kan vise hver sin udgave af de samme spoergsmaal. */
@@ -15748,7 +15789,8 @@ function klipOpgVaerter(lekId) {
 }
 function klipOpgTegn(lekId) {
   klipOpgVaerter(lekId).forEach(function (v) {
-    v.innerHTML = klipOpgRetHtml(lekId, KLIP_OPG_UDKAST ? KLIP_OPG_UDKAST.spm : []);
+    const ud = klipOpgUdkast(lekId);
+    v.innerHTML = klipOpgRetHtml(lekId, ud ? ud.spm : []);
   });
 }
 let KLIP_OPG_TRAK = null;
@@ -15783,8 +15825,15 @@ async function klipOpgGem(lekId, tomOK) {
   /* FOER stod her klipOpgUdkastFor(lekId, []) — den DIGTER et tomt udkast, hvis der ikke
      findes et. Er udkastet blevet nulstillet (fx af en luk et andet sted), skrev et tryk paa
      Gem altsaa en tom liste, som ingen havde skrevet. Findes udkastet ikke, gemmes der ikke. */
-  const u = KLIP_OPG_UDKAST;
-  if (!u || u.id !== String(lekId) || !Array.isArray(u.spm)) { klipOpgSpaerret(lekId, 0, "udkast"); return; }
+  /* SLAAR OP PAA LEKTIONEN (13/8). Foer laeste den "det aktive udkast", og trykkede man Gem
+     i et panel, man ikke sidst havde skrevet i, sagde den nej og gemte ingenting. */
+  const u = klipOpgUdkast(lekId);
+  if (!u || !Array.isArray(u.spm)) { klipOpgSpaerret(lekId, 0, "udkast"); return; }
+  clearTimeout(KLIP_OPG_TIMER); KLIP_OPG_TIMER = null;
+  /* INGEN LAAS MOD SAMTIDIGE GEM. Foerste udgave havde en, men jeg kunne ikke forklare,
+     hvorfor den blev haengende, naar autosaven kaldte igennem timeren — og en mekanisme,
+     ingen kan forklare, hoerer ikke hjemme i en gemme-vej. oevelserGem skriver paa
+     lektionens id, saa to overlappende gem skriver det samme, ikke hver sit. */
   const spm = u.spm.map(ovNorm).filter(Boolean);
   const svar = await oevelserGem(lekId, spm, tomOK);
   const ok = !!(svar && svar.ok);
@@ -15852,6 +15901,7 @@ async function klipOpgHentIgen(lekId) {
     const l = (typeof KURSUS_LEKTIONER !== "undefined" ? KURSUS_LEKTIONER : []).find(function (x) { return String(x.id) === id; });
     liste = (l && Array.isArray(l.ovelse)) ? l.ovelse : (Array.isArray(OEVELSER_DB[id]) ? OEVELSER_DB[id] : []);
   } catch(e) {}
+  delete KLIP_OPG_UDKAST_ALLE[id];   /* kun DENNE lektion hentes forfra — andres udkast lever */
   KLIP_OPG_UDKAST = null;
   klipOpgVaerter(lekId).forEach(function (v) { v.innerHTML = klipOpgRetHtml(lekId, liste); });
   klipOpgAntalOpdater(lekId);
@@ -20478,7 +20528,7 @@ function buildSideNav(def) {
       + '<span style="opacity:.55;">' + ikon("", "Kalender", "laastBesked()", IK.kal) + '</span>'
       + '<span style="opacity:.55;">' + ikon("", "Værktøjskassen", "laastBesked()", IK.tools) + '</span>'
       + '<button class="sn-virk-knap" onclick="toggleVirkMenu(event)" title="' + esc(knapNavn) + '" aria-label="Profil" style="margin-left:auto;"><span class="sn-initial">' + esc((knapNavn || "?").trim().charAt(0).toUpperCase()) + '</span><span class="sn-virk-navn" style="white-space:normal;overflow-wrap:anywhere;">' + esc(knapNavn) + '</span><svg class="sn-virk-pil" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="flex-shrink:0;"><path d="M6 9l6 6 6-6"/></svg></button>'
-      + fodBagud + '<div class="sn-fod"><span>Version 13. august · 1035</span></div>'
+      + fodBagud + '<div class="sn-fod"><span>Version 13. august · 1036</span></div>'
       /* Ida 30/7: alle konto-punkter bor i profilmenuen — ingen streg/sn-bund */
       + '<div id="virkMenu" style="display:none;position:fixed;left:14px;bottom:96px;width:230px;background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:0 16px 40px rgba(0,0,0,0.15);padding:8px;z-index:90;">'
       + '<div style="padding:10px 12px 6px;font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--gray3);">' + esc(virkNavn) + '</div>'
@@ -20538,7 +20588,7 @@ function buildSideNav(def) {
         uPkt("", "Lektioner", "showTab(12)")))
     + '<button class="sn-virk-knap" onclick="toggleVirkMenu(event)" title="' + esc(knapNavn) + '" aria-label="Profil"><span class="sn-initial">' + esc((knapNavn || "?").trim().charAt(0).toUpperCase()) + '</span><span class="sn-virk-navn" style="white-space:normal;overflow-wrap:anywhere;">' + esc(knapNavn) + '</span><svg class="sn-virk-pil" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="flex-shrink:0;"><path d="M6 9l6 6 6-6"/></svg></button>'
     /* Ida 30/7: ingen streg — logo + version samlet i foden under profilknappen */
-    + fodBagud + '<div class="sn-fod"><span>Version 13. august · 1035</span></div>'
+    + fodBagud + '<div class="sn-fod"><span>Version 13. august · 1036</span></div>'
     /* Ida 30/7: menuen åbner VED knappen (nederst t.v.) — ikke i modsatte hjørne */
     + '<div id="virkMenu" style="display:none;position:fixed;left:14px;bottom:96px;width:230px;background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:0 16px 40px rgba(0,0,0,0.15);padding:8px;z-index:90;">'
     + '<div style="padding:10px 12px 6px;font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--gray3);">' + esc(virkNavn) + '</div>'
@@ -22201,7 +22251,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "1035";
+const APP_VERSION = "1036";
 let NY_VERSION_KLAR = false;
 function nyVersionSkjul() { const e = document.getElementById("nyVersion"); if (e) e.style.display = "none"; }
 function nyVersionHent() { try { location.reload(); } catch(e) {} }
@@ -32786,6 +32836,6 @@ if ((location.hash || "").toLowerCase() === "#ole") {   // #ole = preview af Ole
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 13. august · 1035</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 13. august · 1036</div>
 </body>
 </html>
