@@ -552,6 +552,18 @@ function saet(sec,src,val){
   if(!SVAR[s]) SVAR[s]={};
   SVAR[s][src]=val;
   gemSkema(s);
+  /* NAVNET GEMMES RENT (Ida 14/8). Kundens svar staar ordret; det rensede navn
+     skrives ved SIDEN af, i maalgruppens navn-felt, saa {persona} kan genbruge
+     det uden at parse. Kun for den AKTIVE maalgruppe. */
+  try{
+    if(sec==='audiences'){
+      var q=(M5.audiences||[]).filter(function(x){return x.k==='audience_identity'})[0];
+      if(q&&q.src===src){
+        var m=mg(), rent=rensNavn(val);
+        if(m&&rent&&m.navn!==rent){ m.navn=rent; gemMg() }
+      }
+    }
+  }catch(e){}
   renderProgress(); renderSummary(); renderSteps(); opdaterTal();
 }
 /* Kortets "N af M udfyldt" tegnes kun i render(), saa den stod stille, mens man
@@ -593,19 +605,49 @@ function mgNavn(m,i){ return String(m.navn||'').trim()||('Drømmekunde '+(i+1)) 
    saa navnene staar som {virksomhed} og {persona} og flettes ind ved visning.
    Personanavnet er kundens eget svar paa audience_identity — slaaet op paa
    question_key, aldrig paa et hardkodet kilde-id. */
+/* VIRKSOMHEDSNAVNET HENTES FRA BASEN (Ida 14/8).
+   ?navn= var en lap, der kun holdt, saa laenge nogen huskede at saette den paa
+   linket. Det kanoniske navn staar i virksomheder-tabellen og hentes ved
+   indlaesning. Parameteren bliver staaende som noedbremse, aldrig som afhaengighed. */
+var VIRK_NAVN=null;
+async function hentVirksomhedsnavn(){
+  if(!SB_DB||SB_KODE==='DEMO') return;
+  try{
+    /* MAALT 14/8: virksomheder har navn og id — men INGEN kode-kolonne.
+       Koblingen gaar gennem den PERMANENTE identitet paa brugerens eget token,
+       ikke gennem koden. Samme retning som resten af virksomhed_id-sporet. */
+    var u=await SB_DB.auth.getUser();
+    var meta=(u&&u.data&&u.data.user&&u.data.user.app_metadata)||{};
+    var vid=meta.virksomhed_id;
+    if(!vid) return;                                   /* ingen identitet = ingen gaet */
+    var r=await SB_DB.from('virksomheder').select('navn').eq('id',vid).maybeSingle();
+    var n=r&&r.data&&String(r.data.navn||'').trim();
+    if(n){ VIRK_NAVN=n; render(); }
+  }catch(e){}
+}
 function virksomhedsnavn(){
+  if(VIRK_NAVN) return VIRK_NAVN;
   var n=(new URLSearchParams(location.search).get('navn')||'').trim();
-  if(n) return n;
+  if(n) return n;                                     /* noedbremse, ikke normalvej */
   return SB_KODE && SB_KODE!=='DEMO' ? SB_KODE : 'virksomheden';
+}
+
+/* NAVNET ER ET STRUKTURERET FELT, og det er SCOPET til den aktive maalgruppe
+   (Ida 14/8). m.navn er kilden; parsingen er kun legacy-fallback for svar gemt
+   foer 14/8. mgAktiv — ikke [0] — saa maalgruppe 2's spoergsmaal aldrig kan
+   staa med maalgruppe 1's navn. */
+function rensNavn(raa){
+  var t=String(raa==null?'':raa).trim();
+  return t?t.split(/[,.\n]/)[0].trim().slice(0,40):'';
 }
 function personaNavn(){
   try{
+    var m=mg();
+    if(m&&String(m.navn||'').trim()) return String(m.navn).trim();   /* struktureret */
     var q=(M5.audiences||[]).filter(function(x){return x.k==='audience_identity'})[0];
-    if(!q) return 'drømmekunden';
-    var m=MG.filter(function(x){return x.aktiv!==false})[0];
-    var o=m?(SVAR[skemaFor('audiences',MG.indexOf(m))]||{}):{};
-    var raa=String(o[q.src]||'').trim();
-    return raa.split(/[\s,.;:]+/)[0]||'drømmekunden';
+    if(!q||!m) return 'drømmekunden';
+    var o=SVAR[skemaFor('audiences',MG.indexOf(m))]||{};
+    return rensNavn(o[q.src])||'drømmekunden';                       /* legacy */
   }catch(e){ return 'drømmekunden' }
 }
 function fletNavne(t){
@@ -826,6 +868,7 @@ function showDone(){
 window.addEventListener('resize',function(){ clearTimeout(window.__rz); window.__rz=setTimeout(render,150) });
 render();
 dbHent();
+hentVirksomhedsnavn();
 </script>
 </body>
 </html>

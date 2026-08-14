@@ -1856,7 +1856,7 @@ body.modul-open .burger-btn, body.modul-open .bottom-nav, body.modul-open .dash-
     <button class="burger-item" onclick="toggleBurger(); togglePwPanel()">Skift adgangskode</button>
     <button class="burger-item" onclick="toggleBurger(); openChat()">Kontakt Ida</button>
     <button class="burger-item" style="color:var(--red);" onclick="custLogout()">Log ud</button>
-    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 14. august · 1040</div>
+    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 14. august · 1041</div>
   </div>
 </div>
 <div class="plus-menu" id="plusMenu" onclick="if(event.target===this)togglePlus()">
@@ -2959,7 +2959,7 @@ if (/somkunde=/.test(location.hash)) {
     <!-- Foden bliver nederst — den er det ENESTE der skubbes ned (Ida 30/7) -->
     <div class="dsb-fod">
       <button class="dsb-konto" onclick="dashKontoMenu()" title="Ida"><span class="dsb-initial">I</span><span class="dsb-konto-navn">Ida</span><svg class="dsb-konto-pil" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></button>
-      <div class="dsb-version"><span>Version 14. august · 1040</span></div>
+      <div class="dsb-version"><span>Version 14. august · 1041</span></div>
     </div>
   </div>
 
@@ -6577,7 +6577,7 @@ select titel,
          staa fast paa telefon. De hoerer i arket (samme fejl som "left" 31/7). -->
     <div id="dashFooter" style="z-index:50;display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--gray3);background:#fff;border-top:1px solid var(--border);padding:10px 26px;">
       <div style="font-size:10px;">© 2026 Energida · Alle rettigheder forbeholdes</div>
-      <div style="font-size:10px;margin-left:auto;">Version 14. august · 1040 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
+      <div style="font-size:10px;margin-left:auto;">Version 14. august · 1041 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
     </div>
   </div>
 </div>
@@ -11269,17 +11269,27 @@ function ovVirksomhedsnavn() {
     return String(n || "").trim() || "virksomheden";
   } catch (e) { return "virksomheden"; }
 }
+/* SCOPET TIL DEN AKTIVE MAALGRUPPE (Ida 14/8).
+   Staar vi inde i en maalgruppe-oevelse, gaelder DEN maalgruppes navn — ikke den
+   foerste. Ved flere ligevaerdige maalgrupper ville et fast [0] ellers saette
+   maalgruppe 1's navn paa maalgruppe 2's spoergsmaal.
+
+   Navnet hentes gennem appens egen mgNavn(), som allerede tager det strukturerede
+   navn-felt foerst og kun parser svaret som legacy-fallback. */
 function ovPersonaNavn() {
   try {
-    const r = (typeof BS_REGISTER !== "undefined" ? BS_REGISTER : [])
-      .filter(function (x) { return x.k === "audience_identity"; })[0];
-    if (!r) return "drømmekunden";
-    const svar = (typeof KURSUS_SVAR !== "undefined" && KURSUS_SVAR[r.lek]) || {};
-    /* Foerste ord af svaret: kunden skriver "Charlotte", men kan skrive
-       "Charlotte, 42" eller en hel saetning. Uden et navn falder vi tilbage. */
-    const raa = String(svar[r.id] || "").trim();
-    const navn = raa.split(/[\s,.;:]+/)[0];
-    return navn || "drømmekunden";
+    let mg = null;
+    if (typeof OVELSE !== "undefined" && OVELSE && OVELSE.id
+        && typeof mgBasisId === "function" && typeof mgLektionId === "function"
+        && mgBasisId(OVELSE.id) === mgLektionId()) {
+      const mgId = String(OVELSE.id).split("__")[1] || "1";
+      mg = (typeof mgListe === "function" ? mgListe() : [])
+        .filter(function (m) { return String(m.id) === mgId; })[0] || null;
+    }
+    /* Uden for maalgruppe-oevelsen (fx USP-spoergsmaal) gaelder den primaere. */
+    if (!mg && typeof mgAktive === "function") mg = mgAktive()[0];
+    const n = (mg && typeof mgNavn === "function") ? String(mgNavn(mg) || "").trim() : "";
+    return n || "drømmekunden";
   } catch (e) { return "drømmekunden"; }
 }
 function ovFletNavne(t) {
@@ -12297,13 +12307,28 @@ function mgListe() {
 function mgAktive() { return mgListe().filter(function (m) { return m.aktiv !== false; }); }
 /* Navnet er kundens EGET foerste svar — drømmekundens navn. Staar det ikke der endnu,
    siges det ligeud i stedet for at opfinde et. */
-function mgNavn(mg) {
-  if (mg && mg.navn) return mg.navn;
-  const svar = KURSUS_SVAR[mgSvarId(mg)] || {};
+/* NAVNET ER ET STRUKTURERET FELT (Ida 14/8). mg.navn er kilden; parsingen nedenfor
+   er KUN legacy-fallback for svar gemt foer 14/8, hvor navnet kunne staa som
+   "Charlotte, 42 aar". Nye svar skriver det rensede navn til mg.navn ved gem.
+   Slaar op paa question_key gennem registret — aldrig paa opgavens plads. */
+function mgIdentitetsId() {
+  try {
+    const r = (typeof BS_REGISTER !== "undefined" ? BS_REGISTER : [])
+      .filter(function (x) { return x.k === "audience_identity"; })[0];
+    if (r) return r.id;
+  } catch (e) {}
   const l = KURSUS_LEKTIONER.find(function (x) { return x.id === mgLektionId(); });
-  const foerste = (l && l.ovelse && l.ovelse[0]) ? ovId(l.ovelse[0]) : null;
-  const t = foerste ? String(svar[foerste] || "").trim() : "";
+  return (l && l.ovelse && l.ovelse[0]) ? ovId(l.ovelse[0]) : null;   /* sidste udvej */
+}
+function mgRensNavn(raa) {
+  const t = String(raa || "").trim();
   return t ? t.split(/[,.\n]/)[0].trim().slice(0, 40) : "";
+}
+function mgNavn(mg) {
+  if (mg && mg.navn) return mg.navn;                       /* struktureret felt vinder */
+  const svar = KURSUS_SVAR[mgSvarId(mg)] || {};
+  const id = mgIdentitetsId();
+  return id ? mgRensNavn(svar[id]) : "";                   /* legacy-fallback */
 }
 function mgUdfyldt(mg) {
   const svar = KURSUS_SVAR[mgSvarId(mg)] || {};
@@ -12445,7 +12470,20 @@ function ovelseGem() {
   const ta = document.getElementById("ovelseSvar");
   if (!ta || !OVELSE) return;
   const l = KURSUS_LEKTIONER.find(x => x.id === mgBasisId(OVELSE.id)); if (!l) return;
-  OVELSE.svar[ovNoegle(l, OVELSE.i)] = ta.value.trim();
+  const noegle = ovNoegle(l, OVELSE.i);
+  OVELSE.svar[noegle] = ta.value.trim();
+  /* NAVNET GEMMES RENT (Ida 14/8). Kundens eget svar bliver staaende ordret —
+     det rensede navn skrives ved SIDEN af, i maalgruppens strukturerede navn-felt,
+     saa {persona} og alle andre visninger kan genbruge det uden at parse. */
+  try {
+    if (noegle === mgIdentitetsId() && mgBasisId(OVELSE.id) === mgLektionId()) {
+      const mgId = String(OVELSE.id).split("__")[1] || "1";
+      const liste = mgListe().slice();
+      const m = liste.filter(function (x) { return String(x.id) === mgId; })[0];
+      const rent = mgRensNavn(ta.value);
+      if (m && rent && m.navn !== rent) { m.navn = rent; MAALGRUPPER = liste; mgGem(); }
+    }
+  } catch (e) {}
 }
 /* Øvelsen nåede ikke serveren. Vinduet bliver stående, og beskeden siger det, den VED:
    svarene ligger på enheden, men ikke i basen. En knap, der prøver igen, i stedet for
@@ -20679,7 +20717,7 @@ function buildSideNav(def) {
       + '<span style="opacity:.55;">' + ikon("", "Kalender", "laastBesked()", IK.kal) + '</span>'
       + '<span style="opacity:.55;">' + ikon("", "Værktøjskassen", "laastBesked()", IK.tools) + '</span>'
       + '<button class="sn-virk-knap" onclick="toggleVirkMenu(event)" title="' + esc(knapNavn) + '" aria-label="Profil" style="margin-left:auto;"><span class="sn-initial">' + esc((knapNavn || "?").trim().charAt(0).toUpperCase()) + '</span><span class="sn-virk-navn" style="white-space:normal;overflow-wrap:anywhere;">' + esc(knapNavn) + '</span><svg class="sn-virk-pil" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="flex-shrink:0;"><path d="M6 9l6 6 6-6"/></svg></button>'
-      + fodBagud + '<div class="sn-fod"><span>Version 14. august · 1040</span></div>'
+      + fodBagud + '<div class="sn-fod"><span>Version 14. august · 1041</span></div>'
       /* Ida 30/7: alle konto-punkter bor i profilmenuen — ingen streg/sn-bund */
       + '<div id="virkMenu" style="display:none;position:fixed;left:14px;bottom:96px;width:230px;background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:0 16px 40px rgba(0,0,0,0.15);padding:8px;z-index:90;">'
       + '<div style="padding:10px 12px 6px;font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--gray3);">' + esc(virkNavn) + '</div>'
@@ -20739,7 +20777,7 @@ function buildSideNav(def) {
         uPkt("", "Lektioner", "showTab(12)")))
     + '<button class="sn-virk-knap" onclick="toggleVirkMenu(event)" title="' + esc(knapNavn) + '" aria-label="Profil"><span class="sn-initial">' + esc((knapNavn || "?").trim().charAt(0).toUpperCase()) + '</span><span class="sn-virk-navn" style="white-space:normal;overflow-wrap:anywhere;">' + esc(knapNavn) + '</span><svg class="sn-virk-pil" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="flex-shrink:0;"><path d="M6 9l6 6 6-6"/></svg></button>'
     /* Ida 30/7: ingen streg — logo + version samlet i foden under profilknappen */
-    + fodBagud + '<div class="sn-fod"><span>Version 14. august · 1040</span></div>'
+    + fodBagud + '<div class="sn-fod"><span>Version 14. august · 1041</span></div>'
     /* Ida 30/7: menuen åbner VED knappen (nederst t.v.) — ikke i modsatte hjørne */
     + '<div id="virkMenu" style="display:none;position:fixed;left:14px;bottom:96px;width:230px;background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:0 16px 40px rgba(0,0,0,0.15);padding:8px;z-index:90;">'
     + '<div style="padding:10px 12px 6px;font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--gray3);">' + esc(virkNavn) + '</div>'
@@ -22427,7 +22465,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "1040";
+const APP_VERSION = "1041";
 let NY_VERSION_KLAR = false;
 function nyVersionSkjul() { const e = document.getElementById("nyVersion"); if (e) e.style.display = "none"; }
 function nyVersionHent() { try { location.reload(); } catch(e) {} }
@@ -33012,6 +33050,6 @@ if ((location.hash || "").toLowerCase() === "#ole") {   // #ole = preview af Ole
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 14. august · 1040</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 14. august · 1041</div>
 </body>
 </html>
