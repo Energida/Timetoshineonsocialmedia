@@ -423,83 +423,149 @@ const FASE_TXT = {
   RESULTAT:'Hvordan bliver det gjort, målt og justeret?'
 };
 
-/* ---------- lagring ---------- */
+/* ---------- lagring ----------
+   SKRIVER DÉR, HVOR GENERATOREN LÆSER. Appens lektioner gemmer et øvelsessvar
+   i skema_svar under skemaet "lektion_svar_<lektionsId>", med opgavens
+   permanente kilde-id som nøgle. bsSvarFor() i appen læser præcis dét
+   præfiks. Skrev byggeren sit eget sted (skemaet "strategibygger" med
+   question_key), ville svarene aldrig nå Drejebogen — det var byggerens
+   gamle fejl, og den er rettet her.
+
+   question_key bruges fortsat som generatorens semantiske nøgle, men den er
+   IKKE lagringsnøglen. Lagringsnøglen er kilde-id'et, præcis som i appen.
+
+   FLERE PERSONER PÅ SAMME LEKTION: skema_svar har én række pr. (kode, navn,
+   skema). Generatoren tager rækken med flest udfyldte felter. Byggeren
+   læser efter samme regel og SKRIVER TILBAGE I DEN RÆKKE — ellers ville den
+   lave en konkurrerende række, og den fyldigste kunne pludselig være en
+   anden end den, Ida lige har skrevet i. */
 var SB_KODE=(new URLSearchParams(location.search).get('kode')||'demo').toUpperCase();
 var SB_KEY='energida_strategy_builder_'+SB_KODE;
-var SB_DB=null, SB_GEM_TIMER=null;
+var SB_DB=null, SB_GEM_TIMER={}, SB_KLAR=false;
 try{ SB_DB=window.supabase.createClient("https://eikcvvppuphnananxcvp.supabase.co","eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVpa2N2dnBwdXBobmFuYW54Y3ZwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMyMzIxNjEsImV4cCI6MjA5ODgwODE2MX0.M435MA_fPlvP27UtX7LZLpGDFDl8Mi2CzewHhxbmDsI"); }catch(e){}
 
-/* answers bærer BÅDE de gamle nøgler og det nye bs-lag. Kun bs røres her. */
-let answers={};
-try{ answers=JSON.parse(localStorage.getItem(SB_KEY))||{} }catch(e){}
-function bs(){
-  if(!answers.bs) answers.bs={};
-  var b=answers.bs;
-  if(!b.audiences||!Array.isArray(b.audiences)||!b.audiences.length){
-    b.audiences=[{id:'mg1',label:'Drømmekunde 1',aktiv:true,svar:{}}];
-  }
-  ['drive','values','usp','direction'].forEach(function(k){ if(!b[k]) b[k]={} });
-  return b;
-}
-let current=0, qIndex=0, mgAktiv=0;
+/* lektions-id pr. sektion. Præsentation, aldrig en nøgle — registret er
+   uafhængigt af modulnummer, og flyttes modulet, skifter kun disse fem. */
+var LEK={drive:'5-2',audiences:'5-3',values:'5-4',usp:'5-5',direction:'5-6'};
 
-async function dbHent(){
-  if(!SB_DB || SB_KODE==='DEMO') return;
+var SVAR={};        /* skema -> {kildeId: tekst} */
+var RAEKKE_NAVN={}; /* skema -> navnet paa den raekke vi skriver i */
+var MG=[{id:'1',navn:'',sortering:1,aktiv:true}];
+var MG_NAVN='';
+let mgAktiv=0, current=0, qIndex=0;
+
+/* Maalgruppe "1" bor paa basis-id'et, de naeste paa "5-3__<id>" — samme
+   regel som mgSvarId() i appen, saa de to doere rammer samme raekke. */
+function skemaFor(sec,idx){
+  if(sec!=='audiences') return 'lektion_svar_'+LEK[sec];
+  var m=MG[Math.min(idx==null?mgAktiv:idx,MG.length-1)]||MG[0];
+  return 'lektion_svar_'+(String(m.id)==='1'?LEK.audiences:LEK.audiences+'__'+m.id);
+}
+function udfyldteI(o){ return Object.keys(o||{}).filter(function(k){return String(o[k]||'').trim()}).length }
+
+function lokaltGem(){
+  try{ localStorage.setItem(SB_KEY,JSON.stringify({svar:SVAR,mg:MG})) }catch(e){}
+}
+function lokaltHent(){
   try{
-    var res=await SB_DB.from('skema_svar').select('svar').eq('kode',SB_KODE).eq('navn','config').eq('skema','strategibygger').maybeSingle();
-    if(res.data&&res.data.svar&&Object.keys(res.data.svar).length){
-      answers=res.data.svar;
-      localStorage.setItem(SB_KEY,JSON.stringify(answers));
-      render();
-    } else if(answers.bs&&Object.keys(answers.bs).length){ dbGem(); }
+    var d=JSON.parse(localStorage.getItem(SB_KEY))||{};
+    if(d.svar) SVAR=d.svar;
+    if(Array.isArray(d.mg)&&d.mg.length) MG=d.mg;
   }catch(e){}
 }
-function dbGem(){
-  if(!SB_DB || SB_KODE==='DEMO'){ saveTxt('Gemt lokalt'); return; }
-  clearTimeout(SB_GEM_TIMER);
-  SB_GEM_TIMER=setTimeout(async function(){
-    try{
-      var eks=await SB_DB.from('skema_svar').update({svar:answers}).eq('kode',SB_KODE).eq('navn','config').eq('skema','strategibygger').select();
-      if(!eks.data||!eks.data.length){
-        var ins=await SB_DB.from('skema_svar').insert({kode:SB_KODE,navn:'config',skema:'strategibygger',svar:answers}).select();
-        if(!ins.data||!ins.data.length){ saveTxt('Kun gemt lokalt'); return; }
-      }
-      saveTxt('Gemt hos Energida');
-    }catch(e){ saveTxt('Kun gemt lokalt'); }
-  },900);
-}
-function saveTxt(t){ var e=document.getElementById('saveTxt'); if(e) e.textContent=t; }
-function save(){
-  localStorage.setItem(SB_KEY,JSON.stringify(answers));
-  saveTxt('Gemmer…'); dbGem();
-  renderProgress(); renderSummary(); renderSteps();
+lokaltHent();
+
+async function dbHent(){
+  if(!SB_DB||SB_KODE==='DEMO'){ SB_KLAR=true; saveTxt('Gemt lokalt'); return; }
+  try{
+    var res=await Promise.all([
+      SB_DB.from('skema_svar').select('skema,navn,svar').eq('kode',SB_KODE).like('skema','lektion_svar_%'),
+      SB_DB.from('skema_svar').select('navn,svar').eq('kode',SB_KODE).eq('skema','maalgrupper').limit(1)
+    ]);
+    var sv=res[0], mgr=res[1];
+    if(sv.error) throw sv.error;
+
+    /* fyldigste raekke pr. skema — samme valg som generatoren traeffer */
+    var bedste={};
+    (sv.data||[]).forEach(function(r){
+      var n=udfyldteI(r.svar);
+      if(!bedste[r.skema]||n>bedste[r.skema].antal) bedste[r.skema]={navn:r.navn,antal:n,svar:r.svar||{}};
+    });
+    Object.keys(bedste).forEach(function(s){ SVAR[s]=bedste[s].svar; RAEKKE_NAVN[s]=bedste[s].navn; });
+
+    var mr=(mgr.data||[])[0];
+    if(mr&&mr.svar&&Array.isArray(mr.svar.liste)&&mr.svar.liste.length){ MG=mr.svar.liste; MG_NAVN=mr.navn||''; }
+
+    SB_KLAR=true; lokaltGem(); render();
+    saveTxt(Object.keys(bedste).length?'Hentet fra Energida':'Klar');
+  }catch(e){ SB_KLAR=true; saveTxt('Kun gemt lokalt — er du logget ind?'); }
 }
 
-/* ---------- svar-adgang ---------- */
-function mg(){ var a=bs().audiences; return a[Math.min(mgAktiv,a.length-1)]; }
-function hent(sec,key){
-  if(sec==='audiences'){ var m=mg(); return (m&&m.svar&&m.svar[key])||''; }
-  return bs()[sec][key]||'';
+/* Uden .select() og et tjek paa data.length lyver hvert gem: en RLS-afvist
+   update giver error = null og data = []. Derfor kvitteres der paa raekker. */
+async function skriv(skema,obj,navn){
+  var n=(navn!==undefined&&navn!==null)?navn:(RAEKKE_NAVN[skema]!==undefined?RAEKKE_NAVN[skema]:'');
+  var u=await SB_DB.from('skema_svar').update({svar:obj}).eq('kode',SB_KODE).eq('navn',n).eq('skema',skema).select();
+  if(u.data&&u.data.length) return true;
+  var i=await SB_DB.from('skema_svar').insert({kode:SB_KODE,navn:n,skema:skema,svar:obj}).select();
+  if(i.data&&i.data.length){ RAEKKE_NAVN[skema]=n; return true; }
+  return false;
 }
-function saet(sec,key,val){
-  if(sec==='audiences'){ var m=mg(); if(!m.svar) m.svar={}; m.svar[key]=val; }
-  else bs()[sec][key]=val;
-  save();
+function gemSkema(skema){
+  lokaltGem();
+  if(!SB_DB||SB_KODE==='DEMO'){ saveTxt('Gemt lokalt'); return; }
+  saveTxt('Gemmer…');
+  clearTimeout(SB_GEM_TIMER[skema]);
+  SB_GEM_TIMER[skema]=setTimeout(async function(){
+    try{
+      var ok=await skriv(skema,SVAR[skema]||{});
+      saveTxt(ok?'Gemt hos Energida':'Kun gemt lokalt — er du logget ind?');
+    }catch(e){ saveTxt('Kun gemt lokalt — er du logget ind?') }
+  },900);
 }
-function udfyldt(sec,key){ return !!String(hent(sec,key)||'').trim() }
+function gemMg(){
+  lokaltGem();
+  if(!SB_DB||SB_KODE==='DEMO'){ saveTxt('Gemt lokalt'); return; }
+  clearTimeout(SB_GEM_TIMER.__mg);
+  SB_GEM_TIMER.__mg=setTimeout(async function(){
+    try{ await skriv('maalgrupper',{liste:MG},MG_NAVN); }catch(e){}
+  },900);
+}
+function saveTxt(t){ var e=document.getElementById('saveTxt'); if(e) e.textContent=t }
+
+/* ---------- svar-adgang (kilde-id er noeglen, aldrig positionen) ---------- */
+function mg(){ return MG[Math.min(mgAktiv,MG.length-1)]||MG[0] }
+function hent(sec,src){ return (SVAR[skemaFor(sec)]||{})[src]||'' }
+function saet(sec,src,val){
+  var s=skemaFor(sec);
+  if(!SVAR[s]) SVAR[s]={};
+  SVAR[s][src]=val;
+  gemSkema(s);
+  renderProgress(); renderSummary(); renderSteps();
+}
 function sekDone(i){
   var s=SECTIONS[i], qs=M5[s.key];
   if(s.key==='audiences'){
-    var aktive=bs().audiences.filter(function(m){return m.aktiv!==false});
+    var aktive=MG.filter(function(m){return m.aktiv!==false});
     if(!aktive.length) return 0;
-    var f=aktive[0];
-    return qs.filter(function(q){ return !!String((f.svar||{})[q.k]||'').trim() }).length;
+    var idx=MG.indexOf(aktive[0]);
+    var o=SVAR[skemaFor('audiences',idx)]||{};
+    return qs.filter(function(q){ return String(o[q.src]||'').trim() }).length;
   }
-  return qs.filter(function(q){ return udfyldt(s.key,q.k) }).length;
+  var oo=SVAR[skemaFor(s.key)]||{};
+  return qs.filter(function(q){ return String(oo[q.src]||'').trim() }).length;
 }
-function ialtSvar(){
-  var n=0; SECTIONS.forEach(function(s,i){ n+=sekDone(i) }); return n;
+function ialtSvar(){ var n=0; SECTIONS.forEach(function(s,i){ n+=sekDone(i) }); return n }
+
+function vaelgMg(i){ mgAktiv=i; render() }
+function tilfoejMg(){
+  var n=2; while(MG.some(function(x){return String(x.id)==='mg'+n})) n++;
+  MG.push({id:'mg'+n,navn:'Drømmekunde '+(MG.length+1),sortering:MG.length+1,aktiv:true});
+  mgAktiv=MG.length-1; gemMg(); render();
 }
+function omdoebMg(v){ mg().navn=v; gemMg(); renderSteps() }
+function skiftAktivMg(){ var m=mg(); m.aktiv=(m.aktiv===false); gemMg(); render() }
+function mgNavn(m,i){ return String(m.navn||'').trim()||('Drømmekunde '+(i+1)) }
 
 /* ---------- visning ---------- */
 function erMobil(){ return window.matchMedia('(max-width:760px)').matches }
@@ -523,15 +589,19 @@ function renderSteps(){
     '<option value="ark" '+(current===-1?'selected':'')+'>Alle 31 på ét ark</option></select>';
 }
 function renderSummary(){
-  var b=bs(), m=b.audiences.filter(function(x){return x.aktiv!==false})[0]||{svar:{}};
+  /* slaar op paa question_key i registret og henter svaret paa kilde-id'et */
+  function v(sec,noegle){
+    var q=(M5[sec]||[]).filter(function(x){return x.k===noegle})[0];
+    return q?hent(sec,q.src):'';
+  }
   var rk=[
-    ['Drivkraft', b.drive.desired_customer_difference||b.drive.purpose_origin],
-    ['Drømmekunden', m.svar&&m.svar.audience_identity],
-    ['Behovet', m.svar&&m.svar.audience_needs],
-    ['Værdier', b.values.extra_care],
-    ['Tone of voice', b.values.desired_voice],
-    ['USP', b.usp.usp_hard_to_copy],
-    ['Retning', b.direction.social_primary_job]
+    ['Drivkraft', v('drive','desired_customer_difference')||v('drive','purpose_origin')],
+    ['Drømmekunden', v('audiences','audience_identity')],
+    ['Behovet', v('audiences','audience_needs')],
+    ['Værdier', v('values','extra_care')],
+    ['Tone of voice', v('values','desired_voice')],
+    ['USP', v('usp','usp_hard_to_copy')],
+    ['Retning', v('direction','social_primary_job')]
   ];
   document.getElementById('miniSummary').innerHTML=rk.map(function(r){
     var v=String(r[1]||'').trim()||'Ikke udfyldt endnu';
@@ -540,39 +610,29 @@ function renderSummary(){
 }
 
 function felt(sec,q,nr,ialt){
-  var v=hent(sec,q.k);
+  var v=hent(sec,q.src);
   return '<div class="q-blok">'+
     '<div class="q-nr">Spørgsmål '+nr+' af '+ialt+'</div>'+
     '<h3 class="question">'+esc(q.q)+'</h3>'+
     (q.h?'<div class="help">'+esc(q.h)+'</div>':'')+
-    '<textarea data-sec="'+sec+'" data-key="'+q.k+'" placeholder="Skriv svaret her…" '+
-    'oninput="saet(\''+sec+'\',\''+q.k+'\',this.value)">'+esc(v)+'</textarea>'+
+    '<textarea data-sec="'+sec+'" data-key="'+q.src+'" data-noegle="'+q.k+'" placeholder="Skriv svaret her…" '+
+    'oninput="saet(\''+sec+'\',\''+q.src+'\',this.value)">'+esc(v)+'</textarea>'+
   '</div>';
 }
 
 function maalgruppeBar(){
-  var b=bs(), a=b.audiences;
-  var m=a[Math.min(mgAktiv,a.length-1)];
+  var a=MG, m=mg();
   return '<div class="mg-bar">'+
     '<div class="chips">'+
       a.map(function(x,i){
-        return '<button class="chip '+(i===mgAktiv?'on':'')+' '+(x.aktiv===false?'slukket':'')+'" onclick="vaelgMg('+i+')">'+esc(x.label||('Drømmekunde '+(i+1)))+'</button>';
+        return '<button class="chip '+(i===mgAktiv?'on':'')+' '+(x.aktiv===false?'slukket':'')+'" onclick="vaelgMg('+i+')">'+esc(mgNavn(x,i))+'</button>';
       }).join('')+
       '<button class="chip-add" onclick="tilfoejMg()">+ Tilføj drømmekunde</button>'+
     '</div>'+
-    '<input type="text" class="mg-navn" value="'+esc(m.label||'')+'" placeholder="Navn på denne drømmekunde" oninput="omdoebMg(this.value)">'+
+    '<input type="text" class="mg-navn" value="'+esc(m.navn||'')+'" placeholder="Navn på denne drømmekunde" oninput="omdoebMg(this.value)">'+
     (a.length>1?'<div class="mg-vaerktoej"><button class="btn link" onclick="skiftAktivMg()">'+(m.aktiv===false?'Tag med i Drejebogen igen':'Lad denne stå udenfor Drejebogen')+'</button></div>':'')+
   '</div>';
 }
-function vaelgMg(i){ mgAktiv=i; render() }
-function tilfoejMg(){
-  var a=bs().audiences;
-  var n=1; while(a.some(function(x){return x.id==='mg'+n})) n++;
-  a.push({id:'mg'+n,label:'Drømmekunde '+(a.length+1),aktiv:true,svar:{}});
-  mgAktiv=a.length-1; save(); render();
-}
-function omdoebMg(v){ mg().label=v; save(); renderSteps() }
-function skiftAktivMg(){ var m=mg(); m.aktiv=(m.aktiv===false); save(); render() }
 
 function render(){
   renderSteps(); renderProgress(); renderSummary();
@@ -620,7 +680,7 @@ function ikon(){ return '<svg width="15" height="15" viewBox="0 0 24 24" fill="n
    printes med tomme linjer, så svarene kan skrives i hånden undervejs. */
 function visArket(){
   current=-1; window.scrollTo(0,0);
-  var b=bs(), mgListe=b.audiences.filter(function(m){return m.aktiv!==false});
+  var mgListe=MG.filter(function(m){return m.aktiv!==false});
   var ud='<section class="intro"><div class="ey">Alle 31 spørgsmål</div><hr>'+
     '<h2>Grundlaget til Drejebogen</h2>'+
     '<p>Alle spørgsmål i rækkefølge — til mødet, hvor der skal springes frem og tilbage. Skriv direkte i felterne, eller print arket og skriv i hånden.</p></section>';
@@ -628,9 +688,9 @@ function visArket(){
   SECTIONS.forEach(function(s,si){
     if(s.key==='audiences'){
       mgListe.forEach(function(m,mi){
-        var gemt=mgAktiv; mgAktiv=b.audiences.indexOf(m);
+        var gemt=mgAktiv; mgAktiv=MG.indexOf(m);
         ud+='<section class="card"><div class="kort-hoved">'+ikon()+
-          '<div class="lbl">'+esc(m.label||('Drømmekunde '+(mi+1)))+'</div>'+
+          '<div class="lbl">'+esc(mgNavn(m,mi))+'</div>'+
           '<div class="tal">11 spørgsmål</div></div>'+
           M5.audiences.map(function(q,i){ return felt('audiences',q,i+1,11) }).join('')+
         '</section>';
@@ -656,19 +716,25 @@ function nextSection(){ if(current<SECTIONS.length-1){ current++; qIndex=0; wind
 
 /* ---------- samlet grundlag + eksport ---------- */
 function grundlag(){
-  var b=bs();
+  /* eksporteres paa question_key — generatorens semantiske noegle — mens
+     lagringen bliver staaende paa kilde-id'et, hvor appen har den. */
+  function saml(sec,idx){
+    var o=SVAR[skemaFor(sec,idx)]||{}, ud={};
+    (M5[sec]||[]).forEach(function(q){ ud[q.k]=String(o[q.src]||'').trim(); });
+    return ud;
+  }
   return {
     company_code: SB_KODE,
     domain_key: 'brand_strategy',
     definition_version: '2026-08-14',
     question_count: 31,
-    drive: b.drive,
-    audiences: b.audiences.filter(function(m){return m.aktiv!==false}).map(function(m){
-      return {id:m.id, label:m.label, svar:m.svar||{}};
+    drive: saml('drive'),
+    audiences: MG.filter(function(m){return m.aktiv!==false}).map(function(m,i){
+      return {id:String(m.id), label:mgNavn(m,i), svar:saml('audiences',MG.indexOf(m))};
     }),
-    values: b.values,
-    usp: b.usp,
-    direction: b.direction
+    values: saml('values'),
+    usp: saml('usp'),
+    direction: saml('direction')
   };
 }
 function kopierGrundlag(){
@@ -681,13 +747,14 @@ function kopierGrundlag(){
 }
 function showDone(){
   renderSteps(); renderProgress();
-  var b=bs(), n=ialtSvar();
-  var mgListe=b.audiences.filter(function(m){return m.aktiv!==false});
+  var n=ialtSvar();
+  var mgListe=MG.filter(function(m){return m.aktiv!==false});
   var raekker=SECTIONS.map(function(s){
     if(s.key==='audiences'){
-      return mgListe.map(function(m){
-        var d=M5.audiences.filter(function(q){return String((m.svar||{})[q.k]||'').trim()}).length;
-        return '<div class="done-line"><b>'+esc(m.label||'Drømmekunde')+'</b><span>'+d+' af 11 udfyldt</span></div>';
+      return mgListe.map(function(m,mi){
+        var o=SVAR[skemaFor('audiences',MG.indexOf(m))]||{};
+        var d=M5.audiences.filter(function(q){return String(o[q.src]||'').trim()}).length;
+        return '<div class="done-line"><b>'+esc(mgNavn(m,mi))+'</b><span>'+d+' af 11 udfyldt</span></div>';
       }).join('');
     }
     var i=SECTIONS.indexOf(s);
