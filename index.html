@@ -2028,7 +2028,7 @@ body.modul-open .burger-btn, body.modul-open .bottom-nav, body.modul-open .dash-
     <button class="burger-item" onclick="toggleBurger(); togglePwPanel()">Skift adgangskode</button>
     <button class="burger-item" onclick="toggleBurger(); openChat()">Kontakt Ida</button>
     <button class="burger-item" style="color:var(--red);" onclick="custLogout()">Log ud</button>
-    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 16. august · 1083</div>
+    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 16. august · 1084</div>
   </div>
 </div>
 <div class="plus-menu" id="plusMenu" onclick="if(event.target===this)togglePlus()">
@@ -3137,7 +3137,7 @@ if (/somkunde=/.test(location.hash)) {
     <!-- Foden bliver nederst — den er det ENESTE der skubbes ned (Ida 30/7) -->
     <div class="dsb-fod">
       <button class="dsb-konto" onclick="dashKontoMenu()" title="Ida"><span class="dsb-initial">I</span><span class="dsb-konto-navn">Ida</span><svg class="dsb-konto-pil" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></button>
-      <div class="dsb-version"><span>Version 16. august · 1083</span></div>
+      <div class="dsb-version"><span>Version 16. august · 1084</span></div>
     </div>
   </div>
 
@@ -7816,7 +7816,7 @@ select titel,
          staa fast paa telefon. De hoerer i arket (samme fejl som "left" 31/7). -->
     <div id="dashFooter" style="z-index:50;display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--gray3);background:#fff;border-top:1px solid var(--border);padding:10px 26px;">
       <div style="font-size:10px;">© 2026 Energida · Alle rettigheder forbeholdes</div>
-      <div style="font-size:10px;margin-left:auto;">Version 16. august · 1083 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
+      <div style="font-size:10px;margin-left:auto;">Version 16. august · 1084 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
     </div>
   </div>
 </div>
@@ -11479,6 +11479,71 @@ function briefRingSvg(pct) {
     + '</div>';
 }
 function briefPct() { return briefStatus().pct / 100; }   /* EEN kilde (Ida 31/7) */
+
+/* ===== FASER I STEDET FOR PROCENT (Ida 16/8, punkt 18-19) ======================
+   "82 % udfyldt tæller felter, ikke fremdrift." Procenten stod desuden samtidig med
+   raket-trinnet og klip-taelleren — tre maalere, og ingen af dem sagde, hvor langt man
+   var i opslagets RIGTIGE rejse.
+   Faserne er Idas egne: planlagt · brief udfyldt · (godkendt) · postet — og Indblik som
+   en SEPARAT prik.
+
+   HVORFOR INDBLIK STAAR UDENFOR: er den med i taellingen, staar hvert eneste opslag
+   permanent paa "4 af 5" hos dem, der springer refleksionen over — en konstant
+   fornemmelse af at vaere bagud. Briefen skal se FAERDIG ud, naar opslaget er postet.
+   Indblik lyser op, naar det er udfyldt, og ellers staar det roligt og graat.
+
+   "Brief godkendt" findes KUN, naar koden har to eller flere brugere — er man alene,
+   er der ingen at godkende hos, og saa er trinnet stoej (samme regel som "Hvem laver
+   den?", Ida 29/7). */
+function briefFaser() {
+  const it = IDEER.find(x => x.id === BRIEF_ID) || {};
+  const st = it.status || "";
+  const erPostet = st === "Postet" || st === "Målt";
+  const flere = Array.isArray(BRIEF_PERSONER) && BRIEF_PERSONER.length >= 2;
+  let alt = false;
+  try { alt = briefStatus().mangler.length === 0; } catch(e) {}
+  /* HVER FASE HAR TO ORDLYD: "navn" naar den ER naaet, "venter" mens man staar i den.
+     Uden det stod der "Postet" baade paa et opslag, der VAR postet, og paa et, der bare
+     var det naeste skridt — samme ord om to forskellige ting (maalt paa skaermen 16/8).
+     En saetning, der kan lyve, er vaerre end ingen saetning (manualen 2/8). */
+  const faser = [
+    { navn: "Opslaget planlagt", venter: "Mangler en dato",      ok: !!it.dato },
+    /* Er den postet, ER briefen udfyldt — ellers ville et postet opslag kunne staa
+       tilbage paa trin 2, fordi et felt aldrig blev skrevet. */
+    { navn: "Brief udfyldt",     venter: "Briefen mangler noget", ok: alt || erPostet }
+  ];
+  if (flere) faser.push({ navn: "Brief godkendt", venter: "Afventer godkendelse", ok: st === "Godkendt" || erPostet });
+  faser.push({ navn: "Postet", venter: "Klar til at poste", ok: erPostet });
+  /* FASERNE ER KUMULATIVE (maalt 16/8). Uden det her kunne "Brief godkendt" staa
+     udfoert, mens "Brief udfyldt" stod aaben — prikkerne blev ●○●○, og rejsen laeste
+     som noget, der var sprunget over. Er man naaet til et trin, ER de foregaaende
+     passeret, uanset hvad felttaellingen siger. */
+  for (let i = faser.length - 1; i > 0; i--) if (faser[i].ok) faser[i - 1].ok = true;
+  return { faser: faser, indblik: (st === "Målt") };
+}
+function briefFaserHtml() {
+  const f = briefFaser();
+  const nuIx = f.faser.findIndex(x => !x.ok);
+  const prik = (fase, i) => {
+    const gjort = fase.ok, nu = i === nuIx;
+    return '<span title="' + esc(fase.navn) + '" style="width:10px;height:10px;border-radius:50%;flex-shrink:0;box-sizing:border-box;'
+      + (gjort ? 'background:var(--red);'
+        : nu ? 'background:var(--red);box-shadow:0 0 0 3px rgba(252,36,4,0.18);'
+        : 'background:#fff;border:2px solid var(--red-line);') + '"></span>';
+  };
+  /* Navnet paa den fase, man er i — eller "Postet", naar alt er gjort. Aldrig et tal:
+     "4 af 5" siger intet om, hvor lang tid der er tilbage (Idas punkt 18). */
+  const label = nuIx === -1 ? f.faser[f.faser.length - 1].navn : f.faser[nuIx].venter;
+  return '<div style="display:flex;align-items:center;gap:9px;flex-wrap:wrap;min-width:0;">'
+    + '<span style="display:flex;align-items:center;gap:5px;flex-shrink:0;">' + f.faser.map(prik).join("") + '</span>'
+    + '<span style="font-family:Poppins,sans-serif;font-size:12px;font-weight:400;color:' + (nuIx === -1 ? 'var(--red)' : 'var(--black)') + ';white-space:nowrap;">' + esc(label) + '</span>'
+    /* Indblik staar for sig med luft imellem — den er ikke en del af rejsen mod faerdig */
+    + '<span style="display:flex;align-items:center;gap:5px;flex-shrink:0;padding-left:9px;border-left:1px solid var(--border);">'
+      + '<span title="Indblik" style="width:10px;height:10px;border-radius:50%;flex-shrink:0;box-sizing:border-box;'
+      + (f.indblik ? 'background:var(--red);' : 'background:#fff;border:2px solid var(--border);') + '"></span>'
+      + '<span style="font-family:Poppins,sans-serif;font-size:11px;color:' + (f.indblik ? 'var(--red)' : 'var(--gray3)') + ';white-space:nowrap;">Indblik</span></span>'
+    + '</div>';
+}
 function briefHovedOpdater() {
   const it = IDEER.find(x => x.id === BRIEF_ID) || {};
   const l = document.getElementById("briefHovedLabel");
@@ -11487,7 +11552,10 @@ function briefHovedOpdater() {
   if (t) t.textContent = storStart(it.titel || "Nyt opslag");   /* blankt opslag hedder "Nyt opslag", til idéen er skrevet (Ida 30/7) */
   const r = document.getElementById("briefHovedRing");
   if (r) {
-    r.innerHTML = briefRingSvg(briefPct());
+    /* Procentbaren er ude (Ida 16/8, punkt 19) — den taalte felter, ikke fremdrift.
+       Klikket bliver: "Se hvad der mangler" er stadig vejen til feltlisten, og DÉR er
+       en procent af felter aerlig, fordi kortet netop handler om felter. */
+    r.innerHTML = briefFaserHtml();
     r.style.cursor = "pointer";
     r.title = "Se hvad der mangler";
     r.onclick = briefManglerVis;
@@ -22261,7 +22329,7 @@ function buildSideNav(def) {
       + '<span style="opacity:.55;">' + ikon("", "Kalender", "laastBesked()", IK.kal) + '</span>'
       + '<span style="opacity:.55;">' + ikon("", "Værktøjskassen", "laastBesked()", IK.tools) + '</span>'
       + '<button class="sn-virk-knap" onclick="toggleVirkMenu(event)" title="' + esc(knapNavn) + '" aria-label="Profil" style="margin-left:auto;"><span class="sn-initial">' + esc((knapNavn || "?").trim().charAt(0).toUpperCase()) + '</span><span class="sn-virk-navn" style="white-space:normal;overflow-wrap:anywhere;">' + esc(knapNavn) + '</span><svg class="sn-virk-pil" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="flex-shrink:0;"><path d="M6 9l6 6 6-6"/></svg></button>'
-      + fodBagud + '<div class="sn-fod"><span>Version 16. august · 1083</span></div>'
+      + fodBagud + '<div class="sn-fod"><span>Version 16. august · 1084</span></div>'
       /* Ida 30/7: alle konto-punkter bor i profilmenuen — ingen streg/sn-bund */
       + '<div id="virkMenu" style="display:none;position:fixed;left:14px;bottom:96px;width:230px;background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:0 16px 40px rgba(0,0,0,0.15);padding:8px;z-index:90;">'
       + '<div style="padding:10px 12px 6px;font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--gray3);">' + esc(virkNavn) + '</div>'
@@ -22321,7 +22389,7 @@ function buildSideNav(def) {
         uPkt("", "Lektioner", "showTab(12)")))
     + '<button class="sn-virk-knap" onclick="toggleVirkMenu(event)" title="' + esc(knapNavn) + '" aria-label="Profil"><span class="sn-initial">' + esc((knapNavn || "?").trim().charAt(0).toUpperCase()) + '</span><span class="sn-virk-navn" style="white-space:normal;overflow-wrap:anywhere;">' + esc(knapNavn) + '</span><svg class="sn-virk-pil" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="flex-shrink:0;"><path d="M6 9l6 6 6-6"/></svg></button>'
     /* Ida 30/7: ingen streg — logo + version samlet i foden under profilknappen */
-    + fodBagud + '<div class="sn-fod"><span>Version 16. august · 1083</span></div>'
+    + fodBagud + '<div class="sn-fod"><span>Version 16. august · 1084</span></div>'
     /* Ida 30/7: menuen åbner VED knappen (nederst t.v.) — ikke i modsatte hjørne */
     + '<div id="virkMenu" style="display:none;position:fixed;left:14px;bottom:96px;width:230px;background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:0 16px 40px rgba(0,0,0,0.15);padding:8px;z-index:90;">'
     + '<div style="padding:10px 12px 6px;font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--gray3);">' + esc(virkNavn) + '</div>'
@@ -24578,7 +24646,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "1083";
+const APP_VERSION = "1084";
 let NY_VERSION_KLAR = false;
 function nyVersionSkjul() { const e = document.getElementById("nyVersion"); if (e) e.style.display = "none"; }
 function nyVersionHent() { try { location.reload(); } catch(e) {} }
@@ -35432,6 +35500,6 @@ if ((location.hash || "").toLowerCase() === "#ole") {   // #ole = preview af Ole
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 16. august · 1083</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 16. august · 1084</div>
 </body>
 </html>
