@@ -2161,7 +2161,7 @@ body.modul-open .burger-btn, body.modul-open .bottom-nav, body.modul-open .dash-
     <button class="burger-item" onclick="toggleBurger(); togglePwPanel()">Skift adgangskode</button>
     <button class="burger-item" onclick="toggleBurger(); openChat()">Kontakt Ida</button>
     <button class="burger-item" style="color:var(--red);" onclick="custLogout()">Log ud</button>
-    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 17. august · 1106</div>
+    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 17. august · 1107</div>
   </div>
 </div>
 <div class="plus-menu" id="plusMenu" onclick="if(event.target===this)togglePlus()">
@@ -3288,7 +3288,7 @@ if (/somkunde=/.test(location.hash)) {
     <!-- Foden bliver nederst — den er det ENESTE der skubbes ned (Ida 30/7) -->
     <div class="dsb-fod">
       <button class="dsb-konto" onclick="dashKontoMenu()" title="Ida"><span class="dsb-initial">I</span><span class="dsb-konto-navn">Ida</span><svg class="dsb-konto-pil" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></button>
-      <div class="dsb-version"><span>Version 17. august · 1106</span></div>
+      <div class="dsb-version"><span>Version 17. august · 1107</span></div>
     </div>
   </div>
 
@@ -8035,7 +8035,7 @@ select titel,
          staa fast paa telefon. De hoerer i arket (samme fejl som "left" 31/7). -->
     <div id="dashFooter" style="z-index:50;display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--gray3);background:#fff;border-top:1px solid var(--border);padding:10px 26px;">
       <div style="font-size:10px;">© 2026 Energida · Alle rettigheder forbeholdes</div>
-      <div style="font-size:10px;margin-left:auto;">Version 17. august · 1106 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
+      <div style="font-size:10px;margin-left:auto;">Version 17. august · 1107 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
     </div>
   </div>
 </div>
@@ -10796,7 +10796,10 @@ async function renderVaerktoej() {
   const lekLink = document.getElementById("vkLektionerLink");
   if (lekLink) {
     const d = CURRENT_DEF || {};
-    lekLink.innerHTML = (d.type === "forloeb" || d.type === "kursus")
+    /* Samme regel som menuen (Ida 17/8): har kunden ingen lektioner, staar der intet om
+       lektioner. Foer spurgte den kun paa kundetypen — og en forloebskunde UDEN
+       lektionsadgang fik alligevel knappen. */
+    lekLink.innerHTML = harLektionsadgang(d)
       ? '<button type="button" class="row-btn view" style="margin-bottom:14px;font-weight:400;" onclick="showTab(12)">Til lektionerne</button>'
       : '';
   }
@@ -10982,8 +10985,9 @@ const ENERGI_CITATER = [
 function soejleRingSvg(pct) { return energidaRing(Math.round(pct) + "%", "", pct / 100); }
 function vaerktoejAaben() {   // Værktøjskassen = lektionerne + guides samlet (Ida 23/7)
   const d = CURRENT_DEF || {};
-  const harLektioner = (d.type === "forloeb" || d.type === "kursus");
-  if (harLektioner) showTab(12); else showTab(6);
+  /* Samme regel som menuen (Ida 17/8) — uden lektioner lander man paa guides og
+     skabeloner, ikke paa en lektionsliste, der er tom. */
+  if (harLektionsadgang(d)) showTab(12); else showTab(6);
 }
 function soejleSeOpslag(navn) {
   /* Klikket kommer fra fordelings-ringen, saa arkivet skal vise PRAECIS det, ringen
@@ -21073,6 +21077,67 @@ function renderPerf5f() {
   el.style.display = "grid";
 }
 
+/* ===== MAALGRUPPENAVNENE — ÉN KILDE (Ida 17/8) ==================================
+   Briefen udleder dem i openBriefSide, og fordelingen nedenfor skal bruge PRAECIS de
+   samme navne — ellers taeller maalingen paa noget andet, end kunden valgte, og de to
+   skaerme kommer til at sige hver sit om det samme opslag.
+   Reglen for "Begge"/"Alle" er Idas fra 25/7: "Begge" ved praecis to, "Alle" ved flere. */
+function maalgruppeNavne() {
+  const st = (CURRENT_DEF && CURRENT_DEF.strategi && CURRENT_DEF.strategi.kunde) || null;
+  const n = [];
+  if (st && st.navn) n.push(String(st.navn).split(",")[0].trim().split(" ")[0]);
+  if (st && st.sekundaer) n.push(String(st.sekundaer).split(",")[0].trim().split(" ")[0]);
+  return { navne: n, alle: n.length === 2 ? "Begge" : (n.length > 2 ? "Alle" : null) };
+}
+/* ===== HVORDAN FORDELER INDHOLDET SIG PAA MAALGRUPPERNE? (Idas oenske 17/8) ========
+   Data fandtes allerede: hvert opslag baerer brief.maalgruppe, sat paa spoergsmaalet
+   "Hvem er opslaget til?". Det, der manglede, var maalingen.
+
+   TRE VALG, TRUFFET UD FRA REGLERNE — ikke ud fra smag:
+
+   1. KORTET VISES KUN VED FLERE MAALGRUPPER. Har forretningen én, gaar 100 % til den,
+      og tallet siger ingenting. Briefen stiller af samme grund kun spoergsmaalet, naar
+      der er mere end én.
+
+   2. "BEGGE"/"ALLE" FAAR SIN EGEN RAEKKE — den fordeles IKKE ud paa de andre. Kunden
+      har valgt "Begge"; deler vi det i to halve, opfinder vi et tal, hun aldrig har
+      sagt. Bedre at vise praecis det, der blev valgt.
+
+   3. INGEN TOMMELFINGERREGEL. Soejlefordelingen har 60/40, fordi formaalene SKAL
+      balancere. Her afhaenger den rigtige fordeling af, om én maalgruppe er primaer —
+      og systemet maa netop IKKE tvinge nogen til at have en primaer (laast spec 14/8).
+      Kortet er derfor diagnostisk, praecis som formatfordelingen (Ida 13/8). */
+function perfMaalgruppeFordelingHtml() {
+  const mg = maalgruppeNavne();
+  if (mg.navne.length < 2) return "";
+  /* SAMME GRUNDLAG SOM DE OEVRIGE FORDELINGER: postet OG maalt taeller med. Kun "Postet"
+     ville lade et opslag falde ud i samme sekund, det fik sit Indblik (fejlen fra 5/8). */
+  const postede = (IDEER || []).filter(x => x.status === "Postet" || x.status === "Målt");
+  const mgAf = x => String((x.brief && x.brief.maalgruppe) || "").trim();
+  const talt = postede.filter(x => mgAf(x));
+  if (!talt.length) {
+    return '<div style="background:#fff;border:1px solid var(--border);border-radius:20px;padding:20px 24px;margin-bottom:14px;">'
+      + '<div style="border-bottom:1px solid var(--border);padding-bottom:9px;margin-bottom:12px;"><span style="font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--red);">Fordelingen på målgrupperne</span></div>'
+      + '<div style="font-size:12px;color:var(--gray3);line-height:1.6;">Ingen postede opslag har fået en målgruppe endnu. Vælg "Hvem er opslaget til?" i briefen, så bygger fordelingen sig selv.</div></div>';
+  }
+  const raekker = mg.navne.concat(mg.alle ? [mg.alle] : [])
+    .map(n => ({ navn: n, antal: talt.filter(x => mgAf(x) === n).length }));
+  const maks = Math.max.apply(null, raekker.map(r => r.antal)) || 1;
+  const bar = (r, sidste) => '<div style="padding:9px 0;' + (sidste ? '' : 'border-bottom:1px solid #F2F0ED;') + '">'
+    + '<div style="display:flex;justify-content:space-between;gap:10px;font-size:12.5px;margin-bottom:5px;"><span style="min-width:0;">' + esc(r.navn) + '</span>'
+    + '<span style="color:var(--gray3);white-space:nowrap;flex-shrink:0;">' + r.antal + ' opslag</span></div>'
+    + '<div style="height:6px;border-radius:99px;background:#F2F0ED;overflow:hidden;"><div style="width:' + Math.round(r.antal / maks * 100) + '%;height:100%;border-radius:99px;background:var(--red);"></div></div>'
+    + '</div>';
+  /* Et opslag uden valgt maalgruppe skal SIGES, ikke skjules — ellers ser fordelingen
+     komplet ud, mens den kun daekker en del af opslagene. */
+  const uden = postede.length - talt.length;
+  return '<div style="background:#fff;border:1px solid var(--border);border-radius:20px;padding:20px 24px;margin-bottom:14px;">'
+    + '<div style="border-bottom:1px solid var(--border);padding-bottom:9px;margin-bottom:12px;"><span style="font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--red);">Fordelingen på målgrupperne</span></div>'
+    + raekker.map((r, i) => bar(r, i === raekker.length - 1)).join("")
+    + '<div style="font-size:11px;color:var(--gray3);margin-top:10px;line-height:1.55;">'
+    + (uden ? esc(uden + (uden === 1 ? ' postet opslag har ' : ' postede opslag har ')) + 'ingen målgruppe valgt og tæller ikke med. ' : '')
+    + 'Der er ingen rigtig fordeling — den afhænger af, om én målgruppe er den primære.</div></div>';
+}
 /* FINAL 5fb (Task 9.1): Indholdsfordelingen — typer-ringe + soejle-bars + hvad fordelingen siger.
    Flyttet fra Content-siden hertil (5fb-referencen) — soejleBalance paa kalenderen er skjult. */
 function renderPerfFordeling() {
@@ -21127,6 +21192,10 @@ function renderPerfFordeling() {
        tommelfingerregel (60/40), fordi formaalene SKAL balancere. Formatfordelingen har
        ingen og faar aldrig en — den er diagnostisk (Ida 13/8). */
     + kalFormatFordelingHtml()
+    /* Fordelingen paa maalgrupperne (Idas oenske 17/8) — staar EFTER soejler og format,
+       fordi den kun findes for kunder med flere maalgrupper. Har man én, giver
+       funktionen tom streng, og kortet findes slet ikke. */
+    + perfMaalgruppeFordelingHtml()
     + '<div style="background:#fff;border:1px solid var(--border);border-radius:20px;padding:16px 22px;">'
     + '<div style="font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--red);border-bottom:1px solid var(--red);padding-bottom:9px;margin-bottom:8px;">Hvad fordelingen siger</div>'
     + indsigt.join("")
@@ -22554,7 +22623,10 @@ function buildBottomNav(def) {
   } else {
     /* FINAL 5am (Ida 29/7): mobilnavnen er Hjem · Content · [+] · Energien · Mere — Mere åbner
        menuen, som har resten (Performance, Værktøjskassen, Den røde tråd, Kontakt Ida, Log ud). */
-    const visEnergiNav = def && def.type !== "medarbejder" && def.type !== "klipper" && def.type !== "contentplanner" && (typeof erPersonLogin !== "function" || erPersonLogin());   /* content-planner: Performance i stedet for Energien (Ida 3/8) */
+    /* ENERGIEN ER UDE AF B2B (Ida 17/8) — bundnavets fjerde plads er derfor ALTID
+       Performance nu. Samme beslutning som venstremenuens visEnergi ovenfor; de to
+       skal skiftes SAMMEN, ellers står Energien i bunden og ikke i siden. */
+    const visEnergiNav = false;   /* content-planner havde i forvejen Performance i stedet (Ida 3/8) */
     NAV_ITEMS = [
       /* Ikonerne manglede KUN i denne gren — de andre kundetyper havde dem hele tiden.
          Derfor stod forloebskundernes bundmenu som ren tekst (Ida 31/7). */
@@ -22650,7 +22722,7 @@ function buildSideNav(def) {
       + '<span style="opacity:.55;">' + ikon("", "Kalender", "laastBesked()", IK.kal) + '</span>'
       + '<span style="opacity:.55;">' + ikon("", "Værktøjskassen", "laastBesked()", IK.tools) + '</span>'
       + '<button class="sn-virk-knap" onclick="toggleVirkMenu(event)" title="' + esc(knapNavn) + '" aria-label="Profil" style="margin-left:auto;"><span class="sn-initial">' + esc((knapNavn || "?").trim().charAt(0).toUpperCase()) + '</span><span class="sn-virk-navn" style="white-space:normal;overflow-wrap:anywhere;">' + esc(knapNavn) + '</span><svg class="sn-virk-pil" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="flex-shrink:0;"><path d="M6 9l6 6 6-6"/></svg></button>'
-      + fodBagud + '<div class="sn-fod"><span>Version 17. august · 1106</span></div>'
+      + fodBagud + '<div class="sn-fod"><span>Version 17. august · 1107</span></div>'
       /* Ida 30/7: alle konto-punkter bor i profilmenuen — ingen streg/sn-bund */
       + '<div id="virkMenu" style="display:none;position:fixed;left:14px;bottom:96px;width:230px;background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:0 16px 40px rgba(0,0,0,0.15);padding:8px;z-index:90;">'
       + '<div style="padding:10px 12px 6px;font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--gray3);">' + esc(virkNavn) + '</div>'
@@ -22667,7 +22739,28 @@ function buildSideNav(def) {
      ikke et energiforloeb — shinebarometer og energibank hoerer ikke til deres aftale.
      Listerne ("Toem-hovedet-banken") laa under gruppen, men de forsvinder IKKE med den:
      de naas fra "Vælg dagens lister · Get shit done" i I dag-kortet paa Hjem. */
-  const visEnergi = def && def.type !== "medarbejder" && def.type !== "klipper" && def.type !== "contentplanner" && (typeof erPersonLogin !== "function" || erPersonLogin());
+  /* ===== ENERGIEN ER UDE AF B2B (Ida 17/8, sagt to gange) =========================
+     "alt med energien skal fjernes fra b2b content studio — dette er nu kun en del af
+     lektionerne" og derefter "hele energidelen skal ud på b2b".
+
+     Energien hører til lektionerne og til de produkter, der har dem. Content Studio er
+     contentarbejdet: Hjem · Indbakke · Content Studio · Strategi · Performance.
+
+     HVORFOR EN HÅRD FALSK OG IKKE BARE FUNKTIONS-FLAGET: flaget var sat rigtigt på
+     Hinges (funktioner = indbakke·content·strategi·resultat, funkTaendt('energi') =
+     false) — og menuen viste Energi ALLIGEVEL, fordi den blev tegnet, før kundens
+     opsætning var hentet. Et flag, der kun virker, når data når frem i tide, er ikke en
+     beslutning; det er et held. Nu er den ude uanset timing.
+
+     MEDARBEJDERENERGI OG RESET ER IKKE RØRT. De er egne produkter på egne kundetyper
+     (medarbejder / reset) med deres egne skærme (mscreen/showTabM) — denne linje gælder
+     kun Content Studio-kundernes venstremenu.
+     Skal Energien tilbage i b2b en dag, er det denne ene konstant, der skal skiftes. */
+  const visEnergi = false;
+  /* Burgermenuens Energi-punkt er STATISK markup og blev kun skjult af funktions-flaget
+     — altsaa af den klasse, der kommer for sent i kapløbet. Den slukkes her sammen med
+     resten, saa der ikke findes en vej ind ad bagdøren. */
+  try { const be = document.getElementById("burgerEnergi"); if (be) be.style.display = visEnergi ? "" : "none"; } catch(e) {}
   /* NAVIGATIONEN = ENERGI · STRATEGI · RESULTAT (Ida 30/7, godkendt "MEGA godt! YES").
      Idas egen metode gjort til struktur: du laver content, energien baerer den, strategien
      styrer den, og resultatet maaler den. Seks foldbare grupper — alt andet foldet vaek.
@@ -22700,7 +22793,15 @@ function buildSideNav(def) {
       + uPkt("", "Tøm-hovedet-banken", "gsdDashAaben()")) : '')
     + (!F("strategi") ? '' : gruppe("d24", "Strategi", IK.bog, "snFold('snStrategiUnder')", "snStrategiUnder",
         uPkt("", (virkNavn ? ejefald(virkNavn) + " drejebog" : "Drejebogen"), "drejebogAaben()")
-      + uPkt("", "Tilpas drejebog", "tilpasAaben('drejebog')")
+      /* TILPAS DREJEBOG VISES KUN FOR DEM, DER EJER STRATEGIEN (Ida 17/8: "de skal heller
+         ikke have mulighed for at tilpasse deres drejebog").
+         Samme kilde som alle andre steder — maaRedigereByggesten(). I GOT YOU og
+         WE GOT THIS bygger strategien SAMMEN med Ida, saa punktet er ikke bare spaerret
+         indeni; det staar der slet ikke. En doer, man ikke maa gaa igennem, skal ikke
+         staa i menuen og se ud som en mulighed.
+         Maanedens tema og Maalsaetninger bliver — de er kundens egne og har intet med
+         byggestenene at goere. */
+      + (maaRedigereByggesten(def) ? uPkt("", "Tilpas drejebog", "tilpasAaben('drejebog')") : '')
       + uPkt("", "Månedens tema", "tilpasAaben('tema')")
       + uPkt("", "Målsætninger", "tilpasAaben('maal')")
       + uPkt("", "Forløb", "openForloeb()")))
@@ -22711,11 +22812,15 @@ function buildSideNav(def) {
        BEMAERK: Vaerktoejskassen har samme moenster (eet barn, Lektioner). Den er MED
        VILJE ikke roert — Ida traf kun beslutning om denne. */
     + (!F("resultat") ? '' : ikon("d9", "Performance", "openMaal()", IK.graf, " sn-mellemrum"))
-    + (!F("vaerktoej") ? '' : gruppe("d6", "Værktøjskassen", IK.tools, "vaerktoejAaben();snFold('snVaerktoejUnder')", "snVaerktoejUnder",
-        uPkt("", "Lektioner", "showTab(12)")))
+    /* Uden lektioner staar Vaerktoejskassen som et almindeligt punkt — ingen fold, og
+       intet "Lektioner" indeni (Ida 17/8). Guides og skabeloner er der stadig. */
+    + (!F("vaerktoej") ? '' : (!harLektionsadgang(def)
+        ? ikon("d6", "Værktøjskassen", "vaerktoejAaben()", IK.tools, " sn-mellemrum")
+        : gruppe("d6", "Værktøjskassen", IK.tools, "vaerktoejAaben();snFold('snVaerktoejUnder')", "snVaerktoejUnder",
+        uPkt("", "Lektioner", "showTab(12)"))))
     + '<button class="sn-virk-knap" onclick="toggleVirkMenu(event)" title="' + esc(knapNavn) + '" aria-label="Profil"><span class="sn-initial">' + esc((knapNavn || "?").trim().charAt(0).toUpperCase()) + '</span><span class="sn-virk-navn" style="white-space:normal;overflow-wrap:anywhere;">' + esc(knapNavn) + '</span><svg class="sn-virk-pil" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="flex-shrink:0;"><path d="M6 9l6 6 6-6"/></svg></button>'
     /* Ida 30/7: ingen streg — logo + version samlet i foden under profilknappen */
-    + fodBagud + '<div class="sn-fod"><span>Version 17. august · 1106</span></div>'
+    + fodBagud + '<div class="sn-fod"><span>Version 17. august · 1107</span></div>'
     /* Ida 30/7: menuen åbner VED knappen (nederst t.v.) — ikke i modsatte hjørne */
     + '<div id="virkMenu" style="display:none;position:fixed;left:14px;bottom:96px;width:230px;background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:0 16px 40px rgba(0,0,0,0.15);padding:8px;z-index:90;">'
     + '<div style="padding:10px 12px 6px;font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--gray3);">' + esc(virkNavn) + '</div>'
@@ -25102,7 +25207,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "1106";
+const APP_VERSION = "1107";
 let NY_VERSION_KLAR = false;
 function nyVersionSkjul() { const e = document.getElementById("nyVersion"); if (e) e.style.display = "none"; }
 function nyVersionHent() { try { location.reload(); } catch(e) {} }
@@ -27535,7 +27640,22 @@ function applyCustomerView(def) {
   CURRENT_DEF = def;
   try { appBrugLog(); } catch(e) {}
   try { funkAnvend(def); } catch(e) {}   /* fluebenene paa Adgang-fanen gaelder ogsaa FLADERNE (Ida 5/8) */
-  try { const ek = document.getElementById("energiKort"); if (ek && funkTaendt(def, "energi") && def.type !== "medarbejder" && def.type !== "klipper" && def.type !== "contentplanner" && erPersonLogin()) ek.style.display = ""; } catch(e) {}   /* content-planner ser ikke Energien (Ida 3/8) */
+  /* ENERGIEN SKAL OGSAA KUNNE SLUKKES IGEN (Idas fund 17/8: "vi skal have slettet alt
+     med energien paa Freja og Renes konto overhovedt").
+     Linjen TAENDTE kun; den slukkede aldrig. Er kundens opsaetning ikke hentet endnu,
+     svarer funkTaendt true — "intet valgt = alt er taendt" — og saa blev kortet taendt
+     og BLEV staaende, ogsaa naar def'en landede med energi slaaet fra et oejeblik efter.
+     Samme kaploeb som Drejebog-kortet samme dag.
+     Nu saettes visningen BEGGE veje, saa en sen def retter billedet af sig selv.
+     MAALT paa Hinges bagefter: funktioner = indbakke·content·strategi·resultat,
+     funkTaendt('energi') = false, kortet display:none. */
+  try {
+    const ek = document.getElementById("energiKort");
+    if (ek) {
+      const maa = funkTaendt(def, "energi") && def.type !== "medarbejder" && def.type !== "klipper" && def.type !== "contentplanner" && erPersonLogin();
+      ek.style.display = maa ? "" : "none";
+    }
+  } catch(e) {}   /* content-planner ser ikke Energien (Ida 3/8) */
   try { const be = document.getElementById("burgerEnergi"); if (be && !erPersonLogin()) be.style.display = "none"; } catch(e) {}
   try { plejHent(); } catch(e) {}
   try { profilStudioBoot(); } catch(e) {}
@@ -31772,6 +31892,26 @@ function funkAnvend(def) {
   Object.keys(FUNK_FLADER).forEach(function (key) {
     document.body.classList.toggle("funk-fra-" + key, !funkTaendt(def, key));
   });
+}
+/* ===== HAR KUNDEN OVERHOVEDET LEKTIONER? (Ida 17/8) =============================
+   "Naar der ikke er nogle lektioner, skal der ikke komme noget frem om lektioner."
+
+   Tre ting skal alle vaere sande. Foer blev der kun spurgt til den foerste, og saa stod
+   "Lektioner" i menuen hos kunder, der ikke har een eneste.
+     1. Kundetypen giver lektioner (forloeb eller kursus — Content Studio faar ingen)
+     2. Vaerktoejskassen er ikke slaaet fra paa kundekortet
+     3. lektion_adgang er ikke en TOM liste. Udeladt felt = alle lektioner (den gamle
+        regel staar); en tom liste betyder derimod udtrykkeligt INGEN. I GOT YOU faar
+        netop null/tom ved oprettelsen.
+   Spoerg ALTID gennem denne — ellers dukker lektionerne op et nyt sted igen. */
+function harLektionsadgang(def) {
+  def = def || (typeof CURRENT_DEF !== "undefined" ? CURRENT_DEF : null);
+  if (!def) return false;
+  if (def.type !== "forloeb" && def.type !== "kursus") return false;
+  if (!funkTaendt(def, "vaerktoej")) return false;
+  const l = def.lektion_adgang;
+  if (Array.isArray(l) && l.length === 0) return false;
+  return true;
 }
 function funkTaendt(def, key) {
   const liste = def && Array.isArray(def.funktioner) ? def.funktioner : null;
@@ -36122,6 +36262,6 @@ if ((location.hash || "").toLowerCase() === "#ole") {   // #ole = preview af Ole
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 17. august · 1106</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 17. august · 1107</div>
 </body>
 </html>
