@@ -2311,7 +2311,7 @@ body.modul-open .burger-btn, body.modul-open .bottom-nav, body.modul-open .dash-
     <button class="burger-item" onclick="toggleBurger(); minProfilAaben()">Min profil</button>
     <button class="burger-item" onclick="toggleBurger(); togglePwPanel()">Skift adgangskode</button>
     <button class="burger-item" style="color:var(--red);" onclick="custLogout()">Log ud</button>
-    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 19. august · 1173</div>
+    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 19. august · 1174</div>
   </div>
 </div>
 <div class="plus-menu" id="plusMenu" onclick="if(event.target===this)togglePlus()">
@@ -3482,7 +3482,7 @@ if (/somkunde=/.test(location.hash)) {
     <!-- Foden bliver nederst — den er det ENESTE der skubbes ned (Ida 30/7) -->
     <div class="dsb-fod">
       <button class="dsb-konto" onclick="dashKontoMenu()" title="Ida"><span class="dsb-initial">I</span><span class="dsb-konto-navn">Ida</span><svg class="dsb-konto-pil" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></button>
-      <div class="dsb-version"><span>Version 19. august · 1173</span></div>
+      <div class="dsb-version"><span>Version 19. august · 1174</span></div>
     </div>
   </div>
 
@@ -8574,7 +8574,7 @@ select titel,
          staa fast paa telefon. De hoerer i arket (samme fejl som "left" 31/7). -->
     <div id="dashFooter" style="z-index:50;display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--gray3);background:#fff;border-top:1px solid var(--border);padding:10px 26px;">
       <div style="font-size:10px;">© 2026 Energida · Alle rettigheder forbeholdes</div>
-      <div style="font-size:10px;margin-left:auto;">Version 19. august · 1173 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
+      <div style="font-size:10px;margin-left:auto;">Version 19. august · 1174 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
     </div>
   </div>
 </div>
@@ -10040,9 +10040,10 @@ let BRIEF_PERSONER = null;
    og et omdoebt navn hang til man genindlaeste. Nu bindes listen til koden, saa den
    hentes forfra, naar man skifter kunde. */
 let BRIEF_PERSONER_KODE = null;
-async function briefPersonerFyld() {
-  /* "Hvem er ansvarlig?" — personerne = de navne der har logget ind på kundens kode */
-  const w = document.getElementById("briefPersonValg"); if (!w) return;
+/* Hentningen alene — bruges baade af wizardens chips og ansvarlig-vagten (A4, 19/8).
+   Foer laa den inde i briefPersonerFyld, som returnerer FOER hentningen, naar wizardens
+   DOM ikke er fremme — saa kunne vagten aldrig faa listen. */
+async function briefPersonerHent() {
   const koden = (typeof currentKode !== "undefined" && currentKode) ? String(currentKode).toUpperCase() : "";
   if (BRIEF_PERSONER === null || BRIEF_PERSONER_KODE !== koden) {
     BRIEF_PERSONER = [];
@@ -10056,6 +10057,12 @@ async function briefPersonerFyld() {
       }
     } catch(e) {}
   }
+  return BRIEF_PERSONER || [];
+}
+async function briefPersonerFyld() {
+  /* "Hvem er ansvarlig?" — personerne = de navne der har logget ind på kundens kode */
+  const w = document.getElementById("briefPersonValg"); if (!w) return;
+  await briefPersonerHent();
   const w2 = document.getElementById("briefPersonValg"); if (!w2) return;
   /* Content-planner-kunder kan ogsaa vaelge Ida (Ida 30/7) */
   try { if (erContentPlanner(CURRENT_DEF) && BRIEF_PERSONER.indexOf("Ida") === -1) BRIEF_PERSONER.push("Ida"); } catch(e) {}
@@ -10085,6 +10092,54 @@ function briefPersonToggle(el) {
   BRIEF_STATE.hvemPerson = liste.join(" · ");
   el.classList.toggle("on", ix === -1);
 }
+/* ===== ANSVARLIG-VAGTEN (A4, Ida 19/8): "Planlagt kræver ansvarlig — ellers popup" =====
+   Naar et opslag BLIVER Planlagt uden en ansvarlig, spoerger appen med det samme.
+   Kun naar koden har 2+ personer — med één bruger er der intet valg at traeffe (29/7).
+   Popup'en foelger popup-vagten (.modal-back/.modal). Triggeres ved OVERGANGEN til
+   Planlagt (saveBrief, status-vaelgeren, idé-wizardens "Planlæg den") — aldrig ved
+   hvert autosave, saa den ikke nager, mens man skriver. */
+async function ansvarligVagt(id) {
+  try {
+    const it = (IDEER || []).find(x => x.id === id); if (!it) return;
+    if (it.status !== "Planlagt") return;
+    if (String((it.brief && it.brief.hvemPerson) || "").trim()) return;
+    const personer = await briefPersonerHent();
+    if (!personer || personer.length < 2) return;
+    if (document.querySelector('.modal-back[data-ansvarlig]')) return;
+    const bag = document.createElement("div");
+    bag.className = "modal-back on";
+    bag.setAttribute("data-ansvarlig", "1");
+    bag.style.zIndex = "966";
+    bag.innerHTML = '<div class="modal" style="max-width:440px;background:#fff;border-radius:20px;padding:20px 24px;position:relative;text-align:left;">'
+      + '<button class="modal-close" style="position:absolute;top:12px;right:14px;" onclick="this.closest(\'.modal-back\').remove()">&times;</button>'
+      + '<div style="font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--red);border-bottom:1px solid var(--border);padding-bottom:9px;margin-bottom:12px;padding-right:26px;">Hvem er ansvarlig?</div>'
+      + '<div style="font-size:12.5px;color:var(--gray3);line-height:1.55;margin-bottom:10px;">&quot;' + esc(storStart(it.titel || "Uden titel")) + '&quot; er planlagt — vælg hvem der laver opslaget, så det står på den rigtige forside.</div>'
+      + '<div id="ansvarligValg" style="display:flex;gap:7px;flex-wrap:wrap;">'
+      + personer.slice(0, 12).map(n => '<button type="button" class="chip-btn" onclick="this.classList.toggle(\'on\')">' + esc(n) + '</button>').join("")
+      + '</div>'
+      + '<div id="ansvarligMsg" style="font-size:11px;color:var(--red);margin-top:8px;"></div>'
+      + '<div style="display:flex;justify-content:flex-end;margin-top:14px;">'
+      + '<button type="button" class="dbtn primary" onclick="ansvarligVagtGem(\'' + String(id).replace(/'/g, "\\'") + '\')">Gem</button>'
+      + '</div></div>';
+    document.body.appendChild(bag);
+  } catch(e) {}
+}
+async function ansvarligVagtGem(id) {
+  const navne = [...document.querySelectorAll("#ansvarligValg .chip-btn.on")].map(b => b.textContent.trim()).filter(Boolean);
+  const m = document.getElementById("ansvarligMsg");
+  if (!navne.length) { if (m) m.textContent = "Vælg mindst én — eller luk med krydset, hvis det skal vente."; return; }
+  const it = (IDEER || []).find(x => x.id === id);
+  /* HELE brief-objektet sendes med (gem-maa-ikke-slette): kolonnen skrives samlet */
+  const brief = Object.assign({}, (it && it.brief) || {}, { hvemPerson: navne.join(" · ") });
+  const gemt = await ideUpdate(id, { brief: brief });
+  if (!gemt) { if (m) m.textContent = "Det blev ikke gemt — prøv igen."; return; }
+  if (typeof BRIEF_ID !== "undefined" && BRIEF_ID === id) {
+    BRIEF_STATE.hvemPerson = brief.hvemPerson;
+    try { briefPersonerFyld(); } catch(e) {}
+  }
+  const bag = document.querySelector('.modal-back[data-ansvarlig]'); if (bag) bag.remove();
+  try { renderHome(); } catch(e) {}
+}
 let BRIEF_FULD = false;   /* saet naar man selv vaelger "Planlæg den nu" paa en idé (Ida 30/7) */
 function briefFuldVis() { BRIEF_FULD = true; openBrief(BRIEF_ID); }
 let BRIEF_FRA = null;   /* fanen man kom fra — så ← Tilbage lander rigtigt (Ida 28/7) */
@@ -10113,7 +10168,11 @@ async function briefTilbage() {
   }
   /* stod der en fejlbesked fra sidste forsoeg, skal knappen hedde sig selv igen */
   if (knap) { knap.textContent = "Tilbage til oversigten"; knap.style.color = ""; }
+  const vagtId = BRIEF_ID;
   tilbage();
+  /* Planlagt uden ansvarlig? Vagten spoerger, naar man FORLADER briefen — ikke midt i
+     wizarden, hvor ansvarlig-raekken selv staar fremme (A4, Ida 19/8). */
+  try { ansvarligVagt(vagtId); } catch(e) {}
 }
 function openBriefSide(id) {
   /* Gentegner vi SAMME brief (fx naar man vaelger indholdstype eller soejle), skal siden
@@ -12726,7 +12785,9 @@ function renderFokus(planFrem, target, idag) {
         "Planlæg", () => vaelgPlanDagModal());
   }
   // 1¼) et kommende opslag mangler sin brief
-  const mangler = IDEER.filter(x => x.status === "Planlagt" && x.dato && x.dato >= idag && !(x.brief && x.brief.caption && x.brief.hook))
+  /* KUN HOS DEN ANSVARLIGE (A4, Ida 19/8): er der sat navn paa opslaget, staar punktet
+     kun paa DEN persons forside — opslagErTilMig laeser login-navnet (CURRENT_NAVN). */
+  const mangler = IDEER.filter(x => x.status === "Planlagt" && x.dato && x.dato >= idag && !(x.brief && x.brief.caption && x.brief.hook) && opslagErTilMig(x))
     .sort((a, b) => a.dato.localeCompare(b.dato))[0];
   if (mangler) {
     const dele = [];
@@ -23281,7 +23342,7 @@ function buildSideNav(def) {
       + '<span style="opacity:.55;">' + ikon("", "Kalender", "laastBesked()", IK.kal) + '</span>'
       + '<span style="opacity:.55;">' + ikon("", "Værktøjskassen", "laastBesked()", IK.tools) + '</span>'
       + '<button class="sn-virk-knap" onclick="toggleVirkMenu(event)" title="' + esc(knapNavn) + '" aria-label="Profil" style="margin-left:auto;"><span class="sn-initial">' + esc((knapNavn || "?").trim().charAt(0).toUpperCase()) + '</span><span class="sn-virk-navn" style="white-space:normal;overflow-wrap:anywhere;">' + esc(knapNavn) + '</span><svg class="sn-virk-pil" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="flex-shrink:0;"><path d="M6 9l6 6 6-6"/></svg></button>'
-      + fodBagud + '<div class="sn-fod"><span>Version 19. august · 1173</span></div>'
+      + fodBagud + '<div class="sn-fod"><span>Version 19. august · 1174</span></div>'
       /* Ida 30/7: alle konto-punkter bor i profilmenuen — ingen streg/sn-bund */
       + '<div id="virkMenu" style="display:none;position:fixed;left:14px;bottom:96px;width:230px;background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:0 16px 40px rgba(0,0,0,0.15);padding:8px;z-index:90;">'
       + '<div style="padding:10px 12px 6px;font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--gray3);">' + esc(virkNavn) + '</div>'
@@ -23377,7 +23438,7 @@ function buildSideNav(def) {
         uPkt("", "Lektioner", "showTab(12)"))))
     + '<button class="sn-virk-knap" onclick="toggleVirkMenu(event)" title="' + esc(knapNavn) + '" aria-label="Profil"><span class="sn-initial">' + esc((knapNavn || "?").trim().charAt(0).toUpperCase()) + '</span><span class="sn-virk-navn" style="white-space:normal;overflow-wrap:anywhere;">' + esc(knapNavn) + '</span><svg class="sn-virk-pil" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="flex-shrink:0;"><path d="M6 9l6 6 6-6"/></svg></button>'
     /* Ida 30/7: ingen streg — logo + version samlet i foden under profilknappen */
-    + fodBagud + '<div class="sn-fod"><span>Version 19. august · 1173</span></div>'
+    + fodBagud + '<div class="sn-fod"><span>Version 19. august · 1174</span></div>'
     /* Ida 30/7: menuen åbner VED knappen (nederst t.v.) — ikke i modsatte hjørne */
     + '<div id="virkMenu" style="display:none;position:fixed;left:14px;bottom:96px;width:230px;background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:0 16px 40px rgba(0,0,0,0.15);padding:8px;z-index:90;">'
     + '<div style="padding:10px 12px 6px;font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--gray3);">' + esc(virkNavn) + '</div>'
@@ -25589,7 +25650,11 @@ async function ideaWizardParker() {
 function ideaWizardPlanlaeg() {
   const d = document.getElementById("ideWizDato");
   if (!d || !d.value) { if (d) d.focus(); return; }
-  if (IDEWIZ && IDEWIZ.gemtId) ideUpdate(IDEWIZ.gemtId, { status: "Planlagt", dato: d.value });
+  if (IDEWIZ && IDEWIZ.gemtId) {
+    const wizId = IDEWIZ.gemtId;
+    /* Planlagt kraever ansvarlig (A4, Ida 19/8) — vagten koerer EFTER skrivningen */
+    ideUpdate(wizId, { status: "Planlagt", dato: d.value }).then(() => { try { ansvarligVagt(wizId); } catch(e) {} });
+  }
   closeIdeaWizard();
 }
 
@@ -25720,7 +25785,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "1173";
+const APP_VERSION = "1174";
 let NY_VERSION_KLAR = false;
 function nyVersionSkjul() { const e = document.getElementById("nyVersion"); if (e) e.style.display = "none"; }
 function nyVersionHent() { try { location.reload(); } catch(e) {} }
@@ -25780,11 +25845,21 @@ function opslagErTilMig(it) {
   let p = String(b.hvemPerson || "").trim();
   if (!p && b.hvemLaver === "Ida laver den") p = "Ida";
   if (!p) return true;                                   /* ingen tagget = alles */
-  /* Idas egne opgaver hoerer i HENDES indbakke — ikke paa kundens dashboard */
-  if (/^ida\b/i.test(p)) return !CUSTOMER_NAV;
+  /* FLERE ANSVARLIGE LAESES SOM LISTE (A4, 19/8). Feltet gemmes som "Annette · Ida"
+     (19/8: begge kan vaelges) — foer sammenlignede vi HELE strengen, saa et opslag
+     tagget til to personer forsvandt fra begges forsider. */
+  const navne = p.split("·").map(x => x.trim()).filter(Boolean);
   const mig = String((typeof CURRENT_NAVN !== "undefined" && CURRENT_NAVN) || "").trim();
-  if (!mig) return true;                                 /* ved vi ikke hvem der kigger, skjuler vi intet */
-  return p.toLowerCase() === mig.toLowerCase();
+  /* Idas egne opgaver hoerer i HENDES indbakke — ikke paa kundens dashboard */
+  if (CUSTOMER_NAV) {
+    const udenIda = navne.filter(n => !/^ida\b/i.test(n));
+    if (!udenIda.length) return false;                   /* kun Ida tagget */
+    if (!mig) return true;                               /* ved vi ikke hvem der kigger, skjuler vi intet */
+    return udenIda.some(n => n.toLowerCase() === mig.toLowerCase());
+  }
+  if (navne.some(n => /^ida\b/i.test(n))) return true;   /* Backstage ser det, der ligger hos Ida */
+  if (!mig) return true;
+  return navne.some(n => n.toLowerCase() === mig.toLowerCase());
 }
 function kundeHaengListe() {
   const idag = datoDK();
@@ -25877,6 +25952,8 @@ async function ideaStatusSet(id, st) {
      opdateringen blev afvist, saa statusskiftet slet ikke kunne gemmes (Idas roede bjaelke). */
   if (st === "Idé") { patch.dato = null; }
   await ideUpdate(id, patch);
+  /* Planlagt kraever ansvarlig (A4, Ida 19/8) — vagten spoerger, hvis ingen er valgt */
+  if (st === "Planlagt") { try { ansvarligVagt(id); } catch(e) {} }
 }
 function godkendIdea(id) { ideUpdate(id, { status: "Godkendt" }); }
 
@@ -37427,6 +37504,6 @@ if ((location.hash || "").toLowerCase() === "#ole") {   // #ole = preview af Ole
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 19. august · 1173</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 19. august · 1174</div>
 </body>
 </html>
