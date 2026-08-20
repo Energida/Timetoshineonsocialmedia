@@ -2311,7 +2311,7 @@ body.modul-open .burger-btn, body.modul-open .bottom-nav, body.modul-open .dash-
     <button class="burger-item" onclick="toggleBurger(); minProfilAaben()">Min profil</button>
     <button class="burger-item" onclick="toggleBurger(); togglePwPanel()">Skift adgangskode</button>
     <button class="burger-item" style="color:var(--red);" onclick="custLogout()">Log ud</button>
-    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 20. august · 1175</div>
+    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 20. august · 1176</div>
   </div>
 </div>
 <div class="plus-menu" id="plusMenu" onclick="if(event.target===this)togglePlus()">
@@ -3482,7 +3482,7 @@ if (/somkunde=/.test(location.hash)) {
     <!-- Foden bliver nederst — den er det ENESTE der skubbes ned (Ida 30/7) -->
     <div class="dsb-fod">
       <button class="dsb-konto" onclick="dashKontoMenu()" title="Ida"><span class="dsb-initial">I</span><span class="dsb-konto-navn">Ida</span><svg class="dsb-konto-pil" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></button>
-      <div class="dsb-version"><span>Version 20. august · 1175</span></div>
+      <div class="dsb-version"><span>Version 20. august · 1176</span></div>
     </div>
   </div>
 
@@ -4051,6 +4051,46 @@ select nr, maal, svar from (
          coalesce((select string_agg(policyname || ' (' || cmd || ')', '  |  ')
                      from pg_policies where schemaname='public' and tablename='mr_rum'
                       and cmd in ('ALL','INSERT','UPDATE','DELETE')), '(ingen)')
+) x order by nr;</pre></div><div id="sqlk_projektting" data-dato="20. aug 2026" style="border:1.5px solid var(--red);border-radius:12px;background:#fff;padding:12px 14px;margin-bottom:8px;"><div style="font-size:11px;font-weight:400;color:var(--black);margin:0 0 2px;">Denne skal i <span style="color:var(--red);">SQL Editor</span></div><div style="display:flex;align-items:center;gap:8px;margin-bottom:3px;flex-wrap:wrap;"><span style="font-size:12.5px;font-weight:400;">Projektmappens fire omr&aring;der &mdash; Noter, Udkast og Links</span><span style="font-size:9px;font-weight:400;letter-spacing:1px;text-transform:uppercase;border-radius:20px;padding:2px 9px;color:var(--red);border:1px solid var(--red);">K&oslash;r denne</span></div><div style="font-size:11px;color:var(--gray3);line-height:1.6;"><b style="font-weight:400;color:var(--red);">Skriver kun det nye.</b> Opretter bordet <b style="font-weight:400;color:var(--black);">mr_projekt_ting</b> med l&aring;sen t&aelig;ndt i samme s&aelig;tning (kun admin) &mdash; s&aring; kan projektmapperne gemme Noter, Udkast og Links. Id&eacute;er bor fortsat, hvor de altid har boet. K&oslash;rer du det igen, sker der ingenting. Svaret er <b style="font-weight:400;color:var(--black);">tre r&aelig;kker</b> &mdash; linje 1&ndash;2 skal sige JA, linje 3 skal n&aelig;vne en kun-admin-policy.</div><div style="display:flex;gap:6px;margin-top:9px;flex-wrap:wrap;"><button class="row-btn" onclick="sqlKortKoert('sqlk_projektting', this)" title="Er den k&oslash;rt, s&aring; fjern kortet">K&oslash;rt <span style="width:14px;height:14px;border-radius:50%;background:var(--red);display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;vertical-align:-2px;"><svg width="7" height="7" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span> &mdash; fjern kortet</button><button class="row-btn" onclick="sqlVis('sqlProjTing', this)">Vis koden</button><button class="dbtn primary" style="padding:7px 15px;" onclick="sqlKopier('sqlProjTing', this)">Kopi&eacute;r SQL</button></div><pre id="sqlProjTing" style="display:none;margin:9px 0 0;background:#F7F9FB;border:1px solid var(--border);border-radius:12px;padding:12px 14px;font-size:10.5px;line-height:1.5;overflow-x:auto;white-space:pre-wrap;word-break:break-word;font-family:ui-monospace,Menlo,monospace;color:var(--black);">-- PROJEKTMAPPENS FIRE OMRAADER: OPRET + LAAS (20. aug 2026)
+-- Ét bord (mr_projekt_ting) til Noter, Udkast og Links pr. projekt — Idéer bor
+-- fortsat i energida_ideer. ALT kun for admin (er_admin()).
+-- RLS taendes i SAMME aendring som bordet (kontraktens regel 1).
+-- Koerer du kortet igen, opdager det selv, hvad der findes, og roerer intet.
+-- Sidste linje er ÉT opslag — ogsaa hvis alt allerede fandtes.
+
+do $$
+begin
+  if not exists (select 1 from pg_class c join pg_namespace n on n.oid = c.relnamespace
+                  where n.nspname = 'public' and c.relname = 'mr_projekt_ting') then
+    create table public.mr_projekt_ting (
+      id       uuid primary key default gen_random_uuid(),
+      projekt  text not null,
+      slags    text not null check (slags in ('note','udkast','link')),
+      tekst    text not null,
+      url      text,
+      oprettet timestamptz not null default now()
+    );
+    alter table public.mr_projekt_ting enable row level security;
+    create policy mr_projekt_ting_kun_admin on public.mr_projekt_ting
+      for all to authenticated
+      using (public.er_admin()) with check (public.er_admin());
+  end if;
+end $$;
+
+select nr, maal, svar from (
+  select 1 as nr, 'mr_projekt_ting findes'::text as maal,
+         case when exists (select 1 from pg_class c join pg_namespace n on n.oid=c.relnamespace
+                            where n.nspname='public' and c.relname='mr_projekt_ting')
+              then 'JA' else 'NEJ - kortet fejlede' end as svar
+  union all
+  select 2, 'RLS er taendt paa mr_projekt_ting',
+         coalesce((select case when c.relrowsecurity then 'JA' else 'NEJ - LUK DEN' end
+                     from pg_class c join pg_namespace n on n.oid=c.relnamespace
+                    where n.nspname='public' and c.relname='mr_projekt_ting'), 'BORDET FINDES IKKE')
+  union all
+  select 3, 'policies paa mr_projekt_ting',
+         coalesce((select string_agg(policyname || ' (' || cmd || ')', '  |  ')
+                     from pg_policies where schemaname='public' and tablename='mr_projekt_ting'), '(ingen - LUK DEN)')
 ) x order by nr;</pre></div><div id="sqlk_rumnoter_test" data-dato="18. aug 2026 22.20" style="border:1.5px solid var(--red);border-radius:12px;background:#fff;padding:12px 14px;margin-bottom:8px;"><div style="font-size:11px;font-weight:400;color:var(--black);margin:0 0 2px;">Denne skal i <span style="color:var(--red);">SQL Editor</span></div><div style="display:flex;align-items:center;gap:8px;margin-bottom:3px;flex-wrap:wrap;"><span style="font-size:12.5px;font-weight:400;">Rolletest: kan andre se eller skrive dine rum-noter?</span><span style="font-size:9px;font-weight:400;letter-spacing:1px;text-transform:uppercase;border-radius:20px;padding:2px 9px;color:var(--red);border:1px solid var(--red);">K&oslash;r denne</span></div><div style="font-size:11px;color:var(--gray3);line-height:1.6;"><b style="font-weight:400;color:var(--red);">Kigger og pr&oslash;ver &mdash; og rydder op efter sig selv.</b> Tester som anonym og som almindelig kunde: begge skal se 0 r&aelig;kker og afvises ved skrivning. Alt rulles tilbage, 0 testdata efterlades. Admin-beviset tager du selv i appen: skriv en note i et rum, og se at den st&aring;r der. Svaret er <b style="font-weight:400;color:var(--black);">fem r&aelig;kker</b> med en FORVENTET-kolonne at holde dem op mod.</div><div style="display:flex;gap:6px;margin-top:9px;flex-wrap:wrap;"><button class="row-btn" onclick="sqlKortKoert('sqlk_rumnoter_test', this)" title="Er den k&oslash;rt, s&aring; fjern kortet">K&oslash;rt <span style="width:14px;height:14px;border-radius:50%;background:var(--red);display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;vertical-align:-2px;"><svg width="7" height="7" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span> &mdash; fjern kortet</button><button class="row-btn" onclick="sqlVis('sqlRumNoterTest', this)">Vis koden</button><button class="dbtn primary" style="padding:7px 15px;" onclick="sqlKopier('sqlRumNoterTest', this)">Kopi&eacute;r SQL</button></div><pre id="sqlRumNoterTest" style="display:none;margin:9px 0 0;background:#F7F9FB;border:1px solid var(--border);border-radius:12px;padding:12px 14px;font-size:10.5px;line-height:1.5;overflow-x:auto;white-space:pre-wrap;word-break:break-word;font-family:ui-monospace,Menlo,monospace;color:var(--black);">-- ROLLETEST: mr_rum_noter (18. aug 2026, aften) — koeres EFTER kortet ovenfor
 -- Beviser: anonym ser 0 og kan ikke skrive · kunde ser 0 og kan ikke skrive.
 -- Admin-beviset tages i APPEN med din egen konto (skriv en note, se den igen)
@@ -8574,7 +8614,7 @@ select titel,
          staa fast paa telefon. De hoerer i arket (samme fejl som "left" 31/7). -->
     <div id="dashFooter" style="z-index:50;display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--gray3);background:#fff;border-top:1px solid var(--border);padding:10px 26px;">
       <div style="font-size:10px;">© 2026 Energida · Alle rettigheder forbeholdes</div>
-      <div style="font-size:10px;margin-left:auto;">Version 20. august · 1175 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
+      <div style="font-size:10px;margin-left:auto;">Version 20. august · 1176 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
     </div>
   </div>
 </div>
@@ -23342,7 +23382,7 @@ function buildSideNav(def) {
       + '<span style="opacity:.55;">' + ikon("", "Kalender", "laastBesked()", IK.kal) + '</span>'
       + '<span style="opacity:.55;">' + ikon("", "Værktøjskassen", "laastBesked()", IK.tools) + '</span>'
       + '<button class="sn-virk-knap" onclick="toggleVirkMenu(event)" title="' + esc(knapNavn) + '" aria-label="Profil" style="margin-left:auto;"><span class="sn-initial">' + esc((knapNavn || "?").trim().charAt(0).toUpperCase()) + '</span><span class="sn-virk-navn" style="white-space:normal;overflow-wrap:anywhere;">' + esc(knapNavn) + '</span><svg class="sn-virk-pil" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="flex-shrink:0;"><path d="M6 9l6 6 6-6"/></svg></button>'
-      + fodBagud + '<div class="sn-fod"><span>Version 20. august · 1175</span></div>'
+      + fodBagud + '<div class="sn-fod"><span>Version 20. august · 1176</span></div>'
       /* Ida 30/7: alle konto-punkter bor i profilmenuen — ingen streg/sn-bund */
       + '<div id="virkMenu" style="display:none;position:fixed;left:14px;bottom:96px;width:230px;background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:0 16px 40px rgba(0,0,0,0.15);padding:8px;z-index:90;">'
       + '<div style="padding:10px 12px 6px;font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--gray3);">' + esc(virkNavn) + '</div>'
@@ -23438,7 +23478,7 @@ function buildSideNav(def) {
         uPkt("", "Lektioner", "showTab(12)"))))
     + '<button class="sn-virk-knap" onclick="toggleVirkMenu(event)" title="' + esc(knapNavn) + '" aria-label="Profil"><span class="sn-initial">' + esc((knapNavn || "?").trim().charAt(0).toUpperCase()) + '</span><span class="sn-virk-navn" style="white-space:normal;overflow-wrap:anywhere;">' + esc(knapNavn) + '</span><svg class="sn-virk-pil" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="flex-shrink:0;"><path d="M6 9l6 6 6-6"/></svg></button>'
     /* Ida 30/7: ingen streg — logo + version samlet i foden under profilknappen */
-    + fodBagud + '<div class="sn-fod"><span>Version 20. august · 1175</span></div>'
+    + fodBagud + '<div class="sn-fod"><span>Version 20. august · 1176</span></div>'
     /* Ida 30/7: menuen åbner VED knappen (nederst t.v.) — ikke i modsatte hjørne */
     + '<div id="virkMenu" style="display:none;position:fixed;left:14px;bottom:96px;width:230px;background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:0 16px 40px rgba(0,0,0,0.15);padding:8px;z-index:90;">'
     + '<div style="padding:10px 12px 6px;font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--gray3);">' + esc(virkNavn) + '</div>'
@@ -25785,7 +25825,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "1175";
+const APP_VERSION = "1176";
 let NY_VERSION_KLAR = false;
 function nyVersionSkjul() { const e = document.getElementById("nyVersion"); if (e) e.style.display = "none"; }
 function nyVersionHent() { try { location.reload(); } catch(e) {} }
@@ -30817,12 +30857,107 @@ function mrMappeAaben(navn) {
   mrMappeTegn();
 }
 
-function mrMappeTegn() {
+/* ===== PROJEKTMAPPENS FIRE OMRAADER (designoverleveringen skaerm 5 — bygget 20/8) =====
+   Noter · Idéer · Udkast · Links som ARBEJDSKASSER: raekker + tilfoej + fjern.
+   Idéer laeser/skriver energida_ideer (fandtes i forvejen). Noter, Udkast og Links bor i
+   mr_projekt_ting — oprettes af SQL-kortet "Projektmappens fire omraader" bag Teknik-
+   doeren; indtil kortet er koert, siger kasserne det aerligt i stedet for at ligne
+   noget i stykker. Gem og fjern kvitterer med .select() + raekketaelling. */
+let MR_PROJTING = null, MR_PROJTING_MANGLER = false;
+async function mrProjTingHent() {
+  if (!sb) { MR_PROJTING = []; MR_PROJTING_MANGLER = true; return []; }
+  try {
+    const { data, error } = await sb.from("mr_projekt_ting").select("*").order("oprettet", { ascending: false });
+    if (error) { MR_PROJTING = []; MR_PROJTING_MANGLER = true; return []; }
+    MR_PROJTING = data || []; MR_PROJTING_MANGLER = false;
+  } catch (e) { MR_PROJTING = []; MR_PROJTING_MANGLER = true; }
+  return MR_PROJTING;
+}
+async function mrProjTingTilfoej(slags) {
+  const f = document.getElementById("mrpt_felt_" + slags); if (!f) return;
+  const uf = document.getElementById("mrpt_url_" + slags);
+  const m = document.getElementById("mrpt_msg_" + slags);
+  const t = f.value.trim();
+  const url = uf ? uf.value.trim() : "";
+  const sig = (tekst) => { if (m) m.textContent = tekst; };
+  if (!t) { sig("Skriv noget først."); return; }
+  if (slags === "link" && !url) { sig("Sæt linket i det andet felt."); return; }
+  try {
+    const r = await sb.from("mr_projekt_ting").insert({ projekt: MR_MAPPE, slags: slags, tekst: t, url: url || null }).select();
+    if (!r.data || !r.data.length) { sig("Det blev ikke gemt — kør SQL-kortet ”Projektmappens fire områder” bag Teknik-døren."); return; }
+    MR_PROJTING = null;
+    mrMappeTegn();
+  } catch (e) { sig("Det blev ikke gemt — kør SQL-kortet ”Projektmappens fire områder” bag Teknik-døren."); }
+}
+/* To tryk for at fjerne — foerste tryk spoerger paa selve knappen, intet popper op */
+async function mrProjTingFjern(id, knap) {
+  if (knap && !knap.dataset.sikker) { knap.dataset.sikker = "1"; knap.textContent = "Sikker? Fjern"; knap.style.color = "var(--red)"; return; }
+  try {
+    const r = await sb.from("mr_projekt_ting").delete().eq("id", id).select();
+    if (!r.data || !r.data.length) { if (knap) knap.textContent = "Kunne ikke fjernes"; return; }
+    MR_PROJTING = null;
+    mrMappeTegn();
+  } catch (e) { if (knap) knap.textContent = "Kunne ikke fjernes"; }
+}
+async function mrMappeIdeTilfoej() {
+  const f = document.getElementById("mrpt_felt_ide"); if (!f) return;
+  const m = document.getElementById("mrpt_msg_ide");
+  const t = f.value.trim();
+  if (!t) { if (m) m.textContent = "Skriv noget først."; return; }
+  try {
+    let res = await sb.from("energida_ideer").insert({ tekst: t, projekt: MR_MAPPE }).select().single();
+    if (res.error) res = await sb.from("energida_ideer").insert({ tekst: t }).select().single();   /* hvis projekt-kolonnen ikke findes */
+    if (res.error || !res.data) { if (m) m.textContent = "Det blev ikke gemt — prøv igen."; return; }
+    try { ENERGIDA_IDEER.unshift({ t: t, p: MR_MAPPE }); } catch (e) {}
+    mrMappeTegn();
+  } catch (e) { if (m) m.textContent = "Det blev ikke gemt — prøv igen."; }
+}
+async function mrMappeTegn() {
   const el = document.getElementById("mrMappeHost"); if (!el) return;
   const navn = MR_MAPPE; if (!navn) { el.innerHTML = ""; return; }
+  if (MR_PROJTING === null) await mrProjTingHent();
+  const ting = (MR_PROJTING || []).filter(x => x.projekt === navn);
   const ideer = mrProjektIdeer(navn);
   const p = (MR_PROJEKTER || []).filter(x => x.navn === navn)[0] || {};
   const modenhed = p.modenhed || "Tidlig";
+  const pille = n => (n ? '<span style="flex-shrink:0;border-radius:20px;padding:2px 9px;font-size:11px;border:1px solid #E4EAF0;color:#66727E;">' + n + ' ting</span>' : '');
+  const hoved = (titel, n) => '<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:15px 20px;border-bottom:1px solid var(--border);">'
+    + '<span style="font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--red);">' + titel + '</span>' + pille(n) + '</div>';
+  const fjernKn = id => '<button type="button" onclick="event.stopPropagation();mrProjTingFjern(\'' + esc(String(id)) + '\', this)" style="background:none;border:none;font-size:11px;color:var(--gray3);cursor:pointer;font-family:Poppins,sans-serif;white-space:nowrap;flex-shrink:0;">Fjern</button>';
+  const tilfoejFod = (slags, pladsholder, medUrl, fn) =>
+      '<div style="padding:12px 20px 14px;border-top:1px solid #F2F0ED;">'
+    + '<div style="display:flex;gap:6px;flex-wrap:wrap;">'
+      + '<input type="text" id="mrpt_felt_' + slags + '" placeholder="' + pladsholder + '" onkeydown="if(event.key===\'Enter\')' + fn + '" style="flex:2;min-width:140px;background:var(--gray);border:1px solid var(--border);border-radius:12px;padding:9px 12px;font-size:12.5px;font-family:Poppins,sans-serif;outline:none;">'
+      + (medUrl ? '<input type="text" id="mrpt_url_' + slags + '" placeholder="https://…" inputmode="url" autocapitalize="off" spellcheck="false" onkeydown="if(event.key===\'Enter\')' + fn + '" style="flex:2;min-width:140px;background:var(--gray);border:1px solid var(--border);border-radius:12px;padding:9px 12px;font-size:12.5px;font-family:Poppins,sans-serif;outline:none;">' : '')
+      + '<button type="button" class="dbtn primary" style="width:auto;padding:9px 15px;font-size:12px;" onclick="' + fn + '">Tilføj</button>'
+    + '</div>'
+    + '<div id="mrpt_msg_' + slags + '" style="font-size:11px;color:var(--red);margin-top:4px;"></div>'
+    + '</div>';
+  const kortetMangler = '<div style="padding:20px;font-size:12px;color:var(--gray3);line-height:1.6;">Klar, n&aring;r SQL-kortet &bdquo;Projektmappens fire omr&aring;der&ldquo; er k&oslash;rt &mdash; det ligger bag Teknik-d&oslash;ren p&aring; Maskinrummets forside.</div>';
+  const tingKasse = (titel, slags, pladsholder, medUrl) => {
+    const rows = ting.filter(x => x.slags === slags);
+    return '<div style="background:#fff;border:1px solid var(--border);border-radius:20px;overflow:hidden;">'
+      + hoved(titel, rows.length)
+      + (MR_PROJTING_MANGLER ? kortetMangler
+        : (rows.length
+          ? rows.map(x =>
+              '<div class="mr-rum-raekke"' + (x.url ? ' onclick="window.open(' + JSON.stringify(String(x.url)).replace(/"/g, "&quot;") + ',\'_blank\',\'noopener\')" style="cursor:pointer;"' : '') + '>'
+              + '<span class="mr-rum-tekst"><span class="n">' + esc(x.tekst || "") + '</span>'
+                + (x.url ? '<span class="s">' + esc(String(x.url).replace(/^https?:\/\//, "").slice(0, 60)) + '</span>' : '')
+              + '</span>'
+              + '<span class="mr-rum-hoejre">' + fjernKn(x.id) + '</span>'
+              + '</div>').join("")
+          : '<div style="padding:20px;font-size:12.5px;color:var(--gray3);line-height:1.6;">Der ligger ikke noget her endnu.</div>')
+          + tilfoejFod(slags, pladsholder, medUrl, "mrProjTingTilfoej('" + slags + "')"))
+      + '</div>';
+  };
+  const ideKasse = '<div style="background:#fff;border:1px solid var(--border);border-radius:20px;overflow:hidden;">'
+    + hoved("Id&eacute;er", ideer.length)
+    + (ideer.length
+        ? ideer.map(i => '<div class="mr-rum-raekke"><span class="mr-rum-tekst"><span class="n">' + esc(i.t || "") + '</span></span></div>').join("")
+        : '<div style="padding:20px;font-size:12.5px;color:var(--gray3);line-height:1.6;">Der ligger ingen id&eacute;er p&aring; projektet endnu.</div>')
+    + tilfoejFod("ide", "Fang en id&eacute; til projektet…", false, "mrMappeIdeTilfoej()")
+    + '</div>';
 
   el.innerHTML =
       '<button type="button" onclick="mrLuk()" style="background:none;border:none;padding:0;margin:0 0 10px;'
@@ -30840,28 +30975,13 @@ function mrMappeTegn() {
         + esc(navn) + ' ligger som projekt. G&aring;r det live, h&oslash;rer det i Produkter &mdash; og s&aring; f&aring;r det sine egne rum, '
         + 'kan have kunder og t&aelig;lle med i Byggek&oslash;en som produkt.</div>'
     + '</div>'
-    + '<div style="background:#fff;border:1px solid var(--border);border-radius:20px;overflow:hidden;margin-bottom:16px;">'
-      + '<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:15px 20px;border-bottom:1px solid var(--border);">'
-        + '<span style="font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--red);">Id&eacute;er</span>'
-        + (ideer.length ? '<span style="flex-shrink:0;border-radius:20px;padding:2px 9px;font-size:11px;border:1px solid #E4EAF0;color:#66727E;">'
-             + ideer.length + (ideer.length === 1 ? ' ting' : ' ting') + '</span>' : '')
-      + '</div>'
-      + (ideer.length
-          ? ideer.map(function (i) {
-              return '<div class="mr-rum-raekke"><span class="mr-rum-tekst"><span class="n">' + esc(i.t || "") + '</span></span></div>';
-            }).join("")
-          : '<div style="padding:22px;font-size:12.5px;color:var(--gray3);line-height:1.6;">Der ligger ingen id&eacute;er p&aring; projektet endnu.</div>')
-      + '<div style="display:flex;justify-content:flex-end;padding:13px 20px;">'
-        + '<button type="button" class="mq-tap" onclick="visDashSide(\'overblik\')" style="background:none;border:none;font-size:12.5px;color:var(--red);cursor:pointer;font-family:Poppins,sans-serif;">&Aring;bn id&eacute;banken</button>'
-      + '</div>'
-    + '</div>'
-    /* AERLIG OM DET, DER IKKE ER. Designet har fire omraader; tre af dem gemmer
-       appen ikke pr. projekt i dag. Det staar som én linje frem for tre tomme
-       kasser, der ville ligne noget i stykker. */
-    + '<div style="background:#fff;border:1px solid var(--border);border-radius:20px;padding:18px 20px;'
-      + 'font-size:12px;color:var(--gray3);line-height:1.6;">Designet har fire omr&aring;der: Noter &middot; Id&eacute;er &middot; '
-      + 'Udkast &middot; Links. Kun <b style="font-weight:400;color:var(--black);">Id&eacute;er</b> gemmes pr. projekt i dag &mdash; '
-      + 'de tre andre findes ikke endnu, og er derfor ikke tegnet som tomme kasser.</div>';
+    /* de fire omraader i 2x2 paa computeren, én kolonne paa telefonen */
+    + '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px;align-items:start;">'
+      + tingKasse("Noter", "note", "Skriv en note…", false)
+      + ideKasse
+      + tingKasse("Udkast", "udkast", "Skriv udkastet — en linje er nok…", false)
+      + tingKasse("Links", "link", "Hvad er det? Fx ”Forlagets brief”…", true)
+    + '</div>';
 }
 
 function mrProduktAaben(navn) {
@@ -37507,6 +37627,6 @@ if ((location.hash || "").toLowerCase() === "#ole") {   // #ole = preview af Ole
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 20. august · 1175</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 20. august · 1176</div>
 </body>
 </html>
