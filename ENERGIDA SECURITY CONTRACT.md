@@ -172,17 +172,88 @@ select 5, 'laesende policies for anon eller public',
 
 Kontrakten beskriver den **ønskede standard**. Afvigelser, der fandtes, før den blev låst, registreres her og skal arbejdes væk. **De svækker ikke reglerne, og de må aldrig bruges som præcedens.**
 
-## `mailchimp-webhook` — bryder regel 3 og 4
+Et brud stemples først som **LUKKET**, når lukningen er **MÅLT** — ikke når koden ser rigtig ud (regel 10).
+
+---
+
+## `mailchimp-webhook` — brød regel 3 og 4 · **LUKKET 21. august 2026**
 
 | | |
 |---|---|
-| Verify JWT | **OFF** |
-| Egen request-verifikation eller adgangskontrol | **ingen** |
-| Service-role | **ja** |
+| Verify JWT | **OFF** — uændret, og det er med vilje: funktionen kaldes af Mailchimp, ikke af en indlogget bruger |
+| Egen request-verifikation | **JA** — `MAILCHIMP_WEBHOOK_TOKEN` tjekkes som det ALLERFØRSTE; databasen røres først bagefter |
+| Service-role | ja — men først **efter** verificeret hemmelighed |
 | Kan skrive til | `tilmeldinger` |
-| Opstået | **før kontrakten blev låst** (deployet ca. 8. juli 2026) |
-| **Status** | **ÅBEN** |
-| Skal løses | **før kundeonboarding** |
-| Præcedens | **må IKKE bruges som forbillede for nye funktioner** |
+| Opstået | før kontrakten blev låst (deployet ca. 8. juli 2026) |
+| **Status** | **LUKKET 21/8-2026** |
 
-Afgrænsningen er målt: ét `insert` i én tabel med tre felter, ingen læseadgang, og visningen i appen escaper indholdet. Konsekvensen er uvedkommende data i workspacet, ikke et datalæk. **Det gør den ikke acceptabel — kun afgrænset.**
+**MÅLT udefra med `curl` mod den live funktion 21/8** — ikke udledt af koden:
+
+| Kald | Svar |
+|---|---|
+| `GET` uden hemmelighed | **401** |
+| `POST` m. `type=subscribe` uden hemmelighed | **401** |
+| `GET` **med** hemmelighed | **200** |
+| `POST` **med** hemmelighed | **200** |
+
+**Baseline MÅLT 20/8, før lukningen:** de samme to kald uden hemmelighed svarede begge **200** — enhver på internettet kunne skrive rækker i `tilmeldinger`.
+
+Kontraktens krav *"skal løses før kundeonboarding"* er dermed indfriet.
+Fuldt bevis: `../BEVIS - mailchimp-hullet lukket (21. august).md`.
+
+---
+
+## Maskinrummets seks borde — brød regel 1 · **LUKKET 24. august 2026**
+
+`mr_rum` · `mr_byggekoe` · `mr_pins` · `mr_projekter` · `mr_projekt_ting` · `mr_rum_noter`
+
+| | |
+|---|---|
+| Hvad der var galt | hvert bord havde **præcis én regel: `ALL for authenticated` uden betingelse** — enhver med et login, også en workout- eller forløbskunde, måtte læse, skrive og slette i Idas backstage-data |
+| Bryder | **regel 1 (default deny)** — en regel uden betingelse for alle indloggede er samme fejltype som `using (true)` |
+| Opstået | før kontrakten blev låst |
+| Fundet | **MÅLT 22/8** i Idas egen SQL-udskrift |
+| **Status** | **LUKKET 24/8-2026** |
+
+**Hvad der blev gjort:** de gamle regler ryddet, **RLS slået til** på hvert bord — *en tabel uden RLS er åben, uanset hvor gode policies den har* — og præcis én regel oprettet pr. bord, alt i **én transaktion**. Ingen data blev rørt, kun hvem der må se dem:
+
+```sql
+create policy "kun administrator" on public.<bord>
+  for all to authenticated
+  using (er_admin()) with check (er_admin());
+```
+
+**MÅLT EFTER — strukturen (Idas SQL-udskrift 24/8):** alle seks borde har `rls_til = JA`, `antal_regler = 1`, `kun administrator: ALL for authenticated -> er_admin()`.
+
+**MÅLT EFTER — rollerne (kontraktens regel 5 kræver fire):**
+
+| Rolle | Status |
+|---|---|
+| **anonym** | ✅ **MÅLT** — `GET` gav 200 med nul rækker; `POST` gav `401 · 42501 "new row violates row-level security policy"` |
+| **admin (Ida)** | ✅ **MÅLT** — så sine 27 rum efter stramningen |
+| **kunde A** (`test@energida.dk`) | ✅ **MÅLT** — `select` på `mr_rum` gav **0 rum**, og konsollen viste 403 fra basen (afvisning, ikke tomt bord) |
+| **kunde B — krydsadgang** | ⬜ **IKKE MÅLT** — kræver en anden kundekonto. Reglen er `er_admin()` uden virksomheds-betingelse, så to kunder rammer samme regel og begge afvises, men det er **INFERERET**, ikke målt |
+
+> **To fælder, der hver kostede en runde — og som er værd at huske:**
+> `er_admin()` læser `app_metadata ->> 'rolle'` på **dansk**. Det første målekort spurgte efter engelsk `role` og svarede "(ingen)" hos alle tolv konti. Havde nogen troet på det, ville konklusionen have været, at ingen er administrator — og stramningen var aldrig blevet lavet.
+> Den første skrivetest gav `400 invalid input syntax for type uuid`. Det er et **formatfejl**, ikke adgangskontrol, og beviste ingenting. **En fejlbesked er ikke bevis for, at noget blev afvist af den rigtige grund.**
+
+Fuldt bevis: `../BEVIS - maskinrummet lukket (24. august).md`.
+
+### Et fund, rolletesten gav i tilgift — ikke et databasehul
+
+Testkontoen fik **0 rum fra databasen**, men skærmen viste stadig alle 27. Rummene stod i **appens egen hukommelse** fra den forrige session: `doLogout()` kaldte kun `signOut()` og ryddede intet.
+
+**RLS holdt hele vejen** — men en kunde, der loggede ind på samme computer efter Ida, kunne se Idas rum, noter, kunder og idéer på skærmen. **Rettet i v1215** med `nulstilBrugerCache()`, kaldt ved logout, ved login (*før* den nye bruger slippes ind) og på `onAuthStateChange` som sidste net. **MÅLT:** femten lister fyldt, alle tomme efter kaldet.
+
+**Lære til fremtidige lukninger:** rolletesten i regel 5 er ikke kun en kontrol af databasen. Den fandt her et hul, som ingen ledte efter, og som ingen SQL-udskrift ville have vist.
+
+---
+
+## Om stemplerne ovenfor
+
+De to stempler er sat **24. august 2026 af app-tråden** — ikke af en sikkerhedstråd. Den rolle stammer fra deploylåsen 7. august og eksisterer ikke som en selvstændig samtale; kontrakten stod derfor med to brud markeret **ÅBEN**, som begge var lukket og bevist.
+
+**MÅLT før ændringen:** filen er skrivbar (`-rw-r--r--`), og den står **ikke** på deploylåsens liste over spærrede filer (`index.html`, `version.txt`, `_headers`, `manifest.webmanifest`, `sw.js`, `.claude/launch.json`). Formuleringen *"skrivebeskyttet for app-tråden"* i de to bevisdokumenter var en antagelse, der blev skrevet videre fra overlevering til overlevering — ikke en målt spærring.
+
+**Kontraktens ti regler er uændrede.** Kun dette afsnit er rørt.
