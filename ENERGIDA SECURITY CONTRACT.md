@@ -225,14 +225,14 @@ create policy "kun administrator" on public.<bord>
 
 **MÅLT EFTER — strukturen (Idas SQL-udskrift 24/8):** alle seks borde har `rls_til = JA`, `antal_regler = 1`, `kun administrator: ALL for authenticated -> er_admin()`.
 
-**MÅLT EFTER — rollerne (kontraktens regel 5 kræver fire):**
+**MÅLT EFTER — rollerne (kontraktens regel 5 kræver fire — alle fire er nu målt):**
 
 | Rolle | Status |
 |---|---|
 | **anonym** | ✅ **MÅLT** — `GET` gav 200 med nul rækker; `POST` gav `401 · 42501 "new row violates row-level security policy"` |
 | **admin (Ida)** | ✅ **MÅLT** — så sine 27 rum efter stramningen |
 | **kunde A** (`test@energida.dk`) | ✅ **MÅLT** — `select` på `mr_rum` gav **0 rum**, og konsollen viste 403 fra basen (afvisning, ikke tomt bord) |
-| **kunde B — krydsadgang** | ⬜ **IKKE MÅLT** — kræver en anden kundekonto. Reglen er `er_admin()` uden virksomheds-betingelse, så to kunder rammer samme regel og begge afvises, men det er **INFERERET**, ikke målt |
+| **kunde B — krydsadgang** | ✅ **MÅLT 24/8** — 0 rum, 0 noter, skrivning `AFVIST (42501)`. Kontrollinjen med admin-mærke gav **27 rum**, så måleren nåede beviseligt frem til bordene |
 
 > **To fælder, der hver kostede en runde — og som er værd at huske:**
 > `er_admin()` læser `app_metadata ->> 'rolle'` på **dansk**. Det første målekort spurgte efter engelsk `role` og svarede "(ingen)" hos alle tolv konti. Havde nogen troet på det, ville konklusionen have været, at ingen er administrator — og stramningen var aldrig blevet lavet.
