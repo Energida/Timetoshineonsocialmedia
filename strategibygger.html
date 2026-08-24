@@ -177,7 +177,7 @@ textarea:focus,input:focus{border-color:var(--red);box-shadow:0 0 0 3px rgba(252
   <div class="top-inner">
     <div class="brand">ENERGIDA · STRATEGIBYGGER</div>
     <div class="progress"><span id="bar"></span></div>
-    <div class="progress-txt" id="progressTxt">0 af 31</div>
+    <div class="progress-txt" id="progressTxt">&nbsp;</div>
     <div class="save" id="saveTxt">Gemt</div>
   </div>
 </header>
@@ -190,7 +190,7 @@ textarea:focus,input:focus{border-color:var(--red);box-shadow:0 0 0 3px rgba(252
          lektionerne findes kun i YOU GOT THIS. En Content Studio-kunde får slet ingen
          lektioner, og en I GOT YOU-kunde heller ikke — for dem pegede sætningen på
          noget, de ikke har. Fire byggesten, ikke fem: Retning nævnes ikke som en. -->
-    <p>De 31 spørgsmål, Drejebogen er bygget på. Først startgrundlaget, så de fire byggesten — og til sidst retningen, der samler dem.</p>
+    <p id="introAntal">De <span>&nbsp;</span> spørgsmål, Drejebogen er bygget på. Først startgrundlaget, så de fire byggesten — og til sidst retningen, der samler dem.</p>
     <div class="steps" id="steps"></div>
   </aside>
 
@@ -278,6 +278,18 @@ const M5 = {
    "src": "om43trxkup78z6",
    "q": "Hvordan kommer drivkraften til udtryk i menneskene bag {virksomhed}?",
    "h": "Tænk på energien, forskellene, rollerne, kompetencerne eller dynamikken mellem menneskene bag. Hvad skal kunden kunne mærke om personerne, når de møder dem i content?"
+  },
+  {
+   "k": "team_differences",
+   "src": "bs5_team_forskelle",
+   "q": "Hvordan er I forskellige i teamet?",
+   "h": "Tænk på temperament, tempo, smag og holdninger — ikke på hvem der laver hvad. Spørg jer tre om det samme, og I får tre svar. Netop dét er noget af det, kunden holder mest af at følge med i."
+  },
+  {
+   "k": "team_mood_words",
+   "src": "bs5_team_stemning",
+   "q": "Skriv tre ord, der beskriver stemningen mellem jer, når kunderne ikke er der.",
+   "h": "Fx: grinende · hurtige · hjælpsomme. Skriv gerne, hvad ordene kommer af — den faste joke, sætningen I altid siger til hinanden, eller den lille vane, der hører til jeres hverdag."
   },
   {
    "k": "customer_would_miss",
@@ -675,6 +687,10 @@ function sekDone(i){
   var oo=SVAR[skemaFor(s.key)]||{};
   return qs.filter(function(q){ return String(oo[q.src]||'').trim() }).length;
 }
+/* ÉT UDREGNET TAL. Tallet 31 stod hardkodet flere steder og passede ikke længere, da
+   Energien fik to spørgsmål 24/8. Et tal, der kan lyve, er værre end intet tal —
+   så det tælles nu i M5. Skriv det ALDRIG som et ciffer igen. */
+var IALT_SPM = Object.keys(M5).reduce(function(n,k){ return n + M5[k].length }, 0);
 function ialtSvar(){ var n=0; SECTIONS.forEach(function(s,i){ n+=sekDone(i) }); return n }
 
 function vaelgMg(i){ mgAktiv=i; render() }
@@ -751,14 +767,18 @@ function erMobil(){ return window.matchMedia('(max-width:760px)').matches }
 function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]}) }
 
 function renderProgress(){
-  var n=ialtSvar(), pct=Math.round(n/31*100);
+  var intro=document.getElementById('introAntal');
+  if(intro){ var sp=intro.querySelector('span'); if(sp) sp.textContent=IALT_SPM; }
+  var n=ialtSvar(), pct=Math.round(n/IALT_SPM*100);
   document.getElementById('bar').style.width=pct+'%';
   /* Spec 14/8 punkt C3: progressbaren skal vise BÅDE visuel fremdrift OG procent */
-  document.getElementById('progressTxt').textContent=pct+' % · '+n+' af 31';
+  document.getElementById('progressTxt').textContent=pct+' % · '+n+' af '+IALT_SPM;
   /* FÆRDIG-SIGNALET (købs-flowet 20/8): rammer alle 31 svar, får appen udenom besked
      — den bruger det til success-øjeblikket og oplåsningen for selvkøbs-kunder.
      Kun én gang pr. session, kun til vores egen ramme (same-origin), og en fejl her
-     må aldrig vælte byggeren. */
+     må aldrig vælte byggeren.
+     TÆRSKLEN ER BEVIDST ET ANDET TAL END IALT_SPM og er IKKE rettet 24/8: den rører
+     købs-flowet og oplåsningen, og den skal besluttes af Ida, ikke gættes. */
   if (n >= 31 && !window.__FAERDIG_MELDT) {
     window.__FAERDIG_MELDT = true;
     try { if (window.parent && window.parent !== window) window.parent.postMessage({ energida: "drejebog_faerdig" }, location.origin); } catch(e) {}
@@ -774,13 +794,13 @@ function renderSteps(){
       '<span class="no">'+(d===alle?'✓':(byggestenNr(s.key)||'·'))+'</span><strong>'+esc(s.navn)+'</strong><small>'+d+'/'+alle+'</small></button>';
   }).join('');
   document.getElementById('steps').innerHTML+=
-    '<button class="btn sek" style="margin-top:12px" onclick="visArket()">Se alle 31 på ét ark</button>';
+    '<button class="btn sek" style="margin-top:12px" onclick="visArket()">Se alle '+IALT_SPM+' på ét ark</button>';
   document.getElementById('mobileTabs').innerHTML='<select aria-label="Vælg område" onchange="this.value==\'ark\'?visArket():goSection(+this.value)">'+
     /* "Område N af 5" var forkert i forvejen — der er SEKS sektioner — og den gav
        Startgrundlaget og Retning samme vægt som byggestenene. Etiketten siger nu,
        hvad sektionen ER (låst spec 14/8). */
     SECTIONS.map(function(s,i){ return '<option value="'+i+'" '+(i===current?'selected':'')+'>'+esc(sekEtiket(s))+' · '+esc(s.navn)+'</option>' }).join('')+
-    '<option value="ark" '+(current===-1?'selected':'')+'>Alle 31 på ét ark</option></select>';
+    '<option value="ark" '+(current===-1?'selected':'')+'>Alle '+IALT_SPM+' på ét ark</option></select>';
 }
 function renderSummary(){
   /* slaar op paa question_key i registret og henter svaret paa kilde-id'et */
@@ -976,7 +996,7 @@ function showDone(){
       return mgListe.map(function(m,mi){
         var o=SVAR[skemaFor('audiences',MG.indexOf(m))]||{};
         var d=M5.audiences.filter(function(q){return String(o[q.src]||'').trim()}).length;
-        return '<div class="done-line"><b>'+esc(mgNavn(m,mi))+'</b><span>'+d+' af 11 udfyldt</span></div>';
+        return '<div class="done-line"><b>'+esc(mgNavn(m,mi))+'</b><span>'+d+' af '+M5.audiences.length+' udfyldt</span></div>';
       }).join('');
     }
     var i=SECTIONS.indexOf(s);
