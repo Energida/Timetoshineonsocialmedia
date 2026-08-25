@@ -43,6 +43,10 @@ button{cursor:pointer}
 .step .no{width:28px;height:28px;border-radius:50%;border:2px solid var(--slate);display:grid;place-items:center;font-size:11px}
 .step.done .no{background:var(--red);border-color:var(--red);color:#fff}
 .step.active .no{border-color:var(--red);color:var(--red)}
+/* Gruppens navn baerer betydningen "er det en byggesten?" — graa versal, ingen flade,
+   ingen kant. Den forklarer, den handler ikke, saa den er ikke roed (22/8-reglen). */
+.step-gruppe{font-size:9px;letter-spacing:1.6px;text-transform:uppercase;color:var(--muted-2,#9A9590);padding:14px 12px 5px}
+.steps .step-gruppe:first-child{padding-top:2px}
 .step strong{font-weight:400;font-size:12px}
 .step small{font-size:10px;color:var(--muted-2)}
 .main{min-width:0}
@@ -833,17 +837,38 @@ function renderProgress(){
     try { if (window.parent && window.parent !== window) window.parent.postMessage({ energida: "drejebog_faerdig" }, location.origin); } catch(e) {}
   }
 }
+/* SKINNEN ER DELT I TRE — OG TALLET BLIVER STAAENDE (Idas fund 25/8).
+   Hendes ord: "retning er forsat med i venstre side?"
+   MAALT paa hendes skaerm: alle seks punkter blev tegnet af den SAMME knap, og
+   Startgrundlaget og Retning skulle nedtones med en prik i stedet for et tal. Men
+   FLUEBENET OVERSKREV PRIKKEN, saa snart sektionen var udfyldt — der stod
+   "· 1 2 ✓ 4 ✓". Tallet 3 fandtes ikke laengere, og Retnings flueben saa praecis ud
+   som Vaerdiers. Man kunne altsaa ikke se, at der er FIRE byggesten, hvilket er hele
+   listens opgave. Nedtoningen holdt kun, indtil man blev faerdig.
+
+   EEN RUBRIK KAN IKKE BAERE TO BETYDNINGER: "er det en byggesten?" og "er den
+   faerdig?". Nu siger GRUPPEN det foerste og cirklen det andet:
+     · tallet 1-4 staar altid (prik for Startgrundlaget og Retning)
+     · udfyldt = fyldt roed cirkel med hvidt tal
+   BEVIDST LOKAL AFVIGELSE fra flueben-standarden (30/7: udfyldt cirkel m. hvidt
+   SVG-check). Cirklen ER udfyldt og roed; den baerer bare tallet i stedet for
+   check-tegnet, fordi tallet er den oplysning, listen findes for. */
+const STEP_GRUPPER = [
+  { titel: 'Før vi går i gang', keys: ['start'] },
+  { titel: 'De fire byggesten', keys: ['drive','audiences','values','usp'] },
+  { titel: 'Til sidst',         keys: ['direction'] }
+];
 function renderSteps(){
-  document.getElementById('steps').innerHTML=SECTIONS.map(function(s,i){
-    var alle=M5[s.key].length, d=sekDone(i);
-    return '<button class="step '+(i===current?'active':'')+' '+(d===alle?'done':'')+'" onclick="goSection('+i+')">'+
-      /* KUN BYGGESTENENE ER NUMMERERET 1-4 (låst spec 14/8). Før stod alle seks som
-         1-6, og så læste både Startgrundlaget og Retning som byggesten. Startgrundlaget
-         er et forløb FØR dem, og Retning er laget EFTER — de får en prik, ikke et tal. */
-      /* TAELLEREN PR. SEKTION ER UDE (UX-politiet 25/8). Der stod TRE fremdriftsvisninger
-         paa samme skaerm: procenten i toppen, 0/3-0/7-0/2 her, og "1 AF 3" i selve kortet.
-         Dublet-reglen. Fluebenet bliver — det siger noget, tallet ikke gjorde: faerdig. */
-      '<span class="no">'+(d===alle?'✓':(byggestenNr(s.key)||'·'))+'</span><strong>'+esc(s.navn)+'</strong></button>';
+  document.getElementById('steps').innerHTML=STEP_GRUPPER.map(function(g){
+    var raekker = g.keys.map(function(k){
+      var i = SECTIONS.map(function(x){return x.key}).indexOf(k);
+      if (i < 0) return '';
+      var s = SECTIONS[i], alle = M5[s.key].length, d = sekDone(i);
+      return '<button class="step '+(i===current?'active':'')+' '+(d===alle?'done':'')+'" onclick="goSection('+i+')">'+
+        '<span class="no">'+(byggestenNr(s.key)||'·')+'</span><strong>'+esc(s.navn)+'</strong></button>';
+    }).join('');
+    if (!raekker) return '';
+    return '<div class="step-gruppe">'+esc(g.titel)+'</div>'+raekker;
   }).join('');
   /* "SE ALLE PAA ÉT ARK" ER EN VEJ VAEK FRA ÉT SPOERGSMAAL AD GANGEN (UX-politiet 25/8).
      MAALT: den var 246 px bred med roed kant — tre gange saa stor som "Næste" paa 80 px,
@@ -922,14 +947,19 @@ function render(){
   try { document.querySelector('.app').classList.toggle('svarer', !VIS_INTRO && !ARK_VISNING); } catch(e){}
   if(qIndex>qs.length-1) qIndex=qs.length-1;
 
-  /* ESR-striben bliver — den viser, hvor i Energi · Strategi · Resultat man er.
-     Men OMRÅDE-tælleren er væk: den sagde "Område 3 af 5" på et forløb med SEKS
-     sektioner, og den gav Startgrundlaget og Retning samme vægt som byggestenene.
-     Etiketten siger nu, hvad sektionen ER (låst spec 14/8). */
-  var hoved='<div class="esr-strip">'+
-    ['ENERGI','STRATEGI','RESULTAT'].map(function(ph){
-      return '<div class="esr-pill '+(s.fase===ph?'active':'')+'"><div class="k">'+ph+'</div><div class="v">'+FASE_TXT[ph]+'</div></div>';
-    }).join('')+'</div>';
+  /* ESR-STRIBEN ER VAEK FRA ARBEJDSFLADEN (Idas fund 25/8: "det der energi strategi
+     resultat øverst?").
+     MAALT: de tre var <div>'er UDEN onclick — de kunne ikke klikkes. Forklaringslinjen
+     under hvert ord var slaaet fra i arket (.esr-pill .v{display:none}), saa der stod
+     kun tre ord. Alligevel bar den aktive ROED RING OG BLOED FLADE — praecis samme
+     markering som det aktive punkt i venstre skinne. Fladen sagde altsaa TO steder,
+     hvor man var, og det ene lignede tre knapper, man kunne vaelge imellem.
+     To regler paa een gang: "en tilstand er ikke en handling" (22/8) og dublet-reglen.
+     Og ENERGI · STRATEGI · RESULTAT er Energidas interne metodenavne — de hjaelper
+     ikke en butiksejer, der sidder og skal svare paa, hvorfor forretningen findes.
+     METODEN ER IKKE VAEK: fasen staar nu som ET ord i introfladens etiket, dér hvor
+     sektionen bliver forklaret. Een linje tekst i stedet for tre falske knapper. */
+  var hoved='';
 
   /* ===== INTROFLADEN (låst spec 14/8, punkt C5) ==============================
      "Når sektionen skifter, vises en kort introflade, før første spørgsmål."
@@ -941,7 +971,7 @@ function render(){
     document.getElementById('screen').innerHTML = hoved +
       '<section class="intro sek-intro">'+
         (ov ? '<div class="overgang">'+esc(ov)+'</div>' : '')+
-        '<div class="ey">'+sekEtiket(s)+'</div><hr>'+
+        '<div class="ey">'+sekEtiket(s)+(s.fase?' &middot; '+esc(s.fase):'')+'</div><hr>'+
         '<h2>'+esc(s.navn)+'</h2>'+
         '<p class="intro-spm">'+esc(s.intro)+'</p>'+
         '<p>'+esc(s.desc)+'</p>'+
