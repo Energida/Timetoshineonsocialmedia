@@ -2472,7 +2472,7 @@ body.modul-open .burger-btn, body.modul-open .bottom-nav, body.modul-open .dash-
     <button class="burger-item" onclick="toggleBurger(); minProfilAaben()">Min profil</button>
     <button class="burger-item" onclick="toggleBurger(); togglePwPanel()">Skift adgangskode</button>
     <button class="burger-item" style="color:var(--red);" onclick="custLogout()">Log ud</button>
-    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 25. august · 1265</div>
+    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 25. august · 1266</div>
   </div>
 </div>
 <div class="plus-menu" id="plusMenu" onclick="if(event.target===this)togglePlus()">
@@ -3695,7 +3695,7 @@ if (/somkunde=/.test(location.hash)) {
     <!-- Foden bliver nederst — den er det ENESTE der skubbes ned (Ida 30/7) -->
     <div class="dsb-fod">
       <button class="dsb-konto" onclick="dashKontoMenu()" title="Ida"><span class="dsb-initial">I</span><span class="dsb-konto-navn">Ida</span><svg class="dsb-konto-pil" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></button>
-      <div class="dsb-version"><span>Version 25. august · 1265</span></div>
+      <div class="dsb-version"><span>Version 25. august · 1266</span></div>
     </div>
   </div>
 
@@ -9836,7 +9836,7 @@ select titel,
          staa fast paa telefon. De hoerer i arket (samme fejl som "left" 31/7). -->
     <div id="dashFooter" style="z-index:50;display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--gray3);background:#fff;border-top:1px solid var(--border);padding:10px 26px;">
       <div style="font-size:10px;">© 2026 Energida · Alle rettigheder forbeholdes</div>
-      <div style="font-size:10px;margin-left:auto;">Version 25. august · 1265 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
+      <div style="font-size:10px;margin-left:auto;">Version 25. august · 1266 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
     </div>
   </div>
 </div>
@@ -11489,8 +11489,30 @@ async function briefPersonerFyld() {
     w2.innerHTML = '<input type="text" id="bf_hvemPerson" value="' + esc(BRIEF_STATE.hvemPerson || "") + '" placeholder="Skriv navnet på den, der laver opslaget…" onchange="BRIEF_STATE.hvemPerson=this.value.trim();" style="width:100%;background:#fff;border:1px solid var(--border);border-radius:12px;padding:10px 12px;font-size:13px;font-family:Poppins,sans-serif;">';
     return;
   }
-  w2.innerHTML = BRIEF_PERSONER.slice(0, 12).map(n =>
-    '<button type="button" class="chip-btn' + (briefPersonHar(n) ? ' on' : '') + '" onclick="briefPersonToggle(this);">' + esc(n) + '</button>').join("");
+  const folk = BRIEF_PERSONER.slice(0, 12);
+  /* GENVEJEN "BEGGE"/"ALLE" (Ida 25/8: "jeg mangler en alle eller begge chip her...
+     alt efter hvad du synes der giver mest mening").
+     ORDET FOELGER ANTALLET: er der praecis to, hedder den BEGGE — samme ord som feltet
+     lige over ("Hvem er opslaget til?"), saa de to raekker taler samme sprog. Er der
+     tre eller flere, hedder den ALLE, for "begge" ville vaere forkert.
+     DEN GEMMER INTET NYT: chippen taender bare alle navnene, og vaerdien bliver som
+     foer "Annette · Ida". Derfor er kalenderkort, overblik og klipperens kort uroerte,
+     og en gammel brief kan stadig laeses. */
+  const alleNavn = folk.length === 2 ? "Begge" : "Alle";
+  const alleValgt = folk.length > 0 && folk.every(function (n) { return briefPersonHar(n); });
+  w2.innerHTML = folk.map(n =>
+    '<button type="button" class="chip-btn' + (briefPersonHar(n) ? ' on' : '') + '" onclick="briefPersonToggle(this);">' + esc(n) + '</button>').join("")
+    + '<button type="button" class="chip-btn' + (alleValgt ? ' on' : '') + '" onclick="briefPersonAlle();">' + esc(alleNavn) + '</button>';
+}
+/* Taender alle navne — eller slukker dem igen, hvis de allerede er taendt. Samme
+   gemmeform som de enkelte chips, saa der ikke opstaar to slags vaerdier. */
+function briefPersonAlle() {
+  const folk = (BRIEF_PERSONER || []).slice(0, 12);
+  const alleValgt = folk.length > 0 && folk.every(function (n) { return briefPersonHar(n); });
+  BRIEF_STATE.hvemPerson = alleValgt ? "" : folk.join(" · ");
+  /* Samme gemme-vej som de enkelte chips: de skriver bare i BRIEF_STATE, og briefens
+     egen Gem-knap sender det videre. Der kaldes derfor ingen ny gem-funktion her. */
+  try { briefPersonerFyld(); } catch (e) {}
 }
 /* BEGGE KAN VÆLGES (Ida 19/8: "der skal kunne vælges begge her også som mulighed").
    Ansvarlig-chippen er et TILVALG pr. person — én, den anden eller begge. Gemmes fortsat
@@ -15676,15 +15698,40 @@ async function kursusHent() {
    Fremdriften gemmes pr. dag og person (skema "dagsprogram") — streaken tæller dage i træk med mindst ét klik. */
 let DAGSPROG = { dato: null, done: {}, streak: 0, sidste: null };
 function dagsIdag() { const n = new Date(); return n.getFullYear() + "-" + String(n.getMonth() + 1).padStart(2, "0") + "-" + String(n.getDate()).padStart(2, "0"); }
+/* KUN DEN ANSVARLIGE SER OPSLAGET UNDER I DAG (Ida 25/8): "det er vigtigt at det kun
+   er den person der har ansvaret der faar disse omkring idag skal det laves".
+   Ansvarlig gemmes som TEKST ("Annette · Ida"), saa der spoerges paa listen — ikke paa
+   en eksakt streng. Er der INGEN ansvarlig sat, ser ALLE punktet: et opslag uden ejer
+   maa ikke forsvinde for alle paa een gang, for saa er der ingen der laver det.
+   Er man ikke logget ind som person (faelles kode), gaelder det samme. */
+function dagsMitNavn() {
+  try {
+    const n = (typeof CURRENT_NAVN !== "undefined" && CURRENT_NAVN) ? String(CURRENT_NAVN).trim() : "";
+    if (n) return n;
+    return (typeof CURRENT_HILSEN !== "undefined" && CURRENT_HILSEN) ? String(CURRENT_HILSEN).trim() : "";
+  } catch (e) { return ""; }
+}
+function dagsMinOpgave(it) {
+  const ansv = String((it.brief && it.brief.hvemPerson) || "").split("·").map(function (x) { return x.trim(); }).filter(Boolean);
+  if (!ansv.length) return true;                 /* ingen ansvarlig = alles ansvar */
+  const mig = dagsMitNavn();
+  if (!mig) return true;                          /* faelles login: vis alt */
+  const fornavn = mig.split(" ")[0].toLowerCase();
+  return ansv.some(function (a) { return a.toLowerCase() === mig.toLowerCase() || a.toLowerCase().split(" ")[0] === fornavn; });
+}
 function dagensProgramItems() {
   const idag = dagsIdag();
   const items = [];
   (IDEER || []).forEach(it => {
     if (it.status === "Arkiveret") return;
+    if (!dagsMinOpgave(it)) return;
+    /* TEKSTEN ER IDAS (25/8): "jeg vil gerne have teksten aendret til: Idag skal du lave
+       xx". Foer stod der "Optag: <titel>" med "Optagedag i dag" under — en overskrift,
+       ikke en besked. Nu siger linjen, hvad dagen kraever (samme regel som 4/8). */
     if (it.brief && it.brief.optagedag === idag && it.status !== "Postet")
-      items.push({ ik: "kamera", id: "opt-" + it.id, t: "Optag: " + storStart(it.titel || "opslaget"), sub: "Optagedag i dag — briefen ligger klar", kn: "Åbn briefen", fn: () => openBriefSide(it.id) });
+      items.push({ ik: "kamera", id: "opt-" + it.id, t: "I dag skal du lave " + storStart(it.titel || "opslaget"), sub: "Briefen ligger klar", kn: "Åbn briefen", fn: () => openBriefSide(it.id) });
     if (it.dato === idag && it.status !== "Postet")
-      items.push({ ik: "send", id: "pub-" + it.id, t: "Publicér: " + storStart(it.titel || "opslaget"), sub: "Planlagt til i dag", kn: "Åbn briefen", fn: () => openBriefSide(it.id) });
+      items.push({ ik: "send", id: "pub-" + it.id, t: "I dag skal du poste " + storStart(it.titel || "opslaget"), sub: "Planlagt til i dag", kn: "Åbn briefen", fn: () => openBriefSide(it.id) });
   });
   try {
     (typeof KUNDE_OPGAVER !== "undefined" ? KUNDE_OPGAVER : []).forEach(o => {
@@ -25304,7 +25351,7 @@ function buildSideNav(def) {
       + '<span style="opacity:.55;">' + ikon("", "Kalender", "laastBesked()", IK.kal) + '</span>'
       + '<span style="opacity:.55;">' + ikon("", "Værktøjskassen", "laastBesked()", IK.tools) + '</span>'
       + '<button class="sn-virk-knap" onclick="toggleVirkMenu(event)" title="' + esc(knapNavn) + '" aria-label="Profil" style="margin-left:auto;"><span class="sn-initial">' + esc((knapNavn || "?").trim().charAt(0).toUpperCase()) + '</span><span class="sn-virk-navn" style="white-space:normal;overflow-wrap:anywhere;">' + esc(knapNavn) + '</span><svg class="sn-virk-pil" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="flex-shrink:0;"><path d="M6 9l6 6 6-6"/></svg></button>'
-      + fodBagud + '<div class="sn-fod"><span>Version 25. august · 1265</span></div>'
+      + fodBagud + '<div class="sn-fod"><span>Version 25. august · 1266</span></div>'
       /* Ida 30/7: alle konto-punkter bor i profilmenuen — ingen streg/sn-bund */
       + '<div id="virkMenu" style="display:none;position:fixed;left:14px;bottom:96px;width:230px;background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:0 16px 40px rgba(0,0,0,0.15);padding:8px;z-index:90;">'
       + '<div style="padding:10px 12px 6px;font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--gray3);">' + esc(virkNavn) + '</div>'
@@ -25418,7 +25465,7 @@ function buildSideNav(def) {
         uPkt("", "Lektioner", "showTab(12)"))))
     + '<button class="sn-virk-knap" onclick="toggleVirkMenu(event)" title="' + esc(knapNavn) + '" aria-label="Profil"><span class="sn-initial">' + esc((knapNavn || "?").trim().charAt(0).toUpperCase()) + '</span><span class="sn-virk-navn" style="white-space:normal;overflow-wrap:anywhere;">' + esc(knapNavn) + '</span><svg class="sn-virk-pil" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="flex-shrink:0;"><path d="M6 9l6 6 6-6"/></svg></button>'
     /* Ida 30/7: ingen streg — logo + version samlet i foden under profilknappen */
-    + fodBagud + '<div class="sn-fod"><span>Version 25. august · 1265</span></div>'
+    + fodBagud + '<div class="sn-fod"><span>Version 25. august · 1266</span></div>'
     /* Ida 30/7: menuen åbner VED knappen (nederst t.v.) — ikke i modsatte hjørne */
     + '<div id="virkMenu" style="display:none;position:fixed;left:14px;bottom:96px;width:230px;background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:0 16px 40px rgba(0,0,0,0.15);padding:8px;z-index:90;">'
     + '<div style="padding:10px 12px 6px;font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--gray3);">' + esc(virkNavn) + '</div>'
@@ -27912,7 +27959,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "1265";
+const APP_VERSION = "1266";
 let NY_VERSION_KLAR = false;
 function nyVersionSkjul() { const e = document.getElementById("nyVersion"); if (e) e.style.display = "none"; }
 function nyVersionHent() { try { location.reload(); } catch(e) {} }
@@ -41582,6 +41629,6 @@ if ((location.hash || "").toLowerCase() === "#ole") {   // #ole = preview af Ole
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 25. august · 1265</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 25. august · 1266</div>
 </body>
 </html>
