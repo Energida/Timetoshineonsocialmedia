@@ -643,6 +643,69 @@ function lokaltHent(){
 }
 lokaltHent();
 
+/* ===== SVAR, DER MISTEDE DERES SPOERGSMAAL (Idas valg 25/8) =========================
+   Spoergsmaalene gemmes pr. id. Da registret blev bygget om, fik ni spoergsmaal nye
+   id'er — og saa laa svarene tilbage i basen uden noget spoergsmaal til at laese dem.
+   MAALT paa Acorns' ark fra 14. august: 22 af 31 svar stod stadig, ni gjorde ikke,
+   heriblandt HELE USP-sektionen.
+
+   TRE REGLER, DER GOER DET UFARLIGT:
+   1. Der skrives KUN i et TOMT felt. Har nogen svaret paa det nye spoergsmaal, roeres
+      der ingenting — et gem maa aldrig skrive oven paa noget, man ikke selv satte (4/8).
+   2. Det gamle svar SLETTES ALDRIG. Det bliver liggende under sin egen noegle, saa
+      flytningen kan fortrydes, og saa intet gaar tabt, hvis kortlaegningen er forkert.
+   3. Teksten skrives ikke om. Den flyttes ordret.
+
+   TO SVAR TIL SAMME FELT: frustrationer og behov er i dag slaaet sammen til eet
+   spoergsmaal. Begge tekster lander dér, adskilt af en tom linje — saa de to tanker
+   bliver ved med at vaere to.
+
+   KUNDERNES ORD FLYTTER SEKTION: "Hvad fremhaever kunderne selv" laa under USP og har
+   ingen arving dér. Den handler om menneskene og lander paa drive_in_people — feltet,
+   soejle 2A Mennesker lever af. Subjektet foelger med uroert: det er KUNDERNE, der
+   fremhaever energien, og den saetning maa aldrig blive til, at menneskene bag kan lide
+   den (generatorens perspektiv-regel). */
+var MIGRER_SVAR = [
+  { fra:'audiences', fid:'omshn677dy4bs0', til:'audiences', tid:'om7dlft1ln6w4g' },   /* frustrationer  -> kerneudfordring */
+  { fra:'audiences', fid:'omsra7hl9lvz93', til:'audiences', tid:'om7dlft1ln6w4g' },   /* behov          -> kerneudfordring */
+  { fra:'usp',       fid:'omshn67tsqojp8', til:'usp',       tid:'om7y9e2edx1ex3' },   /* derfor vaelges I */
+  { fra:'usp',       fid:'omshn67tsw8d5i', til:'usp',       tid:'omhplokr9ad0ii' },   /* svaer at kopiere -> hvad er saerligt */
+  { fra:'usp',       fid:'omshn67tsbwids', til:'usp',       tid:'oms95shd7eils8' },   /* gaar glip af    -> forskellen for kunden */
+  { fra:'usp',       fid:'omshn67tsi9q0c', til:'drive',     tid:'om43trxkup78z6' }    /* kundernes ord   -> i menneskene bag */
+];
+function migrerGamleSvar(){
+  var roert = {}, vores = {};   /* felter, DENNE koersel selv har fyldt */
+  MIGRER_SVAR.forEach(function(m){
+    var fs = skemaFor(m.fra), ts = skemaFor(m.til);
+    var gammel = String(((SVAR[fs]||{})[m.fid]) || '').trim();
+    if (!gammel) return;
+    if (!SVAR[ts]) SVAR[ts] = {};
+    var nu = String(SVAR[ts][m.tid] || '').trim();
+    var noegle = ts + '|' + m.tid;
+    if (nu) {
+      /* Staar teksten der allerede, er den flyttet foer — saa laegges den ikke ind igen. */
+      if (nu.indexOf(gammel) > -1) return;
+      /* Ellers: har DENNE koersel selv fyldt feltet, deler to gamle svar det, og det
+         andet laegges under med en tom linje imellem. Har feltet indhold, vi IKKE selv
+         satte, har nogen svaret selv — og saa roeres der ingenting (4/8). */
+      if (!vores[noegle]) return;
+      SVAR[ts][m.tid] = nu + '\n\n' + gammel;
+    } else {
+      SVAR[ts][m.tid] = gammel;
+    }
+    vores[noegle] = true;
+    roert[ts] = true;
+  });
+  return Object.keys(roert);
+}
+/* Gemmes med det samme, saa flytningen staar, ogsaa naar man lukker fanen uden at
+   roere noget. Hvert skema for sig — skriv() kvitterer paa raekker. */
+function migrerGem(skemaer){
+  if (!SB_DB || SB_KODE === 'DEMO') return;
+  skemaer.forEach(function(sk){
+    try { skriv(sk, SVAR[sk] || {}); } catch(e){}
+  });
+}
 async function dbHent(){
   if(!SB_DB||SB_KODE==='DEMO'){ SB_KLAR=true; saveTxt('Gemt lokalt'); return; }
   try{
@@ -664,7 +727,9 @@ async function dbHent(){
     var mr=(mgr.data||[])[0];
     if(mr&&mr.svar&&Array.isArray(mr.svar.liste)&&mr.svar.liste.length){ MG=mr.svar.liste; MG_NAVN=mr.navn||''; }
 
+    var flyttet = migrerGamleSvar();
     SB_KLAR=true; lokaltGem(); render();
+    if (flyttet.length) migrerGem(flyttet);
     /* IKKE "Klar" — en laesning, der intet finder, ser praecis ud som en laesning
        fra en bruger uden login: RLS filtrerer raekkerne vaek i stedet for at
        afvise kaldet. Kun et GEM kan afgoere, om der er skriveadgang, saa der
