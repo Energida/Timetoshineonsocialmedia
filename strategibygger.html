@@ -78,6 +78,18 @@ button{cursor:pointer}
 .bs-preview-txt{flex:1;min-width:0;font-size:13px;line-height:1.6;color:var(--black)}
 .bs-preview-txt.tom{color:#B5B0AA}
 .bs-preview-ret{flex-shrink:0;background:none;border:0;padding:2px 0;font-family:inherit;font-size:11px;letter-spacing:1.3px;text-transform:uppercase;color:var(--red);cursor:pointer}
+/* Felterne i den flettede udgave: husets egen feltform (radius 12, graa flade, haarfin
+   kant) — ingen ny form opfundet. 16 px paa mobil, ellers zoomer iPhone ind og ud igen. */
+.flet-felt{width:100%;box-sizing:border-box;background:var(--gray,#F2F0ED);border:1px solid var(--border);border-radius:12px;padding:10px 12px;font-family:inherit;font-size:13px;line-height:1.6;color:var(--black);outline:none;resize:vertical;margin:0 0 8px}
+.flet-felt:focus{border-color:var(--red)}
+.flet-linje{resize:none}
+.flet-vaerdi{display:grid;grid-template-columns:170px minmax(0,1fr);gap:8px;margin-bottom:2px}
+.flet-vaerdi .flet-felt{margin-bottom:8px}
+.flet-bund{display:flex;align-items:center;gap:12px;justify-content:flex-end;flex-wrap:wrap;margin-top:14px}
+.flet-kvit{margin-right:auto;font-size:11.5px;color:var(--muted)}
+.flet-kvit.advarsel{color:var(--red)}
+.flet-igen{font-size:11px;letter-spacing:1.3px;text-transform:uppercase;color:var(--red)}
+@media(max-width:700px){ .flet-vaerdi{grid-template-columns:1fr} .flet-felt{font-size:16px} }
 @media(max-width:700px){ .bs-preview-rk{flex-wrap:wrap} .bs-preview-lbl{flex:1 1 100%} }
 /* Den rolige overgang mellem spoergsmaalene: man skal kunne SE, at man bevaeger sig
    gennem noget. 180 ms ease-out, opacity + 8 px — aldrig fra scale(0), aldrig ease-in. */
@@ -1094,6 +1106,118 @@ function kopierGrundlag(){
    spoergsmaal, byggestenen kommer af. Saa er der stadig KUN eet sted, sandheden bor —
    svaret. Fri overskrivning med egne ord bor fortsat paa Tilpas drejebog.
    NOEGLERNE ER DE SAMME SOM renderSummary bruger: eet register, ikke to. */
+/* ===== PREVIEWET ER AI-FLETNINGEN — IKKE DE RAA SVAR (Ida 25/8, aften) =============
+   Hendes ord: "previewet skal ikke være kundens rå ord - det skal være AI fletningen
+   og fortolkningen de kan rette i".
+
+   FOER stod kundens svar ordret, som de var tastet, og "Ret" sprang tilbage til
+   spoergsmaalet. Det var rigtigt, saa laenge previewet var KILDEN. Nu er previewet
+   RESULTATET: Energidas redaktoer har laest svarene og skrevet de fire byggesten frem,
+   og det er DEN tekst, man retter i — for det er den, Drejebogen bruger.
+
+   ARBEJDET SKER I APPEN, IKKE HER. Strategibyggeren koerer i en iframe inde i Content
+   Studio; den beder appen om at flette og om at gemme. Kaldet kraever kundens login, og
+   rettelserne skal skrives dér, hvor "Tilpas drejebog" skriver — begge veje findes
+   allerede i appen og er afproevet. To veje til den samme raekke driver altid fra
+   hinanden.
+
+   DER KOERES ET AI-KALD, OG DET KOSTER PENGE. Derfor: resultatet gemmes med et
+   fingeraftryk af de svar, det er bygget paa. Aabner man skaermen igen uden at have
+   aendret noget, hentes det gemte — der koeres ikke et nyt kald.
+
+   STAAR DER INGEN APP OMKRING (aabnet direkte), falder previewet tilbage til svarene,
+   som de er tastet. Bedre end en tom kasse — og der loves ikke noget, der ikke sker. */
+var FLET = { status: 'ingen', bygg: null, fejl: '', sek: 0, gemBesked: '' };
+
+/* Fingeraftryk af de fire byggestens svar. AEndrer man et af dem, er fletningen
+   forael det, og der maa koeres et nyt kald. AEndrer man noget ANDET — fx retningen —
+   staar fletningen uroert, og kaldet springes over. */
+function fletFingeraftryk(){
+  var raa = ['drive','audiences','values','usp'].map(function(k){
+    try { return JSON.stringify(SVAR[skemaFor(k)] || {}); } catch(e){ return ''; }
+  }).join('|');
+  var h = 0;
+  for (var i=0; i<raa.length; i++){ h = ((h<<5) - h + raa.charCodeAt(i)) | 0; }
+  return raa.length + '-' + h;
+}
+async function fletCacheHent(){
+  if (!SB_DB || SB_KODE === 'DEMO') return null;
+  try {
+    var r = await SB_DB.from('skema_svar').select('svar').eq('kode', SB_KODE).eq('navn','').eq('skema','bs_flet').maybeSingle();
+    return (r && r.data && r.data.svar) || null;
+  } catch(e){ return null; }
+}
+function fletCacheGem(bygg){
+  try { skriv('bs_flet', { fp: fletFingeraftryk(), bygg: bygg }); } catch(e){}
+}
+function fletHarApp(){ try { return !!(window.parent && window.parent !== window); } catch(e){ return false; } }
+function fletBed(besked){
+  try { window.parent.postMessage(besked, location.origin); return true; } catch(e){ return false; }
+}
+/* Kun kortet tegnes om — ikke hele skaermen. Ellers ville sekundtaelleren rive et felt
+   ud af haenderne paa den, der sad og rettede i det. */
+function fletTegn(){
+  var el = document.getElementById('bsFletKort');
+  if (el) { el.innerHTML = byggestenPreviewIndhold(); fletAlleVoks(); }
+}
+/* FELTET VOKSER MED TEKSTEN (MAALT paa 390 px). Med 16 px skrift paa en telefon fyldte
+   drivkraften seks linjer i et felt paa tre — og resten var KLIPPET af. "Intet klippes"
+   (22/7) gaelder ogsaa skrivefelter: hellere to linjer mere end en afkortet tekst.
+   rows er stadig minimum; hoejden saettes efter indholdet. */
+function fletVoks(el){
+  if (!el) return;
+  el.style.height = 'auto';
+  el.style.height = (el.scrollHeight + 2) + 'px';
+}
+function fletAlleVoks(){
+  try { [].forEach.call(document.querySelectorAll('#bsFletKort textarea.flet-felt'), fletVoks); } catch(e){}
+}
+async function fletStart(paaNy){
+  if (!fletHarApp()){ FLET.status = 'uden-app'; fletTegn(); return; }
+  if (!paaNy){
+    var c = await fletCacheHent();
+    if (c && c.fp === fletFingeraftryk() && c.bygg){ FLET.bygg = c.bygg; FLET.status = 'klar'; fletTegn(); return; }
+  }
+  FLET.status = 'koerer'; FLET.sek = 0; FLET.fejl = ''; fletTegn();
+  fletBed({ energida: 'bs_flet' });
+}
+window.addEventListener('message', function(ev){
+  if (!ev || ev.origin !== location.origin || !ev.data) return;
+  var d = ev.data;
+  if (d.energida === 'bs_flet_status'){ if (FLET.status === 'koerer'){ FLET.sek = d.sek || 0; fletTegn(); } return; }
+  if (d.energida === 'bs_flettet'){
+    if (d.ok && d.byggesten){ FLET.bygg = d.byggesten; FLET.status = 'klar'; FLET.fejl = ''; fletCacheGem(d.byggesten); }
+    else { FLET.status = 'fejl'; FLET.fejl = d.fejl || 'Det gik galt.'; }
+    fletTegn(); return;
+  }
+  if (d.energida === 'bs_gemt'){
+    FLET.gemBesked = d.ok ? 'Gemt hos Energida' : ('Det blev ikke gemt — ' + (d.fejl || 'prøv igen.'));
+    var b = document.getElementById('fletGemBesked'); if (b){ b.textContent = FLET.gemBesked; b.className = 'flet-kvit' + (d.ok ? '' : ' advarsel'); }
+    return;
+  }
+});
+/* Læser felterne og sender dem til appen. Alle fire skrives paa een gang — et gem maa
+   aldrig slette det, man ikke kan se (4/8). */
+function fletGem(){
+  var v = function(id){ var e = document.getElementById(id); return e ? String(e.value||'').trim() : null; };
+  var pil = [];
+  (FLET.bygg && FLET.bygg.pillars || []).forEach(function(_, i){
+    var n = v('fletV_navn_'+i), t = v('fletV_tekst_'+i);
+    if (n || t) pil.push({ icon:'', name: n||'', desc: t||'' });
+  });
+  var bygg = {
+    why: v('fletWhy'),
+    usp: v('fletUsp'),
+    kunde: { navn: v('fletKundeNavn') || '', tekst: v('fletKundeTekst') || '' },
+    pillars: pil
+  };
+  FLET.bygg = bygg;
+  var b = document.getElementById('fletGemBesked'); if (b){ b.textContent = 'Gemmer…'; b.className = 'flet-kvit'; }
+  if (!fletBed({ energida: 'bs_gem', byggesten: bygg })){
+    if (b){ b.textContent = 'Kunne ikke nå appen — prøv at åbne strategibyggeren inde i Content Studio.'; b.className = 'flet-kvit advarsel'; }
+  }
+}
+
 var BYGGESTEN_PREVIEW=[
   { navn:'Drivkraften', sec:'drive',     hvad:'Hvorfor I findes — og hvordan det ses i menneskene bag',
     noegler:[['Derfor findes I','purpose_origin'],['I menneskene bag','drive_in_people']] },
@@ -1114,10 +1238,9 @@ function retByggesten(sec,noegle){
     if(SECTIONS[i].key===sec){ current=i; qIndex=spmIndex(sec,noegle); VIS_INTRO=false; ARK_VISNING=false; window.scrollTo(0,0); render(); return; }
   }
 }
-function byggestenPreviewHtml(){
-  return '<section class="card">'+
-    '<div class="kort-hoved">'+ikon()+'<div class="lbl">Det her bliver jeres fire byggesten</div></div>'+
-    '<p class="preview-intro">Sådan står de nu. Læs dem igennem — og ret dem, før Drejebogen bliver formuleret. Et klik på Ret fører dig tilbage til det spørgsmål, byggestenen kommer af.</p>'+
+/* DE RAA SVAR — bruges kun, naar der ikke er en app omkring til at flette. */
+function byggestenRaaHtml(){
+  return '<p class="preview-intro">Sådan står svarene nu. Læs dem igennem — og ret dem, før Drejebogen bliver formuleret. Et klik på Ret fører dig tilbage til det spørgsmål, byggestenen kommer af.</p>'+
     BYGGESTEN_PREVIEW.map(function(b){
       return '<div class="bs-preview">'+
         '<div class="bs-preview-top"><span class="bs-preview-navn">'+esc(b.navn)+'</span>'+
@@ -1132,9 +1255,64 @@ function byggestenPreviewHtml(){
           '</div>';
         }).join('')+
       '</div>';
-    }).join('')+
-  '</section>';
+    }).join('');
 }
+/* FLETNINGEN — den tekst, Drejebogen faktisk bruger, i felter man kan rette i. */
+function byggestenFlettetHtml(){
+  var b = FLET.bygg || {};
+  var felt = function(id, vaerdi, hoej, plads){
+    return '<textarea class="flet-felt" id="'+id+'" rows="'+(hoej||3)+'" oninput="fletVoks(this)" placeholder="'+esc(plads||'')+'">'+esc(vaerdi||'')+'</textarea>';
+  };
+  var linje = function(id, vaerdi, plads){
+    return '<input class="flet-felt flet-linje" id="'+id+'" type="text" value="'+esc(vaerdi||'')+'" placeholder="'+esc(plads||'')+'">';
+  };
+  var blok = function(navn, hvad, indre){
+    return '<div class="bs-preview">'+
+      '<div class="bs-preview-top"><span class="bs-preview-navn">'+esc(navn)+'</span>'+
+        '<span class="bs-preview-hvad">'+esc(hvad)+'</span></div>'+indre+'</div>';
+  };
+  var vaerdier = (b.pillars || []);
+  if (!vaerdier.length) vaerdier = [{name:'',desc:''}];
+  return '<p class="preview-intro">Sådan har Energida samlet svarene. <b style="font-weight:400;">Det er den her tekst, Drejebogen bruger</b> — ikke svarene, som de blev tastet. Ret det, der ikke passer.</p>'+
+    blok('Drivkraften', 'Hvorfor forretningen findes', felt('fletWhy', b.why, 3, 'Ikke flettet endnu')) +
+    blok('Målgruppen', 'Den kunde, der skal tiltrækkes flere af',
+      linje('fletKundeNavn', (b.kunde&&b.kunde.navn)||'', 'Fx Rikke · 48 år') +
+      felt('fletKundeTekst', (b.kunde&&b.kunde.tekst)||'', 3, 'Det, hun står i')) +
+    blok('Værdierne', 'Det, kunden skal kunne mærke',
+      vaerdier.map(function(v,i){
+        return '<div class="flet-vaerdi">'+
+          linje('fletV_navn_'+i, v.name, 'Værdiens navn')+
+          /* TEKSTEN SKAL KUNNE SES HELT. Et <input> klipper den ved kanten, og
+             "intet klippes" (22/7) gaelder ogsaa felter. To linjer, der vokser. */
+          felt('fletV_tekst_'+i, v.desc, 2, 'Sådan mærkes den')+
+        '</div>';
+      }).join('')) +
+    blok('USP', 'Det, andre ikke bare kan kopiere', felt('fletUsp', b.usp, 3, 'Ikke flettet endnu')) +
+    '<div class="flet-bund">'+
+      '<span class="flet-kvit" id="fletGemBesked">'+esc(FLET.gemBesked||'')+'</span>'+
+      /* SAMME KNAPSPROG SOM RESTEN AF SIDEN (22/8). "Sådan står det"-kortet lige under
+         bruger btn sek — en loes roed tekst her ville vaere et TREDJE knapsprog paa
+         samme flade. Gem er den ene primaere handling og staar fyldt. */
+      '<button class="btn sek" onclick="fletStart(true)">Flet forfra</button>'+
+      '<button class="btn red" onclick="fletGem()">Gem rettelserne</button>'+
+    '</div>';
+}
+function byggestenPreviewIndhold(){
+  var hoved = '<div class="kort-hoved">'+ikon()+'<div class="lbl">Det her bliver jeres fire byggesten</div></div>';
+  if (FLET.status === 'klar')  return hoved + byggestenFlettetHtml();
+  if (FLET.status === 'koerer')
+    return hoved + '<p class="preview-intro">Energida læser jeres svar igennem og skriver de fire byggesten frem. Det tager omkring et minut'+
+      (FLET.sek ? ' &mdash; ' + FLET.sek + ' sek. indtil videre' : '') + '.</p>';
+  if (FLET.status === 'fejl')
+    return hoved + '<p class="preview-intro">Fletningen blev ikke færdig: '+esc(FLET.fejl)+'</p>'+
+      '<div class="flet-bund"><button class="btn red" onclick="fletStart(true)">Prøv igen</button></div>'+
+      byggestenRaaHtml();
+  return hoved + byggestenRaaHtml();
+}
+function byggestenPreviewHtml(){
+  return '<section class="card" id="bsFletKort">'+byggestenPreviewIndhold()+'</section>';
+}
+
 function showDone(){
   renderSteps(); renderProgress();
   try { document.querySelector('.app').classList.remove('svarer'); document.querySelector('.app').classList.add('faerdig'); } catch(e){}
@@ -1169,6 +1347,12 @@ function showDone(){
         '<button class="btn red" onclick="goSection(0)">Ret i svarene</button>'+
       '</div>'+
     '</section>';
+  /* FLETNINGEN SAETTES I GANG, NAAR MAN LANDER HER — men kun EEN gang pr. sæt svar.
+     fletStart henter foerst det gemte og sammenligner fingeraftryk; er der ikke aendret
+     noget, koeres der intet kald. Det er dyrt at flette, og en skaerm, man aabner to
+     gange, maa ikke koste to gange. */
+  fletAlleVoks();
+  if (FLET.status === 'ingen' || FLET.status === 'uden-app') { try { fletStart(false); } catch(e){} }
 }
 
 window.addEventListener('resize',function(){ clearTimeout(window.__rz); window.__rz=setTimeout(render,150) });
