@@ -39,6 +39,9 @@ button{cursor:pointer}
    ikke roede"). Roed er accent og handling, aldrig identitet. UX-politiets fund 25/8. */
 .left h1{font-family:Didot,"Bodoni 72",Georgia,serif;font-weight:400;font-size:31px;text-transform:uppercase;line-height:1.06;margin:0 0 8px;color:var(--black)}
 .left p{font-size:12px;line-height:1.6;color:var(--muted);margin:0 0 20px}
+/* Forventningen om tid — se noten i markuppen. Staar under brodteksten, i samme
+   graa, saa den oplyser i stedet for at advare. */
+.left p.hero-tid{padding-top:12px;border-top:1px solid var(--border);margin-bottom:20px}
 .steps{display:grid;gap:6px}
 .step{width:100%;border:1.5px solid transparent;background:transparent;border-radius:12px;text-align:left;padding:11px 12px;display:grid;grid-template-columns:28px 1fr auto;gap:9px;align-items:center;color:var(--black)}
 .step:hover{background:var(--blod)}
@@ -285,6 +288,7 @@ textarea:focus,input:focus{border-color:var(--red);box-shadow:0 0 0 3px rgba(252
          lektioner, og en I GOT YOU-kunde heller ikke — for dem pegede sætningen på
          noget, de ikke har. Fire byggesten, ikke fem: Retning nævnes ikke som en. -->
     <p id="introAntal">De <span>&nbsp;</span> spørgsmål, Drejebogen er bygget på. Først startgrundlaget, så de fire byggesten — og til sidst retningen, der samler dem.</p>
+    <p class="hero-tid">Sæt god tid af. Det, du skriver her, er det, din strategi kommer til at stå på — og du kan holde pause og fortsætte, hvor du slap.</p>
     <div class="steps" id="steps"></div>
   </aside>
 
@@ -347,6 +351,18 @@ const M5 = {
    "h": "Privatpersoner · virksomheder og organisationer · begge dele."
   },
   {
+   /* NY 26/8. LOKAL noegle — ikke fra kursets Modul 5. */
+   "k": "business_antal_butikker",
+   "src": "lokal_antal_butikker",
+   "q": "Har {virksomhed} én butik eller flere?",
+   "hFn": function (sec) {
+     var v = String(hent(sec, "lokal_antal_butikker") || "");
+     if (v.indexOf("Flere") > -1) return "Drivkraften, værdierne og produktet er fælles — dem kan du svare på herfra. Men menneskene og kunderne er forskellige fra butik til butik, og det er dem, content lever af. Lad én fra hver butik svare på de to.";
+     return "Har I flere, bliver de to af byggestenene forskellige fra butik til butik — så det er godt at vide nu.";
+   },
+   "valg": ["Én butik", "Flere butikker"]
+  },
+  {
    "k": "business_purchase_channels",
    "src": "omun5szzac9lvl",
    "q": "Hvordan møder og køber kunden typisk hos {virksomhed}?",
@@ -359,7 +375,7 @@ const M5 = {
    "k": "purpose_origin",
    "src": "omshn672p8o4dk",
    "q": "Hvorfor eksisterer {virksomhed}?",
-   "h": "Tænk ud over de produkter eller ydelser, der sælges. Hvad ønsker {virksomhed} at gøre eller betyde for kunderne?"
+   "h": "Tænk ud over det, der bliver solgt. Hvad ønsker {virksomhed} at gøre eller betyde for kunderne?"
   },
   {
    "k": "purpose_why_1",
@@ -557,8 +573,8 @@ const M5 = {
   {
    "k": "usp_core_offer",
    "src": "omd1eldja7rw20",
-   "q": "Hvilke varer, ydelser, udvalg eller løsninger er mest centrale for {virksomhed}?",
-   "h": "Det, {virksomhed} særligt gerne vil være kendt og valgt for. Ikke nødvendigvis det, der sælges mest af i dag."
+   "q": "Hvilke produkter er mest centrale for {virksomhed}?",
+   "h": "Et produkt er dét, kunden kan købe af dig — også når det er noget, du gør. En klipning. En ansigtsbehandling. En vurdering. Skriv det, du særligt gerne vil være kendt og valgt for — ikke nødvendigvis det, der sælges mest af i dag."
   },
   {
    /* NY 26/8 (Idas gaffel). LOKAL noegle — den kommer ikke fra kursets Modul 5, og
@@ -805,8 +821,20 @@ async function dbHent(){
   try{
     var res=await Promise.all([
       SB_DB.from('skema_svar').select('skema,navn,svar').eq('kode',SB_KODE).like('skema','lektion_svar_%'),
-      SB_DB.from('skema_svar').select('navn,svar').eq('kode',SB_KODE).eq('skema','maalgrupper').limit(1)
+      SB_DB.from('skema_svar').select('navn,svar').eq('kode',SB_KODE).eq('skema','maalgrupper').limit(1),
+      SB_DB.from('skema_svar').select('svar').eq('kode',SB_KODE).eq('skema','strategibygger_tid').limit(1)
     ]);
+    try{
+      var t=(res[2]&&res[2].data||[])[0];
+      if(t&&t.svar&&typeof t.svar==='object'){
+        BS_TID = { startet:t.svar.startet||'', sidst:t.svar.sidst||'',
+                   sessioner:Number(t.svar.sessioner)||0, aktiv_sek:Number(t.svar.aktiv_sek)||0 };
+        /* Et nyt besoeg efter en pause er en ny etape — den taelles her, ikke ved
+           foerste tastetryk, saa den ogsaa taelles for en, der kun kigger. */
+        var g = BS_TID.sidst ? (Date.now()-Date.parse(BS_TID.sidst))/1000 : 0;
+        if(g >= 1800){ BS_TID.sessioner += 1; }
+      }
+    }catch(e){}
     var sv=res[0], mgr=res[1];
     if(sv.error) throw sv.error;
 
@@ -844,7 +872,26 @@ async function skriv(skema,obj,navn){
   if(i.data&&i.data.length){ RAEKKE_NAVN[skema]=n; return true; }
   return false;
 }
+/* ---------- TIDSMAALEREN — se noten ---------- */
+var BS_TID = { startet:'', sidst:'', sessioner:0, aktiv_sek:0 }, BS_TID_GEMT=false;
+function bsTidPuls(){
+  var nu = Date.now();
+  var sidst = BS_TID.sidst ? Date.parse(BS_TID.sidst) : 0;
+  if(!BS_TID.startet) BS_TID.startet = new Date(nu).toISOString();
+  if(sidst){
+    var spring = (nu - sidst) / 1000;
+    if(spring > 0 && spring < 120) BS_TID.aktiv_sek += Math.round(spring);   /* under 2 min = hun sad der */
+    else if(spring >= 1800) BS_TID.sessioner += 1;                          /* over 30 min = ny etape */
+  } else {
+    BS_TID.sessioner = Math.max(1, BS_TID.sessioner);
+  }
+  BS_TID.sidst = new Date(nu).toISOString();
+  if(!SB_DB || SB_KODE==='DEMO') return;
+  clearTimeout(SB_GEM_TIMER.__tid);
+  SB_GEM_TIMER.__tid = setTimeout(function(){ try{ skriv('strategibygger_tid', BS_TID); }catch(e){} }, 4000);
+}
 function gemSkema(skema){
+  try{ bsTidPuls(); }catch(e){}
   lokaltGem();
   if(!SB_DB||SB_KODE==='DEMO'){ saveTxt('Gemt lokalt'); return; }
   saveTxt('Gemmer…');
