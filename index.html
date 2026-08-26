@@ -2649,7 +2649,7 @@ body.modul-open .burger-btn, body.modul-open .bottom-nav, body.modul-open .dash-
     <button class="burger-item" onclick="toggleBurger(); minProfilAaben()">Min profil</button>
     <button class="burger-item" onclick="toggleBurger(); togglePwPanel()">Skift adgangskode</button>
     <button class="burger-item" style="color:var(--red);" onclick="custLogout()">Log ud</button>
-    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 26. august · 1315</div>
+    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 26. august · 1316</div>
   </div>
 </div>
 <div class="plus-menu" id="plusMenu" onclick="if(event.target===this)togglePlus()">
@@ -3896,7 +3896,7 @@ if (/somkunde=/.test(location.hash)) {
     <!-- Foden bliver nederst — den er det ENESTE der skubbes ned (Ida 30/7) -->
     <div class="dsb-fod">
       <button class="dsb-konto" onclick="dashKontoMenu()" title="Ida"><span class="dsb-initial">I</span><span class="dsb-konto-navn">Ida</span><svg class="dsb-konto-pil" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></button>
-      <div class="dsb-version"><span>Version 26. august · 1315</span></div>
+      <div class="dsb-version"><span>Version 26. august · 1316</span></div>
     </div>
   </div>
 
@@ -10112,7 +10112,7 @@ select titel,
          staa fast paa telefon. De hoerer i arket (samme fejl som "left" 31/7). -->
     <div id="dashFooter" style="z-index:50;display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--gray3);background:#fff;border-top:1px solid var(--border);padding:10px 26px;">
       <div style="font-size:10px;">© 2026 Energida · Alle rettigheder forbeholdes</div>
-      <div style="font-size:10px;margin-left:auto;">Version 26. august · 1315 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
+      <div style="font-size:10px;margin-left:auto;">Version 26. august · 1316 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
     </div>
   </div>
 </div>
@@ -11451,7 +11451,41 @@ function soejleRetning(kode) {
   const rent = function (t) { return String(t == null ? "" : t).replace(/\.$/, ""); };
   return { vibe: rent(s.vibe), foelelse: s.foelelse || "", format: rent(s.format) };
 }
-function ctaType() { const r = (typeof CURRENT_DEF !== "undefined" && CURRENT_DEF && CURRENT_DEF.forretningstype) || "fysisk"; return (typeof forretningsNoegle === "function") ? (forretningsNoegle(r) || "fysisk") : r; }
+/* ===== KUNDEN SVARER SELV PAA KANALEN (Ida 26/8) ===================================
+   Startgrundlaget i strategibyggeren spoerger "Hvordan moeder og koeber kunden typisk
+   hos jer?" — og fra 26/8 med rigtige valg. Staar der INGEN forretningstype paa
+   kundekortet, laeser briefen kundens eget svar i stedet. Saa kan en tester koere
+   byggeren hele vejen, uden at Ida har sat noget paa forhaand.
+
+   IDAS EGET VALG VINDER ALTID. Det her er udelukkende en tilbagefaldsvej for det TOMME
+   felt — har hun sat en type, roeres den aldrig.
+
+   NOEGLEN ER 'lektion_svar_undefined' (MAALT 26/8, og det er ikke en tastefejl): LEK i
+   strategibyggeren har ingen 'start', saa skemaFor('start') giver bogstaveligt
+   "lektion_svar_undefined", og DER er Startgrundlagets svar altid landet. Begge noegler
+   laeses, saa det bliver ved med at virke den dag, nogen retter LEK og flytter raekkerne.
+   Ret ikke LEK uden at flytte raekkerne med — saa ser kundernes svar slettede ud.
+
+   KUN EKSAKTE SVAR TAELLER. Har kunden skrevet sine egne ord i feltet, matcher de
+   ingenting, og vi falder tilbage som foer — vi gaetter aldrig en type ud af fritekst. */
+const KANAL_SVAR_ID = "omun5szzac9lvl";
+const KANAL_TIL_TYPE = { "Hos mig fysisk": "butik", "Online": "webshop", "Begge dele": "butik_webshop" };
+let KANAL_TYPE = "";
+async function kanalHent() {
+  KANAL_TYPE = "";
+  const kd = String(currentKode || "").toUpperCase();
+  if (!kd || typeof sb === "undefined" || !sb) return;
+  try {
+    const { data, error } = await sb.from("skema_svar").select("skema,svar")
+      .eq("kode", kd).in("skema", ["lektion_svar_5-1", "lektion_svar_undefined"]);
+    if (error || !data) return;
+    for (const r of data) {
+      const t = String(((r && r.svar) || {})[KANAL_SVAR_ID] || "").trim();
+      if (t && KANAL_TIL_TYPE[t]) { KANAL_TYPE = KANAL_TIL_TYPE[t]; return; }
+    }
+  } catch (e) {}
+}
+function ctaType() { const r = (typeof CURRENT_DEF !== "undefined" && CURRENT_DEF && CURRENT_DEF.forretningstype) || KANAL_TYPE || "fysisk"; return (typeof forretningsNoegle === "function") ? (forretningsNoegle(r) || "fysisk") : r; }
 /* DE OTTE FORRETNINGSTYPER — ÉN liste, som baade oprettelsen, kundekortet, briefen og
    Drejebogen laeser. Noeglerne er de SAMME som i tabellen bs_forretningstype, saa et valg
    her passer til de eksempler, Ida skriver pr. type. Roeres en noegle, falder koblingen
@@ -11467,10 +11501,25 @@ const FORRETNINGSTYPER = [
      Raekkefoelgen er hendes: butik, butik+webshop, webshop. */
   { k: "butik",         navn: "Fysisk butik",           note: "" },
   { k: "butik_webshop", navn: "Fysisk butik + Webshop", note: "" },
-  { k: "webshop",       navn: "Webshop",                note: "" },
-  { k: "raadgiver", navn: "R\u00e5dgiver, klinik eller B2B", note: "S\u00e6lger sin tid og sin viden" },
-  { k: "spisested", navn: "Spisested eller ophold",     note: "Restaurant, caf\u00e9, hotel, feriehus, oplevelse" }
+  { k: "webshop",       navn: "Webshop",                note: "" }
 ];
+/* ===== KUN DETAIL (Ida 26/8) — VAELTER 24/8's FIRE OG 25/8's FEM ====================
+   Idas beslutning: Succesfuld Detaildrift er til detailhandel — dem der saelger en VARE.
+   Restauration er en anden branche (spiser de det hos dig = restauration, tager de det
+   med = detail), og raadgivere, klinikker og banker er heller ikke detail.
+
+   KODEN HAVDE ALLEREDE STEMT: der var aldrig skrevet CTA'er til 'raadgiver' og
+   'spisested' — de to eneste typer uden indhold var praecis de to, der ikke er detail.
+
+   DE LUKKES I VAELGEREN, MEN SLETTES IKKE. En kunde, der staar paa en af dem, skal
+   stadig kunne se sit eget navn paa kundekortet; ellers stod feltet tomt, og naeste gem
+   kunne skrive tomheden tilbage (gem-reglen 4/8). Ingen bliver stiltiende doebt om.
+   Der oprettes ingen NYE paa dem: forretningsValg() tilbyder dem ikke. */
+const FORRETNINGSTYPER_LUKKET = [
+  { k: "raadgiver", navn: "R\u00e5dgiver, klinik eller B2B", note: "" },
+  { k: "spisested", navn: "Spisested eller ophold",           note: "" }
+];
+function forretningsLukket(k) { return FORRETNINGSTYPER_LUKKET.find(x => x.k === k) || null; }
 /* FIRE TYPER. Otte blev foerst til tre, men det var for haardt: Ida 24/8 —
    "fysisk butik og webshop kan ikke vaere samme da cta og eksempler mm skal vaere
    forskellige". Det er ogsaa praecis den pris, sammenlaegningen kostede: en webshop ville
@@ -11496,7 +11545,8 @@ function forretningsNoegle(k) {
   return Object.prototype.hasOwnProperty.call(FORRETNING_GAMLE, n) ? FORRETNING_GAMLE[n] : n;
 }
 function forretningsNavn(k) {
-  const f = FORRETNINGSTYPER.find(x => x.k === forretningsNoegle(k));
+  const n = forretningsNoegle(k);
+  const f = FORRETNINGSTYPER.find(x => x.k === n) || forretningsLukket(n);
   return f ? f.navn : "";
 }
 /* Tegner vaelgeren ÉT sted, saa oprettelsen og kundekortet aldrig kan komme til at vise
@@ -11505,6 +11555,11 @@ function forretningsValg(id, valgt, onchange, tom) {
   const v = forretningsNoegle(valgt);   /* en gammel noegle vises som sin afloeser */
   let h = '<select id="' + id + '" onchange="' + onchange + '" class="select-nice" style="width:100%;">';
   h += '<option value=""' + (!v ? ' selected' : '') + '>' + (tom || "Ikke valgt endnu") + '</option>';
+  /* STAAR KUNDEN PAA EN LUKKET TYPE, SKAL DEN VAERE I LISTEN — ellers ville vaelgeren
+     vise "Ikke valgt endnu" paa en kunde, der HAR en type, og et gem ville slette den.
+     Den tilbydes kun til DEN kunde; ingen ny kan vaelge den (Ida 26/8: kun detail). */
+  const luk = forretningsLukket(v);
+  if (luk) h += '<option value="' + luk.k + '" selected>' + luk.navn + '</option>';
   FORRETNINGSTYPER.forEach(function (f) {
     h += '<option value="' + f.k + '"' + (v === f.k ? ' selected' : '') + '>'
       + f.navn + (f.note ? ' \u2014 ' + f.note : '') + '</option>';
@@ -25924,7 +25979,7 @@ function buildSideNav(def) {
       + '<span style="opacity:.55;">' + ikon("", "Kalender", "laastBesked()", IK.kal) + '</span>'
       + '<span style="opacity:.55;">' + ikon("", "Værktøjskassen", "laastBesked()", IK.tools) + '</span>'
       + '<button class="sn-virk-knap" onclick="toggleVirkMenu(event)" title="' + esc(knapNavn) + '" aria-label="Profil" style="margin-left:auto;"><span class="sn-initial">' + esc((knapNavn || "?").trim().charAt(0).toUpperCase()) + '</span><span class="sn-virk-navn" style="white-space:normal;overflow-wrap:anywhere;">' + esc(knapNavn) + '</span><svg class="sn-virk-pil" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="flex-shrink:0;"><path d="M6 9l6 6 6-6"/></svg></button>'
-      + fodBagud + '<div class="sn-fod"><span>Version 26. august · 1315</span></div>'
+      + fodBagud + '<div class="sn-fod"><span>Version 26. august · 1316</span></div>'
       /* Ida 30/7: alle konto-punkter bor i profilmenuen — ingen streg/sn-bund */
       + '<div id="virkMenu" style="display:none;position:fixed;left:14px;bottom:96px;width:230px;background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:0 16px 40px rgba(0,0,0,0.15);padding:8px;z-index:90;">'
       + '<div style="padding:10px 12px 6px;font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--gray3);">' + esc(virkNavn) + '</div>'
@@ -26038,7 +26093,7 @@ function buildSideNav(def) {
         uPkt("", "Lektioner", "showTab(12)"))))
     + '<button class="sn-virk-knap" onclick="toggleVirkMenu(event)" title="' + esc(knapNavn) + '" aria-label="Profil"><span class="sn-initial">' + esc((knapNavn || "?").trim().charAt(0).toUpperCase()) + '</span><span class="sn-virk-navn" style="white-space:normal;overflow-wrap:anywhere;">' + esc(knapNavn) + '</span><svg class="sn-virk-pil" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="flex-shrink:0;"><path d="M6 9l6 6 6-6"/></svg></button>'
     /* Ida 30/7: ingen streg — logo + version samlet i foden under profilknappen */
-    + fodBagud + '<div class="sn-fod"><span>Version 26. august · 1315</span></div>'
+    + fodBagud + '<div class="sn-fod"><span>Version 26. august · 1316</span></div>'
     /* Ida 30/7: menuen åbner VED knappen (nederst t.v.) — ikke i modsatte hjørne */
     + '<div id="virkMenu" style="display:none;position:fixed;left:14px;bottom:96px;width:230px;background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:0 16px 40px rgba(0,0,0,0.15);padding:8px;z-index:90;">'
     + '<div style="padding:10px 12px 6px;font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--gray3);">' + esc(virkNavn) + '</div>'
@@ -29181,7 +29236,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "1315";
+const APP_VERSION = "1316";
 let NY_VERSION_KLAR = false;
 function nyVersionSkjul() { const e = document.getElementById("nyVersion"); if (e) e.style.display = "none"; }
 function nyVersionHent() { try { location.reload(); } catch(e) {} }
@@ -33092,6 +33147,7 @@ async function enterApp() {
       } catch(e) {}
       try { const hk = document.getElementById("huskeKnap"); if (hk) hk.style.display = erForloeb(def) ? "" : "none"; } catch(e) {}
       try { soejle1AHent(); } catch(e) {}   // Idas egne soejlenavne vinder over appens
+      try { kanalHent(); } catch(e) {}      // kundens eget kanal-svar, naar kortet staar tomt
       try { ugensFokusVis(); } catch(e) {}
       try { quizChipsHent(); } catch(e) {}
       /* Personens EGET taleform-valg fra oprettelsen vinder over kundekortets standard (Ida 28/7 —
@@ -43835,6 +43891,6 @@ if ((location.hash || "").toLowerCase() === "#ole") {   // #ole = preview af Ole
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 26. august · 1315</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 26. august · 1316</div>
 </body>
 </html>
