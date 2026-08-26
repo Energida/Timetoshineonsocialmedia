@@ -2649,7 +2649,7 @@ body.modul-open .burger-btn, body.modul-open .bottom-nav, body.modul-open .dash-
     <button class="burger-item" onclick="toggleBurger(); minProfilAaben()">Min profil</button>
     <button class="burger-item" onclick="toggleBurger(); togglePwPanel()">Skift adgangskode</button>
     <button class="burger-item" style="color:var(--red);" onclick="custLogout()">Log ud</button>
-    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 26. august · 1320</div>
+    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 26. august · 1321</div>
   </div>
 </div>
 <div class="plus-menu" id="plusMenu" onclick="if(event.target===this)togglePlus()">
@@ -3896,7 +3896,7 @@ if (/somkunde=/.test(location.hash)) {
     <!-- Foden bliver nederst — den er det ENESTE der skubbes ned (Ida 30/7) -->
     <div class="dsb-fod">
       <button class="dsb-konto" onclick="dashKontoMenu()" title="Ida"><span class="dsb-initial">I</span><span class="dsb-konto-navn">Ida</span><svg class="dsb-konto-pil" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></button>
-      <div class="dsb-version"><span>Version 26. august · 1320</span></div>
+      <div class="dsb-version"><span>Version 26. august · 1321</span></div>
     </div>
   </div>
 
@@ -4984,7 +4984,26 @@ Deno.serve(async (req) =&gt; {
   const email = String(s.customer_details?.email ?? "").trim().toLowerCase();
   const navn = String(s.customer_details?.name ?? "").trim();
   const telefon = String(s.customer_details?.phone ?? felter["telefon"] ?? "").trim();
-  const virksomhed = String(felter["virksomhedsnavn"] ?? felter["virksomhed"] ?? "").trim() || navn || "Ny kunde";
+
+  // --- VIRKSOMHEDSNAVNET KAN KOMME FLERE STEDER FRA ------------------------
+  // MAALT 26/8: Stripes Payment Links har "Collect business names" INDBYGGET —
+  // det er altsaa IKKE et custom field, som foerste udgave af denne fil antog.
+  // HVOR i sessionen det praecis lander, er IKKE MAALT. Det kan kun afgoeres paa
+  // en rigtig leverance, og et gaet ville betyde, at kundens firma kom til at
+  // hedde hendes eget navn — uden at nogen opdagede det.
+  //
+  // Derfor laeses ALLE de steder, det kan staa, i prioriteret raekkefoelge, og
+  // svaret siger HVILKEN kilde der bar navnet. Foerste testkoeb giver os det
+  // endelige svar, og saa kan listen skaeres ned til den ene rigtige.
+  const virkKilder: Array&lt;[string, string]&gt; = [
+    ["customer_details.business_name", String(((s.customer_details ?? {}) as any).business_name ?? "").trim()],
+    ["business_name", String((s as any).business_name ?? "").trim()],
+    ["custom_fields", String(felter["virksomhedsnavn"] ?? felter["virksomhed"] ?? "").trim()],
+    ["customer_details.name (noedspor)", navn],
+  ];
+  const virkFundet = virkKilder.find((x) =&gt; x[1]);
+  const virksomhed = virkFundet ? virkFundet[1] : "Ny kunde";
+  const virkKilde = virkFundet ? virkFundet[0] : "ingen";
   const erTest = String(s.amount_total ?? "0") === "0";   // 0 kr. = testadgang, se nedenfor
 
   if (!email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
@@ -5086,7 +5105,10 @@ Deno.serve(async (req) =&gt; {
     return svar({ fejl: "Kunden er oprettet, men invitationen blev ikke sendt: " + invFejl.message, kode }, 500);
   }
 
-  return svar({ ok: true, oprettet: true, kode, test: !!erTest, kontakt: kontaktOk }, 200);
+  // virk_kilde er ikke pynt: den er beviset for, HVOR virksomhedsnavnet kom fra.
+  // Staar der "customer_details.name (noedspor)", fandt vi aldrig firmanavnet, og
+  // kunden hedder nu det samme som personen. Det skal ses, ikke opdages senere.
+  return svar({ ok: true, oprettet: true, kode, test: !!erTest, kontakt: kontaktOk, virk_kilde: virkKilde }, 200);
 });
 </pre></div><!-- OPRETTELSEN GENAABNET SIKKERT (24/8). Den gamle udgave blev pauset 7/8, fordi den kaldte updateUserById med password paa en KONTO, DER FANDTES: kundens mail + virksomhedskoden = kontoovertagelse. Kaldet findes ikke laengere i filen. Funktionen skal fortsat have Verify JWT SLAAET FRA — den bruges nemlig OGSAA af custSignup(), hvor kunden opretter sit eget login med en kode UDEN at vaere logget ind. Derfor er admin ikke en spaerring men et flag: den ENESTE handling, der kraever admin-token, er at rydde et efterladt forsoeg (slet + opret forfra), og kun paa en konto uden kode, som aldrig har vaeret brugt. Appens tre admin-veje sender Idas session-token via loginMotorOpret(); custSignup sender fortsat anon-noeglen og kan derfor intet slette. --><div id="sqlk_opret_login_2408" data-kode="edge" data-dato="24. aug 2026" style="border:1.5px solid var(--red);border-radius:12px;background:#fff;padding:12px 14px;margin-bottom:8px;"><div><span style="font-size:12.5px;font-weight:400;">Luk kundeoprettelsen op igen &mdash; sikkert</span></div><div style="font-size:10px;font-weight:400;letter-spacing:1.4px;text-transform:uppercase;color:var(--red);padding-bottom:7px;border-bottom:1px solid var(--red);margin:6px 0 9px;">K&oslash;res i Supabase &rsaquo; Edge Functions</div><div style="font-size:11.5px;color:var(--gray3);line-height:1.65;"><b style="font-weight:400;color:var(--black);">Det er derfor, du f&aring;r en r&oslash;d fejl, n&aring;r du v&aelig;lger &bdquo;Jeg opretter deres login nu&ldquo;.</b> Motoren blev slukket 7. august, fordi den kunne s&aelig;tte en <b style="font-weight:400;color:var(--black);">ny adgangskode p&aring; en konto, der allerede fandtes</b>. Med en kundes mail plus deres virksomhedskode kunne man overtage kontoen.<br><br><b style="font-weight:400;color:var(--black);">Denne udgave kan kun oprette nye logins.</b> Findes e-mailen, bliver den afvist &mdash; kontoen r&oslash;res aldrig. Ligger der et halvt oprettet fors&oslash;g fra tidligere, siger appen til og rydder det f&oslash;rst, n&aring;r du har sagt ja.<br><br><b style="font-weight:400;color:var(--black);">S&aring;dan g&oslash;r du:</b><br>1 &middot; G&aring; til <b style="font-weight:400;color:var(--black);">Supabase &rsaquo; Edge Functions</b><br>2 &middot; &Aring;bn funktionen <b style="font-weight:400;color:var(--black);">signup-med-kode</b> (findes den ikke, s&aring; opret den med pr&aelig;cis det navn)<br>3 &middot; Slet alt indholdet, s&aelig;t koden herunder ind, og gem<br>4 &middot; <b style="font-weight:400;color:var(--red);">&bdquo;Verify JWT&ldquo; skal v&aelig;re SL&Aring;ET FRA</b> &mdash; som f&oslash;r. Kunder opretter nemlig ogs&aring; deres eget login med koden, uden at v&aelig;re logget ind.<br><br><b style="font-weight:400;color:var(--black);">Bagefter:</b> pr&oslash;v at oprette en kunde med &bdquo;Jeg opretter deres login nu&ldquo;. Virker det, er hullet fra 7. august lukket &mdash; ikke bare slukket.</div><div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap;justify-content:flex-end;"><button class="row-btn" onclick="sqlKortKoert('sqlk_opret_login_2408', this)" title="Er den k&oslash;rt, s&aring; fjern kortet">K&oslash;rt <span style="width:14px;height:14px;border-radius:50%;background:var(--red);display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;vertical-align:-2px;"><svg width="7" height="7" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span> &mdash; fjern kortet</button><button class="row-btn" onclick="sqlVis('edgeOpretLogin2408', this)">Vis koden</button><button class="dbtn primary" style="padding:7px 15px;" onclick="sqlKopier('edgeOpretLogin2408', this)">Kopi&eacute;r koden</button></div><pre id="edgeOpretLogin2408" style="display:none;margin:9px 0 0;background:#F7F9FB;border:1px solid var(--border);border-radius:12px;padding:12px 14px;font-size:10.5px;line-height:1.5;overflow-x:auto;white-space:pre-wrap;word-break:break-word;font-family:ui-monospace,Menlo,monospace;color:var(--black);">// ============================================================================
 // OPRET LOGIN MED KODE · Edge Function "signup-med-kode"
@@ -10376,7 +10398,7 @@ select titel,
          staa fast paa telefon. De hoerer i arket (samme fejl som "left" 31/7). -->
     <div id="dashFooter" style="z-index:50;display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--gray3);background:#fff;border-top:1px solid var(--border);padding:10px 26px;">
       <div style="font-size:10px;">© 2026 Energida · Alle rettigheder forbeholdes</div>
-      <div style="font-size:10px;margin-left:auto;">Version 26. august · 1320 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
+      <div style="font-size:10px;margin-left:auto;">Version 26. august · 1321 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
     </div>
   </div>
 </div>
@@ -26243,7 +26265,7 @@ function buildSideNav(def) {
       + '<span style="opacity:.55;">' + ikon("", "Kalender", "laastBesked()", IK.kal) + '</span>'
       + '<span style="opacity:.55;">' + ikon("", "Værktøjskassen", "laastBesked()", IK.tools) + '</span>'
       + '<button class="sn-virk-knap" onclick="toggleVirkMenu(event)" title="' + esc(knapNavn) + '" aria-label="Profil" style="margin-left:auto;"><span class="sn-initial">' + esc((knapNavn || "?").trim().charAt(0).toUpperCase()) + '</span><span class="sn-virk-navn" style="white-space:normal;overflow-wrap:anywhere;">' + esc(knapNavn) + '</span><svg class="sn-virk-pil" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="flex-shrink:0;"><path d="M6 9l6 6 6-6"/></svg></button>'
-      + fodBagud + '<div class="sn-fod"><span>Version 26. august · 1320</span></div>'
+      + fodBagud + '<div class="sn-fod"><span>Version 26. august · 1321</span></div>'
       /* Ida 30/7: alle konto-punkter bor i profilmenuen — ingen streg/sn-bund */
       + '<div id="virkMenu" style="display:none;position:fixed;left:14px;bottom:96px;width:230px;background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:0 16px 40px rgba(0,0,0,0.15);padding:8px;z-index:90;">'
       + '<div style="padding:10px 12px 6px;font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--gray3);">' + esc(virkNavn) + '</div>'
@@ -26357,7 +26379,7 @@ function buildSideNav(def) {
         uPkt("", "Lektioner", "showTab(12)"))))
     + '<button class="sn-virk-knap" onclick="toggleVirkMenu(event)" title="' + esc(knapNavn) + '" aria-label="Profil"><span class="sn-initial">' + esc((knapNavn || "?").trim().charAt(0).toUpperCase()) + '</span><span class="sn-virk-navn" style="white-space:normal;overflow-wrap:anywhere;">' + esc(knapNavn) + '</span><svg class="sn-virk-pil" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="flex-shrink:0;"><path d="M6 9l6 6 6-6"/></svg></button>'
     /* Ida 30/7: ingen streg — logo + version samlet i foden under profilknappen */
-    + fodBagud + '<div class="sn-fod"><span>Version 26. august · 1320</span></div>'
+    + fodBagud + '<div class="sn-fod"><span>Version 26. august · 1321</span></div>'
     /* Ida 30/7: menuen åbner VED knappen (nederst t.v.) — ikke i modsatte hjørne */
     + '<div id="virkMenu" style="display:none;position:fixed;left:14px;bottom:96px;width:230px;background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:0 16px 40px rgba(0,0,0,0.15);padding:8px;z-index:90;">'
     + '<div style="padding:10px 12px 6px;font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--gray3);">' + esc(virkNavn) + '</div>'
@@ -29500,7 +29522,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "1320";
+const APP_VERSION = "1321";
 let NY_VERSION_KLAR = false;
 function nyVersionSkjul() { const e = document.getElementById("nyVersion"); if (e) e.style.display = "none"; }
 function nyVersionHent() { try { location.reload(); } catch(e) {} }
@@ -44312,6 +44334,6 @@ if ((location.hash || "").toLowerCase() === "#ole") {   // #ole = preview af Ole
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 26. august · 1320</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 26. august · 1321</div>
 </body>
 </html>
