@@ -120,6 +120,9 @@ button{cursor:pointer}
 .intro hr{border:0;border-top:1px solid rgba(255,255,255,.45);margin:12px 0 15px}
 .intro h2{font-size:22px;font-weight:500;margin:0 0 8px}
 .intro p{font-size:13px;line-height:1.65;margin:0;max-width:740px}
+/* Genoptagelses-linjen — se noten i markuppen. Hvid paa roed flade, en anelse
+   daempet, saa den staar under teksten og ikke over den. */
+.intro p.genoptag{margin-top:13px;padding-top:12px;border-top:1px solid rgba(255,255,255,.45);opacity:.94}
 /* ===== INTROFLADEN VED SEKTIONSSKIFT (låst spec 14/8, punkt C5) ==================
    "Spørgsmålet vises i en stor, rolig card-flade." Introen er den flade, man møder
    FØRST i hver sektion — derfor må den fylde og have luft, i modsætning til den
@@ -175,6 +178,16 @@ textarea:focus,input:focus{border-color:var(--red);box-shadow:0 0 0 3px rgba(252
 .btn.sek{background:#fff;color:var(--red);border:1.5px solid var(--red)}
 .btn.sek:hover{background:var(--blod)}
 .btn.link{background:none;color:var(--red);padding-left:0;padding-right:0}
+/* MIKROFONEN — samme badge som appens .tale-knap (symbolbanken 27/7): hvid flade,
+   1 px kant, radius 12, roedt streg-ikon. Roed og pulserende, mens der lyttes;
+   pulsen er det eneste, der BEVAEGER sig, saa man kan se, at den stadig hoerer. */
+.bs-tale{display:flex;align-items:center;gap:10px;margin-top:9px;flex-wrap:wrap}
+.bs-tale-knap{display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;padding:0;background:#fff;border:1px solid var(--border);border-radius:12px;color:var(--red);cursor:pointer;flex-shrink:0}
+.bs-tale-knap.lytter{background:var(--red);border-color:var(--red);color:#fff;animation:bsTalePuls 1.4s ease-out infinite}
+.bs-tale-hint{font-size:11px;color:var(--muted);line-height:1.5}
+@keyframes bsTalePuls{0%{box-shadow:0 0 0 0 rgba(252,36,4,.45)}70%{box-shadow:0 0 0 9px rgba(252,36,4,0)}100%{box-shadow:0 0 0 0 rgba(252,36,4,0)}}
+@media(prefers-reduced-motion:reduce){.bs-tale-knap.lytter{animation:none;box-shadow:0 0 0 3px rgba(252,36,4,.35)}}
+@media(max-width:760px){.bs-tale-knap{width:44px;height:44px}}
 
 /* ---------- højre skinne ---------- */
 /* "DET BYGGER I" SES FOERST TIL SIDST (Ida 25/8: "det her skal man slet ikke kunne se
@@ -751,7 +764,9 @@ async function dbHent(){
     if(mr&&mr.svar&&Array.isArray(mr.svar.liste)&&mr.svar.liste.length){ MG=mr.svar.liste; MG_NAVN=mr.navn||''; }
 
     var flyttet = migrerGamleSvar();
-    SB_KLAR=true; lokaltGem(); render();
+    SB_KLAR=true; lokaltGem();
+    try{ bsGenoptagSaet(); }catch(e){}   /* FOER render — se noten ved bsGenoptagSaet */
+    render();
     if (flyttet.length) migrerGem(flyttet);
     /* IKKE "Klar" — en laesning, der intet finder, ser praecis ud som en laesning
        fra en bruger uden login: RLS filtrerer raekkerne vaek i stedet for at
@@ -964,6 +979,22 @@ const STEP_GRUPPER = [
   { titel: 'De fire byggesten', keys: ['drive','audiences','values','usp'] },
   { titel: 'Til sidst',         keys: ['direction'] }
 ];
+function bsGenoptagPunkt(){
+  /* Se noten ovenfor: foerste sektion med noget ubesvaret, ellers den sidste. */
+  for(var i=0;i<SECTIONS.length;i++){
+    var qs=M5[SECTIONS[i].key];
+    if(sekDone(i) < qs.length) return i;
+  }
+  return SECTIONS.length-1;   /* alt besvaret — saa er vejen frem previewet */
+}
+function bsGenoptagSaet(){
+  if(BS_GENOPTAGET) return;
+  BS_GENOPTAGET=true;
+  if(!ialtSvar()) return;               /* aldrig svaret noget = helt almindelig start */
+  var i=bsGenoptagPunkt();
+  if(i>0){ current=i; qIndex=0; VIS_INTRO=true; }
+}
+var BS_GENOPTAGET=false;
 function renderSteps(){
   document.getElementById('steps').innerHTML=STEP_GRUPPER.map(function(g){
     var raekker = g.keys.map(function(k){
@@ -1038,6 +1069,62 @@ function vaelgSvar(sec,src,val){
   saet(sec,src, nu===val ? '' : val);
   render();
 }
+/* ---------- TAL SVARET IND — se noten oeverst ---------- */
+var BS_REC=null, BS_REC_FELT=null, BS_REC_BASE='';
+function bsTaleMulig(){ return !!(window.SpeechRecognition||window.webkitSpeechRecognition); }
+function bsTaleKnapHtml(sec,src){
+  if(!bsTaleMulig()) return '';   /* browseren kan det ikke — sig intet, vis intet */
+  var id='bstale_'+sec+'_'+src;
+  return '<div class="bs-tale"><button type="button" class="bs-tale-knap" id="'+id+'" '+
+    'onclick="bsTaleToggle(\''+sec+'\',\''+src+'\')" title="Tal i stedet for at skrive" aria-label="Tal i stedet for at skrive">'+
+    '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+
+    '<rect x="9" y="2.5" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0"/><path d="M12 18v3.5"/></svg></button>'+
+    '<span class="bs-tale-hint" id="'+id+'_hint"></span></div>';
+}
+function bsTaleFelt(sec,src){
+  return document.querySelector('textarea[data-sec="'+sec+'"][data-key="'+src+'"]');
+}
+function bsTaleVis(sec,src,aktiv,besked){
+  var k=document.getElementById('bstale_'+sec+'_'+src); if(!k) return;
+  k.classList.toggle('lytter',!!aktiv);
+  k.title = aktiv ? 'Lytter… tryk for at stoppe' : 'Tal i stedet for at skrive';
+  k.setAttribute('aria-label',k.title);
+  var h=document.getElementById('bstale_'+sec+'_'+src+'_hint');
+  if(h) h.textContent = besked || (aktiv ? 'Lytter — sig det bare. Teksten kommer i feltet, mens du taler.' : '');
+}
+function bsTaleToggle(sec,src){
+  var SR=window.SpeechRecognition||window.webkitSpeechRecognition; if(!SR) return;
+  if(BS_REC){ try{ BS_REC.stop(); }catch(e){} return; }
+  var f=bsTaleFelt(sec,src); if(!f) return;
+  BS_REC_FELT={sec:sec,src:src};
+  BS_REC_BASE=f.value||'';
+  var rec=new SR();
+  rec.lang='da-DK'; rec.continuous=true; rec.interimResults=true;
+  rec.onresult=function(ev){
+    var g=bsTaleFelt(sec,src);
+    if(!g){ try{ rec.stop(); }catch(e){} return; }
+    var talt='';
+    for(var i=0;i<ev.results.length;i++) talt+=ev.results[i][0].transcript;
+    talt=talt.replace(/\s+/g,' ').trim();
+    var base=BS_REC_BASE?BS_REC_BASE.replace(/\s+$/,'')+' ':'';
+    g.value=base+talt;
+    /* Gemmes gennem den ALMINDELIGE vej, saa svaret behandles praecis som skrevet
+       tekst — der bygges ikke en gemning ved siden af. */
+    try{ saet(sec,src,g.value); }catch(e){}
+  };
+  rec.onend=function(){ BS_REC=null; bsTaleVis(sec,src,false, window.__BS_TALE_FEJL||''); window.__BS_TALE_FEJL=''; };
+  rec.onerror=function(ev){
+    var e=(ev&&ev.error)||'fejl';
+    /* Stilhed og eget stop er ikke fejl. Alt andet SIGES — en mikrofon, der ikke
+       svarer, ligner en fejl i appen. */
+    if(e!=='no-speech'&&e!=='aborted') window.__BS_TALE_FEJL='Mikrofonen er blokeret — giv browseren lov, eller brug tastaturets egen mikrofon.';
+    try{ rec.stop(); }catch(x){}
+  };
+  bsTaleVis(sec,src,true);   /* klikket ses ALTID, ogsaa hvis start fejler */
+  try{ rec.start(); BS_REC=rec; }
+  catch(e){ BS_REC=null; bsTaleVis(sec,src,false,'Mikrofonen kunne ikke startes.'); }
+}
+
 function felt(sec,q,nr,ialt){
   var v=hent(sec,q.src);
   return '<div class="q-blok">'+
@@ -1050,6 +1137,7 @@ function felt(sec,q,nr,ialt){
     (Array.isArray(q.valg)&&q.valg.length?valgChips(sec,q,v):'')+
     '<textarea data-sec="'+sec+'" data-key="'+q.src+'" data-noegle="'+q.k+'" placeholder="Skriv svaret her…" '+
     'oninput="saet(\''+sec+'\',\''+q.src+'\',this.value)">'+esc(v)+'</textarea>'+
+    bsTaleKnapHtml(sec,q.src)+
   '</div>';
 }
 
@@ -1109,6 +1197,9 @@ function render(){
         '<h2>'+esc(s.navn)+'</h2>'+
         '<p class="intro-spm">'+esc(s.intro)+'</p>'+
         '<p>'+esc(s.desc)+'</p>'+
+        /* GENOPTAGELSES-LINJEN (Ida 26/8): staar KUN naar der faktisk er svaret
+           noget, og siger baade hvor langt hun er, og at svarene er i hus. */
+        (ialtSvar() ? '<p class="genoptag">Du er n&aring;et til <b>'+esc(s.navn)+'</b> &mdash; <b>'+ialtSvar()+' af '+IALT_SPM+'</b> sp&oslash;rgsm&aring;l er besvaret. Alt det, du har skrevet, ligger gemt.</p>' : '')+
         '<div class="nav">'+
           (current>0?'<button class="btn sek" onclick="goSection('+(current-1)+')">Tilbage</button>':'')+
           '<div class="spacer"></div>'+
@@ -1482,6 +1573,7 @@ var BS_TUR_SET=false, BS_TUR_STOPS=[
   { s:'.left',      t:'Her ser du hele vejen: f&oslash;rst startgrundlaget, s&aring; de fire byggesten &mdash; og til sidst retningen, der samler dem. Du kan altid klikke tilbage til noget, du har svaret p&aring;.' },
   { s:'.fremdrift', t:'Her st&aring;r, hvor langt du er. Dine svar gemmes af sig selv, s&aring; du kan holde pause n&aring;r som helst og komme tilbage til det samme sted.' },
   { s:'#screen',    t:'Her st&aring;r sp&oslash;rgsm&aring;let &mdash; &eacute;t ad gangen. Skriv med dine egne ord; der er ingen rigtige svar, og du kan altid rette dem bagefter.' },
+  { s:null,         t:'Du beh&oslash;ver ikke skrive. Under hvert svarfelt sidder en <b>mikrofon</b> &mdash; tryk p&aring; den og <b>tal svaret ind</b>. Teksten kommer i feltet, <b>mens du taler</b>, s&aring; du kan f&oslash;lge med i, at den h&oslash;rer dig. De fleste fort&aelig;ller friere, end de skriver &mdash; og det er lige pr&aelig;cis det, de her sp&oslash;rgsm&aring;l skal bruge.' },
   { s:'.ark-link',  t:'Vil du se dem alle p&aring; forh&aring;nd, ligger de her p&aring; &eacute;t ark. Nogle kan bedre lide at l&aelig;se hele vejen igennem f&oslash;rst.' },
   { s:null,         t:'Det var det. Tag den tid, du har lyst til &mdash; du er ikke ved at udfylde en formular, du er ved at skrive fundamentet for alt dit content. God forn&oslash;jelse &#10024;' }
 ];
