@@ -21,6 +21,7 @@ button{cursor:pointer}
 /* ---------- topbar ---------- */
 .top{position:sticky;top:0;z-index:50;background:rgba(255,255,255,.85);backdrop-filter:blur(14px);border-bottom:1px solid var(--border);padding:14px 24px}
 .top-inner{max-width:1240px;margin:auto;display:flex;align-items:center;gap:18px}
+body.i-app .top{display:none}
 /* FREMDRIFTS-FLISEN — se noten i markuppen. Aflang, fri, lige over arbejdet. */
 .fremdrift{background:#fff;border:1px solid var(--border);border-radius:16px;padding:13px 20px;margin-bottom:14px;display:flex;align-items:center;gap:18px}
 @media(max-width:760px){ .fremdrift{padding:12px 14px;gap:12px;flex-wrap:wrap} .fremdrift .progress{order:3;flex-basis:100%} }
@@ -1297,6 +1298,8 @@ function maalgruppeBar(){
 var VIS_INTRO = true;
 /* Arket med alle 31 har intet korthoved pr. spørgsmål — dér SKAL tallet stå i feltet */
 var ARK_VISNING = false;
+/* Hvor kom man ind paa arket fra? Vejen tilbage skal foere derhen igen. */
+var ARK_FRA_SLUT = false;
 
 function render(){
   renderSteps(); renderProgress(); renderSummary();
@@ -1380,7 +1383,8 @@ function ikon(){ return '<svg width="15" height="15" viewBox="0 0 24 24" fill="n
    Til et kundemøde er ét spørgsmål ad gangen for langsomt: man springer frem
    og tilbage, mens kunden taler. Her står alle 31 i rækkefølge, og arket kan
    printes med tomme linjer, så svarene kan skrives i hånden undervejs. */
-function visArket(){
+function visArket(fraSlut){
+  ARK_FRA_SLUT = !!fraSlut;
   current=-1; ARK_VISNING=true; window.scrollTo(0,0);
   try { document.querySelector('.app').classList.remove('svarer'); } catch(e){}
   var mgListe=MG.filter(function(m){return m.aktiv!==false});
@@ -1412,8 +1416,13 @@ function visArket(){
     '</section>';
   });
 
+  /* VEJEN TILBAGE SKAL FOERE DERHEN, MAN KOM FRA (blindgyde-reglen 30/7 + "der skal
+     altid staa Tilbage", 25/8). Kom man hertil fra opsummeringen — hvor knappen "Lav
+     Drejebogen" staar — ville "Tilbage til områderne" sende en helt om i intro-fladen,
+     og man kunne kun finde tilbage ved at gaa hele vejen igennem igen. */
   ud+='<div class="nav"><button class="btn sek" onclick="window.print()">Print arket</button>'+
-      '<div class="spacer"></div><button class="btn red" onclick="goSection(0)">Tilbage til områderne</button></div>';
+      '<div class="spacer"></div><button class="btn red" onclick="'+(ARK_FRA_SLUT?'showDone()':'goSection(0)')+'">'+
+      (ARK_FRA_SLUT?'Tilbage til opsummeringen':'Tilbage til områderne')+'</button></div>';
   document.getElementById('screen').innerHTML=ud;
   renderSteps(); renderProgress();
 }
@@ -1500,8 +1509,17 @@ function bogStart(){
     BOG.status='fejl'; BOG.fejl='Kunne ikke nå appen — åbn strategibyggeren inde i Content Studio.'; bogTegn();
   }
 }
+/* EN HAANDLAVET BOG VINDER OVER DEN GENEREREDE — samme raekkefoelge som appens egen
+   drejebogAaben(). Uden det ville en kunde med sin egen faerdige bog (Acorns) faa den
+   genererede at se herfra og den haandlavede fra menuen: to konkurrerende Drejeboeger,
+   praecis det appen er bygget for at undgaa. */
 function bogAaben(){
-  try { window.parent.bsVis(window.parent.currentKode); }
+  try {
+    var p = window.parent;
+    var d = (p.CURRENT_DEF || {});
+    if (d.drejebog) { p.open(d.drejebog, '_blank', 'noopener'); return; }
+    p.bsVis(p.currentKode);
+  }
   catch(e){ BOG.status='fejl'; BOG.fejl='Bogen kunne ikke åbnes herfra — åbn den under Drejebogen i menuen.'; bogTegn(); }
 }
 /* ===== PREVIEW AF DE FIRE BYGGESTEN — FOER Drejebogen formuleres (Ida 25/8) ==========
@@ -1781,7 +1799,7 @@ function showDone(){
          Og der staar kun EEN roed knap paa fladen (knap-reglen 22/8): den, der laver
          Drejebogen, staar i sit eget kort nedenunder. */
       '<div class="nav">'+
-        '<button class="btn sek" onclick="visArket()">Se alle '+IALT_SPM+' på ét ark</button>'+
+        '<button class="btn sek" onclick="visArket(true)">Se alle '+IALT_SPM+' på ét ark</button>'+
         '<div class="spacer"></div>'+
         '<button class="btn sek" onclick="goSection(0)">Ret i svarene</button>'+
       '</div>'+
@@ -1862,6 +1880,12 @@ function bsTurStart(igen){
 bsTurHusket().then(function(){ setTimeout(function(){ try{ bsTurStart(); }catch(e){} }, 800); });
 
 window.addEventListener('resize',function(){ clearTimeout(window.__rz); window.__rz=setTimeout(render,150); var o=document.getElementById('bsTurOverlay'); if(o) o.remove(); });
+/* NAVNET STÅR ÉN GANG (dublet-reglen). Inde i Content Studio staar der allerede
+   "Strategi / Strategibyggeren" i appens egen bar lige ovenover — og saa sagde denne
+   fils egen bjaelke "ENERGIDA · STRATEGIBYGGER" som raekke nummer to. To bjaelker
+   oven paa hinanden med det samme navn. Aabner man filen alene, er bjaelken det eneste,
+   der siger hvor man er — dér bliver den staaende. */
+try { if (window.parent && window.parent !== window) document.body.classList.add('i-app'); } catch(e){}
 render();
 dbHent();
 hentVirksomhedsnavn();
