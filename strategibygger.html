@@ -1477,7 +1477,68 @@ function showDone(){
   if (FLET.status === 'ingen' || FLET.status === 'uden-app') { try { fletStart(false); } catch(e){} }
 }
 
-window.addEventListener('resize',function(){ clearTimeout(window.__rz); window.__rz=setTimeout(render,150) });
+/* ---------- RUNDVISNING — se noten oeverst i filen ---------- */
+var BS_TUR_SET=false, BS_TUR_STOPS=[
+  { s:'.left',      t:'Her ser du hele vejen: f&oslash;rst startgrundlaget, s&aring; de fire byggesten &mdash; og til sidst retningen, der samler dem. Du kan altid klikke tilbage til noget, du har svaret p&aring;.' },
+  { s:'.fremdrift', t:'Her st&aring;r, hvor langt du er. Dine svar gemmes af sig selv, s&aring; du kan holde pause n&aring;r som helst og komme tilbage til det samme sted.' },
+  { s:'#screen',    t:'Her st&aring;r sp&oslash;rgsm&aring;let &mdash; &eacute;t ad gangen. Skriv med dine egne ord; der er ingen rigtige svar, og du kan altid rette dem bagefter.' },
+  { s:'.ark-link',  t:'Vil du se dem alle p&aring; forh&aring;nd, ligger de her p&aring; &eacute;t ark. Nogle kan bedre lide at l&aelig;se hele vejen igennem f&oslash;rst.' },
+  { s:null,         t:'Det var det. Tag den tid, du har lyst til &mdash; du er ikke ved at udfylde en formular, du er ved at skrive fundamentet for alt dit content. God forn&oslash;jelse &#10024;' }
+];
+function bsTurSet(){
+  if(BS_TUR_SET) return true;
+  try{ return localStorage.getItem('bs_tur_set_'+SB_KODE)==='1'; }catch(e){ return false; }
+}
+async function bsTurMarker(){
+  BS_TUR_SET=true;
+  try{ localStorage.setItem('bs_tur_set_'+SB_KODE,'1'); }catch(e){}
+  try{ if(SB_DB) await SB_DB.auth.updateUser({ data:{ bs_tur_set:true } }); }catch(e){}
+}
+async function bsTurHusket(){
+  /* KONTOEN FOERST. Uden dette opslag ville et privat vindue starte forfra. */
+  try{ if(!SB_DB) return; var u=await SB_DB.auth.getUser();
+       var md=(u&&u.data&&u.data.user&&u.data.user.user_metadata)||{};
+       if(md.bs_tur_set) BS_TUR_SET=true; }catch(e){}
+}
+function bsTurLuk(){ var el=document.getElementById('bsTurOverlay'); if(el) el.remove(); bsTurMarker(); }
+function bsTurVis(i){
+  var gl=document.getElementById('bsTurOverlay'); if(gl) gl.remove();
+  if(i>=BS_TUR_STOPS.length){ bsTurLuk(); return; }
+  var stop=BS_TUR_STOPS[i];
+  var el=document.createElement('div');
+  el.id='bsTurOverlay'; el.style.cssText='position:fixed;inset:0;z-index:400;';
+  var maal = stop.s ? document.querySelector(stop.s) : null;
+  if(maal && maal.offsetParent===null) maal=null;   /* skjult paa telefon = intet spotlight */
+  var spot;
+  if(maal){
+    var r=maal.getBoundingClientRect();
+    spot='<div style="position:fixed;left:'+Math.max(4,r.left-8)+'px;top:'+Math.max(4,r.top-8)+'px;width:'+(r.width+16)+'px;height:'+(r.height+16)+'px;border-radius:16px;box-shadow:0 0 0 2.5px var(--red), 0 0 0 4000px rgba(26,26,26,.32);pointer-events:none;"></div>';
+  } else {
+    spot='<div style="position:absolute;inset:0;background:rgba(26,26,26,.32);"></div>';
+  }
+  var prikker=BS_TUR_STOPS.map(function(_,n){
+    return '<span style="width:6px;height:6px;border-radius:50%;background:'+(n===i?'var(--red)':'var(--border)')+';"></span>';
+  }).join('');
+  var sidste = i===BS_TUR_STOPS.length-1;
+  el.innerHTML = spot
+    + '<div style="position:fixed;left:50%;top:56%;transform:translate(-50%,-50%);width:min(380px,88vw);background:#fff;border-radius:20px;padding:20px 24px;box-shadow:0 20px 50px rgba(0,0,0,.25);">'
+    + '<button type="button" onclick="bsTurLuk()" aria-label="Luk rundvisningen" style="position:absolute;top:10px;right:14px;background:none;border:none;cursor:pointer;font-size:16px;color:var(--muted-2);">&times;</button>'
+    + '<div style="font-size:9.5px;letter-spacing:1.8px;text-transform:uppercase;color:var(--red);margin-bottom:8px;">Rundvisning &middot; '+(i+1)+' af '+BS_TUR_STOPS.length+'</div>'
+    + '<div style="font-size:13px;line-height:1.65;margin-bottom:14px;color:var(--black);">'+stop.t+'</div>'
+    + '<div style="display:flex;align-items:center;gap:6px;">'+prikker
+    + '<button type="button" class="btn red" style="margin-left:auto;border-radius:999px;" onclick="'+(sidste?'bsTurLuk()':'bsTurVis('+(i+1)+')')+'">'+(sidste?'F&aelig;rdig':'N&aelig;ste')+'</button></div></div>';
+  document.body.appendChild(el);
+}
+function bsTurStart(igen){
+  if(!igen && bsTurSet()) return;
+  if(!document.querySelector('.left')) return;   /* intet at pege paa endnu */
+  bsTurVis(0);
+}
+/* Rundvisningen venter paa kontoopslaget, saa den ikke naar at starte, foer vi
+   ved, om den allerede er set. */
+bsTurHusket().then(function(){ setTimeout(function(){ try{ bsTurStart(); }catch(e){} }, 800); });
+
+window.addEventListener('resize',function(){ clearTimeout(window.__rz); window.__rz=setTimeout(render,150); var o=document.getElementById('bsTurOverlay'); if(o) o.remove(); });
 render();
 dbHent();
 hentVirksomhedsnavn();
