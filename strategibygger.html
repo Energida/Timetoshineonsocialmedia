@@ -1384,7 +1384,11 @@ function visArket(){
   current=-1; ARK_VISNING=true; window.scrollTo(0,0);
   try { document.querySelector('.app').classList.remove('svarer'); } catch(e){}
   var mgListe=MG.filter(function(m){return m.aktiv!==false});
-  var ud='<section class="intro"><div class="ey">Alle 31 spørgsmål</div><hr>'+
+  /* TALLENE TAELLES — DE SKRIVES IKKE (MAALT 26/8). Her stod "Alle 31 spørgsmål", mens
+     der er 41 (42 med fysisk butik), og maalgruppekortet sagde "11 spørgsmål" ved 12.
+     Samme fejl som slutskaermens hardkodede 31 i sin tid: en saetning, der kan lyve, er
+     vaerre end ingen (2/8). spm() er den ene doer, listen taelles igennem. */
+  var ud='<section class="intro"><div class="ey">Alle '+IALT_SPM+' spørgsmål</div><hr>'+
     '<h2>Grundlaget til Drejebogen</h2>'+
     '<p>Alle spørgsmål i rækkefølge — til mødet, hvor der skal springes frem og tilbage. Skriv direkte i felterne, eller print arket og skriv i hånden.</p></section>';
 
@@ -1394,8 +1398,8 @@ function visArket(){
         var gemt=mgAktiv; mgAktiv=MG.indexOf(m);
         ud+='<section class="card"><div class="kort-hoved">'+ikon()+
           '<div class="lbl">'+esc(mgNavn(m,mi))+'</div>'+
-          '<div class="tal">11 spørgsmål</div></div>'+
-          M5.audiences.map(function(q,i){ return felt('audiences',q,i+1,11) }).join('')+
+          '<div class="tal">'+spm('audiences').length+' spørgsmål</div></div>'+
+          spm('audiences').map(function(q,i){ return felt('audiences',q,i+1,spm('audiences').length) }).join('')+
         '</section>';
         mgAktiv=gemt;
       });
@@ -1440,13 +1444,65 @@ function grundlag(){
     direction: saml('direction')
   };
 }
-function kopierGrundlag(){
-  var t=JSON.stringify(grundlag(),null,2);
-  var ta=document.createElement('textarea');
-  ta.value=t; ta.style.position='fixed'; ta.style.opacity='0';
-  document.body.appendChild(ta); ta.select();
-  try{ document.execCommand('copy'); saveTxt('Grundlaget er kopieret'); }catch(e){ saveTxt('Kunne ikke kopiere'); }
-  document.body.removeChild(ta);
+/* "KOPIÉR TIL DREJEBOGEN" ER VÆK (Idas fund 26/8: "den knap virker ikke").
+   Knappen lagde svarene som RÅ JSON i udklipsholderen — og selv naar kopieringen
+   lykkedes, var der ingen steder at putte dem hen. Den lovede en handling, den ikke
+   udfoerte (2/8: en saetning, der kan lyve, er vaerre end ingen). Den er afloest af
+   "Lav Drejebogen" nedenfor, som faktisk laver bogen.
+   grundlag() staar tilbage som det ene sted, de raa svar formes — den har ingen
+   kalder lige nu. */
+
+/* ===== DREJEBOGEN — KUNDENS EGEN KNAP (Idas fund 26/8, med Ole paa skaermen) ========
+   Hendes ord: "ingen steder staar der at jeg kan generere drejebog".
+   MAALT: "Generér Drejebogen" fandtes KUN paa kundekortets Indhold-fane i Backstage.
+   En kunde, der havde svaret paa alle 42 spoergsmaal, kunne ikke komme videre.
+
+   ARBEJDET SKER I APPEN, IKKE HER — praecis som fletningen: kaldet kraever kundens
+   login, og der maa kun findes EEN vej til generatoren. Iframen beder; appen svarer.
+
+   BOGEN AABNES AF SELVE KLIKKET. window.open i en beskedbehandler er ikke laengere et
+   klik, og saa spaerrer browseren vinduet. Derfor kaldes appens egen bsVis direkte —
+   samme origin — inde i klikket. Koden kommer stadig fra APPEN (parent.currentKode),
+   aldrig herfra. */
+var BOG = { status:'ukendt', besked:'', fejl:'', sek:0, ur:null };
+
+function bogHarApp(){ return fletHarApp(); }
+function bogTegn(){ var el=document.getElementById('bogKort'); if (el) el.innerHTML = bogKortIndhold(); }
+function bogKortHtml(){ return '<section class="card" id="bogKort">'+bogKortIndhold()+'</section>'; }
+function bogKortIndhold(){
+  var hoved = '<div class="kort-hoved">'+ikon()+'<div class="lbl">Drejebogen</div></div>';
+  if (!bogHarApp())
+    return hoved + '<p class="preview-intro">Drejebogen laves inde i Content Studio. Åbner du strategibyggeren derfra, står knappen her.</p>';
+  if (BOG.status === 'ukendt')
+    return hoved + '<p class="preview-intro">Henter…</p>';
+  if (BOG.status === 'koerer')
+    return hoved + '<p class="preview-intro">Energida skriver Drejebogen ud fra dine svar. Det tager et par minutter — bliv stående på siden, så siger den til.</p>'+
+      '<p class="preview-intro">'+esc(BOG.besked || 'Arbejder…')+(BOG.sek ? ' &middot; '+BOG.sek+' sek.' : '')+'</p>';
+  if (BOG.status === 'klar')
+    return hoved + '<p class="preview-intro">Drejebogen er klar.</p>'+
+      '<div class="nav"><button class="btn sek" onclick="bogStart(true)">Lav den forfra</button>'+
+      '<div class="spacer"></div><button class="btn red" onclick="bogAaben()">Åbn Drejebogen</button></div>';
+  if (BOG.status === 'fejl')
+    return hoved + '<p class="preview-intro">Drejebogen blev ikke færdig: '+esc(BOG.fejl)+'</p>'+
+      '<div class="nav"><div class="spacer"></div><button class="btn red" onclick="bogStart(true)">Prøv igen</button></div>';
+  return hoved + '<p class="preview-intro">Når de fire byggesten ovenfor står, som de skal, skriver Energida Drejebogen ud fra dem — dine egne sider om drivkraft, målgruppe, værdier og USP, og de indholdssøjler, de fører til.</p>'+
+    '<div class="nav"><div class="spacer"></div><button class="btn red" onclick="bogStart(false)">Lav Drejebogen</button></div>';
+}
+/* Sekundtaelleren er ikke pynt: fire kald paa op til 150 sek. hver er lang tid at se paa
+   en kasse, der staar stille (samme lektie som 14/8). */
+function bogStart(){
+  if (!bogHarApp()) return;
+  BOG.status='koerer'; BOG.besked='Henter svarene…'; BOG.fejl=''; BOG.sek=0; bogTegn();
+  if (BOG.ur) clearInterval(BOG.ur);
+  BOG.ur = setInterval(function(){ BOG.sek++; bogTegn(); }, 1000);
+  if (!fletBed({ energida:'bs_bog_lav' })){
+    clearInterval(BOG.ur); BOG.ur=null;
+    BOG.status='fejl'; BOG.fejl='Kunne ikke nå appen — åbn strategibyggeren inde i Content Studio.'; bogTegn();
+  }
+}
+function bogAaben(){
+  try { window.parent.bsVis(window.parent.currentKode); }
+  catch(e){ BOG.status='fejl'; BOG.fejl='Bogen kunne ikke åbnes herfra — åbn den under Drejebogen i menuen.'; bogTegn(); }
 }
 /* ===== PREVIEW AF DE FIRE BYGGESTEN — FOER Drejebogen formuleres (Ida 25/8) ==========
    Hendes oenske: "naar spoergsmaalene er udfyldt - at man saa ser en preview af
@@ -1539,6 +1595,18 @@ window.addEventListener('message', function(ev){
     if (d.ok && d.byggesten){ FLET.bygg = d.byggesten; FLET.status = 'klar'; FLET.fejl = ''; fletCacheGem(d.byggesten); }
     else { FLET.status = 'fejl'; FLET.fejl = d.fejl || 'Det gik galt.'; }
     fletTegn(); return;
+  }
+  if (d.energida === 'bs_bog_status'){ if (BOG.status === 'koerer' && d.besked){ BOG.besked = d.besked; bogTegn(); } return; }
+  if (d.energida === 'bs_bog_faerdig'){
+    if (BOG.ur){ clearInterval(BOG.ur); BOG.ur = null; }
+    if (d.ok){ BOG.status = 'klar'; BOG.fejl = ''; } else { BOG.status = 'fejl'; BOG.fejl = d.fejl || 'Det gik galt.'; }
+    bogTegn(); return;
+  }
+  /* Svaret paa "findes der allerede en bog?" maa ALDRIG overskrive en koersel, der er
+     i gang — det ville slaa fremdriften i stykker midt i en generering. */
+  if (d.energida === 'bs_bog_findes_svar'){
+    if (BOG.status === 'ukendt'){ BOG.status = d.findes ? 'klar' : 'ingen'; bogTegn(); }
+    return;
   }
   if (d.energida === 'bs_gemt'){
     FLET.gemBesked = d.ok ? 'Gemt hos Energida' : ('Det blev ikke gemt — ' + (d.fejl || 'prøv igen.'));
@@ -1704,19 +1772,31 @@ function showDone(){
     '<section class="card">'+
       '<div class="kort-hoved">'+ikon()+'<div class="lbl">Sådan står det</div><div class="tal">'+mgListe.length+' målgruppe'+(mgListe.length===1?'':'r')+'</div></div>'+
       raekker+
+      /* "PRINT GRUNDLAGET" PRINTEDE SKAERMEN (Idas fund 26/8: "det kommer bare frem som
+         jeg jo ikke kan bruge til noget"). window.print() paa denne flade giver
+         opsummeringen med menu og alt — ikke svarene.
+         Arket ER den printbare udgave, og det har sit eget print-ark og sin egen
+         Print-knap. Knappen hedder DERFOR det samme som doeren i venstre skinne, tegn
+         for tegn (navnereglen 26/8) — een ting, eet navn.
+         Og der staar kun EEN roed knap paa fladen (knap-reglen 22/8): den, der laver
+         Drejebogen, staar i sit eget kort nedenunder. */
       '<div class="nav">'+
-        '<button class="btn sek" onclick="window.print()">Print grundlaget</button>'+
-        '<button class="btn sek" onclick="kopierGrundlag()">Kopiér til Drejebogen</button>'+
+        '<button class="btn sek" onclick="visArket()">Se alle '+IALT_SPM+' på ét ark</button>'+
         '<div class="spacer"></div>'+
-        '<button class="btn red" onclick="goSection(0)">Ret i svarene</button>'+
+        '<button class="btn sek" onclick="goSection(0)">Ret i svarene</button>'+
       '</div>'+
-    '</section>';
+    '</section>'+
+    bogKortHtml();
   /* FLETNINGEN SAETTES I GANG, NAAR MAN LANDER HER — men kun EEN gang pr. sæt svar.
      fletStart henter foerst det gemte og sammenligner fingeraftryk; er der ikke aendret
      noget, koeres der intet kald. Det er dyrt at flette, og en skaerm, man aabner to
      gange, maa ikke koste to gange. */
   fletAlleVoks();
   if (FLET.status === 'ingen' || FLET.status === 'uden-app') { try { fletStart(false); } catch(e){} }
+  /* SPOERG FOERST — GENERÉR ALDRIG AF SIG SELV. Har kunden allerede en Drejebog, skal
+     kortet sige "Åbn", ikke "Lav": et kald koster penge, og en knap, der laver den
+     forfra uden at nogen bad om det, er den dyreste fejl, fladen kan lave. */
+  if (bogHarApp() && BOG.status === 'ukendt') { try { fletBed({ energida:'bs_bog_findes' }); } catch(e){} }
 }
 
 /* ---------- RUNDVISNING — se noten oeverst i filen ---------- */
