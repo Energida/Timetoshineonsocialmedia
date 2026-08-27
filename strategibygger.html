@@ -172,6 +172,20 @@ body.i-app .top{display:none}
 textarea,input[type=text]{width:100%;border:1px solid var(--border);border-radius:12px;background:#fff;padding:12px 13px;outline:none;font-size:14px;line-height:1.55;color:var(--black)}
 textarea{min-height:92px;resize:vertical}
 textarea:focus,input:focus{border-color:var(--red);box-shadow:0 0 0 3px rgba(252,36,4,.10)}
+/* ---------- VÆLGEREN (Ida 27/8) ------------------------------------------------
+   Hendes ord: "alle spoergsmaal hvor der idag er chips - der skal skrivefeltet vaek.
+   og chips skal laves om til dropdown."
+   DET VAELTER 26/8-reglen "chippen UDFYLDER feltet - den erstatter det ikke".
+   Bygger du et spoergsmaal med faste svar, saa byg en VAELGER - ikke chips, og
+   ikke et skrivefelt under den.
+   Formen er appens egen .select-nice (index.html): hvid flade, 1 px graa kant,
+   radius 12, Poppins 400 - plus den ROEDE pil. Browserens graa systempil er
+   forbudt paa computeren (regel 39), og appens 48 unstylede selects er praecis
+   den fejl, der ikke skal gentages her.
+   16 px paa telefon, ellers zoomer iPhone ind og ud igen (1/8). 44 px touch (2/8). */
+.bs-valg{width:100%;background:#fff;border:1px solid var(--border);border-radius:12px;padding:12px 38px 12px 13px;outline:none;font-size:14px;line-height:1.55;font-family:Poppins,Arial,sans-serif;font-weight:400;color:var(--black);-webkit-appearance:none;-moz-appearance:none;appearance:none;cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23FC2404' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 13px center;background-size:12px 12px}
+.bs-valg:focus{border-color:var(--red);box-shadow:0 0 0 3px rgba(252,36,4,.10)}
+@media(max-width:760px){.bs-valg{font-size:16px;min-height:44px}}
 
 /* ---------- chips / knapper ---------- */
 .chips{display:flex;flex-wrap:wrap;gap:7px;align-items:center}
@@ -391,7 +405,7 @@ const M5 = {
    "k": "business_purchase_channels",
    "src": "omun5szzac9lvl",
    "q": "Hvordan møder og køber kunden typisk hos {virksomhed}?",
-   "h": "Vælg dét, der passer bedst — eller skriv det selv. Det afgør, hvilke handlinger vi anbefaler i dine opslag: „Kom forbi“ eller „Se den i webshoppen“.",
+   "h": "Vælg dét, der passer bedst. Det afgør, hvilke handlinger vi anbefaler i dine opslag: „Kom forbi“ eller „Se den i webshoppen“.",
    "valg": ["Hos mig fysisk", "Online", "Begge dele"]
   }
  ],
@@ -1188,33 +1202,104 @@ function renderSummary(){
   + '<p class="summary-fod">Byggestenen skrives ud fra <b>alle</b> svarene i området — ikke ud af ét enkelt.</p>';
 }
 
-/* ===== ET SPOERGSMAAL MED VALG (Ida 26/8) ==========================================
-   "Vaelg alt der passer" stod over en TOM kasse — der var ingenting at vaelge. Det er en
-   saetning, der lyver (2/8), og den ramte det ene spoergsmaal, hele forretningstypen
-   haenger paa.
+/* ===== ET SPOERGSMAAL MED FASTE SVAR (Ida 27/8) ====================================
+   Idas ord: "alle spoergsmaal hvor der idag er chips - der skal skrivefeltet vaek.
+   og chips skal laves om til dropdown."
 
-   CHIPPEN UDFYLDER FELTET — DEN ERSTATTER DET IKKE. Skrivefeltet bliver staaende under
-   chippene, og et klik skriver valget ind i det. Derfor kan et svar, kunden allerede har
-   SKREVET med egne ord, aldrig forsvinde bag tre knapper (gem-reglen 4/8): det staar der
-   stadig, og bytter man det ud, kan man SE at det skete. EEN kilde, eet felt — generatoren
-   og Drejebogen laeser praecis som foer.
+   DET VAELTER 26/8-reglen om, at chippen UDFYLDER skrivefeltet under sig. Der er
+   ikke laengere hverken chips eller skrivefelt paa de fire spoergsmaal med faste
+   svar - der er EEN vaelger, og den er hele svaret. Genindfoer dem ikke.
 
-   Chippen er appens egen (.chip / .chip.on): hvid m. graa kant, valgt = roed m. hvid
-   tekst. Der bygges ingen ny chip-stil. */
-function valgChips(sec,q,v){
+   GEM MAA IKKE SLETTE (4/8): har en kunde svaret med sine EGNE ord, fra dengang
+   feltet var frit, staar hendes svar ikke i listen. Det laegges ind som sin egen
+   mulighed, saa vaelgeren aabner PAA hendes svar i stedet for at se tom ud - og
+   et gem kan ikke skrive tomheden tilbage over noget, hun selv har skrevet.
+
+   EEN kilde, eet felt - generatoren og Drejebogen laeser praecis som foer. */
+function valgVaelger(sec,q,v){
   var valgt=String(v==null?'':v).trim();
-  return '<div class="chips" style="margin:0 0 9px;">'+q.valg.map(function(t){
-    return '<button type="button" class="chip'+(valgt===t?' on':'')+'" data-v="'+esc(t)+'" '+
-      'onclick="vaelgSvar(\''+sec+'\',\''+q.src+'\',this.getAttribute(\'data-v\'))">'+esc(t)+'</button>';
-  }).join('')+'</div>';
+  var liste=q.valg.slice();
+  if(valgt && liste.indexOf(valgt)<0) liste.push(valgt);
+  return '<select class="bs-valg" data-sec="'+sec+'" data-key="'+q.src+'" data-noegle="'+q.k+'" '+
+    'onchange="vaelgSvar(\''+sec+'\',\''+q.src+'\',this.value,true)">'+
+    '<option value="">Vælg …</option>'+
+    liste.map(function(t){
+      return '<option value="'+esc(t)+'"'+(valgt===t?' selected':'')+'>'+esc(t)+'</option>';
+    }).join('')+'</select>';
 }
-/* Klik paa den valgte chip igen fravaelger — ellers kunne man ikke fortryde uden at
-   slette teksten i haanden. */
-function vaelgSvar(sec,src,val){
+/* direkte=true kommer fra vaelgeren: dens egen tomme raekke ("Vaelg ...") er maaden
+   at fortryde paa. Uden flaget ville et gentaget valg af samme svar tomme feltet. */
+function vaelgSvar(sec,src,val,direkte){
   var nu=String(hent(sec,src)||'').trim();
-  saet(sec,src, nu===val ? '' : val);
+  saet(sec,src, (!direkte && nu===val) ? '' : val);
   render();
 }
+/* ===== ENERGIDAS EGEN VAELGERLISTE - PORTERET FRA index.html (27/8) ================
+   Strategibyggeren koerer i en iframe og er sit eget dokument, saa appens globale
+   mousedown-regel fra 5/8 naar den ikke. Uden det her ville computeren aabne
+   BROWSERENS graa liste - praecis det, regel 39 forbyder.
+   Koden er en 1:1-kopi af eVaelgVis/eVaelgSaet/eVaelgLuk, saa de to lister ikke kan
+   drive fra hinanden. Aendrer du den ene, skal du aendre den anden (tvilling-reglen
+   13/8). Telefonen beholder sin native - den er bygget til fingeren (761 px). */
+function eVaelgLuk(){ var p=document.getElementById("eVaelgPop"); if(p) p.remove(); }
+function eVaelgVis(sel){
+  eVaelgLuk();
+  window.__E_VAELG = sel;
+  var valg = Array.prototype.slice.call(sel.options).filter(function(o){ return !o.disabled || o.value; });
+  var r = sel.getBoundingClientRect();
+  var flueben = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>';
+  var raekker = valg.map(function(o,i){
+    var vg = o.value === sel.value;
+    return '<button type="button" onclick="eVaelgSaet('+i+')"'
+      + ' style="display:flex;align-items:center;gap:10px;width:100%;box-sizing:border-box;text-align:left;'
+      + 'background:' + (vg ? 'var(--blod)' : '#fff') + ';border:none;'
+      + (i < valg.length - 1 ? 'border-bottom:1px solid #F2F0ED;' : '')
+      + 'padding:11px 15px;min-height:44px;cursor:pointer;'
+      + 'font-family:Poppins,sans-serif;font-size:12.5px;font-weight:400;'
+      + 'color:' + (vg ? 'var(--red)' : 'var(--black)') + ';">'
+      + '<span style="width:14px;flex-shrink:0;display:inline-flex;">' + (vg ? flueben : '') + '</span>'
+      + '<span style="flex:1;min-width:0;font-weight:400;">' + esc(o.text) + '</span></button>';
+  }).join("");
+  var hoejde = Math.min(valg.length * 46 + 8, 300);
+  var top = (r.bottom + hoejde > innerHeight && r.top > hoejde) ? r.top - hoejde - 6 : r.bottom + 6;
+  var bredde = Math.max(180, Math.min(280, r.width + 40));
+  var pop = document.createElement("div");
+  pop.id = "eVaelgPop";
+  pop.style.cssText = "position:fixed;z-index:920;left:" + Math.max(8, Math.min(r.left, innerWidth - bredde - 8)) + "px;top:" + top + "px;"
+    + "width:" + bredde + "px;max-height:300px;overflow-y:auto;background:#fff;border:1px solid var(--border);border-radius:12px;"
+    + "box-shadow:0 18px 44px rgba(22,32,42,0.18);font-weight:400;";
+  pop.innerHTML = raekker;
+  document.body.appendChild(pop);
+}
+function eVaelgSaet(i){
+  var sel = window.__E_VAELG;
+  if (sel) {
+    var valg = Array.prototype.slice.call(sel.options).filter(function(o){ return !o.disabled || o.value; });
+    if (valg[i]) {
+      sel.value = valg[i].value;
+      sel.dispatchEvent(new Event("input", { bubbles: true }));
+      sel.dispatchEvent(new Event("change", { bubbles: true }));
+    }
+  }
+  eVaelgLuk();
+}
+document.addEventListener("mousedown", function(e){
+  var t = e.target;
+  if (!t || t.disabled) return;
+  if (!(window.matchMedia && matchMedia("(min-width: 761px)").matches)) return;
+  if (t.tagName === "SELECT" && !t.multiple && !(t.size > 1)) {
+    e.preventDefault();
+    try { t.blur(); } catch(err) {}
+    eVaelgVis(t);
+  }
+}, true);
+document.addEventListener("mousedown", function(e){
+  var pop = document.getElementById("eVaelgPop"); if (!pop) return;
+  var t = e.target;
+  if (!pop.contains(t) && !(t && t.tagName === "SELECT")) eVaelgLuk();
+});
+document.addEventListener("keydown", function(e){ if (e.key === "Escape") eVaelgLuk(); });
+window.addEventListener("scroll", eVaelgLuk, true);
 /* ---------- TAL SVARET IND — se noten oeverst ---------- */
 var BS_REC=null, BS_REC_FELT=null, BS_REC_BASE='';
 function bsTaleMulig(){ return !!(window.SpeechRecognition||window.webkitSpeechRecognition); }
@@ -1280,10 +1365,14 @@ function felt(sec,q,nr,ialt){
     (ARK_VISNING ? '<div class="q-nr">'+nr+' af '+ialt+'</div>' : '')+
     '<h3 class="question">'+esc(fletNavne((typeof q.qFn === 'function') ? q.qFn(sec) : q.q))+'</h3>'+
     (function(){ var h = (typeof q.hFn === 'function') ? q.hFn(sec) : q.h; return h ? '<div class="help">'+esc(fletNavne(h))+'</div>' : ''; })()+
-    (Array.isArray(q.valg)&&q.valg.length?valgChips(sec,q,v):'')+
-    '<textarea data-sec="'+sec+'" data-key="'+q.src+'" data-noegle="'+q.k+'" placeholder="Skriv svaret her…" '+
-    'oninput="saet(\''+sec+'\',\''+q.src+'\',this.value)">'+esc(v)+'</textarea>'+
-    bsTaleKnapHtml(sec,q.src)+
+    /* FASTE SVAR = VAELGER OG INTET ANDET (Ida 27/8). Skrivefeltet og mikrofonen
+       er VAEK paa de spoergsmaal - der er ikke noget at skrive eller tale ind,
+       naar svaret er et af fire. Frie spoergsmaal er uroerte. */
+    (Array.isArray(q.valg)&&q.valg.length
+      ? valgVaelger(sec,q,v)
+      : '<textarea data-sec="'+sec+'" data-key="'+q.src+'" data-noegle="'+q.k+'" placeholder="Skriv svaret her…" '+
+        'oninput="saet(\''+sec+'\',\''+q.src+'\',this.value)">'+esc(v)+'</textarea>'+
+        bsTaleKnapHtml(sec,q.src))+
   '</div>';
 }
 
