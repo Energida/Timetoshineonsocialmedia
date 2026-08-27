@@ -263,6 +263,31 @@ textarea:focus,input:focus{border-color:var(--red);box-shadow:0 0 0 3px rgba(252
 .done-line:first-of-type{border-top:none}
 .done-line b{font-weight:400;color:var(--red);width:170px;flex-shrink:0}
 .done-line span{color:var(--black);min-width:0}
+/* ---------- opsummeringens foldebarer (Ida 27/8) ---------- */
+/* Baren ER den gamle .done-line, gjort klikbar: samme luft, samme streg, samme roede
+   navn til venstre. Ingen ny raekkestil — den, fladen allerede havde. */
+.opsum-bar{display:flex;align-items:center;gap:14px;width:100%;text-align:left;background:none;border:0;
+  padding:10px 0;border-top:1px solid var(--gray);font-family:Poppins,Arial,sans-serif;font-size:13px;
+  line-height:1.5;cursor:pointer;color:var(--black);min-height:44px}
+.opsum-gr:first-of-type .opsum-bar{border-top:none}
+.opsum-bar b{font-weight:400;color:var(--red);width:170px;flex-shrink:0}
+.opsum-bar .opsum-tal{color:var(--black);flex:1;min-width:0}
+.opsum-bar svg{flex-shrink:0;color:var(--muted-2);transition:transform .15s}
+.opsum-ind{padding:2px 0 10px}
+.opsum-rk{display:flex;align-items:flex-start;gap:12px;padding:9px 0 9px 12px;border-top:1px solid var(--gray)}
+.opsum-spm{flex:0 0 210px;font-size:12px;color:var(--muted);line-height:1.5}
+.opsum-svar{flex:1;min-width:0;font-size:12.5px;line-height:1.55;color:var(--black);
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.opsum-svar.tom{color:var(--muted-2)}
+.opsum-ret{flex-shrink:0;background:none;border:0;padding:2px 6px;font-family:Poppins,Arial,sans-serif;
+  font-size:12px;font-weight:400;color:var(--red);cursor:pointer;min-height:44px;
+  display:inline-flex;align-items:center;box-sizing:border-box}
+@media(max-width:760px){
+  .opsum-bar b{width:auto}
+  .opsum-rk{flex-wrap:wrap;gap:4px 12px}
+  .opsum-spm{flex:1 1 100%}
+  .opsum-svar{flex:1 1 auto}
+}
 
 .mobile-tabs{display:none}
 @media(max-width:1000px){ .layout{grid-template-columns:200px minmax(0,1fr)} .right{display:none} }
@@ -1836,8 +1861,13 @@ function spm(sec){
   return liste.filter(function(q){ return (typeof q.vis === 'function') ? !!q.vis(sec) : true; });
 }
 function ialtSpm(){ return Object.keys(M5).reduce(function(n,k){ return n + spm(k).length }, 0); }
+/* INDEKSET SKAL TAELLE DE VISTE SPOERGSMAAL (rettet 27/8).
+   Foer soegte den i M5[sec] — ALLE spoergsmaal — mens selve forloebet bladrer i
+   spm(sec), som filtrerer de skjulte fra (butiks-spoergsmaalet vises kun ved fysisk
+   butik). Hos en webshop-kunde laa de to lister forskudt, og et "Ret" landede paa
+   spoergsmaalet ved siden af. Nu taelles der i den samme liste, som man bladrer i. */
 function spmIndex(sec,noegle){
-  var liste=M5[sec]||[];
+  var liste=spm(sec);
   for(var i=0;i<liste.length;i++){ if(liste[i].k===noegle) return i; }
   return 0;
 }
@@ -1921,21 +1951,76 @@ function byggestenPreviewHtml(){
   return '<section class="card" id="bsFletKort">'+byggestenPreviewIndhold()+'</section>';
 }
 
+/* Foldebaren og spoergsmaalsraekken paa opsummeringen (Ida 27/8) — se noten i showDone. */
+function opsumGruppe(titel, tal, id, indhold){
+  return '<div class="opsum-gr">'+
+    '<button type="button" class="opsum-bar" aria-expanded="false" onclick="opsumFold(\''+id+'\',this)">'+
+      '<b>'+esc(titel)+'</b><span class="opsum-tal">'+esc(tal)+'</span>'+
+      '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>'+
+    '</button>'+
+    '<div id="'+id+'" class="opsum-ind" style="display:none;">'+indhold+'</div></div>';
+}
+function opsumSpmRaekke(sec, q, svar, mgIdx){
+  var tekst=fletNavne((typeof q.qFn === 'function') ? q.qFn(sec) : q.q);
+  var arg=(mgIdx===null||mgIdx===undefined)?'null':String(mgIdx);
+  return '<div class="opsum-rk">'+
+    '<span class="opsum-spm">'+esc(tekst)+'</span>'+
+    '<span class="opsum-svar'+(svar?'':' tom')+'">'+esc(svar||'Ikke skrevet endnu')+'</span>'+
+    '<button type="button" class="opsum-ret" onclick="retSpm(\''+sec+'\',\''+q.k+'\','+arg+')">Ret</button>'+
+  '</div>';
+}
+function opsumFold(id, knap){
+  var el=document.getElementById(id); if(!el) return;
+  var aaben = el.style.display !== 'none';
+  el.style.display = aaben ? 'none' : '';
+  if(knap){
+    knap.setAttribute('aria-expanded', aaben ? 'false' : 'true');
+    var sv=knap.querySelector('svg'); if(sv) sv.style.transform = aaben ? '' : 'rotate(180deg)';
+  }
+}
+/* Er spoergsmaalet en maalgruppes, skal DEN maalgruppe vaelges foerst — ellers ville
+   man lande paa det rigtige spoergsmaal for den forkerte maalgruppe (14/8-reglen om
+   at navne er scopet til den aktive maalgruppe). */
+function retSpm(sec, noegle, mgIdx){
+  if(sec==='audiences' && typeof mgIdx==='number' && mgIdx>=0) mgAktiv=mgIdx;
+  retByggesten(sec, noegle);
+}
 function showDone(){
   renderSteps(); renderProgress();
   try { document.querySelector('.app').classList.remove('svarer'); document.querySelector('.app').classList.add('faerdig'); } catch(e){}
   var n=ialtSvar();
   var mgListe=MG.filter(function(m){return m.aktiv!==false});
-  var raekker=SECTIONS.map(function(s){
+  /* ===== GAA DIREKTE TIL DET SPOERGSMAAL, DER SKAL RETTES (Ida 27/8) ================
+     Hendes ord: "nu skal man klikke sig igennem alle spoergsmaal igen indtil man finder
+     det man vil rette i. Her skal det vaere muligt for kunden at kunne gaa direkte til
+     de enkelte spoergsmaal."
+     MAALT: opsummeringen viste kun "Startgrundlaget · 4 af 4 udfyldt", og den eneste
+     vej ind hed "Ret i svarene" -> goSection(0), altsaa forfra i foerste omraade.
+     Raekkerne er nu FOLDE-BARER: overskriften er den samme linje som foer, og folder man
+     den ud, staar omraadets spoergsmaal med deres svar og et roedt "Ret", der springer
+     PRAECIS derhen. Lukket fra start (lange lister foldes, 2/8) — fladen ser ud som foer,
+     indtil man selv aabner.
+     FOLDE-BAREN ER OVERSKRIFTEN: navnet gentages ikke inde i folden (fold-reglen). */
+  var raekker=SECTIONS.map(function(s,si){
     if(s.key==='audiences'){
       return mgListe.map(function(m,mi){
-        var o=SVAR[skemaFor('audiences',MG.indexOf(m))]||{};
-        var d=M5.audiences.filter(function(q){return String(o[q.src]||'').trim()}).length;
-        return '<div class="done-line"><b>'+esc(mgNavn(m,mi))+'</b><span>'+d+' af '+M5.audiences.length+' udfyldt</span></div>';
+        var idx=MG.indexOf(m);
+        var o=SVAR[skemaFor('audiences',idx)]||{};
+        var qs=spm('audiences');
+        var d=qs.filter(function(q){return String(o[q.src]||'').trim()}).length;
+        var indhold=qs.map(function(q){
+          return opsumSpmRaekke('audiences', q, String(o[q.src]||'').trim(), idx);
+        }).join('');
+        return opsumGruppe(mgNavn(m,mi), d+' af '+qs.length+' udfyldt', 'opsum_mg'+idx, indhold);
       }).join('');
     }
     var i=SECTIONS.indexOf(s);
-    return '<div class="done-line"><b>'+esc(s.navn)+'</b><span>'+sekDone(i)+' af '+spm(s.key).length+' udfyldt</span></div>';
+    var o2=SVAR[skemaFor(s.key)]||{};
+    var qs2=spm(s.key);
+    var indhold2=qs2.map(function(q){
+      return opsumSpmRaekke(s.key, q, String(o2[q.src]||'').trim(), null);
+    }).join('');
+    return opsumGruppe(s.navn, sekDone(i)+' af '+qs2.length+' udfyldt', 'opsum_s'+si, indhold2);
   }).join('');
 
   document.getElementById('screen').innerHTML=
@@ -1959,7 +2044,10 @@ function showDone(){
       '<div class="nav">'+
         '<button class="btn sek" onclick="visArket(true)">Se alle '+IALT_SPM+' på ét ark</button>'+
         '<div class="spacer"></div>'+
-        '<button class="btn sek" onclick="goSection(0)">Ret i svarene</button>'+
+        /* Knappen hed "Ret i svarene", indtil hvert spoergsmaal fik sit eget "Ret"
+           (27/8). To veje med samme navn er en dublet — og den her er den LANGE vej.
+           Navnet siger nu, hvad den faktisk goer. */
+        '<button class="btn sek" onclick="goSection(0)">Gå igennem forfra</button>'+
       '</div>'+
     '</section>'+
     bogKortHtml();
