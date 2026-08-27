@@ -56,6 +56,17 @@ body.i-app .top{display:none}
 .steps .step-gruppe:first-child{padding-top:2px}
 .step strong{font-weight:400;font-size:12px}
 .step small{font-size:10px;color:var(--muted-2)}
+/* Spoergsmaalene under det aktive omraade (Ida 27/8). Rolige raekker, ingen flader,
+   ingen prikker foran (27/7). Det, man staar paa, er roedt — det er en TILSTAND, og
+   den bor i teksten, ikke i en flade (22/8). */
+.step-spm{display:grid;gap:1px;margin:2px 0 6px}
+.step-q{width:100%;text-align:left;background:none;border:0;padding:6px 12px 6px 49px;
+  font-family:Poppins,Arial,sans-serif;font-weight:400;font-size:10.5px;line-height:1.45;
+  color:var(--muted-2);cursor:pointer;border-radius:8px}
+.step-q:hover{background:var(--blod);color:var(--black)}
+.step-q.udfyldt{color:var(--muted)}
+.step-q.paa{color:var(--red)}
+@media(max-width:1000px){.step-spm{display:none}}
 .main{min-width:0}
 /* Se noten i CSS-blokken ovenfor: introens egen ramme. */
 .main:has(> #screen > .sek-intro){max-width:820px;min-height:600px;display:flex;flex-direction:column;justify-content:center}
@@ -197,7 +208,11 @@ textarea:focus,input:focus{border-color:var(--red);box-shadow:0 0 0 3px rgba(252
 .chip-add{border:1.5px solid var(--red);background:#fff;color:var(--red);border-radius:999px;padding:8px 14px;font-size:12px;white-space:nowrap}
 .nav{display:flex;gap:10px;align-items:center;margin-top:20px;justify-content:flex-end}
 .nav .spacer{flex:1}
-.btn{border:0;border-radius:12px;padding:10px 18px;white-space:nowrap;font-size:12.5px}
+/* MINDRE KNAPPER (Ida 27/8). Foer 10/18 px polstring og 12,5 px skrift — de fyldte
+   som handlinger, der skulle raabe. Vejen frem og tilbage i et forloeb er ikke en
+   raaben; den skal bare vaere til at ramme. 44 px-touchmaalet paa telefon staar
+   uaendret nedenfor og vinder over det her (2/8). */
+.btn{border:0;border-radius:999px;padding:7px 15px;white-space:nowrap;font-size:12px;line-height:1.4}
 .btn.red{background:var(--red);color:#fff}
 .btn.red:hover{background:var(--red-dark)}
 .btn.sek{background:#fff;color:var(--red);border:1.5px solid var(--red)}
@@ -749,10 +764,10 @@ const M5 = {
 };
 
 const SECTIONS = [
- {key:'start', navn:'Startgrundlaget', fase:'ENERGI', lektion:'5-1',
+ {key:'start', navn:'Startgrundlaget', fase:'DRIVKRAFTEN', lektion:'5-1',
   intro:'Hvilken type virksomhed er det?',
   desc:'Før strategien bygges, skal systemet forstå, hvad {virksomhed} tilbyder, hvem den er til for, og hvordan kunden møder den. Det afgør, hvilket sprog resten af forløbet bruger.'},
- {key:'drive', navn:'Drivkraft', fase:'ENERGI', lektion:'5-2',
+ {key:'drive', navn:'Drivkraft', fase:'DRIVKRAFTEN', lektion:'5-2',
   intro:'Hvorfor findes forretningen?',
   desc:'Drivkraften er personlig og bor i menneskene bag forretningen. Den bliver byggestenen på Mennesker-søjlen i contentmodellen.'},
  /* Sektionen hedder "Målgruppen" (Ida 19/8, ret-arkets afsnit 1). Aabent B1-spoergsmaal:
@@ -813,7 +828,7 @@ function sekProgress(s, nr, ialt){
 const OVERGANG = { audiences:'Godt gået.', values:'Stærkt.', usp:'Den del får betydning senere.', direction:'Nu har I fundamentet.' };
 
 const FASE_TXT = {
-  ENERGI:'Hvad driver jer, og hvad skal være værd at bruge energi på?',
+  DRIVKRAFTEN:'Hvad driver jer, og hvad skal være værd at bruge energi på?',
   STRATEGI:'Hvad er retningen og den røde tråd?',
   RESULTAT:'Hvordan bliver det gjort, målt og justeret?'
 };
@@ -1238,14 +1253,48 @@ function bsGenoptagSaet(){
   if(i>0){ current=i; qIndex=0; VIS_INTRO=true; }
 }
 var BS_GENOPTAGET=false;
+/* Spoergsmaalslisten under det aktive omraade — se noten i renderSteps.
+   Er omraadet gentageligt (maalgruppen), gaelder listen den AKTIVE maalgruppe;
+   navnet staar allerede i korthovedet, saa det gentages ikke her. */
+function stepSpmListe(s, i){
+  var qs = spm(s.key);
+  if (!qs.length) return '';
+  var idx = (s.key === 'audiences') ? mgAktiv : null;
+  return '<div class="step-spm">' + qs.map(function(q, n){
+    var svar = String(hent(s.key, q.src, idx) || '').trim();
+    var tekst = fletNavne((typeof q.qFn === 'function') ? q.qFn(s.key) : q.q);
+    return '<button type="button" class="step-q'+(svar?' udfyldt':'')+(n===qIndex && !VIS_INTRO?' paa':'')+'" '+
+      'onclick="goQuestionNr('+i+','+n+')">'+esc(tekst)+'</button>';
+  }).join('') + '</div>';
+}
+/* Springer direkte til eet spoergsmaal i et omraade — samme vej som skinnen, bare
+   uden at lande paa introfladen foerst. */
+function goQuestionNr(sec, n){
+  current = sec; qIndex = n; VIS_INTRO = false; ARK_VISNING = false;
+  window.scrollTo(0,0); render();
+}
 function renderSteps(){
   document.getElementById('steps').innerHTML=STEP_GRUPPER.map(function(g){
     var raekker = g.keys.map(function(k){
       var i = SECTIONS.map(function(x){return x.key}).indexOf(k);
       if (i < 0) return '';
       var s = SECTIONS[i], alle = spm(s.key).length, d = sekDone(i);
-      return '<button class="step '+(i===current?'active':'')+' '+(d===alle?'done':'')+'" onclick="goSection('+i+')">'+
-        '<span class="no">'+(d===alle ? energidaFlueben() : (byggestenNr(s.key)||'·'))+'</span><strong>'+esc(s.navn)+'</strong></button>';
+      /* ===== INGEN TAL FORAN — OG SPOERGSMAALENE UNDER DET, MAN STAAR I (Ida 27/8) =====
+         Hendes ord: "kunne godt taenke mig at tallene bliver fjernet foran disse emner
+         og spoergsmaalene kan komme frem under men det er fint at der kommer en cirkel
+         med flueben naar de er udfyldt."
+         DET JUSTERER 25/8-beslutningen om, at cirklen skulle baere TALLET, fordi man
+         ellers ikke kunne se, at der er fire byggesten. Gruppeoverskriften siger det
+         allerede ordret — "DE FIRE BYGGESTEN" — saa tallet var en dublet af den.
+         Cirklen bliver: tom ring, indtil omraadet er udfyldt, saa fyldt roed m. hvidt
+         flueben (flueben-standarden 30/7). Den siger nu KUN eet: er du faerdig her.
+         SPOERGSMAALENE STAAR UNDER DET AKTIVE OMRAADE — ikke under dem alle. Seks
+         omraader gange op til tolv spoergsmaal ville vaere en mur i en skinne paa 246 px
+         (lange lister foldes, 2/8). Under det, man staar i, er de en genvej. */
+      var raekke = '<button class="step '+(i===current?'active':'')+' '+(d===alle?'done':'')+'" onclick="goSection('+i+')">'+
+        '<span class="no">'+(d===alle ? energidaFlueben() : '')+'</span><strong>'+esc(s.navn)+'</strong></button>';
+      if (i === current && !ARK_VISNING) raekke += stepSpmListe(s, i);
+      return raekke;
     }).join('');
     if (!raekker) return '';
     return '<div class="step-gruppe">'+esc(g.titel)+'</div>'+raekker;
@@ -1524,7 +1573,12 @@ function render(){
     document.getElementById('screen').innerHTML = hoved +
       '<section class="intro sek-intro">'+
         (ov ? '<div class="overgang">'+esc(ov)+'</div>' : '')+
-        '<div class="ey">'+sekEtiket(s)+(s.fase?' &middot; '+esc(s.fase):'')+'</div><hr>'+
+        /* FASEN HEDDER DRIVKRAFTEN (Ida 27/8: "energi laves om til drivkraften").
+           MEN DEN SKRIVES ALDRIG OVEN OVER SIT EGET NAVN: paa Drivkraft-siden ville der
+           staa "BYGGESTEN 1 AF 4 · DRIVKRAFTEN" og lige under en overskrift, der siger
+           "Drivkraft" — samme ord to gange paa fire linjers afstand (dublet-reglen).
+           Dér staar kun "BYGGESTEN 1 AF 4". */
+        '<div class="ey">'+sekEtiket(s)+((s.fase && String(s.fase).toUpperCase().indexOf(String(s.navn).toUpperCase())<0)?' &middot; '+esc(s.fase):'')+'</div><hr>'+
         '<h2>'+esc(s.navn)+'</h2>'+
         /* INTRO OG BESKRIVELSE SKAL OGSAA FLETTES (Idas fund 27/8). Kun spoergsmaalene
            og hjaelpeteksterne gik gennem fletNavne — sektionens egen intro gjorde ikke,
@@ -1534,12 +1588,17 @@ function render(){
         /* GENOPTAGELSES-LINJEN (Ida 26/8): staar KUN naar der faktisk er svaret
            noget, og siger baade hvor langt hun er, og at svarene er i hus. */
         (ialtSvar() ? '<p class="genoptag">Du er n&aring;et til <b>'+esc(s.navn)+'</b> &mdash; <b>'+ialtSvar()+' af '+IALT_SPM+'</b> sp&oslash;rgsm&aring;l er besvaret. Alt det, du har skrevet, ligger gemt.</p>' : '')+
+      '</section>'+
+        /* KNAPPERNE UD AF DEN ROEDE KASSE (Ida 27/8: "knapperne skal ogsaa fjernes her
+           fra selve den roede boks og placeres under"). Samme greb som paa
+           spoergsmaalskortet: kassen baerer BESKEDEN, og vejen videre staar under den.
+           En hvid knap paa en roed flade laante desuden kassens vaegt — nu staar begge
+           knapper i husets almindelige sprog paa gradienten. */
         '<div class="nav">'+
           (current>0?'<button class="btn sek" onclick="goSection('+(current-1)+')">Tilbage</button>':'')+
           '<div class="spacer"></div>'+
           '<button class="btn red" onclick="startSektion()">'+(sekDone(current)?'Fortsæt':'Kom i gang')+'</button>'+
-        '</div>'+
-      '</section>';
+        '</div>';
     return;
   }
 
@@ -1563,11 +1622,17 @@ function render(){
     (s.gentagelig?maalgruppeBar():'')+
     '<div class="kort-hoved">'+ikon()+'<div class="lbl">'+sekProgress(s, qIndex+1, qs.length)+'</div></div>'+
     felt(s.key,q,qIndex+1,qs.length)+
+    /* KNAPPERNE STAAR UNDER KORTET (Ida 27/8: "knapperne her skal vaere meget mindre og
+       maa gerne sidde under spoergsmaalsboksen"). Foer laa de INDE i den hvide kasse og
+       fyldte en fjerdedel af den. Nu er kortet spoergsmaalet — og vejen videre staar
+       under det, paa gradienten. Placeringen er uaendret: Tilbage til venstre (navigation,
+       30/7), den primaere handling yderst til hoejre (4/8). */
+    '</section>'+
     '<div class="nav">'+
       '<button class="btn sek" onclick="'+(qIndex>0?'goQuestion(-1)':'visIntro()')+'">Tilbage</button>'+
       '<div class="spacer"></div>'+
       '<button class="btn red" onclick="'+(qIndex<qs.length-1?'goQuestion(1)':'nextSection()')+'">'+(qIndex<qs.length-1?'Næste':'Fortsæt')+'</button>'+
-    '</div></section>';
+    '</div>';
   document.getElementById('screen').innerHTML=hoved+krop;
 }
 function startSektion(){ VIS_INTRO=false; ARK_VISNING=false; window.scrollTo(0,0); render() }
