@@ -171,6 +171,8 @@ body.i-app .top{display:none}
 .help{font-size:12.5px;line-height:1.6;color:var(--muted);margin-bottom:12px}
 textarea,input[type=text]{width:100%;border:1px solid var(--border);border-radius:12px;background:#fff;padding:12px 13px;outline:none;font-size:14px;line-height:1.55;color:var(--black)}
 textarea{min-height:92px;resize:vertical}
+/* Print-svaret findes kun paa papiret — se beforeprint-lytteren. */
+.print-svar{display:none}
 textarea:focus,input:focus{border-color:var(--red);box-shadow:0 0 0 3px rgba(252,36,4,.10)}
 /* ---------- VÆLGEREN (Ida 27/8) ------------------------------------------------
    Hendes ord: "alle spoergsmaal hvor der idag er chips - der skal skrivefeltet vaek.
@@ -282,7 +284,22 @@ textarea:focus,input:focus{border-color:var(--red);box-shadow:0 0 0 3px rgba(252
 }
 @media print{
   .top,.left,.right,.nav,.mobile-tabs,.heart,.esr-strip,.mg-vaerktoej{display:none!important}
+  /* RUNDVISNINGEN OG FREMDRIFTSBAREN PRINTES IKKE (fundet i en rigtig PDF 27/8).
+     Overlayet ligger fixed over hele fladen med et graat slaer. Printede man arket,
+     mens rundvisningen stod fremme, kom SLOERET og kortet med paa papiret og daekkede
+     side 1. Fremdriften ("2 % · 1 af 41") er en skaerm-tilstand, ikke noget, der hoerer
+     til paa et ark, man skriver i haanden i. */
+  #bsTurOverlay,.fremdrift,.bs-tale{display:none!important}
+  /* Mikrofonen kan man ikke tale ind i paa et stykke papir, og traek-hjoernet i
+     bunden af et tomt felt er en skaerm-ting. Begge dele er stoej paa arket. */
+  textarea{resize:none!important}
   .app{background:#fff}.layout{display:block;padding:0;max-width:100%}
+  /* SIDE 1 VAR NAESTEN TOM (maalt i en rigtig PDF 27/8). body og .app baerer
+     min-height:100vh til skaermen — i print er 100vh EN HEL SIDE, saa arket aabnede med
+     en tom side, foer det foerste spoergsmaal. .app har desuden overflow:hidden, som
+     ikke hoerer hjemme i et dokument, der skal loebe over mange ark. */
+  html,body,.app,.main,#screen{min-height:0!important;overflow:visible!important;height:auto!important}
+  .main{display:block!important;max-width:100%!important;justify-content:flex-start!important}
   .card{border:0;padding:0 0 14px;break-inside:avoid}
   .intro{background:#fff;color:#000;border:0;padding:0 0 10px}
   .intro h2{color:#000}.intro .ey{color:#666}
@@ -293,6 +310,17 @@ textarea:focus,input:focus{border-color:var(--red);box-shadow:0 0 0 3px rgba(252
   /* tomme felter bliver skrivelinjer, udfyldte svar printes med */
   textarea{min-height:52px;border:0;border-bottom:1px solid #bbb;border-radius:0;padding:4px 0;
            font-size:11.5px;background:repeating-linear-gradient(#fff 0 25px,#e8e8e8 25px 26px)}
+  /* SVARET MAA IKKE KLIPPES AF (Idas fund 27/8: "sp&oslash;rgsm&aring;lene er lukket inde").
+     En textarea RULLER sit indhold — paa skaermen kan man scrolle i den, men paa papir
+     findes der ingen rulning, saa alt under kanten forsvandt. Med et langt svar stod der
+     tre linjer paa arket og resten ingen steder.
+     Hoejden saettes af beforeprint-lytteren nedenfor; her aabnes kun laaget, saa den
+     satte hoejde faktisk faar lov at gaelde. "Intet klippes" (22/7). */
+  textarea.har-svar{display:none!important}
+  .print-svar{display:block!important;font-size:11.5px;line-height:1.55;white-space:pre-wrap;
+              padding:4px 0 6px;border-bottom:1px solid #bbb;break-inside:avoid}
+  .bs-valg{border:0;border-bottom:1px solid #bbb;border-radius:0;padding:4px 0;font-size:11.5px;
+           background-image:none!important;-webkit-appearance:none;appearance:none}
 }
 </style>
 </head>
@@ -1102,12 +1130,20 @@ function renderProgress(){
      — den bruger det til success-øjeblikket og oplåsningen for selvkøbs-kunder.
      Kun én gang pr. session, kun til vores egen ramme (same-origin), og en fejl her
      må aldrig vælte byggeren.
-     TÆRSKLEN ER BESLUTTET AF IDA 27/8: signalet fyrer først, når ALLE spørgsmål er
-     besvaret — IALT_SPM, altså 41, eller 42 når kunden har fysisk butik. Før stod her
-     det hardkodede tal 31: kunden fik "færdig" og trin 2 låst op, mens 10 spørgsmål
-     stadig manglede, og Drejebogen bygges af netop de svar. Tallet må ALDRIG skrives
-     som et tal igen — IALT_SPM følger med, når listen ændrer sig. */
-  if (n >= IALT_SPM && !window.__FAERDIG_MELDT) {
+     TÆRSKLEN — OG EN RETTELSE AF MIG SELV SAMME DAG (Ida 27/8).
+     Om formiddagen blev den hævet fra det hardkodede 31 til ALLE spørgsmål, fordi jeg
+     sagde, at Drejebogen bygges af de svar, signalet tæller. DET VAR FORKERT.
+     MÅLT: signalet har præcis ÉN lytter i hele appen — selvkøbs-oplåsningen i
+     index.html. Det gater IKKE Drejebogen; den laves af en knap, kunden selv trykker på.
+     Det eneste, en høj tærskel gjorde, var at spærre en kunde, der HAR BETALT, ude af
+     resten af sit studio, hvis hun sprang ét felt over. Der er ingen anden dør ind.
+     Idas valg 27/8: "del de to ting ad" — bogen kræver stadig, at man er nået igennem,
+     men adgangen til det købte må aldrig hænge i det.
+     TALLET REGNES, DET SKRIVES IKKE: 75 % af de VISTE spørgsmål — 31 af 41, altså
+     præcis den adfærd, der stod live i går, men nu følger den med, når listen ændrer
+     sig. Skriv det aldrig som et ciffer igen. */
+  var studioGraense = Math.ceil(IALT_SPM * 0.75);
+  if (n >= studioGraense && !window.__FAERDIG_MELDT) {
     window.__FAERDIG_MELDT = true;
     try { if (window.parent && window.parent !== window) window.parent.postMessage({ energida: "drejebog_faerdig" }, location.origin); } catch(e) {}
   }
@@ -2000,6 +2036,37 @@ function bsTurStart(igen){
 /* Rundvisningen venter paa kontoopslaget, saa den ikke naar at starte, foer vi
    ved, om den allerede er set. */
 bsTurHusket().then(function(){ setTimeout(function(){ try{ bsTurStart(); }catch(e){} }, 800); });
+
+/* ===== PRINTET SKAL BAERE HELE SVARET (Ida 27/8) ==================================
+   "Det er vigtigt at jeg kan faa svarene bagefter" — og "Print arket" er den vej.
+   MAALT: felterne er textarea'er med min-height 92 px og rulning. Paa skaermen kan man
+   rulle i dem; paa papir kan man ikke, saa alt under kanten blev klippet vaek.
+   FOERSTE FORSOEG SATTE EN HOEJDE paa feltet (scrollHeight). Det holdt ikke: hoejden
+   maales paa SKAERMENS spalte, hvor venstre skinne fylder — og print-arket skjuler
+   skinnen, saa spalten bliver bredere og tallet forkert. MAALT i en rigtig PDF: side 1
+   stod naesten tom.
+   NU BYTTES FELTET UD: hvert udfyldt felt faar en almindelig tekstblok ved siden af sig,
+   og selve feltet skjules i print. En tekstblok ombryder selv og kan ikke klippes —
+   der er ingen hoejde at regne forkert. Blokken fjernes igen efter print.
+   TOMME FELTER ROERES IKKE: de skal blive ved med at vaere skrivelinjer, saa man kan
+   printe arket og skrive i haanden (den oprindelige hensigt med arket). */
+function bsPrintVoks(){
+  bsPrintTilbage();
+  [].forEach.call(document.querySelectorAll('#screen textarea'), function(t){
+    if (!String(t.value||'').trim()) return;      /* tomt = skrivelinjer, lad staa */
+    var d = document.createElement('div');
+    d.className = 'print-svar';
+    d.textContent = t.value;                      /* ren tekst, aldrig markup */
+    t.classList.add('har-svar');
+    if (t.parentNode) t.parentNode.insertBefore(d, t.nextSibling);
+  });
+}
+function bsPrintTilbage(){
+  [].forEach.call(document.querySelectorAll('.print-svar'), function(d){ d.remove(); });
+  [].forEach.call(document.querySelectorAll('textarea.har-svar'), function(t){ t.classList.remove('har-svar'); });
+}
+window.addEventListener('beforeprint', bsPrintVoks);
+window.addEventListener('afterprint', bsPrintTilbage);
 
 window.addEventListener('resize',function(){ clearTimeout(window.__rz); window.__rz=setTimeout(render,150); var o=document.getElementById('bsTurOverlay'); if(o) o.remove(); });
 /* NAVNET STÅR ÉN GANG (dublet-reglen). Inde i Content Studio staar der allerede
