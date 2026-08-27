@@ -85,6 +85,8 @@ body.i-app .fremdrift{top:0}
 .steps .step-gruppe:first-child{padding-top:2px}
 .step strong{font-weight:400;font-size:12px}
 .step small{font-size:10px;color:var(--muted-2)}
+.step-antal{display:inline-flex;align-items:center;font-size:10px;color:var(--muted-2)}
+.step.active .step-antal{color:var(--red)}
 /* Spoergsmaalene under det aktive omraade (Ida 27/8). Rolige raekker, ingen flader,
    ingen prikker foran (27/7). Det, man staar paa, er roedt — det er en TILSTAND, og
    den bor i teksten, ikke i en flade (22/8). */
@@ -681,44 +683,43 @@ const M5 = {
   {
    "k": "audience_age_or_life_stage",
    "src": "omshn677dx12rd",
-   "q": "Hvor gammel er {persona} ca.?",
-   "h": "Vælg en konkret alder eller et smalt interval. Det handler ikke om at udelukke andre kunder."
+   "q": "Hvor gammel er {persona}?"
   },
   {
    "k": "audience_everyday",
    "src": "omshn677dfzoc5",
    "q": "Hvordan ser {persona}s hverdag ud?",
-   "h": "Arbejde, tempo, familie, ansvar, tidspres — det, der fylder."
+   "h": "Hvor bor {persona}? Hvad arbejder {persona} med? Hvad bruges fritiden på? Hvordan ser familien ud?"
   },
   {
    "k": "audience_lifestyle_values",
    "src": "omx20adfaerd1k",
-   "q": "Hvad vil {persona} gerne prioritere i sin hverdag, men får ikke altid gjort?",
-   "h": "Tænk på det, kunden gerne vil gøre mere af, men som ofte bliver nedprioriteret i en travl hverdag."
+   "q": "Hvad kunne {persona} godt tænke sig at gøre mere af i hverdagen, som der ikke bliver gjort?",
+   "h": "Tænk på det, der ofte bliver nedprioriteret, når hverdagen er travl."
   },
   {
    "k": "audience_desires",
    "src": "omshn677d0k6t8",
-   "q": "Hvad ønsker {persona} sig mere af?",
-   "h": "Tænk på de ønsker, {virksomhed} kan være relevant for."
+   "q": "Hvordan kan {virksomhed} hjælpe med dette?",
+   "h": "Hvilke produkter eller hvilken hjælp kunne bringe {persona} tættere på det?"
   },
   {
    "k": "audience_core_challenge",
    "src": "om7dlft1ln6w4g",
-   "q": "Hvad er {persona}s største udfordring eller behov, som {virksomhed} hjælper med?",
-   "h": "Beskriv problemet med {persona}s egne ord. Beskriv nu-situationen, ikke løsningen."
+   "q": "Når {persona} kommer i butikken — hvad er det så, {virksomhed} hjælper med?",
+   "h": "Beskriv det med {persona}s egne ord. Beskriv situationen, ikke løsningen."
   },
   {
    "k": "audience_situations",
    "src": "omshn677d01ru0",
-   "q": "I hvilke konkrete situationer får {persona} brug for {virksomhed}?",
-   "h": "Beskriv mindst tre. Begivenhed, travl uge, akut behov, sæson, gave."
+   "q": "I hvilke situationer besøger {persona} butikken?",
+   "h": "Beskriv gerne mindst tre. Fx en begivenhed, en travl uge, et akut behov, en sæson eller en gave."
   },
   {
    "k": "audience_rejections",
    "src": "omshn677dhl31k",
-   "q": "Hvad gider {persona} ikke?",
-   "h": "Det, der får {persona} til at miste interessen eller vælge fra."
+   "q": "Hvad kunne få {persona} til at forlade butikken igen — hvad gider {persona} ikke?",
+   "h": "Det, der får {persona} til at miste interessen eller gå videre."
   },
   {
    "k": "audience_desired_after_state",
@@ -729,8 +730,8 @@ const M5 = {
   {
    "k": "audience_content_context",
    "src": "omshn677dk4umm",
-   "q": "Hvornår og i hvilken situation ser {persona} typisk et opslag fra {virksomhed}?",
-   "h": "Fx i sofaen om aftenen, i en pause, på farten eller lige før et køb. Tænk på, hvad kunden typisk laver, når opslaget dukker op."
+   "q": "Forestil dig, at {persona} ser et opslag fra {virksomhed} — hvad laver {persona} i det øjeblik?",
+   "h": "Hvad er klokken på dagen? Hvad er {persona} i gang med? Hvordan er energien lige dér?"
   }
  ],
  "values": [
@@ -1387,6 +1388,14 @@ var BS_GENOPTAGET=false;
 /* Spoergsmaalslisten under det aktive omraade — se noten i renderSteps.
    Er omraadet gentageligt (maalgruppen), gaelder listen den AKTIVE maalgruppe;
    navnet staar allerede i korthovedet, saa det gentages ikke her. */
+/* Hvilket omraade der staar foldet ud i skinnen. -1 = ingen. Nulstilles aldrig af sig
+   selv: har man aabnet en liste, skal den ikke lukke sig, fordi man svarer. */
+var STEP_FOLD = -1;
+function stepKlik(i){
+  if (i === current) { STEP_FOLD = (STEP_FOLD === i) ? -1 : i; renderSteps(); return; }
+  STEP_FOLD = -1;
+  goSection(i);
+}
 function stepSpmListe(s, i){
   var qs = spm(s.key);
   if (!qs.length) return '';
@@ -1430,9 +1439,20 @@ function renderSteps(){
          De baerer UNDERTAL: 1.1, 1.2 ... under byggesten 1. Omraader uden byggestennummer
          (Startgrundlaget, Retning) taeller bare 1, 2, 3 — et opfundet foerste-tal ville
          kollidere med byggestenenes. */
-      var raekke = '<button class="step '+(i===current?'active':'')+' '+(d===alle?'done':'')+'" onclick="goSection('+i+')">'+
-        '<span class="no">'+(d===alle ? energidaFlueben() : (byggestenNr(s.key)||'·'))+'</span><strong>'+esc(s.navn)+'</strong></button>';
-      if (i === current && !ARK_VISNING) raekke += stepSpmListe(s, i);
+      /* OMRAADET ER EEN LINJE — SPOERGSMAALENE KOMMER FREM, NAAR MAN FOLDER UD
+         (Idas valg 27/8). Foer stod alle tolv fremme under det aktive omraade, og saa
+         var skinnen en mur. Nu siger linjen, hvor mange der er, og et klik paa det
+         omraade, man ALLEREDE staar i, folder dem ud. Klikker man paa et andet omraade,
+         gaar man derhen — een raekke, to naturlige betydninger, og ingen knap inde i en
+         knap. Lukket fra start (lange lister foldes, 2/8). */
+      var aaben = (STEP_FOLD === i);
+      var raekke = '<button class="step '+(i===current?'active':'')+' '+(d===alle?'done':'')+'" '+
+        'aria-expanded="'+(aaben?'true':'false')+'" onclick="stepKlik('+i+')">'+
+        '<span class="no">'+(d===alle ? energidaFlueben() : (byggestenNr(s.key)||'·'))+'</span>'+
+        '<strong>'+esc(s.navn)+'</strong>'+
+        '<span class="step-antal">'+alle+'<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-left:5px;'+(aaben?'transform:rotate(180deg);':'')+'"><path d="M6 9l6 6 6-6"/></svg></span>'+
+        '</button>';
+      if (aaben && !ARK_VISNING) raekke += stepSpmListe(s, i);
       return raekke;
     }).join('');
     if (!raekker) return '';
