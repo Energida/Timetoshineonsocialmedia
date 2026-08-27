@@ -59,15 +59,21 @@ body.i-app .top{display:none}
 /* Spoergsmaalene under det aktive omraade (Ida 27/8). Rolige raekker, ingen flader,
    ingen prikker foran (27/7). Det, man staar paa, er roedt — det er en TILSTAND, og
    den bor i teksten, ikke i en flade (22/8). */
-.step-spm{display:grid;gap:1px;margin:2px 0 6px}
-.step-q{width:100%;text-align:left;background:none;border:0;padding:6px 12px 6px 21px;
-  display:grid;grid-template-columns:28px 1fr;gap:9px;align-items:start;
+/* RAMME OM SPOERGSMAALENE (Ida 27/8: "der skal en ramme omkring spoergsmaalene ...
+   ellers bliver det helt uoverskueligt"). Tolv linjer, der flyder frit paa gradienten
+   under et kort med roed kant, hoerte visuelt ingen steder til. Rammen samler dem til
+   EEN blok, der tydeligt haenger under sit omraade: hvid flade, haarfin graa kant,
+   radius 12 (husets inputs-radius) — ingen ny form, den appen allerede bruger. */
+.step-spm{display:grid;gap:1px;margin:5px 0 6px;background:#fff;border:1px solid var(--border);
+  border-radius:12px;padding:5px 0;overflow:hidden}
+.step-q{width:100%;text-align:left;background:none;border:0;padding:6px 12px 6px 10px;
+  display:grid;grid-template-columns:26px 1fr;gap:8px;align-items:start;
   font-family:Poppins,Arial,sans-serif;font-weight:400;font-size:10.5px;line-height:1.45;
   color:var(--muted-2);cursor:pointer;border-radius:8px}
 .step-q-nr{font-size:9.5px;color:var(--muted-2);text-align:center;padding-top:1px}
 .step-q.paa .step-q-nr{color:var(--red)}
 .step-q-txt{min-width:0}
-.step-q:hover{background:var(--blod);color:var(--black)}
+.step-q:hover{background:var(--blod);color:var(--black);border-radius:0}
 .step-q.udfyldt{color:var(--muted)}
 .step-q.paa{color:var(--red)}
 @media(max-width:1000px){.step-spm{display:none}}
@@ -563,16 +569,29 @@ const M5 = {
  ],
  "audiences": [
   {
+   /* SVARMULIGHEDER, IKKE ET SKRIVEFELT (Ida 27/8: "her skal det bare vaere spoergsmaal
+      med svarmuligheder. og ikke skrivefelt"). Svaret er enten det ene eller det andet,
+      og det STYRER det naeste spoergsmaal — derfor skal det vaere til at laese af
+      maskinelt, ikke fritekst. */
    "k": "audience_count",
    "src": "om4gp8el0vaiuj",
    "q": "Har {virksomhed} én eller flere målgrupper?",
-   "h": "Vælg flere, hvis kunderne har forskellige behov, købsmotivationer eller kræver forskellig kommunikation."
+   "h": "Vælg flere, hvis kunderne har forskellige behov, købsmotivationer eller kræver forskellig kommunikation.",
+   "valg": ["Én målgruppe", "Flere målgrupper"]
   },
   {
+   /* VISES KUN, NAAR DER ER FLERE (Ida 27/8). Hjaelpelinjen LOVEDE det allerede — "Vises
+      kun, hvis der er flere maalgrupper" — men der stod ingen regel bag, saa den kom
+      hver gang. En saetning, der kan lyve, er vaerre end ingen (2/8). Nu er der en regel,
+      og saa er linjen overfloedig og taget ud (fyld-reglen 26/8).
+      Ordlyden er Idas: "Er maalgrupperne lige vigtige for forretningen?" */
+   "vis": function (sec) {
+     return String(hent(sec, "om4gp8el0vaiuj") || "").indexOf("Flere") > -1;
+   },
    "k": "audience_priority",
    "src": "omkbsf3xo9b1ac",
-   "q": "Er målgrupperne lige vigtige, eller er der én primær og en eller flere sekundære?",
-   "h": "Vises kun, hvis der er flere målgrupper."
+   "q": "Er målgrupperne lige vigtige for {virksomhed}?",
+   "valg": ["De er lige vigtige", "Én er primær — resten er sekundære"]
   },
   {
    "k": "audience_identity",
@@ -1126,7 +1145,12 @@ function tilfoejMg(){
 }
 function omdoebMg(v){ mg().navn=v; gemMg(); renderSteps() }
 function skiftAktivMg(){ var m=mg(); m.aktiv=(m.aktiv===false); gemMg(); render() }
-function mgNavn(m,i){ return String(m.navn||'').trim()||('Målgruppe '+(i+1)) }
+/* EEN MAALGRUPPE HAR INTET NUMMER (Ida 27/8: "der skal som start heller ikke staa
+   baade maalgruppe 1 og maalgruppe 2 - men kun maalgruppe").
+   Et "1" lover, at der findes et 2 — og i starten er der kun én. Tallet kommer,
+   naar man selv tilfoejer den naeste. Samme regel som "Maalgruppe 1" vs. "Maalgruppen"
+   i brandbogen (23/7): der nummereres kun, naar der ER flere. */
+function mgNavn(m,i){ return String(m.navn||'').trim() || (MG.length>1 ? ('Målgruppe '+(i+1)) : 'Målgruppe') }
 
 /* ---------- visning ---------- */
 /* ---------- NAVNE I SPOERGSMAALENE (Ida 14/8) ----------
@@ -1636,7 +1660,11 @@ function render(){
   var krop=''+
     (q && q.vend ? '<div class="vending">'+esc(q.vend)+'</div>' : '')+
     '<section class="card">'+
-    (s.gentagelig?maalgruppeBar():'')+
+    /* MAALGRUPPE-BAREN KOMMER FOERST EFTER FOERSTE SPOERGSMAAL (Ida 27/8: "her skal
+       man endnu ikke navngive maalgruppen"). Paa 2.1 spoerger vi, om der er EEN eller
+       FLERE — dér giver det ingen mening at staa med chips og et navnefelt til noget,
+       kunden endnu ikke har taget stilling til. */
+    ((s.gentagelig && qIndex > 0)?maalgruppeBar():'')+
     '<div class="kort-hoved">'+ikon()+'<div class="lbl">'+sekProgress(s, qIndex+1, qs.length)+'</div></div>'+
     felt(s.key,q,qIndex+1,qs.length)+
     /* KNAPPERNE STAAR UNDER KORTET (Ida 27/8: "knapperne her skal vaere meget mindre og
