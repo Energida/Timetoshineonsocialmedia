@@ -553,7 +553,7 @@ const M5 = {
   {
    "k": "audience_identity",
    "src": "omshn677dvouqy",
-   "q": "Forestil dig {virksomhed}s kernekunde. Hvad hedder hun?",
+   "q": "Forestil dig {virksomhed}s kernekunde. Hvad hedder personen?",
    "h": "Tag udgangspunkt i en rigtig kunde, som {virksomhed} allerede har, og som {virksomhed} gerne vil have flere af. Skriv kun fornavnet."
   },
   {
@@ -601,8 +601,8 @@ const M5 = {
   {
    "k": "audience_desired_after_state",
    "src": "omshn677difejz",
-   "q": "Hvad skal {persona} sidde tilbage med, når hun har set et opslag fra {virksomhed}?",
-   "h": "Tænk på det øjeblik, hvor hun ruller videre. Ikke hvad hun skal købe, men hvad hun skal føle. Beskriv forandringen fra før til efter. Eksempel: før troede hun, hun var doven. Efter tænker hun, at hun bare mangler energi."
+   "q": "Hvad skal {persona} sidde tilbage med efter et opslag fra {virksomhed}?",
+   "h": "Tænk på det øjeblik, hvor {persona} ruller videre. Ikke hvad {persona} skal købe, men hvad {persona} skal føle. Beskriv forandringen fra før til efter. Eksempel: før var følelsen „jeg er doven“. Efter er den „jeg mangler bare energi“."
   },
   {
    "k": "audience_content_context",
@@ -789,7 +789,21 @@ function sekEtiket(s){
 }
 /* Lokal sektionsprogression ved spørgsmålet — spec'ens egen form.
    "Ikke: Spørgsmål 3 af 6. Men: DRIVKRAFT · 3 af 5." */
-function sekProgress(s, nr, ialt){ return esc(String(s.navn).toUpperCase()) + ' · ' + nr + ' af ' + ialt; }
+/* KORTHOVEDET SIGER HVILKEN MAALGRUPPE, MAN SIDDER I (Ida 27/8).
+   Hendes ord: "man starter med at vaelge og tilfoeje men saa derfra er man i tvivl om
+   hvilken maalgruppe man udfylder."
+   MAALT: hovedet sagde kun "MAALGRUPPEN · 3 af 11". Navnet stod ganske vist i chippen
+   og i navnefeltet ovenover, men det er en MARKERING blandt flere ens piller — ikke en
+   saetning, der siger hvor man er. Hovedet er den linje, man i forvejen laeser for at
+   se, hvor langt man er; nu baerer den ogsaa HVEM. Er der kun EEN maalgruppe, staar der
+   ikke noget ekstra — saa er der ikke noget at vaere i tvivl om (fyld-reglen 26/8). */
+function sekProgress(s, nr, ialt){
+  var navn='';
+  if (s.gentagelig && MG.length > 1) {
+    try { navn = ' · ' + String(mgNavn(mg(), mgAktiv)).toUpperCase(); } catch(e) {}
+  }
+  return esc(String(s.navn).toUpperCase()) + esc(navn) + ' · ' + nr + ' af ' + ialt;
+}
 
 /* ÉN KORT ANERKENDENDE OVERGANG MELLEM BYGGESTENENE (spec 14/8).
    "Ingen lange pep talks, ingen anerkendelse efter hvert spørgsmål, ingen unødig
@@ -1022,9 +1036,17 @@ function saveTxt(t){
 
 /* ---------- svar-adgang (kilde-id er noeglen, aldrig positionen) ---------- */
 function mg(){ return MG[Math.min(mgAktiv,MG.length-1)]||MG[0] }
-function hent(sec,src){ return (SVAR[skemaFor(sec)]||{})[src]||'' }
-function saet(sec,src,val){
-  var s=skemaFor(sec);
+/* ===== EN BESTEMT MAALGRUPPE, IKKE BARE DEN AKTIVE (rettet 27/8) ==================
+   MAALT: paa arket tegnes ALLE maalgrupper under hinanden. Under tegningen skiftes
+   mgAktiv frem og tilbage, men den stilles tilbage bagefter — og felternes oninput
+   kaldte saet() UDEN at sige hvilken maalgruppe, de hoerte til. Skrev man i maalgruppe
+   2's felt paa arket, landede svaret derfor i maalgruppe 1 og overskrev det, der stod.
+   Det er gem-reglen 4/8 brudt: et gem maa aldrig skrive et andet sted, end det man ser.
+   idx er valgfri. Uden den opfoerer alt sig praecis som foer (forloebet spoerger altid
+   om den aktive). */
+function hent(sec,src,idx){ return (SVAR[skemaFor(sec,idx)]||{})[src]||'' }
+function saet(sec,src,val,idx){
+  var s=skemaFor(sec,idx);
   if(!SVAR[s]) SVAR[s]={};
   SVAR[s][src]=val;
   gemSkema(s);
@@ -1035,7 +1057,7 @@ function saet(sec,src,val){
     if(sec==='audiences'){
       var q=(M5.audiences||[]).filter(function(x){return x.k==='audience_identity'})[0];
       if(q&&q.src===src){
-        var m=mg(), rent=rensNavn(val);
+        var m=(idx==null?mg():(MG[Math.min(idx,MG.length-1)]||MG[0])), rent=rensNavn(val);
         if(m&&rent&&m.navn!==rent){ m.navn=rent; gemMg() }
       }
     }
@@ -1277,12 +1299,14 @@ function renderSummary(){
    et gem kan ikke skrive tomheden tilbage over noget, hun selv har skrevet.
 
    EEN kilde, eet felt - generatoren og Drejebogen laeser praecis som foer. */
-function valgVaelger(sec,q,v){
+function valgVaelger(sec,q,v,mgIdx){
   var valgt=String(v==null?'':v).trim();
   var liste=q.valg.slice();
   if(valgt && liste.indexOf(valgt)<0) liste.push(valgt);
-  return '<select class="bs-valg" data-sec="'+sec+'" data-key="'+q.src+'" data-noegle="'+q.k+'" '+
-    'onchange="vaelgSvar(\''+sec+'\',\''+q.src+'\',this.value,true)">'+
+  var mgArg = (mgIdx==null) ? '' : (','+mgIdx);
+  var mgAttr = (mgIdx==null) ? '' : (' data-mg="'+mgIdx+'"');
+  return '<select class="bs-valg" data-sec="'+sec+'" data-key="'+q.src+'" data-noegle="'+q.k+'"'+mgAttr+' '+
+    'onchange="vaelgSvar(\''+sec+'\',\''+q.src+'\',this.value,true'+mgArg+')">'+
     '<option value="">Vælg …</option>'+
     liste.map(function(t){
       return '<option value="'+esc(t)+'"'+(valgt===t?' selected':'')+'>'+esc(t)+'</option>';
@@ -1290,9 +1314,9 @@ function valgVaelger(sec,q,v){
 }
 /* direkte=true kommer fra vaelgeren: dens egen tomme raekke ("Vaelg ...") er maaden
    at fortryde paa. Uden flaget ville et gentaget valg af samme svar tomme feltet. */
-function vaelgSvar(sec,src,val,direkte){
-  var nu=String(hent(sec,src)||'').trim();
-  saet(sec,src, (!direkte && nu===val) ? '' : val);
+function vaelgSvar(sec,src,val,direkte,mgIdx){
+  var nu=String(hent(sec,src,mgIdx)||'').trim();
+  saet(sec,src, (!direkte && nu===val) ? '' : val, mgIdx);
   render();
 }
 /* ===== ENERGIDAS EGEN VAELGERLISTE - PORTERET FRA index.html (27/8) ================
@@ -1364,36 +1388,43 @@ window.addEventListener("scroll", eVaelgLuk, true);
 /* ---------- TAL SVARET IND — se noten oeverst ---------- */
 var BS_REC=null, BS_REC_FELT=null, BS_REC_BASE='';
 function bsTaleMulig(){ return !!(window.SpeechRecognition||window.webkitSpeechRecognition); }
-function bsTaleKnapHtml(sec,src){
+function bsTaleKnapHtml(sec,src,mgIdx){
   if(!bsTaleMulig()) return '';   /* browseren kan det ikke — sig intet, vis intet */
-  var id='bstale_'+sec+'_'+src;
+  /* PAA ARKET STAAR ALLE MAALGRUPPER UNDER HINANDEN, og saa findes det samme
+     data-sec/data-key TO gange. Uden maalgruppen i id og i soegningen ville
+     mikrofonen skrive i den foerste, den fandt — altsaa den forkerte kunde. */
+  var mgDel=(mgIdx==null)?'':('_mg'+mgIdx);
+  var id='bstale_'+sec+'_'+src+mgDel;
   return '<div class="bs-tale"><button type="button" class="bs-tale-knap" id="'+id+'" '+
-    'onclick="bsTaleToggle(\''+sec+'\',\''+src+'\')" title="Tal i stedet for at skrive" aria-label="Tal i stedet for at skrive">'+
+    'onclick="bsTaleToggle(\''+sec+'\',\''+src+'\''+((mgIdx==null)?'':(','+mgIdx))+')" title="Tal i stedet for at skrive" aria-label="Tal i stedet for at skrive">'+
     '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+
     '<rect x="9" y="2.5" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0"/><path d="M12 18v3.5"/></svg></button>'+
     '<span class="bs-tale-hint" id="'+id+'_hint"></span></div>';
 }
-function bsTaleFelt(sec,src){
-  return document.querySelector('textarea[data-sec="'+sec+'"][data-key="'+src+'"]');
+function bsTaleFelt(sec,src,mgIdx){
+  var mgSel=(mgIdx==null)?':not([data-mg])':('[data-mg="'+mgIdx+'"]');
+  return document.querySelector('textarea[data-sec="'+sec+'"][data-key="'+src+'"]'+mgSel)
+      || document.querySelector('textarea[data-sec="'+sec+'"][data-key="'+src+'"]');
 }
-function bsTaleVis(sec,src,aktiv,besked){
-  var k=document.getElementById('bstale_'+sec+'_'+src); if(!k) return;
+function bsTaleVis(sec,src,aktiv,besked,mgIdx){
+  var id='bstale_'+sec+'_'+src+((mgIdx==null)?'':('_mg'+mgIdx));
+  var k=document.getElementById(id); if(!k) return;
   k.classList.toggle('lytter',!!aktiv);
   k.title = aktiv ? 'Lytter… tryk for at stoppe' : 'Tal i stedet for at skrive';
   k.setAttribute('aria-label',k.title);
-  var h=document.getElementById('bstale_'+sec+'_'+src+'_hint');
+  var h=document.getElementById(id+'_hint');
   if(h) h.textContent = besked || (aktiv ? 'Lytter — sig det bare. Teksten kommer i feltet, mens du taler.' : '');
 }
-function bsTaleToggle(sec,src){
+function bsTaleToggle(sec,src,mgIdx){
   var SR=window.SpeechRecognition||window.webkitSpeechRecognition; if(!SR) return;
   if(BS_REC){ try{ BS_REC.stop(); }catch(e){} return; }
-  var f=bsTaleFelt(sec,src); if(!f) return;
-  BS_REC_FELT={sec:sec,src:src};
+  var f=bsTaleFelt(sec,src,mgIdx); if(!f) return;
+  BS_REC_FELT={sec:sec,src:src,mg:mgIdx};
   BS_REC_BASE=f.value||'';
   var rec=new SR();
   rec.lang='da-DK'; rec.continuous=true; rec.interimResults=true;
   rec.onresult=function(ev){
-    var g=bsTaleFelt(sec,src);
+    var g=bsTaleFelt(sec,src,mgIdx);
     if(!g){ try{ rec.stop(); }catch(e){} return; }
     var talt='';
     for(var i=0;i<ev.results.length;i++) talt+=ev.results[i][0].transcript;
@@ -1402,9 +1433,9 @@ function bsTaleToggle(sec,src){
     g.value=base+talt;
     /* Gemmes gennem den ALMINDELIGE vej, saa svaret behandles praecis som skrevet
        tekst — der bygges ikke en gemning ved siden af. */
-    try{ saet(sec,src,g.value); }catch(e){}
+    try{ saet(sec,src,g.value,mgIdx); }catch(e){}
   };
-  rec.onend=function(){ BS_REC=null; bsTaleVis(sec,src,false, window.__BS_TALE_FEJL||''); window.__BS_TALE_FEJL=''; };
+  rec.onend=function(){ BS_REC=null; bsTaleVis(sec,src,false, window.__BS_TALE_FEJL||'', mgIdx); window.__BS_TALE_FEJL=''; };
   rec.onerror=function(ev){
     var e=(ev&&ev.error)||'fejl';
     /* Stilhed og eget stop er ikke fejl. Alt andet SIGES — en mikrofon, der ikke
@@ -1412,13 +1443,15 @@ function bsTaleToggle(sec,src){
     if(e!=='no-speech'&&e!=='aborted') window.__BS_TALE_FEJL='Mikrofonen er blokeret — giv browseren lov, eller brug tastaturets egen mikrofon.';
     try{ rec.stop(); }catch(x){}
   };
-  bsTaleVis(sec,src,true);   /* klikket ses ALTID, ogsaa hvis start fejler */
+  bsTaleVis(sec,src,true,'',mgIdx);   /* klikket ses ALTID, ogsaa hvis start fejler */
   try{ rec.start(); BS_REC=rec; }
-  catch(e){ BS_REC=null; bsTaleVis(sec,src,false,'Mikrofonen kunne ikke startes.'); }
+  catch(e){ BS_REC=null; bsTaleVis(sec,src,false,'Mikrofonen kunne ikke startes.',mgIdx); }
 }
 
-function felt(sec,q,nr,ialt){
-  var v=hent(sec,q.src);
+function felt(sec,q,nr,ialt,mgIdx){
+  var v=hent(sec,q.src,mgIdx);
+  var mgArg = (mgIdx==null) ? '' : (','+mgIdx);
+  var mgAttr = (mgIdx==null) ? '' : (' data-mg="'+mgIdx+'"');
   return '<div class="q-blok">'+
     /* "Spørgsmål N af M" er UDTRYKKELIGT forbudt i den låste spec (14/8). Den lokale
        sektionsprogression står i kortets hoved som DRIVKRAFT · 3 af 5 — ét sted, ikke to.
@@ -1430,10 +1463,10 @@ function felt(sec,q,nr,ialt){
        er VAEK paa de spoergsmaal - der er ikke noget at skrive eller tale ind,
        naar svaret er et af fire. Frie spoergsmaal er uroerte. */
     (Array.isArray(q.valg)&&q.valg.length
-      ? valgVaelger(sec,q,v)
-      : '<textarea data-sec="'+sec+'" data-key="'+q.src+'" data-noegle="'+q.k+'" placeholder="Skriv svaret her…" '+
-        'oninput="saet(\''+sec+'\',\''+q.src+'\',this.value)">'+esc(v)+'</textarea>'+
-        bsTaleKnapHtml(sec,q.src))+
+      ? valgVaelger(sec,q,v,mgIdx)
+      : '<textarea data-sec="'+sec+'" data-key="'+q.src+'" data-noegle="'+q.k+'"'+mgAttr+' placeholder="Skriv svaret her…" '+
+        'oninput="saet(\''+sec+'\',\''+q.src+'\',this.value'+mgArg+')">'+esc(v)+'</textarea>'+
+        bsTaleKnapHtml(sec,q.src,mgIdx))+
   '</div>';
 }
 
@@ -1560,11 +1593,18 @@ function visArket(fraSlut){
   SECTIONS.forEach(function(s,si){
     if(s.key==='audiences'){
       mgListe.forEach(function(m,mi){
-        var gemt=mgAktiv; mgAktiv=MG.indexOf(m);
+        /* HVER MAALGRUPPE SKRIVER I SIN EGEN (rettet 27/8). Foer blev mgAktiv sat
+           midlertidigt under tegningen og stillet tilbage bagefter — men felternes
+           oninput sagde ikke, hvilken maalgruppe de hoerte til, saa et svar skrevet i
+           maalgruppe 2 landede i den AKTIVE og overskrev dens svar. Nu baerer hvert
+           felt sin maalgruppe (data-mg), og gemningen peger derhen. */
+        var idx=MG.indexOf(m);
+        var gemt=mgAktiv; mgAktiv=idx;
+        var qs=spm('audiences');
         ud+='<section class="card"><div class="kort-hoved">'+ikon()+
           '<div class="lbl">'+esc(mgNavn(m,mi))+'</div>'+
-          '<div class="tal">'+spm('audiences').length+' spørgsmål</div></div>'+
-          spm('audiences').map(function(q,i){ return felt('audiences',q,i+1,spm('audiences').length) }).join('')+
+          '<div class="tal">'+qs.length+' spørgsmål</div></div>'+
+          qs.map(function(q,i){ return felt('audiences',q,i+1,qs.length,idx) }).join('')+
         '</section>';
         mgAktiv=gemt;
       });
@@ -1841,7 +1881,7 @@ var BYGGESTEN_PREVIEW=[
   { navn:'Drivkraften', sec:'drive',     hvad:'Hvorfor I findes — og hvordan det ses i menneskene bag',
     noegler:[['Derfor findes I','purpose_origin'],['I menneskene bag','drive_in_people']] },
   { navn:'Målgruppen',  sec:'audiences', hvad:'Hvem I taler til — og hvad de står i',
-    noegler:[['Hvem hun er','audience_identity'],['Det hun står i','audience_needs']] },
+    noegler:[['Hvem kunden er','audience_identity'],['Det kunden står i','audience_needs']] },
   { navn:'Værdierne',   sec:'values',    hvad:'Hvad I går ekstra op i — og hvordan det lyder',
     noegler:[['Det I går ekstra op i','extra_care'],['Sådan lyder I','desired_voice']] },
   { navn:'USP',         sec:'usp',       hvad:'Det, andre ikke bare kan kopiere',
@@ -1915,7 +1955,7 @@ function byggestenFlettetHtml(){
     blok('Drivkraften', 'Hvorfor forretningen findes', felt('fletWhy', b.why, 3, 'Ikke flettet endnu')) +
     blok('Målgruppen', 'Den kunde, der skal tiltrækkes flere af',
       linje('fletKundeNavn', (b.kunde&&b.kunde.navn)||'', 'Fx Rikke · 48 år') +
-      felt('fletKundeTekst', (b.kunde&&b.kunde.tekst)||'', 3, 'Det, hun står i')) +
+      felt('fletKundeTekst', (b.kunde&&b.kunde.tekst)||'', 3, 'Det, kunden står i')) +
     blok('Værdierne', 'Det, kunden skal kunne mærke',
       vaerdier.map(function(v,i){
         return '<div class="flet-vaerdi">'+
