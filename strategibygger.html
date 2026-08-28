@@ -245,7 +245,7 @@ body.i-app .fremdrift{top:0}
 .intro{background:var(--red);color:#fff;border-radius:20px;padding:22px 24px;margin-bottom:14px}
 .intro .ey{font-size:10px;letter-spacing:1.8px;text-transform:uppercase;opacity:.9}
 .intro hr{border:0;border-top:1px solid rgba(255,255,255,.45);margin:12px 0 15px}
-.intro h2{font-size:22px;font-weight:500;margin:0 0 8px}
+.intro h2{font-size:22px;font-weight:400;margin:0 0 8px}   /* Poppins aldrig fed */
 .intro p{font-size:13px;line-height:1.65;margin:0;max-width:740px}
 /* Genoptagelses-linjen — se noten i markuppen. Hvid paa roed flade, en anelse
    daempet, saa den staar under teksten og ikke over den. */
@@ -322,7 +322,9 @@ textarea,input[type=text]{width:100%;border:1px solid var(--border);border-radiu
 textarea{min-height:92px;resize:vertical}
 /* Print-svaret findes kun paa papiret — se beforeprint-lytteren. */
 .print-svar{display:none}
-textarea:focus,input:focus{border-color:var(--red);box-shadow:0 0 0 3px rgba(252,36,4,.10)}
+/* Fokus = roed KANT alene, som i appen (26/8: fokus faar aldrig roed ved lav
+   opacitet — en roed gloed ved 10 % ER rosa for oejet). */
+textarea:focus,input:focus{border-color:var(--red)}
 /* ---------- SVARMULIGHEDER = SEPARATE CHIPS (Ida 27/8, aften) ---------------------
    Hendes vej dertil paa een dag: chips -> dropdown -> aaben liste -> chips igen.
    Facit: "svarmuligheder skal vaere seperate chips".
@@ -394,7 +396,7 @@ textarea:focus,input:focus{border-color:var(--red);box-shadow:0 0 0 3px rgba(252
 .summary-row span i{font-style:italic;text-transform:none;letter-spacing:0;color:var(--muted-2);font-size:9.5px}
 .summary-row p.klar{color:var(--red)}
 .summary-fod{font-size:10.5px;line-height:1.55;color:var(--muted);margin-top:11px;padding-top:10px;border-top:1px solid var(--gray)}
-.summary-fod b{font-weight:500;color:var(--black)}
+.summary-fod b{font-weight:400;color:var(--black)}   /* Poppins aldrig fed */
 .summary-row span{display:block;font-size:9px;letter-spacing:1.1px;text-transform:uppercase;color:var(--muted-2);margin-bottom:3px}
 .summary-row p{font-size:11.5px;line-height:1.45;margin:0}
 .noteboks{background:#fff;border:1px solid var(--border);border-radius:20px;padding:20px}
@@ -1217,7 +1219,13 @@ function migrerGem(skemaer){
   });
 }
 async function dbHent(){
-  if(!SB_DB||SB_KODE==='DEMO'){ SB_KLAR=true; saveTxt('Gemt lokalt'); return; }
+  if(!SB_DB||SB_KODE==='DEMO'){
+    SB_KLAR=true; saveTxt('Gemt lokalt');
+    /* Genoptag gaelder OGSAA uden basen (28/8 nat): svarene ligger i localStorage,
+       og en sandbox/demo, der altid starter forfra, tester ikke det, kunden faar. */
+    try{ bsGenoptagSaet(); tegnFladenIgen(); }catch(e){}
+    return;
+  }
   try{
     var res=await Promise.all([
       SB_DB.from('skema_svar').select('skema,navn,svar').eq('kode',SB_KODE).like('skema','lektion_svar_%'),
@@ -1252,7 +1260,7 @@ async function dbHent(){
     var flyttet = migrerGamleSvar();
     SB_KLAR=true; lokaltGem();
     try{ bsGenoptagSaet(); }catch(e){}   /* FOER render — se noten ved bsGenoptagSaet */
-    render();
+    tegnFladenIgen();   /* respekterer genoptag-landingen — ogsaa naar den er opsummeringen */
     if (flyttet.length) migrerGem(flyttet);
     /* IKKE "Klar" — en laesning, der intet finder, ser praecis ud som en laesning
        fra en bruger uden login: RLS filtrerer raekkerne vaek i stedet for at
@@ -1467,7 +1475,9 @@ async function hentVirksomhedsnavn(){
     if(!vid) return;                                   /* ingen identitet = ingen gaet */
     var r=await SB_DB.from('virksomheder').select('navn').eq('id',vid).maybeSingle();
     var n=r&&r.data&&String(r.data.navn||'').trim();
-    if(n){ VIRK_NAVN=n; render(); }
+    /* Kun ved et NYT navn, og gennem tegnFladenIgen — et navn, der ankommer paa
+       faerdig-fladen eller arket, maa ikke rive fladen vaek (se DONE_FREMME). */
+    if(n && n!==VIRK_NAVN){ VIRK_NAVN=n; tegnFladenIgen(); }
   }catch(e){}
 }
 function virksomhedsnavn(){
@@ -1582,6 +1592,15 @@ function bsGenoptagSaet(){
   if(BS_GENOPTAGET) return;
   BS_GENOPTAGET=true;
   if(!ialtSvar()) return;               /* aldrig svaret noget = helt almindelig start */
+  /* ALT BESVARET -> DIREKTE TIL OPSUMMERINGEN (28/8 nat — 26/8-reglen taenkt til ende):
+     "land dér, hvor du slap" — og en kunde, der ER faerdig, slap paa opsummeringen
+     med sin Drejebog. Foer landede hun paa Maalets INTRO og skulle klikke sig gennem
+     hele Maalet igen for at naa bogen. DONE_FREMME faar tegnFladenIgen til at tegne
+     showDone i stedet for render. Slutfejringen genafspilles ikke (den bor i
+     nextSection, ikke her). */
+  if(ialtSvarDyn()>=ialtSpmDyn()){
+    current=SECTIONS.length-1; qIndex=0; VIS_INTRO=false; DONE_FREMME=true; return;
+  }
   var i=bsGenoptagPunkt();
   if(i>0){
     current=i; qIndex=0; VIS_INTRO=true;
@@ -1730,7 +1749,9 @@ function valgMuligheder(sec,q,v,mgIdx){
   var liste=q.valg.slice();
   if(valgt && liste.indexOf(valgt)<0) liste.push(valgt);
   var mgArg = (mgIdx==null) ? 'null' : String(mgIdx);
-  return '<div class="chips bs-chips">'+
+  /* data-sec/key/mg: saa arkets chips kan gentegnes I STEDET (arkChipsOpdater) —
+     et chip-klik paa arket maa hverken vaelte render() eller rulle til tops. */
+  return '<div class="chips bs-chips" data-sec="'+esc(sec)+'" data-key="'+esc(q.src)+'"'+(mgIdx==null?'':' data-mg="'+mgIdx+'"')+'>'+
     liste.map(function(t){
       return '<button type="button" class="chip'+(valgt===t?' on':'')+'" aria-pressed="'+(valgt===t?'true':'false')+'" '+
         'data-v="'+esc(t)+'" onclick="vaelgSvar(\''+sec+'\',\''+q.src+'\',this.getAttribute(\'data-v\'),false,'+mgArg+')">'+esc(t)+'</button>';
@@ -1741,7 +1762,25 @@ function valgMuligheder(sec,q,v,mgIdx){
 function vaelgSvar(sec,src,val,direkte,mgIdx){
   var nu=String(hent(sec,src,mgIdx)||'').trim();
   saet(sec,src, (!direkte && nu===val) ? '' : val, mgIdx);
-  render();
+  /* PAA ARKET GENTEGNES KUN CHIPSENE (MAALT 28/8 nat): render() vaeltede med
+     current=-1, saa klikket AENDREDE svaret i data, mens chippen blev staaende som
+     valgt — et ark, der lyver. En fuld visArket() ville rulle kunden til tops midt
+     i arket. Derfor: chips + skinner opdateres i stedet, resten staar stille. */
+  if (ARK_VISNING){
+    arkChipsOpdater(sec,src,mgIdx);
+    try { renderSteps(); renderProgress(); renderSummary(); } catch(e){}
+    return;
+  }
+  tegnFladenIgen();
+}
+function arkChipsOpdater(sec,src,mgIdx){
+  var vaerdi=String(hent(sec,src,mgIdx)||'').trim();
+  var sel='.chips.bs-chips[data-sec="'+sec+'"][data-key="'+src+'"]'+(mgIdx==null?':not([data-mg])':'[data-mg="'+mgIdx+'"]');
+  [].forEach.call(document.querySelectorAll(sel+' .chip'),function(c){
+    var on=c.getAttribute('data-v')===vaerdi && !!vaerdi;
+    c.classList.toggle('on',on);
+    c.setAttribute('aria-pressed',on?'true':'false');
+  });
 }
 /* ===== ENERGIDAS EGEN VAELGERLISTE - PORTERET FRA index.html (27/8) ================
    Strategibyggeren koerer i en iframe og er sit eget dokument, saa appens globale
@@ -1934,8 +1973,21 @@ var VIS_INTRO = true;
 var ARK_VISNING = false;
 /* Hvor kom man ind paa arket fra? Vejen tilbage skal foere derhen igen. */
 var ARK_FRA_SLUT = false;
+/* DONE_FREMME: staar faerdig-fladen (showDone) fremme lige nu? showDone tegner UDEN OM
+   render() — saa et asynkront render(), fx naar virksomhedsnavnet ankommer et sekund
+   efter landing, malede et spoergsmaal/introen HEN OVER faerdig-fladen, og kunden roeg
+   tilbage til intro-visningen (set i sandboxen 27/8). Og stod man paa ARKET, var
+   current -1, saa render() vaeltede. Alt, der vil gentegne "det, der staar fremme",
+   skal derfor gaa gennem tegnFladenIgen() — aldrig kalde render() direkte. */
+var DONE_FREMME = false;
+function tegnFladenIgen(){
+  if (DONE_FREMME) { showDone(); return; }
+  if (ARK_VISNING) { visArket(ARK_FRA_SLUT); return; }
+  render();
+}
 
 function render(){
+  DONE_FREMME = false;
   renderSteps(); renderProgress(); renderSummary();
   var s=SECTIONS[current], qs=spm(s.key);
   /* Klassen styrer, om skinnerne staar: de er fremme paa introfladen og paa arket,
@@ -2067,7 +2119,7 @@ function ikon(){ return '<svg width="15" height="15" viewBox="0 0 24 24" fill="n
    printes med tomme linjer, så svarene kan skrives i hånden undervejs. */
 function visArket(fraSlut){
   ARK_FRA_SLUT = !!fraSlut;
-  current=-1; ARK_VISNING=true; window.scrollTo(0,0);
+  DONE_FREMME=false; current=-1; ARK_VISNING=true; window.scrollTo(0,0);
   try { document.querySelector('.app').classList.remove('svarer'); } catch(e){}
   var mgListe=MG.filter(function(m){return m.aktiv!==false});
   /* TALLENE TAELLES — DE SKRIVES IKKE (MAALT 26/8). Her stod "Alle 31 spørgsmål", mens
@@ -2451,7 +2503,7 @@ window.addEventListener('message', function(ev){
      appen, beholder vi det, vi havde (gem-reglen 4/8). */
   if (d.energida === 'bs_virksomhed_svar'){
     var vn = String(d.navn||'').trim();
-    if (vn && vn !== VIRK_NAVN){ VIRK_NAVN = vn; render(); }
+    if (vn && vn !== VIRK_NAVN){ VIRK_NAVN = vn; tegnFladenIgen(); }
     return;
   }
   if (d.energida === 'bs_flet_status'){ if (FLET.status === 'koerer'){ FLET.sek = d.sek || 0; fletTegn(); } return; }
@@ -2504,7 +2556,10 @@ var BYGGESTEN_PREVIEW=[
   { navn:'Drivkraften', sec:'drive',     hvad:'Hvorfor I findes — og hvordan det ses i menneskene bag',
     noegler:[['Derfor findes I','purpose_origin'],['I menneskene bag','drive_in_people']] },
   { navn:'Målgruppen',  sec:'audiences', hvad:'Hvem I taler til — og hvad de står i',
-    noegler:[['Hvem kunden er','audience_identity'],['Det kunden står i','audience_needs']] },
+    /* 'audience_needs' findes ikke laengere i M5 (MAALT 28/8 nat) — raekken stod for
+       evigt som "Ikke skrevet endnu", ogsaa hos kunder, der HAVDE svaret. Kernen i
+       "det kunden staar i" baeres af audience_core_challenge. */
+    noegler:[['Hvem kunden er','audience_identity'],['Det kunden står i','audience_core_challenge']] },
   { navn:'Værdierne',   sec:'values',    hvad:'Hvad I går ekstra op i — og hvordan det lyder',
     noegler:[['Det I går ekstra op i','extra_care'],['Sådan lyder I','desired_voice']] },
   { navn:'USP',         sec:'usp',       hvad:'Det, andre ikke bare kan kopiere',
@@ -2649,6 +2704,7 @@ function retSpm(sec, noegle, mgIdx){
   retByggesten(sec, noegle);
 }
 function showDone(){
+  DONE_FREMME = true;
   renderSteps(); renderProgress();
   /* HOEJRE KORT SKAL TEGNES OM HER (MAALT 27/8 nat): uden dette stod "Det bygger du"
      med gammel status ("Ikke begyndt") ved siden af faerdige svar — et kort, der lyver. */
