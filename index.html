@@ -3734,7 +3734,7 @@ body.modul-open .burger-btn, body.modul-open .bottom-nav, body.modul-open .dash-
     <button class="burger-item" onclick="toggleBurger(); minProfilAaben()">Min profil</button>
     <button class="burger-item" onclick="toggleBurger(); togglePwPanel()">Skift adgangskode</button>
     <button class="burger-item" style="color:var(--red);" onclick="custLogout()">Log ud</button>
-    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 2. september · 1520</div>
+    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 2. september · 1521</div>
   </div>
 </div>
 <div class="plus-menu" id="plusMenu" onclick="if(event.target===this)togglePlus()">
@@ -5066,7 +5066,7 @@ if (/somkunde=/.test(location.hash)) {
     <!-- Foden bliver nederst — den er det ENESTE der skubbes ned (Ida 30/7) -->
     <div class="dsb-fod">
       <button class="dsb-konto" onclick="dashKontoMenu()" title="Ida"><span class="dsb-initial">I</span><span class="dsb-konto-navn">Ida</span><svg class="dsb-konto-pil" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></button>
-      <div class="dsb-version"><span>Version 2. september · 1520</span></div>
+      <div class="dsb-version"><span>Version 2. september · 1521</span></div>
     </div>
   </div>
 
@@ -11778,7 +11778,7 @@ select titel,
          staa fast paa telefon. De hoerer i arket (samme fejl som "left" 31/7). -->
     <div id="dashFooter" style="z-index:50;display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--gray3);background:#fff;border-top:1px solid var(--border);padding:10px 26px;">
       <div style="font-size:10px;">© 2026 Energida · Alle rettigheder forbeholdes</div>
-      <div style="font-size:10px;margin-left:auto;">Version 2. september · 1520 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
+      <div style="font-size:10px;margin-left:auto;">Version 2. september · 1521 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
     </div>
   </div>
 </div>
@@ -22220,6 +22220,9 @@ const MANUS_PRINT_CSS =
   + 'pre{font-family:"Poppins","Avenir Next",Helvetica,Arial,sans-serif;font-size:13px;line-height:1.8;white-space:pre-wrap;word-wrap:break-word;margin:0;}'
   + '.tom{color:#8a8a86;font-style:italic;}'
   + '.sek{margin-top:28px;padding-top:16px;border-top:1px solid #e3e2de;page-break-inside:avoid;}'
+  /* Meta-linjen har SELV en streg under sig. Faar den foerste sektion ogsaa sin egen
+     streg ovenover, staar der to streger med et tomt baelte imellem (SET 2/9). */
+  + '.meta + .sek{margin-top:0;padding-top:0;border-top:none;}'
   + '.seklabel{font-size:10px;letter-spacing:1.6px;text-transform:uppercase;color:#FC2404;font-weight:400;margin-bottom:10px;}'
   + '.sek ol{margin:0;padding-left:20px;}'
   + '.sek li{font-size:12.5px;line-height:1.7;margin-bottom:7px;}'
@@ -22248,7 +22251,23 @@ function manusPrintOvelser(o) {
     + '<div class="ovnote">Opgaverne bor i appen — de skal ikke med i videoen.</div></div>';
 }
 
-function manusPrintArtikel(o, tekstOverstyr) {
+/* SEKTIONERNE SOM PRINT-HTML. Bor eet sted, fordi BAADE produktionsprintet og den
+   samlede oversigt tegner dem — kodes de to steder, driver de fra hinanden (dublet-reglen). */
+function manusSektionerHtml(dele) {
+  return KB_SEKTIONER.map(function (sk) {
+    const t = String(dele[sk.key] || "").trim();
+    if (!t) return "";
+    return '<div class="sek"><div class="seklabel">' + esc(sk.navn) + '</div>'
+      + '<div class="manus">' + prompterFormat(t) + '</div></div>';
+  }).join("");
+}
+
+/* medStruktur (Ida 2/9: "overskrifterne paa lektionsstrukturen kom med ud i printoversigten
+   — altsaa hook, erkendelse og det der"). Den samlede oversigt og modulprintet saetter den;
+   ENKELT-printet goer IKKE — det er speakvisningen fra 13/8 og skal blive ved kun at vise
+   det, der siges. Er lektionen ikke delt op, findes der ingen struktur, og den falder
+   tilbage til det samlede manus praecis som foer. */
+function manusPrintArtikel(o, tekstOverstyr, medStruktur) {
   const dele = klipModtagere(o.modul || o.titel);
   const tekst = tekstOverstyr !== undefined && tekstOverstyr !== null ? tekstOverstyr : (o.manus_tekst || "");
   const ord = klipOrdFor(o);
@@ -22258,9 +22277,16 @@ function manusPrintArtikel(o, tekstOverstyr) {
   return '<article>'
     + '<h2>' + esc(o.titel || "") + '</h2>'
     + (meta ? '<div class="meta">' + esc(meta) + '</div>' : '<div class="meta">&nbsp;</div>')
-    + (String(tekst).trim()
-        ? '<div class="manus">' + prompterFormat(tekst) + '</div>'
-        : '<div class="tom">Der er ikke skrevet manus til denne lektion endnu.</div>')
+    + (function () {
+        const strukt = medStruktur ? kbDeleFra(o) : null;
+        if (strukt) {
+          const krop = manusSektionerHtml(strukt);
+          if (krop) return krop;
+        }
+        return String(tekst).trim()
+          ? '<div class="manus">' + prompterFormat(tekst) + '</div>'
+          : '<div class="tom">Der er ikke skrevet manus til denne lektion endnu.</div>';
+      })()
     + manusPrintOvelser(o)
     + '</article>';
 }
@@ -22294,12 +22320,7 @@ function printManusProd(id) {
   const dele = (KLIP_BRIEF_STRUKTUR && String(KLIP_BRIEF_ID) === String(id) ? kbDeleLaes() : null) || kbDeleFra(o);
   if (!dele) { printManus(id); return; }
   const formaal = String(dele[KB_FORMAAL.key] || "").trim();
-  const krop = KB_SEKTIONER.map(function (s) {
-    const t = String(dele[s.key] || "").trim();
-    if (!t) return "";
-    return '<div class="sek"><div class="seklabel">' + esc(s.navn) + '</div>'
-      + '<div class="manus">' + prompterFormat(t) + '</div></div>';
-  }).join("");
+  const krop = manusSektionerHtml(dele);
   const html = '<article><h2>' + esc(o.titel || "") + '</h2>'
     + '<div class="meta">' + esc(o.modul || "") + ' &middot; produktionsversion</div>'
     + (formaal
@@ -22328,7 +22349,7 @@ function printAlleManus() {
     + '<h1>Manuskripter</h1>'
     + '<div class="sub">' + liste.length + ' lektioner &middot; ' + medManus + ' med manus &middot; ' + ovAntal + ' øvelser &middot; printet '
     + d.getDate() + '. ' + mdr[d.getMonth()] + ' ' + d.getFullYear() + '</div></div>';
-  manusPrintAabn(forside + liste.map(function (o) { return manusPrintArtikel(o); }).join(""), "Manuskripter");
+  manusPrintAabn(forside + liste.map(function (o) { return manusPrintArtikel(o, null, true); }).join(""), "Manuskripter");
 }
 
 /* PRINT ET ENKELT MODUL (Ida 2/8: "kan du også lave ny print funktion? så jeg kan
@@ -22358,7 +22379,7 @@ function printModul(noegle) {
     + '<div class="sub">' + liste.length + ' lektion' + (liste.length === 1 ? "" : "er") + ' &middot; ' + medManus + ' med manus &middot; '
     + ovAntal + ' opgave' + (ovAntal === 1 ? "" : "r") + ' &middot; printet '
     + d.getDate() + '. ' + mdr[d.getMonth()] + ' ' + d.getFullYear() + '</div></div>';
-  manusPrintAabn(forside + liste.map(function (o) { return manusPrintArtikel(o); }).join(""), esc(mT));
+  manusPrintAabn(forside + liste.map(function (o) { return manusPrintArtikel(o, null, true); }).join(""), esc(mT));
 }
 
 /* PRINT ALLE MODULER (Ida 7/8: "Print alle moduler ... samme layout som print dette
@@ -22389,7 +22410,7 @@ function printModulBlok(nk, foerste) {
     + '<div class="sub">' + liste.length + ' lektion' + (liste.length === 1 ? "" : "er") + ' &middot; ' + medManus + ' med manus &middot; '
     + ovAntal + ' opgave' + (ovAntal === 1 ? "" : "r") + ' &middot; printet '
     + d.getDate() + '. ' + mdr[d.getMonth()] + ' ' + d.getFullYear() + '</div></div>';
-  return forside + liste.map(function (o) { return manusPrintArtikel(o); }).join("");
+  return forside + liste.map(function (o) { return manusPrintArtikel(o, null, true); }).join("");
 }
 
 function printAlleModuler() {
@@ -30105,7 +30126,7 @@ function buildSideNav(def) {
             uPkt("", "Lektioner", "showTab(12)")))))
     + '<button class="sn-virk-knap" onclick="toggleVirkMenu(event)" title="' + esc(knapNavn) + '" aria-label="Profil"><span class="sn-initial">' + esc((knapNavn || "?").trim().charAt(0).toUpperCase()) + '</span><span class="sn-virk-navn" style="white-space:normal;overflow-wrap:anywhere;">' + esc(knapNavn) + '</span><svg class="sn-virk-pil" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="flex-shrink:0;"><path d="M6 9l6 6 6-6"/></svg></button>'
     /* Ida 30/7: ingen streg — logo + version samlet i foden under profilknappen */
-    + fodBagud + '<div class="sn-fod"><span>Version 2. september · 1520</span></div>'
+    + fodBagud + '<div class="sn-fod"><span>Version 2. september · 1521</span></div>'
     /* Ida 30/7: menuen åbner VED knappen (nederst t.v.) — ikke i modsatte hjørne */
     + '<div id="virkMenu" style="display:none;position:fixed;left:14px;bottom:96px;width:230px;background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:0 16px 40px rgba(0,0,0,0.15);padding:8px;z-index:90;">'
     + '<div style="padding:10px 12px 6px;font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--gray3);">' + esc(virkNavn) + '</div>'
@@ -33555,7 +33576,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "1520";
+const APP_VERSION = "1521";
 let NY_VERSION_KLAR = false;
 function nyVersionSkjul() { const e = document.getElementById("nyVersion"); if (e) e.style.display = "none"; }
 function nyVersionHent() { try { location.reload(); } catch(e) {} }
@@ -49319,6 +49340,6 @@ if ((location.hash || "").toLowerCase() === "#ole") {   // #ole = preview af Ole
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 2. september · 1520</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 2. september · 1521</div>
 </body>
 </html>
