@@ -3716,7 +3716,7 @@ body.modul-open .burger-btn, body.modul-open .bottom-nav, body.modul-open .dash-
     <button class="burger-item" onclick="toggleBurger(); minProfilAaben()">Min profil</button>
     <button class="burger-item" onclick="toggleBurger(); togglePwPanel()">Skift adgangskode</button>
     <button class="burger-item" style="color:var(--red);" onclick="custLogout()">Log ud</button>
-    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 2. september · 1514</div>
+    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 2. september · 1515</div>
   </div>
 </div>
 <div class="plus-menu" id="plusMenu" onclick="if(event.target===this)togglePlus()">
@@ -4475,6 +4475,17 @@ if (/somkunde=/.test(location.hash)) {
         </div>
       </div>
 
+      <!-- AFSLUTNINGSSKEMAET (Idas klik-valg 2/9: "Naar de har taget alle lektionerne").
+           Samme form som kortet nedenfor — ingen ny variant. -->
+      <div class="post-card" id="efterSkemaCard" style="flex-direction:column;align-items:stretch;margin-top:10px;display:none;">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;">
+          <div>
+            <div style="font-size:11px;font-weight:400;text-transform:uppercase;letter-spacing:0.4px;color:var(--red);">Sådan gik det</div>
+            <div id="efterSkemaStatus" style="font-size:12px;color:var(--gray3);margin-top:4px;">12 spørgsmål · ca. 8 minutter</div>
+          </div>
+          <button class="row-btn view" id="efterSkemaBtn" onclick="openSkema('efter_forloebet')">Udfyld</button>
+        </div>
+      </div>
       <div class="post-card" id="skemaCard" style="flex-direction:column;align-items:stretch;margin-top:10px;display:none;">
         <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;">
           <div>
@@ -5037,7 +5048,7 @@ if (/somkunde=/.test(location.hash)) {
     <!-- Foden bliver nederst — den er det ENESTE der skubbes ned (Ida 30/7) -->
     <div class="dsb-fod">
       <button class="dsb-konto" onclick="dashKontoMenu()" title="Ida"><span class="dsb-initial">I</span><span class="dsb-konto-navn">Ida</span><svg class="dsb-konto-pil" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></button>
-      <div class="dsb-version"><span>Version 2. september · 1514</span></div>
+      <div class="dsb-version"><span>Version 2. september · 1515</span></div>
     </div>
   </div>
 
@@ -11749,7 +11760,7 @@ select titel,
          staa fast paa telefon. De hoerer i arket (samme fejl som "left" 31/7). -->
     <div id="dashFooter" style="z-index:50;display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--gray3);background:#fff;border-top:1px solid var(--border);padding:10px 26px;">
       <div style="font-size:10px;">© 2026 Energida · Alle rettigheder forbeholdes</div>
-      <div style="font-size:10px;margin-left:auto;">Version 2. september · 1514 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
+      <div style="font-size:10px;margin-left:auto;">Version 2. september · 1515 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
     </div>
   </div>
 </div>
@@ -19992,6 +20003,8 @@ async function lektionSet(id) {
   kursusGemLocal();
   if (sb && currentKode) { try { await sb.from("skema_svar").insert({ kode: currentKode, navn: CURRENT_NAVN || "", skema: "lektion_set_" + id, svar: { set: true } }); } catch(e) {} }
   renderKursusHjem();
+  /* Var det den SIDSTE lektion, er afslutningsskemaet netop blevet relevant (Ida 2/9). */
+  try { refreshEfterSkemaStatus(); } catch (e) {}
   if (LEK_AABEN) renderLektionVis();
   try { const lRef = KURSUS_LEKTIONER.find(x => x.id === id); setTimeout(() => refleksionVis("lektion", id, lRef ? lRef.titel : ""), 400); } catch(e) {}
 }
@@ -29150,6 +29163,9 @@ function skemaWizSvar(i, v) {
   SKEMA_ANSWERS["q" + (i + 1)] = v;
   skemaKladdeGem();
   skemaWizFremdrift();
+  /* Laasen skal loesne, mens der skrives — ikke foerst ved naeste tegning. */
+  const msg = document.getElementById("swMsg"); if (msg) delete msg.dataset.fejl;
+  skemaWizNaesteLaas();
 }
 
 /* Fremdriften taeller BESVAREDE — ikke hvor langt man er bladret. Ellers ville stregen
@@ -29262,10 +29278,30 @@ function skemaWizTegn() {
     nk.textContent = sidst ? "Send skemaet" : "Næste";
     nk.className = "sw-knap" + (sidst ? " send" : "");
   }
+  /* MAN KOMMER IKKE VIDERE UDEN AT SVARE (Ida 2/9: "jeg vil gerne at de skal svare paa
+     alle spoergsmaalene for at kunne komme videre").
+     TILBAGE er ALDRIG spaerret — man skal kunne gaa tilbage og rette, ogsaa fra et
+     ubesvaret spoergsmaal. Ellers er man fanget (30/7).
+     Og krydset lukker stadig: svarene ligger i browseren, saa man kan tage en pause. */
+  skemaWizNaesteLaas();
   krop.scrollTop = 0;
   skemaWizFremdrift();
 }
 
+/* LAASEN. Naeste er slaaet fra, til det aktuelle spoergsmaal HAR et svar. Linjen ved
+   siden af siger hvorfor — en slukket knap uden en forklaring er en blindgyde (30/7). */
+function skemaWizNaesteLaas() {
+  const def = SKEMAER[SKEMA_KEY]; if (!def) return;
+  const nk = document.getElementById("swNaeste"); if (!nk) return;
+  const v = SKEMA_ANSWERS["q" + (SKEMA_I + 1)];
+  const svaret = !(v === undefined || v === "");
+  nk.disabled = !svaret;
+  const msg = document.getElementById("swMsg");
+  if (msg && !msg.dataset.fejl) {
+    msg.textContent = svaret ? "" : "Svar for at komme videre";
+    msg.style.color = "";
+  }
+}
 function skemaWizVaelg(i, el) {
   const valgt = el.classList.contains("on");
   [].slice.call(el.parentElement.querySelectorAll("button")).forEach(function (b) { b.classList.remove("on"); });
@@ -29317,7 +29353,7 @@ async function saveSkema() {
       : "Der mangler " + mangler.length + " svar — jeg har åbnet det første.";
     if (typeof SKEMA_I !== "undefined") { SKEMA_I = mangler[0]; try { skemaWizTegn(); } catch (e) {} }
     const m2 = document.getElementById("swMsg");
-    if (m2) { m2.style.color = "var(--red)"; m2.textContent = msg.textContent; }
+    if (m2) { m2.dataset.fejl = "1"; m2.style.color = "var(--red)"; m2.textContent = msg.textContent; }
     return;
   }
   const rec = { kode: currentKode, navn: CURRENT_NAVN || (CURRENT_DEF && CURRENT_DEF.virksomhed) || "", skema: SKEMA_KEY, svar: SKEMA_ANSWERS };
@@ -29362,6 +29398,39 @@ async function refreshSkemaStatus() {
   if (done) {
     setTxt("skemaStatus", "Udfyldt — tak! Du kan altid udfylde igen.");
     document.getElementById("skemaBtn").textContent = "Udfyld igen";
+  }
+}
+
+/* AFSLUTNINGSSKEMAET DUKKER OP, NAAR LEKTIONERNE ER TAGET (Idas klik-valg 2/9).
+   kursusFaerdig() taeller det i forvejen — der bygges ingen ny maaling.
+   Kortet vises IKKE, hvis foer-skemaet er slaaet fra for kunden: uden et "foer" er der
+   intet at spejle, og saa ville halvdelen af spoergsmaalene staa tomme.
+   Tallet TAELLES (samme regel som det foerste kort): laegger nogen et spoergsmaal til,
+   staar der ellers stadig 12, og linjen lyver. */
+async function refreshEfterSkemaStatus() {
+  const card = document.getElementById("efterSkemaCard");
+  if (!card || !CURRENT_DEF || CURRENT_DEF.type === "medarbejder" || CURRENT_DEF.skema === false) return;
+  let faerdig = false;
+  try { faerdig = kursusFaerdig(); } catch (e) {}
+  if (!faerdig) { card.style.display = "none"; return; }
+  card.style.display = "flex";
+  try {
+    const n = ((SKEMAER.efter_forloebet || {}).sp || []).length;
+    if (n) setTxt("efterSkemaStatus", n + " spørgsmål · ca. 8 minutter");
+  } catch (e) {}
+  let done = null;
+  if (sb && currentKode) {
+    try {
+      const { data } = await sb.from("skema_svar").select("created_at")
+        .eq("kode", currentKode).eq("skema", "efter_forloebet")
+        .order("created_at", { ascending: false }).limit(1);
+      if (data && data.length) done = data[0].created_at;
+    } catch (e) {}
+  }
+  if (!done && localStorage.getItem("skema_efter_forloebet_" + (currentKode || "X"))) done = "lokalt";
+  if (done) {
+    setTxt("efterSkemaStatus", "Udfyldt — tak! Du kan altid udfylde igen.");
+    const b = document.getElementById("efterSkemaBtn"); if (b) b.textContent = "Udfyld igen";
   }
 }
 
@@ -29999,7 +30068,7 @@ function buildSideNav(def) {
             uPkt("", "Lektioner", "showTab(12)")))))
     + '<button class="sn-virk-knap" onclick="toggleVirkMenu(event)" title="' + esc(knapNavn) + '" aria-label="Profil"><span class="sn-initial">' + esc((knapNavn || "?").trim().charAt(0).toUpperCase()) + '</span><span class="sn-virk-navn" style="white-space:normal;overflow-wrap:anywhere;">' + esc(knapNavn) + '</span><svg class="sn-virk-pil" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="flex-shrink:0;"><path d="M6 9l6 6 6-6"/></svg></button>'
     /* Ida 30/7: ingen streg — logo + version samlet i foden under profilknappen */
-    + fodBagud + '<div class="sn-fod"><span>Version 2. september · 1514</span></div>'
+    + fodBagud + '<div class="sn-fod"><span>Version 2. september · 1515</span></div>'
     /* Ida 30/7: menuen åbner VED knappen (nederst t.v.) — ikke i modsatte hjørne */
     + '<div id="virkMenu" style="display:none;position:fixed;left:14px;bottom:96px;width:230px;background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:0 16px 40px rgba(0,0,0,0.15);padding:8px;z-index:90;">'
     + '<div style="padding:10px 12px 6px;font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--gray3);">' + esc(virkNavn) + '</div>'
@@ -33449,7 +33518,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "1514";
+const APP_VERSION = "1515";
 let NY_VERSION_KLAR = false;
 function nyVersionSkjul() { const e = document.getElementById("nyVersion"); if (e) e.style.display = "none"; }
 function nyVersionHent() { try { location.reload(); } catch(e) {} }
@@ -37820,6 +37889,7 @@ function applyCustomerView(def) {
   refreshMaalinger();                                  // hent interaktionsrate-målingerne
   refreshRapporter();                                  // hent månedsrapporterne
   refreshSkemaStatus();                                // vis "Inden du går i gang"-kortet + status
+  refreshEfterSkemaStatus();                           // og afslutningsskemaet, naar lektionerne er taget (Ida 2/9)
   refreshOpgaver();                                    // opgaver fra Energida på Hjem
   refreshInspiration();                                // inspirations-væggen i idébanken
   /* CRISP-BOBLEN ER UDE AF B2B (Ida 17/8: "chrisp boblen skal fjernes totalt paa b2b").
@@ -49152,6 +49222,6 @@ if ((location.hash || "").toLowerCase() === "#ole") {   // #ole = preview af Ole
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 2. september · 1514</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 2. september · 1515</div>
 </body>
 </html>
