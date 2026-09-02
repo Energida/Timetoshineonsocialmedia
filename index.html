@@ -4036,7 +4036,7 @@ body.modul-open .burger-btn, body.modul-open .bottom-nav, body.modul-open .dash-
     <button class="burger-item" onclick="toggleBurger(); minProfilAaben()">Min profil</button>
     <button class="burger-item" onclick="toggleBurger(); togglePwPanel()">Skift adgangskode</button>
     <button class="burger-item" style="color:var(--red);" onclick="custLogout()">Log ud</button>
-    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 2. september · 1563</div>
+    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 3. september · 1564</div>
   </div>
 </div>
 <div class="plus-menu" id="plusMenu" onclick="if(event.target===this)togglePlus()">
@@ -5386,7 +5386,7 @@ if (/somkunde=/.test(location.hash)) {
     <!-- Foden bliver nederst — den er det ENESTE der skubbes ned (Ida 30/7) -->
     <div class="dsb-fod">
       <button class="dsb-konto" onclick="dashKontoMenu()" title="Ida"><span class="dsb-initial">I</span><span class="dsb-konto-navn">Ida</span><svg class="dsb-konto-pil" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></button>
-      <div class="dsb-version"><span>Version 2. september · 1563</span></div>
+      <div class="dsb-version"><span>Version 3. september · 1564</span></div>
     </div>
   </div>
 
@@ -12117,7 +12117,7 @@ select titel,
          staa fast paa telefon. De hoerer i arket (samme fejl som "left" 31/7). -->
     <div id="dashFooter" style="z-index:50;display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--gray3);background:#fff;border-top:1px solid var(--border);padding:10px 26px;">
       <div style="font-size:10px;">© 2026 Energida · Alle rettigheder forbeholdes</div>
-      <div style="font-size:10px;margin-left:auto;">Version 2. september · 1563 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
+      <div style="font-size:10px;margin-left:auto;">Version 3. september · 1564 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
     </div>
   </div>
 </div>
@@ -15751,7 +15751,17 @@ function godkVisKopier(id, btn) {
    Kan browseren det ikke, kopieres adressen — og det SIGES, saa knappen ikke bare
    blinker og lader som om der skete noget. */
 function godkVisDel(id, btn) {
-  const url = location.origin + location.pathname + "?brief=" + encodeURIComponent(id);
+  /* LINKET BAERER KUNDENS KODE (Idas fund 2/9: "klikkede lige selv paa linket og kom ind
+     paa mit eget dashboard??").
+     AARSAG MAALT: modtageren aabner kun briefen, hvis dens id ligger i de idéer, der er
+     HENTET. En kunde har sine egne og lander rigtigt — men aabner Ida linket, er hun
+     logget ind som sig selv, briefen findes ikke i hendes liste, og der skete
+     bogstaveligt ingenting: hun blev staaende paa forsiden.
+     Koden skrives med, saa linket siger HVEM briefen hoerer til. Selve opslaget er
+     stadig ?brief=<id>; koden er en tilfoejelse, ikke en ny adresse. */
+  let kNu = ""; try { kNu = String(currentKode || "").trim(); } catch (e) {}
+  const url = location.origin + location.pathname + "?brief=" + encodeURIComponent(id)
+    + (kNu ? "&kunde=" + encodeURIComponent(kNu) : "");
   const it = (IDEER || []).find(x => x.id === id) || {};
   const titel = (it.t || it.titel || "Brief til godkendelse");
   const faerdig = () => { try {
@@ -15769,7 +15779,31 @@ function godkVisDel(id, btn) {
   /* LINKET KOPIERES ALTID FOERST (Ida 31/8: "jeg mangler en Kopier link naar jeg
      klikker paa del") — kvitteringen "Link kopieret" vises, OG dele-arket aabner
      ovenpaa, hvor enheden har et. Saa findes begge veje ved EET klik. */
-  try { navigator.clipboard.writeText(url).then(faerdig, faerdig); } catch (e) { faerdig(); }
+  /* LINKET KOPIERES MED NAVNET SOM KLIKBAR TEKST (Ida 2/9: "naar jeg deler linket ser
+     adressen saadan her ud - det skal selvfoelgelig aendres saa det altid bare er navnet
+     mm der fremgaar?").
+     FOER kopierede vi den RAA adresse, saa en mail viste
+     "https://admin.energida.dk/?brief=0b899e0f-cd95-…" — et id, ingen kan laese.
+     Nu laegges der TO udgaver paa udklipsholderen: text/html med opslagets navn som
+     link, og text/plain med adressen. Mail og dokumenter tager html-udgaven og viser
+     navnet; et rent tekstfelt tager adressen, saa linket aldrig gaar tabt.
+     ADRESSEN SELV ER UROERT: ?brief=<id> er noeglen, appen slaar briefen op paa, og et
+     "pænt" navn i adressen ville vaere en anden ting at vedligeholde. */
+  const linkHtml = '<a href="' + esc(url) + '">' + esc(titel) + '</a>';
+  (function () {
+    try {
+      if (navigator.clipboard && window.ClipboardItem) {
+        navigator.clipboard.write([new ClipboardItem({
+          "text/html":  new Blob([linkHtml], { type: "text/html" }),
+          "text/plain": new Blob([url],      { type: "text/plain" })
+        })]).then(faerdig, function () {
+          try { navigator.clipboard.writeText(url).then(faerdig, faerdig); } catch (e) { faerdig(); }
+        });
+        return;
+      }
+    } catch (e) {}
+    try { navigator.clipboard.writeText(url).then(faerdig, faerdig); } catch (e) { faerdig(); }
+  })();
   try {
     if (navigator.share) navigator.share({ title: titel, text: "Brief til godkendelse: " + titel, url: url }).catch(function () {});
   } catch (e) {}
@@ -30964,7 +30998,7 @@ function buildSideNav(def) {
             uPkt("", "Lektioner", "showTab(12)")))))
     + '<button class="sn-virk-knap" onclick="toggleVirkMenu(event)" title="' + esc(knapNavn) + '" aria-label="Profil"><span class="sn-initial">' + esc((knapNavn || "?").trim().charAt(0).toUpperCase()) + '</span><span class="sn-virk-navn" style="white-space:normal;overflow-wrap:anywhere;">' + esc(knapNavn) + '</span><svg class="sn-virk-pil" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="flex-shrink:0;"><path d="M6 9l6 6 6-6"/></svg></button>'
     /* Ida 30/7: ingen streg — logo + version samlet i foden under profilknappen */
-    + fodBagud + '<div class="sn-fod"><span>Version 2. september · 1563</span></div>'
+    + fodBagud + '<div class="sn-fod"><span>Version 3. september · 1564</span></div>'
     /* Ida 30/7: menuen åbner VED knappen (nederst t.v.) — ikke i modsatte hjørne */
     + '<div id="virkMenu" style="display:none;position:fixed;left:14px;bottom:96px;width:230px;background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:0 16px 40px rgba(0,0,0,0.15);padding:8px;z-index:90;">'
     + '<div style="padding:10px 12px 6px;font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--gray3);">' + esc(virkNavn) + '</div>'
@@ -33769,10 +33803,32 @@ async function refreshIdeer() {
      ville enhver senere opdatering af listen aabne visningen igen midt i arbejdet. */
   try {
     if (!window.__BRIEF_LINK_AABNET) {
-      const bid = new URLSearchParams(location.search).get("brief");
+      const sp = new URLSearchParams(location.search);
+      const bid = sp.get("brief");
+      const bkode = String(sp.get("kunde") || "").trim();
       if (bid && (IDEER || []).some(x => String(x.id) === String(bid))) {
         window.__BRIEF_LINK_AABNET = true;
         setTimeout(function () { try { godkVisAaben(bid); } catch (e) {} }, 200);
+      } else if (bid) {
+        /* BRIEFEN HOERER TIL EN ANDEN (Ida 2/9). Foer skete der INTET — man landede bare
+           paa forsiden og troede, linket var i stykker. Nu siges det, og staar der en
+           kode i linket, tilbydes vejen derhen. Ingen skifter noget af sig selv: at
+           aabne en anden kundes studio er et valg, man skal traeffe. */
+        window.__BRIEF_LINK_AABNET = true;
+        setTimeout(function () {
+          try {
+            const t = bkode
+              ? "Briefen hører til " + bkode + ". Du er logget ind som dig selv, så den ligger ikke i din egen liste."
+              : "Briefen kunne ikke findes i din liste. Den hører sandsynligvis til en kunde.";
+            /* Vejen ind er husets egen: #somkunde=<kode> — samme adresse, CRM'et selv
+               bruger (36765). Der bygges ingen ny doer, og der skiftes ikke af sig selv. */
+            if (bkode && confirm(t + "\n\nÅbn " + bkode + "s Content Studio?")) {
+              location.href = location.pathname + "?brief=" + encodeURIComponent(bid)
+                + "#somkunde=" + encodeURIComponent(bkode);
+              location.reload();
+            } else { alert(t); }
+          } catch (e) {}
+        }, 300);
       }
     }
   } catch (e) {}
@@ -34470,7 +34526,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "1563";
+const APP_VERSION = "1564";
 let NY_VERSION_KLAR = false;
 function nyVersionSkjul() { const e = document.getElementById("nyVersion"); if (e) e.style.display = "none"; }
 function nyVersionHent() { try { location.reload(); } catch(e) {} }
@@ -50330,6 +50386,6 @@ if ((location.hash || "").toLowerCase() === "#ole") {   // #ole = preview af Ole
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 2. september · 1563</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 3. september · 1564</div>
 </body>
 </html>
