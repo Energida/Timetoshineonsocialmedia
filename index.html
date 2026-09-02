@@ -3698,7 +3698,7 @@ body.modul-open .burger-btn, body.modul-open .bottom-nav, body.modul-open .dash-
     <button class="burger-item" onclick="toggleBurger(); minProfilAaben()">Min profil</button>
     <button class="burger-item" onclick="toggleBurger(); togglePwPanel()">Skift adgangskode</button>
     <button class="burger-item" style="color:var(--red);" onclick="custLogout()">Log ud</button>
-    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 2. september · 1509</div>
+    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 2. september · 1510</div>
   </div>
 </div>
 <div class="plus-menu" id="plusMenu" onclick="if(event.target===this)togglePlus()">
@@ -5019,7 +5019,7 @@ if (/somkunde=/.test(location.hash)) {
     <!-- Foden bliver nederst — den er det ENESTE der skubbes ned (Ida 30/7) -->
     <div class="dsb-fod">
       <button class="dsb-konto" onclick="dashKontoMenu()" title="Ida"><span class="dsb-initial">I</span><span class="dsb-konto-navn">Ida</span><svg class="dsb-konto-pil" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></button>
-      <div class="dsb-version"><span>Version 2. september · 1509</span></div>
+      <div class="dsb-version"><span>Version 2. september · 1510</span></div>
     </div>
   </div>
 
@@ -11731,7 +11731,7 @@ select titel,
          staa fast paa telefon. De hoerer i arket (samme fejl som "left" 31/7). -->
     <div id="dashFooter" style="z-index:50;display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--gray3);background:#fff;border-top:1px solid var(--border);padding:10px 26px;">
       <div style="font-size:10px;">© 2026 Energida · Alle rettigheder forbeholdes</div>
-      <div style="font-size:10px;margin-left:auto;">Version 2. september · 1509 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
+      <div style="font-size:10px;margin-left:auto;">Version 2. september · 1510 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
     </div>
   </div>
 </div>
@@ -15954,6 +15954,26 @@ function renderSoejler() {
    Tre skridt i stedet for tomme kort ved første login. YOU GOT THIS-/standardkunder bygger
    selv strategien (11c); forløbskunder har den fra workshoppen med Ida (11d). */
 let OB_STRATEGI = null;   // null = strategibygger-svaret er ikke hentet endnu
+/* SKEMAET ER REJSENS FOERSTE SKRIDT (Idas klik-valg 2/9: "Som skridt 1 i rejsen" +
+   "Alle nye kunder"). Hendes ord om hvorfor: "det skal komme som det foerste naar de har
+   oprettet sig via det stripe link."
+   MAALT foer: mens rejsen koerte, skjulte CSS'en skemakortet med display:none !important,
+   saa en helt ny kunde saa det SLET IKKE, foer hele rejsen var gennemfoert — det modsatte
+   af det, hun bad om. Og kortet maatte ikke bare taendes ved siden af: et
+   foerste-gangs-billede har EEN vej frem (26/8). Derfor bliver skemaet et TRIN. */
+let OB_SKEMA = null;   // null = ikke hentet endnu
+async function onboardingSkemaTjek() {
+  if (!sb || !currentKode || OB_SKEMA !== null) return;
+  /* ER SKEMAET SLAAET FRA FOR KUNDEN, TAELLER TRINNET SOM TAGET. Ellers ville rejsen
+     staa fast paa et skridt, kunden ikke kan tage — en blindgyde (30/7). */
+  if (CURRENT_DEF && CURRENT_DEF.skema === false) { OB_SKEMA = true; try { renderHome(); } catch (e) {} return; }
+  try {
+    const { data } = await sb.from("skema_svar").select("created_at")
+      .eq("kode", currentKode).eq("skema", "inden_workshoppen").limit(1);
+    OB_SKEMA = !!(data && data.length);
+  } catch (e) { OB_SKEMA = false; }
+  try { renderHome(); } catch (e) {}
+}
 async function onboardingStrategiTjek() {
   if (!sb || !currentKode || OB_STRATEGI !== null) return;
   try {
@@ -15987,7 +16007,10 @@ function onboardingTrin(def) {
     : (OB_STRATEGI === true || harStrategiIndhold(def && def.strategi));
   const s2 = IDEER.some(x => x && x.status !== "Arkiveret" && (x.status === "Planlagt" || x.status === "Postet" || (x.brief && (x.brief.hook || x.brief.caption || x.brief.cta || x.brief.optagedag))));
   const s3 = !!planDato();
-  return { s1: s1, s2: s2, s3: s3 };
+  /* s0 = skemaet. Er det ikke hentet endnu (null), regnes trinnet som TAGET — saa
+     blinker rejsen ikke et laast skridt frem, mens svaret er undervejs. */
+  const s0 = (OB_SKEMA !== false);
+  return { s0: s0, s1: s1, s2: s2, s3: s3 };
 }
 function obSkjult() {
   if (window.__INTRO_SKJULT) return true;
@@ -15997,7 +16020,7 @@ function onboardingAktiv(def) {
   if (!onboardingVariant(def) || obSkjult()) return false;
   if (IDEER.some(x => x && x.status === "Postet")) return false;   // kunden er i gang — introen vises aldrig igen
   const t = onboardingTrin(def);
-  return !(t.s1 && t.s2 && t.s3);
+  return !(t.s0 && t.s1 && t.s2 && t.s3);
 }
 async function onboardingSpring() {
   window.__INTRO_SKJULT = true;
@@ -16091,6 +16114,16 @@ function onboardingRender(def) {
      samme ordrette som foer (sprog-aendring kun efter aftale); det er FORMEN, der er ny.
      Faerdige trins egen vej (fx "Aabn Drejebogen") staar som roed tekst-knap under
      trinnet — sekundaer navigation er roed ren tekst (22/7). */
+  /* SKEMAET ER TRIN 1 (Ida 2/9). Det staar FOERST, fordi det maaler udgangspunktet —
+     og et udgangspunkt maalt efter forloebet er ikke et udgangspunkt.
+     Trinnet vises IKKE, naar skemaet er slaaet fra for kunden (def.skema === false):
+     en rejse med et skridt, der ikke findes, er en blindgyde. */
+  const visSkema = !(def && def.skema === false);
+  const skemaAktiv = visSkema && !t.s0;
+  const tSkema = { done: t.s0, aktiv: skemaAktiv, label: "Fortæl hvor du står",
+    tekst: "19 spørgsmål om, hvordan det ser ud i dag. Det tager cirka 10 minutter — og det er dét, vi måler fremgangen op imod.",
+    cta: skemaAktiv ? { txt: "Start her — fortæl hvor du står", klik: "openSkema('inden_workshoppen')" } : null,
+    sek: t.s0 && visSkema ? '<button type="button" class="obp-seklink" onclick="openSkema(\'inden_workshoppen\')">Se dine svar</button>' : "" };
   const t1 = fl
     ? { done: true, label: "Strategien ligger klar",
         tekst: "Bygget sammen med Ida — ligger i Drejebogen, klar til brug.",
@@ -16118,7 +16151,12 @@ function onboardingRender(def) {
     tekst: "Vælg den idé, du har mest energi på — briefen guider dig skridt for skridt.",   /* "gennem Succesraketten" fjernet 1/9: raketten er ugens arbejdsgang, ikke briefens sider */
     cta: briefAktiv ? { txt: "Start her — lav din første brief", klik: "showTab(2)" } : null,
     laast: (!t.s2 && !briefAktiv) ? "Låses op efter planlægningsdagen" : "" };
-  const trin = [t1, tDag, tBrief];
+  /* LAASENE RYKKER MED: skemaet aabner strategien, strategien aabner dagen, dagen
+     aabner briefen. Uden det ville man kunne springe forbi det foerste skridt. */
+  if (visSkema && !t.s0) {
+    if (t1.aktiv) { t1.aktiv = false; t1.cta = null; t1.laast = "Låses op, når du har fortalt hvor du står"; }
+  }
+  const trin = visSkema ? [tSkema, t1, tDag, tBrief] : [t1, tDag, tBrief];
   const flueben = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>';
   /* HVIDE FLISER + TYDELIG HAENGELAAS (Ida 27/8 aften: "hvide fliser paa teksten ved
      1 2 3 og en tydelig haengelaas paa 2+3"). Cirklerne bliver PAA den roede streg;
@@ -29849,7 +29887,7 @@ function buildSideNav(def) {
             uPkt("", "Lektioner", "showTab(12)")))))
     + '<button class="sn-virk-knap" onclick="toggleVirkMenu(event)" title="' + esc(knapNavn) + '" aria-label="Profil"><span class="sn-initial">' + esc((knapNavn || "?").trim().charAt(0).toUpperCase()) + '</span><span class="sn-virk-navn" style="white-space:normal;overflow-wrap:anywhere;">' + esc(knapNavn) + '</span><svg class="sn-virk-pil" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="flex-shrink:0;"><path d="M6 9l6 6 6-6"/></svg></button>'
     /* Ida 30/7: ingen streg — logo + version samlet i foden under profilknappen */
-    + fodBagud + '<div class="sn-fod"><span>Version 2. september · 1509</span></div>'
+    + fodBagud + '<div class="sn-fod"><span>Version 2. september · 1510</span></div>'
     /* Ida 30/7: menuen åbner VED knappen (nederst t.v.) — ikke i modsatte hjørne */
     + '<div id="virkMenu" style="display:none;position:fixed;left:14px;bottom:96px;width:230px;background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:0 16px 40px rgba(0,0,0,0.15);padding:8px;z-index:90;">'
     + '<div style="padding:10px 12px 6px;font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--gray3);">' + esc(virkNavn) + '</div>'
@@ -33299,7 +33337,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "1509";
+const APP_VERSION = "1510";
 let NY_VERSION_KLAR = false;
 function nyVersionSkjul() { const e = document.getElementById("nyVersion"); if (e) e.style.display = "none"; }
 function nyVersionHent() { try { location.reload(); } catch(e) {} }
@@ -37564,6 +37602,9 @@ function applyCustomerView(def) {
   try { plejHent(); } catch(e) {}
   try { profilStudioBoot(); } catch(e) {}
   try { if (onboardingVariant(def) && !erForloeb(def)) onboardingStrategiTjek(); } catch(e) {}   // onboarding-skridt 1: er strategien bygget? (Task 4b)
+  /* Skemaet er rejsens FOERSTE skridt (Ida 2/9) — ogsaa for forloebskunder, som har
+     strategien fra workshoppen men ikke har fortalt, hvor de staar. */
+  try { if (onboardingVariant(def)) onboardingSkemaTjek(); } catch(e) {}
   nytFraIdaHent();
   ER_ENTAL = !!def.ental;
   anvendTone();
@@ -48999,6 +49040,6 @@ if ((location.hash || "").toLowerCase() === "#ole") {   // #ole = preview af Ole
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 2. september · 1509</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 2. september · 1510</div>
 </body>
 </html>
