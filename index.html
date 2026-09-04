@@ -535,6 +535,10 @@ body.has-nav .bottom { display: none !important; }   /* prototype-bjælken må A
 #appLoader img { width:110px; height:auto; animation: hjertePuls 1.6s ease-in-out infinite; }
 #appLoader div { font-family:'Poppins',sans-serif; font-size:11px; letter-spacing:2px; text-transform:uppercase; color:var(--gray3); }
 body.app-klar #appLoader { display:none; }
+/* FEJLFLADEN ARVER IKKE VENTETEKSTENS VERSALER (SET paa skaermbillede 4/9).
+   #appLoader div staar i versaler m. 2 px letterspacing — rigtigt for "Et oejeblik...",
+   forkert for en broedtekst. Uden denne nulstilling stod hele fejlbeskeden i versaler. */
+#appLoader[data-fejl="1"] div { text-transform:none; letter-spacing:normal; font-size:inherit; color:inherit; font-family:inherit; }
 @media print { #appLoader { display:none !important; } }
 #somkundeLoader { display:none; position:fixed; inset:0; z-index:9999; background:var(--blue); align-items:center; justify-content:center; flex-direction:column; gap:18px; }
 #somkundeLoader img { width:110px; height:auto; animation: hjertePuls 1.6s ease-in-out infinite; }
@@ -4090,9 +4094,88 @@ body.modul-open .burger-btn, body.modul-open .bottom-nav, body.modul-open .dash-
     if (g && getComputedStyle(g).display !== "none") return true;   /* login-porten ER en aegte flade */
     return false;
   }
-  var tjek = setInterval(function () { if (erAppenDer()) { clearInterval(tjek); sluk(); } }, 80);
-  window.addEventListener("load", function () { setTimeout(function () { clearInterval(tjek); sluk(); }, 300); });
-  setTimeout(function () { clearInterval(tjek); sluk(); }, 9000);
+
+  /* ================== TAEPPET LETTER ALDRIG OP I EN DOED APP (HAARD, Ida 4/9) ==================
+     Idas ord med skaermbillede: "denne her skaerm maa jeg ALDRIG eller nogen kunde faa vist."
+     Hun stod paa b2b.energida.dk og saa PROTOTYPENS gamle fanerraekke — "Din profil ·
+     AI-strategi · Plan" — over en tom flade. Versionsfoden sagde 1602: den build, der
+     vaeltede appen 3/9 (esc is not defined), serveret fra service-workerens cache.
+
+     MEKANIKKEN, MAALT: prototypens top er kun skjult af `body.has-nav .topbar`. Naar
+     app-scriptet doer, bliver `has-nav` aldrig sat — og de to noedbremser (denne, og
+     appKlar paa 7 sek.) loeftede taeppet ALLIGEVEL. Saa laa den naegne markup fremme.
+
+     RETTELSEN: en noedbremse maa loefte taeppet, men aldrig op i ingenting. Er appen ikke
+     kommet, viser vi en AERLIG flade med en vej ud i stedet — og den vej rydder selv den
+     cache, fejlen kom fra. Pollen bliver ved: kommer appen alligevel, forsvinder fejlfladen.
+
+     BYG ALDRIG EN NOEDBREMSE, DER LOEFTER UDEN AT SPOERGE, OM DER ER NOGET UNDER. */
+  function fejlflade() {
+    if (slukket) return;
+    var el = document.getElementById("appLoader"); if (!el) return;
+    if (el.getAttribute("data-fejl") === "1") return;
+    el.setAttribute("data-fejl", "1");
+    el.innerHTML =
+      '<div style="background:#fff;border:1px solid #DEDAD4;border-radius:20px;padding:26px 28px;'
+      + 'max-width:380px;margin:0 22px;font-family:Poppins,-apple-system,BlinkMacSystemFont,sans-serif;'
+      + 'box-shadow:0 8px 28px rgba(22,32,42,.10);text-align:left;">'
+      + '<div style="font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:#9A9590;margin-bottom:8px;">Energida</div>'
+      + '<div style="font-size:17px;font-weight:400;color:#1A1A1A;line-height:1.35;margin-bottom:10px;">Appen kunne ikke starte</div>'
+      + '<div style="font-size:13px;font-weight:400;color:#6F6B66;line-height:1.65;">'
+      + 'Der gik noget galt undervejs, s\u00e5 appen aldrig kom op. '
+      + '<b style="font-weight:400;color:#1A1A1A;">Intet af dit arbejde er r\u00f8rt</b> \u2014 det ligger gemt.<br><br>'
+      + 'Knappen henter appen forfra og rydder det, din browser har liggende.</div>'
+      + '<div style="display:flex;justify-content:flex-end;margin-top:18px;">'
+      + '<button type="button" onclick="window.__energidaHentForfra()" '
+      + 'style="background:#FC2404;color:#fff;border:0;border-radius:999px;min-height:44px;padding:0 22px;'
+      + 'font-family:Poppins,-apple-system,sans-serif;font-weight:400;font-size:13.5px;cursor:pointer;">'
+      + 'Hent appen forfra</button></div></div>';
+  }
+
+  /* Rydder service-workerens cache og henter siden forfra. Det er praecis den vej ud,
+     Ida manglede: cachen bar en braekket build, og et almindeligt genindlaes gav den igen. */
+  window.__energidaHentForfra = function () {
+    var faerdig = function () {
+      try { location.replace(location.pathname + "?frisk=" + Date.now()); }
+      catch (e) { location.reload(); }
+    };
+    var venter = [];
+    try {
+      if (navigator.serviceWorker && navigator.serviceWorker.getRegistrations) {
+        venter.push(navigator.serviceWorker.getRegistrations().then(function (rs) {
+          return Promise.all(rs.map(function (r) { return r.unregister(); }));
+        }));
+      }
+    } catch (e) {}
+    try {
+      if (window.caches && caches.keys) {
+        venter.push(caches.keys().then(function (ks) {
+          return Promise.all(ks.map(function (k) { return caches.delete(k); }));
+        }));
+      }
+    } catch (e) {}
+    if (!venter.length) return faerdig();
+    Promise.all(venter).then(faerdig, faerdig);
+    setTimeout(faerdig, 2500);   /* svarer noget ikke, kommer man videre alligevel */
+  };
+
+  var tjek = setInterval(function () {
+    if (erAppenDer()) {
+      clearInterval(tjek);
+      var el = document.getElementById("appLoader");
+      if (el && el.getAttribute("data-fejl") === "1") el.removeAttribute("data-fejl");
+      sluk();
+    }
+  }, 80);
+  /* Er appen der, naar siden er faerdig med at loade, letter taeppet. Er den IKKE,
+     bliver taeppet staaende — og pollen ovenfor letter det, saa snart appen kommer. */
+  window.addEventListener("load", function () {
+    setTimeout(function () { if (erAppenDer()) { clearInterval(tjek); sluk(); } }, 300);
+  });
+  setTimeout(function () {
+    if (erAppenDer()) { clearInterval(tjek); sluk(); return; }
+    fejlflade();
+  }, 9000);
 })();
 </script>
 
@@ -4152,7 +4235,7 @@ body.modul-open .burger-btn, body.modul-open .bottom-nav, body.modul-open .dash-
     <button class="burger-item" onclick="toggleBurger(); minProfilAaben()">Min profil</button>
     <button class="burger-item" onclick="toggleBurger(); togglePwPanel()">Skift adgangskode</button>
     <button class="burger-item" style="color:var(--red);" onclick="custLogout()">Log ud</button>
-    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 4. september · 1606</div>
+    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 4. september · 1607</div>
   </div>
 </div>
 <div class="plus-menu" id="plusMenu" onclick="if(event.target===this)togglePlus()">
@@ -5502,7 +5585,7 @@ if (/somkunde=/.test(location.hash)) {
     <!-- Foden bliver nederst — den er det ENESTE der skubbes ned (Ida 30/7) -->
     <div class="dsb-fod">
       <button class="dsb-konto" onclick="dashKontoMenu()" title="Ida"><span class="dsb-initial">I</span><span class="dsb-konto-navn">Ida</span><svg class="dsb-konto-pil" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></button>
-      <div class="dsb-version"><span>Version 4. september · 1606</span></div>
+      <div class="dsb-version"><span>Version 4. september · 1607</span></div>
     </div>
   </div>
 
@@ -11498,7 +11581,7 @@ select titel,
          staa fast paa telefon. De hoerer i arket (samme fejl som "left" 31/7). -->
     <div id="dashFooter" style="z-index:50;display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--gray3);background:#fff;border-top:1px solid var(--border);padding:10px 26px;">
       <div style="font-size:10px;">© 2026 Energida · Alle rettigheder forbeholdes</div>
-      <div style="font-size:10px;margin-left:auto;">Version 4. september · 1606 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
+      <div style="font-size:10px;margin-left:auto;">Version 4. september · 1607 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
     </div>
   </div>
 </div>
@@ -30580,7 +30663,7 @@ function buildSideNav(def) {
             uPkt("", "Lektioner", "showTab(12)")))))
     + '<button class="sn-virk-knap" onclick="toggleVirkMenu(event)" title="' + esc(knapNavn) + '" aria-label="Profil"><span class="sn-initial">' + esc((knapNavn || "?").trim().charAt(0).toUpperCase()) + '</span><span class="sn-virk-navn" style="white-space:normal;overflow-wrap:anywhere;">' + esc(knapNavn) + '</span><svg class="sn-virk-pil" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="flex-shrink:0;"><path d="M6 9l6 6 6-6"/></svg></button>'
     /* Ida 30/7: ingen streg — logo + version samlet i foden under profilknappen */
-    + fodBagud + '<div class="sn-fod"><span>Version 4. september · 1606</span></div>'
+    + fodBagud + '<div class="sn-fod"><span>Version 4. september · 1607</span></div>'
     /* Ida 30/7: menuen åbner VED knappen (nederst t.v.) — ikke i modsatte hjørne */
     + '<div id="virkMenu" style="display:none;position:fixed;left:14px;bottom:96px;width:230px;background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:0 16px 40px rgba(0,0,0,0.15);padding:8px;z-index:90;">'
     + '<div style="padding:10px 12px 6px;font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--gray3);">' + esc(virkNavn) + '</div>'
@@ -34296,7 +34379,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "1606";
+const APP_VERSION = "1607";
 let NY_VERSION_KLAR = false;
 function nyVersionSkjul() { const e = document.getElementById("nyVersion"); if (e) e.style.display = "none"; }
 function nyVersionHent() { try { location.reload(); } catch(e) {} }
@@ -36729,8 +36812,18 @@ function appKlar() {
   if (c) c.style.display = "none";
 }
 /* NOEDBREMSE: gaar noget galt i en vej, vi ikke har taenkt paa, maa taeppet ALDRIG
-   blive staaende — en gradient uden vej ud er en vaerre blindgyde end et blink. */
-setTimeout(appKlar, 7000);
+   blive staaende — en gradient uden vej ud er en vaerre blindgyde end et blink.
+   MEN (Ida 4/9): den maa heller ikke rive taeppet ned i en app, der aldrig kom op.
+   Boot-vagten oeverst i filen viser en aerlig fejlflade i det tilfaelde, og den ligger
+   paa z 10000 — over dette taeppe. Derfor letter vi kun, naar appen FAKTISK er monteret. */
+setTimeout(function () {
+  var b = document.body;
+  var monteret = b && (b.classList.contains("has-nav") || b.classList.contains("dash-mode")
+                    || b.classList.contains("dash-nav"));
+  var g = document.getElementById("authGate");
+  var gateFremme = g && getComputedStyle(g).display !== "none";
+  if (monteret || gateFremme) appKlar();
+}, 7000);
 function privCoverVis(paa) {
   const c = document.getElementById("privCover");
   if (!c) return;
@@ -50231,6 +50324,6 @@ if ((location.hash || "").toLowerCase() === "#ole") {   // #ole = preview af Ole
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 4. september · 1606</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 4. september · 1607</div>
 </body>
 </html>

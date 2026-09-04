@@ -1,5 +1,10 @@
 // Energida service worker — gør appen installérbar (og klar til push-notifikationer senere)
-const CACHE = "energida-v1";
+/* CACHE-NAVNET ER EN UDSMIDER. Ved "activate" slettes ALLE cachenavne, der ikke er
+   dette — saa et bump tvinger enhver enhed til at smide sit gamle indhold vaek.
+   BUMPET 4/9: Idas browser serverede v1602 fra cachen — den build, der vaeltede
+   appen 3/9 — og hun saa prototypens gamle faner i stedet for Content Studio.
+   Bump navnet, hver gang en braekket build kan naa at blive cachet. */
+const CACHE = "energida-v2";
 
 self.addEventListener("install", (e) => {
   self.skipWaiting();
