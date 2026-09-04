@@ -4280,7 +4280,7 @@ body.modul-open .burger-btn, body.modul-open .bottom-nav, body.modul-open .dash-
     <button class="burger-item" onclick="toggleBurger(); minProfilAaben()">Min profil</button>
     <button class="burger-item" onclick="toggleBurger(); togglePwPanel()">Skift adgangskode</button>
     <button class="burger-item" style="color:var(--red);" onclick="custLogout()">Log ud</button>
-    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 4. september · 1620</div>
+    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 4. september · 1621</div>
   </div>
 </div>
 <div class="plus-menu" id="plusMenu" onclick="if(event.target===this)togglePlus()">
@@ -5630,7 +5630,7 @@ if (/somkunde=/.test(location.hash)) {
     <!-- Foden bliver nederst — den er det ENESTE der skubbes ned (Ida 30/7) -->
     <div class="dsb-fod">
       <button class="dsb-konto" onclick="dashKontoMenu()" title="Ida"><span class="dsb-initial">I</span><span class="dsb-konto-navn">Ida</span><svg class="dsb-konto-pil" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></button>
-      <div class="dsb-version"><span>Version 4. september · 1620</span></div>
+      <div class="dsb-version"><span>Version 4. september · 1621</span></div>
     </div>
   </div>
 
@@ -11626,7 +11626,7 @@ select titel,
          staa fast paa telefon. De hoerer i arket (samme fejl som "left" 31/7). -->
     <div id="dashFooter" style="z-index:50;display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--gray3);background:#fff;border-top:1px solid var(--border);padding:10px 26px;">
       <div style="font-size:10px;">© 2026 Energida · Alle rettigheder forbeholdes</div>
-      <div style="font-size:10px;margin-left:auto;">Version 4. september · 1620 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
+      <div style="font-size:10px;margin-left:auto;">Version 4. september · 1621 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
     </div>
   </div>
 </div>
@@ -19543,6 +19543,19 @@ function contentFacitTegn(){
   const ting = [];
   alle.filter(x => x.dato === idag && x.status !== "Postet").forEach(x => ting.push({ slags: "post", x: x }));
   alle.filter(x => x.brief && x.brief.optagedag === idag && x.status !== "Postet" && x.dato !== idag).forEach(x => ting.push({ slags: "optag", x: x }));
+  /* TVILLINGEN TIL dagensProgramItems (Idas klik-valg 4/9): det, der skal postes inden
+     for tre dage, mens briefen endnu ikke er klar. Computeren og telefonen skal sige det
+     SAMME om det samme opslag — den fejl blev maalt 4/9 paa ansvarlig-filteret.
+     Samme fire betingelser som paa computeren: dato frem i tiden, hoejst tre dage,
+     status endnu ikke klar, min opgave, og ingen optagedag sat frem i tiden. */
+  alle.forEach(function (x) {
+    if (!x.dato || x.dato <= idag || x.status === "Postet") return;
+    if (["Idé", "Planlagt", "Brief i gang"].indexOf(String(x.status || "")) < 0) return;
+    try { if (typeof dagsMinOpgave === "function" && !dagsMinOpgave(x)) return; } catch (e) {}
+    if (x.brief && x.brief.optagedag && x.brief.optagedag >= idag) return;
+    const dage = Math.round((new Date(x.dato + "T12:00:00") - new Date(idag + "T12:00:00")) / 86400000);
+    if (dage > 0 && dage <= 3) ting.push({ slags: "snart", x: x, dage: dage });
+  });
   try {
     if (!(def && def.type === "contentplanner") && typeof planDato === "function" && planDato() === idag) ting.push({ slags: "plan" });
   } catch (e) {}
@@ -19557,9 +19570,16 @@ function contentFacitTegn(){
       + '<div class="cf-hjaelp">Ugens aftale med dig selv.</div>'
       + '<div class="cf-cta-r"><button type="button" class="cf-cta" onclick="vaelgPlanDagModal()">Planlæg</button></div></div>';
     const x = t.x;
-    const linje = [tidH(x), statH(x)].filter(Boolean).join(" · ");
+    const linje = t.slags === "snart"
+      ? "Briefen er ikke klar — hvornår laver du den?"
+      : [tidH(x), statH(x)].filter(Boolean).join(" · ");
+    const UGE_CF = ["Søndag", "Mandag", "Tirsdag", "Onsdag", "Torsdag", "Fredag", "Lørdag"];
+    const instr = t.slags === "optag" ? "I dag skal du optage"
+      : t.slags === "snart"
+        ? ((t.dage === 1 ? "I morgen" : "På " + UGE_CF[new Date(x.dato + "T12:00:00").getDay()].toLowerCase()) + " skal du poste")
+        : "I dag skal du poste";
     return '<div class="hf-kort">'
-      + '<div class="cf-instr">' + (t.slags === "optag" ? "I dag skal du optage" : "I dag skal du poste") + '</div>'
+      + '<div class="cf-instr">' + instr + '</div>'
       + '<div class="cf-navn">' + esc(storStart(titelVis(x.titel || "Uden titel"))) + '</div>'
       + (linje ? '<div class="cf-hjaelp">' + esc(linje) + '</div>' : '')
       + chipH(x)
@@ -20859,6 +20879,37 @@ function dagensProgramItems() {
       items.push({ ik: "kamera", id: "opt-" + it.id, t: "I dag skal du lave", navn: storStart(titelVis(it.titel || "opslaget")), sub: "Briefen ligger klar", kn: "Åbn briefen", fn: () => openBriefSide(it.id) });
     if (it.dato === idag && it.status !== "Postet")
       items.push({ ik: "send", id: "pub-" + it.id, t: "I dag skal du poste", navn: storStart(titelVis(it.titel || "opslaget")), sub: "Planlagt til i dag", kn: "Åbn briefen", fn: () => openBriefSide(it.id) });
+    /* ===== DET, DER SKAL POSTES SNART, MEN IKKE ER KLART (Idas klik-valg 4/9) =======
+       Hendes ord: "hvis briefen ikke er færdig eller udfyldt. så må den gerne komme op i
+       idag - på søndag skal du poste xxx - hvornår laver du den?"
+
+       HULLET, DER BLEV MAALT: "I dag skal du lave" staar KUN, naar der er sat en
+       optagedag. Er der ingen, er der stilhed lige indtil den dag, opslaget skal postes
+       — og saa er det for sent at optage noget. Datoen for POSTNINGEN kendte appen hele
+       tiden; den blev bare aldrig brugt til at spoerge, hvornaar arbejdet skulle ske.
+
+       TRE DAGE (Idas valg blandt fire): kort nok til at listen ikke fyldes op af alt,
+       der er planlagt, langt nok til at man kan naa at optage.
+
+       ANSVARLIG-REGLEN FRA v1608 GAELDER: det her er PRODUKTION ("hvornaar laver du
+       den?"), saa linjen filtreres med dagsMinOpgave. Postnings-linjen ovenfor er
+       stadig ufiltreret.
+
+       ER DER SAT EN OPTAGEDAG FREM I TIDEN, siger vi ingenting: saa er der en plan, og
+       en paamindelse om noget, der er besluttet, er stoej (5/8). */
+    if (it.dato && it.dato > idag && it.status !== "Postet" && dagsMinOpgave(it)
+        && ["Idé", "Planlagt", "Brief i gang"].indexOf(String(it.status || "")) > -1) {
+      const dage = Math.round((new Date(it.dato + "T12:00:00") - new Date(idag + "T12:00:00")) / 86400000);
+      const optagPlanlagt = it.brief && it.brief.optagedag && it.brief.optagedag >= idag;
+      if (dage > 0 && dage <= 3 && !optagPlanlagt) {
+        const UGE = ["Søndag", "Mandag", "Tirsdag", "Onsdag", "Torsdag", "Fredag", "Lørdag"];
+        const dagNavn = dage === 1 ? "I morgen" : "På " + UGE[new Date(it.dato + "T12:00:00").getDay()].toLowerCase();
+        items.push({ ik: "kamera", id: "snart-" + it.id, t: dagNavn + " skal du poste",
+          navn: storStart(titelVis(it.titel || "opslaget")),
+          sub: "Briefen er ikke klar — hvornår laver du den?",
+          kn: "Åbn briefen", fn: () => openBriefSide(it.id) });
+      }
+    }
   });
   try {
     (typeof KUNDE_OPGAVER !== "undefined" ? KUNDE_OPGAVER : []).forEach(o => {
@@ -31379,7 +31430,7 @@ function buildSideNav(def) {
             uPkt("", "Lektioner", "showTab(12)")))))
     + '<button class="sn-virk-knap" onclick="toggleVirkMenu(event)" title="' + esc(knapNavn) + '" aria-label="Profil"><span class="sn-initial">' + esc((knapNavn || "?").trim().charAt(0).toUpperCase()) + '</span><span class="sn-virk-navn" style="white-space:normal;overflow-wrap:anywhere;">' + esc(knapNavn) + '</span><svg class="sn-virk-pil" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="flex-shrink:0;"><path d="M6 9l6 6 6-6"/></svg></button>'
     /* Ida 30/7: ingen streg — logo + version samlet i foden under profilknappen */
-    + fodBagud + '<div class="sn-fod"><span>Version 4. september · 1620</span></div>'
+    + fodBagud + '<div class="sn-fod"><span>Version 4. september · 1621</span></div>'
     /* Ida 30/7: menuen åbner VED knappen (nederst t.v.) — ikke i modsatte hjørne */
     + '<div id="virkMenu" style="display:none;position:fixed;left:14px;bottom:96px;width:230px;background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:0 16px 40px rgba(0,0,0,0.15);padding:8px;z-index:90;">'
     + '<div style="padding:10px 12px 6px;font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--gray3);">' + esc(virkNavn) + '</div>'
@@ -35095,7 +35146,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "1620";
+const APP_VERSION = "1621";
 let NY_VERSION_KLAR = false;
 function nyVersionSkjul() { const e = document.getElementById("nyVersion"); if (e) e.style.display = "none"; }
 function nyVersionHent() { try { location.reload(); } catch(e) {} }
@@ -51044,6 +51095,6 @@ if ((location.hash || "").toLowerCase() === "#ole") {   // #ole = preview af Ole
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 4. september · 1620</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 4. september · 1621</div>
 </body>
 </html>
