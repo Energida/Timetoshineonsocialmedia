@@ -1275,6 +1275,8 @@ body.brief-raket #briefHero { display:none !important; }
      polstring 14px 18px · streg mellem felter inde i en kasse */
 .bsam-sl-hoved { font-size:10px; letter-spacing:1.5px; text-transform:uppercase; color:var(--gray3);
   padding-bottom:8px; border-bottom:1px solid var(--border); margin-bottom:12px; }
+/* "KLIP 1 • HOOK" — foerste felts navn staar paa kortets hovedlinje (Ida 4/9). */
+.bsam-sl-hoved-felt::before { content:"\2022"; margin:0 8px; color:var(--gray2); }
 /* DEN LODRETTE STREG ER VAEK (Idas valg C, 1/9: "jeg tror det er den streg der skille
    tekst og beskrivelse af billede jeg har det lidt svaert med").
    Hvorfor den foeltes forkert: en lodret streg midt i kortet siger, at de to felter er
@@ -1338,7 +1340,8 @@ body.brief-raket #briefHero { display:none !important; }
    bogstavafstand, saa den ikke laeses som en anden etiket — og graa, fordi den er hjaelp,
    ikke svar. Bryder den om, foelger den etikettens venstrekant. */
 .bsam-fl-forkl { text-transform:none; letter-spacing:0; font-size:11.5px; color:var(--gray3);
-  margin-left:9px; font-weight:300; }
+  margin-left:8px; font-weight:300; }
+.bsam-fl-forkl::before { content:"\2022"; margin-right:8px; color:var(--gray2); }
 .bsam-mgtekst.kappet { display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
 .bsam-mere { display:none; margin-top:6px; background:none; border:none; padding:0; cursor:pointer;
   font-family:"Poppins",sans-serif; font-weight:300; font-size:11.5px; color:var(--gray3); }
@@ -4253,7 +4256,10 @@ body.modul-open .burger-btn, body.modul-open .bottom-nav, body.modul-open .dash-
      bred og 202 KB, men vises paa 110 px. Paa mobildata betoed det, at venteskærmens
      hjerte foerst kunne tegne sig efter 202 KB - og indtil da saa man en tom flade.
      logo-hjerte-lille.png er 240 px og 38 KB. Originalen er uroert. -->
-<div id="appLoader"><img src="logo-hjerte-lille.png" alt="" onerror="this.style.display='none'"><div>Et &oslash;jeblik&hellip;</div></div>
+<!-- TEKSTEN UNDER HJERTET ER UDE (Ida 4/9: "teksten under skal bare fjernes").
+     Hjertet banker - det siger allerede, at der sker noget. Beholderen bliver, fordi
+     fejlfladen skriver i den, naar appen ikke kommer. -->
+<div id="appLoader"><img src="logo-hjerte-lille.png" alt="" onerror="this.style.display='none'"><div></div></div>
 <div id="nyVersion" role="status">
   <div class="nv-t">Der er kommet en ny version af appen.</div>
   <div class="nv-s">Du sidder p&aring; en &aelig;ldre udgave &mdash; hent den nye, s&aring; du ikke leder efter fejl, der allerede er rettet.</div>
@@ -4273,12 +4279,37 @@ body.modul-open .burger-btn, body.modul-open .bottom-nav, body.modul-open .dash-
     try { document.body.classList.add("app-klar"); } catch (e) {}
   }
   window.appLoaderSluk = sluk;
+  /* EN KLASSE ER IKKE EN FLADE (Idas fund 4/9: "hjernehjertet kommer fint op men
+     forsvinder hurtigt og inden at siden er loadet").
+     MEKANIKKEN: has-nav og authGate saettes, FOER indholdet er tegnet — og med den nye
+     cache-foerst-service-worker sker det saa hurtigt, at taeppet lettede op i en tom
+     gradient. En klasse siger, at appen er I GANG; den siger ikke, at der STAAR noget.
+     DERFOR TO KRAV: der skal baade vaere en flade (klassen) OG noget at se paa
+     (harNoget), og det skal holde TO gange i traek — saa et glimt af login-porten
+     under en session-kontrol ikke kan lette taeppet.
+     9-sekunders-vagten er uroert: kommer appen aldrig, staar den aerlige fejlflade. */
+  function harNoget() {
+    try {
+      var g = document.getElementById("authGate");
+      if (g && getComputedStyle(g).display !== "none" && g.getBoundingClientRect().height > 150) return true;
+      var navne = ["hjemFacit", "contentFacit", "dashMain", "hjemVenstre", "hjemHoejre"];
+      for (var i = 0; i < navne.length; i++) {
+        var e = document.getElementById(navne[i]);
+        if (e && e.getBoundingClientRect().height > 120) return true;
+      }
+      var sc = document.querySelectorAll(".screen");
+      for (var j = 0; j < sc.length; j++) if (sc[j].getBoundingClientRect().height > 120) return true;
+    } catch (e) {}
+    return false;
+  }
   function erAppenDer() {
     var b = document.body; if (!b) return false;
-    if (b.classList.contains("has-nav") || b.classList.contains("dash-mode") || b.classList.contains("dash-nav")) return true;
-    var g = document.getElementById("authGate");
-    if (g && getComputedStyle(g).display !== "none") return true;   /* login-porten ER en aegte flade */
-    return false;
+    var flade = b.classList.contains("has-nav") || b.classList.contains("dash-mode") || b.classList.contains("dash-nav");
+    if (!flade) {
+      var g = document.getElementById("authGate");
+      flade = !!(g && getComputedStyle(g).display !== "none");   /* login-porten ER en aegte flade */
+    }
+    return flade && harNoget();
   }
 
   /* ================== TAEPPET LETTER ALDRIG OP I EN DOED APP (HAARD, Ida 4/9) ==================
@@ -4345,18 +4376,21 @@ body.modul-open .burger-btn, body.modul-open .bottom-nav, body.modul-open .dash-
     setTimeout(faerdig, 2500);   /* svarer noget ikke, kommer man videre alligevel */
   };
 
+  var iTraek = 0;
   var tjek = setInterval(function () {
-    if (erAppenDer()) {
-      clearInterval(tjek);
-      var el = document.getElementById("appLoader");
-      if (el && el.getAttribute("data-fejl") === "1") el.removeAttribute("data-fejl");
-      sluk();
-    }
-  }, 80);
+    if (erAppenDer()) { iTraek++; } else { iTraek = 0; return; }
+    if (iTraek < 3) return;                 /* tre gange i traek = ikke et glimt */
+    clearInterval(tjek);
+    var el = document.getElementById("appLoader");
+    if (el && el.getAttribute("data-fejl") === "1") el.removeAttribute("data-fejl");
+    sluk();
+  }, 120);
   /* Er appen der, naar siden er faerdig med at loade, letter taeppet. Er den IKKE,
      bliver taeppet staaende — og pollen ovenfor letter det, saa snart appen kommer. */
+  /* "Siden er faerdig med at loade" betyder ikke, at appen har tegnet noget — med
+     cache-foerst sker load meget tidligt. Derfor kun samme krav som pollen. */
   window.addEventListener("load", function () {
-    setTimeout(function () { if (erAppenDer()) { clearInterval(tjek); sluk(); } }, 300);
+    setTimeout(function () { if (erAppenDer()) { clearInterval(tjek); sluk(); } }, 700);
   });
   setTimeout(function () {
     if (erAppenDer()) { clearInterval(tjek); sluk(); return; }
@@ -4421,7 +4455,7 @@ body.modul-open .burger-btn, body.modul-open .bottom-nav, body.modul-open .dash-
     <button class="burger-item" onclick="toggleBurger(); minProfilAaben()">Min profil</button>
     <button class="burger-item" onclick="toggleBurger(); togglePwPanel()">Skift adgangskode</button>
     <button class="burger-item" style="color:var(--red);" onclick="custLogout()">Log ud</button>
-    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 4. september · 1643</div>
+    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 4. september · 1645</div>
   </div>
 </div>
 <div class="plus-menu" id="plusMenu" onclick="if(event.target===this)togglePlus()">
@@ -5771,7 +5805,7 @@ if (/somkunde=/.test(location.hash)) {
     <!-- Foden bliver nederst — den er det ENESTE der skubbes ned (Ida 30/7) -->
     <div class="dsb-fod">
       <button class="dsb-konto" onclick="dashKontoMenu()" title="Ida"><span class="dsb-initial">I</span><span class="dsb-konto-navn">Ida</span><svg class="dsb-konto-pil" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></button>
-      <div class="dsb-version"><span>Version 4. september · 1643</span></div>
+      <div class="dsb-version"><span>Version 4. september · 1645</span></div>
     </div>
   </div>
 
@@ -11767,7 +11801,7 @@ select titel,
          staa fast paa telefon. De hoerer i arket (samme fejl som "left" 31/7). -->
     <div id="dashFooter" style="z-index:50;display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--gray3);background:#fff;border-top:1px solid var(--border);padding:10px 26px;">
       <div style="font-size:10px;">© 2026 Energida · Alle rettigheder forbeholdes</div>
-      <div style="font-size:10px;margin-left:auto;">Version 4. september · 1643 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
+      <div style="font-size:10px;margin-left:auto;">Version 4. september · 1645 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
     </div>
   </div>
 </div>
@@ -17951,10 +17985,13 @@ function briefVisFelter(b, it) {
     const alleK = klipUdfyldte();
     const kl = alleK.slice(fra, til);
     if (!kl.length) return "";
-    const rk = (lab, val, tom) => '<div class="bsam-sl-kol' + (tom ? ' billede' : '') + '">'
-      + '<div class="bsam-sl-lab">' + lab + '</div>'
-      + (val ? '<div class="bsam-sl-val">' + esc(val).replace(/\n/g, "<br>") + '</div>' : '')
-      + '</div>';
+    const rk = function (lab, val, tom) {
+      const vaerdi = val ? '<div class="bsam-sl-val">' + esc(val).replace(/\n/g, "<br>") + '</div>' : '';
+      const aab = '<div class="bsam-sl-kol' + (tom ? ' billede' : '') + '">';
+      return { navn: lab,
+        html: aab + '<div class="bsam-sl-lab">' + lab + '</div>' + vaerdi + '</div>',
+        udenLabel: aab + vaerdi + '</div>' };
+    };
     return kl.map(function (k, n) {
       const i = fra + n;                                  /* det RIGTIGE klipnummer */
       const dele = [];
@@ -17967,9 +18004,15 @@ function briefVisFelter(b, it) {
       if (i === alleK.length - 1 && !erKarrusel && b.format !== "Billede"
           && String(b.ctaVideo || "").trim())
         dele.push(rk("Handlingen i videoen", String(b.ctaVideo).trim(), dele.length));
+      /* "KLIP 1 • HOOK" PAA SAMME LINJE (Ida 4/9). Kortets hoved og FOERSTE felts navn
+         siger tilsammen, hvad man kigger paa — to etiketlinjer over hinanden var to
+         halve oplysninger. Kun det foerste felt flytter op; resten beholder deres egne
+         etiketter med streg imellem. */
+      const foersteNavn = dele.length ? dele[0].navn : "";
       return '<div class="bsam-slidekort">'
-        + '<div class="bsam-sl-hoved">Klip ' + (i + 1) + '</div>'
-        + '<div class="bsam-sl-krop">' + dele.join("") + '</div></div>';
+        + '<div class="bsam-sl-hoved">Klip ' + (i + 1)
+          + (foersteNavn ? '<span class="bsam-sl-hoved-felt">' + foersteNavn + '</span>' : '') + '</div>'
+        + '<div class="bsam-sl-krop">' + dele.map(function (d, n) { return n === 0 ? d.udenLabel : d.html; }).join("") + '</div></div>';
     }).join("");
   };
   const L = [
@@ -18381,7 +18424,12 @@ function briefSamletHtml() {
       /* ER ETIKETTEN TOM, BAERER GRUPPENS OVERSKRIFT NAVNET (Ida 4/9) — saa staar der
          ikke en tom linje, hvor et navn plejede at staa. */
       + (lbl ? '<div class="bsam-fl-label">' + esc(lbl)
-        + (o.forkl ? '<span class="bsam-fl-forkl">' + esc(o.forkl) + '</span>' : '')
+        /* PRIKKEN MELLEM OVERSKRIFT OG BESKRIVELSE (Ida 4/9: "husk den • mellem
+           overskrift og beskrivelse"), og KUN FOERSTE SAETNING paa oversigten:
+           "de uddybende beskrivelser kan saa staa naar man er inde i selve briefen og
+           ikke paa oversigten". Oversigten er til at LAESE og godkende; hjaelpen hoerer
+           til, hvor man UDFYLDER. Wizardens fulde tekst er uroert. */
+        + (o.forkl ? '<span class="bsam-fl-forkl">' + esc(String(o.forkl).split(".")[0].trim()) + '</span>' : '')
       + '</div>' : '')
       + krop
       + '<div class="bsam-fl-bund">' + (o.ekstra || '')
@@ -31886,7 +31934,7 @@ function buildSideNav(def) {
             uPkt("", "Lektioner", "showTab(12)")))))
     + '<button class="sn-virk-knap" onclick="toggleVirkMenu(event)" title="' + esc(knapNavn) + '" aria-label="Profil"><span class="sn-initial">' + esc((knapNavn || "?").trim().charAt(0).toUpperCase()) + '</span><span class="sn-virk-navn" style="white-space:normal;overflow-wrap:anywhere;">' + esc(knapNavn) + '</span><svg class="sn-virk-pil" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="flex-shrink:0;"><path d="M6 9l6 6 6-6"/></svg></button>'
     /* Ida 30/7: ingen streg — logo + version samlet i foden under profilknappen */
-    + fodBagud + '<div class="sn-fod"><span>Version 4. september · 1643</span></div>'
+    + fodBagud + '<div class="sn-fod"><span>Version 4. september · 1645</span></div>'
     /* Ida 30/7: menuen åbner VED knappen (nederst t.v.) — ikke i modsatte hjørne */
     + '<div id="virkMenu" style="display:none;position:fixed;left:14px;bottom:96px;width:230px;background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:0 16px 40px rgba(0,0,0,0.15);padding:8px;z-index:90;">'
     + '<div style="padding:10px 12px 6px;font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--gray3);">' + esc(virkNavn) + '</div>'
@@ -35608,7 +35656,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "1643";
+const APP_VERSION = "1645";
 let NY_VERSION_KLAR = false;
 function nyVersionSkjul() { const e = document.getElementById("nyVersion"); if (e) e.style.display = "none"; }
 function nyVersionHent() { try { location.reload(); } catch(e) {} }
@@ -51557,6 +51605,6 @@ if ((location.hash || "").toLowerCase() === "#ole") {   // #ole = preview af Ole
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 4. september · 1643</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 4. september · 1645</div>
 </body>
 </html>
