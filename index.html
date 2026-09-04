@@ -4245,7 +4245,7 @@ body.modul-open .burger-btn, body.modul-open .bottom-nav, body.modul-open .dash-
     <button class="burger-item" onclick="toggleBurger(); minProfilAaben()">Min profil</button>
     <button class="burger-item" onclick="toggleBurger(); togglePwPanel()">Skift adgangskode</button>
     <button class="burger-item" style="color:var(--red);" onclick="custLogout()">Log ud</button>
-    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 4. september · 1613</div>
+    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 4. september · 1614</div>
   </div>
 </div>
 <div class="plus-menu" id="plusMenu" onclick="if(event.target===this)togglePlus()">
@@ -5595,7 +5595,7 @@ if (/somkunde=/.test(location.hash)) {
     <!-- Foden bliver nederst — den er det ENESTE der skubbes ned (Ida 30/7) -->
     <div class="dsb-fod">
       <button class="dsb-konto" onclick="dashKontoMenu()" title="Ida"><span class="dsb-initial">I</span><span class="dsb-konto-navn">Ida</span><svg class="dsb-konto-pil" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></button>
-      <div class="dsb-version"><span>Version 4. september · 1613</span></div>
+      <div class="dsb-version"><span>Version 4. september · 1614</span></div>
     </div>
   </div>
 
@@ -11591,7 +11591,7 @@ select titel,
          staa fast paa telefon. De hoerer i arket (samme fejl som "left" 31/7). -->
     <div id="dashFooter" style="z-index:50;display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--gray3);background:#fff;border-top:1px solid var(--border);padding:10px 26px;">
       <div style="font-size:10px;">© 2026 Energida · Alle rettigheder forbeholdes</div>
-      <div style="font-size:10px;margin-left:auto;">Version 4. september · 1613 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
+      <div style="font-size:10px;margin-left:auto;">Version 4. september · 1614 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
     </div>
   </div>
 </div>
@@ -12737,7 +12737,37 @@ function briefKlipListe() {
     const gl = (BRIEF_STATE.indhold || "").trim();
     BRIEF_STATE.klip = gl ? [{ ser: gl }] : [{ ser: "" }];
   }
+  briefHookFlet();
   return BRIEF_STATE.klip;
+}
+
+/* ===== HOOKET ER KLIP 1's TEKST PAA SKAERMEN (Idas beslutning 4/9) =================
+   Hendes ord: "Tekst paa skaermen i klip 1 skal jo altid vaere HOOK … saa skal flisen
+   paa selve briefen med hook fjernes … og saa kommer det udfyldte hook fra briefen
+   automatisk ind i feltet med tekst paa skaerm."
+
+   TO GEMTE FELTER BLIVER TIL EET, OG INTET MAA GAA TABT (gem-reglen 4/8).
+   Idas klik-valg: TEKST-HOOKET VINDER. Staar der noget ANDET i klip 1 i forvejen,
+   laegges det ind UNDER som en ekstra linje — saa kan hun selv slette det, hun ikke vil
+   have, i stedet for at opdage bagefter, at det er vaek.
+
+   DEN KOERER EEN GANG PR. BRIEF. Uden flaget ville hver gentegning laegge teksten ind
+   igen og igen. hookTekst SLETTES ALDRIG — den bliver staaende i basen, saa en gammel
+   brief altid kan laeses tilbage (samme regel som b.hook, 2/9).
+
+   KARRUSEL OG BILLEDE ER UNDTAGET: de har ingen klip-liste, og dér ER Hook-flisen den
+   eneste vej til feltet. */
+function briefHookFlet() {
+  const b = BRIEF_STATE; if (!b) return;
+  if (b.format === "Karrusel" || b.format === "Billede") return;
+  if (b.hookFlettet) return;
+  const hook = String(b.hookTekst || "").trim();
+  if (!hook) { b.hookFlettet = true; return; }
+  const k0 = b.klip && b.klip[0]; if (!k0) return;
+  const nu = String(k0.tekst || "").trim();
+  if (nu === hook) { b.hookFlettet = true; return; }
+  k0.tekst = nu ? hook + "\n" + nu : hook;
+  b.hookFlettet = true;
 }
 function briefKlipLaes() {   // gem hvad der staar i felterne foer en re-render
   const liste = briefKlipListe();
@@ -12862,8 +12892,11 @@ function briefKlipHtml(enkelt) {
            saa beskrivelsen staar her — ved siden af navnet, i normal skrift og graat,
            uden tankestreg og uden parentes (31/8-laasen). Kun paa det FOERSTE klip;
            de oevrige er bare klip. */
-        + '<span style="flex:1;min-width:0;font-size:11px;font-weight:400;letter-spacing:1px;text-transform:uppercase;color:var(--gray3);">Klip ' + (i + 1)
-          + (i === 0 ? '<span style="letter-spacing:0;text-transform:none;font-size:11.5px;margin-left:9px;">Det visuelle hook, det første klip der skal fange kunden</span>' : '')
+        /* KLIP 1 HEDDER HOOK (Ida 4/9: "det er bare HOOK … der skal ikke vaere noget der
+           hedder det visuelle hook eller teksthook"). Klip 1 ER hooket, saa det er dét,
+           kortet skal hedde — ikke "Klip 1" med en forklaring om et hook ved siden af. */
+        + '<span style="flex:1;min-width:0;font-size:11px;font-weight:400;letter-spacing:1px;text-transform:uppercase;color:var(--gray3);">' + (i === 0 ? 'Hook' : 'Klip ' + (i + 1))
+          + (i === 0 ? '<span style="letter-spacing:0;text-transform:none;font-size:11.5px;margin-left:9px;">Det første klip, der skal fange kunden</span>' : '')
           + '</span>'
         + (i > 0 ? '<button type="button" class="row-btn" title="Flyt op" onclick="briefKlipFlyt(' + i + ',-1)">&#8593;</button>' : '')
         + (i < liste.length - 1 ? '<button type="button" class="row-btn" title="Flyt ned" onclick="briefKlipFlyt(' + i + ',1)">&#8595;</button>' : '')
@@ -14646,7 +14679,14 @@ function openBriefSide(id) {
        spoergsmaal i stedet for et valg.
        OG SKAERMTEKSTEN KOMMER FOERST (Ida 5/8) — den er lettere at begynde med end at
        beskrive et klip, og den giver klippet retning bagefter. */
-    + q('Hook <span class="sk-forkl">' + (BRIEF_STATE.format === "Karrusel" ? 'Teksten på slide 1 + 2 der får kunden til at stoppe op' : 'Teksten i videoens første sekunder, der får kunden til at stoppe op') + '</span>',
+    /* HOOK-FLISEN FINDES KUN, HVOR KLIP 1 IKKE BAERER DEN (Ida 4/9).
+       Paa reel og kort-reel ER klip 1 hooket, og teksten bor i klip 1's "Tekst paa
+       skaermen" — flisen her ville vise det samme felt to gange (dublet-reglen 27/7).
+       KARRUSEL og BILLEDE har ingen klip-liste; dér er flisen den eneste vej ind.
+       DATAEN ER UROERT: hookTekst slettes aldrig, og briefHookFlet() har allerede
+       flyttet den ind i klip 1, foer flisen forsvandt. */
+    + ((BRIEF_STATE.format === "Karrusel" || BRIEF_STATE.format === "Billede") ? (
+      q('Hook <span class="sk-forkl">' + (BRIEF_STATE.format === "Karrusel" ? 'Teksten på slide 1 + 2 der får kunden til at stoppe op' : 'Teksten i videoens første sekunder, der får kunden til at stoppe op') + '</span>',
       /* ?-ringen er UDE (Ida 31/8: mockuppens hjaelp staar skrevet ind paa fladen) */
       ta('hookTekst', 'Den ene sætning, der får dem til at stoppe…', 54, true)
       /* 60%-LINJEN ER FJERNET (Idas valg 31/8 aften): den sagde det SAMME som raket-kassens
@@ -14655,6 +14695,7 @@ function openBriefSide(id) {
          RAKET_VIDEN[1].maal. Genindfoer den ikke. */
       + '<button type="button" class="dbtn primary" style="margin-top:8px;padding:9px 16px;font-size:12px;" onclick="aiKollegaFelt(this, \'hook\')">Spørg din content makker om hooks</button>'
       + '<div id="koHookUd" style="margin-top:6px;"></div>')
+    ) : '')
     /* Spoergsmaalene staar i NUTID og siger, hvad hooket skal gøre (Ida 31/7) */
     /* DET VISUELLE HOOK ER FLYTTET TIL INDHOLDSSIDEN (Ida 2/9: "tror vi skal flytte det
        visuelle hook om paa naeste side til indholdet"). Det BESKRIVER et klip — altsaa
@@ -17370,7 +17411,10 @@ function briefVisFelter(b, it) {
      stadig rettes med Rediger briefen. Samme rum-opdeling som godkendelsessiden, saa
      de to flader bliver ved med at vaere ens (Ida 30/8: alt skal vaere synk og ens). */
   const L = [
-    { k: "hookTekst",   lbl: "Hook",     forkl: erKarrusel ? "Teksten på slide 1 + 2 der får kunden til at stoppe op" : "Teksten i videoens første sekunder, der får kunden til at stoppe op", t: v(b.hookTekst),   hvor: "0", didot: true, rum: "hoved" },
+    /* HOOK-FLISEN ER KUN PAA KARRUSEL (Ida 4/9). Paa reel og kort-reel ER klip 1
+       hooket, og teksten staar dér — flisen her ville vise det samme to gange.
+       hookTekst slettes aldrig; briefHookFlet() har flyttet den ind i klip 1. */
+    erKarrusel ? { k: "hookTekst",   lbl: "Hook",     forkl: erKarrusel ? "Teksten på slide 1 + 2 der får kunden til at stoppe op" : "Teksten i videoens første sekunder, der får kunden til at stoppe op", t: v(b.hookTekst),   hvor: "0", didot: true, rum: "hoved" } : null,
     /* Reel-hookets egen flise er UDE (31/8) — det staar oeverst i Indhold. Karrusellens
        "Foerste slide" bestaar: slides og klip er forskellige dataveje. */
     /* SLIDE 1 ER DEN FOERSTE SLIDE (Idas fund 31/8 nat: "Første slide ER udfyldt" —
@@ -17392,8 +17436,12 @@ function briefVisFelter(b, it) {
        "billedet ER coveret") — samme regel som karrusellen (v1471): felter, formatet
        ikke HAR, tegnes SLET IKKE og maa aldrig staa som "Mangler". */
     /* COVERBILLEDET FOERST, THUMBNAIL UNDER (Ida 2/9) — samme raekkefoelge som wizarden. */
-    (erKarrusel || b.format === "Billede") ? null : { k: "thumbBillede",lbl: "Coverbilledet", forkl: "Billedet skal tydeligt afspejle indholdet. Formatet skal være 9:16.", t: v(b.thumbBillede), hvor: "0", rum: "hoved" },   /* hed Coveret til 31/8 */
-    (erKarrusel || b.format === "Billede") ? null : { k: "thumb",       lbl: "Thumbnail",     forkl: "Teksten på coverbilledet. Den skal skabe nysgerrighed og fortælle kunden hvad de får ud af at se indholdet uden at give svaret.", t: v(b.thumb),        hvor: "0", didot: true, rum: "hoved" },
+    /* INDHOLDET STAAR FOERST, COVER OG THUMBNAIL UNDER (Ida 4/9: "naar man aabner
+       briefoversigten skal indholdet komme op foerst … coverbillede og thumbnail skal
+       saa komme under indholdet").
+       Grunden er hookets nye plads: klip 1 ER hooket, saa indholdet begynder med det,
+       der skal fange kunden. Saa skal det ogsaa staa oeverst. Raekkefoelgen her ER
+       visningens raekkefoelge — listen tegnes, som den staar. */
     /* SLIDES VISES SLIDE FOR SLIDE (Idas fund 31/8 nat: "måden man får viset indholdet
        af opslaget på?? jeg har ingen ord" — en raa nummereret tekstklump). Hver slide er
        sin egen raekke med graa etiket, TEKST og BILLEDE hver for sig — praecis wizardens
@@ -17447,7 +17495,8 @@ function briefVisFelter(b, it) {
               + (val ? '<div class="bsam-sl-val">' + esc(val).replace(/\n/g, "<br>") + '</div>' : '')
               + '</div>';
             return kl.map(function (k, i) {
-              const rolle = i === 0 ? " \u00b7 Det visuelle hook" : "";
+              /* KLIP 1 HEDDER HOOK PAA BEGGE FLADER (Ida 4/9) — navne 1:1 (26/8). */
+              const rolle = "";
               const dele = [];
               if ((k.ser || "").trim())   dele.push(rk("Hvad ser man i klippet", k.ser.trim(), dele.length));
               if ((k.tekst || "").trim()) dele.push(rk("Tekst p\u00e5 sk\u00e6rmen", k.tekst.trim(), dele.length));
@@ -17463,10 +17512,12 @@ function briefVisFelter(b, it) {
                   && String(b.ctaVideo || "").trim())
                 dele.push(rk("Handlingen i videoen", String(b.ctaVideo).trim(), dele.length));
               return '<div class="bsam-slidekort">'
-                + '<div class="bsam-sl-hoved">Klip ' + (i + 1) + rolle + '</div>'
+                + '<div class="bsam-sl-hoved">' + (i === 0 && !erKarrusel ? 'Hook' : 'Klip ' + (i + 1)) + rolle + '</div>'
                 + '<div class="bsam-sl-krop">' + dele.join("") + '</div></div>';
             }).join("");
           })() },
+    (erKarrusel || b.format === "Billede") ? null : { k: "thumbBillede",lbl: "Coverbilledet", forkl: "Billedet skal tydeligt afspejle indholdet. Formatet skal være 9:16.", t: v(b.thumbBillede), hvor: "0", rum: "hoved" },   /* hed Coveret til 31/8 */
+    (erKarrusel || b.format === "Billede") ? null : { k: "thumb",       lbl: "Thumbnail",     forkl: "Teksten på coverbilledet. Den skal skabe nysgerrighed og fortælle kunden hvad de får ud af at se indholdet uden at give svaret.", t: v(b.thumb),        hvor: "0", didot: true, rum: "hoved" },
     { k: "voiceover",   lbl: "Manus",            t: v(b.voiceover), hvor: "1", rum: "detalje" },
     /* Lyd og Undertekster er TO spoergsmaal i wizarden ("Vaelg en eller flere" og
        "Undertekster?") — og saa er de to fliser (flise-reglen 28/8). Musik SKRIVES
@@ -18061,6 +18112,15 @@ function briefHovedOpdater() {
   if (l) l.textContent = "Content-brief";   /* formatet er taget ud af overlinjen (Ida 30/7) */
   const t = document.getElementById("briefHovedTitel");
   if (t) t.textContent = storStart(titelVis(it.titel || "Nyt opslag"));   /* blankt opslag hedder "Nyt opslag", til idéen er skrevet (Ida 30/7) */
+  /* DEN ROEDE HERO SKAL MED (Idas fund 4/9: "hvorfor aendres titlen ikke?").
+     Titlen BLEV gemt — men #briefHero og raket-kortets top tegnes kun, naar siden
+     bygges, saa den gamle titel blev staaende oeverst, mens den nye laa i basen.
+     Denne funktion kaldes i forvejen 50 ms efter et titel-skift; den opdaterer nu
+     begge steder, saa der ikke findes to sandheder om samme titel paa samme skaerm. */
+  const nyTitel = storStart(titelVis(it.titel || "Nyt opslag"));
+  document.querySelectorAll("#briefHero .bsam-titel, .rk-top .rk-titel").forEach(function (el) {
+    el.textContent = nyTitel;
+  });
   const r = document.getElementById("briefHovedRing");
   if (r) {
     /* Procentbaren er ude (Ida 16/8, punkt 19) — den taalte felter, ikke fremdrift.
@@ -30924,7 +30984,7 @@ function buildSideNav(def) {
             uPkt("", "Lektioner", "showTab(12)")))))
     + '<button class="sn-virk-knap" onclick="toggleVirkMenu(event)" title="' + esc(knapNavn) + '" aria-label="Profil"><span class="sn-initial">' + esc((knapNavn || "?").trim().charAt(0).toUpperCase()) + '</span><span class="sn-virk-navn" style="white-space:normal;overflow-wrap:anywhere;">' + esc(knapNavn) + '</span><svg class="sn-virk-pil" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="flex-shrink:0;"><path d="M6 9l6 6 6-6"/></svg></button>'
     /* Ida 30/7: ingen streg — logo + version samlet i foden under profilknappen */
-    + fodBagud + '<div class="sn-fod"><span>Version 4. september · 1613</span></div>'
+    + fodBagud + '<div class="sn-fod"><span>Version 4. september · 1614</span></div>'
     /* Ida 30/7: menuen åbner VED knappen (nederst t.v.) — ikke i modsatte hjørne */
     + '<div id="virkMenu" style="display:none;position:fixed;left:14px;bottom:96px;width:230px;background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:0 16px 40px rgba(0,0,0,0.15);padding:8px;z-index:90;">'
     + '<div style="padding:10px 12px 6px;font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--gray3);">' + esc(virkNavn) + '</div>'
@@ -34640,7 +34700,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "1613";
+const APP_VERSION = "1614";
 let NY_VERSION_KLAR = false;
 function nyVersionSkjul() { const e = document.getElementById("nyVersion"); if (e) e.style.display = "none"; }
 function nyVersionHent() { try { location.reload(); } catch(e) {} }
@@ -50585,6 +50645,6 @@ if ((location.hash || "").toLowerCase() === "#ole") {   // #ole = preview af Ole
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 4. september · 1613</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 4. september · 1614</div>
 </body>
 </html>
