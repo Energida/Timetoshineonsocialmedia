@@ -4243,7 +4243,7 @@ body.modul-open .burger-btn, body.modul-open .bottom-nav, body.modul-open .dash-
     <button class="burger-item" onclick="toggleBurger(); minProfilAaben()">Min profil</button>
     <button class="burger-item" onclick="toggleBurger(); togglePwPanel()">Skift adgangskode</button>
     <button class="burger-item" style="color:var(--red);" onclick="custLogout()">Log ud</button>
-    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 4. september · 1610</div>
+    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 4. september · 1611</div>
   </div>
 </div>
 <div class="plus-menu" id="plusMenu" onclick="if(event.target===this)togglePlus()">
@@ -5593,7 +5593,7 @@ if (/somkunde=/.test(location.hash)) {
     <!-- Foden bliver nederst — den er det ENESTE der skubbes ned (Ida 30/7) -->
     <div class="dsb-fod">
       <button class="dsb-konto" onclick="dashKontoMenu()" title="Ida"><span class="dsb-initial">I</span><span class="dsb-konto-navn">Ida</span><svg class="dsb-konto-pil" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></button>
-      <div class="dsb-version"><span>Version 4. september · 1610</span></div>
+      <div class="dsb-version"><span>Version 4. september · 1611</span></div>
     </div>
   </div>
 
@@ -11589,7 +11589,7 @@ select titel,
          staa fast paa telefon. De hoerer i arket (samme fejl som "left" 31/7). -->
     <div id="dashFooter" style="z-index:50;display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--gray3);background:#fff;border-top:1px solid var(--border);padding:10px 26px;">
       <div style="font-size:10px;">© 2026 Energida · Alle rettigheder forbeholdes</div>
-      <div style="font-size:10px;margin-left:auto;">Version 4. september · 1610 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
+      <div style="font-size:10px;margin-left:auto;">Version 4. september · 1611 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
     </div>
   </div>
 </div>
@@ -13779,15 +13779,20 @@ function briefManglerVis() {
       : '<div style="font-size:12.5px;color:var(--gray3);line-height:1.6;margin:8px 0 4px;">Alt er udfyldt. Godt gået.</div>')
     + st.felter.map(raekke).join("")
     + '</div>';
-}function briefGaaTilFelt(trin) {
-  const wrap = document.getElementById("briefWrap"); if (!wrap) return;
-  const G = briefGrupper(wrap);
-  if (trin === "fakta") briefSideVis(G.basisIx > -1 ? G.basisIx : 0);
-  else if (trin === "plan") briefSideVis(G.planIx > -1 ? G.planIx : G.grupper.length - 1);
-  else {
-    const nr = parseInt(String(trin).replace("raket", ""), 10) || 0;
-    if (G.raketIxs[nr] != null) briefSideVis(G.raketIxs[nr]);
-  }
+}/* "UDFYLD" I "BRIEFEN MANGLER NOGET" GJORDE INGENTING (Idas fund 4/9: "naar jeg her
+   klikker paa udfyld sker der ikke noget? saa skulle jeg jo gerne blive sendt til stedet
+   i briefen").
+   AARSAGEN, MAALT: popup'en aabnes fra OVERBLIKKET. Denne funktion ledte efter wizardens
+   trin-sider inde i #briefWrap — men paa overblikket er de skjult, saa den fandt
+   ingenting og faldt tavst igennem. briefSeRet() gjorde det rigtigt hele tiden: den
+   kalder briefSamletSkjul() FOERST og gaar derefter til siden.
+   DER ER NU EEN NAVIGATOER, IKKE TO (dublet-reglen 13/8). Denne oversaetter blot
+   "raketN" til det tal, briefSeRet forventer, og lader den om resten. Byg aldrig en
+   anden vej til den samme side igen. */
+function briefGaaTilFelt(trin) {
+  const t = String(trin || "");
+  const hvor = /^raket\d+$/.test(t) ? t.replace("raket", "") : t;
+  try { briefSeRet(hvor); } catch (e) {}
   try { briefManglerLuk(); } catch(e) {}
 }
 
@@ -17402,6 +17407,16 @@ function briefVisFelter(b, it) {
               if ((k.ser || "").trim())   dele.push(rk("Hvad ser man i klippet", k.ser.trim(), dele.length));
               if ((k.tekst || "").trim()) dele.push(rk("Tekst p\u00e5 sk\u00e6rmen", k.tekst.trim(), dele.length));
               if ((k.siger || "").trim()) dele.push(rk("Siger", k.siger.trim(), dele.length));
+              /* HANDLINGEN I VIDEOEN STAAR INDE I SIDSTE KLIP (Ida 4/9: "handlingen i
+                 videoen skal jo komme op under klip 2?? og ikke hernede i bunden? saa det
+                 staar paa samme maade som i briefen").
+                 Foerste bud var en LOES flise nederst paa fladen — men i wizarden bor
+                 CTA'en paa sidste klip (2/9: "handlingen SIGES i det sidste klip, saa den
+                 hoerer hjemme dér"), og laesefladen skal sige det samme sted som wizarden.
+                 Tomme felter tegnes slet ikke her — derfor ingen tom raekke. */
+              if (i === kl.length - 1 && !erKarrusel && b.format !== "Billede"
+                  && String(b.ctaVideo || "").trim())
+                dele.push(rk("Handlingen i videoen", String(b.ctaVideo).trim(), dele.length));
               return '<div class="bsam-slidekort">'
                 + '<div class="bsam-sl-hoved">Klip ' + (i + 1) + rolle + '</div>'
                 + '<div class="bsam-sl-krop">' + dele.join("") + '</div></div>';
@@ -17426,16 +17441,7 @@ function briefVisFelter(b, it) {
       lbl: erKarrusel ? "Handlingen på sidste slide" : "Handlingen i captionen",
       t: v(erKarrusel ? b.ctaVideo : b.ctaCaption), hvor: erKarrusel ? "1" : "2", rum: "detalje",
       skjulNaarChip: true },
-    /* HANDLINGEN I VIDEOEN BLEV ALDRIG VIST PAA EN REEL (Idas fund 4/9: "hvorfor kommer
-       feltet med CTA ikke frem herude paa briefforsiden?").
-       MAALT: raekken ovenfor viser ctaVideo KUN paa karrusel; paa alt andet viste den
-       ctaCaption i stedet — saa "Handlingen i videoen", som wizarden samler ind paa
-       sidste klip, forsvandt lydloest paa laesefladen. To FORSKELLIGE felter: hvad man
-       GOER i videoen, og hvad der staar i captionen. De skal begge staa.
-       Ikke paa Billede: dér findes feltet slet ikke (samme gaelder-regel som i
-       BRIEF_FELTER, l. 13686). Ikke paa karrusel: dér er ctaVideo allerede vist ovenfor. */
-    (erKarrusel || b.format === "Billede") ? null
-      : { k: "ctaVideo", lbl: "Handlingen i videoen", t: v(b.ctaVideo), hvor: "1", rum: "detalje" },
+
     { k: "ctaVinkel",   lbl: "Vinklen",          t: v(b.ctaVinkel), hvor: "2", rum: "detalje" },
     { k: "linkIndhold", lbl: "Link til indholdet", t: v(b.linkIndhold), hvor: "fakta", rum: "detalje" },
     /* INDBLIK PR. OPSLAG (Ida 1/9) — Succesrakettens trin 2. Raekkerne staar KUN, naar
@@ -17745,6 +17751,16 @@ function briefSamletHtml() {
     + '<button type="button" class="mq-tap bsam-del" title="' + (linket ? 'Åbn materialet' : 'Sæt link til materiale') + '" aria-label="' + (linket ? 'Åbn materialet' : 'Sæt link til materiale') + '" onclick="' + (linket ? 'window.open(' + JSON.stringify(linket).replace(/"/g, "&quot;") + ',\'_blank\',\'noopener\')' : 'driveKortGaa()') + '">'
       + '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
         + '<path d="M3 7.5a2 2 0 0 1 2-2h4l2 2.5h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></button>'
+    /* PRINTEREN (Ida 4/9: "jeg oensker ogsaa et printersymbol heroppe og hvor man saa
+       ogsaa kan vaelge gem som pdf naar printerfeltet aabner").
+       FUNKTIONEN FANDTES I FORVEJEN: briefPrint() og hele print-arket fra 18/8 — men
+       knappen (#briefPrintKnap) skjules netop, mens overblikket staar fremme, saa der
+       var ingen vej til den herfra. "Gem som PDF" er browserens egen mulighed i
+       print-vinduet; den foelger med af sig selv. */
+    + '<button type="button" class="mq-tap bsam-del" title="Print briefen eller gem som PDF" aria-label="Print briefen eller gem som PDF" onclick="briefPrint()">'
+      + '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'
+        + '<path d="M7 9V3.5h10V9"/><path d="M7 19H5.5a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2H17"/>'
+        + '<rect x="7" y="15.5" width="10" height="5" rx="1.5"/></svg></button>'
     + '<button type="button" class="mq-tap bsam-del" title="Del briefen" aria-label="Del briefen" onclick="if(BRIEF_ID) godkVisDel(BRIEF_ID, this);">'
       /* IOS-DELESYMBOLET (Idas billede 31/8): kassen med pilen op — det symbol, hun
          kender fra telefonen. Netvaerks-noderne er ude; de laestes ikke som "del". */
@@ -30843,7 +30859,7 @@ function buildSideNav(def) {
             uPkt("", "Lektioner", "showTab(12)")))))
     + '<button class="sn-virk-knap" onclick="toggleVirkMenu(event)" title="' + esc(knapNavn) + '" aria-label="Profil"><span class="sn-initial">' + esc((knapNavn || "?").trim().charAt(0).toUpperCase()) + '</span><span class="sn-virk-navn" style="white-space:normal;overflow-wrap:anywhere;">' + esc(knapNavn) + '</span><svg class="sn-virk-pil" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="flex-shrink:0;"><path d="M6 9l6 6 6-6"/></svg></button>'
     /* Ida 30/7: ingen streg — logo + version samlet i foden under profilknappen */
-    + fodBagud + '<div class="sn-fod"><span>Version 4. september · 1610</span></div>'
+    + fodBagud + '<div class="sn-fod"><span>Version 4. september · 1611</span></div>'
     /* Ida 30/7: menuen åbner VED knappen (nederst t.v.) — ikke i modsatte hjørne */
     + '<div id="virkMenu" style="display:none;position:fixed;left:14px;bottom:96px;width:230px;background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:0 16px 40px rgba(0,0,0,0.15);padding:8px;z-index:90;">'
     + '<div style="padding:10px 12px 6px;font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--gray3);">' + esc(virkNavn) + '</div>'
@@ -34559,7 +34575,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "1610";
+const APP_VERSION = "1611";
 let NY_VERSION_KLAR = false;
 function nyVersionSkjul() { const e = document.getElementById("nyVersion"); if (e) e.style.display = "none"; }
 function nyVersionHent() { try { location.reload(); } catch(e) {} }
@@ -50504,6 +50520,6 @@ if ((location.hash || "").toLowerCase() === "#ole") {   // #ole = preview af Ole
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 4. september · 1610</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 4. september · 1611</div>
 </body>
 </html>
