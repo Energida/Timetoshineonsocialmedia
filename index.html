@@ -4052,6 +4052,35 @@ button, .dbtn, .row-btn, .fang-knap, .auth-btn { position: relative; z-index: 1;
     window.addEventListener("load", function() {
       navigator.serviceWorker.register("sw.js").catch(function(){});
     });
+    /* NY VERSION HENTES I BAGGRUNDEN OG SLAAR IGENNEM SELV (Idas klik-valg 4/9).
+       Service-workeren svarer med den gemte kopi med det samme og henter den friske
+       bagefter; er den anderledes, siger den til her.
+
+       MEN EN GENINDLAESNING MAA ALDRIG KOSTE NOGET (gem-reglen 4/8): staar markoeren i
+       et felt, eller er der ugemte aendringer, venter vi til man forlader feltet.
+       Saa skifter skaermen aldrig midt i en saetning.
+       Gaelder ogsaa appen paa hjemmeskaermen — det er den SAMME service worker. */
+    (function () {
+      var venter = false;
+      function skriverHun() {
+        try {
+          var a = document.activeElement;
+          if (a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)) return true;
+          if (a && a.isContentEditable) return true;
+          if (window.BRIEF_GEMMER || window.__ugemt) return true;
+        } catch (e) {}
+        return false;
+      }
+      function hentForfra() {
+        if (skriverHun()) { if (!venter) { venter = true; setTimeout(hentForfra, 4000); venter = false; } return; }
+        try { location.reload(); } catch (e) {}
+      }
+      try {
+        navigator.serviceWorker.addEventListener("message", function (e) {
+          if (e && e.data && e.data.type === "ny-version") setTimeout(hentForfra, 1200);
+        });
+      } catch (e) {}
+    })();
   }
   window.SUPABASE_URL = "https://eikcvvppuphnananxcvp.supabase.co";
   // Kalender-feed til kunderne: sæt SAMME kodeord som Supabase-secret'en APP_KALENDER_TOKEN.
@@ -4330,7 +4359,7 @@ body.modul-open .burger-btn, body.modul-open .bottom-nav, body.modul-open .dash-
     <button class="burger-item" onclick="toggleBurger(); minProfilAaben()">Min profil</button>
     <button class="burger-item" onclick="toggleBurger(); togglePwPanel()">Skift adgangskode</button>
     <button class="burger-item" style="color:var(--red);" onclick="custLogout()">Log ud</button>
-    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 4. september · 1638</div>
+    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 4. september · 1639</div>
   </div>
 </div>
 <div class="plus-menu" id="plusMenu" onclick="if(event.target===this)togglePlus()">
@@ -5680,7 +5709,7 @@ if (/somkunde=/.test(location.hash)) {
     <!-- Foden bliver nederst — den er det ENESTE der skubbes ned (Ida 30/7) -->
     <div class="dsb-fod">
       <button class="dsb-konto" onclick="dashKontoMenu()" title="Ida"><span class="dsb-initial">I</span><span class="dsb-konto-navn">Ida</span><svg class="dsb-konto-pil" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M6 9l6 6 6-6"/></svg></button>
-      <div class="dsb-version"><span>Version 4. september · 1638</span></div>
+      <div class="dsb-version"><span>Version 4. september · 1639</span></div>
     </div>
   </div>
 
@@ -11676,7 +11705,7 @@ select titel,
          staa fast paa telefon. De hoerer i arket (samme fejl som "left" 31/7). -->
     <div id="dashFooter" style="z-index:50;display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--gray3);background:#fff;border-top:1px solid var(--border);padding:10px 26px;">
       <div style="font-size:10px;">© 2026 Energida · Alle rettigheder forbeholdes</div>
-      <div style="font-size:10px;margin-left:auto;">Version 4. september · 1638 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
+      <div style="font-size:10px;margin-left:auto;">Version 4. september · 1639 &nbsp;·&nbsp; <button onclick="koerSystemtjek()" style="background:none;border:none;color:var(--gray3);font-size:10px;font-family:Poppins,sans-serif;cursor:pointer;text-decoration:underline;">Kør systemtjek</button></div>
     </div>
   </div>
 </div>
@@ -15052,9 +15081,14 @@ function openBriefSide(id) {
          thumbnailens egen forklaring siger det selv: "Teksten paa coverbilledet".
          Kun raekkefoelgen er byttet; ordlyd og felt-id'er (thumbBillede, thumb) er
          ordret de samme, saa alt allerede skrevet staar uroert. */
-      qP('cover', 'Coverbilledet <span class="sk-forkl">Billedet skal tydeligt afspejle indholdet. Formatet skal være 9:16.</span>',
-      ta('thumbBillede', 'Beskriv, hvad der skal være på coverbilledet…'))
-    + qP('cover', 'Thumbnail <span class="sk-forkl">Teksten på coverbilledet. Den skal skabe nysgerrighed og fortælle kunden hvad de får ud af at se indholdet uden at give svaret.</span>',
+      /* COVERBILLEDET ER UDE AF HELE BRIEFEN (Ida 4/9: "jeg tror simpelthen vi skal
+         have fjernet coverbilledet fra hele briefen og bare holde os til thumbnailen").
+         DATAEN ER IKKE SLETTET: saveBrief springer felter over, hvis elementet ikke
+         findes ("if (el)"), saa thumbBillede bliver liggende uroert paa alle gamle
+         briefs (gem-reglen 4/8). Genindfoerer du feltet, staar teksterne der igen.
+         thumb-feltets fyldt-tjek laeser stadig begge, saa intet falder ud af
+         fremdriften paa en gammel brief. */
+      qP('cover', 'Thumbnail <span class="sk-forkl">Teksten på coverbilledet. Den skal skabe nysgerrighed og fortælle kunden hvad de får ud af at se indholdet uden at give svaret.</span>',
       briefForslagHtml('thumb')))
     /* Bjaelken siger formatets egen metode (Idas ja 25/8, ordlyden godkendt).
        "Fasthold dem længst muligt" giver ingen mening paa 4-6 sekunder. REELEN ER UAENDRET. */
@@ -17963,7 +17997,9 @@ function briefVisFelter(b, it) {
     erKarrusel ? null
       : { k: "indhold2", lbl: "", t: klipTekst(1), hvor: "1", bred: true, rum: "hoved", del: 2,
           gruppe: true, html: klipKort(1), tomOk: true },
-    (erKarrusel || b.format === "Billede") ? null : { k: "thumbBillede",lbl: "Coverbilledet", forkl: "Billedet skal tydeligt afspejle indholdet. Formatet skal være 9:16.", t: v(b.thumbBillede), hvor: "0", rum: "hoved", del: 1 },   /* hed Coveret til 31/8 */
+    /* COVERBILLEDET ER UDE AF HELE BRIEFEN (Ida 4/9) — ogsaa af laesefladen og
+       godkendelses-fladen, som laeser den samme liste. Datanoeglen thumbBillede er
+       uroert; den tegnes bare ingen steder. */
     (erKarrusel || b.format === "Billede") ? null : { k: "thumb",       lbl: "Thumbnail",     forkl: "Teksten på coverbilledet. Den skal skabe nysgerrighed og fortælle kunden hvad de får ud af at se indholdet uden at give svaret.", /* DIDOT ER UDE AF FELTERNE (Ida 4/9): overskrifterne er Didot, det UDFYLDTE er
        Poppins i EEN stoerrelse "for ro". Thumbnail-teksten stod som eneste felt i Didot
        21 px og traak oejet til sig som en overskrift. */
@@ -31738,7 +31774,7 @@ function buildSideNav(def) {
             uPkt("", "Lektioner", "showTab(12)")))))
     + '<button class="sn-virk-knap" onclick="toggleVirkMenu(event)" title="' + esc(knapNavn) + '" aria-label="Profil"><span class="sn-initial">' + esc((knapNavn || "?").trim().charAt(0).toUpperCase()) + '</span><span class="sn-virk-navn" style="white-space:normal;overflow-wrap:anywhere;">' + esc(knapNavn) + '</span><svg class="sn-virk-pil" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="flex-shrink:0;"><path d="M6 9l6 6 6-6"/></svg></button>'
     /* Ida 30/7: ingen streg — logo + version samlet i foden under profilknappen */
-    + fodBagud + '<div class="sn-fod"><span>Version 4. september · 1638</span></div>'
+    + fodBagud + '<div class="sn-fod"><span>Version 4. september · 1639</span></div>'
     /* Ida 30/7: menuen åbner VED knappen (nederst t.v.) — ikke i modsatte hjørne */
     + '<div id="virkMenu" style="display:none;position:fixed;left:14px;bottom:96px;width:230px;background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:0 16px 40px rgba(0,0,0,0.15);padding:8px;z-index:90;">'
     + '<div style="padding:10px 12px 6px;font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--gray3);">' + esc(virkNavn) + '</div>'
@@ -35460,7 +35496,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "1638";
+const APP_VERSION = "1639";
 let NY_VERSION_KLAR = false;
 function nyVersionSkjul() { const e = document.getElementById("nyVersion"); if (e) e.style.display = "none"; }
 function nyVersionHent() { try { location.reload(); } catch(e) {} }
@@ -51409,6 +51445,6 @@ if ((location.hash || "").toLowerCase() === "#ole") {   // #ole = preview af Ole
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 4. september · 1638</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 4. september · 1639</div>
 </body>
 </html>
