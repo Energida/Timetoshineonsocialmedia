@@ -5007,7 +5007,7 @@ body.modul-open .burger-btn, body.modul-open .bottom-nav, body.modul-open .dash-
     <button class="burger-item" onclick="toggleBurger(); minProfilAaben()">Min profil</button>
     <button class="burger-item" onclick="toggleBurger(); togglePwPanel()">Skift adgangskode</button>
     <button class="burger-item" style="color:var(--red);" onclick="custLogout()">Log ud</button>
-    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 5. september · 1715</div>
+    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 5. september · 1716</div>
   </div>
 </div>
 <div class="plus-menu" id="plusMenu" onclick="if(event.target===this)togglePlus()">
@@ -36533,16 +36533,57 @@ const IDEA_TYPES = ["Reel","Kort-reel","Karrusel","Story"];
 
 function loadLocalIdeer() { try { nsMigrer(IDEAS_KEY); return JSON.parse(localStorage.getItem(nsKey(IDEAS_KEY))) || []; } catch(e) { return []; } }
 function saveLocalIdeer() { localStorage.setItem(nsKey(IDEAS_KEY), JSON.stringify(IDEER)); }
+function ideerFraCache() {
+  try { const c = JSON.parse(localStorage.getItem(nsKey("ideer_cache")) || "null"); if (Array.isArray(c) && c.length) return c; } catch (e) {}
+  return loadLocalIdeer();
+}
 function mapIdeRow(r) { return { id:r.id, titel:r.titel, type:r.type, soejle:r.soejle, status:r.status, dato:r.dato, brief:r.brief || null }; }
 
 /* Hent firmaets content house (delt via Supabase pr. kode) — fallback til localStorage hvis tabellen ikke findes endnu */
+/* ===== OFFLINE-KLADDE (Idas klik-valg 5/9, foer et fly: "Byg det nu alligevel") =====
+   1) Sidst hentede ideer gemmes i browseren (ideer_cache), saa briefene kan aabnes uden net.
+   2) En opdatering, der ikke naar databasen, laegges i en koe (ide_koe) og er allerede
+      lagt ind i IDEER i hukommelsen — saa det skrevne staar der.
+   3) Koeen sendes, naar nettet er tilbage (online-haendelsen) og ved naeste start.
+   LOKALT VINDER ved gensending: Ida er den eneste, der skriver i sine briefs.
+   Gem-reglen (4/8): koeen sletter aldrig noget — den baerer kun det, hun selv skrev. */
+function ideKoeLaes() { try { return JSON.parse(localStorage.getItem(nsKey("ide_koe")) || "{}") || {}; } catch (e) { return {}; } }
+function ideKoeSkriv(k) { try { localStorage.setItem(nsKey("ide_koe"), JSON.stringify(k)); } catch (e) {} }
+function ideKoeLaeg(id, patch) {
+  const k = ideKoeLaes(); k[id] = Object.assign({}, k[id] || {}, patch, { __t: Date.now() }); ideKoeSkriv(k);
+}
+function ideKoeAntal() { return Object.keys(ideKoeLaes()).length; }
+async function ideKoeSend() {
+  if (!ideerShared() || !navigator.onLine) return;
+  const k = ideKoeLaes(); const ids = Object.keys(k); if (!ids.length) return;
+  for (const id of ids) {
+    const patch = Object.assign({}, k[id]); delete patch.__t;
+    try {
+      const r = await sb.from("content_ideer").update(patch).eq("id", id).select();
+      if (!r.error && r.data && r.data.length) { const k2 = ideKoeLaes(); delete k2[id]; ideKoeSkriv(k2); }
+    } catch (e) {}
+  }
+  try { ideKladdeStatus(); } catch (e) {}
+}
+function ideKladdeStatus() {
+  const sp = document.getElementById("briefAutoStatus"); if (!sp) return;
+  const n = ideKoeAntal();
+  if (n) sp.textContent = navigator.onLine ? "Sender det gemte…" : "Gemt på telefonen · sendes når der er net";
+}
+try { window.addEventListener("online", function () { setTimeout(function () { try { ideKoeSend(); } catch (e) {} }, 800); }); } catch (e) {}
 async function refreshIdeer() {
   if (ideerShared()) {
     try {
       const { data, error } = await sb.from("content_ideer").select("*").eq("kode", currentKode).order("created_at", { ascending: true });
-      if (!error && Array.isArray(data)) IDEER = data.map(mapIdeRow);
-      else IDEER = loadLocalIdeer();
-    } catch(e) { IDEER = loadLocalIdeer(); }
+      if (!error && Array.isArray(data)) {
+        IDEER = data.map(mapIdeRow);
+        try { localStorage.setItem(nsKey("ideer_cache"), JSON.stringify(IDEER)); } catch (e) {}
+      }
+      else IDEER = ideerFraCache();
+    } catch(e) { IDEER = ideerFraCache(); }
+    /* Det, der ligger i koeen, er nyere end det hentede — laeg det ovenpaa, og send det. */
+    try { const k = ideKoeLaes(); IDEER.forEach(function (it) { if (k[it.id]) { const p = Object.assign({}, k[it.id]); delete p.__t; Object.assign(it, p); } }); } catch (e) {}
+    try { ideKoeSend(); } catch (e) {}
   } else {
     IDEER = loadLocalIdeer();
   }
@@ -36633,6 +36674,14 @@ async function ideUpdate(id, patch) {
       const r = await sb.from("content_ideer").update(patch).eq("id", id).select();
       if (r.error || !r.data || !r.data.length) { visSyncFejl(); gemt = false; }
     } catch(e) { visSyncFejl(); gemt = false; }
+    /* OFFLINE-KLADDEN (5/9): naaede det ikke databasen, ligger det i koeen — og i cachen,
+       saa en genindlaesning uden net stadig viser det. Naaede det frem, ryddes koeen for id. */
+    try {
+      if (!gemt) { ideKoeLaeg(id, patch); }
+      else { const k = ideKoeLaes(); if (k[id]) { delete k[id]; ideKoeSkriv(k); } }
+      localStorage.setItem(nsKey("ideer_cache"), JSON.stringify(IDEER));
+      ideKladdeStatus();
+    } catch (e) {}
   }
   else saveLocalIdeer();
   renderIdeas(); renderCalendar();
@@ -37282,7 +37331,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "1715";
+const APP_VERSION = "1716";
 let NY_VERSION_KLAR = false;
 function nyVersionSkjul() { const e = document.getElementById("nyVersion"); if (e) e.style.display = "none"; }
 function nyVersionHent() { try { location.reload(); } catch(e) {} }
@@ -53431,6 +53480,6 @@ if ((location.hash || "").toLowerCase() === "#ole") {   // #ole = preview af Ole
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 5. september · 1715</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 5. september · 1716</div>
 </body>
 </html>
