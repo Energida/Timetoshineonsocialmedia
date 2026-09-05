@@ -3,8 +3,11 @@
    dette — saa et bump tvinger enhver enhed til at smide sit gamle indhold vaek.
    BUMPET 4/9: Idas browser serverede v1602 fra cachen — den build, der vaeltede
    appen 3/9 — og hun saa prototypens gamle faner i stedet for Content Studio.
-   Bump navnet, hver gang en braekket build kan naa at blive cachet. */
-const CACHE = "energida-v3";
+   Bump navnet, hver gang en braekket build kan naa at blive cachet.
+   BUMPET 5/9 (v4): Idas telefon sad fast paa 1642 i et doegn, mens serveren leverede
+   1690. Safari lod baggrundshentningen (waitUntil i fetch) doe, saa cachen blev aldrig
+   fornyet og "ny-version" aldrig sendt. Bumpet tvinger den friske ind ved activate. */
+const CACHE = "energida-v4";
 
 self.addEventListener("install", (e) => {
   self.skipWaiting();
@@ -14,6 +17,9 @@ self.addEventListener("activate", (e) => {
   e.waitUntil(
     caches.keys().then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))))
       .then(() => self.clients.claim())
+      /* De sider, der allerede staar aabne, blev tegnet fra den GAMLE cache. Sig til,
+         saa de henter sig selv forfra (5/9) — ellers skal man selv genindlaese to gange. */
+      .then(() => sigTilSiderne({ type: "ny-version" }))
   );
 });
 
@@ -56,11 +62,13 @@ self.addEventListener("fetch", (e) => {
     const frisk = fetch(e.request).then(async (res) => {
       if (!res || !res.ok) return res;
       const nyTekst = erAppFilen(e.request) ? await res.clone().text() : null;
+      /* GEM FOERST, SIG TIL BAGEFTER (5/9). Foer blev beskeden sendt FOER cache.put —
+         saa kunne siden naa at genindlaese og faa den gamle kopi EN gang til. */
+      await cache.put(e.request, res.clone());
       if (nyTekst !== null && gemt) {
         const gammelTekst = await gemt.clone().text();
         if (gammelTekst !== nyTekst) sigTilSiderne({ type: "ny-version" });
       }
-      cache.put(e.request, res.clone());
       return res;
     }).catch(() => null);
 
