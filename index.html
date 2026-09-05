@@ -5047,7 +5047,7 @@ body.modul-open .burger-btn, body.modul-open .bottom-nav, body.modul-open .dash-
     <button class="burger-item" onclick="toggleBurger(); minProfilAaben()">Min profil</button>
     <button class="burger-item" onclick="toggleBurger(); togglePwPanel()">Skift adgangskode</button>
     <button class="burger-item" style="color:var(--red);" onclick="custLogout()">Log ud</button>
-    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 5. september · 1730</div>
+    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 5. september · 1731</div>
   </div>
 </div>
 <div class="plus-menu" id="plusMenu" onclick="if(event.target===this)togglePlus()">
@@ -33000,7 +33000,8 @@ async function refreshOpgaver() {
     try {
       const { data, error } = await sb.from("kunde_opgaver").select("*").eq("kode", currentKode).order("created_at", { ascending: true });
       if (!error && data) {
-        const synlige = data.filter(o => o.aktiv !== false);   // bibliotek-opgaver er usynlige for kunden
+        let synlige = data.filter(o => o.aktiv !== false);   // bibliotek-opgaver er usynlige for kunden
+        try { hjemKoeLaes().filter(x => x.tabel === "kunde_opgaver").forEach((x, i) => { synlige = synlige.concat([Object.assign({ id: "k" + i, kladde: true }, x.raekke)]); }); } catch (e) {}
         if (synlige.length) { OPGAVER = synlige; renderOpgaver(); return; }
       }
     } catch(e) {}
@@ -33085,6 +33086,13 @@ async function kundeAftaleNy() {
   if (!titel) { if (m) m.textContent = "Skriv, hvad aktiviteten handler om."; return; }
   if (!dato) { if (m) m.textContent = "Vælg en dato."; return; }
   if (!sb || !currentKode) { if (m) m.textContent = "Kunne ikke gemme — prøv at logge ind igen."; return; }
+  if (!navigator.onLine) {
+    const rec0 = { kode: currentKode, titel: titel, dato: dato }; if (kl && kl.value) rec0.tid = kl.value;
+    hjemKoeLaeg("kunde_aftaler", rec0);
+    try { window.__AFT_KLADDER = (window.__AFT_KLADDER || []).concat([rec0]); } catch (e) {}
+    await renderAftaler();
+    return;
+  }
   try {
     const rec = { kode: currentKode, titel: titel, dato: dato };
     if (kl && kl.value) rec.tid = kl.value;
@@ -33110,6 +33118,7 @@ async function renderAftaler() {
     } catch(e) {}
   }
   if (!rows.length) rows = (CURRENT_DEF && CURRENT_DEF.aftaler) || [];
+  try { if (window.__AFT_KLADDER && window.__AFT_KLADDER.length) rows = rows.concat(window.__AFT_KLADDER).sort((a, b) => String(a.dato).localeCompare(String(b.dato))); } catch (e) {}
   const nuA = new Date();
   const idag = nuA.getFullYear() + "-" + String(nuA.getMonth() + 1).padStart(2, "0") + "-" + String(nuA.getDate()).padStart(2, "0");
   const klA = String(nuA.getHours()).padStart(2, "0") + ":" + String(nuA.getMinutes()).padStart(2, "0");
@@ -36721,6 +36730,7 @@ async function refreshIdeer() {
     } catch (e) {}
     try { ideKoeSend(); } catch (e) {}
     try { noteKoeSend(); } catch (e) {}
+    try { hjemKoeSend(); } catch (e) {}
   } else {
     IDEER = loadLocalIdeer();
   }
@@ -37484,7 +37494,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "1730";
+const APP_VERSION = "1731";
 let NY_VERSION_KLAR = false;
 function nyVersionSkjul() { const e = document.getElementById("nyVersion"); if (e) e.style.display = "none"; }
 function nyVersionHent() { try { location.reload(); } catch(e) {} }
@@ -37829,12 +37839,40 @@ async function kundeOpgGem(id) {
     await refreshOpgaver();
   } catch (e) { if (m) m.textContent = "Kunne ikke gemme — prøv igen."; }
 }
+/* HJEM-KOEEN (5/9): haengepartier og aktiviteter skrevet uden net. Rene INSERTS med kvittering. */
+function hjemKoeLaes() { try { return JSON.parse(localStorage.getItem(nsKey("hjem_koe")) || "[]") || []; } catch (e) { return []; } }
+function hjemKoeSkriv(a) { try { localStorage.setItem(nsKey("hjem_koe"), JSON.stringify(a)); } catch (e) {} }
+function hjemKoeLaeg(tabel, raekke) { const a = hjemKoeLaes(); a.push({ tabel: tabel, raekke: raekke, __t: Date.now() }); hjemKoeSkriv(a); }
+async function hjemKoeSend() {
+  if (!sb || !currentKode || !navigator.onLine) return;
+  const a = hjemKoeLaes(); if (!a.length) return;
+  const rest = [];
+  for (const x of a) {
+    let ok = false;
+    try { const r = await sb.from(x.tabel).insert(x.raekke).select(); ok = !!(!r.error && r.data && r.data.length); } catch (e) { ok = false; }
+    if (!ok) rest.push(x);
+  }
+  hjemKoeSkriv(rest);
+  try { window.__AFT_KLADDER = rest.filter(x => x.tabel === "kunde_aftaler").map(x => x.raekke); } catch (e) {}
+  try { await refreshOpgaver(); } catch (e) {}
+  try { await renderAftaler(); } catch (e) {}
+}
+try { window.addEventListener("online", function () { setTimeout(function () { try { hjemKoeSend(); } catch (e) {} }, 1600); }); } catch (e) {}
 async function kundeOpgaveNy() {
   const t = document.getElementById("kundeOpgNyTitel");
   const m = document.getElementById("kundeOpgNyMsg");
   const titel = t ? String(t.value || "").trim() : "";
   if (!titel) { if (m) m.textContent = "Skriv opgaven først."; return; }
   if (!sb || !currentKode) { if (m) m.textContent = "Kunne ikke gemme — prøv at logge ind igen."; return; }
+  /* UDEN NET (Ida 5/9 i flyet): haengepartiet lander i koeen og paa skaermen med det samme;
+     sendes ved online-haendelsen (hjemKoeSend). Kun offline — en afvist skrivning MED net siges som foer. */
+  if (!navigator.onLine) {
+    const raekke0 = { kode: currentKode, titel: titel }; if (window.__OPG_PERSON) raekke0.ansvarlig = window.__OPG_PERSON;
+    hjemKoeLaeg("kunde_opgaver", raekke0);
+    if (t) t.value = "";
+    try { OPGAVER.push(Object.assign({ id: "k" + Date.now(), kladde: true }, raekke0)); renderOpgaver(); } catch (e) {}
+    return;
+  }
   try {
     const raekke = { kode: currentKode, titel: titel };
     if (window.__OPG_PERSON) raekke.ansvarlig = window.__OPG_PERSON;
@@ -39587,7 +39625,21 @@ if (USE_SUPABASE) {
                 || /jwt|expired|unauthorized/i.test(besked);
               if (galt && udloebet) {
                 try { loginUdloebet(tabel + "." + op); } catch (e2) {}
+              } else if (galt && !(r && r.error) && op === "update" && tabel === "skema_svar") {
+                /* "0 RAEKKER" PAA skema_svar ER OFTEST "FINDES IKKE ENDNU" (MAALT 5/9: Idas roede
+                   bjaelke efter Done). Fyrre steder i appen skriver "update foerst, insert hvis 0" —
+                   dagsprogram, noter, temaer, profil. Foerste gang findes raekken ikke, opdateringen
+                   rammer 0, og vagten raabte, selv om oprettelsen lykkedes et sekund senere.
+                   Nu VENTER vagten 4 sek.; en vellykket insert paa skema_svar imens afblaeser den.
+                   Kommer der ingen, siges det som foer — en aegte fejl gaar ikke tabt. */
+                try {
+                  window.__VAGT_0RK = window.__VAGT_0RK || [];
+                  window.__VAGT_0RK.push(setTimeout(function () { try { visSyncFejl(tabel + ".update — 0 rækker skrevet, og ingen oprettelse fulgte"); } catch (e3) {} }, 4000));
+                } catch (e2) {}
               } else if (galt) { try { visSyncFejl(tabel + "." + op + (r && r.error ? ": " + (r.error.message || r.error.code || "fejl") : " — 0 rækker skrevet")); } catch (e2) {} }
+              if (!galt && op === "insert" && tabel === "skema_svar" && window.__VAGT_0RK && window.__VAGT_0RK.length) {
+                try { window.__VAGT_0RK.forEach(function (t) { clearTimeout(t); }); window.__VAGT_0RK = []; } catch (e2) {}
+              }
             } catch (e) {}
             return ok ? ok(r) : r;
           }, fejl);
@@ -53762,6 +53814,6 @@ if ((location.hash || "").toLowerCase() === "#ole") {   // #ole = preview af Ole
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 5. september · 1730</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 5. september · 1731</div>
 </body>
 </html>
