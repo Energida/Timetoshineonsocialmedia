@@ -2200,9 +2200,11 @@ input[type="date"][data-tom="1"]::-webkit-datetime-edit { opacity:0; }
     border:0 !important; padding:6px 0 !important; font-size:16px !important; line-height:1.4 !important; background:transparent !important; }
   /* Tilfoej = den stiplede plads i fuld bredde (Idas mockup 5/9) — plusset i hjoernet er
      computerens. Ordet kommer fra knappens egen titel. */
-  body.brief-etspm #briefWrap .sk-q.brief-forslag > .kort-plus { position:static !important; order:4; width:100%; height:52px;
-    border:1.3px dashed var(--red) !important; border-radius:22px !important; background:transparent !important;
-    display:flex; align-items:center; justify-content:center; gap:8px; color:var(--red); font-family:Poppins,sans-serif; font-size:13.5px; margin:2px 0 0; }
+  /* ALDRIG STIPLEDE KNAPPER (Ida 5/9): tilfoej er en hvid knap med roed ramme, samme form som
+     Gem aendringer (radius 999, 48 px). */
+  body.brief-etspm #briefWrap .sk-q.brief-forslag > .kort-plus { position:static !important; order:4; width:100%; height:48px;
+    border:1px solid var(--red) !important; border-radius:999px !important; background:#fff !important;
+    display:flex; align-items:center; justify-content:center; gap:8px; color:var(--red); font-family:Poppins,sans-serif; font-size:13.5px; margin:4px 0 0; }
   /* .kort-plus::after er normalt hit-feltet (inset:-7px, absolut). Her baerer den ordet — saa
      den skal staa i flowet, ellers lander teksten oppe over flisen (maalt 5/9). */
   body.brief-etspm #briefWrap .sk-q.brief-forslag > .kort-plus::after { content:"+ " attr(title); position:static; inset:auto; }
@@ -2215,8 +2217,8 @@ input[type="date"][data-tom="1"]::-webkit-datetime-edit { opacity:0; }
   body.brief-etspm #briefWrap .sk-q.brief-forslag > [id^="forslag_"] > div > button.mq-tap[title="Vælg dette forslag"]::before {
     content:""; position:absolute; inset:8px; border-radius:50%; border:1.5px solid var(--border); pointer-events:none; }
   body.brief-etspm #briefWrap .sk-q.brief-forslag > .kort-plus svg { display:none; }
-  /* Spoerg din content makker = roed tekst under forslagene, ikke en roed knap. */
-  body.brief-etspm #briefWrap .sk-q > .dbtn.primary[onclick^="aiKollegaFelt"] { order:5; background:transparent !important;
+  /* "Spoerg din content makker" er UDE paa telefonen (Ida 5/9: "Fjern spoerg din content makker herfra!"). */
+  body.brief-etspm #briefWrap .sk-q > .dbtn.primary[onclick^="aiKollegaFelt"] { display:none !important; order:5; background:transparent !important;
     color:var(--red) !important; border:0 !important; box-shadow:none !important; width:100%; justify-content:center;
     font-size:13.5px !important; padding:0 !important; margin:16px 0 0 !important; min-height:32px; }
   body.brief-etspm #briefWrap .sk-q > .sk-label .sk-forkl {
@@ -5003,7 +5005,7 @@ body.modul-open .burger-btn, body.modul-open .bottom-nav, body.modul-open .dash-
     <button class="burger-item" onclick="toggleBurger(); minProfilAaben()">Min profil</button>
     <button class="burger-item" onclick="toggleBurger(); togglePwPanel()">Skift adgangskode</button>
     <button class="burger-item" style="color:var(--red);" onclick="custLogout()">Log ud</button>
-    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 5. september · 1710</div>
+    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 5. september · 1711</div>
   </div>
 </div>
 <div class="plus-menu" id="plusMenu" onclick="if(event.target===this)togglePlus()">
@@ -13896,11 +13898,17 @@ function briefForslagSwipeLyt() {
     const aabenFra = (FS_AABEN === rk) ? -88 : 0;
     rk.style.transform = "translateX(" + Math.max(-110, Math.min(0, aabenFra + dx)) + "px)";
   }, { passive: true });
-  document.addEventListener("touchend", function () {
+  document.addEventListener("touchend", function (e) {
     if (!aktiv || !rk) return; aktiv = false;
     const r = rk; rk = null;
     r.style.transition = "";
-    if (!vandret) return;
+    /* ET TRYK (ikke et swipe) paa teksten saetter fokus HER, inde i selve trykket — iPhone viser
+       kun tastaturet, naar fokus kommer fra brugerens egen beroering (Ida 5/9: "tastaturet
+       kommer ikke"). */
+    if (!vandret) {
+      try { const t = e.target; if (t && /^(TEXTAREA|INPUT)$/.test(t.tagName) && document.activeElement !== t) t.focus(); } catch (err) {}
+      return;
+    }
     const aabenFra = (FS_AABEN === r) ? -88 : 0;
     if (aabenFra + dx < -50) { if (FS_AABEN && FS_AABEN !== r) luk(); pak(r); r.style.transform = "translateX(-88px)"; r.classList.add("fs-aaben"); FS_AABEN = r; }
     else { r.style.transform = ""; r.classList.remove("fs-aaben"); if (FS_AABEN === r) FS_AABEN = null; }
@@ -21256,6 +21264,25 @@ function renderFokus(planFrem, target, idag) {
    FACITTET VISES IKKE UNDER ONBOARDING - de tre skridt paa den klassiske forside ER
    foerstegangsoplevelsen, og den maa ikke skjules af en regel paa containeren. */
 /* Done paa I dag-flisen (5/9): gemmer via dagsProgDone og tegner Hjem igen, saa flisen forsvinder. */
+/* Valget: Gaa til briefen eller Done — i den roede spoergsmaals-popup (spmpop, laast 2/9). */
+function hjemIdagValg(i) {
+  try {
+    const p = ((window.__HJEM_FOKUS || {}).pkt || [])[i]; if (!p) return;
+    const back = document.getElementById("ideBack"); const body = document.getElementById("ideBody") || (back && back.querySelector(".modal")); if (!back || !body) { hjemFokusKlik(i); return; }
+    back.classList.add("spmpop", "midt");
+    body.innerHTML = '<button class="modal-close" onclick="closeIdeaWizard()">&times;</button>'
+      + '<div class="sw-top"><div class="sw-navn">I dag</div></div>'
+      + '<div class="sw-krop"><div class="sw-kasse">'
+        + '<div class="sw-spm">' + esc(String(p.titel || "").replace(/^I dag skal du lave$/i, "Du skal optage").replace(/^I dag skal du poste$/i, "Du skal poste")) + '</div>'
+        + (p.navn ? '<div class="sw-svar" style="font-family:\'Didot\',\'Bodoni 72\',Georgia,serif;font-style:italic;font-size:20px;line-height:1.25;color:var(--black);">' + esc(p.navn) + '</div>' : '')
+      + '</div></div>'
+      + '<div class="sw-bund"><span class="sw-hoejre">'
+        + '<button type="button" class="sw-knap" onclick="closeIdeaWizard();hjemIdagDone(\'' + esc(String(p.dagsId)) + '\')">Done</button>'
+        + '<button type="button" class="sw-knap send" onclick="closeIdeaWizard();hjemFokusKlik(' + i + ')">Gå til briefen</button>'
+      + '</span></div>';
+    back.classList.add("on");
+  } catch (e) { hjemFokusKlik(i); }
+}
 function hjemIdagDone(id) {
   try { const r = dagsProgDone(id); if (r && r.then) r.then(function () { try { renderHome(); } catch (e) {} }); } catch (e) {}
   try { renderHome(); } catch (e) {}
@@ -21341,10 +21368,12 @@ function hjemFacitTegn(){
                   en opgave. Halv hoejde, fordi den vejer halvt saa meget.
      Didot kursiv i hvidt PAA ROEDT er husets bevidste afvigelse (heroen 30/8), ikke
      et brud paa 19/7-reglen om Didot i roedt PAA hvidt. */
+  /* TRYK PAA I DAG-FLISEN AABNER ET VALG (Ida 5/9: "en pop up naar man klikker hvor man skal
+     vaelge gaa til brief eller done") — kun for dagens egne punkter (optag/post). */
   const fokusFlise = (x, i, slags) => '<div class="hf-kort'
     + (slags === "idag" ? ' hf-kort-idag' : '') + (slags === "kommende" ? ' hf-kort-lav' : '')
     + (x.knap ? ' hf-kort-klik' : '') + '"'
-    + (x.knap ? ' onclick="hjemFokusKlik(' + i + ')"' : '') + '>'
+    + (x.knap ? ' onclick="' + ((slags === "idag" && /^(opt|pub)-/.test(String(x.dagsId || ""))) ? 'hjemIdagValg(' + i + ')' : 'hjemFokusKlik(' + i + ')') + '"' : '') + '>'
     + '<div class="hf-kort-krop">'
       /* DEN ROEDE FLISE (Ida 5/9): oeverst staar bare "I dag", saa en skillelinje, og saa hvad
          der skal optages eller postes. Ordene "I dag skal du lave/poste" bliver derfor til
@@ -21358,9 +21387,6 @@ function hjemFacitTegn(){
       /* "Briefen ligger klar" er UDE paa telefonens I dag-flise, og Done staar INDE i den roede
          flise som hvid knap (Ida 5/9). */
       + ((x.sub && slags !== "idag") ? '<div class="hf-hjaelp">' + esc(x.sub) + '</div>' : '')
-      + (slags === "idag" && /^(opt|pub)-/.test(String(x.dagsId || ""))
-          ? '<button type="button" class="bsam-mobknap bsam-mobknap-sek hf-faerdig" onclick="event.stopPropagation();hjemIdagDone(\'' + esc(String(x.dagsId)) + '\')">Done</button>'
-          : '')
     + '</div>'
     + (x.knap ? '<span aria-hidden="true" class="hf-vinkel"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></span>' : '')
     + '</div>';
@@ -37240,7 +37266,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "1710";
+const APP_VERSION = "1711";
 let NY_VERSION_KLAR = false;
 function nyVersionSkjul() { const e = document.getElementById("nyVersion"); if (e) e.style.display = "none"; }
 function nyVersionHent() { try { location.reload(); } catch(e) {} }
@@ -53389,6 +53415,6 @@ if ((location.hash || "").toLowerCase() === "#ole") {   // #ole = preview af Ole
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 5. september · 1710</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 5. september · 1711</div>
 </body>
 </html>
