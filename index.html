@@ -5054,7 +5054,7 @@ body.modul-open .burger-btn, body.modul-open .bottom-nav, body.modul-open .dash-
     <button class="burger-item" onclick="toggleBurger(); minProfilAaben()">Min profil</button>
     <button class="burger-item" onclick="toggleBurger(); togglePwPanel()">Skift adgangskode</button>
     <button class="burger-item" style="color:var(--red);" onclick="custLogout()">Log ud</button>
-    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 5. september · 1733</div>
+    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 5. september · 1734</div>
   </div>
 </div>
 <div class="plus-menu" id="plusMenu" onclick="if(event.target===this)togglePlus()">
@@ -37504,7 +37504,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "1733";
+const APP_VERSION = "1734";
 let NY_VERSION_KLAR = false;
 function nyVersionSkjul() { const e = document.getElementById("nyVersion"); if (e) e.style.display = "none"; }
 function nyVersionHent() { try { location.reload(); } catch(e) {} }
@@ -44708,19 +44708,67 @@ async function studieRumTegn() {
 /* Skriv tanken og laeg den i rummet. Bruger rummets egen note-motor (mr_rum_noter), saa
    der ikke opstaar en kasse ved siden af — og gemningen kvitterer: fejler den, bliver
    teksten staaende, saa tanken ikke forsvinder mellem haenderne paa hende. */
-function studieLaegIRum(rumId) {
-  let r = null;
-  try { r = (MR_RUM || []).find(x => String(x.id) === String(rumId)); } catch (e) {}
-  deltPrompt("Læg i " + ((r && r.navn) || "rummet"), "Skriv tanken…", async function (tekst) {
-    const t = (tekst || "").trim(); if (!t) return;
-    let ok = false;
+/* TOEM HOVEDET LANDER SOM EN POST I RUMMET (Maskinrummet etape 3, 5/9 aften). Rummet er en
+   database af poster (etape 2) — en tanke, der bliver lagt derind, skal vaere en post med navn,
+   beskrivelse og status Idé, ikke en loes note ved siden af databasen. Navnet er foerste linje
+   (hoejst 70 tegn); hele teksten staar i beskrivelsen. Er posternes kolonne (felter) ikke koert
+   endnu, skrives posten uden — og fejler selv det, falder den tilbage til noten, saa intet gaar
+   tabt. EEN motor for begge veje ind (Rodebutikken og "Laeg i rummet"). Kvittering: .select() +
+   raekketaelling (4/8). */
+async function mrPostOpretFraTekst(rumId, tekst) {
+  const t = String(tekst || "").trim(); if (!t || !sb) return false;
+  let ok = false;
+  try {
+    const navn = t.split(/\n/)[0].trim().slice(0, 70) || t.slice(0, 70);
+    const rk = { navn: navn, aktiv: true, foraelder_id: rumId, beskrivelse: t };
+    let svar = await sb.from("mr_rum").insert(Object.assign({ felter: { status: "Idé" } }, rk)).select();
+    if (svar.error) svar = await sb.from("mr_rum").insert(rk).select();
+    ok = !!(!svar.error && svar.data && svar.data.length);
+    if (ok) { try { await mrRumHent(true); if (typeof MR_RUM_AABEN !== "undefined" && MR_RUM_AABEN && String(MR_RUM_AABEN) === String(rumId)) mrRumSideTegn(); } catch (e) {} }
+  } catch (e) { ok = false; }
+  if (!ok) {
     try {
       const svar = await sb.from("mr_rum_noter").insert({ rum_id: rumId, tekst: t }).select();
       ok = !!(svar.data && svar.data.length);
     } catch (e) { ok = false; }
     if (ok) { try { MR_NOTER_HENTET = false; await mrNoterHent(true); } catch (e) {} }
-    else { try { deltPrompt("Det blev ikke gemt", "Prøv igen om lidt", function () {}); } catch (e) {} }
+  }
+  return ok;
+}
+function studieLaegIRum(rumId) {
+  let r = null;
+  try { r = (MR_RUM || []).find(x => String(x.id) === String(rumId)); } catch (e) {}
+  deltPrompt("Læg i " + ((r && r.navn) || "rummet"), "Skriv tanken…", async function (tekst) {
+    const ok = await mrPostOpretFraTekst(rumId, tekst);
+    if (!ok) { try { deltPrompt("Det blev ikke gemt", "Prøv igen om lidt", function () {}); } catch (e) {} }
   });
+}
+/* RODEBUTIKKEN -> ET RUM (5/9): en nedskrevet tanke kan laegges i et rum som post. Rummene
+   staar som hvide chips i samme vindue; et tryk opretter posten, fjerner tanken fra skuffen
+   og siger hvor den landede. Ingen ny popup-form — samme vindue, samme chips som foer. */
+let RODE_TIL_RUM = null;
+async function rodebutikTilRum(id) {
+  RODE_TIL_RUM = (RODE_TIL_RUM === id) ? null : id;
+  tomOversigt();
+  if (!RODE_TIL_RUM) return;
+  const el = document.getElementById("rodeRumValg"); if (!el) return;
+  let rum = [];
+  try { rum = await mrRumForslag(8); } catch (e) { rum = []; }
+  if (!rum.length) { el.innerHTML = '<div style="font-size:11.5px;color:var(--gray3);padding:6px 0;">Ingen rum at lægge det i endnu.</div>'; return; }
+  el.innerHTML = '<div style="font-size:10.5px;color:var(--gray3);margin:6px 0 6px;">Læg det i:</div><div style="display:flex;flex-wrap:wrap;gap:7px;">'
+    + rum.map(r => '<button type="button" class="mq-tap" onclick="rodebutikTilRumGem(\'' + esc(String(id)) + '\',\'' + esc(String(r.id)) + '\')" style="background:#fff;border:1px solid var(--border);border-radius:999px;padding:9px 16px;font-family:Poppins,sans-serif;font-size:12.5px;font-weight:400;color:var(--black);cursor:pointer;">' + esc(r.navn) + '</button>').join("")
+    + '</div>';
+}
+async function rodebutikTilRumGem(id, rumId) {
+  const x = (RODEBUTIK || []).find(r => String(r.id) === String(id)); if (!x) return;
+  const el = document.getElementById("rodeRumValg");
+  if (el) el.innerHTML = '<div style="font-size:11.5px;color:var(--gray3);padding:6px 0;">Lægger den i rummet…</div>';
+  const ok = await mrPostOpretFraTekst(rumId, x.t);
+  if (!ok) { if (el) el.innerHTML = '<div style="font-size:11.5px;color:var(--red);padding:6px 0;">Det blev ikke gemt — prøv igen om lidt.</div>'; return; }
+  RODEBUTIK = RODEBUTIK.filter(r => String(r.id) !== String(id)); rodebutikGem();
+  let navn = ""; try { navn = ((MR_RUM || []).find(r => String(r.id) === String(rumId)) || {}).navn || ""; } catch (e) {}
+  RODE_TIL_RUM = null; window.__RODE_KVIT = navn ? "Lagt i " + navn : "Lagt i rummet";
+  tomOversigt();
 }
 async function mrRumAaben(rumId) {
   if (!MR_RUM.length) { try { await mrRumHent(); } catch (e) {} }
@@ -47261,9 +47309,12 @@ function tomOversigt() {
           + '<span style="width:5px;height:5px;border-radius:50%;background:var(--red);flex-shrink:0;margin-top:7px;"></span>'
           + '<span style="flex:1;min-width:0;line-height:1.5;">' + esc(r.t || "") + '</span>'
           + (r.dato ? '<span style="font-size:10.5px;color:var(--gray3);flex-shrink:0;">' + esc(dkDatoKort(r.dato)) + '</span>' : '')
+          + '<button class="row-btn" onclick="rodebutikTilRum(\'' + r.id + '\')">' + (RODE_TIL_RUM === r.id ? 'Luk' : 'Læg i rum') + '</button>'
           + '<button class="row-btn" onclick="rodebutikSlet(\'' + r.id + '\')">Slet</button>'
-          + '</div>').join("")
+          + '</div>'
+          + (RODE_TIL_RUM === r.id ? '<div id="rodeRumValg" style="padding:0 0 8px 14px;"></div>' : '')).join("")
       : '<div style="font-size:11.5px;color:var(--gray3);padding:5px 0;">Tomt.</div>')
+    + (window.__RODE_KVIT ? '<div style="display:flex;align-items:center;gap:7px;font-size:12px;color:var(--red);margin-top:6px;">' + energidaFlueben(14) + esc(window.__RODE_KVIT) + '</div>' : '')
     + '<div style="font-size:10px;letter-spacing:1.6px;text-transform:uppercase;font-weight:400;color:var(--red);margin:16px 0 2px;">Hængepartier \u00b7 ' + ((typeof HAENG !== "undefined" && HAENG) || []).length + '</div>'
     + '<div id="tomHaengListe"></div>'
     + sek("App-ønskelisten", (typeof APP_FUNK !== "undefined" && APP_FUNK || []).map(x => ({ t: x.t, sub: x.dato ? dkDatoKort(String(x.dato)) : "" })));
@@ -53824,6 +53875,6 @@ if ((location.hash || "").toLowerCase() === "#ole") {   // #ole = preview af Ole
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 5. september · 1733</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 5. september · 1734</div>
 </body>
 </html>
