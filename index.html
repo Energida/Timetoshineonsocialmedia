@@ -2893,6 +2893,10 @@ input[type="date"][data-tom="1"]::-webkit-datetime-edit { opacity:0; }
   .bsm-v { font-size:14px; color:var(--black); line-height:1.45; font-weight:300; white-space:normal; }
   .bsm-v.bsm-mangler { color:var(--red); }
   .bsm-v.bsm-andre { color:var(--gray3); font-size:12.5px; margin-top:4px; }
+  .bsm-klip { border-top:1px solid var(--border); padding:10px 0 2px; margin-top:8px; }
+  .bsm-klip:first-child { border-top:0; margin-top:0; padding-top:0; }
+  .bsm-klipnavn { font-size:10px; letter-spacing:1.8px; text-transform:uppercase; color:var(--red); margin:0 0 6px; }
+  .bsm-l + .bsm-v { margin-bottom:8px; }
   .bsm-v.bsm-tom { color:var(--gray3); }
   .bsm-chips .brief-vchips { margin:0; }
   .bsm-vinkel { flex-shrink:0; color:var(--red); display:inline-flex; align-items:center; }
@@ -5161,7 +5165,7 @@ body.modul-open .burger-btn, body.modul-open .bottom-nav, body.modul-open .dash-
     <button class="burger-item" onclick="toggleBurger(); minProfilAaben()">Min profil</button>
     <button class="burger-item" onclick="toggleBurger(); togglePwPanel()">Skift adgangskode</button>
     <button class="burger-item" style="color:var(--red);" onclick="custLogout()">Log ud</button>
-    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 6. september · 1746</div>
+    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 6. september · 1748</div>
   </div>
 </div>
 <div class="plus-menu" id="plusMenu" onclick="if(event.target===this)togglePlus()">
@@ -13993,8 +13997,12 @@ function briefForslagSynk(key) {
   if (key === "hookTekst" && b[key] && Array.isArray(b.klip) && b.klip[0]) {
     b.klip[0].tekst = b[key];
     b.hookFlettet = true;
-    const kf = document.getElementById("bf_klip0_tekst");
-    if (kf) kf.value = b[key];
+    /* ID'ET VAR FORKERT (Ida 6/9 kl. 06.53: "Fang dem opdateres ikke naar jeg aendrer inde i
+       briefen"). Feltet hedder bf_klip_0_tekst (briefKlipLaes laeser det med understreg) — saa
+       det valgte hook landede i hukommelsen, men Gem laeste det GAMLE hook tilbage fra feltet, og
+       oversigten viste det gamle. Begge skrivemaader saettes, saa intet felt overses. */
+    const kf = document.getElementById("bf_klip_0_tekst") || document.getElementById("bf_klip0_tekst");
+    if (kf) { kf.value = b[key]; try { briefForslagHoejde(kf); } catch (e) {} }
   }
 }
 
@@ -20097,8 +20105,9 @@ function briefSamletHtml() {
       const key = (f.k === "thumb") ? "thumb" : ((f.k === "hookTekst" || f.k === "indhold") ? "hookTekst" : null);
       if (!key) return "";
       let liste = []; try { liste = (typeof briefForslagListe === "function") ? briefForslagListe(key) : []; } catch (e) { liste = []; }
-      const valgt = String(tekstAf(f) || "").trim();
-      const andre = (liste || []).map(function (x) { return String(x || "").trim(); }).filter(function (x) { return x && x !== valgt; });
+      const norm = function (x) { return String(x || "").replace(/\.\.\./g, "\u2026").replace(/\s+/g, " ").trim().toLowerCase(); };
+      const valgtN = norm(tekstAf(f)), svarN = norm(BRIEF_STATE && BRIEF_STATE[key]);
+      const andre = (liste || []).map(function (x) { return String(x || "").trim(); }).filter(function (x) { const xn = norm(x); return xn && xn !== valgtN && xn !== svarN; });
       if (!andre.length) return "";
       return '<div class="bsm-v bsm-andre">Andre forslag: ' + esc(andre.join(" · ")) + '</div>';
     };
@@ -20116,13 +20125,62 @@ function briefSamletHtml() {
     });
     const statusNavn = String(it.status || "");
     sekt.push({ hvor: "plan", navn: "Godkend", felter: [], linje: statusNavn === "Godkendt" ? "Godkendt" : (statusNavn === "Til godkendelse" ? "Sendt til godkendelse" : "Ikke sendt"), mangler: [] });
+    /* OPTAGE-VISNINGEN (Ida 6/9 kl. 06.54: "Denne side skal man let kunne afkode naar man skal
+       igang med at optage. Altsaa tydeligt hvad der skal staa i hook, de forskellige klip mm").
+       Fang dem, Fasthold dem og Faa dem til at handle viser ALTID deres indhold med etiketter:
+       HOOK · THUMBNAIL · KLIP 1 (Tekst paa skaermen / Hvad ser man / Siger) · CTA · CAPTION.
+       Idéen og Godkend er stadig een linje; Idéen kun under Se alt. */
+    const rk = function (lbl, val, tomTekst) {
+      return '<div class="bsm-l">' + esc(lbl) + '</div>'
+        + (String(val || "").trim() ? '<div class="bsm-v">' + br(esc(String(val).trim())) + '</div>' : '<div class="bsm-v bsm-mangler">' + esc(tomTekst || "Mangler") + '</div>');
+    };
+    /* b og klipUdfyldte() bor i computerens tegner — her hedder briefen S. */
+    const klipFyldte = function () {
+      const kl = Array.isArray(S.klip) ? S.klip : [];
+      return kl.filter(function (k) { return k && ((k.ser || "").trim() || (k.tekst || "").trim() || (k.siger || "").trim()); });
+    };
+    const optageKrop = function (o) {
+      const f = function (k) { return o.felter.filter(function (x) { return x.k === k; })[0]; };
+      if (o.hvor === "0") {
+        /* Hooket er teksten paa skaermen i klip 1 (2/9) — ikke hele klippet. */
+        const k0 = klipFyldte()[0] || null;
+        const hookT = v(S.hookTekst) || (k0 && (k0.tekst || "").trim()) || "";
+        const hook = f("hookTekst") || f("indhold");
+        const th = f("thumb");
+        return rk("Hook", hookT, "Mangler: hook") + (hook ? andreForslag(Object.assign({}, hook, { t: hookT, chips: null })) : "")
+          + (th ? rk("Thumbnail", tekstAf(th), "Mangler: thumbnail") : "");
+      }
+      if (o.hvor === "1") {
+        const kl = klipFyldte();
+        if (!kl.length) return '<div class="bsm-v bsm-mangler">Mangler: klip 1</div>';
+        return kl.map(function (k, i) {
+          const dele = [];
+          if ((k.tekst || "").trim()) dele.push('<div class="bsm-l">Tekst på skærmen</div><div class="bsm-v">' + br(esc(k.tekst.trim())) + '</div>');
+          if ((k.ser || "").trim())   dele.push('<div class="bsm-l">Hvad ser man</div><div class="bsm-v">' + br(esc(k.ser.trim())) + '</div>');
+          if ((k.siger || "").trim()) dele.push('<div class="bsm-l">Siger</div><div class="bsm-v">' + br(esc(k.siger.trim())) + '</div>');
+          return '<div class="bsm-klip"><div class="bsm-klipnavn">Klip ' + (i + 1) + '</div>' + (dele.length ? dele.join("") : '<div class="bsm-v bsm-mangler">Mangler</div>') + '</div>';
+        }).join("");
+      }
+      if (o.hvor === "2") {
+        const cap = f("caption");
+        return (v(S.cta) ? rk("Handlingen", v(S.cta)) : "")
+          + rk("Caption", cap ? tekstAf(cap) : v(S.caption), "Mangler: caption");
+      }
+      return null;
+    };
+    /* SLUKKET, TIL IDA HAR SET FORSLAGENE (6/9 kl. 06.57: "Husk at sende mig designforslag inden du
+       goer noget"). Optage-visningen er bygget og maalt, men taendes foerst ved hendes tal. */
+    const BSAM_OPTAGE_VISNING = false;
     const flise = function (o) {
+      if (BSAM_OPTAGE_VISNING && o.hvor === "ideen" && !alt) return "";   /* Idéen bor under Se alt (Ida 6/9) */
       const fyldte = o.felter.filter(harNoget);
       /* Navnet paa det, der mangler, er Idas ord — aldrig datanoeglen (indhold → klip 1). */
       const navnAf = function (f) { return f.k === "indhold" ? "klip 1" : f.k === "indhold2" ? "klip 2" : String(f.lbl || f.k || "").toLowerCase(); };
       const mangler = o.mangler || o.felter.filter(f => f.rum === "hoved" && !harNoget(f)).map(navnAf);
-      let krop;
-      if (alt && o.felter.length) {
+      let krop = null;
+      if (BSAM_OPTAGE_VISNING) { try { krop = optageKrop(o); } catch (e) { krop = null; } }
+      if (krop != null) { /* optage-visningen vandt */ }
+      else if (alt && o.felter.length) {
         krop = o.felter.map(function (f) {
           const lbl = f.lbl || (f.k === "indhold" ? "Klip 1" : f.k === "indhold2" ? "Klip 2" : "");
           return (lbl ? '<div class="bsm-l">' + esc(lbl) + '</div>' : '')
@@ -37738,7 +37796,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "1746";
+const APP_VERSION = "1748";
 let NY_VERSION_KLAR = false;
 function nyVersionSkjul() { const e = document.getElementById("nyVersion"); if (e) e.style.display = "none"; }
 function nyVersionHent() { try { location.reload(); } catch(e) {} }
@@ -54109,6 +54167,6 @@ if ((location.hash || "").toLowerCase() === "#ole") {   // #ole = preview af Ole
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 6. september · 1746</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 6. september · 1748</div>
 </body>
 </html>
