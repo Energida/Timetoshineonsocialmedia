@@ -5165,7 +5165,7 @@ body.modul-open .burger-btn, body.modul-open .bottom-nav, body.modul-open .dash-
     <button class="burger-item" onclick="toggleBurger(); minProfilAaben()">Min profil</button>
     <button class="burger-item" onclick="toggleBurger(); togglePwPanel()">Skift adgangskode</button>
     <button class="burger-item" style="color:var(--red);" onclick="custLogout()">Log ud</button>
-    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 6. september · 1748</div>
+    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 6. september · 1749</div>
   </div>
 </div>
 <div class="plus-menu" id="plusMenu" onclick="if(event.target===this)togglePlus()">
@@ -14284,6 +14284,21 @@ function briefKlipLaes() {   // gem hvad der staar i felterne foer en re-render
     ["ser", "siger", "tekst"].forEach(function (f) {
       const el = document.getElementById("bf_klip_" + i + "_" + f);
       if (el) k[f] = el.value;
+      /* BEGGE VEJE (Ida 6/9 kl. 06.58: "naar jeg aendrer noget skal det slaa igennem alle steder —
+         det kunne ende med at mine kunder poster det forkerte"). Klip 1's tekst paa skaermen ER
+         hooket (2/9). Rettes den her, foelger hookTekst og det valgte forslag med — ellers viste
+         Fang dem og oversigten det gamle. */
+      if (el && i === 0 && f === "tekst") {
+        const b = BRIEF_STATE, t = String(el.value || "").trim();
+        if (b && b.format !== "Karrusel" && b.format !== "Billede" && t && t !== String(b.hookTekst || "").trim()) {
+          b.hookTekst = t;
+          if (Array.isArray(b.hookTekstListe)) {
+            const vi = (typeof b.hookTekstValgt === "number") ? b.hookTekstValgt : -1;
+            if (vi > -1 && b.hookTekstListe[vi] != null) b.hookTekstListe[vi] = t;
+            else if (b.hookTekstListe.indexOf(t) === -1) { b.hookTekstListe.push(t); b.hookTekstValgt = b.hookTekstListe.length - 1; }
+          }
+        }
+      }
     });
   });
 }
@@ -21788,10 +21803,25 @@ function hjemFacitTegn(){
       /* "Briefen ligger klar" er UDE paa telefonens I dag-flise, og Done staar INDE i den roede
          flise som hvid knap (Ida 5/9). */
       + ((x.sub && slags !== "idag") ? '<div class="hf-hjaelp">' + esc(x.sub) + '</div>' : '')
-      /* DONE SOM HVID KNAP INDE I DEN ROEDE FLISE (Idas klik-valg 5/9 kl. 16.30 — popuppen droppet). */
-      + (slags === "idag" && /^(opt|pub)-/.test(String(x.dagsId || ""))
-          ? '<button type="button" class="bsam-mobknap bsam-mobknap-sek hf-faerdig" onclick="event.stopPropagation();hjemIdagDone(\'' + esc(String(x.dagsId)) + '\')">Done</button>'
-          : '')
+      /* DONE ER UDE (Ida 6/9 kl. 07.01: "Denne done skulle jo fjernes? Det var meget bedre saadan her
+         med soejlen ud for tiden"). I stedet samme linje som Content-fanens roede flise:
+         "Kl. 10.00 · Klar til post" med soejle-chippen ved siden af. Done-motoren (hjemIdagDone)
+         bestaar — den kaldes ikke herfra laengere. */
+      + (function () {
+          if (slags !== "idag" || !/^(opt|pub)-/.test(String(x.dagsId || ""))) return "";
+          const id = String(x.dagsId).replace(/^(opt|pub)-/, "");
+          const it = (IDEER || []).find(function (i) { return String(i.id) === String(id); });
+          if (!it) return "";
+          const tid = (it.brief && it.brief.tid) ? (typeof tidVis === "function" ? tidVis(it.brief.tid) : String(it.brief.tid).slice(0, 5)) : "";
+          const dele = [];
+          if (tid) dele.push("Kl. " + tid);
+          if (it.status) dele.push(it.status);
+          const soejle = it.soejle ? (typeof soejleVis === "function" ? soejleVis(it.soejle) : it.soejle) : "";
+          return '<div class="hf-hjaelp" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:6px;">'
+            + (dele.length ? '<span>' + esc(dele.join(" \u00b7 ")) + '</span>' : '')
+            + (soejle ? '<span class="cf-chip" style="background:transparent;border:1px solid rgba(255,255,255,.7);color:#fff;">' + esc(soejle) + '</span>' : '')
+            + '</div>';
+        })()
     + '</div>'
     + (x.knap ? '<span aria-hidden="true" class="hf-vinkel"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></span>' : '')
     + '</div>';
@@ -37796,7 +37826,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "1748";
+const APP_VERSION = "1749";
 let NY_VERSION_KLAR = false;
 function nyVersionSkjul() { const e = document.getElementById("nyVersion"); if (e) e.style.display = "none"; }
 function nyVersionHent() { try { location.reload(); } catch(e) {} }
@@ -54167,6 +54197,6 @@ if ((location.hash || "").toLowerCase() === "#ole") {   // #ole = preview af Ole
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 6. september · 1748</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 6. september · 1749</div>
 </body>
 </html>
