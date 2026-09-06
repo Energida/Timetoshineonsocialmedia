@@ -5225,7 +5225,7 @@ body.modul-open .burger-btn, body.modul-open .bottom-nav, body.modul-open .dash-
     <button class="burger-item" onclick="toggleBurger(); minProfilAaben()">Min profil</button>
     <button class="burger-item" onclick="toggleBurger(); togglePwPanel()">Skift adgangskode</button>
     <button class="burger-item" style="color:var(--red);" onclick="custLogout()">Log ud</button>
-    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 6. september · 1761</div>
+    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 6. september · 1762</div>
   </div>
 </div>
 <div class="plus-menu" id="plusMenu" onclick="if(event.target===this)togglePlus()">
@@ -14059,6 +14059,9 @@ function briefForslagSynk(key) {
      skal klip 1 foelge med — ellers viser laesefladen det gamle hook.
      briefHookFlet() koerer kun EEN gang pr. brief, saa den kan ikke goere det her.
      GEM MAA IKKE SLETTE (4/8): er intet valgt, roeres klip 1 ikke. */
+  if (key === "hookTekst" && b[key] && b.format !== "Karrusel" && b.format !== "Billede") {
+    if (!(Array.isArray(b.klip) && b.klip[0])) { try { briefKlipListe(); } catch (e) {} }
+  }
   if (key === "hookTekst" && b[key] && Array.isArray(b.klip) && b.klip[0]) {
     b.klip[0].tekst = b[key];
     b.hookFlettet = true;
@@ -14336,7 +14339,10 @@ function briefHookFlet() {
   if (b.format === "Karrusel" || b.format === "Billede") return;
   if (b.hookFlettet) return;
   const hook = String(b.hookTekst || "").trim();
-  if (!hook) { b.hookFlettet = true; return; }
+  /* ET TOMT HOOK LAASER IKKE FLAGET (MAALT i selen 6/9 kl. 11.5x: hookFlettet stod sandt paa en
+     ny brief, FOER hooket var skrevet — saa naar hooket kom, blev det aldrig flettet ind i klip 1.
+     Ida: "Klip 1 skal jo synkronisere tekst paa skaermen med det hook vi lige har lavet???"). */
+  if (!hook) return;
   const k0 = b.klip && b.klip[0]; if (!k0) return;
   const nu = String(k0.tekst || "").trim();
   if (nu === hook) { b.hookFlettet = true; return; }
@@ -14389,6 +14395,10 @@ function briefKlipHtml(enkelt) {
   try {
     const vh = String(BRIEF_STATE.hook || "").trim();
     if (vh && liste.length && !String(liste[0].ser || "").trim()) liste[0].ser = vh;
+    /* KLIP 1's TEKST PAA SKAERMEN ER HOOKET (Ida 4/9 + 6/9 kl. 11.49). Er feltet tomt ved tegning,
+       staar det nyeste hook dér — uanset i hvilken raekkefoelge siderne blev udfyldt. */
+    const ht = String(BRIEF_STATE.hookTekst || "").trim();
+    if (ht && liste.length && BRIEF_STATE.format !== "Karrusel" && BRIEF_STATE.format !== "Billede" && !String(liste[0].tekst || "").trim()) liste[0].tekst = ht;
   } catch (e) {}
   /* KLIPPETS FELTER FAAR OGSAA MIKROFONEN (Ida 2/9: alle skrivefelter). */
   const mik = function (id) { try { return (typeof taleMikHtml === "function") ? taleMikHtml(id) : ""; } catch (e) { return ""; } };
@@ -15642,6 +15652,10 @@ function openBriefSide(id) {
     try { requestAnimationFrame(function() { if (cEl) cEl.scrollTop = sc; else window.scrollTo(0, sc); }); } catch(e) {}
   }
   if (id !== BRIEF_ID) BRIEF_FULD = false;   /* ny brief = enkel igen (Ida 30/7) */
+  /* "HANDLINGEN I VIDEOEN" ER ET VALG, IKKE STANDARD (Ida 6/9 kl. 11.49). Flaget er et let paa
+     scriptniveau og overlevede fra brief til brief: havde man aabnet feltet EEN gang, stod det
+     tomt og aabent paa alle senere briefs. Ny brief = flaget ned; et skrevet svar staar stadig. */
+  if (id !== BRIEF_ID) BRIEF_CTA_AABEN = false;
   const it = IDEER.find(x => x.id === id);
   if (!it) return;
   /* STORIES BRIEFES IKKE (Ida 28/7, bekraeftet 26/8). Formatvaelgeren har aldrig budt
@@ -18899,6 +18913,14 @@ function briefIdeNaeste() {
   briefSideVis(G.raketIxs.length ? G.raketIxs[0] : (G.planIx > -1 ? G.planIx : (BRIEF_SIDE || 0) + 1));
 }
 function briefSideVis(i) {
+  /* KLIP 1 FOELGER HOOKET, OGSAA NAAR SIDEN ALLEREDE ER TEGNET (MAALT i selen 6/9 kl. 12.0x:
+     hooket laa rigtigt i hukommelsen, men klip-blokken var tegnet FOER hooket fandtes, saa feltet
+     "Hook" i klip 1 fandtes slet ikke — eller stod tomt). Mangler feltet, mens hukommelsen har
+     et hook, tegnes klip-blokken igen, foer siden vises. */
+  try {
+    const b0 = BRIEF_STATE, k0 = b0 && Array.isArray(b0.klip) && b0.klip[0];
+    if (k0 && String(k0.tekst || "").trim() && document.getElementById("briefKlipHolder") && !document.getElementById("bf_klip_0_tekst")) briefKlipRerender();
+  } catch (e) {}
   /* Briefen vises som sider, der følger Succesraketten (Ida 21/7) — kun
      felterne for det aktive trin er fremme. Grupperne afgrænses af de røde
      trin-bannere; Content makker-kortet i bunden hører til sidste raket-trin. */
@@ -37997,7 +38019,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "1761";
+const APP_VERSION = "1762";
 let NY_VERSION_KLAR = false;
 function nyVersionSkjul() { const e = document.getElementById("nyVersion"); if (e) e.style.display = "none"; }
 function nyVersionHent() { try { location.reload(); } catch(e) {} }
@@ -54464,6 +54486,6 @@ if ((location.hash || "").toLowerCase() === "#ole") {   // #ole = preview af Ole
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 6. september · 1761</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 6. september · 1762</div>
 </body>
 </html>
