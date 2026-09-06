@@ -5262,7 +5262,7 @@ body.modul-open .burger-btn, body.modul-open .bottom-nav, body.modul-open .dash-
     <button class="burger-item" onclick="toggleBurger(); minProfilAaben()">Min profil</button>
     <button class="burger-item" onclick="toggleBurger(); togglePwPanel()">Skift adgangskode</button>
     <button class="burger-item" style="color:var(--red);" onclick="custLogout()">Log ud</button>
-    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 6. september · 1771</div>
+    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 6. september · 1772</div>
   </div>
 </div>
 <div class="plus-menu" id="plusMenu" onclick="if(event.target===this)togglePlus()">
@@ -20462,11 +20462,19 @@ function briefSamletHtml() {
         if (!G0) return "";
         const gi = o.hvor === "fakta" ? G0.basisIx : G0.navne.indexOf("Idéen");
         if (gi < 0) return "";
-        const fx = ((typeof bsamSideFelter === "function") ? bsamSideFelter(gi) : []).filter(function (f) { return alt || String(f.t || "").trim(); });
+        /* Det, der allerede staar som chips oeverst (format · dato · ansvarlig · lyd · soejle), staar ikke igen. */
+        const alleredeChips = /^(format|hvorn\u00e5r skal det postes\??|hvem er ansvarlig\??|lyd|indholdss\u00f8jle)$/i;
+        const fx = ((typeof bsamSideFelter === "function") ? bsamSideFelter(gi) : [])
+          .filter(function (f) { return !(o.hvor === "fakta" && alleredeChips.test(String(f.lbl || "").trim())); })
+          .filter(function (f) { return alt || String(f.t || "").trim(); });
         if (!fx.length) return "";
+        /* VALG SOM CHIPS, SKREVET SOM TEKST (Ida 5/9: "Det under fakta skal vaere chips"; 6/9 kl. 12.33). */
+        const valgte = fx.filter(function (f) { return f.valg && String(f.t || "").trim(); });
+        const skrevne = fx.filter(function (f) { return !(f.valg && String(f.t || "").trim()); });
         return '<button type="button" class="bsm-flise" onclick="briefSeRet(\'' + o.hvor + '\')">'
           + '<span class="bsm-fyld"><span class="bsm-n bsm-stor">' + esc(o.hvor === "fakta" ? "Fakta" : o.navn) + '</span><span class="bsm-streg"></span>'
-          + fx.map(function (f) { return (f.lbl ? '<div class="bsm-l">' + esc(f.lbl) + '</div>' : '') + (f.t ? '<div class="bsm-v">' + br(esc(f.t)) + '</div>' : '<div class="bsm-v bsm-tom">Ikke udfyldt endnu</div>'); }).join("")
+          + (valgte.length ? '<div class="bsm-v bsm-chips">' + briefVisChips(valgte.map(function (f) { return f.t; })) + '</div>' : '')
+          + skrevne.map(function (f) { return (f.lbl ? '<div class="bsm-l">' + esc(f.lbl) + '</div>' : '') + (f.t ? '<div class="bsm-v">' + br(esc(f.t)) + '</div>' : '<div class="bsm-v bsm-tom">Ikke udfyldt endnu</div>'); }).join("")
           + '</span></button>';
       }
       const fyldte = o.felter.filter(harNoget);
@@ -20537,6 +20545,9 @@ function briefSamletHtml() {
       + '<div class="bsam-mobknapper" style="display:block;margin:14px 0 0;">'
         + mobLinkDel
         + '<button type="button" class="bsam-mobknap bsam-mobknap-sek" onclick="briefTilbage()">Tilbage</button>'
+        /* SLET OPSLAGET NEDERST (Ida 6/9 kl. 12.32: "Hvor kan jeg slette et opslag?! Den knap skal ind nederst
+           paa briefoversigten"). To tryk — confirm() fryser telefonen (5/9). Samme motor som computeren. */
+        + '<button type="button" class="bsam-mobknap bsam-mobknap-sek" onclick="briefSletMobil(this)">Slet opslaget</button>'
       + '</div>'
       + bund
     + '</div>';
@@ -20588,19 +20599,22 @@ function bsamSideFelter(gi) {
   return qs.map(function (q) {
     let lbl = ""; const l = q.querySelector(".sk-label");
     if (l) { const c = l.cloneNode(true); c.querySelectorAll(".sk-forkl").forEach(function (x) { x.remove(); }); lbl = String(c.textContent || "").replace(/\s+/g, " ").trim(); }
-    const dele = [];
+    const dele = []; let valg = false;
     q.querySelectorAll('[id^="forslag_"] textarea').forEach(function (t) { const v = String(t.value || "").trim(); if (v) dele.push(v); });
     if (!dele.length) {
-      q.querySelectorAll(".bdrop-knap").forEach(function (k) { if (k.classList.contains("tom")) return; const c = k.cloneNode(true); c.querySelectorAll(".bdrop-pil").forEach(function (x) { x.remove(); }); const t = String(c.textContent || "").replace(/\s+/g, " ").trim(); if (t) dele.push(t); });
+      q.querySelectorAll(".bdrop-knap").forEach(function (k) { if (k.classList.contains("tom")) return; const c = k.cloneNode(true); c.querySelectorAll(".bdrop-pil").forEach(function (x) { x.remove(); }); const t = String(c.textContent || "").replace(/\s+/g, " ").trim(); if (t) { dele.push(t); valg = true; } });
       const chips = Array.prototype.map.call(q.querySelectorAll(".chip-btn.on"), function (c) { return String(c.textContent || "").trim(); }).filter(Boolean);
-      if (chips.length) dele.push(chips.join(" \u00b7 "));
+      if (chips.length) { dele.push(chips.join(" \u00b7 ")); valg = true; }
       q.querySelectorAll("textarea, input[type=text], input[type=date], input[type=time], input[type=number]").forEach(function (t) {
         if (t.closest('[id^="forslag_"]')) return;
         const v = String(t.value || "").trim(); if (!v) return;
         try { dele.push(t.type === "date" ? dkDatoKort(v) : (t.type === "time" ? tidVis(v) : v)); } catch (e) { dele.push(v); }
       });
     }
-    return { lbl: lbl, t: dele.join("\n") };
+    /* INGEN DUBLETTER (Ida 6/9 kl. 12.33: "hvorfor alt staar dobbelt"): dropdown-knappen OG det skjulte
+       vaerdifelt bar samme svar. Samme tekst taelles een gang. */
+    const set = []; dele.forEach(function (d) { if (set.map(function (x) { return x.toLowerCase(); }).indexOf(d.toLowerCase()) === -1) set.push(d); });
+    return { lbl: lbl, t: set.join("\n"), valg: valg };
   }).filter(function (x) { return x.lbl || x.t; });
 }
 function briefSeRet(hvor, felt) {
@@ -38117,6 +38131,13 @@ async function briefArkiver() {
   await ideUpdate(BRIEF_ID, { status: "Arkiveret" });
   showTab(2);   // tilbage til Idébanken — Arkivér kan altid fortrydes med Gendan
 }
+async function briefSletMobil(knap) {
+  if (!BRIEF_ID) return;
+  if (!knap.getAttribute("data-igen")) { knap.setAttribute("data-igen", "1"); knap.textContent = "Slet \u2014 tryk igen for at bekræfte"; setTimeout(function () { try { knap.removeAttribute("data-igen"); knap.textContent = "Slet opslaget"; } catch (e) {} }, 6000); return; }
+  knap.textContent = "Sletter\u2026";
+  try { await ideDelete(BRIEF_ID); } catch (e) {}
+  showTab(2);
+}
 async function briefSlet() {
   if (!BRIEF_ID) return;
   if (!confirm("Er du sikker på, at du vil slette den? Slet kan ikke fortrydes — Arkivér kan.")) return;
@@ -38213,7 +38234,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "1771";
+const APP_VERSION = "1772";
 let NY_VERSION_KLAR = false;
 function nyVersionSkjul() { const e = document.getElementById("nyVersion"); if (e) e.style.display = "none"; }
 function nyVersionHent() { try { location.reload(); } catch(e) {} }
@@ -54773,6 +54794,6 @@ if ((location.hash || "").toLowerCase() === "#ole") {   // #ole = preview af Ole
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 6. september · 1771</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 6. september · 1772</div>
 </body>
 </html>
