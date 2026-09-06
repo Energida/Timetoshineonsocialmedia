@@ -5241,7 +5241,7 @@ body.modul-open .burger-btn, body.modul-open .bottom-nav, body.modul-open .dash-
     <button class="burger-item" onclick="toggleBurger(); minProfilAaben()">Min profil</button>
     <button class="burger-item" onclick="toggleBurger(); togglePwPanel()">Skift adgangskode</button>
     <button class="burger-item" style="color:var(--red);" onclick="custLogout()">Log ud</button>
-    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 6. september · 1764</div>
+    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 6. september · 1765</div>
   </div>
 </div>
 <div class="plus-menu" id="plusMenu" onclick="if(event.target===this)togglePlus()">
@@ -21719,7 +21719,7 @@ function renderFokus(planFrem, target, idag) {
      TO-DO'ERNE KOM TIL GENGÆLD IND ("To-do skal tilgengæld flyttes til i
      dag") — et opslag, der er skredet eller venter paa en dato, ER dagens arbejde. */
   try {
-    kundeHaengListe().forEach(r => laeg(r.t, r.grund, r.h, () => openBriefSide(r.id)));
+    kundeHaengListe().forEach(r => { laeg(r.t, r.grund, r.h, () => openBriefSide(r.id)); pkt[pkt.length - 1].haeng = true; });
   } catch(e) {}
 
   /* Dublet-reglen: staar den naeste lektion allerede som et dagsprogram-punkt, skal
@@ -22010,7 +22010,7 @@ function hjemFacitTegn(){
             + '</div>';
         })()
     + '</div>'
-    + (x.knap ? '<span aria-hidden="true" class="hf-vinkel"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></span>' : '')
+    /* pilen er UDE — hele flisen er knappen (bud 9, 6/9) */
     + '</div>';
   /* Etiketten er flyttet op paa dagens linje (Ida 4/9) — se hf-top nedenfor. */
   /* "I DAG" BETYDER I DAG (Ida 4/9: "under idag skal man jo ikke kunne scrolle og se
@@ -22023,7 +22023,10 @@ function hjemFacitTegn(){
      kun VISNINGEN og beholder hvert punkts oprindelige plads. */
   const alleP = (F.pkt || []).map(function (x, i) { return { x: x, i: i }; });
   const erKommende = function (o) { return /^snart-/.test(String((o.x && o.x.dagsId) || "")); };
-  const iDagP = alleP.filter(function (o) { return !erKommende(o); });
+  /* SKREDNE OG VENTENDE OPSLAG ER IKKE ROEDE I DAG-KORT (Ida 6/9 kl. 12.05: "tilfoejet alle de roede
+     fliser oeverst paa dashboardet" — seks kort hos en kunde med fire opslag uden dato). I dag paa
+     telefonen = dagens optagelse/post. De skredne staar stadig i kalenderen og i briefens status. */
+  const iDagP = alleP.filter(function (o) { return !erKommende(o) && !(o.x && o.x.haeng); });
   const kommendeP = alleP.filter(erKommende);
   const tegnGruppe = function (liste) {
     if (liste.length > 1)
@@ -22189,7 +22192,7 @@ function contentFacitTegn(){
   } catch (e) {}
 
   const chipH = x => { const n = x.soejle ? (typeof soejleVis === "function" ? soejleVis(x.soejle) : x.soejle) : ""; return n ? '<div><span class="cf-chip">' + esc(n) + '</span></div>' : ""; };
-  const tidH = x => (x.brief && x.brief.tid) ? "Kl. " + dkTid(x.brief.tid) : "";
+  const tidH = x => { if (!(x.brief && x.brief.tid)) return ""; const t = (typeof tidVis === "function") ? tidVis(x.brief.tid) : dkTid(x.brief.tid); return /^\d/.test(t) ? "Kl. " + t : t; };
   const statH = x => { try { return statusVisNavn(x.status) || ""; } catch (e) { return ""; } };
 
   const flise = t => {
@@ -22202,10 +22205,13 @@ function contentFacitTegn(){
       ? "Briefen er ikke klar — hvornår laver du den?"
       : [tidH(x), statH(x)].filter(Boolean).join(" · ");
     const UGE_CF = ["Søndag", "Mandag", "Tirsdag", "Onsdag", "Torsdag", "Fredag", "Lørdag"];
-    const instr = t.slags === "optag" ? "I dag skal du optage"
+    /* SAMME ORD SOM HJEM (Ida 6/9 kl. 12.05: "alle aendringerne vi har lavet paa acorns siden [Hjem] er
+       ikke slaaet igennem" — Content-kortet er Hjem-kortets tvilling og sagde stadig "I dag skal du
+       poste" og "Kl. 10.00"). Rubrikken I DAG staar allerede over kortet. */
+    const instr = t.slags === "optag" ? "Du skal optage"
       : t.slags === "snart"
         ? ((t.dage === 1 ? "I morgen" : "På " + UGE_CF[new Date(x.dato + "T12:00:00").getDay()].toLowerCase()) + " skal du poste")
-        : "I dag skal du poste";
+        : "Skal du poste:";
     /* HELE FLISEN KLIKKER — INGEN KNAP (Ida 2/9: "knapperne her skal fjernes - man
        klikker bare paa felterne"). TVILLINGEN, DER BLEV MISSET: Hjem fik reglen i
        v1638, men Content stod stadig med den fyldte roede "Aabn briefen"-pille midt i
@@ -22222,7 +22228,7 @@ function contentFacitTegn(){
            siden af tidspunktet") — een raekke: "Kl. 10.00 · Klar til post  [2B · Bag om forretningen]". */
         + ((linje || x.soejle) ? '<div class="cf-hjaelp" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:4px;">' + (linje ? '<span>' + esc(linje) + '</span>' : '') + chipH(x).replace(/^<div>|<\/div>$/g, '') + '</div>' : '')
       + '</div>'
-      + '<span aria-hidden="true" class="hf-vinkel"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></span>'
+      /* pilen er UDE — hele flisen er knappen (bud 9, 6/9) */
       + '</div>';
   };
 
@@ -38037,7 +38043,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "1764";
+const APP_VERSION = "1765";
 let NY_VERSION_KLAR = false;
 function nyVersionSkjul() { const e = document.getElementById("nyVersion"); if (e) e.style.display = "none"; }
 function nyVersionHent() { try { location.reload(); } catch(e) {} }
@@ -54591,6 +54597,6 @@ if ((location.hash || "").toLowerCase() === "#ole") {   // #ole = preview af Ole
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 6. september · 1764</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 6. september · 1765</div>
 </body>
 </html>
