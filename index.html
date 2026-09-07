@@ -881,6 +881,7 @@ body.hjem-facit .hf-rum .chip-knap{min-height:44px;display:inline-flex;align-ite
      herfra"). Kl. 17.43 blev plusserne til knapper; nu skal hverken plus eller knap staa her.
      Aktiviteter og haengepartier oprettes via Toem hovedet (plusset i bundmenuen) og paa computeren. */
   #kundeAftNyKnap,#kundeOpgNyKnap,#kundeAftNyFelt,#kundeOpgNyFelt{display:none !important}
+  .aft-send{display:block;margin-top:12px}
   /* KOMMENDE AKTIVITETER SOM ENKELTE FLISER (altid fliser-reglen 5/9): kortet gennemsigtigt,
      hver aktivitet sin egen hvide flise — praecis som haengepartierne lige under. */
   body.hjem-facit .hf-rum #aftaleListHome>div{background:transparent !important;border:0 !important;box-shadow:none !important;padding:0 !important}
@@ -4114,6 +4115,7 @@ textarea.sendfelt-felt { max-height:120px; }
 .sendfelt-knap:active { transform:scale(0.92); }
 .sendfelt-knap.mq-tap, html body #briefWrap .sendfelt-knap { width:36px !important; height:36px !important; min-height:36px !important; min-width:0 !important; padding:0 !important; }
 html body.brief-etspm #briefWrap textarea.sendfelt-felt, html body.brief-etspm #briefWrap input.sendfelt-felt, html body #briefWrap .sendfelt-felt { min-height:44px !important; height:44px; max-height:120px; padding:11px 52px 11px 14px !important; border:1px solid var(--border) !important; border-radius:22px !important; background:#fff !important; box-shadow:none !important; font-size:16px !important; line-height:1.35 !important; margin:0 !important; }
+.aft-send { display:none; }   /* kun telefonen (hjem-facittet) viser sendefeltet til aftaler */
 .ib-svar { display:flex; gap:8px; width:100%; margin-top:4px; }
 .ib-svar button { flex:1; min-height:40px; border-radius:999px; font-family:"Poppins",sans-serif; font-size:13px; cursor:pointer; padding:0 12px; }
 .ib-ja { background:var(--red); color:#fff; border:1px solid var(--red); }
@@ -5293,7 +5295,7 @@ body.modul-open .burger-btn, body.modul-open .bottom-nav, body.modul-open .dash-
     <button class="burger-item" onclick="toggleBurger(); minProfilAaben()">Min profil</button>
     <button class="burger-item" onclick="toggleBurger(); togglePwPanel()">Skift adgangskode</button>
     <button class="burger-item" style="color:var(--red);" onclick="custLogout()">Log ud</button>
-    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 7. september · 1782</div>
+    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 7. september · 1783</div>
   </div>
 </div>
 <div class="plus-menu" id="plusMenu" onclick="if(event.target===this)togglePlus()">
@@ -33988,6 +33990,8 @@ async function renderAftaler() {
           + '<button type="button" class="chip-knap rolig" onclick="var f=document.getElementById(\'kundeAftNyFelt\');if(f)f.style.display=\'none\';var k=document.getElementById(\'kundeAftNyKnap\');if(k)k.style.display=\'\';">Annullér</button>'
           + '<button type="button" class="dbtn primary" style="padding:7px 16px;font-size:12px;border-radius:999px;" onclick="kundeAftaleNy()">Gem aktiviteten</button>'
           + '</div></div>'
+        /* TELEFONEN: sendefeltet (7/9) — computeren beholder plusset og skemaet. */
+        + '<div class="aft-send">' + sendFeltHtml({ id: 'aftSendFelt', ph: 'Skriv en aftale…', fn: 'aftaleSendNy()', aria: 'Tilføj aftale' }) + '</div>'
         + '<button type="button" id="kundeAftNyKnap" class="kort-plus" title="Tilføj aktivitet" aria-label="Tilføj aktivitet" onclick="this.style.display=\'none\';var f=document.getElementById(\'kundeAftNyFelt\');if(f){f.style.display=\'\';var t=document.getElementById(\'kundeAftNyTitel\');if(t)t.focus();}"><svg width=\"19\" height=\"19\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.9\" stroke-linecap=\"round\"><path d=\"M12 5v14M5 12h14\"/></svg></button>'
         + '</div>';
     const sec = document.getElementById("aftaleForside");
@@ -38310,6 +38314,53 @@ async function opslagNyDatoGem() {
   try { indbakkenAaben(); } catch (e) {}
   try { renderHome(); } catch (e) {}
 }
+/* ===== NY AFTALE PAA TELEFONEN — SOM NY TO-DO (Idas valg 7/9 kl. 19.0x: "Paa samme maade som ny to do") =====
+   Sendefeltet under aftalerne: man skriver, hvad aftalen hedder, og sender. Det roede kort spoerger saa
+   Hvornaar? og Klokken? (valgfrit), eet ad gangen, og Gem skriver i kunde_aftaler med kvittering — samme
+   raekke som computerens kundeAftaleNy. Uden net lander den i hjem-koeen. */
+let AFT_NY = null;
+function aftaleSendNy() {
+  const f = document.getElementById("aftSendFelt"); const t = (f && f.value || "").trim(); if (!t) return;
+  AFT_NY = { titel: t, dato: "", tid: "", trin: 1, msg: "" };
+  aftaleNyTegn();
+}
+function aftaleNyLaes() { const r = AFT_NY; if (!r) return; const d = document.getElementById("aftNyDato"); if (d) r.dato = d.value; const k = document.getElementById("aftNyTid"); if (k) r.tid = k.value; }
+function aftaleNyGaa(n) { aftaleNyLaes(); if (!AFT_NY) return; if (n > 0 && AFT_NY.trin === 1 && !AFT_NY.dato) { AFT_NY.msg = "Vælg en dag først."; aftaleNyTegn(); return; } AFT_NY.trin = Math.max(1, Math.min(2, AFT_NY.trin + n)); AFT_NY.msg = ""; aftaleNyTegn(); }
+function aftaleNyLuk() { AFT_NY = null; try { document.getElementById("modalBack").classList.remove("spmpop", "hs-ret"); } catch (e) {} closeModal(); }
+function aftaleNyTegn() {
+  const r = AFT_NY; if (!r) return;
+  const body = document.getElementById("modalBody"), bak = document.getElementById("modalBack"); if (!body || !bak) return;
+  bak.classList.add("spmpop", "hs-ret");
+  const knap = function (t, klik, sek) { return '<button type="button" class="sw-knap' + (sek ? '' : ' send') + '" onclick="' + klik + '">' + t + '</button>'; };
+  let spm, svar, bund;
+  if (r.trin === 1) { spm = "Hvornår?"; svar = '<input type="date" id="aftNyDato" class="sw-felt" value="' + esc(r.dato) + '">'; bund = knap("Videre", "aftaleNyGaa(1)"); }
+  else { spm = "Klokken?"; svar = '<input type="time" id="aftNyTid" class="sw-felt" value="' + esc(r.tid) + '">'; bund = knap("Gem", "aftaleNyGem()") + knap("Tilbage", "aftaleNyGaa(-1)", true); }
+  body.innerHTML = '<button class="modal-close" onclick="aftaleNyLuk()">&times;</button>'
+    + '<div class="sw-top"><div class="sw-navn">' + esc(r.titel) + ' · ' + r.trin + ' af 2</div></div>'
+    + '<div class="sw-krop"><div class="sw-kasse"><div class="sw-spm">' + spm + '</div><div class="sw-svar">' + svar + '</div></div>'
+    + (r.msg ? '<div class="sw-msg" style="margin-top:8px;">' + esc(r.msg) + '</div>' : '') + '</div>'
+    + '<div class="sw-bund"><span class="sw-hoejre">' + bund + '</span></div>';
+  bak.classList.add("on");
+}
+async function aftaleNyGem() {
+  aftaleNyLaes(); const r = AFT_NY; if (!r) return;
+  if (!r.dato) { r.trin = 1; r.msg = "Vælg en dag først."; aftaleNyTegn(); return; }
+  if (!sb || !currentKode) { r.msg = "Kunne ikke gemme — prøv at logge ind igen."; aftaleNyTegn(); return; }
+  const rec = { kode: currentKode, titel: r.titel, dato: r.dato }; if (r.tid) rec.tid = r.tid;
+  if (!navigator.onLine) {
+    hjemKoeLaeg("kunde_aftaler", rec);
+    try { window.__AFT_KLADDER = (window.__AFT_KLADDER || []).concat([rec]); } catch (e) {}
+    aftaleNyLuk(); try { await renderAftaler(); } catch (e) {} return;
+  }
+  r.msg = "Gemmer…"; aftaleNyTegn();
+  try {
+    const { data, error } = await sb.from("kunde_aftaler").insert(rec).select();
+    if (error || !data || !data.length) { r.msg = "Kunne ikke gemme aftalen — prøv igen."; aftaleNyTegn(); return; }
+    aftaleNyLuk();
+    const f = document.getElementById("aftSendFelt"); if (f) f.value = "";
+    try { await renderAftaler(); } catch (e) {}
+  } catch (e) { r.msg = "Kunne ikke gemme aftalen — prøv igen."; aftaleNyTegn(); }
+}
 async function briefSletMobil(knap) {
   if (!BRIEF_ID) return;
   if (!knap.getAttribute("data-igen")) { knap.setAttribute("data-igen", "1"); knap.textContent = "Slet \u2014 tryk igen for at bekræfte"; setTimeout(function () { try { knap.removeAttribute("data-igen"); knap.textContent = "Slet opslaget"; } catch (e) {} }, 6000); return; }
@@ -38413,7 +38464,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "1782";
+const APP_VERSION = "1783";
 let NY_VERSION_KLAR = false;
 function nyVersionSkjul() { const e = document.getElementById("nyVersion"); if (e) e.style.display = "none"; }
 function nyVersionHent() { try { location.reload(); } catch(e) {} }
@@ -54969,6 +55020,6 @@ if ((location.hash || "").toLowerCase() === "#ole") {   // #ole = preview af Ole
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 7. september · 1782</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 7. september · 1783</div>
 </body>
 </html>
