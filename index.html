@@ -4114,6 +4114,10 @@ textarea.sendfelt-felt { max-height:120px; }
 .sendfelt-knap:active { transform:scale(0.92); }
 .sendfelt-knap.mq-tap, html body #briefWrap .sendfelt-knap { width:36px !important; height:36px !important; min-height:36px !important; min-width:0 !important; padding:0 !important; }
 html body.brief-etspm #briefWrap textarea.sendfelt-felt, html body.brief-etspm #briefWrap input.sendfelt-felt, html body #briefWrap .sendfelt-felt { min-height:44px !important; height:44px; max-height:120px; padding:11px 52px 11px 14px !important; border:1px solid var(--border) !important; border-radius:22px !important; background:#fff !important; box-shadow:none !important; font-size:16px !important; line-height:1.35 !important; margin:0 !important; }
+.ib-svar { display:flex; gap:8px; width:100%; margin-top:4px; }
+.ib-svar button { flex:1; min-height:40px; border-radius:999px; font-family:"Poppins",sans-serif; font-size:13px; cursor:pointer; padding:0 12px; }
+.ib-ja { background:var(--red); color:#fff; border:1px solid var(--red); }
+.ib-nej { background:#fff; color:var(--red); border:1px solid var(--border); }
 .sendfelt-luk-ramme { top:-8px !important; right:-2px !important; width:26px !important; height:26px !important; min-height:26px !important; }   /* rammen staar ved skaermkanten — krydset maa ikke klippes */
 .sendfelt-luk { position:absolute; top:-9px; right:-4px; width:22px; height:22px; min-height:22px; padding:0; border-radius:50%; background:#fff; border:1px solid var(--red); color:var(--red); display:flex; align-items:center; justify-content:center; cursor:pointer; z-index:2; }
 @media (max-width:760px) { .sendfelt-felt { font-size:16px; } }
@@ -5289,7 +5293,7 @@ body.modul-open .burger-btn, body.modul-open .bottom-nav, body.modul-open .dash-
     <button class="burger-item" onclick="toggleBurger(); minProfilAaben()">Min profil</button>
     <button class="burger-item" onclick="toggleBurger(); togglePwPanel()">Skift adgangskode</button>
     <button class="burger-item" style="color:var(--red);" onclick="custLogout()">Log ud</button>
-    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 7. september · 1780</div>
+    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 7. september · 1781</div>
   </div>
 </div>
 <div class="plus-menu" id="plusMenu" onclick="if(event.target===this)togglePlus()">
@@ -22150,7 +22154,7 @@ function hjemFacitTegn(){
   if (!aktiv) return;
 
   const F = window.__HJEM_FOKUS || { pkt: [], klarede: 0 };
-  let ib = []; try { const r = indbakkeRegn() || {}; ib = (r.handling || []).concat(r.tildig || []); } catch (e) {}
+  let ib = []; try { const r = indbakkeRegn() || {}; ib = (r.handling || []).concat(r.tildig || [], r.postet || []); } catch (e) {}
   const uge = window.__HJEM_UGE || null;
   const navn = (typeof hilsenFornavn === "function" ? hilsenFornavn() : "");
   const hils = (typeof dagensHilsen === "function" ? dagensHilsen(undefined, (def && def.sprog) || "") : "Go' dag");
@@ -22748,7 +22752,14 @@ function indbakkeRegn() {
       tildig.push({ t: esc(o.titel || ""), s: o.deadline ? esc(dkDatoKort(String(o.deadline))) : "", knap: "Åbn", klik: "haengSideAabn()", aabn: "haengSideAabn()" });
     });
   } catch (e) {}
-  return { handling: handling, orientering: orientering, tildig: tildig };
+  /* ER DET POSTET? (Ida 7/9): postedagen er gaaet, status ikke Postet — eet spoergsmaal pr. opslag. */
+  let postet = [];
+  try { postet = (typeof opslagPostetListe === "function" ? opslagPostetListe() : []).map(function (it) {
+    const idS = String(it.id).replace(/'/g, "\\'");
+    return { t: esc(storStart(titelVis(it.titel || "Uden titel"))), s: esc(dkDatoKort(String(it.dato))), aabn: "openBriefSide('" + idS + "')",
+      ekstra: '<div class="ib-svar" onclick="event.stopPropagation()"><button type="button" class="ib-ja mq-tap" onclick="opslagPostetJa(\'' + idS + '\')">Ja, postet</button><button type="button" class="ib-nej mq-tap" onclick="opslagNyDatoAabn(\'' + idS + '\')">Nej, ny dato</button></div>' };
+  }); } catch (e) { postet = []; }
+  return { handling: handling, orientering: orientering, tildig: tildig, postet: postet };
 }
 function renderIndbakkeKort() {
   const el = document.getElementById("indbakkeKort"); if (!el) return;
@@ -22856,6 +22867,7 @@ function indbakkenAaben() {
     + '<span style="font-size:13.5px;flex:1;min-width:0;">' + r.t
     + '<span style="display:block;font-size:12px;color:var(--gray3);margin-top:2px;">' + r.s + '</span></span>'
     + (r.knap ? '<span onclick="event.stopPropagation();' + r.klik + '" style="font-size:12.5px;color:var(--red);white-space:nowrap;cursor:pointer;flex-shrink:0;">' + r.knap + '</span>' : '')
+    + (r.ekstra || '')
     + '</div>';
   const sektion = (titel, rows, tomTekst) => '<div style="margin-bottom:18px;">'
     + '<div style="display:flex;align-items:center;gap:10px;margin:0 2px 8px;">'
@@ -22870,6 +22882,8 @@ function indbakkenAaben() {
        naaet af sweepen (fundet 28/8 nat). */
     + '<div style="font-family:\'Didot\',\'Bodoni 72\',Georgia,serif;font-size:44px;line-height:1.05;color:var(--black);text-transform:uppercase;margin-bottom:6px;">Indbakken</div>'
     /* (beskrivende tekst slettet 6/9 — Ida: aldrig beskrivende tekster uden hendes ja) */
+    /* ER DET POSTET? oeverst (Idas valg 7/9) — kun naar der er noget. */
+    + ((ib.postet || []).length ? sektion('Er det postet?', ib.postet, '') : '')
     + sektion('Afventer din godkendelse', ib.handling, 'Ingenting venter på dit ja lige nu.')
     + ((ib.tildig || []).length ? sektion('Til dig', ib.tildig, '') : '')
     /* DET, DU BARE HAR SKREVET NED (Ida 25/8) — her lander Tøm hovedets noter.
@@ -38246,6 +38260,56 @@ function sendFeltHtml(o) {
   return '<div class="sendfelt' + (o.klasse ? ' ' + o.klasse : '') + '">' + felt + luk
     + '<button type="button" class="mq-tap sendfelt-knap" aria-label="' + esc(o.aria || "Tilføj") + '" title="' + esc(o.aria || "Tilføj") + '" onclick="' + o.fn + '"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button></div>';
 }
+/* ===== ER DET POSTET? (Idas valg 7/9 kl. 09.2x: Indbakken) =====
+   Et opslag, hvis postedag er gaaet, uden at status er Postet, staar i Indbakken med to svar: Ja (status
+   Postet) og Nej (vaelg ny dato). Aldrig "skulle vaere postet" — som oftest ER det postet, briefen var
+   bare ikke opdateret (Ida). Eet spoergsmaal pr. opslag; svaret fjerner raekken. Klokken taeller med. */
+function opslagPostetListe() {
+  const idag = (typeof datoDK === "function") ? datoDK() : new Date().toISOString().slice(0, 10);
+  return (IDEER || []).filter(function (it) {
+    if (!it || !it.dato || it.dato >= idag) return false;
+    if (["Postet", "Idé", "Målt", "Arkiveret"].indexOf(String(it.status || "")) > -1) return false;
+    try { if (typeof opslagErTilMig === "function" && !opslagErTilMig(it)) return false; } catch (e) {}
+    return true;
+  });
+}
+async function opslagPostetJa(id) {
+  try { await ideaStatusSet(id, "Postet"); } catch (e) {}
+  try { const it = (IDEER || []).find(function (x) { return String(x.id) === String(id); }); if (it) it.status = "Postet"; } catch (e) {}
+  try { indbakkenAaben(); } catch (e) {}
+  try { renderHome(); } catch (e) {}
+}
+let OPSLAG_DATO = null;
+function opslagNyDatoAabn(id) {
+  const it = (IDEER || []).find(function (x) { return String(x.id) === String(id); }); if (!it) return;
+  OPSLAG_DATO = { id: it.id, titel: it.titel || "", dato: it.dato || "", msg: "" };
+  opslagNyDatoTegn();
+}
+function opslagNyDatoLuk() { OPSLAG_DATO = null; try { document.getElementById("modalBack").classList.remove("spmpop", "hs-ret"); } catch (e) {} closeModal(); }
+function opslagNyDatoTegn() {
+  const r = OPSLAG_DATO; if (!r) return;
+  const body = document.getElementById("modalBody"), bak = document.getElementById("modalBack"); if (!body || !bak) return;
+  bak.classList.add("spmpop", "hs-ret");
+  body.innerHTML = '<button class="modal-close" onclick="opslagNyDatoLuk()">&times;</button>'
+    + '<div class="sw-top"><div class="sw-navn">' + esc(storStart(titelVis(r.titel || "Opslaget"))) + '</div></div>'
+    + '<div class="sw-krop"><div class="sw-kasse"><div class="sw-spm">Hvornår?</div><div class="sw-svar"><input type="date" id="opslagDatoFelt" class="sw-felt" value="' + esc(r.dato) + '"></div></div>'
+    + (r.msg ? '<div class="sw-msg" style="margin-top:8px;">' + esc(r.msg) + '</div>' : '') + '</div>'
+    + '<div class="sw-bund"><span class="sw-hoejre"><button type="button" class="sw-knap send" onclick="opslagNyDatoGem()">Gem</button></span></div>';
+  bak.classList.add("on");
+}
+async function opslagNyDatoGem() {
+  const r = OPSLAG_DATO; if (!r) return;
+  const f = document.getElementById("opslagDatoFelt"); const d = (f && f.value) || "";
+  if (!d) { r.msg = "Vælg en dag først."; opslagNyDatoTegn(); return; }
+  r.msg = "Gemmer…"; opslagNyDatoTegn();
+  let ok = false;
+  try { const g = await ideUpdate(r.id, { dato: d }); ok = (g !== false); } catch (e) { ok = false; }
+  if (!ok) { r.msg = "Kunne ikke gemme — prøv igen."; opslagNyDatoTegn(); return; }
+  try { const it = (IDEER || []).find(function (x) { return String(x.id) === String(r.id); }); if (it) it.dato = d; } catch (e) {}
+  opslagNyDatoLuk();
+  try { indbakkenAaben(); } catch (e) {}
+  try { renderHome(); } catch (e) {}
+}
 async function briefSletMobil(knap) {
   if (!BRIEF_ID) return;
   if (!knap.getAttribute("data-igen")) { knap.setAttribute("data-igen", "1"); knap.textContent = "Slet \u2014 tryk igen for at bekræfte"; setTimeout(function () { try { knap.removeAttribute("data-igen"); knap.textContent = "Slet opslaget"; } catch (e) {} }, 6000); return; }
@@ -38349,7 +38413,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "1780";
+const APP_VERSION = "1781";
 let NY_VERSION_KLAR = false;
 function nyVersionSkjul() { const e = document.getElementById("nyVersion"); if (e) e.style.display = "none"; }
 function nyVersionHent() { try { location.reload(); } catch(e) {} }
@@ -54905,6 +54969,6 @@ if ((location.hash || "").toLowerCase() === "#ole") {   // #ole = preview af Ole
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 7. september · 1780</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 7. september · 1781</div>
 </body>
 </html>
