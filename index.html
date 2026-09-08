@@ -5415,7 +5415,7 @@ body.modul-open .burger-btn, body.modul-open .bottom-nav, body.modul-open .dash-
     <button class="burger-item" onclick="toggleBurger(); togglePwPanel()">Skift adgangskode</button>
     <button class="burger-item" style="color:var(--red);" onclick="custLogout()">Log ud</button>
     <div class="fod-version" style="font-size:10px;color:var(--gray3);padding:10px 0 0;"><span>Version</span></div>
-    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 8. september · 1803</div>
+    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 8. september · 1804</div>
   </div>
 </div>
 <div class="plus-menu" id="plusMenu" onclick="if(event.target===this)togglePlus()">
@@ -38532,7 +38532,7 @@ async function venterHent() {
   try { const r = await sb.from("content_ideer").select("id,kode,titel,brief,status,dato").neq("status", "Arkiveret"); rows = r.data || []; } catch (e) { rows = []; }
   /* IDAS EGET CONTENT STUDIO ER UDE AF BACKSTAGE (Ida 8/9 kl. 15.07: »Alt med content studio på admin skal fjernes«).
      Hendes egne opslag (kode ENERGIDA og andre »egen«-koder) staar aldrig i Venter paa dig — dem svarer hun paa i sin egen app. */
-  rows = rows.filter(function (x) { const d = (VIRKSOMHEDSKODER || {})[String(x.kode || "").toUpperCase()]; return !(d && d.egen === true); });
+  rows = rows.filter(function (x) { return !erEgenKode(String(x.kode || "").toUpperCase()); });
   window.__ALLE_OPSLAG = rows.map(function (x) { return { id: x.id, kode: x.kode, titel: x.titel, status: x.status, dato: x.dato }; });
   rows.forEach(function (x) {
     const g = (x.brief && x.brief.godk) || null; const kom = (x.brief && Array.isArray(x.brief.kommentarer)) ? x.brief.kommentarer : [];
@@ -38546,7 +38546,7 @@ async function venterHent() {
   });
   try {
     const t = await sb.from("kunde_opgaver").select("id,kode,titel,deadline,ansvarlig,done,aktiv").ilike("ansvarlig", "Ida%");
-    (t.data || []).filter(function (o) { return !o.done && o.aktiv !== false; }).forEach(function (o) {
+    (t.data || []).filter(function (o) { return !o.done && o.aktiv !== false && !erEgenKode(String(o.kode || "").toUpperCase()); }).forEach(function (o) {
       ud.push({ slags: "todo", kode: o.kode, kunde: venterKundeNavn(o.kode), titel: storStart(o.titel || ""), sub: o.deadline ? dkDatoKort(String(o.deadline)) : "To-do", id: o.id, ja: "Done", nej: "" });
     });
   } catch (e) {}
@@ -38667,7 +38667,7 @@ function soegKoer() {
   const sek = function (titel, rows) { return rows.length ? '<div class="bs-sek">' + titel + '</div>' + rows.join("") : ""; };
   const kEsc = function (k) { return esc(String(k)).replace(/'/g, "\\'"); };
   let kunder = [];
-  try { kunder = Object.keys(VIRKSOMHEDSKODER).filter(function (k) { return (erRigtigKunde(k) || (VIRKSOMHEDSKODER[k] || {}).egen === true) && (har(k) || har((VIRKSOMHEDSKODER[k] || {}).virksomhed)); }).slice(0, 6)
+  try { kunder = Object.keys(VIRKSOMHEDSKODER).filter(function (k) { return (erRigtigKunde(k) || erEgenKode(k)) && (har(k) || har((VIRKSOMHEDSKODER[k] || {}).virksomhed)); }).slice(0, 6)
     .map(function (k) { return rk((VIRKSOMHEDSKODER[k] || {}).virksomhed || k, bsKundeProdukt(k) || "Kunde", "kundeSideVis('" + kEsc(k) + "')"); }); } catch (e) {}
   const rum = (MR_RUM || []).filter(function (r) { return har(r.navn) || har(r.produkt) || har(r.zone) || har(r.beskrivelse); }).slice(0, 6)
     .map(function (r) { return rk(r.navn, r.produkt || r.zone || "Rum", "mrRumAaben('" + kEsc(r.id) + "')"); });
@@ -39013,7 +39013,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "1803";
+const APP_VERSION = "1804";
 let NY_VERSION_KLAR = false;
 function nyVersionSkjul() { const e = document.getElementById("nyVersion"); if (e) e.style.display = "none"; }
 function nyVersionHent() { try { location.reload(); } catch(e) {} }
@@ -41832,7 +41832,10 @@ function erContentPlanner(def) { return !!def && def.type === "contentplanner"; 
    hun logger ind og faar sin egen drejebog, for det ER produktet — men hun skal ikke
    rode i kundelisten eller taelle med i tallene. Hun findes paa fanen Testere.
    Der slettes ALDRIG en testkunde; hun lukkes med aktiv=false som enhver anden. */
-function erRigtigKunde(k) { const d = (VIRKSOMHEDSKODER || {})[k] || {}; return !d.egen && !d.test; }
+/* IDAS EGNE KODER (8/9 kl. 16.25): IDAENERGIDA er Idas eget Content Studio, oprettet som kunde i basen — den er aldrig en kunde i Backstage. */
+const EGNE_KODER = ["ENERGIDA", "IDAENERGIDA"];
+function erEgenKode(k) { const d = (VIRKSOMHEDSKODER || {})[k] || {}; return d.egen === true || EGNE_KODER.indexOf(String(k || "").toUpperCase()) > -1; }
+function erRigtigKunde(k) { const d = (VIRKSOMHEDSKODER || {})[k] || {}; return !erEgenKode(k) && !d.test; }
 function erTestkunde(k)   { const d = (VIRKSOMHEDSKODER || {})[k] || {}; return !d.egen && !!d.test; }
 
 const VIRKSOMHEDSKODER = {
@@ -49339,7 +49342,7 @@ async function dashFangGem(medKal) {
      appen som kunde. Lykkes skrivningen ikke (kvittering kraeves), falder den tilbage til den gamle liste. */
   if (f.art === "idé" && sb) {
     try {
-      const r = await sb.from("content_ideer").insert({ kode: "ENERGIDA", titel: t, status: "Idé" }).select();
+      const r = await sb.from("content_ideer").insert({ kode: "IDAENERGIDA", titel: t, status: "Idé" }).select();   /* Idas eget Content Studio (oprettet 8/9 kl. 16.22) */
       if (!r.error && r.data && r.data.length) { try { bsFangKvit("Lagt i Idébanken."); } catch (e) {} return; }
     } catch (e) {}
   }
@@ -55617,6 +55620,6 @@ if ((location.hash || "").toLowerCase() === "#ole") {   // #ole = preview af Ole
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 8. september · 1803</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 8. september · 1804</div>
 </body>
 </html>
