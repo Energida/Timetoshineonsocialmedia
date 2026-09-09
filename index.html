@@ -4286,6 +4286,11 @@ html body.brief-etspm #briefWrap textarea.sendfelt-felt, html body.brief-etspm #
 .bs-rumpil { min-height:44px; min-width:104px; border-radius:999px; border:1px solid var(--border); background:#fff; color:var(--black); font-family:Poppins,sans-serif; font-size:12px; padding:0 16px; display:inline-flex; align-items:center; justify-content:center; cursor:pointer; transition:transform 160ms cubic-bezier(0.23,1,0.32,1); }
 .bs-rumpil:active { transform:scale(0.97); }
 .bs-rumpil.on { background:var(--red); color:#fff; border-color:#fff; }   /* valgt kategori: fyldt roed m. HVID kant (chips-reglen 2/9) */
+/* FLYT FLISERNE SELV (9/9): hold → loeft → traek. Ingen tekstmarkering eller systemmenu under fingeren. */
+[data-doer] { -webkit-touch-callout:none; -webkit-user-select:none; user-select:none; touch-action:pan-y; }
+.bs-loeftet { z-index:5; box-shadow:0 14px 30px rgba(0,0,0,.14) !important; transition:none !important; opacity:.96; }
+#bsFlytMenu { display:none; position:fixed; inset:0; z-index:950; background:rgba(17,17,17,.28); align-items:flex-end; justify-content:center; padding:0 12px calc(16px + env(safe-area-inset-bottom)); }
+.bs-flyt-ark { width:100%; max-width:420px; background:#fff; border:1px solid var(--border); border-radius:24px; padding:18px 16px; box-sizing:border-box; }
 @media (min-width:900px) { .bs-hero { font-size:60px; } }
 /* Teknik og omraaderne faar samme hero */
 #mrHero .ov-h1, .mr-omr .ch-titel { font-family:'Didot','Bodoni 72',Georgia,serif !important; font-style:italic; font-size:52px !important; line-height:.95 !important; letter-spacing:-.5px; text-transform:none !important; font-weight:400 !important; margin:0 0 4px !important; }
@@ -5497,7 +5502,7 @@ body.modul-open .burger-btn, body.modul-open .bottom-nav, body.modul-open .dash-
     <button class="burger-item" onclick="toggleBurger(); minProfilAaben()">Min profil</button>
     <button class="burger-item" onclick="toggleBurger(); togglePwPanel()">Skift adgangskode</button>
     <button class="burger-item" style="color:var(--red);" onclick="custLogout()">Log ud</button>
-    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 9. september · 1818</div>
+    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 9. september · 1819</div>
   </div>
 </div>
 <div class="plus-menu" id="plusMenu" onclick="if(event.target===this)togglePlus()">
@@ -38783,8 +38788,10 @@ async function dashForsideTegn() {
   try { const aktive = Object.keys(VIRKSOMHEDSKODER).filter(function (k) { return erRigtigKunde(k) && VIRKSOMHEDSKODER[k].aktiv !== false; }); kunder = aktive.length; kunderVenter = new Set(venter.map(function (v) { return v.kode; })).size; } catch (e) {}
   let sidsteRum = ""; try { const s = (typeof mrSenesteLaes === "function") ? mrSenesteLaes() : []; sidsteRum = s.length ? (MR_NAVNE[s[0]] || "") : ""; } catch (e) {}
   const ik = function (d) { return '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">' + d + '</svg>'; };
-  const doer = function (ikon, navn, linje, klik) {
-    return '<button type="button" class="bs-doer" onclick="' + klik + '"><span class="bs-ik">' + ikon + '</span><span class="bs-doer-n">' + navn + '</span><span class="bs-doer-s">' + esc(linje) + '</span></button>';
+  try { await bsFlytHent(); } catch (e) {}
+  const doer = function (ikon, navn, linje, klik, noegle) {
+    if (noegle && bsPlads(noegle) !== "hjem") return "";   /* flyttet til et andet rum (Ida 9/9) */
+    return '<button type="button" class="bs-doer"' + (noegle ? ' data-doer="' + noegle + '"' : '') + ' onclick="' + klik + '"><span class="bs-ik">' + ikon + '</span><span class="bs-doer-n">' + navn + '</span><span class="bs-doer-s">' + esc(linje) + '</span></button>';
   };
   /* INTET KUNDEINDHOLD PAA FORSIDEN (Ida 8/9 kl. 16.01: »Hvis jeg skal noget skal det komme i min indbakke og placeres på min to-do«).
      Venter paa dig bor i Indbakken; forsiden er doere. */
@@ -38792,14 +38799,15 @@ async function dashForsideTegn() {
   el.innerHTML = '<div class="bs-hero">' + hilsen + '</div><div class="bs-eye">Backstage · ' + esc(dato) + '</div>'
     + '<div class="bs-sek">Døre</div><div class="bs-grid">'
     /* RAEKKEFOELGEN (Ida 8/9 kl. 18.49): Kunderne foerst, Kundeopgaver under; To-do er ikke en doer men listen nederst, foldet ud. */
-    + doer(ik(BRIEF_IK.person), "Kunderne", kunder + " aktive" + (kunderVenter ? " · " + kunderVenter + " venter" : ""), "visDashSide('crm')")
-    + doer(ik('<path d="M3 8.5 12 14l9-5.5"/><rect x="3" y="5" width="18" height="14" rx="2.5"/>'), "Kundeopgaver", venter.length ? (venter.length === 1 ? "1 venter på dig" : venter.length + " venter på dig") : "", "visDashSide('crm')")
-    + doer(ik('<path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 9.5V20h13V9.5"/><path d="M10 20v-5h4v5"/>'), "Mine rum", sidsteRum ? "Sidst: " + sidsteRum : "", "visDashSide('energida')")
-    + doer(ik(BRIEF_IK.format), "Energida Studio", "", "visDashSide('klip')")
-    + doer(ik(BRIEF_IK.person), "Klienter", "", "bsKlienterAabn()")
-    + doer(ik(BRIEF_IK.person), "Salg", "", "bsSalgAabn()")
-    + doer(ik(BRIEF_IK.format), "Content Studio", "", "mrGaaTil('contentstudio')")   /* Content Studio-rummet (Ida 9/9 kl. 07.20-07.25) */
-    + doer(ik('<rect x="3" y="7.5" width="18" height="12.5" rx="2.5"/><path d="M8.5 7.5V5.5a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2v2"/><path d="M3 12h18"/>'), "Produkter", "", "energidaVis('produkter')")
+    + doer(ik(BRIEF_IK.person), "Kunderne", kunder + " aktive" + (kunderVenter ? " · " + kunderVenter + " venter" : ""), "visDashSide('crm')", "kunder")
+    + doer(ik('<path d="M3 8.5 12 14l9-5.5"/><rect x="3" y="5" width="18" height="14" rx="2.5"/>'), "Kundeopgaver", venter.length ? (venter.length === 1 ? "1 venter på dig" : venter.length + " venter på dig") : "", "visDashSide('crm')", "kundeopgaver")
+    + doer(ik('<path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 9.5V20h13V9.5"/><path d="M10 20v-5h4v5"/>'), "Mine rum", sidsteRum ? "Sidst: " + sidsteRum : "", "visDashSide('energida')", "minerum")
+    + doer(ik(BRIEF_IK.format), "Energida Studio", "", "visDashSide('klip')", "energidastudio")
+    + doer(ik(BRIEF_IK.person), "Klienter", "", "bsKlienterAabn()", "klienter")
+    + doer(ik(BRIEF_IK.person), "Salg", "", "bsSalgAabn()", "salg")
+    + doer(ik(BRIEF_IK.format), "Content Studio", "", "mrGaaTil('contentstudio')", "contentstudio")   /* Content Studio-rummet (Ida 9/9 kl. 07.20-07.25) */
+    + doer(ik('<rect x="3" y="7.5" width="18" height="12.5" rx="2.5"/><path d="M8.5 7.5V5.5a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2v2"/><path d="M3 12h18"/>'), "Produkter", "", "energidaVis('produkter')", "produkter")
+    + bsFremmedeDoere("hjem")
     + '</div>'
     + '<button type="button" class="bs-doer bs-bred" onclick="bsTeknikAabn()"><span class="bs-ik">' + ik(BRIEF_IK.optag) + '</span><span class="bs-doer-n">Teknik</span></button>'
     /* TO-DO NEDERST, FOLDET UD (Ida 8/9 kl. 18.49): dine egne to-dos som fliser med flueben, og sendefeltet »Ny to-do …« under. */
@@ -38810,6 +38818,7 @@ async function dashForsideTegn() {
     + sendFeltHtml({ id: "bsTodoNy", ph: "Ny to-do …", fn: "bsTodoNy()", aria: "Tilføj to-do", klasse: "bs-sendfelt" });
   /* prikkerne foelger swipet */
   try {
+    try { bsOrdenAnvend(el.querySelector(".bs-grid"), "hjem"); } catch (e) {}
     const spor = el.querySelector(".bs-spor"), prik = el.querySelectorAll(".bs-prik span");
     if (spor && prik.length) spor.addEventListener("scroll", function () { const i = Math.round(spor.scrollLeft / (spor.firstElementChild.offsetWidth + 10)); prik.forEach(function (p, n) { p.classList.toggle("on", n === i); }); }, { passive: true });
   } catch (e) {}
@@ -38945,12 +38954,14 @@ async function energidaTegn(visning) {
   const flise = function (r, hoej, pin) {
     const id = esc(String(r.id)); const antal = (r.antal_tekst || "").toString().trim();
     /* Flisen er en div (rolle knap) — en <button> kan ikke rumme naalens <button> (MAALT 8/9). */
-    return '<div class="bs-doer' + (hoej ? ' bs-doer-hoej' : '') + (pin ? ' bs-doer-pinnet' : '') + '" role="button" tabindex="0" onclick="mrRumAaben(\'' + id + '\')" onkeydown="if(event.key===&#39;Enter&#39;)mrRumAaben(\'' + id + '\')">'
+    return '<div class="bs-doer' + (hoej ? ' bs-doer-hoej' : '') + (pin ? ' bs-doer-pinnet' : '') + '" data-doer="rum:' + id + '" role="button" tabindex="0" onclick="mrRumAaben(\'' + id + '\')" onkeydown="if(event.key===&#39;Enter&#39;)mrRumAaben(\'' + id + '\')">'
       + '<span class="bs-doer-naal" id="mrpin-' + id + '">' + bsPinKnap(id, pin) + '</span>'
       + '<span class="bs-doer-n">' + esc(r.navn) + '</span><span class="bs-doer-s">' + esc(antal || "Ingenting endnu") + '</span></div>';
   };
   const pil = function (navn, klik) { return '<button type="button" class="bs-rumpil" onclick="' + klik + '">' + navn + '</button>'; };
+  try { await bsFlytHent(); } catch (e) {}
   const alleFliser = pinFliser.map(function (r, i) { return flise(r, i === 0, true); }).concat(rumFliser.map(function (r) { return flise(r, false, false); }));
+  const fremmede = bsFremmedeDoere("energida"); if (fremmede) alleFliser.push(fremmede);
   el.innerHTML = '<div class="bs-hero">Dine rum</div><div class="bs-eye">Energida</div>'
     + (alleFliser.length ? '<div class="bs-grid bs-bento">' + alleFliser.join("") + '</div>' : '<div class="bs-kf bs-tom">Du har ikke lavet nogen rum endnu.</div>')
     + sendFeltHtml({ id: "bsNytRumFelt", ph: "Nyt rum …", fn: "bsNytRumGem()", aria: "Opret rummet", klasse: "bs-sendfelt" })
@@ -38964,6 +38975,7 @@ async function energidaTegn(visning) {
     + pil("Økonomi", "visDashSide('budget')")
     + pil("Skabeloner", "mrGaaTil('motorer')")
     + '</div>';
+  try { bsOrdenAnvend(el.querySelector(".bs-bento"), "energida"); } catch (e) {}
   try { navstiBackstage("energida"); } catch (e) {}
 }
 function bsTeknikAabn() { visDashSide("maskinrum"); try { mrTeknikrumVis(true); } catch (e) {} }
@@ -39162,11 +39174,14 @@ function bsRumDashboard(omr) {
   const aaben = omr.dataset.rumKort || "";
   ekte.forEach(function (k, i) { k.dataset.rumNr = String(i); k.classList.toggle("bs-kort-skjult", aaben !== String(i)); });
   if (aaben) {
-    dash.innerHTML = '<button type="button" class="bsam-mobknap bsam-mobknap-sek bs-knap" onclick="bsRumDashLuk(this)">Tilbage</button>';
+    const h1 = '<button type="button" class="bsam-mobknap bsam-mobknap-sek bs-knap" onclick="bsRumDashLuk(this)">Tilbage</button>';
+    if (dash.dataset.html !== h1) { dash.innerHTML = h1; dash.dataset.html = h1; }   /* observer-loekke: innerHTML kun naar noget er aendret (MAALT 9/9) */
     dash.classList.add("bs-rumdash-luk"); const k = ekte[parseInt(aaben, 10)]; if (k && k.nextSibling !== dash) k.after(dash);
   } else {
     dash.classList.remove("bs-rumdash-luk");
-    dash.innerHTML = '<div class="bs-grid">' + ekte.map(function (k, i) { const n = k.querySelectorAll(".follow-item, .bs-raekkeflise, .mr-flise, .bs-kf").length; return '<button type="button" class="bs-doer" onclick="bsRumDashAabn(this,' + i + ')"><span class="bs-doer-n">' + esc(navnAf(k)) + '</span><span class="bs-doer-s">' + (n ? n + (n === 1 ? " punkt" : " punkter") : "") + '</span></button>'; }).join("") + '</div>';
+    const side = omr.id === "mro_food" ? "food" : omr.id;
+    const h2 = '<div class="bs-grid">' + ekte.map(function (k, i) { const n = k.querySelectorAll(".follow-item, .bs-raekkeflise, .mr-flise, .bs-kf").length; const navn = navnAf(k); return '<button type="button" class="bs-doer" data-doer="kort:' + esc(navn) + '" onclick="bsRumDashAabn(this,' + i + ')"><span class="bs-doer-n">' + esc(navn) + '</span><span class="bs-doer-s">' + (n ? n + (n === 1 ? " punkt" : " punkter") : "") + '</span></button>'; }).join("") + (side === "food" ? bsFremmedeDoere("food") : "") + '</div>';
+    if (dash.dataset.html !== h2) { dash.innerHTML = h2; dash.dataset.html = h2; try { bsOrdenAnvend(dash.querySelector(".bs-grid"), side); } catch (e) {} }
     /* Doerene staar dér, hvor det foerste kort stod — saa heroen og alt over kortene (Oekonomis maaned og tal) bliver staaende oeverst (MAALT 8/9: doerene laa OVER overskriften paa Oekonomi) */
     if (ekte[0].previousSibling !== dash) ekte[0].before(dash);
   }
@@ -39228,6 +39243,99 @@ function fliseP(k) {
   return '<div class="bs-kf" role="button" tabindex="0" onclick="kundeSideVis(\'' + esc(k) + '\')" onkeydown="if(event.key===&#39;Enter&#39;)kundeSideVis(\'' + esc(k) + '\')"><span class="bs-kf-tekst"><span class="bs-kf-n">' + esc(navn) + '</span>' + (linje ? '<span class="bs-kf-s">' + esc(linje) + '</span>' : '') + '</span>'
     + '<span class="bs-kf-pin"><button type="button" class="mq-tap bs-naal' + (pin ? ' on' : '') + '" aria-label="' + (pin ? 'Fjern nålen' : 'Sæt nålen') + '" title="' + (pin ? 'Fjern nålen' : 'Sæt nålen') + '" onclick="event.stopPropagation();kundePinSkift(\'' + esc(k) + '\')">' + bsNaalSvg(17) + '</button></span></div>';
 }
+/* ===== FLYT FLISERNE SELV (Idas klik 9/9 kl. 07.45: »Ja, byg det nu«) =====
+   Hold fingeren paa en flise (450 ms) → den loeftes og kan traekkes paa plads i sit gitter; slip → raekkefoelgen gemmes (doer_orden).
+   Hold uden at traekke → menuen »Flyt til …« (Hjem · Dine rum · Content Studio · Food Studio) for doere i registret (doer_placering).
+   Alt gemmes i skema_svar gennem vaneGemRow — ingen ny tabel. Rum-fliser og kort-doere kan kun flyttes rundt, ikke til en anden side. */
+const BS_DOER_DEF = {
+  kunder: { n: "Kunderne", k: "visDashSide('crm')", hjem: "hjem" }, kundeopgaver: { n: "Kundeopgaver", k: "visDashSide('crm')", hjem: "hjem" },
+  minerum: { n: "Mine rum", k: "visDashSide('energida')", hjem: "hjem" }, energidastudio: { n: "Energida Studio", k: "visDashSide('klip')", hjem: "hjem" },
+  klienter: { n: "Klienter", k: "bsKlienterAabn()", hjem: "hjem" }, salg: { n: "Salg", k: "bsSalgAabn()", hjem: "hjem" },
+  contentstudio: { n: "Content Studio", k: "mrGaaTil('contentstudio')", hjem: "hjem" }, produkter: { n: "Produkter", k: "energidaVis('produkter')", hjem: "hjem" },
+  cs_velkomst: { n: "Velkomsthilsner", k: "bsCsAabn('velkomst')", hjem: "contentstudio" }, cs_quotes: { n: "Quotes", k: "bsCsAabn('quotes')", hjem: "contentstudio" },
+  cs_ideer: { n: "Idéer", k: "bsCsAabn('ideer')", hjem: "contentstudio" }, cs_kundetyper: { n: "Kundetyper", k: "visDashSide('typeeks')", hjem: "contentstudio" },
+  cs_lektioner: { n: "Lektionsoversigten", k: "mrGaaTil('ygt')", hjem: "contentstudio" }
+};
+const BS_SIDER = { hjem: "Hjem", energida: "Dine rum", contentstudio: "Content Studio", food: "Food Studio" };
+let BS_ORDEN = {}, BS_PLAC = {}, BS_FLYT_HENTET = false, BS_KLIK_LAAS = false;
+function bsCsAabn(n) { mrGaaTil("contentstudio"); setTimeout(function () { CS_AABEN = n; try { contentStudioTegn(); } catch (e) {} }, 150); }
+async function bsFlytHent() {
+  if (BS_FLYT_HENTET) return; BS_FLYT_HENTET = true;
+  try { const o = (await vaneRow("doer_orden")) || vaneLocal("doer_orden", null); if (o && typeof o === "object" && !Array.isArray(o)) BS_ORDEN = o; } catch (e) {}
+  try { const p = (await vaneRow("doer_placering")) || vaneLocal("doer_placering", null); if (p && typeof p === "object" && !Array.isArray(p)) BS_PLAC = p; } catch (e) {}
+}
+function bsPlads(noegle) { return BS_PLAC[noegle] || (BS_DOER_DEF[noegle] || {}).hjem || ""; }
+function bsFremmedeDoere(side) {
+  return Object.keys(BS_DOER_DEF).filter(function (k) { return bsPlads(k) === side && BS_DOER_DEF[k].hjem !== side; })
+    .map(function (k) { return '<button type="button" class="bs-doer" data-doer="' + k + '" onclick="' + BS_DOER_DEF[k].k + '"><span class="bs-doer-n">' + BS_DOER_DEF[k].n + '</span><span class="bs-doer-s"></span></button>'; }).join("");
+}
+function bsOrdenAnvend(grid, side) {
+  if (!grid) return; grid.dataset.side = side;
+  const o = BS_ORDEN[side];
+  if (o && o.length) { const b = Array.prototype.slice.call(grid.children); b.sort(function (x, y) { const ix = o.indexOf(x.dataset.doer || ""), iy = o.indexOf(y.dataset.doer || ""); return (ix < 0 ? 999 : ix) - (iy < 0 ? 999 : iy); }); b.forEach(function (c) { grid.appendChild(c); }); }
+  if (!grid.dataset.traek) { grid.dataset.traek = "1"; bsTraekLyt(grid); }
+}
+function bsTraekLyt(grid) {
+  let t = null, el = null, loeft = false, x0 = 0, y0 = 0, flyttet = false, pid = null;
+  const slut = function () { if (t) { clearTimeout(t); t = null; } if (el) { el.classList.remove("bs-loeftet"); el.style.transform = ""; el.style.pointerEvents = ""; } el = null; loeft = false; };
+  grid.addEventListener("pointerdown", function (e) {
+    const d = e.target.closest("[data-doer]"); if (!d || d.parentElement !== grid || e.target.closest(".bs-naal")) return;
+    if (e.pointerType === "mouse" && e.button !== 0) return;
+    el = d; x0 = e.clientX; y0 = e.clientY; flyttet = false; loeft = false; pid = e.pointerId;
+    t = setTimeout(function () { loeft = true; BS_KLIK_LAAS = true; el.classList.add("bs-loeftet"); el.style.pointerEvents = "none"; /* ellers finder elementFromPoint den loeftede flise selv (MAALT 9/9) */ try { grid.setPointerCapture(pid); } catch (err) {} }, 450);
+  });
+  grid.addEventListener("pointermove", function (e) {
+    if (!el) return;
+    const dx = e.clientX - x0, dy = e.clientY - y0;
+    if (!loeft) { if (Math.abs(dx) > 8 || Math.abs(dy) > 8) { clearTimeout(t); t = null; el = null; } return; }
+    flyttet = true; el.style.transform = "translate(" + dx + "px," + dy + "px) scale(1.04)";
+    const under = document.elementFromPoint(e.clientX, e.clientY); const m = under && under.closest("[data-doer]");
+    if (m && m !== el && m.parentElement === grid) {
+      const b = Array.prototype.slice.call(grid.children); const iE = b.indexOf(el), iM = b.indexOf(m);
+      const rE = el.getBoundingClientRect();
+      if (iE < iM) m.after(el); else m.before(el);
+      /* flisen har nu en ny plads i gitteret — traekket regnes fra det nye udgangspunkt, saa den ikke springer */
+      const rN = el.getBoundingClientRect(); x0 += rN.left - rE.left - dx; y0 += rN.top - rE.top - dy;
+      el.style.transform = "translate(" + (e.clientX - x0) + "px," + (e.clientY - y0) + "px) scale(1.04)";
+    }
+  });
+  const op = function (e) {
+    if (!el) return;
+    if (loeft) {
+      const side = grid.dataset.side || "", noegle = el.dataset.doer || "";
+      if (flyttet) { BS_ORDEN[side] = Array.prototype.map.call(grid.children, function (c) { return c.dataset.doer || ""; }); vaneGemRow("doer_orden", Object.assign({}, BS_ORDEN)); }
+      else if (BS_DOER_DEF[noegle]) { bsFlytMenu(noegle, side); }
+      setTimeout(function () { BS_KLIK_LAAS = false; }, 250);
+    }
+    slut();
+  };
+  grid.addEventListener("pointerup", op); grid.addEventListener("pointercancel", function () { slut(); });
+  grid.addEventListener("click", function (e) { if (BS_KLIK_LAAS) { e.stopPropagation(); e.preventDefault(); } }, true);
+  grid.addEventListener("touchmove", function (e) { if (loeft) e.preventDefault(); }, { passive: false });
+  grid.addEventListener("contextmenu", function (e) { if (el || loeft) e.preventDefault(); });
+}
+function bsFlytMenu(noegle, side) {
+  const d = BS_DOER_DEF[noegle]; if (!d) return;
+  let m = document.getElementById("bsFlytMenu"); if (!m) { m = document.createElement("div"); m.id = "bsFlytMenu"; document.body.appendChild(m); }
+  m.innerHTML = '<div class="bs-flyt-ark"><div class="bs-sek" style="margin:0 2px 10px;">Flyt »' + esc(d.n) + '« til</div>'
+    + Object.keys(BS_SIDER).filter(function (k) { return k !== side; }).map(function (k) { return '<button type="button" class="bsam-mobknap bsam-mobknap-sek bs-knap" style="display:block;width:100%;margin:0 0 8px;" onclick="bsFlytTil(\'' + noegle + '\',\'' + k + '\',\'' + side + '\')">' + BS_SIDER[k] + '</button>'; }).join("")
+    + '<button type="button" class="bsam-mobknap bs-knap" style="display:block;width:100%;margin:6px 0 0;" onclick="bsFlytLuk()">Luk</button></div>';
+  m.style.display = "flex";
+}
+function bsFlytLuk() { const m = document.getElementById("bsFlytMenu"); if (m) m.style.display = "none"; }
+async function bsFlytTil(noegle, til, fra) {
+  BS_PLAC[noegle] = til; bsFlytLuk();
+  try { await vaneGemRow("doer_placering", Object.assign({}, BS_PLAC)); } catch (e) {}
+  bsSideTegnIgen(fra); bsSideTegnIgen(til);
+}
+function bsSideTegnIgen(side) {
+  try {
+    if (side === "hjem") dashForsideTegn();
+    else if (side === "energida") energidaTegn("");
+    else if (side === "contentstudio") contentStudioTegn();
+    else if (side === "food") { const o = document.getElementById("mro_food"); if (o) { const dash = o.querySelector(".bs-rumdash"); if (dash) dash.dataset.html = ""; bsRumDashboard(o); } }
+  } catch (e) {}
+}
 /* ===== CONTENT STUDIO-RUMMET (Ida 9/9 kl. 07.25) =====
    Doere: Velkomsthilsner · Quotes · Idéer (lister m. sendefelt, swipe-slet paa telefonen) · Kundetyper (→ Eksempler pr. forretningstype) ·
    Lektionsoversigten (→ YOU GOT THIS). Aaben liste = eet kort + Tilbage til doerene. */
@@ -39244,15 +39352,18 @@ async function contentStudioTegn() {
       + '</div><button type="button" class="bsam-mobknap bsam-mobknap-sek bs-knap" style="display:block;width:100%;margin:12px 0 0;" onclick="CS_AABEN=\'\';contentStudioTegn()">Tilbage</button>';
     return;
   }
-  const doer = function (navn, linje, klik) { return '<button type="button" class="bs-doer" onclick="' + klik + '"><span class="bs-doer-n">' + navn + '</span><span class="bs-doer-s">' + esc(linje || "") + '</span></button>'; };
+  try { await bsFlytHent(); } catch (e) {}
+  const doer = function (navn, linje, klik, noegle) { if (bsPlads(noegle) !== "contentstudio") return ""; return '<button type="button" class="bs-doer" data-doer="' + noegle + '" onclick="' + klik + '"><span class="bs-doer-n">' + navn + '</span><span class="bs-doer-s">' + esc(linje || "") + '</span></button>'; };
   const antal = function (n) { const a = (CS[n] || []).length; return a ? a + (a === 1 ? " linje" : " linjer") : "Ingenting endnu"; };
   el.innerHTML = '<div class="bs-grid">'
-    + doer("Velkomsthilsner", antal("velkomst"), "CS_AABEN='velkomst';contentStudioTegn()")
-    + doer("Quotes", antal("quotes"), "CS_AABEN='quotes';contentStudioTegn()")
-    + doer("Idéer", antal("ideer"), "CS_AABEN='ideer';contentStudioTegn()")
-    + doer("Kundetyper", "", "visDashSide('typeeks')")
-    + doer("Lektionsoversigten", "", "mrGaaTil('ygt')")
+    + doer("Velkomsthilsner", antal("velkomst"), "CS_AABEN='velkomst';contentStudioTegn()", "cs_velkomst")
+    + doer("Quotes", antal("quotes"), "CS_AABEN='quotes';contentStudioTegn()", "cs_quotes")
+    + doer("Idéer", antal("ideer"), "CS_AABEN='ideer';contentStudioTegn()", "cs_ideer")
+    + doer("Kundetyper", "", "visDashSide('typeeks')", "cs_kundetyper")
+    + doer("Lektionsoversigten", "", "mrGaaTil('ygt')", "cs_lektioner")
+    + bsFremmedeDoere("contentstudio")
     + '</div>';
+  try { bsOrdenAnvend(el.querySelector(".bs-grid"), "contentstudio"); } catch (e) {}
 }
 async function csGem(noegle) {
   const f = document.getElementById("csFelt_" + noegle); const t = ((f && f.value) || "").trim(); if (!t) { if (f) f.focus(); return; }
@@ -39516,10 +39627,10 @@ async function kunderneTegn() {
     /* KATEGORIERNE SOM DOERE (Ida 9/9): Succesfuld Detaildrift · Reset din energi · Klienter · Time to Shine — kun dem med kunder (Klienter altid) */
     const doer = [];
     BS_KUNDE_KATEGORIER.forEach(function (kat) {
-      if (kat.id === "klienter") { doer.push('<button type="button" class="bs-doer" onclick="bsKlienterAabn()"><span class="bs-doer-n">Klienter</span><span class="bs-doer-s"></span></button>'); return; }
+      if (kat.id === "klienter") { doer.push('<button type="button" class="bs-doer" data-doer="kat:klienter" onclick="bsKlienterAabn()"><span class="bs-doer-n">Klienter</span><span class="bs-doer-s"></span></button>'); return; }
       const liste = koder.filter(kat.passer); if (!liste.length) return;
       const venterK = liste.filter(function (k) { return bsKundeVenter(k).length; }).length;
-      doer.push('<button type="button" class="bs-doer" onclick="BS_KUNDE_KAT=\'' + kat.id + '\';BS_KUNDE_CHIP=\'alle\';kunderneTegn()"><span class="bs-doer-n">' + esc(kat.navn) + '</span><span class="bs-doer-s">' + liste.length + (liste.length === 1 ? " kunde" : " kunder") + (venterK ? " · " + venterK + " venter" : "") + '</span></button>');
+      doer.push('<button type="button" class="bs-doer" data-doer="kat:' + kat.id + '" onclick="BS_KUNDE_KAT=\'' + kat.id + '\';BS_KUNDE_CHIP=\'alle\';kunderneTegn()"><span class="bs-doer-n">' + esc(kat.navn) + '</span><span class="bs-doer-s">' + liste.length + (liste.length === 1 ? " kunde" : " kunder") + (venterK ? " · " + venterK + " venter" : "") + '</span></button>');
     });
     krop = '<div class="bs-sek">Kategorier</div><div class="bs-grid">' + doer.join("") + '</div>'
       + '<button type="button" class="bs-doer bs-bred" onclick="nyKundeAaben()"><span class="bs-doer-n">Ny kunde</span><span class="bs-doer-s">Kode, produkt og login</span></button>'
@@ -39527,6 +39638,7 @@ async function kunderneTegn() {
   }
   const harFokus = document.activeElement && document.activeElement.id === "bsKundeSoeg";
   el.innerHTML = '<div class="bs-hero">Kunderne</div><div class="bs-eye">Backstage</div>' + soeg + opgaver + krop;
+  try { await bsFlytHent(); bsOrdenAnvend(el.querySelector(".bs-grid"), "kunder"); } catch (e) {}
   if (harFokus) { const f = document.getElementById("bsKundeSoeg"); if (f) { f.focus(); try { f.setSelectionRange(f.value.length, f.value.length); } catch (e) {} } }
 }
 function kundeSideVis(kode) {
@@ -39672,7 +39784,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "1818";
+const APP_VERSION = "1819";
 let NY_VERSION_KLAR = false;
 function nyVersionSkjul() { const e = document.getElementById("nyVersion"); if (e) e.style.display = "none"; }
 function nyVersionHent() { try { location.reload(); } catch(e) {} }
@@ -56282,6 +56394,6 @@ if ((location.hash || "").toLowerCase() === "#ole") {   // #ole = preview af Ole
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 9. september · 1818</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 9. september · 1819</div>
 </body>
 </html>
