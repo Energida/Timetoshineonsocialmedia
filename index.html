@@ -5502,7 +5502,7 @@ body.modul-open .burger-btn, body.modul-open .bottom-nav, body.modul-open .dash-
     <button class="burger-item" onclick="toggleBurger(); minProfilAaben()">Min profil</button>
     <button class="burger-item" onclick="toggleBurger(); togglePwPanel()">Skift adgangskode</button>
     <button class="burger-item" style="color:var(--red);" onclick="custLogout()">Log ud</button>
-    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 9. september · 1819</div>
+    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 9. september · 1820</div>
   </div>
 </div>
 <div class="plus-menu" id="plusMenu" onclick="if(event.target===this)togglePlus()">
@@ -39341,9 +39341,10 @@ function bsSideTegnIgen(side) {
    Lektionsoversigten (→ YOU GOT THIS). Aaben liste = eet kort + Tilbage til doerene. */
 const CS_LISTER = [["velkomst", "Velkomsthilsner", "Ny velkomsthilsen …", "Ingen velkomsthilsner endnu."], ["quotes", "Quotes", "Nyt quote …", "Ingen quotes endnu."], ["ideer", "Idéer", "Ny idé …", "Ingen idéer endnu."]];
 let CS = { velkomst: [], quotes: [], ideer: [] }, CS_HENTET = false, CS_AABEN = "";
+async function csHent() { if (CS_HENTET) return; CS_HENTET = true; for (const l of CS_LISTER) { try { const svar = (await vaneRow("cs_" + l[0])) || vaneLocal("cs_" + l[0], []); CS[l[0]] = Array.isArray(svar) ? svar : []; } catch (e) {} } }
 async function contentStudioTegn() {
   const el = document.getElementById("csHost"); if (!el) return;
-  if (!CS_HENTET) { CS_HENTET = true; for (const l of CS_LISTER) { try { const svar = (await vaneRow("cs_" + l[0])) || vaneLocal("cs_" + l[0], []); CS[l[0]] = Array.isArray(svar) ? svar : []; } catch (e) {} } }
+  await csHent();
   if (CS_AABEN) {
     const l = CS_LISTER.find(function (x) { return x[0] === CS_AABEN; }); const liste = CS[l[0]] || [];
     el.innerHTML = '<div class="ws-card"><div class="ws-head">' + l[1] + '</div>'
@@ -39364,6 +39365,25 @@ async function contentStudioTegn() {
     + bsFremmedeDoere("contentstudio")
     + '</div>';
   try { bsOrdenAnvend(el.querySelector(".bs-grid"), "contentstudio"); } catch (e) {}
+}
+/* IDÉ TIL CONTENT STUDIO fra Toem hovedet (Idas klik 9/9): samme form som Idé til manus, lander i rummets Idéer (cs_ideer). */
+function csIdeFang() {
+  const body = document.getElementById("modalBody"); if (!body) return;
+  body.innerHTML = '<button class="modal-close" onclick="closeModal()">&times;</button>'
+    + '<h2 style="font-size:19px;margin:2px 0 4px;">Idé til Content Studio</h2>'
+    + '<div style="font-size:11.5px;color:var(--gray3);line-height:1.55;margin-bottom:12px;">Lander under Idéer i Content Studio-rummet.</div>'
+    + '<textarea id="csIdeTekst" placeholder="Skriv løs…" ' + DF_FELT.replace('style="', 'style="min-height:90px;') + '></textarea>' + taleKnapHtml("csIdeTekst")
+    + '<button class="dbtn primary" style="width:100%;margin-top:12px;" onclick="csIdeGem()">Gem</button>';
+  document.getElementById("modalBack").classList.add("on");
+  setTimeout(() => { const t = document.getElementById("csIdeTekst"); if (t) t.focus(); }, 100);
+}
+async function csIdeGem() {
+  const el = document.getElementById("csIdeTekst"); const t = (el ? el.value : "").trim(); if (!t) { if (el) el.focus(); return; }
+  await csHent();   /* ellers overskrev rummets foerste tegning den nye idé (MAALT 9/9) */
+  CS.ideer = [{ id: "c" + Date.now(), t: t, dato: dkDatoKort(new Date().toISOString().slice(0, 10)) }].concat(CS.ideer || []);
+  closeModal();
+  try { const ok = await vaneGemRow("cs_ideer", CS.ideer.slice()); if (ok === false) console.warn("cs_ideer: kun gemt lokalt"); } catch (e) {}
+  try { contentStudioTegn(); } catch (e) {}
 }
 async function csGem(noegle) {
   const f = document.getElementById("csFelt_" + noegle); const t = ((f && f.value) || "").trim(); if (!t) { if (f) f.focus(); return; }
@@ -39784,7 +39804,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "1819";
+const APP_VERSION = "1820";
 let NY_VERSION_KLAR = false;
 function nyVersionSkjul() { const e = document.getElementById("nyVersion"); if (e) e.style.display = "none"; }
 function nyVersionHent() { try { location.reload(); } catch(e) {} }
@@ -50448,6 +50468,7 @@ function studieVaelgerVis(tving) {
     + knap("Indkøb", "studieFang(&quot;indkoebHubAaben()&quot;)")
     + knap("App-ønsker", "studieFang(&quot;dashFangApp()&quot;)")
     + knap("Idé til manus", "studieFang(&quot;manusIdeFang()&quot;)")
+    + knap("Idé til Content Studio", "studieFang(&quot;csIdeFang()&quot;)")   /* lander i Content Studio-rummets Idéer (Idas klik 9/9 kl. 07.20) */
     /* Idas ord 2/9: "Bliv og lander i maskinrummet under workout studio". Foer gik den til
        traeningssiden (visDashSide) — et andet sted end det, knappen lover. Food Studio ved
        siden af er hendes ordre fra samme dag: "foodstudio skal oprettes som knap og lande i
@@ -56394,6 +56415,6 @@ if ((location.hash || "").toLowerCase() === "#ole") {   // #ole = preview af Ole
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 9. september · 1819</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 9. september · 1820</div>
 </body>
 </html>
