@@ -4305,6 +4305,17 @@ html body.brief-etspm #briefWrap textarea.sendfelt-felt, html body.brief-etspm #
 .bs-rumpil { min-height:44px; min-width:104px; border-radius:999px; border:1px solid var(--border); background:#fff; color:var(--black); font-family:Poppins,sans-serif; font-size:12px; padding:0 16px; display:inline-flex; align-items:center; justify-content:center; cursor:pointer; transition:transform 160ms cubic-bezier(0.23,1,0.32,1); }
 .bs-rumpil:active { transform:scale(0.97); }
 .bs-rumpil.on { background:var(--red); color:#fff; border-color:#fff; }   /* valgt kategori: fyldt roed m. HVID kant (chips-reglen 2/9) */
+/* ===== AFSTANDSREGLEN (HAARD, Ida 11/9): fire trin, aldrig andre tal =====
+   --luft-1  8 px  mellem ting i samme flise (titel/streg/linje)
+   --luft-2 16 px  mellem fliser i et gitter og mellem en flise og dens naboer
+   --luft-3 24 px  mellem en gruppe (gitter/liste) og det naeste element (sendefelt, knap, etiket)
+   --luft-4 32 px  mellem sektioner (etiket over ny gruppe) og under heroen */
+:root { --luft-1:8px; --luft-2:16px; --luft-3:24px; --luft-4:32px; }
+.bs-grid { gap:var(--luft-2); }
+.bs-grid + .sendfelt, .bs-grid + .bs-sendfelt, .bs-bento + .sendfelt, .bs-tom + .sendfelt, .bs-kf + .bs-sendfelt, .bs-grid + .bsam-mobknap, .bs-grid + .bs-knap, .bs-grid + .bs-doer { margin-top:var(--luft-3) !important; }
+.bs-sek { margin-top:var(--luft-4); margin-bottom:var(--luft-1); }
+.bs-sek:first-child { margin-top:0; }
+.bs-sendfelt + .bs-sek, .sendfelt + .bs-sek { margin-top:var(--luft-4); }
 /* FLYT FLISERNE SELV (9/9): hold → loeft → traek. Ingen tekstmarkering eller systemmenu under fingeren. */
 [data-doer] { -webkit-touch-callout:none; -webkit-user-select:none; user-select:none; touch-action:pan-y; }
 .bs-loeftet { z-index:5; box-shadow:0 14px 30px rgba(0,0,0,.14) !important; transition:none !important; opacity:.96; }
@@ -5528,7 +5539,7 @@ body.modul-open .burger-btn, body.modul-open .bottom-nav, body.modul-open .dash-
     <button class="burger-item" onclick="toggleBurger(); minProfilAaben()">Min profil</button>
     <button class="burger-item" onclick="toggleBurger(); togglePwPanel()">Skift adgangskode</button>
     <button class="burger-item" style="color:var(--red);" onclick="custLogout()">Log ud</button>
-    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 11. september · 1824</div>
+    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 11. september · 1825</div>
   </div>
 </div>
 <div class="plus-menu" id="plusMenu" onclick="if(event.target===this)togglePlus()">
@@ -38969,6 +38980,7 @@ async function energidaTegn(visning) {
   const el = document.getElementById("bsEnergida"); if (!el) return;
   if (typeof visning === "string") BS_ENERGIDA_VISNING = visning;
   try { await mrRumHent(); } catch (e) {}
+  try { await bsFlytHent(); } catch (e) {}   /* MAALT 11/9: placeringerne blev hentet EFTER filteret, saa flyttede rum stod stadig paa Dine rum ved foerste visning */
   const fast = function (navn, linje, klik) { return '<div class="bs-kf bs-rum" onclick="' + klik + '"><span class="bs-kf-tekst"><span class="bs-kf-n">' + navn + '</span>' + (linje ? '<span class="bs-kf-s">' + esc(linje) + '</span>' : '') + '</span></div>'; };
   if (BS_ENERGIDA_VISNING === "produkter") {
     const grupper = {}; (MR_RUM || []).forEach(function (r) { const p = (r.produkt || "").toString().trim(); if (p) (grupper[p] = grupper[p] || []).push(r); });
@@ -39007,11 +39019,10 @@ async function energidaTegn(visning) {
       + '<span class="bs-doer-n">' + esc(r.navn) + '</span><span class="bs-doer-s">' + esc(antal || "Ingenting endnu") + '</span></div>';
   };
   const pil = function (navn, klik) { return '<button type="button" class="bs-rumpil" onclick="' + klik + '">' + navn + '</button>'; };
-  try { await bsFlytHent(); } catch (e) {}
   const alleFliser = pinFliser.map(function (r, i) { return flise(r, i === 0, true); }).concat(rumFliser.map(function (r) { return flise(r, false, false); }));
   const fremmede = bsFremmedeDoere("energida"); if (fremmede) alleFliser.push(fremmede);
   el.innerHTML = '<div class="bs-hero">Dine rum</div><div class="bs-eye">Energida</div>'
-    + (alleFliser.length ? '<div class="bs-grid bs-bento">' + alleFliser.join("") + '</div>' : '<div class="bs-kf bs-tom">Du har ikke lavet nogen rum endnu.</div>')
+    + (alleFliser.length ? '<div class="bs-grid bs-bento">' + alleFliser.join("") + '</div>' : '<div class="bs-kf bs-tom">' + (bsRumTop().length ? 'Alle dine rum står på andre sider.' : 'Du har ikke lavet nogen rum endnu.') + '</div>')   /* MAALT 11/9: alle rum uden produkt var flyttet — »ikke lavet nogen« loej */
     + sendFeltHtml({ id: "bsNytRumFelt", ph: "Nyt rum …", fn: "bsNytRumGem()", aria: "Opret rummet", klasse: "bs-sendfelt" })
     + '<span id="bsNytRumBesked" style="font-size:12px;color:var(--red);"></span>'
     + '';   /* de faste rum er fordelt ud paa Hjem/Salg/Kunder (Idas klik 9/9 kl. 08.45-08.50) — Dine rum er kun dine egne rum */
@@ -39342,7 +39353,9 @@ function bsOrdenAnvend(grid, side) {
 }
 function bsTraekLyt(grid) {
   let t = null, el = null, loeft = false, x0 = 0, y0 = 0, flyttet = false, pid = null;
-  const slut = function () { if (t) { clearTimeout(t); t = null; } if (el) { el.classList.remove("bs-loeftet"); el.style.transform = ""; el.style.pointerEvents = ""; } el = null; loeft = false; };
+  const slut = function () { if (t) { clearTimeout(t); t = null; } if (el) { el.classList.remove("bs-loeftet"); el.style.transform = ""; el.style.pointerEvents = ""; } el = null; loeft = false;
+    /* LAASEN LOEFTES ALTID (MAALT 11/9): blev trykket afbrudt (pointercancel ved scroll) efter et loeft, blev BS_KLIK_LAAS staaende, og INGEN flise kunne trykkes */
+    setTimeout(function () { BS_KLIK_LAAS = false; }, 250); };
   grid.addEventListener("pointerdown", function (e) {
     const d = e.target.closest("[data-doer]"); if (!d || d.parentElement !== grid || e.target.closest(".bs-naal")) return;
     if (e.pointerType === "mouse" && e.button !== 0) return;
@@ -39375,7 +39388,7 @@ function bsTraekLyt(grid) {
     slut();
   };
   grid.addEventListener("pointerup", op); grid.addEventListener("pointercancel", function () { slut(); });
-  grid.addEventListener("click", function (e) { if (BS_KLIK_LAAS) { e.stopPropagation(); e.preventDefault(); } }, true);
+  grid.addEventListener("click", function (e) { if (BS_KLIK_LAAS) { e.stopPropagation(); e.preventDefault(); BS_KLIK_LAAS = false; } }, true);   /* een spaerret klik, aldrig to */
   grid.addEventListener("touchmove", function (e) { if (loeft) e.preventDefault(); }, { passive: false });
   grid.addEventListener("contextmenu", function (e) { if (el || loeft) e.preventDefault(); });
 }
@@ -39967,7 +39980,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "1824";
+const APP_VERSION = "1825";
 let NY_VERSION_KLAR = false;
 function nyVersionSkjul() { const e = document.getElementById("nyVersion"); if (e) e.style.display = "none"; }
 function nyVersionHent() { try { location.reload(); } catch(e) {} }
@@ -56589,6 +56602,6 @@ if ((location.hash || "").toLowerCase() === "#ole") {   // #ole = preview af Ole
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 11. september · 1824</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 11. september · 1825</div>
 </body>
 </html>
