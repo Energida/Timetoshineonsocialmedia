@@ -5739,7 +5739,7 @@ body.modul-open .burger-btn, body.modul-open .bottom-nav, body.modul-open .dash-
     <button class="burger-item" onclick="toggleBurger(); minProfilAaben()">Min profil</button>
     <button class="burger-item" onclick="toggleBurger(); togglePwPanel()">Skift adgangskode</button>
     <button class="burger-item" style="color:var(--red);" onclick="custLogout()">Log ud</button>
-    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 12. september · 1845</div>
+    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 12. september · 1846</div>
   </div>
 </div>
 <div class="plus-menu" id="plusMenu" onclick="if(event.target===this)togglePlus()">
@@ -39789,7 +39789,12 @@ function bsFlytMenu(noegle, side) {
     const kand = (MR_RUM || []).filter(function (x) { return x.aktiv !== false && !udeluk[String(x.id)]; }).sort(function (a, b) { return String(a.navn).localeCompare(String(b.navn), "da"); });
     if (kand.length) rumChips = '<div class="bs-sek" style="margin:14px 2px 8px;">Ind i et rum</div><div class="ark-chips i-fladen" style="margin:0;">' + kand.map(function (x) { return '<button type="button" class="ark-chip" onclick="bsFlytIndIRum(\'' + esc(String(rumId)) + '\',\'' + esc(String(x.id)) + '\',\'' + esc(side) + '\')">' + esc(x.navn) + '</button>'; }).join("") + '</div>';
   }
-  const slet = erRum ? '<button type="button" class="bsam-mobknap bsam-mobknap-sek bs-knap" style="display:block;width:100%;margin:14px 0 0;color:var(--red);" onclick="bsRumSletSpoerg(\'' + esc(String(rumId)) + '\',\'' + esc(side) + '\')">Slet rummet</button>' : '';
+  const slet = erRum
+    ? '<div class="bs-sek" style="margin:14px 2px 8px;">Rummet</div>'
+      + '<button type="button" class="bsam-mobknap bsam-mobknap-sek bs-knap" style="display:block;width:100%;margin:0;" onclick="bsRumOmdoebVis(\'' + esc(String(rumId)) + '\',\'' + esc(side) + '\')">Omdøb</button>'
+      + '<button type="button" class="bsam-mobknap bsam-mobknap-sek bs-knap" style="display:block;width:100%;margin:6px 0 0;" onclick="bsRumDupliker(\'' + esc(String(rumId)) + '\',\'' + esc(side) + '\')">Duplikér</button>'
+      + '<button type="button" class="bsam-mobknap bsam-mobknap-sek bs-knap" style="display:block;width:100%;margin:6px 0 0;color:var(--red);" onclick="bsRumSletSpoerg(\'' + esc(String(rumId)) + '\',\'' + esc(side) + '\')">Slet rummet</button>'
+    : '';
   m.innerHTML = '<div class="bs-flyt-ark"><div class="bs-sek" style="margin:0 2px 10px;">Flyt »' + esc(d.n) + '« til</div>'
     + Object.keys(BS_SIDER).filter(function (k) { return k !== side; }).map(function (k) { return '<button type="button" class="bsam-mobknap bsam-mobknap-sek bs-knap" style="display:block;width:100%;margin:0 0 8px;" onclick="bsFlytTil(\'' + noegle + '\',\'' + k + '\',\'' + side + '\')">' + BS_SIDER[k] + '</button>'; }).join("")
     + rumChips + slet
@@ -39806,6 +39811,34 @@ async function bsFlytIndIRum(rumId, maalId, side) {
     delete BS_PLAC["rum:" + rumId]; try { await vaneGemRow("doer_placering", Object.assign({}, BS_PLAC)); } catch (e) {}
     await mrRumHent(true); bsSideTegnIgen(side);
   } catch (e) { alert("Kunne ikke flytte: " + String((e && e.message) || e)); }
+}
+function bsRumOmdoebVis(rumId, side) {
+  const r = (MR_RUM || []).find(function (x) { return String(x.id) === String(rumId); }); if (!r) return;
+  const m = document.getElementById("bsFlytMenu"); if (!m) return;
+  m.innerHTML = '<div class="bs-flyt-ark"><div class="bs-sek" style="margin:0 2px 10px;">Omdøb »' + esc(r.navn) + '«</div>'
+    + sendFeltHtml({ id: "bsOmdoebFelt", ph: "Nyt navn", fn: "bsRumOmdoebGem('" + esc(String(rumId)) + "','" + esc(side) + "')", aria: "Gem navnet", klasse: "bs-sendfelt" })
+    + '<button type="button" class="bsam-mobknap bsam-mobknap-sek bs-knap" style="display:block;width:100%;margin:12px 0 0;" onclick="bsFlytLuk()">Luk</button></div>';
+  const f = document.getElementById("bsOmdoebFelt"); if (f) { f.value = r.navn || ""; setTimeout(function () { try { f.focus(); f.select(); } catch (e) {} }, 60); }
+}
+async function bsRumOmdoebGem(rumId, side) {
+  const f = document.getElementById("bsOmdoebFelt"); const navn = ((f && f.value) || "").trim(); if (!navn) { if (f) f.focus(); return; }
+  bsFlytLuk(); if (!sb) return;
+  try {
+    const r = await sb.from("mr_rum").update({ navn: navn }).eq("id", rumId).select("id");
+    if (r.error) throw r.error; if (!r.data || !r.data.length) throw new Error("Skrivningen ramte 0 rækker");
+    await mrRumHent(true); bsSideTegnIgen(side);
+  } catch (e) { alert("Kunne ikke omdøbe: " + String((e && e.message) || e)); }
+}
+async function bsRumDupliker(rumId, side) {
+  const r = (MR_RUM || []).find(function (x) { return String(x.id) === String(rumId); }); if (!r) return;
+  bsFlytLuk(); if (!sb) return;
+  try {
+    const rec = { navn: (r.navn || "Rum") + " kopi", aktiv: true, foraelder_id: r.foraelder_id || null, produkt: r.produkt || null, zone: r.zone || null, beskrivelse: r.beskrivelse || null, indhold: r.indhold || null };
+    const ny = await sb.from("mr_rum").insert(rec).select("id");
+    if (ny.error) throw ny.error; if (!ny.data || !ny.data.length) throw new Error("Skrivningen ramte 0 rækker");
+    if (BS_PLAC["rum:" + rumId]) { BS_PLAC["rum:" + ny.data[0].id] = BS_PLAC["rum:" + rumId]; try { await vaneGemRow("doer_placering", Object.assign({}, BS_PLAC)); } catch (e) {} }
+    await mrRumHent(true); bsSideTegnIgen(side);
+  } catch (e) { alert("Kunne ikke duplikere: " + String((e && e.message) || e)); }
 }
 function bsRumSletSpoerg(rumId, side) {
   const r = (MR_RUM || []).find(function (x) { return String(x.id) === String(rumId); }); const navn = r ? r.navn : "rummet";
@@ -40417,7 +40450,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "1845";
+const APP_VERSION = "1846";
 let NY_VERSION_KLAR = false;
 function nyVersionSkjul() { const e = document.getElementById("nyVersion"); if (e) e.style.display = "none"; }
 function nyVersionHent() { try { location.reload(); } catch(e) {} }
@@ -57202,6 +57235,6 @@ if ((location.hash || "").toLowerCase() === "#ole") {   // #ole = preview af Ole
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 12. september · 1845</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 12. september · 1846</div>
 </body>
 </html>
