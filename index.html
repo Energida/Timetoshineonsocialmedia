@@ -557,6 +557,7 @@ body.has-nav .bottom { display: none !important; }   /* prototype-bjælken må A
 #appLoader img { width:110px; height:auto; animation: hjertePuls 1.6s ease-in-out infinite; }
 #appLoader div { font-family:'Poppins',sans-serif; font-size:11px; letter-spacing:2px; text-transform:uppercase; color:var(--gray3); }
 body.app-klar #appLoader { display:none; }
+body:not(.fane0-vis) #screen0 { visibility:hidden !important; }   /* fane 0 vises ALDRIG, medmindre showTab(0) er kaldt (12/9) */
 /* FEJLFLADEN ARVER IKKE VENTETEKSTENS VERSALER (SET paa skaermbillede 4/9).
    #appLoader div staar i versaler m. 2 px letterspacing — rigtigt for "Et oejeblik...",
    forkert for en broedtekst. Uden denne nulstilling stod hele fejlbeskeden i versaler. */
@@ -5738,7 +5739,7 @@ body.modul-open .burger-btn, body.modul-open .bottom-nav, body.modul-open .dash-
     <button class="burger-item" onclick="toggleBurger(); minProfilAaben()">Min profil</button>
     <button class="burger-item" onclick="toggleBurger(); togglePwPanel()">Skift adgangskode</button>
     <button class="burger-item" style="color:var(--red);" onclick="custLogout()">Log ud</button>
-    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 12. september · 1841</div>
+    <div style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;">Version 12. september · 1842</div>
   </div>
 </div>
 <div class="plus-menu" id="plusMenu" onclick="if(event.target===this)togglePlus()">
@@ -14027,6 +14028,10 @@ function energiDashRender() {
     + '</div>';
 }
 function showTab(n) {
+  /* SPOEGELSET VED ROTTEN (Ida 12/9 kl. 13.30, fjerde gang: »Jeg så fandme lige strategibyggeren som spøgelsesside igen«):
+     fane 0 (den gamle profil-/strategiskaerm) er KUN synlig, naar showTab(0) er kaldt med vilje. Ved boot og login staar den
+     som .active, foer Hjem er valgt — nu er den usynlig, uanset hvad taeppet og loaderen naar. */
+  try { document.body.classList.toggle("fane0-vis", n === 0); } catch (e) {}
   /* CONTENT STUDIO I BACKSTAGE ER EN SIDE — ikke kundeappens faneblade (Idas fund 31/7:
      "det er jo i idébanken jeg er?"). Skaermene inde i #csMount har deres egne knapper,
      der kalder showTab; uden denne vagt slukkede de begge skaerme, saa fane-chippen sagde
@@ -40362,7 +40367,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "1841";
+const APP_VERSION = "1842";
 let NY_VERSION_KLAR = false;
 function nyVersionSkjul() { const e = document.getElementById("nyVersion"); if (e) e.style.display = "none"; }
 function nyVersionHent() { try { location.reload(); } catch(e) {} }
@@ -45301,16 +45306,25 @@ async function initAuth() {
   if (DEPLOY === "crm" && !SOM_KUNDE) return;
   const gate = document.getElementById("authGate");
   if (!gate) return;
-  if (!SOM_KUNDE) { gate.style.display = "flex"; appKlar(); }   // login staar klar — taeppet kan lettes (som kunde: route() styrer gaten)
   document.getElementById("authDev").style.display = (DEPLOY === "dev") ? "block" : "none";
   const lg = document.querySelector(".auth-logo"), src = document.querySelector(".logo-img");
   if (lg && src) lg.src = src.src;
+  /* LOGIN HVER GANG FRA HJEMMESKAERMEN (Ida 12/9 kl. 13.20: »Jeg åbner via app ikonet«). MAALT i koden: porten blev vist
+     FOER sessionen var tjekket, og er adgangstokenet udloebet (appen har ligget lukket i timer), skal getSession() foerst
+     forny det over nettet — paa en telefon, der lige er vaagnet, fejler det foerste kald tit. Saa stod login-porten der,
+     og Ida loggede ind igen. Nu: taeppet bliver paa, sessionen proeves op til tre gange (kun hvis der LIGGER en gemt
+     session), og porten vises foerst, naar der reelt ingen session er. Holder sig under 9-sekunders-vagten. */
   if (sb) {
-    try {
-      const { data: { session } } = await sb.auth.getSession();
-      if (session) { enterApp(); return; }
-    } catch(e) {}
+    let session = null;
+    const gemt = function () { try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i) || ""; if (/^sb-.*-auth-token$/.test(k)) return true; } } catch (e) {} return false; };
+    for (let i = 0; i < 3; i++) {
+      try { const r = await sb.auth.getSession(); session = (r && r.data) ? r.data.session : null; if (session) break; } catch(e) {}
+      if (!gemt()) break;
+      await new Promise(function (r) { setTimeout(r, 1200); });
+    }
+    if (session) { enterApp(); return; }
   }
+  if (!SOM_KUNDE) { gate.style.display = "flex"; appKlar(); }   // ingen session: login staar klar — foerst NU letter taeppet
   if (SOM_KUNDE) return;   // ingen session: route() viser selv gaten med "Log ind foerst"-beskeden
   /* Delelinket (#68): b2b.energida.dk/?kode=XXX udfylder koden og aabner oprettelsen direkte.
      custCheckCode haandterer selv lukket selvoprettelse (login_klar -> "log ind"-beskeden). */
@@ -57139,6 +57153,6 @@ if ((location.hash || "").toLowerCase() === "#ole") {   // #ole = preview af Ole
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 12. september · 1841</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 12. september · 1842</div>
 </body>
 </html>
