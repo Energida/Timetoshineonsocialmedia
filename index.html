@@ -25551,7 +25551,11 @@ function lekSideHtml(aktivId, aktive, setAntal) {
 
 /* ---------- pop-ups på lektionssiden (notevalg, opgave-valg, "Lover du det?") ---------- */
 function lekPop(html) { const p = document.getElementById("lekPop"); document.getElementById("lekPopKort").innerHTML ='<button class="modal-close" onclick="lukLekPop()" title="Luk">&times;</button>' + html; p.classList.add("on"); }   // krydset følger ALLE popups (Idas regel 16/7)
-function lukLekPop() { const p = document.getElementById("lekPop"); if (p) p.classList.remove("on"); try { if (LEK_MOMENT_TIMER) { clearTimeout(LEK_MOMENT_TIMER); LEK_MOMENT_TIMER = null; } } catch (e) {} }
+function lukLekPop() {
+  try { if (LEK_MOMENT_ID) { const mid = LEK_MOMENT_ID; LEK_MOMENT_ID = null; lekMomentFeedbackGem(mid); } } catch (e) {}   /* feedbacken foelger med ud (13/9) */
+  const p = document.getElementById("lekPop"); if (p) p.classList.remove("on");
+  try { if (LEK_MOMENT_TIMER) { clearTimeout(LEK_MOMENT_TIMER); LEK_MOMENT_TIMER = null; } } catch (e) {}
+}
 document.addEventListener("keydown", e => { if (e.key === "Escape") { const p = document.getElementById("lekPop"); if (p && p.classList.contains("on")) lukLekPop(); } });   // Escape = altid
 /* ESCAPE LUKKER OGSÅ SELVE LEKTIONEN (Ida 5/8). Lektionsvisningen er en fuldskaermsflade,
    og den havde KUN een vej ud: "Til oversigten". Var den knap af en eller anden grund doed,
@@ -25676,6 +25680,7 @@ function lekMoment(id, art) {
   REFL_STJERNER = 0;
   const visStjerner = !!(typeof CUSTOMER_NAV !== "undefined" && CUSTOMER_NAV && !reflSet()["lektion_" + id]);
   const flueben = '<svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>';
+  LEK_MOMENT_ID = id;
   lekPop('<div class="lek-moment">'
     + '<div class="lek-moment-ring">' + flueben + '</div>'
     + '<div class="lek-moment-lbl">Lektion ' + esc(l.id.replace("-", ".")) + (art === "oevelse" ? ' er set' : ' er i mål') + '</div>'
@@ -25687,7 +25692,14 @@ function lekMoment(id, art) {
           + '<div style="height:6px;border-radius:12px;background:rgba(169,191,216,0.55);overflow:hidden;"><div id="lekMomentBar" style="height:100%;width:' + pct(foer) + '%;min-width:' + (foer ? 6 : 0) + 'px;background:var(--red);border-radius:12px;transition:width .6s ease;"></div></div>'
           + '</div>'
           + (naeste ? '<div class="lek-moment-txt">Næste: ' + esc(naeste.titel) + (naeste.tid ? ' &middot; ' + esc(naeste.tid) : '') + '</div>' : ''))
-    + (visStjerner ? '<div class="lek-moment-stj"><div class="lek-moment-lbl">Hvordan var lektionen?</div><div id="reflStjerner">' + reflStjerneHtml() + '</div></div>' : '')
+    /* STJERNER OG EN FRIVILLIG KOMMENTAR (Ida 13/9: "bedoemme videoen med stjerner fra et til
+       fem og ... tilfoeje kommentar ... at den feedback saa lander inde i studio paa hver
+       lektion"). Kommentarfeltet ligger foldet bag eet link, saa kortet ikke tynger; det
+       foldes ud med eet tryk. Begge gemmes, naar kortet forlades — uanset hvilken vej. */
+    + (visStjerner ? '<div class="lek-moment-stj"><div class="lek-moment-lbl">Hvordan var videoen?</div><div id="reflStjerner">' + reflStjerneHtml() + '</div>'
+        + '<button type="button" class="lek-moment-link" id="lekMomentKomLink" style="min-height:36px;font-size:12.5px;" onclick="lekMomentKomAabn()">Skriv en kommentar til videoen</button>'
+        + '<textarea id="lekMomentKom" class="sk-input" style="display:none;width:100%;min-height:84px;background:#fff;font-size:16px;line-height:1.5;margin-top:4px;" placeholder="Hvad tænker du om videoen? Ida læser det selv."></textarea>'
+        + '</div>' : '')
     + '<button type="button" class="dbtn primary lek-moment-knap" onclick="lekMomentVidere(\'' + id + '\',\'' + art + '\')">'
       + (art === "oevelse" ? 'Tag øvelsen (' + antalOv + ' spørgsmål)' : (sidste ? 'Tilbage til forløbet' : 'Videre til næste')) + '</button>'
     + '<button type="button" class="lek-moment-link" onclick="lekMomentBliv(\'' + id + '\',\'' + art + '\')">'
@@ -25698,15 +25710,26 @@ function lekMoment(id, art) {
   LEK_MOMENT_TIMER = null;
   if (art === "faerdig" && !visStjerner && !sidste) LEK_MOMENT_TIMER = setTimeout(function () { lekMomentVidere(id, art); }, 2500);
 }
-async function lekMomentStjernerGem(id) {
-  const n = REFL_STJERNER; if (!n) return;
+function lekMomentKomAabn() {
+  const t = document.getElementById("lekMomentKom"), l = document.getElementById("lekMomentKomLink");
+  if (t) { t.style.display = "block"; try { t.focus(); } catch (e) {} }
+  if (l) l.style.display = "none";
+}
+/* Feedbacken gemmes EEN gang pr. kort — ogsaa naar kortet lukkes udenom knapperne (kryds,
+   klik udenfor, Escape): lukLekPop kalder herind med det id, kortet blev tegnet for. Een
+   raekke pr. person pr. lektion (skemaSvarSkriv), saa Backstage kan laese den paa lektionen. */
+let LEK_MOMENT_ID = null;
+async function lekMomentFeedbackGem(id) {
+  const n = REFL_STJERNER;
+  const t = document.getElementById("lekMomentKom");
+  const kom = t ? String(t.value || "").trim().slice(0, 1000) : "";
   REFL_STJERNER = 0;
+  if (!n && !kom) return;
   reflMarker("lektion_" + id);
-  if (sb && currentKode) { try { await skemaSvarSkriv("lektion_feedback_" + id, { stjerner: n, dato: dagsIdag(), lektion: String(id) }); } catch (e) {} }
+  if (sb && currentKode) { try { await skemaSvarSkriv("lektion_feedback_" + id, { stjerner: n || 0, kommentar: kom, dato: dagsIdag(), lektion: String(id) }); } catch (e) {} }
 }
 function lekMomentVidere(id, art) {
   lukLekPop();
-  try { lekMomentStjernerGem(id); } catch (e) {}
   if (art === "oevelse") { startOvelse(id); return; }
   const aktive = kursusLektionerAktive();
   const ix = aktive.findIndex(x => x.id === id);
@@ -25714,7 +25737,6 @@ function lekMomentVidere(id, art) {
 }
 function lekMomentBliv(id, art) {
   lukLekPop();
-  try { lekMomentStjernerGem(id); } catch (e) {}
   if (art === "oevelse") {
     KURSUS_UDSAT[id] = true;
     kursusGemLocal();
@@ -28321,6 +28343,7 @@ async function klipHent() {
      VÆRRE END VISNINGEN: editoren fyldte sit udkast fra samme gamle liste, saa et tryk
      paa Gem ville have skrevet de gamle spoergsmaal hen over de rettede. */
   try { await oevelserHent(); } catch(e) {}
+  try { klipFeedbackHent(); } catch (e) {}   /* kundernes stjerner og kommentarer, pr. lektion (13/9) */
   if (sb) {
     try {
       const { data, error } = await sb.from("video_opgaver").select("*").order("created_at", { ascending: false });
@@ -28333,6 +28356,59 @@ async function klipHent() {
   }
   KLIP_OPGAVER = klipLocal();
   klipEfterHent();
+}
+/* ===== KUNDERNES FEEDBACK PAA LEKTIONEN (Ida 13/9: "at den feedback saa lander inde i studio
+   paa hver lektion saa jeg kan se hvad de rater og se deres kommentar"). Raekkerne er dem,
+   kunden skriver fra faerdig-kortet: skema "lektion_feedback_<id>", svar { stjerner,
+   kommentar, dato }. Hentes EEN gang for alle lektioner, naar tavlen hentes, og laeses af
+   klipFeedback(o) under hvert kort. Kun laesning; ingen ny tabel, ingen ny policy. Kan admin
+   ikke laese raekkerne (RLS), er kortet tomt — det siger "Ingen feedback endnu". ===== */
+let KLIP_LEKFB = {};   /* lektions-id -> [{ kode, navn, stjerner, kommentar, dato }] */
+let KLIP_LEKFB_HENTET = false;
+async function klipFeedbackHent() {
+  if (!sb) return;
+  try {
+    const { data } = await sb.from("skema_svar").select("kode,navn,skema,svar,created_at").like("skema", "lektion_feedback_%");
+    const m = {};
+    (data || []).forEach(function (r) {
+      const id = String(r.skema || "").slice(17);   /* "lektion_feedback_".length === 17 */
+      const sv = r.svar || {};
+      const n = Number(sv.stjerner) || 0;
+      const kom = String(sv.kommentar || "").trim();
+      if (!n && !kom) return;
+      (m[id] = m[id] || []).push({ kode: r.kode || "", navn: r.navn || "", stjerner: n, kommentar: kom, dato: sv.dato || String(r.created_at || "").slice(0, 10) });
+    });
+    KLIP_LEKFB = m; KLIP_LEKFB_HENTET = true;
+    try { if (typeof renderKlipperum === "function" && document.getElementById("klipDetalje")) renderKlipperum(); } catch (e) {}
+  } catch (e) {}
+}
+function klipFeedbackFor(o) {
+  const id = klipLekIdFor(o); if (!id) return null;
+  const rk = KLIP_LEKFB[id] || [];
+  const med = rk.filter(function (r) { return r.stjerner > 0; });
+  const snit = med.length ? med.reduce(function (a, r) { return a + r.stjerner; }, 0) / med.length : 0;
+  return { id: id, raekker: rk, antal: med.length, snit: snit, kommentarer: rk.filter(function (r) { return r.kommentar; }) };
+}
+function klipFeedbackChip(o) {
+  const f = klipFeedbackFor(o); if (!f || !f.antal) return "";
+  return '<span title="' + f.antal + (f.antal === 1 ? ' vurdering' : ' vurderinger') + '" style="display:inline-flex;align-items:center;gap:4px;font-size:11px;color:var(--black);font-variant-numeric:tabular-nums;">'
+    + kkStjerne(true) + f.snit.toFixed(1).replace(".", ",") + ' <span style="color:var(--gray3);">(' + f.antal + ')</span></span>';
+}
+function klipFeedback(o) {
+  const f = klipFeedbackFor(o); if (!f) return "";
+  if (!f.raekker.length) return "";   /* intet at vise = intet kort (skjul-tomme-kort-reglen) */
+  const virk = function (kode) { try { const d = VIRKSOMHEDSKODER[String(kode).toUpperCase()]; return (d && d.virksomhed) || kode; } catch (e) { return kode; } };
+  return '<div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--border);" onclick="event.stopPropagation()">'
+    + '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:10px;letter-spacing:1.4px;text-transform:uppercase;color:var(--gray3);">Kundernes feedback'
+    + (f.antal ? '<span style="display:inline-flex;gap:1px;">' + [1,2,3,4,5].map(function (n) { return kkStjerne(n <= Math.round(f.snit)); }).join("") + '</span><span style="letter-spacing:0;text-transform:none;font-size:11px;color:var(--black);">' + f.snit.toFixed(1).replace(".", ",") + ' af 5 · ' + f.antal + (f.antal === 1 ? ' vurdering' : ' vurderinger') + '</span>' : '')
+    + '</div>'
+    + f.kommentarer.map(function (r) {
+        return '<div style="margin-top:8px;">'
+          + '<div style="font-family:Didot,\'Bodoni 72\',Georgia,serif;font-style:italic;font-size:13px;line-height:1.5;color:var(--black);">' + esc(r.kommentar) + '</div>'
+          + '<div style="font-size:10.5px;color:var(--gray3);margin-top:2px;">' + esc(r.navn || "Uden navn") + ' · ' + esc(virk(r.kode)) + (r.dato ? ' · ' + esc(r.dato) : '') + (r.stjerner ? ' · ' + r.stjerner + ' af 5' : '') + '</div>'
+          + '</div>';
+      }).join("")
+    + '</div>';
 }
 /* Tavlen er hentet: lektionssiden bygges om, saa den viser de samme lektioner som tavlen.
    Staar lektionssiden aaben imens, tegnes den forfra — ellers ville man se den gamle liste,
@@ -29786,8 +29862,9 @@ function klipKort(o) {
     + '</div>'
     + '<div style="display:flex;gap:5px;align-items:center;flex-shrink:0;">' + piler + styr + '</div>'
     + '</div>'
-    + '<div style="display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end;margin-top:12px;">' + chips + '</div>'
+    + '<div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;align-items:center;margin-top:12px;">' + klipFeedbackChip(o) + chips + '</div>'
     + klipOpgaver(o)
+    + klipFeedback(o)
     + '</div>';
 }
 
@@ -40995,7 +41072,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "1860";
+const APP_VERSION = "1861";
 let NY_VERSION_KLAR = false;
 function nyVersionSkjul() { const e = document.getElementById("nyVersion"); if (e) e.style.display = "none"; }
 function nyVersionHent() { try { location.reload(); } catch(e) {} }
@@ -53739,12 +53816,15 @@ async function kkAktivitetHent() {
       b.stjerner = b.stjerner || {};
       const n = r.svar && Number(r.svar.stjerner);
       if (n > 0) b.stjerner[String(r.skema).slice(17)] = n;   /* "lektion_feedback_".length === 17 */
+      /* Kommentaren fra faerdig-kortet (13/9) staar i samme raekke som stjernerne. */
+      const kom = r.svar && String(r.svar.kommentar || "").trim();
+      if (kom) { b.note = b.note || {}; b.note[String(r.skema).slice(17)] = kom; }
     });
     (notRes.data || []).forEach(r => {
       const b = brugere[r.navn || ""] = brugere[r.navn || ""] || { set: {}, seneste: "", vis: {} };
       b.note = b.note || {};
       const t = r.svar && String(r.svar.tekst || "").trim();
-      if (t) b.note[String(r.skema).slice(19)] = t;           /* "refleksion_lektion_".length === 19 */
+      if (t && !b.note[String(r.skema).slice(19)]) b.note[String(r.skema).slice(19)] = t;           /* "refleksion_lektion_".length === 19 */
     });
     (visRes.data || []).forEach(r => {
       const b = brugere[r.navn || ""] = brugere[r.navn || ""] || { set: {}, seneste: "", vis: {} };
@@ -57780,6 +57860,6 @@ if ((location.hash || "").toLowerCase() === "#ole") {   // #ole = preview af Ole
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 13. september · 1860</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 13. september · 1861</div>
 </body>
 </html>

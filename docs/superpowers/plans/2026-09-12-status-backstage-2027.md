@@ -119,6 +119,14 @@ Idas spørgsmål: er det det mest moderne og mobilvenlige design? Svaret var nej
 
 Målt i selen 13/9: 390 (bjælke 358×48 fast, ark med greb, felt 16 px), 1440 (én rød knap 120×32, kortet centreret, bar 50 %), 844×390 (video 0,0 fuld bredde, top og bjælke skjult, Tilbage synlig).
 
+## 5e. v1861: stjerner og kommentar på hver lektion, læst i Backstage (Ida 13/9)
+
+Idas ord: »bedømme videoen med stjerner fra et til fem og ... tilføje kommentar ... at den feedback så lander inde i studio på hver lektion så jeg kan se hvad de rater og se deres kommentar«.
+
+- **Kunden:** færdig-kortet har »Hvordan var videoen?« med fem stjerner og linket »Skriv en kommentar til videoen«, der folder et felt ud (16 px). Begge gemmes, når kortet forlades, uanset vej (knap, Bliv, kryds, klik udenfor): `lekMomentFeedbackGem` → `skemaSvarSkriv("lektion_feedback_<id>", { stjerner, kommentar, dato, lektion })`, én række pr. person pr. lektion. Vises til lektionen er vurderet (`reflSet`).
+- **Backstage, produktionstavlen:** `klipFeedbackHent` henter alle `lektion_feedback_%`-rækker én gang, når tavlen hentes. Hvert lektionskort får en chip »★ 4,0 (3)« ved statussen og afsnittet »Kundernes feedback« nederst: snit, antal vurderinger og kommentarerne i Didot-kursiv med navn, virksomhed, dato og stjerner. Intet afsnit uden feedback. Kun læsning, ingen ny tabel, ingen ny policy. **Kan admin ikke læse andre koders skema_svar-rækker (RLS), står der intet; det skal Ida tjekke live på en lektion, der har fået en vurdering.**
+- **Kundekortet (Aktivitet):** kommentaren fra feedback-rækken vises som kundens note under lektionen, som de gamle refleksionsnoter.
+
 ## 6. Bridge-trådene 12/9
 
 Trådene på Idas maskine (»Skærm, der ikke må vises« m.fl.) døde kl. 16:25 dansk tid, fem minutter efter v1856 blev pushet, fordi computeren blev lukket. Intet i repoet er halvt; højst få minutters ucommitteret arbejde kan være tabt. De vågner først, når Claude Code startes på den maskine igen.
