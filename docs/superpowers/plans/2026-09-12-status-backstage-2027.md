@@ -254,6 +254,12 @@ Ida: »Jeg mener faktisk også jeg har et sted med alle mine egne velkomsthilsne
 - **SQL-kort** øverst i »Supabase, venter på dine klik«: opretter funktionen og giver kun indloggede lov at kalde den. Kan køres igen uden skade. Det tilsvarende kort for `dashboard_citater` (12/9) ligger ikke i repoet; funktionen her er skrevet efter samme mønster.
 - Målt i selen: Backstage-listen med flueben og »1 bruges«; kundens dagskort, Hjem og facit med »Godmorgen sunshine«-typen hilsen; tom liste giver klokkehilsenen.
 
+## 5r. v1875: swipe op på dagskortet åbner arket for Idas egne koder (Ida 13/9)
+
+- Ida på b2b som sig selv: swipe op på dagskortet åbnede plus-menuen (FANG_KNAPPER: Jeg har en god content-idé, Jeg har set noget fedt, …), altså kundernes Tøm hovedet, ikke arket »Tøm hovedet · Ny idé« med chips, som hendes Backstage-skærm åbner. Det kom med v1857, hvor kortet fik `dagensKortToemHovedet()` for alle.
+- Nu: for egne koder (`erEgenKode`) er swipe `nyIdeAabn('cs', true)`, arket oven på fotoet, samme som standarden i `dagensKortVis`. Kunderne er uændrede: plus-menuen.
+- Målt i selen på 390: ENERGIDA får arket (paa-foto), HINGES2026 får plus-menuen.
+
 ## 6. Bridge-trådene 12/9
 
 Trådene på Idas maskine (»Skærm, der ikke må vises« m.fl.) døde kl. 16:25 dansk tid, fem minutter efter v1856 blev pushet, fordi computeren blev lukket. Intet i repoet er halvt; højst få minutters ucommitteret arbejde kan være tabt. De vågner først, når Claude Code startes på den maskine igen.
