@@ -220,6 +220,13 @@ Bygget efter mockups (»Planlægningsdagen mockups«) og Idas tre klik: de fem t
 - Målt i selen på 390 og 1440: Hjem-kortet på begge flader; de fem månedsspørgsmål og temaet gemt; tilbageblik med Postet og refleksion på opslaget; tre forslag (1A, 1B, 2A) oprettet i kalenderen med dato; optagedag på alle tre; målfliserne; book med 11 chips og .ics; status `{sidst, uge, tid, maanedPlan}`; efter Tilbage til Hjem er kortet væk.
 - Ikke bygget: notifikation på dagen (ingen push i appen, jf. 5l). Forslagenes »hvorfor« står ikke på kortet, kun søjlen der mangler.
 
+## 5n. v1870: svarvejen på ønsker til appen (hængeparti 3b, Ida 13/9)
+
+- **Backstage:** rækken »Ønske til appen fra …« i Venter på dig og Indbakken har nu Svar og Set. Svar åbner arket (samme popup-form som kundens), Ida skriver, og svaret gemmes PÅ ønsket i kundens egen `app_oensker`-række (`svar: {t, af, dato}`). Ingen ny tabel, ingen ny policy. Besvarede ønsker forsvinder fra listen; Set gemmer set-mærket på enheden som før.
+- **Kunden:** egne ønsker hentes én gang pr. session (`APP_OENSKER`, samme mønster som noterne). Et svar står i Indbakken under Til orientering: »Ida har svaret på dit ønske: …« med svaret og datoen, knap Set. Rækken tæller med i klokkens prik på telefonen (orienteringsrækker tæller nu med der, så et svar kan ses). Arkets undertekst siger nu, hvad der sker: »Svarer hun, står svaret i Indbakken.«
+- Målt i selen: Backstage 1440 (rækken med Svar/Set, arket, kvittering »Sendt til Rikke.«, svaret på ønsket, rækken væk bagefter); kunden 390 (orienteringsrækken, prikken i klokken, Set fjerner rækken).
+- Ikke målt live: at Ida (admin) må læse og opdatere andre koders `skema_svar`-rækker under RLS. Læsningen bruges allerede af Venter på dig; opdateringen er ny og skal prøves i drift én gang.
+
 ## 6. Bridge-trådene 12/9
 
 Trådene på Idas maskine (»Skærm, der ikke må vises« m.fl.) døde kl. 16:25 dansk tid, fem minutter efter v1856 blev pushet, fordi computeren blev lukket. Intet i repoet er halvt; højst få minutters ucommitteret arbejde kan være tabt. De vågner først, når Claude Code startes på den maskine igen.
