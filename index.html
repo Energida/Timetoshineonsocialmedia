@@ -18909,9 +18909,11 @@ async function perfMaalGemSvar() {
 }
 /* Maalsaetningerne rettes i arket — samme form som alt andet, der skrives (Ida 11/9). */
 function perfMaalRet(k) {
-  const nuv = k === "uge" ? String(maalUge() || "") : k === "rate" ? String((PERF_MAAL && PERF_MAAL.rate) || "") : String((PERF_MAAL && PERF_MAAL.fokus) || "");
+  if (k === "story") { perfStoryDageVis(); return; }
+  const nuv = k === "uge" ? String(maalUge() || "") : k === "rate" ? String((PERF_MAAL && PERF_MAAL.rate) || "") : k === "proeve" ? String((PERF_MAAL && PERF_MAAL.proeve) || "") : String((PERF_MAAL && PERF_MAAL.fokus) || "");
   const o = k === "uge" ? { titel: "Opslag om ugen", under: "Det ærlige tal — ikke det ambitiøse.", ph: "Fx 3" }
         : k === "rate" ? { titel: "Interaktionsrate", under: "Målet for raten på de seneste 9 opslag.", ph: "Fx 5" }
+        : k === "proeve" ? { titel: "Prøvereels om måneden", under: "Hvor mange prøvereels vil du poste på en måned? Tallet tæller de postede med indholdssøjlen Prøvereel.", ph: "Fx 2" }
         : { titel: "Månedens fokus", under: "Det ene, vi går efter denne måned.", ph: "Fx flere gemte" };
   arkAabn({ eye: "Målsætninger", titel: o.titel, under: nuv ? o.under + " Nu: " + nuv + (k === "rate" ? " %" : "") : o.under, ph: o.ph, send: "Gem",
     gem: async function (tekst) {
@@ -18924,12 +18926,46 @@ function perfMaalRet(k) {
       } else {
         PERF_MAAL = PERF_MAAL || {};
         if (k === "rate") { const r = parseFloat(v.replace("%", "").replace(",", ".")); if (isNaN(r) || r <= 0) return false; PERF_MAAL.rate = r; }
+        else if (k === "proeve") { const n = parseInt(v, 10); if (!n || n < 1) return false; PERF_MAAL.proeve = n; }
         else PERF_MAAL.fokus = v;
         await perfMaalGemSvar();
       }
       try { perfBud1Tegn(); } catch (e) {}
       return "Gemt.";
     } });
+}
+/* STORY-DAGENE vaelges i en lille popup med de syv runde dagknapper (samme form som Maalsaetningers
+   Stories-kort). Listen er MAALS.storyDage — den, forsidens check-ind laeser (13/9). */
+async function perfStoryDageVis() {
+  try { await maalsHent(); } catch (e) {}
+  const body = document.getElementById("ideBody"), bak = document.getElementById("ideBack"); if (!body || !bak) return;
+  const DAGE_K = ["Ma", "Ti", "On", "To", "Fr", "Lø", "Sø"];
+  const valgte = (MAALS && Array.isArray(MAALS.storyDage)) ? MAALS.storyDage : [];
+  body.innerHTML = '<button class="modal-close" onclick="closeIdeaWizard()">&times;</button>'
+    + '<div style="font-size:11px;font-weight:400;letter-spacing:1.8px;text-transform:uppercase;color:var(--red);">Målsætninger</div>'
+    + '<h2 style="font-size:19px;margin-top:2px;text-transform:none;">Story-dage</h2>'
+    + '<div style="font-size:12.5px;color:var(--gray3);line-height:1.6;margin:6px 0 14px;">De faste dage, du er i Story. De får et check-ind på forsiden.</div>'
+    + '<div style="display:flex;gap:8px;flex-wrap:wrap;">'
+    + DAGE_K.map(function (d, i) {
+        const n = i + 1, til = valgte.indexOf(n) > -1;
+        return '<button type="button" class="mq-tap" onclick="perfStoryDagSkift(' + n + ')" style="width:44px;height:44px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-family:Poppins,sans-serif;cursor:pointer;'
+          + (til ? 'background:var(--red);color:#fff;border:none;' : 'background:#fff;border:1.5px solid var(--border);color:var(--gray3);') + '">' + d + '</button>';
+      }).join("")
+    + '</div>'
+    + '<div id="perfStoryMsg" style="font-size:11.5px;color:var(--gray3);margin-top:12px;min-height:16px;">' + (valgte.length ? valgte.length + (valgte.length === 1 ? ' fast story-dag' : ' faste story-dage') : 'Ingen dage valgt endnu.') + '</div>'
+    + '<button type="button" class="dbtn primary" style="width:100%;margin-top:14px;" onclick="closeIdeaWizard()">Færdig</button>';
+  bak.classList.add("on");
+}
+async function perfStoryDagSkift(n) {
+  try { await maalsHent(); } catch (e) {}
+  if (!MAALS) return;
+  MAALS.storyDage = Array.isArray(MAALS.storyDage) ? MAALS.storyDage.slice() : [];
+  const i = MAALS.storyDage.indexOf(n); if (i > -1) MAALS.storyDage.splice(i, 1); else MAALS.storyDage.push(n);
+  const ok = await maalsGem();
+  if (!ok) { const m = document.getElementById("perfStoryMsg"); if (m) { m.style.color = "var(--red)"; m.textContent = "Det blev ikke gemt — prøv igen."; } return; }
+  perfStoryDageVis();
+  try { perfBud1Tegn(); } catch (e) {}
+  try { renderHome(); } catch (e) {}
 }
 function perfBud1Tegn() {
   const sc = document.getElementById("screen9"); if (!sc) return;
@@ -18950,6 +18986,16 @@ function perfBud1Tegn() {
   const r0 = (typeof RAPPORTER !== "undefined" && RAPPORTER && RAPPORTER.length) ? (RAPPORTER[0].data || RAPPORTER[0]) : null;
   const butikPct = (r0 && r0.eksponering && r0.profil) ? Math.round(Number(r0.profil) / Number(r0.eksponering) * 1000) / 10 : null;
   const nR = (typeof RAPPORTER !== "undefined" && RAPPORTER) ? RAPPORTER.length : 0;
+  const proeveMaal = (PERF_MAAL && PERF_MAAL.proeve) ? parseInt(PERF_MAAL.proeve, 10) : 0;
+  let proeveNu = 0;
+  try { const mdS = datoDK(nu).slice(0, 7); proeveNu = (IDEER || []).filter(function (x) { return x.status === "Postet" && x.dato && String(x.dato).slice(0, 7) === mdS && /pr[øo]vereel/i.test(String(x.soejle || "")); }).length; } catch (e) {}
+  const DAGE_K = ["Ma", "Ti", "On", "To", "Fr", "Lø", "Sø"];
+  let storyTxt = "";
+  try {
+    if (!MAALS && typeof maalsHent === "function" && !window.__PB_MAALS_VENTER) { window.__PB_MAALS_VENTER = true; maalsHent().then(function () { window.__PB_MAALS_VENTER = false; try { perfBud1Tegn(); } catch (e) {} }).catch(function () { window.__PB_MAALS_VENTER = false; }); }
+    const sd = (MAALS && Array.isArray(MAALS.storyDage)) ? MAALS.storyDage.slice().sort(function (a, b) { return a - b; }) : [];
+    storyTxt = sd.map(function (n) { return DAGE_K[n - 1] || ""; }).filter(Boolean).join(" · ");
+  } catch (e) {}
   const MDR = ["januar","februar","marts","april","maj","juni","juli","august","september","oktober","november","december"];
   const RS = 88;
   const ring = function (svg, l) { return '<div class="pb-rg">' + svg + '<div class="pb-rg-l">' + l + '</div></div>'; };
@@ -18967,6 +19013,12 @@ function perfBud1Tegn() {
     + '<div class="bs-eye pb-sek">Målsætninger</div>'
     + '<div class="pb-maal-grid">'
     + maal("uge", "Opslag om ugen", ugem ? String(ugem) : "")
+    /* PROEVEREELS OG STORY-DAGE (haengeparti 6a, Ida 13/9: "maalsaetninger for proevereels og for tjek ind i
+       Story"). Proevereels: maalet er pr. maaned (perf_maal.proeve), tallet foran er de postede proevereels i
+       denne maaned (soejlen Prøvereel). Story-dage: de faste dage fra Maalsaetninger (MAALS.storyDage) —
+       samme liste, som forsidens check-ind bruger; flisen aabner dagvaelgeren. */
+    + maal("proeve", "Prøvereels om måneden", proeveMaal ? proeveNu + " af " + proeveMaal : "")
+    + maal("story", "Story-dage", storyTxt)
     + maal("rate", "Interaktionsrate", rateMaal ? String(rateMaal).replace(".", ",") + " %" : "")
     + maal("fokus", "Månedens fokus", fokus ? esc(fokus) : "")
     + '</div>'
@@ -41392,7 +41444,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "1866";
+const APP_VERSION = "1867";
 let NY_VERSION_KLAR = false;
 function nyVersionSkjul() { const e = document.getElementById("nyVersion"); if (e) e.style.display = "none"; }
 function nyVersionHent() { try { location.reload(); } catch(e) {} }
@@ -58183,6 +58235,6 @@ if ((location.hash || "").toLowerCase() === "#ole") {   // #ole = preview af Ole
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 13. september · 1866</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 13. september · 1867</div>
 </body>
 </html>

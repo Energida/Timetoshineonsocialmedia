@@ -191,6 +191,13 @@ Kæden efter Gem: `byggGem` skriver `kunde_strategi.byggesten`, henter forfra ge
 
 **Ikke rørt, men værd at vide:** de fire indholdssøjlers tekster (side 3-4 og 11-14) kommer fra generationen alene; kunden retter eksempler og hooks pr. søjle, ikke søjlens grundtekst. Det er efter reglen 17/8 (kun ejeren af strategien retter byggesten) og valget 25/8.
 
+## 5k. v1867: mål for prøvereels og story-dage på Performance (hængeparti 6a, Ida 13/9)
+
+- **Prøvereels om måneden:** ny flise under Målsætninger på Performance. Målet gemmes i `perf_maal.proeve` (samme række som rate og fokus). Flisen viser »1 af 2«: postede opslag i denne måned med indholdssøjlen Prøvereel mod målet. Ret via arket som de andre.
+- **Story-dage:** ny flise, der viser de faste dage (»Ma · On · Fr«) fra `MAALS.storyDage`, den liste forsidens check-ind allerede læser. Trykket åbner en lille popup med de syv runde dagknapper (44 px); hvert tryk gemmes med kvittering (`maalsGem`).
+- Målt i selen på 390: fliserne »Opslag om ugen 3 · Prøvereels om måneden 1 af 2 · Story-dage Ma · On · Fr · Interaktionsrate 5 % · Månedens fokus sæt et mål« og dagvælgeren.
+- Ikke rørt: selve planlægningsritualet (hængeparti 6b/8) tegnes som mockups først.
+
 ## 6. Bridge-trådene 12/9
 
 Trådene på Idas maskine (»Skærm, der ikke må vises« m.fl.) døde kl. 16:25 dansk tid, fem minutter efter v1856 blev pushet, fordi computeren blev lukket. Intet i repoet er halvt; højst få minutters ucommitteret arbejde kan være tabt. De vågner først, når Claude Code startes på den maskine igen.
