@@ -260,6 +260,17 @@ Ida: »Jeg mener faktisk også jeg har et sted med alle mine egne velkomsthilsne
 - Nu: for egne koder (`erEgenKode`) er swipe `nyIdeAabn('cs', true)`, arket oven på fotoet, samme som standarden i `dagensKortVis`. Kunderne er uændrede: plus-menuen.
 - Målt i selen på 390: ENERGIDA får arket (paa-foto), HINGES2026 får plus-menuen.
 
+## 5s. v1876: alle kundens skrivefelter er arket (Ida 13/9)
+
+Ida (13/9 kl. 14.24, med skærmbillede af helskærms-Tøm hovedet): »hvordan fanden det kan lade sig gøre at du bygger sådan en side … med det nye låste designvalg«. Forløbet: helskærmen (v1823, 11/9 kl. 10.35) blev bygget tre timer før arket blev låst (11/9, »aldrig hele skærmen«) og aldrig lagt om; v1830 og v1857 sendte swipet derind. Gennemgang af alle kundens popups på telefonen i selen fandt otte skriveformer i den gamle form (hvidt kort, overskrift i versaler, rød knap). Idas klik: alle otte i én version.
+
+- **Nu arket, alle otte:** Tøm hovedet (plus og swipe, alle bredder), Jeg har en god content-idé, Jeg skal bare have det skrevet ned, Jeg har set noget fedt, Gem inspirationen (var dublet af Set noget fedt, kortet i DOM'en bærer kun filfelterne), Ny idé i Idébanken (`addIdea`/`openIdeaPanel`, søjlen fra filteret følger med), Lav til idé fra Inspiration (forudfyldt med noten, linket/billedet følger med i briefen), Idé til et ugetema, Link til indholdet i briefen, og Hvordan gik det? efter Ja, postet.
+- **Kundens ark** (`kundeArkAabn`): chips Content-idé, Set noget fedt, Skrevet ned, Nyt opslag, Ugetema (kun hvor strategien er tændt). Søg og Find en idé er ikke skrivning og står ikke i arket; de findes i Idébanken og Indbakken. Plus-menuen (FANG_KNAPPER) er kun bevaret som kode.
+- **Arket har fået to små udvidelser:** forudfyldt tekst (`tekst`) og en ekstra række under chips (`ekstraAf`). Set noget fedt bruger rækken til tre lange knapper: Tag et billede, Fra kamerarullen (begge går direkte på væggen som billede, kvittering i arket) og Vedhæft et skærmbillede (følger linket i teksten som `sti`, jf. 5p).
+- **Hvordan gik det?** er arket med to chips, Hvad gik godt? og Hvad var svært?, ét felt. Gem skriver det valgte svar på opslaget, det andet røres ikke; man bliver stående og kan skifte chip. Backstage læser `brief.refleksion` uændret.
+- **Ikke skriveformer, uændrede:** Story-dage, Planlægningsdag, Dagens opslag, Ny dato, Tag den nu/Senere. Hvide kort uden kryds og med lang Luk.
+- Målt i selen på 390 (og 1440 for arket): alle otte åbner arket; gem af idé med søjle, Lav til idé med link i briefen, ugetema i MAALS, refleksion godt og svært på opslaget, skærmbillede valgt i arket. Ikke målt: Link til indholdet (kræver åben brief), kamera og upload (kræver telefon og base).
+
 ## 6. Bridge-trådene 12/9
 
 Trådene på Idas maskine (»Skærm, der ikke må vises« m.fl.) døde kl. 16:25 dansk tid, fem minutter efter v1856 blev pushet, fordi computeren blev lukket. Intet i repoet er halvt; højst få minutters ucommitteret arbejde kan være tabt. De vågner først, når Claude Code startes på den maskine igen.
