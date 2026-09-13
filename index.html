@@ -13625,6 +13625,7 @@ select titel,
     <div class="msub">Et billede fra kamerarullen, et opslag fra Instagram eller TikTok — før det forsvinder.</div>
     <label class="dbtn primary" style="display:block;text-align:center;cursor:pointer;margin-bottom:10px;">Upload billeder fra kamerarullen
       <input type="file" id="inspFiler" accept="image/*" multiple style="display:none;" onchange="uploadInspBilleder(this)">
+      <input type="file" id="inspKamera" accept="image/*" capture="environment" style="display:none;" onchange="uploadInspBilleder(this)">
     </label>
     <input type="text" id="inspLink" placeholder="…eller sæt et link ind (Instagram, TikTok…)" onkeydown="if(event.key==='Enter')tilfoejInspLink()" style="width:100%;background:#fff;border:1px solid var(--border);border-radius:12px;padding:11px 13px;font-size:12.5px;font-family:Poppins,sans-serif;margin-bottom:8px;">
     <input type="text" id="inspNote" placeholder="Hvad fangede dig? (beskriv kort)" onkeydown="if(event.key==='Enter')tilfoejInspLink()" style="width:100%;background:#fff;border:1px solid var(--border);border-radius:12px;padding:11px 13px;font-size:12.5px;font-family:Poppins,sans-serif;margin-bottom:10px;">
@@ -32818,9 +32819,12 @@ async function uploadInspBilleder(inp) {
   for (const f of filer) {
     nr++;
     inspMsg("Uploader " + nr + " af " + filer.length + "…");
-    const sti = currentKode + "/" + Date.now() + "_" + (f.name || "billede.jpg").replace(/[^a-zA-Z0-9._-]/g, "");
+    const sti = currentKode + "/" + Date.now() + "_" + (f.name || "billede.jpg").replace(/[^a-zA-Z0-9._-]/g, "").replace(/\.[a-zA-Z0-9]+$/, "") + ".jpg";
     try {
-      const up = await sb.storage.from("inspiration").upload(sti, f);
+      /* BILLEDET GOERES LILLE FOERST (13/9): laengste side 1200 px, jpeg — ellers fylder een kundes
+         telefonfotos lageret paa faa uger. Kan det ikke skaleres, sendes originalen. */
+      let blob = f; try { blob = await foodBilledeSkaler(f); } catch (e) { blob = f; }
+      const up = await sb.storage.from("inspiration").upload(sti, blob, { contentType: "image/jpeg" });
       if (up.error) { inspMsg("Kunne ikke uploade: " + up.error.message); continue; }
       const pu = sb.storage.from("inspiration").getPublicUrl(sti);
       await sb.from("inspiration").insert({ kode: currentKode, type: "billede", url: pu.data.publicUrl, sti: sti });
@@ -39217,8 +39221,86 @@ function closeIdeaWizard() {
   ib.classList.remove("spmpop", "midt", "ov-ark");
   IDEWIZ = null;
   INSP_VEDHAEFT = "";
+  IDE_VEDH_AABEN = "";
   IDE_FORVALGT_SOEJLE = "";   /* naeste idé maa ikke arve en soejle, man ikke har valgt */
   KAL_OPRET_DATO = null;   // luk uden at gemme → datoen må ikke smitte af på næste idé
+}
+/* ===== VEDHAEFT BILLEDE, KAMERA ELLER LINK PAA NY IDÉ (haengeparti 2, Ida 13/9: "paa selve
+   ideen mulighed for at indsaette et link til inspirationen og/eller tilfoeje et billede ...
+   som +-symbolet i en sms ... og gerne tilgaa kameraet direkte"). Billedet goeres lille paa
+   telefonen (laengste side 1200 px), lander i Inspiration (samme bucket og tabel som
+   inspirationsvaeggen, ingen ny lagerplads) og haegtes paa idéen som i dag: INSP_VEDHAEFT
+   -> "Inspiration: <url>" i briefens beskrivelse. Linket gemmes ogsaa paa vaeggen med idéens
+   tekst som note. Kameraet er eet attribut paa filfeltet (capture); iPhone aabner kameraet
+   direkte, computeren viser filvaelgeren. */
+let IDE_VEDH_AABEN = "";   /* "" | "valg" | "link" */
+const IDE_IK_PLUS = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>';
+const IDE_IK_KAMERA = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8.5h3l1.5-2.5h7L17 8.5h3v10H4z"/><circle cx="12" cy="13.5" r="3.2"/></svg>';
+const IDE_IK_BILLEDE = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="5" width="16" height="14" rx="2.5"/><circle cx="9" cy="10" r="1.6"/><path d="M20 15.5l-4.5-4.5-6 6"/></svg>';
+const IDE_IK_LINK = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13.5a4 4 0 0 0 5.7 0l2.8-2.8a4 4 0 0 0-5.7-5.7L11.5 6.3"/><path d="M14 10.5a4 4 0 0 0-5.7 0l-2.8 2.8a4 4 0 0 0 5.7 5.7l1.3-1.3"/></svg>';
+function erBilledeUrl(u) { u = String(u || ""); return /^data:image\//i.test(u) || /\.(jpe?g|png|webp|gif|heic|heif)(\?|#|$)/i.test(u) || /\/storage\/v1\/object\/public\/inspiration\//.test(u); }
+function ideInspUrl(it) { try { const m = String((it && it.brief && it.brief.beskrivelse) || "").match(/Inspiration:\s*(https?:\/\/\S+)/); return m ? m[1] : ""; } catch (e) { return ""; } }
+function ideVedhaeftHtml() {
+  const pille = (t, kald, ikon) => '<button type="button" class="mq-tap" onclick="' + kald + '" style="display:inline-flex;align-items:center;gap:7px;min-height:40px;padding:8px 13px;border-radius:999px;border:1px solid var(--border);background:#fff;font-family:Poppins,sans-serif;font-size:12.5px;font-weight:400;color:var(--black);cursor:pointer;">' + ikon + t + '</button>';
+  const filer = '<input type="file" id="ideFotoKamera" accept="image/*" capture="environment" style="display:none;" onchange="ideFotoValgt(this)">'
+    + '<input type="file" id="ideFotoRulle" accept="image/*" style="display:none;" onchange="ideFotoValgt(this)">';
+  const msg = '<div id="ideVedhMsg" style="display:none;font-size:11.5px;color:var(--gray3);line-height:1.5;margin:8px 0 0;"></div>';
+  if (INSP_VEDHAEFT) {
+    const erB = erBilledeUrl(INSP_VEDHAEFT);
+    return filer + '<div style="display:flex;align-items:center;gap:10px;margin-top:12px;padding:8px 8px 8px 10px;border:1px solid var(--border);border-radius:14px;background:#fff;">'
+      + (erB ? '<img src="' + esc(INSP_VEDHAEFT) + '" alt="" style="width:56px;height:56px;object-fit:cover;border-radius:10px;flex-shrink:0;">'
+             : '<span style="width:40px;height:40px;border-radius:10px;background:var(--gray);display:inline-flex;align-items:center;justify-content:center;color:var(--red);flex-shrink:0;">' + IDE_IK_LINK + '</span>')
+      + '<span style="flex:1;min-width:0;font-size:12.5px;line-height:1.4;overflow:hidden;"><span style="display:block;color:var(--black);">' + (erB ? 'Billede vedhæftet' : 'Link vedhæftet') + '</span><span style="display:block;color:var(--gray3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + esc(erB ? 'Ligger også under Inspiration' : inspVaert(INSP_VEDHAEFT)) + '</span></span>'
+      + '<button type="button" class="mq-tap" onclick="ideVedhaeftFjern()" title="Fjern" aria-label="Fjern vedhæftningen" style="width:44px;height:44px;border:none;background:none;color:var(--gray3);font-size:22px;cursor:pointer;flex-shrink:0;">&times;</button>'
+      + '</div>';
+  }
+  if (IDE_VEDH_AABEN === "link") {
+    return filer + '<div style="display:flex;gap:8px;margin-top:12px;">'
+      + '<input type="url" id="ideLinkFelt" inputmode="url" placeholder="Sæt linket ind …" onkeydown="if(event.key===\'Enter\'){event.preventDefault();ideLinkSaet();}" style="flex:1;min-width:0;background:var(--gray);border:1px solid var(--border);border-radius:12px;padding:11px 13px;font-size:16px;font-family:Poppins,sans-serif;color:var(--black);outline:none;">'
+      + '<button type="button" class="dbtn primary mq-tap" style="padding:9px 15px;" onclick="ideLinkSaet()">Tilføj</button></div>' + msg;
+  }
+  if (IDE_VEDH_AABEN === "valg") {
+    return filer + '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;">'
+      + pille("Tag et billede", "document.getElementById('ideFotoKamera').click()", IDE_IK_KAMERA)
+      + pille("Fra kamerarullen", "document.getElementById('ideFotoRulle').click()", IDE_IK_BILLEDE)
+      + pille("Indsæt et link", "IDE_VEDH_AABEN='link';ideVedhaeftTegn();", IDE_IK_LINK)
+      + '</div>' + msg;
+  }
+  return filer + '<div style="margin-top:12px;">' + pille("Vedhæft billede eller link", "IDE_VEDH_AABEN='valg';ideVedhaeftTegn();", IDE_IK_PLUS) + '</div>';
+}
+function ideVedhaeftTegn() { const v = document.getElementById("ideVedh"); if (v) v.innerHTML = ideVedhaeftHtml(); }
+function ideVedhMsg(t) { const m = document.getElementById("ideVedhMsg"); if (m) { m.textContent = t || ""; m.style.display = t ? "block" : "none"; } }
+function ideVedhaeftFjern() { INSP_VEDHAEFT = ""; IDE_VEDH_AABEN = ""; ideVedhaeftTegn(); }
+async function ideFotoValgt(inp) {
+  const f = inp.files && inp.files[0]; inp.value = ""; if (!f) return;
+  if (!sb || !currentKode) { ideVedhMsg("Billeder kræver forbindelse til databasen. Et link virker stadig."); return; }
+  ideVedhMsg("Gør billedet klar …");
+  try {
+    let blob = f; try { blob = await foodBilledeSkaler(f); } catch (e) { blob = f; }   /* kan billedet ikke skaleres, sendes originalen */
+    const sti = currentKode + "/" + Date.now() + "_ide.jpg";
+    const up = await sb.storage.from("inspiration").upload(sti, blob, { contentType: "image/jpeg" });
+    if (up.error) { ideVedhMsg("Kunne ikke uploade billedet. Prøv igen."); return; }
+    const pu = sb.storage.from("inspiration").getPublicUrl(sti);
+    const url = pu && pu.data ? pu.data.publicUrl : "";
+    if (!url) { ideVedhMsg("Kunne ikke uploade billedet. Prøv igen."); return; }
+    try { await sb.from("inspiration").insert({ kode: currentKode, type: "billede", url: url, sti: sti }); } catch (e) {}
+    INSP_VEDHAEFT = url; IDE_VEDH_AABEN = "";
+    ideVedhaeftTegn();
+    try { refreshInspiration(); } catch (e) {}
+  } catch (e) { ideVedhMsg("Kunne ikke uploade billedet. Prøv igen."); }
+}
+async function ideLinkSaet() {
+  const f = document.getElementById("ideLinkFelt"); let url = ((f && f.value) || "").trim();
+  if (!url) { if (f) f.focus(); return; }
+  if (!/^https?:\/\//i.test(url)) url = "https://" + url;
+  try { new URL(url); } catch (e) { ideVedhMsg("Det ligner ikke et link. Prøv at kopiere adressen igen."); return; }
+  const titelFelt = document.getElementById("ideWizFangFelt") || document.getElementById("ideWizInput");
+  const note = ((titelFelt && titelFelt.value) || "").trim() || "Fra Ny idé";
+  const rec = { kode: currentKode || "X", type: "link", url: url, note: note };
+  if (sb && currentKode) { try { await sb.from("inspiration").insert(rec); try { refreshInspiration(); } catch (e) {} } catch (e) {} }
+  else { rec.id = "i" + Date.now(); rec.created_at = new Date().toISOString(); try { INSPIRATION.unshift(rec); inspLocalSave(); } catch (e) {} }
+  INSP_VEDHAEFT = url; IDE_VEDH_AABEN = "";
+  ideVedhaeftTegn();
 }
 function renderIdeaWizard() {
   const w = IDEWIZ;
@@ -39242,7 +39324,8 @@ function renderIdeaWizard() {
       + 'onkeydown="if(event.key===\'Enter\'){event.preventDefault();ideaWizardFang();}" '
       + 'style="width:100%;box-sizing:border-box;background:var(--gray);border:1px solid var(--border);'
       + 'border-radius:12px;padding:11px 13px;font-size:13.5px;font-family:Poppins,sans-serif;color:var(--black);outline:none;margin:14px 0 0;">'
-      + '<div id="ideWizFangFejl" style="display:none;font-size:11.5px;color:var(--red);line-height:1.5;margin:8px 0 0;"></div>';
+      + '<div id="ideWizFangFejl" style="display:none;font-size:11.5px;color:var(--red);line-height:1.5;margin:8px 0 0;"></div>'
+      + '<div id="ideVedh">' + ideVedhaeftHtml() + '</div>';   /* + billede, kamera eller link (13/9) */
     const valg = (strategyPillars.length ? strategyPillars : []).concat(["Prøvereel", "Andet"]);
     html += '<div style="font-size:10px;letter-spacing:1.6px;text-transform:uppercase;color:var(--gray3);margin:16px 0 6px;">Indholdssøjle</div>'
       + '<select id="ideWizSoejle" class="select-nice" style="width:100%;">'
@@ -39488,7 +39571,8 @@ function fangFedt() {
   body.innerHTML = '<button class="modal-close" onclick="closeIdeaWizard()">&times;</button>'
     + '<div style="font-size:11px;font-weight:400;letter-spacing:1.8px;text-transform:uppercase;color:var(--red);">Jeg har set noget fedt</div>'
     + '<h2 style="font-size:19px;margin-top:2px;">Gem det p&aring; inspirations-v&aelig;ggen</h2>'
-    + '<button class="dbtn primary" style="width:100%;margin-top:12px;" onclick="closeIdeaWizard();document.getElementById(\'inspFiler\').click()">V&aelig;lg billede fra kamerarullen</button>'
+    + '<button class="dbtn primary" style="width:100%;margin-top:12px;" onclick="closeIdeaWizard();document.getElementById(\'inspKamera\').click()">Tag et billede nu</button>'   /* kameraet direkte (13/9) */
+    + '<button class="dbtn ghost" style="width:100%;margin-top:8px;background:#fff;" onclick="closeIdeaWizard();document.getElementById(\'inspFiler\').click()">V&aelig;lg billede fra kamerarullen</button>'
     + '<div style="font-size:11px;color:var(--gray3);text-align:center;margin:10px 0;">&mdash; eller &mdash;</div>'
     + '<input id="fangFedtLink" placeholder="S&aelig;t et link ind (Instagram, TikTok, artikel&hellip;)" style="width:100%;background:#fff;border:1px solid var(--border);border-radius:12px;padding:13px 14px;font-size:13px;font-family:Poppins,sans-serif;outline:none;">'
     + '<input id="fangFedtNote" placeholder="Kort note &mdash; hvad var det fede?" style="width:100%;background:#fff;border:1px solid var(--border);border-radius:12px;padding:13px 14px;font-size:13px;font-family:Poppins,sans-serif;outline:none;margin-top:8px;">'
@@ -41168,7 +41252,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "1862";
+const APP_VERSION = "1863";
 let NY_VERSION_KLAR = false;
 function nyVersionSkjul() { const e = document.getElementById("nyVersion"); if (e) e.style.display = "none"; }
 function nyVersionHent() { try { location.reload(); } catch(e) {} }
@@ -41853,6 +41937,8 @@ function ideaCard(it) {
        gaelder stadig de kort, der HAR broedtekst under stregen — men i banken staar de
        fleste idéer med titel alene, og saa deler stregen overskriften fra ingenting. */
     + '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;">'
+    /* BILLEDET PAA KORTET (13/9): er der et billede haegtet paa idéen, staar det som lille kvadrat foer titlen. */
+    + (function () { const u = ideInspUrl(it); return u && erBilledeUrl(u) ? '<img src="' + esc(u) + '" alt="" loading="lazy" style="width:40px;height:40px;object-fit:cover;border-radius:9px;flex-shrink:0;">' : ''; })()
     + '<span style="font-size:13.5px;min-width:0;">' + esc(storStart(titelVis(it.titel))) + '</span>' + statusChip + '</div>'
     + (it.brief && it.brief.beskrivelse ? '<div style="font-size:12px;color:var(--gray3);line-height:1.55;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">' + esc(storStart(it.brief.beskrivelse)) + '</div>' : '')
     + '<div style="display:flex;gap:5px 8px;align-items:center;flex-wrap:wrap;margin-top:10px;">'
@@ -57957,6 +58043,6 @@ if ((location.hash || "").toLowerCase() === "#ole") {   // #ole = preview af Ole
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 13. september · 1862</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 13. september · 1863</div>
 </body>
 </html>

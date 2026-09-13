@@ -138,6 +138,14 @@ Samme motor som Backstages manus-oplæsning (Web Speech, dansk stemme, ingen ser
 
 Målt i selen: 390 og 1440, overblik og spørgsmål, tekststykkerne logget. Ikke målt: selve stemmen (kræver en rigtig telefon). På iPhone er den danske stemme med som standard; er den ikke installeret, læser telefonen med en anden stemme.
 
+## 5g. v1863: billede, kamera og link på Ny idé (hængeparti 2, Ida 13/9)
+
+- **Ny idé (plusset og swipe op):** under feltet står pillen »Vedhæft billede eller link«. Den folder tre valg ud: Tag et billede (kameraet direkte, `capture="environment"`), Fra kamerarullen, Indsæt et link. Billedet gøres lille på telefonen (længste side 1200 px, jpeg, `foodBilledeSkaler`), lander i bucket `inspiration` under kundens kode og som række i tabellen `inspiration`, og hægtes på idéen som i dag: `INSP_VEDHAEFT` → »Inspiration: <url>« i briefens beskrivelse. Linket gemmes også på inspirationsvæggen med idéens tekst som note. Vedhæftningen vises som en lille flise med kryds; kryds fjerner den fra idéen (billedet bliver på væggen).
+- **Idékortet i Idébanken:** har idéen et billede, står det som 40 px kvadrat før titlen (`ideInspUrl`, `erBilledeUrl`).
+- **»Jeg har set noget fedt«:** ny rød knap »Tag et billede nu« (kameraet), kamerarullen som hvid knap under. Alle billeder til væggen gøres små før upload.
+- Ingen ny tabel, ingen ny policy, ingen ny lagerplads: samme bucket og tabel som væggen har haft siden 30/7.
+- Målt i selen på 390 og 1440: valgrækken, linkflisen (instagram.com), billedflisen, kortets miniature, kamera-feltet. Selve upload og kameraet kræver en rigtig telefon og basen.
+
 ## 6. Bridge-trådene 12/9
 
 Trådene på Idas maskine (»Skærm, der ikke må vises« m.fl.) døde kl. 16:25 dansk tid, fem minutter efter v1856 blev pushet, fordi computeren blev lukket. Intet i repoet er halvt; højst få minutters ucommitteret arbejde kan være tabt. De vågner først, når Claude Code startes på den maskine igen.
