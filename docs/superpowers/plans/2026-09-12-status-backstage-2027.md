@@ -173,6 +173,24 @@ Ikke rørt: teamet (klipperen) har sin egen kæde på produktionstavlen (Klippet
 - **Ida:** hvert ønske står i Venter på dig (Hjem, kundekortet, Indbakken) som »Ønske til appen fra Rikke · dato« med teksten og Set, der kvitterer (set-mærke på enheden). Kan lægges på to-do fra Indbakken som alle andre rækker.
 - Målt i selen: menuen, arket, kvitteringen. Ikke bygget: svar tilbage til kunden med status (modtaget / på vej / bygget). Det kræver en skrivevej fra Backstage til kundens Indbakke og hører under Indbakke-360 næste runde.
 
+## 5j. v1866: Drejebog-synk målt (hængeparti 5, Ida 13/9)
+
+Idas ønske: at kunne stole på, at en rettet byggesten slår igennem alle steder, på telefon og computer.
+
+**Målt i selen** (390 og 1440) med en generation, der siger »GAMMEL«, og byggesten rettet til »NY« under Tilpas drejebog:
+
+| Flade | Læser | Resultat |
+|---|---|---|
+| Drejebogens 16 sider (`bsBogSider` via `bsBogRaastof`) | `CURRENT_DEF.strategi` lagt oven på generationen | Alle fire NY (drivkraft, USP, kernekunde med navn og tekst, værdier). Ingen GAMMEL. |
+| Briefens »Fra brandstrategien« (`brandDelData`) | `CURRENT_DEF.strategi` | 1A USP, 1B kernekunden, 2A drivkraften, 2B værdierne: alle NY. |
+| Tilpas drejebog (`byggTegn`) | samme | Viser NY. På telefonen stables rækkerne (label over tekst). |
+
+Kæden efter Gem: `byggGem` skriver `kunde_strategi.byggesten`, henter forfra gennem den ene dør (`hentStrategiOverride` → `loadForloebStrategi` → `CURRENT_DEF.strategi`) og tegner siden igen. Drejebogen hentes og tegnes forfra ved hver åbning; briefen tegner sin boks ved hver åbning. Der er ingen cache imellem.
+
+**Rettet:** Ret/Skriv-knapperne på Tilpas drejebog var 26 × 12 px på telefonen; nu 44 px. Og Drejebogens port »er der grundlag?« kendte kun generationen; nu tæller kundens egne byggesten med, så en kunde med rettelser men uden ny generation ikke får »tom bog«.
+
+**Ikke rørt, men værd at vide:** de fire indholdssøjlers tekster (side 3-4 og 11-14) kommer fra generationen alene; kunden retter eksempler og hooks pr. søjle, ikke søjlens grundtekst. Det er efter reglen 17/8 (kun ejeren af strategien retter byggesten) og valget 25/8.
+
 ## 6. Bridge-trådene 12/9
 
 Trådene på Idas maskine (»Skærm, der ikke må vises« m.fl.) døde kl. 16:25 dansk tid, fem minutter efter v1856 blev pushet, fordi computeren blev lukket. Intet i repoet er halvt; højst få minutters ucommitteret arbejde kan være tabt. De vågner først, når Claude Code startes på den maskine igen.
