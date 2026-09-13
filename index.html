@@ -39992,6 +39992,42 @@ async function opslagPostetJa(id) {
   try { const it = (IDEER || []).find(function (x) { return String(x.id) === String(id); }); if (it) it.status = "Postet"; } catch (e) {}
   try { indbakkenAaben(); } catch (e) {}
   try { renderHome(); } catch (e) {}
+  /* DAGEN EFTER (haengeparti 7, Ida 13/9): naar opslaget er markeret postet, spoerges der med det samme,
+     hvad der gik godt, og hvad der var svaert. Eet kort, to felter, begge frivillige. Svaret bor paa
+     opslaget (brief.refleksion) og laeses i Backstage paa kundens side. */
+  try { opslagRefleksionVis(id); } catch (e) {}
+}
+function opslagRefleksionVis(id) {
+  const it = (IDEER || []).find(function (x) { return String(x.id) === String(id); }); if (!it) return;
+  const body = document.getElementById("ideBody"), bak = document.getElementById("ideBack"); if (!body || !bak) return;
+  const r = (it.brief && it.brief.refleksion) || {};
+  const idS = String(id).replace(/'/g, "\\'");
+  const felt = function (fid, lbl, ph, v) {
+    return '<div style="margin-top:12px;"><div style="font-size:10px;letter-spacing:1.6px;text-transform:uppercase;color:var(--gray3);margin-bottom:6px;">' + lbl + '</div>'
+      + '<textarea id="' + fid + '" class="sk-input" style="min-height:74px;background:#fff;font-size:16px;line-height:1.5;" placeholder="' + ph + '">' + esc(v || "") + '</textarea></div>';
+  };
+  body.innerHTML = '<button class="modal-close" onclick="closeIdeaWizard()">&times;</button>'
+    + '<div style="font-size:11px;font-weight:400;letter-spacing:1.8px;text-transform:uppercase;color:var(--red);">Postet</div>'
+    + '<h2 style="font-size:19px;margin-top:2px;text-transform:none;">' + esc(storStart(titelVis(it.titel || "Opslaget"))) + '</h2>'
+    + '<div style="font-size:12.5px;color:var(--gray3);line-height:1.6;margin-top:6px;">Hvordan gik det? To linjer er nok. Ida læser det og bruger det til næste planlægning.</div>'
+    + felt("oprGodt", "Hvad gik godt?", "Fx: folk skrev, at de ville komme forbi", r.godt)
+    + felt("oprSvaert", "Hvad var svært?", "Fx: at få lyset til at passe", r.svaert)
+    + '<div id="oprMsg" style="display:none;font-size:11.5px;color:var(--red);margin-top:8px;"></div>'
+    + '<button type="button" class="dbtn primary" style="width:100%;margin-top:14px;min-height:48px;" onclick="opslagRefleksionGem(\'' + idS + '\')">Gem</button>'
+    + '<button type="button" class="lek-moment-link" style="width:100%;" onclick="closeIdeaWizard()">Spring over</button>';
+  bak.classList.add("on");
+  try { const f = document.getElementById("oprGodt"); if (f) f.focus(); } catch (e) {}
+}
+async function opslagRefleksionGem(id) {
+  const it = (IDEER || []).find(function (x) { return String(x.id) === String(id); }); if (!it) return;
+  const g = ((document.getElementById("oprGodt") || {}).value || "").trim().slice(0, 1000);
+  const sv = ((document.getElementById("oprSvaert") || {}).value || "").trim().slice(0, 1000);
+  if (!g && !sv) { closeIdeaWizard(); return; }
+  const brief = Object.assign({}, it.brief || {}, { refleksion: { godt: g, svaert: sv, dato: datoDK() } });
+  let ok = false;
+  try { ok = await ideUpdate(id, { brief: brief }); } catch (e) { ok = false; }
+  if (ok === false) { const m = document.getElementById("oprMsg"); if (m) { m.textContent = "Det blev ikke gemt — prøv igen."; m.style.display = "block"; } return; }
+  closeIdeaWizard();
 }
 let OPSLAG_DATO = null;
 function opslagNyDatoAabn(id) {
@@ -40091,7 +40127,7 @@ async function venterHent() {
   /* IDAS EGET CONTENT STUDIO ER UDE AF BACKSTAGE (Ida 8/9 kl. 15.07: »Alt med content studio på admin skal fjernes«).
      Hendes egne opslag (kode ENERGIDA og andre »egen«-koder) staar aldrig i Venter paa dig — dem svarer hun paa i sin egen app. */
   rows = rows.filter(function (x) { return !erEgenKode(String(x.kode || "").toUpperCase()); });
-  window.__ALLE_OPSLAG = rows.map(function (x) { return { id: x.id, kode: x.kode, titel: x.titel, status: x.status, dato: x.dato }; });
+  window.__ALLE_OPSLAG = rows.map(function (x) { return { id: x.id, kode: x.kode, titel: x.titel, status: x.status, dato: x.dato, refleksion: (x.brief && x.brief.refleksion) || null }; });
   venterRaekkerFra(rows, mig, idag).forEach(function (r) { ud.push(r); });
   try {
     const t = await sb.from("kunde_opgaver").select("id,kode,titel,deadline,ansvarlig,done,aktiv").ilike("ansvarlig", "Ida%");
@@ -41330,6 +41366,7 @@ async function kundeSideTegn() {
   el.innerHTML = '<div class="bs-hero">' + esc(navn) + '</div><div class="bs-eye">Kunderne' + (bsKundeProdukt(k) ? ' · ' + esc(bsKundeProdukt(k)) : '') + '</div>'
     + '<div class="bs-ringe">' + ring(postet, "af " + uge.length + " postet", uge.length ? postet / uge.length : 0) + ring(frem, "planlagt frem", frem ? 1 : 0) + ring(venter.length, "venter på dig", venter.length ? 1 : 0) + '</div>'
     + (venter.length ? '<div class="bs-sek">Venter på dig</div><div class="bs-spor">' + venter.map(function (v) { return venterKortHtml(v, (window.__VENTER || []).indexOf(v)); }).join("") + '</div>' : '')
+    + bsRefleksionerHtml(ops)
     + '<div class="bs-sek">Alt om ' + esc(navn) + '</div><div class="bs-grid">'
     + lav("Briefs", briefs ? briefs + " i gang" : "", "aabnKundensSide('" + kEsc + "')")
     + lav("Kalenderen", naeste ? "Næste " + dkDatoKort(String(naeste.dato)) : "", "aabnKundensSide('" + kEsc + "')")
@@ -41340,6 +41377,23 @@ async function kundeSideTegn() {
     + '</div>'
     + '<button type="button" class="bsam-mobknap bsam-mobknap-sek bs-knap" onclick="aabnKundensSide(\'' + kEsc + '\')">Se som kunden</button>'
     + '<button type="button" class="bsam-mobknap bsam-mobknap-sek bs-knap bs-tilbage" onclick="visDashSide(\'crm\')">Tilbage</button>';
+}
+/* KUNDENS REFLEKSIONER EFTER OPSLAG (haengeparti 7, 13/9): det, kunden skrev, da opslaget blev markeret
+   postet — hvad gik godt, hvad var svaert. De fem nyeste, nyeste foerst. Intet afsnit uden refleksioner. */
+function bsRefleksionerHtml(ops) {
+  const med = (ops || []).filter(function (o) { return o && o.refleksion && (o.refleksion.godt || o.refleksion.svaert); })
+    .sort(function (a, b) { return String(b.refleksion.dato || b.dato || "") < String(a.refleksion.dato || a.dato || "") ? -1 : 1; }).slice(0, 5);
+  if (!med.length) return "";
+  return '<div class="bs-sek">Efter opslagene</div>'
+    + med.map(function (o) {
+        const r = o.refleksion;
+        return '<div class="bs-rk">'
+          + '<div class="bs-rk-l">' + esc(r.dato ? dkDatoKort(String(r.dato)) : "") + '</div>'
+          + '<div class="bs-rk-n">' + esc(storStart(titelVis(o.titel || "Opslaget"))) + '</div>'
+          + (r.godt ? '<div class="bs-rk-s"><span style="color:var(--black);">Godt:</span> ' + esc(r.godt) + '</div>' : '')
+          + (r.svaert ? '<div class="bs-rk-s"><span style="color:var(--black);">Svært:</span> ' + esc(r.svaert) + '</div>' : '')
+          + '</div>';
+      }).join("");
 }
 async function briefSletMobil(knap) {
   if (!BRIEF_ID) return;
@@ -41444,7 +41498,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "1867";
+const APP_VERSION = "1868";
 let NY_VERSION_KLAR = false;
 function nyVersionSkjul() { const e = document.getElementById("nyVersion"); if (e) e.style.display = "none"; }
 function nyVersionHent() { try { location.reload(); } catch(e) {} }
@@ -58235,6 +58289,6 @@ if ((location.hash || "").toLowerCase() === "#ole") {   // #ole = preview af Ole
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 13. september · 1867</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 13. september · 1868</div>
 </body>
 </html>

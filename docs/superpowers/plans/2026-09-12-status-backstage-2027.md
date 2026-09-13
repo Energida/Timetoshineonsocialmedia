@@ -198,6 +198,13 @@ Kæden efter Gem: `byggGem` skriver `kunde_strategi.byggesten`, henter forfra ge
 - Målt i selen på 390: fliserne »Opslag om ugen 3 · Prøvereels om måneden 1 af 2 · Story-dage Ma · On · Fr · Interaktionsrate 5 % · Månedens fokus sæt et mål« og dagvælgeren.
 - Ikke rørt: selve planlægningsritualet (hængeparti 6b/8) tegnes som mockups først.
 
+## 5l. v1868: dagen efter et opslag (hængeparti 7, Ida 13/9)
+
+- »Er det postet?« fandtes allerede (7/9) øverst i kundens Indbakke og i Idas Venter på dig. Nyt: når kunden trykker »Ja, postet«, kommer ét kort: »Hvordan gik det?« med to frivillige felter, Hvad gik godt? og Hvad var svært? Gem eller Spring over. Svaret bor på opslaget (`brief.refleksion` med godt, svært, dato) via `ideUpdate`, ingen ny tabel.
+- **Backstage, kundens side:** afsnittet »Efter opslagene« med de fem nyeste refleksioner (dato, opslag, Godt, Svært). Intet afsnit uden refleksioner. `__ALLE_OPSLAG` bærer nu refleksionen med.
+- Ikke push: appen har ingen push-notifikationer. Kortet står i Indbakken og på Hjem, til kunden svarer. Push er kontraktarbejde (serviceworker, server, nøgler) og tages separat, hvis Ida vil.
+- Målt i selen på 390: kortet efter Ja, postet; gemt refleksion på opslaget; Backstage-afsnittet med ét opslag.
+
 ## 6. Bridge-trådene 12/9
 
 Trådene på Idas maskine (»Skærm, der ikke må vises« m.fl.) døde kl. 16:25 dansk tid, fem minutter efter v1856 blev pushet, fordi computeren blev lukket. Intet i repoet er halvt; højst få minutters ucommitteret arbejde kan være tabt. De vågner først, når Claude Code startes på den maskine igen.
