@@ -167,6 +167,12 @@ Orienteringsrækker hos kunden forsvinder, når de er åbnet (`ibSetMark`, pr. k
 
 Ikke rørt: teamet (klipperen) har sin egen kæde på produktionstavlen (Klippet → Til din godkendelse), og »Ønsker til appen« er hængeparti 3. Den tomme tekst under Til orientering sagde »Ingen aftaler i kalenderen lige nu« (aftalerne flyttede til Hjem 3/8); nu »Ingenting nyt«.
 
+## 5i. v1865: Ønsker til appen (hængeparti 3, Ida 13/9)
+
+- **Kunden:** »Ønsker til appen« under Mere (telefon) og i profilmenuen (computer), lige efter Min profil. Åbner arket (den ene popup-form, 11/9): »Hvad ville gøre appen bedre?«, Ida læser det selv. Send gemmer ønsket som liste på kundens egen række i skema_svar (skema `app_oensker`, én pr. person, samme mønster som Tøm hovedet-noterne). Kvittering: »Sendt til Ida. Tak.« Ingen ny tabel, ingen ny policy.
+- **Ida:** hvert ønske står i Venter på dig (Hjem, kundekortet, Indbakken) som »Ønske til appen fra Rikke · dato« med teksten og Set, der kvitterer (set-mærke på enheden). Kan lægges på to-do fra Indbakken som alle andre rækker.
+- Målt i selen: menuen, arket, kvitteringen. Ikke bygget: svar tilbage til kunden med status (modtaget / på vej / bygget). Det kræver en skrivevej fra Backstage til kundens Indbakke og hører under Indbakke-360 næste runde.
+
 ## 6. Bridge-trådene 12/9
 
 Trådene på Idas maskine (»Skærm, der ikke må vises« m.fl.) døde kl. 16:25 dansk tid, fem minutter efter v1856 blev pushet, fordi computeren blev lukket. Intet i repoet er halvt; højst få minutters ucommitteret arbejde kan være tabt. De vågner først, når Claude Code startes på den maskine igen.

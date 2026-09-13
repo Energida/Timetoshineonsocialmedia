@@ -5846,6 +5846,7 @@ body.modul-open .burger-btn, body.modul-open .bottom-nav, body.modul-open .dash-
   <div class="burger-bund">
     <div class="burger-linje"></div>
     <button class="burger-item" onclick="toggleBurger(); minProfilAaben()">Min profil</button>
+    <button class="burger-item" onclick="toggleBurger(); appOenskeAabn()">Ønsker til appen</button>
     <button class="burger-item" onclick="toggleBurger(); togglePwPanel()">Skift adgangskode</button>
     <button class="burger-item" style="color:var(--red);" onclick="custLogout()">Log ud</button>
     <div id="burgerVersion" style="font-size:9px;letter-spacing:0.5px;color:var(--gray3);padding:10px 0 0;"></div>
@@ -24027,6 +24028,35 @@ async function kundeNoteGem(tekst) {
   if (ok) KUNDE_NOTER = ny;
   return ok;
 }
+/* ===== OENSKER TIL APPEN (haengeparti 3, Ida 13/9: "under profil ... oensker til appen, oensker til
+   funktion"). Kunden skriver i arket (den ene popup-form, 11/9), oensket lander som raekke paa
+   kundens egen skema_svar (skema "app_oensker", en liste pr. person — samme moenster som Toem
+   hovedet-noterne) og i Idas Venter paa dig. Ingen ny tabel, ingen ny policy. */
+function appOenskeAabn() {
+  arkAabn({ eye: "Ønsker til appen", titel: "Hvad ville gøre appen bedre?", ph: "Skriv dit ønske …", send: "Send",
+    under: "Ida læser det selv.",   /* intet loefte om svar, foer svar-vejen er bygget (2/8-reglen) */
+    gem: appOenskeGem });
+}
+async function appOenskeGem(tekst) {
+  const t = String(tekst || "").trim(); if (!t) return false;
+  if (!sb || !currentKode) return false;
+  const n = (typeof kundeNoterNavn === "function") ? kundeNoterNavn() : "kunde";
+  let gamle = [];
+  try {
+    const r = await sb.from("skema_svar").select("svar").eq("kode", currentKode).eq("navn", n).eq("skema", "app_oensker").maybeSingle();
+    if (r.error) return false;   /* de gamle kendes ikke — skriv ikke i blinde (4/8-reglen) */
+    if (r.data && r.data.svar && Array.isArray(r.data.svar.oensker)) gamle = r.data.svar.oensker;
+  } catch (e) { return false; }
+  const ny = [{ id: "ao" + Date.now(), t: t, dato: datoDK() }].concat(gamle);
+  const krop = { oensker: ny };
+  let ok = false;
+  try {
+    const u = await sb.from("skema_svar").update({ svar: krop }).eq("kode", currentKode).eq("navn", n).eq("skema", "app_oensker").select();
+    ok = !!(u.data && u.data.length);
+    if (!ok) { const i = await sb.from("skema_svar").insert({ kode: currentKode, navn: n, skema: "app_oensker", svar: krop }).select(); ok = !!(i.data && i.data.length); }
+  } catch (e) { ok = false; }
+  return ok ? "Sendt til Ida. Tak." : false;
+}
 async function kundeNoteSlet(id) {
   await kundeNoterHent();
   const ud = (KUNDE_NOTER || []).filter(function (x) { return String(x.id) !== String(id); });
@@ -35962,7 +35992,8 @@ function buildSideNav(def) {
     /* Ida 30/7: menuen åbner VED knappen (nederst t.v.) — ikke i modsatte hjørne */
     + '<div id="virkMenu" style="display:none;position:fixed;left:14px;bottom:96px;width:230px;background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:0 16px 40px rgba(0,0,0,0.15);padding:8px;z-index:90;">'
     + '<div style="padding:10px 12px 6px;font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--gray3);">' + esc(virkNavn) + '</div>'
-    + '<button class="dbtn ghost" style="width:100%;text-align:left;font-weight:400;" onclick="toggleVirkMenu();minProfilAaben()">Min profil</button>'   /* manglede på desktop (Freja-fundet 28/7) */
+    + '<button class="dbtn ghost" style="width:100%;text-align:left;font-weight:400;" onclick="toggleVirkMenu();minProfilAaben()">Min profil</button>'
+    + '<button class="dbtn ghost" style="width:100%;text-align:left;font-weight:400;" onclick="toggleVirkMenu();appOenskeAabn()">Ønsker til appen</button>'   /* haengeparti 3 (13/9) '   /* manglede på desktop (Freja-fundet 28/7) */
     + (!erSelvkoeb(def) || selvkoebAabnet(def)
       ? '<button class="dbtn ghost" style="width:100%;text-align:left;font-weight:400;" onclick="toggleVirkMenu();turStart(true)">Se rundvisningen igen</button>'
       : '')   /* RUNDVISNINGEN GAELDER ALLE KUNDER (Ida 24/8) - men genvejen stod kun for
@@ -40011,6 +40042,18 @@ async function venterHent() {
       ud.push({ slags: "todo", kode: o.kode, kunde: venterKundeNavn(o.kode), titel: storStart(o.titel || ""), sub: o.deadline ? dkDatoKort(String(o.deadline)) : "To-do", id: o.id, ja: "Done", nej: "" });
     });
   } catch (e) {}
+  /* OENSKER TIL APPEN fra kunderne (haengeparti 3, 13/9): een raekke pr. oenske, til Ida trykker Set. */
+  try {
+    const set = bsVenterSetLaes();
+    const o = await sb.from("skema_svar").select("kode,navn,svar").eq("skema", "app_oensker");
+    (o.data || []).forEach(function (r) {
+      if (erEgenKode(String(r.kode || "").toUpperCase())) return;
+      ((r.svar && r.svar.oensker) || []).forEach(function (w) {
+        if (!w || !w.t || set["oenske:" + w.id]) return;
+        ud.push({ slags: "oenske", kode: r.kode, kunde: venterKundeNavn(r.kode), titel: storStart(String(w.t)), sub: "Ønske til appen fra " + String(r.navn || "kunden") + (w.dato ? " · " + dkDatoKort(String(w.dato)) : ""), id: w.id, ja: "Set", nej: "", noegle: "oenske:" + w.id });
+      });
+    });
+  } catch (e) {}
   window.__VENTER = ud; return ud;
 }
 /* Set-maerket for Idas orienteringsraekker (godkendt af kunden): paa enheden. */
@@ -40072,7 +40115,7 @@ async function venterJa(i) {
     else if (v.slags === "postet") { const r = await sb.from("content_ideer").update({ status: "Postet" }).eq("id", v.id).select(); ok = !!(r.data && r.data.length); }
     else if (v.slags === "kommentar") { godkKoeAabn(v.kode, v.id); return; }
     else if (v.slags === "retur") { godkKoeAabn(v.kode, v.id); return; }
-    else if (v.slags === "godkendt") { bsVenterSetMark(v.noegle); ok = true; }
+    else if (v.slags === "godkendt" || v.slags === "oenske") { bsVenterSetMark(v.noegle); ok = true; }
     else if (v.slags === "todo") { const r = await sb.from("kunde_opgaver").update({ done: true }).eq("id", v.id).select(); ok = !!(r.data && r.data.length); }
   } catch (e) { ok = false; }
   if (!ok) { try { visSyncFejl && visSyncFejl("Kunne ikke gemme — prøv igen."); } catch (e) {} }
@@ -41344,7 +41387,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "1864";
+const APP_VERSION = "1865";
 let NY_VERSION_KLAR = false;
 function nyVersionSkjul() { const e = document.getElementById("nyVersion"); if (e) e.style.display = "none"; }
 function nyVersionHent() { try { location.reload(); } catch(e) {} }
@@ -58135,6 +58178,6 @@ if ((location.hash || "").toLowerCase() === "#ole") {   // #ole = preview af Ole
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 13. september · 1864</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 13. september · 1865</div>
 </body>
 </html>
