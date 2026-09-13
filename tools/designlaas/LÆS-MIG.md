@@ -2,10 +2,8 @@
 
 `probe-popups.js` åbner hver kendt popup-dør i kundeappen og måler den mod `DESIGNLÅS.md`.
 
-Kør den i selen (selen er beskrevet i bilaget i `docs/superpowers/plans/2026-09-12-status-backstage-2027.md`, den må aldrig committes):
+**Kør den:** `bash tools/designlaas/koer.sh` (bygger selen i en midlertidig mappe med `byg-sele.py`, kræver Chromium; sæt `CHROME=<sti>`, hvis den ikke finder den selv). Slutter med `SELE LAAS OK: N døre` og exit 0, ellers `SELE LAAS FEJL …` og exit 1.
 
-```
-bash koer.sh "vis=kunde&fil=index-sele.html&bred=390" laas tools/designlaas/probe-popups.js | grep "SELE LAAS"
-```
+**Porten:** `.github/workflows/designlaas.yml` kører det samme ved hvert push til `dashboard-og-database` og skubber kun OK-commits videre til `produktion`.
 
-`SELE LAAS OK` = alle døre holder. Hver `SELE LAAS FEJL` siger dør og hvad der er galt. Ny popup-dør i appen skal ind i `DOERE` i samme commit.
+Ny popup-dør i appen skal ind i `DOERE` i `probe-popups.js` i samme commit. Selen bygges ud af `byg-sele.py` og må aldrig committes som filer (en `index-sele.html` på det levende site ville være appen med en falsk bruger).

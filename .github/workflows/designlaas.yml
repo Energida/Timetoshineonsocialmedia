@@ -1,0 +1,47 @@
+# DESIGNLAASENS PORT (Ida 13/9: »jeg vil gerne undgaa, at jeg skal spoerge om det paa bagkant«).
+# Hvert push til dashboard-og-database maales her: selen bygges uden for repoet, kundeappen aabnes paa 390 i
+# headless Chromium, og tools/designlaas/probe-popups.js maaler alle kendte popup-doere mod DESIGNLÅS.md.
+# Siger maalingen OK, skubbes PRAECIS samme commit videre til grenen "produktion". Siger den fejl, sker intet,
+# og GitHub sender besked. Peger Cloudflare Pages paa "produktion", naar intet ud til kunderne uden maalingen.
+name: Designlaas
+on:
+  push:
+    branches: [dashboard-og-database]
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: designlaas
+  cancel-in-progress: false
+jobs:
+  maal:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Syntaks og versionsnummer
+        run: |
+          node -e "
+            const fs=require('fs');const s=fs.readFileSync('index.html','utf8');
+            const re=/<script(?![^>]*src)[^>]*>([\s\S]*?)<\/script>/g;let m,n=0,fejl=0;
+            while((m=re.exec(s))){n++;try{new Function(m[1])}catch(e){console.log('blok',n,'FEJL',e.message);fejl++}}
+            const v=(s.match(/const APP_VERSION = \"(\d+)\"/)||[])[1]; const vt=fs.readFileSync('version.txt','utf8').trim();
+            const fod=(s.match(/Version 13\. september · (\d+)|Version [^<·]+· (\d+)/)||[]); 
+            console.log('APP_VERSION',v,'version.txt',vt);
+            if(v!==vt){console.log('FEJL: APP_VERSION og version.txt er ikke ens');fejl++}
+            if(fejl){process.exit(1)} console.log('blokke',n,'OK');
+          "
+      - name: Chromium
+        run: npx --yes playwright@1.47.2 install --with-deps chromium
+      - name: Designlaasens maaling (390)
+        run: bash tools/designlaas/koer.sh
+      - name: Videre til produktion
+        if: success() && github.event_name == 'push'
+        run: |
+          git config user.name "designlaas"
+          git config user.email "designlaas@users.noreply.github.com"
+          git push origin HEAD:produktion

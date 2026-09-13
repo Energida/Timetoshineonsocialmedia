@@ -277,6 +277,12 @@ Ida (13/9 kl. 14.24, med skærmbillede af helskærms-Tøm hovedet): »hvordan fa
 - **`tools/designlaas/probe-popups.js`:** åbner 17 kendte popup-døre i kundeappen på 390 og måler: skriveformer skal være arket, ingen helskærm, ingen lille dialog, intet synligt kryds, lang Luk, alle knapper mindst 44 px og lange. Kørt nu: `SELE LAAS OK: 17 døre`. Fandt undervejs dagknapperne i Planlægningsdag på 43 px; rettet til 44.
 - Ærligt: ingen fil kan garantere »aldrig«. Det, der virker, er tre ting sammen: én fil, alle tråde læser først; en måling, der siger fejl før deploy; og fejningen, når en lås ændres. 11/9 manglede de to sidste.
 
+## 5u. Designlåsens port (Ida 13/9: »jeg vil gerne undgå, at jeg skal spørge om det på bagkant«)
+
+- **Mekanisk, ikke en regel:** `.github/workflows/designlaas.yml` kører ved hvert push til `dashboard-og-database`: syntaks, versionsnummer (APP_VERSION = version.txt), Chromium, og `tools/designlaas/koer.sh`, som bygger selen uden for repoet (`byg-sele.py`, stub og sele.html ligger som tekst i scriptet, aldrig som filer) og kører `probe-popups.js` på 390. Siger målingen OK, skubbes samme commit til grenen `produktion`. Siger den fejl, sker intet, og GitHub sender besked.
+- **Idas ene klik:** i Cloudflare Pages sættes produktionsgrenen til `produktion`. Fra det øjeblik når intet ud til kunderne uden målingen. Indtil da er porten en alarm: den kører og fejler synligt, men sitet deployer stadig fra `dashboard-og-database`.
+- Kørt lokalt før commit: `SELE LAAS OK: 17 døre`, exit 0.
+
 ## 6. Bridge-trådene 12/9
 
 Trådene på Idas maskine (»Skærm, der ikke må vises« m.fl.) døde kl. 16:25 dansk tid, fem minutter efter v1856 blev pushet, fordi computeren blev lukket. Intet i repoet er halvt; højst få minutters ucommitteret arbejde kan være tabt. De vågner først, når Claude Code startes på den maskine igen.
