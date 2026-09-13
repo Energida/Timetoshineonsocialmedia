@@ -5472,6 +5472,9 @@ body.modul-open .burger-btn, body.modul-open .bottom-nav, body.modul-open .dash-
 .lek-video-ph { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; text-align:center; padding:20px; }
 .lek-kort { background:#fff; border:1px solid var(--border); border-radius:20px; padding:18px 20px; margin-top:14px; }
 .lek-knapper { display:flex; gap:10px; flex-wrap:wrap; margin-top:16px; }
+/* PAA TELEFONEN STAAR KNAPPERNE SOM EEN STAK I FULD BREDDE (lektionsgennemgangen 13/9).
+   Maalt paa 390: tre knapper i tre bredder (lille, mellem, fuld) saa flossede ud. 44 px. */
+@media (max-width:700px) { .lek-knapper .dbtn { flex:1 1 100%; min-height:44px; } }
 .lek-note-liste { margin-top:12px; display:flex; flex-direction:column; gap:8px; }
 .lek-note { background:var(--gray); border-radius:12px; padding:10px 12px; font-size:12.5px; line-height:1.55; display:flex; gap:10px; align-items:flex-start; }
 .lek-note-tid { flex-shrink:0; background:var(--blue); border-radius:12px; font-size:10.5px; padding:2px 8px; font-variant-numeric:tabular-nums; }
@@ -18708,7 +18711,7 @@ async function renderVaerktoej() {
        lektioner. Foer spurgte den kun paa kundetypen — og en forloebskunde UDEN
        lektionsadgang fik alligevel knappen. */
     lekLink.innerHTML = harLektionsadgang(d)
-      ? '<button type="button" class="row-btn view" style="margin-bottom:14px;font-weight:400;" onclick="showTab(12)">Til lektionerne</button>'
+      ? '<button type="button" class="row-btn view" style="margin-bottom:14px;font-weight:400;" onclick="showTab(12)">Til forløbet</button>'
       : '';
   }
   await vkKonfigHent();
@@ -19216,7 +19219,7 @@ function obFremdriftHtml(def) {
   return '<div style="border:1px solid var(--border);border-radius:20px;background:#fff;padding:20px 22px;margin-top:14px;">'
     + '<div style="display:flex;gap:26px;flex-wrap:wrap;align-items:flex-start;justify-content:center;">'
     + ring(lekDone, aktive.length, "Lektioner", alt ? "Alle lektioner er i mål" : "Set og markeret som færdig")
-    + (medOvelse.length ? ring(ovDone, medOvelse.length, "Opgaver", "Besvaret undervejs i lektionerne") : "")
+    + (medOvelse.length ? ring(ovDone, medOvelse.length, "Øvelser", "Besvaret undervejs i lektionerne") : "")   /* eet ord: oevelser (Idas klik 13/9) */
     + '</div>'
     + '<div style="display:flex;justify-content:flex-end;margin-top:12px;">'
     + '<button type="button" class="row-btn" onclick="showTab(12)">' + (lekDone ? "Fortsæt forløbet" : "Se første lektion") + '</button>'
@@ -19278,6 +19281,32 @@ function onboardingRender(def) {
     tekst: (skemaAntal ? skemaAntal + " spørgsmål" : "Et par spørgsmål") + " om, hvordan det ser ud i dag. Det tager cirka 10 minutter — og det er dét, vi måler fremgangen op imod.",
     cta: skemaAktiv ? { txt: skemaAntal ? "Start her — svar på de " + skemaAntal + " spørgsmål" : "Start her — udfyld skemaet", klik: "openSkema('inden_workshoppen')" } : null,
     sek: t.s0 && visSkema ? '<button type="button" class="obp-seklink" onclick="openSkema(\'inden_workshoppen\')">Se dine svar</button>' : "" };
+  /* ===== FORLOEBET ER REJSENS TRIN 2 FOR KURSUSKUNDER (lektionsgennemgangen 13/9, Idas klik:
+     "een rejse med lektionerne som trin 2"). Foer stod firetrinsrejsen OG et lektionskort med
+     hver sin knap under hinanden paa Hjem — to sandheder om, hvad kunden skal foerst. Rejsen
+     sagde "byg din Drejebog", lektionerne sagde "resten laaser op, naar du er igennem", og
+     rejsens egne trin 3 og 4 foerte ind i laaste sider. Nu: skema -> forloebet -> Drejebog ->
+     planlaegningsdag -> foerste brief. Tallet bor i trinnet, lektionskortet under rejsen er ude
+     for kursuskunder (obFremdriftHtml tegnes stadig for forloebskunder med lektioner).
+     Findes der ingen publicerede lektioner, staar trinnet som "paa vej" og spaerrer INTET —
+     samme sikkerhedsventil som kursusLaasAktiv. */
+  const kursusRejse = !!(def && def.type === "kursus" && typeof kursusLektionerAktive === "function");
+  let tLek = null;
+  if (kursusRejse) {
+    let lekAlle = [];
+    try { lekAlle = kursusLektionerAktive() || []; } catch (e) { lekAlle = []; }
+    const lekDone = lekAlle.filter(function (l) { return KURSUS_SET[l.id]; }).length;
+    const lekFaerdig = lekAlle.length > 0 && lekDone === lekAlle.length;
+    const lekAktiv = !!(lekAlle.length && (!visSkema || t.s0) && !lekFaerdig);
+    tLek = lekAlle.length
+      ? { done: lekFaerdig, aktiv: lekAktiv, label: "Forløbet",
+          tekst: lekDone + " af " + lekAlle.length + " lektioner set. Øvelserne undervejs bygger din Drejebog.",
+          cta: lekAktiv ? { txt: lekDone ? "Fortsæt forløbet" : "Se første lektion", klik: "showTab(12)" } : null,
+          sek: lekFaerdig ? '<button type="button" class="obp-seklink" onclick="showTab(12)">Gense lektionerne</button>' : "",
+          laast: (visSkema && !t.s0) ? "Låses op, når du har udfyldt skemaet" : "" }
+      : { done: false, aktiv: false, label: "Forløbet",
+          tekst: "Ida optager lektionerne i øjeblikket. De dukker op her, så snart de første er klippet." };
+  }
   /* STRATEGIEN LIGGER KUN KLAR, NAAR DEN FINDES (Ida 8/9 kl. 16.46: en ny Content Studio-kunde fik »ligger klar« og en tom Drejebog). */
   const t1 = (fl && t.s1)
     ? { done: true, label: "Strategien ligger klar",
@@ -19314,7 +19343,10 @@ function onboardingRender(def) {
   if (visSkema && !t.s0) {
     if (t1.aktiv) { t1.aktiv = false; t1.cta = null; t1.laast = "Låses op, når du har udfyldt skemaet"; }
   }
-  const trin = visSkema ? [tSkema, t1, tDag, tBrief] : [t1, tDag, tBrief];
+  /* Forloebet aabner Drejebogen (13/9): saa laenge lektionerne er det aktive trin, venter
+     Drejebog-trinnet. Er der ingen lektioner (paa vej), spaerrer trinnet ikke. */
+  if (tLek && tLek.aktiv && t1.aktiv) { t1.aktiv = false; t1.cta = null; t1.laast = "Låses op, når du er igennem forløbet"; }
+  const trin = [visSkema ? tSkema : null, tLek, t1, tDag, tBrief].filter(Boolean);
   const flueben = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>';
   /* HVIDE FLISER + TYDELIG HAENGELAAS (Ida 27/8 aften: "hvide fliser paa teksten ved
      1 2 3 og en tydelig haengelaas paa 2+3"). Cirklerne bliver PAA den roede streg;
@@ -19353,12 +19385,12 @@ function onboardingRender(def) {
     ? '<div class="ob-cta-r"><button type="button" id="obStartCta" class="dbtn primary ob-cta" onclick="' + aktivCta.klik + '">' + aktivCta.txt + '</button></div>'
     : '';
   kort.innerHTML = '<div class="ob-proces">' + trinHtml + '</div>' + ctaRaekke
-    + obFremdriftHtml(def)
+    + (tLek ? '' : obFremdriftHtml(def))   /* kursuskundens tal bor i trin 2 (13/9) */
     /* "SPRING INTROEN OVER" KUN FOER MAN ER BEGYNDT (Ida 27/8 aften: "skal fjernes naar
        man allerede har vaeret igennem den"). Er et trin gennemfoert, er man I GANG —
        saa er der ikke laengere nogen intro at springe over, og linket var fyld. */
     + ((t.s1 || t.s2 || t.s3) ? '' : '<div id="obSpring" style="display:flex;justify-content:flex-end;">'
-    + '<button type="button" onclick="onboardingSpring()" style="background:none;border:none;cursor:pointer;font-family:Poppins,sans-serif;font-size:11px;color:var(--gray3);white-space:nowrap;padding:6px 2px;">Spring introen over</button></div>');
+    + '<button type="button" onclick="onboardingSpring()" style="background:none;border:none;cursor:pointer;font-family:Poppins,sans-serif;font-size:11px;color:var(--gray3);white-space:nowrap;padding:6px 2px;min-height:44px;display:inline-flex;align-items:center;">Spring introen over</button></div>');   /* 44 px trykfelt (13/9) */
   obBegyndtTjek(def);
 }
 /* ER KUNDEN I GANG MED BYGGEREN, SIGER KNAPPEN DET (Ida 27/8 aften: "naar kunden
@@ -23910,10 +23942,13 @@ const KURSUS_MODULER = [
        selv og med basen. Roer aldrig den ene uden den anden. */
     { id: "5-1", titel: "Din strategi skal passe til DIG" },
     { id: "5-2", titel: "Din drivkraft", ovelse: [{ id: "o4sqng9q", spm: "Hvorfor har du din forretning? (dit første, ærlige svar)" }, { id: "okh2qiit", spm: "Hvorfor? (spørg ind til dit eget svar)" }, { id: "oia8icym", spm: "Hvorfor betyder det noget?" }, { id: "ogpmfu6h", spm: "Hvorfor er det vigtigt for dig?" }, { id: "o49edrqg", spm: "Gør sætningen færdig: \"Vores forretning findes, fordi…\"" }, { id: "o6dwexzc", spm: "Gør sætningen færdig: \"Når en kunde har været hos os, skal de gå derfra med følelsen af…\"" }] },
-    { id: "5-3", titel: "Jeres kernekunde", ovelse: [{ id: "o8svncur", spm: "Beskriv den kunde, du ALLERHELST vil have flere af — hvem er de, og hvad betyder noget for dem?" }, { id: "or2ecwfy", spm: "I hvilke situationer opstår deres behov for netop jer?" }] },
-    { id: "5-4", titel: "Jeres værdier", ovelse: [{ id: "oftgsh9q", spm: "Beskriv den bedste kundeoplevelse i jeres forretning nogensinde — hvad skete der?" }, { id: "o9rdm3nb", spm: "Hvad kunne I aldrig finde på?" }, { id: "ofkezspp", spm: "Vælg jeres tre værdier — tre ord." }] },
-    { id: "5-5", titel: "Jeres USP", ovelse: [{ id: "of4624fh", spm: "Hvad har jeres forretning, som hverken en kæde eller en webshop kan kopiere?" }, { id: "on4wq3m7", spm: "Hvad siger kunderne, når de anbefaler jer til andre?" }] },
-    { id: "5-6", titel: "Hvad er succeskriteriet?", ovelse: [{ id: "oc7b3y8c", spm: "Hvad skal jeres tilstedeværelse på sociale medier gøre for forretningen — helt konkret?" }] }
+    /* DU/DIN I STEDET FOR I/JER (lektionsgennemgangen 13/9, husreglen fra 3/9). Titler og
+       reservespoergsmaal rettet SAMMEN, som noten ovenfor kraever. Basen (lektioner og
+       lektion_oevelser) baerer de samme ord og skal rettes dér ogsaa — listen ligger hos Ida. */
+    { id: "5-3", titel: "Din kernekunde", ovelse: [{ id: "o8svncur", spm: "Beskriv den kunde, du ALLERHELST vil have flere af — hvem er de, og hvad betyder noget for dem?" }, { id: "or2ecwfy", spm: "I hvilke situationer opstår deres behov for netop din forretning?" }] },
+    { id: "5-4", titel: "Dine værdier", ovelse: [{ id: "oftgsh9q", spm: "Beskriv den bedste kundeoplevelse i din forretning nogensinde — hvad skete der?" }, { id: "o9rdm3nb", spm: "Hvad kunne du aldrig finde på?" }, { id: "ofkezspp", spm: "Vælg dine tre værdier — tre ord." }] },
+    { id: "5-5", titel: "Din USP", ovelse: [{ id: "of4624fh", spm: "Hvad har din forretning, som hverken en kæde eller en webshop kan kopiere?" }, { id: "on4wq3m7", spm: "Hvad siger kunderne, når de anbefaler dig til andre?" }] },
+    { id: "5-6", titel: "Hvad er succeskriteriet?", ovelse: [{ id: "oc7b3y8c", spm: "Hvad skal din tilstedeværelse på sociale medier gøre for forretningen — helt konkret?" }] }
   ]},
   { titel: "Modul 6 · Content-strategien", lektioner: [
     { id: "6-1", titel: "Hvad virker i dag?", ovelse: [{ id: "oxp8di2k", spm: "Nævn tre profiler, du selv elsker at følge." }, { id: "onx7mrtk", spm: "For hver: hvad gør de, som får dig til at blive hængende?" }] },
@@ -23921,7 +23956,7 @@ const KURSUS_MODULER = [
     { id: "6-3", titel: "Skabe behov — produkt-søjlen" },
     { id: "6-4", titel: "Skabe behov — situations-søjlen" },
     { id: "6-5", titel: "Danne relation & community" },
-    { id: "6-6", titel: "Jeres fire indholdssøjler — fra strategi til hverdag", ovelse: [{ id: "o5ntxk8d", spm: "Hvad er månedens tema? (fx sæsonen, en mærkedag eller det, der fylder i butikken lige nu)" }, { id: "o74f5e63", spm: "Hvad sker der i butikken den kommende måned — nyheder, sæson eller anledninger, temaet kan bygge på?" }, { id: "o8fz64h7", spm: "Hvordan kommer temaet til at kunne ses i skabe behov-søjlerne (1A og 1B)?" }, { id: "o49mz4s6", spm: "Og hvordan kan det mærkes i people follow people-søjlen (2A)?" }, { id: "og2xhejy", spm: "Hvilke dage i ugen poster I jeres faste opslag?", type: "dage" }] }
+    { id: "6-6", titel: "Dine fire indholdssøjler — fra strategi til hverdag", ovelse: [{ id: "o5ntxk8d", spm: "Hvad er månedens tema? (fx sæsonen, en mærkedag eller det, der fylder i butikken lige nu)" }, { id: "o74f5e63", spm: "Hvad sker der i butikken den kommende måned — nyheder, sæson eller anledninger, temaet kan bygge på?" }, { id: "o8fz64h7", spm: "Hvordan kommer temaet til at kunne ses i skabe behov-søjlerne (1A og 1B)?" }, { id: "o49mz4s6", spm: "Og hvordan kan det mærkes i people follow people-søjlen (2A)?" }, { id: "og2xhejy", spm: "Hvilke dage i ugen poster du dine faste opslag?", type: "dage" }] }
   ]},
   { titel: "Værktøjskassen", lektioner: [
     { id: "7-1", titel: "Profiloptimering" },
@@ -24149,6 +24184,16 @@ async function pubHent() {
   PUB_HENTET = true;
   try { renderKursusHjem(); } catch(e) {}
   try { pubPanelRender(); } catch(e) {}
+  /* MENUERNE OG REJSEN TEGNES OM, NAAR PUBLICERINGEN ER HENTET (13/9). Laasen og menuerne
+     spoerger kursusLaasAktiv, som foerst kender svaret nu (sikkerhedsventilen: ingen
+     publicerede lektioner = ingen laas). Blev de staaende fra boot, viste menuen daempede
+     punkter, mens siderne var aabne — de to skal svare det samme. Kun kursuskunder. */
+  try {
+    if (CURRENT_DEF && CURRENT_DEF.type === "kursus" && typeof CUSTOMER_NAV !== "undefined" && CUSTOMER_NAV) {
+      buildBottomNav(CURRENT_DEF);
+      if (typeof onboardingAktiv === "function" && onboardingAktiv(CURRENT_DEF)) onboardingRender(CURRENT_DEF);
+    }
+  } catch(e) {}
 }
 
 function pubErPubliceret(id) {
@@ -25073,6 +25118,22 @@ async function lektionSet(id) {
   try { const lRef = KURSUS_LEKTIONER.find(x => x.id === id); setTimeout(() => refleksionVis("lektion", id, lRef ? lRef.titel : ""), 400); } catch(e) {}
 }
 function kursusFaerdig() { const a = kursusLektionerAktive(); return a.length > 0 && a.every(l => KURSUS_SET[l.id]); }   /* tom liste = IKKE færdig (rod-årsagen til "Forløbet er gennemført"-buggen) */
+/* EEN DOER TIL "ER KURSUS-LAASEN PAA?" (lektionsgennemgangen 13/9, Idas klik: alt-eller-intet
+   BLIVER, men med sikkerhedsventil). Foer var laasen bare !kursusFaerdig(): fandtes der INGEN
+   publicerede lektioner, var forloebet aldrig faerdigt, og de syv sider stod laast for altid
+   med et overlay, der pegede paa lektioner, der ikke fandtes. Nu: er publiceringen hentet og
+   listen tom, er intet laast. Er den IKKE hentet endnu, er der stadig laast (sikker side, som
+   pubErPubliceret). Bruges af showTab-porten, kursusIGangMenu og Forloebet-siden — skriv
+   aldrig betingelsen et fjerde sted. */
+function kursusLaasAktiv(def) {
+  try {
+    def = def || CURRENT_DEF;
+    if (!def || def.type !== "kursus") return false;
+    if (kursusFaerdig()) return false;
+    if (PUB_HENTET && !kursusLektionerAktive().length) return false;   /* sikkerhedsventilen */
+    return true;
+  } catch (e) { return false; }
+}
 const KURSUS_LAASTE_SIDER = { 1: 1, 2: 1, 5: 1, 6: 1, 8: 1, 9: 1, 10: 1 };
 function kursusLaasOverlay() {
   const scr = document.querySelector(".screen.active"); if (!scr) return;
@@ -25084,7 +25145,7 @@ function kursusLaasOverlay() {
     + '<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="2" stroke-linecap="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>'
     + '<div class="kort-titel" style="margin:10px 0 6px;">Låst endnu</div>'
     + '<div style="font-size:12.5px;color:var(--gray3);line-height:1.6;margin-bottom:16px;">Denne del af dit Content Studio låser op, efterhånden som du kommer gennem forløbet. Lige nu er lektionerne vejen frem.</div>'
-    + '<button class="dbtn primary" style="padding:11px 22px;" onclick="showTab(12)">Til lektionerne</button>'
+    + '<button class="dbtn primary" style="padding:11px 22px;" onclick="showTab(12)">Til forløbet</button>'   /* eet navn: Forloebet (13/9) */
     + '</div>';
   scr.appendChild(ov);
 }
@@ -25342,6 +25403,16 @@ function renderLektionVis() {
   const tf = document.getElementById("lekTopFrem"); if (tf) tf.textContent = setAntal + " af " + aktive.length;
   const sidste = ix === aktive.length - 1;
 
+  /* EEN ROED KNAP PR. LEKTION (lektionsgennemgangen 13/9, Idas klik). Foer stod "Tag oevelsen"
+     og "Done John — klar til naeste" begge roede over hinanden, og "Gaa til naeste" som
+     tekstlink gjorde det samme en gang til uden at markere. "John" var en intern joke —
+     kunden hedder Mette. Nu: har lektionen en oevelse, der ikke er taget, er OEVELSEN den
+     roede, og "Markér som set" er hvid. Ellers er "Færdig — videre til naeste" den roede.
+     Forrige/naeste-linkene er ude; forloebslisten er vejen til at springe. */
+  const harOv = !!(l.ovelse && !mgErGentagelig(id));
+  const ovTaget = !!KURSUS_SVAR[id];
+  const ovFoerst = harOv && !ovTaget;
+  const faerdigTxt = sidste ? 'Færdig — forløbet er i mål' : 'Færdig — videre til næste';
   document.getElementById("lekMain").innerHTML =
       lekVideoHtml(l)
     + '<div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-top:16px;">'
@@ -25351,11 +25422,15 @@ function renderLektionVis() {
     + '</div>'
     + '<h2 style="font-size:21px;font-weight:400;line-height:1.3;margin:2px 0 0;">' + esc(l.titel) + '</h2>'
     + '<div class="lek-knapper">'
-    + '<button class="dbtn ghost" style="background:#fff;" onclick="lekNoteKlik()">' + NOTE_SVG + 'Skriv note</button>'
     /* MÅLGRUPPE-LEKTIONEN faar en RAEKKE pr. maalgruppe i stedet for een knap (Ida 13/8).
        Alle andre lektioner er uroerte — de har een oevelse og een knap som altid. */
-    + (l.ovelse && mgErGentagelig(id) ? '' :
-       (l.ovelse ? '<button class="dbtn' + (KURSUS_SVAR[id] ? ' ghost" style="background:#fff;"' : ' primary"') + ' onclick="startOvelse(\'' + id + '\')">' + (KURSUS_SVAR[id] ? 'Ret dine øvelsessvar' : 'Tag øvelsen (' + l.ovelse.length + ' spørgsmål — ét ad gangen)') + '</button>' : ''))
+    + (ovFoerst ? '<button class="dbtn primary" onclick="startOvelse(\'' + id + '\')">Tag øvelsen (' + l.ovelse.length + ' spørgsmål)</button>' : '')
+    + (harOv && ovTaget ? '<button class="dbtn ghost" style="background:#fff;" onclick="startOvelse(\'' + id + '\')">Ret dine øvelsessvar</button>' : '')
+    + (!set
+        ? '<button class="dbtn ' + (ovFoerst ? 'ghost" style="background:#fff;"' : 'primary"') + ' onclick="lekVidere(\'' + id + '\')">' + (ovFoerst ? 'Markér som set' : faerdigTxt) + '</button>'
+        : (sidste ? '<button class="dbtn primary" onclick="lukLektion()">Tilbage til forløbet</button>'
+                  : '<button class="dbtn primary" onclick="lekNaeste()">N&aelig;ste lektion</button>'))
+    + '<button class="dbtn ghost" style="background:#fff;" onclick="lekNoteKlik()">' + NOTE_SVG + 'Skriv note</button>'
     + '</div>'
     + (l.ovelse && mgErGentagelig(id) ? mgKortHtml() : '')
     + '<div class="lek-kort" id="lekNotePanel" style="display:none;">'
@@ -25367,16 +25442,6 @@ function renderLektionVis() {
     + '<span style="font-size:10.5px;color:var(--gray3);">Videoen ' + (KURSUS_PREF.videoNote === "pause" ? 'sættes på pause, mens du skriver' : 'kører videre, mens du skriver') + ' — ændr det under Indstillinger.</span>'
     + '<button class="dbtn primary" style="padding:9px 18px;" onclick="gemLekNote()">Gem note</button></div>'
     + '<div class="lek-note-liste" id="lekNoteListe"></div>'
-    + '</div>'
-    + '<div class="lek-knapper" style="margin-top:18px;">'
-    + (!set
-        ? '<button class="dbtn primary" style="flex:1;min-width:200px;" onclick="lekVidere(\'' + id + '\')">' + (sidste ? 'Done John — forløbet er i mål' : 'Done John — klar til næste') + '</button>'
-        : (sidste ? '<button class="dbtn primary" style="flex:1;min-width:200px;" onclick="lukLektion()">Tilbage</button>'
-                  : '<button class="dbtn primary" style="flex:1;min-width:200px;" onclick="lekNaeste()">N&aelig;ste lektion</button>'))
-    + '</div>'
-    + '<div style="display:flex;justify-content:space-between;gap:10px;margin-top:4px;">'
-    + (ix > 0 ? '<button class="lek-tilbage" onclick="visLektion(\'' + aktive[ix-1].id + '\')">G&aring; til forrige</button>' : '<span></span>')
-    + (!sidste ? '<button class="lek-tilbage" style="text-align:right;" onclick="visLektion(\'' + aktive[ix+1].id + '\')">G&aring; til n&aelig;ste</button>' : '<span></span>')
     + '</div>';
 
   document.getElementById("lekSide").innerHTML = lekSideHtml(id, aktive, setAntal);
@@ -25424,7 +25489,10 @@ document.addEventListener("keydown", e => {
 
 /* ---------- noter: engangsvalg (pause/kør videre) + noteliste pr. lektion ---------- */
 function lekNoteKlik() {
-  if (!KURSUS_PREF.videoNote) { visNotePrefValg(); return; }
+  /* PAUSE ER STANDARD (lektionsgennemgangen 13/9). Foer moedte kunden en popup med et valg,
+     foer den foerste note maatte skrives. Nu aabner feltet med det samme; valget bor stadig
+     under Indstillinger, hvor det altid har kunnet aendres. visNotePrefValg er ude af brug. */
+  if (!KURSUS_PREF.videoNote) { KURSUS_PREF.videoNote = "pause"; try { kursusGemLocal(); kursusBlobGem("kursus_pref", KURSUS_PREF); } catch (e) {} }
   aabnNotePanel();
 }
 function visNotePrefValg() {
@@ -25510,13 +25578,18 @@ function lekVidere(id) {
   lektionSet(id);
   lekNaeste();
 }
+/* EEN POPUP, NAAR OEVELSEN SPRINGES OVER (lektionsgennemgangen 13/9, Idas klik). Foer var det
+   tre i traek: "Lektionen har en oevelse" -> "Lover du det?" -> "Den tror vi ikke paa". Pointen
+   (oevelsen bygger strategien, den venter under Dit forloeb) bliver; forhoeret er ude. */
 function visOpgaveValg(id) {
   const l = KURSUS_LEKTIONER.find(x => x.id === id); if (!l) return;
-  lekPop('<div class="kort-titel" style="font-size:19px;margin-bottom:4px;">Lektionen har en &oslash;velse</div>'
-    + '<div style="font-size:12.5px;color:var(--gray3);line-height:1.6;margin-bottom:16px;">&Oslash;velserne er d&eacute;t, der bygger din strategi &mdash; appen samler alle dine svar til sidst.</div>'
-    + '<button class="dbtn primary" style="width:100%;margin-bottom:8px;" onclick="lukLekPop();startOvelse(\'' + id + '\')">Lav &oslash;velsen nu (' + l.ovelse.length + ' sp&oslash;rgsm&aring;l)</button>'
-    + '<button class="dbtn" style="width:100%;background:#fff;border:1px solid var(--border);" onclick="visLoverDuDet(\'' + id + '\')">Jeg g&oslash;r det senere</button>');
+  lekPop('<div class="kort-titel" style="font-size:19px;margin-bottom:4px;">&Oslash;velsen bygger din strategi</div>'
+    + '<div style="font-size:12.5px;color:var(--gray3);line-height:1.6;margin-bottom:16px;">Svarene samler appen til din Drejebog. Tager du den senere, venter den under Dit forl&oslash;b, til du er klar.</div>'
+    + '<button class="dbtn primary" style="width:100%;margin-bottom:8px;" onclick="lukLekPop();startOvelse(\'' + id + '\')">Tag den nu (' + l.ovelse.length + ' sp&oslash;rgsm&aring;l)</button>'
+    + '<button class="dbtn" style="width:100%;background:#fff;border:1px solid var(--border);" onclick="udsaetOvelse(\'' + id + '\')">Senere</button>');
 }
+/* visLoverDuDet og loverDuDetNej er UDE AF BRUG siden 13/9 (see visOpgaveValg). Staar her, saa
+   ordene ikke gaar tabt, hvis Ida vil have dem tilbage. */
 function visLoverDuDet(id) {
   lekPop('<div style="font-family:\'Didot\',\'Bodoni 72\',Georgia,serif;font-size:22px;font-weight:400;color:var(--black);border-bottom:1px solid var(--border);padding-bottom:10px;margin-bottom:10px;">Lover du det?</div>'
     + '<div style="font-size:12.5px;color:var(--gray3);line-height:1.6;margin-bottom:16px;">&Oslash;velsen venter p&aring; dig under Dit forl&oslash;b, til du er klar.</div>'
@@ -25680,11 +25753,39 @@ function mgKortHtml() {
     + '</div></div>';
 }
 
+/* KLADDEN (lektionsgennemgangen 13/9): et halvskrevet svar forsvandt, naar popup'en blev
+   lukket med krydset eller Luk — der blev kun gemt ved Naeste og Tilbage. Nu gemmes hvert
+   tastetryk som kladde paa enheden (localStorage, aldrig basen), og kladden skrives tilbage i
+   feltet, naar oevelsen aabnes igen. Naar oevelsen goeres faerdig, slettes kladden. */
+let OVELSE_KLADDE = null;
+function ovelseKladdeKey() { return "energida_ovelse_kladde_" + (typeof currentKode !== "undefined" && currentKode ? currentKode : "X"); }
+function ovelseKladdeHent() {
+  if (OVELSE_KLADDE) return OVELSE_KLADDE;
+  try { OVELSE_KLADDE = JSON.parse(localStorage.getItem(ovelseKladdeKey()) || "{}") || {}; } catch (e) { OVELSE_KLADDE = {}; }
+  return OVELSE_KLADDE;
+}
+function ovelseKladdeGem() {
+  const o = OVELSE; if (!o) return;
+  const k = ovelseKladdeHent();
+  k[o.id] = Object.assign({}, o.svar);
+  try { localStorage.setItem(ovelseKladdeKey(), JSON.stringify(k)); } catch (e) {}
+}
+function ovelseKladdeSlet(id) {
+  const k = ovelseKladdeHent();
+  delete k[id];
+  try { localStorage.setItem(ovelseKladdeKey(), JSON.stringify(k)); } catch (e) {}
+}
+function ovelseKladdeInput(ta) {
+  const o = OVELSE; if (!o || !ta) return;
+  const l = KURSUS_LEKTIONER.find(x => x.id === mgBasisId(o.id)); if (!l) return;
+  o.svar[ovNoegle(l, o.i)] = ta.value;
+  ovelseKladdeGem();
+}
 function startOvelse(id) {
   /* Spoergsmaalene hentes paa BASIS-id'et, svarene paa det virtuelle. Saa deler alle
      maalgrupper de samme elleve spoergsmaal og de samme stabile noegler. */
   const l = KURSUS_LEKTIONER.find(x => x.id === mgBasisId(id)); if (!l || !l.ovelse) return;
-  OVELSE = { id: id, i: 0, svar: Object.assign({}, KURSUS_SVAR[id] || {}) };
+  OVELSE = { id: id, i: 0, svar: Object.assign({}, KURSUS_SVAR[id] || {}, ovelseKladdeHent()[id] || {}) };   /* kladden vinder over det gemte (13/9) */
   renderOvelse();
 }
 function renderOvelse() {
@@ -25696,14 +25797,16 @@ function renderOvelse() {
   const erDage = typeof item === "object" && item.type === "dage";
   body.innerHTML = '<button class="modal-close" onclick="closeIdeaWizard()">&times;</button>'
     + '<div style="font-size:11px;font-weight:400;letter-spacing:1.8px;text-transform:uppercase;color:var(--red);">' + esc(l.titel) + '</div>'
-    + '<h2 style="font-size:17px;margin-top:2px;">' + esc(spm) + '</h2>'
+    /* SPOERGSMAALET RAABER IKKE (lektionsgennemgangen 13/9): .modal h2 saetter versaler paa alle
+       popup-overskrifter, men et spoergsmaal over to-tre linjer skal LAESES. Almindelig skrift. */
+    + '<h2 style="font-size:18px;line-height:1.35;margin-top:2px;text-transform:none;">' + esc(spm) + '</h2>'
     + (besk ? '<div style="font-size:12.5px;color:var(--gray3);line-height:1.6;margin:5px 0 2px;">' + esc(besk) + '</div>' : '')
     + '<div class="msub">Spørgsmål ' + (o.i + 1) + ' af ' + l.ovelse.length + '</div>'
     + (erEjerOevelse(l.id) ? '<div class="msub" style="margin-top:-4px;color:var(--red);">Ejerens øvelse — ét fælles svar for forretningen' + (erEjer() ? '' : '. Kig med her, og lad ejeren skrive svaret') + '.</div>' : '')
     + '<div style="display:flex;gap:4px;margin-bottom:14px;">' + l.ovelse.map((_, n) => '<div style="flex:1;height:4px;border-radius:12px;background:' + (n < o.i ? 'var(--red)' : 'var(--border)') + ';"></div>').join("") + '</div>'
     + (erDage
         ? '<div id="ovelseDage">' + ovelseDageHtml(ovSvarFor(o, l, o.i) || "") + '</div>'
-        : '<textarea id="ovelseSvar" class="sk-input" style="min-height:90px;background:#fff;" placeholder="Skriv dit svar…">' + esc(ovSvarFor(o, l, o.i) || "") + '</textarea>')
+        : '<textarea id="ovelseSvar" class="sk-input" style="min-height:90px;background:#fff;" placeholder="Skriv dit svar…" oninput="ovelseKladdeInput(this)">' + esc(ovSvarFor(o, l, o.i) || "") + '</textarea>')
     + '<div style="display:flex;gap:8px;margin-top:14px;">'
     + (o.i > 0 ? '<button class="dbtn" style="flex:1;" onclick="ovelseGem();OVELSE.i--;renderOvelse()">Tilbage</button>' : '')
     + '<button class="dbtn primary" style="flex:2;" onclick="ovelseNaeste()">' + (o.i === l.ovelse.length - 1 ? 'Færdig' : 'Næste') + '</button>'
@@ -25725,7 +25828,7 @@ function ovelseDageHtml(svar) {
     : n <= 5 ? "Ambitiøst — sørg for, at rytmen kan holde i en travl uge."
     : "Ro på — gem energien til at holde rytmen. Færre dage er helt fint.";
   return '<div style="text-align:center;padding:4px 0 2px;">'
-    + '<div style="font-size:11px;font-weight:400;letter-spacing:1.8px;text-transform:uppercase;color:var(--gray3);margin-bottom:3px;">Planlægning er key</div>'
+    + '<div style="font-size:11px;font-weight:400;letter-spacing:1.8px;text-transform:uppercase;color:var(--gray3);margin-bottom:3px;">Planlægning er hele hemmeligheden</div>'   /* samme ord som rejsen paa Hjem; "key" var engelsk (13/9) */
     + '<div style="font-size:12px;color:var(--gray3);line-height:1.55;max-width:300px;margin:0 auto 10px;">Det grundige forarbejde afgør, hvor godt resultatet bliver — ligesom når man maler. ' + duI("Dine", "Vores") + ' dage gælder uge efter uge.</div>'
     + '<svg width="' + str + '" height="' + str + '" viewBox="0 0 ' + str + ' ' + str + '">'
     + '<circle cx="' + m + '" cy="' + m + '" r="' + r + '" fill="none" stroke="#A9BFD8" stroke-opacity="0.55" stroke-width="7"/>'
@@ -25734,10 +25837,12 @@ function ovelseDageHtml(svar) {
     + '<text x="' + m + '" y="' + (m + 26) + '" text-anchor="middle" font-size="11" font-family="Poppins" fill="var(--gray3)">' + (n === 1 ? 'dag/uge' : 'dage/uge') + '</text>'
     + '</svg>'
     + '<div style="font-size:12px;color:var(--gray3);line-height:1.5;max-width:290px;margin:2px auto 12px;">' + tekst + '</div>'
-    + '<div style="display:flex;gap:7px;justify-content:center;flex-wrap:wrap;">'
+    /* SYV DAGE PAA EEN LINJE (maalt 13/9 paa 390: 7 x 44 + 6 x 7 = 350 px i en popup paa ~314,
+       saa "soen." stod alene paa linje to). 40 px brede med 4 px luft = 304. Hoejden er 44. */
+    + '<div style="display:flex;gap:4px;justify-content:center;flex-wrap:wrap;">'
     + OVELSE_DAGE.map(d => {
         const on = valgte.indexOf(d) > -1;
-        return '<button type="button" onclick="ovelseDagToggle(\'' + d + '\')" style="min-width:44px;padding:10px 8px;border-radius:12px;cursor:pointer;font-family:Poppins,sans-serif;font-size:12.5px;'
+        return '<button type="button" onclick="ovelseDagToggle(\'' + d + '\')" style="min-width:40px;min-height:44px;padding:8px 4px;border-radius:12px;cursor:pointer;font-family:Poppins,sans-serif;font-size:12px;'
           + (on ? 'background:var(--red);color:#fff;border:1px solid var(--red);font-weight:400;' : 'background:#fff;color:var(--black);border:1px solid var(--border);')
           + '">' + d + '.</button>';
       }).join("")
@@ -25750,6 +25855,7 @@ function ovelseDagToggle(dag) {
   let valgte = ovelseDageValgte(ovSvarFor(o, l, o.i));
   valgte = valgte.indexOf(dag) > -1 ? valgte.filter(d => d !== dag) : OVELSE_DAGE.filter(d => valgte.indexOf(d) > -1 || d === dag);
   o.svar[n] = valgte.join(", ");
+  ovelseKladdeGem();   /* dagvalget er ogsaa en kladde (13/9) */
   const el = document.getElementById("ovelseDage");
   if (el) el.innerHTML = ovelseDageHtml(o.svar[n]);
 }
@@ -25793,6 +25899,7 @@ async function ovelseNaeste() {
   const l = KURSUS_LEKTIONER.find(x => x.id === mgBasisId(OVELSE.id));
   if (OVELSE.i < l.ovelse.length - 1) { OVELSE.i++; renderOvelse(); return; }
   KURSUS_SVAR[OVELSE.id] = OVELSE.svar;
+  try { ovelseKladdeSlet(OVELSE.id); } catch (e) {}   /* faerdig = kladden er ude (13/9) */
   /* "Set" og "venter" hoerer til LEKTIONEN, ikke til den enkelte maalgruppe — ellers saa
      lektionen ugennemfoert ud, saa snart man tilfoejede en maalgruppe mere. */
   KURSUS_SET[mgBasisId(OVELSE.id)] = true;                        // en gennemført øvelse tæller også som set lektion
@@ -25890,21 +25997,25 @@ function renderKursusHjem() {
   const medOvelse = AKTIVE.filter(l => l.ovelse);
   const ovelserDone = medOvelse.filter(l => KURSUS_SVAR[l.id]).length;
   const fs = document.getElementById("forloebStatus");
+  /* "0 af 0 oevelser i maal" siger ingenting — linjen skjules uden oevelser, som ringen paa Hjem (13/9) */
   if (fs) fs.innerHTML = forloebBarHtml(setAntal, AKTIVE.length)
-    + '<div style="font-size:11.5px;color:var(--gray3);margin-top:8px;">' + ovelserDone + ' af ' + medOvelse.length + ' øvelser i mål</div>';
+    + (medOvelse.length ? '<div style="font-size:11.5px;color:var(--gray3);margin-top:8px;">' + ovelserDone + ' af ' + medOvelse.length + ' øvelser i mål</div>' : '');
+  /* GUIDES-KORTET ER VAEK, MENS VAERKTOEJSKASSEN ER LAAST (13/9): "Aabn" foerte ind i laas-overlayet. */
+  try { const vk = document.getElementById("lekVkKort"); if (vk) vk.style.display = kursusLaasAktiv() ? "none" : ""; } catch (e) {}
   const sbK = document.getElementById("soejleBalance");
   if (sbK && CURRENT_DEF && CURRENT_DEF.type === "kursus") {   // kursus-kunder: forløbets proces også på den åbnede forside
     sbK.style.display = "block";
     sbK.innerHTML = '<div class="section-divider" style="margin:0 0 12px;">Dit forløb</div>'
       + forloebBarHtml(setAntal, AKTIVE.length)
       + '<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:8px;flex-wrap:wrap;">'
-      + '<span style="font-size:11.5px;color:var(--gray3);">' + ovelserDone + ' af ' + medOvelse.length + ' øvelser i mål</span>'
+      + '<span style="font-size:11.5px;color:var(--gray3);">' + (medOvelse.length ? ovelserDone + ' af ' + medOvelse.length + ' øvelser i mål' : '') + '</span>'
       + '<button class="dbtn primary" style="padding:10px 20px;" onclick="showTab(12)">Fortsæt forløbet</button>'
       + '</div>';
   }
+  /* SIDEN HEDDER FORLOEBET (lektionsgennemgangen 13/9). "Velkommen tilbage, Mette" var en dublet
+     af Hjems "Velkommen, Mette" — to hilsener paa to sider. Hilsenen bor paa Hjem. */
   const hilsen = document.getElementById("kursusHilsen");
-  const vtNavn = hilsenFornavn();   /* kun fornavnet (27/8) */
-  if (hilsen) hilsen.innerHTML = 'Velkommen' + (vtNavn ? ' tilbage, <span style="color:var(--red);font-style:italic;">' + esc(vtNavn) + '</span>' : '!');
+  if (hilsen) hilsen.textContent = "Forløbet";
   const naeste = kursusNaesteLektion();
   const st = document.getElementById("kursusStartTitel"), ss = document.getElementById("kursusStartSub"), sk = document.getElementById("kursusStartKnap");
   /* INGEN LEKTIONER ENDNU (Ida 5/8). Naar videoerne ikke er klar, er der intet forloeb at
@@ -25969,7 +26080,7 @@ function renderNotesbog() {
      så notesbogen er til at opdage, før den første note er skrevet */
   if (!medNoter.length) {
     kort.innerHTML = '<div class="kort-titel" style="margin-bottom:2px;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M17 3.5l3.5 3.5L8 19.5 3.5 20.5 4.5 16 17 3.5z"/></svg>Min notesbog</div>'
-      + '<div style="font-size:11.5px;color:var(--gray3);line-height:1.5;">Ingen noter endnu — skriv ' + duI("din", "vores") + ' første med “Skriv note” inde på en lektion, så samler den sig her.</div>';
+      + '<div style="font-size:11.5px;color:var(--gray3);line-height:1.5;">Ingen noter endnu. Den første skriver du med “Skriv note” inde på en lektion, så samler de sig her.</div>';   /* "skriv vores foerste" laeste forkert (13/9) */
     return;
   }
   const antal = medNoter.reduce((n, l) => n + KURSUS_NOTER[l.id].length, 0);
@@ -35203,7 +35314,10 @@ function buildBottomNav(def) {
   /* PAA REJSEN ER FORLOEBET/LEKTIONERNE HELT UDE AF BUNDNAVET (Ida 27/8 nat) — et
      laast punkt i bunden er en blindgyde med tommelfingeren (20/8-reglen), saa her
      fjernes doeren i stedet for at faa haengelaas. */
-  if (rejseLaast(def)) NAV_ITEMS = NAV_ITEMS.filter(it => it.k !== "d12");
+  /* FORLOEBET BLIVER I BUNDNAVET PAA REJSEN (lektionsgennemgangen 13/9, Idas klik: lektionerne
+     er rejsens trin 2). 27/8-linjen ovenfor fjernede det, fordi lektionerne dengang laa UDEN
+     FOR rejsen. Nu er de selve det skridt, kunden staar paa — en doer til det aktive trin
+     skal staa i menuen. Filteret er derfor ude; kursusIGang afgoer alene, om d12 er med. */
   try { document.body.classList.toggle("kursus-igang", kursusIGang); } catch (e) {}
   if (!harChat(def)) NAV_ITEMS = NAV_ITEMS.filter(it => it.k !== "chat");   // Chat-knap kun for Reset + forløbskunder
   /* Funktions-låsen gælder også bundnavet (selvkøb 20/8): et låst punkt i bunden er en
@@ -35227,7 +35341,7 @@ function buildBottomNav(def) {
    CSS-klassen skal svare det samme - ellers driver de fra hinanden, som de tre menuer
    allerede havde gjort. */
 function kursusIGangMenu(def) {
-  try { return !!(def && def.type === "kursus" && !kursusFaerdig()); } catch (e) { return false; }
+  try { return kursusLaasAktiv(def); } catch (e) { return false; }   /* samme ventil som laasen (13/9) */
 }
 /* EEN DOER TIL "ER REJSE-LAASEN PAA?" (Ida 27/8 nat). Paa foerstegangs-rejsen staar
    Content Studio og Performance laast i menuen, og Lektionerne er HELT fjernet
@@ -35366,6 +35480,13 @@ function buildSideNav(def) {
      laases der IKKE (en betalende kunde maa aldrig laases ude af en fejl).
      Laasens form er v1390-moensteret: haengelaasen ALENE i roed, ordene i title/aria. */
   const rejseLaas = rejseLaast(def);   /* EEN doer — se rejseLaast() ved kursusIGangMenu */
+  /* KURSUS-LAASEN DAEMPER OGSAA (lektionsgennemgangen 13/9). Maalt paa 1440: en ny kursuskunde
+     saa Content Studio, Strategi og Performance som almindelige punkter — og alle tre aabnede
+     laas-overlayet. Tre doere til tre laaste rum, mens telefonen skjulte dem. Nu daempes de
+     med samme moenster som rejse-laasen (Idas valg 27/8 nat: daempet, ingen haengelaas), til
+     forloebet er gennemfoert. Ordene i title/aria siger hvorfor. */
+  const kursusLaas = kursusIGangMenu(def);
+  const laasOrd = rejseLaas ? "din Drejebog er færdig" : "forløbet er gennemført";
   const laasIkonMenu = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4.5" y="10.5" width="15" height="10" rx="2.5"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/></svg>';
   /* data-k bliver paa punktet, saa rundvisningens spotlight kan finde det, ogsaa laast. */
   /* INGEN HAENGELAAS I MENUEN (Idas omvalg 27/8 nat: "vi fjerner de roede haengelaase
@@ -35373,8 +35494,8 @@ function buildSideNav(def) {
      bor i rejsens cirkler paa Hjem. Ordene bliver i title/aria. */
   const laastPunkt = (k, titel, svg) =>
       '<button class="sn-item sn-ikon sn-mellemrum sn-laast" data-k="' + k + '" tabindex="-1" aria-disabled="true"'
-    + ' title="Låses op, når din Drejebog er færdig"'
-    + ' aria-label="' + titel + ' — låses op, når din Drejebog er færdig">'
+    + ' title="Låses op, når ' + laasOrd + '"'
+    + ' aria-label="' + titel + ' — låses op, når ' + laasOrd + '">'
     + svg + '<span class="sn-tekst">' + titel + '</span></button>';
   sn.innerHTML = snHoved
     + ikon("d3", "Hjem", "showTab(3)", IK.hus)
@@ -35388,7 +35509,7 @@ function buildSideNav(def) {
        den samme doer en gang til — dublet-reglen. De to flader er UROERTE og naas
        praecis som foer, saa ingen mister en vej ind.
        Idébanken bliver i menuen: Ida bad kun om de to. */
-    + (rejseLaas ? laastPunkt("d8", "Content Studio", IK.paere)
+    + ((rejseLaas || kursusLaas) ? laastPunkt("d8", "Content Studio", IK.paere)
        : !F("content") ? '' : gruppe("d8", "Content Studio", IK.paere, "showTab(8);snFold('snContentUnder')", "snContentUnder",
         uPkt("", "Kalender", "showTab(8)")
       + uPkt("", "Idébanken", "showTab(2);ibVis('ideer')")
@@ -35399,7 +35520,8 @@ function buildSideNav(def) {
     + (visEnergi && F("energi") ? gruppe("energi", "Energi", solIkon, "energiAaben();snFold('snEnergiUnder')", "snEnergiUnder",
         uPkt("m1", duI("Dit", "Vores") + " shinebarometer", "showTabM(1)")
       + uPkt("m3", duI("Din", "Vores") + " energibank", "showTabM(3)")) : '')
-    + (!F("strategi") ? '' : gruppe("d24", "Strategi", IK.bog, "drejebogAaben();snFold('snStrategiUnder')", "snStrategiUnder",
+    + (kursusLaas ? laastPunkt("d24", "Strategi", IK.bog)   /* Drejebogen (side 1) er paa laaselisten (13/9) */
+       : !F("strategi") ? '' : gruppe("d24", "Strategi", IK.bog, "drejebogAaben();snFold('snStrategiUnder')", "snStrategiUnder",
         uPkt("", (virkNavn ? ejefald(virkNavn) + " drejebog" : "Drejebogen"), "drejebogAaben()")
       /* TILPAS DREJEBOG VISES KUN FOR DEM, DER EJER STRATEGIEN (Ida 17/8: "de skal heller
          ikke have mulighed for at tilpasse deres drejebog").
@@ -35427,7 +35549,7 @@ function buildSideNav(def) {
        Hjem, Indbakke og Content Studio — eet klik i stedet for to.
        BEMAERK: Vaerktoejskassen har samme moenster (eet barn, Lektioner). Den er MED
        VILJE ikke roert — Ida traf kun beslutning om denne. */
-    + (rejseLaas ? laastPunkt("d9", "Performance", IK.graf)
+    + ((rejseLaas || kursusLaas) ? laastPunkt("d9", "Performance", IK.graf)
        : !F("resultat") ? '' : gruppe("d9", "Performance", IK.graf, "openMaal();snFold('snPerfUnder')", "snPerfUnder",
         uPkt("", "Målsætninger", "tilpasAaben('maal')")))
     /* Uden lektioner staar Vaerktoejskassen som et almindeligt punkt — ingen fold, og
@@ -35440,12 +35562,15 @@ function buildSideNav(def) {
     /* PAA REJSEN ER LEKTIONERNE HELT FJERNET — ikke laast (Ida 27/8 nat: "lektioner
        skal helt fjernes faktisk - det var kun performance og kalender der manglede").
        Naar Drejebogen er faerdig, kommer punktet tilbage af sig selv. */
-    + (!F("vaerktoej") ? '' : (kursusIGangMenu(def)
-        ? (rejseLaas ? '' : ikon("d6", "Lektioner", "showTab(12)", IK.tools, " sn-mellemrum"))
+    /* FORLOEBET STAAR I MENUEN, OGSAA PAA REJSEN (lektionsgennemgangen 13/9, Idas klik):
+       lektionerne er rejsens trin 2, saa doeren til dem maa ikke vaere vaek. Og den hedder
+       det samme som i bundnavet og navstien: Forloebet. */
+    + (!F("vaerktoej") ? '' : (kursusLaas
+        ? ikon("d6", "Forløbet", "showTab(12)", IK.tools, " sn-mellemrum")
         : (!harLektionsadgang(def)
             ? ikon("d6", "Værktøjskassen", "vaerktoejAaben()", IK.tools, " sn-mellemrum")
             : gruppe("d6", "Værktøjskassen", IK.tools, "vaerktoejAaben();snFold('snVaerktoejUnder')", "snVaerktoejUnder",
-            uPkt("", "Lektioner", "showTab(12)")))))
+            uPkt("", "Forløbet", "showTab(12)")))))
     + '<button class="sn-virk-knap" onclick="toggleVirkMenu(event)" title="' + esc(knapNavn) + '" aria-label="Profil"><span class="sn-initial">' + esc((knapNavn || "?").trim().charAt(0).toUpperCase()) + '</span><span class="sn-virk-navn" style="white-space:normal;overflow-wrap:anywhere;">' + esc(knapNavn) + '</span><svg class="sn-virk-pil" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" style="flex-shrink:0;"><path d="M6 9l6 6 6-6"/></svg></button>'
     /* Ida 30/7: ingen streg — logo + version samlet i foden under profilknappen */
     + fodBagud + '<div class="sn-fod"><span>' + (function () { try { return document.getElementById("versionsFod").textContent.trim(); } catch (e) { return "Version · " + APP_VERSION; } })() + '</span></div>'
@@ -40719,7 +40844,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "1858";
+const APP_VERSION = "1859";
 let NY_VERSION_KLAR = false;
 function nyVersionSkjul() { const e = document.getElementById("nyVersion"); if (e) e.style.display = "none"; }
 function nyVersionHent() { try { location.reload(); } catch(e) {} }
@@ -46208,8 +46333,10 @@ function navstiKundeSti(n) {
     case 7:  return { led: [CS(), { navn: "Briefen" }], tilbage: function () { try { briefTilbage(); } catch (e) { tilKalender(); } } };
     case 9:  return { led: [HJEM(), { navn: navstiMenuNavn("d9", "Performance") }], tilbage: tilHjem };
     case 6:  return { led: [HJEM(), { navn: navstiMenuNavn("d6", "Værktøjskassen") }], tilbage: tilHjem };
-    case 12: return { led: [{ navn: navstiMenuNavn("d6", "Værktøjskassen"), klik: "vaerktoejAaben()" }, { navn: "Lektioner" }],
-                      tilbage: function () { try { vaerktoejAaben(); } catch (e) {} } };
+    /* FORLOEBET HEDDER FORLOEBET (lektionsgennemgangen 13/9). Stien stod "Vaerktoejskassen /
+       Lektioner", mens bundnavet sagde Forloebet og kortet Dit forloeb — fire navne paa det
+       samme. Forloebet aabnes fra Hjem (rejsens trin 2), saa Hjem er foraelderen. */
+    case 12: return { led: [HJEM(), { navn: "Forløbet" }], tilbage: tilHjem };
     /* ===== DE TI SIDER, BAREN MANGLEDE PAA (Ida 27/8) ==============================
        Hendes ord: "det er ogsaa virkelig vigtigt for mig at topbaren for alvor bliver
        lavet". MAALT 27/8: kundeappen har 19 skaerme, og switchen daekkede ni. De ti
@@ -57472,7 +57599,7 @@ if ((location.hash || "").toLowerCase() === "#ole") {   // #ole = preview af Ole
   window.showTab = function (n) {
     origShowTab(n);
     try {
-      if (CURRENT_DEF && CURRENT_DEF.type === "kursus" && !kursusFaerdig() && KURSUS_LAASTE_SIDER[n]) kursusLaasOverlay();
+      if (KURSUS_LAASTE_SIDER[n] && kursusLaasAktiv()) kursusLaasOverlay();   /* een doer: kursusLaasAktiv (13/9) */
     } catch (e) {}
   };
 })();
@@ -57502,6 +57629,6 @@ if ((location.hash || "").toLowerCase() === "#ole") {   // #ole = preview af Ole
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 13. september · 1858</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 13. september · 1859</div>
 </body>
 </html>

@@ -80,6 +80,29 @@ Gennemgangen ligger som Artifact (»Drejebogen 360«, 10 fund, alle 16 sider byg
 | 8 Følelsessætningerne | Åbent | Dokumentet kalder dem arbejdsudkast; bogen viser dem som facit. Ingen ændring; Ida låser eller markerer. |
 | 9 Per på side 8 | Idas tjek | Motoren tegner alle personaer; kræver at basen har Per. |
 
+## 5c. v1859: lektionssiden efter 360-gennemgangen (Idas klik 13/9)
+
+Gennemgangen ligger som Artifact (»Lektionssiden 360«, 16 fund, Mette som kernekunde på telefon og computer, kursuskoden RINGKOBING2026 i selen). Idas valg og det, der er bygget:
+
+| Fund | Valg | Bygget |
+|---|---|---|
+| F1 To rejser på Hjem | Én rejse, lektionerne som trin 2 | `onboardingRender`: kursuskunder får trinnet »Forløbet« mellem skemaet og Drejebogen, med tallet »x af y lektioner set« og knappen »Se første lektion« / »Fortsæt forløbet«. Drejebog-trinnet låses, til forløbet er igennem. Lektionskortet under rejsen (`obFremdriftHtml`) tegnes ikke for kursuskunder; forløbskunder er uændrede. Ingen publicerede lektioner: trinnet står som »på vej« og spærrer intet. |
+| F2 Låsen | Alt-eller-intet bliver, med sikkerhedsventil | Ny `kursusLaasAktiv(def)`: én dør for showTab-porten, `kursusIGangMenu` og Forløbet-siden. Er publiceringen hentet og listen tom, er intet låst. Ikke hentet endnu = låst (sikker side). Menuer og rejse tegnes om, når publiceringen er hentet. |
+| F3 Menuen på computeren | Ret | Content Studio, Strategi og Performance står dæmpede (samme mønster som rejselåsen 27/8), til forløbet er igennem. »Forløbet« står i venstremenuen og bundnavet, også på rejsen (27/8-filteret, der fjernede det, er ude, fordi lektionerne nu ER rejsens trin 2). |
+| F4 Done John | »Færdig — videre til næste« | Én rød knap pr. lektion: med utaget øvelse er »Tag øvelsen (N spørgsmål)« rød og »Markér som set« hvid; ellers »Færdig — videre til næste« / »Færdig — forløbet er i mål«. »Gå til forrige/næste« er ude. Telefon: alle knapper i fuld bredde, 44 px. |
+| F5 Svar forsvinder ved luk | Ret | Kladde pr. tastetryk i localStorage (`ovelseKladde*`), skrives tilbage ved genåbning, slettes når øvelsen gøres færdig. Aldrig i basen. |
+| F6 Versaler | Ret | Spørgsmålet i almindelig skrift, 18 px. |
+| F7 Navne | Forløbet; øvelser | Navsti »Hjem / Forløbet«, menu »Forløbet«, overlayets knap »Til forløbet«, ringen på Hjem hedder »Øvelser«. |
+| F8 Lover du det? | Én popup | »Øvelsen bygger din strategi« med »Tag den nu (N spørgsmål)« og »Senere«. `visLoverDuDet`/`loverDuDetNej` står ude af brug. |
+| F9 Dagknapperne | Ret | 40 px brede, 4 px luft, 44 px høje: alle syv på én linje på 390. »Luk«-knappen bliver (husreglen 7/9: alle popups har lang Luk på telefon). |
+| F10 Modulforsidens antal | Regel til Ida | Teksten for modul 1 siger »seks korte lektioner«; appen tæller selv. Skriv ikke antal i modulteksterne. |
+| F11 »0 af 0 øvelser i mål« | Ret | Linjen skjules uden øvelser, som ringen på Hjem. Guides-kortet skjules, mens Værktøjskassen er låst. |
+| F12 Tiltale | Ret | Notesbogen: »Den første skriver du med Skriv note…«. Dage-ringen: »Planlægning er hele hemmeligheden«. Modul 5 og 6 i koden: Din kernekunde, Dine værdier, Din USP, Dine fire indholdssøjler, og spørgsmålene til du/din. **Basen (`lektioner` og `lektion_oevelser`) bærer stadig I/jer og skal rettes dér: 5-3, 5-4, 5-5, 5-6 og 6-6.** |
+| F13 Små mål | Ret | »Spring introen over« er 44 px. |
+| F14 To velkomster | Ret | Forløbet-siden hedder »Forløbet«; hilsenen bor på Hjem. |
+| F15 Notevalget | Ret | Pause er standard; feltet åbner med det samme. Valget kan stadig ændres under Indstillinger. |
+| F16 Modulnavn i toplinjen | Ikke en fejl | Tomt felt kom af selens seeding (lektion uden video er ikke aktiv). Med video står »Mindset, motivation & retning«. |
+
 ## 6. Bridge-trådene 12/9
 
 Trådene på Idas maskine (»Skærm, der ikke må vises« m.fl.) døde kl. 16:25 dansk tid, fem minutter efter v1856 blev pushet, fordi computeren blev lukket. Intet i repoet er halvt; højst få minutters ucommitteret arbejde kan være tabt. De vågner først, når Claude Code startes på den maskine igen.
