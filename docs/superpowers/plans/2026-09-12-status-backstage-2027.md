@@ -235,6 +235,16 @@ Bygget efter mockups (»Planlægningsdagen mockups«) og Idas tre klik: de fem t
 - Målt i selen på 390: Inspiration 324×48 pr. knap, Arkivet 316×48; på 1440 uændret (79×14).
 - Mockups af Inspiration med previews (canvas »Inspiration previews« og PDF) rettet, så de viser de samme lange knapper.
 
+## 5p. v1872: skærmbillede + link på Inspiration (Idas valg B, 13/9)
+
+Ida så tre bud (canvas »Inspiration previews« og PDF): A som i dag, B skærmbillede + link, C rigtige previews via mellemled. Hun valgte B: ingen server, intet sendes ud af huset, og det virker også for Instagram og TikTok, som blokerer previews.
+
+- **Gem inspirationen (popup og »Jeg har set noget fedt«):** ny valgfri knap »Vedhæft et skærmbillede af opslaget« med miniature og Fjern. Ved Gem uploades billedet som de andre (lille, jpeg, bucket `inspiration` under kundens kode), og STIEN gemmes på link-rækken i kolonnen `sti`, som billedrækkerne allerede bruger. Ingen ny kolonne, ingen ny policy. Uden base: besked, intet tabes.
+- **Linkkortet:** med skærmbillede står billedet øverst (4:3) og åbner linket. Uden står det grå felt som én stor knap: »Tag et skærmbillede af opslaget, så står det her · Tilføj skærmbillede«; trykket vælger billedet, uploader og skriver `sti` på rækken med kvittering (update + select). Siger basen nej, fjernes billedet igen, og kunden får besked.
+- Kortets knapper: Lav til idé, Åbn linket, Slet (lange på telefonen, jf. 5o). Slet fjerner nu også et links skærmbillede fra bucketen.
+- **Skal ses live én gang:** at kunden må UPDATE sin egen række i `inspiration` (insert og delete er allerede i drift). Går det ikke, siger kortet »Kunne ikke gemme skærmbilledet på kortet«, og så skrives en update-regel efter husets mønster.
+- Målt i selen på 390 og 1440: kort med skærmbillede (billede + link), kort uden (det grå felt som knap), popuppen med miniature, gem med `sti` på rækken.
+
 ## 6. Bridge-trådene 12/9
 
 Trådene på Idas maskine (»Skærm, der ikke må vises« m.fl.) døde kl. 16:25 dansk tid, fem minutter efter v1856 blev pushet, fordi computeren blev lukket. Intet i repoet er halvt; højst få minutters ucommitteret arbejde kan være tabt. De vågner først, når Claude Code startes på den maskine igen.

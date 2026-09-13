@@ -13687,6 +13687,12 @@ select titel,
     </label>
     <input type="text" id="inspLink" placeholder="…eller sæt et link ind (Instagram, TikTok…)" onkeydown="if(event.key==='Enter')tilfoejInspLink()" style="width:100%;background:#fff;border:1px solid var(--border);border-radius:12px;padding:11px 13px;font-size:12.5px;font-family:Poppins,sans-serif;margin-bottom:8px;">
     <input type="text" id="inspNote" placeholder="Hvad fangede dig? (beskriv kort)" onkeydown="if(event.key==='Enter')tilfoejInspLink()" style="width:100%;background:#fff;border:1px solid var(--border);border-radius:12px;padding:11px 13px;font-size:12.5px;font-family:Poppins,sans-serif;margin-bottom:10px;">
+    <!-- SKAERMBILLEDE + LINK (Idas valg B, 13/9): Instagram og TikTok giver ingen previews, saa kunden
+         tager selv et skaermbillede, og det gaar sammen med linket paa eet kort. Valgfrit. -->
+    <label class="dbtn ghost" style="display:block;text-align:center;cursor:pointer;background:#fff;margin-bottom:10px;">Vedhæft et skærmbillede af opslaget
+      <input type="file" id="inspSkaerm" accept="image/*" style="display:none;" onchange="inspSkaermValgt(this)">
+    </label>
+    <div id="inspSkaermVis" style="display:none;align-items:center;gap:10px;margin:-2px 0 10px;font-size:12px;color:var(--gray3);"></div>
     <button class="dbtn primary" style="width:100%;" onclick="tilfoejInspLink()">Gem</button>
     <div id="inspMsg" style="font-size:11px;color:var(--red);font-weight:400;margin-top:8px;"></div>
   </div>
@@ -33098,20 +33104,72 @@ async function tilfoejInspLink() {
   const url = (lf.value || "").trim(); const note = (nf.value || "").trim();
   if (!url && !note) return;
   if (url && !note) { inspMsg("Skriv et par ord om, hvad der fangede dig — det bliver kortets titel, så du kan kende dem fra hinanden."); nf.focus(); return; }
-  lf.value = ""; nf.value = "";
   const rec = { kode: currentKode || "X", type: "link", url: url || null, note: note || null };
-  if (sb && currentKode) {
-    try { const { error } = await sb.from("inspiration").insert(rec); if (!error) { refreshInspiration(); inspLuk(); return; } } catch(e) {}
+  /* SKAERMBILLEDET (13/9): uploades som de andre billeder (lille, jpeg, bucket inspiration) og
+     STIEN gemmes paa link-raekken i den kolonne, billedraekkerne allerede bruger (sti). Ingen ny
+     kolonne. Uden base kan billedet ikke gemmes — saa siger vi det, i stedet for at tabe det. */
+  if (INSP_SKAERM) {
+    if (!sb || !currentKode) { inspMsg("Skærmbilledet kræver forbindelse til databasen — prøv igen om lidt."); return; }
+    inspMsg("Uploader skærmbilledet …");
+    const sti = await inspSkaermUpload(INSP_SKAERM);
+    if (!sti) { inspMsg("Kunne ikke uploade skærmbilledet — prøv igen."); return; }
+    rec.sti = sti;
   }
+  lf.value = ""; nf.value = "";
+  if (sb && currentKode) {
+    try { const { error } = await sb.from("inspiration").insert(rec); if (!error) { inspSkaermNulstil(); refreshInspiration(); inspLuk(); return; } } catch(e) {}
+  }
+  inspSkaermNulstil();
   rec.id = "i" + Date.now(); rec.created_at = new Date().toISOString();
   INSPIRATION.unshift(rec); inspLocalSave(); renderInspiration(); inspLuk();
+}
+let INSP_SKAERM = null;   /* det valgte skaermbillede i popuppen (File), til det er gemt */
+function inspSkaermValgt(inp) {
+  const f = (inp.files || [])[0]; inp.value = ""; if (!f) return;
+  INSP_SKAERM = f;
+  const v = document.getElementById("inspSkaermVis") || document.getElementById("fangSkaermVis"); if (!v) return;
+  let url = ""; try { url = URL.createObjectURL(f); } catch (e) {}
+  v.style.display = "flex";
+  v.innerHTML = (url ? '<img src="' + url + '" alt="" style="width:44px;height:44px;object-fit:cover;border-radius:10px;border:1px solid var(--border);flex-shrink:0;">' : '')
+    + '<span style="flex:1;min-width:0;">Skærmbillede valgt</span>'
+    + '<button type="button" class="ib-genbrug" style="color:var(--gray3);" onclick="inspSkaermNulstil()">Fjern</button>';
+}
+function inspSkaermNulstil() { INSP_SKAERM = null; ["inspSkaermVis", "fangSkaermVis"].forEach(function (id) { const v = document.getElementById(id); if (v) { v.style.display = "none"; v.innerHTML = ""; } }); }
+async function inspSkaermUpload(f) {
+  if (!sb || !currentKode || !f) return "";
+  const sti = currentKode + "/" + Date.now() + "_skaerm.jpg";
+  try {
+    let blob = f; try { blob = await foodBilledeSkaler(f); } catch (e) { blob = f; }
+    const up = await sb.storage.from("inspiration").upload(sti, blob, { contentType: "image/jpeg" });
+    if (up.error) return "";
+    return sti;
+  } catch (e) { return ""; }
+}
+function inspSkaermUrl(x) {
+  if (!x || !x.sti) return "";
+  if (x.skaerm) return x.skaerm;
+  try { const pu = sb.storage.from("inspiration").getPublicUrl(x.sti); return (pu && pu.data && pu.data.publicUrl) || ""; } catch (e) { return ""; }
+}
+/* Skaermbillede sat paa et link-kort BAGEFTER (det graa felt paa kortet). Kvittering paa update
+   (select + length) — siger basen nej, bliver kortet, som det var, og kunden faar besked. */
+async function inspSkaermTilfoej(id, inp) {
+  const f = (inp.files || [])[0]; inp.value = ""; if (!f) return;
+  const x = INSPIRATION.find(y => String(y.id) === String(id)); if (!x) return;
+  if (!sb || !currentKode || String(x.id).indexOf("i") === 0) { try { visSyncFejl("Skærmbilledet kræver forbindelse til databasen."); } catch (e) {} return; }
+  const sti = await inspSkaermUpload(f);
+  if (!sti) { try { visSyncFejl("Kunne ikke uploade skærmbilledet — prøv igen."); } catch (e) {} return; }
+  try {
+    const u = await sb.from("inspiration").update({ sti: sti }).eq("id", x.id).select();
+    if (!(u.data && u.data.length)) { try { await sb.storage.from("inspiration").remove([sti]); } catch (e) {} try { visSyncFejl("Kunne ikke gemme skærmbilledet på kortet."); } catch (e) {} return; }
+  } catch (e) { try { visSyncFejl("Kunne ikke gemme skærmbilledet på kortet."); } catch (e2) {} return; }
+  x.sti = sti; x.skaerm = ""; renderInspiration();
 }
 async function delInsp(id) {
   const x = INSPIRATION.find(y => String(y.id) === String(id));
   INSPIRATION = INSPIRATION.filter(y => String(y.id) !== String(id));
   if (sb && currentKode && x && String(x.id).indexOf("i") !== 0) {
     try {
-      if (x.type === "billede" && x.sti) await sb.storage.from("inspiration").remove([x.sti]);
+      if (x.sti) await sb.storage.from("inspiration").remove([x.sti]);   /* ogsaa et links skaermbillede (13/9) */
       await sb.from("inspiration").delete().eq("id", id);
     } catch(e) {}
   } else inspLocalSave();
@@ -33145,11 +33203,20 @@ function renderInspiration() {
       : x.url
       ? '<path d="M10 14l4-4"/><path d="M8.5 15.5l-2 2a3.2 3.2 0 0 1-4.5-4.5l3-3a3.2 3.2 0 0 1 4.5 0"/><path d="M15.5 8.5l2-2a3.2 3.2 0 0 1 4.5 4.5l-3 3a3.2 3.2 0 0 1-4.5 0"/>'
       : '<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/>';
+    const skaerm = (x.type !== "billede" && x.url) ? inspSkaermUrl(x) : "";
+    const idS = String(x.id).replace(/'/g, "\\'");
+    /* LINKKORTET (Idas valg B, 13/9): med skaermbillede staar billedet oeverst og aabner linket.
+       Uden staar det graa felt som EEN stor knap: tryk, vaelg skaermbilledet, og det staar her. */
     const medie = x.type === "billede"
       ? '<img src="' + iv(x.url) + '" loading="lazy" alt="" style="width:100%;aspect-ratio:4/3;object-fit:cover;display:block;">'
       : (x.url
-        ? '<a href="' + iv(x.url) + '" target="_blank" rel="noopener" style="height:120px;background:var(--gray);display:flex;align-items:center;justify-content:center;text-decoration:none;">'
-          + '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#9A9590" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">' + pIkon + '</svg></a>'
+        ? (skaerm
+          ? '<a href="' + iv(x.url) + '" target="_blank" rel="noopener" style="display:block;text-decoration:none;"><img src="' + iv(skaerm) + '" loading="lazy" alt="" style="width:100%;aspect-ratio:4/3;object-fit:cover;display:block;"></a>'
+          : '<label style="min-height:120px;background:var(--gray);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;cursor:pointer;padding:14px 16px;text-align:center;">'
+            + '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#9A9590" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">' + pIkon + '</svg>'
+            + '<span style="font-size:11.5px;color:var(--gray3);line-height:1.4;">Tag et skærmbillede af opslaget, så står det her</span>'
+            + '<span style="font-size:11px;color:var(--red);border:1px solid var(--red);border-radius:999px;padding:6px 14px;background:#fff;">Tilføj skærmbillede</span>'
+            + '<input type="file" accept="image/*" style="display:none;" onchange="inspSkaermTilfoej(\'' + idS + '\', this)"></label>')
         : '');
     return '<div class="insp-kort" style="background:#fff;border:1px solid var(--border);border-radius:20px;overflow:hidden;">'
       + medie
@@ -33159,6 +33226,7 @@ function renderInspiration() {
       + '</div>'
       + (x.note ? '<div style="font-size:12px;line-height:1.5;word-break:break-word;">' + esc(x.note) + '</div>' : '')
       + '<div class="kort-knapper"><button type="button" class="ib-genbrug" onclick="inspTilIde(\'' + x.id + '\')">Lav til idé</button>'
+      + ((x.type !== "billede" && x.url) ? '<a href="' + iv(x.url) + '" target="_blank" rel="noopener" class="ib-genbrug" style="text-decoration:none;">Åbn linket</a>' : '')
       + '<button type="button" class="ib-genbrug" style="color:var(--gray3);" onclick="delInsp(\'' + x.id + '\')">Slet</button></div>'
       + '</div></div>';
   }).join("") : '<div class="ws-empty" style="grid-column:1/-1;padding:14px 0;">Tom endnu — smid det første billede eller link ind, næste gang du ser noget godt.</div>';
@@ -39840,6 +39908,8 @@ function fangFedt() {
     + '<div style="font-size:11px;color:var(--gray3);text-align:center;margin:10px 0;">&mdash; eller &mdash;</div>'
     + '<input id="fangFedtLink" placeholder="S&aelig;t et link ind (Instagram, TikTok, artikel&hellip;)" style="width:100%;background:#fff;border:1px solid var(--border);border-radius:12px;padding:13px 14px;font-size:13px;font-family:Poppins,sans-serif;outline:none;">'
     + '<input id="fangFedtNote" placeholder="Kort note &mdash; hvad var det fede?" style="width:100%;background:#fff;border:1px solid var(--border);border-radius:12px;padding:13px 14px;font-size:13px;font-family:Poppins,sans-serif;outline:none;margin-top:8px;">'
+    + '<label class="dbtn ghost" style="display:block;text-align:center;cursor:pointer;background:#fff;margin-top:8px;">Vedh&aelig;ft et sk&aelig;rmbillede af opslaget<input type="file" accept="image/*" style="display:none;" onchange="inspSkaermValgt(this)"></label>'   /* Idas valg B (13/9) */
+    + '<div id="fangSkaermVis" style="display:none;align-items:center;gap:10px;margin-top:8px;font-size:12px;color:var(--gray3);"></div>'
     + '<button class="dbtn" style="width:100%;margin-top:12px;" onclick="fangFedtGem()">Gem p&aring; v&aelig;ggen</button>';
   document.getElementById("ideBack").classList.add("on");
 }
@@ -41618,7 +41688,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "1871";
+const APP_VERSION = "1872";
 let NY_VERSION_KLAR = false;
 function nyVersionSkjul() { const e = document.getElementById("nyVersion"); if (e) e.style.display = "none"; }
 function nyVersionHent() { try { location.reload(); } catch(e) {} }
@@ -58776,6 +58846,6 @@ function prFaerdigHtml() {
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 13. september · 1871</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 13. september · 1872</div>
 </body>
 </html>
