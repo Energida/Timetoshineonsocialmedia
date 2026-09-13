@@ -103,6 +103,22 @@ Gennemgangen ligger som Artifact (»Lektionssiden 360«, 16 fund, Mette som kern
 | F15 Notevalget | Ret | Pause er standard; feltet åbner med det samme. Valget kan stadig ændres under Indstillinger. |
 | F16 Modulnavn i toplinjen | Ikke en fejl | Tomt felt kom af selens seeding (lektion uden video er ikke aktiv). Med video står »Mindset, motivation & retning«. |
 
+## 5d. v1860: lektionssiden moderniseret (Idas klik 13/9 på mockup-lærredet »Lektionssiden mockups«)
+
+Idas spørgsmål: er det det mest moderne og mobilvenlige design? Svaret var nej på fire punkter. Mockups blev tegnet først (otte tavler, telefon, computer og telefonen drejet), og Ida klikkede ja til alt plus to ønsker undervejs.
+
+| Ønske | Bygget |
+|---|---|
+| Intet om øvelsen, før videoen er set (Idas ønske) | Lektionen viser én rød knap, »Færdig — videre«. Øvelsen tilbydes først i færdig-kortet. Er lektionen set, står øvelsen som den røde, til den er taget. |
+| Fast handlingsbjælke på telefonen | `.lek-bar`: fast i bunden, 48 px, over safe-area. Kun kursus-lektionen; Workout Studios lektion i samme `#lekVis` er uændret. Noten er en pille ved titlen. |
+| Større skrift | Titel 22, forløbsliste 14, moduletiketter 11, spørgsmål 19, tekstfelt 16 (iPhone zoomer ikke). Variablerne `--lek-rk`/`--lek-mh` sættes kun under 700 px. |
+| Øvelsen som bundark | `ov-ark` på `#ideBack` under 760 px: greb, glid op, feltet lige over tastaturet. Computeren beholder midterpopup'en. Luk-knappen bliver (8/9-reglen: intet kryds på telefonen). |
+| Færdig-øjeblik | `lekMoment(id, art)`: flueben, tallet der rykker (bar animeres fra før til nu), »Næste: …«, stjernerne fra den gamle refleksions-popup (Idas klik: stjernerne herind, skrivefeltet ud; `REFLEKSION_PROMPTS` står i koden, `refleksionVis("lektion")` kaldes ikke længere), én rød knap. Med øvelse: »Nu øvelsen« / »Tag øvelsen (N spørgsmål)« / »Senere«. Uden stjerner at give går kortet selv videre efter 2,5 s. Efter en gennemført øvelse vises kortet også. |
+| Videoen slutter af sig selv | `<video onended>` og Vimeo-API'ets »ended« via postMessage (`lekVimeoLyt`) kalder `lekVideoSlut` → færdig-kortet uden tryk. |
+| Telefonen drejet | Medieregel (liggende, højde ≤ 520): videoen fylder hele skærmen, alt andet skjules, »Tilbage« som pille øverst. iPhone følger rotationen, når rotationslåsen er fra; appen kan ikke tvinge den. Android: `screen.orientation.lock("landscape")` ved fuld skærm, `unlock` når den forlades. |
+
+Målt i selen 13/9: 390 (bjælke 358×48 fast, ark med greb, felt 16 px), 1440 (én rød knap 120×32, kortet centreret, bar 50 %), 844×390 (video 0,0 fuld bredde, top og bjælke skjult, Tilbage synlig).
+
 ## 6. Bridge-trådene 12/9
 
 Trådene på Idas maskine (»Skærm, der ikke må vises« m.fl.) døde kl. 16:25 dansk tid, fem minutter efter v1856 blev pushet, fordi computeren blev lukket. Intet i repoet er halvt; højst få minutters ucommitteret arbejde kan være tabt. De vågner først, når Claude Code startes på den maskine igen.
