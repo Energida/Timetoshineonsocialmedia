@@ -21034,6 +21034,10 @@ function briefSamletHtml() {
        Samme klasse, stoerrelse og streg som de to andre — BSAM_BLYANT er den ene kilde.
        Betydningen bor i title + aria-label (4/8). */
     + '<button type="button" class="mq-tap bsam-del" title="Rediger briefen" aria-label="Rediger briefen" onclick="briefSeRet(\'fakta\')">' + BSAM_BLYANT + '</button>'
+    /* HOEJTALEREN (Ida 13/9, ordblind kunde): laeser overblikket op. Samme familie som blyant,
+       mappe og del — symbol, betydning i title/aria. Paa telefonen laeses der fra den lange
+       knap i knapraekken nederst (bsam-mobknapper); denne raekke er skjult dér. */
+    + '<button type="button" class="mq-tap bsam-del brief-laes-knap" title="Læs op" aria-label="Læs op" onclick="briefLaesOp()">' + KB_IKON_HOEJTALER + '</button>'
     /* DEL som rent symbol ved siden af (Ida 30/8). Ikon uden tekst er tilladt, naar
        symbolet taler for sig selv - betydningen bor i title + aria-label (4/8). */
     /* MAPPEN STAAR PAA LINJEN SOM RENT SYMBOL (Ida 2/9: "link til materiale skal flyttes
@@ -21551,6 +21555,7 @@ function briefSamletHtml() {
         + '</div>'
       + '</div>'
       + '<div class="bsam-mobknapper" style="display:block;margin:14px 0 0;">'
+        + briefLaesKnapHtml(true)   /* oplaesning (13/9) — staar foerst, den er en visning, ikke et vaerktoej */
         + mobLinkDel
         + '<button type="button" class="bsam-mobknap bsam-mobknap-sek" onclick="briefTilbage()">Tilbage</button>'
         /* SLET OPSLAGET NEDERST (Ida 6/9 kl. 12.32: "Hvor kan jeg slette et opslag?! Den knap skal ind nederst
@@ -21814,8 +21819,94 @@ function briefKnapperRed() {
     if (k && k.parentElement !== depot) depot.appendChild(k);
   });
 }
+/* ===== LAES BRIEFEN OP (Ida 13/9: en ordblind kunde bad om oplaesning paa briefoversigten) =====
+   Samme motor som Backstages manus-oplaesning (kbLaesOp): telefonens egen danske stemme
+   via Web Speech, ingen server. EEN knap i topraekken laeser det, der er FREMME:
+   overblikket (hver flise: etiket og svar) eller det aktuelle spoergsmaal (etiket, hjaelp
+   og kundens svar). Teksten deles i stykker pr. flise, saa lange briefs ikke knaekker
+   midt i (Chrome stopper een lang saetning efter ca. 15 sekunder). Tryk igen = stop.
+   Skift af side/fane stopper ogsaa (showTab-porten nederst i filen). */
+let BRIEF_LAES_KOE = 0;
+function briefLaesTekst() {
+  const dele = [];
+  const rens = t => String(t || "").replace(/\s+/g, " ").replace(/(\s*\.\s*){2,}/g, ". ").replace(/^[\s.]+|[\s.]+$/g, "").trim();
+  /* Blokke laeses som saetninger: en klonet flise uden layout klistrer "Klip 1Hook…" sammen,
+     saa hvert blok-element faar et punktum efter sig, foer teksten tages ud. */
+  const blokTekst = function (el) {
+    const kl = el.cloneNode(true);
+    kl.querySelectorAll("button, .bsam-fliseknap, .fl-forkl, .bsam-fl-forkl, svg, .bsm-streg, .bdrop-pil").forEach(x => x.remove());
+    kl.querySelectorAll("div, p, li, strong, b, span.bsm-n, span.bsm-l, span.bsm-v, span.bsm-klipnavn, .bsam-fl-label, .bsam-sl-hoved-felt, .bsam-sl-lab, .bsam-sl-val").forEach(x => x.insertAdjacentText("afterend", " . "));
+    kl.querySelectorAll(".bsam-sl-hoved").forEach(x => { x.insertAdjacentText("afterbegin", " "); x.querySelectorAll("span").forEach(y => y.insertAdjacentText("beforebegin", " . ")); });
+    return rens(kl.innerText || kl.textContent);
+  };
+  const sam = document.getElementById("briefSamlet");
+  if (sam && sam.style.display !== "none" && sam.innerHTML) {
+    try { const it = (IDEER || []).find(x => String(x.id) === String(BRIEF_ID)) || {}; const t = typeof titelVis === "function" ? titelVis(it.titel || "") : (it.titel || ""); if (t) dele.push(rens(t)); } catch (e) {}
+    const fliser = sam.querySelectorAll(".bsam-flise, .bsm-flise");
+    fliser.forEach(function (fl) {
+      if (fl.offsetParent === null) return;   /* foldede fliser laeses ikke */
+      const vt = blokTekst(fl);
+      if (vt && !/^Mangler$/.test(vt)) dele.push(vt);
+    });
+    return dele;
+  }
+  const wrap = document.getElementById("briefWrap"); if (!wrap) return dele;
+  Array.prototype.forEach.call(wrap.querySelectorAll(".sk-q"), function (f) {
+    if (f.closest(".modal-back") || f.offsetParent === null) return;
+    const lb = f.querySelector(".sk-label"); const lbt = lb ? rens(lb.innerText) : "";
+    let val = "";
+    f.querySelectorAll("input, textarea").forEach(function (i) {
+      if (/^(hidden|checkbox|radio|file)$/.test(i.type || "")) return;
+      const v = rens(i.value); if (v) val += (val ? ". " : "") + v;
+    });
+    f.querySelectorAll("select").forEach(function (sel) { const o = sel.options[sel.selectedIndex]; if (o && o.value) val += (val ? ". " : "") + rens(o.text); });
+    f.querySelectorAll(".bs-chip.on, .chip.on, [aria-pressed=\"true\"]").forEach(function (c) { const v = rens(c.innerText); if (v) val += (val ? ". " : "") + v; });
+    if (lbt || val) dele.push(lbt + (val ? ". Dit svar: " + val : ""));
+  });
+  return dele;
+}
+function briefLaesKnapSaet(koerer) {
+  document.querySelectorAll(".brief-laes-knap").forEach(function (k) {
+    const tekst = k.getAttribute("data-tekst") === "1";
+    k.innerHTML = tekst ? (koerer ? "Stop oplæsningen" : "Læs briefen op") : (koerer ? KB_IKON_STOP : KB_IKON_HOEJTALER);
+    k.title = koerer ? "Stop oplæsningen" : "Læs op";
+    k.setAttribute("aria-label", k.title);
+    k.setAttribute("aria-pressed", koerer ? "true" : "false");
+  });
+}
+/* Telefonens knapper: overblikket har sin egen knaprække (bsam-mobknapper), og
+   spoergsmaalet sit hoved (#briefSpmHoved). Topraekken er skjult paa telefonen (8/9). */
+function briefLaesKnapHtml(tekst) {
+  return tekst
+    ? '<button type="button" class="bsam-mobknap bsam-mobknap-sek brief-laes-knap" data-tekst="1" onclick="briefLaesOp()" title="Læs op" aria-label="Læs op">Læs briefen op</button>'
+    : '<button type="button" class="brief-laes-knap mq-tap" onclick="briefLaesOp()" title="Læs op" aria-label="Læs op" style="background:#fff;border:1px solid var(--border);border-radius:12px;width:44px;height:44px;padding:0;display:inline-flex;align-items:center;justify-content:center;color:var(--black);cursor:pointer;flex-shrink:0;">' + KB_IKON_HOEJTALER + '</button>';
+}
+function briefLaesStop() { try { if (window.speechSynthesis) speechSynthesis.cancel(); } catch (e) {} BRIEF_LAES_KOE = 0; briefLaesKnapSaet(false); }
+function briefLaesOp() {
+  if (!("speechSynthesis" in window)) { try { alert("Telefonen kan ikke læse op i denne browser."); } catch (e) {} return; }
+  if (speechSynthesis.speaking || BRIEF_LAES_KOE) { briefLaesStop(); return; }
+  const dele = briefLaesTekst(); if (!dele.length) return;
+  const stemmer = speechSynthesis.getVoices().filter(v => v.lang && v.lang.indexOf("da") === 0);
+  const bedst = stemmer.find(v => /premium|enhanced|neural|siri/i.test(v.name)) || stemmer[0];
+  BRIEF_LAES_KOE = dele.length;
+  dele.forEach(function (t) {
+    const u = new SpeechSynthesisUtterance(t);
+    u.lang = "da-DK"; try { if (bedst) u.voice = bedst; } catch (e) {} u.rate = 0.95; u.pitch = 1;
+    u.onend = u.onerror = function () { BRIEF_LAES_KOE = Math.max(0, BRIEF_LAES_KOE - 1); if (!BRIEF_LAES_KOE) briefLaesKnapSaet(false); };
+    speechSynthesis.speak(u);
+  });
+  briefLaesKnapSaet(true);
+}
 function briefKnapperFlyt() {
   const vaert = document.getElementById("briefHovedKnapper"); if (!vaert) return;
+  /* Hoejtaleren bygges EEN gang og flyttes med som de andre (25/8-moensteret). */
+  if (!document.getElementById("briefLaesKnap")) {
+    const lk = document.createElement("button");
+    lk.type = "button"; lk.id = "briefLaesKnap"; lk.className = "mq-tap brief-laes-knap";
+    lk.onclick = briefLaesOp;
+    lk.innerHTML = KB_IKON_HOEJTALER; lk.title = "Læs op"; lk.setAttribute("aria-label", "Læs op");
+    vaert.appendChild(lk);
+  }
   const lille = "background:#fff;border:1px solid var(--border);border-radius:12px;padding:6px 12px;margin:0;font-family:Poppins,sans-serif;font-size:11.5px;font-weight:400;cursor:pointer;display:inline-flex;align-items:center;gap:5px;white-space:nowrap;";
   /* VAERKTOEJERNE BAG EEN KNAP PAA TELEFONEN (Idas klik-valg 2/9).
      MAALT paa 375 px: der gik 334 px — 41 % af skaermen — foer det foerste felt, og det
@@ -21827,7 +21918,7 @@ function briefKnapperFlyt() {
      bliver de to raekker til een.
      Computeren er UROERT: dér er der plads, og musen er praecis nok. */
   const paaTelefon = (function () { try { return briefEtAdGangen(); } catch (e) { return false; } })();
-  const fremme = paaTelefon ? ["briefRetKnap"] : ["briefSeKnap", "briefRetKnap", "briefGemTop"];
+  const fremme = paaTelefon ? ["briefRetKnap", "briefLaesKnap"] : ["briefSeKnap", "briefRetKnap", "briefLaesKnap", "briefGemTop"];
   fremme.forEach(function (id) {
     const k = document.getElementById(id); if (!k) return;
     k.style.cssText = lille + "color:var(--black);";
@@ -21843,6 +21934,8 @@ function briefKnapperFlyt() {
       k.style.cssText = lille + "color:var(--black);width:32px;padding:0;justify-content:center;";
       try { k.innerHTML = BSAM_BLYANT; } catch (e) {}
     }
+    /* HOEJTALEREN er et symbol som blyanten (samme gruppe, samme regel 2/9). */
+    if (id === "briefLaesKnap") k.style.cssText = lille + "color:var(--black);width:32px;padding:0;justify-content:center;";
     vaert.appendChild(k);
   });
   /* ⋯ bygges kun een gang og genbruges — ellers ville hver gentegning lave en ny. */
@@ -22440,7 +22533,10 @@ function briefEtSpmTegn() {
   let hoved = document.getElementById("briefSpmHoved");
   if (!hoved) { hoved = document.createElement("div"); hoved.id = "briefSpmHoved"; }
   let titelH = ""; try { const itH = (IDEER || []).find(function (x) { return String(x.id) === String(BRIEF_ID); }) || {}; titelH = (typeof titelVis === "function" ? titelVis(itH.titel || "") : (itH.titel || "")) || ""; } catch (e) {}
-  hoved.innerHTML = titelH ? '<div class="brief-spm-titel">' + esc(titelH) + '</div>' : "";
+  hoved.innerHTML = '<div style="display:flex;align-items:center;gap:10px;justify-content:center;">'
+    + (titelH ? '<div class="brief-spm-titel" style="flex:1;min-width:0;margin:0;">' + esc(titelH) + '</div>' : '<span style="flex:1;"></span>')
+    + briefLaesKnapHtml(false)   /* laeser det spoergsmaal, der er fremme (13/9) */
+    + '</div>';
   hoved.appendChild(top);
   wrap.insertBefore(hoved, wrap.firstChild);
 
@@ -41072,7 +41168,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "1861";
+const APP_VERSION = "1862";
 let NY_VERSION_KLAR = false;
 function nyVersionSkjul() { const e = document.getElementById("nyVersion"); if (e) e.style.display = "none"; }
 function nyVersionHent() { try { location.reload(); } catch(e) {} }
@@ -57828,6 +57924,7 @@ if ((location.hash || "").toLowerCase() === "#ole") {   // #ole = preview af Ole
 (function () {
   const origShowTab = window.showTab;
   window.showTab = function (n) {
+    try { if (typeof briefLaesStop === "function" && (BRIEF_LAES_KOE || (window.speechSynthesis && speechSynthesis.speaking))) briefLaesStop(); } catch (e) {}   /* oplaesningen foelger ikke med til en anden side (13/9) */
     origShowTab(n);
     try {
       if (KURSUS_LAASTE_SIDER[n] && kursusLaasAktiv()) kursusLaasOverlay();   /* een doer: kursusLaasAktiv (13/9) */
@@ -57860,6 +57957,6 @@ if ((location.hash || "").toLowerCase() === "#ole") {   // #ole = preview af Ole
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 13. september · 1861</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 13. september · 1862</div>
 </body>
 </html>

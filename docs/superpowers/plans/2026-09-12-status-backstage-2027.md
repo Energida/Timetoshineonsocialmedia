@@ -127,6 +127,17 @@ Idas ord: »bedømme videoen med stjerner fra et til fem og ... tilføje komment
 - **Backstage, produktionstavlen:** `klipFeedbackHent` henter alle `lektion_feedback_%`-rækker én gang, når tavlen hentes. Hvert lektionskort får en chip »★ 4,0 (3)« ved statussen og afsnittet »Kundernes feedback« nederst: snit, antal vurderinger og kommentarerne i Didot-kursiv med navn, virksomhed, dato og stjerner. Intet afsnit uden feedback. Kun læsning, ingen ny tabel, ingen ny policy. **Kan admin ikke læse andre koders skema_svar-rækker (RLS), står der intet; det skal Ida tjekke live på en lektion, der har fået en vurdering.**
 - **Kundekortet (Aktivitet):** kommentaren fra feedback-rækken vises som kundens note under lektionen, som de gamle refleksionsnoter.
 
+## 5f. v1862: oplæsning af briefen (hængeparti 1, Ida 13/9: ordblind kunde)
+
+Samme motor som Backstages manus-oplæsning (Web Speech, dansk stemme, ingen server). Én knap læser det, der er fremme, og trykket igen stopper. Teksten deles i stykker pr. flise, så Chrome ikke stopper midt i. Sideskift stopper oplæsningen.
+
+- **Overblikket, computer:** højtaler-symbol i symbolrækken ved blyant, mappe og del. Læser titlen og hver flise: etiket og svar, klip for klip.
+- **Overblikket, telefon:** lang hvid knap »Læs briefen op« øverst i knaprækken under rammen (topraekken er skjult på telefonen siden 8/9). Læser de synlige fliser; foldede fliser springes over.
+- **Spørgsmålene, telefon:** højtaler ved opslagets titel i hovedet. Læser spørgsmålet, hjælpen og kundens svar.
+- **Spørgsmålene, computer:** højtaler i topraekken. Læser alle synlige spørgsmål på siden med svar.
+
+Målt i selen: 390 og 1440, overblik og spørgsmål, tekststykkerne logget. Ikke målt: selve stemmen (kræver en rigtig telefon). På iPhone er den danske stemme med som standard; er den ikke installeret, læser telefonen med en anden stemme.
+
 ## 6. Bridge-trådene 12/9
 
 Trådene på Idas maskine (»Skærm, der ikke må vises« m.fl.) døde kl. 16:25 dansk tid, fem minutter efter v1856 blev pushet, fordi computeren blev lukket. Intet i repoet er halvt; højst få minutters ucommitteret arbejde kan være tabt. De vågner først, når Claude Code startes på den maskine igen.
