@@ -146,6 +146,27 @@ Målt i selen: 390 og 1440, overblik og spørgsmål, tekststykkerne logget. Ikke
 - Ingen ny tabel, ingen ny policy, ingen ny lagerplads: samme bucket og tabel som væggen har haft siden 30/7.
 - Målt i selen på 390 og 1440: valgrækken, linkflisen (instagram.com), billedflisen, kortets miniature, kamera-feltet. Selve upload og kameraet kræver en rigtig telefon og basen.
 
+## 5h. v1864: Indbakke-360 (hængeparti 4, Ida 13/9)
+
+Målt i koden: hvilke hændelser lander hvor, for Ida (Backstage: Venter på dig på Hjem, kundekortet og Indbakken) og for kunden (Indbakken i appen og Indbakke-kortet på Hjem).
+
+| Hændelse | Ida så det før | Kunden så det før | Nu |
+|---|---|---|---|
+| Kunden sender til Ida | Venter på dig (Godkend) | (egen brief: »Venter på Ida«) | Uændret |
+| Ida sender til kunden | (egen brief) | **Ingen steder i Indbakken.** `GODK_KOE` fyldes kun på Backstages forside, så kundens »Afventer din godkendelse« var altid tom. Kun briefens bjælke sagde det. | Kundens egne opslag er kilden: sendt TIL mig (ikke AF mig) står under Afventer din godkendelse med afsender, tid og note. Åbner briefen direkte. |
+| Kunden godkender Idas brief | **Ingen steder** | (egen brief) | Venter på dig: »Godkendt af Rikke« med OK, der kvitterer (set-mærke på enheden). |
+| Kunden sender Idas brief retur med kommentar | **Ingen steder** | (egen brief) | Venter på dig: »Sendt retur af Rikke · kommentar«, Åbn / Set. |
+| Ida godkender kundens brief | (status) | **Kun i briefen** | Til orientering: »… er godkendt af Ida« med Idas kommentar og »Vælg dato«, når der ingen dato er. |
+| Ida sender kundens brief retur | (status) | **Kun i briefen** | Til orientering: »… er sendt retur af Ida« med kommentaren, Åbn briefen. |
+| Kommentar på briefen (begge veje) | Venter på dig: »Kommentar fra …« | **Kun i briefen** | Til orientering: »Ida har kommenteret …« med teksten, Svar. |
+| Er det postet? | Venter på dig (kunder Ida poster for) | Indbakken øverst | Uændret |
+| To-do til dig | Venter på dig (ansvarlig Ida) | Til dig | Uændret |
+| Tøm hovedet-noter | (kundekortet) | Det du har skrevet ned | Uændret |
+
+Orienteringsrækker hos kunden forsvinder, når de er åbnet (`ibSetMark`, pr. kode på enheden). Idas »godkendt«- og »retur«-rækker kvitteres med OK/Set (`bsVenterSetMark`). Rækkebygningen for Backstage er én ren funktion, `venterRaekkerFra(rows, mig, idag)`, målt i selen med seks opslag. Kundens Indbakke målt på 390 med fem opslag: én under Afventer (den fra Ida), tre under Til orientering, og den, kunden selv sendte til Ida, står ikke som hendes opgave.
+
+Ikke rørt: teamet (klipperen) har sin egen kæde på produktionstavlen (Klippet → Til din godkendelse), og »Ønsker til appen« er hængeparti 3. Den tomme tekst under Til orientering sagde »Ingen aftaler i kalenderen lige nu« (aftalerne flyttede til Hjem 3/8); nu »Ingenting nyt«.
+
 ## 6. Bridge-trådene 12/9
 
 Trådene på Idas maskine (»Skærm, der ikke må vises« m.fl.) døde kl. 16:25 dansk tid, fem minutter efter v1856 blev pushet, fordi computeren blev lukket. Intet i repoet er halvt; højst få minutters ucommitteret arbejde kan være tabt. De vågner først, når Claude Code startes på den maskine igen.

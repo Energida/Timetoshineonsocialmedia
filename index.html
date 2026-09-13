@@ -23823,14 +23823,36 @@ function indbakkeRegn() {
   /* VENTER PAA MIG (flyttet helt ind i Indbakken, Ida 9/8): samme koe som forsidens boks
      brugte (GODK_KOE, hentet paa tvaers af kunder af godkKoeHent), saa en brief sendt
      uden navngiven modtager ogsaa lander her. Klikket aabner kundens brief som boksen. */
-  (typeof GODK_KOE !== "undefined" && Array.isArray(GODK_KOE) ? GODK_KOE : []).forEach(x => {
+  /* ===== INDBAKKE-360 (haengeparti 4, Ida 13/9: "sikre mig at Indbakken virker") =====
+     MAALT: GODK_KOE fyldes KUN paa Backstages forside (godkKoeHent). I kundeappen var den altid
+     tom, saa en brief, Ida sendte til Rikke, stod ALDRIG i Rikkes indbakke — kun i briefens
+     egen bjaelke, naar hun tilfaeldigvis aabnede den. Nu laeses kundens egne opslag (IDEER)
+     som kilde, naar koeen er tom: sendt TIL mig, ikke AF mig. Uden personligt navn (kode-login)
+     regnes alt, der ikke er sendt til Ida, som til mig. */
+  const erIdaNu = /^ida\b/i.test(String(migNu || ""));
+  const tilMig = function (g) {
+    const til = String((g && g.til) || "").trim();
+    if (!til) return erIdaNu || !migNu;
+    if (/^ida\b/i.test(til)) return erIdaNu;
+    if (!migNu) return true;
+    return til.toLowerCase() === String(migNu).toLowerCase();
+  };
+  const koeKilde = (typeof GODK_KOE !== "undefined" && Array.isArray(GODK_KOE) && GODK_KOE.length) ? GODK_KOE
+    : (typeof IDEER !== "undefined" && Array.isArray(IDEER) ? IDEER : []).filter(function (x) {
+        if (x.status !== "Klar til godkendelse" || x.status === "Arkiveret") return false;
+        const g = (x.brief && x.brief.godk) || null;
+        if (g && g.fra && migNu && String(g.fra).toLowerCase() === String(migNu).toLowerCase()) return false;   /* sendt af mig = ikke min opgave */
+        return tilMig(g);
+      });
+  koeKilde.forEach(x => {
     const g = (x.brief && x.brief.godk) || {};
     const navn = (VIRKSOMHEDSKODER[x.kode] && VIRKSOMHEDSKODER[x.kode].virksomhed) || x.kode;
     handling.push({
       t: esc(storStart(titelVis(x.titel || "Uden titel"))) + ' venter paa din godkendelse',
       s: esc(navn) + (g.fra ? ' · sendt af ' + esc(String(g.fra)) : '') + (g.sendt && typeof godkNaar === "function" ? ' · ' + esc(godkNaar(g.sendt)) : '') + (g.note ? ' · ' + esc(String(g.note)) : ''),
-      knap: 'Åbn briefen', klik: "godkKoeAabn('" + esc(String(x.kode)) + "','" + esc(String(x.id)) + "')",
-      aabn: "godkKoeAabn('" + esc(String(x.kode)) + "','" + esc(String(x.id)) + "')"
+      /* KUNDEN aabner sin egen brief direkte; godkKoeAabn er Idas vej (ny fane som kunden) (13/9). */
+      knap: 'Åbn briefen', klik: (typeof CUSTOMER_NAV !== "undefined" && CUSTOMER_NAV && !document.body.classList.contains("dash-mode")) ? "openBriefSide('" + String(x.id).replace(/'/g, "\\'") + "')" : "godkKoeAabn('" + esc(String(x.kode)) + "','" + esc(String(x.id)) + "')",
+      aabn: (typeof CUSTOMER_NAV !== "undefined" && CUSTOMER_NAV && !document.body.classList.contains("dash-mode")) ? "openBriefSide('" + String(x.id).replace(/'/g, "\\'") + "')" : "godkKoeAabn('" + esc(String(x.kode)) + "','" + esc(String(x.id)) + "')"
     });
   });
   /* ===== SAMME OPSLAG STAAR KUN EET STED (Idas valg 17/8, punkt 14) =====
@@ -23868,6 +23890,38 @@ function indbakkeRegn() {
      ti andre kunne man ikke se, at det var I DAG. De har faaet deres eget kort tilbage
      paa forsiden. Dublet-reglen holdes: de staar EET sted, bare det rigtige. */
   const orientering = [];
+  /* TIL ORIENTERING (Indbakke-360, 13/9): det, en anden har GJORT ved mit opslag, og som jeg ellers kun
+     saa ved at aabne briefen: godkendt, sendt retur med kommentar, ny kommentar. Raekken staar, til den
+     er aabnet (set-maerket bor paa enheden, ibSetMark) — saa listen ikke vokser for evigt. */
+  try {
+    const set = ibSetLaes();
+    const lav = function (it, noegle, t, s2, knap, klik) {
+      if (set[noegle]) return;
+      const idS = String(it.id).replace(/'/g, "\\'");
+      const aabn = "ibSetMark('" + noegle + "');openBriefSide('" + idS + "')";
+      orientering.push({ t: t, s: s2, aabn: aabn, knap: knap || "Åbn", klik: klik ? ("ibSetMark('" + noegle + "');" + klik) : aabn });
+    };
+    (typeof IDEER !== "undefined" && Array.isArray(IDEER) ? IDEER : []).forEach(function (it) {
+      if (!it || it.status === "Arkiveret") return;
+      const b = it.brief || {}; const g = b.godk || null; const sv = b.svar || null;
+      const titel = esc(storStart(titelVis(it.titel || "Uden titel")));
+      const mineg = migNu ? String(migNu).toLowerCase() : "";
+      const afAnden = function (hvem) { return !!hvem && String(hvem).toLowerCase() !== mineg; };
+      if (sv && sv.valg && afAnden(sv.af) && (!g || !g.fra || !migNu || String(g.fra).toLowerCase() === mineg)) {
+        const naar = sv.dato ? String(sv.dato).slice(0, 10) : "";
+        if (sv.valg === "godkendt")
+          lav(it, "godk:" + it.id + ":" + naar, titel + ' er godkendt af ' + esc(String(sv.af)), (sv.note ? esc(String(sv.note)) : 'Ingen kommentar') + (naar ? ' · ' + esc(dkDatoKort(naar)) : ''),
+              it.dato ? "Åbn" : "Vælg dato", it.dato ? "" : "showPlanDate('" + String(it.id).replace(/'/g, "\\'") + "')");
+        else if (sv.valg === "retur")
+          lav(it, "retur:" + it.id + ":" + naar, titel + ' er sendt retur af ' + esc(String(sv.af)), (sv.note ? esc(String(sv.note)) : 'Ingen kommentar') + (naar ? ' · ' + esc(dkDatoKort(naar)) : ''), "Åbn briefen", "");
+      }
+      const kom = Array.isArray(b.kommentarer) ? b.kommentarer : [];
+      if (kom.length && it.status !== "Postet") {
+        const sidste = kom[kom.length - 1];
+        if (afAnden(sidste.hvem)) lav(it, "kom:" + it.id + ":" + String(sidste.tid || kom.length), esc(String(sidste.hvem)) + ' har kommenteret ' + titel, esc(String(sidste.t || "")).slice(0, 140), "Svar", "");
+      }
+    });
+  } catch (e) {}
   /* TIL DIG (Ida 6/9 kl. 10.22: "saa skal hun jo faa en notifikation oppe i klokken og det skal
      staa i indbakken"). En to-do tagget med dit navn staar her, til den er klaret. Samme regel som
      opgaveErTilMig — men KUN dem med navn paa; dem uden navn er til alle og stoejer ikke. */
@@ -23889,6 +23943,9 @@ function indbakkeRegn() {
   }); } catch (e) { postet = []; }
   return { handling: handling, orientering: orientering, tildig: tildig, postet: postet };
 }
+/* Set-maerket for orienteringsraekker: paa enheden, pr. kode (Indbakke-360, 13/9). */
+function ibSetLaes() { try { return JSON.parse(localStorage.getItem(nsKey("ib_set")) || "{}") || {}; } catch (e) { return {}; } }
+function ibSetMark(n) { try { const m = ibSetLaes(); m[n] = 1; localStorage.setItem(nsKey("ib_set"), JSON.stringify(m)); } catch (e) {} try { setTimeout(function () { try { renderIndbakkeKort(); } catch (e) {} }, 50); } catch (e) {} }
 function renderIndbakkeKort() {
   const el = document.getElementById("indbakkeKort"); if (!el) return;
   if (!CURRENT_DEF || CURRENT_DEF.type === "kursus") { el.style.display = "none"; return; }
@@ -24025,7 +24082,7 @@ function indbakkenAaben() {
                        knap: "Slet", klik: "kundeNoteSlet('" + String(n.id).replace(/'/g, "\\'") + "')" };
             }), '')
         : '')
-    + sektion('Til orientering', ib.orientering, 'Ingen aftaler i kalenderen lige nu.')
+    + sektion('Til orientering', ib.orientering, 'Ingenting nyt.')   /* aftalerne bor paa Hjem siden 3/8 — den gamle tomtekst loej (13/9) */
     + '</div>';
   showTab(23);
 }
@@ -39947,6 +40004,44 @@ async function venterHent() {
      Hendes egne opslag (kode ENERGIDA og andre »egen«-koder) staar aldrig i Venter paa dig — dem svarer hun paa i sin egen app. */
   rows = rows.filter(function (x) { return !erEgenKode(String(x.kode || "").toUpperCase()); });
   window.__ALLE_OPSLAG = rows.map(function (x) { return { id: x.id, kode: x.kode, titel: x.titel, status: x.status, dato: x.dato }; });
+  venterRaekkerFra(rows, mig, idag).forEach(function (r) { ud.push(r); });
+  try {
+    const t = await sb.from("kunde_opgaver").select("id,kode,titel,deadline,ansvarlig,done,aktiv").ilike("ansvarlig", "Ida%");
+    (t.data || []).filter(function (o) { return !o.done && o.aktiv !== false && !erEgenKode(String(o.kode || "").toUpperCase()); }).forEach(function (o) {
+      ud.push({ slags: "todo", kode: o.kode, kunde: venterKundeNavn(o.kode), titel: storStart(o.titel || ""), sub: o.deadline ? dkDatoKort(String(o.deadline)) : "To-do", id: o.id, ja: "Done", nej: "" });
+    });
+  } catch (e) {}
+  window.__VENTER = ud; return ud;
+}
+/* Set-maerket for Idas orienteringsraekker (godkendt af kunden): paa enheden. */
+function bsVenterSetLaes() { try { return JSON.parse(localStorage.getItem("bs_venter_set") || "{}") || {}; } catch (e) { return {}; } }
+function bsVenterSetMark(n) { try { const m = bsVenterSetLaes(); m[n] = 1; localStorage.setItem("bs_venter_set", JSON.stringify(m)); } catch (e) {} }
+/* EEN REN FUNKTION bygger raekkerne af opslagene (Indbakke-360, 13/9), saa den kan maales i selen
+   uden basen. NYT: "retur" (kunden sendte Idas brief retur med kommentar) og "godkendt" (kunden
+   godkendte Idas brief) — foer saa Ida det kun ved at aabne briefen. */
+function venterRaekkerFra(rows, mig, idag) {
+  const ud = [];
+  const set = bsVenterSetLaes();
+  const erMig = function (n) { return !!n && (String(n) === mig || /^ida\b/i.test(String(n))); };
+  (rows || []).forEach(function (x) {
+    const g = (x.brief && x.brief.godk) || null; const sv = (x.brief && x.brief.svar) || null;
+    const kom = (x.brief && Array.isArray(x.brief.kommentarer)) ? x.brief.kommentarer : [];
+    const titel = storStart(titelVis(x.titel || "Uden titel"));
+    if (x.status === "Klar til godkendelse" && (!g || !g.til || String(g.til) === mig || /^ida\b/i.test(String(g.til))))
+      ud.push({ slags: "godkend", kode: x.kode, kunde: venterKundeNavn(x.kode), titel: titel, sub: "Godkend", id: x.id, ja: "Ja", nej: "Nej", dato: x.dato || "" });
+    else if (sv && sv.valg === "retur" && g && erMig(g.fra) && !erMig(sv.af) && x.status !== "Postet" && !set["retur:" + x.id + ":" + String(sv.dato || "").slice(0, 10)])
+      ud.push({ slags: "retur", kode: x.kode, kunde: venterKundeNavn(x.kode), titel: titel, sub: "Sendt retur af " + String(sv.af || "kunden") + (sv.note ? " · " + String(sv.note).slice(0, 80) : ""), id: x.id, ja: "Åbn", nej: "Set", dato: x.dato || "", noegle: "retur:" + x.id + ":" + String(sv.dato || "").slice(0, 10) });
+    else if (sv && sv.valg === "godkendt" && g && erMig(g.fra) && !erMig(sv.af) && !set["godk:" + x.id + ":" + String(sv.dato || "").slice(0, 10)])
+      ud.push({ slags: "godkendt", kode: x.kode, kunde: venterKundeNavn(x.kode), titel: titel, sub: "Godkendt af " + String(sv.af || "kunden") + (sv.note ? " · " + String(sv.note).slice(0, 80) : ""), id: x.id, ja: "OK", nej: "", dato: x.dato || "", noegle: "godk:" + x.id + ":" + String(sv.dato || "").slice(0, 10) });
+    else if (x.dato && x.dato < idag && ["Postet", "Idé", "Målt"].indexOf(String(x.status || "")) === -1 && !venterKundenPosterSelv(x.kode))   /* Ida 8/9 kl. 15.41: Acorns' content (CONTENT-PLANNER — kunden poster selv) staar ikke paa hendes liste */
+      ud.push({ slags: "postet", kode: x.kode, kunde: venterKundeNavn(x.kode), titel: titel, sub: "Er det postet? · " + dkDatoKort(String(x.dato)), id: x.id, ja: "Ja, postet", nej: "Ny dato", dato: x.dato });
+    else if (kom.length && String(kom[kom.length - 1].hvem || "") !== mig && x.status !== "Postet")
+      ud.push({ slags: "kommentar", kode: x.kode, kunde: venterKundeNavn(x.kode), titel: titel, sub: "Kommentar fra " + String(kom[kom.length - 1].hvem || ""), id: x.id, ja: "Svar", nej: "", dato: x.dato || "" });
+  });
+  return ud;
+}
+async function venterHentGAMMEL_UDE_AF_BRUG(rows, mig, idag) {   /* den gamle loekke, bevaret ordret til sammenligning (13/9) */
+  const ud = [];
   rows.forEach(function (x) {
     const g = (x.brief && x.brief.godk) || null; const kom = (x.brief && Array.isArray(x.brief.kommentarer)) ? x.brief.kommentarer : [];
     const titel = storStart(titelVis(x.titel || "Uden titel"));
@@ -39957,13 +40052,7 @@ async function venterHent() {
     else if (kom.length && String(kom[kom.length - 1].hvem || "") !== mig && x.status !== "Postet")
       ud.push({ slags: "kommentar", kode: x.kode, kunde: venterKundeNavn(x.kode), titel: titel, sub: "Kommentar fra " + String(kom[kom.length - 1].hvem || ""), id: x.id, ja: "Svar", nej: "", dato: x.dato || "" });
   });
-  try {
-    const t = await sb.from("kunde_opgaver").select("id,kode,titel,deadline,ansvarlig,done,aktiv").ilike("ansvarlig", "Ida%");
-    (t.data || []).filter(function (o) { return !o.done && o.aktiv !== false && !erEgenKode(String(o.kode || "").toUpperCase()); }).forEach(function (o) {
-      ud.push({ slags: "todo", kode: o.kode, kunde: venterKundeNavn(o.kode), titel: storStart(o.titel || ""), sub: o.deadline ? dkDatoKort(String(o.deadline)) : "To-do", id: o.id, ja: "Done", nej: "" });
-    });
-  } catch (e) {}
-  window.__VENTER = ud; return ud;
+  return ud;
 }
 function venterKortHtml(v, i) {
   return '<div class="bs-rk">'
@@ -39982,6 +40071,8 @@ async function venterJa(i) {
     if (v.slags === "godkend") { const r = await sb.from("content_ideer").update({ status: "Godkendt" }).eq("id", v.id).select(); ok = !!(r.data && r.data.length); }
     else if (v.slags === "postet") { const r = await sb.from("content_ideer").update({ status: "Postet" }).eq("id", v.id).select(); ok = !!(r.data && r.data.length); }
     else if (v.slags === "kommentar") { godkKoeAabn(v.kode, v.id); return; }
+    else if (v.slags === "retur") { godkKoeAabn(v.kode, v.id); return; }
+    else if (v.slags === "godkendt") { bsVenterSetMark(v.noegle); ok = true; }
     else if (v.slags === "todo") { const r = await sb.from("kunde_opgaver").update({ done: true }).eq("id", v.id).select(); ok = !!(r.data && r.data.length); }
   } catch (e) { ok = false; }
   if (!ok) { try { visSyncFejl && visSyncFejl("Kunne ikke gemme — prøv igen."); } catch (e) {} }
@@ -39993,6 +40084,7 @@ async function venterJa(i) {
 async function venterNej(i) {
   const v = (window.__VENTER || [])[i]; if (!v) return;
   if (v.slags === "godkend") { try { godkKoeAabn(v.kode, v.id); } catch (e) {} return; }
+  if (v.slags === "retur") { try { bsVenterSetMark(v.noegle); } catch (e) {} try { await dashForsideTegn(); } catch (e) {} return; }
   if (v.slags === "postet") {
     try { if (!(IDEER || []).some(function (x) { return String(x.id) === String(v.id); })) IDEER.push({ id: v.id, titel: v.titel, dato: v.dato, kode: v.kode }); } catch (e) {}
     try { opslagNyDatoAabn(v.id); } catch (e) {}
@@ -41252,7 +41344,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "1863";
+const APP_VERSION = "1864";
 let NY_VERSION_KLAR = false;
 function nyVersionSkjul() { const e = document.getElementById("nyVersion"); if (e) e.style.display = "none"; }
 function nyVersionHent() { try { location.reload(); } catch(e) {} }
@@ -58043,6 +58135,6 @@ if ((location.hash || "").toLowerCase() === "#ole") {   // #ole = preview af Ole
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 13. september · 1863</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 13. september · 1864</div>
 </body>
 </html>
