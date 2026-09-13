@@ -227,6 +227,14 @@ Bygget efter mockups (»Planlægningsdagen mockups«) og Idas tre klik: de fem t
 - Målt i selen: Backstage 1440 (rækken med Svar/Set, arket, kvittering »Sendt til Rikke.«, svaret på ønsket, rækken væk bagefter); kunden 390 (orienteringsrækken, prikken i klokken, Set fjerner rækken).
 - Ikke målt live: at Ida (admin) må læse og opdatere andre koders `skema_svar`-rækker under RLS. Læsningen bruges allerede af Venter på dig; opdateringen er ny og skal prøves i drift én gang.
 
+## 5o. v1871: kortenes knapper er lange knapper på telefonen (Ida 13/9)
+
+- Ida så mockups af Inspirationssiden med det lille røde »Lav til idé« og reagerede: alle knapper på mobilskærm skal være knapper, der går hele vejen over. Reglen fandtes for briefen og navigationen (`bsam-mobknap`), men kortene på Inspiration og Arkivet havde stadig små røde ord.
+- **Nu:** kortets handlinger står i én stak `.kort-knapper`. På telefonen (op til 760 px) bliver hvert ord en lang knap: hvid flade, rød tekst, 48 px, primær øverst; den dæmpede (Slet, Gendan) har grå tekst. På computeren står de som før, små røde ord til højre.
+- Rettet: Inspiration (Lav til idé, Slet), Arkivet (Genbrug idéen, Gendan) og tre steder i briefen (»Se tidligere opslag fra søjlen i Arkivet«, »Skift« ved CTA'en, »Åbn Drive-mappen«).
+- Målt i selen på 390: Inspiration 324×48 pr. knap, Arkivet 316×48; på 1440 uændret (79×14).
+- Mockups af Inspiration med previews (canvas »Inspiration previews« og PDF) rettet, så de viser de samme lange knapper.
+
 ## 6. Bridge-trådene 12/9
 
 Trådene på Idas maskine (»Skærm, der ikke må vises« m.fl.) døde kl. 16:25 dansk tid, fem minutter efter v1856 blev pushet, fordi computeren blev lukket. Intet i repoet er halvt; højst få minutters ucommitteret arbejde kan være tabt. De vågner først, når Claude Code startes på den maskine igen.
