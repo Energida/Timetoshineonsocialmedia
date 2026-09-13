@@ -205,6 +205,21 @@ Kæden efter Gem: `byggGem` skriver `kunde_strategi.byggesten`, henter forfra ge
 - Ikke push: appen har ingen push-notifikationer. Kortet står i Indbakken og på Hjem, til kunden svarer. Push er kontraktarbejde (serviceworker, server, nøgler) og tages separat, hvis Ida vil.
 - Målt i selen på 390: kortet efter Ja, postet; gemt refleksion på opslaget; Backstage-afsnittet med ét opslag.
 
+## 5m. v1869: Planlægningsdagen som fem trin (hængeparti 6b og 8, Ida 13/9)
+
+Bygget efter mockups (»Planlægningsdagen mockups«) og Idas tre klik: de fem trin som tegnet; månedsplanlægning ved første planlægning i en ny måned; appen skriver forslagene ud fra Drejebogen, ingen AI-kald.
+
+- **Døren:** ét rødt kort på Hjem, »I dag er planlægningsdag · Uge N på 25 minutter«, med de fem trin listet og knappen Start planlægningen. Vises når den faste planlægningsdag (`plan_dato`) er i dag eller passeret, og ugen ikke allerede er planlagt. På computeren ligger kortet lige før I DAG (`#planRitKort`, order 39); på telefonen tegner facittet det samme indhold under I DAG-flisen (`planRitKortHtml` er ét sted). Den gamle I DAG-række »I dag er vores planlægningsdag« viger, når ritualet kan køres (dublet-reglen). Ritualet er ikke tilgængeligt for kunder uden Content (`funkTaendt`).
+- **Status:** `skema_svar` række `plan_ritual` (navn config) med sidst, uge, tid, maanedPlan. Ingen ny tabel.
+- **Måneden (trin 0):** første planlægning i en ny måned (ugens torsdag afgør måneden) starter med fem spørgsmål, ét ad gangen: tema, kundernes udfordring, hvad sker i butikken, hvad virkede sidste år, det ene mål. Temaet gemmes i `maanedens_tema` (samme række som Content-siden og Hjem læser), alle fem i `plan_maaned_<YYYY-MM>`.
+- **Trin 1 Tilbageblik:** sidste syv dages opslag med status. Ikke-postede får Postet / Nej (Nej åbner ny dato). Postede uden refleksion får »Hvordan gik det?« med samme to felter som v1868 (`brief.refleksion`). Ugens tal: postet af planlagt, prøvereels, faste story-dage.
+- **Trin 2 Næste uge:** appen foreslår op til fire opslag: antallet er ugemålet minus det, der allerede ligger i næste uge; søjlerne er dem, næste uge mangler, i Drejebogens rotation. Teksten er kundens egne eksempler fra Drejebogen (`egneFor`), ellers grundtekstens eksempler, ellers hooks. Månedens tema hentes fra `maanedens_tema` og vises i forklaringen. Pr. forslag: dagchip (forvalgt fra `MAALS.naesteDage`), Andet forslag, Skriv min egen, Ikke denne uge. »Læg de N i kalenderen« opretter dem via `ideAdd` som Planlagt Reel med `brief.beskrivelse` og `brief.fraPlanlaegning`.
+- **Trin 3 Optagedage:** samlet på én dag (dag og tidsrum) eller pr. opslag. Gemmes som `brief.optagedag` og `brief.optagetid` på hvert opslag i ugen.
+- **Trin 4 Ugens mål:** de fire Performance-fliser (opslag, prøvereels, story-dage, fokus) i samme motor (`perfMaalRet`), rettes her.
+- **Trin 5 Book næste:** dag i næste uge og klokkeslæt; »Læg i min kalender (.ics)«; Færdig gemmer `plan_dato` (`setPlanDato`) og ritualstatus. Færdig-kortet er det samme som lektionens (ring, Godt gået, næste planlægning).
+- Målt i selen på 390 og 1440: Hjem-kortet på begge flader; de fem månedsspørgsmål og temaet gemt; tilbageblik med Postet og refleksion på opslaget; tre forslag (1A, 1B, 2A) oprettet i kalenderen med dato; optagedag på alle tre; målfliserne; book med 11 chips og .ics; status `{sidst, uge, tid, maanedPlan}`; efter Tilbage til Hjem er kortet væk.
+- Ikke bygget: notifikation på dagen (ingen push i appen, jf. 5l). Forslagenes »hvorfor« står ikke på kortet, kun søjlen der mangler.
+
 ## 6. Bridge-trådene 12/9
 
 Trådene på Idas maskine (»Skærm, der ikke må vises« m.fl.) døde kl. 16:25 dansk tid, fem minutter efter v1856 blev pushet, fordi computeren blev lukket. Intet i repoet er halvt; højst få minutters ucommitteret arbejde kan være tabt. De vågner først, når Claude Code startes på den maskine igen.
