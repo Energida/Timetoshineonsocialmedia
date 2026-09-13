@@ -243,7 +243,7 @@ Ida så tre bud (canvas »Inspiration previews« og PDF): A som i dag, B skærmb
 - **Linkkortet:** med skærmbillede står billedet øverst (4:3) og åbner linket. Uden står det grå felt som én stor knap: »Tag et skærmbillede af opslaget, så står det her · Tilføj skærmbillede«; trykket vælger billedet, uploader og skriver `sti` på rækken med kvittering (update + select). Siger basen nej, fjernes billedet igen, og kunden får besked.
 - Kortets knapper: Lav til idé, Åbn linket, Slet (lange på telefonen, jf. 5o). Slet fjerner nu også et links skærmbillede fra bucketen.
 - **Skal ses live én gang:** at kunden må UPDATE sin egen række i `inspiration` (insert og delete er allerede i drift). Går det ikke, siger kortet »Kunne ikke gemme skærmbilledet på kortet«, og så skrives en update-regel efter husets mønster.
-- Målt i selen på 390 og 1440: kort med skærmbillede (billede + link), kort uden (det grå felt som knap), popuppen med miniature, gem med `sti` på rækken.
+- Målt i selen på 390 og 1440: kort med skærmbillede (billede + link), kort uden (det grå felt som knap), popuppen med miniature, gem med `sti` på rækken. v1873: »Tilføj skærmbillede« i det grå felt er også en lang knap på telefonen.
 
 ## 6. Bridge-trådene 12/9
 
