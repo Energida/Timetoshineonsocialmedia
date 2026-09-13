@@ -282,6 +282,7 @@ Ida (13/9 kl. 14.24, med skærmbillede af helskærms-Tøm hovedet): »hvordan fa
 - **Mekanisk, ikke en regel:** `.github/workflows/designlaas.yml` kører ved hvert push til `dashboard-og-database`: syntaks, versionsnummer (APP_VERSION = version.txt), Chromium, og `tools/designlaas/koer.sh`, som bygger selen uden for repoet (`byg-sele.py`, stub og sele.html ligger som tekst i scriptet, aldrig som filer) og kører `probe-popups.js` på 390. Siger målingen OK, skubbes samme commit til grenen `produktion`. Siger den fejl, sker intet, og GitHub sender besked.
 - **Idas ene klik:** i Cloudflare Pages sættes produktionsgrenen til `produktion`. Fra det øjeblik når intet ud til kunderne uden målingen. Indtil da er porten en alarm: den kører og fejler synligt, men sitet deployer stadig fra `dashboard-og-database`.
 - Kørt lokalt før commit: `SELE LAAS OK: 17 døre`, exit 0.
+- Første kørsel på GitHub (13/9 kl. 14.38): grøn på 46 sekunder, grenen `produktion` oprettet. Ida satte Cloudflare Pages til `produktion` kl. 14.50. v1878 er testpushet gennem hele kæden: push, måling, produktion, live.
 
 ## 6. Bridge-trådene 12/9
 
