@@ -64,6 +64,22 @@ Ikke testet med rigtige data: forslag-swipe på parrede kort, Content makker, de
 
 **Også i v1857: layouttjek af hele appen (13/9, Idas ønske efter cirklerne).** Probe i selen på 390 og 1440: runde elementer (`border-radius:50%`) der ikke er kvadratiske, klippet tekst, elementer ud over kanten, trykfelter under 30 px. Kørt på 13 Backstage-sider, 17 faner i kundeappen, briefens fem tilstande, plus-menuen, Mere-menuen, dagens kort og Tøm hovedet-skærmen. Fund og rettelser: (1) Energida Studios ⋯-knap (`.kv-menuknap.mq-tap`) var 36 × 44, nu 36 × 36. (2) »Slet vanen« (`.ic-del`) 19 × 20 px, trykfelt 44 via `::before`. (3) »Åbn drejebogen« (`.obp-seklink`) 12 px høj, trykfelt 44 via `::before`. (4) Krydset i Mere-menuen (`.burger-luk`) 19 × 30, trykfelt via `::before`. Ikke fejl: `.hjerte-pynt` stikker ud til højre med vilje (pynt, siden ruller ikke vandret), og `#csDeck`s slides er en vandret karrusel. Ingen klippet tekst nogen steder.
 
+## 5b. v1858: Drejebogen efter 360-gennemgangen (Idas klik 13/9)
+
+Gennemgangen ligger som Artifact (»Drejebogen 360«, 10 fund, alle 16 sider bygget af motoren for Hinges Hus og holdt op mod de låste lister). Idas valg og det, der er bygget:
+
+| Fund | Valg | Bygget |
+|---|---|---|
+| 1 Navnet over søjlerne | De fire indholdssøjler | Side 3 og 4: »DE FIRE INDHOLDSSØJLER«; side 15: »Indholdssøjlerne: brug dem sådan her«. Samme ord som appen siden 1/9. |
+| 2 Briefens tre trin | Appens navne er facit, og ind i bogen | Side 16, trin 3, får linjen »Briefen har tre trin: Fang dem, Fasthold dem, Få dem til at handle på indholdet«. Ordbogen får opslaget. **Dokumentet »Succesfuld Detaildrift, endelig version« (3/9, Del 2) skal rettes til de samme navne; det ligger på Idas maskine.** |
+| 5 CTA-listerne | Hele den låste liste | `bsCtaFor` klipper ikke længere ved tre. Fysisk 2A viser fire, ydelsesforretning 1A viser syv. Eksempler og åbninger holder stadig tre (deres egen 30/8-grænse). |
+| 3 + 4 Ordbogen og 1B-viben | Ja | 1B: »Primært uddannende eller inspirerende«. Ordbogen: Vibe og CTA rettet til de låste ord; nye opslag Byggesten, Briefens tre trin, EFU-modellen, Succesraketten. Ordlyden er godkendt af Ida ved klik før deploy. |
+| 6 EFU-siden | Ja | Ydelsesforretning (`forretningsNoegle === "raadgiver"`) får »ydelsen«, »prislisten«, »når ydelsen er leveret«. De tre andre typer er uændrede. |
+| 7 USP og Drivkraft to gange | Ja | Fald-tilbage-rækkerne »Det særlige« og »Det meningsfulde« er ude af råstoffet; indledningen bærer teksten alene, når der ikke er detaljer. |
+| 10 Acorns' gamle bøger | Pensioneres | `drejebog-acorns-x29j.html` og `drejebog-acorns-kort-og-godt.html` er nu en lille side »Drejebogen er flyttet ind i appen« med knap til b2b. Adresserne består; de gamle filer ligger i git. Ingen kundedef pegede på dem (Acorns blev koblet fra 25/8). |
+| 8 Følelsessætningerne | Åbent | Dokumentet kalder dem arbejdsudkast; bogen viser dem som facit. Ingen ændring; Ida låser eller markerer. |
+| 9 Per på side 8 | Idas tjek | Motoren tegner alle personaer; kræver at basen har Per. |
+
 ## 6. Bridge-trådene 12/9
 
 Trådene på Idas maskine (»Skærm, der ikke må vises« m.fl.) døde kl. 16:25 dansk tid, fem minutter efter v1856 blev pushet, fordi computeren blev lukket. Intet i repoet er halvt; højst få minutters ucommitteret arbejde kan være tabt. De vågner først, når Claude Code startes på den maskine igen.
