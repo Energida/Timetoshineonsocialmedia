@@ -245,6 +245,15 @@ Ida så tre bud (canvas »Inspiration previews« og PDF): A som i dag, B skærmb
 - **Skal ses live én gang:** at kunden må UPDATE sin egen række i `inspiration` (insert og delete er allerede i drift). Går det ikke, siger kortet »Kunne ikke gemme skærmbilledet på kortet«, og så skrives en update-regel efter husets mønster.
 - Målt i selen på 390 og 1440: kort med skærmbillede (billede + link), kort uden (det grå felt som knap), popuppen med miniature, gem med `sti` på rækken. v1873: »Tilføj skærmbillede« i det grå felt er også en lang knap på telefonen.
 
+## 5q. v1874: velkomsthilsnerne fra Content Studio (Ida 13/9)
+
+Ida: »Jeg mener faktisk også jeg har et sted med alle mine egne velkomsthilsner … i Some-appen på skrivebordet«. Listen fandtes (Backstage → Content Studio → Velkomsthilsner, `cs_velkomst`), men var ikke koblet til noget: telefonens forside sagde Godmorgen/Goddag/Godaften, computeren de fem klokkehilsner. Hendes valg: »under Content Studio og aktivere dem ligesom quotes«.
+
+- **Backstage:** Velkomsthilsner har nu flueben pr. linje som Citater på dashboardet (`brug`), og døren siger »N bruges«. Samme motor (`csBrug`).
+- **Kunderne:** appen læser de aktive hilsner gennem `dashboard_hilsner()` (security definer, læser kun rækken ENERGIDA/Ida/cs_velkomst) i `DASH_HILSNER`, én pr. dag (`dagensNr`). `dagensVelkomst(ellers)` bruges på telefonens dagskort, Hjem-heroen (computer og telefon) og facittet. Er listen tom, eller er funktionen ikke kørt, står klokkehilsenen som før.
+- **SQL-kort** øverst i »Supabase, venter på dine klik«: opretter funktionen og giver kun indloggede lov at kalde den. Kan køres igen uden skade. Det tilsvarende kort for `dashboard_citater` (12/9) ligger ikke i repoet; funktionen her er skrevet efter samme mønster.
+- Målt i selen: Backstage-listen med flueben og »1 bruges«; kundens dagskort, Hjem og facit med »Godmorgen sunshine«-typen hilsen; tom liste giver klokkehilsenen.
+
 ## 6. Bridge-trådene 12/9
 
 Trådene på Idas maskine (»Skærm, der ikke må vises« m.fl.) døde kl. 16:25 dansk tid, fem minutter efter v1856 blev pushet, fordi computeren blev lukket. Intet i repoet er halvt; højst få minutters ucommitteret arbejde kan være tabt. De vågner først, når Claude Code startes på den maskine igen.
