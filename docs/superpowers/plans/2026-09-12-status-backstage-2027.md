@@ -39,7 +39,32 @@ Bemærk: uden database viser Energida-siden »Du har ikke lavet nogen rum endnu�
 - **Kan ikke:** læse `../CLAUDE.md`, MASTERPLAN, hændelsesloggen, manualen, skill'en eller hukommelsen. De ligger kun på Idas maskine. Regler, der kun står dér, kender en sky-tråd ikke.
 - **Deploylåsen i `CLAUDE.md` (7/8)** er aldrig formelt ophævet i filen, selv om der er deployet 840 versioner siden. En sky-tråd bør ikke pushe til `dashboard-og-database` uden Idas udtrykkelige ord.
 
-## 5. Bridge-trådene 12/9
+## 5. v1857: briefen efter gennemgangen (Idas klik 12/9, bygget i skyen)
+
+Gennemgangen ligger som Artifact (»Briefen under lup«, 13 fund). Idas valg og det, der er bygget:
+
+| Fund | Valg | Bygget |
+|---|---|---|
+| 7, 8, 9 (tvillinger) | Telefonen følger computeren | Klip 1 hører til Fang dem med »Hvad ser man i klippet«; Fasthold dem begynder ved klip 2 (kort reel: ingen »mangler klip 2«). Én etiket. Ét chipsæt: søjle · format · hvem · dato, samme datoform (`dkDatoKort`) på godkendelsen. Hvem-chippen holdes ude af godkendelsen (26/8-beslutningen). Viben er ude af alle chips. |
+| 1, 2 (spørgsmålsskærmen) | Titel og fremdrift øverst | `#briefSpmHoved` først i wrap: titlen i Didot + »Fang dem · 1 af 2« (stadig vejen ud til fliserne). Rammen bærer kun spørgsmålet og står stadig nederst/midt. |
+| 3 (den røde knap) | Behold Gem ændringer | Ingen ændring. |
+| 4 | Ja | »Dine forslag« vises først, når der er et forslag (CSS `:not(:has(.fs-rk))`). |
+| 5 | Ja | Parrede spørgsmål: de to datoer på ét kort, Platform · Format · Lyd på ét kort (`briefSpmParGrupper`, `data-spm-par` sat efter etiketten, markup urørt). Fakta: 12 skærme bliver 9 på en ny brief (ansvarlig-feltet tæller med), 11 bliver 8 på en udfyldt. Flisens tal følger grupperne. |
+| 6 | Ja | Godkend-flisen siger »Ikke sendt endnu« / »Sendt til godkendelse« / »Godkendt« (grøn). |
+| 10 | Ja | Fakta-kortet er ude af telefonens overblik; chiprækken er Fakta. |
+| 11, 12, 13 | Ja | Computerens hoved: Tilbage · status · Se brief · ⋯; mappe, del og print ligger i ⋯ (øje og printikon var dubletter af Se brief og Print). Én Gem, nederst ved Næste. Rygraden og fliserne siger »Få dem til at handle«; banneret beholder det fulde navn. |
+
+Ikke testet med rigtige data: forslag-swipe på parrede kort, Content makker, deling. Kør selen på 390 og 1440, hvis noget rettes her igen.
+
+**Også i v1857: Tøm hovedet på b2b for Idas egne koder.** Ida 12/9: »Tøm hovedet skal komme hver gang man klikker på appen«. Da hendes Content Studio flyttede til b2b (8/9), arvede hun kundernes regel fra v1830 (dagens kort én gang om dagen). Nu: `dagensKortKunde` springer dagsspærren over, når `erEgenKode(currentKode)`, og `studieVaelgerHjem` kalder den igen ved `visibilitychange`/`pageshow` på b2b for egne koder. Kunderne er uændrede (én gang om dagen). Målt i selen: ENERGIDA får kortet ved boot, efter visibilitychange og efter pageshow; HINGES2026 kun ved boot. Den store Tøm hovedet-skærm (`studieVaelgerVis`) er stadig kun Backstage.
+
+**Også i v1857: To-do på Backstage Hjem viser kun Energida-sfæren.** Ida 12/9 kl. 23 med skærmbillede: listen var fuld af opskrifter, citater og private noter. To-do på Hjem (8/9) tegner hele `haengepartier`-rækken (`skema_svar`, ENERGIDA/Ida), som rummer to sfærer fra Get shit done (Privat og Energida) uden at vise hvilken. Nu filtreres `sfaere === "privat"` fra på Hjem (`hjemTodos`); de private står stadig i Get shit done. Skriveveje til rækken, alle med sfære Energida: Tøm hovedet-skærmens »To-do« (haengModal, spørger om sfære), Ny idé-arkets To-do-chip, Energida-sidens sendefelt › To-do, forsidens »Ny to-do …«, og »Venter på dig«-kort. Ikke verificeret: hvilken vej de konkrete tekster kom ind ad (kræver basen). Er de skrevet som Energida-to-dos, skal de swipes væk på Hjem eller ryddes i Get shit done.
+
+**Også i v1857: fluebens-cirklen på Hjems to-dos er rund igen.** Knappen `.bs-tjek` bærer `mq-tap`, og telefonreglen (`min-height:44px; padding:11px 0`) strakte den 28 px brede cirkel til 44 px høj. Nu `.bs-tjek.mq-tap { 28 × 28, padding 0 }`; trykfeltet på 44 × 44 ligger i `::before` som før.
+
+**Også i v1857: layouttjek af hele appen (13/9, Idas ønske efter cirklerne).** Probe i selen på 390 og 1440: runde elementer (`border-radius:50%`) der ikke er kvadratiske, klippet tekst, elementer ud over kanten, trykfelter under 30 px. Kørt på 13 Backstage-sider, 17 faner i kundeappen, briefens fem tilstande, plus-menuen, Mere-menuen, dagens kort og Tøm hovedet-skærmen. Fund og rettelser: (1) Energida Studios ⋯-knap (`.kv-menuknap.mq-tap`) var 36 × 44, nu 36 × 36. (2) »Slet vanen« (`.ic-del`) 19 × 20 px, trykfelt 44 via `::before`. (3) »Åbn drejebogen« (`.obp-seklink`) 12 px høj, trykfelt 44 via `::before`. (4) Krydset i Mere-menuen (`.burger-luk`) 19 × 30, trykfelt via `::before`. Ikke fejl: `.hjerte-pynt` stikker ud til højre med vilje (pynt, siden ruller ikke vandret), og `#csDeck`s slides er en vandret karrusel. Ingen klippet tekst nogen steder.
+
+## 6. Bridge-trådene 12/9
 
 Trådene på Idas maskine (»Skærm, der ikke må vises« m.fl.) døde kl. 16:25 dansk tid, fem minutter efter v1856 blev pushet, fordi computeren blev lukket. Intet i repoet er halvt; højst få minutters ucommitteret arbejde kan være tabt. De vågner først, når Claude Code startes på den maskine igen.
 
