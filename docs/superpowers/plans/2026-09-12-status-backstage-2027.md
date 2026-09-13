@@ -271,6 +271,12 @@ Ida (13/9 kl. 14.24, med skærmbillede af helskærms-Tøm hovedet): »hvordan fa
 - **Ikke skriveformer, uændrede:** Story-dage, Planlægningsdag, Dagens opslag, Ny dato, Tag den nu/Senere. Hvide kort uden kryds og med lang Luk.
 - Målt i selen på 390 (og 1440 for arket): alle otte åbner arket; gem af idé med søjle, Lav til idé med link i briefen, ugetema i MAALS, refleksion godt og svært på opslaget, skærmbillede valgt i arket. Ikke målt: Link til indholdet (kræver åben brief), kamera og upload (kræver telefon og base).
 
+## 5t. v1877: Designlåsen som fil og måling (Ida 13/9: »Hvordan sikrer vi os, at der ALDRIG bliver bygget andet end det senest låste design?«)
+
+- **`DESIGNLÅS.md` i repo-roden:** de låste regler som korte, målbare sætninger med dato (arket, popups uden kryds og med lang Luk, lange knapper, 44 px, én rød handling, Didot kun til navne, ingen emoji og I/jer, dubletreglen, navigationen). Proceduren: den, der låser, fejer hele appen samme dag; nyt låses kun ind i filen; ukendt = spørg med klik. `CLAUDE.md` peger på filen øverst, så enhver tråd læser den, før den rører noget, kunden ser.
+- **`tools/designlaas/probe-popups.js`:** åbner 17 kendte popup-døre i kundeappen på 390 og måler: skriveformer skal være arket, ingen helskærm, ingen lille dialog, intet synligt kryds, lang Luk, alle knapper mindst 44 px og lange. Kørt nu: `SELE LAAS OK: 17 døre`. Fandt undervejs dagknapperne i Planlægningsdag på 43 px; rettet til 44.
+- Ærligt: ingen fil kan garantere »aldrig«. Det, der virker, er tre ting sammen: én fil, alle tråde læser først; en måling, der siger fejl før deploy; og fejningen, når en lås ændres. 11/9 manglede de to sidste.
+
 ## 6. Bridge-trådene 12/9
 
 Trådene på Idas maskine (»Skærm, der ikke må vises« m.fl.) døde kl. 16:25 dansk tid, fem minutter efter v1856 blev pushet, fordi computeren blev lukket. Intet i repoet er halvt; højst få minutters ucommitteret arbejde kan være tabt. De vågner først, når Claude Code startes på den maskine igen.

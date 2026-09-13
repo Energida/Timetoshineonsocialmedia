@@ -1,6 +1,9 @@
 > **Rører din ændring database, auth, storage eller Edge Functions?
 > Læs `ENERGIDA SECURITY CONTRACT.md` i denne mappe FØRST. Den er bindende.**
 
+> **Rører din ændring noget, kunden ser (en side, en popup, en knap)?
+> Læs `DESIGNLÅS.md` i denne mappe FØRST. Den seneste lås vinder, og låsning er fejning.**
+
 # DEPLOY- OG COMMITLÅS — AKTIV (HÅRD, Ida 7. august 2026)
 
 **Denne fil ligger i repo-roden, fordi en tråd, der starter direkte her, ikke nødvendigvis indlæser `../CLAUDE.md` i projektmappen ovenover. Den fil gælder stadig — læs den også. Ved konflikt vinder den strengeste.**

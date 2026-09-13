@@ -1,0 +1,37 @@
+# DESIGNLÅS — det senest låste design (gælder for enhver tråd)
+
+**Læs denne fil, før du bygger eller ændrer noget, kunden ser.** Den seneste lås vinder altid over ældre kode, ældre kommentarer og ældre mockups. Finder du kode, der bryder en lås, er det en fejl, der skal rettes, ikke et design, der skal bevares.
+
+Filen er kort med vilje. Hver regel kan måles. Målingen står i `tools/designlaas/`.
+
+## Sådan låses et design (proceduren)
+
+1. Ida låser med et klik eller med ord i tråden. Tråden skriver låsen ind HER samme dag, med dato.
+2. **Låsning er fejning.** Den tråd, der låser, gennemgår hele appen for det gamle samme dag og lægger alt om, eller skriver præcist i statusnotatet, hvad der står tilbage og hvorfor. Det var det, der glippede 11/9 (arket blev låst kl. 12, helskærmen fra kl. 10 blev stående til 13/9).
+3. Før hvert commit, der rører en popup, en knap eller en side på telefonen: kør `tools/designlaas/probe-popups.js` i selen på 390 og skriv resultatet i statusnotatet. `SELE LAAS OK` eller ingen deploy.
+4. Ny popup-dør i appen? Tilføj den i `DOERE` i proben i samme commit. En dør, proben ikke kender, er ikke målt.
+5. Er du i tvivl, om noget er låst: spørg Ida med et klik-valg. Byg ikke et bud og deploy det.
+
+## Låsene (dato = den dag, Ida låste)
+
+**Arket er den ene popup-form for alt, man skriver (11/9).** Titel i Didot kursiv, én streg, skrivefeltet med mikrofon til venstre for den røde sendecirkel, chips under feltet, kvittering, lang Luk. Telefon: ark fra bunden med greb. Computer: hvidt kort midt på. Aldrig hele skærmen. Man bliver stående efter Gem. Åbnes med `arkAabn`. Kundens skriveformer går gennem `kundeArkAabn`.
+
+**Popups, der ikke er skriveformer (8/9 og 9/9).** Hvidt kort, intet kryds på telefonen, en lang Luk nederst. Kun valg og lister hører hjemme her (dage, datoer, Tag den nu/Senere).
+
+**Alle knapper på telefonen er lange knapper (4/9, 5/9, 13/9).** Fuld bredde, mindst 48 px, radius 999, i en stak med den primære øverst. Rød flade og hvid tekst til den ene primære handling; hvid flade og rød tekst til de sekundære; hvid flade og grå tekst til den dæmpede (Slet, Gendan). Små røde ord som knapper findes ikke på telefonen. Computeren må have dem som ord til højre.
+
+**Trykfelter er mindst 44 px høje (2/8).** Også chips, runde dagknapper og rækker, man kan trykke på.
+
+**Én rød handling pr. flade.** Røde etiketter findes ikke. Tal i cirkler findes ikke (6/9).
+
+**Didot kursiv er forbeholdt navnet** (personens navn, sidens navn). Sætninger og opgaver står i Poppins.
+
+**Ingen emoji. Ingen »I« og »jer« til kunden (du og din).** En sætning, der kan lyve, er værre end ingen sætning: lov aldrig noget, appen ikke gør.
+
+**Dubletreglen.** Én funktion, én dør, ét navn. To veje til det samme er en fejl. Et navn, der bruges to steder til to forskellige ting, er en fejl.
+
+**Navigationen på telefonen.** Ingen topbar; Tilbage står som lang knap nederst. Bundmenuen med plusset i midten. Plusset og swipe op på dagskortet åbner arket.
+
+## Det, der IKKE er låst
+
+Alt, der ikke står her, er ikke låst. Det betyder ikke frit valg: det betyder mockup først og Idas klik, før der bygges.
