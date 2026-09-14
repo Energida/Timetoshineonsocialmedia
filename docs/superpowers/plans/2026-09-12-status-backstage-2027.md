@@ -743,6 +743,18 @@ Planlægningsdagen, trin 2, blev tegnet tre gange: først i mit eget ark-sprog (
 - **Målt LIVE v1930 i Idas kundesession (Acorns, kl. 23.05, lukket uden at gemme):** arket uden knap før søjlevalg; efter »Målgruppens behov / udfordring« står »Find idéen med Drejebogen«; tryk → »1B · Målgruppens behov / udfordring · 1 af 3«, »Hvilken situation kender Charlotte fra sin hverdag lige nu?« med hendes tre situationer som kort og det skrevne i Skriv selv. Tilbage lukker.
 - **Ikke målt:** computeren, rigtig telefon.
 
+## 5be. v1931: mobiltesten af v1928–v1930 (Idas ord 14/9 kl. 20.20: »kan du teste det i mobilversion for mig?«) — tre fund, alle tre rettet (hendes klik kl. 20.35)
+
+Kørt i browserpanen på 390 × 844 med selen (v1930, tom base), hele vejen: dagskortet → swipe op → arket → søjle → »Find idéen med Drejebogen« → tre spørgsmål → »Læg i Idébanken«; derefter trin 2 (hjul → rækkefølgen → spørgsmål → »Her er idéen« → »Gem som Planlagt«).
+
+- **Fejl (rettet):** fra dagskortets ark åbnede Drejebogens spørgsmål BAG kortet — `#planRit` z-index 57, `#dagensKort` 600; arket lukkede, kortet stod der igen, kunden så ingenting ske. `drejebogSpoergAabn` kalder nu `dagensKortLuk()` først. Målt v1931: kortet væk, `elementFromPoint(195,300)` = `.pr-svar` i `#planRit`, toplinjen »TILBAGE · DREJEBOGEN«.
+- **Låsebrud (rettet):** på fotoet stod »Find idéen med Drejebogen« OVER søjle-chipsene, fordi `.ark-slor.paa-foto .ark-chips { order:1 }` også ramte `.ark-soejler` inde i `.ark-ekstra`. Ny regel `.ark-slor.paa-foto .ark-ekstra .ark-chips.ark-soejler { order:0; margin-bottom:0 }`. Målt v1931: chips top 544, knap top 598. Fra Idébanken stod den rigtigt både før og efter.
+- **Låsebrud (rettet):** trin 2 »Start med det, ugen mangler« havde »Spring over« (111 px, 29 %) ved siden af »Find idéen til 1A« (61 %). `.pr-bar` på ≤ 700 px er nu `flex-direction:column-reverse` (DOM har ghost først), begge 100 %: målt v1931 rød 358 × 48 top 722, »Spring over« 358 × 48 top 778. Rammer også trin 3 (Spring over + Gem optagedagene) og månedens Tilbage + Næste — samme lås. `.pr-grid` bundpolstring 130 → `calc(150px + env(safe-area-inset-bottom))`, fordi bjælken er 133 px høj med to knapper.
+- **Målt OK uden rettelse:** arket 12 · 366 · 12, radius 28; teksten fra feltet som svar 1; »Dit svar før« på 2 og 3; idéen gemt som Idé/Produkt/dato null med de tre spørgsmål i briefen; hjulet smalt med Poppins-tal; bundknappens `env(safe-area-inset-bottom)`.
+- **Set, ikke rørt:** svarkortet »Hvis du leder efter en løsning på [X], så se med her.« viser hook-skabelonens [X] råt.
+- **Probeerne v1931 (browserpanen, headless crasher på Macen):** `SELE LAAS OK: 19 doere` · `SELE SIDER OK: 15 sider`. Selens røde »ikke gemt«-bjælke skyldes stubbens `.single()` (data null) — ikke appen.
+- **Ikke målt:** rigtig iPhone, rigtig base, kunde med Drejebog (selen har ingen: spørgsmål 3 havde kun Skriv selv), flere målgrupper, computeren for `.pr-bar` (reglen ligger under 700 px).
+
 ## 6. Bridge-trådene 12/9
 
 Trådene på Idas maskine (»Skærm, der ikke må vises« m.fl.) døde kl. 16:25 dansk tid, fem minutter efter v1856 blev pushet, fordi computeren blev lukket. Intet i repoet er halvt; højst få minutters ucommitteret arbejde kan være tabt. De vågner først, når Claude Code startes på den maskine igen.
