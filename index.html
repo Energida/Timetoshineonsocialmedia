@@ -28954,6 +28954,49 @@ function klipBud6Tegn(el) {
    Ida 14/9 kl. 21.47: »hvordan kan jeg slette en lektion?« — Slet fandtes kun i den gamle Listen-visning bag ⋯.
    Nu: hold fingeren paa flisen i 450 ms (uden at bevaege den 10 px) → arket med Flyt til modul · Omdoeb · Duplikér ·
    Slet (spoerger foerst). Et kort tryk aabner briefen som foer. Flyt rundt (traek) er IKKE bygget her endnu. */
+/* NUMRENE FOELGER RAEKKEFOELGEN (Ida 14/9 kl. 21.58: »når der bliver flyttet rundt på lektioner skal numrene automatisk
+   tilpasses! så de står i rækkefølge«). Nummeret bor i titlen og er samtidig koblingen til lektionens oevelser
+   (klipLektionFor). Derfor: i et nummereret modul (»Modul 6«) faar videoerne M.1 … M.n i den raekkefoelge, de VISES
+   (klipSortCmp: det, Ida selv har trukket, foerst). Koeres efter traek, flyt, slet og duplikér — og ved hentning, hvis
+   et modul ikke staar i orden. Kun titler, der faktisk skifter nummer, skrives, med kvittering; resten af titlen
+   roeres ikke. Moduler uden nummer (Værktøjskassen) roeres aldrig. */
+function klipTitelRest(t) { return String(t || "").replace(/^\d+\.\d+\s*[·-]?\s*/, ""); }
+function klipNummererPlan(gruppe) {
+  const mm = String(gruppe || "").match(/^Modul\s+(\d+)/i); if (!mm) return [];
+  const M = parseInt(mm[1], 10);
+  const raek = (KLIP_OPGAVER || []).filter(function (x) { return klipModulGruppe(x.modul) === gruppe; }).sort(klipSortCmp);
+  const plan = [];
+  raek.forEach(function (x, i) {
+    const ny = M + "." + (i + 1) + " · " + klipTitelRest(x.titel);
+    const patch = {};
+    if (String(x.titel || "") !== ny) patch.titel = ny;
+    if (KLIP_HAR_SORT && Number(x.sort_nr) !== i + 1) patch.sort_nr = i + 1;
+    if (Object.keys(patch).length) plan.push({ o: x, patch: patch });
+  });
+  return plan;
+}
+let KLIP_NUMMERERER = false;
+async function klipNummererGruppe(gruppe) {
+  const plan = klipNummererPlan(gruppe); if (!plan.length) return 0;
+  if (!sb) { plan.forEach(function (p) { Object.assign(p.o, p.patch); }); klipSaveLocal(); return plan.length; }
+  if (KLIP_NUMMERERER) return 0; KLIP_NUMMERERER = true;
+  let n = 0;
+  try {
+    for (const p of plan) {
+      const r = await sb.from("video_opgaver").update(p.patch).eq("id", p.o.id).select("id");
+      if (r.error || !r.data || !r.data.length) { visSyncFejl(); break; }
+      Object.assign(p.o, p.patch); n++;
+    }
+  } finally { KLIP_NUMMERERER = false; }
+  return n;
+}
+/* Ved hentning: staar et modul ikke i orden, rettes det — og listen tegnes igen, naar det er skrevet. Kun paa Idas side. */
+async function klipNummererAlle() {
+  if (!KLIP_ER_IDA || !sb) return;
+  const set = {}; (KLIP_OPGAVER || []).forEach(function (x) { set[klipModulGruppe(x.modul)] = true; });
+  let n = 0; for (const g of Object.keys(set)) { try { n += await klipNummererGruppe(g); } catch (e) {} }
+  if (n) { try { renderKlipperum(); } catch (e) {} }
+}
 function klipLangTrykLyt(host) {
   if (!host || host.__klipLang) return; host.__klipLang = true;
   let t = null, el = null, x0 = 0, y0 = 0, laas = false;
@@ -28990,9 +29033,11 @@ function klipFliseMenu(id) {
 async function klipFlytTilModul(id, modul) {
   bsFlytLuk(); if (!sb) return;
   try {
-    const r = await sb.from("video_opgaver").update({ modul: modul || null }).eq("id", id).select("id");
+    const fra = klipModulGruppe((KLIP_OPGAVER.find(function (x) { return String(x.id) === String(id); }) || {}).modul);
+    const r = await sb.from("video_opgaver").update({ modul: modul || null, sort_nr: KLIP_HAR_SORT ? 9999 : undefined }).eq("id", id).select("id");   /* sidst i det nye modul */
     if (r.error) throw r.error; if (!r.data || !r.data.length) throw new Error("Skrivningen ramte 0 rækker");
     await klipHent();
+    try { await klipNummererGruppe(fra); await klipNummererGruppe(klipModulGruppe(modul)); renderKlipperum(); } catch (e) {}
   } catch (e) { alert("Kunne ikke flytte: " + String((e && e.message) || e)); }
 }
 function klipOmdoebVis(id) {
@@ -29021,9 +29066,11 @@ async function klipDupliker(id) {
     const uden = String(o.titel || "").replace(/^\d+\.\d+\s*·?\s*/, "");
     const nr = klipNaesteNr(o.modul); const titel = (nr ? nr + " · " : "") + uden + " kopi";
     const rec = { titel: titel, modul: o.modul || null, status: "Manus ikke godkendt", kommentarer: [], kode: o.kode || "THOMAS2026", manus_tekst: o.manus_tekst || null, raafiler_link: o.raafiler_link || null };
+    if (KLIP_HAR_SORT) rec.sort_nr = 9999;   /* sidst i modulet — nummereringen giver den sit tal */
     const ny = await sb.from("video_opgaver").insert(rec).select("id");
     if (ny.error) throw ny.error; if (!ny.data || !ny.data.length) throw new Error("Skrivningen ramte 0 rækker");
     await klipHent();
+    try { await klipNummererGruppe(klipModulGruppe(o.modul)); renderKlipperum(); } catch (e) {}
   } catch (e) { alert("Kunne ikke duplikere: " + String((e && e.message) || e)); }
 }
 function klipSletSpoerg(id) {
@@ -29038,9 +29085,11 @@ function klipSletSpoerg(id) {
 async function klipSletNu(id) {
   bsFlytLuk(); if (!sb) return;
   try {
+    const gr = klipModulGruppe((KLIP_OPGAVER.find(function (x) { return String(x.id) === String(id); }) || {}).modul);
     const r = await sb.from("video_opgaver").delete().eq("id", id).select("id");
     if (r.error) throw r.error; if (!r.data || !r.data.length) throw new Error("Sletningen ramte 0 rækker");
     await klipHent();
+    try { await klipNummererGruppe(gr); renderKlipperum(); } catch (e) {}   /* hullet lukkes: numrene foelger raekkefoelgen (14/9) */
   } catch (e) { alert("Kunne ikke slette: " + String((e && e.message) || e)); }
 }
 /* Hvilke moduler er foldet ud i liste-visningen. Lukket fra start — 49 raekker
@@ -29155,6 +29204,7 @@ async function klipTraekSlip(e, maalId) {
       if (r.error || !r.data || !r.data.length) { visSyncFejl(); return; }
     } catch(err) { visSyncFejl(); return; }
   }
+  try { await klipNummererGruppe(klipModulGruppe(a.modul)); renderKlipperum(); } catch (e) {}   /* numrene foelger raekkefoelgen (14/9) */
 }
 function klipTabel(synlige, filterControls) {
   const th = t => '<th style="text-align:left;font-weight:400;font-size:10px;letter-spacing:1.4px;text-transform:uppercase;color:var(--red);padding:0 12px 11px;border-bottom:1px solid var(--border);white-space:nowrap;vertical-align:bottom;">' + t + '</th>';
@@ -29328,7 +29378,9 @@ async function klipHent() {
       if (!error && data) {
         /* Findes sort_nr i basen? Aflaest af raekkerne selv — koster intet ekstra kald */
         try { KLIP_HAR_SORT = !!(data.length && Object.prototype.hasOwnProperty.call(data[0], "sort_nr")); } catch(e) {}
-        KLIP_OPGAVER = data.map(o => { o.status = klipStatusNorm(o.status); return o; }); klipEfterHent(); return;
+        KLIP_OPGAVER = data.map(o => { o.status = klipStatusNorm(o.status); return o; }); klipEfterHent();
+        try { klipNummererAlle(); } catch (e) {}   /* numrene foelger raekkefoelgen (14/9) */
+        return;
       }
     } catch(e) {}
   }
@@ -42867,7 +42919,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "1934";
+const APP_VERSION = "1935";
 let NY_VERSION_KLAR = false;
 let NY_VERSION_AFVIST = false;
 function nyVersionSkjul() {
@@ -60725,6 +60777,6 @@ function prFaerdigHtml() {
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 14. september · 1934</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 14. september · 1935</div>
 </body>
 </html>
