@@ -406,6 +406,15 @@ Rettet ved at flette computerens arbejde ind og **omnummerere skytrådens til v1
 - **MÅLT med en rigtig service worker** (Chromium via playwright-core, tre besøg med et deploy imellem, ingen nulstilling og ingen parametre): den gamle `sw.js` gav kunden **1000**, efter at serveren var gået til **1001**. Den nye giver **1001** på det næste åbn. Tre faldgruber målt med: ingen `version.txt`, intet svar fra serveren, og samme version. Alle tre svarer den gemte app, ingen hvid skærm. Selen kunne ikke måle dette (den registrerer ingen worker), så testen er bygget for sig i skrivebordsmappen og skal bygges igen, hvis workeren ændres.
 - **Mangler stadig** (ikke bygget): beskeden om en ny version prøver ikke igen af sig selv, hvis hun trykker »Ikke nu«, og den henter kun automatisk, når skærmen har ligget stille i 45 sekunder. Med v1893 er det mindre vigtigt, fordi næste åbn nu er frisk af sig selv, men det er ikke lukket.
 
+## 6h. v1894: min egen fejl fra v1893, tom skærm i op til seks sekunder (Ida 14/9 kl. 09.23)
+
+- **»Forstår stadig heller ikke hvorfor jeg i admin skal kigge mere end 6 sekunder på denne skærm EFTER loading siden er færdig??«** (skærmbillede: tom flade med hjertet i baggrunden, kl. 09.23, altså to minutter efter v1893 gik i luften.)
+- **Det var v1893.** For at kunden skulle få den rigtige app første gang, ventede service-workeren på den nye fil, FØR den svarede navigationen, med et loft på seks sekunder. Er der kommet en ny version, og er forbindelsen langsom, står skærmen altså tom i den tid. Målt med en langsom server: svar efter 4021 ms, noget på skærmen efter 4049 ms. Det er præcis det, hun peger på, og det er min fejl, ikke en gammel fejl.
+- **Rettet:** den gemte kopi svares nu med det samme, og den nye hentes ved siden af i `waitUntil`. Når den ligger i cachen, får siden besked og henter sig selv forfra på en adresse uden kopi. Det er 4/9-reglen: kunden venter aldrig på den store fil.
+- **Målt igen** (rigtig service worker, tre besøg, deploy imellem, ingen nulstilling): med en langsom server (4 sekunder) står der noget på skærmen efter **86 ms** i stedet for 4049, og den nye version står på skærmen af sig selv efter 8,2 sekunder. Med en hurtig server står den nye version der efter **167 ms**. Ingen tom skærm i nogen af tilfældene, og hun gør ingenting.
+- **Prisen, sagt ærligt:** på en langsom forbindelse ser hun den gamle app et øjeblik, og så opdaterer siden sig selv. Det er bedre end en tom skærm, og det er den afvejning, hun selv traf 4. september.
+- **Bemærk:** den tomme Backstage-skærm fra 12/9 (»loadingskærmen forsvinder, og jeg kigger på tom skærm i 6 sekunder«) er en ANDEN sag, og den arbejder tråden på hendes computer på (deres v1891: tæppet må ikke lette, før siden har sine møbler). Den her handler kun om service-workeren.
+
 ## 6g. Idas rettelser og beskeder 13/9 og 14/9, punkt for punkt
 
 Skrevet på opfordring fra tråden på Idas computer, så den kan overtage køen. (Afsnitsnavnene 6d og 6e var taget, derfor 6g.) Rækkefølgen er kronologisk. Citaterne er korte, men hendes egne ord.
@@ -455,6 +464,7 @@ Skrevet på opfordring fra tråden på Idas computer, så den kan overtage køen
 38. »Hvis der er kommet en ny version af appen, skal den vises herinde og ikke først inde på dashboardet« · **BYGGET v1890**: banneret lå på z-index 500, dagskortet på 600
 39. »På de røde under idag skal jeg kunne holde fingeren inde på den og så skal jeg kunne klikke done eller udsæt« · **BYGGET v1891, omnummereret til v1892** efter sammenstød med computertrådens eget v1891
 40. »Men jeg kan jo ikke bede mine kunder nulstille på den måde! Det skal jo virke?« · **BYGGET v1893**, målt med en rigtig service worker
+41. »Forstår stadig heller ikke hvorfor jeg i admin skal kigge mere end 6 sekunder på denne skærm EFTER loading siden er færdig??« (kl. 09.23) · **BYGGET v1894**: det var v1893, der ventede på den nye fil før den svarede. Nu svares den gemte kopi straks. Se afsnit 6h
 
 **Det, ingen af hendes beskeder har lukket endnu:** admin-dashboardet på computeren (21), den ægte gennemgang med et login (23 og 24), hilsnerne i basen (11 og 22), modul 5 og 6 siger stadig »I« og »jer«, der findes ingen notifikationer, målingen dækker popups og bundnavet i kundeappen (ikke hele sider og ikke Backstage), og `CLAUDE.md` erklærer stadig deploylåsen fra 7. august aktiv.
 

@@ -129,13 +129,18 @@ self.addEventListener("fetch", (e) => {
         return n || new Response("", { status: 504 });
       }
       const gammel = versionIHtml(await gemtApp.clone().text());
-      const ude = await udeVersion(1800);
+      const ude = await udeVersion(1200);
       if (gammel == null || ude == null || ude <= gammel) return gemtApp;
-      /* Serveren er nyere. Hentningen holdes i live med waitUntil, ogsaa hvis vi loeber toer for taalmodighed. */
-      const stor = hentNy();
-      e.waitUntil(stor.then(() => sigTilSiderne({ type: "ny-version" })).catch(() => null));
-      const svar = await Promise.race([stor.catch(() => null), new Promise((res) => setTimeout(() => res(null), 6000))]);
-      if (svar && svar.ok) return svar;
+      /* SERVEREN ER NYERE — MEN SKAERMEN MAA IKKE STAA TOM MENS VI HENTER (Ida 14/9 kl. 09.23:
+         »Forstaar stadig heller ikke hvorfor jeg i admin skal kigge mere end 6 sekunder paa denne
+         skaerm EFTER loading siden er faerdig??«).
+         MAALT samme dag: den foerste udgave af dette svar VENTEDE paa den nye fil, foer den svarede
+         navigationen — med en langsom server stod skaermen tom i fire sekunder, og med et loft paa
+         seks. Det var min egen fejl, og den var praecis den, hun peger paa.
+         NU: den gemte kopi svares MED DET SAMME, saa der altid staar noget paa skaermen. Den nye
+         hentes ved siden af, og naar den ligger i cachen, faar siden besked og henter sig selv
+         forfra paa en adresse uden kopi. Det er 4/9-reglen: kunden venter aldrig paa den store fil. */
+      e.waitUntil(hentNy().then((res) => { if (res && res.ok) return sigTilSiderne({ type: "ny-version" }); }).catch(() => null));
       return gemtApp;
     }
 
