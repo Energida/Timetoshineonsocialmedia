@@ -398,11 +398,73 @@ Rettet ved at flette computerens arbejde ind og **omnummerere skytrådens til v1
 
 **Læren, som gælder alle tråde:** versionsnummeret er ikke en fri variabel. Hent `dashboard-og-database`, FØR nummeret sættes, og læs `version.txt` derfra. To tråde, der arbejder samtidig, skal aldrig kunne nå frem til samme tal, for porten og telefonens versionsvagt sammenligner netop det tal.
 
+## 6f. v1893: kunden får den nye version af sig selv (Ida 14/9)
+
+- **»Men jeg kan jo ikke bede mine kunder nulstille på den måde! Det skal jo virke?«** Fuldstændig rigtigt, og roden sad i service-workeren. Den svarede ALTID med den gemte kopi og tjekkede friskheden bagefter: kunden fik den gamle app først, og først derefter en genindlæsning. Døde baggrundshentningen (Safari dropper store hentninger i `waitUntil`), kom den nye aldrig, og der var ingen vej ud uden `?nulstil` i adressen.
+- Nu tjekkes de fire tegn i `version.txt` FØR der svares. Er serveren ikke nyere, svares den gemte kopi lige så hurtigt som før. Er den nyere, hentes den nye side og DEN svares. Tager det over seks sekunder, svares den gamle, mens hentningen kører videre og lander i cachen, så næste visning er frisk. Appfilen har nu én plads i cachen (basen uden parametre), så `?frisk=` ikke kan efterlade sin egen kopi ved siden af den gamle. `friskNaarNyere` er væk: én mekanik, ingen tvillinger. Cachenavnet er bumpet til `energida-v6`.
+- Genindlæsningen går ét sted: `window.__energidaGenindlaes` henter en adresse, ingen har en kopi af (`?frisk=NNNN`), og tager hash'et med, så en Backstage-side ikke lander i kundeappen. Både workerens besked, »Hent den nu« og fejlfladen bruger den vej. Før stod der `location.reload()`, og både browserens cache og workeren svarer på den samme adresse.
+- **MÅLT med en rigtig service worker** (Chromium via playwright-core, tre besøg med et deploy imellem, ingen nulstilling og ingen parametre): den gamle `sw.js` gav kunden **1000**, efter at serveren var gået til **1001**. Den nye giver **1001** på det næste åbn. Tre faldgruber målt med: ingen `version.txt`, intet svar fra serveren, og samme version. Alle tre svarer den gemte app, ingen hvid skærm. Selen kunne ikke måle dette (den registrerer ingen worker), så testen er bygget for sig i skrivebordsmappen og skal bygges igen, hvis workeren ændres.
+- **Mangler stadig** (ikke bygget): beskeden om en ny version prøver ikke igen af sig selv, hvis hun trykker »Ikke nu«, og den henter kun automatisk, når skærmen har ligget stille i 45 sekunder. Med v1893 er det mindre vigtigt, fordi næste åbn nu er frisk af sig selv, men det er ikke lukket.
+
+## 6g. Idas rettelser og beskeder 13/9 og 14/9, punkt for punkt
+
+Skrevet på opfordring fra tråden på Idas computer, så den kan overtage køen. (Afsnitsnavnene 6d og 6e var taget, derfor 6g.) Rækkefølgen er kronologisk. Citaterne er korte, men hendes egne ord.
+
+**13. september**
+
+1. Klik: »Ja, byg de fem trin som tegnet« (planlægningsdagen) · **BYGGET v1869**
+2. Klik: »Første planlægning i en ny måned« (hvornår månedens tema spørges) · **BYGGET v1869**
+3. Klik: »Appen skriver dem ud fra Drejebogen« (forslagene) · **BYGGET v1869**
+4. Klik: »Svarvej på ønsker til appen« · **BYGGET v1870**
+5. »Jeg vil gerne se hvordan inspirationssiden ser ud med previews på link mm?« · **BESVARET** med mockups, intet bygget endnu på det tidspunkt
+6. Klik: »Vis mig forskellen« · **BESVARET** med to mockups
+7. »Kan ikke rigtig se det på denne måde? Kan du ikke sende det som tidligere hvor hver skærm fylder siden ala en pdf jeg kan scrolle ned på?« · **BESVARET**, mockups lavet om til fuldskærms-ark
+8. »Den der lav om til ide knap bliver jeg enormt bange for at se, når vi har aftalt at alle knapper på mobilskærm skal være knapper der går hele vejen over? Vil du ikke godt være sød at lave tingene ens« · **BYGGET v1871** (`.kort-knapper` på Inspiration, Arkivet og de tre brief-links)
+9. Klik: »B · Skærmbillede + link« · **BYGGET v1872 og v1873**
+10. »Jeg mener faktisk også jeg har et sted med alle mine egne velkomsthilsner et sted i Some appen på skrivebordet?« (skærmbillede) · **DELVIST**: listen `cs_velkomst` blev fundet, men den står tom i basen
+11. Klik: »Jeg skal have dem under content studio og aktivere dem ligesom quotes« · **DELVIST v1874**: fladen, fluebenet og RPC'en `dashboard_hilsner()` er bygget, men SQL-kortet er ikke kørt, og listen er tom, så kunderne ser stadig klokkehilsenen
+12. »Fuck fuck fuck hvad foregår der?! Når jeg er på b2b siden og swiper op her kommer jeg ind på den helt gamle tøm hovedet skærm og ikke den vi har låst« (to skærmbilleder) · **BYGGET v1875**
+13. »Gider du være sød at fremlægge for mig hvordan fanden det kan lade sig gøre at du bygger sådan en side?« · **BESVARET**: helskærmen var fra kl. 10, arket blev låst kl. 12, og låsningen blev ikke fejet samme dag. Det er nu skrevet ind i `DESIGNLÅS.md` som reglen »låsning er fejning«
+14. Klik: »Send mig det visuelt så jeg sikrer at det 1:1 er det tidligere godkendte design« · **BESVARET**
+15. »Vil du være sød at gennemgå alle skærme for om du har bygget andet gammelt?« + klik »Alle otte, i én version« · **BYGGET v1876**: alle otte skriveflader går nu gennem arket
+16. »Hvordan sikrer vi os at der ALDRIG bliver bygget andet end det senest låste design??« · **BYGGET v1877**: `DESIGNLÅS.md` plus målingen i `tools/designlaas/`
+17. »Ok så alt der bliver deployet fra nu gennemgår den seneste?« · **BESVARET**: nej, ikke af sig selv, og derfor punkt 18
+18. »Men jeg vil gerne undgå at jeg skal spørge om det på bagkant« · **BYGGET v1878**: GitHub-actionen måler hvert push og skubber kun grønne commits til grenen `produktion`, som Cloudflare deployer
+19. Skærmbilleder fra Cloudflare + »done kør test« · **BEKRÆFTET**: porten er aktiv og målt
+20. »Udover videoerne! Hvad synes du så jeg mangler for at kunne gå ægte i luften med contentstudio?« · **BESVARET** med listen
+21. »Synes slet ikke mit admin dashboard fungerer på desktop?? Det er jo den samme som mobilversionen??« · **IKKE RØRT**. Den er ikke undersøgt, og den står stadig åben
+22. Skærmbillede fra Supabase: `hilsner_i_listen 0 / aktive 0` · **DELVIST**, samme som punkt 11
+23. »Har du mulighed for nr. 1 med chrome integrationen?« (den ægte gennemgang) · **UDSKUDT**: kræver at netværkspolitikken åbnes for b2b.energida.dk, admin.energida.dk, Supabase-værten, funktions-værten, cdn.jsdelivr.net, fonts.googleapis.com og fonts.gstatic.com, og at hun selv skriver et login
+24. Klik: »Åbn netværket for tråden« og »Kan du ikke gøre det via integrationen uden mig?« · **UDSKUDT**, samme som 23. Jeg kan ikke åbne politikken selv
+25. »Skal jeg oprette en ny tråd hvor du laver overlevering fra denne så du kan arbejde?« og »Skal jeg sende nogen promte med?« · **BYGGET**: overleveringen ligger i `docs/superpowers/plans/2026-09-13-overlevering-live-gennemgang.md`
+26. Skærmbillede: den nye tråd kunne ikke finde planfilen · **BESVARET**: den skulle hente grenen først
+
+**14. september**
+
+27. »Det spiller stadig ikke med brugervenlighed og afstande. Tilbageknappen her kan jeg ikke komme ned til, og når jeg klikker ind på en knap ligger der en rød knap oven i mål interaktionsraten?!« (to skærmbilleder) · **BYGGET v1879**: bundpolstringen regner nu telefonens hjemme-indikator med, og den fastlåste røde knap er væk
+28. »Der står stadig både tøm hovedet og ny ide her også?!« + klik »Kun Tøm hovedet« · **BYGGET v1880**
+29. »Disse chips er fra min admin?! De må sku da ikke komme frem under b2b?! Hvad er det for noget rod!!!?« · **BYGGET v1881**: b2b er kundeappen, også når Ida er logget ind. Låsen er skrevet ind
+30. »Altså helt seriøst. Er virkelig ikke tryg ved alle de fejl jeg hele tiden finder« · **BYGGET v1882 og v1893**: telefonen kunne stå fast på en gammel build. v1882 rettede vagten, v1893 rettede roden i service-workeren
+31. »Og uhyggeligt at you got this kunder får denne menu også med forløbsoversigt mm?!!« + klik »Ja, produktet bestemmer« · **BYGGET v1883**: `PRODUKT_FUNKTIONER` og `harForloebsoversigt`
+32. »You got this har jo også drejebogen med??? Hvordan kan du spørge mig om dette? Har du ikke styr på produkterne?« · **NOTERET SOM ARBEJDSREGEL**: produktmodellen skal læses i koden, ikke spørges om. Står i statusnotatet
+33. »Den røde content studio skal også komme frem på tøm hovedet oversigten, så man ikke skal lukke for at komme tilbage til den« · **BYGGET v1884**
+34. »Idebanken spiller heller ikke. Kan stadig se kalender mm her?! Og de er ikke delt op i kolonnerne??« · **BYGGET v1885**
+35. Klik: »Arkiv skal også være der« (Content-sidens chiprække) · **BYGGET v1887**
+36. »De skal jo være delt op på indholdssøjlerne, og man kan ikke se at det er en dropdown?« · **BYGGET v1888**. Søjlerne var bygget i v1885, men hendes telefon kørte en gammel build, og pilen var slettet af et background-shorthand
+37. »Når et rum er tomt som fx dette i admin, skal det være tomt bare med mulighed for at tilføje. Her fx skal jeg kunne oprette programmer som tager øvelser fra biblioteket« · **DELVIST v1889**: det tomme rum og programbyggeren er bygget, programmet gemmes som et rum inde i rummet med øvelserne som tekst. Sæt og reps som rigtige felter pr. øvelse kræver ét SQL-kort og er IKKE bygget
+38. »Hvis der er kommet en ny version af appen, skal den vises herinde og ikke først inde på dashboardet« · **BYGGET v1890**: banneret lå på z-index 500, dagskortet på 600
+39. »På de røde under idag skal jeg kunne holde fingeren inde på den og så skal jeg kunne klikke done eller udsæt« · **BYGGET v1891, omnummereret til v1892** efter sammenstød med computertrådens eget v1891
+40. »Men jeg kan jo ikke bede mine kunder nulstille på den måde! Det skal jo virke?« · **BYGGET v1893**, målt med en rigtig service worker
+
+**Det, ingen af hendes beskeder har lukket endnu:** admin-dashboardet på computeren (21), den ægte gennemgang med et login (23 og 24), hilsnerne i basen (11 og 22), modul 5 og 6 siger stadig »I« og »jer«, der findes ingen notifikationer, målingen dækker popups og bundnavet i kundeappen (ikke hele sider og ikke Backstage), og `CLAUDE.md` erklærer stadig deploylåsen fra 7. august aktiv.
+
+**Køen er tom, tråden er stoppet.**
+
 ## 6c. Slutstatus for skytråden (14/9, aften)
 
 Ida fortsætter i tråden på sin egen computer. Denne tråd stopper her.
 
-- **Sidst pushet:** v1892 til `claude/second-thread-not-responding-2yngb0` og `dashboard-og-database`. v1888 og v1889 nåede `produktion` gennem porten efter 60 sekunder hver; v1890 gjorde det samme; v1891 forventes samme vej.
+- **Sidst pushet:** v1893 til `claude/second-thread-not-responding-2yngb0` og `dashboard-og-database`. v1888 og v1889 nåede `produktion` gennem porten efter 60 sekunder hver; v1890 gjorde det samme; v1891 forventes samme vej.
 - **Idas klik og beskeder i dag, der IKKE er lukket:** (1) den ægte gennemgang med en rigtig kode kræver stadig, at netværkspolitikken åbnes for b2b.energida.dk, admin.energida.dk, Supabase-værten og funktions-værten, `cdn.jsdelivr.net`, `fonts.googleapis.com`, `fonts.gstatic.com`, og at hun selv skriver et login. (2) SQL-kortet til `dashboard_hilsner()` er ikke kørt, og `cs_velkomst` står tom i basen, så hendes egne velkomsthilsner er ikke fundet endnu. (3) Modul 5 og 6 siger stadig »I« og »jer« i basen. (4) Der findes ingen notifikationer (planlægningsdag, »Er det postet?«, svar på app-ønsker). (5) Designlåsens måling dækker popups og bundnavet i kundeappen, ikke hele sider og ikke Backstage. (6) `CLAUDE.md` erklærer stadig deploylåsen fra 7. august aktiv, selv om der deployes dagligt; kun hun kan beslutte, at teksten skal skrives om.
 - **Det, der var i gang, da tråden stoppede:** intet halvt. Alt målt arbejde er committet og pushet.
 
