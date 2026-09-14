@@ -585,6 +585,24 @@ Idas ord: »mine rum er jo netop KUNDER : SALG osv … for 2 dage siden placered
 
 **Lærestreg (skrevet i hukommelsen):** når Ida siger »hvor er mine knapper«, er svaret at finde det sted, hun HAR lagt dem, ikke at vise dem alle steder. Én ting, ét sted.
 
+## 5al. Idas klik 14/9 kl. 14.50: de to tomme rum på Salg er arkiveret (ingen kodeændring)
+
+»Arkivér de to tomme rum (anbefalet)«. Gjort i Idas egen admin-session mod basen: `mr_rum` Gameplan (dfb191ed…) og Priser og tilbud (569e4048…) har `aktiv = false` (kvitteret med `.select()`, 1 række hver; intet slettet). Salg viser nu 14 døre uden dubletter: Pipeline · Forretningsoverblikket · Produkter · Økonomi · Gameplan · Priser · Tilbud og salgstekster · Markedsføring · Oplæg · Bookinger · I GOT YOU · Leads og kampagner · Målsætninger · Medarbejderdelen. Foldemenuen viser de samme 14.
+
+## 5am. v1914: Workout, Food og Teknik på 1440 (Idas klik 14/9 kl. 14.55) + manus rettes på stedet
+
+**Målt i Idas admin-session på 1440:**
+1. **Teknik var tom.** `bsTeknikAabn` → `visDashSide('maskinrum')` → `mrLuk()` → Dine rum; `#mrForside` stod med `display:none` fra et tidligere `mrAabn`, og `mrLuk` sprang forbi linjen, der viste den igen. Nu: `mrOmraaderLuk()` (lukker områderne, viser forsiden, navigerer ikke) bruges af `visDashSide('maskinrum')` og `bsTeknikAabn`; Teknik viser sine døre og har stien Hjem › Teknik.
+2. **Stien sagde »Hjem / Energida« på Salg, Content Studio og studierne**: `mrLuk` gik til Dine rum (visDashSide('energida')), hvis sti blev tegnet efter områdets. Nu følger stien placeringen: Hjem › [siden, rummet er lagt på] › [rummet]; Tilbage = leddet før det sidste. `mrLuk` (vejen ud af et rum) går til den side, rummet er lagt på, ellers Hjem; Dine rum er ikke længere vejen ud (den er tom). `BS_SIDER.energida` hedder »Mine rum« som menuen (var »Dine rum«). `bsSideGaa(side)` er den ene vej til en side.
+3. **Streg under hvert korts overskrift** (Food, Workout, Mindful Studio: `.ws-head` border-bottom): væk i Backstage (`body.dash-mode .ws-card > .ws-head`). Kundeappen urørt.
+4. **Workout og Food:** menu = kortene (Øvelsesbiblioteket · Doserings-motoren · Workout-kunder · Idéer / Opskrifter · Kogebøger · Idéer · Kalorieberegner), 32 px under heroen, ingen emoji, ingen sejlads. Chips 36 px og »+« 34×25 er computerens mål (44 er telefonens).
+5. **Ikke rettet (kræver Idas klik):** Øvelsesbiblioteket på computeren er 100+ rækker med streger i én kasse (5/9: »altid fliser, aldrig en liste i én kasse«); på telefonen bliver de til fliser (`bsFliserAfRaekker`). Et gitter af fliser på computeren er en synlig ombygning.
+6. **Tøm hovedet-skærmen (`#studieVaelger`) på 1440** i browserpanelet var panelets egen (den blev tegnet, mens panelet stod under 760 px, og blev stående ved skift til 1440). `studieVaelgerVis` har 760-spærren; på computeren kommer den ikke.
+
+**Manus rettes på stedet (Ida 14/9 kl. 15.10):** »når jeg vil ændre noget i teksten i manus … skal siden IKKE åbne i en ny helside — den funktion skal du bare slette«. `kbFokus` åbner ikke længere fuld skærm (`kbFuldAaben`); felterne rettes direkte i briefen. Vælter 2/9 (»manus åbner som hel skærm hvis man klikker på den«). Fuldskærmens CSS og Escape-håndtering står, men nås ikke.
+
+**Målt:** `koer.sh` 19 døre + 15 sider OK. Teknik, stien og Tilbage måles live efter deploy (næste afsnit).
+
 ## 6. Bridge-trådene 12/9
 
 Trådene på Idas maskine (»Skærm, der ikke må vises« m.fl.) døde kl. 16:25 dansk tid, fem minutter efter v1856 blev pushet, fordi computeren blev lukket. Intet i repoet er halvt; højst få minutters ucommitteret arbejde kan være tabt. De vågner først, når Claude Code startes på den maskine igen.
