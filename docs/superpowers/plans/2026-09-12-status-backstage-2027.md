@@ -557,6 +557,22 @@ Set i den ægte admin-session på 1440 (browserpanelet), ikke i selen.
 
 **Målt:** `koer.sh` 19 døre + 15 sider OK. Verificeret live ved at lægge de nye funktioner ind i Idas session før deploy (Kunder-siden og menuen tegnet igen).
 
+## 5aj. v1912: Idas fire fund kl. 13.55 til 14.05 og resten af 1440-gennemgangen
+
+Idas ord: »hvorfor ser min admin pludselig sådan her ud med menuen på desktop?« · »overskrifterne her er lidt uklare?« · »når jeg klikker på de 3 prikker her i energida studio skal de altså ikke komme op sådan her til separate knapper???« · »min print manus for hvert enkelt modul er også forsvundet?« · »jeg er godt nok ægte i chock … at du ikke har lavet en grundig gennemgang og fjernet dubletter«.
+
+1. **Menuen som smal skinne:** menuen var skubbet ind (pin-knappen »Skjul menuen« nederst, valget huskes pr. bruger). De gamle punkter havde ikoner i skinnen, foldemenuens døre havde ingen, så navnene stod klippet (»Kunde«, »Mine r«). Nu bærer hver dør samme ikon som telefonens Hjem-døre (`bsMenuIkon`), skinnen viser kun ikonet, den udfoldede menu kun navnet.
+2. **Uklare overskrifter (1.1 · Velkommen):** målt i selen: ingen transform, filter eller opacitet på flisen eller dens forældre; Poppins 14,5 px, sort. Det, der kan gøre den blød, er Chromes zoom (ikke 100 %) eller skærmbilledets nedskalering fra Retina. Ikke rettet i koden, for der er ingen kode at rette.
+3. **⋯-menuen i Energida Studio** tegnede ti fliser i fuld bredde oven over siden (bud 6, 11/9). Nu husets ark (`#bsFlytMenu`/`.bs-flyt-ark`, samme som langt tryk): lange hvide knapper i ét kort på 420 px, Luk nederst. Målt: 12 knapper à 48 px.
+4. **Print pr. modul** sad i den gamle modulvisning (»Print dette modul«, 2/8), som bud 6 afløste. Tilbage i ⋯-arket øverst; printer det valgte chip-modul (`printModul(KLIP_MODUL_CHIP)`). Målt: Modul 1 = 5 videoer.
+5. **Mine rum i foldemenuen** viste alle 20 rum hos Ida (og 3 i selen): `bsFlytHent` meldte »hentet« til kalder nr. 2, før placeringerne var i hus, og menuen brugte et andet filter end siden. Nu: samme liste som siden (nålede først, så `bsRumTop()` uden veje), alle venter på samme hentning (`BS_FLYT_LOFTE`), og menuen tegnes én gang til, når placeringer, rum og nåle er hentet.
+6. **Studierne på computeren:** rum flyttet til Food/Workout/Mindful Studio stod kun på telefonen. Nu døre under heroen + »Tilføj rum« (`bsStudioRumTegn`). Rummene »Food Studio« på Food Studio og »Workout Studio« på Workout Studio var døre til sig selv (veje): væk.
+7. **Luft under heroen i områderne:** `.mr-omr .ch-titel {margin 4px !important}` vandt over `.bs-hero-ren` (32 px) på Salg, Content Studio og studierne. Nu 32 px.
+
+**Stadig Idas valg (rum med samme navn som noget andet, ikke rørt):** Gameplan × 2 på Salg (dør til Skabeloner + tomt rum), »Priser« (prisliste) og »Priser og tilbud« (tomt rum) på Salg, rummet »Mindful Studio« på Mindful Studio. Rum på Salg/Content Studio står også under Mine rum (Ida 11/9: »Hvor er alle mine knapper!!?«).
+
+**Målt:** `koer.sh` 19 døre + 15 sider OK før deploy; arket og Kunder/Salg/Mindful målt i Idas admin-session ved at lægge funktionerne ind før deploy.
+
 ## 6. Bridge-trådene 12/9
 
 Trådene på Idas maskine (»Skærm, der ikke må vises« m.fl.) døde kl. 16:25 dansk tid, fem minutter efter v1856 blev pushet, fordi computeren blev lukket. Intet i repoet er halvt; højst få minutters ucommitteret arbejde kan være tabt. De vågner først, når Claude Code startes på den maskine igen.
