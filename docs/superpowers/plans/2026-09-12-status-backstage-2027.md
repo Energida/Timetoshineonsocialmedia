@@ -345,6 +345,14 @@ Ida åbnede menuen på b2b og skrev: »uhyggeligt at you got this kunder får de
 
 Også målt: Idas egne koder får alt, en kunde med egen liste beholder sin liste, et ukendt produkt får alt. Mens et kursusforløb kører, er menuen stadig den låste (Forløbet plus fire dæmpede) som før.
 
+## 5ø. v1884: Content Studio med ind i Tøm hovedet (Ida 14/9)
+
+- Ida: »Den røde content studio skal også komme frem på Tøm hovedet, så man ikke skal lukke for at komme tilbage til den.« Står arket på dagskortets foto, ligger kortets egen røde knap bag arket.
+- Arket kan nu bære **én** ekstra lang knap (`knap: {tekst, klik}`), sat ind lige over Luk. Dagskortets ark bruger den med kortets egen handling, så der er én dør: luk kortet, og appen står der. Både kundens ark og Idas eget.
+- Kun over dagskortet. Åbnes arket fra plusset, er appen allerede bag det, og bundmenuen har Content. Målt: ingen ekstra knap dér.
+- **Rækkefølgen er sat med `order` i foto-varianten**, ikke af DOM'en. Første forsøg lagde knappen over chippene. Rettet, og målt: feltet, så den røde knap, så Luk.
+- **Målt i rigtig telefonhøjde (390×844)**, fordi bundfejlen fra v1879 var samme klasse: arket er 541 px mod en grænse på 726, det kan rummes uden at rulle, og Luk slutter 816 px ned på en 844 px skærm. Slide-ind-animationen fryser i selen, så målingen er taget med animationen tvunget til sin slutposition.
+
 ## 6. Bridge-trådene 12/9
 
 Trådene på Idas maskine (»Skærm, der ikke må vises« m.fl.) døde kl. 16:25 dansk tid, fem minutter efter v1856 blev pushet, fordi computeren blev lukket. Intet i repoet er halvt; højst få minutters ucommitteret arbejde kan være tabt. De vågner først, når Claude Code startes på den maskine igen.

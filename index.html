@@ -1241,6 +1241,8 @@ select.cal-periode:not([multiple]):not([size]) {
 .ark-ekstra { display:flex; flex-direction:column; gap:8px; }
 .ark-ekstra:not(:empty) { margin-top:12px; }
 .ark-knap { display:flex; align-items:center; justify-content:center; width:100%; min-height:48px; border-radius:999px; background:#fff; color:var(--red); border:1px solid var(--border); font-family:Poppins,sans-serif; font-size:13.5px; font-weight:400; cursor:pointer; margin:0; }
+.ark-knap-roed { background:var(--red); color:#fff; border:0; min-height:52px; font-size:14px; margin-top:16px; }   /* dagskortets egen knap, nu ogsaa i arket (14/9) */
+.ark-knap-roed + .ark-luk { margin-top:10px; }
 .ark-luk { display:flex; align-items:center; justify-content:center; width:100%; min-height:52px; margin-top:16px; background:#fff; color:var(--red); border:1px solid var(--red); border-radius:999px; font-size:14px; font-family:Poppins,sans-serif; font-weight:400; cursor:pointer; }
 @media (min-width:761px) {
   .ark-slor { align-items:center; padding:20px; }
@@ -1257,7 +1259,11 @@ select.cal-periode:not([multiple]):not([size]) {
 .ark-slor.paa-foto .ark-chips { order:1; margin-top:0; margin-bottom:12px; }
 .ark-slor.paa-foto .ark-felt { order:2; }
 .ark-slor.paa-foto .ark-kvit { order:3; }
-.ark-slor.paa-foto .ark-luk { order:4; background:transparent; color:#fff; border-color:rgba(255,255,255,.85); }
+/* Dagskortets egen roede knap staar NEDERST, lige over Luk (Ida 14/9) — paa fotoet er raekkefoelgen
+   sat med order, saa DOM-raekkefoelgen alene ville have lagt den over chippene. */
+.ark-slor.paa-foto .ark-ekstra { order:3; }
+.ark-slor.paa-foto .ark-knap-roed { order:4; }
+.ark-slor.paa-foto .ark-luk { order:5; background:transparent; color:#fff; border-color:rgba(255,255,255,.85); }
 .ark-slor.paa-foto .ark-chip { background:rgba(255,255,255,.12); color:#fff; border-color:rgba(255,255,255,.85); }
 .ark-slor.paa-foto .ark-chip.on { background:var(--red); border-color:var(--red); }
 /* ===== DAGENS KORT = TOEM HOVEDET (Ida 11/9 kl. 12.50: bud 4 »Swipe op« + feltet som bud 2) =====
@@ -41774,7 +41780,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "1883";
+const APP_VERSION = "1884";
 let NY_VERSION_KLAR = false;
 function nyVersionSkjul() { const e = document.getElementById("nyVersion"); if (e) e.style.display = "none"; }
 /* GENINDLAESNINGEN MAA IKKE HENTE DEN GEMTE KOPI (Ida 14/9: »Er virkelig ikke tryg ved alle de
@@ -52506,6 +52512,11 @@ function arkAabn(o) {
     + ((o.chips && o.chips.length) ? '<div class="ark-chips" id="arkChips">' + o.chips.map(function (c) { return '<button type="button" class="ark-chip' + (c.k === ARK.valgt ? ' on' : '') + '" data-k="' + esc(c.k) + '" onclick="arkVaelg(this)">' + esc(c.n) + '</button>'; }).join("") + '</div>' : '')
     + '<div class="ark-ekstra" id="arkEkstra">' + ((o.ekstraAf && o.ekstraAf(ARK.valgt)) || "") + '</div>'   /* fx vedhaeft-raekken paa Set noget fedt (13/9) */
     + '<div class="ark-kvit" id="arkKvit"></div>'
+    /* EEN EKSTRA LANG KNAP OVER LUK (Ida 14/9: »Den roede content studio skal ogsaa komme frem paa
+       Toem hovedet, saa man ikke skal lukke for at komme tilbage til den«). Bruges af dagskortets
+       ark, hvor kortets egen roede knap ligger BAG arket. Primaer oeverst, Luk under — husets
+       knap-stak paa telefonen. Send-cirklen i feltet er feltets handling, ikke fladens. */
+    + (o.knap ? '<button type="button" class="ark-knap ark-knap-roed" onclick="' + String(o.knap.klik).replace(/"/g, "&quot;") + '">' + esc(o.knap.tekst) + '</button>' : '')
     + '<button type="button" class="ark-luk" onclick="arkLuk()">Luk</button></div>';
   d.addEventListener("click", function (e) { if (e.target === d && !(((document.getElementById("arkTekst") || {}).value) || "").trim()) arkLuk(); });
   document.body.appendChild(d);
@@ -52611,7 +52622,12 @@ function kundeArkChips() {
 let KUNDE_ARK_SOEJLE = "";   /* soejlen, naar arket aabnes fra en filtreret idebank */
 function kundeArkAabn(valgt, paaFoto, tekst) {
   const chips = kundeArkChips();
-  arkAabn({ titel: "Tøm hovedet", ph: "Skriv løs …", send: "Gem", chips: chips, valgt: valgt || "ide", paaFoto: !!paaFoto, tekst: tekst || "",
+  /* Staar arket paa dagskortets foto, ligger kortets roede »Content Studio« BAG det (Ida 14/9).
+     Knappen kommer med ind i arket, saa man ikke skal lukke for at komme videre. Samme handling
+     som kortets egen: luk kortet, og appen staar der. */
+  const kortKnap = (paaFoto && document.getElementById("dagensKort"))
+    ? { tekst: "Content Studio", klik: "arkLuk(true);dagensKortLuk()" } : null;
+  arkAabn({ titel: "Tøm hovedet", ph: "Skriv løs …", send: "Gem", chips: chips, valgt: valgt || "ide", paaFoto: !!paaFoto, tekst: tekst || "", knap: kortKnap,
     underAf: function (k) { const c = chips.find(function (x) { return x.k === k; }); return c ? c.u : ""; },
     ekstraAf: function (k) {
       if (k !== "fedt") return "";
@@ -52700,7 +52716,9 @@ const NY_IDE_CHIPS = [
   { k: "app",     n: "App-ønske",       u: "Lander på App-ønskelisten" }
 ];
 function nyIdeAabn(valgt, paaFoto) {
-  arkAabn({ titel: "Tøm hovedet", ph: "Skriv løs …", send: "Gem", chips: NY_IDE_CHIPS, valgt: valgt || "cs", paaFoto: !!paaFoto,
+  const kortKnap = (paaFoto && document.getElementById("dagensKort"))
+    ? { tekst: "Content Studio", klik: "arkLuk(true);dagensKortLuk()" } : null;   /* som kundens ark (14/9) */
+  arkAabn({ titel: "Tøm hovedet", ph: "Skriv løs …", send: "Gem", chips: NY_IDE_CHIPS, valgt: valgt || "cs", paaFoto: !!paaFoto, knap: kortKnap,
     underAf: function (k) { const c = NY_IDE_CHIPS.find(function (x) { return x.k === k; }); return c ? c.u : ""; },
     gem: nyIdeGem, efterLuk: function () { try { studieVaelgerRetur(); } catch (e) {} } });
 }
@@ -59083,6 +59101,6 @@ function prFaerdigHtml() {
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 14. september · 1883</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 14. september · 1884</div>
 </body>
 </html>
