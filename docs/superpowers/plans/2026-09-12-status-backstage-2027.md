@@ -656,6 +656,16 @@ Målt i Idas admin-session (browserpanelet, 1440) med en måler (`__uxMaal`) på
 - Idas egen to-do-tekst indeholder en emoji (»Let's go bro🚀«): hendes ord, ikke rørt.
 - »Ingenting endnu.« som tom-tekst i kort (Workout, Food, Mindful) er 12/9-låsen for tomme lister (v1848) og står.
 
+## 5as. v1920: forretningstyperne på Eksempler-siden var basens gamle navne (Ida 14/9 kl. 16.50: »jeg er i chok!! dette er totalt forældet??«)
+
+**Målt i basen (`bs_forretningstype`):** raadgiver hed stadig »Raadgiver, klinik eller B2B« (24/8), spisested var aktiv (lukket i koden 26/8), webshop lå efter butik+webshop (rækkefølgen vendt 3/9). Siden Eksempler pr. forretningstype læste navnene direkte fra basen, så den viste 24/8-verdenen, mens oprettelsen og kundens app viser kodens fire (Fysisk butik · Webshop · Fysisk butik + Webshop · Ydelsesforretning).
+
+**Rettet i basen i Idas session (kvitteret med `.select()`):** raadgiver → navn »Ydelsesforretning« (beskrivelsen tømt), spisested → aktiv = nej (intet slettet), webshop → sortering 11.
+
+**Rettet i koden:** `teHent` viser kun `FORRETNINGSTYPER`s nøgler, med kodens navne og rækkefølge; basens navn bruges ikke længere til visning. Eksempler-siden: 32 px under heroen. Stien på Mine rum siger »Mine rum« (ikke »Energida«).
+
+**Ikke afgjort:** om eksemplerne pr. type (`bs_type_eksempler`, skrevet 24/8) stadig er dem, Ida vil have. Det er hendes ord.
+
 ## 6. Bridge-trådene 12/9
 
 Trådene på Idas maskine (»Skærm, der ikke må vises« m.fl.) døde kl. 16:25 dansk tid, fem minutter efter v1856 blev pushet, fordi computeren blev lukket. Intet i repoet er halvt; højst få minutters ucommitteret arbejde kan være tabt. De vågner først, når Claude Code startes på den maskine igen.
