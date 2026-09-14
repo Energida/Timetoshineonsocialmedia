@@ -353,6 +353,14 @@ Også målt: Idas egne koder får alt, en kunde med egen liste beholder sin list
 - **Rækkefølgen er sat med `order` i foto-varianten**, ikke af DOM'en. Første forsøg lagde knappen over chippene. Rettet, og målt: feltet, så den røde knap, så Luk.
 - **Målt i rigtig telefonhøjde (390×844)**, fordi bundfejlen fra v1879 var samme klasse: arket er 541 px mod en grænse på 726, det kan rummes uden at rulle, og Luk slutter 816 px ned på en 844 px skærm. Slide-ind-animationen fryser i selen, så målingen er taget med animationen tvunget til sin slutposition.
 
+## 5å. v1885: Idébanken på telefonen delt op i søjlerne, og Kalender-chippen væk (Ida 14/9)
+
+- **»De er ikke delt op i kolonnerne.«** Computeren har haft søjlerne hele tiden (`#ideBank` med filterrækken `#ibFilterRow`), men telefonen fik en flad liste 8/9, og filterrækken er skjult på telefon. Nu står idéerne under deres søjle i Drejebogens egen rækkefølge med antal, og det, der ikke hører til en søjle, står under »Andet« til sidst. Samme fliser, samme klik, kun grupperingen er ny. Kender appen ingen søjler endnu (Drejebogen ikke hentet), grupperes der på idéernes eget søjlenavn, så siden aldrig falder tilbage til den flade liste.
+- **»Kan stadig se kalender mm her.«** Chippen Kalender på Idébanken-siden er bundmenuens Content. Idébanken er sit eget punkt i bundnavet i det nye design, så chippen var en anden dør til samme sted. Skjult på telefonen, står stadig på computeren, hvor der ikke er noget bundnav. Idébanken, Inspiration og Arkiv bliver: de er sidens egne undervisninger og den eneste vej til de to sidste.
+- Målt i selen på 390 med seks idéer: `[1A · Produkt · 2]` Krea rum ovenpå, Vinterjakken · `[1B · Målgruppens situation · 1]` · `[2A · Menneskerne i forretningen · 1]` · `[Andet · 2]`. Chipsene er nu Idébanken · Inspiration · Arkiv.
+- **Fundet, ikke rettet:** Content-siden (`screen8`) har sin egen chiprække med Idébanken, Inspiration og Arkiv. Idébanken dér er samme dublet af bundmenuen. Afventer Idas klik, fordi Inspiration og Arkiv også er genveje derfra.
+- Målingen lærte mig noget om selen: seed ALTID efter appens egen hentning. Første forsøg gav en tom liste, fordi `IDEER` blev ryddet af boot bagefter.
+
 ## 6. Bridge-trådene 12/9
 
 Trådene på Idas maskine (»Skærm, der ikke må vises« m.fl.) døde kl. 16:25 dansk tid, fem minutter efter v1856 blev pushet, fordi computeren blev lukket. Intet i repoet er halvt; højst få minutters ucommitteret arbejde kan være tabt. De vågner først, når Claude Code startes på den maskine igen.

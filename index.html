@@ -4364,6 +4364,7 @@ html body.brief-etspm #briefWrap textarea.sendfelt-felt, html body.brief-etspm #
 /* ===== IDÉBANKEN PAA TELEFONEN (bud 1, 8/9): det gamle gemmes under 760 — computeren er uroert ===== */
 @media (max-width:760px) {
   #ibBankFaner, #ibVaerktoej, #ibFilterRow, #ideBank, #ibQuizBoks { display:none !important; }
+  .ib-kalchip { display:none !important; }   /* dublet af bundmenuens Content (14/9) */
   #ibMobil .bs-filter { margin-bottom:12px; }
   #ibMobil .bs-rk .bs-rk-kn button { width:100%; }
 }
@@ -6524,7 +6525,11 @@ if (/somkunde=/.test(location.hash)) {
           <div class="ch-titel" id="ibTitel">Idébanken</div>
         </div>
         <div class="ch-faner">
-          <button type="button" class="chip-btn" onclick="showTab(8)">Kalender</button>
+          <!-- KALENDER ER BUNDMENUENS "CONTENT" (Ida 14/9: »Kan stadig se kalender mm her?«).
+               Idébanken er sit eget punkt i bundnavet i det nye design, saa chippen var en
+               anden doer til samme sted. Skjult paa telefonen (.ib-kalchip), staar paa
+               computeren, hvor der ikke er noget bundnav. -->
+          <button type="button" class="chip-btn ib-kalchip" onclick="showTab(8)">Kalender</button>
           <button type="button" class="chip-btn on" id="ibFaneIdeer" onclick="ibVis('ideer')">Idébanken</button>
           <button type="button" class="chip-btn" id="ibFaneInsp" onclick="ibVis('insp')">Inspiration</button>
           <button type="button" class="chip-btn" id="ibFaneArkiv" onclick="ibVis('arkiv')">Arkiv</button>
@@ -40777,10 +40782,36 @@ function ibMobilTegn() {
   if (IB_BANK === "feed") {
     let ideer = (IDEER || []).filter(function (x) { return x.status !== "Arkiveret" && !x.dato && x.status !== "Postet"; });
     try { ideer = ibSorter(ideer); } catch (e) {}
-    krop = (ideer.length ? ideer.map(function (it) {
-        const linje = [it.type, it.soejle, it.status && it.status !== "Idé" ? it.status : ""].filter(Boolean).join(" · ");
-        return '<button type="button" class="bs-kf" onclick="openBrief(\'' + esc(String(it.id)) + '\')"><span class="bs-kf-tekst"><span class="bs-kf-n">' + esc(storStart(titelVis(it.titel || "Uden titel"))) + '</span>' + (linje ? '<span class="bs-kf-s">' + esc(linje) + '</span>' : '') + '</span></button>';
-      }).join("") : '<div class="bs-kf bs-tom">Ingen idéer endnu.</div>')
+    /* DELT OP I SOEJLERNE (Ida 14/9: »de er ikke delt op i kolonnerne«). Computeren har haft
+       soejlerne hele tiden (#ideBank med #ibFilterRow); telefonen fik en FLAD liste 8/9, og
+       filterraekken er skjult paa telefon (reglen ved #ibFilterRow). Nu staar idéerne under
+       deres soejle i Drejebogens egen raekkefoelge, og det, der ikke hoerer til en soejle,
+       staar under "Andet" til sidst. Samme fliser, samme klik — kun grupperingen er ny. */
+    const flise = function (it) {
+      const linje = [it.type, it.status && it.status !== "Idé" ? it.status : ""].filter(Boolean).join(" · ");
+      return '<button type="button" class="bs-kf" onclick="openBrief(\'' + esc(String(it.id)) + '\')"><span class="bs-kf-tekst"><span class="bs-kf-n">' + esc(storStart(titelVis(it.titel || "Uden titel"))) + '</span>' + (linje ? '<span class="bs-kf-s">' + esc(linje) + '</span>' : '') + '</span></button>';
+    };
+    const soejler = (typeof strategyPillars !== "undefined" && Array.isArray(strategyPillars)) ? strategyPillars.slice() : [];
+    const grupper = [];
+    soejler.forEach(function (sj) {
+      const i = ideer.filter(function (x) { return String(x.soejle || "") === sj; });
+      if (i.length) grupper.push([soejleVis ? soejleVis(sj) : sj, i]);
+    });
+    const andre = ideer.filter(function (x) { return !x.soejle || soejler.indexOf(String(x.soejle)) === -1; });
+    /* Kender vi ingen soejler (drejebogen er ikke hentet endnu), grupperes paa idéernes eget
+       soejlenavn — saa siden aldrig falder tilbage til den flade liste, hun lige har peget paa. */
+    if (!soejler.length) {
+      const set = [];
+      andre.forEach(function (x) { const n = String(x.soejle || ""); if (n && set.indexOf(n) === -1) set.push(n); });
+      set.forEach(function (n) { grupper.push([n, andre.filter(function (x) { return String(x.soejle || "") === n; })]); });
+      const uden = andre.filter(function (x) { return !x.soejle; });
+      if (uden.length) grupper.push(["Andet", uden]);
+    } else if (andre.length) {
+      grupper.push(["Andet", andre]);
+    }
+    krop = (ideer.length
+        ? grupper.map(function (g) { return '<div class="cf-sek">' + esc(g[0]) + ' · ' + g[1].length + '</div>' + g[1].map(flise).join(""); }).join("")
+        : '<div class="bs-kf bs-tom">Ingen idéer endnu.</div>')
       + sendFeltHtml({ id: "ibMobilNy", ph: "Ny idé …", fn: "ibMobilNyIde()", aria: "Læg idéen i banken", klasse: "bs-sendfelt" })
       + '<div class="bs-rk" style="width:100%;max-width:none;margin:14px 0 0;box-sizing:border-box;"><div class="bs-rk-l">Mangler du en idé?</div><div class="bs-rk-n">Svar på få spørgsmål, så bygger vi den sammen.</div><div class="bs-rk-kn"><button type="button" class="mq-tap" onclick="quizStart()">Byg en idé</button></div></div>';
   }
@@ -41780,7 +41811,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "1884";
+const APP_VERSION = "1885";
 let NY_VERSION_KLAR = false;
 function nyVersionSkjul() { const e = document.getElementById("nyVersion"); if (e) e.style.display = "none"; }
 /* GENINDLAESNINGEN MAA IKKE HENTE DEN GEMTE KOPI (Ida 14/9: »Er virkelig ikke tryg ved alle de
@@ -59101,6 +59132,6 @@ function prFaerdigHtml() {
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 14. september · 1884</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 14. september · 1885</div>
 </body>
 </html>
