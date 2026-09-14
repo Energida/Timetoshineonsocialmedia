@@ -3171,6 +3171,10 @@ input[type="date"][data-tom="1"]::-webkit-datetime-edit { opacity:0; }
   .bsm-n.bsm-stor { font-size:20px; }
   .bsm-flise, .bsm-n, .bsm-v { white-space:normal; overflow-wrap:anywhere; }
   .bsm-streg { display:block; height:1px; background:var(--border); margin:10px 0; }
+  /* Sektionens navn over sine fliser (14/9): graa etiket, ikke en titel inde i et kort. */
+  .bsm-sek { font-size:10px; letter-spacing:1.8px; text-transform:uppercase; color:var(--gray3); margin:20px 2px 8px; }
+  .bsm-sek:first-child { margin-top:0; }
+  .bsm-n + .bsm-v, .bsm-n + .bsm-l { margin-top:8px; }
   .bsm-l { font-size:10px; letter-spacing:1.6px; text-transform:uppercase; color:var(--gray3); margin:10px 0 3px; }
   .bsm-l:first-of-type { margin-top:0; }
   .bsm-v { font-size:14px; color:var(--black); line-height:1.45; font-weight:300; white-space:normal; }
@@ -21747,14 +21751,19 @@ function briefSamletHtml() {
            sektion med navnet oeverst og etiketterne HOOK · THUMBNAIL · KLIP 1 … som foer. "Delt op" (bud 9)
            betyder: hver del er sit eget trykfelt, adskilt af en haarfin streg, og lander paa sit eget
            spoergsmaal. Ingen pil. */
-        return '<div class="bsm-flise" role="button" tabindex="0" onclick="briefSeRet(\'' + o.hvor + '\')">'
-          + '<span class="bsm-fyld"><span class="bsm-n">' + esc(o.navn) + '</span><span class="bsm-streg"></span>'
+        /* EEN FLISE PR. TING (Ida 14/9: »den skal deles op saa alle er fliser, saa fx hook og thumbnail
+           tydeligt er 2 fliser«). Foer laa delene INDE i een flise, adskilt af en haarfin streg — man
+           kunne ikke se, at hook og thumbnail var to ting, og et tryk paa kortets kant aabnede noget
+           andet end et tryk paa delen. Nu er hver del sit eget kort med sit eget navn som titel, og
+           sektionens navn staar som graa etiket over gruppen. Ingen streg inde i fliserne (laasen 14/9),
+           og ingen pil. Et tryk lander paa PRAECIS det spoergsmaal, delen viser, og Tilbage foerer
+           tilbage til denne oversigt. */
+        return '<div class="bsm-sek">' + esc(o.navn) + '</div>'
           + delte.map(function (d) {
-              const etiket = (o.hvor === "1") ? '<div class="bsm-klipnavn">' + esc(d.navn) + '</div>' : '<div class="bsm-l">' + esc(d.navn) + '</div>';
-              return '<div class="bsm-del" role="button" tabindex="0" onclick="event.stopPropagation();briefSeRet(\'' + o.hvor + '\'' + (d.felt ? ',\'' + d.felt + '\'' : '') + ')">'
-                + etiket + d.krop + (d.under || '') + '</div>';
-            }).join("")
-          + '</span></div>';
+              return '<div class="bsm-flise" role="button" tabindex="0" onclick="briefSeRet(\'' + o.hvor + '\'' + (d.felt ? ',\'' + d.felt + '\'' : '') + ')">'
+                + '<span class="bsm-fyld"><span class="bsm-n">' + esc(d.navn) + '</span>'
+                + d.krop + (d.under || '') + '</span></div>';
+            }).join("");
       }
       /* SE HELE BRIEFEN VISER HELE BRIEFEN (Ida 6/9 kl. 12.4x: "Naar jeg klikker paa se hele briefen ser jeg
          stadig ikke det hele!!? … kan pludselig slet ikke finde hele faktasiden — der hvor det staar hvad
@@ -22692,54 +22701,11 @@ function briefFeltFyldt(f) {
   return false;
 }
 
-function briefSektionerTegn() {
-  const wrap = document.getElementById("briefWrap"); if (!wrap) return;
-  const G = briefGrupper(wrap);
-  document.body.classList.add("brief-sektioner");
-  let boks = document.getElementById("briefSektioner");
-  if (!boks) { boks = document.createElement("div"); boks.id = "briefSektioner"; }
-  wrap.insertBefore(boks, wrap.firstChild);
-  const alleFelter = Array.prototype.filter.call(wrap.querySelectorAll(".sk-q"), function (f) { return !f.closest(".modal-back"); });
-  const it = (typeof IDEER !== "undefined" ? (IDEER || []).find(x => String(x.id) === String(BRIEF_ID)) : null) || {};
-  const titel = (typeof titelVis === "function" ? titelVis(it.titel || "") : (it.titel || "")) || "";
-  const pil = '<span aria-hidden="true" style="flex-shrink:0;color:var(--red);display:inline-flex;align-items:center;"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></span>';
-  let html = '<div id="briefSpmTop">Briefen</div>'
-    + (titel ? '<div class="brief-sek-titel">' + esc(titel) + '</div>' : '');
-  G.navne.forEach(function (navn, gi) {
-    const felter = alleFelter.filter(function (f) { const v = f.closest("[data-brief-side]"); return v && String(v.getAttribute("data-brief-side")) === String(gi); });
-    if (!felter.length) return;
-    const fyldt = felter.filter(briefFeltFyldt).length;
-    let n = navn || ""; if (n === "The basics") n = "Fakta"; n = n.replace(/^\d\s*\/\s*3\s*\u00b7\s*/, "");
-    n = briefKortNavn(n);
-    /* CIRKEL UD FOR HVER SEKTION, GROENT FLUEBEN NAAR DEN ER I HUS (Ida 5/9: "misvisende at
-       udfyldt er roedt for mig"). Roedt er handlinger; det faerdige er groent — hendes ord vinder. */
-    /* GODKEND ER EN STATUS, IKKE ET FELT (12/9, Idas klik): flisen sagde "0 af 1 udfyldt". Nu siger den, hvor
-       godkendelsen staar — samme ord som overblikket — og bliver groen, naar briefen ER godkendt. */
-    let hel, linje;
-    if (n === "Godkend") {
-      const st = String(it.status || "");
-      hel = st === "Godkendt";
-      linje = hel ? "Godkendt" : (/godkendelse/i.test(st) ? "Sendt til godkendelse" : "Ikke sendt endnu");
-    } else {
-      /* PARREDE SPOERGSMAAL TAELLER SOM EET (12/9) — samme tal som "1 af 8" paa skaermene. */
-      const grupper = briefSpmParGrupper(felter);
-      const fyldteG = grupper.filter(function (g) { return g.every(briefFeltFyldt); }).length;
-      hel = fyldteG >= grupper.length;
-      linje = hel ? "Udfyldt" : fyldteG + " af " + grupper.length + " udfyldt";
-    }
-    const cirkel = hel
-      ? '<span class="brief-sek-cirkel er-hel"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7"/></svg></span>'
-      : '<span class="brief-sek-cirkel"></span>';
-    html += '<button type="button" class="brief-sek" onclick="briefSektionAabn(' + gi + ')">'
-      + cirkel
-      + '<span style="flex:1;min-width:0;"><span class="brief-sek-navn">' + esc(n) + '</span>'
-      + '<span class="brief-sek-linje">' + esc(linje) + '</span></span>' + pil + '</button>';
-  });
-  html += '<div id="briefSpmBund" style="margin-top:18px;">'
-    + '<button type="button" class="dbtn mq-tap" style="background:#fff;border:1px solid var(--border);" onclick="briefTilbage()">Tilbage</button></div>';
-  boks.innerHTML = html;
-}
-
+/* briefSektionerTegn ER SLETTET (Ida 14/9). Den tegnede siden »Briefen« inde i briefen: Fakta ·
+   Idéen · Fang dem · Fasthold dem · Faa dem til at handle · Godkend med »0 af 3 udfyldt« og en pil.
+   Den var en dublet af briefoverblikket, og to oversigter over den samme brief er praecis det,
+   dubletreglen forbyder. Forsiden i briefen er nu overblikket (briefSamletVis), og vejen ind i et
+   felt gaar gennem briefSeRet som foer. */
 function briefEtSpmTegn() {
   const wrap = document.getElementById("briefWrap"); if (!wrap) return;
   let mobil = false; try { mobil = window.matchMedia("(max-width:760px)").matches; } catch (e) {}
@@ -22776,8 +22742,20 @@ function briefEtSpmTegn() {
     const p0 = document.getElementById("briefSpmPrikker"); if (p0) p0.remove();
     const t0 = document.getElementById("briefSpmTilbage"); if (t0) t0.remove();
     const h1 = document.getElementById("briefSpmHoved"); if (h1) h1.remove();
-    briefSektionerTegn();
-    return;
+    /* FORSIDEN ER OVERBLIKKET (Ida 14/9: »I selve briefen skal vi have slettet den side der hedder
+       briefen … det er alt for forvirrende at der er 2 af disse sider. Den anden fungerer meget
+       bedre«). Foer stod her briefSektionerTegn() — listen »Briefen« med Fakta · Idéen · Fang dem …
+       og »0 af 3 udfyldt«. Den var en ANDEN oversigt over det samme som overblikket, altsaa to
+       sandheder om den samme brief. Listen er slettet, og Tilbage fra et spoergsmaal lander nu paa
+       overblikket, den flade hun bruger.
+       Kan overblikket ikke tegnes (en helt tom brief har ingenting at vise), falder vi tilbage til
+       spoergsmaalene som foer i stedet for at staa med en tom flade. */
+    document.body.classList.remove("brief-sektioner");
+    const sk1 = document.getElementById("briefSektioner"); if (sk1) sk1.remove();
+    try { briefSamletVis(); } catch (e) {}
+    const sam1 = document.getElementById("briefSamlet");
+    if (sam1 && getComputedStyle(sam1).display !== "none") return;
+    BRIEF_MOBIL_FORSIDE = false;
   }
   krop.classList.remove("brief-sektioner");
   (function () { const sk = document.getElementById("briefSektioner"); if (sk) sk.remove(); })();
@@ -42070,7 +42048,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "1899";
+const APP_VERSION = "1900";
 let NY_VERSION_KLAR = false;
 let NY_VERSION_AFVIST = false;
 function nyVersionSkjul() {
@@ -59613,6 +59591,6 @@ function prFaerdigHtml() {
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 14. september · 1899</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 14. september · 1900</div>
 </body>
 </html>
