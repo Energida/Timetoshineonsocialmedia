@@ -11,6 +11,7 @@ Filen er kort med vilje. Hver regel kan måles. Målingen står i `tools/designl
 3. Før hvert commit, der rører en popup, en knap eller en side på telefonen: kør `bash tools/designlaas/koer.sh` og skriv resultatet i statusnotatet. `SELE LAAS OK` eller ingen deploy.
    **Porten (13/9):** GitHub-actionen `.github/workflows/designlaas.yml` kører samme måling ved hvert push til `dashboard-og-database` og skubber kun commits, der siger OK, videre til grenen `produktion`. Peger Cloudflare Pages på `produktion`, når intet ud til kunderne uden målingen, uanset hvad en tråd gør.
 4. Ny popup-dør i appen? Tilføj den i `DOERE` i proben i samme commit. En dør, proben ikke kender, er ikke målt.
+   **Grænsen (14/9):** proben åbner KUNDEAPPEN. Døre i Backstage (fx arket på et rum i Maskinrummet) måles endnu ikke af `koer.sh` og skal måles for sig, indtil proben også kører Backstage. Står der OK, er det kundeappen, der er målt.
 5. Er du i tvivl, om noget er låst: spørg Ida med et klik-valg. Byg ikke et bud og deploy det.
 
 ## Låsene (dato = den dag, Ida låste)
@@ -36,6 +37,8 @@ Filen er kort med vilje. Hver regel kan måles. Målingen står i `tools/designl
 **Produktet bestemmer adgangen (14/9).** Hvert produkt har sin egen liste over funktioner (`PRODUKT_FUNKTIONER`), og den er kundens standard. En manglende liste må ALDRIG betyde »alt er tændt«. En fluebensliste på kunden vinder fortsat over produktet, så et eksisterende køb aldrig ændrer sig af en ny regel. Menupunkter i burgeren og i computerens menu er tvillinger: får den ene en lås, får den anden samme lås samme dag.
 
 **B2b er kundeappen, også når Ida er logget ind (14/9).** Idas egne lister (Manus, Food Studio, Workout Studio, Mindful Studio, App-ønskelisten) hører i Backstage og må ikke kunne nås fra b2b. Plusset og swipet på b2b åbner kundens ark med kundens chips for alle koder, også `EGNE_KODER`. Backstage-arket (`nyIdeAabn`) må kun kaldes fra Backstage.
+
+**Et tomt rum er tomt (14/9).** En side eller et rum uden indhold viser navnet og ÉN lang Tilføj-knap, ikke åbne skrivefelter. Det, der skal skrives, skrives i arket med chips for hvad man tilføjer. Tre skriveflader oven i hinanden på en tom side er den tivoli, dubletreglen forbyder. Så snart rummet HAR indhold, står fladerne som før.
 
 **Navigationen på telefonen.** Ingen topbar; Tilbage står som lang knap nederst. Bundmenuen med plusset i midten. Plusset og swipe op på dagskortet åbner arket.
 

@@ -1234,6 +1234,26 @@ select.cal-periode:not([multiple]):not([size]) {
 .ark-send { width:40px; height:40px; border-radius:50%; background:var(--red); color:#fff; border:none; display:inline-flex; align-items:center; justify-content:center; cursor:pointer; padding:0; flex-shrink:0; transition:transform 160ms cubic-bezier(0.23,1,0.32,1); }
 .ark-send:active { transform:scale(.95); }
 .ark-chips { display:flex; gap:8px; overflow-x:auto; margin:12px -24px 0; padding:2px 24px; scrollbar-width:none; -webkit-overflow-scrolling:touch; }
+/* ===== ET TOMT RUM ER TOMT (Ida 14/9: »Naar et rum er tomt som fx dette … skal det vaere tomt bare
+   med mulighed for at tilfoeje«) =====
+   Tilfoej-knappen er husets roede handling: paa computeren en pille, paa telefonen lang og 48 px,
+   som alle andre knapper siden 13/9. Feltet og biblioteket bor i ARKET, husets ene skriveform, saa
+   der ikke staar tre aabne skriveflader paa en tom side. */
+.mr-tilfoej { display:inline-flex; align-items:center; justify-content:center; min-height:44px; padding:0 24px; border-radius:999px; background:var(--red); color:#fff; border:none; font-family:Poppins,sans-serif; font-weight:400; font-size:13px; cursor:pointer; }
+@media (max-width:760px) { .mr-tilfoej { display:flex; width:100%; min-height:48px; box-sizing:border-box; } }
+.ark-inp { display:block; width:100%; box-sizing:border-box; min-height:44px; background:#fff; border:1px solid var(--border); border-radius:26px; padding:0 16px; margin:10px 0 0; font-family:Poppins,sans-serif; font-weight:300; font-size:16px; color:var(--black); outline:none; }
+.ark-inp::placeholder { color:#B9B4AC; }
+/* OEVELSESBIBLIOTEKET INDE I ARKET (14/9). Baade de valgte og bibliotekets raekker er LANGE knapper
+   (hele bredden, mindst 44 px) — designlaasens knap-regel gaelder ogsaa inde i en popup. Tryk paa en
+   raekke i biblioteket laegger oevelsen i programmet; tryk paa en valgt raekke tager den ud igen. */
+.mr-prog-liste { max-height:236px; overflow-y:auto; margin-top:4px; scrollbar-width:none; -webkit-overflow-scrolling:touch; }
+.mr-prog-liste::-webkit-scrollbar { display:none; }   /* rullepanelet maa ikke tage bredde fra raekkerne — de er knapper og skal vaere lange (maalt 14/9: 327 af 342 px med panel) */
+.mr-prog-r { display:flex; width:100%; box-sizing:border-box; align-items:center; gap:10px; text-align:left; background:none; border:none; border-top:1px solid var(--border); padding:11px 2px; min-height:44px; font-family:Poppins,sans-serif; font-weight:300; font-size:13px; color:var(--black); cursor:pointer; }
+.mr-prog-r .m { display:block; font-size:11px; color:var(--gray3); line-height:1.5; }
+.mr-prog-r .h { margin-left:auto; flex-shrink:0; color:var(--red); font-size:12px; white-space:nowrap; }
+.mr-prog-r.paa { color:var(--gray3); }
+.mr-prog-tom { font-size:12px; color:var(--gray3); padding:10px 2px; line-height:1.6; }
+.mr-prog-sek { font-size:9px; letter-spacing:1.8px; text-transform:uppercase; color:var(--gray3); margin:14px 2px 2px; }
 .ark-chips::-webkit-scrollbar { display:none; }
 .ark-chip { flex:0 0 auto; border:1px solid var(--border); background:#fff; border-radius:999px; padding:0 16px; min-height:44px; font-size:12.5px; font-family:Poppins,sans-serif; font-weight:300; color:var(--black); cursor:pointer; white-space:nowrap; }
 .ark-chip.on { background:var(--red); color:#fff; border-color:#fff; }
@@ -41832,7 +41852,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "1888";
+const APP_VERSION = "1889";
 let NY_VERSION_KLAR = false;
 function nyVersionSkjul() { const e = document.getElementById("nyVersion"); if (e) e.style.display = "none"; }
 /* GENINDLAESNINGEN MAA IKKE HENTE DEN GEMTE KOPI (Ida 14/9: »Er virkelig ikke tryg ved alle de
@@ -49388,6 +49408,9 @@ async function mrRumAaben(rumId) {
 async function mrRumSideTegn() {
   const el = document.getElementById("mrRumSideHost"); if (!el) return;
   const r = MR_RUM.find(x => String(x.id) === String(MR_RUM_AABEN)); if (!r) { el.innerHTML = ""; return; }
+  /* Noterne SKAL vaere hentet, foer vi kan vide, om rummet er tomt — ellers ville et rum med
+     indhold blinke som tomt, indtil hentningen kom hjem. Kaldet er en no-op, naar de er hentet. */
+  try { await mrNoterHent(); } catch (e) {}
   let koe = [];
   try { koe = (await mrKoeHent()).filter(p => !p.loest && String(p.rum_id) === String(r.id)); } catch (e) { koe = []; }
   /* FLISE-REGLEN (Ida 28/8 nat): tallet staar SEPARAT paa etiket-linjen ("Rum · 41
@@ -49416,10 +49439,12 @@ async function mrRumSideTegn() {
     + (omtekst ? '<div style="font-size:12.5px;color:var(--gray3);line-height:1.65;margin:0 0 var(--luft-4);">' + omtekst + '</div>' : '<div style="height:var(--luft-4);"></div>')
     + (MR_SIDE_MENU ? mrSideMenu(r) : '')
     + (MR_OMDOEB_AABEN ? mrOmdoebFelt(r) : '')
-    + mrFelterBlok(r)
-    + mrUnderrumBlok(r)
-    + mrSideFelt(r)
-    + '<div id="mrNoterHost" style="margin-bottom:16px;"></div>';
+    /* TOMT RUM = TOMT + EEN KNAP (Ida 14/9). Ingen af de tre skriveflader staar paa en tom side;
+       de kommer, saa snart der ER noget i rummet. Er SQL-kortene ikke koert, staar de aerlige
+       beskeder fra mrSideFelt/mrUnderrumBlok som foer — de er en oplysning, ikke en tivoli. */
+    + (mrRumTom(r) && MR_SIDER_KLAR
+        ? '<button type="button" class="mr-tilfoej mq-tap" onclick="mrTilfoejArk(\'' + esc(String(r.id)) + '\')">Tilføj</button>'
+        : mrFelterBlok(r) + mrUnderrumBlok(r) + mrSideFelt(r) + '<div id="mrNoterHost" style="margin-bottom:16px;"></div>');
   setTimeout(heroPas, 30);
   mrNoterTegn(r);
   try { mrSideVoks(document.getElementById("mrSideFelt")); } catch (e) {}
@@ -49690,7 +49715,13 @@ async function mrNoterHent(tving) {
   if (MR_NOTER_HENTET && !tving) return;
   if (!sb) { MR_NOTER_KLAR = false; return; }
   try {
-    const r = await sb.from("mr_rum_noter").select("id,rum_id,tekst,oprettet").order("oprettet", { ascending: false });
+    /* SLAGSEN SKAL MED (fundet 14/9). Raekkerne blev hentet UDEN slags, url og klaret, selv om
+       fladen grupperer efter slags — saa alt stod som "Note", links havde ingen adresse, og
+       fluebenene kunne ikke ses. Bredt select foerst, smalt fald tilbage som i mrRumHent, saa
+       rummene ikke staar tomme, hvis SQL-kortet "Rummene skal kunne rumme mere end noter"
+       ikke er koert. */
+    let r = await sb.from("mr_rum_noter").select("id,rum_id,tekst,oprettet,slags,url,klaret").order("oprettet", { ascending: false });
+    if (r.error) r = await sb.from("mr_rum_noter").select("id,rum_id,tekst,oprettet").order("oprettet", { ascending: false });
     if (r.error) throw r.error;
     MR_NOTER = r.data || []; MR_NOTER_KLAR = true; MR_NOTER_HENTET = true;
   } catch (e) {
@@ -49856,6 +49887,153 @@ async function mrNoteFjern(id) {
   mrRumSideTegn();
 }
 
+/* ===== ET TOMT RUM ER TOMT, OG DET DER TILFOEJES, TILFOEJES I ARKET =====
+   Ida 14/9 (skaermbillede fra rummet "Morgenflow"): »Naar et rum er tomt som fx dette … skal det
+   vaere tomt bare med mulighed for at tilfoeje. Her fx skal jeg kunne oprette programmer som tager
+   oevelser fra biblioteket.«
+
+   Et nyt rum stod med TRE aabne skriveflader oven i hinanden: sendefeltet "Tilfoej rum", Tekst-kortet
+   med sin egen Gem-knap, og slags-chipsene med endnu et sendefelt. Tre spoergsmaal, foer man har
+   svaret paa eet — den tivoli, DESIGNLÅS.md forbyder, og paa den flade hvor der ingenting er at se.
+
+   Nu staar der navnet og EEN lang roed knap. Alt, der skal skrives, skrives i ARKET (husets ene
+   skriveform, laast 13/9) med chips for hvad man tilfoejer: Rum · Note · Idé · Link · Tjekliste ·
+   Program. Har rummet indhold, staar fladerne som foer — det er kun den tomme side, der aendrer sig.
+
+   PROGRAMMET: et program ER et rum inde i rummet (mr_rum med foraelder_id, som alle poster siden
+   5/9) med type "Program" og oevelserne som rummets egen tekst. Ingen ny tabel, ingen ny slags,
+   ingen SQL — og programmet kan derfor aabnes, skrives videre i og omdoebes som alt andet med det
+   samme. Oevelserne kommer fra det bibliotek, appen allerede har (oevListe: tabellen oevelser, ellers
+   kartoteket i koden), og doseringen fra husets egen motor (doseringMotor med maal og niveau).
+   Hver skrivning kvitteres med .select() og en raekketaelling (kontraktens regel 5). */
+let MR_PROG = { valgt: [], soeg: "" };
+const MR_ARK_SLAGS = [
+  { k: "note", n: "Note", u: "Bliver liggende i rummet." },
+  { k: "ide", n: "Idé", u: "Hvad kunne man gøre?" },
+  { k: "rum", n: "Rum", u: "Et rum inde i rummet — det kan rumme sit eget." },
+  { k: "link", n: "Link", u: "Skriv navnet i feltet og adressen nedenunder." },
+  { k: "tjekliste", n: "Tjekliste", u: "Et punkt, der kan krydses af." },
+  { k: "program", n: "Program", u: "Navnet i feltet. Vælg øvelserne fra biblioteket nedenunder." }
+];
+function mrRumTom(r) {
+  if (!r) return false;
+  if (String(r.indhold || "").trim()) return false;
+  if (mrUnderrumListe(r.id).length) return false;
+  if ((MR_NOTER || []).some(function (x) { return String(x.rum_id) === String(r.id); })) return false;
+  return true;
+}
+function mrTilfoejArk(rumId) {
+  const r = (MR_RUM || []).find(function (x) { return String(x.id) === String(rumId); }); if (!r) return;
+  MR_PROG = { valgt: [], soeg: "" };
+  arkAabn({
+    titel: r.navn,
+    ph: "Skriv …",
+    send: "Gem",
+    valgt: "note",
+    chips: MR_ARK_SLAGS.map(function (x) { return { k: x.k, n: x.n }; }),
+    underAf: function (k) { const f = MR_ARK_SLAGS.find(function (x) { return x.k === k; }); return f ? f.u : ""; },
+    ekstraAf: function (k) {
+      if (k === "link") return '<input type="text" class="ark-inp" id="mrArkUrl" placeholder="Adressen …">';
+      if (k === "program") return mrProgVaelgerHtml();
+      return "";
+    },
+    gem: function (tekst, k) { return mrArkGem(rumId, tekst, k); },
+    kvit: "Gemt.",
+    efterLuk: function () { try { mrRumSideTegn(); } catch (e) {} }
+  });
+}
+/* ---------- oevelsesbiblioteket inde i arket ---------- */
+function mrProgBibliotek() { try { return oevListe() || []; } catch (e) { return []; } }
+function mrProgVaelgerHtml() {
+  if (!mrProgBibliotek().length) return '<div class="mr-prog-tom">Øvelsesbiblioteket kunne ikke læses her.</div>';
+  return '<div class="mr-prog-sek">Programmet</div><div id="mrProgValgt">' + mrProgValgtHtml() + '</div>'
+    + '<input type="text" class="ark-inp" id="mrProgSoeg" placeholder="Søg i biblioteket …" value="' + esc(String(MR_PROG.soeg || "")).replace(/"/g, "&quot;") + '" oninput="mrProgSoegSaet(this.value)">'
+    + '<div class="mr-prog-liste" id="mrProgListe">' + mrProgListeHtml() + '</div>';
+}
+function mrProgValgtHtml() {
+  if (!MR_PROG.valgt.length) return '<div class="mr-prog-tom">Ingen øvelser valgt endnu. Tryk på en øvelse i biblioteket.</div>';
+  return MR_PROG.valgt.map(function (navn, i) {
+    return '<button type="button" class="mr-prog-r paa" onclick="mrProgFjern(' + i + ')">'
+      + '<span>' + (i + 1) + '. ' + esc(navn) + '<span class="m">' + esc(mrProgDose(navn)) + '</span></span>'
+      + '<span class="h">Tag ud</span></button>';
+  }).join("");
+}
+function mrProgListeHtml() {
+  const sq = String(MR_PROG.soeg || "").trim().toLowerCase();
+  const alle = mrProgBibliotek().filter(function (x) {
+    return !sq || (String(x.navn) + " " + String(x.muskler || "") + " " + String(x.type || "")).toLowerCase().indexOf(sq) > -1;
+  });
+  const vis = alle.slice(0, 12);
+  if (!vis.length) return '<div class="mr-prog-tom">Ingen øvelser matcher.</div>';
+  return vis.map(function (x) {
+    const paa = MR_PROG.valgt.indexOf(x.navn) > -1;
+    return '<button type="button" class="mr-prog-r' + (paa ? ' paa' : '') + '" onclick="mrProgTilfoej(\'' + esc(String(x.navn)).replace(/'/g, "\\'") + '\')">'
+      + '<span>' + esc(x.navn) + '<span class="m">' + esc([x.muskler, x.type, x.grad].filter(Boolean).join(" · ")) + '</span></span>'
+      + '<span class="h">' + (paa ? "Valgt" : "Læg i") + '</span></button>';
+  }).join("")
+  + (alle.length > vis.length ? '<div class="mr-prog-tom">' + (alle.length - vis.length) + ' flere i biblioteket — søg for at finde dem.</div>' : '');
+}
+function mrProgTegnOm() {
+  const v = document.getElementById("mrProgValgt"); if (v) v.innerHTML = mrProgValgtHtml();
+  const l = document.getElementById("mrProgListe"); if (l) l.innerHTML = mrProgListeHtml();
+}
+/* Kun listen tegnes om, mens hun soeger — en gentegning af hele blokken ville rive markoeren
+   ud af soegefeltet (samme faelde som mrSideGem 25/8). */
+function mrProgSoegSaet(v) { MR_PROG.soeg = String(v || ""); const l = document.getElementById("mrProgListe"); if (l) l.innerHTML = mrProgListeHtml(); }
+function mrProgTilfoej(navn) { if (MR_PROG.valgt.indexOf(navn) === -1) MR_PROG.valgt.push(navn); mrProgTegnOm(); }
+function mrProgFjern(i) { MR_PROG.valgt.splice(i, 1); mrProgTegnOm(); }
+/* Doseringen: oevelsens egne tal, hvis biblioteket har dem — ellers husets motor for det maal og
+   niveau, der staar i Workout Studio (WO_MAAL · WO_NIVEAU). Samme linje som sessionKopier skriver. */
+function mrProgDose(navn) {
+  const o = mrProgBibliotek().find(function (x) { return x.navn === navn; }) || {};
+  let d = null; try { d = doseringMotor(WO_MAAL, WO_NIVEAU); } catch (e) { d = null; }
+  const saet = String(o.saet || (d && d.saet) || "").trim();
+  const reps = String(o.antal || (d && d.reps) || "").trim();
+  const tempo = String(o.tempo || (d && d.tempo) || "").trim();
+  const pause = String(o.pause || (d && d.pause) || "").trim();
+  return [saet && (saet + " sæt"), reps && ("× " + reps), tempo && ("tempo " + tempo), pause && ("pause " + pause)].filter(Boolean).join(" · ");
+}
+function mrProgTekst() {
+  const hoved = [];
+  try { hoved.push(WO_MAAL + " · " + WO_NIVEAU); } catch (e) {}
+  const linjer = MR_PROG.valgt.map(function (navn, i) {
+    const dose = mrProgDose(navn);
+    return (i + 1) + ". " + navn + (dose ? " — " + dose : "");
+  });
+  return hoved.concat("", linjer).join("\n");
+}
+/* ---------- arkets Gem: een vej ind for alle seks slags ---------- */
+async function mrArkGem(rumId, tekst, k) {
+  if (!sb) throw new Error("!Ingen forbindelse til basen.");
+  const slags = k || "note";
+  if (slags === "rum" || slags === "program") {
+    if (slags === "program" && !MR_PROG.valgt.length) throw new Error("!Vælg mindst én øvelse fra biblioteket.");
+    const raekke = { navn: tekst, aktiv: true, foraelder_id: rumId };
+    if (slags === "program") {
+      if (MR_SIDER_KLAR) raekke.indhold = mrProgTekst();
+      if (MR_FELTER_KLAR) raekke.felter = { type: "Program", status: "" };
+    }
+    const r = await sb.from("mr_rum").insert(raekke).select();
+    if (r.error) throw new Error("!Kunne ikke oprette: " + String(r.error.message || r.error));
+    if (!r.data || !r.data.length) throw new Error("!Skrivningen ramte 0 rækker — er SQL-kortet »Sider, du selv laver« kørt?");
+    await mrRumHent(true);
+    if (slags === "program") { MR_PROG = { valgt: [], soeg: "" }; const x = document.getElementById("arkEkstra"); if (x) x.innerHTML = mrProgVaelgerHtml(); }
+    return slags === "program" ? "Programmet ligger i rummet." : "Rummet ligger i rummet.";
+  }
+  const felter = { rum_id: rumId, tekst: tekst, slags: slags };
+  if (slags === "link") {
+    const uf = document.getElementById("mrArkUrl");
+    const url = ((uf && uf.value) || "").trim();
+    if (!url) { if (uf) uf.focus(); throw new Error("!Skriv også adressen — ellers er linket en blind vej."); }
+    felter.url = url;
+  }
+  const r = await sb.from("mr_rum_noter").insert(felter).select();
+  if (r.error) throw new Error("!Kunne ikke gemme: " + String(r.error.message || r.error));
+  if (!r.data || !r.data.length) throw new Error("!Skrivningen ramte 0 rækker.");
+  await mrNoterHent(true);
+  if (slags === "link") { const uf = document.getElementById("mrArkUrl"); if (uf) uf.value = ""; }
+  return (MR_ARK_SLAGS.find(function (x) { return x.k === slags; }) || { n: "Noten" }).n + " er lagt i rummet.";
+}
 /* ---------- OMDOEB RUM (paa rummets side) ---------- */
 function mrOmdoebStart() { MR_OMDOEB_AABEN = true; mrRumSideTegn(); }
 function mrOmdoebLuk() { MR_OMDOEB_AABEN = false; mrRumSideTegn(); }
@@ -52598,9 +52776,15 @@ async function arkSend() {
   const t = document.getElementById("arkTekst"); const tekst = ((t && t.value) || "").trim();
   if (!tekst) { if (t) t.focus(); return; }
   const k = document.getElementById("arkKvit"); if (k) k.textContent = "Gemmer …";
-  let svar;
-  try { svar = await o.gem(tekst, o.valgt); } catch (e) { svar = false; }
-  if (svar === false) { if (k) k.textContent = "Kunne ikke gemme. Prøv igen."; return; }
+  let svar, minBesked = "";
+  /* En gem-funktion kan kaste en besked, der er SKREVET TIL HENDE, ved at saette "!" foran
+     (fx "!Vælg mindst én øvelse fra biblioteket."). Alt andet — tekniske fejl fra basen —
+     bliver den samme korte linje som foer, saa arket aldrig viser rutekode. */
+  try { svar = await o.gem(tekst, o.valgt); } catch (e) {
+    svar = false; const m = String((e && e.message) || "");
+    if (m.charAt(0) === "!") minBesked = m.slice(1);
+  }
+  if (svar === false) { if (k) k.textContent = minBesked || "Kunne ikke gemme. Prøv igen."; return; }
   if (t) { t.value = ""; arkVoks(t); t.focus(); }
   if (k) k.innerHTML = energidaFlueben(14) + esc(typeof svar === "string" ? svar : (o.kvit || "Gemt."));
 }
@@ -59153,6 +59337,6 @@ function prFaerdigHtml() {
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 14. september · 1888</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 14. september · 1889</div>
 </body>
 </html>
