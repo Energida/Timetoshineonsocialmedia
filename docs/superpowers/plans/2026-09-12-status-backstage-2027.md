@@ -301,6 +301,14 @@ To fejl fra to skærmbilleder af Performance, begge målt og rettet.
 - Nu er titlen »Tøm hovedet« i Didot, etiketten er væk, og undertitlen siger fortsat, hvor det lander (»Lander i Idébanken«, »Lander i din to-do på Hjem«). Gælder både kundens ark og Idas eget.
 - Gennemgået alle syv ark: kun dette havde dubletten. De andre bruger etiketten til at sige, hvor man er (»Postet · Vinterjakken«, »Ønske til appen · Hinges Hus«), og titlen til handlingen eller spørgsmålet. Reglen står nu i `DESIGNLÅS.md` under dubletreglen.
 
+## 5y. v1881: Idas admin-chips ud af b2b (Ida 14/9)
+
+- Ida på b2b som sig selv fik Tøm hovedet med **sine Backstage-chips**: Content Studio, Skrevet ned, To-do, Manus, Food Studio, Workout Studio, Mindful Studio, App-ønske. Hendes ord: »Disse chips er fra min admin. De må sku da ikke komme frem under b2b.«
+- **Min fejl fra v1875.** Da swipet blev rettet den 13/9, gav jeg egne koder Backstage-arket på b2b i stedet for kundens. Det så rigtigt ud, fordi hendes Content Studio bor på b2b, men chipsene peger på lister, der kun findes i Backstage.
+- Nu: plusset og swipet på b2b åbner **kundens ark** for alle koder, også egne: Content-idé, Set noget fedt, Skrevet ned, Nyt opslag, Ugetema. `nyIdeAabn` kaldes kun fra Backstage-skærmen (`studieFang`). Dagskortets standard-swipe er også kundens ark.
+- Reglen står nu i `DESIGNLÅS.md`: b2b er kundeappen, også når Ida er logget ind.
+- Målt i selen på 390 med kode ENERGIDA: både plusset og swipet giver de fem kundechips, ingen Manus eller studier.
+
 ## 6. Bridge-trådene 12/9
 
 Trådene på Idas maskine (»Skærm, der ikke må vises« m.fl.) døde kl. 16:25 dansk tid, fem minutter efter v1856 blev pushet, fordi computeren blev lukket. Intet i repoet er halvt; højst få minutters ucommitteret arbejde kan være tabt. De vågner først, når Claude Code startes på den maskine igen.
