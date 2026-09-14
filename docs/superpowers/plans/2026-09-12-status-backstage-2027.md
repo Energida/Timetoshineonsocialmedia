@@ -716,7 +716,7 @@ Ida klikkede bud 4 kl. 19.20 (Dag · Uge · Måned som piller, kun dage med opsl
 
 **Løftet:** 25 af kundens 31 idéer lå under »Andet«, fordi ingen søjle var sat, så briefen, kalenderen og Performance kendte ikke søjlen. **Bygget:** `kundeArkAabn` → `ekstraAf("ide")` tegner `kundeArkSoejleChips()` (1A · 1B · 2A · 2B med kundens navne via `soejleVis`) som anden chip-række; `kundeArkSoejleVaelg` sætter `KUNDE_ARK_SOEJLE` (tryk igen = fravalgt); `kundeArkGem` kaster »!Vælg en søjle først.« uden valg (arket viser beskeden). Idébankens sendefelt »Ny idé …« (`ibMobilNyIde`) går nu gennem arket med teksten forudfyldt (13/9-låsen: alt skrives i arket); »+ Ny idé« på computeren gik allerede gennem arket. Står man i en søjle i Idébanken, er den valgt på forhånd. `efterLuk` tegner Idébanken igen. Eksisterende idéer uden søjle er urørte (Idas data).
 
-**Målt:** `koer.sh` 19 døre + 15 sider OK; arket målt i selen (chips, afvisning uden søjle, gem med søjle) og live i Idas session, se næste afsnit.
+**Målt:** `koer.sh` 19 døre + 15 sider OK; arket målt i selen (chips 44 px, »Vælg en søjle først.«, gem med søjle → soejle sat) og live i Idas session som kunde på 390 (v1926: chips og afvisning; ingen testrækker skrevet). **v1927:** chipsene viste kun koderne (»1A«); nu kundens egne søjlenavne fra `strategyPillars` (samme kilde som Arkivets chips), og den gemte værdi er navnet, som Idébankens filter og Arkivet bruger.
 
 ## 6. Bridge-trådene 12/9
 
