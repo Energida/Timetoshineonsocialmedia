@@ -415,6 +415,13 @@ Rettet ved at flette computerens arbejde ind og **omnummerere skytrådens til v1
 - **Prisen, sagt ærligt:** på en langsom forbindelse ser hun den gamle app et øjeblik, og så opdaterer siden sig selv. Det er bedre end en tom skærm, og det er den afvejning, hun selv traf 4. september.
 - **Bemærk:** den tomme Backstage-skærm fra 12/9 (»loadingskærmen forsvinder, og jeg kigger på tom skærm i 6 sekunder«) er en ANDEN sag, og den arbejder tråden på hendes computer på (deres v1891: tæppet må ikke lette, før siden har sine møbler). Den her handler kun om service-workeren.
 
+## 6i. v1895: heroen på admins rum-side er Backstage, og datoen står over (Ida 14/9 kl. 09.24)
+
+- **»På min admin skal der ikke stå dine rum men Backstage og datoen mangler over?«** Siden `dside-energida` (rum-fliserne) havde heroen »Dine rum« med etiketten »Energida« under og ingen dato. Nu står datolinjen ØVERST, heroen siger **Backstage**, og etiketten under er væk: den sagde det samme som heroen og var dermed en dublet.
+- Datolinjen er den SAMME som Backstage-Hjem (`dkDatoKort` + ugenummer, hendes 12/9-ønske), ikke en ny dato-form. Tvillinger skal se ens ud.
+- Målt i Backstage-selen på 390: linje 1 = `man. 14. september · Uge 38` med `bs-eye bs-eye-over` i y 62, heroen `Backstage` i y 79 (altså datoen OVER), »Dine rum« findes ikke længere på siden, én etiket, fliserne urørte, heroen Didot italic 52 px. `SELE LAAS OK`.
+- **Set undervejs, ikke rettet:** på hendes skærmbillede er bundmenuens **Hjem** markeret rød, mens hun står på rum-siden. Enten lyser navet det forkerte punkt, eller siden nås fra Hjem uden at navet følger med. Det er ikke undersøgt, og det står her, så det ikke går tabt.
+
 ## 6g. Idas rettelser og beskeder 13/9 og 14/9, punkt for punkt
 
 Skrevet på opfordring fra tråden på Idas computer, så den kan overtage køen. (Afsnitsnavnene 6d og 6e var taget, derfor 6g.) Rækkefølgen er kronologisk. Citaterne er korte, men hendes egne ord.
@@ -465,6 +472,7 @@ Skrevet på opfordring fra tråden på Idas computer, så den kan overtage køen
 39. »På de røde under idag skal jeg kunne holde fingeren inde på den og så skal jeg kunne klikke done eller udsæt« · **BYGGET v1891, omnummereret til v1892** efter sammenstød med computertrådens eget v1891
 40. »Men jeg kan jo ikke bede mine kunder nulstille på den måde! Det skal jo virke?« · **BYGGET v1893**, målt med en rigtig service worker
 41. »Forstår stadig heller ikke hvorfor jeg i admin skal kigge mere end 6 sekunder på denne skærm EFTER loading siden er færdig??« (kl. 09.23) · **BYGGET v1894**: det var v1893, der ventede på den nye fil før den svarede. Nu svares den gemte kopi straks. Se afsnit 6h
+42. »På min admin skal der ikke stå dine rum men Backstage og datoen mangler over?« (kl. 09.24) · **BYGGET v1895**. Se afsnit 6i. Bundmenuens Hjem lyser på den side, og det er IKKE undersøgt
 
 **Det, ingen af hendes beskeder har lukket endnu:** admin-dashboardet på computeren (21), den ægte gennemgang med et login (23 og 24), hilsnerne i basen (11 og 22), modul 5 og 6 siger stadig »I« og »jer«, der findes ingen notifikationer, målingen dækker popups og bundnavet i kundeappen (ikke hele sider og ikke Backstage), og `CLAUDE.md` erklærer stadig deploylåsen fra 7. august aktiv.
 
