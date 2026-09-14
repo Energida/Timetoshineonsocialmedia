@@ -11,8 +11,15 @@
    Roden: enhver GET blev svaret fra cachen FOERST, ogsaa navigationer — saa en genindlaesning
    gav den gamle side igen. Baggrundshentningen af index.html (1,2 MB) doer paa Safari, saa
    cachen blev aldrig fornyet. Nu tjekkes friskheden paa version.txt (fire tegn), og den store
-   fil hentes KUN, naar serveren er nyere. Bumpet tvinger alle enheder friske denne ene gang. */
-const CACHE = "energida-v5";
+   fil hentes KUN, naar serveren er nyere. Bumpet tvinger alle enheder friske denne ene gang.
+   BUMPET 14/9 (v6): Ida: »Men jeg kan jo ikke bede mine kunder nulstille paa den maade! Det skal jo virke?«
+   Og det er rigtigt. Indtil nu svarede workeren ALTID med den gemte kopi og tjekkede friskheden bagefter:
+   kunden fik altsaa den gamle app, og foerst derefter en genindlaesning. Doede baggrundshentningen (Safari
+   dropper store hentninger i waitUntil), kom den nye aldrig, og der var ingen vej ud uden ?nulstil.
+   NU tjekkes de fire tegn i version.txt FOER der svares. Er serveren ikke nyere, svares den gemte kopi med
+   det samme som foer. Er den nyere, hentes den nye side og DEN svares — saa kunden faar den rigtige app
+   FOERSTE gang, uden genindlaesning og uden at skulle goere noget. */
+const CACHE = "energida-v6";
 
 self.addEventListener("install", (e) => {
   self.skipWaiting();
@@ -56,26 +63,32 @@ function erVersionsFilen(req) { return req.url.split("?")[0].endsWith("/version.
 
 function versionIHtml(txt) { const m = txt.match(/const APP_VERSION = "(\d{1,6})"/); return m ? Number(m[1]) : null; }
 
-/* DEN BILLIGE FRISKHEDSTJEK (14/9). Foer hentede vi 1,2 MB i baggrunden ved hver sidevisning og
-   haabede, at Safari lod den koere faerdig. Nu hentes fire tegn: er serveren IKKE nyere, sker der
-   ingenting. Er den nyere (eller kan vi ikke laese tallet), hentes den store fil og siden faar besked. */
-async function friskNaarNyere(cache, req, gemt) {
+/* Appfilen har EEN plads i cachen: basen uden parametre. Saa kan ?frisk= og ?nulstil= ikke
+   efterlade hver sin kopi, og en frisk hentning erstatter altid den, den naeste plain visning
+   faar. Foer laa /?frisk=123 som sin egen raekke, mens / stadig bar den gamle build. */
+function appFilNoegle(req) {
+  try { const u = new URL(req.url); u.search = ""; u.hash = ""; return new Request(u.toString(), { credentials: "same-origin" }); }
+  catch (e) { return req; }
+}
+/* ?frisk= og ?nulstil= betyder "spring cachen over" — det er vejen ud af en gammel build. */
+function friskKraevet(req) { return /[?&](frisk|nulstil)(=|&|$)/.test(req.url); }
+/* De fire tegn, med et loft paa ventetiden: svarer nettet ikke hurtigt, svarer vi den gemte kopi
+   i stedet for at lade kunden se paa en hvid skaerm. Timeouten afbryder ikke hentningen. */
+async function udeVersion(ms) {
   try {
-    const gammelTxt = await gemt.clone().text();
-    const gammel = versionIHtml(gammelTxt);
-    const r = await fetch("version.txt?sw=" + Date.now(), { cache: "no-store" });
-    if (r && r.ok && gammel != null) {
-      const ude = (await r.text()).trim();
-      if (/^[0-9]{1,6}$/.test(ude) && Number(ude) <= gammel) return;   /* samme eller aeldre: rør ikke noget */
-    }
-    const res = await fetch(req);
-    if (!res || !res.ok) return;
-    const nyTxt = await res.clone().text();
-    await cache.put(req, res.clone());
-    if (nyTxt !== gammelTxt) await sigTilSiderne({ type: "ny-version" });
-  } catch (err) {}
+    const r = await Promise.race([
+      fetch("version.txt?sw=" + Date.now(), { cache: "no-store" }),
+      new Promise((res) => setTimeout(() => res(null), ms))
+    ]);
+    if (!r || !r.ok) return null;
+    const t = (await r.text()).trim();
+    return /^[0-9]{1,6}$/.test(t) ? Number(t) : null;
+  } catch (err) { return null; }
 }
 
+/* friskNaarNyere er UDE (14/9): den tjekkede friskheden EFTER at den gamle kopi var svaret, og det
+   var netop det, der lod en kunde staa paa en gammel build. Tjekket ligger nu FOER svaret i
+   fetch-handleren. Een mekanik, ingen tvillinger. */
 async function sigTilSiderne(besked) {
   const liste = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
   liste.forEach((c) => { try { c.postMessage(besked); } catch (err) {} });
@@ -95,13 +108,41 @@ self.addEventListener("fetch", (e) => {
       return k || new Response("", { status: 504 });
     }
 
+    /* ===== APPFILEN: TJEK FOERST, SVAR DEREFTER (14/9) =====
+       1) ?frisk=/?nulstil= i adressen: hent fra nettet, gem paa basens plads, svar.
+       2) ingen gemt kopi: hent, gem, svar.
+       3) gemt kopi + serveren er IKKE nyere: svar kopien med det samme (som foer, lige saa hurtigt).
+       4) gemt kopi + serveren ER nyere: hent den nye og svar MED den. Tager den for lang tid,
+          svares den gamle, mens hentningen koerer videre og lander i cachen — saa er naeste
+          visning frisk, uden at nogen skal goere noget. */
+    if (erAppFilen(e.request)) {
+      const noegle = appFilNoegle(e.request);
+      const gemtApp = friskKraevet(e.request) ? null : await cache.match(noegle);
+      const hentNy = async () => {
+        const res = await fetch(e.request, { cache: "reload" });
+        if (res && res.ok) { try { await cache.put(noegle, res.clone()); } catch (err) {} }
+        return res;
+      };
+      if (!gemtApp) {
+        try { const res = await hentNy(); if (res) return res; } catch (err) {}
+        const n = await cache.match(noegle);
+        return n || new Response("", { status: 504 });
+      }
+      const gammel = versionIHtml(await gemtApp.clone().text());
+      const ude = await udeVersion(1800);
+      if (gammel == null || ude == null || ude <= gammel) return gemtApp;
+      /* Serveren er nyere. Hentningen holdes i live med waitUntil, ogsaa hvis vi loeber toer for taalmodighed. */
+      const stor = hentNy();
+      e.waitUntil(stor.then(() => sigTilSiderne({ type: "ny-version" })).catch(() => null));
+      const svar = await Promise.race([stor.catch(() => null), new Promise((res) => setTimeout(() => res(null), 6000))]);
+      if (svar && svar.ok) return svar;
+      return gemtApp;
+    }
+
     const gemt = await cache.match(e.request);
 
     if (gemt) {
-      /* Appfilen: billig friskhedstjek (version.txt) og kun den store hentning, naar det er noedvendigt.
-         Alt andet (billeder, ikoner) opdateres stille som foer. */
-      if (erAppFilen(e.request)) e.waitUntil(friskNaarNyere(cache, e.request, gemt));
-      else e.waitUntil(fetch(e.request).then(async (res) => { if (res && res.ok) await cache.put(e.request, res.clone()); }).catch(() => null));
+      e.waitUntil(fetch(e.request).then(async (res) => { if (res && res.ok) await cache.put(e.request, res.clone()); }).catch(() => null));
       return gemt;
     }
 
