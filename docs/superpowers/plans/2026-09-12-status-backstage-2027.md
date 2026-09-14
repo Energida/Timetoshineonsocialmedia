@@ -718,6 +718,15 @@ Ida klikkede bud 4 kl. 19.20 (Dag · Uge · Måned som piller, kun dage med opsl
 
 **Målt:** `koer.sh` 19 døre + 15 sider OK; arket målt i selen (chips 44 px, »Vælg en søjle først.«, gem med søjle → soejle sat) og live i Idas session som kunde på 390 (v1926: chips og afvisning; ingen testrækker skrevet). **v1927:** chipsene viste kun koderne (»1A«); nu kundens egne søjlenavne fra `strategyPillars` (samme kilde som Arkivets chips), og den gemte værdi er navnet, som Idébankens filter og Arkivet bruger.
 
+## 5bb. v1928: popuppen fylder ikke hele bredden (Idas klik 14/9 kl. 21.50) + fem bud på spørgeskemaet
+
+Planlægningsdagen, trin 2, blev tegnet tre gange: først i mit eget ark-sprog (»det er jo ikke ens popup«), så 1:1 med appens ark-kode (samme svar), så efter mappen `Designstil/App` (Hevy-onboarding: ét spørgsmål pr. skærm, store svarkort med cirkel, én lang knap). Idas svar: »jeg kan slet ikke genkende designet ift farverne« (mine bud brugte mine egne greige-toner; nu er tokens hentet ordret fra index.html: sort #000, kant #e3e2de, grå #f0efec, gradienterne) og »sådan et hjul ala dropdown man kunne dreje på« til antal opslag. Så »5 bud«.
+
+- **Artifact f770e9b1 (Spørgeskemaet · fem bud):** 1 Arket som det er · 2 Arket i fuld højde med svarkort · 3 Ét spørgsmål fylder skærmen (anbefalet: samme sprog som strategibyggeren og briefen på telefonen) · 4 Kortene i sporet · 5 Samtalen. Hvert bud: antal (hjulet) + ét Drejebog-spørgsmål på 390 + 1440. Sektionen »Flere målgrupper« (Idas ord kl. 21.30): har Drejebogen mere end én målgruppe, vælger kunden først, hvem opslaget taler til, og Content Studio sætter den målgruppe øverst, der har fået færrest opslag de sidste fire uger, med »Anbefalet«; valget gemmes på idéen. Kræver, at idéen bærer sin målgruppe (nyt felt i briefen).
+- **Idas kommentar i buddet (kl. 21.23):** hjulet »skal ikke fylde hele skærmen i bredden og ikke didot tal her« → hjulet 236 px, midt i, Poppins. Hendes svar på klikket: »den skal bare ikke fylde hele bredden??« → klik kl. 21.50: **»Popuppen selv«**.
+- **v1928 (LIVE):** `.ark` på telefonen: `width:calc(100% - 24px); margin:0 12px calc(12px + safe-area); border-radius:28px` (alle popups i appen). Computerens ark uændret (`margin:0; width:100%` i medieblokken). Målt i selen på 390: 12 · 366 · 12, radius 28, bund 12. Designlåsen lokalt: 19 døre + 15 sider OK. Ikke målt på rigtig telefon. DESIGNLÅS.md har afsnittet.
+- **Åbent:** hvilket af de fem bud spørgeskemaet bygges efter (klik sendt). Trin 2 er IKKE bygget endnu; hjulet findes kun i buddet.
+
 ## 6. Bridge-trådene 12/9
 
 Trådene på Idas maskine (»Skærm, der ikke må vises« m.fl.) døde kl. 16:25 dansk tid, fem minutter efter v1856 blev pushet, fordi computeren blev lukket. Intet i repoet er halvt; højst få minutters ucommitteret arbejde kan være tabt. De vågner først, når Claude Code startes på den maskine igen.
