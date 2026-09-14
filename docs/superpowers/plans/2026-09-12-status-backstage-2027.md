@@ -666,6 +666,16 @@ Målt i Idas admin-session (browserpanelet, 1440) med en måler (`__uxMaal`) på
 
 **Ikke afgjort:** om eksemplerne pr. type (`bs_type_eksempler`, skrevet 24/8) stadig er dem, Ida vil have. Det er hendes ord.
 
+## 5at. v1921: Salg › Pipeline = bud 3 »Dagens salg« (Idas klik 14/9 kl. 17.20 efter fem bud med anbefalinger, Artifact 0cd313f6)
+
+Ida valgte UX-politiet frem for en ny tegning (kl. 16.30), derefter Pipeline som den første af de tre gamle flader (kl. 17.05), fem bud med min anbefaling pr. bud (kl. 17.15), og bud 3 (kl. 17.20).
+
+**Bygget:** `bsSalgAabn` åbner `SALG_AABEN = "pipeline"` i Salg-området (`salgTegn`), ikke det gamle CRM. `plHtml`: »Følg op i dag« (`plIdag`: næste aktivitet ≤ i dag, eller samarbejde udløber inden 14 dage; Afsluttet/Ikke igang tælles ikke) som `.bs-idag`-rammen med Åbn → `openModal(kontakt)`; fire ringe (`energidaRing`, 88 px) i `.pl-rg`-fliser med tal og andel af alle; chips på status (`PL_STATUS`, Idas ord: Lead · Kontaktet · Ikke sendt · Aktiv · Passiv · Ikke igang · Afsluttet), kun dem med kontakter; kontakterne som `.bs-kf` i `.pl-gitter` (3 spalter, 1 på telefonen); »Tilføj kontakt …« (`plNyGem` → `contacts` med status Lead, kvitteret med `.select()`). Heroen i området skifter til »Pipeline«, stien Hjem › Salg › Pipeline, Tilbage → Salg.
+
+**Ikke bygget:** kontaktkortet som ark (det gamle `openModal` bruges), Ny kontakt-arket, langt tryk = flyt status. Det gamle CRM (`bsSalgAabnGAMMEL`) står urørt bag Kunder › »Pipeline, kontakter og koder«.
+
+**Målt:** `koer.sh` 19 døre + 15 sider OK. Live-måling på 1440 og 390 i næste afsnit.
+
 ## 6. Bridge-trådene 12/9
 
 Trådene på Idas maskine (»Skærm, der ikke må vises« m.fl.) døde kl. 16:25 dansk tid, fem minutter efter v1856 blev pushet, fordi computeren blev lukket. Intet i repoet er halvt; højst få minutters ucommitteret arbejde kan være tabt. De vågner først, når Claude Code startes på den maskine igen.

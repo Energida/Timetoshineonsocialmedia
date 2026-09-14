@@ -4661,6 +4661,16 @@ body.dash-nav #bsForside { max-width:1500px; }   /* bud G fylder skaermen (Ida 1
 .bs-sek:first-child { margin-top:0; }
 .bs-sendfelt + .bs-sek, .sendfelt + .bs-sek { margin-top:var(--luft-4); }
 .bs-studiorum { margin:0 0 var(--luft-4); }
+/* PIPELINEN (bud 3, 14/9) */
+.pl .bs-to { margin-bottom:var(--luft-4); }
+.pl .pl-sek { margin-top:0; }
+.pl-ringe { display:grid; grid-template-columns:repeat(4,1fr); gap:var(--luft-2); }
+.pl-rg { background:#fff; border:1px solid var(--border); border-radius:20px; padding:16px 12px 12px; display:flex; flex-direction:column; align-items:center; gap:8px; }
+.pl-rg-l { font-size:11px; color:var(--gray3); text-align:center; }
+.pl-chips { margin:0 0 var(--luft-2); }
+.pl-gitter { display:grid; grid-template-columns:repeat(3,1fr); gap:var(--luft-2); margin:0 0 var(--luft-2); }
+.pl-gitter .bs-kf { margin:0; }
+@media (max-width:760px) { .pl .bs-to { grid-template-columns:1fr; } .pl-ringe { grid-template-columns:repeat(2,1fr); } .pl-gitter { grid-template-columns:1fr; gap:var(--luft-1); } }
 body.dash-mode .ws-card > .ws-head { border-bottom:0; }   /* MAALT 14/9 paa 1440: Food/Workout/Mindful Studio havde en streg under hvert korts overskrift — ingen streger i fliserne (LOVET 12/9) */   /* rummene paa et studio paa computeren (14/9): 32 px ned til kortene */
 /* FLYT FLISERNE SELV (9/9): hold → loeft → traek. Ingen tekstmarkering eller systemmenu under fingeren. */
 [data-doer] { -webkit-touch-callout:none; -webkit-user-select:none; user-select:none; touch-action:pan-y; }
@@ -41288,7 +41298,10 @@ function bsTeknikAabn() {
 /* KLIENTER (Ida 9/9): »under kunder men have sin egen knap paa dashboardet« — doer paa Hjem og paa Kunderne; omraadet bor i Maskinrummet. */
 function bsKlienterAabn() { visDashSide("maskinrum"); try { mrKlienterAaben(null); } catch (e) {} }
 /* SALG (Ida 9/9 kl. 07.05: »Der mangler et rum på mit dashboard der hedder salg«): doeren aabner pipelinen paa Kunderne (det gamle CRM's Pipeline-fane). */
-function bsSalgAabn() {
+/* SALG › PIPELINE = BUD 3 »DAGENS SALG« (Idas klik 14/9 kl. 17.20 efter fem bud, Artifact 0cd313f6). Det gamle CRM (fanerne)
+   staar uroert bag Kunder › »Pipeline, kontakter og koder«. Pipelinen er en undervisning paa Salg (SALG_AABEN = "pipeline"). */
+function bsSalgAabn() { bsSalgAabnListe("pipeline"); }
+function bsSalgAabnGAMMEL() {
   visDashSide("crm");
   setTimeout(function () {
     try { const c = document.getElementById("dside-crm"); if (c) c.classList.add("bs-gammel"); } catch (e) {}
@@ -42061,10 +42074,84 @@ async function salgHent() { if (SALG_HENTET) return; SALG_HENTET = true; for (co
 /* Gameplan bor i Skabeloner-omraadet (mro_motorer) som andet kort — paa telefonen aabnes kortet direkte (Ida 9/9: Skabeloner splittes op) */
 function bsGameplanAabn() { mrGaaTil("motorer"); setTimeout(function () { const o = document.getElementById("mro_motorer"); let tlf = false; try { tlf = matchMedia("(max-width:760px)").matches; } catch (e) {} if (o && tlf) { o.dataset.rumKort = "1"; try { bsRumDashboard(o); mobTilbageTegn(document.getElementById("dashMain") || document.body); } catch (e) {} } }, 200); }
 function bsSalgAabnListe(n) { mrGaaTil("salg"); setTimeout(function () { SALG_AABEN = n; try { salgTegn(); } catch (e) {} }, 150); }
+/* ===== PIPELINEN (bud 3): Foelg op i dag (roed ramme, samme form som Venter paa dig) · pipelinen som fire ringe · alle kontakter
+   med chips paa status · Tilfoej kontakt som sendefelt. Data = contacts (CUSTOMERS); statusordene er Idas egne fra CRM'et. ===== */
+const PL_STATUS = ["Lead", "Kontaktet", "Ikke sendt", "Aktiv", "Passiv", "Ikke igang", "Afsluttet"];
+let PL_CHIP = "";
+function plKontakter() { return (typeof CUSTOMERS !== "undefined" && Array.isArray(CUSTOMERS)) ? CUSTOMERS : []; }
+function plDato(x) { return x ? String(x).slice(0, 10) : ""; }
+function plIdag() {
+  const idag = (typeof datoDK === "function") ? datoDK() : new Date().toISOString().slice(0, 10);
+  const om = new Date(); om.setDate(om.getDate() + 14); const om14 = om.toISOString().slice(0, 10);
+  const ud = [];
+  plKontakter().forEach(function (c) {
+    if (/^(Afsluttet|Ikke igang)$/i.test(String(c.status || ""))) return;
+    const na = plDato(c.naeste_aktivitet), sl = plDato(c.samarbejde_udloeber);
+    if (na && na <= idag) ud.push({ c: c, dato: na, hvorfor: na < idag ? "Næste aktivitet var " + dkDatoKort(na) : "Næste aktivitet i dag" });
+    else if (sl && sl >= idag && sl <= om14) ud.push({ c: c, dato: sl, hvorfor: "Samarbejdet udløber " + dkDatoKort(sl) });
+  });
+  return ud.sort(function (a, b) { return a.dato < b.dato ? -1 : 1; });
+}
+function plLinje(c) {
+  const d = [String(c.status || "").trim(), String(c.produkt || "").trim()].filter(Boolean);
+  const sk = plDato(c.sidste_kontakt); if (sk) d.push("sidst " + dkDatoKort(sk));
+  const na = plDato(c.naeste_aktivitet); if (na) d.push("næste " + dkDatoKort(na));
+  return d.join(" · ");
+}
+function plChip(k) { PL_CHIP = k || ""; salgTegn(); }
+function plHtml() {
+  const alle = plKontakter();
+  const idag = plIdag();
+  const tal = {}; PL_STATUS.forEach(function (k) { tal[k] = 0; }); alle.forEach(function (c) { const k = String(c.status || "").trim(); if (k in tal) tal[k]++; });
+  const total = alle.length || 1;
+  const ramme = idag.length
+    ? '<div class="bs-idag">' + idag.map(function (it) {
+        return '<div class="k" onclick="openModal(\'' + esc(String(it.c.id)) + '\')"><span class="t">' + esc(it.c.kunde || "Uden navn") + '<small>' + esc(String(it.c.status || "")) + ' · ' + esc(it.hvorfor) + '</small></span><span class="sv"><button type="button" onclick="event.stopPropagation();openModal(\'' + esc(String(it.c.id)) + '\')">Åbn</button></span></div>';
+      }).join("") + '</div>'
+    : '<div class="bs-kf bs-tom">Ingen at følge op på i dag. Sæt en næste aktivitet på en kontakt, så står den her.</div>';
+  const ring = function (k, navn) { return '<div class="pl-rg">' + energidaRing(tal[k], "", Math.round(100 * tal[k] / total), 88) + '<div class="pl-rg-l">' + navn + '</div></div>'; };
+  const ringe = '<div class="pl-ringe">' + ring("Lead", "Leads") + ring("Kontaktet", "Kontaktet") + ring("Ikke sendt", "Ikke sendt") + ring("Aktiv", "Aktive") + '</div>';
+  const chips = '<div class="ark-chips i-fladen pl-chips">'
+    + '<button type="button" class="mq-tap ark-chip' + (!PL_CHIP ? ' on' : '') + '" onclick="plChip(\'\')">Alle · ' + alle.length + '</button>'
+    + PL_STATUS.filter(function (k) { return tal[k]; }).map(function (k) { return '<button type="button" class="mq-tap ark-chip' + (PL_CHIP === k ? ' on' : '') + '" onclick="plChip(\'' + esc(k) + '\')">' + esc(k) + ' · ' + tal[k] + '</button>'; }).join("")
+    + '</div>';
+  const liste = alle.filter(function (c) { return !PL_CHIP || String(c.status || "").trim() === PL_CHIP; })
+    .sort(function (a, b) { const ia = PL_STATUS.indexOf(String(a.status || "").trim()), ib = PL_STATUS.indexOf(String(b.status || "").trim()); if (ia !== ib) return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib); return String(a.kunde || "").localeCompare(String(b.kunde || ""), "da"); });
+  const fliser = liste.length
+    ? '<div class="pl-gitter">' + liste.map(function (c) { return '<button type="button" class="bs-kf" onclick="openModal(\'' + esc(String(c.id)) + '\')"><span class="bs-kf-tekst"><span class="bs-kf-n">' + esc(c.kunde || "Uden navn") + '</span><span class="bs-kf-s">' + esc(plLinje(c)) + '</span></span></button>'; }).join("") + '</div>'
+    : '<div class="bs-kf bs-tom">Ingen kontakter her.</div>';
+  return '<div class="bs-hjem-c pl">'
+    + '<div class="bs-to"><div><div class="bs-sekl">Følg op i dag</div>' + ramme + '</div><div><div class="bs-sekl">Pipelinen</div>' + ringe + '</div></div>'
+    + '<div class="bs-sekl pl-sek">Alle kontakter</div>' + chips + fliser
+    + sendFeltHtml({ id: "plNyFelt", ph: "Tilføj kontakt …", fn: "plNyGem()", aria: "Tilføj kontakten", klasse: "bs-sendfelt" })
+    + '<span id="plNyBesked" style="font-size:12px;color:var(--red);"></span>'
+    + '</div>';
+}
+async function plNyGem() {
+  const f = document.getElementById("plNyFelt"); const navn = ((f && f.value) || "").trim(); if (!navn) { if (f) f.focus(); return; }
+  const b = document.getElementById("plNyBesked");
+  if (!sb) { if (b) b.textContent = "Ingen forbindelse til basen."; return; }
+  try {
+    const r = await sb.from("contacts").insert({ kunde: navn, status: "Lead", source: "backstage" }).select("id");
+    if (r.error) throw r.error; if (!r.data || !r.data.length) throw new Error("Skrivningen ramte 0 rækker");   /* kvittering (3/8) */
+    try { await fetchCustomers(); } catch (e) {}
+    salgTegn();
+  } catch (e) { if (b) b.textContent = "Kunne ikke tilføje: " + String((e && e.message) || e); }
+}
 async function salgTegn() {
   const el = document.getElementById("salgHost"); if (!el) return;
   await salgHent(); try { await bsFlytHent(); } catch (e) {} try { await mrRumHent(); } catch (e) {}
   const tilbage = '<button type="button" class="bsam-mobknap bsam-mobknap-sek bs-knap" style="display:block;width:100%;margin:12px 0 0;" onclick="SALG_AABEN=\'\';PRIS_NY=null;salgTegn()">Tilbage</button>';
+  /* heroen og stien foelger undervisningen: Pipeline har sin egen hero og sti Hjem › Salg › Pipeline (bud 3) */
+  try { const h = document.querySelector("#mro_salg .ch-titel"); if (h) h.textContent = (SALG_AABEN === "pipeline") ? "Pipeline" : "Salg"; } catch (e) {}
+  if (SALG_AABEN === "pipeline") {
+    try { if (!plKontakter().length && typeof fetchCustomers === "function") await fetchCustomers(); } catch (e) {}
+    el.innerHTML = plHtml() + tilbage;
+    try { navstiSaet([{ navn: "Hjem", klik: "visDashSide('overblik')" }, { navn: "Salg", klik: "SALG_AABEN='';salgTegn()" }, { navn: "Pipeline" }], function () { SALG_AABEN = ""; salgTegn(); }); } catch (e) {}
+    try { heroPas(); } catch (e) {}
+    return;
+  }
+  try { const led = mrStiLed("salg"); if (led && !SALG_AABEN) navstiSaet(led, function () { visDashSide("overblik"); }); } catch (e) {}
   if (SALG_AABEN === "priser") {
     const liste = SALG.priser || [];
     const form = PRIS_NY
@@ -42627,7 +42714,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "1920";
+const APP_VERSION = "1921";
 let NY_VERSION_KLAR = false;
 let NY_VERSION_AFVIST = false;
 function nyVersionSkjul() {
@@ -60258,6 +60345,6 @@ function prFaerdigHtml() {
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 14. september · 1920</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 14. september · 1921</div>
 </body>
 </html>
