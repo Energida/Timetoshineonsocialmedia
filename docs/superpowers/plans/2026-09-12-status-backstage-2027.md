@@ -284,6 +284,17 @@ Ida (13/9 kl. 14.24, med skærmbillede af helskærms-Tøm hovedet): »hvordan fa
 - Kørt lokalt før commit: `SELE LAAS OK: 17 døre`, exit 0.
 - Første kørsel på GitHub (13/9 kl. 14.38): grøn på 46 sekunder, grenen `produktion` oprettet. Ida satte Cloudflare Pages til `produktion` kl. 14.50. v1878 er testpushet gennem hele kæden: push, måling, produktion, live.
 
+## 5v. v1879: bunden af hver side kunne ikke nås, og den røde knap blev stående (Idas fund 14/9)
+
+To fejl fra to skærmbilleder af Performance, begge målt og rettet.
+
+- **Bunden af HVER side lå bag bundnavet.** `.content` havde 90 px flad luft i bunden. Bundnavet er 68 px PLUS `env(safe-area-inset-bottom)`, som er cirka 34 px på en iPhone med hjemme-indikator, altså cirka 102 px. Derfor kunne Ida ikke komme ned til Tilbage. Rettet til `calc(90px + env(safe-area-inset-bottom, 0px))` for `body.has-nav .content` op til 899 px. **Hvorfor det aldrig blev fanget:** i selen er insettet 0 px, så 90 px ser rigtigt ud.
+- **Den røde »Mål interaktionsraten« blev stående oven i sideoverskriften**, når en dør på Performance blev åbnet. Reglen, der skjuler `.pb-top > *` ved en åben dør, havde ikke `!important`, og `.pb-knap { display:block !important }` vandt over den. Rettet med `!important` på skjulet.
+
+**Designlåsens måling er udvidet med bundnavet.** Den kan ikke sætte `env()` i headless, så den gør to ting: den læser kildeteksten og kræver, at en `.content`-regel regner `safe-area-inset-bottom` med i bunden, og den **simulerer** en 34 px hjemme-indikator og tjekker, at det nederste element på Hjem, Content, Idébanken og Performance ikke havner bag navet. Bevist ved at fjerne rettelsen: målingen sagde fejl med den præcise diagnose og exit 1.
+
+**En fejl i målingen selv, rettet samme sted:** `koer.sh` brugte port 4600 blindt. Var porten optaget af en ældre server, målte porten en **gammel kopi** af appen og kunne både bestå og fejle uden grund (det skete to gange under arbejdet). Nu vælges en ledig port, og scriptet verificerer, at serveren leverer præcis den `APP_VERSION`, der lige blev bygget, før der måles. Kørt fire gange i træk med samme svar.
+
 ## 6. Bridge-trådene 12/9
 
 Trådene på Idas maskine (»Skærm, der ikke må vises« m.fl.) døde kl. 16:25 dansk tid, fem minutter efter v1856 blev pushet, fordi computeren blev lukket. Intet i repoet er halvt; højst få minutters ucommitteret arbejde kan være tabt. De vågner først, når Claude Code startes på den maskine igen.

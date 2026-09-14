@@ -58,6 +58,45 @@ setTimeout(async function () {
       document.querySelectorAll(".modal-back.on").forEach(function (m) { m.classList.remove("on"); });
       await new Promise(function (r) { setTimeout(r, 150); });
     }
-    console.log(fejl ? "SELE LAAS FEJL i alt: " + fejl : "SELE LAAS OK: " + DOERE.length + " doere holder designlaasen");
+    /* BUNDNAVET (Idas fund 14/9): headless Chromium har env(safe-area-inset-bottom) = 0, en iPhone med
+       hjemme-indikator har ~34 px. 90 px flad bundpolstring saa derfor rigtig ud her og skjulte alligevel
+       Tilbage bag navet paa telefonen. Vi maaler to ting: at reglen REGNER indikatoren med, og at bunden
+       kan naas, naar vi SIMULERER den (vi kan ikke saette env() i headless). */
+    const INDIKATOR = 34;
+    const nav = document.querySelector(".bottom-nav");
+    const navR = nav && getComputedStyle(nav).display !== "none" ? nav.getBoundingClientRect() : null;
+    if (!navR) { console.log("SELE LAAS FEJL bundnav: ikke synligt, kunne ikke maales"); fejl++; }
+    else {
+      /* Chrome oploeser env() ved indlaesning, saa CSSOM viser kun "90px". Vi laeser derfor KILDETEKSTEN
+         i <style> og spoerger, om en .content-regel skriver env(safe-area-inset-bottom) i bunden. */
+      let regner = false;
+      try {
+        const css = [].map.call(document.querySelectorAll("style"), function (e) { return e.textContent || ""; }).join("\n");
+        const re = /([^{}]*\.content[^{}]*)\{([^}]*)\}/g; let m;
+        while ((m = re.exec(css))) { if (/padding(-bottom)?\s*:[^;]*safe-area-inset-bottom/.test(m[2])) { regner = true; break; } }
+      } catch (e) {}
+      if (!regner) { console.log("SELE LAAS FEJL bundnav: .content regner ikke env(safe-area-inset-bottom) med i bunden"); fejl++; }
+      /* simuler iPhonen: navet bliver hoejere, og bundpolstringen vokser lige saa meget, som env() ville give */
+      const c = document.querySelector(".content");
+      const padFoer = parseFloat(getComputedStyle(c).paddingBottom) || 0;
+      const navPadFoer = parseFloat(getComputedStyle(nav).paddingBottom) || 0;
+      nav.style.paddingBottom = (navPadFoer + INDIKATOR) + "px";
+      if (regner) c.style.paddingBottom = (padFoer + INDIKATOR) + "px";
+      await new Promise(function (r) { setTimeout(r, 250); });
+      const navR2 = nav.getBoundingClientRect();
+      for (const t of [3, 8, 2, 9]) {
+        try { showTab(t); } catch (e) { continue; }
+        await new Promise(function (r) { setTimeout(r, 400); });
+        const sc = document.querySelector(".screen.active"); if (!sc) continue;
+        c.scrollTop = c.scrollHeight;
+        await new Promise(function (r) { setTimeout(r, 200); });
+        const born = [].slice.call(sc.children).filter(function (x) { const r = x.getBoundingClientRect(); return r.height > 0 && getComputedStyle(x).position !== "fixed"; });
+        const sidste = born[born.length - 1]; if (!sidste) continue;
+        const sr = sidste.getBoundingClientRect();
+        if (sr.bottom > navR2.top && sr.top < navR2.bottom) { console.log("SELE LAAS FEJL bundnav: nederste element paa fane " + t + " (" + (sidste.id || sidste.className.split(" ")[0]) + ") naar " + Math.round(sr.bottom) + " px, navet starter " + Math.round(navR2.top) + " px"); fejl++; }
+      }
+      nav.style.paddingBottom = navPadFoer + "px"; c.style.paddingBottom = "";
+    }
+    console.log(fejl ? "SELE LAAS FEJL i alt: " + fejl : "SELE LAAS OK: " + DOERE.length + " doere og bundnavet holder designlaasen");
   } catch (e) { console.log("SELE LAAS FEJL probe: " + e.message); }
 }, 1200);

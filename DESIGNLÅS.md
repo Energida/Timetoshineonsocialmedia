@@ -23,6 +23,8 @@ Filen er kort med vilje. Hver regel kan måles. Målingen står i `tools/designl
 
 **Trykfelter er mindst 44 px høje (2/8).** Også chips, runde dagknapper og rækker, man kan trykke på.
 
+**Bunden af hver side skal kunne nås (14/9).** Bundnavet er fast og 68 px højt PLUS telefonens hjemme-indikator, som er cirka 34 px på en iPhone. Bundpolstringen skal regne indikatoren med (`calc(… + env(safe-area-inset-bottom))`), ellers ligger den nederste knap bag navet. En flad pixelværdi er en fejl, også når den ser rigtig ud i selen, hvor indikatoren er 0.
+
 **Én rød handling pr. flade.** Røde etiketter findes ikke. Tal i cirkler findes ikke (6/9).
 
 **Didot kursiv er forbeholdt navnet** (personens navn, sidens navn). Sætninger og opgaver står i Poppins.
