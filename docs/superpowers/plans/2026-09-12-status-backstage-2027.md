@@ -309,6 +309,20 @@ To fejl fra to skærmbilleder af Performance, begge målt og rettet.
 - Reglen står nu i `DESIGNLÅS.md`: b2b er kundeappen, også når Ida er logget ind.
 - Målt i selen på 390 med kode ENERGIDA: både plusset og swipet giver de fem kundechips, ingen Manus eller studier.
 
+## 5z. v1882: telefonen kunne stå fast på en gammel build (Ida 14/9, den vigtigste fejl i dag)
+
+Ida sendte tre skærmbilleder i træk med fejl, jeg netop havde rettet, og skrev: »Er virkelig ikke tryg ved alle de fejl, jeg hele tiden finder.« Skærmbillederne var **gammel kode**, og det var ikke hendes skyld.
+
+**Kæden, målt i koden:** service-workeren svarede ENHVER GET fra cachen først, også navigationer. Vagten i appen (`versionVagtTjek`) læste rigtigt på `version.txt` hvert femte minut og så, at serveren var nyere, men `nyVersionHent()` var `location.reload()`. En genindlæsning gik gennem workeren og fik **den gemte index.html igen**. Appen kunne derfor stå fast på en gammel build, uanset hvor mange gange hun genindlæste. Baggrundshentningen, der skulle fornye cachen, er 1,2 MB og dør på Safari. Det samme skete 5/9 (telefonen sad på 1642, serveren leverede 1690), og dengang blev symptomet lappet med `?nulstil` i stedet for årsagen.
+
+**Rettet tre steder:**
+- `nyVersionHent(ude)` sletter nu den gemte APPFIL, før den genindlæser, så workeren skal på nettet. Hjælper det ikke, tages den hårde vej én gang (afmeld workeren, slet alle caches). Et mærke i `sessionStorage` gør, at det aldrig kan loope. Loopet 25/8 kom af netop en genindlæsning uden mærke.
+- Service-workeren tjekker friskheden på `version.txt` (fire tegn) og henter kun den store fil, når serveren er **strengt nyere**. Det er den ændring, der gør, at opdateringen faktisk fuldføres på en telefon.
+- `version.txt` svares aldrig fra cachen længere. Før blev hvert tjek (`?vagt=<tid>`) også gemt, så cachen voksede med en række hvert femte minut.
+- Cachenavnet bumpet til `energida-v5`, så hver enhed smider sit gamle indhold væk denne ene gang.
+
+**Prøvet:** sammenligningslogikken kørt isoleret (samme version giver ingen hentning, nyere giver hentning og besked, ældre server giver ingenting, ukendt tal giver hentning). Syntaks på begge filer. **Kan ikke prøves herfra:** en service-worker kræver en rigtig enhed. Første bevis er, at Idas telefon selv skifter til 1882 uden `?nulstil`.
+
 ## 6. Bridge-trådene 12/9
 
 Trådene på Idas maskine (»Skærm, der ikke må vises« m.fl.) døde kl. 16:25 dansk tid, fem minutter efter v1856 blev pushet, fordi computeren blev lukket. Intet i repoet er halvt; højst få minutters ucommitteret arbejde kan være tabt. De vågner først, når Claude Code startes på den maskine igen.

@@ -5643,7 +5643,7 @@ body.plan-open .burger-btn, body.plan-open .bottom-nav, body.plan-open .dash-fab
 <div id="nyVersion" role="status">
   <div class="nv-t">Der er kommet en ny version af appen.</div>
   <div class="nv-s">Du sidder p&aring; en &aelig;ldre udgave &mdash; hent den nye, s&aring; du ikke leder efter fejl, der allerede er rettet.</div>
-  <div class="nv-b"><button type="button" style="color:var(--gray3);" onclick="nyVersionSkjul()">Ikke nu</button><button type="button" style="color:var(--red);" onclick="nyVersionHent()">Hent den nu</button></div>
+  <div class="nv-b"><button type="button" style="color:var(--gray3);" onclick="nyVersionSkjul()">Ikke nu</button><button type="button" style="color:var(--red);" onclick="nyVersionHent(window.__NY_VERSION_UDE)">Hent den nu</button></div>
 </div>
 <script>/* VENTESIDEN SLUKKES, NAAR APPEN ER DER (Ida 5/8).
    Tre veje ud, saa den aldrig kan blive haengende:
@@ -41769,10 +41769,36 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "1881";
+const APP_VERSION = "1882";
 let NY_VERSION_KLAR = false;
 function nyVersionSkjul() { const e = document.getElementById("nyVersion"); if (e) e.style.display = "none"; }
-function nyVersionHent() { try { location.reload(); } catch(e) {} }
+/* GENINDLAESNINGEN MAA IKKE HENTE DEN GEMTE KOPI (Ida 14/9: »Er virkelig ikke tryg ved alle de
+   fejl, jeg hele tiden finder«). MAALT i koden: vagten saa RIGTIGT, at serveren var nyere, men
+   location.reload() fik service-workerens GEMTE index.html igen, for workeren svarer fra cachen
+   foerst. Saa kunne telefonen staa fast paa en gammel build, uanset hvor mange gange hun
+   genindlaeste — praecis som 5/9 (1642 mod 1690). Nu slettes den gemte APPFIL foerst, saa
+   workeren skal paa nettet. Hjaelper det ikke, tages den haarde vej EEN gang (afmeld workeren,
+   slet alle caches). Maerket i sessionStorage goer, at det aldrig kan loope. */
+async function nyVersionHent(ude) {
+  const noegle = "energida_nyversion_forsoeg";
+  let forsoegt = ""; try { forsoegt = sessionStorage.getItem(noegle) || ""; } catch (e) {}
+  const haard = !!ude && forsoegt === String(ude);
+  try { if (ude) sessionStorage.setItem(noegle, String(ude)); } catch (e) {}
+  if (haard) { try { window.__energidaHentForfra(); return; } catch (e) {} }
+  try {
+    if (window.caches && caches.keys) {
+      const navne = await caches.keys();
+      for (const n of navne) {
+        const c = await caches.open(n);
+        for (const r of await c.keys()) {
+          const u = String(r.url).split("?")[0];
+          if (u.endsWith("/") || u.endsWith("/index.html")) await c.delete(r);
+        }
+      }
+    }
+  } catch (e) {}
+  try { location.reload(); } catch (e) {}
+}
 /* Maa vi hente den af os selv? KUN naar der ikke er noget at miste: skriver hun i et
    felt, eller staar en popup aaben, ville en genindlaesning kaste arbejde vaek — og
    "gem maa ikke slette" gaelder ogsaa her. Saa spoerger vi i stedet. */
@@ -41791,11 +41817,12 @@ function nyVersionRoligNu() {
   } catch(e) {}
   return true;
 }
-function nyVersionVis() {
+function nyVersionVis(ude) {
   if (NY_VERSION_KLAR) return;
   NY_VERSION_KLAR = true;
+  try { window.__NY_VERSION_UDE = ude || null; } catch (e) {}
   /* Er skaermen i ro, henter vi den bare — saa opdager hun det aldrig som et problem. */
-  if (nyVersionRoligNu()) { nyVersionHent(); return; }
+  if (nyVersionRoligNu()) { nyVersionHent(ude); return; }
   const e = document.getElementById("nyVersion"); if (e) e.style.display = "block";
 }
 async function versionVagtTjek() {
@@ -41820,7 +41847,7 @@ async function versionVagtTjek() {
        genindlaeste i en uendelighed. Idas ord: "den logger bare ind og ud hele tiden".
        En AELDRE fil paa serveren er en deploy-forsinkelse, ikke en ny udgave.
        Sammenlign ALDRIG paa ulighed igen. */
-    if (Number(ude) > Number(APP_VERSION)) nyVersionVis();
+    if (Number(ude) > Number(APP_VERSION)) nyVersionVis(ude);
   } catch(e) {}
 }
 /* TRE ANDRE VERSIONSFOEDDER (dashboardets menu, Maskinrummets fod, sidens fod) stod haardkodet
@@ -59018,6 +59045,6 @@ function prFaerdigHtml() {
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 14. september · 1881</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 14. september · 1882</div>
 </body>
 </html>
