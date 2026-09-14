@@ -41153,6 +41153,19 @@ let BS_ENERGIDA_VISNING = "";
 function bsNaalSvg(px) { px = px || 16; return '<svg width="' + px + '" height="' + px + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><g transform="rotate(45 12 12)"><line x1="12" y1="17" x2="12" y2="22"/><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24Z"/></g></svg>'; }
 function bsPinKnap(id, pin) { return '<button type="button" class="mq-tap bs-naal' + (pin ? ' on' : '') + '" aria-label="' + (pin ? 'Fjern nålen' : 'Sæt nålen i rummet') + '" title="' + (pin ? 'Fjern nålen' : 'Sæt nålen i rummet') + '" onclick="event.stopPropagation();' + (pin ? 'mrPinFjern' : 'mrPinSaet') + '(\'' + id + '\')">' + bsNaalSvg(17) + '</button>'; }
 function energidaVis(visning) { BS_ENERGIDA_VISNING = visning || ""; visDashSide("energida"); }
+/* MINE RUM = KUN RUM, DER IKKE ER LAGT ET ANDET STED. Ida 9/9 kl. 09.05: »Dine rum = kun egne rum … hvert rum faar en placering«;
+   11/9 kl. 08.30-11.30: hendes 27 svar i doer_placering (Salg baerer forretningen, Content Studio baerer Content-planner/Contentmodellen/
+   Drejebogen/Opgavebiblioteket, Vidensbank paa Hjem …). 11/9 kl. 14.12 »Hvor er alle mine knapper!!?« blev laest som »vis alle rum her«
+   — FORKERT (Ida 14/9 kl. 14.30: »for 2 dage siden placerede vi alt indholdet i mine rum ud paa de nye rigtige knapper«): rummene
+   manglede paa Salg/Content Studio, ikke her. Siden OG foldemenuen tegner fra DENNE ene liste. Veje (Klienter, Oekonomi …) staar ikke. */
+function bsMineRumListe() {
+  const erVej = function (r) { return !!MR_RUM_VEJE[r.navn] || /^(Klienter|Økonomi|Byggekøen)$/i.test(String(r.navn || "").trim()); };
+  const hjemme = function (r) { return r && r.aktiv !== false && bsRumPlads(r) === "energida" && !erVej(r); };
+  const pinnede = (typeof MR_PINS !== "undefined" ? (MR_PINS || []) : []).map(function (p) { return (MR_RUM || []).find(function (r) { return String(r.id) === String(p.rum_id); }); }).filter(hjemme);
+  const pinIds = pinnede.map(function (r) { return String(r.id); });
+  const rum = bsRumTop().filter(function (r) { return pinIds.indexOf(String(r.id)) === -1 && hjemme(r); });
+  return { pinnede: pinnede, rum: rum };
+}
 function bsRumTop() {
   return (MR_RUM || []).filter(function (r) { return !(r.produkt || "").toString().trim() && !r.foraelder_id; })
     .sort(function (a, b) { return String(a.navn).localeCompare(String(b.navn), "da"); });
@@ -41198,18 +41211,16 @@ async function energidaTegn(visning) {
      - Naalen i det pinnede gitter er en knap (fjern naalen), 44 px trykfelt.
      - Ingen beskrivende linjer under de faste rum (6/9-reglen) — kun tal, der er data (antal_tekst).
      - Faste rum, der allerede findes som rum i listen (fx YOU GOT THIS), vises ikke to gange. */
-  const pinnede = (MR_PINS || []).map(function (p) { return (MR_RUM || []).find(function (r) { return String(r.id) === String(p.rum_id); }); }).filter(Boolean);
-  const pinIds = pinnede.map(function (r) { return String(r.id); });
-  const rum = bsRumTop().filter(function (r) { return pinIds.indexOf(String(r.id)) === -1; });
+  const liste = bsMineRumListe(); const pinnede = liste.pinnede, rum = liste.rum;   /* kun rum, der ikke er lagt et andet sted (14/9) */
   const harVej = function (vej) { return (MR_RUM || []).some(function (r) { return MR_RUM_VEJE[r.navn] === vej; }); };
   const harNavn = function (re) { return (MR_RUM || []).some(function (r) { return re.test(String(r.navn || "")); }); };
   /* ENERGIDA-SIDEN = BUD 3 (Idas valg 9/9 kl. 06.40 efter Designstil/App): bento med EET hoejt kort (det foerste pinnede rum),
      de andre rum som smaa fliser med naalen i hjoernet, faste rum som piller, Nyt rum som sendefelt nederst. Ingen Toem hovedet her
      (Ida 9/9: »den skal vaek fra Energida-siden«), ingen YOU GOT THIS / Get shit done / Byggekoeen (ligger under Teknik).
      Rum, der bare er en vej til et omraade (MR_RUM_VEJE) eller hedder Klienter/Oekonomi, staar IKKE som fliser — pillerne baerer dem. */
-  const erVej = function (r) { return !!MR_RUM_VEJE[r.navn] || /^(Klienter|Økonomi|Byggekøen)$/i.test(String(r.navn || "").trim()) ; };   /* Dine rum viser ALLE egne rum — ogsaa dem, der ogsaa staar paa Salg/Content Studio (Ida 11/9 kl. 14.12: »Hvor er alle mine knapper!!?«) */
-  const pinFliser = pinnede.filter(function (r) { return !erVej(r); });
-  const rumFliser = rum.filter(function (r) { return !erVej(r); });
+  /* 11/9 kl. 14.12-laesningen (»vis ALLE egne rum her, ogsaa dem paa Salg/Content Studio«) er VAELTET 14/9 — se bsMineRumListe. */
+  const pinFliser = pinnede;
+  const rumFliser = rum;
   const flise = function (r, hoej, pin) {
     const id = esc(String(r.id)); const antal = rumLinje(r);
     /* Flisen er en div (rolle knap) — en <button> kan ikke rumme naalens <button> (MAALT 8/9). */
@@ -41654,11 +41665,8 @@ function bsMenuUnder(id) {
   if (id === "minerum") {
     /* SAMME LISTE SOM SIDEN (MAALT 14/9: menuen viste 3 rum, siden 11): pinnede foerst, saa bsRumTop() — egne rum uden produkt og
        uden foraelder, uanset om de ogsaa staar paa Salg/Content Studio (Ida 11/9: »Hvor er alle mine knapper!!?«). Veje staar ikke. */
-    const erVej = function (r) { return !!MR_RUM_VEJE[r.navn] || /^(Klienter|Økonomi|Byggekøen)$/i.test(String(r.navn || "").trim()); };
-    const pinnede = (typeof MR_PINS !== "undefined" ? (MR_PINS || []) : []).map(function (p) { return (MR_RUM || []).find(function (r) { return String(r.id) === String(p.rum_id); }); }).filter(Boolean);
-    const pinIds = pinnede.map(function (r) { return String(r.id); });
-    let top = []; try { top = bsRumTop().filter(function (r) { return pinIds.indexOf(String(r.id)) === -1; }); } catch (e) {}
-    pinnede.concat(top).filter(function (r) { return r.aktiv !== false && !erVej(r); })
+    let liste = { pinnede: [], rum: [] }; try { liste = bsMineRumListe(); } catch (e) {}
+    liste.pinnede.concat(liste.rum)
       .forEach(function (r) { ud.push({ n: r.navn || "Uden navn", k: "visDashSide('energida');setTimeout(function(){mrRumAaben('" + esc1(r.id) + "')},60)" }); });
     return ud;
   }
@@ -42543,7 +42551,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "1912";
+const APP_VERSION = "1913";
 let NY_VERSION_KLAR = false;
 let NY_VERSION_AFVIST = false;
 function nyVersionSkjul() {
@@ -49815,6 +49823,7 @@ const MR_STATUSSER = ["Idé", "I gang", "Færdig"];
 const MR_RUM_VEJE = { "Byggekøen": "byggekoe", "Forretningsoverblikket": "overblik",
   "Fælles motor": "faelles", "Publicering": "publicering", "Workout Studio": "oevelser",
   "Food Studio": "food",
+  "Mindful Studio": "mindful",   /* rummet »Mindful Studio« (produkt Time to Shine) er en vej som Workout/Food Studio (Ida 14/9: »mindful studio er da ikke tom??« — siden har indholdet, raekken var tom) */
   "Get shit done-biblioteket": "appfunk", "App-ønskelisten": "appfunk", "Forretningsmodellen": "model",
   "Motorer & biblioteker": "motorer", "Motorer og biblioteker": "motorer", "Skabeloner": "motorer",
   "YOU GOT THIS": "ygt", "Energimotoren": "energi" };
@@ -60137,6 +60146,6 @@ function prFaerdigHtml() {
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 14. september · 1912</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 14. september · 1913</div>
 </body>
 </html>

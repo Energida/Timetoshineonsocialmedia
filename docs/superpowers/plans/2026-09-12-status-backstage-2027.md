@@ -573,6 +573,18 @@ Idas ord: »hvorfor ser min admin pludselig sådan her ud med menuen på desktop
 
 **Målt:** `koer.sh` 19 døre + 15 sider OK før deploy; arket og Kunder/Salg/Mindful målt i Idas admin-session ved at lægge funktionerne ind før deploy.
 
+## 5ak. v1913: Mine rum viser kun rum, der ikke er lagt et andet sted (Ida 14/9 kl. 14.30: »dette er IKKE de korrekte låste rum«)
+
+Idas ord: »mine rum er jo netop KUNDER : SALG osv … for 2 dage siden placerede vi alt indholdet i mine rum ud på de nye rigtige knapper … kan du ikke finde det låste tidligere???«
+
+**Det låste, fundet i noten:** 9/9 kl. 09.05 »Dine rum = kun egne rum … hvert rum får en placering« + 11/9 kl. 08.30-11.30: Idas 27 svar i `doer_placering` (Salg bærer forretningen + Markedsføring med Hjemmesiden/Anmeldelser og omtale/Nyhedsbrev; Content Studio bærer Content-planner/Contentmodellen/Drejebogen/Opgavebiblioteket; Vidensbank på Hjem; Quotekalenderen under Produkter; Reset din energi under Salg). **Det, der væltede det:** 11/9 kl. 14.12 »Hvor er alle mine knapper!!?« blev læst som »vis alle egne rum på Dine rum igen«, så Gameplan, Markedsføring, Drejebogen osv. stod både på Salg/Content Studio og på Mine rum. Læsningen er vendt: rummene manglede på Salg og Content Studio (på computeren indtil v1912), ikke på Mine rum.
+
+**Rettelsen:** `bsMineRumListe()` er den ene liste for siden og foldemenuen: nålede + `bsRumTop()`, kun rum med placering »energida« (ikke flyttet), uden veje. Rummet »Mindful Studio« (produkt Time to Shine) er nu en vej til Mindful Studio som Workout/Food Studio (`MR_RUM_VEJE`), ikke et tomt rum.
+
+**Målt i Idas admin-session før deploy:** se listen i næste afsnit af samtalen (rum med placering energida vs. det, siden viser). `koer.sh` 19 døre + 15 sider OK.
+
+**Lærestreg (skrevet i hukommelsen):** når Ida siger »hvor er mine knapper«, er svaret at finde det sted, hun HAR lagt dem, ikke at vise dem alle steder. Én ting, ét sted.
+
 ## 6. Bridge-trådene 12/9
 
 Trådene på Idas maskine (»Skærm, der ikke må vises« m.fl.) døde kl. 16:25 dansk tid, fem minutter efter v1856 blev pushet, fordi computeren blev lukket. Intet i repoet er halvt; højst få minutters ucommitteret arbejde kan være tabt. De vågner først, når Claude Code startes på den maskine igen.
