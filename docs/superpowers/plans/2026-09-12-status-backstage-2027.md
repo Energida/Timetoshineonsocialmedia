@@ -295,6 +295,12 @@ To fejl fra to skærmbilleder af Performance, begge målt og rettet.
 
 **En fejl i målingen selv, rettet samme sted:** `koer.sh` brugte port 4600 blindt. Var porten optaget af en ældre server, målte porten en **gammel kopi** af appen og kunne både bestå og fejle uden grund (det skete to gange under arbejdet). Nu vælges en ledig port, og scriptet verificerer, at serveren leverer præcis den `APP_VERSION`, der lige blev bygget, før der måles. Kørt fire gange i træk med samme svar.
 
+## 5x. v1880: ét navn i Tøm hovedet (Ida 14/9)
+
+- Arket viste både etiketten »TØM HOVEDET« og titlen »Ny idé«: to navne på det samme, og ordet idé passer ikke, når man skriver en to-do eller en note. Idas klik: kun Tøm hovedet.
+- Nu er titlen »Tøm hovedet« i Didot, etiketten er væk, og undertitlen siger fortsat, hvor det lander (»Lander i Idébanken«, »Lander i din to-do på Hjem«). Gælder både kundens ark og Idas eget.
+- Gennemgået alle syv ark: kun dette havde dubletten. De andre bruger etiketten til at sige, hvor man er (»Postet · Vinterjakken«, »Ønske til appen · Hinges Hus«), og titlen til handlingen eller spørgsmålet. Reglen står nu i `DESIGNLÅS.md` under dubletreglen.
+
 ## 6. Bridge-trådene 12/9
 
 Trådene på Idas maskine (»Skærm, der ikke må vises« m.fl.) døde kl. 16:25 dansk tid, fem minutter efter v1856 blev pushet, fordi computeren blev lukket. Intet i repoet er halvt; højst få minutters ucommitteret arbejde kan være tabt. De vågner først, når Claude Code startes på den maskine igen.

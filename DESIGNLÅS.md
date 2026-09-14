@@ -31,7 +31,7 @@ Filen er kort med vilje. Hver regel kan måles. Målingen står i `tools/designl
 
 **Ingen emoji. Ingen »I« og »jer« til kunden (du og din).** En sætning, der kan lyve, er værre end ingen sætning: lov aldrig noget, appen ikke gør.
 
-**Dubletreglen.** Én funktion, én dør, ét navn. To veje til det samme er en fejl. Et navn, der bruges to steder til to forskellige ting, er en fejl.
+**Dubletreglen.** Én funktion, én dør, ét navn. To veje til det samme er en fejl. Et navn, der bruges to steder til to forskellige ting, er en fejl. **Også inde i arket (14/9):** etiketten over titlen siger, HVOR man er, når det ikke allerede står i titlen (»Postet · Vinterjakken«). Siger etiketten og titlen det samme, er etiketten en dublet og skal væk.
 
 **Navigationen på telefonen.** Ingen topbar; Tilbage står som lang knap nederst. Bundmenuen med plusset i midten. Plusset og swipe op på dagskortet åbner arket.
 
