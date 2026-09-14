@@ -33,6 +33,8 @@ Filen er kort med vilje. Hver regel kan måles. Målingen står i `tools/designl
 
 **Dubletreglen.** Én funktion, én dør, ét navn. To veje til det samme er en fejl. Et navn, der bruges to steder til to forskellige ting, er en fejl. **Også inde i arket (14/9):** etiketten over titlen siger, HVOR man er, når det ikke allerede står i titlen (»Postet · Vinterjakken«). Siger etiketten og titlen det samme, er etiketten en dublet og skal væk.
 
+**Produktet bestemmer adgangen (14/9).** Hvert produkt har sin egen liste over funktioner (`PRODUKT_FUNKTIONER`), og den er kundens standard. En manglende liste må ALDRIG betyde »alt er tændt«. En fluebensliste på kunden vinder fortsat over produktet, så et eksisterende køb aldrig ændrer sig af en ny regel. Menupunkter i burgeren og i computerens menu er tvillinger: får den ene en lås, får den anden samme lås samme dag.
+
 **B2b er kundeappen, også når Ida er logget ind (14/9).** Idas egne lister (Manus, Food Studio, Workout Studio, Mindful Studio, App-ønskelisten) hører i Backstage og må ikke kunne nås fra b2b. Plusset og swipet på b2b åbner kundens ark med kundens chips for alle koder, også `EGNE_KODER`. Backstage-arket (`nyIdeAabn`) må kun kaldes fra Backstage.
 
 **Navigationen på telefonen.** Ingen topbar; Tilbage står som lang knap nederst. Bundmenuen med plusset i midten. Plusset og swipe op på dagskortet åbner arket.

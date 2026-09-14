@@ -323,6 +323,28 @@ Ida sendte tre skærmbilleder i træk med fejl, jeg netop havde rettet, og skrev
 
 **Prøvet:** sammenligningslogikken kørt isoleret (samme version giver ingen hentning, nyere giver hentning og besked, ældre server giver ingenting, ukendt tal giver hentning). Syntaks på begge filer. **Kan ikke prøves herfra:** en service-worker kræver en rigtig enhed. Første bevis er, at Idas telefon selv skifter til 1882 uden `?nulstil`.
 
+## 5æ. v1883: produktet bestemmer adgangen (Ida 14/9)
+
+Ida åbnede menuen på b2b og skrev: »uhyggeligt at you got this kunder får denne menu også med forløbsoversigt mm«. Målt på alle fem produkter, og hun havde ret to gange.
+
+**Fejl 1: en manglende fluebensliste betød »alt er tændt«.** `funkTaendt` svarede `true`, når kunden ikke havde en `funktioner`-liste. En kunde, oprettet uden at sætte flueben, fik derfor hele Content Studio-menuen uanset produkt. Modellen fandtes allerede i koden (en selvkøbt kunde fødes med `["strategi"]` og får `SELVKOEB_FULD`, når hun trykker »Gå til mit content«), men produkterne havde ingen lister.
+
+**Nu:** `PRODUKT_FUNKTIONER` pr. produkt, og `funktionerFor(def)` med denne rækkefølge: kundens egen liste vinder altid, Idas egne koder får alt, derefter produktets liste, og kender vi ikke produktet, er alt tændt som før. **Ingen eksisterende kunde skifter adgang**, for alle med en liste beholder præcis det, de har. Listerne er appens egne produktbeskrivelser plus Idas rettelse: lektionerne bygger Drejebogen, så `strategi` hører til begge YOU GOT THIS-produkter.
+
+**Fejl 2: Forløbsoversigt havde ingen lås på telefonen.** Computerens menu har haft gaten siden 26/8 med Idas ord: »forløbsoversigt er jo også kun til we got this og i got you kunder«. Burgeren fik den aldrig, så punktet stod hos alle. Og gaten var desuden for bred: `erForloeb` dækker også `contentplanner`, så CONTENT STUDIO-kunder fik et punkt, der åbner en tom side. Nu er der én dør, `harForloebsoversigt(def)`: produktet er I GOT YOU eller WE GOT THIS, eller kunden har en rigtig `forloeb_plan` (så en plan aldrig kan blive usynlig). Bruges af begge menuer.
+
+**Målt i selen på 390, fem produkter, hver i sin egen indlæsning** (menuen skrives destruktivt om ved opstart, så den faste menu hentes fra filen først):
+
+| Produkt | Menuen |
+|---|---|
+| YOU GOT THIS | Indbakken · Hjem · Drejebogen · Tema · Tilpas drejebog |
+| YOU GOT THIS · DETAIL | + Værktøjskassen |
+| I GOT YOU | alt · Forløbsoversigt · ingen Tilpas drejebog (17/8: strategien bygges sammen med Ida) |
+| WE GOT THIS | alt uden Værktøjskassen · Forløbsoversigt · ingen Tilpas drejebog |
+| CONTENT STUDIO | alt · Tilpas drejebog · ingen Forløbsoversigt |
+
+Også målt: Idas egne koder får alt, en kunde med egen liste beholder sin liste, et ukendt produkt får alt. Mens et kursusforløb kører, er menuen stadig den låste (Forløbet plus fire dæmpede) som før.
+
 ## 6. Bridge-trådene 12/9
 
 Trådene på Idas maskine (»Skærm, der ikke må vises« m.fl.) døde kl. 16:25 dansk tid, fem minutter efter v1856 blev pushet, fordi computeren blev lukket. Intet i repoet er halvt; højst få minutters ucommitteret arbejde kan være tabt. De vågner først, når Claude Code startes på den maskine igen.

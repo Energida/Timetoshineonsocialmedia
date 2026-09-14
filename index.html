@@ -5910,7 +5910,11 @@ body.plan-open .burger-btn, body.plan-open .bottom-nav, body.plan-open .dash-fab
          strategien" og gik i strategibyggeren, mens sidemenuen hed "Tilpas drejebog". To navne
          paa den samme doer er praecis den drift, soejlenavnene kostede en runde paa. Ret altid begge. -->
     <button class="burger-item" id="burgerTilpas" onclick="toggleBurger(); tilpasAaben('drejebog')">Tilpas drejebog</button>
-    <button class="burger-item" onclick="toggleBurger(); openForloeb()">Forløbsoversigt</button>
+    <!-- KUN forloebskunder (Idas regel 26/8: »forloebsoversigt er jo ogsaa kun til we got this og
+         i got you kunder«). Computerens menu har haft gaten siden da; burgeren fik den aldrig, saa
+         punktet stod hos ALLE og aabnede en tom side hos kursus- og Content Studio-kunder.
+         Samme betingelse som desktop: erEjer() && erForloeb(def), sat i buildSideNav. -->
+    <button class="burger-item" id="burgerForloebsoversigt" style="display:none;" onclick="toggleBurger(); openForloeb()">Forløbsoversigt</button>
     <button class="burger-item" id="burgerDrive" style="display:none;" onclick="toggleBurger(); window.open(driveLink(), '_blank')" data-ental="Din Drive-mappe">Vores Drive-mappe</button>
   </div>
   <div class="burger-bund">
@@ -36158,6 +36162,7 @@ function buildSideNav(def) {
   /* "Tilpas strategien" kun for dem, der EJER strategien (Ida 17/8) — desktop-menuen har
      gatet den siden 17/8, telefonens burger viste den for alle (politiets fund 21/8). */
   try { const bt = document.getElementById("burgerTilpas"); if (bt) bt.style.display = maaRedigereByggesten(def) ? "" : "none"; } catch(e) {}
+  try { const bf = document.getElementById("burgerForloebsoversigt"); if (bf) bf.style.display = (erEjer() && harForloebsoversigt(def)) ? "" : "none"; } catch(e) {}   /* samme doer som desktop (26/8-reglen), sat 14/9 */
   /* NAVIGATIONEN = ENERGI · STRATEGI · RESULTAT (Ida 30/7, godkendt "MEGA godt! YES").
      Idas egen metode gjort til struktur: du laver content, energien baerer den, strategien
      styrer den, og resultatet maaler den. Seks foldbare grupper — alt andet foldet vaek.
@@ -36284,7 +36289,7 @@ function buildSideNav(def) {
       : '')   /* RUNDVISNINGEN GAELDER ALLE KUNDER (Ida 24/8) - men genvejen stod kun for
                  selvkoeb, saa alle andre kunne se den een gang og aldrig igen. Den eneste,
                  der IKKE skal have den, er en selvkoebs-kunde med et endnu uaabnet studio. */
-    + (erEjer() && erForloeb(def)
+    + (erEjer() && harForloebsoversigt(def)
       ? '<button class="dbtn ghost" style="width:100%;text-align:left;font-weight:400;" onclick="toggleVirkMenu();openForloeb()">Forløbsoversigt</button>'
       : '')   /* KUN forloebskunder (Ida 26/8): "forloebsoversigt er jo ogsaa kun til we got this
                  og i got you kunder". Foer stod den paa erEjer() alene - og en selvkoebende kunde
@@ -41769,7 +41774,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "1882";
+const APP_VERSION = "1883";
 let NY_VERSION_KLAR = false;
 function nyVersionSkjul() { const e = document.getElementById("nyVersion"); if (e) e.style.display = "none"; }
 /* GENINDLAESNINGEN MAA IKKE HENTE DEN GEMTE KOPI (Ida 14/9: »Er virkelig ikke tryg ved alle de
@@ -44559,6 +44564,16 @@ function applyDeployMode() {
    i stedet for at sammenligne med "forloeb", ellers falder planner-kunder ud af
    forsiden, kundekortet og "Åbn kundens side". */
 function erForloeb(def) { return !!def && (def.type === "forloeb" || def.type === "contentplanner"); }
+/* HVEM HAR EN FORLOEBSOVERSIGT? (Idas regel 26/8, ordret: »forloebsoversigt er jo ogsaa kun til
+   we got this og i got you kunder«.) erForloeb daekker OGSAA contentplanner, og dermed CONTENT
+   STUDIO-kunder — de fik derfor et punkt, der aabner en tom side. MAALT 14/9 paa alle fem
+   produkter. Har kunden en rigtig plan (forloeb_plan), vises den uanset produkt, saa en plan
+   aldrig kan blive usynlig. EEN doer: baade computerens menu og telefonens burger bruger den. */
+function harForloebsoversigt(def) {
+  if (!def) return false;
+  if (Array.isArray(def.forloeb_plan) && def.forloeb_plan.length) return true;
+  return def.pakke === "igotyou" || def.pakke === "ldit";
+}
 /* ===== HVEM MAA SELV REDIGERE SINE BYGGESTEN? (Ida 17/8) =========================
    Hendes ord: "det er vigtigt at det kun er you got this, content studio kunder og
    contentplanner kunder som har adgang til selv at aendre i deres byggesten. we got
@@ -53631,9 +53646,32 @@ function harLektionsadgang(def) {
   if (Array.isArray(l) && l.length === 0) return false;
   return true;
 }
+/* PRODUKTET BESTEMMER ADGANGEN (Idas klik 14/9). FOER: manglede fluebenslisten paa kunden,
+   var ALT taendt — saa en YOU GOT THIS-kunde, oprettet uden flueben, fik hele Content
+   Studio-menuen med Drejebog, Performance og Tilpas drejebog. Idas ord: »uhyggeligt«.
+   NU er hvert produkt sin egen liste, og den er kundens standard. Listen paa kunden VINDER
+   fortsat, saa ingen eksisterende kunde skifter adgang af det her.
+   Listerne er appens egne produktbeskrivelser (nkPakke) plus Idas rettelse 14/9: lektionerne
+   BYGGER Drejebogen, saa "strategi" hoerer til begge YOU GOT THIS-produkter.
+   Content Studio og Performance kommer med selvkoeb (SELVKOEB_FULD) eller ved at Ida saetter
+   fluebenene. Kender vi ikke produktet, er alt taendt som foer — en ukendt kode maa aldrig
+   miste noget, hun har betalt for. */
+const PRODUKT_FUNKTIONER = {
+  ttsosm:        ["indbakke", "strategi"],                                       /* YOU GOT THIS: lektionerne + Drejebogen */
+  detaildrift:   ["indbakke", "strategi", "vaerktoej"],                          /* YOU GOT THIS · DETAIL: + Vaerktoejskassen */
+  igotyou:       ["indbakke", "content", "strategi", "resultat", "vaerktoej"],    /* I GOT YOU: forloebet, alt med */
+  ldit:          ["indbakke", "energi", "content", "strategi", "resultat"],       /* WE GOT THIS: energimodulerne + Content Studio */
+  contentstudio: ["indbakke", "content", "strategi", "resultat", "vaerktoej"]     /* CONTENT STUDIO */
+};
+function funktionerFor(def) {
+  if (def && Array.isArray(def.funktioner)) return def.funktioner;   /* Idas eget valg vinder altid */
+  try { if (typeof erEgenKode === "function" && erEgenKode(currentKode)) return null; } catch (e) {}   /* Idas egne koder: alt */
+  const p = def && def.pakke ? String(def.pakke) : "";
+  return PRODUKT_FUNKTIONER[p] || null;
+}
 function funkTaendt(def, key) {
-  const liste = def && Array.isArray(def.funktioner) ? def.funktioner : null;
-  return liste ? liste.indexOf(key) > -1 : true;   /* intet valgt = alt er tændt */
+  const liste = funktionerFor(def);
+  return liste ? liste.indexOf(key) > -1 : true;   /* ukendt produkt uden liste = alt er tændt */
 }
 function renderFunkValg(elId, valgte) {
   const el = document.getElementById(elId); if (!el) return;
@@ -59045,6 +59083,6 @@ function prFaerdigHtml() {
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 14. september · 1882</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 14. september · 1883</div>
 </body>
 </html>
