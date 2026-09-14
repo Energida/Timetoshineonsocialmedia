@@ -634,6 +634,28 @@ Idas ord: »hvad sker der seriøst her for layoutet på mit hjem på desktop???�
 
 v1915 lod statuslinjen og ringene på flisen åbne status-arket; et tryk midt på flisen (hvor man plejer at trykke) ramte dem og åbnede arket i stedet for briefen. Målt i Idas session: titlen åbnede briefen, statuslinjen åbnede arket. Nu: hele flisen åbner lektionen (`klipBriefAaben`), status skiftes ét sted, i briefen (`#kbStatusChip` → `klipStatusArk`). Ét tryk, ét svar (4/9).
 
+## 5ar. v1919: UX-politiet over alle admin-sider på 1440 med Idas data (Idas klik 14/9 kl. 16.30)
+
+Målt i Idas admin-session (browserpanelet, 1440) med en måler (`__uxMaal`) på 20 sider: hero (Didot 52, én hero, 32 px luft), streger i fliser, trykfelter under 32 px, emoji, vandret sejlads, fed Poppins, Didot på rødt, gamle ord, dubletdøre, stiens første led, rosa. Sider: Hjem · Kunder · Kunder › Succesfuld Detaildrift · Kundeside · Salg · Pipeline · Priser · Tilbud og salgstekster · Økonomi · Produkter · Gameplan (Skabeloner) · rummet Markedsføring · Content Studio · Velkomsthilsner · Citater · Energida Studio · Workout · Food · Mindful · Mine rum · Teknik · Byggekøen · Eksempler pr. forretningstype.
+
+**Rettet (bryder en lås, ingen ny tegning):**
+1. `.bs-hero` var 60 px fra 900 px (Hjem, Kunder, Produkter, rummene, Teknik, Mine rum). Låsen 11/9: én hero, 52 px på alle bredder. Nu 52.
+2. Etiketten under heroen (»Backstage« på Kunder, Søg, Indbakken; »Energida« på Produkter) gav 4 px luft og sagde det samme som siden. Ude; 32 px luft som Mine rum (14/9 kl. 09.24).
+3. Byggekøens egen titel havde 4 px under (`.mr-omr .ch-titel {4px}` vandt). Nu 32 for områdernes egne titler.
+4. Stien: Produkter sagde »Energida / Produkter« (nu Hjem › Salg › Produkter, Tilbage → Salg); Eksempler pr. forretningstype sagde »Maskinrummet / …« (nu Hjem › Teknik › …, Tilbage → Teknik).
+5. Mine rum-døren viste den sidst åbnede undervisning (Produkter) i stedet for Mine rum. Nu altid Mine rum.
+6. Didot på rødt: Kundeopgavernes røde kort (`.bs-rk-n`) havde opslagets titel i Didot. DESIGNLÅS: Didot er forbeholdt navnet; opgaver står i Poppins. Nu Poppins 15.
+7. Trykfelter: »Kør systemtjek« i foden (72×15) og »Ret typerne« (66×17) er 32 px høje; svarene i Venter på dig (Ja/Nej, 32) er 34.
+
+**Målt OK uden fund:** Salg, Priser, Tilbud og salgstekster, Gameplan (Skabeloner), Content Studio, Velkomsthilsner, Energida Studio, Mindful Studio, Teknik (kun fodens knap, nu rettet).
+
+**Åbent, kræver Idas klik (gammelt design eller ny tegning, ikke en lås-rettelse):**
+- **Salg › Pipeline** åbner det gamle CRM (`dside-crm` med fanerne Kunderne · Pipeline · Kontakter & leads · Koder og adgang · Testere, 27 små faner, streger i pipelinekortet, heroen siger »Kunder«). Hele siden er før låsen.
+- **Salg › Økonomi** (`dside-budget`): ingen hero, tabel med streger, slet-knapper 19×20. Før låsen.
+- **Lister i én kasse på computeren:** Citater på dashboardet (16 rækker med streger, Slet 46×31), Food (1), Workout Studios øvelsesbibliotek (103 rækker + »+« 34×25). På telefonen bliver rækkerne til fliser (5/9-låsen); på computeren står de som rækker i kortet. Fliser i fuld bredde er den anden lås (14/9). Kræver en tegning.
+- Idas egen to-do-tekst indeholder en emoji (»Let's go bro🚀«): hendes ord, ikke rørt.
+- »Ingenting endnu.« som tom-tekst i kort (Workout, Food, Mindful) er 12/9-låsen for tomme lister (v1848) og står.
+
 ## 6. Bridge-trådene 12/9
 
 Trådene på Idas maskine (»Skærm, der ikke må vises« m.fl.) døde kl. 16:25 dansk tid, fem minutter efter v1856 blev pushet, fordi computeren blev lukket. Intet i repoet er halvt; højst få minutters ucommitteret arbejde kan være tabt. De vågner først, når Claude Code startes på den maskine igen.
