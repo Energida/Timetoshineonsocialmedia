@@ -4564,6 +4564,18 @@ html body.brief-etspm #briefWrap textarea.sendfelt-felt, html body.brief-etspm #
 .bs-kf { display:flex; align-items:center; gap:12px; width:100%; text-align:left; background:#fff; border:1px solid var(--border); border-radius:20px; padding:12px 14px; margin:0 0 8px; cursor:pointer; font-family:Poppins,sans-serif; box-sizing:border-box; transition:transform 160ms cubic-bezier(0.23,1,0.32,1); }
 .bs-kf:active { transform:scale(.985); }
 .bs-kf.bs-tom { color:var(--gray3); cursor:default; }
+/* De fem lister i Idébanken (v1934): tomt = navn + EEN lang Tilfoej-knap (hvid, roed ramme, 999, 48 — Tilfoej-reglen 5/9). */
+.ib-tilfoej { display:flex; width:100%; min-height:48px; align-items:center; justify-content:center; box-sizing:border-box; border:1px solid var(--red); border-radius:999px; background:#fff; color:var(--red); font-family:Poppins,sans-serif; font-size:13.5px; font-weight:400; cursor:pointer; margin:0; }
+.ib-liste-flise { position:relative; overflow:hidden; }
+.ib-liste-ord { background:none; border:0; padding:0 0 0 12px; color:var(--gray3); font-family:Poppins,sans-serif; font-size:12px; cursor:pointer; white-space:nowrap; flex-shrink:0; }
+.ib-liste-ord:hover { color:var(--red); }
+.ib-liste-send { margin-top:var(--luft-3, 24px); }
+.ib-liste-note { font-size:11.5px; color:var(--gray3); line-height:1.6; margin-top:var(--luft-2, 16px); }
+.ib-liste-msg { font-size:11px; color:var(--gray3); margin-top:8px; text-align:right; min-height:0; }
+@media (max-width:760px) {
+  .ib-liste-flise::after { content:"Slet"; position:absolute; right:-120px; top:0; bottom:0; width:120px; display:flex; align-items:center; justify-content:center; background:var(--red); color:#fff; font-size:12.5px; opacity:0; }
+  .ib-liste-flise.bs-swipe-klar::after { opacity:1; }
+}
 .bs-kf-foto { width:40px; height:40px; border-radius:50%; background:#EFE9DF; color:var(--black); display:flex; align-items:center; justify-content:center; font-family:'Didot','Bodoni 72',Georgia,serif; font-size:18px; flex-shrink:0; }
 .bs-kf-tekst { flex:1; min-width:0; display:flex; flex-direction:column; }
 .bs-kf, .bs-kf-n, .bs-kf-s { white-space:normal; }   /* en FLISE er ikke en knap: titlen ombryder inde i flisen (MAALT 12/9: button{nowrap} sendte 960 px tekst ud af en 358 px flise) */
@@ -33586,54 +33598,69 @@ const IB_LISTER = {
                 ph: "Skriv en pin-idé…",
                 tom: "Her kan en pin-idé ligge, til den skal laves.", note: "" }
 };
+/* DE FEM LISTER = LAASENS FORM (v1934, natten 14/9-15/9 — Idas ord: »kigge paa content studio som en koeber«):
+   »Et tomt rum er tomt« (14/9): uden indhold staar KUN navnet og EEN lang Tilfoej-knap, der aabner arket —
+   ingen aabne skrivefelter, ingen forklarende saetninger. Med indhold: hver idé sin egen flise (»altid fliser,
+   aldrig en liste i én kasse«, 5/9), swipe sletter paa telefonen, ordet Fjern staar kun paa computeren, og nyt
+   skrives i sendefeltet nederst (7/9). Foer: hvidt kort med et aabent inputfelt oeverst, raekker med streger
+   imellem og en saetning som »Her kan en story-idé ligge, til dagen kommer.« */
+const IB_LISTE_NY = { story: "Ny story", tema: "Nyt tema", serie: "Ny serie", proevereel: "Ny prøvereel", pin: "Ny pin" };
+function ibListeFane(slags) { const f = IB_BANK_FANER.find(function (x) { return x[0] === slags; }); return f ? f[1] : slags; }
 async function ibBankListeTegn(slags) {
   const K = IB_LISTER[slags]; if (!K) return;
   const host = document.getElementById("ibListeDel"); if (!host) return;
   try { await maalsHent(); } catch (e) {}
   const liste = (MAALS && Array.isArray(MAALS[K.felt])) ? MAALS[K.felt] : [];
-  const retKn = function (tekst, fn) {
-    return '<button type="button" class="rkn" onclick="' + fn + '" style="margin-left:auto;background:none;border:none;padding:0;color:var(--red);font-family:Poppins,sans-serif;cursor:pointer;white-space:nowrap;flex-shrink:0;">' + tekst + '</button>';
-  };
-  /* EN STORY, DER LAA I FEED-BANKEN (26/8). Klikket paa den lander her i stedet for i
-     reel-briefen. Linjen siger, HVAD der skete, og baerer den ene handling, der goer
-     noget ved det — flytningen er Idas klik, aldrig appens eget. Ingen oe-boks inde i
-     kortet (manualen): linjen staar frit under rubrikken. */
+  const sl = esc(slags).replace(/'/g, "\\'");
+  /* EN STORY, DER LAA I FEED-BANKEN (26/8). Klikket paa den lander her i stedet for i reel-briefen. Linjen
+     siger, HVAD der skete, og baerer den ene handling — flytningen er Idas klik, aldrig appens eget. */
   const storyNote = (slags === "story" && IB_STORY_FRA)
-    ? '<div style="display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;margin-top:15px;">'
-      + '<span style="flex:1 1 220px;min-width:0;font-size:12px;color:var(--gray3);line-height:1.6;">'
-      + esc(storStart(titelVis(IB_STORY_FRA.titel || "Idéen"))) + ' er en story — og stories briefes ikke. Her hører den hjemme.</span>'
-      + retKn('LÆG DEN I LISTEN', 'ibStoryFlyt()')
-      + '</div>'
+    ? '<div class="bs-kf" style="cursor:default;"><span class="bs-kf-tekst"><span class="bs-kf-n">' + esc(storStart(titelVis(IB_STORY_FRA.titel || "Idéen"))) + '</span>'
+      + '<span class="bs-kf-s">Er en story — og stories briefes ikke. Her hører den hjemme.</span></span>'
+      + '<button type="button" class="ib-liste-ord" onclick="ibStoryFlyt()">Læg den i listen</button></div>'
     : '';
-  host.innerHTML = '<div style="background:#fff;border:1px solid var(--border);border-radius:20px;padding:24px 28px;">'
-    + '<div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--gray3);border-bottom:1px solid var(--border);padding-bottom:11px;">' + esc(K.hoved) + '</div>'
+  if (!liste.length && !storyNote) {
+    host.innerHTML = '<div class="cf-sek">' + esc(K.hoved) + '</div>'
+      + '<button type="button" class="ib-tilfoej" onclick="ibBankListeArk(\'' + sl + '\')">Tilføj ' + esc(ibListeFane(slags).toLowerCase()) + '</button>'
+      + '<div id="ibListeMsg" class="ib-liste-msg"></div>';
+    return;
+  }
+  host.innerHTML = '<div class="cf-sek">' + esc(K.hoved) + '</div>'
     + storyNote
-    + '<input type="text" id="ibListeFelt" placeholder="' + esc(K.ph) + '" '
-      + 'onkeydown="if(event.key===\'Enter\'){event.preventDefault();ibBankListeTilfoej(\'' + slags + '\');}" '
-      + 'style="width:100%;box-sizing:border-box;background:var(--gray);border:1px solid var(--border);border-radius:12px;padding:11px 13px;font-size:13px;font-family:Poppins,sans-serif;color:var(--black);outline:none;margin:16px 0 0;">'
-    + (liste.length
-        ? liste.map(function (t, i) {
-            return '<div style="display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;padding:13px 0;border-top:1px solid #F2F0ED;margin-top:' + (i ? '0' : '14px') + ';">'
-              + '<span style="flex:1 1 220px;min-width:0;font-size:13.5px;line-height:1.6;">' + esc(t) + '</span>'
-              + retKn('FJERN', 'ibBankListeFjern(\'' + slags + '\',' + i + ')') + '</div>';
-          }).join("")
-        : '<div style="font-size:12px;color:var(--gray3);line-height:1.6;margin-top:12px;">' + esc(K.tom) + '</div>')
-    + (K.note ? '<div style="font-size:11.5px;color:var(--gray3);line-height:1.6;border-top:1px solid var(--border);margin-top:16px;padding-top:13px;">' + esc(K.note) + '</div>' : '')
-    + '<div id="ibListeMsg" style="font-size:11px;color:var(--gray3);margin-top:10px;text-align:right;"></div>'
-    + '</div>';
+    + liste.map(function (t, i) {
+        return '<div class="bs-kf ib-liste-flise" data-slet="ibBankListeFjern(\'' + sl + '\',' + i + ')" style="cursor:default;">'
+          + '<span class="bs-kf-tekst"><span class="bs-kf-n">' + esc(t) + '</span></span>'
+          + '<button type="button" class="ib-liste-ord bs-kun-computer" onclick="ibBankListeFjern(\'' + sl + '\',' + i + ')">Fjern</button></div>';
+      }).join("")
+    + sendFeltHtml({ id: "ibListeFelt", ph: IB_LISTE_NY[slags] + " …", fn: "ibBankListeTilfoej('" + sl + "')", aria: "Læg den i listen", klasse: "bs-sendfelt ib-liste-send" })
+    + (K.note ? '<div class="ib-liste-note">' + esc(K.note) + '</div>' : '')
+    + '<div id="ibListeMsg" class="ib-liste-msg"></div>';
+  try { Array.prototype.forEach.call(host.querySelectorAll(".ib-liste-flise"), function (el) { bsSwipeSlet(el); }); } catch (e) {}
+}
+/* Arket er den ene popup-form for alt, man skriver (11/9). Man bliver staaende efter Gem; listen bag arket
+   tegnes om, saa den foerste idé kan ses lande. */
+function ibBankListeArk(slags) {
+  const K = IB_LISTER[slags]; if (!K) return;
+  arkAabn({ titel: IB_LISTE_NY[slags] || "Ny idé", under: "Lander under " + ibListeFane(slags) + " i Idébanken", ph: K.ph, send: "Gem", kvit: "Lagt til.",
+    gem: async function (tekst) { const ok = await ibBankListeLaeg(slags, tekst); if (!ok) return false; try { await ibBankListeTegn(slags); } catch (e) {} return "Lagt til."; } });
 }
 /* Gemmes med maalsGem, som kvitterer med .select() og raekketaelling. Fejler den,
    RULLES listen tilbage — en idé maa aldrig se gemt ud, hvis basen afviste. */
-async function ibBankListeTilfoej(slags) {
-  const K = IB_LISTER[slags]; if (!K) return;
-  const f = document.getElementById("ibListeFelt"); if (!f) return;
-  const v = (f.value || "").trim(); if (!v) return;
+async function ibBankListeLaeg(slags, v) {
+  const K = IB_LISTER[slags]; if (!K) return false;
+  v = String(v || "").trim(); if (!v) return false;
   await maalsHent();
   if (!Array.isArray(MAALS[K.felt])) MAALS[K.felt] = [];
   MAALS[K.felt].unshift(v);
-  f.value = "";
   const ok = await maalsGem("Lagt til.");
   if (!ok) MAALS[K.felt].shift();
+  return ok;
+}
+async function ibBankListeTilfoej(slags) {
+  const f = document.getElementById("ibListeFelt"); if (!f) return;
+  const v = (f.value || "").trim(); if (!v) return;
+  f.value = "";
+  const ok = await ibBankListeLaeg(slags, v);
   await ibBankListeTegn(slags);
   if (!ok) { const m = document.getElementById("ibListeMsg"); if (m) { m.style.color = "var(--red)"; m.textContent = "Det blev ikke gemt — prøv igen."; } }
 }
