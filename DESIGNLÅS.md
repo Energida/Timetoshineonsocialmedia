@@ -24,6 +24,8 @@ Filen er kort med vilje. Hver regel kan måles. Målingen står i `tools/designl
 
 **Målingen holder øje med de lange knapper (14/9).** Sidemålingen (`probe-sider.js`) måler nu hver knap med et navn på telefonen: fylder den under 60 % af skærmens bredde, er det en fejl. Chips, ikon-knapper uden tekst, bundnavet, fanerne, fliser der er trykfelter og sendefeltets cirkler er ikke knapper i den forstand og står på undtagelseslisten i proben. Undtagelserne er navngivne: **`.kal-fpill`** (Arkivets filterpiller er chips) og **`.lek-top`** (lektionssidens titelbjælke, hvor Tilbage er bjælkens egen vej ud). Strategibyggeren er en anden fil og måles for sig.
 
+**Etiketten hører til det, den indleder (14/9).** En sektions-etiket (»Seneste 7 dage«, »Målsætninger«, »Kommende indhold«) står tættere på indholdet UNDER sig end på det, der står over: 24 px op, 8 px ned. Det gælder også, når den står lige under heroen. Sidens identitets-etiket (`.bs-eye` lige under heroen, fx »ENERGIDA« under »Dine rum«) er det modsatte: den hører til heroen og står tæt på den. Står en etiket lige langt fra begge, svæver den, og øjet kan ikke se, hvad den hører til. Målingen tjekker det på geometrien, ikke på søskende i markuppen.
+
 **Trykfelter er mindst 44 px høje (2/8).** Også chips, runde dagknapper og rækker, man kan trykke på.
 
 **Bunden af hver side skal kunne nås (14/9).** Bundnavet er fast og 68 px højt PLUS telefonens hjemme-indikator, som er cirka 34 px på en iPhone. Bundpolstringen skal regne indikatoren med (`calc(… + env(safe-area-inset-bottom))`), ellers ligger den nederste knap bag navet. En flad pixelværdi er en fejl, også når den ser rigtig ud i selen, hvor indikatoren er 0.

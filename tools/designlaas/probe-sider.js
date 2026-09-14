@@ -106,6 +106,44 @@ setTimeout(async function () {
         return (b.textContent || "").replace(/\s+/g, " ").trim().slice(0, 22) + "(" + Math.round(q.width) + "x" + Math.round(q.height) + " " + (b.className.toString().split(" ")[0] || b.tagName) + ")";
       });
       if (lange.length) { console.log("SELE SIDER FEJL " + navn + " smaa knapper (" + lange.length + "): " + lange.slice(0, 6).join(", ")); fejl++; }
+      /* ===== ETIKETTEN HOERER TIL DET, DEN INDLEDER (Ida 14/9 kl. 09.40) =====
+         »Datoen her staar stadig for taet paa hero og for langt fra fliserne.« Det er naerhedsreglen,
+         og den kan maales: en sektions-etiket skal staa TAETTERE paa indholdet UNDER sig end paa det,
+         der staar over. Sidens identitets-etiket lige under heroen er det modsatte: den hoerer til
+         heroen. Staar en etiket lige langt fra begge (under 5 px forskel), svaever den, og saa ved
+         oejet ikke, hvad den hoerer til.
+         MAALT PAA GEOMETRIEN, IKKE PAA SOESKENDE (14/9): foerste udgave sammenlignede etikettens
+         previousElementSibling og nextElementSibling — og paa Performance er etiketten FOERSTE barn i
+         sin beholder, mens heroen staar uden for den. Reglen sprang derfor netop det, Ida pegede paa,
+         over. Nu findes naermeste kant over og under paa fladen, som oejet ser den. */
+      var SEKETIK = ".cf-sek,.pb-eye,.pb-sek,.bs-sek,.bsm-sek,.mr-sekhoved,.hf-sek,.bs-eye";
+      var blokke = [].filter.call(r.querySelectorAll("div,section,ul,ol,table,button,h1,h2,h3,p,img"), function (e) {
+        var q = e.getBoundingClientRect(); return q.height > 8 && q.width > 60 && getComputedStyle(e).visibility !== "hidden";
+      });
+      var svaever = [];
+      [].forEach.call(r.querySelectorAll(SEKETIK), function (el) {
+        var lr = el.getBoundingClientRect(); if (!(lr.height > 0 && lr.width > 40)) return;
+        var over = null, under = null, overEl = null, underEl = null;
+        blokke.forEach(function (e) {
+          if (e === el || e.contains(el) || el.contains(e)) return;
+          var q = e.getBoundingClientRect();
+          if (q.bottom <= lr.top + 1 && (over === null || q.bottom > over)) { over = q.bottom; overEl = e; }
+          if (q.top >= lr.bottom - 1 && (under === null || q.top < under)) { under = q.top; underEl = e; }
+        });
+        if (over === null || under === null) return;
+        var gOver = Math.round(lr.top - over), gUnder = Math.round(under - lr.bottom);
+        if (gOver < 0 || gUnder < 0 || gOver > 120 || gUnder > 120) return;   /* langt fra hinanden: ikke een rytme */
+        /* HVAD etiketten ER afgoer, hvad den hoerer til — ikke hvad der tilfaeldigvis staar over den.
+           Kun sidens IDENTITETS-etiket (.bs-eye lige under heroen, fx »ENERGIDA« under »Dine rum«)
+           hoerer til heroen. En sektions-etiket hoerer til sit indhold, OGSAA naar den staar lige
+           under heroen — det var praecis Idas fund paa Performance: »Seneste 7 dage« klistrede til
+           overskriften og svaevede 32 px over ringene, den beskriver. */
+        var erIdentitet = el.classList.contains("bs-eye") && !el.classList.contains("pb-eye") && !el.classList.contains("pb-sek")
+          && overEl.classList && (overEl.classList.contains("bs-hero") || overEl.classList.contains("ch-titel"));
+        var ok = erIdentitet ? (gOver + 4 < gUnder) : (gUnder + 4 < gOver);
+        if (!ok) svaever.push((el.className.toString().split(" ")[0] || "etiket") + ' "' + (el.textContent || "").trim().slice(0, 16) + '" over=' + gOver + " under=" + gUnder);
+      });
+      if (svaever.length) { console.log("SELE SIDER FEJL " + navn + " etiket svaever (" + svaever.length + "): " + svaever.slice(0, 5).join(", ")); fejl++; }
       var kryds = [].filter.call(r.querySelectorAll(".modal-close"), function (k) { return getComputedStyle(k).display !== "none" && k.getBoundingClientRect().height > 0; });
       if (kryds.length) { console.log("SELE SIDER FEJL " + navn + " synligt kryds paa siden"); fejl++; }
       var emoji = txt.match(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{2B50}\u{2728}]/gu);
