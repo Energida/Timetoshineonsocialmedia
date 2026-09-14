@@ -390,11 +390,19 @@ Også målt: Idas egne koder får alt, en kunde med egen liste beholder sin list
 - Målt i selen på 390: to røde fliser med `data-fokus=[0,1]`, kort tryk åbner stadig punktets egen handling, langt tryk giver popup'en med `spm="1 · Find din baseline-interaktionsrate"`, knapperne 318x48 af et kort på 358 (88 %) med Done øverst (y 628) over Udsæt (y 684) og Luk 358x44, intet synligt kryds, klikket efter det lange tryk åbner intet, Done sætter `done` og skjuler punktet, Udsæt sætter `2026-09-15` og skjuler punktet, og et swipe under trykket åbner ikke popup'en.
 - **Døren er lagt i proben** (`hjemIdagValg`), som designlåsens procedure kræver: `SELE LAAS OK: 18 doere og bundnavet holder designlaasen`. Låsen »Et langt tryk er en genvej, aldrig den eneste vej« er skrevet ind i `DESIGNLÅS.md`.
 
+## 6e. To tråde gav samme versionsnummer (14/9, målt ved push)
+
+Tråden på Idas computer pushede sin egen **v1891** til `dashboard-og-database`, mens skytråden også havde bygget v1891. Pushet blev afvist (non fast-forward), og det var det, der skulle ske. Fletningen gav INGEN konflikt, fordi begge sider havde skrevet præcis samme tal (1890 → 1891) i `APP_VERSION`, foden og `version.txt` — identiske ændringer flettes lydløst. Resultatet var altså ét bygge med to forskellige indhold under samme nummer, og det er præcis den slags, versionsvagten ikke kan se.
+
+Rettet ved at flette computerens arbejde ind og **omnummerere skytrådens til v1892**. Ingen force, ingen omskrevet historie.
+
+**Læren, som gælder alle tråde:** versionsnummeret er ikke en fri variabel. Hent `dashboard-og-database`, FØR nummeret sættes, og læs `version.txt` derfra. To tråde, der arbejder samtidig, skal aldrig kunne nå frem til samme tal, for porten og telefonens versionsvagt sammenligner netop det tal.
+
 ## 6c. Slutstatus for skytråden (14/9, aften)
 
 Ida fortsætter i tråden på sin egen computer. Denne tråd stopper her.
 
-- **Sidst pushet:** v1891 til `claude/second-thread-not-responding-2yngb0` og `dashboard-og-database`. v1888 og v1889 nåede `produktion` gennem porten efter 60 sekunder hver; v1890 gjorde det samme; v1891 forventes samme vej.
+- **Sidst pushet:** v1892 til `claude/second-thread-not-responding-2yngb0` og `dashboard-og-database`. v1888 og v1889 nåede `produktion` gennem porten efter 60 sekunder hver; v1890 gjorde det samme; v1891 forventes samme vej.
 - **Idas klik og beskeder i dag, der IKKE er lukket:** (1) den ægte gennemgang med en rigtig kode kræver stadig, at netværkspolitikken åbnes for b2b.energida.dk, admin.energida.dk, Supabase-værten og funktions-værten, `cdn.jsdelivr.net`, `fonts.googleapis.com`, `fonts.gstatic.com`, og at hun selv skriver et login. (2) SQL-kortet til `dashboard_hilsner()` er ikke kørt, og `cs_velkomst` står tom i basen, så hendes egne velkomsthilsner er ikke fundet endnu. (3) Modul 5 og 6 siger stadig »I« og »jer« i basen. (4) Der findes ingen notifikationer (planlægningsdag, »Er det postet?«, svar på app-ønsker). (5) Designlåsens måling dækker popups og bundnavet i kundeappen, ikke hele sider og ikke Backstage. (6) `CLAUDE.md` erklærer stadig deploylåsen fra 7. august aktiv, selv om der deployes dagligt; kun hun kan beslutte, at teksten skal skrives om.
 - **Det, der var i gang, da tråden stoppede:** intet halvt. Alt målt arbejde er committet og pushet.
 
