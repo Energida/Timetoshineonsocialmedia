@@ -783,6 +783,15 @@ Gren `nat-15-9` (lokal, to commits oven på v1933). Greb 5 (de fem lister efter 
 - **Døde funktioner i det nye design (sweep, statisk):** kun to, begge i Energida Studio bag ⋯ → Listen: »Redigér felter« (antal ord · råfil-link · link til færdig video) og »Se lektionen som kunden« (`klipSeLektion`). Venter på Idas klik (anbefalet: begge i briefens ⋯-menu).
 - **Inspiration-buddene (artifact 4e829b8c v3):** Idas otte kommentarer → uden søjle ved indsættelse · »Hvad fangede dig?« · kun kilde/tid på fliser · rigtigt preview (energida.dk og:image) · Del fra Instagram: Android direkte, iPhone via Genvej · Ønskesky-grebet skrives ind som hård regel (skill + hukommelse) · den røde skygge under plusset er appens egen — åbent.
 
+## 5bj. Natteloopet 14/9 kl. 22.30–23.20 (Idas klik: »Fejl + bud, hele vejen rundt«) — gren `nat-15-9b`, intet deployet
+
+- **Ny probe:** `tools/designlaas/probe-backstage.js` måler 14 Backstage-sider (hjem · kunder · salg · pipeline · contentstudio · energidastudio · workout · food · mindful · minerum · teknik · søg · todo · indbakken) mod låsene + admin-reglerne (hero 52, 32 px under heroen, ingen billeder, ingen fast bjælke på telefonen). Køres fra browserpanen som de andre (`vis=dash&side=overblik`). Lærestreger: toasts med opacity 0 er ikke bjælker; en side med kun et søgefelt har ingen innerText; appLoader skal FJERNES før måling (selen har ingen møbler). Sideproben måler nu også computeren (lange knapper og 44 px er telefonens lov; computeren: < 28 px og ikke et rent ord).
+- **Rettet:** ⋯-knappen i Energida Studio var 42 px at ramme (`inset:-4` regnes inden for borderen → -5) og lå under `.klip-hoved` (z 1) → `#klipHeadTgl z-index:3`. To-do-heroen (»Get shit done«) havde 18 px under sig → `--luft-4`. Køn/I-jer ude af to app-tekster.
+- **Fund til klik:** Workout Studio + Food Studio i Backstage på 1440: rækker med streger i én kasse (gammelt design; telefonen får fliser af `bsFliserAfRaekker`).
+- **Fem bud (Artifacts):** Kontaktkortet som ark (a15d5664) · Værktøjskassen (1447cd55) · Målsætninger (3286f351) · Hjem på computeren (f6522cdb) · Salg › Økonomi (36851900). Mockup-rammen rettet i alle (arket lå i flowet — `position:absolute` for `.ark`/`.bund`/`.nav` inde i telefonrammen); Sortér og Inspiration udgivet igen.
+- **Slutmåling:** LAAS OK 19 · SIDER OK 15 (390 og 1440) · BACKSTAGE OK 14 (390) · BACKSTAGE 1440: 2 (workout/food, se ovenfor). `knaptjek.py`: 0 døde klik.
+- **Morgenlisten:** `MORGEN 15. september - det der venter paa dit klik.md` — 12 klik i rækkefølge.
+
 ## 6. Bridge-trådene 12/9
 
 Trådene på Idas maskine (»Skærm, der ikke må vises« m.fl.) døde kl. 16:25 dansk tid, fem minutter efter v1856 blev pushet, fordi computeren blev lukket. Intet i repoet er halvt; højst få minutters ucommitteret arbejde kan være tabt. De vågner først, når Claude Code startes på den maskine igen.
