@@ -1251,6 +1251,9 @@ select.cal-periode:not([multiple]):not([size]) {
 #arkPlus:empty { display:none; }
 .ark-plus { flex-shrink:0; }
 .ark-plus.paa { color:var(--red); border-color:var(--red); }
+/* Refleksionens tre trin: prikker og en linje, saa swipet kan SES (14/9). */
+.refl-prikker { justify-content:center; margin:14px 0 0; }
+.refl-hint { font-size:11px; letter-spacing:.04em; color:var(--gray3); text-align:center; margin:8px 0 0; }
 .ark-mik.tale-lytter { color:var(--red); border-color:var(--red); animation:talePuls 1.4s ease-out infinite; }
 .ark-send { width:40px; height:40px; border-radius:50%; background:var(--red); color:#fff; border:none; display:inline-flex; align-items:center; justify-content:center; cursor:pointer; padding:0; flex-shrink:0; transition:transform 160ms cubic-bezier(0.23,1,0.32,1); }
 .ark-send:active { transform:scale(.95); }
@@ -40587,23 +40590,101 @@ async function opslagPostetJa(id) {
      opslaget (brief.refleksion) og laeses i Backstage paa kundens side. */
   try { opslagRefleksionVis(id); } catch (e) {}
 }
+let REFL_TRIN = 0, REFL_UDKAST = null;
+/* ===== REFLEKSIONEN: TRE SPOERGSMAAL, MAN SWIPER IMELLEM (Ida 14/9 kl. 09.55) =====
+   Hendes ord: »Dette med Ida skal jo heller ikke komme op paa you got this kunder…? Men kun komme op
+   paa i got you. Men til alle content studio kunder og you got this skal det hedde »reflektion« eller
+   saadan noget, og hero paa pop up skal vaere: hvad gik godt? Og i stedet for chips skal man swipe for
+   at komme til hvad var svaert? Og saa den sidste: hvad laerte du af dette opslag?«
+
+   PRODUKTET BESTEMMER TEKSTEN (laasen 14/9), og pakkerne staar i koden, ikke i et gaet:
+   igotyou = I GOT YOU (forloebet, hvor Ida faktisk laeser det) -> »Ida laeser det og bruger det til
+   naeste planlaegning«. ttsosm/detaildrift = YOU GOT THIS, contentstudio = CONTENT STUDIO,
+   ldit = WE GOT THIS -> ingen Ida-linje; det er kundens EGEN refleksion, og saa hedder det det.
+   En saetning, der lover, at Ida laeser noget, hun ikke laeser, er praecis den slags loefte appen
+   aldrig maa give (stil-laasen).
+
+   HEROEN ER SPOERGSMAALET, og man swiper mellem de tre. Prikkerne siger, hvor man er. Chipsene er
+   vaek HER — arket har stadig chips alle de andre steder, og formen er ellers uaendret: greb, Didot,
+   streg, felt med mikrofon og send, lang Luk.
+   INGENTING MAA GAA TABT: swiper man med noget uskrevet i feltet, gemmes det FOERST. */
+function refleksionTrinTegn(trin, id, it) {
+  const t = trin[REFL_TRIN]; if (!t) return;
+  const h = document.querySelector("#arkSlor .ark-t"); if (h) h.textContent = t.n;
+  const f = document.getElementById("arkTekst");
+  const r = ((it.brief && it.brief.refleksion) || {});
+  if (f) { f.placeholder = t.ph; f.value = (REFL_UDKAST && REFL_UDKAST[t.k] != null) ? REFL_UDKAST[t.k] : (r[t.k] || ""); try { arkVoks(f); } catch (e) {} }
+  const pr = document.getElementById("arkEkstra");
+  if (pr) pr.innerHTML = '<div class="cf-prikker refl-prikker">' + trin.map(function (_, n) { return '<span' + (n === REFL_TRIN ? ' class="on"' : '') + '></span>'; }).join("")
+    + '</div><div class="refl-hint">Swipe til siden for de næste spørgsmål</div>';
+}
 function opslagRefleksionVis(id) {
   const it = (IDEER || []).find(function (x) { return String(x.id) === String(id); }); if (!it) return;
-  /* ARKET (Ida 13/9): to chips, eet felt. Gem skriver det valgte svar paa opslaget, og man bliver
-     staaende og kan skifte chip. Det andet svar roeres ikke. Luk = faerdig (ingen Spring over noedvendig). */
   if (typeof arkAabn === "function") {
+    const trin = [
+      { k: "godt",   n: "Hvad gik godt?",                ph: "Fx: folk skrev, at de ville komme forbi" },
+      { k: "svaert", n: "Hvad var svært?",               ph: "Fx: at få lyset til at passe" },
+      { k: "laert",  n: "Hvad lærte du af dette opslag?", ph: "Fx: korte klip virker bedre end lange" }
+    ];
+    let pakke = ""; try { pakke = String((CURRENT_DEF && CURRENT_DEF.pakke) || ""); } catch (e) {}
+    const idaLaeser = pakke === "igotyou";
+    const navn = storStart(titelVis(it.titel || "Opslaget"));
+    REFL_TRIN = 0; REFL_UDKAST = {};
     const r = function () { return ((it.brief && it.brief.refleksion) || {}); };
-    const chips = [{ k: "godt", n: "Hvad gik godt?", ph: "Fx: folk skrev, at de ville komme forbi" }, { k: "svaert", n: "Hvad var svært?", ph: "Fx: at få lyset til at passe" }];
-    arkAabn({ eye: "Postet · " + storStart(titelVis(it.titel || "Opslaget")), titel: "Hvordan gik det?", ph: chips[0].ph, send: "Gem", chips: chips, valgt: "godt", tekst: r().godt || "",
-      underAf: function (k) { const t = document.getElementById("arkTekst"); const c = chips.find(function (x) { return x.k === k; }); if (t) { t.placeholder = c ? c.ph : ""; t.value = r()[k] || ""; try { arkVoks(t); } catch (e) {} } return "To linjer er nok. Ida læser det og bruger det til næste planlægning."; },
-      gem: async function (tekst, k) {
-        const v = String(tekst || "").trim().slice(0, 1000);
-        const ny = Object.assign({ godt: "", svaert: "" }, r()); ny[k] = v; ny.dato = datoDK();
-        let ok = false; try { ok = await ideUpdate(id, { brief: Object.assign({}, it.brief || {}, { refleksion: ny }) }); } catch (e) { ok = false; }
-        if (ok === false) return false;
-        try { it.brief = Object.assign({}, it.brief || {}, { refleksion: ny }); } catch (e) {}
-        return "Gemt.";
-      } });
+    const gemTrin = async function (tekst, k) {
+      const v = String(tekst || "").trim().slice(0, 1000);
+      const ny = Object.assign({ godt: "", svaert: "", laert: "" }, r()); ny[k] = v; ny.dato = datoDK();
+      let ok = false; try { ok = await ideUpdate(id, { brief: Object.assign({}, it.brief || {}, { refleksion: ny }) }); } catch (e) { ok = false; }
+      if (ok === false) return false;
+      try { it.brief = Object.assign({}, it.brief || {}, { refleksion: ny }); } catch (e) {}
+      if (REFL_UDKAST) delete REFL_UDKAST[k];
+      return true;
+    };
+    arkAabn({
+      eye: (idaLaeser ? "Postet" : "Refleksion") + " · " + navn,
+      titel: trin[0].n,
+      ph: trin[0].ph,
+      send: "Gem",
+      tekst: r().godt || "",
+      under: idaLaeser
+        ? "To linjer er nok. Ida læser det og bruger det til næste planlægning."
+        : "To linjer er nok. Din refleksion bliver liggende på opslaget.",
+      ekstraAf: function () { return ""; },
+      gem: async function (tekst) {
+        const k = (trin[REFL_TRIN] || trin[0]).k;
+        const ok = await gemTrin(tekst, k);
+        return ok === false ? false : "Gemt.";
+      },
+      efterLuk: function () { REFL_TRIN = 0; REFL_UDKAST = null; }
+    });
+    refleksionTrinTegn(trin, id, it);
+    /* Swipet: kun vandret, og kun naar fingeren IKKE begynder i feltet (det skal kunne markere tekst). */
+    try {
+      const slor = document.getElementById("arkSlor"); const kort = slor && slor.querySelector(".ark");
+      if (kort) {
+        let x0 = 0, y0 = 0, klar = false;
+        kort.addEventListener("touchstart", function (e) {
+          const t = e.touches && e.touches[0]; if (!t) return;
+          klar = true; x0 = t.clientX; y0 = t.clientY;
+        }, { passive: true });
+        kort.addEventListener("touchend", function (e) {
+          if (!klar) return; klar = false;
+          const t = e.changedTouches && e.changedTouches[0]; if (!t) return;
+          const dx = t.clientX - x0, dy = t.clientY - y0;
+          if (Math.abs(dx) < 55 || Math.abs(dx) < Math.abs(dy) * 1.4) return;
+          const f = document.getElementById("arkTekst");
+          const skrevet = f ? String(f.value || "") : "";
+          const k = (trin[REFL_TRIN] || trin[0]).k;
+          if (skrevet.trim() && skrevet.trim() !== String(r()[k] || "").trim()) { gemTrin(skrevet, k); }
+          else if (REFL_UDKAST) { REFL_UDKAST[k] = skrevet; }
+          const ny = REFL_TRIN + (dx < 0 ? 1 : -1);
+          if (ny < 0 || ny > trin.length - 1) return;
+          REFL_TRIN = ny;
+          refleksionTrinTegn(trin, id, it);
+          const kv = document.getElementById("arkKvit"); if (kv) kv.textContent = "";
+        }, { passive: true });
+      }
+    } catch (e) {}
     return;
   }
   const body = document.getElementById("ideBody"), bak = document.getElementById("ideBack"); if (!body || !bak) return;
@@ -42140,7 +42221,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "1905";
+const APP_VERSION = "1906";
 let NY_VERSION_KLAR = false;
 let NY_VERSION_AFVIST = false;
 function nyVersionSkjul() {
@@ -53098,18 +53179,22 @@ function arkPlusSkift() {
    efterLuk skal koere, som naar man trykker Luk, saa lukningen gaar gennem arkLuk() til sidst. */
 function arkGrebTraek(slor) {
   const kort = slor.querySelector(".ark"); if (!kort) return;
-  let y0 = 0, dy = 0, traek = false;
+  let y0 = 0, x0 = 0, dy = 0, traek = false;
   const start = function (e) {
     const t = e.touches ? e.touches[0] : e; if (!t) return;
     try { if (e.target && e.target.closest && e.target.closest("textarea, input, select, .ark-chips, .mr-prog-liste, button")) return; } catch (x) {}
     if (kort.scrollTop > 2) return;
-    y0 = t.clientY; dy = 0; traek = true;
+    y0 = t.clientY; x0 = t.clientX; dy = 0; traek = true;
     kort.style.transition = "none";
   };
   const flyt = function (e) {
     if (!traek) return;
     const t = e.touches ? e.touches[0] : e; if (!t) return;
     dy = t.clientY - y0;
+    /* VANDRET SWIPE ER IKKE ET TRAEK (14/9): refleksionen swipes til siden mellem tre spoergsmaal,
+       og arket maa ikke begynde at glide ned, mens fingeren gaar sidelaens. */
+    const dx = Math.abs(t.clientX - x0);
+    if (dx > Math.abs(dy)) { kort.style.transform = ""; slor.style.background = ""; return; }
     if (dy <= 0) { dy = 0; kort.style.transform = ""; return; }
     if (e.cancelable) e.preventDefault();
     kort.style.transform = "translateY(" + Math.round(dy) + "px)";
@@ -59733,6 +59818,6 @@ function prFaerdigHtml() {
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 14. september · 1905</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 14. september · 1906</div>
 </body>
 </html>
