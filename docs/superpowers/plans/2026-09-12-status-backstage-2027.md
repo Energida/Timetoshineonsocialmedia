@@ -682,6 +682,10 @@ Ida valgte UX-politiet frem for en ny tegning (kl. 16.30), derefter Pipeline som
 
 **Ikke målt med Idas data:** browserpanelet mistede login, da det blev lukket, så Følg op i dag, ringene og de 90 kontakter er ikke set live. Måles, når Ida logger ind i panelet igen.
 
+## 5av. v1923: dagens kort (telefonens) stod på computerens dashboard i b2b (Ida 14/9 kl. 18.05: »mobil tøm hovedet er også på dashboardet med swipefunktionen!!!! FIX DETTE«)
+
+**Målt i browserpanelet, logget ind som en Content Studio-kunde:** kortet (foto, »Godaften«, »SWIPE OP FOR EN NY IDÉ«, Content Studio-knappen) er `position:fixed` og dækkede hele fladen på 1440. `dagensKortKunde` har en 760 px-spærre, når kortet TEGNES, men blev vinduet bredere bagefter (panelet: tegnet ved 679 px), stod kortet der stadig. **Rettet:** `@media (min-width:761px) { #dagensKort { display:none !important } }`: på computeren findes kortet ikke, uanset hvornår det blev tegnet. Telefonen er urørt.
+
 ## 6. Bridge-trådene 12/9
 
 Trådene på Idas maskine (»Skærm, der ikke må vises« m.fl.) døde kl. 16:25 dansk tid, fem minutter efter v1856 blev pushet, fordi computeren blev lukket. Intet i repoet er halvt; højst få minutters ucommitteret arbejde kan være tabt. De vågner først, når Claude Code startes på den maskine igen.
