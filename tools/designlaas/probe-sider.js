@@ -66,6 +66,7 @@ setTimeout(async function () {
       var kn = [].filter.call(r.querySelectorAll("button, a[onclick], [role=button], .row-btn, label.ark-knap"), function (b) { var q = b.getBoundingClientRect(); return q.height > 0 && q.width > 0; });
       kn.forEach(function (b) {
         var q = b.getBoundingClientRect(); if (q.height >= 44) return;
+        if (innerWidth > 760 && q.height >= 34) return;   /* computeren: 34 px er husets vaerktoejsmaal (25/8); 44 er telefonens */
         /* elementFromPoint ser kun det, der er inde i vinduet: rul knappen ind i midten foerst */
         if (q.top < 30 || q.bottom > innerHeight - 30) { try { b.scrollIntoView({ block: "center" }); } catch (e) {} q = b.getBoundingClientRect(); }
         var cx = q.left + q.width / 2, cy = q.top + q.height / 2;
@@ -105,7 +106,7 @@ setTimeout(async function () {
         var q = b.getBoundingClientRect();
         return (b.textContent || "").replace(/\s+/g, " ").trim().slice(0, 22) + "(" + Math.round(q.width) + "x" + Math.round(q.height) + " " + (b.className.toString().split(" ")[0] || b.tagName) + ")";
       });
-      if (lange.length) { console.log("SELE SIDER FEJL " + navn + " smaa knapper (" + lange.length + "): " + lange.slice(0, 6).join(", ")); fejl++; }
+      if (lange.length && innerWidth <= 760) { console.log("SELE SIDER FEJL " + navn + " smaa knapper (" + lange.length + "): " + lange.slice(0, 6).join(", ")); fejl++; }   /* lange knapper er telefonens lov; computeren maa have ord til hoejre (laasen 13/9) */
       /* ===== ETIKETTEN HOERER TIL DET, DEN INDLEDER (Ida 14/9 kl. 09.40) =====
          »Datoen her staar stadig for taet paa hero og for langt fra fliserne.« Det er naerhedsreglen,
          og den kan maales: en sektions-etiket skal staa TAETTERE paa indholdet UNDER sig end paa det,
