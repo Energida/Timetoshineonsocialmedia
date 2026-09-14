@@ -41545,7 +41545,7 @@ function bsTodoRet(id) {
   const chips = [{ k: "", n: "Ingen dato" }, { k: iso(d0), n: "I dag" }, { k: iso(d1), n: "I morgen" }, { k: iso(d7), n: "Om en uge" }];
   const valgt = x.dato ? String(x.dato).slice(0, 10) : "";
   if (valgt && !chips.some(function (c) { return c.k === valgt; })) chips.push({ k: valgt, n: dkDatoKort(valgt) });
-  arkAabn({ eye: "To-do", titel: storStart(String(x.t || "To-do")), ph: "Hvad skal du?", tekst: x.t || "", chips: chips, valgt: valgt, send: "Gem",
+  arkAabn({ titel: "To-do", ph: "Hvad skal du?", tekst: x.t || "", chips: chips, valgt: valgt, send: "Gem",
     gem: function (tekst, k) {
       const t = String(tekst || "").trim(); if (!t) return false;
       x.t = t; x.dato = k || null;
@@ -42627,7 +42627,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "1916";
+const APP_VERSION = "1917";
 let NY_VERSION_KLAR = false;
 let NY_VERSION_AFVIST = false;
 function nyVersionSkjul() {
@@ -52498,8 +52498,16 @@ async function rodebutikHent() {
 function rodebutikGem() { vaneGemRow("rodebutikken", RODEBUTIK); }
 function rodebutikSlet(id) { RODEBUTIK = RODEBUTIK.filter(x => x.id !== id); rodebutikGem(); tomOversigt(); }
 async function haengHent() {
-  const svar = (await vaneRow("haengepartier")) || vaneLocal("haengepartier", []);
-  HAENG = Array.isArray(svar) ? svar : [];
+  const fraBase = await vaneRow("haengepartier");
+  const lokal = vaneLocal("haengepartier", []);
+  HAENG = Array.isArray(fraBase) ? fraBase.slice() : (Array.isArray(lokal) ? lokal : []);
+  /* TO-DOS, DER KUN LAA I BROWSEREN, FOELGER MED I BASEN (MAALT 14/9: 10 i Idas Chrome, 1 i basen, fordi vaneRow fejlede paa tre
+     raekker). En to-do, browseren har, og basen ikke har, laegges til EEN gang og gemmes. Gem maa ikke slette (4/8): intet fjernes. */
+  if (Array.isArray(fraBase) && Array.isArray(lokal) && lokal.length) {
+    const har = {}; HAENG.forEach(function (x) { har[String(x && x.id)] = 1; });
+    const nye = lokal.filter(function (x) { return x && x.id && !har[String(x.id)]; });
+    if (nye.length) { HAENG = HAENG.concat(nye); try { await vaneGemRow("haengepartier", HAENG); } catch (e) {} }
+  }
   renderHaeng();
 }
 function haengGemAlle() { vaneGemRow("haengepartier", HAENG); renderHaeng(); }
@@ -58770,8 +58778,11 @@ function renderVelkomstPanel() {
 async function vaneRow(skema) {
   if (!sb) return null;
   try {
-    const { data } = await sb.from("skema_svar").select("svar").eq("kode", "ENERGIDA").eq("navn", "Ida").eq("skema", skema).maybeSingle();
-    return data ? data.svar : null;
+    /* MAALT 14/9 kl. 16.05: haengepartier har TRE raekker (13/7 + to fra 10/9) for ENERGIDA/Ida. maybeSingle() fejler paa flere
+       raekker og svarede null, saa Idas to-dos kom fra browserens localStorage — 10 i Chrome, 1 i basen, og ingen af de ni naaede
+       basen. Nu laeses den foerste raekke; vaneGemRow opdaterer alle raekker med samme noegle, saa de holder samme indhold. */
+    const { data } = await sb.from("skema_svar").select("svar").eq("kode", "ENERGIDA").eq("navn", "Ida").eq("skema", skema).limit(1);
+    return (data && data.length) ? data[0].svar : null;
   } catch(e) { return null; }
 }
 /* KVITTERING (Ida 3/8). Basen AFVISER skrivninger, den ikke tillader — og den kaster ikke:
@@ -60242,6 +60253,6 @@ function prFaerdigHtml() {
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 14. september · 1916</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 14. september · 1917</div>
 </body>
 </html>

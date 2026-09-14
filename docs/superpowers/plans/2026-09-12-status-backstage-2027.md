@@ -622,6 +622,14 @@ Idas ord: »hvad sker der seriøst her for layoutet på mit hjem på desktop???�
 
 **Målt:** `koer.sh` 19 døre + 15 sider OK. Hjem måles live efter deploy.
 
+## 5ap. v1917: Idas to-dos lå kun i hendes Chrome (fundet 14/9 kl. 16.05 under målingen af v1916)
+
+**Målt i basen:** `skema_svar` har TRE rækker ENERGIDA/Ida/haengepartier (13/7 og to fra 10/9), alle med den samme ene to-do. `vaneRow` brugte `maybeSingle()`, som fejler ved flere rækker, så alle Idas Vane-lister med dubletter faldt tilbage til browserens localStorage. Derfor: 10 to-dos i Idas Chrome, 1 i basen, 1 i browserpanelet. Ingen af de ni var nogensinde nået basen (så en anden enhed viser dem ikke).
+
+**Rettelsen:** `vaneRow` læser første række (`limit(1)`); `vaneGemRow` opdaterer i forvejen alle rækker med samme nøgle, så de holder samme indhold (ingen række slettes). `haengHent` lægger to-dos, som browseren har og basen ikke har, til ÉN gang og gemmer (Gem må ikke slette: intet fjernes). Når Ida åbner appen i sin Chrome, følger de ni med i basen. Arket til en to-do hedder »To-do« (titlen var to-do'ens egen tekst i Didot over tre linjer).
+
+**Ikke gjort:** de to dubletrækker er ikke slettet (kræver Idas ja; et SQL-kort kan gøre det, når listen er i basen).
+
 ## 6. Bridge-trådene 12/9
 
 Trådene på Idas maskine (»Skærm, der ikke må vises« m.fl.) døde kl. 16:25 dansk tid, fem minutter efter v1856 blev pushet, fordi computeren blev lukket. Intet i repoet er halvt; højst få minutters ucommitteret arbejde kan være tabt. De vågner først, når Claude Code startes på den maskine igen.
