@@ -62,6 +62,8 @@ Filen er kort med vilje. Hver regel kan måles. Målingen står i `tools/designl
 
 **Søjlen vælges, når idéen skrives (14/9 kl. 20.00, Idas klik).** I kundens ark (Tøm hovedet, »+ Ny idé«, Idébankens sendefelt) står de fire indholdssøjler som en anden chip-række under den første, når chippen er Content-idé. Gem uden søjle giver »Vælg en søjle først.« Står man i en søjle i Idébanken, er den valgt på forhånd. Ingen ny flade; »Andet« skal ikke længere vokse.
 
+**Popuppen fylder ikke hele bredden på telefonen (14/9 kl. 21.50, Idas klik: »Popuppen selv«).** Arket (`.ark`, alle popups i appen: Tøm hovedet, ny idé, søjle, målsætning, ⋯-menuer) står med 12 px luft til begge sider og 12 px til bunden og har runde hjørner (28 px) hele vejen rundt; det går ikke længere fra kant til kant. Målt i selen v1928 på 390: 12 · 366 · 12. På computeren er arket uændret (centreret, 520 px). Hjulet til antal opslag (planlægningsdagen, ikke bygget endnu) er smalt, midt i arket, med tal i Poppins, aldrig Didot (Idas kommentar kl. 21.23).
+
 ## Det, der IKKE er låst
 
 Alt, der ikke står her, er ikke låst. Det betyder ikke frit valg: det betyder mockup først og Idas klik, før der bygges.
