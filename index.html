@@ -4638,6 +4638,7 @@ html body.brief-etspm #briefWrap textarea.sendfelt-felt, html body.brief-etspm #
 .bs-hjem-c .bs-idag + .bs-kf { margin-top:var(--luft-1); }
 .bs-hjem-c .bs-ringe { display:grid; grid-template-columns:repeat(3,1fr); gap:var(--luft-2); max-width:720px; }
 .bs-hjem-c .bs-ringe > div { display:flex; flex-direction:column; align-items:center; text-align:center; gap:8px; }
+.bs-hjem-c .bs-ringe .bs-stak { width:100%; }
 .bs-hjem-c .bs-ringe .u { font-size:10.5px; color:var(--gray3); max-width:170px; line-height:1.5; }
 .bs-sek:first-child { margin-top:0; }
 .bs-sendfelt + .bs-sek, .sendfelt + .bs-sek { margin-top:var(--luft-4); }
@@ -41611,7 +41612,7 @@ function dsbDoerKlik(id) {
    I dag (Venter paa dig m. to-do under · Kommende aftaler) · Dine (genveje · pinnede kunder) · Denne uge (tre ringe) ·
    Forretningen (Energida Studio · salget) · Dig (dit eget content, kode IDAENERGIDA — de SAMME raekker som hendes eget
    b2b-login skriver, ingen kopi). Alt fra motorer, der findes: venterHent/venterKortHtml, HAENG, CRM_AFTALER, KUNDE_PINS,
-   energidaRing. Denne uge og Forretningen kommer i naeste version; her staar de kun, naar der ER data. */
+   energidaRing, KLIP_OPGAVER/klipLinje, CUSTOMERS/Foelg op paa. */
 function bsNaesteAftaler(n) {
   const nu = new Date(); const idagStr = datoDK(nu); const klStr = String(nu.getHours()).padStart(2, "0") + ":" + String(nu.getMinutes()).padStart(2, "0");
   return (CRM_AFTALER || []).filter(function (a) { if (!a.dato) return false; if (a.dato < idagStr) return false; if (a.dato > idagStr) return true; return String(a.tid_slut || a.tid || "23:59").slice(0, 5) > klStr; })
@@ -41647,6 +41648,46 @@ async function bsHjemComputerTegn(el, d) {
     else eget += '<div class="bs-kf bs-tom">Ingen planlagte opslag i dit eget studio.</div>';
     if (window.__EGEN_PLAN_DATO) eget += '<div class="bs-kf" onclick="window.open(\'https://b2b.energida.dk\',\'_blank\')"><span class="bs-kf-tekst"><span class="bs-kf-n">Din planlægningsdag</span><span class="bs-kf-s2">' + esc(dkDatoKort(String(window.__EGEN_PLAN_DATO))) + '</span></span></div>';
   } catch (e) { eget = '<div class="bs-kf bs-tom">Ingen planlagte opslag i dit eget studio.</div>'; }
+  /* DENNE UGE (bud G, v1908): tre af husets ringe, regnet paa kundernes opslag (__ALLE_OPSLAG, alle koder undtagen egne).
+     Ugen er mandag til soendag (energidaUgeMandag). Ingen ring uden data: er der ingen aktive kunder, tegnes gruppen ikke. */
+  let ugeHtml = "";
+  try {
+    const alle = window.__ALLE_OPSLAG || []; const man = energidaUgeMandag(new Date()); const manS = datoDK(man); const soen = new Date(man); soen.setDate(man.getDate() + 6); const soenS = datoDK(soen);
+    const iUgen = alle.filter(function (x) { return x.dato && x.dato >= manS && x.dato <= soenS && x.status !== "Arkiveret"; });
+    const postet = iUgen.filter(function (x) { return x.status === "Postet"; }).length;
+    const godk = alle.filter(function (x) { return x.status === "Godkendt"; }).length; const venterG = alle.filter(function (x) { return x.status === "Klar til godkendelse"; }).length;
+    const aktive = Object.keys(VIRKSOMHEDSKODER).filter(function (k) { return erRigtigKunde(k) && VIRKSOMHEDSKODER[k].aktiv !== false; });
+    const aktiveUgen = new Set(iUgen.map(function (x) { return String(x.kode || "").toUpperCase(); })); const aktivN = aktive.filter(function (k) { return aktiveUgen.has(String(k).toUpperCase()); }).length;
+    if (aktive.length) ugeHtml = '<div class="bs-ringe">'
+      + '<div>' + energidaRing(postet + "/" + iUgen.length, "", iUgen.length ? postet / iUgen.length : 0) + '<div class="u">Postet af kunderne mod det, de har planlagt i ugen</div></div>'
+      + '<div>' + energidaRing(godk + "/" + (godk + venterG), "", (godk + venterG) ? godk / (godk + venterG) : 0) + '<div class="u">Briefs godkendt mod dem, der venter på dig</div></div>'
+      + '<div>' + energidaRing(aktivN + "/" + aktive.length, "", aktive.length ? aktivN / aktive.length : 0) + '<div class="u">Kunder med opslag i ugen</div></div>'
+      + '</div>';
+  } catch (e) { ugeHtml = ""; }
+  /* FORRETNINGEN (bud G, v1908): Energida Studio = hvor bolden ligger (video_opgaver, samme statusser som tavlen: klipLinje);
+     salget = Foelg op paa (kun kontakter med en opfoelgningsdato, Idas regel 21/7) — samme motor som CRM'ets kort. */
+  let forrHtml = "";
+  try {
+    try { if ((typeof KLIP_OPGAVER === "undefined" || !KLIP_OPGAVER.length) && typeof klipHent === "function") await klipHent(); } catch (e) {}
+    const op = (typeof KLIP_OPGAVER !== "undefined" ? KLIP_OPGAVER : []) || [];
+    const hosDig = op.filter(function (o) { return ["Manus ikke godkendt", "Klippet"].indexOf(klipStatusNorm(o.status)) > -1; });
+    const hosKlip = op.filter(function (o) { return ["Råfiler klar", "Rettelser"].indexOf(klipStatusNorm(o.status)) > -1; });
+    const venterOpt = op.filter(function (o) { return klipStatusNorm(o.status) === "Manus godkendt"; });
+    const raekke = function (n, linje, roed) { return '<div class="bs-kf" onclick="visDashSide(\'klip\')"><span class="bs-kf-tekst"><span class="bs-kf-n">' + n + '</span><span class="bs-kf-s2">' + (roed ? '<span style="color:var(--red)">' + roed + '</span> · ' : '') + linje + '</span></span></div>'; };
+    let studio = "";
+    if (hosDig.length) studio += raekke(hosDig.length === 1 ? "1 video venter på dig" : hosDig.length + " videoer venter på dig", hosDig.slice(0, 2).map(function (o) { return esc(o.titel || o.lektion || ""); }).filter(Boolean).join(" · ") || "manus eller godkendelse", "Hos dig");
+    if (hosKlip.length) studio += raekke(hosKlip.length === 1 ? "1 video hos klipperen" : hosKlip.length + " videoer hos klipperen", hosKlip.slice(0, 2).map(function (o) { return esc(o.titel || o.lektion || ""); }).filter(Boolean).join(" · ") || "råfiler eller rettelser", "");
+    if (venterOpt.length) studio += raekke(venterOpt.length === 1 ? "1 video venter på optagelse" : venterOpt.length + " videoer venter på optagelse", "manus godkendt", "");
+    if (!studio) studio = '<div class="bs-kf bs-tom">' + (op.length ? "Ingenting venter i studiet." : "Ingen videoer endnu.") + '</div>';
+    try { if ((typeof CUSTOMERS === "undefined" || !CUSTOMERS || !CUSTOMERS.length) && typeof fetchCustomers === "function") CUSTOMERS = await fetchCustomers(); } catch (e) {}
+    const idagE = new Date(); idagE.setHours(23, 59, 59, 999); const idag0 = new Date(); idag0.setHours(0, 0, 0, 0);
+    const opf = [];
+    (CUSTOMERS || []).forEach(function (c) { if (!c.naeste_aktivitet) return; const dd = new Date(c.naeste_aktivitet); if (isNaN(dd)) return; opf.push({ c: c, d: dd, nu: dd <= idagE, forbi: dd < idag0 }); });
+    opf.sort(function (a, b) { return (a.nu === b.nu ? 0 : (a.nu ? -1 : 1)) || (a.d - b.d); });
+    let salg = opf.slice(0, 3).map(function (it) { return '<div class="bs-kf" onclick="visDashSide(\'crm\');setTimeout(function(){try{openModal(\'' + esc(String(it.c.id)) + '\')}catch(e){}},200)"><span class="bs-kf-tekst"><span class="bs-kf-n">' + esc(it.c.kunde || "") + '</span><span class="bs-kf-s2">' + (it.nu ? '<span style="color:var(--red)">Følg op i dag</span>' + (it.forbi ? ' · datoen var ' + esc(fmtDate(it.c.naeste_aktivitet)) : '') : 'Opfølgning ' + esc(fmtDate(it.c.naeste_aktivitet))) + (it.c.status ? ' · ' + esc(it.c.status) : '') + '</span></span></div>'; }).join("");
+    if (!salg) salg = '<div class="bs-kf bs-tom">Ingen opfølgninger sat. Sæt en dato på en kontakt under Salg › Pipeline.</div>';
+    forrHtml = '<div class="bs-to"><div><div class="bs-sekl">Energida Studio</div><div class="bs-stak">' + studio + '</div></div><div><div class="bs-sekl">Salget</div><div class="bs-stak">' + salg + '</div></div></div>';
+  } catch (e) { forrHtml = ""; }
   const gruppe = function (navn, inner) { return '<div class="bs-gruppe"><div class="bs-gruppe-l">' + navn + '</div>' + inner + '</div>'; };
   el.innerHTML = '<div class="bs-hjem-c">'
     + '<div class="bs-eye bs-eye-over">' + esc(d.dato) + esc(d.ugeS) + '</div><div class="bs-hero bs-hero-streg">' + d.hilsen + '</div>'
@@ -41658,8 +41699,8 @@ async function bsHjemComputerTegn(el, d) {
       + '</div></div>')
     + gruppe("Dine", '<div class="bs-sekl">Genveje</div><div class="bs-genveje">' + genveje.map(function (g) { return '<button type="button" class="bs-genvej" onclick="' + g[1].replace(/"/g, "&quot;") + '">' + esc(g[0]) + '</button>'; }).join("") + '</div>'
         + '<div class="bs-sekl">Pinnede kunder</div>' + pinHtml)
-    + (window.__BS_UGE_HTML ? gruppe("Denne uge", window.__BS_UGE_HTML) : "")
-    + (window.__BS_FORRETNING_HTML ? gruppe("Forretningen", window.__BS_FORRETNING_HTML) : "")
+    + (ugeHtml ? gruppe("Denne uge", ugeHtml) : "")
+    + (forrHtml ? gruppe("Forretningen", forrHtml) : "")
     + gruppe("Dig", '<div class="bs-to"><div><div class="bs-sekl">Dit eget content</div>' + eget + '</div></div>')
     + '</div>';
   try { el.querySelectorAll(".bs-todo").forEach(function (t) { t.dataset.slet = "bsTodoKlar('" + t.dataset.todo + "')"; bsSwipeSlet(t); }); } catch (e) {}
@@ -42419,7 +42460,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "1907";
+const APP_VERSION = "1908";
 let NY_VERSION_KLAR = false;
 let NY_VERSION_AFVIST = false;
 function nyVersionSkjul() {
@@ -60017,6 +60058,6 @@ function prFaerdigHtml() {
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 14. september · 1907</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 14. september · 1908</div>
 </body>
 </html>

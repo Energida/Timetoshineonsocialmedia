@@ -527,6 +527,8 @@ Punkt 21 på Idas liste (»mit admin dashboard fungerer ikke på desktop, det er
 - Målt i selen: 1440 med og uden data (venter, to-do, aftaler, pins, eget opslag), foldemenuen åben på Salg med syv punkter, `SELE LAAS OK: 19 doere`, `SELE SIDER OK: 15 sider`. Ikke målt: den rigtige base (IDAENERGIDA-læsning under RLS med admin-session; `venterHent` læser allerede alle koder, så det bør holde), Kunder-siden på 1440 efter menuskiftet, telefonen (koden er gated på ≥ 1000 px).
 - Overleveringen fra skytråden er kopieret ind på denne gren (`2026-09-14-overlevering-til-computertraaden.md`).
 
+**v1908: Denne uge og Forretningen bygget færdig.** Denne uge = tre af husets ringe på kundernes opslag (`__ALLE_OPSLAG`): postet mod planlagt i ugen (mandag til søndag, `energidaUgeMandag`) · briefs godkendt mod dem, der venter på dig (status Godkendt mod Klar til godkendelse) · kunder med opslag i ugen mod alle aktive. Forretningen = Energida Studio (hvor bolden ligger, `KLIP_OPGAVER` med tavlens egne statusser: hos dig = manus mangler eller klippet til godkendelse · hos klipperen = råfiler eller rettelser · venter på optagelse = manus godkendt; tryk åbner studiet) og Salget (samme motor som CRM'ets »Følg op på«: kun kontakter med en opfølgningsdato, Idas regel 21/7, forfaldne først, højst tre, tryk åbner kontakten). Målt i selen 1440 med data: fem grupper, tre ringe, tre studio-rækker, to salgsrækker. `SELE LAAS OK`, `SELE SIDER OK`.
+
 ## 6. Bridge-trådene 12/9
 
 Trådene på Idas maskine (»Skærm, der ikke må vises« m.fl.) døde kl. 16:25 dansk tid, fem minutter efter v1856 blev pushet, fordi computeren blev lukket. Intet i repoet er halvt; højst få minutters ucommitteret arbejde kan være tabt. De vågner først, når Claude Code startes på den maskine igen.
