@@ -1283,6 +1283,7 @@ select.cal-periode:not([multiple]):not([size]) {
 .ark-chip.on { background:var(--red); color:#fff; border-color:#fff; }
 .ark-kvit { font-size:12.5px; color:var(--red); margin-top:10px; display:flex; align-items:center; gap:7px; min-height:18px; }
 .ark-ekstra { display:flex; flex-direction:column; gap:8px; }
+.ark-ekstra .ark-soejler { margin:0; }   /* soejle-chips under den foerste raekke (14/9) */
 .ark-ekstra:not(:empty) { margin-top:12px; }
 .ark-knap { display:flex; align-items:center; justify-content:center; width:100%; min-height:48px; border-radius:999px; background:#fff; color:var(--red); border:1px solid var(--border); font-family:Poppins,sans-serif; font-size:13.5px; font-weight:400; cursor:pointer; margin:0; }
 .ark-knap-roed { background:var(--red); color:#fff; border:0; min-height:52px; font-size:14px; margin-top:16px; }   /* dagskortets egen knap, nu ogsaa i arket (14/9) */
@@ -41416,8 +41417,10 @@ function ibMobilTegn() {
 }
 async function ibMobilNyIde() {
   const f = document.getElementById("ibMobilNy"); const t = ((f && f.value) || "").trim(); if (!t) { if (f) f.focus(); return; }
-  try { await ideAdd({ titel: t, type: "Reel", soejle: "", status: "Idé", dato: null }); } catch (e) {}
-  try { renderIdeas(); } catch (e) {}
+  /* Gennem arket, saa soejlen bliver valgt (14/9). Teksten foelger med; arket gemmer med ideAdd som foer. */
+  if (f) f.value = "";
+  try { KUNDE_ARK_SOEJLE = (typeof IDEBANK_FILTER === "string" && /^[12][AB]$/.test(IDEBANK_FILTER)) ? IDEBANK_FILTER : ""; } catch (e) { KUNDE_ARK_SOEJLE = ""; }   /* staar man i en soejle, foelger den med (som addIdea) */
+  kundeArkAabn("ide", false, t);
 }
 /* ===== FLYT IDAS CONTENT STUDIO FRA APPEN (8/9 kl. 17.50) =====
    Samme flytning som SQL-kortet, men koert med Idas admin-session gennem RLS — saa den kan koeres fra telefonen uden SQL Editor.
@@ -42737,7 +42740,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "1925";
+const APP_VERSION = "1926";
 let NY_VERSION_KLAR = false;
 let NY_VERSION_AFVIST = false;
 function nyVersionSkjul() {
@@ -53871,6 +53874,9 @@ function kundeArkAabn(valgt, paaFoto, tekst) {
     /* Plusset staar KUN paa den chip, der kan vedhaefte noget (Set noget fedt). */
     plusAf: function (k) { return k === "fedt" ? arkPlusKnap() : ""; },
     ekstraAf: function (k) {
+      /* SOEJLEN VAELGES, NAAR IDEEN SKRIVES (Idas klik 14/9 kl. 20.00: 25 af 31 idéer laa under »Andet«, fordi ingen soejle
+         var sat). Anden chip-raekke under den foerste: de fire soejler med kundens egne navne (soejleVis). Gem kraever et valg. */
+      if (k === "ide") return kundeArkSoejleChips() + '<div id="fangSkaermVis" style="display:none;"></div>';
       if (k !== "fedt") return '<div id="fangSkaermVis" style="display:none;"></div>';
       /* VEDHAEFT-RAEKKEN (Idas klik 13/9): kamera og kamerarulle gaar direkte paa vaeggen som billede;
          skaermbilledet foelger linket i teksten, naar der trykkes Gem. Samme motorer som foer.
@@ -53884,10 +53890,22 @@ function kundeArkAabn(valgt, paaFoto, tekst) {
           : '')
         + '<div id="fangSkaermVis" style="display:none;align-items:center;gap:10px;font-size:12px;color:var(--gray3);"></div>';
     },
-    gem: kundeArkGem, efterLuk: function () { KUNDE_ARK_SOEJLE = ""; INSP_VEDHAEFT = ""; inspSkaermNulstil(); } });
+    gem: kundeArkGem, efterLuk: function () { KUNDE_ARK_SOEJLE = ""; INSP_VEDHAEFT = ""; inspSkaermNulstil(); try { if (typeof current === "number" && current === 2) renderIdeas(); } catch (e) {} } });
+}
+function kundeArkSoejleChips() {
+  return '<div class="ark-chips i-fladen ark-soejler" id="arkSoejler">' + ["1A", "1B", "2A", "2B"].map(function (k) {
+    let n = k; try { n = soejleVis(k) || k; } catch (e) {}
+    return '<button type="button" class="ark-chip' + (KUNDE_ARK_SOEJLE === k ? ' on' : '') + '" data-soejle="' + k + '" onclick="kundeArkSoejleVaelg(\'' + k + '\')">' + esc(n) + '</button>';
+  }).join("") + '</div>';
+}
+function kundeArkSoejleVaelg(k) {
+  KUNDE_ARK_SOEJLE = (KUNDE_ARK_SOEJLE === k) ? "" : k;   /* tryk igen = fravalgt */
+  const r = document.getElementById("arkSoejler"); if (r) Array.prototype.forEach.call(r.querySelectorAll(".ark-chip"), function (b) { b.classList.toggle("on", b.dataset.soejle === KUNDE_ARK_SOEJLE); });
+  const t = document.getElementById("arkTekst"); if (t) t.focus();
 }
 async function kundeArkGem(tekst, k) {
   const t = String(tekst || "").trim(); if (!t) return false;
+  if (k === "ide" && !KUNDE_ARK_SOEJLE) throw new Error("!Vælg en søjle først.");   /* ellers lander idéen under Andet igen */
   if (k === "note") { let ok = false; try { ok = await kundeNoteGem(t); } catch (e) { ok = false; } if (ok) { try { renderIndbakkeKort(); } catch (e) {} } return ok ? "Skrevet ned." : false; }
   if (k === "ide") {
     const titel = storStart(t.split(/[.!?\n]/)[0].slice(0, 70));
@@ -60368,6 +60386,6 @@ function prFaerdigHtml() {
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 14. september · 1925</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 14. september · 1926</div>
 </body>
 </html>

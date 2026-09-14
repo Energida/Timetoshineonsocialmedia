@@ -60,6 +60,8 @@ Filen er kort med vilje. Hver regel kan måles. Målingen står i `tools/designl
 
 **Drejebogen på telefonen åbner i appen (14/9, v1925).** Menuens »Drejebogen« viser bogen som sider i appen (screen1, bud 2 8/9) på ≤ 760 px; på computeren åbnes vinduet, mens trykket gælder. Et nyt vindue efter en hentning findes ikke: pop op-spærren stopper det.
 
+**Søjlen vælges, når idéen skrives (14/9 kl. 20.00, Idas klik).** I kundens ark (Tøm hovedet, »+ Ny idé«, Idébankens sendefelt) står de fire indholdssøjler som en anden chip-række under den første, når chippen er Content-idé. Gem uden søjle giver »Vælg en søjle først.« Står man i en søjle i Idébanken, er den valgt på forhånd. Ingen ny flade; »Andet« skal ikke længere vokse.
+
 ## Det, der IKKE er låst
 
 Alt, der ikke står her, er ikke låst. Det betyder ikke frit valg: det betyder mockup først og Idas klik, før der bygges.

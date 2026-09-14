@@ -712,6 +712,12 @@ Målt i Idas browserpanel, logget ind som en Content Studio-kunde, 390 og 1440, 
 
 Ida klikkede bud 4 kl. 19.20 (Dag · Uge · Måned som piller, kun dage med opslag). Jeg byggede det (`KAL_TLF_VIS`, `kalTlfVis`, perioderækker i `contentFacitTegn`), målte det i selen (OK) og var på vej til at måle det live, da hun skrev kl. 19.30: »jeg vil heller ikke have vist datoerne hvor der ikke er indhold. det skal bare være som det fint var kommende indhold eller noget som det var før? det var da super?? vi havde da ramt noget godt tidligere???« **Ændringen er rullet tilbage før deploy** (index.html og version.txt tilbage til v1925). Telefonens kalender er uændret: I dag · Kommende indhold · Kommende opslag · den røde plus. Buddene (Artifact 67bd2170) står som dokumentation. Lære: et klik på et bud er ikke det samme som et ja til at bygge om det, der virker; spørg »skal det ændres overhovedet?« før fem bud på noget, hun er glad for.
 
+## 5ba. v1926: søjlen vælges, når idéen skrives (Idas klik 14/9 kl. 20.00; hendes ord kl. 19.55: »forslag, der udelukkende løfter produktet«)
+
+**Løftet:** 25 af kundens 31 idéer lå under »Andet«, fordi ingen søjle var sat, så briefen, kalenderen og Performance kendte ikke søjlen. **Bygget:** `kundeArkAabn` → `ekstraAf("ide")` tegner `kundeArkSoejleChips()` (1A · 1B · 2A · 2B med kundens navne via `soejleVis`) som anden chip-række; `kundeArkSoejleVaelg` sætter `KUNDE_ARK_SOEJLE` (tryk igen = fravalgt); `kundeArkGem` kaster »!Vælg en søjle først.« uden valg (arket viser beskeden). Idébankens sendefelt »Ny idé …« (`ibMobilNyIde`) går nu gennem arket med teksten forudfyldt (13/9-låsen: alt skrives i arket); »+ Ny idé« på computeren gik allerede gennem arket. Står man i en søjle i Idébanken, er den valgt på forhånd. `efterLuk` tegner Idébanken igen. Eksisterende idéer uden søjle er urørte (Idas data).
+
+**Målt:** `koer.sh` 19 døre + 15 sider OK; arket målt i selen (chips, afvisning uden søjle, gem med søjle) og live i Idas session, se næste afsnit.
+
 ## 6. Bridge-trådene 12/9
 
 Trådene på Idas maskine (»Skærm, der ikke må vises« m.fl.) døde kl. 16:25 dansk tid, fem minutter efter v1856 blev pushet, fordi computeren blev lukket. Intet i repoet er halvt; højst få minutters ucommitteret arbejde kan være tabt. De vågner først, når Claude Code startes på den maskine igen.
