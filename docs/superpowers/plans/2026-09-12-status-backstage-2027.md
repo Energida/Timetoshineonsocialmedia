@@ -630,6 +630,10 @@ Idas ord: »hvad sker der seriøst her for layoutet på mit hjem på desktop???�
 
 **Ikke gjort:** de to dubletrækker er ikke slettet (kræver Idas ja; et SQL-kort kan gøre det, når listen er i basen).
 
+## 5aq. v1918: hele videoflisen åbner lektionen igen (Ida 14/9 kl. 16.15: »nu kan jeg ikke åbne lektionerne og se manus når jeg klikker på dem«)
+
+v1915 lod statuslinjen og ringene på flisen åbne status-arket; et tryk midt på flisen (hvor man plejer at trykke) ramte dem og åbnede arket i stedet for briefen. Målt i Idas session: titlen åbnede briefen, statuslinjen åbnede arket. Nu: hele flisen åbner lektionen (`klipBriefAaben`), status skiftes ét sted, i briefen (`#kbStatusChip` → `klipStatusArk`). Ét tryk, ét svar (4/9).
+
 ## 6. Bridge-trådene 12/9
 
 Trådene på Idas maskine (»Skærm, der ikke må vises« m.fl.) døde kl. 16:25 dansk tid, fem minutter efter v1856 blev pushet, fordi computeren blev lukket. Intet i repoet er halvt; højst få minutters ucommitteret arbejde kan være tabt. De vågner først, når Claude Code startes på den maskine igen.
