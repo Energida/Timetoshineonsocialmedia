@@ -28,11 +28,17 @@ const DOERE = [
 ];
 setTimeout(async function () {
   try {
+    /* TAEPPET SKAL VAERE LETTET AF SIG SELV (13/9 aften): proben fjernede appLoader med haanden, saa ingen maaling saa,
+       at en NY kunde (rejsen paa Hjem) fik hjertet i 30 sek. og »Appen kunne ikke starte«. Nu venter vi op til 6 sek.
+       paa body.app-klar, og staar taeppet der stadig, er det en fejl, FOER doerene maales. */
+    var taeppeFejl = 0;
+    for (var v = 0; v < 40 && !document.body.classList.contains("app-klar"); v++) { await new Promise(function (r) { setTimeout(r, 150); }); }
+    if (!document.body.classList.contains("app-klar")) { console.log("SELE LAAS FEJL taeppet: appLoader lettede ikke af sig selv paa 6 sek. (aktiv skaerm: " + ((document.querySelector(".screen.active") || {}).id || "ingen") + ")"); taeppeFejl = 1; }
     ["appLoader", "turOverlay", "dagensKort"].forEach(function (id) { var e = document.getElementById(id); if (e) e.remove(); });
     IDEER.push({ id: "dl-ops", titel: "Designlaas-opslag", type: "Reel", soejle: "Produkt", status: "Postet", dato: datoDK(), kode: currentKode, brief: {} });
     try { MAALS = Object.assign(maalsStandard(), {}); MAALS_KODE = String(currentKode).toUpperCase(); } catch (e) {}
     showTab(3); await new Promise(function (r) { setTimeout(r, 300); });
-    var fejl = 0;
+    var fejl = taeppeFejl;
     for (var i = 0; i < DOERE.length; i++) {
       var d = DOERE[i]; var navn = d[0], art = d[1];
       try { d[2](); } catch (e) { console.log("SELE LAAS FEJL " + navn + " kunne ikke aabnes: " + e.message); fejl++; continue; }
