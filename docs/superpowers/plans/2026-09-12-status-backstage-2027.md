@@ -686,6 +686,20 @@ Ida valgte UX-politiet frem for en ny tegning (kl. 16.30), derefter Pipeline som
 
 **Målt i browserpanelet, logget ind som en Content Studio-kunde:** kortet (foto, »Godaften«, »SWIPE OP FOR EN NY IDÉ«, Content Studio-knappen) er `position:fixed` og dækkede hele fladen på 1440. `dagensKortKunde` har en 760 px-spærre, når kortet TEGNES, men blev vinduet bredere bagefter (panelet: tegnet ved 679 px), stod kortet der stadig. **Rettet:** `@media (min-width:761px) { #dagensKort { display:none !important } }`: på computeren findes kortet ikke, uanset hvornår det blev tegnet. Telefonen er urørt.
 
+## 5ax. v1924: kundeappen med elevens øjne (Ida 14/9 kl. 17.40: »log ind som en kunde, en elev i en butik der skal bruge det i en travl hverdag, og gennemgå ALLE sider for alle funktioner«)
+
+Målt i Idas browserpanel, logget ind som en Content Studio-kunde, 390 og 1440, alle sider og arkene (Tøm hovedet, planlægningsdagen, briefen). Fund-listen: Artifact c18ec2f6 (»Kundeappen med elevens øjne«).
+
+**Rettet (v1924):** Indbakkens »Ja, postet«/»Nej, ny dato« var 158×40 side om side → lange 48 px under hinanden på telefonen. »Start planlægningen« 318×44 (inline-stil slog reglen) → 48 px fuld bredde. »Tema« i menuen førte til kalenderen uden tema-kort → åbner Målsætninger, hvor temaet sættes.
+
+**Stopper eleven, Idas valg:** Drejebogen siger »Strategien er på vej«, mens Tilpas drejebog har byggesten (bogen er ikke genereret for kunden). Kalenderen på telefonen har kun I dag + Kommende. Idébanken: 25 af 31 idéer under »Andet« (ingen søjle sat).
+
+**Gammelt design, venter på tegning:** Værktøjskassen (tekstblokke, versaler, »Åbner, når din strategi er bygget« hos en kunde med bygget strategi, 90 px felt), Målsætninger (22 px toggles, 17 px tekstlinks), Hjem på computeren (ugegitter med små plus, 30 px ikoner, 20 px flueben), kalenderen på computeren (28 px pile, 17 px link), planlægningsdagens topbar med Tilbage (Idas eget klik 13/9).
+
+**Målt OK:** Hjem på telefonen, briefen, Performance, Indbakken, Tøm hovedet-arket, Arkivet, Inspiration, planlægningsdagens fem trin.
+
+**Ikke målt:** optagelse/oplæsning, Del, Log ud, Skift adgangskode, Drive-mappen, Ønsker til appen med et rigtigt ønske, strategibyggeren, en YOU GOT THIS-kunde.
+
 ## 6. Bridge-trådene 12/9
 
 Trådene på Idas maskine (»Skærm, der ikke må vises« m.fl.) døde kl. 16:25 dansk tid, fem minutter efter v1856 blev pushet, fordi computeren blev lukket. Intet i repoet er halvt; højst få minutters ucommitteret arbejde kan være tabt. De vågner først, når Claude Code startes på den maskine igen.
