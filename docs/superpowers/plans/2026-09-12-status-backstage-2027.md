@@ -770,6 +770,10 @@ Set gennem Idas login i som kunde-visningen på computeren (1470 px, Chrome zoom
 
 Energida Studio › sendefeltet »Ny video …« (`klipNy`) gemte titlen, som den var skrevet; nummeret (»3.5 · …«) bor i titlen, og alt læser det derfra (`klipLekNr`, `klipLektionFor`, rækken i 29088). Ny `klipNaesteNr(modul)`: er det valgte modul nummereret (»Modul 3«), sættes højeste 3.x i hele listen + 1 foran (»3.6 · Titel«). Starter titlen allerede med et nummer, røres den ikke; uden nummereret modul (Værktøjskassen, tom) sættes intet. Testet i node: Modul 3 → 3.6 · Modul 2 → 2.10 · Modul 4 (tom) → 4.1 · Værktøjskassen → intet. Ikke målt: selve indsættelsen i basen (ingen video oprettet hos Ida). Videoen »Kan jeg gøre noget ved det?« fra før v1933 står stadig uden nummer — Ida omdøber den selv.
 
+## 5bh. Natten 14/9-15/9: fire greb som køber af systemet (Idas ord kl. 21.15: »lave alle klar i loop … gennemgå dem samlet i morgen«) — INTET deployet
+
+Gren `nat-15-9` (lokal, to commits oven på v1933). Greb 5 (de fem lister efter »et tomt rum er tomt«: tomt = navn + én lang Tilføj-knap → arket `ibBankListeArk`; med indhold = `.bs-kf`-fliser, `bsSwipeSlet`, »Fjern« kun på computeren, sendefelt nederst; `ibBankListeLaeg` er den ene gemmer) og greb 2 (`ideLandVis(id)`: Idébanken åbner, flisen får `.bs-landet` med NU-ringen, der toner ud; Reducér bevægelse får ringen uden glidning). Målt i selen 390 + 1440; probeerne OK (19 døre · 15 sider). Greb 1 (Sortér med Drejebogen) og greb 3 (Inspiration som Ønskeskyen) som fem bud hver: artifacts b0442ccf og 4e829b8c. Greb 4 (Meta) kræver Ida. Morgenlisten: `MORGEN 15. september - det der venter paa dit klik.md` i roden. Lærestreg i selen: service-workeren cacher OGSÅ mockups på samme port — afmeld den, før en fil måles igen.
+
 ## 6. Bridge-trådene 12/9
 
 Trådene på Idas maskine (»Skærm, der ikke må vises« m.fl.) døde kl. 16:25 dansk tid, fem minutter efter v1856 blev pushet, fordi computeren blev lukket. Intet i repoet er halvt; højst få minutters ucommitteret arbejde kan være tabt. De vågner først, når Claude Code startes på den maskine igen.
