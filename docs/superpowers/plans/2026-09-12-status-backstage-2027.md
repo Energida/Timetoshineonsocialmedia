@@ -486,6 +486,8 @@ Skrevet på opfordring fra tråden på Idas computer, så den kan overtage køen
 
 **Køen er tom, tråden er stoppet.**
 
+**Overleveringen til computertråden (14/9 kl. 10.05):** `docs/superpowers/plans/2026-09-14-overlevering-til-computertraaden.md`. Den siger, hvor grenene står (v1906, ikke v1896), hvad der blev bygget i v1888 til v1906, hvordan vagterne køres, hvilke regler der binder, hvilke fælder jeg ramte i dag, og hvad der venter på Idas beslutning. Filen ligger kun på `claude/second-thread-not-responding-2yngb0`.
+
 ## 6c. Slutstatus for skytråden (14/9, aften)
 
 Ida fortsætter i tråden på sin egen computer. Denne tråd stopper her.
