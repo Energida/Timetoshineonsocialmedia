@@ -56,6 +56,10 @@ Filen er kort med vilje. Hver regel kan måles. Målingen står i `tools/designl
 
 **Salg › Pipeline = bud 3 »Dagens salg« (14/9 kl. 17.20, Idas klik efter fem bud).** Øverst »Følg op i dag« som den røde ramme med hvide rækker (samme form som Venter på dig på Hjem): kontakter med næste aktivitet i dag eller overskredet, og samarbejder der udløber inden 14 dage; svaret er »Åbn« (kontaktkortet). Til højre pipelinen som fire af husets ringe (Leads · Kontaktet · Ikke sendt · Aktive) i hver sin hvide flise. Under: alle kontakter med chips på status (Idas egne statusord fra CRM'et, aldrig omskrevet), som fliser i tre spalter på computeren og én på telefonen, og »Tilføj kontakt …« som sendefelt (ny kontakt = Lead). Heroen siger Pipeline, stien Hjem › Salg › Pipeline. Det gamle CRM med faner nås kun fra Kunder › »Pipeline, kontakter og koder«. Ikke tegnet endnu: kontaktkortet som ark og Ny kontakt-arket (kommer som næste bud).
 
+**Kalenderen på telefonen bliver, som den er (Ida 14/9 kl. 19.30: »det skal bare være som det fint var, kommende indhold … vi havde da ramt noget godt tidligere«).** I dag · Kommende indhold · Kommende opslag som fliser med datoen først, og den røde plus-knap. Ingen dage eller datoer uden indhold, ingen Dag/Uge/Måned-piller på telefonen. Bud 4 (klikket kl. 19.20) blev trukket tilbage af hendes ord ti minutter efter og er IKKE bygget. Computerens kalender er urørt.
+
+**Drejebogen på telefonen åbner i appen (14/9, v1925).** Menuens »Drejebogen« viser bogen som sider i appen (screen1, bud 2 8/9) på ≤ 760 px; på computeren åbnes vinduet, mens trykket gælder. Et nyt vindue efter en hentning findes ikke: pop op-spærren stopper det.
+
 ## Det, der IKKE er låst
 
 Alt, der ikke står her, er ikke låst. Det betyder ikke frit valg: det betyder mockup først og Idas klik, før der bygges.
