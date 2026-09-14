@@ -774,6 +774,15 @@ Energida Studio › sendefeltet »Ny video …« (`klipNy`) gemte titlen, som de
 
 Gren `nat-15-9` (lokal, to commits oven på v1933). Greb 5 (de fem lister efter »et tomt rum er tomt«: tomt = navn + én lang Tilføj-knap → arket `ibBankListeArk`; med indhold = `.bs-kf`-fliser, `bsSwipeSlet`, »Fjern« kun på computeren, sendefelt nederst; `ibBankListeLaeg` er den ene gemmer) og greb 2 (`ideLandVis(id)`: Idébanken åbner, flisen får `.bs-landet` med NU-ringen, der toner ud; Reducér bevægelse får ringen uden glidning). Målt i selen 390 + 1440; probeerne OK (19 døre · 15 sider). Greb 1 (Sortér med Drejebogen) og greb 3 (Inspiration som Ønskeskyen) som fem bud hver: artifacts b0442ccf og 4e829b8c. Greb 4 (Meta) kræver Ida. Morgenlisten: `MORGEN 15. september - det der venter paa dit klik.md` i roden. Lærestreg i selen: service-workeren cacher OGSÅ mockups på samme port — afmeld den, før en fil måles igen.
 
+## 5bi. Aftenen 14/9 kl. 21.50–22.22: v1934–v1937 (Ida vågen, klik og kommentarer)
+
+- **v1934** langt tryk på en videoflise i Energida Studio = husets menu (`klipLangTrykLyt`/`klipFliseMenu`: Flyt til modul · Omdøb · Duplikér · Slet med »Slet »X«?«). Ida kl. 21.55: »deploy så jeg kan slette en lektion«.
+- **v1935** numrene følger rækkefølgen (`klipNummererGruppe`/`klipNummererAlle`): M.1…M.n efter det, der vises; efter træk, flyt, slet, duplikér og ved hentning. Målt live: Modul 6 blev 6.1–6.12 i Idas egen rækkefølge, alle otte moduler i orden, Værktøjskassen urørt. Sagt til Ida: nummeret er også koblingen til lektionens øvelser (klipLektionFor).
+- **v1936** chippen hedder »Jeg har set noget fedt« (Idas kommentar på Inspiration-buddene).
+- **v1937** greb 5 (de fem lister efter »et tomt rum er tomt«) + greb 2 (idéen ses lande) fra grenen `nat-15-9` — Idas klik kl. 22.15. Probeer OK (19 døre · 15 sider) før push; curl 1937 på begge.
+- **Døde funktioner i det nye design (sweep, statisk):** kun to, begge i Energida Studio bag ⋯ → Listen: »Redigér felter« (antal ord · råfil-link · link til færdig video) og »Se lektionen som kunden« (`klipSeLektion`). Venter på Idas klik (anbefalet: begge i briefens ⋯-menu).
+- **Inspiration-buddene (artifact 4e829b8c v3):** Idas otte kommentarer → uden søjle ved indsættelse · »Hvad fangede dig?« · kun kilde/tid på fliser · rigtigt preview (energida.dk og:image) · Del fra Instagram: Android direkte, iPhone via Genvej · Ønskesky-grebet skrives ind som hård regel (skill + hukommelse) · den røde skygge under plusset er appens egen — åbent.
+
 ## 6. Bridge-trådene 12/9
 
 Trådene på Idas maskine (»Skærm, der ikke må vises« m.fl.) døde kl. 16:25 dansk tid, fem minutter efter v1856 blev pushet, fordi computeren blev lukket. Intet i repoet er halvt; højst få minutters ucommitteret arbejde kan være tabt. De vågner først, når Claude Code startes på den maskine igen.
