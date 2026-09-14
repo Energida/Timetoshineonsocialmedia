@@ -22,6 +22,8 @@ Filen er kort med vilje. Hver regel kan måles. Målingen står i `tools/designl
 
 **Alle knapper på telefonen er lange knapper (4/9, 5/9, 13/9).** Fuld bredde, mindst 48 px, radius 999, i en stak med den primære øverst. Rød flade og hvid tekst til den ene primære handling; hvid flade og rød tekst til de sekundære; hvid flade og grå tekst til den dæmpede (Slet, Gendan). Små røde ord som knapper findes ikke på telefonen. Computeren må have dem som ord til højre.
 
+**Målingen holder øje med de lange knapper (14/9).** Sidemålingen (`probe-sider.js`) måler nu hver knap med et navn på telefonen: fylder den under 60 % af skærmens bredde, er det en fejl. Chips, ikon-knapper uden tekst, bundnavet, fanerne, fliser der er trykfelter og sendefeltets cirkler er ikke knapper i den forstand og står på undtagelseslisten i proben. Undtagelserne er navngivne: **`.kal-fpill`** (Arkivets filterpiller er chips) og **`.lek-top`** (lektionssidens titelbjælke, hvor Tilbage er bjælkens egen vej ud). Strategibyggeren er en anden fil og måles for sig.
+
 **Trykfelter er mindst 44 px høje (2/8).** Også chips, runde dagknapper og rækker, man kan trykke på.
 
 **Bunden af hver side skal kunne nås (14/9).** Bundnavet er fast og 68 px højt PLUS telefonens hjemme-indikator, som er cirka 34 px på en iPhone. Bundpolstringen skal regne indikatoren med (`calc(… + env(safe-area-inset-bottom))`), ellers ligger den nederste knap bag navet. En flad pixelværdi er en fejl, også når den ser rigtig ud i selen, hvor indikatoren er 0.

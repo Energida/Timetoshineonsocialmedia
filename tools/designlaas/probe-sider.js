@@ -74,6 +74,38 @@ setTimeout(async function () {
         var ramt = function (e) { return e ? (e.id || String(e.className).split(" ")[0] || e.tagName) : "ingenting"; };
         console.log("SELE SIDER FEJL " + navn + " trykfelt under 44 px: " + (b.textContent.trim().slice(0, 24) || b.className.split(" ")[0] || b.tagName) + " (" + Math.round(q.width) + "x" + Math.round(q.height) + ", over: " + ramt(op) + ", under: " + ramt(ned) + ")"); fejl++;
       });
+      /* ===== UX-POLITIET: KUN LANGE KNAPPER PAA TELEFONEN (Ida 14/9 kl. 09.37) =====
+         Hendes ord: »Der maa ikke vaere smaa knapper som denne? … Vil du sende ux politiet afsted paa
+         hele b2b en og tjekke at der kun er de lange knapper og ikke disse?«
+         Reglen er laasen fra 4., 5. og 13. september: en KNAP paa telefonen er fuld bredde og mindst
+         48 px. Maalt som mindst 60 % af skaermens bredde — en lang knap er ~88 % af 390, en lille som
+         »Kom i gang« var ~49 %, saa graensen skiller dem rent uden at vaere paastaaelig.
+         DET, DER IKKE ER EN KNAP I DEN FORSTAND, staar paa undtagelseslisten og er ikke pynt:
+         chips (egen laast form), ikon-knapper uden tekst (klokke, mappe, mikrofon, send, naal, kryds),
+         bundnavet og fanerne, fliser der er trykfelter (en flise er ikke en knap), sendefeltets
+         cirkler, dagbogstaver og alt inde i en tabel. Alt andet SKAL vaere langt. */
+      var UNDT = ".chip-btn,.chip,.ark-chip,.bs-chip,.cf-chip,.mood-chip,.hilsen-pill,.pr-chip,.dept-btn,.scale-btn,.esr-pill,"
+        + ".bottom-nav,#dashBundnav,#woNavHost,.mobile-tabs,.ch-faner,.bs-spor,.cf-prikker,.bs-prik,.ib-faner,"
+        + ".bs-doer,.bsm-flise,.bsam-flise,.hf-kort,.bs-kf,.gv,.mr-prog-r,.idea-kort,.lek-kort,.kv-flise,.post-card,.uge-dag,.cal-dag,.mr-flise,.bs-rk,"
+        + ".sendfelt,.ark-send,.ark-rund,.bs-tjek,.hf-done,.hf-klokke,.vt-knap,.modal-close,.bdrop-knap,.cal-periode,.dsb-item,.dsb-under,table,"
+        /* .kal-fpill: filterpillerne paa Arkivet er chips (egen laast form), ikke knapper.
+           .lek-top: lektionssidens titelbjaelke — Tilbage dér er bjaelkens egen vej ud, og
+           bjaelken baerer modulets navn og fremdriften. Skal bjaelken vaek paa telefonen
+           (navigationslaasen siger »ingen topbar«), er det en beslutning om hele
+           lektionsfladen, og den er Idas — derfor staar den her som en NAVNGIVEN undtagelse
+           og ikke som en stille tilladelse. */
+        + ".kal-fpill,.lek-top";
+      var lange = [].filter.call(r.querySelectorAll("button, label.ark-knap, label.dbtn, a.dbtn"), function (b) {
+        var q = b.getBoundingClientRect(); if (!(q.height > 0 && q.width > 0)) return false;
+        if (b.closest(UNDT)) return false;
+        var t = (b.textContent || "").replace(/\s+/g, " ").trim();
+        if (t.length < 3) return false;                 /* ikon eller eet tegn: ikke en knap med et navn */
+        return q.width < innerWidth * 0.6;
+      }).map(function (b) {
+        var q = b.getBoundingClientRect();
+        return (b.textContent || "").replace(/\s+/g, " ").trim().slice(0, 22) + "(" + Math.round(q.width) + "x" + Math.round(q.height) + " " + (b.className.toString().split(" ")[0] || b.tagName) + ")";
+      });
+      if (lange.length) { console.log("SELE SIDER FEJL " + navn + " smaa knapper (" + lange.length + "): " + lange.slice(0, 6).join(", ")); fejl++; }
       var kryds = [].filter.call(r.querySelectorAll(".modal-close"), function (k) { return getComputedStyle(k).display !== "none" && k.getBoundingClientRect().height > 0; });
       if (kryds.length) { console.log("SELE SIDER FEJL " + navn + " synligt kryds paa siden"); fejl++; }
       var emoji = txt.match(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{2B50}\u{2728}]/gu);
