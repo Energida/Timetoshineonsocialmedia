@@ -21,7 +21,10 @@ const DOERE = [
   ["perfStoryDageVis", "valg", function () { perfStoryDageVis(); }],
   ["vaelgPlanDagModal", "valg", function () { vaelgPlanDagModal(); }],
   ["opslagNyDatoAabn", "valg", function () { opslagNyDatoAabn("dl-ops"); }],
-  ["visDagOpslag", "valg", function () { visDagOpslag(datoDK()); }]
+  ["visDagOpslag", "valg", function () { visDagOpslag(datoDK()); }],
+  /* Det lange tryk paa en roed I dag-flise (Ida 14/9): Done eller Udsaet. Doeren aabnes her direkte
+     med et punkt lagt i listen, saa maalingen ikke afhaenger af, hvad basen svarer. */
+  ["hjemIdagValg", "valg", function () { window.__HJEM_FOKUS = { pkt: [{ titel: "Designlaas-punkt", navn: "", sub: "", knap: "Ja" }], klarede: 0 }; hjemIdagValgAabn(0); }]
 ];
 setTimeout(async function () {
   try {

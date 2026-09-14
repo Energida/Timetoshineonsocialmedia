@@ -40,6 +40,8 @@ Filen er kort med vilje. Hver regel kan måles. Målingen står i `tools/designl
 
 **Et tomt rum er tomt (14/9).** En side eller et rum uden indhold viser navnet og ÉN lang Tilføj-knap, ikke åbne skrivefelter. Det, der skal skrives, skrives i arket med chips for hvad man tilføjer. Tre skriveflader oven i hinanden på en tom side er den tivoli, dubletreglen forbyder. Så snart rummet HAR indhold, står fladerne som før.
 
+**Et langt tryk er en genvej, aldrig den eneste vej (14/9).** Holder man fingeren inde på en rød I dag-flise, åbner husets spørgsmåls-popup med Done og Udsæt. Et kort tryk gør præcis det samme som før. Et langt tryk må aldrig være det eneste sted, en handling findes, og det må ikke udløses af et swipe: bevæger fingeren sig mere end 10 px, afbrydes trykket.
+
 **Navigationen på telefonen.** Ingen topbar; Tilbage står som lang knap nederst. Bundmenuen med plusset i midten. Plusset og swipe op på dagskortet åbner arket.
 
 ## Det, der IKKE er låst

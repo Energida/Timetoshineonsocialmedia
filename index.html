@@ -819,7 +819,7 @@ body.nyt-b2b .hf-datolinje{margin-top:0}
 .hf-kort-idag .hf-done{width:44px;height:44px;min-height:44px;margin:-11px -11px -11px 0;padding:0;background:transparent;border:0;border-radius:50%;position:relative;cursor:pointer}
 .hf-kort-idag .hf-done::before{content:"";position:absolute;inset:11px;border-radius:50%;border:1.5px solid rgba(255,255,255,.85);background:transparent}
 .hf-kort-idag .hf-done:active::before{background:rgba(255,255,255,.25)}
-.hf-kort-idag{position:relative}
+.hf-kort-idag{position:relative;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}   /* hold fingeren inde = valget (14/9). Uden denne viser iOS sin egen lup og tekstmarkering i stedet. */
 .hf-kort-idag .hf-done.hf-done-hjoerne{position:absolute;top:6px;right:6px;margin:0;z-index:2}
 .hf-kort-idag .hf-idag-streg{display:none}   /* INGEN streger inde i en roed flise (Ida 12/9: »ALDRIG«) */
 .hf-kort-idag .hf-navn{color:#fff}
@@ -2200,6 +2200,12 @@ body.brief-raket #briefHero { display:none !important; }
   .sw-top, .sw-krop, .sw-bund { padding-left: 20px; padding-right: 20px; }
   /* Plads til iPhonens hjemme-indikator, saa knapperne ikke ligger under den. */
   .sw-bund { padding-bottom: 22px; }
+  /* VALGET PAA EN ROED I DAG-FLISE (Ida 14/9: »holde fingeren inde paa den og saa klikke done eller udsaet«).
+     Knapperne er lange og stakkede som alle andre knapper paa telefonen (13/9), og den primaere staar
+     OEVERST — derfor column-reverse: Done er skrevet sidst i markuppen, fordi den er husets send-knap. */
+  .spmpop.idag-valg .sw-bund { flex-direction:column; align-items:stretch; }
+  .spmpop.idag-valg .sw-bund .sw-hoejre { display:flex; flex-direction:column-reverse; gap:8px; margin:0; width:100%; }
+  .spmpop.idag-valg .sw-knap { width:100%; min-height:48px; }
   .sw-top { padding-top: 22px; }
   .sw-svar { margin-left: -20px; margin-right: -20px; padding-left: 20px; padding-right: 20px; }
 }
@@ -23305,6 +23311,12 @@ function renderFokus(planFrem, target, idag) {
       else if (/^Klar til at poste$/.test(t) && pkt.some(y => y.dagsId && /^pub-/.test(y.dagsId))) pkt.splice(i, 1);
     }
   }
+  /* DONE OG UDSAT GAELDER OGSAA PUNKTER UDEN dagsId (14/9). De to startopgaver i et forloeb
+     (baseline og Indblik), planlaegningsdagen og de andre nudges kom fra laeg()/unshift og blev
+     derfor ALDRIG filtreret — der var ingen vej til at sige "den er gjort" om dem. Nu har hvert
+     punkt et stabilt id (hjemIdagPunktId), og filteret gaelder hele listen.
+     INDEKSET FOELGER MED, fordi der filtreres FOER FOKUS_ACTIONS bygges. */
+  try { for (let i = pkt.length - 1; i >= 0; i--) { if (hjemIdagSkjult(pkt[i])) pkt.splice(i, 1); } } catch (e) {}
   blok.style.display = "block";
   FOKUS_ACTIONS = pkt.map(x => x.action);
   /* FINAL 5a: linjen under hilsenen — "To ting i dag — så er ugen hjemme." */
@@ -23451,6 +23463,123 @@ function hjemIdagDone(id) {
   try { renderHome(); } catch (e) {}
 }
 function hjemFokusKlik(i){ try { var p = (window.__HJEM_FOKUS || {}).pkt || []; if (p[i] && p[i].action) p[i].action(); } catch (e) {} }
+/* ===== HOLD FINGEREN INDE PAA EN ROED I DAG-FLISE = DONE ELLER UDSAET (Ida 14/9) =====
+   Hendes ord: »Paa de roede under i dag skal jeg kunne holde fingeren inde paa den og saa skal jeg
+   kunne klikke done eller udsaet.«
+
+   Done fandtes kun for dagens opslag (den lille cirkel i hjoernet, 6/9), og den blev taget ud igen
+   samme dag. De ANDRE roede fliser — de to startopgaver i et forloeb, planlaegningsdagen, nudges —
+   havde ingen vej til at blive gjort. Nu har hvert punkt et stabilt id, og begge handlinger gaelder
+   alle roede fliser.
+     Done   = ud af dagens liste. Nulstilles i morgen, som resten af dagsprogrammet.
+     Udsaet = kommer igen i morgen. Gemmes MED sin dato, saa den overlever natten.
+   Ingen af dem roerer opslagets egen dato — det siger popup'en ordret, saa den ikke lover noget andet.
+   Formen er husets egen spoergsmaals-popup (.spmpop med .sw-*, laast 13/8): roed flade, hvid kasse,
+   praecis een fyldt handling, lang Luk paa telefonen. */
+function hjemIdagPunktId(x) {
+  if (x && x.dagsId) return String(x.dagsId);
+  const t = String((x && x.titel) || "") + "|" + String((x && x.navn) || "");
+  return "pkt-" + t.toLowerCase().replace(/[^a-z0-9æøå]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 60);
+}
+function hjemIdagUdsatTil(id) {
+  try {
+    const u = (DAGSPROG && DAGSPROG.udsat) || {};
+    const d = u[id]; if (!d) return false;
+    return String(d) > dagsIdag();   /* gemt dato = den dag, den maa komme igen */
+  } catch (e) { return false; }
+}
+function hjemIdagSkjult(x) {
+  const id = hjemIdagPunktId(x);
+  try { if (DAGSPROG && DAGSPROG.dato === dagsIdag() && DAGSPROG.done && DAGSPROG.done[id]) return true; } catch (e) {}
+  return hjemIdagUdsatTil(id);
+}
+/* Samme to gemmesteder som dagsProgDone: localStorage med det samme, og blobben "dagsprogram"
+   bagefter. Kvitteringen paa blobben ligger i kursusBlobGem. */
+async function hjemIdagGem() {
+  try { localStorage.setItem("dagsprogram_" + (currentKode || "X"), JSON.stringify(DAGSPROG)); } catch (e) {}
+  try { await kursusBlobGem("dagsprogram", DAGSPROG); } catch (e) {}
+}
+/* PUNKTETS ID FANGES, NAAR POPUP'EN AABNER — ikke naar der trykkes (maalt 14/9). Hjem tegnes om,
+   hver gang et tal kommer hjem fra basen, og listen bliver bygget forfra. Laa nummeret i knappen,
+   kunne Done ramme et ANDET punkt, hvis listen skiftede, mens popup'en stod aaben. */
+let HJEM_IDAG_VALG = null;
+function hjemIdagValgAabn(i) {
+  const p = ((window.__HJEM_FOKUS || {}).pkt || [])[i]; if (!p) return;
+  HJEM_IDAG_VALG = hjemIdagPunktId(p);
+  const mb = document.getElementById("modalBody"); if (!mb) return;
+  const titel = String(p.titel || "")
+    .replace(/^I dag skal du lave$/i, "Du skal optage")
+    .replace(/^I dag skal du poste$/i, "Du skal poste");
+  mb.innerHTML = '<button class="modal-close" onclick="closeModal()">&times;</button>'
+    + '<div class="sw-top"><div class="sw-navn">I dag</div></div>'
+    + '<div class="sw-krop"><div class="sw-kasse">'
+      + '<div class="sw-spm">' + esc(titel) + (p.navn ? ' \u00b7 ' + esc(String(p.navn)) : '') + '</div>'
+      + '<div class="sw-hjaelp">Done tager den af dagens liste. Uds\u00e6t lader den komme igen i morgen. Datoen p\u00e5 opslaget bliver, som den er.</div>'
+    + '</div></div>'
+    + '<div class="sw-bund"><span class="sw-hoejre">'
+      + '<button type="button" class="sw-knap mq-tap" onclick="hjemIdagUdsaetKlik()">Udsæt til i morgen</button>'
+      + '<button type="button" class="sw-knap send mq-tap" onclick="hjemIdagDoneKlik()">Done</button>'
+    + '</span></div>';
+  const bk = document.getElementById("modalBack");
+  if (bk) { bk.classList.add("spmpop"); bk.classList.add("idag-valg"); bk.classList.add("on"); }
+  try { modalLukMobilTegn(); } catch (e) {}
+}
+async function hjemIdagDoneKlik() {
+  const id = HJEM_IDAG_VALG; if (!id) { closeModal(); return; }
+  const idag = dagsIdag();
+  if (DAGSPROG.dato !== idag) { DAGSPROG.dato = idag; DAGSPROG.done = {}; }
+  DAGSPROG.done = DAGSPROG.done || {};
+  DAGSPROG.done[id] = true;
+  closeModal();
+  try { renderHome(); } catch (e) {}
+  await hjemIdagGem();
+  try { renderHome(); } catch (e) {}
+}
+async function hjemIdagUdsaetKlik() {
+  const id = HJEM_IDAG_VALG; if (!id) { closeModal(); return; }
+  const n = new Date(); n.setDate(n.getDate() + 1);
+  const imorgen = n.getFullYear() + "-" + String(n.getMonth() + 1).padStart(2, "0") + "-" + String(n.getDate()).padStart(2, "0");
+  DAGSPROG.udsat = DAGSPROG.udsat || {};
+  DAGSPROG.udsat[id] = imorgen;
+  closeModal();
+  try { renderHome(); } catch (e) {}
+  await hjemIdagGem();
+  try { renderHome(); } catch (e) {}
+}
+/* Det lange tryk selv. EEN vagt paa document for alle roede fliser — ingen handlere pr. flise,
+   for fliserne tegnes om hver gang Hjem tegnes. Swipes karrusellen, afbrydes trykket (bevaegelse
+   over 10 px), saa man aldrig faar et valg, man ikke bad om. */
+let HJEM_LANG = { t: null, x0: 0, y0: 0, fyret: false };
+(function hjemLangtTryk() {
+  const flise = function (e) { try { return e.target && e.target.closest ? e.target.closest(".hf-kort-idag[data-fokus]") : null; } catch (x) { return null; } };
+  const stop = function () { clearTimeout(HJEM_LANG.t); HJEM_LANG.t = null; };
+  document.addEventListener("pointerdown", function (e) {
+    const k = flise(e); if (!k) return;
+    HJEM_LANG.fyret = false; HJEM_LANG.x0 = e.clientX; HJEM_LANG.y0 = e.clientY;
+    stop();
+    HJEM_LANG.t = setTimeout(function () {
+      HJEM_LANG.t = null; HJEM_LANG.fyret = true;
+      try { if (navigator.vibrate) navigator.vibrate(12); } catch (x) {}
+      hjemIdagValgAabn(Number(k.getAttribute("data-fokus")));
+    }, 480);
+  }, true);
+  ["pointerup", "pointercancel", "scroll", "touchmove", "touchend"].forEach(function (ev) { document.addEventListener(ev, stop, true); });
+  document.addEventListener("pointermove", function (e) {
+    if (!HJEM_LANG.t) return;
+    if (Math.abs(e.clientX - HJEM_LANG.x0) > 10 || Math.abs(e.clientY - HJEM_LANG.y0) > 10) stop();
+  }, true);
+  /* Klikket, der foelger et langt tryk, maa ikke ogsaa aabne briefen bagved. */
+  document.addEventListener("click", function (e) {
+    if (!HJEM_LANG.fyret) return;
+    if (!flise(e)) { HJEM_LANG.fyret = false; return; }
+    HJEM_LANG.fyret = false; e.stopPropagation(); e.preventDefault();
+  }, true);
+  /* Computeren har ingen finger at holde inde: hoejreklik aabner samme valg. */
+  document.addEventListener("contextmenu", function (e) {
+    const k = flise(e); if (!k) return;
+    e.preventDefault(); hjemIdagValgAabn(Number(k.getAttribute("data-fokus")));
+  });
+})();
 async function hjemTemaHent(){
   if (window.__HJEM_TEMA !== undefined) return;
   window.__HJEM_TEMA = "";   /* hentes een gang pr. session */
@@ -23546,6 +23675,10 @@ function hjemFacitTegn(){
   const fokusFlise = (x, i, slags) => '<div class="hf-kort'
     + (slags === "idag" ? ' hf-kort-idag' : '') + (slags === "kommende" ? ' hf-kort-lav' : '')
     + (x.knap ? ' hf-kort-klik' : '') + '"'
+    /* HOLD FINGEREN INDE (Ida 14/9): nummeret staar paa flisen, saa det lange tryk ved, HVILKET
+       punkt der skal vaere done eller udsat. Det staar paa ALLE roede I dag-fliser — ogsaa dem
+       uden klik-handling, for de skal ogsaa kunne krydses af. */
+    + (slags === "idag" ? ' data-fokus="' + i + '"' : '')
     + (x.knap ? ' onclick="hjemFokusKlik(' + i + ')"' : '') + '>'
     + '<div class="hf-kort-krop">'
       /* DEN ROEDE FLISE (Ida 5/9): oeverst staar bare "I dag", saa en skillelinje, og saa hvad
@@ -25432,7 +25565,9 @@ function dagensProgramItems() {
      punkter pr. dag siden #37, men INGEN laeste dem — nu forsvinder de fra dagens liste paa
      begge flader (Hjem og Content laeser den samme funktion). */
   try {
-    if (DAGSPROG && DAGSPROG.dato === idag && DAGSPROG.done) return items.filter(x => !DAGSPROG.done[x.id]);
+    /* UDSAT GAELDER OGSAA HER (14/9): "Udsæt" paa en roed I dag-flise skjuler punktet til en
+       dato, ikke bare for i dag. done nulstilles hver morgen, udsat gemmes med sin dato. */
+    if (DAGSPROG) return items.filter(x => !(DAGSPROG.dato === idag && DAGSPROG.done && DAGSPROG.done[x.id]) && !hjemIdagUdsatTil(x.id));
   } catch (e) {}
   return items;
 }
@@ -41861,7 +41996,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "1890";
+const APP_VERSION = "1891";
 let NY_VERSION_KLAR = false;
 let NY_VERSION_AFVIST = false;
 function nyVersionSkjul() {
@@ -58598,7 +58733,7 @@ function closeModal() {
   try { document.getElementById("modalBack").classList.remove("oevo-fuld"); } catch(e) {}
   /* Den roede spoergsmaals-flade er ogsaa pr. popup — uden oprydning ville den naeste
      arve rød baggrund uden en hvid kasse at laese i (samme regel som .bred). */
-  try { document.getElementById("modalBack").classList.remove("spmpop", "midt"); } catch(e) {}
+  try { document.getElementById("modalBack").classList.remove("spmpop", "midt", "idag-valg"); } catch(e) {}
   try { studieVaelgerRetur(); } catch(e) {}
 }
 
@@ -59370,6 +59505,6 @@ function prFaerdigHtml() {
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 14. september · 1890</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 14. september · 1891</div>
 </body>
 </html>
