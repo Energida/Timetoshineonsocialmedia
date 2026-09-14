@@ -38767,7 +38767,7 @@ function bsBogSider(st, navn, tiltale, butik) {
 }
 
 /* ---------- BOGEN I SIT EGET VINDUE ---------- */
-function bsVis(kode) {
+function bsVis(kode, vindue) {
   const t = BS_TILSTAND[kode];
   if (!t || !t.generation) return;
   const navn = bsNavnFor(kode) || "Drejebogen";
@@ -38792,7 +38792,7 @@ function bsVis(kode) {
 
   const sider = bsBogSider(st, navn, bsAddressingMode(kode), butik);
 
-  const w = window.open("", "_blank");
+  const w = vindue || window.open("", "_blank");   /* vinduet kan vaere aabnet i forvejen af drejebogAaben (14/9: pop op-spaerren) */
   if (!w) { alert("Browseren blokerede vinduet. Tillad pop op-vinduer, så kan du åbne Drejebogen."); return; }
 
   /* BOGEN AABNER PAA about:blank, saa der er ingen adresse at regne relative filer ud
@@ -39111,12 +39111,30 @@ async function drejebogAaben() {
   if (d.drejebog) { window.open(d.drejebog, "_blank", "noopener"); return; }
   const kode = (typeof currentKode !== "undefined" && currentKode) || "";
   if (!kode || typeof sb === "undefined" || !sb) { drejebogTomVis(d); return; }
+  /* TELEFONEN FAAR BOGEN I APPEN (MAALT 14/9 som kunde paa 390: menuens »Drejebogen« aabnede et nyt vindue EFTER en hentning,
+     og pop op-spaerren stoppede det — bogen kom aldrig, selv om bsMobilBogTegn (bud 2, 8/9) laa klar i screen1). */
+  let telefon = false; try { telefon = window.matchMedia("(max-width:760px)").matches; } catch (e) {}
+  if (telefon) {
+    drejebogHenterVis(true);
+    try { await bsAktivHent(kode); } catch (e) {}
+    drejebogHenterVis(false);
+    const t0 = (typeof BS_TILSTAND !== "undefined" && BS_TILSTAND[kode]) || null;
+    const st0 = t0 && t0.generation && t0.generation.strategi; const bb0 = (st0 && st0.building_blocks) || {};
+    const grundlag = !!(bb0.drive || bb0.usp || (Array.isArray(bb0.audiences) && bb0.audiences.length) || (Array.isArray(bb0.values) && bb0.values.length));
+    if (!grundlag) { drejebogTomVis(d); return; }
+    try { showTab(1); } catch (e) {}
+    try { await bsMobilBogTegn(); } catch (e) {}
+    return;
+  }
+  /* COMPUTEREN: vinduet aabnes MENS trykket stadig gaelder (foer hentningen), ellers blokerer Safari det. Kommer der ingen bog, lukkes det igen. */
+  let w = null; try { w = window.open("", "_blank"); } catch (e) { w = null; }
   drejebogHenterVis(true);
   try { await bsAktivHent(kode); } catch (e) {}
   drejebogHenterVis(false);
   const t = (typeof BS_TILSTAND !== "undefined" && BS_TILSTAND[kode]) || null;
   const md = t && t.generation && String(t.generation.markdown || "").trim();
-  if (md) { try { bsVis(kode); return; } catch (e) {} }
+  if (md) { try { bsVis(kode, w); return; } catch (e) {} }
+  try { if (w) w.close(); } catch (e) {}
   drejebogTomVis(d);
 }
 /* En hentning maa aldrig vaere tavs: uden den her stod man og trykkede paa "Drejebogen"
@@ -42719,7 +42737,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "1924";
+const APP_VERSION = "1925";
 let NY_VERSION_KLAR = false;
 let NY_VERSION_AFVIST = false;
 function nyVersionSkjul() {
@@ -60350,6 +60368,6 @@ function prFaerdigHtml() {
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 14. september · 1924</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 14. september · 1925</div>
 </body>
 </html>

@@ -692,13 +692,21 @@ Målt i Idas browserpanel, logget ind som en Content Studio-kunde, 390 og 1440, 
 
 **Rettet (v1924):** Indbakkens »Ja, postet«/»Nej, ny dato« var 158×40 side om side → lange 48 px under hinanden på telefonen. »Start planlægningen« 318×44 (inline-stil slog reglen) → 48 px fuld bredde. »Tema« i menuen førte til kalenderen uden tema-kort → åbner Målsætninger, hvor temaet sættes.
 
-**Stopper eleven, Idas valg:** Drejebogen siger »Strategien er på vej«, mens Tilpas drejebog har byggesten (bogen er ikke genereret for kunden). Kalenderen på telefonen har kun I dag + Kommende. Idébanken: 25 af 31 idéer under »Andet« (ingen søjle sat).
+**Stopper eleven, Idas valg:** ~~Drejebogen siger »Strategien er på vej«~~ RETTET MÅLING kl. 18.55: Drejebogen findes (generation med 16.344 tegn markdown) og åbner i sit eget vindue (`window.open`, 112 KB bog med Tilbage); browserpanelet blokerede vinduet, og jeg læste screen1's skjulte reservetekst. Fejlen var min. Eleven skal vide, at bogen åbner som ny fane, og at Safari skal tillade pop op. Kalenderen på telefonen har kun I dag + Kommende. Idébanken: 25 af 31 idéer under »Andet« (ingen søjle sat).
 
 **Gammelt design, venter på tegning:** Værktøjskassen (tekstblokke, versaler, »Åbner, når din strategi er bygget« hos en kunde med bygget strategi, 90 px felt), Målsætninger (22 px toggles, 17 px tekstlinks), Hjem på computeren (ugegitter med små plus, 30 px ikoner, 20 px flueben), kalenderen på computeren (28 px pile, 17 px link), planlægningsdagens topbar med Tilbage (Idas eget klik 13/9).
 
 **Målt OK:** Hjem på telefonen, briefen, Performance, Indbakken, Tøm hovedet-arket, Arkivet, Inspiration, planlægningsdagens fem trin.
 
 **Ikke målt:** optagelse/oplæsning, Del, Log ud, Skift adgangskode, Drive-mappen, Ønsker til appen med et rigtigt ønske, strategibyggeren, en YOU GOT THIS-kunde.
+
+## 5ay. v1925: Drejebogen på telefonen åbner i appen (Ida 14/9 kl. 19.10: »vurderer du at drejebogen fungerer?«)
+
+**Målt i Idas session som kunde på 390:** menuens »Drejebogen« kaldte `drejebogAaben` → hentning (await) → `bsVis` → `window.open`. Et nyt vindue EFTER en hentning er uden for trykket, så pop op-spærren (Safari på iPhone og browserpanelet) stoppede det: bogen kom aldrig, og alerten »Browseren blokerede vinduet« var det eneste, eleven så. Samtidig lå telefonens egen bog (`bsMobilBogTegn`, bud 2 8/9: hvide sider, én ad gangen, swipe) klar i screen1 og blev kun tegnet af `showTab(1)`, som menuen ikke kaldte.
+
+**Rettet:** på ≤ 760 px åbner `drejebogAaben` screen1 og tegner bogen i appen (målt: 10 sider, »Den røde tråd · Drivkraften …«, Tilbage 358 px lang, ingen tom-tekst). På computeren åbnes vinduet FØR hentningen (mens trykket gælder) og lukkes igen, hvis der ingen bog er; `bsVis(kode, vindue)` tager det åbne vindue.
+
+**Vurdering:** teknisk virker Drejebogen nu på begge flader for en kunde med genereret bog. Om ordene i bogen holder, er Idas dom, ikke min.
 
 ## 6. Bridge-trådene 12/9
 
