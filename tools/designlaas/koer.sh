@@ -27,5 +27,9 @@ LEVERET=$(curl -s "http://127.0.0.1:$PORT/index-sele.html" | grep -c "const APP_
 K=$(python3 -c "import urllib.parse,sys;print(urllib.parse.quote(open(sys.argv[1]).read()))" "$ROD/tools/designlaas/probe-popups.js")
 UD=$(timeout 90 "$C" --headless=new --no-sandbox --disable-gpu --window-size=390,1200 --virtual-time-budget=20000 --enable-logging=stderr --v=0 --screenshot="$MAAL/laas.png" "http://127.0.0.1:$PORT/sele.html?vis=kunde&fil=index-sele.html&bred=390&kode=$K" 2>&1 | grep -a 'CONSOLE' | sed -E 's/^.*CONSOLE:[0-9]+\] //; s/", source:.*$//; s/^"//' | grep -a 'SELE LAAS')
 echo "$UD"
-echo "$UD" | grep -q "SELE LAAS OK" && exit 0
+# SIDEMAALINGEN (14/9): samme sele, anden probe — hele sider paa 390 (taeppet, sejlads, 44 px, kryds, emoji, streger i fliser)
+K2=$(python3 -c "import urllib.parse,sys;print(urllib.parse.quote(open(sys.argv[1]).read()))" "$ROD/tools/designlaas/probe-sider.js")
+UD2=$(timeout 90 "$C" --headless=new --no-sandbox --disable-gpu --window-size=390,1200 --virtual-time-budget=40000 --enable-logging=stderr --v=0 --screenshot="$MAAL/sider.png" "http://127.0.0.1:$PORT/sele.html?vis=kunde&fil=index-sele.html&bred=390&kode=$K2" 2>&1 | grep -a 'CONSOLE' | sed -E 's/^.*CONSOLE:[0-9]+\] //; s/", source:.*$//; s/^"//' | grep -a 'SELE SIDER')
+echo "$UD2"
+echo "$UD" | grep -q "SELE LAAS OK" && echo "$UD2" | grep -q "SELE SIDER OK" && exit 0
 echo "SELE LAAS FEJL: maalingen sagde ikke OK"; exit 1

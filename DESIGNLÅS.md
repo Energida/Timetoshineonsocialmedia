@@ -10,7 +10,7 @@ Filen er kort med vilje. Hver regel kan måles. Målingen står i `tools/designl
 2. **Låsning er fejning.** Den tråd, der låser, gennemgår hele appen for det gamle samme dag og lægger alt om, eller skriver præcist i statusnotatet, hvad der står tilbage og hvorfor. Det var det, der glippede 11/9 (arket blev låst kl. 12, helskærmen fra kl. 10 blev stående til 13/9).
 3. Før hvert commit, der rører en popup, en knap eller en side på telefonen: kør `bash tools/designlaas/koer.sh` og skriv resultatet i statusnotatet. `SELE LAAS OK` eller ingen deploy.
    **Porten (13/9):** GitHub-actionen `.github/workflows/designlaas.yml` kører samme måling ved hvert push til `dashboard-og-database` og skubber kun commits, der siger OK, videre til grenen `produktion`. Peger Cloudflare Pages på `produktion`, når intet ud til kunderne uden målingen, uanset hvad en tråd gør.
-4. Ny popup-dør i appen? Tilføj den i `DOERE` i proben i samme commit. En dør, proben ikke kender, er ikke målt.
+4. Ny popup-dør i appen? Tilføj den i `DOERE` i `probe-popups.js` i samme commit. Ny side? Tilføj dens dør i `SIDER` i `probe-sider.js` (14/9: hele sider måles også: tæppet, sejlads, 44 px trykfelter, kryds, emoji, streger i fliser). En dør, proben ikke kender, er ikke målt.
    **Grænsen (14/9):** proben åbner KUNDEAPPEN. Døre i Backstage (fx arket på et rum i Maskinrummet) måles endnu ikke af `koer.sh` og skal måles for sig, indtil proben også kører Backstage. Står der OK, er det kundeappen, der er målt.
 5. Er du i tvivl, om noget er låst: spørg Ida med et klik-valg. Byg ikke et bud og deploy det.
 

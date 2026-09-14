@@ -22,6 +22,7 @@ const DOERE = [
   ["vaelgPlanDagModal", "valg", function () { vaelgPlanDagModal(); }],
   ["opslagNyDatoAabn", "valg", function () { opslagNyDatoAabn("dl-ops"); }],
   ["visDagOpslag", "valg", function () { visDagOpslag(datoDK()); }],
+  ["drejebogTomVis", "valg", function () { drejebogTomVis(); }],   /* »Drejebogen er tom« (fundet af sidemaalingen 14/9: doeren var ukendt og blev staaende over naeste side) */
   /* Det lange tryk paa en roed I dag-flise (Ida 14/9): Done eller Udsaet. Doeren aabnes her direkte
      med et punkt lagt i listen, saa maalingen ikke afhaenger af, hvad basen svarer. */
   ["hjemIdagValg", "valg", function () { window.__HJEM_FOKUS = { pkt: [{ titel: "Designlaas-punkt", navn: "", sub: "", knap: "Ja" }], klarede: 0 }; hjemIdagValgAabn(0); }]
@@ -64,6 +65,7 @@ setTimeout(async function () {
       try { closeModal(); } catch (e) {}
       try { if (hel) togglePlus(); } catch (e) {}
       try { deltDialogLuk(); } catch (e) {}
+      try { drejebogTomLuk(); } catch (e) {}
       document.querySelectorAll(".modal-back.on").forEach(function (m) { m.classList.remove("on"); });
       await new Promise(function (r) { setTimeout(r, 150); });
     }
