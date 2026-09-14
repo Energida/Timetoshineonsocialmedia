@@ -28934,7 +28934,7 @@ function klipBud6Tegn(el) {
   const liste = (grupper[KLIP_MODUL_CHIP] || []).slice().sort(klipSortCmp);
   const fliser = liste.length
     ? liste.map(function (o) {
-        return '<button type="button" class="bs-kf kv-flise" onclick="klipBriefAaben(\'' + esc(String(o.id)) + '\')">'
+        return '<button type="button" class="bs-kf kv-flise" data-vid="' + esc(String(o.id)) + '" onclick="klipBriefAaben(\'' + esc(String(o.id)) + '\')">'
           + '<span class="bs-kf-tekst"><span class="bs-kf-n">' + esc(titelVis(o.titel || "Uden titel")) + '</span>'
           + '<span class="bs-kf-s">' + esc(klipLinje(o)) + '</span>' + klipRinge(o) + '</span></button>';   /* HELE flisen aabner lektionen (Ida 14/9 kl. 16.15: »nu kan jeg ikke aabne lektionerne« — v1915 lod statuslinjen aabne status-arket i stedet). Status skiftes KUN i briefen (#kbStatusChip). */
       }).join("")
@@ -28947,7 +28947,101 @@ function klipBud6Tegn(el) {
   const ht = document.getElementById("klipHeadTgl");
   if (ht) ht.innerHTML = '<button type="button" class="kv-menuknap mq-tap" aria-label="Menu" title="Værktøjer og visninger" onclick="klipMenuSkift()">···</button>';
   el.innerHTML = menu + chips + fliser + send;
+  try { klipLangTrykLyt(el); } catch (e) {}   /* langt tryk paa en videoflise = husets ene menu (12/9-reglen; bygget natten 14/9-15/9) */
   try { sideKlarNaar("klipPageList"); } catch (e) {}
+}
+/* ===== LANGT TRYK PAA EN VIDEOFLISE = EEN MENU, DE SAMME FEM (Ida 12/9: »gælder alle fliser, admin og b2b«) =====
+   Ida 14/9 kl. 21.47: »hvordan kan jeg slette en lektion?« — Slet fandtes kun i den gamle Listen-visning bag ⋯.
+   Nu: hold fingeren paa flisen i 450 ms (uden at bevaege den 10 px) → arket med Flyt til modul · Omdoeb · Duplikér ·
+   Slet (spoerger foerst). Et kort tryk aabner briefen som foer. Flyt rundt (traek) er IKKE bygget her endnu. */
+function klipLangTrykLyt(host) {
+  if (!host || host.__klipLang) return; host.__klipLang = true;
+  let t = null, el = null, x0 = 0, y0 = 0, laas = false;
+  const slut = function () { if (t) { clearTimeout(t); t = null; } el = null; };
+  host.addEventListener("pointerdown", function (e) {
+    const f = e.target.closest(".kv-flise[data-vid]"); if (!f) return;
+    if (e.pointerType === "mouse" && e.button !== 0) return;
+    el = f; x0 = e.clientX; y0 = e.clientY; laas = false;
+    t = setTimeout(function () { laas = true; try { klipFliseMenu(el.dataset.vid); } catch (err) {} }, 450);
+  });
+  host.addEventListener("pointermove", function (e) { if (!el || laas) return; if (Math.abs(e.clientX - x0) > 10 || Math.abs(e.clientY - y0) > 10) slut(); });
+  host.addEventListener("pointerup", slut); host.addEventListener("pointercancel", slut);
+  host.addEventListener("click", function (e) { if (laas) { e.stopPropagation(); e.preventDefault(); laas = false; } }, true);   /* eet spaerret klik efter et langt tryk */
+  host.addEventListener("contextmenu", function (e) { if (el || laas) e.preventDefault(); });
+}
+function klipFliseMenu(id) {
+  const o = KLIP_OPGAVER.find(function (x) { return String(x.id) === String(id); }); if (!o) return;
+  let m = document.getElementById("bsFlytMenu"); if (!m) { m = document.createElement("div"); m.id = "bsFlytMenu"; document.body.appendChild(m); }
+  const sid = esc(String(id)).replace(/'/g, "\\'");
+  const kn = function (tekst, fn, roed) { return '<button type="button" class="bsam-mobknap bsam-mobknap-sek bs-knap" style="display:block;width:100%;margin:6px 0 0;' + (roed ? 'color:var(--red);' : '') + '" onclick="' + fn + '">' + tekst + '</button>'; };
+  /* Flyt til et andet modul: modulerne, der findes i listen (samme gruppering som chipsene), uden det, videoen staar i. */
+  const nu = klipModulGruppe(o.modul); const set = {}; const moduler = [];
+  (KLIP_OPGAVER || []).forEach(function (x) { const k = klipModulGruppe(x.modul); if (k !== nu && !set[k]) { set[k] = String(x.modul || ""); moduler.push(k); } });
+  moduler.sort(function (a, b) { return klipModulSortNr(a) - klipModulSortNr(b) || a.localeCompare(b, "da"); });
+  const chips = moduler.length ? '<div class="bs-sek" style="margin:0 2px 8px;">Flyt til</div><div class="ark-chips i-fladen" style="margin:0 0 14px;">' + moduler.map(function (k) {
+    return '<button type="button" class="ark-chip" onclick="klipFlytTilModul(\'' + sid + '\',\'' + esc(set[k]).replace(/'/g, "\\'") + '\')">' + esc(k) + '</button>'; }).join("") + '</div>' : '';
+  m.innerHTML = '<div class="bs-flyt-ark"><div class="bs-sek" style="margin:0 2px 10px;">' + esc(titelVis(o.titel || "Videoen")) + '</div>'
+    + chips
+    + '<div class="bs-sek" style="margin:0 2px 2px;">Videoen</div>'
+    + kn("Omdøb", "klipOmdoebVis('" + sid + "')") + kn("Duplikér", "klipDupliker('" + sid + "')") + kn("Slet", "klipSletSpoerg('" + sid + "')", true)
+    + '<button type="button" class="bsam-mobknap bsam-mobknap-sek bs-knap" style="display:block;width:100%;margin:14px 0 0;" onclick="bsFlytLuk()">Luk</button></div>';
+  m.style.display = "flex";
+}
+async function klipFlytTilModul(id, modul) {
+  bsFlytLuk(); if (!sb) return;
+  try {
+    const r = await sb.from("video_opgaver").update({ modul: modul || null }).eq("id", id).select("id");
+    if (r.error) throw r.error; if (!r.data || !r.data.length) throw new Error("Skrivningen ramte 0 rækker");
+    await klipHent();
+  } catch (e) { alert("Kunne ikke flytte: " + String((e && e.message) || e)); }
+}
+function klipOmdoebVis(id) {
+  const o = KLIP_OPGAVER.find(function (x) { return String(x.id) === String(id); }); if (!o) return;
+  const m = document.getElementById("bsFlytMenu"); if (!m) return;
+  const sid = esc(String(id)).replace(/'/g, "\\'");
+  m.innerHTML = '<div class="bs-flyt-ark"><div class="bs-sek" style="margin:0 2px 10px;">Omdøb</div>'
+    + sendFeltHtml({ id: "klipOmdoebFelt", ph: "Nyt navn", fn: "klipOmdoebGem('" + sid + "')", aria: "Gem navnet", klasse: "bs-sendfelt" })
+    + '<button type="button" class="bsam-mobknap bsam-mobknap-sek bs-knap" style="display:block;width:100%;margin:12px 0 0;" onclick="bsFlytLuk()">Luk</button></div>';
+  const f = document.getElementById("klipOmdoebFelt"); if (f) { f.value = o.titel || ""; setTimeout(function () { try { f.focus(); f.select(); } catch (e) {} }, 60); }
+}
+async function klipOmdoebGem(id) {
+  const f = document.getElementById("klipOmdoebFelt"); const titel = ((f && f.value) || "").trim(); if (!titel) { if (f) f.focus(); return; }
+  bsFlytLuk(); if (!sb) return;
+  try {
+    const r = await sb.from("video_opgaver").update({ titel: titel }).eq("id", id).select("id");
+    if (r.error) throw r.error; if (!r.data || !r.data.length) throw new Error("Skrivningen ramte 0 rækker");
+    await klipHent();
+  } catch (e) { alert("Kunne ikke omdøbe: " + String((e && e.message) || e)); }
+}
+async function klipDupliker(id) {
+  const o = KLIP_OPGAVER.find(function (x) { return String(x.id) === String(id); }); if (!o) return;
+  bsFlytLuk(); if (!sb) return;
+  try {
+    /* Kopien faar naeste ledige nummer i modulet (som en ny video), manus og raafil-link foelger med; status starter forfra. */
+    const uden = String(o.titel || "").replace(/^\d+\.\d+\s*·?\s*/, "");
+    const nr = klipNaesteNr(o.modul); const titel = (nr ? nr + " · " : "") + uden + " kopi";
+    const rec = { titel: titel, modul: o.modul || null, status: "Manus ikke godkendt", kommentarer: [], kode: o.kode || "THOMAS2026", manus_tekst: o.manus_tekst || null, raafiler_link: o.raafiler_link || null };
+    const ny = await sb.from("video_opgaver").insert(rec).select("id");
+    if (ny.error) throw ny.error; if (!ny.data || !ny.data.length) throw new Error("Skrivningen ramte 0 rækker");
+    await klipHent();
+  } catch (e) { alert("Kunne ikke duplikere: " + String((e && e.message) || e)); }
+}
+function klipSletSpoerg(id) {
+  const o = KLIP_OPGAVER.find(function (x) { return String(x.id) === String(id); }); const navn = o ? titelVis(o.titel || "videoen") : "videoen";
+  const m = document.getElementById("bsFlytMenu"); if (!m) return;
+  const sid = esc(String(id)).replace(/'/g, "\\'");
+  m.innerHTML = '<div class="bs-flyt-ark"><div class="bs-sek" style="margin:0 2px 10px;">Slet »' + esc(navn) + '«?</div>'
+    + '<div style="font-size:12.5px;color:var(--gray3);line-height:1.6;margin:0 2px 12px;">Manus, brief, B-rolls og kommentarer følger med. Det kan ikke fortrydes.</div>'
+    + '<button type="button" class="bsam-mobknap bs-knap" style="display:block;width:100%;background:var(--red);color:#fff;border:0;" onclick="klipSletNu(\'' + sid + '\')">Ja, slet</button>'
+    + '<button type="button" class="bsam-mobknap bsam-mobknap-sek bs-knap" style="display:block;width:100%;margin:6px 0 0;" onclick="bsFlytLuk()">Nej</button></div>';
+}
+async function klipSletNu(id) {
+  bsFlytLuk(); if (!sb) return;
+  try {
+    const r = await sb.from("video_opgaver").delete().eq("id", id).select("id");
+    if (r.error) throw r.error; if (!r.data || !r.data.length) throw new Error("Sletningen ramte 0 rækker");
+    await klipHent();
+  } catch (e) { alert("Kunne ikke slette: " + String((e && e.message) || e)); }
 }
 /* Hvilke moduler er foldet ud i liste-visningen. Lukket fra start — 49 raekker
    paa een gang er ikke et overblik (Ida 2/8, kanban-reglen 31/7). */
