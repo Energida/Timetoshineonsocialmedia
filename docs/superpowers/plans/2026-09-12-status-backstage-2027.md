@@ -676,6 +676,12 @@ Ida valgte UX-politiet frem for en ny tegning (kl. 16.30), derefter Pipeline som
 
 **Målt:** `koer.sh` 19 døre + 15 sider OK. Live-måling på 1440 og 390 i næste afsnit.
 
+## 5au. v1922: foldemenuen følger det åbne område (målt i selen 14/9 kl. 17.45)
+
+**Målt i selen (tom base) på 1440 og 390:** Pipelinen står som bud 3: hero »Pipeline«, sti Hjem › Salg › Pipeline, Følg op i dag (tom-tekst uden data), fire ringe (to spalter på telefonen), chips, tom liste, »Tilføj kontakt …«, Tilbage 48 px lang på telefonen. Ingen vandret sejlads. **Fund:** åbnes Pipeline fra Hjem (mrGaaTil), stod »Mine rum« rød i menuen, fordi `visDashSide('maskinrum')` ikke svarer til nogen dør. Nu tegner `mrAabn` menuen efter området (salg, contentstudio, oevelser → workout, food, mindful).
+
+**Ikke målt med Idas data:** browserpanelet mistede login, da det blev lukket, så Følg op i dag, ringene og de 90 kontakter er ikke set live. Måles, når Ida logger ind i panelet igen.
+
 ## 6. Bridge-trådene 12/9
 
 Trådene på Idas maskine (»Skærm, der ikke må vises« m.fl.) døde kl. 16:25 dansk tid, fem minutter efter v1856 blev pushet, fordi computeren blev lukket. Intet i repoet er halvt; højst få minutters ucommitteret arbejde kan være tabt. De vågner først, når Claude Code startes på den maskine igen.
