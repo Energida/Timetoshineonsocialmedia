@@ -607,6 +607,21 @@ Idas ord: »mine rum er jo netop KUNDER : SALG osv … for 2 dage siden placered
 
 Statuschippen sad i den gamle modulvisning (`klipKort`), som bud 6 afløste 12/9; bud 6 viste ringene, men gav ingen vej til at skifte. Nu: tryk på statuslinjen/ringene på flisen (`.kv-status`) eller på status-knappen i briefen (`#kbStatusChip`, knapraekken ved Start optagelse) → husets ark (`klipStatusArk`) med de seks statusser som lange knapper, den valgte rød; valget skriver via `klipStatus` (samme motor som før), tegner siden igen og opdaterer knappen i briefen. Ordene på flisen er uændrede (`klipLinje`); i arket står statussernes egne navne (`klipStatusVis`).
 
+## 5ao. v1916: Hjem på computeren efter Idas fem beskeder kl. 15.30 til 15.45
+
+Idas ord: »hvad sker der seriøst her for layoutet på mit hjem på desktop???« · »disse skal komme frem på kunden - altså hinges hus!! Ikke på min idag?« · »jeg skal kunne arbejde i mine todos?? lige nu kan jeg kun klikke på fluebenet???« · »ALT skrift på min desktop version ser super grumset ud« · »er du ikke lige sød at kalde på superpower og ux ui og emil design« · »det er som om at alt jeg besluttede i den anden tråd er gået tabt«.
+
+**Hvad der var gået tabt fra skytråden (læst i overleveringen, afsnit 6.1):** rækkefølgen Kunder · Salg · Content Studio som de tre første. Bud G havde Kunder · Mine rum · Energida Studio · Salg … Nu: Kunder · Salg · Content Studio · Energida Studio · Workout Studio · Food Studio · Mindful Studio · Mine rum · Teknik, på computeren. Resten af skytrådens 42 punkter er i koden (v1888 til v1906 ligger under alt herfra); det åbne fra dens liste er stadig hilsnerne i basen, I/jer i modul 5 og 6, notifikationer og målgrupper på Performance.
+
+1. **»Er det postet?« er kundens.** Grenen er fjernet fra Idas Venter på dig (`venterRaekkerFra`); kunden får spørgsmålet i sin egen Indbakke (`opslagPostetListe`, alle kunder, ikke kun Content Studio-kunder). Godkend, retur, kommentar, to-do og ønsker står stadig hos Ida.
+2. **Venter på dig som bud G:** én rød ramme med hvide rækker (`bsVenterRammeHtml`, `.bs-idag`), svarene som røde ord til højre; før stod telefonens røde kort stablet i fuld bredde.
+3. **Bredden:** `#bsForside` var låst til 1100 px, så et 2000 px vindue viste en smal søjle og 900 px tomt. Nu 1500 px på computeren.
+4. **To-do kan rettes:** tryk på flisen åbner arket med teksten og datoen som chips (Ingen dato · I dag · I morgen · Om en uge · den nuværende); Gem skriver til samme række som telefonens to-do-side (`bsTodoRet`). Fluebenet = klaret som før.
+5. **Egne ikoner i den smalle skinne:** person · søjler (Salg) · pen (Content Studio) · afspil (Energida Studio) · håndvægt · skål · hjerte (Mindful) · hus (Mine rum) · tandhjul (Teknik). Før: fire ens kalendere.
+6. **»Grumset skrift«:** målt på html, body, dashMain, dash-wrap, dside-overblik og bsForside: ingen transform, filter, opacity, zoom eller font-smoothing-regel; Poppins 400. Ikke rettet, for der er ingen kode at rette; Chromes »Genstart for at opdatere« og zoom er de to ting uden for koden.
+
+**Målt:** `koer.sh` 19 døre + 15 sider OK. Hjem måles live efter deploy.
+
 ## 6. Bridge-trådene 12/9
 
 Trådene på Idas maskine (»Skærm, der ikke må vises« m.fl.) døde kl. 16:25 dansk tid, fem minutter efter v1856 blev pushet, fordi computeren blev lukket. Intet i repoet er halvt; højst få minutters ucommitteret arbejde kan være tabt. De vågner først, når Claude Code startes på den maskine igen.
