@@ -52,6 +52,8 @@ Filen er kort med vilje. Hver regel kan måles. Målingen står i `tools/designl
 
 **Navigationen på telefonen.** Ingen topbar; Tilbage står som lang knap nederst. Bundmenuen med plusset i midten. Plusset og swipe op på dagskortet åbner arket.
 
+**Backstage på computeren (14/9, Idas klik på bud F og G).** Sidemenuen ER dørene: Kunder · Mine rum · Energida Studio · Salg · Content Studio · Workout Studio · Food Studio · Mindful Studio · Teknik, hver folder ud til det, der ligger bag (registret `BS_DOER_DEF` + rum + kategorier + studiernes kort), én dør åben ad gangen, den aktive rød. Dørfliserne på Hjem findes ikke på computeren. Hjem på computeren er fem rammer: I dag (Venter på dig med To-do under, Kommende aftaler til højre) · Dine (genveje som piller, pinnede kunder som døre) · Denne uge (tre ringe) · Forretningen (Energida Studio, salget) · Dig (dit eget content fra IDAENERGIDA, de samme rækker som hendes eget login; energien hører til Time to Shine). Rammen er gennemsigtig med hårfin kant; rækker i en stak står med 8 px. Telefonen (< 1000 px) er urørt: dagens kort, dørene som fliser, bundmenuen.
+
 ## Det, der IKKE er låst
 
 Alt, der ikke står her, er ikke låst. Det betyder ikke frit valg: det betyder mockup først og Idas klik, før der bygges.
