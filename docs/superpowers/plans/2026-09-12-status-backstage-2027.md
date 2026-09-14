@@ -603,6 +603,10 @@ Idas ord: »mine rum er jo netop KUNDER : SALG osv … for 2 dage siden placered
 
 **Målt:** `koer.sh` 19 døre + 15 sider OK. Teknik, stien og Tilbage måles live efter deploy (næste afsnit).
 
+## 5an. v1915: status på videoerne kan skiftes igen (Ida 14/9 kl. 15.25: »jeg kan ikke ændre status på lektionerne nogle steder nu??«)
+
+Statuschippen sad i den gamle modulvisning (`klipKort`), som bud 6 afløste 12/9; bud 6 viste ringene, men gav ingen vej til at skifte. Nu: tryk på statuslinjen/ringene på flisen (`.kv-status`) eller på status-knappen i briefen (`#kbStatusChip`, knapraekken ved Start optagelse) → husets ark (`klipStatusArk`) med de seks statusser som lange knapper, den valgte rød; valget skriver via `klipStatus` (samme motor som før), tegner siden igen og opdaterer knappen i briefen. Ordene på flisen er uændrede (`klipLinje`); i arket står statussernes egne navne (`klipStatusVis`).
+
 ## 6. Bridge-trådene 12/9
 
 Trådene på Idas maskine (»Skærm, der ikke må vises« m.fl.) døde kl. 16:25 dansk tid, fem minutter efter v1856 blev pushet, fordi computeren blev lukket. Intet i repoet er halvt; højst få minutters ucommitteret arbejde kan være tabt. De vågner først, når Claude Code startes på den maskine igen.

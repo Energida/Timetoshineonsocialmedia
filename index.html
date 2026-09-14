@@ -5055,6 +5055,7 @@ body.klip-bud6 #klipHeadTgl > * { width:36px !important; min-width:36px !importa
 .kv-menuknap { width:36px; height:36px; min-height:36px; border-radius:50%; background:#fff; border:1px solid var(--border); color:var(--gray3); font-family:Poppins,sans-serif; font-size:16px; letter-spacing:1px; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0; }
 .kv-menu { margin:0 0 var(--luft-3); }
 .kv-flise .bs-kf-tekst { display:flex; flex-direction:column; width:100%; }
+.kv-status { display:block; cursor:pointer; }   /* statuslinje + ringe aabner status-arket (14/9) */
 .kv-ringe { display:flex; gap:6px; margin-top:8px; }
 .kv-ringe i { width:16px; height:16px; border-radius:50%; border:1.5px solid var(--border); display:block; box-sizing:border-box; }
 .kv-ringe i.on { border-color:var(--red); background:var(--red); }
@@ -28892,7 +28893,7 @@ function klipBud6Tegn(el) {
     ? liste.map(function (o) {
         return '<button type="button" class="bs-kf kv-flise" onclick="klipBriefAaben(\'' + esc(String(o.id)) + '\')">'
           + '<span class="bs-kf-tekst"><span class="bs-kf-n">' + esc(titelVis(o.titel || "Uden titel")) + '</span>'
-          + '<span class="bs-kf-s">' + esc(klipLinje(o)) + '</span>' + klipRinge(o) + '</span></button>';
+          + '<span class="kv-status" role="button" title="Skift status" onclick="event.stopPropagation();klipStatusArk(\'' + esc(String(o.id)) + '\')"><span class="bs-kf-s">' + esc(klipLinje(o)) + '</span>' + klipRinge(o) + '</span></span></button>';
       }).join("")
     : '<div class="bs-kf bs-tom">Ingenting endnu.</div>';
   /* Sendefeltet ER klipNy(): titlen i feltet, modulet = den valgte chip (skjulte felter, som klipNy laeser). */
@@ -29376,6 +29377,7 @@ function klipBriefRender() {
     + '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:16px 0 0;">'
     + '<button class="dbtn primary" style="padding:11px 20px;" onclick="prompterAaben(&#39;' + o.id + '&#39;)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;"><path d="M7 4.5v15l12-7.5Z"/></svg> Start optagelse</button>'
     + '<button id="kbLaesBtn" title="Læs manus op" onclick="kbLaesOp(&#39;' + o.id + '&#39;)" style="background:#fff;border:1px solid var(--red);color:var(--red);border-radius:12px;padding:10px 12px;cursor:pointer;display:inline-flex;align-items:center;line-height:0;flex-shrink:0;">' + KB_IKON_HOEJTALER + '</button>'
+    + '<button type="button" class="row-btn" id="kbStatusChip" style="font-weight:400;" title="Skift status" onclick="klipStatusArk(&#39;' + o.id + '&#39;)">' + esc(klipLinje(o)) + '</button>'   /* status skiftes her (Ida 14/9) */
     + '<button class="row-btn view" style="font-weight:400;" onclick="klipManusNyFane(&#39;' + o.id + '&#39;)">Åbn i ny fane</button>'
     + '<button class="row-btn" style="font-weight:400;" title="Kun det, der skal siges" onclick="printManus(&#39;' + o.id + '&#39;)">Print manus</button>'
     /* Produktionsversionen findes kun, naar der ER en struktur at vise. Ellers ville
@@ -30637,6 +30639,29 @@ function klipOpgLuk(id) {
 }
 function klipOpgFold(id) { KLIP_OPG_AABEN = (String(KLIP_OPG_AABEN) === String(id)) ? null : String(id); renderKlipperum(); }
 function klipStatusVaelg(id, st) { KLIP_STATUS_AABEN = null; klipStatus(id, st); renderKlipperum(); }
+/* STATUS SKIFTES I HUSETS ARK (Ida 14/9 kl. 15.25: »jeg kan ikke ændre status på lektionerne nogle steder nu??«). Statuschippen
+   sad i den gamle modulvisning (klipKort), som bud 6 afloeste. Nu: tryk paa statuslinjen/ringene paa flisen ELLER paa
+   status-knappen i briefen → arket (#bsFlytMenu/.bs-flyt-ark) med de seks statusser som lange knapper; den valgte er roed. */
+function klipStatusArk(id) {
+  const o = KLIP_OPGAVER.find(function (x) { return String(x.id) === String(id); }); if (!o) return;
+  let m = document.getElementById("bsFlytMenu"); if (!m) { m = document.createElement("div"); m.id = "bsFlytMenu"; document.body.appendChild(m); }
+  const nu = klipStatusNorm(o.status);
+  const r = function (st) {
+    const valgt = st === nu;
+    return '<button type="button" class="bsam-mobknap bsam-mobknap-sek bs-knap" style="display:block;width:100%;margin:0 0 8px;' + (valgt ? 'background:var(--red);color:#fff;border-color:var(--red);' : '') + '" onclick="klipStatusFraArk(\'' + esc(String(id)) + '\',\'' + esc(st).replace(/'/g, "\\'") + '\')">' + esc(klipStatusVis(st)) + '</button>';
+  };
+  m.innerHTML = '<div class="bs-flyt-ark"><div class="bs-sek" style="margin:0 2px 10px;">' + esc(titelVis(o.titel || "Videoen")) + ' · status</div>'
+    + KLIP_STATUSSER.map(r).join("")
+    + '<button type="button" class="bsam-mobknap bsam-mobknap-sek bs-knap" style="display:block;width:100%;margin:6px 0 0;" onclick="bsFlytLuk()">Luk</button></div>';
+  m.style.display = "flex";
+}
+function klipStatusFraArk(id, st) {
+  bsFlytLuk();
+  try { klipStatus(id, st); } catch (e) {}
+  try { renderKlipperum(); } catch (e) {}
+  const c = document.getElementById("kbStatusChip"); const o = KLIP_OPGAVER.find(function (x) { return String(x.id) === String(id); });
+  if (c && o) c.textContent = klipLinje(o);
+}
 function klipKort(o) {
   const iv = v => esc(v == null ? "" : String(v)).replace(/"/g, "&quot;");
   if (String(KLIP_RET) === String(o.id)) {
@@ -42563,7 +42588,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "1914";
+const APP_VERSION = "1915";
 let NY_VERSION_KLAR = false;
 let NY_VERSION_AFVIST = false;
 function nyVersionSkjul() {
@@ -60178,6 +60203,6 @@ function prFaerdigHtml() {
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 14. september · 1914</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 14. september · 1915</div>
 </body>
 </html>
