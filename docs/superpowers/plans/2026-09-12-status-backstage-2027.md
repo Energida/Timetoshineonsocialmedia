@@ -766,6 +766,10 @@ Set gennem Idas login i som kunde-visningen på computeren (1470 px, Chrome zoom
 - **Probeerne v1932:** `SELE LAAS OK: 19 doere` · `SELE SIDER OK: 15 sider`.
 - **Ikke målt:** telefonen med rigtige data · Gem.
 
+## 5bg. v1933: nyt lektionsnummer af sig selv (Ida 14/9 kl. 21.10, skærmbillede: »når jeg tilføjer ny video kommer der ikke automatisk nummer på?«)
+
+Energida Studio › sendefeltet »Ny video …« (`klipNy`) gemte titlen, som den var skrevet; nummeret (»3.5 · …«) bor i titlen, og alt læser det derfra (`klipLekNr`, `klipLektionFor`, rækken i 29088). Ny `klipNaesteNr(modul)`: er det valgte modul nummereret (»Modul 3«), sættes højeste 3.x i hele listen + 1 foran (»3.6 · Titel«). Starter titlen allerede med et nummer, røres den ikke; uden nummereret modul (Værktøjskassen, tom) sættes intet. Testet i node: Modul 3 → 3.6 · Modul 2 → 2.10 · Modul 4 (tom) → 4.1 · Værktøjskassen → intet. Ikke målt: selve indsættelsen i basen (ingen video oprettet hos Ida). Videoen »Kan jeg gøre noget ved det?« fra før v1933 står stadig uden nummer — Ida omdøber den selv.
+
 ## 6. Bridge-trådene 12/9
 
 Trådene på Idas maskine (»Skærm, der ikke må vises« m.fl.) døde kl. 16:25 dansk tid, fem minutter efter v1856 blev pushet, fordi computeren blev lukket. Intet i repoet er halvt; højst få minutters ucommitteret arbejde kan være tabt. De vågner først, når Claude Code startes på den maskine igen.
