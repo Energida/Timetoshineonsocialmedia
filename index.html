@@ -4941,6 +4941,18 @@ body.perf-bud1 #screen9[data-perf-aaben] #perfBud1 .pb-top > * { display:none !i
 .pb-eye::after { content:""; flex:1; border-top:1px solid var(--border); }
 /* BUD 2 »Ringene« (12/9): tre af husets ringe i hver sin flise · maalsaetninger som fliser · doere */
 .pb-ringe { display:grid; grid-template-columns:repeat(3,1fr); gap:var(--luft-1); margin:0 0 var(--luft-2); }
+/* EEN RING ALENE skal ikke staa som en tredjedel af en raekke (14/9): den fylder sin egen bredde. */
+.pb-ringe-en { grid-template-columns:1fr; }
+/* FORDELINGEN PAA SOEJLER OG FORMATER (Ida 14/9). Raekker som .pb-maal, men med en tynd bjaelke i
+   forhold til den stoerste gruppe. Ingen procenter: med tre opslag paa en uge siger procenter mere,
+   end tallet kan baere. */
+.pb-fordel { margin:0 0 var(--luft-2); }
+.pb-fd { display:grid; grid-template-columns:1fr auto; align-items:baseline; gap:10px; background:#fff; border:1px solid var(--border); border-radius:20px; padding:13px 18px 11px; margin:0 0 8px; }
+.pb-fd-n { font-size:14px; font-weight:300; color:var(--black); min-width:0; overflow-wrap:anywhere; }
+.pb-fd-t { font-family:'Didot','Bodoni 72',Georgia,serif; font-style:italic; font-size:19px; color:var(--black); }
+.pb-fd-bar { grid-column:1 / -1; display:block; height:3px; border-radius:999px; background:var(--gray); margin-top:9px; overflow:hidden; }
+.pb-fd-bar > span { display:block; height:100%; border-radius:999px; background:var(--red); }
+.pb-tom { font-size:13px; color:var(--gray3); line-height:1.6; margin:0 2px var(--luft-2); }
 .pb-rg { background:#fff; border:1px solid var(--border); border-radius:20px; padding:12px 4px 10px; text-align:center; min-width:0; }
 .pb-rg svg { display:block; margin:0 auto 8px; max-width:100%; height:auto; }
 .pb-rg-l { font-size:9px; letter-spacing:1.1px; text-transform:uppercase; color:var(--gray3); border-top:1px solid var(--border); padding-top:6px; margin:0 6px; line-height:1.4; min-height:calc(2 * 1.4 * 9px + 6px); overflow-wrap:normal; hyphens:manual; }
@@ -19269,11 +19281,60 @@ function perfBud1Tegn() {
   const MDR = ["januar","februar","marts","april","maj","juni","juli","august","september","oktober","november","december"];
   const RS = 88;
   const ring = function (svg, l) { return '<div class="pb-rg">' + svg + '<div class="pb-rg-l">' + l + '</div></div>'; };
-  const ringe = '<div class="pb-ringe">'
-    + ring(energidaRing(rateN != null ? rate : "—", rateMaal ? "af " + String(rateMaal).replace(".", ",") + " %" : "", rateMaal && rateN != null ? rateN / rateMaal : 0, RS), "Interaktions&shy;raten")
+  /* ===== SENESTE 7 DAGE ER DE SIDSTE 7 DAGE (Ida 14/9 kl. 09.41) =====
+     Hendes ord: »Jeg forstaar heller ikke hvorfor det her er saa foraeldet??? Denne side skal vise
+     ringene med de sidste 7 dage: der skal man se hvordan indholdet fordeler sig paa indholdssoejler,
+     paa formater, hvis man har flere maalgrupper saa maalgrupper. Jeg aner slet ikke hvad butikken er?!
+     Og interaktionsraten skal slet ikke staa under seneste 7 dage?«
+
+     MAALT I KODEN, og hun har ret paa en maade, der er vaerre end en smagssag: TO af de tre ringe under
+     »Seneste 7 dage« var slet ikke 7-dages tal. Interaktionsraten kom fra MAALINGER[0] (seneste maaling,
+     typisk en maaned gammel), og »Til butikken« var profilbesoeg delt med eksponering fra RAPPORTER[0]
+     (seneste maanedsrapport). Overskriften loej altsaa om to af tre tal, og navnet »Til butikken« sagde
+     ikke, hvad tallet var. Ingen af dem forsvinder: raten staar paa doeren »Maalingerne« MED sin dato,
+     og rapport-tallet bor i »Maanedsrapporten«.
+
+     NU staar der det, der ER de sidste 7 dage: antallet af opslag mod ugemaalet, og hvordan de opslag
+     fordeler sig paa indholdssoejler og formater. MAALGRUPPER KAN IKKE ENDNU: et opslag har ingen
+     maalgruppe i basen (personaerne bor i lektionssvarene, ikke paa opslaget), saa der ville skulle et
+     felt paa opslaget foerst. Det er Idas kald, og det staar i statusnotatet — der bygges ikke et gaet. */
+  let syvListe = [];
+  try {
+    const fra = new Date(nu); fra.setDate(nu.getDate() - 6);
+    const fraS = datoDK(fra), idagS = datoDK(nu);
+    syvListe = (IDEER || []).filter(function (x) { return x.status === "Postet" && x.dato && String(x.dato) >= fraS && String(x.dato) <= idagS; });
+  } catch (e) { syvListe = []; }
+  /* Fordelingen: navn, antal og en tynd bjaelke i forhold til den stoerste gruppe. Ingen procenter —
+     med tre opslag paa en uge siger »33 %« mere, end tallet kan baere. */
+  const fordel = function (titel, par) {
+    if (!par.length) return "";
+    const mest = par.reduce(function (m, x) { return Math.max(m, x[1]); }, 0) || 1;
+    return '<div class="bs-eye pb-sek">' + titel + '</div><div class="pb-fordel">'
+      + par.map(function (x) {
+          return '<div class="pb-fd"><span class="pb-fd-n">' + esc(x[0]) + '</span><span class="pb-fd-t">' + x[1] + '</span>'
+            + '<span class="pb-fd-bar"><span style="width:' + Math.round(x[1] / mest * 100) + '%;"></span></span></div>';
+        }).join("")
+      + '</div>';
+  };
+  const taelOp = function (n) {
+    const m = {}; syvListe.forEach(function (x) { const k = n(x); if (!k) return; m[k] = (m[k] || 0) + 1; });
+    return Object.keys(m).map(function (k) { return [k, m[k]]; }).sort(function (a, b) { return b[1] - a[1] || a[0].localeCompare(b[0], "da"); });
+  };
+  const soejleFordeling = (function () {
+    /* Drejebogens egen raekkefoelge, naar vi kender soejlerne; ellers det, der staar paa opslagene. */
+    const rk = (typeof strategyPillars !== "undefined" && Array.isArray(strategyPillars)) ? strategyPillars : [];
+    const m = {}; syvListe.forEach(function (x) { const k = String(x.soejle || "").trim() || "Uden søjle"; m[k] = (m[k] || 0) + 1; });
+    const ud = [];
+    rk.forEach(function (sj) { if (m[sj]) { ud.push([(typeof soejleVis === "function" ? soejleVis(sj) : sj), m[sj]]); delete m[sj]; } });
+    Object.keys(m).sort(function (a, b) { return m[b] - m[a] || a.localeCompare(b, "da"); }).forEach(function (k) { ud.push([k, m[k]]); });
+    return ud;
+  })();
+  const ringe = '<div class="pb-ringe pb-ringe-en">'
     + ring(energidaRing(String(syv), ugem ? "af " + ugem : "", ugem ? syv / ugem : 0, RS), "Opslag · 7 dage")
-    + ring(energidaRing(butikPct != null ? String(butikPct).replace(".", ",") + " %" : "—", "", butikPct != null ? butikPct / 100 : 0, RS), "Til butikken")
-    + '</div>';
+    + '</div>'
+    + (syvListe.length
+        ? fordel("Indholdssøjler", soejleFordeling) + fordel("Formater", taelOp(function (x) { return String(x.type || "").trim(); }))
+        : '<div class="pb-tom">Ingen opslag i de sidste 7 dage. Fordelingen kommer, så snart der er postet noget.</div>');
   const maal = function (k, navn, v) { return '<div class="pb-maal mq-tap" role="button" tabindex="0" onclick="perfMaalRet(\'' + k + '\')"><span class="pb-maal-n">' + navn + '</span><span class="pb-maal-v' + (v ? '' : ' pb-maal-tom') + '">' + (v || "sæt et mål") + '</span></div>'; };
   const d = function (k, navn, l) { return '<div class="bs-doer" role="button" tabindex="0" onclick="perfAabn(\'' + k + '\')"><span class="bs-doer-n">' + navn + '</span><span class="bs-doer-s">' + (l || "") + '</span></div>'; };
   const top = '<div class="pb-top">'
@@ -42079,7 +42140,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "1903";
+const APP_VERSION = "1904";
 let NY_VERSION_KLAR = false;
 let NY_VERSION_AFVIST = false;
 function nyVersionSkjul() {
@@ -59622,6 +59683,6 @@ function prFaerdigHtml() {
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 14. september · 1903</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 14. september · 1904</div>
 </body>
 </html>
