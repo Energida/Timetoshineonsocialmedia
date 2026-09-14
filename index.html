@@ -5825,6 +5825,8 @@ body.plan-open .burger-btn, body.plan-open .bottom-nav, body.plan-open .dash-fab
   .pr-forslag { display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:12px; }
   .pr-bar { justify-content:flex-end; }
 }
+#planRit.pr-solo .pr-rail { display:none !important; }
+#planRit.pr-solo .pr-grid { display:block; max-width:760px; }
 #screen3 #planRitKort { order:39; }   /* lige foer I DAG (40) — dagen er i dag */
 .lek-drej-tilbage { display:none; position:fixed; top:8px; left:12px; z-index:61; align-items:center; min-height:44px; padding:6px 14px; border-radius:999px; border:0; background:rgba(0,0,0,0.45); color:#fff; font-family:"Poppins",sans-serif; font-size:12px; letter-spacing:.08em; text-transform:uppercase; cursor:pointer; }
 @media (max-width:1000px) and (orientation:landscape) and (max-height:520px) {
@@ -42757,7 +42759,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "1929";
+const APP_VERSION = "1930";
 let NY_VERSION_KLAR = false;
 let NY_VERSION_AFVIST = false;
 function nyVersionSkjul() {
@@ -53893,7 +53895,10 @@ function kundeArkAabn(valgt, paaFoto, tekst) {
     ekstraAf: function (k) {
       /* SOEJLEN VAELGES, NAAR IDEEN SKRIVES (Idas klik 14/9 kl. 20.00: 25 af 31 idéer laa under »Andet«, fordi ingen soejle
          var sat). Anden chip-raekke under den foerste: de fire soejler med kundens egne navne (soejleVis). Gem kraever et valg. */
-      if (k === "ide") return kundeArkSoejleChips() + '<div id="fangSkaermVis" style="display:none;"></div>';
+      /* DREJEBOGEN SOM VAERKTOEJ I IDEBANKEN (Idas klik 14/9 kl. 22.50): er soejlen valgt, staar der EEN lang knap under
+         chipsene, der aabner de samme tre spoergsmaal som paa planlaegningsdagen (bud 3, v1929). Det skrevne foelger med
+         som svar paa det foerste spoergsmaal, saa ingenting tabes. */
+      if (k === "ide") return kundeArkSoejleChips() + (KUNDE_ARK_SOEJLE ? '<button type="button" class="ark-knap" onclick="kundeArkDrejebog()">Find idéen med Drejebogen</button>' : '') + '<div id="fangSkaermVis" style="display:none;"></div>';
       if (k !== "fedt") return '<div id="fangSkaermVis" style="display:none;"></div>';
       /* VEDHAEFT-RAEKKEN (Idas klik 13/9): kamera og kamerarulle gaar direkte paa vaeggen som billede;
          skaermbilledet foelger linket i teksten, naar der trykkes Gem. Samme motorer som foer.
@@ -53923,7 +53928,18 @@ function kundeArkSoejleChips() {
 function kundeArkSoejleVaelg(k) {
   KUNDE_ARK_SOEJLE = (KUNDE_ARK_SOEJLE === k) ? "" : k;   /* tryk igen = fravalgt */
   const r = document.getElementById("arkSoejler"); if (r) Array.prototype.forEach.call(r.querySelectorAll(".ark-chip"), function (b) { b.classList.toggle("on", !!KUNDE_ARK_SOEJLE && b.dataset.soejle === KUNDE_ARK_SOEJLE); });
+  try { if (ARK && ARK.valgt === "ide" && ARK.ekstraAf) { const x = document.getElementById("arkEkstra"); if (x) x.innerHTML = ARK.ekstraAf("ide") || ""; } } catch (e) {}   /* Drejebog-knappen foelger soejlevalget */
   const t = document.getElementById("arkTekst"); if (t) t.focus();
+}
+/* Arket → Drejebogens tre spoergsmaal i fuld skaerm (samme motor som planlaegningsdagens trin 2). Idéen lander som Idé
+   i Idébanken under soejlen, uden dato. */
+function kundeArkDrejebog() {
+  const soejle = KUNDE_ARK_SOEJLE; if (!soejle) return;
+  let kode = /^[12][AB]$/.test(soejle) ? soejle : ""; if (!kode) { try { const m = soejleModel(soejle); kode = m ? m.kode : ""; } catch (e) {} }   /* uden Drejebog er chippen selve koden */
+  if (!kode) return;
+  const tekst = (((document.getElementById("arkTekst") || {}).value) || "").trim();
+  arkLuk(true); KUNDE_ARK_SOEJLE = ""; INSP_VEDHAEFT = ""; try { inspSkaermNulstil(); } catch (e) {}
+  drejebogSpoergAabn(kode, /^[12][AB]$/.test(soejle) ? prSoejleNavnFor(kode) : soejle, tekst);
 }
 async function kundeArkGem(tekst, k) {
   const t = String(tekst || "").trim(); if (!t) return false;
@@ -60105,9 +60121,9 @@ function planRitStart() {
   try { prTemaHent(); } catch (e) {}
   planRitTegn(); el.scrollTop = 0;
 }
-function planRitLuk() { const el = document.getElementById("planRit"); if (el) el.classList.remove("on"); document.body.classList.remove("plan-open"); PR = null; try { renderHome(); } catch (e) {} try { planRitKortTegn(); } catch (e) {} }
+function planRitLuk() { const el = document.getElementById("planRit"); if (el) { el.classList.remove("on"); el.classList.remove("pr-solo"); } document.body.classList.remove("plan-open"); PR = null; try { renderHome(); } catch (e) {} try { planRitKortTegn(); } catch (e) {} }
 document.addEventListener("keydown", function (e) { if (e.key === "Escape" && PR) { const ib = document.getElementById("ideBack"); if (ib && ib.classList.contains("on")) return; planRitLuk(); } });
-function prBjaelke(n) { return '<div class="pr-bjaelke">' + [1, 2, 3, 4, 5].map(function (i) { return '<span' + (i <= n ? ' class="on"' : '') + '></span>'; }).join("") + '</div>'; }
+function prBjaelke(n) { if (PR && PR.solo) return ""; return '<div class="pr-bjaelke">' + [1, 2, 3, 4, 5].map(function (i) { return '<span' + (i <= n ? ' class="on"' : '') + '></span>'; }).join("") + '</div>'; }
 function prRail() {
   const navne = ["Tilbageblik", "Næste uge", "Optagedage", "Ugens mål", "Book næste planlægning"];
   const r = document.getElementById("prRail"); if (!r) return;
@@ -60117,8 +60133,9 @@ function prRail() {
 }
 function planRitTegn() {
   const k = document.getElementById("prKrop"); if (!k || !PR) return;
-  const frem = document.getElementById("prFrem"); if (frem) frem.textContent = PR.trin > 5 ? "Færdig" : (PR.trin ? PR.trin + " af 5" : "Måneden");
-  prRail();
+  const frem = document.getElementById("prFrem"); if (frem) frem.textContent = PR.solo ? "" : (PR.trin > 5 ? "Færdig" : (PR.trin ? PR.trin + " af 5" : "Måneden"));
+  const lbl = document.querySelector("#planRit .pr-top-label"); if (lbl) lbl.textContent = PR.solo ? "Drejebogen" : "Planlægningsdagen";
+  if (!PR.solo) prRail();
   if (PR.trin === 0) { k.innerHTML = prMaanedHtml(); return; }
   if (PR.trin === 1) { k.innerHTML = prTilbageblikHtml(); return; }
   if (PR.trin === 2) { k.innerHTML = prForslagHtml(); try { prHjulInit(); } catch (e) {} return; }
@@ -60366,7 +60383,7 @@ function prMgHtml() {
   const anb = navne[0];
   if (!t.mg) t.mg = anb;
   const kort = navne.map(function (n, i) { return prSvarKort(n, i === 0 ? "Anbefalet · færrest opslag de sidste 4 uger" : (fd.tal[n] || 0) + " af de sidste " + fd.sum + " opslag", t.mg === n, "PR.t2.mg='" + n.replace(/'/g, "\\'") + "';planRitTegn()"); }).join("");
-  return prBjaelke(2) + '<div class="pr-eye">' + esc(f.kode) + ' · ' + esc(PR_DAGE_LANG[f.dag - 1]) + ' · målgruppen</div><div class="pr-h1">Hvem taler dette opslag til?</div>'
+  return prBjaelke(2) + '<div class="pr-eye">' + esc(f.kode) + ' · ' + esc(prEyeSted(f)) + ' · målgruppen</div><div class="pr-h1">Hvem taler dette opslag til?</div>'
     + '<div class="pr-sub">Content Studio anbefaler ' + esc(anb) + ': ' + (fd.tal[anb] || 0) + ' af de sidste ' + fd.sum + ' opslag talte til ' + esc(anb) + '.</div>'
     + kort
     + '<div class="pr-bar"><button type="button" class="dbtn primary" onclick="prT2Naeste()">Næste</button></div>';
@@ -60377,7 +60394,7 @@ function prSpmHtml() {
   const t = prT2(); const f = t.forslag[t.aktiv]; const sp = prSpm(f.kode)[t.q];
   const kilder = sp.k ? prForslagKilder(f.kode, sp.k) : [];
   const kort = kilder.map(function (x, i) { return prSvarKort(storStart(x), "", t.valg[t.q] === i, "prSvarVaelg(" + i + ")"); }).join("");
-  return prBjaelke(2) + '<div class="pr-eye">' + esc(f.kode) + ' · ' + esc(PR_DAGE_LANG[f.dag - 1]) + ' · ' + (t.q + 1) + ' af 3</div><div class="pr-h1">' + esc(sp.t) + '</div>'
+  return prBjaelke(2) + '<div class="pr-eye">' + esc(f.kode) + ' · ' + esc(prEyeSted(f)) + ' · ' + (t.q + 1) + ' af 3</div><div class="pr-h1">' + esc(sp.t) + '</div>'
     + (sp.u ? '<div class="pr-sub">' + esc(sp.u) + '</div>' : '')
     + (t.q > 0 && t.svar[0] ? '<div class="pr-sub" style="color:var(--black);">Dit svar før: »' + esc(t.svar[t.q - 1] || t.svar[0]) + '«</div>' : '')
     + kort
@@ -60399,11 +60416,11 @@ function prIdeHtml() {
   if (!t.format) { const s = (BS_SOEJLER || []).filter(function (x) { return x.kode === f.kode; })[0] || {}; const fm = String(s.format || "Reel").replace(/\.$/, ""); t.format = fm === "Kort-reel" ? "Kort-reel" : fm === "Karrusel" ? "Karrusel" : "Reel"; }
   const dage = planRitUgeDage(PR.uge);
   return prBjaelke(2) + '<div class="pr-eye">' + esc(f.kode) + ' · ' + esc(f.navn) + ' · idéen</div><div class="pr-h1">Her er idéen</div>'
-    + '<div class="pr-sub">De tre svar er samlet i briefen. Idéen lander som Planlagt i kalenderen og i Idébanken under ' + esc(f.kode) + '.</div>'
+    + '<div class="pr-sub">' + (PR.solo ? 'De tre svar er samlet i briefen. Idéen lander i Idébanken under ' + esc(f.kode) + '.' : 'De tre svar er samlet i briefen. Idéen lander som Planlagt i kalenderen og i Idébanken under ' + esc(f.kode) + '.') + '</div>'
     + '<div class="pr-kort"><div class="pr-lbl">Titel · ret den, hvis du vil</div><textarea id="prTitel" class="pr-felt" style="min-height:56px;" oninput="PR.t2.titel=this.value">' + esc(t.titel) + '</textarea></div>'
-    + '<div class="pr-kort"><div class="pr-lbl">Dagen</div><div class="pr-chips">' + PR_DAGE.map(function (d, di) { return '<button type="button" class="pr-chip' + (f.dag === di + 1 ? ' on' : '') + '" onclick="PR.t2.forslag[' + t.aktiv + '].dag=' + (di + 1) + ';planRitTegn()">' + d + ' ' + dage[di].slice(8, 10).replace(/^0/, "") + '.</button>'; }).join("") + '</div></div>'
+    + (PR.solo ? '' : '<div class="pr-kort"><div class="pr-lbl">Dagen</div><div class="pr-chips">' + PR_DAGE.map(function (d, di) { return '<button type="button" class="pr-chip' + (f.dag === di + 1 ? ' on' : '') + '" onclick="PR.t2.forslag[' + t.aktiv + '].dag=' + (di + 1) + ';planRitTegn()">' + d + ' ' + dage[di].slice(8, 10).replace(/^0/, "") + '.</button>'; }).join("") + '</div></div>')
     + '<div class="pr-kort"><div class="pr-lbl">Formatet</div><div class="pr-chips">' + ["Reel", "Kort-reel", "Karrusel"].map(function (x) { return '<button type="button" class="pr-chip' + (t.format === x ? ' on' : '') + '" onclick="PR.t2.format=\'' + x + '\';planRitTegn()">' + x + '</button>'; }).join("") + '</div></div>'
-    + '<div class="pr-bar"><button type="button" class="dbtn primary" onclick="prIdeGem()">Gem som Planlagt</button></div>';
+    + '<div class="pr-bar"><button type="button" class="dbtn primary" onclick="prIdeGem()">' + (PR.solo ? 'Læg i Idébanken' : 'Gem som Planlagt') + '</button></div>';
 }
 async function prIdeGem() {
   const t = prT2(); const f = t.forslag[t.aktiv]; if (!f || f.gemt) return;
@@ -60413,11 +60430,13 @@ async function prIdeGem() {
   const brief = { beskrivelse: besk, fraPlanlaegning: PR.ugeKey };
   if (prMgNavne().length > 1 && t.mg) brief.maalgruppe = t.mg;
   const dage = planRitUgeDage(PR.uge);
+  const solo = !!PR.solo;
   try {
-    const rec = await ideAdd({ titel: titel, type: t.format || "Reel", soejle: f.navn, status: "Planlagt", dato: dage[f.dag - 1], brief: brief });
+    const rec = await ideAdd({ titel: titel, type: t.format || "Reel", soejle: f.navn, status: solo ? "Idé" : "Planlagt", dato: solo ? null : dage[f.dag - 1], brief: brief });
     if (rec && rec.id) { PR.nye.push(rec.id); f.gemt = rec.id; f.titel = titel; }
   } catch (e) {}
   if (!f.gemt) { f.gemt = "lokal"; f.titel = titel; }
+  if (solo) { planRitLuk(); try { if (typeof current === "number" && current === 2) renderIdeas(); } catch (e) {} return; }
   const naeste = t.forslag.findIndex(function (x) { return !x.gemt; });
   if (naeste > -1) prStartOpslag(naeste); else { t.skaerm = "raekke"; planRitTegn(); const el = document.getElementById("planRit"); if (el) el.scrollTop = 0; }
 }
@@ -60428,6 +60447,24 @@ async function prT2Naeste() {
   else if (t.skaerm === "spm") { t.svar[t.q] = prSvarNu(); t.skriv = ""; if (t.q < 2) t.q++; else t.skaerm = "ide"; }
   planRitTegn(); const el = document.getElementById("planRit"); if (el) el.scrollTop = 0;
 }
+/* DREJEBOGEN SOM VAERKTOEJ UDEN FOR PLANLAEGNINGSDAGEN (Idas klik 14/9 kl. 22.50). Samme skaerme, samme motor: PR staar i
+   solo-tilstand med EET opslag, ingen dag, og idéen gemmes som Idé i Idébanken. Skinnen og trin-bjaelken er ude. */
+function drejebogSpoergAabn(kode, navn, tekst) {
+  const man = planRitUge();
+  PR = { solo: true, uge: man, ugeKey: planRitUgeKey(man), mkey: planRitMaanedKey(man), maaned: false, trin: 2, nye: [], optag: { dag: 1, tid: "Formiddag", hverForSig: false }, book: { dag: null, tid: "10:00" }, tema: "" };
+  PR.t2 = { skaerm: "spm", antal: 0, forslag: [{ kode: kode, navn: navn || prSoejleNavnFor(kode), grund: "", dag: 0, gemt: null, titel: "" }], eksisterende: [], aktiv: 0, mg: "", q: 0, svar: ["", "", ""], valg: [null, null, null], skriv: String(tekst || ""), titel: "", format: "" };
+  const n = prMgNavne(); if (n.length > 1) { PR.t2.skaerm = "mg"; } else PR.t2.mg = n[0] || "";
+  let el = document.getElementById("planRit");
+  if (!el) {
+    el = document.createElement("div"); el.id = "planRit";
+    el.innerHTML = '<div class="pr-top"><button type="button" class="lek-tilbage" onclick="planRitTilbage()">Tilbage</button><div class="pr-top-label">Planlægningsdagen</div><div class="pr-top-frem" id="prFrem"></div></div>'
+      + '<div class="pr-grid"><aside class="pr-rail" id="prRail"></aside><div id="prKrop"></div></div>';
+    document.body.appendChild(el);
+  }
+  el.classList.add("on"); el.classList.add("pr-solo"); document.body.classList.add("plan-open");
+  planRitTegn(); el.scrollTop = 0;
+}
+function prEyeSted(f) { return (f.dag && PR_DAGE_LANG[f.dag - 1]) ? PR_DAGE_LANG[f.dag - 1] : f.navn; }
 /* »Tilbage« oeverst: eet skridt tilbage i trin 2, ellers ud af planlaegningsdagen (der skal altid staa Tilbage, 25/8). */
 function planRitTilbage() {
   if (!PR) { planRitLuk(); return; }
@@ -60435,7 +60472,8 @@ function planRitTilbage() {
   if (PR.trin === 2 && t && t.skaerm !== "antal") {
     if (t.skaerm === "raekke") t.skaerm = "antal";
     else if (t.skaerm === "mg") t.skaerm = "raekke";
-    else if (t.skaerm === "spm") { if (t.q > 0) { t.q--; t.skriv = ""; } else t.skaerm = prMgNavne().length > 1 ? "mg" : "raekke"; }
+    else if (t.skaerm === "spm") { if (t.q > 0) { t.q--; t.skriv = ""; } else if (PR.solo && prMgNavne().length < 2) { planRitLuk(); return; } else t.skaerm = prMgNavne().length > 1 ? "mg" : "raekke"; }
+    else if (t.skaerm === "mg" && PR.solo) { planRitLuk(); return; }
     else if (t.skaerm === "ide") { t.skaerm = "spm"; t.q = 2; t.skriv = ""; }
     planRitTegn(); const el = document.getElementById("planRit"); if (el) el.scrollTop = 0; return;
   }
@@ -60572,6 +60610,6 @@ function prFaerdigHtml() {
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 14. september · 1929</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 14. september · 1930</div>
 </body>
 </html>
