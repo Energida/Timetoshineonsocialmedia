@@ -1294,6 +1294,7 @@ select.cal-periode:not([multiple]):not([size]) {
   .ark { border-radius:28px; margin:0; width:100%; max-width:520px; border:1px solid var(--border); transform:translateY(12px) scale(.98); opacity:0; transition:transform 220ms cubic-bezier(0.23,1,0.32,1), opacity 220ms ease; }
   .ark-slor.on .ark { transform:none; opacity:1; }
   .ark-greb { display:none; }
+  .ark .ark-chips, .ark .ark-chips.i-fladen { flex-wrap:wrap; overflow:visible; row-gap:8px; }   /* MAALT 14/9 hos en kunde (v1932): soejle-raekken var 730 px i en 470 px kasse uden greb — »2B« var skjult paa computeren. Telefonen beholder swipet. */
 }
 /* ARKET PAA DAGENS KORT (Ida 11/9 kl. 12.50, bud 4 + 2): ingen hvid flade — chips OVER feltet, hvid tekst, feltet er det eneste hvide. */
 .ark-slor.paa-foto { background:rgba(17,17,17,.25); z-index:960; }
@@ -42760,7 +42761,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "1931";
+const APP_VERSION = "1932";
 let NY_VERSION_KLAR = false;
 let NY_VERSION_AFVIST = false;
 function nyVersionSkjul() {
@@ -44306,7 +44307,7 @@ function renderIdeas() {
             + (g.maal ? '<button type="button" class="uge-opret" title="Ny idé i denne indholdssøjle" aria-label="Ny idé i denne indholdssøjle" onclick="ideOpretISoejle(\'' + maal + '\')">+</button>' : '')
             /* "Se alle" staar KUN, naar der er noget at se alle af — og ikke, naar man
                allerede ER inde i soejlen (den ville pege paa sig selv). */
-            + ((g.kort.length && !IB_KUN_SOEJLE)
+            + ((g.kort.length > 5 && !IB_KUN_SOEJLE)   /* MAALT 14/9 hos en kunde (v1932): »Se alle« stod under én idé — kun naar der er flere end fem */
                 ? '<div style="text-align:right;padding-top:12px;"><button type="button" class="rkn" onclick="ibKunSoejle(\'' + esc(String(g.navn)).replace(/'/g, "\\'") + '\')" style="background:none;border:none;padding:0;color:var(--red);font-family:Poppins,sans-serif;font-weight:400;cursor:pointer;">Se alle</button></div>'
                 : '')
             + '</div>';
@@ -60352,7 +60353,7 @@ function prRaekkeHtml() {
   const naeste = t.forslag.findIndex(function (f) { return !f.gemt; });
   const eks = (t.eksisterende || []).map(function (x) { const di = dage.indexOf(x.dato); let kode = ""; try { const m = soejleModel(x.soejle || ""); kode = m ? m.kode + " · " : ""; } catch (e) {} return prSvarKort(kode + (x.soejle || "Uden søjle"), "Ligger allerede · " + storStart(titelVis(x.titel || "Uden titel")) + (di > -1 ? " · " + PR_DAGE_LANG[di] : ""), false, "", true); }).join("");
   const kort = t.forslag.map(function (f, i) {
-    return prSvarKort(f.kode + " · " + f.navn, f.gemt ? "Planlagt · " + f.titel + " · " + PR_DAGE_LANG[f.dag - 1] : f.grund + " · " + PR_DAGE_LANG[f.dag - 1], i === naeste, f.gemt ? "" : "prStartOpslag(" + i + ")", !!f.gemt);
+    return prSvarKort(f.kode + " · " + prNavnVis(f), f.gemt ? "Planlagt · " + f.titel + " · " + PR_DAGE_LANG[f.dag - 1] : f.grund + " · " + PR_DAGE_LANG[f.dag - 1], i === naeste, f.gemt ? "" : "prStartOpslag(" + i + ")", !!f.gemt);
   }).join("");
   const alle = t.forslag.length && naeste === -1;
   const ingen = !t.forslag.length;
@@ -60416,7 +60417,7 @@ function prIdeHtml() {
   if (!t.titel) t.titel = storStart(String(t.svar[0] || t.svar[1] || t.svar[2] || "").split(/[.!?]/)[0].slice(0, 70));
   if (!t.format) { const s = (BS_SOEJLER || []).filter(function (x) { return x.kode === f.kode; })[0] || {}; const fm = String(s.format || "Reel").replace(/\.$/, ""); t.format = fm === "Kort-reel" ? "Kort-reel" : fm === "Karrusel" ? "Karrusel" : "Reel"; }
   const dage = planRitUgeDage(PR.uge);
-  return prBjaelke(2) + '<div class="pr-eye">' + esc(f.kode) + ' · ' + esc(f.navn) + ' · idéen</div><div class="pr-h1">Her er idéen</div>'
+  return prBjaelke(2) + '<div class="pr-eye">' + esc(f.kode) + ' · ' + esc(prNavnVis(f)) + ' · idéen</div><div class="pr-h1">Her er idéen</div>'
     + '<div class="pr-sub">' + (PR.solo ? 'De tre svar er samlet i briefen. Idéen lander i Idébanken under ' + esc(f.kode) + '.' : 'De tre svar er samlet i briefen. Idéen lander som Planlagt i kalenderen og i Idébanken under ' + esc(f.kode) + '.') + '</div>'
     + '<div class="pr-kort"><div class="pr-lbl">Titel · ret den, hvis du vil</div><textarea id="prTitel" class="pr-felt" style="min-height:56px;" oninput="PR.t2.titel=this.value">' + esc(t.titel) + '</textarea></div>'
     + (PR.solo ? '' : '<div class="pr-kort"><div class="pr-lbl">Dagen</div><div class="pr-chips">' + PR_DAGE.map(function (d, di) { return '<button type="button" class="pr-chip' + (f.dag === di + 1 ? ' on' : '') + '" onclick="PR.t2.forslag[' + t.aktiv + '].dag=' + (di + 1) + ';planRitTegn()">' + d + ' ' + dage[di].slice(8, 10).replace(/^0/, "") + '.</button>'; }).join("") + '</div></div>')
@@ -60425,7 +60426,7 @@ function prIdeHtml() {
 }
 async function prIdeGem() {
   const t = prT2(); const f = t.forslag[t.aktiv]; if (!f || f.gemt) return;
-  const titel = String(t.titel || "").trim() || (f.kode + " · " + f.navn);
+  const titel = String(t.titel || "").trim() || (f.kode + " · " + prNavnVis(f));
   const sp = prSpm(f.kode);
   const besk = sp.map(function (q, i) { return t.svar[i] ? q.t + "\n" + t.svar[i] : ""; }).filter(Boolean).join("\n\n");
   const brief = { beskrivelse: besk, fraPlanlaegning: PR.ugeKey };
@@ -60468,7 +60469,11 @@ function drejebogSpoergAabn(kode, navn, tekst) {
   el.classList.add("on"); el.classList.add("pr-solo"); document.body.classList.add("plan-open");
   planRitTegn(); el.scrollTop = 0;
 }
-function prEyeSted(f) { return (f.dag && PR_DAGE_LANG[f.dag - 1]) ? PR_DAGE_LANG[f.dag - 1] : f.navn; }
+function prEyeSted(f) { return (f.dag && PR_DAGE_LANG[f.dag - 1]) ? PR_DAGE_LANG[f.dag - 1] : prNavnVis(f); }
+/* EEN TING = EET NAVN (MAALT 14/9 hos en kunde, v1932): banken, kalenderen og chipsene siger »1B · Målgruppens situation« (soejleVis),
+   men flowet viste kundens gamle gemte navn (»Målgruppens behov / udfordring«). Vis-navnet bruges nu overalt i flowet; f.navn er
+   stadig datanoeglen, der gemmes paa idéen. */
+function prNavnVis(f) { try { const v = soejleVis(f.navn); return v ? String(v).replace(/^[12][AB] · /, "") : f.navn; } catch (e) { return f.navn; } }
 /* »Tilbage« oeverst: eet skridt tilbage i trin 2, ellers ud af planlaegningsdagen (der skal altid staa Tilbage, 25/8). */
 function planRitTilbage() {
   if (!PR) { planRitLuk(); return; }
@@ -60614,6 +60619,6 @@ function prFaerdigHtml() {
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 14. september · 1931</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 14. september · 1932</div>
 </body>
 </html>

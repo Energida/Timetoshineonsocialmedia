@@ -755,6 +755,17 @@ Kørt i browserpanen på 390 × 844 med selen (v1930, tom base), hele vejen: dag
 - **Probeerne v1931 (browserpanen, headless crasher på Macen):** `SELE LAAS OK: 19 doere` · `SELE SIDER OK: 15 sider`. Selens røde »ikke gemt«-bjælke skyldes stubbens `.single()` (data null) — ikke appen.
 - **Ikke målt:** rigtig iPhone, rigtig base, kunde med Drejebog (selen har ingen: spørgsmål 3 havde kun Skriv selv), flere målgrupper, computeren for `.pr-bar` (reglen ligger under 700 px).
 
+## 5bf. v1932: Idébanken set hos en kunde (Idas ord 14/9 kl. 20.45: »kigge på … idebanken og se om alt fungerer optimalt«) — tre rettelser (hendes klik kl. 21.05)
+
+Set gennem Idas login i som kunde-visningen på computeren (1470 px, Chrome zoomet, så telefonen kunne ikke måles med rigtige data). Intet gemt. Banken: 54 idéer, 31 i banken, ingen konsolfejl; 1A 1 · 1B 4 · 2A 1 · 2B 0 · **25 uden søjle** (Notion-importen, står som »Idéer uden indholdssøjle« / »Andet · 25« på telefonen — indhold, ikke kode; kan trækkes på computeren, briefen › Indholdssøjle på telefonen).
+
+- **Fejl (rettet):** søjle-chipsene i arket på computeren var 730 px i en 470 px kasse (`nowrap`, `overflow:auto`, ingen scrollbar) — »2B · Bag om forretningen« var usynlig. `@media (min-width:761px) .ark .ark-chips { flex-wrap:wrap; overflow:visible }`. Målt i selen 1440 med kundens navne: to rækker (top 521/572), scrollWidth = clientWidth. Telefonen swiper som før.
+- **Fejl (rettet), én ting = ét navn:** banken/kalenderen/chipsene siger `soejleVis` (»1B · Målgruppens situation«), men Drejebog-flowet og trin 2's kort viste kundens gemte navn (»Målgruppens behov / udfordring«). Ny `prNavnVis(f)` (soejleVis uden kode) i `prEyeSted`, rækkefølge-kortene, idéen-skærmens etiket og titel-fallback. `f.navn` er stadig datanøglen, der gemmes.
+- **Rettet:** »Se alle« under en søjle kun ved flere end fem idéer (stod under én). Bemærk: computerens kolonner har INTET 5-loft (jeg påstod det i tråden — forkert; alle idéer vises, og det er blevet stående).
+- **Set, ikke rørt:** Story · Tema · Serie · Prøvereel · Pin viser tomme lister som åbent skrivefelt + forklaring (mod »et tomt rum er tomt« 14/9 — gammelt design, fem bud før noget bygges) · persona-teksten »Hun … hun« i briefen (kræver Idas ord).
+- **Probeerne v1932:** `SELE LAAS OK: 19 doere` · `SELE SIDER OK: 15 sider`.
+- **Ikke målt:** telefonen med rigtige data · Gem.
+
 ## 6. Bridge-trådene 12/9
 
 Trådene på Idas maskine (»Skærm, der ikke må vises« m.fl.) døde kl. 16:25 dansk tid, fem minutter efter v1856 blev pushet, fordi computeren blev lukket. Intet i repoet er halvt; højst få minutters ucommitteret arbejde kan være tabt. De vågner først, når Claude Code startes på den maskine igen.
