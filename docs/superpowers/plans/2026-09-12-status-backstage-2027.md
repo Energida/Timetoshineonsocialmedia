@@ -375,11 +375,17 @@ Også målt: Idas egne koder får alt, en kunde med egen liste beholder sin list
 - Målt i Backstage-selen på 390: tomt rum = `Tilføj`-knappen alene, 362x44 = 100 % af fladen, nul textarea, nul input, nul sendefelt. Arket: titel »Morgenflow«, intet kryds, lang Luk, ingen helskærm, chips med Note valgt. Program: 12 bibliotekrækker + søgefelt, søgning på »squat« finder squat-øvelserne, ingen knap i arket er under 44 px eller kortere end 85 % af kortet. Programteksten: `Muskelvækst · Øvet` + `1. Body weight squat — 3-4 sæt · × 8-12 · tempo 2-1-2-0 · pause 60-90 sek`. Gem uden øvelser svarer »Vælg mindst én øvelse fra biblioteket«, link uden adresse »Skriv også adressen«. `SELE LAAS OK: 17 doere og bundnavet holder designlaasen`.
 - **Ikke målt:** selve skrivningen mod den ægte base. Selen har en stub-base, så kvitteringen er målt på koden, ikke på Supabase. Og `koer.sh` åbner kundeappen — arket på et rum i Maskinrummet er Backstage og måles endnu ikke af porten. Det står nu i `DESIGNLÅS.md`.
 
+## 6bb. v1890: beskeden om en ny version står, hvor hun er (Ida 14/9)
+
+- **»Hvis der er kommet en ny version af appen, skal den vises herinde og ikke først inde på dashboardet.«** Målt i koden: banneret `#nyVersion` lå på `z-index:500`, dagskortet på `600`. Beskeden lå altså BAG det foto, der er det første, hun ser om morgenen, og hun opdagede en ny udgave først, når kortet var lukket. Banneret er nu 700, og dagskortet får beskeden ind i sin egen bund som en lang hvid knap over swipe-linjen: »Der er kommet en ny version · Hent den«. Kun ét sted ad gangen: er kortet åbent, står den der og ikke i banneret; lukkes kortet, flytter den over i banneret; »Ikke nu« gælder nu begge steder (`NY_VERSION_AFVIST`).
+- Kortets ene røde handling er stadig Content Studio: beskeden er hvid med ét rødt ord, husets sekundære knap.
+- Målt i selen på 390: beskeden 342x48 = 100 % af bundblokkens bredde, y 976 over swipe-linjen (1038) og den røde knap (1112), bunden slutter 1164 af 1200. Nøjagtig én rød flade på kortet. Banneret vises ikke samtidig. Et kort, der tegnes EFTER at vagten har fyret, bærer beskeden fra starten. `SELE LAAS OK`.
+
 ## 6c. Slutstatus for skytråden (14/9, aften)
 
 Ida fortsætter i tråden på sin egen computer. Denne tråd stopper her.
 
-- **Sidst pushet:** v1889 til `claude/second-thread-not-responding-2yngb0` og `dashboard-og-database`. v1888 nåede `produktion` gennem porten efter 60 sekunder; v1889 forventes samme vej, men **det er ikke set bekræftet herfra**.
+- **Sidst pushet:** v1890 til `claude/second-thread-not-responding-2yngb0` og `dashboard-og-database`. v1888 og v1889 nåede `produktion` gennem porten efter 60 sekunder hver; v1890 forventes samme vej.
 - **Idas klik og beskeder i dag, der IKKE er lukket:** (1) den ægte gennemgang med en rigtig kode kræver stadig, at netværkspolitikken åbnes for b2b.energida.dk, admin.energida.dk, Supabase-værten og funktions-værten, `cdn.jsdelivr.net`, `fonts.googleapis.com`, `fonts.gstatic.com`, og at hun selv skriver et login. (2) SQL-kortet til `dashboard_hilsner()` er ikke kørt, og `cs_velkomst` står tom i basen, så hendes egne velkomsthilsner er ikke fundet endnu. (3) Modul 5 og 6 siger stadig »I« og »jer« i basen. (4) Der findes ingen notifikationer (planlægningsdag, »Er det postet?«, svar på app-ønsker). (5) Designlåsens måling dækker popups og bundnavet i kundeappen, ikke hele sider og ikke Backstage. (6) `CLAUDE.md` erklærer stadig deploylåsen fra 7. august aktiv, selv om der deployes dagligt; kun hun kan beslutte, at teksten skal skrives om.
 - **Det, der var i gang, da tråden stoppede:** intet halvt. Alt målt arbejde er committet og pushet.
 

@@ -554,13 +554,22 @@ body.has-nav .bottom { display: none !important; }   /* prototype-bjælken må A
    det foerste script er hentet. Den fjernes igen af body.app-klar. */
 /* NY VERSION-BESKEDEN (Ida 5/8). Energida-kort efter manualen: hvid flade, graa kant,
    radius 20, bloed skygge — knappen som roed ren tekst nederst til hoejre, uden pil. */
-#nyVersion { position:fixed; z-index:500; right:18px; bottom:18px; max-width:330px; background:#fff; border:1px solid var(--border); border-radius:20px; box-shadow:0 16px 40px rgba(22,32,42,.16); padding:16px 18px 13px; font-family:'Poppins',sans-serif; display:none; }
+#nyVersion { position:fixed; z-index:700; right:18px; bottom:18px; max-width:330px; background:#fff; border:1px solid var(--border); border-radius:20px; box-shadow:0 16px 40px rgba(22,32,42,.16); padding:16px 18px 13px; font-family:'Poppins',sans-serif; display:none; }
 #nyVersion .nv-t { font-size:12.5px; line-height:1.55; color:var(--black); }
 #nyVersion .nv-s { font-size:11px; line-height:1.5; color:var(--gray3); margin-top:4px; }
 #nyVersion .nv-b { display:flex; justify-content:flex-end; gap:12px; margin-top:11px; }
 #nyVersion button { background:none; border:none; padding:0; font-family:'Poppins',sans-serif; font-size:12.5px; font-weight:400; cursor:pointer; }
 @media (max-width:760px) { #nyVersion { left:14px; right:14px; bottom:14px; max-width:none; } }
 @media print { #nyVersion { display:none !important; } }
+/* BESKEDEN OM EN NY VERSION SKAL STAA DER, HVOR HUN ER (Ida 14/9: »Hvis der er kommet en ny version
+   af appen, skal den vises herinde og ikke foerst inde paa dashboardet«).
+   MAALT: banneret laa paa z-index 500, dagskortet paa 600 — altsaa BAG det foto, der er det foerste,
+   hun ser om morgenen. Hun opdagede derfor foerst en ny udgave, naar kortet var lukket. Nu er banneret
+   hoejere end kortet, OG kortet faar beskeden ind i sin egen bund som en lang hvid knap over swipe-linjen.
+   Kortets ene roede handling (Content Studio) bliver den eneste roede flade — beskeden er hvid med et
+   roedt ord, husets sekundaere knap. */
+#dagensKort .dk-ny { display:flex; align-items:center; justify-content:center; gap:8px; width:100%; min-height:48px; box-sizing:border-box; padding:0 18px; border-radius:999px; background:rgba(255,255,255,.94); color:var(--black); border:0; font-family:Poppins,sans-serif; font-weight:400; font-size:13px; line-height:1.3; cursor:pointer; margin:0 0 14px; }
+#dagensKort .dk-ny span { color:var(--red); }
 #appLoader { position:fixed; inset:0; z-index:10000; background:var(--app-bg-mobil); display:flex; align-items:center; justify-content:center; flex-direction:column; gap:18px; }
 #appLoader img { width:110px; height:auto; animation: hjertePuls 1.6s ease-in-out infinite; }
 #appLoader div { font-family:'Poppins',sans-serif; font-size:11px; letter-spacing:2px; text-transform:uppercase; color:var(--gray3); }
@@ -41852,9 +41861,14 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "1889";
+const APP_VERSION = "1890";
 let NY_VERSION_KLAR = false;
-function nyVersionSkjul() { const e = document.getElementById("nyVersion"); if (e) e.style.display = "none"; }
+let NY_VERSION_AFVIST = false;
+function nyVersionSkjul() {
+  NY_VERSION_AFVIST = true;   /* »Ikke nu« gaelder ogsaa dagskortets linje — ellers spoerger appen igen med det samme */
+  const e = document.getElementById("nyVersion"); if (e) e.style.display = "none";
+  try { const k = document.querySelector("#dagensKort .dk-ny"); if (k) k.remove(); } catch (e) {}
+}
 /* GENINDLAESNINGEN MAA IKKE HENTE DEN GEMTE KOPI (Ida 14/9: »Er virkelig ikke tryg ved alle de
    fejl, jeg hele tiden finder«). MAALT i koden: vagten saa RIGTIGT, at serveren var nyere, men
    location.reload() fik service-workerens GEMTE index.html igen, for workeren svarer fra cachen
@@ -41906,6 +41920,14 @@ function nyVersionVis(ude) {
   try { window.__NY_VERSION_UDE = ude || null; } catch (e) {}
   /* Er skaermen i ro, henter vi den bare — saa opdager hun det aldrig som et problem. */
   if (nyVersionRoligNu()) { nyVersionHent(ude); return; }
+  /* DAGSKORTET DAEKKER SKAERMEN. Er det aabent, hoerer beskeden DER — ikke i et banner, hun
+     foerst ser, naar kortet er lukket (Ida 14/9). Kun eet sted ad gangen, aldrig to. */
+  const kort = document.getElementById("dagensKort");
+  if (kort) {
+    const b = kort.querySelector(".dk-bund");
+    if (b && !b.querySelector(".dk-ny")) b.insertAdjacentHTML("afterbegin", dagensKortNyHtml());
+    if (b) return;
+  }
   const e = document.getElementById("nyVersion"); if (e) e.style.display = "block";
 }
 async function versionVagtTjek() {
@@ -52926,7 +52948,7 @@ function dagensKortVis(o) {
     + '<div class="dk-tekst">' + (o.midt
       ? '<div class="dk-h">' + hilsen + ',<br>' + esc(navn || "") + '</div><div class="dk-streg"></div><div class="dk-dato">' + esc(dato) + ' · Uge ' + ugeNr(nu) + '</div>'   /* LAAST 11/9 (bud 8): hilsen i to linjer midt paa, streg, dato under */
       : '<div class="dk-dato">' + esc(dato) + ' · Uge ' + ugeNr(nu) + '</div><div class="dk-h">' + hilsen + (navn ? ', ' + esc(navn) : '') + '</div>') + '</div>'   /* kun hilsen + dato (Ida 11/9 kl. 14.05) — citatet bor paa Hjem */
-    + '<div class="dk-bund"><button type="button" class="dk-swipe" onclick="' + swipe.replace(/"/g, '&quot;') + '"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14l6-6 6 6"/></svg>Swipe op for en ny idé</button>'
+    + '<div class="dk-bund">' + dagensKortNyHtml() + '<button type="button" class="dk-swipe" onclick="' + swipe.replace(/"/g, '&quot;') + '"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14l6-6 6 6"/></svg>Swipe op for en ny idé</button>'
     + '<button type="button" class="dk-knap" onclick="dagensKortLuk()">Content Studio <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="margin-left:8px;"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button></div>';   /* Ida 12/9 kl. 12.50: »Content Studio« + pil (som Login-knappen) */
   document.body.appendChild(d);
   /* Fotoet tones ind, naar det ER hentet — kortet staar med gradienten og teksten imens (loadingreglen: aldrig noget tomt). */
@@ -52937,7 +52959,18 @@ function dagensKortVis(o) {
   d.addEventListener("touchend", function (e) { if (y0 === null) return; const dy = e.changedTouches[0].clientY - y0; y0 = null; if (dy < -60 && !document.getElementById("arkSlor")) { try { (new Function(swipe))(); } catch (e) {} } }, { passive: true });
   try { if (window.$crisp) { $crisp.push(["do", "chat:hide"]); } } catch (e) {}
 }
-function dagensKortLuk() { const d = document.getElementById("dagensKort"); if (!d) return; d.classList.add("vaek"); setTimeout(function () { d.remove(); }, 280); }
+/* Beskeden paa dagskortet. Tom streng, naar der ikke ER en ny version — kortet skal ikke baere en
+   knap, der ikke goer noget. Teksten siger, hvad der sker, foer man trykker. */
+function dagensKortNyHtml() {
+  try { if (!NY_VERSION_KLAR || NY_VERSION_AFVIST || !window.__NY_VERSION_UDE) return ""; } catch (e) { return ""; }
+  return '<button type="button" class="dk-ny mq-tap" onclick="nyVersionHent(window.__NY_VERSION_UDE)">Der er kommet en ny version <span>Hent den</span></button>';
+}
+function dagensKortLuk() {
+  const d = document.getElementById("dagensKort"); if (!d) return;
+  d.classList.add("vaek"); setTimeout(function () { d.remove(); }, 280);
+  /* Stod beskeden paa kortet, maa den ikke forsvinde med kortet — saa flytter den over i banneret. */
+  try { if (NY_VERSION_KLAR && !NY_VERSION_AFVIST && window.__NY_VERSION_UDE) { const e = document.getElementById("nyVersion"); if (e) e.style.display = "block"; } } catch (e) {}
+}
 /* ===== NY IDÉ (Idas klik 11/9 kl. 11.40 + 12.49): Toem hovedets seks nederste knapper er samlet under EEN knap.
    Placeringen vaelges som chips: App-oenske · Manus · Content Studio · Workout · Food · Mindful. Hver chip lander PRAECIS
    der, hvor den gamle knap landede (samme lister, samme noegler i basen). */
@@ -59337,6 +59370,6 @@ function prFaerdigHtml() {
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 14. september · 1889</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 14. september · 1890</div>
 </body>
 </html>
