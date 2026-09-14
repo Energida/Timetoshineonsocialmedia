@@ -66,7 +66,10 @@ setTimeout(async function () {
       var kn = [].filter.call(r.querySelectorAll("button, a[onclick], [role=button], .row-btn, label.ark-knap"), function (b) { var q = b.getBoundingClientRect(); return q.height > 0 && q.width > 0; });
       kn.forEach(function (b) {
         var q = b.getBoundingClientRect(); if (q.height >= 44) return;
-        if (innerWidth > 760 && q.height >= 34) return;   /* computeren: 34 px er husets vaerktoejsmaal (25/8); 44 er telefonens */
+        if (innerWidth > 760) {   /* computeren: 44 er telefonens maal. Husets egne computer-maal er 28-34 px (karrusel-pil 30, vaerktoejer 32-34, plus 33), og roede ord som knapper er tilladt dér (13/9). Kun det, der er mindre end 28 px OG ikke et rent ord, er en fejl. */
+          var csb = getComputedStyle(b); var rentOrd = /rgba\(0, 0, 0, 0\)|transparent/.test(csb.backgroundColor) && (csb.borderStyle === "none" || parseFloat(csb.borderWidth) === 0);
+          if (q.height >= 28 || rentOrd) return;
+        }
         /* elementFromPoint ser kun det, der er inde i vinduet: rul knappen ind i midten foerst */
         if (q.top < 30 || q.bottom > innerHeight - 30) { try { b.scrollIntoView({ block: "center" }); } catch (e) {} q = b.getBoundingClientRect(); }
         var cx = q.left + q.width / 2, cy = q.top + q.height / 2;
