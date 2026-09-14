@@ -3813,6 +3813,10 @@ body.dash-nav .dsb-version span { font-size: 10.5px; color: var(--gray3); white-
   body.dash-nav #dsbDoere .dsb-under-liste { display: none; padding: 0 0 6px 10px; }
   body.dash-nav #dsbDoere .dsb-doer.aab + .dsb-under-liste { display: grid; gap: 2px; }
   body.dash-nav #dsbDoere .dsb-under { padding-left: 14px; }
+  /* KUNDEOPGAVER PAA COMPUTEREN (14/9, 1440-gennemgangen): ni roede kort i fuld bredde under hinanden er en stak
+     aflange kasser. Paa computeren staar de som fliser i tre spalter, samme luft som .bs-grid. Telefonen er uroert. */
+  body.dash-nav .bs-opgaver { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--luft-2); margin: 0 0 var(--luft-3); }
+  body.dash-nav .bs-opgaver .bs-rk { margin: 0; }
   /* FOOTEREN maa ikke laegge sig hen over venstremenuens bund (Ida 30/7) — den starter efter menuen,
      og menuen ligger OVENPAA den. Foer klippede footeren versionslinjen midt over. */
   /* left laa som INLINE style paa elementet og slog arket — derfor loeb footeren
@@ -41530,12 +41534,23 @@ async function bsFlytHent() {
   try { const p = (await vaneRow("doer_placering")) || vaneLocal("doer_placering", null); if (p && typeof p === "object" && !Array.isArray(p)) BS_PLAC = p; } catch (e) {}
 }
 function bsPlads(noegle) { return BS_PLAC[noegle] || (BS_DOER_DEF[noegle] || {}).hjem || ""; }
+/* DUBLETTER (MAALT 14/9 paa 1440): rummene »Klienter«, »Økonomi« og »Forretningsoverblikket« er kun veje til en side
+   (mrRumAaben sender dem videre), og registret har allerede en doer med samme navn paa samme side. Saa stod »Klienter«
+   to gange paa Kunder og »Økonomi«/»Forretningsoverblikket« to gange paa Salg og i foldemenuen. Et rum, der er en vej,
+   vises ikke, naar en doer med samme navn allerede bor paa siden. Rum med eget indhold (fx »Gameplan«) roeres ikke. */
+function bsRumErVejDublet(r, side) {
+  const navn = String((r && r.navn) || "").trim();
+  const erVej = !!MR_RUM_VEJE[navn] || /^(Klienter|Økonomi|Byggekøen)$/i.test(navn);
+  if (!erVej) return false;
+  return Object.keys(BS_DOER_DEF).some(function (k) { return bsPlads(k) === side && String(BS_DOER_DEF[k].n || "").trim().toLowerCase() === navn.toLowerCase(); })
+    || (side === "kunder" && /^klienter$/i.test(navn));   /* Kunder-siden tegner sin egen Klienter-doer (BS_KUNDE_KATEGORIER) */
+}
 function bsFremmedeDoere(side) {
   const doere = Object.keys(BS_DOER_DEF).filter(function (k) { return bsPlads(k) === side && BS_DOER_DEF[k].hjem !== side; })
     .map(function (k) { return '<button type="button" class="bs-doer" data-doer="' + k + '" onclick="' + BS_DOER_DEF[k].k + '"><span class="bs-doer-n">' + BS_DOER_DEF[k].n + '</span><span class="bs-doer-s"></span></button>'; });
   /* RUM, DER ER FLYTTET HERTIL (Ida 11/9): noeglen er rum:<id>; hjemmet er Dine rum (energida) */
   try { if (typeof MR_NOTER_HENTET !== "undefined" && !MR_NOTER_HENTET && !window.__NOTER_PAA_VEJ) { window.__NOTER_PAA_VEJ = true; mrNoterHent().then(function () { if (MR_NOTER_HENTET) { try { bsSideTegnIgen(side); } catch (e) {} } }); } } catch (e) {}   /* EET forsoeg — aldrig en loekke (MAALT 12/9: gentegning uden base loeb i ring) */
-  const rum = (typeof MR_RUM !== "undefined" ? (MR_RUM || []) : []).filter(function (r) { return BS_PLAC["rum:" + r.id] === side && side !== "energida"; })
+  const rum = (typeof MR_RUM !== "undefined" ? (MR_RUM || []) : []).filter(function (r) { return BS_PLAC["rum:" + r.id] === side && side !== "energida" && !bsRumErVejDublet(r, side); })
     .map(function (r) { const id = esc(String(r.id)); const antal = rumLinje(r); return '<div class="bs-doer" data-doer="rum:' + id + '" role="button" tabindex="0" onclick="mrRumAaben(\'' + id + '\')" onkeydown="if(event.key===&#39;Enter&#39;)mrRumAaben(\'' + id + '\')"><span class="bs-doer-n">' + esc(r.navn) + '</span><span class="bs-doer-s">' + esc(antal) + '</span></div>'; });
   return doere.concat(rum).join("");
 }
@@ -41578,7 +41593,13 @@ function bsMenuUnder(id) {
   const ud = [];
   const esc1 = function (t) { return String(t).replace(/'/g, "\\'"); };
   if (id === "kunder") {
-    (BS_KUNDE_KATEGORIER || []).forEach(function (kat) { ud.push({ n: kat.navn, k: "BS_KUNDE_KAT='" + kat.id + "';BS_KUNDE_CHIP='alle';visDashSide('crm');setTimeout(function(){BS_KUNDE_KAT='" + kat.id + "';kunderneTegn()},60)" }); });
+    /* samme kategorier som Kunder-siden selv: kun dem med kunder, Klienter altid (MAALT 14/9: menuen viste Reset din energi og Time to Shine uden kunder) */
+    let koder = []; try { koder = Object.keys(VIRKSOMHEDSKODER).filter(function (k) { return erRigtigKunde(k) && VIRKSOMHEDSKODER[k].aktiv !== false; }); } catch (e) {}
+    (BS_KUNDE_KATEGORIER || []).forEach(function (kat) {
+      if (kat.id === "klienter") { ud.push({ n: "Klienter", k: "visDashSide('crm');setTimeout(function(){try{bsKlienterAabn()}catch(e){}},60)" }); return; }
+      if (!koder.some(kat.passer)) return;
+      ud.push({ n: kat.navn, k: "BS_KUNDE_KAT='" + kat.id + "';BS_KUNDE_CHIP='alle';visDashSide('crm');setTimeout(function(){BS_KUNDE_KAT='" + kat.id + "';kunderneTegn()},60)" });
+    });
     ud.push({ n: "Ny kunde", k: "visDashSide('crm');setTimeout(function(){try{nyKundeAaben()}catch(e){}},60)" });
     return ud;
   }
@@ -41595,7 +41616,7 @@ function bsMenuUnder(id) {
   /* registrets doere, der bor paa denne side (hjem eller flyttet dertil) */
   Object.keys(BS_DOER_DEF).forEach(function (k) { if (BS_DOER_DEF[k].hjem !== "hjem" && bsPlads(k) === id) ud.push({ n: BS_DOER_DEF[k].n, k: BS_DOER_DEF[k].k }); });
   (BS_MENU_KORT[id] || []).forEach(function (p) { ud.push({ n: p[1], k: "bsMenuKortGaa('" + p[0] + "','" + esc1(p[1]) + "')" }); });
-  (typeof MR_RUM !== "undefined" ? (MR_RUM || []) : []).filter(function (r) { return r.aktiv !== false && BS_PLAC["rum:" + r.id] === id; })
+  (typeof MR_RUM !== "undefined" ? (MR_RUM || []) : []).filter(function (r) { return r.aktiv !== false && BS_PLAC["rum:" + r.id] === id && !bsRumErVejDublet(r, id); })
     .forEach(function (r) { ud.push({ n: r.navn || "Uden navn", k: "mrRumAaben('" + esc1(r.id) + "')" }); });
   return ud;
 }
@@ -42467,7 +42488,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "1910";
+const APP_VERSION = "1911";
 let NY_VERSION_KLAR = false;
 let NY_VERSION_AFVIST = false;
 function nyVersionSkjul() {
@@ -60061,6 +60082,6 @@ function prFaerdigHtml() {
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 14. september · 1910</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 14. september · 1911</div>
 </body>
 </html>

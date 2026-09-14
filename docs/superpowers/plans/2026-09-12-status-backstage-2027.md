@@ -541,6 +541,22 @@ Alt gemt undervejs hed »TEST 14/9« og er slettet igen (talt: 0 tilbage).
 
 **Fundet:** (1) Ingen `cs_*`-rækker i basen overhovedet (velkomst, quotes, dashboard-citater, ideer): listerne lå kun i browseren. Skrivning virker (testrække skrevet og slettet), så v1907's automatik gemmer dem, når listen åbnes på den enhed. (2) `plan_maaned_<mdr>` blev gemt med tomt navn (`skemaSvarSkriv` bruger CURRENT_NAVN, tomt for fælles login) og to gange ved to tryk. **v1910:** navn »config«, opdatér ellers opret, lås mod dobbelttryk. (3) Kundens dagskort sagde »Goddag,« uden navn. **v1910:** kommaet følger navnet. (4) Planlægningsdag-kortet havde en streg inde i den røde flise og en kort knap på telefonen. **v1910:** stregen væk, `.planrit-start` lang på telefonen. (5) Ikke målt: kundens egen UPDATE på inspiration (kræver kundens session). **v1910:** SQL-kort »Må kunden opdatere sin egen inspiration?« (`sqlk_insp_policy_1409`) viser policies på inspiration, skema_svar og kunde_maal; ændrer intet.
 
+## 5ai. v1911: Kunder, Salg og Content Studio på 1440 efter menuskiftet (Idas klik 14/9 kl. 13.40)
+
+Set i den ægte admin-session på 1440 (browserpanelet), ikke i selen.
+
+**Kunder:** Kundeopgaverne stod som ni røde kort i fuld bredde (1092 px) under hinanden, en stak aflange kasser. Nu fliser i tre spalter på computeren (`body.dash-nav .bs-opgaver` gitter, 16 px luft), 353 px hver; telefonen urørt. »Klienter« stod to gange: kategori-døren fra `BS_KUNDE_KATEGORIER` og rummet »Klienter«, som er flyttet til Kunder og som `mrRumAaben` alligevel sender til samme klientliste.
+
+**Salg:** »Økonomi« og »Forretningsoverblikket« stod to gange (registrets dør + Idas rum med samme navn, som kun er en vej til samme side). Samme dubletter i foldemenuen.
+
+**Rettelsen:** `bsRumErVejDublet(r, side)`: et rum, der kun er en vej (`MR_RUM_VEJE`, Klienter, Økonomi, Byggekøen), vises ikke som dør på en side, hvor registret allerede har en dør med samme navn. Gælder `bsFremmedeDoere` (siderne) og `bsMenuUnder` (foldemenuen). Foldemenuen under Kunder viser nu samme kategorier som siden (kun dem med kunder; Klienter altid). Kunder: 3 kategori-døre + Ny kunde + Pipeline. Salg-menuen: 16 punkter, ingen dubletter af veje.
+
+**Ikke rettet (Idas valg):** »Gameplan« står stadig to gange på Salg: registrets dør går til Motorer og biblioteker, Idas rum »Gameplan« er et tomt rum. »Priser« (prislisten) og »Priser og tilbud« (tomt rum) ligner også to navne for én ting. Rummene har eget indhold (eller kan få det), så de er ikke slettet.
+
+**Content Studio på 1440:** OK. Ingen streger i fliser, ingen små trykfelter, døre kun navne.
+
+**Målt:** `koer.sh` 19 døre + 15 sider OK. Verificeret live ved at lægge de nye funktioner ind i Idas session før deploy (Kunder-siden og menuen tegnet igen).
+
 ## 6. Bridge-trådene 12/9
 
 Trådene på Idas maskine (»Skærm, der ikke må vises« m.fl.) døde kl. 16:25 dansk tid, fem minutter efter v1856 blev pushet, fordi computeren blev lukket. Intet i repoet er halvt; højst få minutters ucommitteret arbejde kan være tabt. De vågner først, når Claude Code startes på den maskine igen.
