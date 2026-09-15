@@ -43,6 +43,10 @@ function siderStreger(r) {
     var tynd = b.height > 0 && b.height <= 2 && synlig(cs.backgroundColor) && cs.backgroundColor !== "rgb(255, 255, 255)";
     if (!(e.tagName === "HR" || tynd || ((bt || bb) && !bl && !br))) return;
     var fl = e.parentElement && e.parentElement.closest(FLISER); if (!fl) return;
+    /* FLISEN = ETIKET · ÉN SKILLELINJE · INDHOLD (Ida 15/9 kl. 08.27). En etiket (versaler, lille skrift) MAA have
+       sin ene streg under sig — det er reglen, ikke fejlen. 12/9-forbuddet gjaldt dobbeltlinjer og doere. */
+    var erEtiket = cs.textTransform === "uppercase" && parseFloat(cs.fontSize) <= 11.5 && bb && !bt;
+    if (erEtiket) { var etiketter = fl.__etiketStreger = (fl.__etiketStreger || 0) + 1; if (etiketter === 1) return; }
     ud.push((fl.id || fl.className.toString().split(" ")[0]) + ">" + (e.id || e.className.toString().split(" ")[0] || e.tagName));
   });
   return ud;
