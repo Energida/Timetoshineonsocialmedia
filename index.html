@@ -19489,19 +19489,43 @@ function perfMoedeOpslag() {
    skal der komme saadan et slags moede op, hvor der staar omkring moedet, et link til onlinemoedet, og en knap forneden
    der siger Start« — og saa eet skridt ad gangen: foerst tilbageblikket (Siden sidst), saa Succesraketten. Linket til
    onlinemoedet gemmes paa kunden (MAALS.moedeLink) — skrives een gang, staar der hver gang. */
+/* UGENTLIG CONTENTPLANLAEGNING (Idas ord efter kundemoedet 15/9 kl. 10.40): fysisk eller online (link kun ved online),
+   en agenda for det, man skal igennem, og Start, der traekker een gennem siderne. Form og link gemmes paa kunden
+   (MAALS.moedeForm / MAALS.moedeLink). */
 function perfMoedeStartHtml() {
   const idag = datoDK(new Date());
-  let link = ""; try { link = (MAALS && MAALS.moedeLink) ? String(MAALS.moedeLink) : ""; } catch (e) {}
+  let link = "", form = ""; try { link = (MAALS && MAALS.moedeLink) ? String(MAALS.moedeLink) : ""; form = (MAALS && MAALS.moedeForm) ? String(MAALS.moedeForm) : ""; } catch (e) {}
+  if (!form) form = link ? "online" : "fysisk";
   let n = 0; try { n = perfMoedeOpslag().length; } catch (e) {}
+  const agenda = [
+    ["Siden sidst", n ? n + (n === 1 ? " opslag postet" : " opslag postet") + " — Indblik og læring på hvert" : "Opslagene siden sidste møde — Indblik og læring"],
+    ["Planlæg frem", "Hvor mange opslag · hvor langt frem · søjlerne appen foreslår · idéerne i Idébanken"],
+    ["Succesraketten", "Optagedage · ugens mål · book næste planlægning"]
+  ];
   return '<div class="pm-side"><div class="db-kort pm-top">'
-    + '<div class="db-eye">Contentplanlægning · ' + esc(dkDatoKort(idag)) + '</div>'
-    + '<div class="db-navn">Planlægningsmødet</div>'
-    + '<div class="db-tekst">Først kigger vi tilbage: ' + (n ? n + (n === 1 ? ' opslag er postet' : ' opslag er postet') : 'det, der er postet') + ' siden sidste møde — vi udfylder Indblik på hvert og taler om, hvad der virkede. Så planlægger vi frem: hvor mange opslag, hvor langt frem, og hvilke indholdssøjler de skal ligge i. Ét skridt ad gangen.</div>'
-    + '<div class="pm-felt pm-tekst" style="margin-top:14px;"><span class="pm-navn">Link til onlinemødet</span>'
-    + '<span class="pm-ind"><input type="url" inputmode="url" id="pmMoedeLink" placeholder="Sæt linket ind én gang — så står det her hver gang" value="' + esc(link) + '" onchange="perfMoedeLinkGem(this)" style="text-align:left;"></span></div>'
-    + (link ? '<div class="db-bund" style="padding-top:12px;"><a class="db-knap sek mq-tap" href="' + esc(link) + '" target="_blank" rel="noopener" style="text-decoration:none;">Åbn onlinemødet</a></div>' : '')
+    + '<div class="db-eye">' + esc(dkDatoKort(idag)) + '</div>'
+    + '<div class="db-navn">Ugentlig contentplanlægning</div>'
+    + '<div class="db-tekst">Ét skridt ad gangen — Start trækker dig igennem.</div>'
+    + '<div class="ark-chips" style="margin:14px 0 0;">'
+    + '<button type="button" class="ark-chip' + (form === "fysisk" ? ' on' : '') + '" onclick="perfMoedeFormGem(\'fysisk\')">Fysisk</button>'
+    + '<button type="button" class="ark-chip' + (form === "online" ? ' on' : '') + '" onclick="perfMoedeFormGem(\'online\')">Online</button></div>'
+    + (form === "online"
+        ? '<div class="pm-felt pm-tekst" style="margin-top:12px;"><span class="pm-navn">Link til onlinemødet</span>'
+          + '<span class="pm-ind"><input type="url" inputmode="url" id="pmMoedeLink" placeholder="Sæt linket ind én gang — så står det her hver gang" value="' + esc(link) + '" onchange="perfMoedeLinkGem(this)" style="text-align:left;"></span></div>'
+          + (link ? '<div style="margin-top:10px;"><a class="db-knap sek mq-tap" href="' + esc(link) + '" target="_blank" rel="noopener" style="text-decoration:none;">Åbn onlinemødet</a></div>' : '')
+        : '')
+    + '<div class="pm-navn" style="margin-top:16px;">Agenda</div>'
+    + '<div class="pm-spm">' + agenda.map(function (a, i) { return '<div class="pm-spm-l"><span style="color:var(--red);margin-right:8px;">' + (i + 1) + '</span>' + esc(a[0]) + '<span class="db-under" style="display:block;margin-top:2px;">' + esc(a[1]) + '</span></div>'; }).join("") + '</div>'
     + '<div class="db-bund"><button type="button" class="db-knap mq-tap" onclick="perfAabn(\'moede\')">Start</button></div>'
     + '</div></div>';
+}
+async function perfMoedeFormGem(form) {
+  try { await maalsHent(); } catch (e) {}
+  if (!MAALS) return;
+  const foer = MAALS.moedeForm; MAALS.moedeForm = form;
+  const ok = await maalsGem("Gemt.");
+  if (!ok) MAALS.moedeForm = foer;
+  perfBud1Tegn();
 }
 async function perfMoedeLinkGem(el) {
   try { await maalsHent(); } catch (e) {}
@@ -20725,7 +20749,7 @@ function turSwipeLyt(kort, i, sidste) {
 
 /* DE TRE STJERNER EFTER NAVNET (Ida 15/9 kl. 09.39: »mine gamle 3 stjerner efter kundens navn«). Det gamle glimt var
    emojien ✨ — husets ikoner er tegnede SVG'er (ingen emoji), saa de tre stjerner er tegnet: een stor og to smaa, roede. */
-const HJEM_GLIMT_SVG = '<span class="hjem-glimt" aria-hidden="true"><svg width="30" height="30" viewBox="0 0 30 30" fill="var(--red)"><path d="M12 3c.6 4.6 2.4 6.4 7 7-4.6.6-6.4 2.4-7 7-.6-4.6-2.4-6.4-7-7 4.6-.6 6.4-2.4 7-7z"/><path d="M23 14c.3 2.4 1.3 3.4 3.7 3.7-2.4.3-3.4 1.3-3.7 3.7-.3-2.4-1.3-3.4-3.7-3.7 2.4-.3 3.4-1.3 3.7-3.7z"/><path d="M8 20c.25 1.9 1.05 2.7 2.95 2.95-1.9.25-2.7 1.05-2.95 2.95-.25-1.9-1.05-2.7-2.95-2.95 1.9-.25 2.7-1.05 2.95-2.95z"/></svg></span>';
+const HJEM_GLIMT_SVG = '<span class="hjem-glimt" aria-hidden="true"><svg width="30" height="30" viewBox="0 0 30 30" fill="#F5B301"><path d="M12 3c.6 4.6 2.4 6.4 7 7-4.6.6-6.4 2.4-7 7-.6-4.6-2.4-6.4-7-7 4.6-.6 6.4-2.4 7-7z"/><path d="M23 14c.3 2.4 1.3 3.4 3.7 3.7-2.4.3-3.4 1.3-3.7 3.7-.3-2.4-1.3-3.4-3.7-3.7 2.4-.3 3.4-1.3 3.7-3.7z"/><path d="M8 20c.25 1.9 1.05 2.7 2.95 2.95-1.9.25-2.7 1.05-2.95 2.95-.25-1.9-1.05-2.7-2.95-2.95 1.9-.25 2.7-1.05 2.95-2.95z"/></svg></span>';
 function renderHome() {
   if (!CURRENT_DEF) return;
   const def = CURRENT_DEF;
@@ -26270,11 +26294,12 @@ function dagensProgramItems() {
        ugentlige contentplanlægningsmodel — altså succesraketten!«). Linjen staar i I dag, saa laenge ugens planlaegning
        ikke er gjort (planRitErDagen — planlaegningsdagen er naaet, og ugen er ikke afsluttet). Knappen aabner ritualet
        (planRitStart); »Siden sidst« er ritualets tilbageblik og naas ogsaa fra Performance. */
+    /* LINJEN STAAR ALTID (Ida efter kundemoedet 15/9 kl. 10.40: »jeg kunne ikke klikke på det der stod under i dag, så jeg
+       vidste ikke hvordan man kom i gang«). Den hedder det, hun kalder det: Ugentlig contentplanlaegning. */
     const pd = (typeof planDato === "function") ? planDato() : "";
-    let due = false; try { due = (typeof planRitErDagen === "function") && planRitErDagen(); } catch (e) {}
-    if (due || (pd && pd === idag)) {
+    if (typeof perfAabn === "function" && typeof funkTaendt === "function" && funkTaendt(CURRENT_DEF, "content")) {
       let n = 0; try { n = perfMoedeOpslag().length; } catch (e) {}
-      items.unshift({ ik: "kalender", id: "moede-" + idag, t: (pd === idag ? "I dag er planlægningsdag" : "Ugens planlægning venter"), navn: "Succesraketten · uge for uge", sub: n ? n + " opslag postet siden sidste møde" : "Tilbageblik · næste uge · optagedage · ugens mål", kn: "Start", fn: () => { showTab(9); perfAabn("moedeStart"); } });
+      items.unshift({ ik: "kalender", id: "moede-" + idag, t: (pd === idag ? "I dag er planlægningsdag" : "Ugentlig contentplanlægning"), navn: (pd === idag ? "Ugentlig contentplanlægning" : ""), sub: n ? n + " opslag postet siden sidste møde · tryk for at starte" : "Tilbageblik · planlæg frem · datoer · tryk for at starte", kn: "Start", fn: () => { showTab(9); perfAabn("moedeStart"); } });
     }
   } catch (e) {}
   /* I DATORAEKKEFOELGE (Ida 5/9: "hvorfor er den foerste ikke det der skal postes i
@@ -43551,7 +43576,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "1949";
+const APP_VERSION = "1950";
 let NY_VERSION_KLAR = false;
 let NY_VERSION_AFVIST = false;
 function nyVersionSkjul() {
@@ -61451,6 +61476,6 @@ function prFaerdigHtml() {
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 15. september · 1949</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 15. september · 1950</div>
 </body>
 </html>
