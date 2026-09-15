@@ -16,7 +16,10 @@ def byg(rod, maal):
     s = open(os.path.join(rod, "index.html"), encoding="utf-8").read()
     tag = '<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>'
     if tag not in s: raise SystemExit("Supabase-scriptet blev ikke fundet i index.html — selen kan ikke bygges")
-    open(os.path.join(maal, "index-sele.html"), "w", encoding="utf-8").write(s.replace(tag, '<script src="sb-stub.js"></script>', 1))
+    # INGEN SERVICE WORKER I SELEN (MAALT 15/9): appens sw.js cachede index-sele.html paa port 4633, saa hver
+    # ny bygning blev maalt paa en GAMMEL kopi, indtil SW'en blev afregistreret med haanden. Selen maa aldrig cache.
+    ude = s.replace(tag, '<script src="sb-stub.js"></script>', 1).replace('navigator.serviceWorker.register("sw.js").catch(function(){});', '/* SELE: ingen service worker */ try { navigator.serviceWorker.getRegistrations().then(function (rs) { rs.forEach(function (r) { r.unregister(); }); }); } catch (e) {}', 1)
+    open(os.path.join(maal, "index-sele.html"), "w", encoding="utf-8").write(ude)
     open(os.path.join(maal, "sb-stub.js"), "w", encoding="utf-8").write(STUB)
     open(os.path.join(maal, "sele.html"), "w", encoding="utf-8").write(SELE)
     for navn in os.listdir(rod):

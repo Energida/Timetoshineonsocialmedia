@@ -71,3 +71,7 @@ Filen er kort med vilje. Hver regel kan måles. Målingen står i `tools/designl
 ## Det, der IKKE er låst
 
 Alt, der ikke står her, er ikke låst. Det betyder ikke frit valg: det betyder mockup først og Idas klik, før der bygges.
+
+**Flisen = etiket · ÉN skillelinje · indhold (15/9 kl. 08.27, Idas ord — RETTER 12/9-noten).** En flise med etiket har altid én hårfin streg i fuld bredde under etiketten (grå på hvidt, hvid/35 % på rødt). Aldrig to streger i samme flise; en dør er kun navnet. **Didot kun i heroen — Poppins i alt andet** (fliseoverskrifter, felter, tal, ringe, knapper).
+
+**FLISEN — LÅST 15/9 kl. 08.35 (bud A »Ét skridt fylder skærmen«, Idas ord: »sådan skal alle fliser se ud fremadrettet … i alle mine apps, både admin, Succesfuld Detaildrift og Time to Shine«).** Hvid flise (1 px #DEDAD4, hjørner 20, polstring 18/20) = etiket (10 px versal, grå) · ÉN hårfin skillelinje · overskrift Poppins 18 normal · én sætning Poppins 12,5 grå · rød pilleknap i fuld bredde (48 px). Didot kun i heroen. Flere trin = ét spor, det aktive kort fylder bredden, swipe til de næste (dæmpede med lås / grønt flueben), prikker under; computeren tre kort pr. række. Fremgang = husets ringe i små hvide fliser under sporet, etiketten 14 px under ringen. Ingen tal i knapper (»Start her« · »Fortsæt« · »Åbn«). Motor: `dashBentoHtml` — tegner Hjem (rejsen: Spørgeskema · Forløbet · Drejebogen · Planlægningsdagen · Den første brief) og Forløbet-siden. Rundvisningen tilpasses kortene. Manualen: afsnittet »Flisen« (15/9). Alle knapper i huset er piller (999).
