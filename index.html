@@ -19483,6 +19483,32 @@ function perfMoedeOpslag() {
   return (IDEER || []).filter(function (x) { return x && (x.status === "Postet" || x.status === "Målt") && x.dato && String(x.dato) >= fra; })
     .sort(function (a, b) { return String(b.dato).localeCompare(String(a.dato)); });
 }
+/* MOEDEKORTET (Ida 15/9 kl. 09.49, 10 minutter foer kundemoedet): »naar jeg klikker paa I dag › Contentplanlaegning saa
+   skal der komme saadan et slags moede op, hvor der staar omkring moedet, et link til onlinemoedet, og en knap forneden
+   der siger Start« — og saa eet skridt ad gangen: foerst tilbageblikket (Siden sidst), saa Succesraketten. Linket til
+   onlinemoedet gemmes paa kunden (MAALS.moedeLink) — skrives een gang, staar der hver gang. */
+function perfMoedeStartHtml() {
+  const idag = datoDK(new Date());
+  let link = ""; try { link = (MAALS && MAALS.moedeLink) ? String(MAALS.moedeLink) : ""; } catch (e) {}
+  let n = 0; try { n = perfMoedeOpslag().length; } catch (e) {}
+  return '<div class="pm-side"><div class="db-kort pm-top">'
+    + '<div class="db-eye">Contentplanlægning · ' + esc(dkDatoKort(idag)) + '</div>'
+    + '<div class="db-navn">Planlægningsmødet</div>'
+    + '<div class="db-tekst">Først kigger vi tilbage: ' + (n ? n + (n === 1 ? ' opslag er postet' : ' opslag er postet') : 'det, der er postet') + ' siden sidste møde — vi udfylder Indblik på hvert og taler om, hvad der virkede. Så planlægger vi frem: hvor mange opslag, hvor langt frem, og hvilke indholdssøjler de skal ligge i. Ét skridt ad gangen.</div>'
+    + '<div class="pm-felt pm-tekst" style="margin-top:14px;"><span class="pm-navn">Link til onlinemødet</span>'
+    + '<span class="pm-ind"><input type="url" inputmode="url" id="pmMoedeLink" placeholder="Sæt linket ind én gang — så står det her hver gang" value="' + esc(link) + '" onchange="perfMoedeLinkGem(this)" style="text-align:left;"></span></div>'
+    + (link ? '<div class="db-bund" style="padding-top:12px;"><a class="db-knap sek mq-tap" href="' + esc(link) + '" target="_blank" rel="noopener" style="text-decoration:none;">Åbn onlinemødet</a></div>' : '')
+    + '<div class="db-bund"><button type="button" class="db-knap mq-tap" onclick="perfAabn(\'moede\')">Start</button></div>'
+    + '</div></div>';
+}
+async function perfMoedeLinkGem(el) {
+  try { await maalsHent(); } catch (e) {}
+  if (!MAALS) return;
+  const foer = MAALS.moedeLink; MAALS.moedeLink = String(el.value || "").trim();
+  const ok = await maalsGem("Gemt.");
+  if (!ok) { MAALS.moedeLink = foer; el.style.borderColor = "var(--red)"; return; }
+  perfBud1Tegn();
+}
 function perfMoedeHtml() {
   const fra = perfMoedeFra();
   const liste = perfMoedeOpslag();
@@ -19682,7 +19708,7 @@ function perfBud1Tegn() {
   const tilbage = PERF_AABEN ? '<button type="button" class="bsam-mobknap bsam-mobknap-sek pb-tilbage mq-tap" onclick="perfAabn(\'\')">Tilbage</button>' : '';
   /* PLANLAEGNINGSMOEDET »SIDEN SIDST« (Ida 15/9 kl. 09.15, til kundemoedet samme formiddag): doeren aabner sin egen
      flade i stedet for de gamle kolonner — se perfMoedeHtml. */
-  host.innerHTML = (PERF_AABEN === "moede") ? perfMoedeHtml() : top;
+  host.innerHTML = (PERF_AABEN === "moede") ? perfMoedeHtml() : (PERF_AABEN === "moedeStart") ? perfMoedeStartHtml() : top;
   let tb = document.getElementById("perfBud1Tilbage");
   if (!tb) { tb = document.createElement("div"); tb.id = "perfBud1Tilbage"; sc.appendChild(tb); }
   tb.innerHTML = tilbage;
@@ -26143,7 +26169,7 @@ function dagensProgramItems() {
     let due = false; try { due = (typeof planRitErDagen === "function") && planRitErDagen(); } catch (e) {}
     if (due || (pd && pd === idag)) {
       let n = 0; try { n = perfMoedeOpslag().length; } catch (e) {}
-      items.unshift({ ik: "kalender", id: "moede-" + idag, t: (pd === idag ? "I dag er planlægningsdag" : "Ugens planlægning venter"), navn: "Succesraketten · uge for uge", sub: n ? n + " opslag postet siden sidste møde" : "Tilbageblik · næste uge · optagedage · ugens mål", kn: "Start", fn: () => { try { planRitStart(); } catch (e) { showTab(9); perfAabn("moede"); } } });
+      items.unshift({ ik: "kalender", id: "moede-" + idag, t: (pd === idag ? "I dag er planlægningsdag" : "Ugens planlægning venter"), navn: "Succesraketten · uge for uge", sub: n ? n + " opslag postet siden sidste møde" : "Tilbageblik · næste uge · optagedage · ugens mål", kn: "Start", fn: () => { showTab(9); perfAabn("moedeStart"); } });
     }
   } catch (e) {}
   /* I DATORAEKKEFOELGE (Ida 5/9: "hvorfor er den foerste ikke det der skal postes i
@@ -43420,7 +43446,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "1947";
+const APP_VERSION = "1948";
 let NY_VERSION_KLAR = false;
 let NY_VERSION_AFVIST = false;
 function nyVersionSkjul() {
@@ -61320,6 +61346,6 @@ function prFaerdigHtml() {
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 15. september · 1947</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 15. september · 1948</div>
 </body>
 </html>
