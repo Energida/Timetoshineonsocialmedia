@@ -26,7 +26,8 @@ PORT=$(python3 -c "import socket;s=socket.socket();s.bind(('127.0.0.1',0));print
 cd "$MAAL" || exit 1
 python3 -m http.server "$PORT" --bind 127.0.0.1 >/dev/null 2>&1 &
 SERVER=$!
-ryd() { kill "$SERVER" >/dev/null 2>&1; }
+# RYD OP (15/9): mktemp-mappen blev efterladt ved hver koersel (17 MB pr. gang) og fyldte disken paa en eftermiddag. Kun vores egen mappe slettes.
+ryd() { kill "$SERVER" >/dev/null 2>&1; if [ -z "${SELE_MAPPE:-}" ] && [ -f "$MAAL/sele.html" ]; then rm -rf "$MAAL"; fi; }
 trap ryd EXIT
 for i in 1 2 3 4 5 6 7 8 9 10; do curl -s -o /dev/null "http://127.0.0.1:$PORT/sele.html" && break; sleep 0.4; done
 LEVERET=$(curl -s "http://127.0.0.1:$PORT/index-sele.html" | grep -c "const APP_VERSION = \"$VER\"")

@@ -45,7 +45,8 @@ function siderStreger(r) {
     var fl = e.parentElement && e.parentElement.closest(FLISER); if (!fl) return;
     /* FLISEN = ETIKET · ÉN SKILLELINJE · INDHOLD (Ida 15/9 kl. 08.27). En etiket (versaler, lille skrift) MAA have
        sin ene streg under sig — det er reglen, ikke fejlen. 12/9-forbuddet gjaldt dobbeltlinjer og doere. */
-    var erEtiket = cs.textTransform === "uppercase" && parseFloat(cs.fontSize) <= 11.5 && bb && !bt;
+    /* 15/9: ringflisens etiket staar UNDER ringen med stregen OVER sig (FLISEN: »ringe under m. etiket 14 px under«) — den ene streg maa vende begge veje, men aldrig begge. */
+    var erEtiket = cs.textTransform === "uppercase" && parseFloat(cs.fontSize) <= 11.5 && ((bb && !bt) || (bt && !bb));
     if (erEtiket) { var etiketter = fl.__etiketStreger = (fl.__etiketStreger || 0) + 1; if (etiketter === 1) return; }
     ud.push((fl.id || fl.className.toString().split(" ")[0]) + ">" + (e.id || e.className.toString().split(" ")[0] || e.tagName));
   });
