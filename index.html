@@ -192,6 +192,8 @@ input[type="date"]::-webkit-calendar-picker-indicator, input[type="time"]::-webk
 .pm-tekst textarea { width:100%; box-sizing:border-box; background:#fff; border:1px solid var(--border); border-radius:12px; padding:10px 11px; font-size:16px; line-height:1.5; font-family:"Poppins",sans-serif; color:var(--black); outline:none; resize:vertical; }
 .pm-kvit { font-size:11px; color:var(--gray3); min-height:14px; margin-top:6px; }
 .pm-hook-gr { margin-top:10px; }
+.pm-spm { display:grid; gap:8px; margin:8px 0 4px; }
+.pm-spm-l { background:var(--gray); border-radius:12px; padding:10px 12px; font-size:13px; line-height:1.45; }
 .pm-hook { font-size:13px; line-height:1.45; padding:8px 0 0; display:flex; flex-direction:column; gap:2px; }
 @media (min-width:761px) { .pm-tal { grid-template-columns:repeat(4,1fr); } }
 .ob-proces { display:flex; align-items:stretch; max-width:900px; margin:8px 0 20px; }
@@ -19509,6 +19511,108 @@ async function perfMoedeLinkGem(el) {
   if (!ok) { MAALS.moedeLink = foer; el.style.borderColor = "var(--red)"; return; }
   perfBud1Tegn();
 }
+/* ===== PLANLAEG FREM — EET SKRIDT AD GANGEN (Ida 15/9 kl. 09.49, bygget under kundemoedet) =====================
+   »naar man skal planlaegge fremad saa skal man tage stilling til hvor mange opslag … vaelge hvor langt frem, 7 eller 14
+   dage (aldrig 30) … paa baggrund af det foreslaa hvilke indholdssoejler … og komme med de spoergsmaal der kan hjaelpe
+   kunden ud fra kundetypen.«
+   plan1: hvor mange opslag om ugen (chips 1-7, forvalgt = ugemaalet) · plan2: 7 eller 14 dage · plan3: appen foreslaar
+   soejlerne efter rotationen 1A → 1B → 2A → 2B (naesteSoejleKode, samme motor som Idébanken) — eet kort pr. opslag med
+   tre spoergsmaal til forretningstypen og et felt, der laegger idéen i Idébanken med soejlen sat. Derfra videre til
+   Succesraketten (planRitStart: optagedage, ugens maal, book naeste). Flisen er den laaste (15/9). */
+let PLAN = { antal: 0, dage: 7 };
+const PLAN_SPM = {
+  webshop: {
+    "1A": ["Hvad er nyt ind, som kunderne ikke har set endnu?", "Hvilken vare får flest spørgsmål — og hvad er svaret?", "Hvad ligger oftest i kurven uden at blive købt — og hvad ville få den med?"],
+    "1B": ["Hvad står kunden i lige nu — vejret, sæsonen, en anledning?", "Hvilket problem løser pakken, den dag den lander?", "Hvad tøver kunden med, før de køber — og hvad ville tage tvivlen?"],
+    "2A": ["Hvem pakker ordrerne — og hvad kan kunden ikke se bag skærmen?", "Hvad blev vi uenige om i denne uge?", "Hvad gjorde en kunde glad i denne uge — fortæl det som en lille historie."],
+    "2B": ["Hvilket valg tog vi i denne uge, som kunden ikke ser — et indkøb, en vare vi sagde nej til?", "Hvordan ser det ud, dér hvor pakkerne bliver til?", "Hvad er reglen hos os, som andre ikke har?"]
+  },
+  butik: {
+    "1A": ["Hvad står forrest i butikken i dag — og hvorfor?", "Hvilken vare tager kunderne op og stiller igen — hvad mangler de at vide?", "Hvad siger du til kunden, når du viser den frem?"],
+    "1B": ["Hvad kommer folk ind og spørger efter i denne uge?", "Hvilken anledning står for døren — og hvad har vi til den?", "Hvad går kunden hjem og fortryder, at de ikke købte?"],
+    "2A": ["Hvem står i butikken i dag, og hvad er de gode til?", "Hvad griner vi af bag disken?", "Hvad sagde en kunde i dag, som vi ikke glemmer?"],
+    "2B": ["Hvad sker der i butikken, før den åbner?", "Hvilken vare valgte vi IKKE at tage hjem — og hvorfor?", "Hvordan vælger du, hvad der kommer på hylden?"]
+  },
+  butik_webshop: {
+    "1A": ["Hvad står forrest i butikken i dag — og ligger det også forrest i webshoppen?", "Hvilken vare får flest spørgsmål — i butikken eller på mail?", "Hvad siger du til kunden, når du viser den frem?"],
+    "1B": ["Hvad kommer folk ind og spørger efter i denne uge?", "Hvad står kunden i lige nu — vejret, sæsonen, en anledning?", "Hvad tøver kunden med — i butikken eller ved kurven?"],
+    "2A": ["Hvem står i butikken i dag, og hvem pakker ordrerne?", "Hvad griner vi af bag disken?", "Hvad gjorde en kunde glad i denne uge — i butikken eller på nettet?"],
+    "2B": ["Hvad sker der, før butikken åbner — og før pakkerne går ud?", "Hvilken vare valgte vi IKKE at tage hjem — og hvorfor?", "Hvad er reglen hos os, som andre ikke har?"]
+  },
+  raadgiver: {
+    "1A": ["Hvilket resultat fik en kunde i denne uge?", "Hvad er det første, du gør, når en ny kunde kommer?", "Hvad misforstår folk om det, du sælger?"],
+    "1B": ["Hvad står kunden i, lige før de ringer?", "Hvilket spørgsmål får du igen og igen?", "Hvad kan kunden selv gøre i dag — og hvornår skal de have dig?"],
+    "2A": ["Hvorfor gør du det her — den korte version?", "Hvad har du lært af en kunde i denne uge?", "Hvordan ser din arbejdsdag ud klokken 7?"],
+    "2B": ["Hvilket nej sagde du i denne uge — og hvorfor?", "Hvad tager tid hos dig, som kunden ikke ser?", "Hvad er din regel nummer ét?"]
+  }
+};
+function planSpm(kode) {
+  let t = "butik"; try { t = ctaType(); } catch (e) {}
+  if (t === "fysisk") t = "butik";
+  const sæt = PLAN_SPM[t] || PLAN_SPM.butik;
+  return sæt[kode] || [];
+}
+function planSoejleNavn(kode) {
+  try { const n = (strategyPillars || []).find(function (x) { const m = soejleModel(x); return m && m.kode === kode; }); if (n) return n; } catch (e) {}
+  if (kode === "1A") { try { return soejle1ANavn(); } catch (e) {} }
+  return SOEJLE_NAVNE[kode] || kode;
+}
+function planForslag() {
+  const antal = Math.max(1, Math.round((PLAN.antal || 3) * (PLAN.dage || 7) / 7));
+  let start = 0; try { start = NAESTE_ROT.indexOf(naesteSoejleKode()); } catch (e) {}
+  if (start < 0) start = 0;
+  const ud = [];
+  for (let i = 0; i < antal; i++) ud.push(NAESTE_ROT[(start + i) % 4]);
+  return ud;
+}
+function perfPlanHtml(trin) {
+  const chip = function (v, t, valgt, klik) { return '<button type="button" class="ark-chip' + (valgt ? ' on' : '') + '" onclick="' + klik + '">' + t + '</button>'; };
+  if (trin === "plan1") {
+    if (!PLAN.antal) { try { PLAN.antal = maalUge() || 3; } catch (e) { PLAN.antal = 3; } }
+    return '<div class="pm-side"><div class="db-kort pm-top"><div class="db-eye">Planlæg frem · 1 af 3</div>'
+      + '<div class="db-navn">Hvor mange opslag om ugen?</div>'
+      + '<div class="db-tekst">Forvalgt er dit ugemål. Tre om ugen er rytmen: sælg · sælg · relation.</div>'
+      + '<div class="ark-chips" style="margin:14px 0 0;">' + [1, 2, 3, 4, 5, 6, 7].map(function (n) { return chip(n, String(n), PLAN.antal === n, "PLAN.antal=" + n + ";perfBud1Tegn()"); }).join("") + '</div>'
+      + '<div class="db-bund"><button type="button" class="db-knap mq-tap" onclick="perfAabn(\'plan2\')">Videre</button></div></div></div>';
+  }
+  if (trin === "plan2") {
+    return '<div class="pm-side"><div class="db-kort pm-top"><div class="db-eye">Planlæg frem · 2 af 3</div>'
+      + '<div class="db-navn">Hvor langt frem?</div>'
+      + '<div class="db-tekst">Syv dage er ét planlægningsmøde ad gangen. Fjorten, hvis du vil have to uger i kalenderen. Aldrig længere — det bliver ikke lavet.</div>'
+      + '<div class="ark-chips" style="margin:14px 0 0;">' + chip(7, "7 dage", PLAN.dage === 7, "PLAN.dage=7;perfBud1Tegn()") + chip(14, "14 dage", PLAN.dage === 14, "PLAN.dage=14;perfBud1Tegn()") + '</div>'
+      + '<div class="db-bund"><button type="button" class="db-knap mq-tap" onclick="perfAabn(\'plan3\')">Videre</button></div></div></div>';
+  }
+  const koder = planForslag();
+  const kort = koder.map(function (k, i) {
+    const navn = planSoejleNavn(k);
+    const spm = planSpm(k);
+    return '<div class="db-kort pm-kort"><div class="db-eye">Opslag ' + (i + 1) + ' af ' + koder.length + ' · ' + k + ' · ' + esc(navn) + '</div>'
+      + '<div class="db-navn">' + esc(k === "1A" || k === "1B" ? "Skabe behov" : "Danne relation") + '</div>'
+      + '<div class="db-tekst">Find indholdet — svar på ét af spørgsmålene:</div>'
+      + '<div class="pm-spm">' + spm.map(function (q) { return '<div class="pm-spm-l">' + esc(q) + '</div>'; }).join("") + '</div>'
+      + '<label class="pm-felt pm-tekst"><span class="pm-navn">Idéen</span><textarea rows="2" id="planIde_' + i + '" placeholder="Skriv idéen med dine egne ord …"></textarea></label>'
+      + '<div class="pm-kvit" id="planKvit_' + i + '"></div>'
+      + '<div class="db-bund"><button type="button" class="db-knap sek mq-tap" onclick="planIdeLaeg(' + i + ',\'' + k + '\',this)">Læg i Idébanken</button></div>'
+      + '</div>';
+  }).join("");
+  return '<div class="pm-side"><div class="db-kort pm-top"><div class="db-eye">Planlæg frem · 3 af 3</div>'
+    + '<div class="db-navn">' + koder.length + (koder.length === 1 ? ' opslag' : ' opslag') + ' de næste ' + PLAN.dage + ' dage</div>'
+    + '<div class="db-tekst">Appen foreslår søjlerne efter rytmen 1A · 1B · 2A · 2B — dér hvor du slap sidst. Skriv idéen i hvert kort og læg den i Idébanken; datoerne sættes i Succesraketten bagefter.</div>'
+    + '<div class="db-bund"><button type="button" class="db-knap mq-tap" onclick="try{planRitStart()}catch(e){}">Videre til Succesraketten · datoer og mål</button></div></div>'
+    + kort + '</div>';
+}
+async function planIdeLaeg(i, kode, knap) {
+  const f = document.getElementById("planIde_" + i); const t = f ? String(f.value || "").trim() : "";
+  const kv = document.getElementById("planKvit_" + i);
+  if (!t) { if (f) f.focus(); return; }
+  const navn = planSoejleNavn(kode);
+  if (kv) { kv.textContent = "Gemmer…"; kv.style.color = "var(--gray3)"; }
+  try {
+    const rec = await ideAdd({ titel: t, type: "", soejle: navn, status: "Idé" });
+    if (rec) { if (kv) { kv.textContent = "Ligger i Idébanken under " + soejleVis(navn); } if (knap) { knap.textContent = "Lagt i Idébanken"; knap.disabled = true; } }
+    else if (kv) { kv.textContent = "Ikke gemt — prøv igen"; kv.style.color = "var(--red)"; }
+  } catch (e) { if (kv) { kv.textContent = "Ikke gemt — prøv igen"; kv.style.color = "var(--red)"; } }
+}
 function perfMoedeHtml() {
   const fra = perfMoedeFra();
   const liste = perfMoedeOpslag();
@@ -19525,7 +19629,7 @@ function perfMoedeHtml() {
   const top = '<div class="db-kort pm-top"><div class="db-eye">Siden sidst · fra ' + esc(dkDatoKort(fra)) + '</div>'
     + '<div class="db-navn">' + liste.length + (liste.length === 1 ? ' opslag postet' : ' opslag postet') + '</div>'
     + '<div class="db-tekst">Udfyld Indblik på hvert opslag, og skriv, hvad I lærte. Når I er færdige, afsluttes mødet — så starter næste møde fra i dag.</div>'
-    + '<div class="db-bund" style="display:flex;flex-direction:column;gap:10px;"><button type="button" class="db-knap mq-tap" onclick="try{planRitStart()}catch(e){}">Videre til Succesraketten · planlæg ugen</button>'
+    + '<div class="db-bund" style="display:flex;flex-direction:column;gap:10px;"><button type="button" class="db-knap mq-tap" onclick="perfAabn(\'plan1\')">Videre · planlæg frem</button>'
     + '<button type="button" class="db-knap sek mq-tap" onclick="perfMoedeAfslut(this)">Afslut mødet · ' + esc(dkDatoKort(idag)) + '</button></div></div>';
   const kort = liste.length ? liste.map(function (x) {
     const b = x.brief || {};
@@ -19708,7 +19812,8 @@ function perfBud1Tegn() {
   const tilbage = PERF_AABEN ? '<button type="button" class="bsam-mobknap bsam-mobknap-sek pb-tilbage mq-tap" onclick="perfAabn(\'\')">Tilbage</button>' : '';
   /* PLANLAEGNINGSMOEDET »SIDEN SIDST« (Ida 15/9 kl. 09.15, til kundemoedet samme formiddag): doeren aabner sin egen
      flade i stedet for de gamle kolonner — se perfMoedeHtml. */
-  host.innerHTML = (PERF_AABEN === "moede") ? perfMoedeHtml() : (PERF_AABEN === "moedeStart") ? perfMoedeStartHtml() : top;
+  host.innerHTML = (PERF_AABEN === "moede") ? perfMoedeHtml() : (PERF_AABEN === "moedeStart") ? perfMoedeStartHtml()
+    : (PERF_AABEN === "plan1" || PERF_AABEN === "plan2" || PERF_AABEN === "plan3") ? perfPlanHtml(PERF_AABEN) : top;
   let tb = document.getElementById("perfBud1Tilbage");
   if (!tb) { tb = document.createElement("div"); tb.id = "perfBud1Tilbage"; sc.appendChild(tb); }
   tb.innerHTML = tilbage;
@@ -43446,7 +43551,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "1948";
+const APP_VERSION = "1949";
 let NY_VERSION_KLAR = false;
 let NY_VERSION_AFVIST = false;
 function nyVersionSkjul() {
@@ -61346,6 +61451,6 @@ function prFaerdigHtml() {
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 15. september · 1948</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 15. september · 1949</div>
 </body>
 </html>
