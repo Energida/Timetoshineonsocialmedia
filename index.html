@@ -198,6 +198,11 @@ input[type="date"]::-webkit-calendar-picker-indicator, input[type="time"]::-webk
 .pm-hook-gr { margin-top:10px; }
 .pm-spm { display:grid; gap:8px; margin:8px 0 4px; }
 .pm-spm-l { background:var(--gray); border-radius:12px; padding:10px 12px; font-size:13px; line-height:1.45; }
+.pm-agenda { display:grid; grid-template-columns:auto 1fr auto; gap:6px 10px; align-items:center; }
+.pm-agenda .pm-agenda-navn, .pm-agenda .pm-agenda-under { grid-column:2; font-family:"Poppins",sans-serif !important; border:0 !important; background:transparent !important; outline:none; width:100% !important; min-width:0; padding:0 !important; margin:0 !important; border-radius:0 !important; box-shadow:none !important; }
+.pm-agenda .pm-agenda-navn { font-size:14px !important; color:var(--black) !important; }
+.pm-agenda .pm-agenda-under { font-size:12px !important; color:var(--gray3) !important; }
+.pm-agenda .pm-agenda-slet { grid-column:3; grid-row:1 / span 2; background:none; border:0; color:var(--gray3); font-family:"Poppins",sans-serif; font-size:11px; cursor:pointer; min-height:44px; padding:0 6px; }
 .pm-hook { font-size:13px; line-height:1.45; padding:8px 0 0; display:flex; flex-direction:column; gap:2px; }
 @media (min-width:761px) { .pm-tal { grid-template-columns:repeat(4,1fr); } .pm-side .db-kort { flex:none; } }
 .ob-proces { display:flex; align-items:stretch; max-width:900px; margin:8px 0 20px; }
@@ -19497,48 +19502,93 @@ function perfMoedeOpslag() {
    en agenda for det, man skal igennem, og Start, der traekker een gennem siderne. Form og link gemmes paa kunden
    (MAALS.moedeForm / MAALS.moedeLink). */
 function perfMoedeStartHtml() {
+  /* MOEDEDETALJERNE KAN RETTES (Ida 15/9 kl. 11.25: »her skal jeg kunne redigere i mødedetaljerne — tilføje deltagerne,
+     indsætte link hvis det er online, klokkeslæt og ændre i agendaen … det skal tydeligt fremgå at det er Succesraketten
+     vi gennemgår … alle kunne skrive noget i mødet«). Alt gemmes paa kunden i MAALS.moede (skema_svar) — klokkeslaet,
+     deltagere, form, link, agenda — og noterne pr. moededato i MAALS.moedeNoter[dato], saa alle paa kundens konto ser
+     og skriver i de samme. */
   const idag = datoDK(new Date());
-  let link = "", form = ""; try { link = (MAALS && MAALS.moedeLink) ? String(MAALS.moedeLink) : ""; form = (MAALS && MAALS.moedeForm) ? String(MAALS.moedeForm) : ""; } catch (e) {}
-  if (!form) form = link ? "online" : "fysisk";
+  const M = perfMoedeOpsaet();
   let n = 0; try { n = perfMoedeOpslag().length; } catch (e) {}
-  const agenda = [
-    ["Siden sidst", n ? n + (n === 1 ? " opslag postet" : " opslag postet") + " — Indblik og læring på hvert" : "Opslagene siden sidste møde — Indblik og læring"],
-    ["Planlæg frem", "Hvor mange opslag · hvor langt frem · søjlerne appen foreslår · idéerne i Idébanken"],
-    ["Succesraketten", "Optagedage · ugens mål · book næste planlægning"]
-  ];
+  const noter = (MAALS && MAALS.moedeNoter && MAALS.moedeNoter[idag]) ? String(MAALS.moedeNoter[idag]) : "";
+  const felt = function (id, navn, vaerdi, attr, ph) {
+    return '<label class="pm-felt pm-tekst" style="margin-top:12px;"><span class="pm-navn">' + navn + '</span>'
+      + '<span class="pm-ind"><input ' + attr + ' id="' + id + '" value="' + esc(vaerdi || "") + '" placeholder="' + esc(ph || "") + '" onchange="perfMoedeRet(\'' + id + '\', this.value)" style="text-align:left;"></span></label>';
+  };
+  const agenda = M.agenda.map(function (a, i) {
+    return '<div class="pm-spm-l pm-agenda"><span style="color:var(--red);margin-right:8px;">' + (i + 1) + '</span>'
+      + '<input type="text" value="' + esc(a.navn) + '" placeholder="Punkt" onchange="perfMoedeAgendaRet(' + i + ',\'navn\',this.value)" class="pm-agenda-navn">'
+      + '<input type="text" value="' + esc(a.under) + '" placeholder="Hvad vi gør" onchange="perfMoedeAgendaRet(' + i + ',\'under\',this.value)" class="pm-agenda-under">'
+      + '<button type="button" class="pm-agenda-slet mq-tap" aria-label="Fjern punktet" onclick="perfMoedeAgendaFjern(' + i + ')">Fjern</button></div>';
+  }).join("");
   return '<div class="pm-side"><div class="db-kort pm-top">'
-    + '<div class="db-eye">' + esc(dkDatoKort(idag)) + '</div>'
+    + '<div class="db-eye">Succesraketten · ' + esc(dkDatoKort(idag)) + (M.tid ? ' · kl. ' + esc(M.tid) : '') + '</div>'
     + '<div class="db-navn">Ugentlig contentplanlægning</div>'
-    + '<div class="db-tekst">Ét skridt ad gangen — Start trækker dig igennem.</div>'
+    + '<div class="db-tekst">Vi gennemgår Succesraketten — ét skridt ad gangen. Start trækker os igennem.</div>'
+    + '<div class="pm-tal" style="margin-top:14px;">'
+    + felt("pmTid", "Klokkeslæt", M.tid, 'type="time"', "")
+    + felt("pmDeltagere", "Deltagere", M.deltagere, 'type="text"', "Navne, adskilt med ·")
+    + '</div>'
     + '<div class="ark-chips" style="margin:14px 0 0;">'
-    + '<button type="button" class="ark-chip' + (form === "fysisk" ? ' on' : '') + '" onclick="perfMoedeFormGem(\'fysisk\')">Fysisk</button>'
-    + '<button type="button" class="ark-chip' + (form === "online" ? ' on' : '') + '" onclick="perfMoedeFormGem(\'online\')">Online</button></div>'
-    + (form === "online"
-        ? '<div class="pm-felt pm-tekst" style="margin-top:12px;"><span class="pm-navn">Link til onlinemødet</span>'
-          + '<span class="pm-ind"><input type="url" inputmode="url" id="pmMoedeLink" placeholder="Sæt linket ind én gang — så står det her hver gang" value="' + esc(link) + '" onchange="perfMoedeLinkGem(this)" style="text-align:left;"></span></div>'
-          + (link ? '<div style="margin-top:10px;"><a class="db-knap sek mq-tap" href="' + esc(link) + '" target="_blank" rel="noopener" style="text-decoration:none;">Åbn onlinemødet</a></div>' : '')
+    + '<button type="button" class="ark-chip' + (M.form === "fysisk" ? ' on' : '') + '" onclick="perfMoedeFormGem(\'fysisk\')">Fysisk</button>'
+    + '<button type="button" class="ark-chip' + (M.form === "online" ? ' on' : '') + '" onclick="perfMoedeFormGem(\'online\')">Online</button></div>'
+    + (M.form === "online"
+        ? felt("pmMoedeLink", "Link til onlinemødet", M.link, 'type="url" inputmode="url"', "Sæt linket ind én gang — så står det her hver gang")
+          + (M.link ? '<div style="margin-top:10px;"><a class="db-knap sek mq-tap" href="' + esc(M.link) + '" target="_blank" rel="noopener" style="text-decoration:none;">Åbn onlinemødet</a></div>' : '')
         : '')
     + '<div class="pm-navn" style="margin-top:16px;">Agenda</div>'
-    + '<div class="pm-spm">' + agenda.map(function (a, i) { return '<div class="pm-spm-l"><span style="color:var(--red);margin-right:8px;">' + (i + 1) + '</span>' + esc(a[0]) + '<span class="db-under" style="display:block;margin-top:2px;">' + esc(a[1]) + '</span></div>'; }).join("") + '</div>'
+    + '<div class="pm-spm">' + agenda + '</div>'
+    + '<button type="button" class="db-knap sek mq-tap" style="margin-top:10px;" onclick="perfMoedeAgendaTilfoej()">Tilføj punkt</button>'
+    + '<label class="pm-felt pm-tekst" style="margin-top:16px;"><span class="pm-navn">Noter fra mødet · alle kan skrive</span>'
+    + '<textarea rows="3" id="pmNoter" placeholder="Det, vi aftaler undervejs …" onchange="perfMoedeNoterGem(this.value)">' + esc(noter) + '</textarea></label>'
+    + '<div class="pm-kvit" id="pmKvit"></div>'
     + '<div class="db-bund"><button type="button" class="db-knap mq-tap" onclick="perfAabn(\'moede\')">Start</button></div>'
     + '</div></div>';
 }
-async function perfMoedeFormGem(form) {
+function perfMoedeOpsaet() {
+  const std = { form: "", link: "", tid: "", deltagere: "", agenda: [
+    { navn: "Siden sidst", under: "Opslagene siden sidste møde — Indblik og læring på hvert" },
+    { navn: "Planlæg frem", under: "Hvor mange opslag · hvor langt frem · søjlerne appen foreslår · idéerne i Idébanken" },
+    { navn: "Succesraketten", under: "Optagedage · ugens mål · book næste planlægning" } ] };
+  let M = {};
+  try { M = (MAALS && MAALS.moede && typeof MAALS.moede === "object") ? MAALS.moede : {}; } catch (e) {}
+  const ud = Object.assign({}, std, M);
+  /* De gamle enkeltnoegler (moedeLink/moedeForm) laeses med, saa intet gaar tabt. */
+  if (!ud.link && MAALS && MAALS.moedeLink) ud.link = String(MAALS.moedeLink);
+  if (!ud.form && MAALS && MAALS.moedeForm) ud.form = String(MAALS.moedeForm);
+  if (!ud.form) ud.form = ud.link ? "online" : "fysisk";
+  if (!Array.isArray(ud.agenda) || !ud.agenda.length) ud.agenda = std.agenda.slice();
+  return ud;
+}
+async function perfMoedeSkriv(aendr, tegn) {
+  try { await maalsHent(); } catch (e) {}
+  if (!MAALS) return false;
+  const foer = JSON.stringify(MAALS.moede || null), foerN = JSON.stringify(MAALS.moedeNoter || null);
+  const M = perfMoedeOpsaet(); aendr(M); MAALS.moede = M;
+  const kv = document.getElementById("pmKvit"); if (kv) { kv.textContent = "Gemmer…"; kv.style.color = "var(--gray3)"; }
+  const ok = await maalsGem("Gemt.");
+  if (!ok) { try { MAALS.moede = JSON.parse(foer); MAALS.moedeNoter = JSON.parse(foerN); } catch (e) {} if (kv) { kv.textContent = "Ikke gemt — prøv igen"; kv.style.color = "var(--red)"; } return false; }
+  if (kv) kv.textContent = "Gemt";
+  if (tegn) perfBud1Tegn();
+  return true;
+}
+function perfMoedeRet(id, v) {
+  const n = { pmTid: "tid", pmDeltagere: "deltagere", pmMoedeLink: "link" }[id]; if (!n) return;
+  perfMoedeSkriv(function (M) { M[n] = String(v || "").trim(); }, n === "link");
+}
+function perfMoedeAgendaRet(i, felt, v) { perfMoedeSkriv(function (M) { if (M.agenda[i]) M.agenda[i][felt] = String(v || "").trim(); }, false); }
+function perfMoedeAgendaFjern(i) { perfMoedeSkriv(function (M) { M.agenda.splice(i, 1); }, true); }
+function perfMoedeAgendaTilfoej() { perfMoedeSkriv(function (M) { M.agenda.push({ navn: "", under: "" }); }, true); }
+async function perfMoedeNoterGem(v) {
   try { await maalsHent(); } catch (e) {}
   if (!MAALS) return;
-  const foer = MAALS.moedeForm; MAALS.moedeForm = form;
-  const ok = await maalsGem("Gemt.");
-  if (!ok) MAALS.moedeForm = foer;
-  perfBud1Tegn();
+  if (!MAALS.moedeNoter || typeof MAALS.moedeNoter !== "object") MAALS.moedeNoter = {};
+  MAALS.moedeNoter[datoDK(new Date())] = String(v || "");
+  const kv = document.getElementById("pmKvit"); const ok = await maalsGem("Gemt.");
+  if (kv) { kv.textContent = ok ? "Gemt" : "Ikke gemt — prøv igen"; kv.style.color = ok ? "var(--gray3)" : "var(--red)"; }
 }
-async function perfMoedeLinkGem(el) {
-  try { await maalsHent(); } catch (e) {}
-  if (!MAALS) return;
-  const foer = MAALS.moedeLink; MAALS.moedeLink = String(el.value || "").trim();
-  const ok = await maalsGem("Gemt.");
-  if (!ok) { MAALS.moedeLink = foer; el.style.borderColor = "var(--red)"; return; }
-  perfBud1Tegn();
-}
+async function perfMoedeFormGem(form) { perfMoedeSkriv(function (M) { M.form = form; }, true); }
+async function perfMoedeLinkGem(el) { perfMoedeRet("pmMoedeLink", el.value); }
 /* ===== PLANLAEG FREM — EET SKRIDT AD GANGEN (Ida 15/9 kl. 09.49, bygget under kundemoedet) =====================
    »naar man skal planlaegge fremad saa skal man tage stilling til hvor mange opslag … vaelge hvor langt frem, 7 eller 14
    dage (aldrig 30) … paa baggrund af det foreslaa hvilke indholdssoejler … og komme med de spoergsmaal der kan hjaelpe
@@ -19842,6 +19892,9 @@ function perfBud1Tegn() {
      flade i stedet for de gamle kolonner — se perfMoedeHtml. */
   host.innerHTML = (PERF_AABEN === "moede") ? perfMoedeHtml() : (PERF_AABEN === "moedeStart") ? perfMoedeStartHtml()
     : (PERF_AABEN === "plan1" || PERF_AABEN === "plan2" || PERF_AABEN === "plan3") ? perfPlanHtml(PERF_AABEN) : top;
+  /* HEROEN SIGER, HVOR MAN ER (Ida 15/9 kl. 11.27: »forkert der står Performance der«): moedeflowet hedder
+     Contentplanlaegning i heroen, resten Performance. */
+  try { const h = sc.querySelector(".ch-titel"); if (h && h.parentElement === sc) { h.textContent = (["moede", "moedeStart", "plan1", "plan2", "plan3"].indexOf(PERF_AABEN) > -1) ? "Contentplanlægning" : "Performance"; heroPas(sc); } } catch (e) {}   /* heroPas: ordet deles aldrig (v1854) */
   let tb = document.getElementById("perfBud1Tilbage");
   if (!tb) { tb = document.createElement("div"); tb.id = "perfBud1Tilbage"; sc.appendChild(tb); }
   tb.innerHTML = tilbage;
@@ -43566,7 +43619,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "1952";
+const APP_VERSION = "1953";
 let NY_VERSION_KLAR = false;
 let NY_VERSION_AFVIST = false;
 function nyVersionSkjul() {
@@ -61467,6 +61520,6 @@ function prFaerdigHtml() {
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 15. september · 1952</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 15. september · 1953</div>
 </body>
 </html>
