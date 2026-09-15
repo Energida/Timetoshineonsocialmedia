@@ -16738,16 +16738,18 @@ function briefSlidesLaes() {   // gem hvad der står i felterne før en re-rende
   const bEls = document.querySelectorAll('[id^="bf_slideb_"]');
   if (bEls.length) BRIEF_STATE.slideBilleder = Array.from(bEls).map(el => el.value);
 }
-function briefSlidesHtml() {
-  const slides = Array.isArray(BRIEF_STATE.slides) && BRIEF_STATE.slides.length ? BRIEF_STATE.slides : (BRIEF_STATE.slides = ["", "", ""]);
-  const kort = slides.map((tekst, i) =>
-    '<div style="background:#fff;border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:10px;">'
+/* SLIDE 1 ER DET VISUELLE HOOK OG STAAR UNDER FANG DEM (Idas klik 15/9 kl. 21.35, fund 4): karrusellens slides begynder ved slide 2
+   under Fasthold dem. Samme data (b.slides / b.slideBilleder), kun pladsen er ny. Det gamle felt »Det visuelle hook« (b.hook) er ude
+   paa karrusellen — slide 1 spoerges EET sted. Paa Billede hedder b.hook »Billedet« og staar under Fang dem. */
+function briefSlideKort(i, slides) {
+  const tekst = slides[i];
+  return '<div style="background:#fff;border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:10px;">'
     + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">'
     + '<span style="width:26px;height:26px;border-radius:50%;background:var(--red);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:400;flex-shrink:0;">' + (i + 1) + '</span>'
     + '<span style="flex:1;font-size:11px;font-weight:400;letter-spacing:1px;text-transform:uppercase;color:var(--gray3);">Slide ' + (i + 1) + ' af ' + slides.length + (i === 0 ? ' · forsiden (hook)' : (i === slides.length - 1 ? ' · CTA-slide' : '')) + '</span>'
     + (i > 0 ? '<button type="button" class="row-btn" title="Flyt op" onclick="briefSlideFlyt(' + i + ',-1)">&#8593;</button>' : '')
     + (i < slides.length - 1 ? '<button type="button" class="row-btn" title="Flyt ned" onclick="briefSlideFlyt(' + i + ',1)">&#8595;</button>' : '')
-    + (slides.length > 1 ? '<button type="button" class="row-btn" title="Slet slide" onclick="briefSlideSlet(' + i + ')">&#10005;</button>' : '')
+    + (slides.length > 1 && i > 0 ? '<button type="button" class="row-btn" title="Slet slide" onclick="briefSlideSlet(' + i + ')">&#10005;</button>' : '')   /* slide 1 (det visuelle hook) slettes ikke */
     + '</div>'
     /* TEKST + BILLEDE hver for sig (Ida 31/8: "tidligere var min karrussel så god fordi
        der kunne jeg tydeligt på hver slide dele op i tekst og billede"). Teksten bor i
@@ -16756,11 +16758,16 @@ function briefSlidesHtml() {
     + '<textarea class="sk-input" id="bf_slide_' + i + '" placeholder="' + (i === 0 ? 'Hook’et der stopper scrollet…' : 'Teksten på sliden…') + '" style="min-height:48px;">' + esc(tekst) + '</textarea>'
     + '<div style="font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--gray3);margin:8px 0 4px;">Billedet på sliden</div>'
     + '<textarea class="sk-input" id="bf_slideb_' + i + '" placeholder="' + (i === 0 ? 'Hvad ser man på forsiden?' : 'Hvad viser billedet?') + '" style="min-height:48px;">' + esc((Array.isArray(BRIEF_STATE.slideBilleder) && BRIEF_STATE.slideBilleder[i]) || "") + '</textarea>'
-    + '</div>').join("");
+    + '</div>';
+}
+function briefSlidesHtml(fra) {
+  const slides = Array.isArray(BRIEF_STATE.slides) && BRIEF_STATE.slides.length ? BRIEF_STATE.slides : (BRIEF_STATE.slides = ["", "", ""]);
+  const start = fra || 0;
+  const kort = slides.map((t, i) => i < start ? '' : briefSlideKort(i, slides)).join("");
   /* Mini-storyboard-baren er FJERNET (Ida 31/8: "klam processbar ... FJERN. jeg har
      ALDRIG bedt dig implementere dette") — gloeden var oven i koebet rosa (roed 18 %). */
   return '<div class="sk-q">'
-    + '<div class="sk-label">Karrusellens slides</div>'
+    + '<div class="sk-label">Karrusellens slides' + (start ? ' <span class="sk-forkl">Fra slide 2. Slide 1 er det visuelle hook under Fang dem.</span>' : '') + '</div>'
     + '<div id="briefSlides">' + kort + '</div>'
     + '<button type="button" class="bf-plads" style="margin-top:8px;" onclick="briefSlideNy()"><svg width=\'14\' height=\'14\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'1.9\' stroke-linecap=\'round\'><path d=\'M12 5v14M5 12h14\'/></svg> Slide</button>'
     + '</div>';
@@ -16771,8 +16778,9 @@ function briefSlideFlyt(i, d) { briefSlidesLaes(); const a = BRIEF_STATE.slides,
 function briefSlideRerender() {
   const holder = document.getElementById("briefSlides"); if (!holder) return;
   const ny = document.createElement("div");
-  ny.innerHTML = briefSlidesHtml();
+  ny.innerHTML = briefSlidesHtml(BRIEF_STATE.format === "Karrusel" ? 1 : 0);
   holder.closest(".sk-q").outerHTML = ny.innerHTML;
+  try { const h1 = document.getElementById("briefSlide1"); if (h1) { const s1 = Array.isArray(BRIEF_STATE.slides) ? BRIEF_STATE.slides : []; h1.innerHTML = briefSlideKort(0, s1); } } catch (e) {}   /* slide 1 under Fang dem tegnes med */
   document.querySelectorAll('[id^="bf_slide_"]').forEach(autoGro);
   if (typeof saveBrief === "function") saveBrief(true);
 }
@@ -18601,6 +18609,13 @@ function openBriefSide(id) {
          fremdriften paa en gammel brief. */
       qP('cover', 'Thumbnail <span class="sk-forkl">Teksten på billedet. Den skal skabe nysgerrighed og fortælle kunden hvad de får ud af at se indholdet uden at give svaret.</span>',
       briefForslagHtml('thumb')))
+    /* FUND 4 (Idas klik 15/9 kl. 21.35): det, der skal FANGE, staar under Fang dem — karrusellens slide 1 og billedets billede. */
+    + (BRIEF_STATE.format === "Karrusel"
+      ? (function () { const sl = Array.isArray(BRIEF_STATE.slides) && BRIEF_STATE.slides.length ? BRIEF_STATE.slides : (BRIEF_STATE.slides = ["", "", ""]);
+          return q('Det visuelle hook <span class="sk-forkl">Slide 1: det første, kunden ser</span>', '<div id="briefSlide1">' + briefSlideKort(0, sl) + '</div>'); })()
+      : (BRIEF_STATE.format === "Billede"
+      ? q('Billedet <span class="sk-forkl">Billedet, der skal fange kunden</span>', ta('hook', 'Beskriv billedet, kunden ser…', 54, true))
+      : ''))
     /* Bjaelken siger formatets egen metode (Idas ja 25/8, ordlyden godkendt).
        "Fasthold dem længst muligt" giver ingen mening paa 4-6 sekunder. REELEN ER UAENDRET. */
     /* FORMATET SKIFTER TEKSTEN (bevaret): scene-skift giver ingen mening paa en
@@ -18623,12 +18638,7 @@ function openBriefSide(id) {
        feltet og bliver staaende med hver sin ordlyd.
        DATAEN ER UROERT: b.hook slettes ikke. Paa reels laeses den fortsat til
        forudfyldning af klip 1, saa intet gammelt svar gaar tabt (gem-reglen 4/8). */
-    + ((BRIEF_STATE.format === "Karrusel" || BRIEF_STATE.format === "Billede")
-      ? q((BRIEF_STATE.format === "Karrusel" ? 'Det visuelle hook <span class="sk-forkl">Den første slide, der skal fange kunden</span>'
-          : 'Det visuelle hook <span class="sk-forkl">Billedet, der skal fange kunden</span>'),
-        ta('hook', BRIEF_STATE.format === "Billede" ? 'Beskriv billedet, kunden ser…'
-          : 'Beskriv den første slide, kunden ser…', 54, true))
-      : '')
+    /* »Det visuelle hook« staar under FANG DEM fra 15/9 (fund 4) — se ovenfor. */
     + ((BRIEF_STATE.format === "Billede")
       /* BILLEDE (vej A): ingen klip og ingen slides — eet felt om det, kunden skal
          laegge maerke til. Gemmes i b.indhold, saa fremdrift og overblik taeller med. */
@@ -18638,7 +18648,7 @@ function openBriefSide(id) {
       /* "Handlingen paa sidste slide" er FJERNET (Ida 31/8: "CTA slide står dobbelt")
          — sidste slide-kort HEDDER CTA-slide og baerer selv handlingen. Gammelt
          ctaVideo-svar slettes ikke (feltet laeses kun, naar det findes paa skaermen). */
-      ? briefSlidesHtml()
+      ? briefSlidesHtml(1)
       /* KORT-REEL HAR INGEN OPBYGNING (Idas valg 25/8) — den har ét klip. Overskriften
          og hjaelpen foelger med: "beskriv scenerne trin for trin" giver ingen mening,
          naar der kun er én scene. */
@@ -44612,7 +44622,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "1984";
+const APP_VERSION = "1985";
 let NY_VERSION_KLAR = false;
 let NY_VERSION_AFVIST = false;
 function nyVersionSkjul() {
@@ -62552,6 +62562,6 @@ function prFaerdigHtml() {
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 15. september · 1984</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 15. september · 1985</div>
 </body>
 </html>
