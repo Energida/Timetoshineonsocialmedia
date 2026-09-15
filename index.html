@@ -29693,6 +29693,19 @@ function klipBriefRender() {
     + '<div style="display:flex;gap:6px;margin-top:10px;">'
     + sendFeltHtml({ id: 'klip_ko_' + o.id, ph: 'Skriv en kommentar eller rettelse…', fn: 'klipKommentar(&#39;' + o.id + '&#39;)', aria: 'Send' })
     + '</div>'
+    /* LINKS OG LÆNGDE + »SE LEKTIONEN SOM KUNDEN« (Idas klik 15/9 kl. 05.45: »I briefen«).
+       De tre felter (antal ord · råfil-link · video-link) og knappen til kundens lektionsside
+       blev kun tegnet i den gamle editor og på det gamle klippekort — begge er ude af bud 6,
+       saa funktionerne var doede. Nu bor de i briefen: én flise, felterne gemmer sig selv med
+       kvittering (kbLinksGem), knappen lukker briefen og aabner lektionen (kbSeSomKunde). */
+    + label("Links og længde")
+    + '<div class="kb-manuskort kb-links" style="background:#fff;border:1px solid var(--border);border-radius:20px;padding:14px 16px;margin-top:8px;display:grid;gap:12px;">'
+    + kbLinksFelt("kbOrd", "Antal ord i manus", o.ord, felt, 'type="number" inputmode="numeric" min="0"', "Bruges kun, når der ikke er skrevet et manus — så beregnes videolængden (ord × 0,43 sek.)")
+    + kbLinksFelt("kbRaafiler", "Link til råfilerne", o.raafiler_link, felt, 'type="url" inputmode="url" placeholder="Dropbox eller Drive"', "")
+    + kbLinksFelt("kbVideo", "Link til den færdige video", o.video_link, felt, 'type="url" inputmode="url"', "")
+    + '<div id="kbLinksStatus" style="font-size:11px;color:var(--gray3);min-height:14px;"></div>'
+    + '</div>'
+    + (lek && lek.l ? '<button type="button" class="dbtn" style="width:100%;min-height:44px;margin-top:16px;" onclick="kbSeSomKunde(&#39;' + esc(o.id) + '&#39;)">Se lektionen som kunden</button>' : "")
     /* "Gem", ikke "Faerdig" (Ida 2/8): at hun har rettet i manuskriptet betyder ikke,
        at det er faerdigt. Statussen afgoer hun selv med chippen paa kortet. */
     /* HANDLINGSKNAPPER LIGGER NEDERST TIL HØJRE (Ida 4/8 — skærpet). Gem stod nederst til
@@ -30189,6 +30202,35 @@ function appLukAaben() {
   });
 })();
 function klipBriefLuk() { try { speechSynthesis.cancel(); } catch(e) {} kbGemNu(true); closeModal(); }
+/* Et felt i »Links og længde«: etiket OVER feltet (mobiltjek-reglen), gemmer paa change. */
+function kbLinksFelt(id, etiket, vaerdi, felt, attr, hint) {
+  return '<label style="display:block;">'
+    + '<span style="display:block;font-size:11px;color:var(--gray3);margin-bottom:5px;">' + etiket + '</span>'
+    + '<input id="' + id + '" ' + attr + ' value="' + esc(vaerdi == null ? "" : vaerdi) + '" ' + felt + ' onchange="kbLinksGem(this)">'
+    + (hint ? '<span style="display:block;font-size:10.5px;color:var(--gray3);line-height:1.5;margin-top:4px;">' + hint + '</span>' : "")
+    + '</label>';
+}
+/* Gemmer de tre felter for den aabne video. Kvittering kraeves (.select + data.length),
+   for en RLS-afvist update giver error = null. Tomt felt = null (feltet ER synligt). */
+async function kbLinksGem() {
+  const id = KLIP_BRIEF_ID; const st = document.getElementById("kbLinksStatus");
+  const o = (KLIP_OPGAVER || []).find(x => String(x.id) === String(id)); if (!o) return;
+  const v = fid => { const el = document.getElementById(fid); return el ? el.value.trim() : ""; };
+  const ord = v("kbOrd");
+  const patch = { ord: ord ? (parseInt(ord, 10) || 0) : null, raafiler_link: v("kbRaafiler") || null, video_link: v("kbVideo") || null };
+  if (st) { st.textContent = "Gemmer\u2026"; st.style.color = "var(--gray3)"; }
+  if (sb) {
+    try {
+      const { data, error } = await sb.from("video_opgaver").update(patch).eq("id", id).select("id");
+      if (error || !data || !data.length) { if (st) { st.textContent = "Ikke gemt — prøv igen"; st.style.color = "var(--red)"; } return; }
+    } catch(e) { if (st) { st.textContent = "Ikke gemt — prøv igen"; st.style.color = "var(--red)"; } return; }
+  }
+  Object.assign(o, patch);
+  if (!sb) klipSaveLocal();
+  if (st) st.textContent = "Gemt";
+}
+/* Knappen »Se lektionen som kunden«: briefen gemmes og lukkes, lektionen aabnes som kunden ser den. */
+function kbSeSomKunde(id) { klipBriefLuk(); klipSeLektion(id); }
 
 /* Højtaler-knappen i briefen: læser manus op — samme stemme som optage-visningen.
    Læser fra tekstfeltet, så den også tager rettelser med, du ikke har gemt endnu. */
@@ -42952,7 +42994,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "1938";
+const APP_VERSION = "1939";
 let NY_VERSION_KLAR = false;
 let NY_VERSION_AFVIST = false;
 function nyVersionSkjul() {
@@ -60829,6 +60871,6 @@ function prFaerdigHtml() {
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 15. september · 1938</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 15. september · 1939</div>
 </body>
 </html>
