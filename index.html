@@ -5892,6 +5892,7 @@ body.plan-open .burger-btn, body.plan-open .bottom-nav, body.plan-open .dash-fab
 .pr-svar.on .pr-svar-rd { background:var(--red); border-color:var(--red); color:#fff; }
 .pr-svar.dim { opacity:.55; cursor:default; }
 .pr-svar-felt { flex-direction:column; align-items:stretch; cursor:auto; padding:10px 12px; }
+.pr-dagvalg { margin:-2px 0 12px; padding:0 4px; }   /* ugens dage under et foreslaaet opslag (15/9) */
 .pr-svar-felt .pr-felt { border:0; padding:4px 6px; min-height:56px; background:transparent; }
 .pr-felt { width:100%; min-height:70px; background:#fff; border:1px solid var(--border); border-radius:12px; padding:10px 12px; font-size:16px; line-height:1.5; font-family:"Poppins",sans-serif; box-sizing:border-box; resize:vertical; }
 @media (max-width:700px) {
@@ -17799,7 +17800,9 @@ function openBriefSide(id) {
       /* WEBSHOP (Idas ord 15/9 kl. 12.33: »når det er en webshop skal det bare være: Link til produkter der skal med«). Samme
          datanoegle (medIIndhold), samme flise — kun ordene og plus-formen foelger forretningstypen. */
       + (briefErWebshop() ? '<div class="sk-label">Link til produkter der skal med</div>' : '<div class="sk-label">Hvad skal med i indholdet? <span class="sk-forkl">Personer, produkter, rekvisitter</span></div>')
-      + '<button type="button" class="kort-plus" onclick="briefProduktAaben(this)" title="Tilføj produkt" aria-label="Tilføj produkt"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>'
+      /* PLUSSET I HJOERNET STAAR KUN, NAAR FELTET HAR INDHOLD (Ida 15/9 kl. 12.45: »når knappen tilføj er der skal der ikke
+         være krydset i højre hjørne«). Tomt felt = kun den lange Tilfoej-knap; den aabner link-formen for webshops. */
+      + (String(BRIEF_STATE.medIIndhold || '').trim() ? '<button type="button" class="kort-plus" onclick="briefProduktAaben(this)" title="Tilføj produkt" aria-label="Tilføj produkt"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>' : '')
       /* FELTET ER VALGFRIT (Ida 4/9: "denne kasse skal laves valgfri som knap ala.
          Tilfoej produkter"). Et tomt skrivefelt, der altid staar aabent, siger at her
          MANGLER noget — og de fleste opslag har ingen rekvisitter.
@@ -17808,7 +17811,7 @@ function openBriefSide(id) {
          det man har skrevet aldrig gemmer sig bag en knap. */
       + (String(BRIEF_STATE.medIIndhold || '').trim()
           ? ta('medIIndhold', briefErWebshop() ? 'Sæt linket fra webshoppen ind…' : 'Skriv, hvem eller hvad der skal med…', 54, true)
-          : '<button type="button" class="bf-plads" id="bfMedIPlads" onclick="briefMedIAaben()">'
+          : '<button type="button" class="bf-plads" id="bfMedIPlads" onclick="' + (briefErWebshop() ? 'briefProduktAaben(this)' : 'briefMedIAaben()') + '">'
             + '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>'
             + (briefErWebshop() ? 'Tilføj link til produkt' : 'Tilføj person, produkt eller rekvisit') + '</button>')
       + '<div id="briefProduktFelt" style="display:none;margin-top:10px;"></div>'
@@ -19544,14 +19547,22 @@ function perfMoedeStartHtml() {
     + '<label class="pm-felt pm-tekst" style="margin-top:16px;"><span class="pm-navn">Noter fra mødet · alle kan skrive</span>'
     + '<textarea rows="3" id="pmNoter" placeholder="Det, vi aftaler undervejs …" onchange="perfMoedeNoterGem(this.value)">' + esc(noter) + '</textarea></label>'
     + '<div class="pm-kvit" id="pmKvit"></div>'
-    + '<div class="db-bund"><button type="button" class="db-knap mq-tap" onclick="perfAabn(\'moede\')">Start</button></div>'
+    + '<div class="db-bund"><button type="button" class="db-knap mq-tap" onclick="planRitStart()">Start</button></div>'
     + '</div></div>';
 }
 function perfMoedeOpsaet() {
+  /* AGENDAEN ER IDAS (mødenoterne 15/9 kl. 12.00): »performance af de foregående opslag siden vi havde møde sidst → finde
+     et tema for den kommende uge, baseret på tiden lige nu (ikke et krav, en vejledning, med spørgsmål) → vælge antal
+     opslag → søjlerne placeret på datoerne i den kommende uge → hvornår laves briefen, hvornår produceres, hvem er ansvarlig«.
+     Moedet og Succesraketten er EET forloeb (Idas klik 15/9 kl. 12.05). */
   const std = { form: "", link: "", tid: "", deltagere: "", agenda: [
     { navn: "Siden sidst", under: "Opslagene siden sidste møde — Indblik og læring på hvert" },
-    { navn: "Planlæg frem", under: "Hvor mange opslag · hvor langt frem · søjlerne appen foreslår · idéerne i Idébanken" },
-    { navn: "Succesraketten", under: "Optagedage · ugens mål · book næste planlægning" } ] };
+    { navn: "Ugens tema", under: "Hvad ugen skal handle om, ud fra tiden lige nu — en vejledning, ikke et krav" },
+    { navn: "Antal opslag", under: "Hvor mange opslag i den kommende uge" },
+    { navn: "Ugen", under: "Søjlerne lagt på ugens dage — appen foreslår ud fra det, der er postet" },
+    { navn: "Hvem gør hvad", under: "Hvornår briefen laves · hvornår det produceres · hvem der er ansvarlig" },
+    { navn: "Ugens mål og næste møde", under: "Målene for ugen · book næste planlægning" } ] };
+  const GAMMEL_AGENDA = ["Siden sidst", "Planlæg frem", "Succesraketten"];
   let M = {};
   try { M = (MAALS && MAALS.moede && typeof MAALS.moede === "object") ? MAALS.moede : {}; } catch (e) {}
   const ud = Object.assign({}, std, M);
@@ -19560,6 +19571,8 @@ function perfMoedeOpsaet() {
   if (!ud.form && MAALS && MAALS.moedeForm) ud.form = String(MAALS.moedeForm);
   if (!ud.form) ud.form = ud.link ? "online" : "fysisk";
   if (!Array.isArray(ud.agenda) || !ud.agenda.length) ud.agenda = std.agenda.slice();
+  /* En gemt agenda med formiddagens tre punkter (foer Idas noter) faar de nye seks — kundens egne rettelser roeres ikke. */
+  try { if (ud.agenda.length === 3 && ud.agenda.every(function (a, i) { return a && a.navn === GAMMEL_AGENDA[i]; })) ud.agenda = std.agenda.slice(); } catch (e) {}
   return ud;
 }
 async function perfMoedeSkriv(aendr, tegn) {
@@ -19591,109 +19604,9 @@ async function perfMoedeNoterGem(v) {
 }
 async function perfMoedeFormGem(form) { perfMoedeSkriv(function (M) { M.form = form; }, true); }
 async function perfMoedeLinkGem(el) { perfMoedeRet("pmMoedeLink", el.value); }
-/* ===== PLANLAEG FREM — EET SKRIDT AD GANGEN (Ida 15/9 kl. 09.49, bygget under kundemoedet) =====================
-   »naar man skal planlaegge fremad saa skal man tage stilling til hvor mange opslag … vaelge hvor langt frem, 7 eller 14
-   dage (aldrig 30) … paa baggrund af det foreslaa hvilke indholdssoejler … og komme med de spoergsmaal der kan hjaelpe
-   kunden ud fra kundetypen.«
-   plan1: hvor mange opslag om ugen (chips 1-7, forvalgt = ugemaalet) · plan2: 7 eller 14 dage · plan3: appen foreslaar
-   soejlerne efter rotationen 1A → 1B → 2A → 2B (naesteSoejleKode, samme motor som Idébanken) — eet kort pr. opslag med
-   tre spoergsmaal til forretningstypen og et felt, der laegger idéen i Idébanken med soejlen sat. Derfra videre til
-   Succesraketten (planRitStart: optagedage, ugens maal, book naeste). Flisen er den laaste (15/9). */
-let PLAN = { antal: 0, dage: 7 };
-const PLAN_SPM = {
-  webshop: {
-    "1A": ["Hvad er nyt ind, som kunderne ikke har set endnu?", "Hvilken vare får flest spørgsmål — og hvad er svaret?", "Hvad ligger oftest i kurven uden at blive købt — og hvad ville få den med?"],
-    "1B": ["Hvad står kunden i lige nu — vejret, sæsonen, en anledning?", "Hvilket problem løser pakken, den dag den lander?", "Hvad tøver kunden med, før de køber — og hvad ville tage tvivlen?"],
-    "2A": ["Hvem pakker ordrerne — og hvad kan kunden ikke se bag skærmen?", "Hvad blev vi uenige om i denne uge?", "Hvad gjorde en kunde glad i denne uge — fortæl det som en lille historie."],
-    "2B": ["Hvilket valg tog vi i denne uge, som kunden ikke ser — et indkøb, en vare vi sagde nej til?", "Hvordan ser det ud, dér hvor pakkerne bliver til?", "Hvad er reglen hos os, som andre ikke har?"]
-  },
-  butik: {
-    "1A": ["Hvad står forrest i butikken i dag — og hvorfor?", "Hvilken vare tager kunderne op og stiller igen — hvad mangler de at vide?", "Hvad siger du til kunden, når du viser den frem?"],
-    "1B": ["Hvad kommer folk ind og spørger efter i denne uge?", "Hvilken anledning står for døren — og hvad har vi til den?", "Hvad går kunden hjem og fortryder, at de ikke købte?"],
-    "2A": ["Hvem står i butikken i dag, og hvad er de gode til?", "Hvad griner vi af bag disken?", "Hvad sagde en kunde i dag, som vi ikke glemmer?"],
-    "2B": ["Hvad sker der i butikken, før den åbner?", "Hvilken vare valgte vi IKKE at tage hjem — og hvorfor?", "Hvordan vælger du, hvad der kommer på hylden?"]
-  },
-  butik_webshop: {
-    "1A": ["Hvad står forrest i butikken i dag — og ligger det også forrest i webshoppen?", "Hvilken vare får flest spørgsmål — i butikken eller på mail?", "Hvad siger du til kunden, når du viser den frem?"],
-    "1B": ["Hvad kommer folk ind og spørger efter i denne uge?", "Hvad står kunden i lige nu — vejret, sæsonen, en anledning?", "Hvad tøver kunden med — i butikken eller ved kurven?"],
-    "2A": ["Hvem står i butikken i dag, og hvem pakker ordrerne?", "Hvad griner vi af bag disken?", "Hvad gjorde en kunde glad i denne uge — i butikken eller på nettet?"],
-    "2B": ["Hvad sker der, før butikken åbner — og før pakkerne går ud?", "Hvilken vare valgte vi IKKE at tage hjem — og hvorfor?", "Hvad er reglen hos os, som andre ikke har?"]
-  },
-  raadgiver: {
-    "1A": ["Hvilket resultat fik en kunde i denne uge?", "Hvad er det første, du gør, når en ny kunde kommer?", "Hvad misforstår folk om det, du sælger?"],
-    "1B": ["Hvad står kunden i, lige før de ringer?", "Hvilket spørgsmål får du igen og igen?", "Hvad kan kunden selv gøre i dag — og hvornår skal de have dig?"],
-    "2A": ["Hvorfor gør du det her — den korte version?", "Hvad har du lært af en kunde i denne uge?", "Hvordan ser din arbejdsdag ud klokken 7?"],
-    "2B": ["Hvilket nej sagde du i denne uge — og hvorfor?", "Hvad tager tid hos dig, som kunden ikke ser?", "Hvad er din regel nummer ét?"]
-  }
-};
-function planSpm(kode) {
-  let t = "butik"; try { t = ctaType(); } catch (e) {}
-  if (t === "fysisk") t = "butik";
-  const sæt = PLAN_SPM[t] || PLAN_SPM.butik;
-  return sæt[kode] || [];
-}
-function planSoejleNavn(kode) {
-  try { const n = (strategyPillars || []).find(function (x) { const m = soejleModel(x); return m && m.kode === kode; }); if (n) return n; } catch (e) {}
-  if (kode === "1A") { try { return soejle1ANavn(); } catch (e) {} }
-  return SOEJLE_NAVNE[kode] || kode;
-}
-function planForslag() {
-  const antal = Math.max(1, Math.round((PLAN.antal || 3) * (PLAN.dage || 7) / 7));
-  let start = 0; try { start = NAESTE_ROT.indexOf(naesteSoejleKode()); } catch (e) {}
-  if (start < 0) start = 0;
-  const ud = [];
-  for (let i = 0; i < antal; i++) ud.push(NAESTE_ROT[(start + i) % 4]);
-  return ud;
-}
-function perfPlanHtml(trin) {
-  const chip = function (v, t, valgt, klik) { return '<button type="button" class="ark-chip' + (valgt ? ' on' : '') + '" onclick="' + klik + '">' + t + '</button>'; };
-  if (trin === "plan1") {
-    if (!PLAN.antal) { try { PLAN.antal = maalUge() || 3; } catch (e) { PLAN.antal = 3; } }
-    return '<div class="pm-side"><div class="db-kort pm-top"><div class="db-eye">Planlæg frem · 1 af 3</div>'
-      + '<div class="db-navn">Hvor mange opslag om ugen?</div>'
-      + '<div class="db-tekst">Forvalgt er dit ugemål. Tre om ugen er rytmen: sælg · sælg · relation.</div>'
-      + '<div class="ark-chips" style="margin:14px 0 0;">' + [1, 2, 3, 4, 5, 6, 7].map(function (n) { return chip(n, String(n), PLAN.antal === n, "PLAN.antal=" + n + ";perfBud1Tegn()"); }).join("") + '</div>'
-      + '<div class="db-bund"><button type="button" class="db-knap mq-tap" onclick="perfAabn(\'plan2\')">Videre</button></div></div></div>';
-  }
-  if (trin === "plan2") {
-    return '<div class="pm-side"><div class="db-kort pm-top"><div class="db-eye">Planlæg frem · 2 af 3</div>'
-      + '<div class="db-navn">Hvor langt frem?</div>'
-      + '<div class="db-tekst">Syv dage er ét planlægningsmøde ad gangen. Fjorten, hvis du vil have to uger i kalenderen. Aldrig længere — det bliver ikke lavet.</div>'
-      + '<div class="ark-chips" style="margin:14px 0 0;">' + chip(7, "7 dage", PLAN.dage === 7, "PLAN.dage=7;perfBud1Tegn()") + chip(14, "14 dage", PLAN.dage === 14, "PLAN.dage=14;perfBud1Tegn()") + '</div>'
-      + '<div class="db-bund"><button type="button" class="db-knap mq-tap" onclick="perfAabn(\'plan3\')">Videre</button></div></div></div>';
-  }
-  const koder = planForslag();
-  const kort = koder.map(function (k, i) {
-    const navn = planSoejleNavn(k);
-    const spm = planSpm(k);
-    return '<div class="db-kort pm-kort"><div class="db-eye">Opslag ' + (i + 1) + ' af ' + koder.length + ' · ' + k + ' · ' + esc(navn) + '</div>'
-      + '<div class="db-navn">' + esc(k === "1A" || k === "1B" ? "Skabe behov" : "Danne relation") + '</div>'
-      + '<div class="db-tekst">Find indholdet — svar på ét af spørgsmålene:</div>'
-      + '<div class="pm-spm">' + spm.map(function (q) { return '<div class="pm-spm-l">' + esc(q) + '</div>'; }).join("") + '</div>'
-      + '<label class="pm-felt pm-tekst"><span class="pm-navn">Idéen</span><textarea rows="2" id="planIde_' + i + '" placeholder="Skriv idéen med dine egne ord …"></textarea></label>'
-      + '<div class="pm-kvit" id="planKvit_' + i + '"></div>'
-      + '<div class="db-bund"><button type="button" class="db-knap sek mq-tap" onclick="planIdeLaeg(' + i + ',\'' + k + '\',this)">Læg i Idébanken</button></div>'
-      + '</div>';
-  }).join("");
-  return '<div class="pm-side"><div class="db-kort pm-top"><div class="db-eye">Planlæg frem · 3 af 3</div>'
-    + '<div class="db-navn">' + koder.length + (koder.length === 1 ? ' opslag' : ' opslag') + ' de næste ' + PLAN.dage + ' dage</div>'
-    + '<div class="db-tekst">Appen foreslår søjlerne efter rytmen 1A · 1B · 2A · 2B — dér hvor du slap sidst. Skriv idéen i hvert kort og læg den i Idébanken; datoerne sættes i Succesraketten bagefter.</div>'
-    + '<div class="db-bund"><button type="button" class="db-knap mq-tap" onclick="try{planRitStart()}catch(e){}">Videre til Succesraketten · datoer og mål</button></div></div>'
-    + kort + '</div>';
-}
-async function planIdeLaeg(i, kode, knap) {
-  const f = document.getElementById("planIde_" + i); const t = f ? String(f.value || "").trim() : "";
-  const kv = document.getElementById("planKvit_" + i);
-  if (!t) { if (f) f.focus(); return; }
-  const navn = planSoejleNavn(kode);
-  if (kv) { kv.textContent = "Gemmer…"; kv.style.color = "var(--gray3)"; }
-  try {
-    const rec = await ideAdd({ titel: t, type: "", soejle: navn, status: "Idé" });
-    if (rec) { if (kv) { kv.textContent = "Ligger i Idébanken under " + soejleVis(navn); } if (knap) { knap.textContent = "Lagt i Idébanken"; knap.disabled = true; } }
-    else if (kv) { kv.textContent = "Ikke gemt — prøv igen"; kv.style.color = "var(--red)"; }
-  } catch (e) { if (kv) { kv.textContent = "Ikke gemt — prøv igen"; kv.style.color = "var(--red)"; } }
-}
-function perfMoedeHtml() {
+/* PLANLAEG FREM (v1941-v1950) ER UDGAAET 15/9 kl. 12.05: det var en dublet af Succesrakettens »Naeste uge«. Idas agenda
+   fra kundemoedet lever i EET forloeb — planRitStart (Siden sidst · Ugens tema · Naeste uge · Hvem goer hvad · Ugens maal · Book). */
+function perfMoedeKortHtml() {
   const fra = perfMoedeFra();
   const liste = perfMoedeOpslag();
   const idag = datoDK(new Date());
@@ -19706,11 +19619,6 @@ function perfMoedeHtml() {
     return '<label class="pm-felt pm-tekst"><span class="pm-navn">' + navn + '</span>'
       + '<textarea rows="2" data-id="' + esc(id.id) + '" data-felt="' + id.felt + '" onchange="perfMoedeGem(this)">' + esc(vaerdi || "") + '</textarea></label>';
   };
-  const top = '<div class="db-kort pm-top"><div class="db-eye">Siden sidst · fra ' + esc(dkDatoKort(fra)) + '</div>'
-    + '<div class="db-navn">' + liste.length + (liste.length === 1 ? ' opslag postet' : ' opslag postet') + '</div>'
-    + '<div class="db-tekst">Udfyld Indblik på hvert opslag, og skriv, hvad I lærte. Når I er færdige, afsluttes mødet — så starter næste møde fra i dag.</div>'
-    + '<div class="db-bund" style="display:flex;flex-direction:column;gap:10px;"><button type="button" class="db-knap mq-tap" onclick="perfAabn(\'plan1\')">Videre · planlæg frem</button>'
-    + '<button type="button" class="db-knap sek mq-tap" onclick="perfMoedeAfslut(this)">Afslut mødet · ' + esc(dkDatoKort(idag)) + '</button></div></div>';
   const kort = liste.length ? liste.map(function (x) {
     const b = x.brief || {};
     const hook = String(b.hookTekst || (Array.isArray(b.klip) && b.klip[0] && b.klip[0].tekst) || "").trim();
@@ -19732,7 +19640,7 @@ function perfMoedeHtml() {
       + '<div class="db-bund"><button type="button" class="db-knap sek mq-tap" onclick="openBrief(\'' + esc(String(x.id)) + '\')">Åbn briefen</button></div>'
       + '</div>';
   }).join("") : '<div class="db-kort"><div class="db-eye">Opslag</div><div class="db-navn">Ingen opslag postet siden ' + esc(dkDatoKort(fra)) + '</div><div class="db-tekst">Opslag lander her, når de har status Postet.</div></div>';
-  return '<div class="pm-side">' + top + kort + perfBedsteHooksHtml() + '</div>';
+  return '<div class="pm-side" style="margin-top:0;">' + kort + perfBedsteHooksHtml() + '</div>';
 }
 /* DE BEDSTE HOOKS AF EGET CONTENT — pr. soejle, laveste overspringsfrekvens foerst (jo faerre der springer over,
    jo bedre fangede hooket). Kun opslag med et tal. Hoejst tre pr. soejle. */
@@ -19767,16 +19675,7 @@ async function perfMoedeGem(el) {
   /* Bedste hooks tegnes om, naar en overspringsfrekvens er tastet — uden at roere felterne. */
   if (felt === "indblikSpring") { const h = document.querySelector(".pm-hooks"); if (h) h.outerHTML = perfBedsteHooksHtml(); }
 }
-async function perfMoedeAfslut(knap) {
-  if (knap && !knap.dataset.sikker) { knap.dataset.sikker = "1"; knap.textContent = "Sikker? Næste møde starter fra i dag"; return; }
-  try { await maalsHent(); } catch (e) {}
-  if (!MAALS) return;
-  const foer = MAALS.sidsteMoede;
-  MAALS.sidsteMoede = datoDK(new Date());
-  const ok = await maalsGem("Mødet er afsluttet.");
-  if (!ok) { MAALS.sidsteMoede = foer; if (knap) { knap.textContent = "Ikke gemt — prøv igen"; knap.dataset.sikker = ""; } return; }
-  perfBud1Tegn();
-}
+/* perfMoedeAfslut er udgaaet 15/9: moedet afsluttes (MAALS.sidsteMoede) i forloebets sidste skridt, prBookGem. */
 function perfBud1Tegn() {
   const sc = document.getElementById("screen9"); if (!sc) return;
   document.body.classList.add("perf-bud1");
@@ -19892,11 +19791,11 @@ function perfBud1Tegn() {
   const tilbage = PERF_AABEN ? '<button type="button" class="bsam-mobknap bsam-mobknap-sek pb-tilbage mq-tap" onclick="perfAabn(\'\')">Tilbage</button>' : '';
   /* PLANLAEGNINGSMOEDET »SIDEN SIDST« (Ida 15/9 kl. 09.15, til kundemoedet samme formiddag): doeren aabner sin egen
      flade i stedet for de gamle kolonner — se perfMoedeHtml. */
-  host.innerHTML = (PERF_AABEN === "moede") ? perfMoedeHtml() : (PERF_AABEN === "moedeStart") ? perfMoedeStartHtml()
-    : (PERF_AABEN === "plan1" || PERF_AABEN === "plan2" || PERF_AABEN === "plan3") ? perfPlanHtml(PERF_AABEN) : top;
+  /* SIDEN SIDST OG PLANLAEG FREM BOR I DET FAELLES FORLOEB (planRitStart) SIDEN 15/9 kl. 12.05 — her staar kun moedekortet. */
+  host.innerHTML = (PERF_AABEN === "moedeStart") ? perfMoedeStartHtml() : top;
   /* HEROEN SIGER, HVOR MAN ER (Ida 15/9 kl. 11.27: »forkert der står Performance der«): moedeflowet hedder
      Contentplanlaegning i heroen, resten Performance. */
-  try { const h = sc.querySelector(".ch-titel"); if (h && h.parentElement === sc) { h.textContent = (["moede", "moedeStart", "plan1", "plan2", "plan3"].indexOf(PERF_AABEN) > -1) ? "Contentplanlægning" : "Performance"; heroPas(sc); } } catch (e) {}   /* heroPas: ordet deles aldrig (v1854) */
+  try { const h = sc.querySelector(".ch-titel"); if (h && h.parentElement === sc) { h.textContent = (PERF_AABEN === "moedeStart") ? "Contentplanlægning" : "Performance"; heroPas(sc); } } catch (e) {}   /* heroPas: ordet deles aldrig (v1854) */
   let tb = document.getElementById("perfBud1Tilbage");
   if (!tb) { tb = document.createElement("div"); tb.id = "perfBud1Tilbage"; sc.appendChild(tb); }
   tb.innerHTML = tilbage;
@@ -26363,7 +26262,7 @@ function dagensProgramItems() {
     const pd = (typeof planDato === "function") ? planDato() : "";
     if (typeof perfAabn === "function" && typeof funkTaendt === "function" && funkTaendt(CURRENT_DEF, "content")) {
       let n = 0; try { n = perfMoedeOpslag().length; } catch (e) {}
-      items.unshift({ ik: "kalender", id: "moede-" + idag, t: (pd === idag ? "I dag er planlægningsdag" : "Ugentlig contentplanlægning"), navn: (pd === idag ? "Ugentlig contentplanlægning" : ""), sub: n ? n + " opslag postet siden sidste møde · tryk for at starte" : "Tilbageblik · planlæg frem · datoer · tryk for at starte", kn: "Start", fn: () => { showTab(9); perfAabn("moedeStart"); } });
+      items.unshift({ ik: "kalender", id: "moede-" + idag, t: (pd === idag ? "I dag er planlægningsdag" : "Ugentlig contentplanlægning"), navn: (pd === idag ? "Ugentlig contentplanlægning" : ""), sub: n ? n + " opslag postet siden sidste møde · tryk for at starte" : "Siden sidst · ugens tema · ugen · hvem gør hvad · tryk for at starte", kn: "Start", fn: () => { showTab(9); perfAabn("moedeStart"); } });
     }
   } catch (e) {}
   /* I DATORAEKKEFOELGE (Ida 5/9: "hvorfor er den foerste ikke det der skal postes i
@@ -43632,7 +43531,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "1955";
+const APP_VERSION = "1956";
 let NY_VERSION_KLAR = false;
 let NY_VERSION_AFVIST = false;
 function nyVersionSkjul() {
@@ -61018,11 +60917,11 @@ function planRitStart() {
   try { prTemaHent(); } catch (e) {}
   planRitTegn(); el.scrollTop = 0;
 }
-function planRitLuk() { const el = document.getElementById("planRit"); if (el) { el.classList.remove("on"); el.classList.remove("pr-solo"); } document.body.classList.remove("plan-open"); PR = null; try { renderHome(); } catch (e) {} try { planRitKortTegn(); } catch (e) {} }
+function planRitLuk() { const el = document.getElementById("planRit"); if (el) { el.classList.remove("on"); el.classList.remove("pr-solo"); } document.body.classList.remove("plan-open"); PR = null; try { renderHome(); } catch (e) {} try { planRitKortTegn(); } catch (e) {} try { perfBud1Tegn(); } catch (e) {} }
 document.addEventListener("keydown", function (e) { if (e.key === "Escape" && PR) { const ib = document.getElementById("ideBack"); if (ib && ib.classList.contains("on")) return; planRitLuk(); } });
-function prBjaelke(n) { if (PR && PR.solo) return ""; return '<div class="pr-bjaelke">' + [1, 2, 3, 4, 5].map(function (i) { return '<span' + (i <= n ? ' class="on"' : '') + '></span>'; }).join("") + '</div>'; }
+function prBjaelke(n) { if (PR && PR.solo) return ""; return '<div class="pr-bjaelke">' + [1, 2, 3, 4, 5, 6].map(function (i) { return '<span' + (i <= n ? ' class="on"' : '') + '></span>'; }).join("") + '</div>'; }
 function prRail() {
-  const navne = ["Tilbageblik", "Næste uge", "Optagedage", "Ugens mål", "Book næste planlægning"];
+  const navne = ["Siden sidst", "Ugens tema", "Næste uge", "Hvem gør hvad", "Ugens mål", "Book næste planlægning"];
   const r = document.getElementById("prRail"); if (!r) return;
   r.innerHTML = '<div class="pr-eye">Planlægningsdagen · uge ' + energidaUgeNr(PR.uge) + '</div><div class="pr-h1">25 minutter</div><div class="pr-kort">'
     + navne.map(function (n, i) { const t = i + 1; const cls = PR.trin === t ? " on" : (PR.trin > t ? " done" : ""); return '<div class="pr-rail-rk' + cls + '"><span class="pr-rail-c">' + (PR.trin > t ? '&#10003;' : t) + '</span><span>' + n + '</span></div>'; }).join("")
@@ -61030,15 +60929,18 @@ function prRail() {
 }
 function planRitTegn() {
   const k = document.getElementById("prKrop"); if (!k || !PR) return;
-  const frem = document.getElementById("prFrem"); if (frem) frem.textContent = PR.solo ? "" : (PR.trin > 5 ? "Færdig" : (PR.trin ? PR.trin + " af 5" : "Måneden"));
+  const frem = document.getElementById("prFrem"); if (frem) frem.textContent = PR.solo ? "" : (PR.trin > 6 ? "Færdig" : (PR.trin ? PR.trin + " af 6" : "Måneden"));
   const lbl = document.querySelector("#planRit .pr-top-label"); if (lbl) lbl.textContent = PR.solo ? "Drejebogen" : "Planlægningsdagen";
   if (!PR.solo) prRail();
   if (PR.trin === 0) { k.innerHTML = prMaanedHtml(); return; }
-  if (PR.trin === 1) { k.innerHTML = prTilbageblikHtml(); return; }
-  if (PR.trin === 2) { k.innerHTML = prForslagHtml(); try { prHjulInit(); } catch (e) {} return; }
-  if (PR.trin === 3) { k.innerHTML = prOptagHtml(); return; }
-  if (PR.trin === 4) { k.innerHTML = prMaalHtml(); return; }
-  if (PR.trin === 5) { k.innerHTML = prBookHtml(); return; }
+  /* IDAS AGENDA (15/9 kl. 12.00): Siden sidst · Ugens tema · Naeste uge (antal, ugen, spoergsmaal) · Hvem goer hvad ·
+     Ugens maal · Book naeste. Moedet og Succesraketten er EET forloeb (klik 12.05). */
+  if (PR.trin === 1) { k.innerHTML = prSidenSidstHtml(); return; }
+  if (PR.trin === 2) { k.innerHTML = prTemaHtml(); return; }
+  if (PR.trin === 3) { k.innerHTML = prForslagHtml(); try { prHjulInit(); } catch (e) {} return; }
+  if (PR.trin === 4) { k.innerHTML = prHvemHtml(); try { prHvemPersoner(); } catch (e) {} return; }
+  if (PR.trin === 5) { k.innerHTML = prMaalHtml(); return; }
+  if (PR.trin === 6) { k.innerHTML = prBookHtml(); return; }
   k.innerHTML = prFaerdigHtml();
 }
 function prGaa(t) { if (!PR) return; PR.trin = t; planRitTegn(); const el = document.getElementById("planRit"); if (el) el.scrollTop = 0; }
@@ -61093,39 +60995,53 @@ async function prMaanedGem(retning) {
   PR.maanedGjort = true;
   prGaa(1);
 }
-/* ---- 1 tilbageblik ---- */
-function prTilbageblikHtml() {
-  const liste = planRitSidsteUge();
-  const postet = liste.filter(function (x) { return x.status === "Postet"; }).length;
-  const proeve = liste.filter(function (x) { return x.status === "Postet" && /pr[øo]vereel/i.test(String(x.soejle || "")); }).length;
-  const sd = (MAALS && Array.isArray(MAALS.storyDage)) ? MAALS.storyDage.length : 0;
-  const rk = liste.map(function (x) {
-    const idS = String(x.id).replace(/'/g, "\\'");
-    const r = (x.brief && x.brief.refleksion) || null;
-    const aaben = PR.refl === x.id;
-    let hoejre;
-    if (x.status !== "Postet") hoejre = '<div class="pr-chips"><button type="button" class="pr-chip on" onclick="prPostet(\'' + idS + '\')">Postet</button><button type="button" class="pr-chip" onclick="opslagNyDatoAabn(\'' + idS + '\')">Nej</button></div>';
-    else if (r && (r.godt || r.svaert)) hoejre = '<span style="width:22px;height:22px;border-radius:50%;background:var(--red);display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>';
-    else hoejre = '<button type="button" class="pr-link" onclick="PR.refl=\'' + idS + '\';planRitTegn()">Hvordan gik det?</button>';
-    return '<div class="pr-rk"><div style="flex:1;min-width:0;"><div style="font-size:14px;">' + esc(storStart(titelVis(x.titel || "Uden titel"))) + '</div><div style="font-size:12px;color:var(--gray3);">' + esc(dkDatoKort(String(x.dato))) + ' · ' + esc(x.status || "") + '</div></div>' + hoejre + '</div>'
-      + (aaben ? '<div class="pr-kort" style="margin:4px 0 8px;background:var(--gray);"><div class="pr-lbl">Hvad gik godt?</div><textarea id="prGodt" class="pr-felt" placeholder="Fx: folk skrev, at de ville komme forbi">' + esc((r && r.godt) || "") + '</textarea><div class="pr-lbl" style="margin-top:10px;">Hvad var svært?</div><textarea id="prSvaert" class="pr-felt" placeholder="Fx: at få lyset til at passe">' + esc((r && r.svaert) || "") + '</textarea><div style="display:flex;justify-content:flex-end;gap:8px;margin-top:10px;"><button type="button" class="pr-link" onclick="PR.refl=null;planRitTegn()">Spring over</button><button type="button" class="dbtn primary" style="padding:9px 16px;" onclick="prReflGem(\'' + idS + '\')">Gem</button></div></div>' : '');
-  }).join("");
-  return prBjaelke(1) + '<div class="pr-eye">Trin 1 af 5</div><div class="pr-h1">Sådan gik sidste uge</div>'
-    + '<div class="pr-kort"><div class="pr-lbl">Opslagene</div>' + (liste.length ? rk : '<div style="font-size:13px;color:var(--gray3);">Der lå ingen opslag i kalenderen i sidste uge.</div>') + '</div>'
-    + '<div style="font-size:12.5px;color:var(--gray3);margin-top:4px;">Ugens tal: ' + postet + ' af ' + liste.length + ' postet' + (proeve ? ' · ' + proeve + (proeve === 1 ? ' prøvereel' : ' prøvereels') : '') + (sd ? ' · story ' + sd + (sd === 1 ? ' fast dag' : ' faste dage') : '') + '</div>'
-    + '<div class="pr-bar"><button type="button" class="dbtn primary" onclick="prGaa(2)">Videre til næste uge</button></div>';
+/* ---- 1 siden sidst (Idas agenda 15/9: »det første vi snakkede om var performance af de foregående opslag siden vi
+   havde møde sidst«). Kortene er perfMoedeKortHtml (Indblik pr. opslag + Bedste hooks) — samme motor som i formiddags,
+   nu inde i forloebet. Det gamle Tilbageblik (sidste uges opslag m. Postet/Nej) er afloest: opslag markeres Postet i
+   kalenderen og paa dagens kort. ---- */
+function prSidenSidstHtml() {
+  const fra = perfMoedeFra(); const liste = perfMoedeOpslag();
+  return prBjaelke(1) + '<div class="pr-eye">Trin 1 af 6 · siden ' + esc(dkDatoKort(fra)) + '</div><div class="pr-h1">Siden sidst</div>'
+    + (liste.length ? '<div class="pr-sub">' + liste.length + (liste.length === 1 ? ' opslag postet' : ' opslag postet') + ' siden sidste møde. Udfyld Indblik på hvert, og skriv, hvad vi lærte.</div>' : '')
+    + perfMoedeKortHtml()
+    + '<div class="pr-bar"><button type="button" class="dbtn primary" onclick="prGaa(2)">Videre til ugens tema</button></div>';
 }
-async function prPostet(id) {
-  try { await ideaStatusSet(id, "Postet"); } catch (e) {}
-  try { const it = (IDEER || []).find(function (x) { return String(x.id) === String(id); }); if (it) it.status = "Postet"; } catch (e) {}
-  PR.refl = id; planRitTegn();
+/* ---- 2 ugens tema (Idas agenda 15/9: »finde et tema for den kommende uge baseret på tiden lige nu … det skal ikke være et
+   krav … en god vejledning … nogle spørgsmål til at finde ugens tema«). Temaet gemmes i MAALS.ugetemaer[ugeKey] — den
+   raekke, kalenderens overlinje og Maalsaetninger allerede laeser (4/9). EEN kilde. Spoergsmaalene er mine ord (15/9),
+   ikke Idas — siger hun andre, rettes de her. ---- */
+const PR_TEMA_SPM = [
+  "Hvad står kunden i lige nu — vejret, sæsonen, en anledning?",
+  "Hvad sker der hos os i den kommende uge — nyt hjem, en dag der er anderledes, noget vi glæder os til?",
+  "Hvad spurgte kunderne om i den forgangne uge?"
+];
+function prTemaBrug() { if (!PR) return; PR.temaSkriv = String(PR.tema || ""); planRitTegn(); }
+function prTemaHtml() {
+  const uge = energidaUgeNr(PR.uge); const key = PR.ugeKey;
+  const nu = (MAALS && MAALS.ugetemaer && MAALS.ugetemaer[key]) ? String(MAALS.ugetemaer[key]) : "";
+  if (PR.temaSkriv == null) PR.temaSkriv = nu;
+  const dage = planRitUgeDage(PR.uge); const sidsteAar = dage.map(function (d) { return String(parseInt(d.slice(0, 4), 10) - 1) + d.slice(4); });
+  const liste = (IDEER || []).filter(function (x) { return x && x.dato && sidsteAar.indexOf(String(x.dato)) > -1 && x.status !== "Arkiveret"; }).slice(0, 4);
+  return prBjaelke(2) + '<div class="pr-eye">Trin 2 af 6 · uge ' + uge + '</div><div class="pr-h1">Hvad skal uge ' + uge + ' handle om?</div>'
+    + '<div class="pr-sub">Et tema er en vejledning, ikke et krav. Spring over, hvis ugen ikke har ét.</div>'
+    + (PR.tema ? prSvarKort("Månedens tema: " + PR.tema, "Tryk for at bruge det som ugens", String(PR.temaSkriv || "").trim() === String(PR.tema).trim(), "prTemaBrug()") : '')
+    + '<div class="pr-kort"><div class="pr-lbl">Spørgsmål, der kan finde temaet</div>' + PR_TEMA_SPM.map(function (q) { return '<div class="pm-spm-l" style="margin-top:8px;">' + esc(q) + '</div>'; }).join("") + '</div>'
+    + (liste.length ? '<div class="pr-kort"><div class="pr-lbl">Samme uge sidste år</div>' + liste.map(function (x) { return '<div style="font-size:12.5px;line-height:1.6;color:var(--gray3);">' + esc(dkDatoKort(String(x.dato))) + ' · ' + esc(storStart(titelVis(x.titel || ""))) + '</div>'; }).join("") + '</div>' : '')
+    + '<div class="pr-svar pr-svar-felt"><textarea id="prTemaFelt" class="pr-felt" placeholder="Skriv temaet …" oninput="PR.temaSkriv=this.value">' + esc(PR.temaSkriv) + '</textarea>' + taleKnapHtml("prTemaFelt") + '</div>'
+    + '<div class="pr-bar"><button type="button" class="dbtn ghost" style="background:#fff;" onclick="prGaa(3)">Spring over</button><button type="button" class="dbtn primary" onclick="prTemaGem()">Gem temaet</button></div>';
 }
-async function prReflGem(id) {
-  const it = (IDEER || []).find(function (x) { return String(x.id) === String(id); }); if (!it) return;
-  const g = ((document.getElementById("prGodt") || {}).value || "").trim().slice(0, 1000);
-  const sv = ((document.getElementById("prSvaert") || {}).value || "").trim().slice(0, 1000);
-  if (g || sv) { try { await ideUpdate(id, { brief: Object.assign({}, it.brief || {}, { refleksion: { godt: g, svaert: sv, dato: datoDK() } }) }); } catch (e) {} }
-  PR.refl = null; planRitTegn();
+async function prTemaGem() {
+  const v = String(PR.temaSkriv || "").trim();
+  try { await maalsHent(); } catch (e) {}
+  if (MAALS) {
+    if (!MAALS.ugetemaer || typeof MAALS.ugetemaer !== "object") MAALS.ugetemaer = {};
+    const foer = MAALS.ugetemaer[PR.ugeKey];
+    if (v) MAALS.ugetemaer[PR.ugeKey] = v; else delete MAALS.ugetemaer[PR.ugeKey];
+    const ok = await maalsGem();
+    if (!ok) { if (foer != null) MAALS.ugetemaer[PR.ugeKey] = foer; else delete MAALS.ugetemaer[PR.ugeKey]; try { visSyncFejl(); } catch (e) {} }
+    try { mtemaContentVis(); } catch (e) {}
+  }
+  prGaa(3);
 }
 /* ---- 2 naeste uge: forslag pr. soejle ---- */
 function prSoejleNavnFor(kode) {
@@ -61215,7 +61131,7 @@ function prForslagHtml() {
    foelger det med derover (kunde_maal.opslag_uge, samme motor som perfMaalRet). */
 function prAntalHtml() {
   const t = prT2(); const uge = energidaUgeNr(PR.uge);
-  return prBjaelke(2) + '<div class="pr-eye">Trin 2 af 5 · uge ' + uge + '</div><div class="pr-h1">Hvor mange opslag i uge ' + uge + '?</div>'
+  return prBjaelke(3) + '<div class="pr-eye">Trin 3 af 6 · uge ' + uge + '</div><div class="pr-h1">Hvor mange opslag i uge ' + uge + '?</div>'
     + '<div class="pr-sub">Samme tal som under Performance › Målsætninger. Ret det her, og det følger med derover.</div>'
     + '<div class="pr-hjul-w"><div class="pr-hjul-band"></div><div class="pr-hjul" id="prHjul" onscroll="prHjulScroll()">'
     + [1, 2, 3, 4, 5, 6, 7].map(function (n) { return '<div class="pr-hjul-rk' + (n === t.antal ? ' on' : '') + '" data-v="' + n + '" onclick="prHjulTil(' + n + ')">' + n + '</div>'; }).join("")
@@ -61246,17 +61162,20 @@ function prSvarKort(tekst, sub, on, onclick, dim) {
 function prRaekkeHtml() {
   const t = prT2(); const uge = energidaUgeNr(PR.uge); const dage = planRitUgeDage(PR.uge);
   const naeste = t.forslag.findIndex(function (f) { return !f.gemt; });
-  const eks = (t.eksisterende || []).map(function (x) { const di = dage.indexOf(x.dato); let kode = ""; try { const m = soejleModel(x.soejle || ""); kode = m ? m.kode + " · " : ""; } catch (e) {} return prSvarKort(kode + (x.soejle || "Uden søjle"), "Ligger allerede · " + storStart(titelVis(x.titel || "Uden titel")) + (di > -1 ? " · " + PR_DAGE_LANG[di] : ""), false, "", true); }).join("");
+  const eks = (t.eksisterende || []).map(function (x) { const di = dage.indexOf(x.dato); let kode = ""; try { const m = soejleModel(x.soejle || ""); kode = m ? m.kode + " · " : ""; } catch (e) {} return prSvarKort(x.soejle ? soejleVis(x.soejle) : "Uden søjle", "Ligger allerede · " + storStart(titelVis(x.titel || "Uden titel")) + (di > -1 ? " · " + PR_DAGE_LANG[di] : ""), false, "", true); }).join("");
+  /* DAGENE VAELGES HER (Idas agenda 15/9: »vælge indholdssøjlerne og placere dem på datoerne på den kommende uge«):
+     under hvert foreslaaet opslag staar ugens dage som chips; »Her er idéen« har ikke laengere sin egen dag-raekke (dublet). */
   const kort = t.forslag.map(function (f, i) {
-    return prSvarKort(f.kode + " · " + prNavnVis(f), f.gemt ? "Planlagt · " + f.titel + " · " + PR_DAGE_LANG[f.dag - 1] : f.grund + " · " + PR_DAGE_LANG[f.dag - 1], i === naeste, f.gemt ? "" : "prStartOpslag(" + i + ")", !!f.gemt);
+    const chips = f.gemt ? "" : '<div class="pr-chips pr-dagvalg">' + PR_DAGE.map(function (d, di) { return '<button type="button" class="pr-chip' + (f.dag === di + 1 ? ' on' : '') + '" onclick="PR.t2.forslag[' + i + '].dag=' + (di + 1) + ';planRitTegn()">' + d + ' ' + dage[di].slice(8, 10).replace(/^0/, "") + '.</button>'; }).join("") + '</div>';
+    return prSvarKort(f.kode + " · " + prNavnVis(f), f.gemt ? "Planlagt · " + f.titel + " · " + PR_DAGE_LANG[f.dag - 1] : f.grund + " · " + PR_DAGE_LANG[f.dag - 1], i === naeste, f.gemt ? "" : "prStartOpslag(" + i + ")", !!f.gemt) + chips;
   }).join("");
   const alle = t.forslag.length && naeste === -1;
   const ingen = !t.forslag.length;
-  return prBjaelke(2) + '<div class="pr-eye">Trin 2 af 5 · uge ' + uge + '</div><div class="pr-h1">' + (alle ? 'Ugen er lagt' : ingen ? 'Ugen er fuld' : 'Start med det, ugen mangler') + '</div>'
-    + '<div class="pr-sub">' + (alle ? t.forslag.length + (t.forslag.length === 1 ? ' nyt opslag' : ' nye opslag') + ' i kalenderen som Planlagt.' : ingen ? 'Der ligger allerede ' + (t.eksisterende || []).length + ' opslag i uge ' + uge + ', og ugemålet er ' + t.antal + '.' : 'Appen foreslår ud fra fordelingen mellem de fire søjler og det, der sidst blev postet. Tryk på et opslag for at finde idéen.') + '</div>'
+  return prBjaelke(3) + '<div class="pr-eye">Trin 3 af 6 · uge ' + uge + '</div><div class="pr-h1">' + (alle ? 'Ugen er lagt' : ingen ? 'Ugen er fuld' : 'Start med det, ugen mangler') + '</div>'
+    + '<div class="pr-sub">' + (alle ? t.forslag.length + (t.forslag.length === 1 ? ' nyt opslag' : ' nye opslag') + ' i kalenderen som Planlagt.' : ingen ? 'Der ligger allerede ' + (t.eksisterende || []).length + ' opslag i uge ' + uge + ', og ugemålet er ' + t.antal + '.' : 'Appen foreslår ud fra fordelingen mellem de fire søjler og det, der sidst blev postet. Flyt et opslag til en anden dag med dagene under det. Tryk på opslaget for at finde idéen.') + '</div>'
     + eks + kort
-    + '<div class="pr-bar">' + (alle || ingen ? '' : '<button type="button" class="dbtn ghost" style="background:#fff;" onclick="prGaa(3)">Spring over</button>')
-    + (alle || ingen ? '<button type="button" class="dbtn primary" onclick="prGaa(3)">Videre til optagedage</button>' : '<button type="button" class="dbtn primary" onclick="prStartOpslag(' + naeste + ')">Find idéen til ' + esc(t.forslag[naeste].kode) + '</button>') + '</div>';
+    + '<div class="pr-bar">' + (alle || ingen ? '' : '<button type="button" class="dbtn ghost" style="background:#fff;" onclick="prGaa(4)">Spring over</button>')
+    + (alle || ingen ? '<button type="button" class="dbtn primary" onclick="prGaa(4)">Videre til hvem gør hvad</button>' : '<button type="button" class="dbtn primary" onclick="prStartOpslag(' + naeste + ')">Find idéen til ' + esc(t.forslag[naeste].kode) + '</button>') + '</div>';
 }
 function prStartOpslag(i) {
   const t = prT2(); if (!t.forslag || !t.forslag[i] || t.forslag[i].gemt) return;
@@ -61280,7 +61199,7 @@ function prMgHtml() {
   const anb = navne[0];
   if (!t.mg) t.mg = anb;
   const kort = navne.map(function (n, i) { return prSvarKort(n, i === 0 ? "Anbefalet · færrest opslag de sidste 4 uger" : (fd.tal[n] || 0) + " af de sidste " + fd.sum + " opslag", t.mg === n, "PR.t2.mg='" + n.replace(/'/g, "\\'") + "';planRitTegn()"); }).join("");
-  return prBjaelke(2) + '<div class="pr-eye">' + esc(f.kode) + ' · ' + esc(prEyeSted(f)) + ' · målgruppen</div><div class="pr-h1">Hvem taler dette opslag til?</div>'
+  return prBjaelke(3) + '<div class="pr-eye">' + esc(f.kode) + ' · ' + esc(prEyeSted(f)) + ' · målgruppen</div><div class="pr-h1">Hvem taler dette opslag til?</div>'
     + '<div class="pr-sub">Content Studio anbefaler ' + esc(anb) + ': ' + (fd.tal[anb] || 0) + ' af de sidste ' + fd.sum + ' opslag talte til ' + esc(anb) + '.</div>'
     + kort
     + '<div class="pr-bar"><button type="button" class="dbtn primary" onclick="prT2Naeste()">Næste</button></div>';
@@ -61291,7 +61210,7 @@ function prSpmHtml() {
   const t = prT2(); const f = t.forslag[t.aktiv]; const sp = prSpm(f.kode)[t.q];
   const kilder = sp.k ? prForslagKilder(f.kode, sp.k) : [];
   const kort = kilder.map(function (x, i) { return prSvarKort(storStart(x), "", t.valg[t.q] === i, "prSvarVaelg(" + i + ")"); }).join("");
-  return prBjaelke(2) + '<div class="pr-eye">' + esc(f.kode) + ' · ' + esc(prEyeSted(f)) + ' · ' + (t.q + 1) + ' af 3</div><div class="pr-h1">' + esc(sp.t) + '</div>'
+  return prBjaelke(3) + '<div class="pr-eye">' + esc(f.kode) + ' · ' + esc(prEyeSted(f)) + ' · ' + (t.q + 1) + ' af 3</div><div class="pr-h1">' + esc(sp.t) + '</div>'
     + (sp.u ? '<div class="pr-sub">' + esc(sp.u) + '</div>' : '')
     + (t.q > 0 && t.svar[0] ? '<div class="pr-sub" style="color:var(--black);">Dit svar før: »' + esc(t.svar[t.q - 1] || t.svar[0]) + '«</div>' : '')
     + kort
@@ -61312,10 +61231,9 @@ function prIdeHtml() {
   if (!t.titel) t.titel = storStart(String(t.svar[0] || t.svar[1] || t.svar[2] || "").split(/[.!?]/)[0].slice(0, 70));
   if (!t.format) { const s = (BS_SOEJLER || []).filter(function (x) { return x.kode === f.kode; })[0] || {}; const fm = String(s.format || "Reel").replace(/\.$/, ""); t.format = fm === "Kort-reel" ? "Kort-reel" : fm === "Karrusel" ? "Karrusel" : "Reel"; }
   const dage = planRitUgeDage(PR.uge);
-  return prBjaelke(2) + '<div class="pr-eye">' + esc(f.kode) + ' · ' + esc(prNavnVis(f)) + ' · idéen</div><div class="pr-h1">Her er idéen</div>'
-    + '<div class="pr-sub">' + (PR.solo ? 'De tre svar er samlet i briefen. Idéen lander i Idébanken under ' + esc(f.kode) + '.' : 'De tre svar er samlet i briefen. Idéen lander som Planlagt i kalenderen og i Idébanken under ' + esc(f.kode) + '.') + '</div>'
+  return prBjaelke(3) + '<div class="pr-eye">' + esc(f.kode) + ' · ' + esc(prNavnVis(f)) + ' · idéen</div><div class="pr-h1">Her er idéen</div>'
+    + '<div class="pr-sub">' + (PR.solo ? 'De tre svar er samlet i briefen. Idéen lander i Idébanken under ' + esc(f.kode) + '.' : 'De tre svar er samlet i briefen. Idéen lander som Planlagt ' + esc(PR_DAGE_LANG[f.dag - 1] || "") + ' i kalenderen og i Idébanken under ' + esc(f.kode) + '.') + '</div>'
     + '<div class="pr-kort"><div class="pr-lbl">Titel · ret den, hvis du vil</div><textarea id="prTitel" class="pr-felt" style="min-height:56px;" oninput="PR.t2.titel=this.value">' + esc(t.titel) + '</textarea></div>'
-    + (PR.solo ? '' : '<div class="pr-kort"><div class="pr-lbl">Dagen</div><div class="pr-chips">' + PR_DAGE.map(function (d, di) { return '<button type="button" class="pr-chip' + (f.dag === di + 1 ? ' on' : '') + '" onclick="PR.t2.forslag[' + t.aktiv + '].dag=' + (di + 1) + ';planRitTegn()">' + d + ' ' + dage[di].slice(8, 10).replace(/^0/, "") + '.</button>'; }).join("") + '</div></div>')
     + '<div class="pr-kort"><div class="pr-lbl">Formatet</div><div class="pr-chips">' + ["Reel", "Kort-reel", "Karrusel"].map(function (x) { return '<button type="button" class="pr-chip' + (t.format === x ? ' on' : '') + '" onclick="PR.t2.format=\'' + x + '\';planRitTegn()">' + x + '</button>'; }).join("") + '</div></div>'
     + '<div class="pr-bar"><button type="button" class="dbtn primary" onclick="prIdeGem()">' + (PR.solo ? 'Læg i Idébanken' : 'Gem som Planlagt') + '</button></div>';
 }
@@ -61351,7 +61269,7 @@ function drejebogSpoergAabn(kode, navn, tekst) {
      ingenting ske. Kortet er en startskaerm; Drejebogen er vejen ind i appen, saa kortet lukkes foerst (som »Content Studio«). */
   try { if (typeof dagensKortLuk === "function") dagensKortLuk(); } catch (e) {}
   const man = planRitUge();
-  PR = { solo: true, uge: man, ugeKey: planRitUgeKey(man), mkey: planRitMaanedKey(man), maaned: false, trin: 2, nye: [], optag: { dag: 1, tid: "Formiddag", hverForSig: false }, book: { dag: null, tid: "10:00" }, tema: "" };
+  PR = { solo: true, uge: man, ugeKey: planRitUgeKey(man), mkey: planRitMaanedKey(man), maaned: false, trin: 3, nye: [], optag: { dag: 1, tid: "Formiddag", hverForSig: false }, book: { dag: null, tid: "10:00" }, tema: "" };
   PR.t2 = { skaerm: "spm", antal: 0, forslag: [{ kode: kode, navn: navn || prSoejleNavnFor(kode), grund: "", dag: 0, gemt: null, titel: "" }], eksisterende: [], aktiv: 0, mg: "", q: 0, svar: ["", "", ""], valg: [null, null, null], skriv: String(tekst || ""), titel: "", format: "" };
   const n = prMgNavne(); if (n.length > 1) { PR.t2.skaerm = "mg"; } else PR.t2.mg = n[0] || "";
   let el = document.getElementById("planRit");
@@ -61392,7 +61310,7 @@ function prNavnVis(f) { try { const v = soejleVis(f.navn); return v ? String(v).
 function planRitTilbage() {
   if (!PR) { planRitLuk(); return; }
   const t = PR.t2;
-  if (PR.trin === 2 && t && t.skaerm !== "antal") {
+  if (PR.trin === 3 && t && t.skaerm !== "antal") {
     if (t.skaerm === "raekke") t.skaerm = "antal";
     else if (t.skaerm === "mg") t.skaerm = "raekke";
     else if (t.skaerm === "spm") { if (t.q > 0) { t.q--; t.skriv = ""; } else if (PR.solo && prMgNavne().length < 2) { planRitLuk(); return; } else t.skaerm = prMgNavne().length > 1 ? "mg" : "raekke"; }
@@ -61402,45 +61320,61 @@ function planRitTilbage() {
   }
   planRitLuk();
 }
-/* ---- 3 optagedage ---- */
+/* ---- 4 hvem goer hvad (Idas agenda 15/9: »hvornår laves briefen og hvornår skal de produceres og hvem er ansvarlig«).
+   Pr. opslag i ugen: briefen laves (brief.briefDag, ny noegle) · produceres (brief.optagedag, samme noegle som briefen og
+   kalenderen) · ansvarlig (brief.hvemPerson, samme noegle som briefens »Hvem er ansvarlig?«). Dagene gaar fra i dag til den
+   dag, opslaget postes — det, der skal vaere lavet foer, kan ikke ligge efter. Hele brief-objektet skrives (gem maa ikke
+   slette, 4/8). Afloeser »Optagedage« (samlet paa een dag), som var det gamle trin 3. ---- */
 function prUgensOpslag() {
   const dage = planRitUgeDage(PR.uge);
   return (IDEER || []).filter(function (x) { return x && x.dato && dage.indexOf(x.dato) > -1 && ["Idé", "Arkiveret", "Postet"].indexOf(String(x.status || "")) === -1; })
     .sort(function (a, b) { return String(a.dato).localeCompare(String(b.dato)); });
 }
-function prOptagHtml() {
-  const ops = prUgensOpslag(); const dage = planRitUgeDage(PR.uge);
-  if (!PR.optagSat) {
-    let d = 1;
-    try { const nd = (MAALS && Array.isArray(MAALS.naesteDage) && MAALS.naesteDage.length) ? MAALS.naesteDage.slice().sort(function (a, b) { return a - b; })[0] : 1; d = nd || 1; } catch (e) {}
-    PR.optag.dag = d; PR.optagSat = true;
-  }
-  const liste = ops.length ? ops.map(function (x, i) {
-    const idS = String(x.id).replace(/'/g, "\\'");
-    const od = (x.brief && x.brief.optagedag) ? dage.indexOf(x.brief.optagedag) + 1 : 0;
-    return '<div class="pr-rk"><div style="flex:1;min-width:0;"><div style="font-size:14px;">' + esc(storStart(titelVis(x.titel || "Uden titel"))) + '</div><div style="font-size:12px;color:var(--gray3);">postes ' + esc(dkDatoKort(String(x.dato))) + '</div></div>'
-      + (PR.optag.hverForSig ? '<select class="select-nice" style="width:auto;" onchange="prOptagEnkelt(\'' + idS + '\', this.value)"><option value="">Vælg dag</option>' + dage.map(function (iso, di) { return '<option value="' + iso + '"' + (od === di + 1 ? ' selected' : '') + '>' + PR_DAGE[di] + ' ' + esc(dkDatoKort(iso)) + '</option>'; }).join("") + '</select>' : '')
+function prHvemDage(til) {
+  const ud = []; const d = new Date(); d.setHours(12, 0, 0, 0);
+  for (let i = 0; i < 21; i++) { const iso = prIso(d); if (iso > til) break; ud.push(iso); d.setDate(d.getDate() + 1); }
+  if (!ud.length) ud.push(til);
+  return ud;
+}
+function prHvemDagTekst(iso) { const d = new Date(iso + "T12:00:00"); const wd = d.getDay(); return PR_DAGE[wd === 0 ? 6 : wd - 1] + " " + String(d.getDate()) + "."; }
+function prHvemHtml() {
+  const ops = prUgensOpslag(); const uge = energidaUgeNr(PR.uge);
+  const personer = (BRIEF_PERSONER || []).slice();
+  const chip = function (tekst, on, klik) { return '<button type="button" class="pr-chip' + (on ? ' on' : '') + '" onclick="' + klik + '">' + esc(tekst) + '</button>'; };
+  const kort = ops.length ? ops.map(function (x) {
+    const b = x.brief || {}; const idS = String(x.id).replace(/'/g, "\\'"); const dage = prHvemDage(String(x.dato));
+    const raekke = function (lbl, felt, valgt) { return '<div class="pr-lbl" style="margin-top:12px;">' + lbl + '</div><div class="pr-chips">' + dage.map(function (iso) { return chip(prHvemDagTekst(iso), valgt === iso, "prHvemSaet('" + idS + "','" + felt + "','" + iso + "')"); }).join("") + '</div>'; };
+    const ans = String(b.hvemPerson || "").split(" · ").map(function (v) { return v.trim(); }).filter(Boolean);
+    return '<div class="pr-kort"><div class="pr-lbl">Postes ' + esc(dkDatoKort(String(x.dato))) + (x.soejle ? ' · ' + esc(soejleVis(x.soejle)) : '') + '</div>'
+      + '<div style="font-size:15px;line-height:1.4;margin-top:4px;">' + esc(storStart(titelVis(x.titel || "Uden titel"))) + '</div>'
+      + raekke("Briefen laves", "briefDag", b.briefDag || "")
+      + raekke("Produceres", "optagedag", b.optagedag || "")
+      + (personer.length >= 2 ? '<div class="pr-lbl" style="margin-top:12px;">Ansvarlig</div><div class="pr-chips">' + personer.map(function (n) { return chip(n, ans.indexOf(n) > -1, "prHvemPerson('" + idS + "','" + n.replace(/'/g, "\\'") + "')"); }).join("") + '</div>' : '')
+      + '<div class="pm-kvit" id="prHvemKvit_' + esc(String(x.id)) + '"></div>'
       + '</div>';
-  }).join("") : '<div style="font-size:13px;color:var(--gray3);">Der ligger ingen opslag i ugen endnu.</div>';
-  return prBjaelke(3) + '<div class="pr-eye">Trin 3 af 5</div><div class="pr-h1">Hvornår optager du?</div>'
-    + '<div class="pr-sub">Appen foreslår at samle det: én formiddag, alle ugens klip.</div>'
-    + '<div class="pr-kort"><div class="pr-lbl">' + (PR.optag.hverForSig ? 'Én dag pr. opslag' : 'Samlet på én dag') + '</div>' + liste
-    + (PR.optag.hverForSig ? '' : '<div class="pr-chips" style="margin-top:12px;">' + PR_DAGE.map(function (d, di) { return '<button type="button" class="pr-chip' + (PR.optag.dag === di + 1 ? ' on' : '') + '" onclick="PR.optag.dag=' + (di + 1) + ';planRitTegn()">' + d + '</button>'; }).join("") + '</div>'
-      + '<div class="pr-chips" style="margin-top:8px;">' + ["Morgen", "Formiddag", "Eftermiddag", "Aften"].map(function (t) { return '<button type="button" class="pr-chip' + (PR.optag.tid === t ? ' on' : '') + '" onclick="PR.optag.tid=\'' + t + '\';planRitTegn()">' + t + '</button>'; }).join("") + '</div>')
-    + '</div>'
-    + '<button type="button" class="pr-link" onclick="PR.optag.hverForSig=' + (PR.optag.hverForSig ? 'false' : 'true') + ';planRitTegn()">' + (PR.optag.hverForSig ? 'Samlet på én dag i stedet' : 'Eller sæt en optagedag pr. opslag') + '</button>'
-    + '<div class="pr-bar"><button type="button" class="dbtn ghost" style="background:#fff;" onclick="prGaa(4)">Spring over</button><button type="button" class="dbtn primary" onclick="prOptagGem()">Gem optagedagene</button></div>';
+  }).join("") : '<div class="pr-kort"><div style="font-size:13px;color:var(--gray3);">Der ligger ingen opslag i uge ' + uge + ' endnu.</div></div>';
+  return prBjaelke(4) + '<div class="pr-eye">Trin 4 af 6 · uge ' + uge + '</div><div class="pr-h1">Hvem gør hvad?</div>'
+    + '<div class="pr-sub">For hvert opslag: hvornår briefen laves, hvornår det produceres, og hvem der er ansvarlig. Det gemmes på opslaget med det samme.</div>'
+    + kort
+    + '<div class="pr-bar"><button type="button" class="dbtn primary" onclick="prGaa(5)">Videre til ugens mål</button></div>';
 }
-async function prOptagEnkelt(id, iso) {
-  const it = (IDEER || []).find(function (x) { return String(x.id) === String(id); }); if (!it || !iso) return;
-  try { await ideUpdate(id, { brief: Object.assign({}, it.brief || {}, { optagedag: iso }) }); } catch (e) {}
+async function prHvemPersoner() {
+  const foer = (BRIEF_PERSONER || []).length;
+  try { await briefPersonerHent(); try { if (erContentPlanner(CURRENT_DEF) && BRIEF_PERSONER.indexOf("Ida") === -1) BRIEF_PERSONER.push("Ida"); } catch (e) {} } catch (e) {}
+  if (PR && PR.trin === 4 && (BRIEF_PERSONER || []).length !== foer) planRitTegn();
 }
-async function prOptagGem() {
-  if (!PR.optag.hverForSig) {
-    const iso = planRitUgeDage(PR.uge)[PR.optag.dag - 1];
-    for (const it of prUgensOpslag()) { try { await ideUpdate(it.id, { brief: Object.assign({}, it.brief || {}, { optagedag: iso, optagetid: PR.optag.tid }) }); } catch (e) {} }
-  }
-  prGaa(4);
+async function prHvemGem(id, aendr) {
+  const it = (IDEER || []).find(function (x) { return String(x.id) === String(id); }); if (!it) return;
+  const b = Object.assign({}, it.brief || {}); aendr(b);
+  const kv = document.getElementById("prHvemKvit_" + id); if (kv) { kv.textContent = "Gemmer…"; kv.style.color = "var(--gray3)"; }
+  const ok = await ideUpdate(it.id, { brief: b });
+  if (ok !== false) planRitTegn();
+  const kv2 = document.getElementById("prHvemKvit_" + id);
+  if (kv2) { kv2.textContent = ok === false ? "Ikke gemt — prøv igen" : "Gemt"; kv2.style.color = ok === false ? "var(--red)" : "var(--gray3)"; }
+}
+function prHvemSaet(id, felt, iso) { prHvemGem(id, function (b) { b[felt] = b[felt] === iso ? "" : iso; }); }
+function prHvemPerson(id, navn) {
+  prHvemGem(id, function (b) { const ans = String(b.hvemPerson || "").split(" · ").map(function (v) { return v.trim(); }).filter(Boolean); const i = ans.indexOf(navn); if (i > -1) ans.splice(i, 1); else ans.push(navn); b.hvemPerson = ans.join(" · "); });
 }
 /* ---- 4 ugens maal (Performance-fliserne) ---- */
 function prMaalHtml() {
@@ -61448,22 +61382,22 @@ function prMaalHtml() {
   const pm = PERF_MAAL || {};
   const sd = (MAALS && Array.isArray(MAALS.storyDage)) ? MAALS.storyDage.slice().sort(function (a, b) { return a - b; }).map(function (n) { return PR_DAGE[n - 1]; }).join(" · ") : "";
   const fl = function (k, n, v) { return '<div class="pb-maal mq-tap" role="button" tabindex="0" onclick="perfMaalRet(\'' + k + '\')" style="background:#fff;border:1px solid var(--border);border-radius:20px;padding:12px 16px;margin:0 0 8px;min-height:44px;display:flex;justify-content:space-between;align-items:baseline;cursor:pointer;"><span style="font-size:13.5px;">' + n + '</span><span style="font-size:14px;font-weight:400;color:' + (v ? 'var(--black)' : 'var(--gray3)') + ';">' + (v || 'sæt et mål') + '</span></div>'; };
-  return prBjaelke(4) + '<div class="pr-eye">Trin 4 af 5</div><div class="pr-h1">Ugens mål</div>'
+  return prBjaelke(5) + '<div class="pr-eye">Trin 5 af 6</div><div class="pr-h1">Ugens mål</div>'
     + '<div class="pr-sub">De samme som på Performance. Ret dem her, hvis ugen er anderledes.</div>'
     + fl("uge", "Opslag i uge " + energidaUgeNr(PR.uge), ugem ? String(ugem) : "")
     + fl("proeve", "Prøvereels om måneden", pm.proeve ? String(pm.proeve) : "")
     + fl("story", "Story-dage", sd)
     + fl("fokus", "Ugens fokus", pm.fokus ? esc(String(pm.fokus)) : "")
-    + '<div class="pr-bar"><button type="button" class="dbtn primary" onclick="prGaa(5)">Videre</button></div>';
+    + '<div class="pr-bar"><button type="button" class="dbtn primary" onclick="prGaa(6)">Videre</button></div>';
 }
-/* ---- 5 book naeste planlaegning ---- */
+/* ---- 6 book naeste planlaegning ---- */
 function prBookHtml() {
   const dage = planRitUgeDage(PR.uge); const idag = new Date().getDay(); const idagIx = idag === 0 ? 7 : idag;
   if (!PR.book.dag) PR.book.dag = idagIx;
   const tider = ["09:00", "10:00", "14:00", "20:00"];
   const naesteM = planRitMaanedKey(new Date(PR.uge.getFullYear(), PR.uge.getMonth(), PR.uge.getDate() + 7));
   const maanedNaeste = naesteM !== PR.mkey;
-  return prBjaelke(5) + '<div class="pr-eye">Trin 5 af 5</div><div class="pr-h1">Hvornår planlægger du uge ' + (energidaUgeNr(PR.uge) + 1) + '?</div>'
+  return prBjaelke(6) + '<div class="pr-eye">Trin 6 af 6</div><div class="pr-h1">Hvornår planlægger du uge ' + (energidaUgeNr(PR.uge) + 1) + '?</div>'
     + '<div class="pr-sub">Én uge ad gangen. Det er din aftale med dig selv.</div>'
     + '<div class="pr-kort"><div class="pr-lbl">Dag</div><div class="pr-chips">' + dage.map(function (iso, di) { return '<button type="button" class="pr-chip' + (PR.book.dag === di + 1 ? ' on' : '') + '" onclick="PR.book.dag=' + (di + 1) + ';planRitTegn()">' + PR_DAGE[di] + ' ' + iso.slice(8, 10).replace(/^0/, "") + '.</button>'; }).join("") + '</div>'
     + '<div class="pr-lbl" style="margin-top:14px;">Klokken</div><div class="pr-chips">' + tider.map(function (t) { return '<button type="button" class="pr-chip' + (PR.book.tid === t ? ' on' : '') + '" onclick="PR.book.tid=\'' + t + '\';planRitTegn()">' + t + '</button>'; }).join("") + '</div></div>'
@@ -61475,7 +61409,7 @@ function prIcsHref() {
   try {
     const iso = planRitUgeDage(PR.uge)[(PR.book.dag || 1) - 1]; const t = String(PR.book.tid || "10:00").replace(":", "");
     const st = iso.replace(/-/g, "") + "T" + t + "00"; const sl = iso.replace(/-/g, "") + "T" + String(parseInt(t.slice(0, 2), 10) + 1).padStart(2, "0") + t.slice(2) + "00";
-    const ics = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Energida//Content Studio//DA", "BEGIN:VEVENT", "UID:plan-" + iso + "@energida", "DTSTART:" + st, "DTEND:" + sl, "SUMMARY:Planlægningsdag · næste uges content", "DESCRIPTION:25 minutter i Content Studio: tilbageblik, næste uges opslag, optagedage, mål.", "END:VEVENT", "END:VCALENDAR"].join("\r\n");
+    const ics = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Energida//Content Studio//DA", "BEGIN:VEVENT", "UID:plan-" + iso + "@energida", "DTSTART:" + st, "DTEND:" + sl, "SUMMARY:Planlægningsdag · næste uges content", "DESCRIPTION:25 minutter i Content Studio: siden sidst, ugens tema, ugen, hvem gør hvad, mål.", "END:VEVENT", "END:VCALENDAR"].join("\r\n");
     return "data:text/calendar;charset=utf-8," + encodeURIComponent(ics);
   } catch (e) { return "#"; }
 }
@@ -61485,7 +61419,10 @@ async function prBookGem() {
   const patch = { sidst: datoDK(), uge: PR.ugeKey, tid: PR.book.tid };
   if (PR.maanedGjort) patch.maanedPlan = PR.mkey;
   const ok = await planRitStatusGem(patch);
-  PR.gemtOk = ok; PR.trin = 6; planRitTegn();
+  /* MOEDET ER AFSLUTTET HER (15/9): naeste »Siden sidst« starter fra i dag. Foer laa knappen »Afslut moedet« paa Siden sidst. */
+  try { await maalsHent(); } catch (e) {}
+  if (MAALS) { const foerM = MAALS.sidsteMoede; MAALS.sidsteMoede = datoDK(new Date()); const okM = await maalsGem("Mødet er afsluttet."); if (!okM) MAALS.sidsteMoede = foerM; }
+  PR.gemtOk = ok; PR.trin = 7; planRitTegn();
 }
 function prFaerdigHtml() {
   const iso = planRitUgeDage(PR.uge)[(PR.book.dag || 1) - 1];
@@ -61533,6 +61470,6 @@ function prFaerdigHtml() {
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 15. september · 1954</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 15. september · 1956</div>
 </body>
 </html>
