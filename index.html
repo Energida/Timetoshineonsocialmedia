@@ -5107,6 +5107,7 @@ body.perf-bud1 #screen9[data-perf-aaben] #perfBud1 .pb-top > * { display:none !i
 .pb-ringe { display:grid; grid-template-columns:repeat(3,1fr); gap:var(--luft-1); margin:0 0 var(--luft-2); }
 /* EEN RING ALENE skal ikke staa som en tredjedel af en raekke (14/9): den fylder sin egen bredde. */
 .pb-ringe-en { grid-template-columns:1fr; }
+.pb-ringe-fordel { grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); }   /* fordelingens ringe (15/9): saa mange, der er soejler/formater */
 /* FORDELINGEN PAA SOEJLER OG FORMATER (Ida 14/9). Raekker som .pb-maal, men med en tynd bjaelke i
    forhold til den stoerste gruppe. Ingen procenter: med tre opslag paa en uge siger procenter mere,
    end tallet kan baere. */
@@ -19621,14 +19622,15 @@ function perfBud1Tegn() {
   } catch (e) { syvListe = []; }
   /* Fordelingen: navn, antal og en tynd bjaelke i forhold til den stoerste gruppe. Ingen procenter —
      med tre opslag paa en uge siger »33 %« mere, end tallet kan baere. */
+  /* FORDELINGEN ER RINGE — ALDRIG BJAELKER (Ida 15/9 kl. 09.38: »hvor er mine ringe … 'sådan fordeler indholdet sig'«;
+     laasen 3/9: procesbaren er ringe). v1904 tegnede soejler og formater som roede bjaelker i fliser — det er vaeltet.
+     Hver soejle/format er husets ring i en hvid flise (samme .pb-ringe/.pb-rg som de tre ringe over), tallet i ringen,
+     andelen af de 7 dages opslag som bue. */
   const fordel = function (titel, par) {
     if (!par.length) return "";
-    const mest = par.reduce(function (m, x) { return Math.max(m, x[1]); }, 0) || 1;
-    return '<div class="bs-eye pb-sek">' + titel + '</div><div class="pb-fordel">'
-      + par.map(function (x) {
-          return '<div class="pb-fd"><span class="pb-fd-n">' + esc(x[0]) + '</span><span class="pb-fd-t">' + x[1] + '</span>'
-            + '<span class="pb-fd-bar"><span style="width:' + Math.round(x[1] / mest * 100) + '%;"></span></span></div>';
-        }).join("")
+    const ialt = par.reduce(function (m, x) { return m + x[1]; }, 0) || 1;
+    return '<div class="bs-eye pb-sek">' + titel + '</div><div class="pb-ringe pb-ringe-fordel">'
+      + par.map(function (x) { return ring(energidaRing(String(x[1]), "af " + ialt, x[1] / ialt, RS), esc(x[0])); }).join("")
       + '</div>';
   };
   const taelOp = function (n) {
@@ -20641,10 +20643,12 @@ function renderHome() {
            telefon, uanset hvad der blev skrevet i arket \u2014 og det var netop den, der
            skubbede I DAG-kortet under skaermkanten. */
         /* CITATET ER HEROEN (Idas klik 11/9 kl. 14.05 + 14.18, B2B til alle kunder): hilsen + dato som etiket over, dagens citat i Idas egne ord i Didot, kilden under. Glimtet (emoji) er ude. */
+          /* HILSENEN ER HEROEN PAA COMPUTEREN — CITATET ER UDE (Ida 15/9 kl. 09.40, fra kundemoedet: »quote skal fjernes
+             fra desktop hjem siden! Denne hero skal være velkomsthilsnen!«). Vaelter 11/9-klikket (citatet som hero).
+             Datoen staar som etiket over, navnet roedt i kursiv som foer. Telefonens foto-hero med citat er uroert. */
           (NYT_B2B_DESIGN
-          ? '<div class="hjem-dato">' + esc(dagensVelkomst(dagensHilsen())) + (hilsenNavn ? ', ' + esc(hilsenNavn) : '') + ' · ' + datoLinje + '</div>'
-            + '<div class="hjem-citat-hero">' + esc((window.__homeCitatTekst || "")) + '</div>'
-            + '<div class="hjem-citat-kilde">' + esc(window.__homeCitatKilde || "") + '</div>'
+          ? '<div class="hjem-dato">' + datoLinje + '</div>'
+            + '<span class="hjem-hilsen">' + esc(dagensVelkomst(dagensHilsen())) + (hilsenNavn ? ', <span style="font-style:italic;color:var(--red);">' + esc(hilsenNavn) + '</span>' : '') + '</span>'
           : '<div class="hjem-dato">' + datoLinje + '</div>'
             + '<span class="hjem-hilsen">' + esc(dagensVelkomst(dagensHilsen())) + (hilsenNavn ? ', <span style="font-style:italic;color:var(--red);">' + esc(hilsenNavn) + '</span>' : '') + '</span>')
         /* FINAL 5a (30/7): dagens antal opgaver under hilsenen */
@@ -43406,7 +43410,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "1944";
+const APP_VERSION = "1945";
 let NY_VERSION_KLAR = false;
 let NY_VERSION_AFVIST = false;
 function nyVersionSkjul() {
@@ -45335,6 +45339,20 @@ function kalRingSvg(tal, pct) {
    — saa en ny kunde saa ALDRIG den ring, samtalen om strategien hviler paa. Den staar nu
    dér, hvor kunden kigger: ved siden af de to andre ringe under kalenderen.
    Den skjuler sig ikke laengere ved nul; den siger hvad der skal til. */
+/* PERIODEN FOR FORDELINGEN (Ida 15/9 kl. 09.42, fra kundemoedet: »her aner man ikke hvor lang tid dataen strækker sig
+   over — her skal man kunne vælge 7, 14, seneste måned«). Chips over ringene; 30 = seneste maaned. Gaelder baade
+   soejle- og formatfordelingen. Standard: seneste maaned. */
+let KAL_FORDEL_DAGE = 30;
+function kalFordelPeriode(alle) {
+  const fra = new Date(); fra.setDate(fra.getDate() - (KAL_FORDEL_DAGE - 1)); const fraS = datoDK(fra);
+  return alle.filter(function (x) { return x.dato && String(x.dato) >= fraS; });
+}
+function kalFordelVaelg(d) { KAL_FORDEL_DAGE = d; try { renderKalRinge(); } catch (e) {} }
+function kalFordelChipsHtml() {
+  return '<div class="ark-chips kal-fordel-chips" style="margin:0 0 4px;">' + [[7, "7 dage"], [14, "14 dage"], [30, "Seneste måned"]].map(function (p) {
+    return '<button type="button" class="ark-chip' + (KAL_FORDEL_DAGE === p[0] ? ' on' : '') + '" onclick="kalFordelVaelg(' + p[0] + ')">' + p[1] + '</button>';
+  }).join("") + '</div>';
+}
 function kalFordelingHtml() {
   /* TRE PROCESRINGE — ikke bjælker (Ida 5/8: "dette skal være processringe præcis som de
      andre"). Ring-standarden: der findes ÉN ring i appen, og den bygges aldrig forfra.
@@ -45351,7 +45369,7 @@ function kalFordelingHtml() {
      Foer taalte kortet ALT, der ikke var arkiveret — ogsaa idéer og planlagte. Det svarede
      paa "hvad har vi liggende", men spoergsmaalet er "hvad har vi faktisk leveret".
      "Indblik" hedder Maalt i dataen — statussen efter Postet. */
-  const alle = (IDEER || []).filter(function (x) { return x.status === "Postet" || x.status === "Målt"; });
+  const alle = kalFordelPeriode((IDEER || []).filter(function (x) { return x.status === "Postet" || x.status === "Målt"; }));
   const medSoejle = alle.filter(function (x) { return x.soejle; });
   const ialt = medSoejle.length;
   const ringe = feed.map(function (n) {
@@ -45376,7 +45394,7 @@ function kalFordelingHtml() {
        Grundlags-linjen ("7 af 41 opslag har en soejle · 34 mangler") er taget UD igen paa
        Idas oenske: ringene taler for sig selv, og tallet fyldte mere end det hjalp.
        Tom-tilstanden bliver — uden den ville kortet bare staa tomt uden forklaring. */
-    + '<div><div style="font-size:12.5px;line-height:1.6;">Indholdsfordeling i feed</div>'
+    + '<div><div style="font-size:12.5px;line-height:1.6;">Indholdsfordeling i feed · ' + (KAL_FORDEL_DAGE === 30 ? 'seneste måned' : 'seneste ' + KAL_FORDEL_DAGE + ' dage') + '</div>'
     + (ialt ? '' : '<div style="font-size:11.5px;color:var(--gray3);line-height:1.5;">Intet er postet med en søjle endnu — fordelingen tegner sig, når det første opslag er ude.</div>') + '</div>'
     + '<div style="display:flex;gap:14px;align-items:flex-start;justify-content:space-around;flex-wrap:wrap;">' + ringe + '</div>'
     + (function () {
@@ -45467,7 +45485,7 @@ function energidaLagkage(dele, tomTekst) {
     + (ialt ? '' : '<div style="font-size:11.5px;color:var(--gray3);line-height:1.5;margin-top:10px;">' + esc(tomTekst || "") + '</div>');
 }
 function kalFormatFordelingHtml() {
-  const alle = (IDEER || []).filter(function (x) { return x.status === "Postet" || x.status === "Målt"; });
+  const alle = kalFordelPeriode((IDEER || []).filter(function (x) { return x.status === "Postet" || x.status === "Målt"; }));
   const med = alle.filter(function (x) { return x.type && KAL_FORMATER.some(function (f) { return f.v === x.type; }); });
   const ialt = med.length;
   const ringe = KAL_FORMATER.map(function (f) {
@@ -45482,7 +45500,7 @@ function kalFormatFordelingHtml() {
       + '</div>';
   }).join("");
   return '<div class="kal-ringkort" style="flex-direction:column;align-items:stretch;gap:12px;">'
-    + '<div><div style="font-size:12.5px;line-height:1.6;">Sådan fordeler indholdet sig på formaterne</div>'
+    + '<div><div style="font-size:12.5px;line-height:1.6;">Sådan fordeler indholdet sig på formaterne · ' + (KAL_FORDEL_DAGE === 30 ? 'seneste måned' : 'seneste ' + KAL_FORDEL_DAGE + ' dage') + '</div>'
     + (ialt
         /* GRUNDLAGET SKAL STAA (Ida: hun saa en Kort-reel i kalenderen og nul i
            fordelingen). Kortet taeller KUN postet og maalt indhold — planlagt taeller
@@ -45517,7 +45535,7 @@ function renderKalRinge() {
      se paa forsiden: hvordan indholdet fordeler sig paa soejler og paa formater.
      ROERER IKKE FORSIDEN. Ringene lever videre i ugePlanSlot; det er kun kalenderens
      kopi, der er fjernet. Genindfoer den ikke som en "manglende ring". */
-  el.innerHTML = kalFordelingHtml() + kalFormatFordelingHtml();
+  el.innerHTML = kalFordelChipsHtml() + kalFordelingHtml() + kalFormatFordelingHtml();   /* perioden vaelges over begge kort (15/9) */
 }
 
 
@@ -61292,6 +61310,6 @@ function prFaerdigHtml() {
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 15. september · 1944</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 15. september · 1945</div>
 </body>
 </html>
