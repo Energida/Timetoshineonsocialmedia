@@ -5183,7 +5183,8 @@ body.klip-bud6 #klipHeadTgl > * { width:36px !important; min-width:36px !importa
 
 .kv-menu { margin:0 0 var(--luft-3); }
 .kv-flise .bs-kf-tekst { display:flex; flex-direction:column; width:100%; }
-.kv-flise { cursor:grab; }
+.kv-flise { cursor:grab; touch-action:pan-y; user-select:none; -webkit-user-select:none; }
+.kv-flise.klip-traekker { opacity:.55; cursor:grabbing; }
 .kv-flise.klip-over { box-shadow:var(--mb-skygge, 0 0 4px rgba(46,44,41,.10), 0 0 36px rgba(46,44,41,.20)), inset 0 3px 0 var(--red); }   /* slip-maalet: roed kant i toppen (15/9) */
 
 .kv-ringe { display:flex; gap:6px; margin-top:8px; }
@@ -30494,9 +30495,7 @@ function klipBud6Tegn(el) {
   const fliser = liste.length
     ? liste.map(function (o) {
         /* TRAEK OG SLIP MELLEM FLISERNE (Ida 15/9 kl. 21.10: »jeg skal kunne traekke rundt i lektionerne … hvor tallene automatisk skal foelge med«): samme motor som listevisningen (klipTraekStart/klipTraekSlip) — numrene rettes af klipNummererGruppe bagefter. */
-        return '<button type="button" class="bs-kf kv-flise" data-vid="' + esc(String(o.id)) + '" draggable="true" title="Træk for at flytte lektionen"'
-          + ' ondragstart="klipTraekStart(event,\'' + esc(String(o.id)) + '\')" ondragover="event.preventDefault();this.classList.add(\'klip-over\')" ondragleave="this.classList.remove(\'klip-over\')" ondrop="klipTraekSlip(event,\'' + esc(String(o.id)) + '\')"'
-          + ' onclick="klipBriefAaben(\'' + esc(String(o.id)) + '\')">'
+        return '<button type="button" class="bs-kf kv-flise" data-vid="' + esc(String(o.id)) + '" title="Træk for at flytte lektionen" onclick="klipBriefAaben(\'' + esc(String(o.id)) + '\')">'
           + '<span class="bs-kf-tekst"><span class="bs-kf-n">' + esc(titelVis(o.titel || "Uden titel")) + '</span>'
           + '<span class="bs-kf-s">' + esc(klipLinje(o)) + '</span>' + klipRinge(o) + '</span>'
           + '</button>';   /* Slet-knappen sad paa flisen i v1968-v1971; Ida 15/9 kl. 19.40: »skraldespanden skal vaere inde naar man aabner lektionen« — den staar nu i lektionens knaprække (klipBriefRender) */   /* SLET-KNAPPEN STAAR PAA FLISEN PAA COMPUTEREN (Ida 15/9 kl. 19.22: »der skal vaere en knap der hedder slet med en skraldespand« — det lange tryk alene duer ikke paa en desktop). Telefonen beholder det lange tryk. */   /* HELE flisen aabner lektionen (Ida 14/9 kl. 16.15: »nu kan jeg ikke aabne lektionerne« — v1915 lod statuslinjen aabne status-arket i stedet). Status skiftes KUN i briefen (#kbStatusChip). */
@@ -30570,9 +30569,36 @@ function klipLangTrykLyt(host) {
     el = f; x0 = e.clientX; y0 = e.clientY; laas = false;
     t = setTimeout(function () { laas = true; try { klipFliseMenu(el.dataset.vid); } catch (err) {} }, 450);
   });
-  host.addEventListener("pointermove", function (e) { if (!el || laas) return; if (Math.abs(e.clientX - x0) > 10 || Math.abs(e.clientY - y0) > 10) slut(); });
-  host.addEventListener("pointerup", slut); host.addEventListener("pointercancel", slut);
-  host.addEventListener("click", function (e) { if (laas) { e.stopPropagation(); e.preventDefault(); laas = false; } }, true);   /* eet spaerret klik efter et langt tryk */
+  /* TRAEK MED FINGER ELLER MUS (Ida 15/9 kl. 21.10 + 21.20 »det virker ikke?«): HTML5-traek fra en <button> er upaalideligt, saa
+     flytningen koerer paa pointer-hændelser: bevaeg dig 10 px, saa er du i gang — flisen daempes, slip-maalet faar den roede kant,
+     og ved slip rykker lektionen derhen og numrene foelger med (klipFlytTil). Det lange tryk (menuen) afbrydes af bevaegelsen. */
+  let traek = null, maal = null;
+  const maalRyd = function () { if (maal) { maal.classList.remove("klip-over"); maal = null; } };
+  host.addEventListener("pointermove", function (e) {
+    if (!el || laas) return;
+    if (!traek) {
+      if (Math.abs(e.clientX - x0) > 10 || Math.abs(e.clientY - y0) > 10) {
+        if (t) { clearTimeout(t); t = null; }
+        traek = el; traek.classList.add("klip-traekker"); try { host.setPointerCapture(e.pointerId); } catch (err) {}
+      } else return;
+    }
+    e.preventDefault();
+    const under = document.elementFromPoint(e.clientX, e.clientY);
+    const m = under ? under.closest(".kv-flise[data-vid]") : null;
+    if (m !== maal) { maalRyd(); if (m && m !== traek) { maal = m; maal.classList.add("klip-over"); } }
+  });
+  const traekSlut = function (e) {
+    if (traek) {
+      const fra = traek.dataset.vid, til = maal ? maal.dataset.vid : null;
+      traek.classList.remove("klip-traekker"); maalRyd(); traek = null; laas = true;   /* eet spaerret klik efter et traek */
+      try { host.releasePointerCapture(e.pointerId); } catch (err) {}
+      if (til && til !== fra) { try { klipFlytTil(fra, til); } catch (err) {} }
+    }
+    slut();
+  };
+  host.addEventListener("pointerup", traekSlut); host.addEventListener("pointercancel", traekSlut);
+  host.addEventListener("click", function (e) { if (laas) { e.stopPropagation(); e.preventDefault(); laas = false; } }, true);   /* eet spaerret klik efter et langt tryk eller et traek */
+  host.addEventListener("dragstart", function (e) { if (e.target && e.target.closest && e.target.closest(".kv-flise")) e.preventDefault(); });   /* HTML5-traek er slaaet fra paa fliserne — pointer-traekket tager over */
   host.addEventListener("contextmenu", function (e) { if (el || laas) e.preventDefault(); });
 }
 function klipFliseMenu(id) {
@@ -30748,6 +30774,10 @@ async function klipTraekSlip(e, maalId) {
   try { if (e.currentTarget) e.currentTarget.classList.remove("klip-over"); } catch(x) {}
   const id = KLIP_TRAK || (e.dataTransfer && e.dataTransfer.getData("text/plain"));
   KLIP_TRAK = null;
+  await klipFlytTil(id, maalId);
+}
+/* Kernen i flytningen — bruges baade af HTML5-traek (listen) og af pointer-traekket paa fliserne (15/9). */
+async function klipFlytTil(id, maalId) {
   if (!id || String(id) === String(maalId)) return;
   const a = (KLIP_OPGAVER || []).find(x => String(x.id) === String(id));
   const b = (KLIP_OPGAVER || []).find(x => String(x.id) === String(maalId));
@@ -44579,7 +44609,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "1982";
+const APP_VERSION = "1983";
 let NY_VERSION_KLAR = false;
 let NY_VERSION_AFVIST = false;
 function nyVersionSkjul() {
@@ -62519,6 +62549,6 @@ function prFaerdigHtml() {
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 15. september · 1982</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 15. september · 1983</div>
 </body>
 </html>
