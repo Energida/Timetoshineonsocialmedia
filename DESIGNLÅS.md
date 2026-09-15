@@ -68,6 +68,8 @@ Filen er kort med vilje. Hver regel kan måles. Målingen står i `tools/designl
 
 **Drejebogen som værktøj i Idébanken (14/9 kl. 22.50, Idas klik; v1930).** I kundens ark (Tøm hovedet, »+ Ny idé«, Idébankens sendefelt, Lav til idé) står der, når en søjle er valgt, én lang hvid knap under søjle-chipsene: »Find idéen med Drejebogen«. Den åbner de samme tre spørgsmål som på planlægningsdagen (samme skærme, samme svarkort, samme »Skriv selv« med mikrofon), toplinjen hedder »Drejebogen«, uden trin-bjælke og skinne. Det, der allerede var skrevet i arket, står som svar på det første spørgsmål. Sidste skærm: titel og format (ingen dag), knappen »Læg i Idébanken« gemmer som Idé under søjlen uden dato; de tre spørgsmål med svar er briefens beskrivelse. »Tilbage« fra det første spørgsmål lukker og går tilbage til appen.
 
+**ALT SES PÅ BÅDE 390 OG 1440, FØR DET DEPLOYES (HÅRD, Ida 15/9 kl. 11.22).** Mødeflowet (v1948–v1950) blev bygget under tidspres og kun målt på telefonen — på computeren stod flisen i venstre side, tekst i heroen og små knapper. Computeren er sin egen flade: flisen fylder hele bredden, 32 px under heroen, knapper i fuld bredde. Ingen undtagelser, heller ikke under tidspres — nås det ikke, deployes der ikke.
+
 ## Det, der IKKE er låst
 
 Alt, der ikke står her, er ikke låst. Det betyder ikke frit valg: det betyder mockup først og Idas klik, før der bygges.
