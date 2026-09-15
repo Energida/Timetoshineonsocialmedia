@@ -179,6 +179,21 @@ input[type="date"]::-webkit-calendar-picker-indicator, input[type="time"]::-webk
 .db-ringflise svg { display:block; }
 .db-ringnavn { font-size:9.5px; letter-spacing:1.3px; text-transform:uppercase; color:var(--gray3); margin-top:14px; text-align:center; }   /* luft under ringen (Ida 15/9: »en lillebitte smule længere nede«) */
 @media (min-width:761px) { .db-deck { flex-wrap:wrap; overflow:visible; margin:0; padding:0; max-width:900px; } .db-kort { flex:0 0 calc(33.333% - 8px); } .db-knap { width:auto; } .db-prikker { display:none; } .db-ringe { max-width:600px; } }
+/* Planlaegningsmoedet »Siden sidst« (15/9) — flisen (15/9), Poppins, piller. */
+.pm-side { display:grid; gap:12px; max-width:900px; margin:0 0 16px; }
+.pm-side .db-kort { flex:none; min-height:0; }
+.pm-tal { display:grid; grid-template-columns:1fr 1fr; gap:10px 12px; margin:12px 0 4px; }
+.pm-felt { display:flex; flex-direction:column; gap:6px; }
+.pm-navn { font-size:11px; color:var(--gray3); line-height:1.4; }
+.pm-ind { display:inline-flex; align-items:center; gap:6px; }
+.pm-ind input { width:100%; min-width:0; background:#fff; border:1px solid var(--border); border-radius:12px; padding:10px 11px; font-size:16px; font-family:"Poppins",sans-serif; color:var(--black); outline:none; text-align:right; }
+.pm-suf { font-size:11px; color:var(--gray3); white-space:nowrap; }
+.pm-tekst { margin-top:10px; }
+.pm-tekst textarea { width:100%; box-sizing:border-box; background:#fff; border:1px solid var(--border); border-radius:12px; padding:10px 11px; font-size:16px; line-height:1.5; font-family:"Poppins",sans-serif; color:var(--black); outline:none; resize:vertical; }
+.pm-kvit { font-size:11px; color:var(--gray3); min-height:14px; margin-top:6px; }
+.pm-hook-gr { margin-top:10px; }
+.pm-hook { font-size:13px; line-height:1.45; padding:8px 0 0; display:flex; flex-direction:column; gap:2px; }
+@media (min-width:761px) { .pm-tal { grid-template-columns:repeat(4,1fr); } }
 .ob-proces { display:flex; align-items:stretch; max-width:900px; margin:8px 0 20px; }
 .obp-trin { flex:1; position:relative; display:flex; flex-direction:column; align-items:center; text-align:center; gap:10px; padding:0 16px; }
 .obp-flise { display:flex; flex-direction:column; align-items:center; gap:8px; background:#fff; border:1px solid var(--border); border-radius:20px; padding:14px 16px; width:100%; box-sizing:border-box; flex:1; }
@@ -19439,6 +19454,108 @@ async function perfStoryDagSkift(n) {
   try { if (typeof PR !== "undefined" && PR) planRitTegn(); } catch (e) {}
   try { renderHome(); } catch (e) {}
 }
+/* ===== PLANLAEGNINGSMOEDET »SIDEN SIDST« (Ida 15/9 kl. 09.15) ==================================
+   Idas ord: »en planlægningsfunktion hvor vi sammen gennemgår de opslag der er postet siden sidste planlægningsmøde
+   … systemet ud fra den dato selv kommer med de opslag der har været postet siden, så vi for hver kan udfylde Indblik
+   … overspringsfrekvens, hvor lang tid de så, hvor lang videoen var … hvad gik godt, hvad var svært, hvad lærte vi …
+   det skal lande under Performance, så den i toppen kommer frem med de hooks der fungerede bedst af eget content.«
+   Datoen for sidste moede bor i MAALS.sidsteMoede (skema_svar, samme motor som maalsaetningerne). Foerste gang:
+   30 dage tilbage. Tallene og laeringen gemmes PAA opslaget (it.brief — indblikTid/indblikSpring/indblikInt findes
+   allerede i briefen; indblikLaengde, laerGodt, laerSvaert, laerte er nye noegler). Hele brief-objektet skrives,
+   aldrig et delvist (gem maa ikke slette, 4/8). Flisen er den laaste (15/9). */
+function perfMoedeFra() {
+  let fra = (MAALS && MAALS.sidsteMoede) ? String(MAALS.sidsteMoede) : "";
+  if (!fra) { const d = new Date(); d.setDate(d.getDate() - 30); fra = datoDK(d); }
+  return fra;
+}
+function perfMoedeOpslag() {
+  const fra = perfMoedeFra();
+  return (IDEER || []).filter(function (x) { return x && (x.status === "Postet" || x.status === "Målt") && x.dato && String(x.dato) >= fra; })
+    .sort(function (a, b) { return String(b.dato).localeCompare(String(a.dato)); });
+}
+function perfMoedeHtml() {
+  const fra = perfMoedeFra();
+  const liste = perfMoedeOpslag();
+  const idag = datoDK(new Date());
+  const felt = function (id, navn, vaerdi, suf, tal) {
+    return '<label class="pm-felt"><span class="pm-navn">' + navn + '</span>'
+      + '<span class="pm-ind"><input type="text" ' + (tal ? 'inputmode="decimal"' : '') + ' data-id="' + esc(id.id) + '" data-felt="' + id.felt + '" value="' + esc(vaerdi == null ? "" : String(vaerdi)) + '" onchange="perfMoedeGem(this)">'
+      + (suf ? '<span class="pm-suf">' + suf + '</span>' : '') + '</span></label>';
+  };
+  const tekst = function (id, navn, vaerdi) {
+    return '<label class="pm-felt pm-tekst"><span class="pm-navn">' + navn + '</span>'
+      + '<textarea rows="2" data-id="' + esc(id.id) + '" data-felt="' + id.felt + '" onchange="perfMoedeGem(this)">' + esc(vaerdi || "") + '</textarea></label>';
+  };
+  const top = '<div class="db-kort pm-top"><div class="db-eye">Siden sidst · fra ' + esc(dkDatoKort(fra)) + '</div>'
+    + '<div class="db-navn">' + liste.length + (liste.length === 1 ? ' opslag postet' : ' opslag postet') + '</div>'
+    + '<div class="db-tekst">Udfyld Indblik på hvert opslag, og skriv, hvad I lærte. Når I er færdige, afsluttes mødet — så starter næste møde fra i dag.</div>'
+    + '<div class="db-bund"><button type="button" class="db-knap mq-tap" onclick="perfMoedeAfslut(this)">Afslut mødet · ' + esc(dkDatoKort(idag)) + '</button></div></div>';
+  const kort = liste.length ? liste.map(function (x) {
+    const b = x.brief || {};
+    const hook = String(b.hookTekst || (Array.isArray(b.klip) && b.klip[0] && b.klip[0].tekst) || "").trim();
+    const so = x.soejle ? soejleVis(x.soejle) : "";
+    return '<div class="db-kort pm-kort">'
+      + '<div class="db-eye">' + esc(dkDatoKort(x.dato)) + (so ? ' · ' + esc(so) : '') + (x.type ? ' · ' + esc(x.type) : '') + '</div>'
+      + '<div class="db-navn">' + esc(storStart(titelVis(x.titel || "Uden titel"))) + '</div>'
+      + (hook ? '<div class="db-tekst">Hook: ' + esc(hook) + '</div>' : '')
+      + '<div class="pm-tal">'
+      + felt({ id: x.id, felt: "indblikLaengde" }, "Videoens længde", b.indblikLaengde, "sek.", true)
+      + felt({ id: x.id, felt: "indblikTid" }, "Gennemsnitlig visningstid", b.indblikTid, "sek.", true)
+      + felt({ id: x.id, felt: "indblikSpring" }, "Overspringsfrekvens", b.indblikSpring, "%", true)
+      + felt({ id: x.id, felt: "indblikInt" }, "Interaktioner", b.indblikInt, "", true)
+      + '</div>'
+      + tekst({ id: x.id, felt: "laerGodt" }, "Hvad gik godt?", b.laerGodt)
+      + tekst({ id: x.id, felt: "laerSvaert" }, "Hvad var svært?", b.laerSvaert)
+      + tekst({ id: x.id, felt: "laerte" }, "Hvad lærte vi?", b.laerte)
+      + '<div class="pm-kvit" id="pmKvit_' + esc(x.id) + '"></div>'
+      + '<div class="db-bund"><button type="button" class="db-knap sek mq-tap" onclick="openBrief(\'' + esc(String(x.id)) + '\')">Åbn briefen</button></div>'
+      + '</div>';
+  }).join("") : '<div class="db-kort"><div class="db-eye">Opslag</div><div class="db-navn">Ingen opslag postet siden ' + esc(dkDatoKort(fra)) + '</div><div class="db-tekst">Opslag lander her, når de har status Postet.</div></div>';
+  return '<div class="pm-side">' + top + kort + perfBedsteHooksHtml() + '</div>';
+}
+/* DE BEDSTE HOOKS AF EGET CONTENT — pr. soejle, laveste overspringsfrekvens foerst (jo faerre der springer over,
+   jo bedre fangede hooket). Kun opslag med et tal. Hoejst tre pr. soejle. */
+function perfBedsteHooksHtml() {
+  const alle = (IDEER || []).filter(function (x) {
+    const b = x && x.brief; if (!b) return false;
+    const v = parseFloat(String(b.indblikSpring || "").replace(",", "."));
+    return (x.status === "Postet" || x.status === "Målt") && !isNaN(v) && String(b.hookTekst || (Array.isArray(b.klip) && b.klip[0] && b.klip[0].tekst) || "").trim();
+  });
+  if (!alle.length) return '<div class="db-kort pm-hooks"><div class="db-eye">Bedste hooks</div><div class="db-navn">Ingen tal endnu</div><div class="db-tekst">Når overspringsfrekvensen er tastet på et opslag, står de hooks, der fangede bedst, her — pr. søjle.</div></div>';
+  const grupper = {};
+  alle.forEach(function (x) { const k = (soejleModel(String(x.soejle || "")) || {}).kode || "Andet"; (grupper[k] = grupper[k] || []).push(x); });
+  const koder = ["1A", "1B", "2A", "2B", "Andet"].filter(function (k) { return grupper[k]; });
+  return '<div class="db-kort pm-hooks"><div class="db-eye">Bedste hooks · eget content</div>'
+    + koder.map(function (k) {
+        const l = grupper[k].sort(function (a, b) { return parseFloat(String(a.brief.indblikSpring).replace(",", ".")) - parseFloat(String(b.brief.indblikSpring).replace(",", ".")); }).slice(0, 3);
+        const navn = k === "Andet" ? "Uden søjle" : soejleVis(l[0].soejle);
+        return '<div class="pm-hook-gr"><div class="pm-navn">' + esc(navn) + '</div>'
+          + l.map(function (x) { const b = x.brief; const hook = String(b.hookTekst || (b.klip && b.klip[0] && b.klip[0].tekst) || "").trim(); return '<div class="pm-hook">' + esc(hook) + '<span class="pm-suf">' + esc(String(b.indblikSpring)) + ' % sprang over</span></div>'; }).join("")
+          + '</div>';
+      }).join("")
+    + '</div>';
+}
+async function perfMoedeGem(el) {
+  const id = el.getAttribute("data-id"), felt = el.getAttribute("data-felt");
+  const it = (IDEER || []).find(function (x) { return String(x.id) === String(id); }); if (!it) return;
+  const b = Object.assign({}, it.brief || {}); b[felt] = String(el.value || "").trim();
+  const kv = document.getElementById("pmKvit_" + id);
+  if (kv) { kv.textContent = "Gemmer…"; kv.style.color = "var(--gray3)"; }
+  const ok = await ideUpdate(it.id, { brief: b });
+  if (kv) { kv.textContent = ok === false ? "Ikke gemt — prøv igen" : "Gemt"; kv.style.color = ok === false ? "var(--red)" : "var(--gray3)"; }
+  /* Bedste hooks tegnes om, naar en overspringsfrekvens er tastet — uden at roere felterne. */
+  if (felt === "indblikSpring") { const h = document.querySelector(".pm-hooks"); if (h) h.outerHTML = perfBedsteHooksHtml(); }
+}
+async function perfMoedeAfslut(knap) {
+  if (knap && !knap.dataset.sikker) { knap.dataset.sikker = "1"; knap.textContent = "Sikker? Næste møde starter fra i dag"; return; }
+  try { await maalsHent(); } catch (e) {}
+  if (!MAALS) return;
+  const foer = MAALS.sidsteMoede;
+  MAALS.sidsteMoede = datoDK(new Date());
+  const ok = await maalsGem("Mødet er afsluttet.");
+  if (!ok) { MAALS.sidsteMoede = foer; if (knap) { knap.textContent = "Ikke gemt — prøv igen"; knap.dataset.sikker = ""; } return; }
+  perfBud1Tegn();
+}
 function perfBud1Tegn() {
   const sc = document.getElementById("screen9"); if (!sc) return;
   document.body.classList.add("perf-bud1");
@@ -19544,13 +19661,16 @@ function perfBud1Tegn() {
     + maal("fokus", "Månedens fokus", fokus ? esc(fokus) : "")
     + '</div>'
     + '<div class="bs-grid bs-bento pb-doere">'
+    + d("moede", "Siden sidst", (function () { try { return perfMoedeOpslag().length + " opslag postet"; } catch (e) { return ""; } })())
     + d("kpi", "Målingerne", m0 ? esc(m0dato) + " · " + rate : "")
     + d("tjek", "Månedens tjek", "3 ting i " + MDR[nu.getMonth()])
     + d("rapport", "Månedsrapporten", nR ? nR + (nR === 1 ? " rapport" : " rapporter") : "")
     + d("plej", "Plej profilen", "")
     + '</div></div>';
   const tilbage = PERF_AABEN ? '<button type="button" class="bsam-mobknap bsam-mobknap-sek pb-tilbage mq-tap" onclick="perfAabn(\'\')">Tilbage</button>' : '';
-  host.innerHTML = top;
+  /* PLANLAEGNINGSMOEDET »SIDEN SIDST« (Ida 15/9 kl. 09.15, til kundemoedet samme formiddag): doeren aabner sin egen
+     flade i stedet for de gamle kolonner — se perfMoedeHtml. */
+  host.innerHTML = (PERF_AABEN === "moede") ? perfMoedeHtml() : top;
   let tb = document.getElementById("perfBud1Tilbage");
   if (!tb) { tb = document.createElement("div"); tb.id = "perfBud1Tilbage"; sc.appendChild(tb); }
   tb.innerHTML = tilbage;
@@ -43261,7 +43381,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "1940";
+const APP_VERSION = "1941";
 let NY_VERSION_KLAR = false;
 let NY_VERSION_AFVIST = false;
 function nyVersionSkjul() {
@@ -61144,6 +61264,6 @@ function prFaerdigHtml() {
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 15. september · 1940</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 15. september · 1941</div>
 </body>
 </html>
