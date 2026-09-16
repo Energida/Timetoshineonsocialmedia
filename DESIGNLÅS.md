@@ -31,6 +31,8 @@ Filen er kort med vilje. Hver regel kan måles. Målingen står i `tools/designl
 
 **LEKTIONSTITLERNE I ENERGIDA STUDIO STÅR I VERSALER (Ida 16/9 kl. 11.06, v2025).** Poppins 14, 1 px spatiering, uppercase i visningen — ordene i basen er urørte.
 
+**FAKTA-BOKSEN: VALGET STÅR SOM CHIPS = BUD A (Idas klik 16/9 kl. 11.52, v2032).** Format · Platform · Vibe · Ansvarlig · Lyd viser det valgte som små hvide chips (26 px, radius 999, 1 px kant, 11,5 px) under navnet — kun det valgte, aldrig mulighederne. Ikke valgt = »Ikke sat«. Postes og Produkter er tekst. Chippen viser bare; rækken åbner listen direkte under (v2027). Mockup: »MOCKUP - Fakta-boksen med valget i chips (16. september)«.
+
 **GEM ÆNDRINGER BLIVER PÅ BRIEFEN (Idas klik 16/9 kl. 11.38, v2031).** »Der skal laves en oversigt men indtil vi er klar til det skal man bare blive på briefen.« 4/9-reglen (Gem → briefoversigten) er sat ud af kraft; den gamle oversigt vises aldrig. En ny oversigt tegnes senere (fem bud først).
 
 **TITLEN RETTES PÅ TITLEN (Ida 16/9 kl. 11.37, v2031).** Intern titel-flisen er ude af højre spalte. Didot-titlen bærer en grå blyant (44 px trykfelt); tryk → Didot-skrivefelt i samme størrelse, Enter/klik udenfor gemmer. Uden titel står der »Ingen titel« i gråt. Datanøglen (titel, feltet bf_titel) er urørt.
