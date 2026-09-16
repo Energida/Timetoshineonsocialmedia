@@ -6084,6 +6084,8 @@ body.dash-mode #dashMain .ws-card:has(> .follow-item) .bs-sendfelt, body.dash-mo
    saa skyggen ligger inde i billedet); baandet er 28 px hoejere, saa den synlige mark er den samme som foer, og navnet + datoen
    rykker 28 px op. Luften under heroen (32 px) maales stadig fra baandets kant = arkets kant. Gaelder hele b2b: Hjem, Content
    Studio, briefen, Performance, lektionerne — computer og telefon. */
+/* HJERTET I BAANDETS HJOERNE ER UDE (Ida 16/9 kl. 08.40: »denne skal fjernes fra hjørnet på b2b«) — computer og telefon, ogsaa lektionerne. */
+body.mb .mb-hjerte, body.lek-mb #lekVis .mb-hjerte { display:none !important; }
 body.mb .mb-baand::after, body.lek-mb #lekVis .mb-baand::after { content:""; position:absolute; left:0; right:0; bottom:0; height:28px; background:#fff; border-radius:28px 28px 0 0; box-shadow:0 -6px 30px rgba(46,44,41,.22); z-index:3; pointer-events:none; }
 @media (min-width: 900px) {
   body.mb .mb-baand { height: 288px; }
@@ -6650,7 +6652,7 @@ body.plan-open .burger-btn, body.plan-open .bottom-nav, body.plan-open .dash-fab
   <div class="burger-linje"></div>
   <div id="burgerItems">
     <!-- Låst navigation (Ida 28/7): Hjem · Content · Get shit done · Performance · Værktøjskassen -->
-    <button class="burger-item" id="burgerIndbakke" onclick="toggleBurger(); indbakkenAaben()">Indbakken</button>
+    <button class="burger-item" id="burgerIndbakke" onclick="toggleBurger(); indbakkenAaben()">Indbakken <span id="burgerIndbakBadge" style="display:none;background:var(--red);color:#fff;font-size:9px;width:16px;height:16px;border-radius:50%;align-items:center;justify-content:center;flex-shrink:0;margin-left:8px;vertical-align:middle;"></span></button>
     <button class="burger-item" onclick="toggleBurger(); showTab(3)">Hjem</button>
     <button class="burger-item" id="burgerEnergi" onclick="toggleBurger(); energiAaben()">Energi</button>
     <button class="burger-item" id="burgerContent" onclick="toggleBurger(); showTab(8)">Content</button>
@@ -15182,7 +15184,31 @@ function ensTegn() {
   } catch (e) {}
 }
 let ENS_T = null;
-function ensSnart() { clearTimeout(ENS_T); ENS_T = setTimeout(ensTegn, 120); }
+function ensSnart() { clearTimeout(ENS_T); ENS_T = setTimeout(function () { ensTegn(); try { luftVagt(); } catch (e) {} }, 120); }
+/* LUFT MELLEM TEKST OG KNAP (Ida 16/9 kl. 08.36: »finder en del steder paa b2b hvor knapper sidder for taet paa teksten« — »Ingen kommende
+   aktiviteter.« + »Tilfoej aktivitet« sad klos op ad hinanden). MAALT, ikke gaettet: hver knap paa den aktive side, som staar UNDER et
+   element med tekst (ikke ved siden af), og hvor afstanden er under 12 px, faar 16 px (--luft-2) ovenover. Knapper i chip-raekker, ark,
+   modaler, kalenderens celler og baandet roeres ikke. Afstandsreglen (11/9): kun 8/16/24/32. */
+function luftVagt() {
+  if (!document.body.classList.contains("mb")) return;
+  const sk = document.querySelector(".screen.active"); if (!sk) return;
+  sk.querySelectorAll("button, a.dbtn, a.row-btn, .dbtn, .row-btn").forEach(function (k) {
+    if (k.dataset.luft) return;
+    if (k.closest(".ark, .modal, .modal-back, .mb-baand, .ark-chips, .ch-faner, .uge-dag, .cal-cell, .kal-raekke, .bottom-nav, #bottomNav, .navsti, .idea-chip, .follow-item, .bs-idag, .db-deck, select, .sendfelt, .bs-sendfelt, table")) return;
+    let f = k.previousElementSibling;
+    while (f && !f.getBoundingClientRect().height) f = f.previousElementSibling;   /* skjulte felter (fx »Tilfoej aktivitet«-formen) taeller ikke */
+    if (!f) return;
+    if (f.matches("button, .dbtn, .row-btn, .chip-btn, .ark-chip, input, textarea, select, svg, img, br, hr")) return;
+    const tekst = (f.textContent || "").trim(); if (!tekst || tekst.length < 3) return;
+    if (getComputedStyle(f).textTransform === "uppercase" || f.matches(".cf-sek, .mb-versal, .db-eye, .ws-head, .bs-sek, .pb-eye")) return;   /* en etiket (versal) er flisens hoved — dens luft er laast (FLISEN 15/9), ikke tekst foer en knap (MAALT i porten: Idébankens 1A-2B svaevede) */
+    const rk = k.getBoundingClientRect(), rf = f.getBoundingClientRect();
+    if (!rk.height || !rf.height) return;
+    if (rk.top < rf.bottom - 2) return;                                   /* staar ved siden af, ikke under */
+    const luft = rk.top - rf.bottom;
+    if (luft >= 12) return;
+    k.dataset.luft = "1"; k.style.marginTop = "16px";
+  });
+}
 try { new MutationObserver(function (m) { if (m.some(x => x.type === "childList")) ensSnart(); }).observe(document.body, { childList: true, subtree: true }); } catch (e) {}
 function markbaandSti() {
   const sk = document.querySelector(".screen.active"); if (!sk) return;
@@ -25918,13 +25944,25 @@ function indbakkeRegn() {
 /* Set-maerket for orienteringsraekker: paa enheden, pr. kode (Indbakke-360, 13/9). */
 function ibSetLaes() { try { return JSON.parse(localStorage.getItem(nsKey("ib_set")) || "{}") || {}; } catch (e) { return {}; } }
 function ibSetMark(n) { try { const m = ibSetLaes(); m[n] = 1; localStorage.setItem(nsKey("ib_set"), JSON.stringify(m)); } catch (e) {} try { setTimeout(function () { try { renderIndbakkeKort(); } catch (e) {} }, 50); } catch (e) {} }
+/* BADGEN PAA INDBAKKEN I MENUEN (Ida 16/9 kl. 08.45: »jeg har lige tilfoejet en opgave til [kunden] — der kunne jeg godt taenke mig at der kom en
+   notifikation paa indbakken i menuen saa [de] ser det naar [de] kommer ind«). Tallet = det, der venter paa kunden (Afventer din godkendelse +
+   Til dig). Tegnes i sidemenuen (computer) OG i Mere-menuen (telefon), og hver gang opgaverne eller menuen er tegnet om — foer kunne badgen
+   staa tom, fordi opgaverne kom hjem EFTER menuen var bygget. */
+function ibBadgeTegn(ib) {
+  try {
+    if (!ib) ib = indbakkeRegn();
+    const nb = (ib.handling || []).length + (ib.tildig || []).length;
+    ["snIndbakBadge", "burgerIndbakBadge"].forEach(function (id) { const b = document.getElementById(id); if (!b) return; b.textContent = nb; b.style.display = nb ? "inline-flex" : "none"; });
+  } catch (e) {}
+}
 function renderIndbakkeKort() {
+  try { ibBadgeTegn(); } catch (e) {}
   const el = document.getElementById("indbakkeKort"); if (!el) return;
   if (!CURRENT_DEF || CURRENT_DEF.type === "kursus") { el.style.display = "none"; return; }
   if (!Array.isArray(APP_OENSKER)) { try { appOenskerHent(); } catch (e) {} }   /* tegner selv om, naar de er hjemme (13/9) */
   const ib = indbakkeRegn();
   /* sidebar-badgen følger med (FINAL 5a: Indbakken øverst m. rød badge) */
-  try { const b = document.getElementById("snIndbakBadge"); const nb = ib.handling.length + ((ib.tildig || []).length); if (b) { b.textContent = nb; b.style.display = nb ? "inline-flex" : "none"; } } catch(e) {}
+  try { ibBadgeTegn(ib); } catch (e) {}
   if (!ib.handling.length && !ib.orientering.length) { el.style.display = "none"; return; }
   const raekke = (r, daempet) => '<div' + (r.aabn ? ' onclick="' + r.aabn + '" style="cursor:pointer;' : ' style="') + 'padding:13px 20px;border-bottom:1px solid var(--gray);font-size:12.5px;line-height:1.55;' + (daempet ? 'color:var(--gray3);' : '') + '" onmouseover="this.style.background=\'#FBFAF9\'" onmouseout="this.style.background=\'\'">' + r.t
     + '<div style="font-size:11px;color:var(--gray3);margin-top:2px;">' + r.s + '</div></div>';
@@ -26095,12 +26133,15 @@ function indbakkenAaben() {
      har skrevet ned" stod som raekker med streger i een hvid kasse. Nu er gruppen gennemsigtig,
      etiketten staar graa OVER fliserne (med tallet, hvis der er noget), og hver raekke er sin egen
      hvide flise med sort titel og graa forklaring. Det tomme tilfaelde er ogsaa en flise. */
-  const raekke = r => '<div' + (r.aabn ? ' onclick="' + r.aabn + '" style="cursor:pointer;' : ' style="') + 'display:flex;align-items:center;gap:14px;padding:13px 16px;background:#fff;border:1px solid var(--border);border-radius:20px;margin:0 0 6px;flex-wrap:wrap;box-sizing:border-box;">'
+  /* ORDET »ÅBN« ER UDE (Ida 16/9 kl. 08.42: »havde vi ikke fjernet alle disse knapper?«): flisen ER doeren — hele raekken aabner. Kun et ord,
+     der goer noget ANDET end at aabne (Godkend · Vælg dato · Slet · Set), staar stadig til hoejre. */
+  const raekke = r => { const aabn = r.aabn || (r.knap === "Åbn" ? r.klik : ""); const ord = (r.knap && r.knap !== "Åbn") ? r.knap : "";
+    return '<div' + (aabn ? ' onclick="' + aabn + '" style="cursor:pointer;' : ' style="') + 'display:flex;align-items:center;gap:14px;padding:13px 16px;background:#fff;border:1px solid var(--border);border-radius:20px;margin:0 0 6px;flex-wrap:wrap;box-sizing:border-box;">'
     + '<span style="font-size:13.5px;flex:1;min-width:0;">' + r.t
     + '<span style="display:block;font-size:12px;color:var(--gray3);margin-top:2px;">' + r.s + '</span></span>'
-    + (r.knap ? '<span onclick="event.stopPropagation();' + r.klik + '" style="font-size:12.5px;color:var(--red);white-space:nowrap;cursor:pointer;flex-shrink:0;">' + r.knap + '</span>' : '')
+    + (ord ? '<span onclick="event.stopPropagation();' + r.klik + '" style="font-size:12.5px;color:var(--red);white-space:nowrap;cursor:pointer;flex-shrink:0;">' + ord + '</span>' : '')
     + (r.ekstra || '')
-    + '</div>';
+    + '</div>'; };
   const sektion = (titel, rows, tomTekst) => '<div style="margin-bottom:18px;">'
     + '<div style="display:flex;align-items:center;gap:10px;margin:0 2px 8px;">'
     + '<span style="font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--gray3);">' + titel + '</span>'
@@ -38033,7 +38074,7 @@ async function refreshOpgaver() {
       if (!error && data) {
         let synlige = data.filter(o => o.aktiv !== false);   // bibliotek-opgaver er usynlige for kunden
         try { hjemKoeLaes().filter(x => x.tabel === "kunde_opgaver").forEach((x, i) => { synlige = synlige.concat([Object.assign({ id: "k" + i, kladde: true }, x.raekke)]); }); } catch (e) {}
-        if (synlige.length) { OPGAVER = synlige; renderOpgaver(); return; }
+        if (synlige.length) { OPGAVER = synlige; renderOpgaver(); try { ibBadgeTegn(); } catch (e) {} return; }
       }
     } catch(e) {}
   }
@@ -38728,6 +38769,7 @@ function buildSideNav(def) {
   } catch (e) {}
   navPinSaet(navPinLaes());
   navSkinneWire();
+  try { ibBadgeTegn(); } catch (e) {}   /* badgen paa Indbakken, ogsaa naar menuen bygges efter opgaverne (16/9) */
 }
 /* SIDEBAR IND/UD + PIN (Ida 30/7) — som bogmaerkerne i en browser: fastgjort staar menuen fast,
    frigjort falder den sammen til en smal skinne, der folder ud, naar musen er over den.
@@ -44742,7 +44784,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2001";
+const APP_VERSION = "2002";
 let NY_VERSION_KLAR = false;
 let NY_VERSION_AFVIST = false;
 function nyVersionSkjul() {
@@ -62780,6 +62822,6 @@ function prFaerdigHtml() {
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 16. september · 2001</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 16. september · 2002</div>
 </body>
 </html>

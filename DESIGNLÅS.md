@@ -16,6 +16,8 @@ Filen er kort med vilje. Hver regel kan måles. Målingen står i `tools/designl
 
 ## Låsene (dato = den dag, Ida låste)
 
+**B2B, FIRE RETTELSER 16/9 kl. 08.36–08.45 (v2002).** (1) **Luft mellem tekst og knap:** en knap, der står under tekst med under 12 px luft, får 16 px (`luftVagt`, målt pr. knap på den aktive side; chips, ark, kalenderceller røres ikke). (2) **Hjertet i markbåndets hjørne er ude** — computer og telefon. (3) **Indbakkens rækker bærer ikke ordet »Åbn«** — flisen er døren; kun ord, der gør noget andet (Godkend · Vælg dato · Slet · Set), står til højre. (4) **Badge på Indbakken i menuen** (rødt tal = Afventer din godkendelse + Til dig) i sidemenuen på computeren og Mere-menuen på telefonen, tegnet igen når opgaverne er hjemme — så kunden ser en ny opgave fra Ida, når de kommer ind.
+
 **ARKET OVER MARKEN — HELE B2B (LÅST, Ida 16/9 kl. 08.33: »tror faktisk jeg elsker bud 4!«, v2001).** Den hvide side lægger sig som et ark med runde hjørner (28 px, husets ark) 28 px op over markbåndet med en blød skygge (0 −6px 30px rgba(46,44,41,.22)). Billedet får aldrig en lige kant. Båndet er 28 px højere (288 computer · 228 telefon), navn og dato rykker 28 px op, luften under heroen er stadig 32 px fra arkets kant. Gælder alle sider med markbåndet, computer og telefon, også lektionerne. Mockup: »MOCKUP - Marken flettes ned i siden, fem bud (16. september).html« (artifact QRoem6uGSvL6g8vCsNZskH). Bud 1 udtoning, 2 flisen op i marken, 3 stråets tone, 5 marken sløret bag hele siden — ikke valgt.
 
 **INGEN »I DAG ER OPTAGEDAG« UNDER RINGEN (Ida 16/9 kl. 08.30: »den står allerede under I dag«, v2000).** Ringkortet på kundens Hjem (computer) viser kun »4 af 4 planlagt frem«; optagedagen står i I DAG-rammen (»Bliv klar til optagelse«). Én ting ét sted.
