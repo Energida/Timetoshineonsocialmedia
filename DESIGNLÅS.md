@@ -16,6 +16,8 @@ Filen er kort med vilje. Hver regel kan måles. Målingen står i `tools/designl
 
 ## Låsene (dato = den dag, Ida låste)
 
+**PLUS-KNAPPERNE I KALENDEREN OG IDÉBANKEN: GRÅ RING, RØDT PLUS (Ida 16/9 kl. 10.45, v2020).** `.uge-opret` har kanten i #DEDAD4, plusset rødt.
+
 **HJEM PÅ COMPUTEREN (Ida 16/9 kl. 10.40, v2018–v2019):** »Ida, Energida« under citatet er ude; hilsen og citat står lavere i båndet (40 px fra kanten). **»Kommende indhold« er helt ude af Hjem** — forvarslerne bor i kalenderen.
 
 **KUNDESIDEN = TRE DØRE (Idas klik 16/9 kl. 10.35, nattens punkt 6, v2017).** »Alt om kunden« har Kundekortet · Se som kunden · Aftaler (kundekortet rullet til aftalerne). Briefs, Kalenderen, Noter, Drejebogen og den løse »Se som kunden«-knap er ude — én dør pr. mål. **Kommende indhold** på kundens Hjem har ingen cirkel (kl. 10.38) — kun I dag har den.
