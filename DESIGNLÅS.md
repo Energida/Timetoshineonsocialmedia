@@ -16,7 +16,10 @@ Filen er kort med vilje. Hver regel kan måles. Målingen står i `tools/designl
 
 ## Låsene (dato = den dag, Ida låste)
 
-**DROPDOWNEN I FAKTA-BOKSEN KOMMER MED DET SAMME (Ida 16/9 kl. 11.12, v2027).** Et tryk på Format · Platform · Vibe · Lyd i briefens fakta-boks viser listen (bud 3-kortet) direkte under rækken — ingen mellemflise med etiket og pille. Flere valg (Platform, Lyd) holder listen åben, til man trykker på rækken igen (Ida 16/9 kl. 11.10: »når jeg har klikket en af her forsvinder den«); ét valg lukker rækken. Postes · Ansvarlig · Produkter · Link · Inspiration beholder flisen (de har felter, ikke lister). Telefonens brief er uændret (fakta rettes i trin-fliserne).
+**EN ÆNDRING ÆNDRES ALLE STEDER — TJEK RESTEN AF SIDEN OG SYSTEMET FØRST (HÅRD, Idas ord 16/9 kl. 11.26: »Når Ida ber mig om at lave en ændring — skal jeg tjekke resten af siden og systemet for samme funktioner/design og ændre alle steder!«).** Dropdownen i fakta-boksen blev lavet for Format · Platform · Vibe · Lyd, men ikke for Ansvarlig, som er den samme liste (v2029 rettet). Før noget deployes: søg hele siden OG hele appen (admin + b2b) efter det samme element, den samme funktion og det samme design, og ret alle fund i samme commit. »Det er så frustrerende du ikke færdiggør tingene og jeg skal bruge så meget tid på at finde fejl.«
+
+
+**DROPDOWNEN I FAKTA-BOKSEN KOMMER MED DET SAMME (Ida 16/9 kl. 11.12, v2027).** Et tryk på Format · Platform · Vibe · Ansvarlig · Lyd i briefens fakta-boks viser listen (bud 3-kortet) direkte under rækken — ingen mellemflise med etiket og pille. Flere valg (Platform, Lyd) holder listen åben, til man trykker på rækken igen (Ida 16/9 kl. 11.10: »når jeg har klikket en af her forsvinder den«); ét valg lukker rækken. Postes · Produkter · Link · Inspiration beholder flisen (de har felter, ikke lister). Telefonens brief er uændret (fakta rettes i trin-fliserne).
 
 **PRODUKTER-FLISEN BOR KUN I FAKTA-BOKSEN (Ida 16/9 kl. 11.23, v2028).** »Link til produkter der skal med« / »Hvad skal med i indholdet?« står aldrig i højre spalte — hverken tom (knappen) eller udfyldt (feltet); den folder ud under rækken Produkter i fakta-boksen.
 
