@@ -16,6 +16,14 @@ Filen er kort med vilje. Hver regel kan måles. Målingen står i `tools/designl
 
 ## Låsene (dato = den dag, Ida låste)
 
+**DROPDOWNEN I FAKTA-BOKSEN KOMMER MED DET SAMME (Ida 16/9 kl. 11.12, v2027).** Et tryk på Format · Platform · Vibe · Lyd i briefens fakta-boks viser listen (bud 3-kortet) direkte under rækken — ingen mellemflise med etiket og pille. Flere valg (Platform, Lyd) holder listen åben, til man trykker på rækken igen (Ida 16/9 kl. 11.10: »når jeg har klikket en af her forsvinder den«); ét valg lukker rækken. Postes · Ansvarlig · Produkter · Link · Inspiration beholder flisen (de har felter, ikke lister). Telefonens brief er uændret (fakta rettes i trin-fliserne).
+
+**MÅLGRUPPEN STÅR I HØJRE SPALTE UNDER IDÉEN (Ida 16/9 kl. 11.15, v2027).** »Hvem taler indholdet til?« står efter Indholdssøjle i Idéen-gruppen — ikke som række i fakta-boksen. Fakta-boksen: Format · Platform · Vibe · Postes · Ansvarlig · Lyd · Produkter.
+
+**SALG › PRODUKTER RUMMER PRISERNE (Idas klik 16/9 kl. 11.08, v2026–v2027).** Døren Priser er ude af Salg; Produkter er en liste af døre (rummenes produkt-felt ∪ prislisten), heroen hedder Produkter, sendefeltet »Tilføj produkt«. Prisen og betalingslinket rettes øverst på produktsiden (Gem prisen · Åbn betalingslink).
+
+**TÆPPET LETTER, NÅR SIDEN HAR MØBLER — IKKE 40 TEGN (MÅLT 16/9 kl. 11.20, v2027).** Ida fik »Appen kunne ikke starte« tre gange i Backstage: hendes sidste side var Energida Studio (»Mine rum Idéer App-ønskelisten« = 30 tegn), og vagten krævede 40 tegn ud over møblerne. Nu er en dør + et navn nok (`erAppenDer`, `sideKlarNaar`). Reglen består: tæppet løftes aldrig op i en tom side.
+
 **LEKTIONSTITLERNE I ENERGIDA STUDIO STÅR I VERSALER (Ida 16/9 kl. 11.06, v2025).** Poppins 14, 1 px spatiering, uppercase i visningen — ordene i basen er urørte.
 
 **KOMMENDE AKTIVITETER = SAMME FORM SOM TO-DO (Ida 16/9 kl. 11.05: »der er igen ikke synk … overskriften over det ene sted og ikke det andet«, v2024).** På kundens Hjem står de to sektioner side om side og har nu samme form: etiket grå over (uden ikon og streg), hver aftale en hvid flise med skygge, den tomme sætning en flise, plusset under. **REGEL:** to sektioner side om side på samme side har ALTID samme etiket-form. **UX-politiet gælder ALT** (Ida kl. 11.10: »når jeg siger at ux politiet skal køre alt igennem mener jeg alt«) — også fejlflader (»Appen kunne ikke starte«), loadere og popups; fejlfladen tages i b2b-runden som husets ark.
