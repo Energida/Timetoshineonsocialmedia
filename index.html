@@ -16387,7 +16387,7 @@ let BRIEF_SIDE_AKTIV = 0;
 let BRIEF_MB_VIS = "forside";
 function briefMbVis(vis, n) {
   BRIEF_MB_VIS = vis === "skriv" ? "skriv" : "forside";
-  if (typeof n === "number") BRIEF_SIDE_AKTIV = n;
+  if (typeof n === "number") { BRIEF_SIDE_AKTIV = n; BRIEF_TRIN_AKTIV = 0; }
   try { briefSideVis(BRIEF_SIDE || 0); } catch (e) {}
   try { const c = document.querySelector(".content"); if (c) c.scrollTop = 0; window.scrollTo(0, 0); } catch (e) {}
 }
@@ -16593,13 +16593,20 @@ function briefSiderTegn(G, grupper, wrap, navM, bud) {
     tal.style.display = "";
   }
   else if (bud === 7) {
-    /* PRODUKTION (16/9 aften): »Tilbage til forsiden« tv. + »FANG DEM · 2 AF 4« th.; hovederne folder ikke — de er sidens titel */
+    /* PRODUKTION (16/9 aften): »Tilbage til forsiden« tv. + »FANG DEM · 2 AF 4« th.; hovederne folder ikke — de er sidens titel.
+       EET FELT AD GANGEN INDEN FOR AFSNITTET (Idas klik 16/9 kl. 23.20 »For meget paa hver side« — reglen: ingen side laengere end skaermen paa 1440;
+       moderne design = eet spoergsmaal ad gangen som strategibyggeren): Naeste bladrer felt for felt, afsnittet er den roede bjaelke. */
     const hvor = ["Retning", "Fang dem", "Fasthold dem", "Få dem til at handle"];
     bar.innerHTML = '<div class="bss-top"><button type="button" class="bss-hjem" onclick="briefMbVis(\'forside\')"><svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg>Tilbage til forsiden</button><span class="bss-hvor">' + esc(hvor[akt] || navne[akt]) + ' · ' + (akt + 1) + ' af ' + sider.length + '</span></div>';
     wrap.querySelectorAll(".brief-raketkort.bsd-titel").forEach(function (h) { h.removeAttribute("onclick"); h.removeAttribute("role"); h.removeAttribute("tabindex"); });
     const fs = document.getElementById("briefForside"); if (fs) fs.style.display = "none";
     document.body.removeAttribute("data-bforside");
     navM.style.cssText = "";
+    const ti = briefTrinAnvend(wrap, sider, akt);
+    navM.innerHTML = (akt > 0 || ti.t > 0 ? '<button type="button" class="dbtn bsd-tilbage" onclick="briefTrinGaa(-1)">Tilbage</button>' : '<span></span>')
+      + ((akt === sider.length - 1 && ti.t === ti.n - 1) ? briefSendKnapHtml() + '<button type="button" class="dbtn primary" onclick="briefSkrivGem(this)">Gem ændringer</button>' : '<button type="button" class="dbtn primary" onclick="briefTrinGaa(1)">Næste</button>');
+    navM.classList.add("bsd-nav");
+    return;
   }
   else bar.innerHTML = '<div class="bsd-sek"><span>' + esc(navne[akt]) + '</span><span class="bsd-tal">' + (akt + 1) + ' af ' + sider.length + '</span></div>';
   /* navigationen nederst */
@@ -16607,6 +16614,46 @@ function briefSiderTegn(G, grupper, wrap, navM, bud) {
   navM.innerHTML = (akt > 0 ? '<button type="button" class="dbtn bsd-tilbage" onclick="briefSideGaa(' + (bud === 6 ? 0 : akt - 1) + ')">' + (bud === 6 ? 'Tilbage til forsiden' : 'Tilbage') + '</button>' : '<span></span>')
     + (sidste ? (bud === 7 ? briefSendKnapHtml() : '') + '<button type="button" class="dbtn primary" onclick="' + (bud === 7 ? 'briefSkrivGem(this)' : 'briefGemNu(this)') + '">Gem ændringer</button>' : '<button type="button" class="dbtn primary" onclick="briefSideGaa(' + (akt + 1) + ')">Næste</button>');
   navM.classList.add("bsd-nav");
+}
+/* TRINNENE INDEN FOR ET AFSNIT: hvert oeverste .sk-q paa siden er eet trin; paa Retning er soejle-bjaelken + guiden trin 0. Fakta-felterne (de flyttes til
+   fakta-boksen af briefFaktaFelterFlyt) og felter, motoren selv har skjult, taeller ikke. Skjulte trin baerer data-trin-skjult, saa de kan taendes igen. */
+let BRIEF_TRIN_AKTIV = 0, BRIEF_TRIN_INFO = { t: 0, n: 1 };
+function briefTrinAnvend(wrap, sider, akt) {
+  wrap.querySelectorAll("[data-trin-skjult]").forEach(function (e) { const p = e.closest("[data-bside]"); e.style.display = (p && p.getAttribute("data-bside") !== String(akt)) ? "none" : ""; e.removeAttribute("data-trin-skjult"); });
+  const FAKTA = "#bdrop_vibe, #bdrop_soejle, #bf_titel, #bdrop_format, #bdrop_platform, #bf_dato, #bf_optagedag, #briefPersonRow, #briefPersonValg, #bdrop_hvemLaver, #bdrop_lyd, #bf_medIIndhold, #bfMedIPlads, #bf_inspiration, #bf_linkIndhold";
+  const alle = [];
+  sider[akt].forEach(function (el) {
+    if (el.style.display === "none") return;
+    const q = el.classList.contains("sk-q") ? [el] : [].slice.call(el.querySelectorAll(".sk-q"));
+    q.forEach(function (f) {
+      if (f.closest("#briefRail, #fbFelter")) return;
+      if (f.parentElement && f.parentElement.closest(".sk-q")) return;   /* et felt inde i et felt er ikke sit eget trin */
+      if (f.querySelector(FAKTA)) return;
+      if (f.style.display === "none") return;
+      if (alle.indexOf(f) === -1) alle.push(f);
+    });
+  });
+  const dh = wrap.querySelector(".brief-dbog-hoved"), df = wrap.querySelector(".brief-dbog-flise"), ih = wrap.querySelector(".brief-ide-hoved");
+  const trin = [];
+  if (akt === 0 && dh && df) trin.push([dh, df]);
+  alle.forEach(function (f) { trin.push([f]); });
+  if (!trin.length) trin.push([]);
+  const t = Math.max(0, Math.min(trin.length - 1, BRIEF_TRIN_AKTIV)); BRIEF_TRIN_AKTIV = t;
+  const vis = trin[t];
+  const skjul = function (e) { if (!e) return; e.style.display = "none"; e.setAttribute("data-trin-skjult", "1"); };
+  alle.forEach(function (f) { if (vis.indexOf(f) === -1) skjul(f); });
+  if (akt === 0) { if (vis.indexOf(dh) === -1) { skjul(dh); skjul(df); } else { skjul(ih); } }
+  /* et kort, hvis felter alle er skjult, skjules med (ellers staar dets luft tilbage) */
+  sider[akt].forEach(function (el) { if (el.classList.contains("basis-kort") && !el.querySelector(".sk-q:not([data-trin-skjult])")) skjul(el); });
+  BRIEF_TRIN_INFO = { t: t, n: trin.length };
+  return BRIEF_TRIN_INFO;
+}
+function briefTrinGaa(d) {
+  const i = BRIEF_TRIN_INFO || { t: 0, n: 1 };
+  if (d > 0) { if (i.t < i.n - 1) BRIEF_TRIN_AKTIV = i.t + 1; else { BRIEF_SIDE_AKTIV = BRIEF_SIDE_AKTIV + 1; BRIEF_TRIN_AKTIV = 0; } }
+  else { if (i.t > 0) BRIEF_TRIN_AKTIV = i.t - 1; else { BRIEF_SIDE_AKTIV = Math.max(0, BRIEF_SIDE_AKTIV - 1); BRIEF_TRIN_AKTIV = 999; } }
+  try { saveBrief(true); } catch (e) {}
+  briefMbVis("skriv");
 }
 /* »Send til godkendelse« (hvid) staar ved siden af Gem paa sidste skriveside — kun for kunder, der kan sende (samme regel som bundraekken) */
 function briefSendKnapHtml() {
@@ -16647,9 +16694,13 @@ function briefFaktaFelterFlyt() {
   const rail = document.getElementById("briefRail"); if (!rail) return;
   let hold = rail.querySelector("#fbFelter");
   if (!hold) { hold = document.createElement("div"); hold.id = "fbFelter"; hold.style.display = "none"; rail.appendChild(hold); }
-  /* Gamle flyttede fliser (fra en tidligere tegning af briefWrap) smides ud — wrap har lige faaet nye med samme id'er. */
-  rail.querySelectorAll(".fb-ud").forEach(u => u.remove());
+  /* Gamle flyttede fliser (fra en tidligere tegning af briefWrap) smides KUN ud, naar wrap faktisk har faaet nye med samme id'er
+     (MAALT 16/9 kl. 23.30: briefSideVis alene — uden openBriefSide — tegner ikke wrap om, og saa forsvandt bf_dato m.fl. for altid). */
+  const wrap0 = document.getElementById("briefWrap");
   Object.keys(FB_FELTER).forEach(key => {
+    const nyt = FB_FELTER[key].some(id => { const el = document.getElementById(id); return el && wrap0 && wrap0.contains(el); });
+    if (!nyt) return;   /* wrap har ingen nye felter til denne raekke — de flyttede bliver, hvor de er */
+    rail.querySelectorAll('.fb-ud[data-for="' + key + '"]').forEach(u => u.remove());
     const ud = document.createElement("div"); ud.className = "fb-ud"; ud.setAttribute("data-for", key); ud.style.display = "none";
     FB_FELTER[key].forEach(id => {
       const el = document.getElementById(id); if (!el) return;
@@ -21299,7 +21350,10 @@ async function saveBrief(stille) {
      et gem fra en anden side aldrig kan toemme dem. */
   if (document.querySelector('[id^="bf_thumb_f"]')) { try { briefForslagLaes("thumb"); } catch(e) {} }
   const datoEl = document.getElementById("bf_dato");
-  const nyDato = datoEl ? (datoEl.value || null) : null;
+  /* GEM MAA IKKE SLETTE (4/8): findes datofeltet ikke paa skaermen, bliver datoen, som den var (MAALT 16/9 kl. 23.30: skrivesidernes
+     Naeste satte datoen til null, fordi feltet var flyttet vaek — »Postes · Ikke sat« i fakta-boksen). */
+  const itDato = (IDEER.find(x => x.id === BRIEF_ID) || {}).dato || null;
+  const nyDato = datoEl ? (datoEl.value || null) : itDato;
   const tidEl = document.getElementById("bf_tid");
   if (tidEl) BRIEF_STATE.tid = tidEl.value || null;
   const optEl = document.getElementById("bf_optagedag");
@@ -46408,7 +46462,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2066";
+const APP_VERSION = "2067";
 let NY_VERSION_KLAR = false;
 let NY_VERSION_AFVIST = false;
 function nyVersionSkjul() {
@@ -64568,6 +64622,6 @@ function prFaerdigHtml() {
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 16. september · 2066</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 16. september · 2067</div>
 </body>
 </html>
