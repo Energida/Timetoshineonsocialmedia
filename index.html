@@ -26285,6 +26285,36 @@ async function appOenskerHent() {
   try { if (typeof hjemFacitTegn === "function") hjemFacitTegn(); } catch (e) {}
   return APP_OENSKER;
 }
+/* PLACÉR — kundens noter (Ida 16/9 kl. 10.20: »det samme gør sig gældende for b2b siden«): arket med chips Content-idé · To-do · Slet. */
+function kundePlacerAabn(id) {
+  const r = (KUNDE_NOTER || []).find(function (x) { return String(x.id) === String(id); }); if (!r) return;
+  let m = document.getElementById("bsFlytMenu"); if (!m) { m = document.createElement("div"); m.id = "bsFlytMenu"; document.body.appendChild(m); }
+  const idS = String(id).replace(/'/g, "\\'");
+  m.innerHTML = '<div class="bs-flyt-ark"><div class="bs-sek" style="margin:0 2px 10px;">Placér</div>'
+    + '<div style="font-size:12.5px;color:var(--gray3);line-height:1.6;margin:0 2px 12px;">' + esc(String(r.t || "")) + '</div>'
+    + '<div class="ark-chips i-fladen" style="margin:0 0 12px;flex-wrap:wrap;">'
+    + '<button type="button" class="mq-tap ark-chip" onclick="kundePlacerNu(\'' + idS + '\',\'ide\')">Content-idé</button>'
+    + '<button type="button" class="mq-tap ark-chip" onclick="kundePlacerNu(\'' + idS + '\',\'todo\')">To-do</button>'
+    + '<button type="button" class="mq-tap ark-chip" onclick="bsFlytLuk();kundeNoteSlet(\'' + idS + '\')">Slet</button></div>'
+    + '<button type="button" class="bsam-mobknap bsam-mobknap-sek bs-knap" style="display:block;width:100%;margin:6px 0 0;" onclick="bsFlytLuk()">Luk</button></div>';
+  m.style.display = "flex"; m.onclick = function (e) { if (e.target === m) bsFlytLuk(); };
+}
+async function kundePlacerNu(id, k) {
+  const r = (KUNDE_NOTER || []).find(function (x) { return String(x.id) === String(id); }); if (!r) return;
+  bsFlytLuk();
+  const t = String(r.t || "");
+  if (k === "ide") {
+    /* Idé uden soejle: aabn Ny idé-arket med teksten og chippen Content-idé — soejlen vaelges dér (reglen 14/9) */
+    try { kundeArkAabn("ide", false, t, true); } catch (e) {}
+    await kundeNoteSlet(id); return;
+  }
+  if (k === "todo") {
+    let ok = false;
+    try { const res = await sb.from("kunde_opgaver").insert({ kode: currentKode, titel: t, ansvarlig: CURRENT_NAVN || null }).select(); ok = !!(res.data && res.data.length); } catch (e) { ok = false; }
+    if (!ok) { husBesked("Kunne ikke lægge den på to-do — prøv igen."); return; }
+    await kundeNoteSlet(id); try { await refreshOpgaver(); } catch (e) {} husBesked("Lagt på to-do."); return;
+  }
+}
 async function kundeNoteSlet(id) {
   await kundeNoterHent();
   const ud = (KUNDE_NOTER || []).filter(function (x) { return String(x.id) !== String(id); });
@@ -26341,7 +26371,7 @@ function indbakkenAaben() {
         ? sektion('Det du har skrevet ned',
             KUNDE_NOTER.map(function (n) {
               return { t: esc(n.t || ""), s: n.dato ? dkDatoKort(String(n.dato)) : "",
-                       knap: "Slet", klik: "kundeNoteSlet('" + String(n.id).replace(/'/g, "\\'") + "')" };
+                       knap: "Placér", klik: "kundePlacerAabn('" + String(n.id).replace(/'/g, "\\'") + "')" };   /* Placér (Ida 16/9): Idé · To-do; Slet ligger i arket */
             }), '')
         : '')
     + sektion('Til orientering', ib.orientering, 'Ingenting nyt.')   /* aftalerne bor paa Hjem siden 3/8 — den gamle tomtekst loej (13/9) */
@@ -43810,13 +43840,58 @@ function bsTodoNy() {
   try { dashForsideTegn(); } catch (e) {}
 }
 /* ===== INDBAKKEN (8/9 kl. 16.01): det, der venter paa Ida — kort med svar, og »Læg på to-do« ===== */
+/* ===== INDBAKKEN (Ida 16/9 kl. 10.20: »når jeg har tilføjet noget i jeg skal bare have skrevet det ned, skal det lande i min indbakke
+   hvorfra jeg skal placere det … det skal altså ikke komme op under to-do«) =====
+   Oeverst: SKREVET NED (RODEBUTIK) som 9B-fliser uden cirkel — ordet »Placér« til hoejre aabner arket med chips (To-do · Content Studio ·
+   Workout · Food · Mindful · Manus · App-oenske). Placeret = noten flyttes derhen (samme motorer som Toem hovedet-arket, nyIdeGem) og
+   forsvinder fra Indbakken. Slet ved langt tryk/swipe som andre fliser. Under: VENTER PAA DIG (kundernes retur/oensker) som foer. */
 async function indbakkeTegn() {
   const el = document.getElementById("bsIndbakke"); if (!el) return;
+  try { await rodebutikHent(); } catch (e) {}
   let venter = []; try { venter = await venterHent(); } catch (e) { venter = []; }
+  const noter = (RODEBUTIK || []).slice();
   el.innerHTML = '<div class="bs-hero bs-hero-streg">Indbakken</div>'
+    + '<div class="bs-sek">Skrevet ned</div>'
+    + (noter.length ? noter.map(function (r) {
+        return '<div class="idag-flise" style="cursor:default;" data-rode="' + esc(String(r.id)) + '"><span class="idag-tekst"><span class="idag-titel" style="white-space:normal;">' + esc(String(r.t || r.tekst || "")) + '</span><span class="idag-sub">' + esc(String(r.dato || "")) + '</span></span>'
+          + '<button type="button" class="row-btn mq-tap" style="flex-shrink:0;color:var(--red);" onclick="bsPlacerAabn(\'' + esc(String(r.id)) + '\')">Placér</button>'
+          + '<button type="button" class="row-btn mq-tap bs-skjult" style="flex-shrink:0;" onclick="bsRodeSlet(\'' + esc(String(r.id)) + '\')">Slet</button></div>';
+      }).join("") : '<div class="idag-flise tom">Ingenting skrevet ned.</div>')
+    + '<div class="bs-sek" style="margin-top:24px;">Venter på dig</div>'
     + (venter.length ? venter.map(function (v, i) { return venterKortHtml(v, i).replace('</div></div>', '</div><button type="button" class="bs-rk-todo" onclick="venterTilTodo(' + i + ', this)">Læg på to-do</button></div>'); }).join("")
-                     : '<div class="bs-kf bs-tom">Der venter ikke noget på dig.</div>');
+                     : '<div class="idag-flise tom">Der venter ikke noget på dig.</div>');
   try { navstiBackstage("indbakke"); } catch (e) {}
+  try { bsIndbakkeBadge(); } catch (e) {}
+}
+const BS_PLACER_CHIPS = [
+  { k: "todo",    n: "To-do" }, { k: "cs", n: "Content Studio" }, { k: "workout", n: "Workout Studio" }, { k: "food", n: "Food Studio" },
+  { k: "mindful", n: "Mindful Studio" }, { k: "manus", n: "Manus" }, { k: "app", n: "App-ønske" }
+];
+function bsPlacerAabn(id) {
+  const r = (RODEBUTIK || []).find(function (x) { return String(x.id) === String(id); }); if (!r) return;
+  let m = document.getElementById("bsFlytMenu"); if (!m) { m = document.createElement("div"); m.id = "bsFlytMenu"; document.body.appendChild(m); }
+  m.innerHTML = '<div class="bs-flyt-ark"><div class="bs-sek" style="margin:0 2px 10px;">Placér</div>'
+    + '<div style="font-size:12.5px;color:var(--gray3);line-height:1.6;margin:0 2px 12px;">' + esc(String(r.t || r.tekst || "")) + '</div>'
+    + '<div class="ark-chips i-fladen" style="margin:0 0 12px;flex-wrap:wrap;">' + BS_PLACER_CHIPS.map(function (c) { return '<button type="button" class="mq-tap ark-chip" onclick="bsPlacerNu(\'' + esc(String(id)) + '\',\'' + c.k + '\')">' + c.n + '</button>'; }).join("") + '</div>'
+    + '<button type="button" class="bsam-mobknap bsam-mobknap-sek bs-knap" style="display:block;width:100%;margin:6px 0 0;" onclick="bsFlytLuk()">Luk</button></div>';
+  m.style.display = "flex"; m.onclick = function (e) { if (e.target === m) bsFlytLuk(); };
+}
+async function bsPlacerNu(id, k) {
+  const r = (RODEBUTIK || []).find(function (x) { return String(x.id) === String(id); }); if (!r) return;
+  bsFlytLuk();
+  let svar = false;
+  try { svar = await nyIdeGem(String(r.t || r.tekst || ""), k); } catch (e) { svar = false; }
+  if (svar === false) { husBesked("Kunne ikke placere — prøv igen."); return; }
+  RODEBUTIK = RODEBUTIK.filter(function (x) { return String(x.id) !== String(id); }); rodebutikGem();
+  husBesked(typeof svar === "string" ? svar : "Placeret.");
+  try { indbakkeTegn(); } catch (e) {}
+}
+function bsRodeSlet(id) { RODEBUTIK = RODEBUTIK.filter(function (x) { return String(x.id) !== String(id); }); rodebutikGem(); try { indbakkeTegn(); } catch (e) {} }
+function bsIndbakkeBadge() {
+  try {
+    const n = (RODEBUTIK || []).length + ((window.__VENTER || []).length || 0);
+    document.querySelectorAll("[data-doer-m=indbakke] .dsb-badge").forEach(function (b) { b.textContent = n; b.style.display = n ? "inline-flex" : "none"; });
+  } catch (e) {}
 }
 function venterTilTodo(i, knap) {
   const v = (window.__VENTER || [])[i]; if (!v) return;
@@ -43853,6 +43928,7 @@ function fliseP(k) {
    Hold uden at traekke → menuen »Flyt til …« (Hjem · Dine rum · Content Studio · Food Studio) for doere i registret (doer_placering).
    Alt gemmes i skema_svar gennem vaneGemRow — ingen ny tabel. Rum-fliser og kort-doere kan kun flyttes rundt, ikke til en anden side. */
 const BS_DOER_DEF = {
+  indbakke: { n: "Indbakken", k: "visDashSide('indbakke')", hjem: "hjem" },   /* Indbakken (Ida 16/9 kl. 10.25) */
   kunder: { n: "Kunder", k: "visDashSide('crm')", hjem: "hjem" },
   minerum: { n: "Mine rum", k: "visDashSide('energida')", hjem: "hjem" }, energidastudio: { n: "Energida Studio", k: "visDashSide('klip')", hjem: "hjem" },
   ideer: { n: "Idéer", k: "mrGaaTil('ideer')", hjem: "energida" }, appoensker: { n: "App-ønskelisten", k: "mrGaaTil('appfunk')", hjem: "energida" },   /* EEN ideliste + EEN app-oenskeliste under Mine rum (Idas klik 16/9 kl. 08.05) */
@@ -43937,6 +44013,7 @@ function bsErComputer() { try { return window.matchMedia("(min-width:1000px)").m
    STUDIO«): Kunder · Salg · Content Studio foerst. Hvert punkt har sit EGET ikon i den smalle skinne (14/9 kl. 15.40: fire ens
    kalendere og to ens personer var ulaeselige). Husets streg: 24-grid, 1.9 px, runde ender. */
 const BS_MENU_DOERE = [
+  { id: "indbakke", n: "Indbakken", k: "visDashSide('indbakke')", side: "indbakke", ik: '<path d="M4 13h4l1.5 3h5L16 13h4"/><path d="M4 13V7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v6"/><path d="M4 13v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4"/>' },   /* Indbakken (Ida 16/9 kl. 10.25) */
   { id: "kunder", n: "Kunder", k: "visDashSide('crm')", side: "crm", ik: "person" },
   { id: "salg", n: "Salg", k: "mrGaaTil('salg')", side: "salg", ik: '<path d="M4 20v-9M10 20V5M16 20v-6M2 20h20"/>' },
   { id: "contentstudio", n: "Content Studio", k: "mrGaaTil('contentstudio')", side: "contentstudio", ik: '<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/>' },
@@ -44010,11 +44087,12 @@ function dsbDoereTegn(aktivSide) {
   const vink = '<svg class="dsb-vink" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>';
   el.innerHTML = BS_MENU_DOERE.map(function (d) {
     const under = bsMenuUnder(d.id); const aab = BS_MENU_AABEN === d.id;
-    return '<button type="button" class="dsb-doer' + (aab ? ' on aab' : '') + '" data-doer-m="' + d.id + '" title="' + esc(d.n) + '" aria-label="' + esc(d.n) + '" onclick="dsbDoerKlik(\'' + d.id + '\')">' + bsMenuIkon(d) + '<span class="dsb-doer-t">' + esc(d.n) + '</span>' + (under.length ? vink : '') + '</button>'
+    return '<button type="button" class="dsb-doer' + (aab ? ' on aab' : '') + '" data-doer-m="' + d.id + '" title="' + esc(d.n) + '" aria-label="' + esc(d.n) + '" onclick="dsbDoerKlik(\'' + d.id + '\')">' + bsMenuIkon(d) + '<span class="dsb-doer-t">' + esc(d.n) + '</span>' + (d.id === "indbakke" ? '<span class="dsb-badge" style="display:none;background:var(--red);color:#fff;font-size:9px;width:16px;height:16px;border-radius:50%;align-items:center;justify-content:center;flex-shrink:0;margin-left:8px;"></span>' : '') + (under.length ? vink : '') + '</button>'
       + '<div class="dsb-under-liste">' + under.map(function (u) { return '<button type="button" class="dsb-under" onclick="' + u.k.replace(/"/g, "&quot;") + '">' + esc(u.n) + '</button>'; }).join("") + '</div>';
   }).join("");
   /* Menuen tegnes EEN gang til, naar placeringer, rum og naale er i hus — ellers staar den med boot-tidens tomme data. */
   if (!window.__MENU_DATA_KLAR) { window.__MENU_DATA_KLAR = true; Promise.all([bsFlytHent(), mrRumHent(), kundePinsHent()]).then(function () { dsbDoereTegn(); }).catch(function () {}); }
+  try { bsIndbakkeBadge(); if (!window.__RODE_TIL_BADGE) { window.__RODE_TIL_BADGE = true; rodebutikHent().then(bsIndbakkeBadge).catch(function () {}); } } catch (e) {}
 }
 function dsbDoerKlik(id) {
   const d = BS_MENU_DOERE.find(function (x) { return x.id === id; }); if (!d) return;
@@ -44995,7 +45073,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2012";
+const APP_VERSION = "2013";
 let NY_VERSION_KLAR = false;
 let NY_VERSION_AFVIST = false;
 function nyVersionSkjul() {
@@ -50662,7 +50740,8 @@ function visDashSide(side) {
      haengende og skjule blokke, naeste gang man kom tilbage. */
   if (side !== "maskinrum") { document.body.classList.remove("mr-mobil"); document.body.removeAttribute("data-mrvis"); }
   if (side === "forretning") side = "maskinrum";   // rummene er slaaet sammen (Idas beslutning 17/7)
-  if (side === "indbakke") side = "crm";   /* 8/9 kl. 16.13: Kundeopgaverne ligger oeverst paa Kunderne — Indbakken er samme ting */       // BACKSTAGE 2027: Indbakken er forsidens »Venter paa dig«
+  /* INDBAKKEN ER TILBAGE (Ida 16/9 kl. 10.25: »jeg skal have en indbakke«) — 8/9-omdirigeringen til Kunderne er ude. */
+  /* if (side === "indbakke") side = "crm"; */   /* 8/9 kl. 16.13: Kundeopgaverne ligger oeverst paa Kunderne — Indbakken er samme ting */       // BACKSTAGE 2027: Indbakken er forsidens »Venter paa dig«
   if (side === "overblik") setTimeout(() => { try { ovForside(); } catch(e) {} try { godkKoeHent(); } catch(e) {} try { hjemMobilOrden(); } catch(e) {} try { dashForsideTegn(); } catch(e) {} }, 0);
   /* CRM-tabellens tal hentes samlet, saa der ikke laves eet kald pr. raekke (designpakken 1c) */
   if (side === "energida") setTimeout(() => { try { energidaTegn(BS_ENERGIDA_VISNING); } catch(e) {} }, 0);
@@ -50705,7 +50784,8 @@ function visDashSide(side) {
   /* INDBAKKEN (Ida 25/8): henter det, siden viser — feedet og det, der er skrevet ned
      under Toem hovedet. Hver sin try, saa en fejl i den ene ikke tier den anden ihjel. */
   if (side === "indbakke") setTimeout(async () => {
-    try { ovSidenSidst(); } catch(e) {}
+    try { await indbakkeTegn(); } catch (e) {}   /* Indbakken 16/9: Skrevet ned + Venter paa dig */
+    try { sideKlarNaar("bsIndbakke"); } catch (e) {}
     try { await rodebutikHent(); } catch(e) {}
     try { gsdDashRender(); } catch(e) {}
   }, 0);
@@ -63033,6 +63113,6 @@ function prFaerdigHtml() {
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 16. september · 2012</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 16. september · 2013</div>
 </body>
 </html>
