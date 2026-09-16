@@ -150,7 +150,7 @@ setTimeout(async function () {
         var erIdentitet = el.classList.contains("bs-eye") && !el.classList.contains("pb-eye") && !el.classList.contains("pb-sek")
           && overEl.classList && (overEl.classList.contains("bs-hero") || overEl.classList.contains("ch-titel"));
         var ok = erIdentitet ? (gOver + 4 < gUnder) : (gUnder + 4 < gOver);
-        if (!ok) svaever.push((el.className.toString().split(" ")[0] || "etiket") + ' "' + (el.textContent || "").trim().slice(0, 16) + '" over=' + gOver + " under=" + gUnder);
+        if (!ok) svaever.push((el.className.toString().split(" ")[0] || "etiket") + ' "' + (el.textContent || "").trim().slice(0, 16) + '" over=' + gOver + " (" + overEl.tagName + "." + (overEl.className.toString().split(" ")[0] || "") + ") under=" + gUnder + " (" + underEl.tagName + "." + (underEl.className.toString().split(" ")[0] || "") + ")");   /* 16/9: naboerne staar med, saa fundet kan findes */
       });
       if (svaever.length) { console.log("SELE SIDER FEJL " + navn + " etiket svaever (" + svaever.length + "): " + svaever.slice(0, 5).join(", ")); fejl++; }
       var kryds = [].filter.call(r.querySelectorAll(".modal-close"), function (k) { return getComputedStyle(k).display !== "none" && k.getBoundingClientRect().height > 0; });
