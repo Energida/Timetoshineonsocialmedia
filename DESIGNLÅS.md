@@ -18,6 +18,8 @@ Filen er kort med vilje. Hver regel kan måles. Målingen står i `tools/designl
 
 **DROPDOWNEN I FAKTA-BOKSEN KOMMER MED DET SAMME (Ida 16/9 kl. 11.12, v2027).** Et tryk på Format · Platform · Vibe · Lyd i briefens fakta-boks viser listen (bud 3-kortet) direkte under rækken — ingen mellemflise med etiket og pille. Flere valg (Platform, Lyd) holder listen åben, til man trykker på rækken igen (Ida 16/9 kl. 11.10: »når jeg har klikket en af her forsvinder den«); ét valg lukker rækken. Postes · Ansvarlig · Produkter · Link · Inspiration beholder flisen (de har felter, ikke lister). Telefonens brief er uændret (fakta rettes i trin-fliserne).
 
+**PRODUKTER-FLISEN BOR KUN I FAKTA-BOKSEN (Ida 16/9 kl. 11.23, v2028).** »Link til produkter der skal med« / »Hvad skal med i indholdet?« står aldrig i højre spalte — hverken tom (knappen) eller udfyldt (feltet); den folder ud under rækken Produkter i fakta-boksen.
+
 **MÅLGRUPPEN STÅR I HØJRE SPALTE UNDER IDÉEN (Ida 16/9 kl. 11.15, v2027).** »Hvem taler indholdet til?« står efter Indholdssøjle i Idéen-gruppen — ikke som række i fakta-boksen. Fakta-boksen: Format · Platform · Vibe · Postes · Ansvarlig · Lyd · Produkter.
 
 **SALG › PRODUKTER RUMMER PRISERNE (Idas klik 16/9 kl. 11.08, v2026–v2027).** Døren Priser er ude af Salg; Produkter er en liste af døre (rummenes produkt-felt ∪ prislisten), heroen hedder Produkter, sendefeltet »Tilføj produkt«. Prisen og betalingslinket rettes øverst på produktsiden (Gem prisen · Åbn betalingslink).
