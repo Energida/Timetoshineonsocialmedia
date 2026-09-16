@@ -16,6 +16,8 @@ Filen er kort med vilje. Hver regel kan måles. Målingen står i `tools/designl
 
 ## Låsene (dato = den dag, Ida låste)
 
+**ETIKETTEN PÅ KUNDENS HJEM BLIVER, SOM DEN ER — »I DAG« STØRRE SOM UNDTAGELSE (Ida 16/9 kl. 09.40, v2008).** I DAG og To-do står som etiket over fliserne; Kommende aktiviteter, Denne uge og Ugens indhold inde i deres flise med streg — det er valgt, ikke en fejl. Undtagelsen: »I DAG« er 14 px versal (2,4 px spatiering); alle andre etiketter 10 px. Mockup: »Etiketten på Hjem, fire bud« (artifact Vuut19VD7gtZHfQeYVz5FN) — A/B/C/D ikke valgt.
+
 **DRIVE-MAPPEN = BUD 1 + K6 (Idas klik 16/9 kl. 09.27: »implementeret 1 og 6«, v2007).** På kundens Hjem (computer) er linket til Google Drive én lang rød pille i fuld bredde med Drives eget logo i hvid rundel: »Åbn indholdsmappen i Drive« (K6) — den lange hvide flise er ude. I Værktøjskassen står døren »Indholdsmappen« (flise med Drive-logo i lyseblå kasse · »Google Drive · sidst åbnet i dag/i går/dato«, gemt lokalt) øverst under »Din egen værktøjskasse« (bud 1). Uden link: flisen siger »Linket sættes under Min profil«. Telefonens Hjem er uændret (mappe-ikonet ved klokken). Ingen udad-pile (Idas kommentar 16/9). Mockup: »MOCKUP - Drive-mappen, ti bud (16. september).html«.
 
 **MÅNEDEN STÅR PÅ ALLE DAGE I UGEGITTERET (Ida 16/9 kl. 09.25: »det skal stå på alle!!«, v2006).** »MAN 14 SEP · TIR 15 SEP …« — før kun på første dag og den 1. Ét format for alle dage.
