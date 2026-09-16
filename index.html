@@ -6159,6 +6159,7 @@ body.dash-mode #dashMain .ws-card:has(> .follow-item) .bs-sendfelt, body.dash-mo
 .bdrop-kort .bdrop-rk.on::after, .bdrop-kort .bdrop-rk[aria-selected="true"]::after { border-color:var(--red); background-color:var(--red);
   background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'><path d='M5 12.5l4.5 4.5L19 7'/></svg>"); }
 .bdrop-kort .bdrop-lbl { padding:12px 14px 6px; }
+.bdrop-anb { font-size:9.5px; letter-spacing:1.2px; text-transform:uppercase; color:var(--red); margin-left:8px; flex-shrink:0; }   /* bud 1a (16/9): drejebogens anbefaling i listen */
 /* ===== I DAG = 9B »CIRKLEN FORAN TEKSTEN« (LAAST, Ida 16/9 kl. 09.04: »vi går med 9B. det må du gerne låse. også på admin!«) =====
    Hver ting i dag er sin egen hvide flise med husets skygge (ingen kant, ingen roed ramme): cirklen (28 px, 44 px trykfelt) foran teksten,
    roedt flueben naar det er gjort, hele flisen aabner. Intet plus, ingen pil. Teksten holder EEN linje — er der mere, klikker man for at
@@ -15647,6 +15648,26 @@ async function briefSoejleArkStart(id) {
   bsFlytLuk();
   openBriefSide(id);
 }
+/* Er valget o anbefalet af drejebogen for briefens soejle? vibe/format: husets soejle-retning (BS_SOEJLER, Idas klik 3/9) · cta: kundens tema.handling */
+function briefAnbefalet(key, o) {
+  try {
+    const it = (IDEER || []).find(x => String(x.id) === String(BRIEF_ID)) || {};
+    if (!it.soejle) return false;
+    const ord = String(o || "").toLowerCase().trim(); if (!ord) return false;
+    if (key === "vibe" || key === "format") {
+      const mm = soejleModel(it.soejle); if (!mm) return false;
+      const tekst = String((soejleRetning(mm.kode) || {})[key] || "").toLowerCase();
+      if (!tekst) return false;
+      if (key === "format") { const kort = /kort-?reel/.test(tekst); if (ord === "kort-reel") return kort; if (ord === "reel") return /(^|[^-])\breel/.test(tekst.replace(/kort-?reel/g, "")); }
+      return new RegExp("(^|[^a-zæøå])" + ord.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "([^a-zæøå]|$)").test(tekst);
+    }
+    if (key === "cta") {
+      const d = (STRATEGI_TEMAER || []).find(x => x.navn === it.soejle || (x.serie && x.serie === it.soejle));
+      return !!(d && d.handling && String(d.handling).toLowerCase().trim() === ord);
+    }
+  } catch (e) {}
+  return false;
+}
 function briefDrejebogFliseHtml(it) {
   const IK = {
     maal: '<path d="M12 3v3M12 18v3M3 12h3M18 12h3"/><circle cx="12" cy="12" r="5"/>',
@@ -18283,7 +18304,9 @@ function openBriefSide(id) {
   }).join("") + '</div>';
   /* drop() afloeser chips() for VALG (Ida 31/8) — chips() bestaar til visninger. */
   const FLUEBEN_DROP = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M5 12.5l4.5 4.5L19 7"/></svg>';
-  const dropRk = (key, o, on, multi, visning) => '<button type="button" class="bdrop-rk chip-btn' + (on ? ' on' : '') + '" data-val="' + esc(o) + '" onclick="briefDropVaelg(this,\'' + key + '\',' + (multi ? 1 : 0) + ')">' + esc((visning && visning[o]) || o) + (on ? FLUEBEN_DROP : '') + '</button>';
+  /* DET ANBEFALEDE VALG STAAR MED ROEDT »ANBEFALET« (Idas klik 16/9 kl. 12.33 paa bud 1a, »MOCKUP - Det anbefalede valg i listen«): drejebogens
+     anbefaling for soejlen (vibe · format · handlingen/CTA) markeres i listen — kun visning; intet vaelges for kunden. */
+  const dropRk = (key, o, on, multi, visning) => '<button type="button" class="bdrop-rk chip-btn' + (on ? ' on' : '') + '" data-val="' + esc(o) + '" onclick="briefDropVaelg(this,\'' + key + '\',' + (multi ? 1 : 0) + ')">' + esc((visning && visning[o]) || o) + (briefAnbefalet(key, o) ? '<span class="bdrop-anb">Anbefalet</span>' : '') + (on ? FLUEBEN_DROP : '') + '</button>';
   const drop = (key, opts, multi, visning, grupper) => {
     let raa = BRIEF_STATE[key];
     if (key === 'cta' && BRIEF_STATE.ctaAuto) raa = null;   /* auto-sat foer 31/8 = ikke kundens valg */
@@ -45323,7 +45346,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2033";
+const APP_VERSION = "2034";
 let NY_VERSION_KLAR = false;
 let NY_VERSION_AFVIST = false;
 function nyVersionSkjul() {
@@ -63373,6 +63396,6 @@ function prFaerdigHtml() {
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 16. september · 2033</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 16. september · 2034</div>
 </body>
 </html>
