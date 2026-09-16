@@ -16,6 +16,8 @@ Filen er kort med vilje. Hver regel kan måles. Målingen står i `tools/designl
 
 ## Låsene (dato = den dag, Ida låste)
 
+**HJEM PÅ COMPUTEREN (Ida 16/9 kl. 10.40, v2018–v2019):** »Ida, Energida« under citatet er ude; hilsen og citat står lavere i båndet (40 px fra kanten). **»Kommende indhold« er helt ude af Hjem** — forvarslerne bor i kalenderen.
+
 **KUNDESIDEN = TRE DØRE (Idas klik 16/9 kl. 10.35, nattens punkt 6, v2017).** »Alt om kunden« har Kundekortet · Se som kunden · Aftaler (kundekortet rullet til aftalerne). Briefs, Kalenderen, Noter, Drejebogen og den løse »Se som kunden«-knap er ude — én dør pr. mål. **Kommende indhold** på kundens Hjem har ingen cirkel (kl. 10.38) — kun I dag har den.
 
 **SKYGGERNE = BUD B (LÅST, Ida 16/9 kl. 10.40 »låser b«, v2014).** Den tydelige skygge (0 0 4px/10 % + 0 0 36px/20 %) bliver på fliser, der ligger direkte på siden. En flise INDE i en flise med den tydelige skygge får den lette (`--mb-skygge-let`: 0 0 4px/10 % + 0 0 12px/8 %). Målt af `skyggeVagt` (klassen `.skygge-let`), aldrig håndsat pr. sted. Grunden: 16/9 kl. 10.30 »baggrunden virker mere grå end hvid« — siden var hvid, skyggerne lagde sløret. Mockup: »MOCKUP - Skyggerne, tre bud (16. september).html«. **Citatet i båndet** er Poppins-versaler som datoen (10 px, 1,5 px), ikke Didot (Ida kl. 10.42). I arket bag ringen »Postet denne uge« står ordet Postet ikke igen (kl. 10.45).
