@@ -16,6 +16,8 @@ Filen er kort med vilje. Hver regel kan måles. Målingen står i `tools/designl
 
 ## Låsene (dato = den dag, Ida låste)
 
+**BACKSTAGE HJEM: GENVEJENE UDE, DIG = ÉN DØR (Idas klik 16/9 kl. 10.39, nattens punkt 7, v2021).** Genvejsrækken (Ny kunde · Ny video · Byggekøen · SQL-kort · Mit eget studio) er arkiveret — én dør pr. ting: Ny kunde på Kunder, Byggekøen og SQL-kort under Teknik, Ny video i Energida Studio. DIG har én dør »Mit eget studio« (åbner b2b.energida.dk); de to fliser (næste opslag · planlægningsdag) er ude.
+
 **PLUS-KNAPPERNE I KALENDEREN OG IDÉBANKEN: GRÅ RING, RØDT PLUS (Ida 16/9 kl. 10.45, v2020).** `.uge-opret` har kanten i #DEDAD4, plusset rødt.
 
 **HJEM PÅ COMPUTEREN (Ida 16/9 kl. 10.40, v2018–v2019):** »Ida, Energida« under citatet er ude; hilsen og citat står lavere i båndet (40 px fra kanten). **»Kommende indhold« er helt ude af Hjem** — forvarslerne bor i kalenderen.
