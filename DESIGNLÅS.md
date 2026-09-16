@@ -16,6 +16,8 @@ Filen er kort med vilje. Hver regel kan måles. Målingen står i `tools/designl
 
 ## Låsene (dato = den dag, Ida låste)
 
+**DRIVE-MAPPEN = BUD 1 + K6 (Idas klik 16/9 kl. 09.27: »implementeret 1 og 6«, v2007).** På kundens Hjem (computer) er linket til Google Drive én lang rød pille i fuld bredde med Drives eget logo i hvid rundel: »Åbn indholdsmappen i Drive« (K6) — den lange hvide flise er ude. I Værktøjskassen står døren »Indholdsmappen« (flise med Drive-logo i lyseblå kasse · »Google Drive · sidst åbnet i dag/i går/dato«, gemt lokalt) øverst under »Din egen værktøjskasse« (bud 1). Uden link: flisen siger »Linket sættes under Min profil«. Telefonens Hjem er uændret (mappe-ikonet ved klokken). Ingen udad-pile (Idas kommentar 16/9). Mockup: »MOCKUP - Drive-mappen, ti bud (16. september).html«.
+
 **MÅNEDEN STÅR PÅ ALLE DAGE I UGEGITTERET (Ida 16/9 kl. 09.25: »det skal stå på alle!!«, v2006).** »MAN 14 SEP · TIR 15 SEP …« — før kun på første dag og den 1. Ét format for alle dage.
 
 **I DAG PÅ COMPUTEREN: INGEN KASSE OMKRING, 32 PX TIL BÅNDET (Ida 16/9 kl. 09.20–09.22, v2005).** Sporet (#fokusDeck) klippede fliserne skygger og etikettens I — med 9B er blokken en almindelig liste (overflow synlig, ingen prikker/pile). Den tomme hero-række under båndet er væk, så luften fra arkets kant til I DAG er 32 px (målt).
