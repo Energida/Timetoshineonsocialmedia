@@ -16,6 +16,8 @@ Filen er kort med vilje. Hver regel kan måles. Målingen står i `tools/designl
 
 ## Låsene (dato = den dag, Ida låste)
 
+**INGEN »I DAG ER OPTAGEDAG« UNDER RINGEN (Ida 16/9 kl. 08.30: »den står allerede under I dag«, v2000).** Ringkortet på kundens Hjem (computer) viser kun »4 af 4 planlagt frem«; optagedagen står i I DAG-rammen (»Bliv klar til optagelse«). Én ting ét sted.
+
 **PLUS-KNAPPEN I KALENDEREN OG IDÉBANKEN ER KUN ET PLUS (Ida 16/9 kl. 08.20: »kan du fjerne ordet opslag her så det bare er et plus?«, v1999).** `.uge-opret` viser ikke længere ordet (Opslag / Idé) på computeren — samme knap overalt; ordet bor i title/aria-label.
 
 **KUNDER: DØREN »PIPELINE, KONTAKTER OG KODER« ER UDE (Idas klik 16/9 kl. 08.17, v1998).** Pipelinen bor under Salg (14/9); kontakterne nås gennem kundekortet og Klienter. Døren er arkiveret (data-arkiv), det gamle CRM's faner står stadig i markuppen bag Kunder-siden, men ingen dør åbner dem.
