@@ -16,6 +16,8 @@ Filen er kort med vilje. Hver regel kan måles. Målingen står i `tools/designl
 
 ## Låsene (dato = den dag, Ida låste)
 
+**PLUS-KNAPPEN I KALENDEREN OG IDÉBANKEN ER KUN ET PLUS (Ida 16/9 kl. 08.20: »kan du fjerne ordet opslag her så det bare er et plus?«, v1999).** `.uge-opret` viser ikke længere ordet (Opslag / Idé) på computeren — samme knap overalt; ordet bor i title/aria-label.
+
 **KUNDER: DØREN »PIPELINE, KONTAKTER OG KODER« ER UDE (Idas klik 16/9 kl. 08.17, v1998).** Pipelinen bor under Salg (14/9); kontakterne nås gennem kundekortet og Klienter. Døren er arkiveret (data-arkiv), det gamle CRM's faner står stadig i markuppen bag Kunder-siden, men ingen dør åbner dem.
 
 **ÉN IDÉLISTE OG ÉN APP-ØNSKELISTE UNDER MINE RUM (Idas klik 16/9 kl. 08.05, v1997).** Mine rum har to døre: »Idéer« (Content Studio · Workout Studio · Food Studio · Mindful Studio · Get shit done i én liste med studio-chips; hver idé bliver i sin egen nøgle i basen — cs_ideer · oev_ideer · food_ideer · mind_ideer · energida_ideer — ingen ny tabel) og »App-ønskelisten« (alle ønsker, app_funktioner, chips pr. studio, sendefelt, Kopiér til Claude). Sendefeltet i Idéer gemmer i det valgte studio; »Alle« giver »Vælg et studio først.« Slet spørger i husets ark; på telefonen er slet swipet (8/9). De fem studie-kort »Idéer« og de tre »App-ønsker til …« er arkiveret (data-arkiv), Content Studios dør »Idéer« ude, foldemenuens »Idéer«-punkter ude. Ny idé-arket lander samme sted som før, kvitteringen siger »Lagt i Idéer · Food Studio.« Sti: Hjem › Mine rum › Idéer. Målt i selen 1440 + 390.
