@@ -16,6 +16,8 @@ Filen er kort med vilje. Hver regel kan måles. Målingen står i `tools/designl
 
 ## Låsene (dato = den dag, Ida låste)
 
+**ARKET OVER MARKEN — HELE B2B (LÅST, Ida 16/9 kl. 08.33: »tror faktisk jeg elsker bud 4!«, v2001).** Den hvide side lægger sig som et ark med runde hjørner (28 px, husets ark) 28 px op over markbåndet med en blød skygge (0 −6px 30px rgba(46,44,41,.22)). Billedet får aldrig en lige kant. Båndet er 28 px højere (288 computer · 228 telefon), navn og dato rykker 28 px op, luften under heroen er stadig 32 px fra arkets kant. Gælder alle sider med markbåndet, computer og telefon, også lektionerne. Mockup: »MOCKUP - Marken flettes ned i siden, fem bud (16. september).html« (artifact QRoem6uGSvL6g8vCsNZskH). Bud 1 udtoning, 2 flisen op i marken, 3 stråets tone, 5 marken sløret bag hele siden — ikke valgt.
+
 **INGEN »I DAG ER OPTAGEDAG« UNDER RINGEN (Ida 16/9 kl. 08.30: »den står allerede under I dag«, v2000).** Ringkortet på kundens Hjem (computer) viser kun »4 af 4 planlagt frem«; optagedagen står i I DAG-rammen (»Bliv klar til optagelse«). Én ting ét sted.
 
 **PLUS-KNAPPEN I KALENDEREN OG IDÉBANKEN ER KUN ET PLUS (Ida 16/9 kl. 08.20: »kan du fjerne ordet opslag her så det bare er et plus?«, v1999).** `.uge-opret` viser ikke længere ordet (Opslag / Idé) på computeren — samme knap overalt; ordet bor i title/aria-label.
