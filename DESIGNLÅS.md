@@ -16,6 +16,8 @@ Filen er kort med vilje. Hver regel kan måles. Målingen står i `tools/designl
 
 ## Låsene (dato = den dag, Ida låste)
 
+**MÅNEDEN STÅR PÅ ALLE DAGE I UGEGITTERET (Ida 16/9 kl. 09.25: »det skal stå på alle!!«, v2006).** »MAN 14 SEP · TIR 15 SEP …« — før kun på første dag og den 1. Ét format for alle dage.
+
 **I DAG PÅ COMPUTEREN: INGEN KASSE OMKRING, 32 PX TIL BÅNDET (Ida 16/9 kl. 09.20–09.22, v2005).** Sporet (#fokusDeck) klippede fliserne skygger og etikettens I — med 9B er blokken en almindelig liste (overflow synlig, ingen prikker/pile). Den tomme hero-række under båndet er væk, så luften fra arkets kant til I DAG er 32 px (målt).
 
 **I DAG = 9B »CIRKLEN FORAN TEKSTEN« (LÅST, Ida 16/9 kl. 09.04: »vi går med 9B. det må du gerne låse. også på admin!«, v2004).** Hver ting i dag er sin egen hvide flise med husets skygge — ingen kant, ingen rød ramme. Cirklen (28 px, 44 px trykfelt) står foran teksten; et tryk = gjort (rødt flueben, teksten grå, flisen bliver stående til i morgen); hele flisen åbner. Intet plus, ingen pil. Teksten holder ÉN linje — er der mere, klikker man for at læse (Ida kl. 09.08). Møder bærer klokkeslættet i linjen under. Gælder kundens Hjem (computer + telefon — swipe-sporet med prikker er ude, fliserne står under hinanden), kundens To-do-kort (kassen gennemsigtig, hver to-do en flise, én linje) og Backstage Hjem (Venter på dig uden rød ramme, To-do på én linje). Mockups: »MOCKUP - I dag, ti bud« og »… bud 2 og 9 i fem versioner« (16. september). Vælter: den røde I DAG-ramme (31/8, 2/9), done-cirklen i hjørnet (6/9), pilen ud for hver flise (4/9).
