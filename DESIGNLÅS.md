@@ -31,6 +31,18 @@ Filen er kort med vilje. Hver regel kan måles. Målingen står i `tools/designl
 
 **LEKTIONSTITLERNE I ENERGIDA STUDIO STÅR I VERSALER (Ida 16/9 kl. 11.06, v2025).** Poppins 14, 1 px spatiering, uppercase i visningen — ordene i basen er urørte.
 
+**GEM ÆNDRINGER BLIVER PÅ BRIEFEN (Idas klik 16/9 kl. 11.38, v2031).** »Der skal laves en oversigt men indtil vi er klar til det skal man bare blive på briefen.« 4/9-reglen (Gem → briefoversigten) er sat ud af kraft; den gamle oversigt vises aldrig. En ny oversigt tegnes senere (fem bud først).
+
+**TITLEN RETTES PÅ TITLEN (Ida 16/9 kl. 11.37, v2031).** Intern titel-flisen er ude af højre spalte. Didot-titlen bærer en grå blyant (44 px trykfelt); tryk → Didot-skrivefelt i samme størrelse, Enter/klik udenfor gemmer. Uden titel står der »Ingen titel« i gråt. Datanøglen (titel, feltet bf_titel) er urørt.
+
+**BRIEFENS FELT-FLISER ER HVIDE MED SKYGGEN (Ida 16/9 kl. 11.37, v2031).** »Alle disse fliser i briefen skal også være som det låste design altså hvide med skyggerne der blev låst senest« — feltfladen 2b (#F0F5F8, 15/9 kl. 18.55) er dermed væltet for briefens felt-fliser. Skrivefeltet inde i flisen beholder sin 1 px kant (6a).
+
+**MIKROFONEN I SKRIVEFELTET (Ida 16/9 kl. 11.40, v2031).** 18 px, streg 1,5, i rammens nederste højre hjørne med 8 px luft — »tyndere i stregen og placeres bedre«.
+
+**LINK TIL INSPIRATION = SAMME PILLE SOM LINK TIL INDHOLDET (Ida 16/9 kl. 11.42, v2031).** Samme link-ikon, ordet »Link til inspiration«. Udfyldt = rødt flueben i cirkel til højre i pillen (Ønskeskyens flueben, 14/9-reglen) — gælder begge link-piller.
+
+**MODULETS TITEL STÅR UNDER CHIPSENE I ENERGIDA STUDIO (Ida 16/9 kl. 11.45, v2031).** »Modul 1 · Velkommen« i Poppins 18 under modul-chipsene; titlen rettes i Forside-editoren (feltet Titel).
+
 **TO-DO = SAMME FORM SOM KOMMENDE AKTIVITETER (Ida 16/9 kl. 11.30: »det var TO-DO der skulle laves ligesom kommende aktiviteter!« — VÆLTER v2024, v2030).** På computeren er begge ÉN hvid flise med skygge: etiketten (uden ikon, 2/9-reglen) med hårfin streg inde i flisen, rækkerne under hinanden, plusknappen nederst i flisen. Ingen gennemsigtig kasse, ingen flise pr. række. Telefonen (≤ 760) er urørt: fliser-reglen 5/9. Lære: når to ting skal være ens, spørg HVILKEN der er facit — gæt aldrig.
 
 **KOMMENDE AKTIVITETER = SAMME FORM SOM TO-DO (Ida 16/9 kl. 11.05: »der er igen ikke synk … overskriften over det ene sted og ikke det andet«, v2024).** På kundens Hjem står de to sektioner side om side og har nu samme form: etiket grå over (uden ikon og streg), hver aftale en hvid flise med skygge, den tomme sætning en flise, plusset under. **REGEL:** to sektioner side om side på samme side har ALTID samme etiket-form. **UX-politiet gælder ALT** (Ida kl. 11.10: »når jeg siger at ux politiet skal køre alt igennem mener jeg alt«) — også fejlflader (»Appen kunne ikke starte«), loadere og popups; fejlfladen tages i b2b-runden som husets ark.
