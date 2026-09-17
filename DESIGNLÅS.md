@@ -346,3 +346,6 @@ Idas ord: »kryds skal laves om til skraldespande. vil du tilføje til designlå
 
 ## v2083 — »HVEM ER MED«-CHIPS KOM IKKE FREM (Ida 17/9 kl. 11.59)
 Målt: klip-kortene tegnes, før personlisten er hentet fra basen, så `briefKlipHvemHtml` så nul personer. Nu tegner `briefPersonerFyld` klippene om én gang, når listen er i hus (2+ personer og ingen chips endnu). Selen: før 0 → efter 2 rækker chips, siden bliver på Fasthold dem.
+
+## v2084 — FELTETS FORKLARING FØLGER FLISENS BREDDE (Ida 17/9 kl. 12.03: »hvorfor er denne tekstbeskrivelse delt op på 2 linjer?«)
+Forklaringen under feltets navn (`.sk-forkl`) havde et loft på 62 tegn (`max-width: 62ch`), så den knækkede, selv om flisen havde plads. Loftet er væk (`max-width: none`) — én linje, når der er plads. Målt 1440: Målet-forklaringen 19 px høj (én linje), 628 px bred.
