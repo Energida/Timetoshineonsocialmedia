@@ -336,3 +336,6 @@ Idas ord: »de chips skal ud og de 4 ting skal vises på samme side! så det ikk
 - Den røde bjælke under fakta-boksen hedder **»Tips«** med en lysende pære (hvidt stregikon 24 px) — ingen søjlenavn, ingen blyant; folder anbefalingerne ud.
 - **Versalen FAKTA over boksen er ude.**
 Målt 1440: række først i boksen, bjælke 74 px med pære, nav-knapper 48 px på alle fire sider, »Tilbage til briefoversigten« → forsiden.
+
+## v2081 — ÉN RØD KNAP PR. SIDE (Idas klik 17/9 kl. 11.50) · INGEN RØD HOVER PÅ FORSIDENS RÆKKER (kl. 11.52)
+Idas klik »Kun én rød pr. side« (efter »kan vi ikke prøve at lave alle knapper røde?«): den vigtigste handling er rød, de sekundære hvide. Bygget: **Luk i et ark er rød, når den står alene** (målgruppe-popuppen, spørgsmåls-ark uden Gem); står der en Gem/Tilføj/Ja/sendeknap over den, er Luk hvid med rød kant (`:has(.ark-knap, .ark-knap-roed, .ark-send, .dbtn.primary)`). **»Ret briefen« på forsiden er rød** (forsidens ene handling). Tilbage, Send til godkendelse, Tilføj under fakta-boksen forbliver hvide. Chips urørte. Forsidens rækker: hover = grå flade #F2F0ED, teksten bliver ikke rød (Ida: »når man holder musen over klippene her skal de ikke blive røde«). Målt 1440: Ret briefen rgb(252,36,4), Luk i popup rød, Tilføj-arkets Tilføj rød.
