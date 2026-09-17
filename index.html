@@ -6454,7 +6454,10 @@ body.lek-mb #lekMomentKom { border:1px solid var(--border) !important; border-ra
   .pf-rk:last-child { border-bottom: 0; }
   .pf-rk span { font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--gray3); padding-top: 3px; }
   .pf-rk small { display: block; font-size: 12.5px; color: var(--gray3); }
-  .pf-rk .pf-tom, .pf-cap .pf-tom { color: var(--red); }   /* MANGLER staar med roedt (Ida 17/9 kl. 11.40) */
+  .pf-rk .pf-tom, .pf-cap .pf-tom { color: var(--red); }
+  .pf-filter { display: flex; flex-wrap: wrap; gap: 8px; padding: 12px 0 4px; }   /* hvem skal lave hvad (17/9) */
+  .klip-hvem { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 12px; }
+  .klip-hvem-eye { font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--gray3); margin-right: 4px; }   /* MANGLER staar med roedt (Ida 17/9 kl. 11.40) */
   .pf-cap-tekst { font-size: 13px; line-height: 1.55; padding-top: 8px; color: var(--black); }
   .pf-cap-tekst p { margin: 0 0 6px; }
   .pf-cap-tags { color: var(--gray3); margin-top: 6px; }
@@ -16566,9 +16569,10 @@ function briefForsideTegn(G, grupper, wrap, navM) {
   } else {
     const kl = (Array.isArray(B.klip) ? B.klip : []).filter(k => k && (T(k.ser) || T(k.tekst) || T(k.siger)));
     if (kl.length) kl.forEach((k, i) => {
-      const under = [T(k.tekst) ? "På skærmen: " + T(k.tekst) : "", T(k.siger) ? "Siger: " + T(k.siger) : ""].filter(Boolean).join(" · ");
-      rows += rk("Klip " + (i + 1), T(k.ser), under, KLIP);   /* »Paa skaermen: …« ogsaa under klip 1 — som i mockuppen */
-      laes.push("Klip " + (i + 1) + ". " + [T(k.ser), T(k.tekst) ? "På skærmen: " + T(k.tekst) : "", T(k.siger) ? "Siger: " + T(k.siger) : ""].filter(Boolean).join(". "));
+      const under = [T(k.tekst) ? "Tekst på skærmen: " + T(k.tekst) : "", T(k.siger) ? "Siger: " + T(k.siger) : ""].filter(Boolean).join(" · ");   /* »Tekst paa skaermen« (Ida 17/9 kl. 11.33) */
+      const hvem = Array.isArray(k.hvem) ? k.hvem.filter(Boolean) : [];
+      rows += rk("Klip " + (i + 1), T(k.ser), under, KLIP).replace('<div class="pf-rk', '<div data-hvem="' + esc(hvem.join("|")) + '" class="pf-rk');
+      laes.push("Klip " + (i + 1) + ". " + [T(k.ser), T(k.tekst) ? "Tekst på skærmen: " + T(k.tekst) : "", T(k.siger) ? "Siger: " + T(k.siger) : ""].filter(Boolean).join(". "));
     });
     else if (T(B.indhold)) { rows += rk("Klip", T(B.indhold), "", KLIP + ", " + BILL); laes.push("Klip. " + T(B.indhold)); }
     else { rows += rk("Klip 1", "", "", KLIP + ", " + BILL); laes.push("Klip 1. Mangler"); }
@@ -16585,13 +16589,17 @@ function briefForsideTegn(G, grupper, wrap, navM) {
   const mgSaet = "";   /* kun navnet (Ida 17/9 kl. 11.25: »slet karrierekvinde herfra«) — beskrivelsen ligger i popuppen */
   const mgHtml = mg.navne.length ? '<button type="button" class="pf-mg" onclick="briefMaalgruppeVis()" title="Se målgruppen"><span>Taler til</span>' + esc(mgValgt === "Begge" ? "begge målgrupper" : mgValgt === "Alle" ? "alle målgrupper" : (mgValgt || "Vælg målgruppe")) + (mgSaet ? '<i> · ' + esc(mgSaet) + '</i>' : '') + '</button>' : '';
   const laesKnap = (dele) => '<button type="button" class="pf-ik pf-laes" title="Læs højt" aria-label="Læs højt" aria-pressed="false" data-laes="' + esc(JSON.stringify(dele)) + '" onclick="briefForsideLaes(this)"><svg viewBox="0 0 24 24"><path d="M4 10v4h4l5 4V6l-5 4H4zM16 9a4 4 0 0 1 0 6"/></svg></button>';
-  const html = mgHtml + '<div class="pf-flise"><div class="pf-eye"><span>Det, du skal producere</span>' + laesKnap(laes) + '</div>' + rows + '</div>'
+  /* FILTER: HVEM SKAL LAVE HVAD (Ida 17/9 kl. 11.32) — chips Alle · navne, kun naar et klip baerer navne */
+  const folk = briefPersonerListe(); const brugt = folk.filter(n => (Array.isArray(B.klip) ? B.klip : []).some(k => k && Array.isArray(k.hvem) && k.hvem.indexOf(n) > -1));
+  const filt = brugt.length ? '<div class="pf-filter">' + ["Alle"].concat(brugt).map(n => '<button type="button" class="ark-chip' + ((window.__PF_HVEM || "Alle") === n ? ' on' : '') + '" onclick="briefForsideHvem(this)">' + esc(n) + '</button>').join("") + '</div>' : '';
+  const html = mgHtml + '<div class="pf-flise"><div class="pf-eye"><span>Det, du skal producere</span>' + laesKnap(laes) + '</div>' + filt + rows + '</div>'
     + '<div class="pf-flise pf-cap"><div class="pf-eye"><span>Caption</span>' + (capFuld ? '<button type="button" class="pf-ik" data-ikon="1" title="Kopiér captionen" aria-label="Kopiér captionen" onclick="ktpKopier(' + JSON.stringify(capFuld).replace(/"/g, "&quot;") + ', this)"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/></svg></button>' : '') + '</div>'
     + '<div class="pf-cap-tekst pf-klik" role="button" tabindex="0" onclick="briefMbVisFelt(\'#bf_captionFoerste, #bf_caption\')">' + (cap ? [capF, capH, capA].filter(Boolean).map(x => '<p>' + esc(x).replace(/\n/g, "<br>") + '</p>').join("") : tom) + (tags ? '<div class="pf-cap-tags">' + esc(tags) + '</div>' : '') + '</div></div>'
     + '<div class="pf-ret"><button type="button" onclick="briefMbVis(\'skriv\', 0)">Ret briefen</button></div>';
   let fs = document.getElementById("briefForside");
   if (!fs) { fs = document.createElement("div"); fs.id = "briefForside"; }
   fs.innerHTML = html;
+  try { const c = [].find.call(fs.querySelectorAll(".pf-filter .ark-chip"), x => x.classList.contains("on")); if (c) briefForsideHvem(c); } catch (e) {}   /* filteret holder ved gentegning */
   const tb = document.getElementById("briefTitelBlok");
   if (tb && tb.parentNode === wrap) tb.insertAdjacentElement("afterend", fs); else wrap.insertBefore(fs, wrap.firstChild);
   fs.style.display = "";
@@ -16612,6 +16620,12 @@ function briefMbVisFelt(sel) {
   const maal = el.closest(".klip-kort") || q;   /* et klip er sit eget trin (17/9) */
   for (let t = 0; t < 12; t++) { BRIEF_TRIN_AKTIV = t; try { briefSideVis(BRIEF_SIDE || 0); } catch (e) {} if (maal.offsetParent || (BRIEF_TRIN_INFO && t >= BRIEF_TRIN_INFO.n - 1)) break; }
   try { const c = document.querySelector(".content"); if (c) c.scrollTop = 0; window.scrollTo(0, 0); } catch (e) {}
+}
+function briefForsideHvem(knap) {
+  const n = String(knap.textContent || "").trim(); window.__PF_HVEM = n;
+  const fs = document.getElementById("briefForside"); if (!fs) return;
+  fs.querySelectorAll(".pf-filter .ark-chip").forEach(c => c.classList.toggle("on", c === knap));
+  fs.querySelectorAll(".pf-rk[data-hvem]").forEach(r => { const h = String(r.getAttribute("data-hvem") || "").split("|").filter(Boolean); r.style.display = (n === "Alle" || h.indexOf(n) > -1) ? "" : "none"; });
 }
 /* Skift maalgruppe fra forsiden: husets ark med maalgrupperne som chips (samme kilde som popuppen) */
 function briefMaalgruppeArk() {
@@ -18363,6 +18377,7 @@ function briefKlipHtml(enkelt) {
       + '</div>'
       + ekstra
       + (tilfoej ? '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;">' + tilfoej + '</div>' : '')
+      + briefKlipHvemHtml(i, k)
       + '</div>';
   }).join("");
   const foersteTomme = liste.findIndex(function (k) { return !(k.ser || "").trim(); });
@@ -18400,6 +18415,22 @@ function briefKlipHtml(enkelt) {
    felt-id'er (bf_klip_i_ser/tekst/siger, bf_ctaVideo), saa briefKlipLaes og Gem virker som foer.
    Felter med indhold tegnes ALTID (skjult, naar raekken er lukket) — gem maa ikke slette (4/8). */
 window.__KS_AABEN = window.__KS_AABEN || {};
+/* HVEM ER MED I KLIPPET (Ida 17/9 kl. 11.32: »paa hvert klip kunne vaelge maaske som chips hvem der er med i klippet — og saa herude paa oversigten
+   lave en filtrering saa hun kun ser de klip hun skal lave«): chips med kodens personer (samme liste som Hvem skal lave det), kun ved 2+ personer;
+   gemmes som klip[i].hvem = [navne]. Forsiden filtrerer klip-raekkerne paa navnet. */
+function briefPersonerListe() { let f = Array.isArray(BRIEF_PERSONER) ? BRIEF_PERSONER.slice() : []; try { if (erContentPlanner(CURRENT_DEF) && f.indexOf("Ida") === -1) f.push("Ida"); } catch (e) {} return f.slice(0, 12); }
+function briefKlipHvemHtml(i, k) {
+  const folk = briefPersonerListe(); if (folk.length < 2) return "";
+  const valgt = Array.isArray(k.hvem) ? k.hvem : [];
+  return '<div class="klip-hvem"><span class="klip-hvem-eye">Hvem er med</span>' + folk.map(function (n) { return '<button type="button" class="ark-chip' + (valgt.indexOf(n) > -1 ? ' on' : '') + '" onclick="briefKlipHvemSkift(' + i + ',this)">' + esc(n) + '</button>'; }).join("") + '</div>';
+}
+function briefKlipHvemSkift(i, knap) {
+  const liste = briefKlipListe(); const k = liste[i]; if (!k) return;
+  const n = String(knap.textContent || "").trim(); if (!Array.isArray(k.hvem)) k.hvem = [];
+  const ix = k.hvem.indexOf(n); if (ix > -1) k.hvem.splice(ix, 1); else k.hvem.push(n);
+  knap.classList.toggle("on", ix === -1);
+  try { saveBrief(true); } catch (e) {}
+}
 function briefKlipScenerHtml(liste) {
   const mik = function (id) { try { return (typeof taleMikHtml === "function") ? taleMikHtml(id) : ""; } catch (e) { return ""; } };
   const hook = String(BRIEF_STATE.hookTekst || "").trim();
@@ -18437,7 +18468,7 @@ function briefKlipScenerHtml(liste) {
     return '<div class="ks-rk" data-i="' + i + '">'
       + '<div class="ks-lbl">Klip ' + (i + 1) + '</div>'
       + '<div class="ks-rum"><textarea class="sk-input ks-ser" rows="1" id="bf_klip_' + i + '_ser" placeholder="' + (i === 0 ? 'Hvad ser man i klippet, mens hooket står på skærmen?' : 'Hvad ser man i dette klip?') + '">' + esc(k.ser || "") + '</textarea>' + mik('bf_klip_' + i + '_ser') + '</div>'
-      + inde + (valg ? '<div class="ks-valg">' + valg + '</div>' : '') + sub
+      + inde + (valg ? '<div class="ks-valg">' + valg + '</div>' : '') + briefKlipHvemHtml(i, k) + sub
       + '</div>';
   }).join("");
   const sidsteFyldt = liste.length && String(liste[liste.length - 1].ser || "").trim();
@@ -46887,7 +46918,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2077";
+const APP_VERSION = "2078";
 let NY_VERSION_KLAR = false;
 let NY_VERSION_AFVIST = false;
 function nyVersionSkjul() {
@@ -65047,6 +65078,6 @@ function prFaerdigHtml() {
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 17. september · 2077</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 17. september · 2078</div>
 </body>
 </html>
