@@ -418,3 +418,6 @@ Det, der skete: scenerne (v2094) blev målt på selens testbrief (to klip) og s�
 2. **En ny struktur på en skriveside vises som Artifact og klikkes, FØR den bygges.** Et klik på en mockup af forsiden er ikke en godkendelse af skrivesiden. Hver flade (forside · skriveside · telefon) vises for sig.
 3. **En migrering af gamle data (»klip uden scene bliver …«) er en designbeslutning**, ikke en teknisk detalje: den vises på den rigtige brief og klikkes, før den deployes.
 4. Porten (`koer.sh`) måler kun form (fliser, chips, versaler). Den ser ALDRIG, om indholdet giver mening. Grønt lys fra porten er ikke en godkendelse.
+
+## v2096 — FORSIDENS KLIP-RÆKKER MED TEGN (Idas klik 17/9 kl. 14.0x »Bud 1: Aa« + Idas ord kl. 15.55: »det der står nu fungerer — vi skal bare have de visuelle symboler ud i venstre side«)
+Forsidens rækker står, som de gjorde (Hook · Klip 1, 2, 3 … · CTA i videoen) — ingen scener. Hvert klip: **kamera i lys cirkel** til venstre, versal »KLIP n« + det, man ser, **initialer i cirkler** til højre (hvem), og under: **Aa i lys cirkel + teksten på skærmen**, evt. »SIGER« + manus. Karrusel: **billede-tegnet** i stedet for kameraet, »SLIDE n« + billedet, Aa + teksten. Målt 1440 + 390 på en brief med Idas eget indhold (fire klip, tomt hook, to klip i ét felt). Skrivesiderne er urørte.
