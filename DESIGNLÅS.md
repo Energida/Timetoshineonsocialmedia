@@ -424,3 +424,6 @@ Forsidens rækker står, som de gjorde (Hook · Klip 1, 2, 3 … · CTA i videoe
 
 ## v2097 — TELEFONRAMMEN BLIVER LAVERE UNDER »SOM KUNDE«-BANNERET (Ida 17/9 kl. 15.42: »på mobilsiden kan jeg ikke scrolle helt ned«)
 Banneret »Du arbejder i …s Content Studio« skubbede appen 150 px ned, men `.phone` var stadig 100dvh — de nederste 150 px (Ret briefen) lå under skærmkanten. Bannerets målte højde gives som `--som-bar`, og rammen er `100dvh − --som-bar`. Målt 390 med 150 px banner: knappen ender 49 px over bundmenuen. Kun Idas visning (kunderne har intet banner).
+
+## v2098 — KOMMENTARER-FLISEN KUN NÅR DIALOGEN ER BEGYNDT (Idas klik 17/9 kl. 15.58)
+Flisen »Kommentarer« med sendefeltet står på briefens forside KUN, når briefen er sendt til godkendelse, eller der findes kommentarer. En brief, ingen har set endnu, har ingen tom »Ingen kommentarer endnu«-flise (fyldtekst-reglen).
