@@ -380,3 +380,11 @@ Rettet samme runde: To-do-rækkerne på b2b-Hjem (computer) var 14,5 px med pers
 
 ## v2089 — »TILBAGE TIL BRIEFOVERSIGTEN« = ØJET VED TITLEN (Ida 17/9 kl. 13.35)
 Idas ord: »ændre knappen tilbage til briefoversigten til et øje-symbol heroppe foran del symbolet«. Pillen nederst er ude; ved titlen står nu øje · del · skraldespand (`.bt-oeje`, kun på skrivesiderne — skjult på forsiden). Nederst står kun Tilbage · Næste (Send + Gem på sidste side). Computer og telefon. Målt 1440.
+
+## v2090 — TELEFONENS HJEM: KASSERNE BAG FLISERNE UDE · SENDEFELTETS KNAP INDE I FELTET · BUNDEN KAN NÅS · »I DAG« (Ida 17/9 kl. 13.37–13.42) · 2A-TEKSTEN
+- **»I dag«** står forrest i datolinjen på telefonen som på computeren: »I dag · tor. 17. september · uge 38«.
+- **Kasserne bag fliserne** (»tydelige skygger eller kasser på baggrunden skal fjernes alle steder«): beholderne bag Kommende aktiviteter/To-do (`#aftaleListHome`, `#kundeOpgaverKort`, `.hf-rum`) er uden skygge og flade; sporet »Kommende indhold« (`.db-deck`) har 28 px luft, så fliseskyggen ikke klippes til en lysere kasse. Kun på telefonen (`max-width:899px`).
+- **Sendefeltet:** feltet 48 px, den runde knap 40 px inde i feltet (før 44 i et 44-felt: knappen »skred ud over linjerne«). Kun på telefonen.
+- **Bunden:** `.content` har 120 px luft over bundmenuen; Hjem-fladen er greige helt ned (`body.hjem-facit` greige på telefonen); »Gå til to-do« står inde på fladen.
+- **2A-teksten** (Idas klik kl. 13.45 på mit bud): »Vis dynamikken mellem menneskene bag Acorns.dk — personlighed og forskelligheder i teamet. Viben er underholdende. Når kunden har set det, skal de tænke: »Dem kan jeg godt lide« — og føle, at de kender os. Det er ikke salg.« (kundens søjle 2A, bruges i Kort fortalt og guiden).
+Målt 390 i selen: aftale-beholder uden skygge, felt 48/knap 44 inde, body greige. Computeren urørt (alle regler under max-width:899px).
