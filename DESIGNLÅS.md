@@ -408,3 +408,10 @@ Sporet (`.cf-vindue`, telefonens Hjem) havde 0 px luft, så fliseskyggen blev kl
 ## v2093 — KOMMENDE INDHOLD PÅ TELEFONENS HJEM MED DATOEN I FIRKANTEN (Ida 17/9 kl. 14.24: »det flotte design med datoen i en firkant … som kommende aftaler«)
 Fliserne i sporet »Kommende indhold« har datofirkanten (48×48, tal + dag, datofliserne-facit 2/9) til venstre og teksten til højre — som Kommende aftaler. Punktet bærer nu `dato`. Målt 390.
 - v2093 også: **Skift adgangskode = husets ark** (Ida 17/9 kl. 14.30: »så kommer der sku sådan en pop up«): »Ny adgangskode« · felt · rød Gem · Luk. Den gamle boks i hjørnet er arkiveret. Enter gemmer.
+
+## v2094 — SCENER MED KLIP INDEN I + FORSIDENS OVERBLIK = BUD 1 »Aa« (Idas klik 17/9 kl. 12.10 »Scene 1 bor på Fang dem« + kl. 14.0x »Bud 1: Aa«)
+- **En scene er de klip, der deler teksten på skærmen.** Scene 1 bærer hooket over sine klip og står på **Fang dem** under hook-feltet; scene 2 … står under Fasthold dem. Klippene nummereres **fortløbende** (Klip 1, 2, 3 — aldrig 1a/2a).
+- **Skrivesiden:** scenen er flisen (etiket »Scene n« + initialer · én streg · klippene adskilt af hårfine linjer · »+ Klip i scenen« nederst th.); »+ Scene« under scenerne. Klip 1 har intet Hook-felt (hooket står lige over). Et klip kan »Ind i scenen ovenfor« / »Ny scene her«; skraldespand fjerner en scene (spørger først).
+- **Forsiden (Det, du skal producere):** pr. scene en blok med versal »SCENE n« + initialer i lyseblå cirkler; hver klip-række = kamera i lys cirkel · »KLIP n« + det, man ser · initial; under: **Aa i lys cirkel + teksten på skærmen** (klippets egen, ellers scenens). Karrusel: samme blok med **billede-tegnet** i stedet for kameraet, »SLIDE n« + billedet, Aa + teksten. Ordet er altid »Tekst på skærmen« — aldrig »Skriv på skærmen«.
+- **Data:** samme flade liste `BRIEF_STATE.klip`, hvert klip får kun `scene` (løbenummer). Gamle klip uden scene: hvert sit (= sidernes deling fra 12/9). Filtret »hvem« virker på klip-rækkerne som før.
+- Afvist på vejen (17/9 kl. 12.39–13.02): rød tekst, sorte flader, opfundne scenenavne/tekster, »Skriv på skærmen«, ti fliser for ét tegn. Artifact 2guNAgvZdVA1g8xnRmR54Q v6.
