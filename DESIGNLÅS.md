@@ -329,3 +329,10 @@ Hvert klip-kort (computer + telefonens sceneliste) har nederst rækken **HVEM ER
 
 ## v2079 — ÉT AFSNIT = ÉN SIDE, INGEN CHIPS · »1 AF 4« I BJÆLKENS HJØRNE (Ida 17/9 kl. 11.41–11.44)
 Idas ord: »de chips skal ud og de 4 ting skal vises på samme side! så det ikke er så mange klik« + »dette skal flyttes ned i den røde flise og ideen skal fjernes så der bare står 1 af 4 … i højre hjørne«. Vælter 16/9's »ét felt ad gangen« (klik »For meget på hver side«) og 17/9 kl. 07.55's chips (bud C). Nu: Idéen-siden viser Hvad er idéen · Udbyttet · Målet · Handlingen som fliser under hinanden; Fang dem: Hook · Thumbnail; Fasthold dem: klippene; Få dem til at handle: Første linje · Historien · CTA i captionen. Næste går afsnit for afsnit (`briefTrinAnvend`: ét trin pr. side). Tallet »1 AF 4« står som hvid versal i bjælkens øverste højre hjørne (`.bss-tal`, absolut top 10/right 16); »IDÉEN · 1 AF 4« over bjælken er væk — kun »Tilbage til forsiden« står der. Målt 1440: alle fire sider, chips=0, tallet i bjælken (74 px).
+
+## v2080 — TILBAGE TIL BRIEFOVERSIGTEN NEDERST · INDHOLDSSØJLEN ØVERST I FAKTA-BOKSEN · TIPS MED PÆRE · FAKTA-VERSALEN UDE (Ida 17/9 kl. 11.45–11.49)
+- Knappen over bjælken er væk; nederst tv. står **»Tilbage til briefoversigten«** (hvid pille 48) + »Tilbage« (fra side 2), th. Næste / Send + Gem (`.bsd-venstre`).
+- **Indholdssøjle er første række i fakta-boksen** (ikon: søjler; trykket åbner søjle-arket »Hvilken indholdssøjle er opslaget?«). Vælter 15/9's »uden Indholdssøjle-række«.
+- Den røde bjælke under fakta-boksen hedder **»Tips«** med en lysende pære (hvidt stregikon 24 px) — ingen søjlenavn, ingen blyant; folder anbefalingerne ud.
+- **Versalen FAKTA over boksen er ude.**
+Målt 1440: række først i boksen, bjælke 74 px med pære, nav-knapper 48 px på alle fire sider, »Tilbage til briefoversigten« → forsiden.
