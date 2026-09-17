@@ -401,3 +401,6 @@ Porten: sendefeltet (radius 22) måles ikke som brief-felt.
 - v2091 også: markbåndets navn følger visningen på Content-siden — Idébanken · Inspiration · Arkivet (Ida 17/9 kl. 14.25: »under inspiration men hero siger idebank«).
 - v2091 også: **HUSETS ARK (arkAabn) = SAMME FORM SOM BRIEFENS POPUPS** (Ida 17/9 kl. 14.30: »nr. 20 forskellige pop-up jeg har fundet i dag«): spørgsmålet i Poppins 18 (ikke Didot kursiv), chips centreret, feltet (radius 14) med mikrofon, rød pille »Gem« (o.send), hvid Luk — ingen streg, ingen greb, ingen send-cirkel i feltet. Gælder Tøm hovedet · Jeg har set noget fedt · Content-idé · Ugetema · alle arkAabn-kald. Målt 1440 (midt) + 390 (ark).
 - v2091 også: mikrofonen **ånder i farven** (rød ↔ lys rød, 1,4 s), mens den lytter — ingen »Lytter — sig det bare«-tekst (Ida 17/9 kl. 14.35). Størrelsen røres ikke.
+
+## v2092 — SPORET »KOMMENDE INDHOLD« PÅ TELEFONEN KLIPPER IKKE SKYGGEN (Ida 17/9 kl. 14.24: »man kan se sådan en firkant«)
+Sporet (`.cf-vindue`, telefonens Hjem) havde 0 px luft, så fliseskyggen blev klippet til en lysere firkant. Nu 28 px luft rundt om (negativ margin, samme layout). Målt 390: ingen firkant, ingen vandret sejlads.
