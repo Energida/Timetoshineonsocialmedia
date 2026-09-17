@@ -411,3 +411,10 @@ Fliserne i sporet »Kommende indhold« har datofirkanten (48×48, tal + dag, dat
 
 ## v2095 — v2094 (SCENERNE) RULLET TILBAGE (Idas klik 17/9 kl. 15.45: »jeg har ikke godkendt noget ift scener«)
 Scenerne på skrivesiderne (scene-flisen, »+ Klip i scenen«, »+ Scene«, »Ny scene her«, »Ind i scenen ovenfor«) og forsidens Aa-overblik var bygget efter to klik (Scene 1 på Fang dem · bud 1 Aa) — men udformningen af skrivesiden var aldrig vist eller godkendt. Alt er rullet tilbage til v2093. **Regel:** et klik på en mockup af forsiden er ikke en godkendelse af skrivesiden — hver flade vises, før den bygges. Koden ligger som patch (scener-v2094) til næste runde: først et bud på skrivesiden som Artifact, ét klik, så bygges der.
+
+## INTET BYGGES PÅ TESTDATA ALENE — OG INTET DEPLOYES, FØR DET ER SET PÅ EN RIGTIG BRIEF (HÅRD, Ida 17/9 kl. 15.50: »hvordan kan du bygge noget uden at kigge på om det fungerer??? … dette må ALDRIG ske igen«)
+Det, der skete: scenerne (v2094) blev målt på selens testbrief (to klip) og så rigtige ud. På Idas rigtige brief blev hvert gammelt klip til sin egen scene — SCENE 1 · 2 · 3 · 4 med ét klip i hver. Det så jeg aldrig, fordi jeg aldrig kiggede på en rigtig brief.
+1. **Rører en ændring gemte data (klip, slides, forslag, briefens felter), ses den på MINDST ÉN RIGTIG BRIEF i selen, før den deployes** — en brief med det, kunderne faktisk skriver (fire klip, tomt hook, to klip i ét felt). Testdata med to pæne klip er ikke en måling.
+2. **En ny struktur på en skriveside vises som Artifact og klikkes, FØR den bygges.** Et klik på en mockup af forsiden er ikke en godkendelse af skrivesiden. Hver flade (forside · skriveside · telefon) vises for sig.
+3. **En migrering af gamle data (»klip uden scene bliver …«) er en designbeslutning**, ikke en teknisk detalje: den vises på den rigtige brief og klikkes, før den deployes.
+4. Porten (`koer.sh`) måler kun form (fliser, chips, versaler). Den ser ALDRIG, om indholdet giver mening. Grønt lys fra porten er ikke en godkendelse.
