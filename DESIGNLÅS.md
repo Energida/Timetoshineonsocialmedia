@@ -404,3 +404,7 @@ Porten: sendefeltet (radius 22) måles ikke som brief-felt.
 
 ## v2092 — SPORET »KOMMENDE INDHOLD« PÅ TELEFONEN KLIPPER IKKE SKYGGEN (Ida 17/9 kl. 14.24: »man kan se sådan en firkant«)
 Sporet (`.cf-vindue`, telefonens Hjem) havde 0 px luft, så fliseskyggen blev klippet til en lysere firkant. Nu 28 px luft rundt om (negativ margin, samme layout). Målt 390: ingen firkant, ingen vandret sejlads.
+
+## v2093 — KOMMENDE INDHOLD PÅ TELEFONENS HJEM MED DATOEN I FIRKANTEN (Ida 17/9 kl. 14.24: »det flotte design med datoen i en firkant … som kommende aftaler«)
+Fliserne i sporet »Kommende indhold« har datofirkanten (48×48, tal + dag, datofliserne-facit 2/9) til venstre og teksten til højre — som Kommende aftaler. Punktet bærer nu `dato`. Målt 390.
+- v2093 også: **Skift adgangskode = husets ark** (Ida 17/9 kl. 14.30: »så kommer der sku sådan en pop up«): »Ny adgangskode« · felt · rød Gem · Luk. Den gamle boks i hjørnet er arkiveret. Enter gemmer.
