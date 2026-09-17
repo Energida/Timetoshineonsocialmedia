@@ -421,3 +421,6 @@ Det, der skete: scenerne (v2094) blev målt på selens testbrief (to klip) og s�
 
 ## v2096 — FORSIDENS KLIP-RÆKKER MED TEGN (Idas klik 17/9 kl. 14.0x »Bud 1: Aa« + Idas ord kl. 15.55: »det der står nu fungerer — vi skal bare have de visuelle symboler ud i venstre side«)
 Forsidens rækker står, som de gjorde (Hook · Klip 1, 2, 3 … · CTA i videoen) — ingen scener. Hvert klip: **kamera i lys cirkel** til venstre, versal »KLIP n« + det, man ser, **initialer i cirkler** til højre (hvem), og under: **Aa i lys cirkel + teksten på skærmen**, evt. »SIGER« + manus. Karrusel: **billede-tegnet** i stedet for kameraet, »SLIDE n« + billedet, Aa + teksten. Målt 1440 + 390 på en brief med Idas eget indhold (fire klip, tomt hook, to klip i ét felt). Skrivesiderne er urørte.
+
+## v2097 — TELEFONRAMMEN BLIVER LAVERE UNDER »SOM KUNDE«-BANNERET (Ida 17/9 kl. 15.42: »på mobilsiden kan jeg ikke scrolle helt ned«)
+Banneret »Du arbejder i …s Content Studio« skubbede appen 150 px ned, men `.phone` var stadig 100dvh — de nederste 150 px (Ret briefen) lå under skærmkanten. Bannerets målte højde gives som `--som-bar`, og rammen er `100dvh − --som-bar`. Målt 390 med 150 px banner: knappen ender 49 px over bundmenuen. Kun Idas visning (kunderne har intet banner).
