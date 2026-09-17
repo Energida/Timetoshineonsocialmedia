@@ -3302,7 +3302,11 @@ input[type="date"][data-tom="1"]::-webkit-datetime-edit { opacity:0; }
   /* Sektionens navn over sine fliser (14/9): graa etiket, ikke en titel inde i et kort. */
   .bsm-sek { font-size:10px; letter-spacing:1.8px; text-transform:uppercase; color:var(--gray3); margin:20px 2px 8px; }
   .bsm-sek:first-child { margin-top:0; }
-  .bsm-n + .bsm-v, .bsm-n + .bsm-l { margin-top:10px; padding-top:10px; border-top:1px solid var(--border); }   /* overskrift · streg · tekst (17/9) */
+  .bsm-n + .bsm-v, .bsm-n + .bsm-l, .bsm-forkl + .bsm-v, .bsm-forkl + .bsm-l { margin-top:10px; padding-top:10px; border-top:1px solid var(--border); }   /* overskrift · (forklaring) · streg · tekst (17/9) */
+  .bsm-forkl { display:block; font-size:12.5px; line-height:1.5; color:var(--gray3); margin-top:4px; }
+  /* SKYGGERNE MAA IKKE KLIPPES (Ida 17/9 kl. 07.24: »siderne paa fliserne og dermed skyggerne forsvinder«): #screen7 var praecis flisens bredde med
+     overflow skjult, saa skyggen (36 px) blev skaaret af i begge sider. Skaermen klipper ikke laengere — .content holder stadig sejladsen ude. */
+  body.brief-aaben #screen7 { overflow:visible !important; }
   .bsm-l { font-size:10px; letter-spacing:1.6px; text-transform:uppercase; color:var(--gray3); margin:10px 0 3px; }
   .bsm-l:first-of-type { margin-top:0; }
   .bsm-v { font-size:14px; color:var(--black); line-height:1.45; font-weight:300; white-space:normal; }
@@ -25012,12 +25016,13 @@ function briefSamletHtml() {
         const hookT = v(S.hookTekst) || (k0 && (k0.tekst || "").trim()) || "";
         const hook = f("hookTekst") || f("indhold");
         const th = f("thumb");
-        const ud = [{ navn: "Hook", felt: "hookTekst", krop: vaerdi(hookT, "Mangler: hook") + (hook ? andreForslag(Object.assign({}, hook, { t: hookT, chips: null })) : "") }];
+        const erBil = String(S.format || "") === "Billede";
+        const ud = [{ navn: "Hook", felt: "hookTekst", forkl: erBil ? "Teksten på billedet, der får kunden til at stoppe op" : "Teksten i videoens første sekunder, der får kunden til at stoppe op", krop: vaerdi(hookT, "Mangler: hook") + (hook ? andreForslag(Object.assign({}, hook, { t: hookT, chips: null })) : "") }];
         /* KLIP 1 HOERER TIL FANG DEM (tvillingetjek 12/9, Idas klik). Computeren og godkendelsessiden viser
            "Klip 1 · Hook" med "Hvad ser man i klippet" under Fang dem, og Fasthold dem begynder ved klip 2.
            Telefonen viste hooket her OG klip 1 igen under Fasthold dem — samme brief, to opbygninger. */
-        if (k0 && (k0.ser || "").trim()) ud.push({ navn: "Hvad ser man i klippet", felt: "klip", krop: vaerdi(k0.ser.trim()) });
-        if (th) ud.push({ navn: "Thumbnail", felt: "thumb", krop: vaerdi(tekstAf(th), "Mangler: thumbnail") + andreForslag(th) });
+        if (k0 && (k0.ser || "").trim()) ud.push({ navn: "Hvad ser man i klippet", felt: "klip", forkl: "Det første klip, der skal fange kunden", krop: vaerdi(k0.ser.trim()) });
+        if (th) ud.push({ navn: "Thumbnail", felt: "thumb", forkl: "Teksten på billedet. Den skal skabe nysgerrighed og fortælle kunden hvad de får ud af at se indholdet uden at give svaret.", krop: vaerdi(tekstAf(th), "Mangler: thumbnail") + andreForslag(th) });
         return ud;
       }
       if (o.hvor === "1") {
@@ -25041,11 +25046,11 @@ function briefSamletHtml() {
       if (o.hvor === "2") {
         const cap = f("caption");
         const ud = [];
-        if (v(S.cta)) ud.push({ navn: "Handlingen", felt: "cta", krop: vaerdi(v(S.cta)) });
+        if (v(S.cta)) ud.push({ navn: "Handlingen", felt: "cta", forkl: "Den ene handling, kunden skal gøre, når de har set det", krop: vaerdi(v(S.cta)) });
         /* KOPIÉR CAPTION SIDDER VED CAPTIONEN (kontekstreglen 4/8; Ida 6/9 kl. 12.19: "Der mangler noget af
            det aller vigtigste — Kopiér caption-knappen"). Hvid knap i fuld bredde INDE i flisen (4/9-formen). */
         const capT = cap ? tekstAf(cap) : v(S.caption);
-        ud.push({ navn: "Caption", felt: "caption", krop: vaerdi(capT, "Mangler: caption"),
+        ud.push({ navn: "Caption", felt: "caption", forkl: "Teksten under opslaget", krop: vaerdi(capT, "Mangler: caption"),
           under: String(capT || "").trim() ? '<button type="button" class="bsam-fliseknap" onclick="event.stopPropagation();ktpKopier(' + JSON.stringify(captionFuld).replace(/"/g, "&quot;") + ', this)">Kopiér caption</button>' : "" });
         return ud;
       }
@@ -25080,7 +25085,9 @@ function briefSamletHtml() {
         return '<div class="bsm-sek">' + esc(o.navn) + '</div>'
           + delte.map(function (d) {
               return '<div class="bsm-flise" role="button" tabindex="0" onclick="briefSeRet(\'' + o.hvor + '\'' + (d.felt ? ',\'' + d.felt + '\'' : '') + ')">'
-                + '<span class="bsm-fyld"><span class="bsm-n">' + esc(d.navn) + '</span>'
+                /* FORKLARINGEN UNDER NAVNET (Ida 17/9 kl. 07.24: »mobildesignet mangler beskrivelser af tingene — mange vil ikke ane, hvad thumbnail er«):
+                   samme ord som feltets forklaring i briefen (Idas egne), graa linje under overskriften, stregen under den. */
+                + '<span class="bsm-fyld"><span class="bsm-n">' + esc(d.navn) + '</span>' + (d.forkl ? '<span class="bsm-forkl">' + esc(d.forkl) + '</span>' : '')
                 + d.krop + (d.under || '') + '</span></div>';
             }).join("");
       }
@@ -46804,7 +46811,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2072";
+const APP_VERSION = "2073";
 let NY_VERSION_KLAR = false;
 let NY_VERSION_AFVIST = false;
 function nyVersionSkjul() {
@@ -64964,6 +64971,6 @@ function prFaerdigHtml() {
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 17. september · 2072</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 17. september · 2073</div>
 </body>
 </html>
