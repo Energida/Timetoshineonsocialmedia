@@ -364,3 +364,10 @@ Regel: **Før hver etiket, forklaring, pladsholder og hjælpetekst stilles ét s
 - **Tilføj-arket: linket først, så »Hvad er det?«** (Ida: »man skal først indsætte linket og derefter vælge hvad det er«). Feltet er aldrig låst; det skrevne bliver, når man vælger.
 - **Telefonen:** fakta-felterne (dato m.fl.) blev slettet, når skinnen bor inde i wrap (`briefFaktaFelterFlyt` fandt sit eget felt i skinnen og smed det ud) — rettet (`iWrap`). Bundmenuen har samme lyse flade som siden med sløring (»baggrunden forsvinder i bunden«). `.content` ruller med `-webkit-overflow-scrolling: touch` + `overscroll-behavior: contain` (»den hakkede« — ikke målt på rigtig iPhone).
 - Tilføj-pillen: ordet står i midten, plusset foran.
+
+## v2087 — UX-POLITIET PÅ TELEFONEN, RUNDE 1 (Ida 17/9 kl. 13.00: »send UX-politiet på sundhedstjek på mobilversionen«)
+Alle 15 kundeapp-sider skudt på 390 i selen og set mod desktop-beslutningerne. Rettet uden at spørge (rene regelbrud):
+- **Idébanken (telefon):** »Tilføj idé«-pillen under hver søjle er ude — hver søjle har sit eget sendefelt »Ny idé …« nederst (regel 17/9 kl. 10.25: nyt på en liste = sendefeltet). Idéen lander i den søjle (`data-soejle`). Det ene fælles sendefelt i bunden er ude.
+- **Performance:** »sæt et mål« var rød skrift — nu chippen »Sæt et mål« (knapper er altid piller).
+- **Min profil:** Gem var rund på telefonen (kort ord i en pille) — nu fuld bredde, 48 px.
+Set og i orden: Inspiration · Arkiv · Content Studio · Indbakken · Værktøjskassen · Målsætninger · Forløbet · Lektionen (piller, fliser, skygger, én rød pr. side). ÅBENT (kræver Idas valg): telefonens Hjem er greige med fotohero (låst 11/9) — computerens kundeapp er ren hvid med markbåndet (låst 15/9).
