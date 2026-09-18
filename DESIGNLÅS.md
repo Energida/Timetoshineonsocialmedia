@@ -514,3 +514,8 @@ Vejen fra en skriveside til forsiden er ØJET ved titlen (v2089, Idas klik 17/9 
 
 ## v2111 — B2B-GENNEMGANGENS FUND 3: KALENDERENS PLUS ER DEN GRÅ KNAP (18/9 kl. 14.25, målt 390 + 1440)
 - `.uge-opret` (plusset i hver dag på computeren) var hvid med grå ring og RØDT plus (Ida 16/9 kl. 10.45). 18/9-reglen »kun to knapper: rød og grå — rød tekst i hvid knap findes ikke mere« vinder: grå kant `--knap-graa-kant`, gråt plus `--knap-graa-tekst`. Telefonen viser ikke plusset i månedscellerne (uændret).
+
+## v2112 — FUND 4 + 5: »RET« · »SKRIV TEMAET« · »SKRIV« ER DEN GRÅ CHIP, OG DE 4 BYGGESTEN HEDDER DET SAMME I NAVSTI OG BÅND (18/9 kl. 14.40, målt 390 + 1440)
+- Målsætninger og De 4 byggesten på computeren: de røde ord-knapper (`#screen24 .rkn`, `.bygg-ret`) er den grå chip (36 px, grå kant, grå tekst); telefonen havde dem allerede grå og lange. Ét knapsprog på begge flader.
+- Båndet på De 4 byggesten sagde »Målsætninger« (MB_NAVNE[24]), mens navstien sagde »DE 4 BYGGESTEN« — båndet følger nu sidens titel (`#tilpasSideTitel`), så navnet er 1:1 (26/8).
+- IKKE RØRT (klik til Ida): rækkerne i én kasse på De 4 byggesten og Målsætninger (Idas godkendte reference v1177) mod 5/9-reglen »altid fliser« — de to sider deler formen, så det er én beslutning for begge.
