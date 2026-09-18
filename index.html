@@ -17633,7 +17633,7 @@ function briefForsideTegn(G, grupper, wrap, navM) {
       const hvem = Array.isArray(k.hvem) ? k.hvem.filter(Boolean) : [];
       const ser = T(k.ser), tekst = T(k.tekst), siger = T(k.siger);
       const felter = [felt(FB_IK.kamera, "Det, man ser i klippet", ser, "Beskriv, hvad man ser i klippet")];
-      if ((tekst && !(n === 0 && tekst === hook)) || !ser) felter.push(felt(FB_IK.undertekst, "Tekst på skærmen", tekst, "Skriv teksten på skærmen", true));   /* et klip uden tekst paa skaermen fylder hele bredden med sit ene felt; klip 1's tekst ER hooket og staar ikke to gange */
+      if (n > 0 && (tekst || !ser)) felter.push(felt(FB_IK.undertekst, "Tekst på skærmen", tekst, "Skriv teksten på skærmen", true));   /* et klip uden tekst paa skaermen fylder hele bredden med sit ene felt; klip 1's tekst ER hooket (4/9) og staar i hook-flisen — aldrig to gange (Ida 18/9 kl. 12.31) */
       if (siger) felter.push(felt(FB_IK.boble, "Manus", siger, "", false));
       rows += flise({ navn: "Klip " + (n + 1), hvem: hvem, hop: "#bf_klip_" + p.i + "_ser", felter: felter });
       laes.push("Klip " + (n + 1) + ". " + [ser, tekst ? "Tekst på skærmen: " + tekst : "", siger ? "Manus: " + siger : ""].filter(Boolean).join(". "));
@@ -17916,7 +17916,7 @@ function briefSiderTegn(G, grupper, wrap, navM, bud) {
     wrap.querySelectorAll(".bss-chips").forEach(function (e) { e.remove(); });
     const hoved = akt === 0 ? wrap.querySelector(".brief-ide-hoved") : sider[akt].find(function (e) { return e.classList.contains("brief-raketkort"); });
     wrap.querySelectorAll(".bss-tal").forEach(function (e) { e.remove(); });
-    if (hoved) { const tal = document.createElement("span"); tal.className = "bss-tal"; tal.textContent = (akt + 1) + " af " + sider.length; const hb = hoved.querySelector(".rk-fold-tekst b"); (hb || hoved).appendChild(tal); }   /* lige efter navnet (Ida 17/9 kl. 11.57) */
+    /* »N AF 4« ER UDE AF BJAELKEN (Ida 18/9 kl. 12.33: »efter vi har samlet alt paa én side skal det der 2 af 4 slettes paa alle«) — vaelter 17/9 kl. 11.57 */
     if (hoved && ti.n > 1) {
       const row = document.createElement("div"); row.className = "bss-chips";
       row.innerHTML = (ti.navne || []).map(function (nv, i) { return '<button type="button" class="ark-chip' + (i === ti.t ? ' on' : '') + '" onclick="BRIEF_TRIN_AKTIV=' + i + ';briefMbVis(\'skriv\', undefined, true)">' + esc(nv || ("Trin " + (i + 1))) + '</button>'; }).join("");
@@ -18968,6 +18968,12 @@ function briefForslagSynk(key) {
   if (key === "hookTekst" && b[key] && b.format !== "Karrusel" && b.format !== "Billede") {
     if (!(Array.isArray(b.klip) && b.klip[0])) { try { briefKlipListe(); } catch (e) {} }
   }
+  if (key === "hookTekst" && !b[key] && Array.isArray(b.klip) && b.klip[0] && b.format !== "Karrusel" && b.format !== "Billede") {
+    /* FRAVALGT HOOK = KLIP 1 UDEN TEKST PAA SKAERMEN (Ida 18/9 kl. 12.31): klip 1's tekst ER hooket (4/9) — staar der et af listens forslag, toemmes den.
+       Kundens egne ord i klip 1, der ikke er et forslag, roeres ikke (gem maa ikke slette, 4/8). */
+    const nu0 = String(b.klip[0].tekst || "").trim();
+    if (nu0 && liste.some(function (t) { return String(t || "").trim() === nu0; })) { b.klip[0].tekst = ""; const kf0 = document.getElementById("bf_klip_0_tekst"); if (kf0) kf0.value = ""; }
+  }
   if (key === "hookTekst" && b[key] && Array.isArray(b.klip) && b.klip[0]) {
     b.klip[0].tekst = b[key];
     b.hookFlettet = true;
@@ -19209,7 +19215,7 @@ function briefForslagRaekker(key) {
        valgt - skal de andre forslag få en anden farve baggrund en slags visuel låst
        effekt?"). Tonen hentes i gradientens VARME ende — sand, aldrig rosa og aldrig
        blaa (2/9). De kan stadig rettes; de er dæmpede, ikke spærrede. */
-    const laast = (valgt2 > -1 && !on);
+    const laast = (valgt2 > -1 && !on && !!String(t || "").trim());   /* det tomme »Skriv et forslag« daempes aldrig (Ida 18/9 kl. 12.30) */
     /* EEN LINJE, CENTRERET UD FOR CIRKLEN (Ida 6/9 kl. 12.08: "Disse felter er stadig for store og jeg
        skal kunne skrive centreret altsaa lige linje ud for cirklen"). rows=1 — hoejden vokser med teksten. */
     const felt = '<textarea class="sk-input" rows="1" id="bf_' + key + '_f' + i + '"'
@@ -24874,7 +24880,9 @@ function briefSideVis(i) {
      et hook, tegnes klip-blokken igen, foer siden vises. */
   try {
     const b0 = BRIEF_STATE, k0 = b0 && Array.isArray(b0.klip) && b0.klip[0];
-    if (k0 && String(k0.tekst || "").trim() && document.getElementById("briefKlipHolder") && !document.getElementById("bf_klip_0_tekst")) briefKlipRerender();
+    /* KLIP 1 HAR INTET TEKSTFELT, NAAR DET BOR UNDER FANG DEM (18/9): hooket staar lige over — saa maa vagten ikke tegne om (den tegnede briefen om i det
+       uendelige paa GitHub: »Maximum call stack size exceeded«, v2101). */
+    if (k0 && String(k0.tekst || "").trim() && document.getElementById("briefKlipHolder") && !document.getElementById("bf_klip_0_tekst") && !(typeof briefKlipScenerPaaComputer === "function" && briefKlipScenerPaaComputer())) briefKlipRerender();
   } catch (e) {}
   /* Briefen vises som sider, der følger Succesraketten (Ida 21/7) — kun
      felterne for det aktive trin er fremme. Grupperne afgrænses af de røde
@@ -48199,7 +48207,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2102";
+const APP_VERSION = "2103";
 let NY_VERSION_KLAR = false;
 let NY_VERSION_AFVIST = false;
 function nyVersionSkjul() {
@@ -66367,6 +66375,6 @@ function prFaerdigHtml() {
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 18. september · 2102</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 18. september · 2103</div>
 </body>
 </html>

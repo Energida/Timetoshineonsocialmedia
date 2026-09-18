@@ -49,6 +49,19 @@ setTimeout(async function(){ try {
   maal("forside"); SIDSTE="forside maalt";
   for(var side=0; side<4; side++){ BRIEF_SIDE_AKTIV=side; BRIEF_TRIN_AKTIV=0; briefMbVis("skriv"); await vent(150); var n=(BRIEF_TRIN_INFO||{n:1}).n; for(var t=0;t<n;t++){ BRIEF_TRIN_AKTIV=t; briefMbVis("skriv"); await vent(120); document.querySelectorAll("#briefWrap textarea").forEach(function(x){x.classList.add("mb-felt")}); maal("side"+side+"/"+t); SIDSTE="side"+side+"/"+t+" maalt"; } }
   SIDSTE="alle sider maalt";
+  /* SYNK-PORTEN (Ida 18/9 kl. 12.31: »den synkroniserer ikke automatisk naar jeg til/fravaelger eller aendrer i hooket??«): resultatet maales, ikke mekanikken —
+     vaelg et andet hook paa Fang dem → forsiden viser det · fravaelg → forsiden siger »Vaelg dit hook«, og klip 1 baerer ikke det gamle · ret ordlyden → forsiden foelger. */
+  try {
+    var hookPaaForsiden=function(){ var f=document.querySelector("#briefForside .pf-kf .pf-felt span:last-child"); return f?(f.innerText||"").replace(/\s+/g," ").trim():"(ingen hook-flise)"; };
+    BRIEF_SIDE_AKTIV=1; BRIEF_TRIN_AKTIV=0; briefMbVis("skriv"); await vent(150);
+    briefForslagVaelg("hookTekst",1); await vent(150); briefMbVis("forside"); await vent(200);
+    var h1=hookPaaForsiden(); if(h1.indexOf("Min kollega vælger altid det modsatte af mig")<0) FUND.push("SYNK: forsiden viser ikke det valgte hook — staar: "+h1.slice(0,60));
+    BRIEF_SIDE_AKTIV=1; briefMbVis("skriv"); await vent(150); briefForslagVaelg("hookTekst",1); await vent(150); briefMbVis("forside"); await vent(200);
+    var h0=hookPaaForsiden(); if(h0.indexOf("Vælg dit hook")<0) FUND.push("SYNK: hooket er fravalgt, men forsiden viser stadig: "+h0.slice(0,60));
+    var k1=document.querySelectorAll("#briefForside .pf-kf")[1]; var k1t=k1?(k1.innerText||""):""; if(/modsatte af mig|farver — og det er derfor/.test(k1t)) FUND.push("SYNK: klip 1 baerer det fravalgte hook paa forsiden");
+    BRIEF_SIDE_AKTIV=1; briefMbVis("skriv"); await vent(150); var f0=document.getElementById("bf_hookTekst_f0"); if(f0){ f0.value="Nyt hook skrevet i selen"; briefForslagLaes("hookTekst"); briefForslagVaelg("hookTekst",0); await vent(150); briefMbVis("forside"); await vent(200); var h2=hookPaaForsiden(); if(h2.indexOf("Nyt hook skrevet i selen")<0) FUND.push("SYNK: hooket blev rettet, men forsiden viser: "+h2.slice(0,60)); }
+    SIDSTE="synk maalt";
+  } catch(e){ FUND.push("SYNK-proben fejlede: "+(e&&e.message)); }
   Object.keys(GRUPPER).forEach(function(g){ var keys=Object.keys(GRUPPER[g]); if(keys.length>1){ keys.sort(function(a,b){return GRUPPER[g][b].length-GRUPPER[g][a].length}); FUND.push("UENS "+g+": "+keys.map(function(k){return k+" ×"+GRUPPER[g][k].length+" (fx "+GRUPPER[g][k][0]+")"}).join(" || ")); } });
   if(FUND.length){ FUND.forEach(function(f){ console.log("SELE BRIEF FEJL: "+f); }); console.log("SELE BRIEF IKKE OK: "+FUND.length+" fund"); }
   else { var tal=Object.keys(GRUPPER).map(function(g){ var k=Object.keys(GRUPPER[g])[0]; return g+" "+GRUPPER[g][k].length+" ("+k+")"; }).join(" · "); var ialt=Object.keys(GRUPPER).reduce(function(a,g){ return a+Object.keys(GRUPPER[g]).reduce(function(b,k){return b+GRUPPER[g][k].length},0); },0); if(ialt<40) console.log("SELE BRIEF FEJL: kun "+ialt+" elementer maalt — briefen blev ikke tegnet"); else console.log("SELE BRIEF OK: "+ialt+" elementer ens paa forsiden og alle skrivetrin, ingen rosa — "+tal); }
