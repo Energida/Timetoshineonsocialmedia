@@ -21,6 +21,13 @@ function maal(trin){
       if(hvid&&(roedKant||roedTekst)) FUND.push("ROED RAMME/TEKST I HVID KNAP "+trin+" · "+txt(e)+" ["+cl.split(" ")[0]+"]");
     }
     var rad=px(cs.borderTopLeftRadius), h=px(r.height);
+    /* RUNDT ER RUNDT (HAARD, Ida 18/9 kl. 13.37: »det maa ALDRIG deployes uden at alle stoerrelser og formater er tjekket«): en cirkel (radius >= halv side, under 60 px,
+       uden ord eller med hoejst to tegn) skal have samme bredde og hoejde. 28 x 44 er en oval — det var hook-cirklen paa telefonen. */
+    if(rad>=Math.min(px(r.width),h)/2-1&&px(r.width)<60&&h<60&&px(r.width)>=12&&h>=12&&(tag==="BUTTON"||tag==="SPAN"||tag==="I"||tag==="DIV")){
+      var ordL=(e.innerText||"").trim().length, usynligFlade=/rgba\(0, 0, 0, 0\)|transparent/.test(cs.backgroundColor)&&(cs.borderTopStyle==="none"||parseFloat(cs.borderTopWidth)===0);
+      /* en chip med ord er en pille (bredere end hoej) — kun hoejere end bred er en strakt cirkel; en usynlig flade (rent tegn uden kant/baggrund) har ingen form at maale */
+      if(!usynligFlade&&(ordL===0?Math.abs(px(r.width)-h)>1.5:(ordL<=2&&h-px(r.width)>1.5))) FUND.push("OVAL "+trin+" · "+tag+"["+cl.split(" ")[0]+"] "+px(r.width)+"x"+h+" — en cirkel skal vaere rund");
+    }
     if(tag==="BUTTON"&&!/\b(bdrop-knap|pf-ik|bt-blyant|kort-plus|fs-cirkel|fs-slet|fs-fjern|ko-plus|klip-flyt|klip-slet|bdrop-rk|chip-btn|ark-luk|ark-send|ark-rund|tale-knap|bsam-ret-link|klip-knap|bs-flyt-luk|fb-rk)\b/.test(cl)&&!e.closest(".bdrop-kort,.fb-rk,.ark,#bsFlytMenu,.sk-input")&&(e.innerText||"").trim()){   /* kun knapper med ORD — ikon-knapper (skraldespand, mikrofon, flueben) har hver sin laaste form */
       if(Math.abs(px(r.width)-h)<=8) return;   /* runde ikon-knapper (flueben, mikrofon, skraldespand, Del/Slet) har hver sin laaste stoerrelse og maales ikke som chips */
       if(rad>=99||rad>=h/2-1){ if(h>40) laeg("pille","h"+h2(h)+" fs"+Math.round(parseFloat(cs.fontSize))+" rad999 bd"+px(cs.borderTopWidth),e,trin); else laeg("chip","h"+h2(h)+" fs"+Math.round(parseFloat(cs.fontSize))+" bd"+px(cs.borderTopWidth),e,trin); }
@@ -50,14 +57,14 @@ setTimeout(async function(){ try {
   for(var side=0; side<4; side++){ BRIEF_SIDE_AKTIV=side; BRIEF_TRIN_AKTIV=0; briefMbVis("skriv"); await vent(150); var n=(BRIEF_TRIN_INFO||{n:1}).n; for(var t=0;t<n;t++){ BRIEF_TRIN_AKTIV=t; briefMbVis("skriv"); await vent(120); document.querySelectorAll("#briefWrap textarea").forEach(function(x){x.classList.add("mb-felt")}); maal("side"+side+"/"+t); SIDSTE="side"+side+"/"+t+" maalt"; } }
   SIDSTE="alle sider maalt";
   /* SYNK-PORTEN (Ida 18/9 kl. 12.31: »den synkroniserer ikke automatisk naar jeg til/fravaelger eller aendrer i hooket??«): resultatet maales, ikke mekanikken —
-     vaelg et andet hook paa Fang dem → forsiden viser det · fravaelg → forsiden siger »Vaelg dit hook«, og klip 1 baerer ikke det gamle · ret ordlyden → forsiden foelger. */
+     vaelg et andet hook paa Fang dem → forsiden viser det · fravaelg → forsiden siger »Mangler« (Ida 18/9 kl. 15.10), og klip 1 baerer ikke det gamle · ret ordlyden → forsiden foelger. */
   try {
     var hookPaaForsiden=function(){ var f=document.querySelector("#briefForside .pf-kf .pf-felt span:last-child"); return f?(f.innerText||"").replace(/\s+/g," ").trim():"(ingen hook-flise)"; };
     BRIEF_SIDE_AKTIV=1; BRIEF_TRIN_AKTIV=0; briefMbVis("skriv"); await vent(150);
     briefForslagVaelg("hookTekst",1); await vent(150); briefMbVis("forside"); await vent(200);
     var h1=hookPaaForsiden(); if(h1.indexOf("Min kollega vælger altid det modsatte af mig")<0) FUND.push("SYNK: forsiden viser ikke det valgte hook — staar: "+h1.slice(0,60));
     BRIEF_SIDE_AKTIV=1; briefMbVis("skriv"); await vent(150); briefForslagVaelg("hookTekst",1); await vent(150); briefMbVis("forside"); await vent(200);
-    var h0=hookPaaForsiden(); if(h0.indexOf("Vælg dit hook")<0) FUND.push("SYNK: hooket er fravalgt, men forsiden viser stadig: "+h0.slice(0,60));
+    var h0=hookPaaForsiden(); if(h0.indexOf("Mangler")<0) FUND.push("SYNK: hooket er fravalgt, men forsiden viser stadig: "+h0.slice(0,60));
     var k1=document.querySelectorAll("#briefForside .pf-kf")[1]; var k1t=k1?(k1.innerText||""):""; if(/modsatte af mig|farver — og det er derfor/.test(k1t)) FUND.push("SYNK: klip 1 baerer det fravalgte hook paa forsiden");
     BRIEF_SIDE_AKTIV=1; briefMbVis("skriv"); await vent(150); var f0=document.getElementById("bf_hookTekst_f0"); if(f0){ f0.value="Nyt hook skrevet i selen"; briefForslagLaes("hookTekst"); briefForslagVaelg("hookTekst",0); await vent(150); briefMbVis("forside"); await vent(200); var h2=hookPaaForsiden(); if(h2.indexOf("Nyt hook skrevet i selen")<0) FUND.push("SYNK: hooket blev rettet, men forsiden viser: "+h2.slice(0,60)); }
     SIDSTE="synk maalt";

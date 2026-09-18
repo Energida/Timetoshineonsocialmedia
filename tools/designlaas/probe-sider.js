@@ -69,6 +69,15 @@ setTimeout(async function () {
       var c = document.querySelector(".content");
       if (document.documentElement.scrollWidth > innerWidth + 1 || (c && c.scrollWidth > c.clientWidth + 1)) { console.log("SELE SIDER FEJL " + navn + " vandret sejlads: siden er bredere end skaermen"); fejl++; }
       var kn = [].filter.call(r.querySelectorAll("button, a[onclick], [role=button], .row-btn, label.ark-knap"), function (b) { var q = b.getBoundingClientRect(); return q.height > 0 && q.width > 0; });
+      /* RUNDT ER RUNDT (HAARD, Ida 18/9 kl. 13.37): en cirkel under 60 px uden ord (hoejst to tegn) skal have samme bredde og hoejde — 28 x 44 er en oval. */
+      [].forEach.call(r.querySelectorAll("button, span, i, div"), function (e) {
+        var q = e.getBoundingClientRect(); if (q.width < 12 || q.height < 12 || q.width >= 60 || q.height >= 60) return;
+        var ce = getComputedStyle(e); if (ce.display === "none" || ce.visibility === "hidden") return;
+        var rad = parseFloat(ce.borderTopLeftRadius) || 0; if (rad < Math.min(q.width, q.height) / 2 - 1) return;
+        var ordL = (e.innerText || "").trim().length; if (ordL > 2) return;
+        if (/rgba\(0, 0, 0, 0\)|transparent/.test(ce.backgroundColor) && (ce.borderTopStyle === "none" || parseFloat(ce.borderTopWidth) === 0)) return;   /* usynlig flade: intet at maale */
+        if (ordL === 0 ? Math.abs(q.width - q.height) > 1.5 : q.height - q.width > 1.5) FUND.push("OVAL " + navn + " · " + e.tagName + "[" + String(e.className).split(" ")[0] + "] " + Math.round(q.width) + "x" + Math.round(q.height) + " — en cirkel skal vaere rund");
+      });
       kn.forEach(function (b) {
         var q = b.getBoundingClientRect(); if (q.height >= 44) return;
         if (innerWidth > 760) {   /* computeren: 44 er telefonens maal. Husets egne computer-maal er 28-34 px (karrusel-pil 30, vaerktoejer 32-34, plus 33), og roede ord som knapper er tilladt dér (13/9). Kun det, der er mindre end 28 px OG ikke et rent ord, er en fejl. */
