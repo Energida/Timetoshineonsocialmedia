@@ -32,7 +32,9 @@ function maal(trin){
     if(/\b(brief-raketkort|brief-dbog-hoved)\b/.test(cl)) laeg("bjaelke","rad"+rad+" h"+h2(h)+" bg"+rgb(cs.backgroundColor),e,trin);
   });
 }
-setTimeout(async function(){
+var SIDSTE="start";   /* vagten (18/9): naar proben aldrig naar i maal, skal loggen sige HVOR den stod — ikke bare »ingen maaling« */
+setTimeout(function(){ console.log("SELE BRIEF FEJL: proben naaede ikke i maal paa 70 s — sidste trin: "+SIDSTE); },70000);
+setTimeout(async function(){ try {
   var vent=function(ms){return new Promise(function(r){setTimeout(r,ms)})};
   for(var v=0;v<40&&!document.body.classList.contains("app-klar");v++) await vent(150);
   ["appLoader","turOverlay","dagensKort","nyVersion"].forEach(function(id){var e=document.getElementById(id); if(e) e.remove();});
@@ -40,12 +42,15 @@ setTimeout(async function(){
   try{ STRATEGI_TEMAER.push({navn:"Menneskene bag", formaal:"kunderne skal lære os at kende", foelelse:"Dem kan jeg lide", eksempler:[]}); }catch(e){}
   var H1="Vi er aldrig enige om farver — og det er derfor, butikken virker";
   IDEER.push({id:"ens1",titel:"To om ét indkøb",soejle:"Menneskene bag",type:"Reel",status:"Brief i gang",dato:"2026-09-17",brief:{format:"Reel",platform:["Instagram"],beskrivelse:"Vi viser, hvordan vi to vælger forskelligt.",maal:"Flere kommentarer",hookTekst:H1,hookTekstListe:[H1,"Min kollega vælger altid det modsatte af mig"],hookTekstValgt:0,thumb:"To mennesker.",thumbListe:["To mennesker."],thumbValgt:0,klip:[{ser:"Vi står med hver vores favorit",tekst:H1},{ser:"Klip mellem de to valg",tekst:"Hvem har ret?"}],ctaVideo:"Skriv i kommentarerne",caption:"Vi køber ind sammen — og vi er sjældent enige.\n\nDen ene går efter det rolige. Hvem er du mest enig med?",ctaCaption:"Kommentér opslaget",cta:"Kommentér opslaget",hashtags:"#menneskenebag #butiksliv",linkIndhold:"https://drive.google.com/x"}});
-  openBriefSide("ens1"); await vent(1500);
+  SIDSTE="app-klar "+document.body.classList.contains("app-klar")+" · openBriefSide";
+  openBriefSide("ens1"); await vent(1500); SIDSTE="brief aabnet, mb="+document.body.classList.contains("mb");
   try{ document.querySelectorAll("#turOverlay,.tur-slor,#turKort,#nyVersion,#dagensKort").forEach(function(e){e.remove()}); }catch(e){}
   if(!document.body.classList.contains("mb")){ console.log("SELE BRIEF FEJL: computeren (body.mb) er ikke aktiv paa "+innerWidth); return; }
-  maal("forside");
-  for(var side=0; side<4; side++){ BRIEF_SIDE_AKTIV=side; BRIEF_TRIN_AKTIV=0; briefMbVis("skriv"); await vent(150); var n=(BRIEF_TRIN_INFO||{n:1}).n; for(var t=0;t<n;t++){ BRIEF_TRIN_AKTIV=t; briefMbVis("skriv"); await vent(120); document.querySelectorAll("#briefWrap textarea").forEach(function(x){x.classList.add("mb-felt")}); maal("side"+side+"/"+t); } }
+  maal("forside"); SIDSTE="forside maalt";
+  for(var side=0; side<4; side++){ BRIEF_SIDE_AKTIV=side; BRIEF_TRIN_AKTIV=0; briefMbVis("skriv"); await vent(150); var n=(BRIEF_TRIN_INFO||{n:1}).n; for(var t=0;t<n;t++){ BRIEF_TRIN_AKTIV=t; briefMbVis("skriv"); await vent(120); document.querySelectorAll("#briefWrap textarea").forEach(function(x){x.classList.add("mb-felt")}); maal("side"+side+"/"+t); SIDSTE="side"+side+"/"+t+" maalt"; } }
+  SIDSTE="alle sider maalt";
   Object.keys(GRUPPER).forEach(function(g){ var keys=Object.keys(GRUPPER[g]); if(keys.length>1){ keys.sort(function(a,b){return GRUPPER[g][b].length-GRUPPER[g][a].length}); FUND.push("UENS "+g+": "+keys.map(function(k){return k+" ×"+GRUPPER[g][k].length+" (fx "+GRUPPER[g][k][0]+")"}).join(" || ")); } });
   if(FUND.length){ FUND.forEach(function(f){ console.log("SELE BRIEF FEJL: "+f); }); console.log("SELE BRIEF IKKE OK: "+FUND.length+" fund"); }
   else { var tal=Object.keys(GRUPPER).map(function(g){ var k=Object.keys(GRUPPER[g])[0]; return g+" "+GRUPPER[g][k].length+" ("+k+")"; }).join(" · "); var ialt=Object.keys(GRUPPER).reduce(function(a,g){ return a+Object.keys(GRUPPER[g]).reduce(function(b,k){return b+GRUPPER[g][k].length},0); },0); if(ialt<40) console.log("SELE BRIEF FEJL: kun "+ialt+" elementer maalt — briefen blev ikke tegnet"); else console.log("SELE BRIEF OK: "+ialt+" elementer ens paa forsiden og alle skrivetrin, ingen rosa — "+tal); }
+} catch(e){ console.log("SELE BRIEF FEJL probe: "+(e&&e.message)+" — sidste trin: "+SIDSTE+" — "+String(e&&e.stack||"").split("\n").slice(0,3).join(" | ")); }
 }, 2500);

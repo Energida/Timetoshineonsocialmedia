@@ -50,6 +50,6 @@ K3=$(python3 -c "import urllib.parse,sys;print(urllib.parse.quote(open(sys.argv[
 RAA3=$($TO "$C" $HL --no-sandbox --disable-gpu --window-size=1480,1000 --virtual-time-budget=30000 --enable-logging=stderr --v=0 --screenshot="$MAAL/brief.png" "http://127.0.0.1:$PORT/sele.html?vis=kunde&fil=index-sele.html%3Fselekode%3DACORNS2026&bred=1440&hoej=940&kode=$K3" 2>&1)
 UD3=$(echo "$RAA3" | grep -a 'CONSOLE' | sed -E 's/^.*CONSOLE[:(][0-9]+\)?\] //; s/", source:.*$//; s/^"//' | grep -a 'SELE BRIEF')
 echo "$UD3"
-[ -z "$UD3" ] && { echo "SELE BRIEF FEJL: ingen maaling fra chromium — de foerste linjer:"; echo "$RAA3" | head -20; }
+[ -z "$UD3" ] && { echo "SELE BRIEF FEJL: ingen maaling fra chromium — de SIDSTE 30 konsollinjer (18/9: de foerste 20 var kun opstartsstoej):"; echo "$RAA3" | grep -a 'CONSOLE' | tail -30 | cut -c1-400; echo "--- og de foerste 5 raa linjer:"; echo "$RAA3" | head -5; }
 echo "$UD" | grep -q "SELE LAAS OK" && echo "$UD2" | grep -q "SELE SIDER OK" && echo "$UD3" | grep -q "SELE BRIEF OK" && exit 0
 echo "SELE LAAS FEJL: maalingen sagde ikke OK"; exit 1
