@@ -68,6 +68,11 @@ setTimeout(async function(){ try {
       {id:"pf3",titel:"Karrusel uden billeder",soejle:"Produkt",type:"Karrusel",status:"Idé",dato:null,brief:{format:"Karrusel",slides:["a","b"],hookTekst:"a",hookTekstListe:["a"],hookTekstValgt:0}}];
     for(var fi=0;fi<FORMER.length;fi++){ IDEER.push(FORMER[fi]); openBriefSide(FORMER[fi].id); await vent(700); var fsx=document.getElementById("briefForside"); var okx=fsx&&fsx.style.display!=="none"&&(fsx.innerText||"").length>20; if(!okx) FUND.push("FORSIDEN TEGNES IKKE paa briefen »"+FORMER[fi].titel+"« — den raa brief staar synlig"); if(okx&&/\bfalse\b/.test(fsx.innerText||"")) FUND.push("FORSIDEN viser ordet »false« paa »"+FORMER[fi].titel+"«"); }
     SIDSTE="brief-former maalt";
+    /* VEJEN TILBAGE FRA EN SKRIVESIDE ER OEJET VED TITLEN (v2089; Ida 18/9 kl. 14.50 fjernede en uoensket pille): oejet skal vaere synligt paa skrivesiderne, og ingen »Tilbage til forsiden«-pille */
+    try { BRIEF_SIDE_AKTIV=1; BRIEF_TRIN_AKTIV=0; briefMbVis("skriv"); await vent(200);
+      var oeje=document.querySelector("#briefTitelBlok .bt-oeje"); if(!oeje||!synlig(oeje)) FUND.push("OEJET (Briefoversigten) mangler ved titlen paa skrivesiden");
+      var pille=[].find.call(document.querySelectorAll("#briefWrap button"),function(b){return /tilbage til forsiden/i.test(b.innerText||"")&&synlig(b)}); if(pille) FUND.push("PILLE »Tilbage til forsiden« staar paa skrivesiden — den er fjernet (Ida 18/9 kl. 14.50)"); } catch(e){ FUND.push("OEJE-proben fejlede: "+(e&&e.message)); }
+    SIDSTE="oeje maalt";
   } catch(e){ FUND.push("SYNK-proben fejlede: "+(e&&e.message)); }
   Object.keys(GRUPPER).forEach(function(g){ var keys=Object.keys(GRUPPER[g]); if(keys.length>1){ keys.sort(function(a,b){return GRUPPER[g][b].length-GRUPPER[g][a].length}); FUND.push("UENS "+g+": "+keys.map(function(k){return k+" ×"+GRUPPER[g][k].length+" (fx "+GRUPPER[g][k][0]+")"}).join(" || ")); } });
   if(FUND.length){ FUND.forEach(function(f){ console.log("SELE BRIEF FEJL: "+f); }); console.log("SELE BRIEF IKKE OK: "+FUND.length+" fund"); }
