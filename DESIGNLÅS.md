@@ -554,3 +554,9 @@ Vejen fra en skriveside til forsiden er ØJET ved titlen (v2089, Idas klik 17/9 
 
 ## v2119 — EN EGEN SØJLE KAN SLETTES (18/9, målt 390 + 1440)
 - Skraldespanden (aldrig et kryds, 17/9) står i den egne søjles hoved: hvid på den røde flise på computeren, grå i sektionens etiket på telefonen; trykfelt 44. Trykket spørger i husets ark (»Slet søjlen »X«?« · Slet (rød) · Annuller) — idéerne i den bliver og lander under Uden indholdssøjle. De fire indholdssøjler kan ikke slettes. Omdøb er ikke bygget (klik).
+
+## v2120 — »FIND IDÉEN MED DREJEBOGEN« ER UDE AF NY IDÉ-ARKET (Ida 18/9 kl. 16.05)
+- Knappen under søjlechipsene er fjernet. Ida: »drejebogen skal ikke fremgå som ord nogle steder — så skal det være byggesten, hvis det er«. Ordet står stadig som navn på Drejebog-siden (sidemenu, Hjem-flisen, forløbet, kurset) — omdøbningen af selve siden er et klik (den hedder i dag noget andet end »De 4 byggesten«, som er en anden side).
+
+## v2121 — INGEN STREG I IDÉ-FLISEN I IDÉBANKEN (Ida 18/9 kl. 16.10)
+- Idé-flisen i søjlen (`.ibb-foto`) har ingen skillelinje under titlen — titlen er en overskrift, ikke en etiket (flise-reglen 15/9: én streg under en ETIKET). VÆLTER 16/9 kl. 15.45 + 16.11. Formatchippen står 10 px under titlen; uden chip står titlen alene i flisen (ingen tom bund).
