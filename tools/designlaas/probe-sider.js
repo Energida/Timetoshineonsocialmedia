@@ -157,6 +157,16 @@ setTimeout(async function () {
       if (kryds.length) { console.log("SELE SIDER FEJL " + navn + " synligt kryds paa siden"); fejl++; }
       var emoji = txt.match(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{2B50}\u{2728}]/gu);
       if (emoji) { console.log("SELE SIDER FEJL " + navn + " emoji i teksten: " + emoji.slice(0, 3).join(" ")); fejl++; }
+      /* DEN GRAA KNAP (LAAST 18/9 kl. 11.10): ingen knap med ord har roed ramme + hvid flade, og ingen har roed tekst i en hvid knap.
+         Huset har KUN den roede (fyldt) og den graa. Undtaget: valgt-tilstande (.on), runde ikon-knapper, datoboksen, soejle-fliserne, sendefeltets cirkel. */
+      var roede = [].filter.call(r.querySelectorAll("button, .bf-plads, .bs-langknap, .cm-chip, .chip-knap, .dbtn, .row-btn, .ark-luk, .ark-knap, .ib-tilfoej"), function (k) {
+        if (!(k.innerText || "").trim() || k.classList.contains("on") || k.closest(".on, .cf-dato, .pillar, .sendfelt, .hs-send, #briefSpmSkriv, .pf-godk, .pf-kort, .bs-rk, .sw-kasse, .spmpop")) return false;
+        var cs = getComputedStyle(k); if (cs.display === "none" || cs.visibility === "hidden") return false;
+        var b = k.getBoundingClientRect(); if (b.width < 20 || b.height < 20 || Math.abs(b.width - b.height) <= 8) return false;
+        var hvid = /rgb\(255, ?255, ?255\)/.test(cs.backgroundColor), roedKant = /rgb\(252, ?36, ?4\)/.test(cs.borderTopColor) && parseFloat(cs.borderTopWidth) > 0, roedTekst = /rgb\(252, ?36, ?4\)/.test(cs.color);
+        return hvid && (roedKant || roedTekst);
+      });
+      if (roede.length) { console.log("SELE SIDER FEJL " + navn + " roed ramme/roed tekst i hvid knap (" + roede.length + "): " + roede.slice(0, 4).map(function (k) { return (k.innerText || "").trim().slice(0, 18) + " [" + (k.className.toString().split(" ")[0] || k.tagName) + "]"; }).join(", ")); fejl++; }
       var st = siderStreger(r);
       if (st.length) { console.log("SELE SIDER FEJL " + navn + " streg inde i en flise: " + st.slice(0, 4).join(", ")); fejl++; }
       /* luk det, doeren maatte have aabnet, saa naeste side maales rent */

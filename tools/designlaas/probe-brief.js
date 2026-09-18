@@ -15,6 +15,11 @@ function maal(trin){
     if(!synlig(e)) return; if(e.closest("#briefRail .fb-ud")) return;
     var cs=getComputedStyle(e), tag=e.tagName, cl=(e.className&&e.className.toString())||"", r=e.getBoundingClientRect();
     if(rosa(cs.backgroundColor)||rosa(cs.borderTopColor)) FUND.push("ROSA "+trin+" · "+txt(e)+" ["+cl.split(" ")[0]+"] "+cs.backgroundColor);
+    /* DEN GRAA KNAP (LAAST 18/9 kl. 11.10): en knap med ord er roed (fyldt) eller graa — aldrig hvid m. roed ramme eller roed tekst. Valgt-tilstande (.on) og runde ikon-knapper er undtaget. */
+    if((tag==="BUTTON"||/\b(bf-plads|bs-langknap|cm-chip|chip-knap|dbtn|row-btn|ark-luk|ark-knap)\b/.test(cl))&&(e.innerText||"").trim()&&!/\bon\b/.test(cl)&&!e.closest(".on,.cf-dato,.pf-godk,.pf-kort,.sendfelt,.hs-send,#briefSpmSkriv")&&Math.abs(px(r.width)-px(r.height))>8&&r.height>=20){
+      var hvid=/rgb\(255, ?255, ?255\)/.test(cs.backgroundColor), roedKant=/rgb\(252, ?36, ?4\)/.test(cs.borderTopColor)&&parseFloat(cs.borderTopWidth)>0, roedTekst=/rgb\(252, ?36, ?4\)/.test(cs.color);
+      if(hvid&&(roedKant||roedTekst)) FUND.push("ROED RAMME/TEKST I HVID KNAP "+trin+" · "+txt(e)+" ["+cl.split(" ")[0]+"]");
+    }
     var rad=px(cs.borderTopLeftRadius), h=px(r.height);
     if(tag==="BUTTON"&&!/\b(bdrop-knap|pf-ik|bt-blyant|kort-plus|fs-cirkel|fs-slet|fs-fjern|ko-plus|klip-flyt|klip-slet|bdrop-rk|chip-btn|ark-luk|ark-send|ark-rund|tale-knap|bsam-ret-link|klip-knap|bs-flyt-luk|fb-rk)\b/.test(cl)&&!e.closest(".bdrop-kort,.fb-rk,.ark,#bsFlytMenu,.sk-input")&&(e.innerText||"").trim()){   /* kun knapper med ORD — ikon-knapper (skraldespand, mikrofon, flueben) har hver sin laaste form */
       if(Math.abs(px(r.width)-h)<=8) return;   /* runde ikon-knapper (flueben, mikrofon, skraldespand, Del/Slet) har hver sin laaste stoerrelse og maales ikke som chips */
