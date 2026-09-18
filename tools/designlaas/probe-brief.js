@@ -61,6 +61,13 @@ setTimeout(async function(){ try {
     var k1=document.querySelectorAll("#briefForside .pf-kf")[1]; var k1t=k1?(k1.innerText||""):""; if(/modsatte af mig|farver — og det er derfor/.test(k1t)) FUND.push("SYNK: klip 1 baerer det fravalgte hook paa forsiden");
     BRIEF_SIDE_AKTIV=1; briefMbVis("skriv"); await vent(150); var f0=document.getElementById("bf_hookTekst_f0"); if(f0){ f0.value="Nyt hook skrevet i selen"; briefForslagLaes("hookTekst"); briefForslagVaelg("hookTekst",0); await vent(150); briefMbVis("forside"); await vent(200); var h2=hookPaaForsiden(); if(h2.indexOf("Nyt hook skrevet i selen")<0) FUND.push("SYNK: hooket blev rettet, men forsiden viser: "+h2.slice(0,60)); }
     SIDSTE="synk maalt";
+    /* FORSIDEN PAA ANDRE BRIEF-FORMER (18/9 kl. 14.10: en brief UDEN caption vaeltede forsiden — »tom is not defined« — og den raa brief stod synlig):
+       tre briefs, som kunderne faktisk har — uden caption · gammel indhold-streng · karrusel uden billed-liste — SKAL tegne forsiden. */
+    var FORMER=[{id:"pf1",titel:"Uden caption",soejle:"Produkt",type:"Reel",status:"Idé",dato:null,brief:{format:"Reel",hookTekst:"H",hookTekstListe:["H"],hookTekstValgt:0,klip:[{ser:"Et klip"}],ctaVideo:"Gem opslaget"}},
+      {id:"pf2",titel:"Gammel streng",soejle:"Produkt",type:"Reel",status:"Idé",dato:null,brief:{format:"Reel",indhold:"Gammel beskrivelse"}},
+      {id:"pf3",titel:"Karrusel uden billeder",soejle:"Produkt",type:"Karrusel",status:"Idé",dato:null,brief:{format:"Karrusel",slides:["a","b"],hookTekst:"a",hookTekstListe:["a"],hookTekstValgt:0}}];
+    for(var fi=0;fi<FORMER.length;fi++){ IDEER.push(FORMER[fi]); openBriefSide(FORMER[fi].id); await vent(700); var fsx=document.getElementById("briefForside"); var okx=fsx&&fsx.style.display!=="none"&&(fsx.innerText||"").length>20; if(!okx) FUND.push("FORSIDEN TEGNES IKKE paa briefen »"+FORMER[fi].titel+"« — den raa brief staar synlig"); if(okx&&/\bfalse\b/.test(fsx.innerText||"")) FUND.push("FORSIDEN viser ordet »false« paa »"+FORMER[fi].titel+"«"); }
+    SIDSTE="brief-former maalt";
   } catch(e){ FUND.push("SYNK-proben fejlede: "+(e&&e.message)); }
   Object.keys(GRUPPER).forEach(function(g){ var keys=Object.keys(GRUPPER[g]); if(keys.length>1){ keys.sort(function(a,b){return GRUPPER[g][b].length-GRUPPER[g][a].length}); FUND.push("UENS "+g+": "+keys.map(function(k){return k+" ×"+GRUPPER[g][k].length+" (fx "+GRUPPER[g][k][0]+")"}).join(" || ")); } });
   if(FUND.length){ FUND.forEach(function(f){ console.log("SELE BRIEF FEJL: "+f); }); console.log("SELE BRIEF IKKE OK: "+FUND.length+" fund"); }
