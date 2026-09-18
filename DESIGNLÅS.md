@@ -546,3 +546,11 @@ Vejen fra en skriveside til forsiden er ØJET ved titlen (v2089, Idas klik 17/9 
 - **På Briefoversigten fører et tryk direkte til linket** (ny fane). Flere produkter åbner **popuppen »Produkter«** (husets ark): ét link pr. række med titlen og pil, et produkt uden link som grå tekst, Annuller nederst, kryds på linjen. Inde i briefen åbner rækken Tilføj-arket som før.
 - **Tilføj-arket har et titelfelt** (»Navn på linket« / »Navn på produktet«) under dropdownen — valgfrit, kommer frem sammen med resten, når linket er sat (15.03-reglen). **Produkter tilføjes ét ad gangen** (»Indsæt link til produktet«) og lægges til listen; inde i briefen står de allerede satte produkter i arket med skraldespand.
 - Data: `brief.linkTitler = { linkIndhold · musikLink · inspiration: titel }` og `brief.produktTitler = { »produkt/URL«: titel }` i briefens JSON; `medIIndhold` er stadig én streng adskilt af » · « — gamle data røres ikke (et produkt uden titel vises som før).
+
+## v2118 — B2B-GENNEMGANGENS FUND 7, 8 OG 9 (18/9, målt 390 + 1440)
+- **Fund 7 — Forløbsoversigten:** titlen på det trin, man står på, er sort (rødt er kun handlinger; ringen viser »her er du«); ordene »· DU ER HER« er ude. KOMMENDE AFTALER · DIT FORLØB er husets etiket (10 px versal, grå).
+- **Fund 8 — skrivesiden på telefonen:** »+ Klip i scene n« og »+ Scene« står i fuld bredde under hinanden (5/9-reglen), 8 px imellem, 24 px under. IKKE RØRT: den røde bjælkes ordlyd på telefonen (»Følelsen: …« under Step 2) — den bærer Drejebogens ord som computeren; sig til, hvis den skal være ens med computerens faste linje.
+- **Fund 9 — Idébanken på telefonen:** den lange »Tilbage« nederst er ude på kundeappens bundmenu-sider (Hjem · Content · Idébanken), som 8/9-reglen siger; Forløbsoversigten og de andre sider uden bundmenu-punkt beholder den. Søjlerne uden idéer siger »Ingen idéer her endnu.« (v2110).
+
+## v2119 — EN EGEN SØJLE KAN SLETTES (18/9, målt 390 + 1440)
+- Skraldespanden (aldrig et kryds, 17/9) står i den egne søjles hoved: hvid på den røde flise på computeren, grå i sektionens etiket på telefonen; trykfelt 44. Trykket spørger i husets ark (»Slet søjlen »X«?« · Slet (rød) · Annuller) — idéerne i den bliver og lander under Uden indholdssøjle. De fire indholdssøjler kan ikke slettes. Omdøb er ikke bygget (klik).
