@@ -519,3 +519,18 @@ Vejen fra en skriveside til forsiden er ØJET ved titlen (v2089, Idas klik 17/9 
 - Målsætninger og De 4 byggesten på computeren: de røde ord-knapper (`#screen24 .rkn`, `.bygg-ret`) er den grå chip (36 px, grå kant, grå tekst); telefonen havde dem allerede grå og lange. Ét knapsprog på begge flader.
 - Båndet på De 4 byggesten sagde »Målsætninger« (MB_NAVNE[24]), mens navstien sagde »DE 4 BYGGESTEN« — båndet følger nu sidens titel (`#tilpasSideTitel`), så navnet er 1:1 (26/8).
 - IKKE RØRT (klik til Ida): rækkerne i én kasse på De 4 byggesten og Målsætninger (Idas godkendte reference v1177) mod 5/9-reglen »altid fliser« — de to sider deler formen, så det er én beslutning for begge.
+
+## v2113 — BRIEFENS BÅND: »BRIEFOVERSIGTEN« / »BRIEFEN«, DEL + SLET I BÅNDET, BLYANTEN KUN INDE I BRIEFEN (Ida 18/9 kl. 14.18–14.20, målt 390 + 1440)
+- Heroen og navstiens sidste led hedder **»Briefoversigten«** på forsiden og **»Briefen«** inde i briefen (Ida kl. 14.18: »burde heroen her ikke hedde briefoversigten?«); båndet tegnes om ved hvert skift (`markbaandTegn(7)`).
+- **Del og skraldespanden står i markbåndet** nederst th. (computer 48/36 px fra kanten; telefon over navnet, 16 px fra højre) som hvide cirkler 36 px med gråt tegn (`.bt-ik-baand`, flyttes af `briefBaandIk()`). VÆLTER 16/9 kl. 23.40 (symbolerne ved titlen).
+- **Blyanten (ret titlen) vises kun inde i briefen**, aldrig på Briefoversigten.
+
+## v2114 — IDAS FUND 18/9 kl. 14.25–14.45 (målt 390 + 1440)
+- **Øjet og højttaleren står også i båndet** (Ida kl. 14.28: »ved siden af del og øjet og skraldespanden«): rækken er øje (kun inde i briefen) · højttaler (kun på forsiden, Læs højt) · Del · Slet. Titelblokken har ingen symboler mere ud over blyanten. VÆLTER 17/9 (øjet ved titlen) og 17/9 (højttaleren på INDHOLDET-linjen).
+- **Hvem-chips (Alle · navne) kun når to eller flere er med i indholdet** (Ida kl. 14.25).
+- **Captionen mangler = samme form som udfyldt** (Ida kl. 14.27): kopiér-symbolet står også, når der står »Mangler«.
+- **Citatet i Hjem-båndet på computeren står på én linje, når det kan** (Ida kl. 14.30): båndets navnefelt går til 48 px fra højre, ingen 70ch-grænse. IKKE MÅLT på et rigtigt citat (selens kunde har intet citat).
+- **»+ Ny idé« i Idébanken åbner arket »Ny idé«** — ingen »Tøm hovedet«, ingen »Lander i Idébanken«, ingen slags-chips; kun feltet og indholdssøjlerne (Ida kl. 14.32–14.35). **Arket lukker efter Gem** (kl. 14.33). **En ny idé får intet format** (kl. 14.38: »jeg skrev aldrig at det var en reel«) — chippen kommer, når kunden vælger formatet. Hele Tøm hovedet hører til plusset i bundmenuen. Ida: »rigtig mange ting at sige om denne pop up« — arkets form er ikke låst; fem bud som Artifact, når hun beder om det.
+- **KRYDSET SIDDER PÅ LINJEN (Ida kl. 14.36: »krydset på alle pop ups skal sidde på linjen ikke inden i flisen«)**: krydset lever i sløret bag popuppen og måles ind på popuppens øverste højre hjørne (midt på kanten; på telefonens bundark 16 px inde fra højre), også mens arket glider ind (`arkKrydsPlacer`). Gælder ark, modal og flyt-menu.
+- **»Luk« hedder »Annuller« i alle popups med kryds** (Ida kl. 14.40: »når krydset er der skal der selvfølgelig ikke være en luk knap — den skal i stedet være annuller«). Arkets overlinje (REFLEKSION · …) er centreret som titlen.
+- **Navstien følger Idébankens visning** (Ida kl. 14.45: »står på inspiration men i stien øverst står der idebanken«): Idébanken · Inspiration · Arkiv — og Arkiv hedder Arkiv alle steder (sidemenu, chip, bånd, navsti; før »Arkivet« i bånd og titel).
