@@ -576,3 +576,7 @@ Vejen fra en skriveside til forsiden er ØJET ved titlen (v2089, Idas klik 17/9 
 - **Kalenderens plads** (Næste anbefalede indhold) foreslår ingen idéer; den fører til Idébanken (Ida 19/9: »den skal hellere bare sige gå til idébank«).
 - **UDE:** telefonens »Vis«-dropdown med listerne Feed · Story · Tema · Serie · Prøvereel · Pin (11/9) — Story er kolonne, Prøvereel chip, tags afløser resten. Listerne bliver i basen; siges højt til Ida.
 - **Porten:** `.ib-chip` og `.ib-forslag` er chips/liste, ikke knapper (probe-sider); et element, der er udskiftet under målingen, tæller ikke.
+
+## v2124 — TELEFONEN SOM KUNDE: HVID SIDE OG BÅNDETS SYMBOLER OVER NAVNET (Idas iPhone 19/9 kl. 09.23: »Designet sidder helt forkert!«)
+- **Siden var greige, ikke hvid, når Ida ser appen som kunde fra Backstage:** klassen `dash-nav` blev hængende fra Backstage, og den hvide b2b-regel udelukker den. Fjernes nu i som-kunde-visningen, så Ida ser præcis det, kunden ser. Rigtige kunder var ikke ramt. MÅLT: gentaget i selen med klassen → greige; uden → hvid.
+- **Båndets symboler (højttaler · del · skraldespand) lå oven i »Briefoversigten« på telefonen:** telefonreglen var skrevet ind i den maskinkopierede blok og blev overskrevet af computerens mål (bottom 36). Reglen står nu efter markøren »telefonens egne maal« — 16 px fra højre, 96 px fra bunden, over navnet. LÆRE: telefonens egne regler skrives ALDRIG i den kopierede blok.
