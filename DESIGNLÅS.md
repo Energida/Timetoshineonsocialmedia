@@ -592,3 +592,28 @@ Vejen fra en skriveside til forsiden er ØJET ved titlen (v2089, Idas klik 17/9 
 8. Målsætninger: ingen streg »—« som tal; tom = den grå knap »Sæt et tal« (lang på telefonen). Dagcirklerne er 36 px, så alle syv står på én linje på computeren; `.maals-dag.mq-tap` holder dem runde. ÅBENT: »Ret« + »Sæt et tal« er to veje i samme flise på telefonen — anbefaling: »Ret« væk, når tallet ikke er sat (Idas flise 1/9, ikke rørt).
 9. Performance: fem døre i én række på computeren (grid 5), ringflisen i fuld bredde; på telefonen er dørene ét spor, man swiper i (Hjem-formen 15/9), 78 % bredde, snap.
 IKKE RØRT (valg 10–12 i rapporten): arket midt på telefonen · rækker i én kasse på De 4 byggesten/lektionssiden · ordet »Drejebogen«.
+
+## v2126 — POPUPPEN ER LÅST TIL ÉT DESIGN: DET LILLE ARK (HÅRD, Ida 19/9 kl. ~12.00: »vi skal låse ét design til pop up — jeg er ved at blive sindssyg af at de altid er forskellige«) · BUNDARK PÅ TELEFONEN (Idas klik 19/9 kl. ~11.45)
+**ÉN form for enhver popup i b2b — ingen undtagelser, ingen nye former:**
+- **Computer:** midt på skærmen, 360 px bred, hjørner 28, husets skygge, ingen kant. **Telefon:** bundark i fuld bredde med 12 px luft til kanterne og bunden (+ safe area), hjørner 28, glider op (220 ms). Sløret bag er rgba(17,17,17,.30).
+- **Krydset** i cirkel (28 px, grå kant, gråt kryds) sidder på hjørnebuen (r·(1−1/√2) inde) — aldrig ude i luften, aldrig inde i flisen.
+- **Titlen** Poppins 16/24, centreret, sort. Aldrig Didot, aldrig en rød versal, aldrig en underlinje som »Lander i Idébanken«.
+- **Etiketter** over felter: 10 px grå versal. **Felter:** hvid, 1 px #DEDAD4, hjørner 14, 44 px høje (tekstfelt min. 64). **Chips:** 36 px, ombrudt, aldrig en rullende række, valgt = rød.
+- **Knapper nederst, altid i denne rækkefølge og fuld bredde:** én rød primær (Gem · Lav Drejebogen · Slet …) · evt. én grå sekundær · **»Annuller«** (grå) sidst. Aldrig »Luk«, aldrig knapper i en række til højre, aldrig en rød Annuller. Popuppen lukker selv efter Gem.
+- **Motorer:** `arkAabn()` (klassen `.ark`, med `.ark-ide` for Ny idé) og `.modal.modal-lille` for de gamle modal-popups. Alt andet (`.modal` uden `modal-lille`, `#bsFlytMenu`-arkene) skal over på formen, side for side — porten (`probe-popups.js`) måler formen.
+- **Bygget i v2126:** Ny idé · Tøm hovedet · Min profil · Drejebogen. **IKKE endnu:** Tilføj link/produkt (`briefTilfoejLinkArk`), Ret titlen, Ny søjle (ude), status-listen, dato-arket, spørgeskemaets popups, briefens Del-ark — tages som rene fejl, én ad gangen.
+- **Ordet »strategibygger« må aldrig møde en kunde** (Ida 19/9 kl. ~12.00) — kunden ser **»Spørgsmålene«** (Idas klik kl. ~12.10): »Åbn spørgsmålene«, »Din Drejebog bygges af dine svar på spørgsmålene«, navsti og bånd »Spørgsmålene«. 13 steder i appen + 5 i spørgsmålenes egen side. Backstage-tekster urørt.
+- **Pladsen i Ny idé-arket = husets dropdown** (Idas ja kl. ~13.20 efter research: energida-design · emil · brainstorming · ui-ux-pro-max): én række »Plads · Vælg«, listen med fulde navne under, og den søjle, der er tur til (Næste anbefalede indhold), bærer ordet »næste« i rødt. Intet forvalg. Forkastet: koder alene (låsen), rullende række (skjuler halvdelen), seks ombrudte chips (fire linjer luft). Tags uændrede under. Samme dropdown i Tøm hovedet.
+- **Står der Annuller, er der intet kryds** (Ida kl. 10.37) — `arkKrydsTegn` springer popups med `.ark-luk` over. Drejebog-popuppen = én sætning (Ida kl. 10.08). Min profil siger under hver knap, hvor den lander: Idébanken · Inspiration · Indbakken (Ida kl. 10.06).
+
+## KODEN STÅR ALDRIG ALENE — OG KUNDEN ER MED I ALLE BESLUTNINGER (HÅRD, Ida 19/9 kl. ~12.50)
+Idas ord: *»Aldrig nogensinde kun 1A uden indholdssøjlens navn. Aldrig. Det er virkelig vigtigt du husker hvem kunden er i ALLE beslutninger.«*
+- En indholdssøjle skrives ALTID som kode + navn: »1A · Produkt«, »2A · Menneskene bag«. Koden alene (»1A«) findes ikke på nogen flade — ikke i chips, ikke i dropdowns, ikke i fliser, ikke i bud og mockups. (Målt 14/9: koderne alene siger en ny kunde ingenting. Jeg tegnede alligevel bud 2 med koder alene 19/9 — det var en fejl mod kunden, ikke et bud.)
+- **Kunden er en stresset butiksejer, der læser hvert ord for første gang, midt i en travl dag.** Hver beslutning — ord, chip, rækkefølge, popup, forkortelse — måles på ét spørgsmål: forstår den person det med det samme, uden at kende systemet? Hvis ikke, er det forkert, uanset hvor meget plads det sparer. Pladsbesparelse er aldrig et argument mod forståelse.
+- Gælder alle bud: et bud, der bryder denne regel, sendes ikke — heller ikke som »sagt højt«.
+
+## RESEARCH FØR BUD — DET ER IKKE IDA, DER SKAL KOMME MED DEN BEDRE IDÉ (HÅRD, Ida 19/9 kl. ~13.10)
+Idas ord: *»har du så været grundig og virkelig spurgt dine skills om noget kan gøres bedre? … At det ikke skal være mig der kommer med bedre ideer men at der allerede er lavet research.«*
+- Før et bud eller en mockup vises, er det kørt gennem husets skills: `energida-design` (manualen og låsene), `emil-design-eng` (Emils tjekliste for tryk, bevægelse, popovers), `superpowers:brainstorming` (formål og begrænsninger før form), `ui-ux-pro-max` (mønstre for præcis det element) — og reglen »kunden er en stresset butiksejer« lægges over til sidst.
+- Buddet skriver selv, hvad der blev undersøgt, og hvad der blev forkastet, og hvorfor. Et bud uden den linje er ikke klar til Ida.
+- Ida skal aldrig være den, der opdager den bedre løsning. Ser hun én, jeg kunne have fundet, er det en fejl i researchen, ikke i hendes øjne.
