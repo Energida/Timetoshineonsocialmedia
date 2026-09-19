@@ -580,3 +580,15 @@ Vejen fra en skriveside til forsiden er ØJET ved titlen (v2089, Idas klik 17/9 
 ## v2124 — TELEFONEN SOM KUNDE: HVID SIDE OG BÅNDETS SYMBOLER OVER NAVNET (Idas iPhone 19/9 kl. 09.23: »Designet sidder helt forkert!«)
 - **Siden var greige, ikke hvid, når Ida ser appen som kunde fra Backstage:** klassen `dash-nav` blev hængende fra Backstage, og den hvide b2b-regel udelukker den. Fjernes nu i som-kunde-visningen, så Ida ser præcis det, kunden ser. Rigtige kunder var ikke ramt. MÅLT: gentaget i selen med klassen → greige; uden → hvid.
 - **Båndets symboler (højttaler · del · skraldespand) lå oven i »Briefoversigten« på telefonen:** telefonreglen var skrevet ind i den maskinkopierede blok og blev overskrevet af computerens mål (bottom 36). Reglen står nu efter markøren »telefonens egne maal« — 16 px fra højre, 96 px fra bunden, over navnet. LÆRE: telefonens egne regler skrives ALDRIG i den kopierede blok.
+
+## v2125 — UX-POLITIETS NI RETTELSER PÅ B2B (rapport 19/9, Idas go kl. ~10.40, deploy-klik ~11.30; målt 390 + 1440)
+1. Værktøjskassens »Åbn guiden« er den grå knap (computer egen bredde th., telefon fuld bredde). VÆLTER de røde ord-knapper fra 13/7.
+2. Inspirations send-cirkel og plus er grå (Idas klik 18/9 kl. 14.05 gælder også her).
+3. Kalenderens lange »+« på telefonen er grå (lægger til).
+4. **Min profil og Drejebog-popuppen har det lille arks form** (`.modal-lille`, 360 px): Poppins-titel 16, grå versaler, kryds på buen, rød knap + grå Annuller i fuld bredde. Didot ude af popups. Reglen for grå Annuller kender nu også `.modal-lille`.
+5. Sektionslinjen i b2b (`.section-divider`) er husets etiket: 10 px versal, 1,5 px spatiering. VÆLTER 19/8 (15 px).
+6. Tøm hovedet-arkets søjlechips ombrydes også på telefonen.
+7. De 4 byggesten: én tekststil i flisen — sort 14 for det, kunden skrev, grå 13 for forklaringer (`.bygg-graa`).
+8. Målsætninger: ingen streg »—« som tal; tom = den grå knap »Sæt et tal« (lang på telefonen). Dagcirklerne er 36 px, så alle syv står på én linje på computeren; `.maals-dag.mq-tap` holder dem runde. ÅBENT: »Ret« + »Sæt et tal« er to veje i samme flise på telefonen — anbefaling: »Ret« væk, når tallet ikke er sat (Idas flise 1/9, ikke rørt).
+9. Performance: fem døre i én række på computeren (grid 5), ringflisen i fuld bredde; på telefonen er dørene ét spor, man swiper i (Hjem-formen 15/9), 78 % bredde, snap.
+IKKE RØRT (valg 10–12 i rapporten): arket midt på telefonen · rækker i én kasse på De 4 byggesten/lektionssiden · ordet »Drejebogen«.
