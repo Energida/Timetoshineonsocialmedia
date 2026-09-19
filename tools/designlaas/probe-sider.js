@@ -79,6 +79,7 @@ setTimeout(async function () {
         if (ordL === 0 ? Math.abs(q.width - q.height) > 1.5 : q.height - q.width > 1.5) FUND.push("OVAL " + navn + " · " + e.tagName + "[" + String(e.className).split(" ")[0] + "] " + Math.round(q.width) + "x" + Math.round(q.height) + " — en cirkel skal vaere rund");
       });
       kn.forEach(function (b) {
+        if (!b.isConnected) return;   /* elementet blev tegnet om, efter listen blev samlet (MAALT 19/9: Idébankens chips) — det nye element maales i naeste runde */
         var q = b.getBoundingClientRect(); if (q.height >= 44) return;
         if (innerWidth > 760) {   /* computeren: 44 er telefonens maal. Husets egne computer-maal er 28-34 px (karrusel-pil 30, vaerktoejer 32-34, plus 33), og roede ord som knapper er tilladt dér (13/9). Kun det, der er mindre end 28 px OG ikke et rent ord, er en fejl. */
           var csb = getComputedStyle(b); var rentOrd = /rgba\(0, 0, 0, 0\)|transparent/.test(csb.backgroundColor) && (csb.borderStyle === "none" || parseFloat(csb.borderWidth) === 0);
@@ -89,6 +90,7 @@ setTimeout(async function () {
         var cx = q.left + q.width / 2, cy = q.top + q.height / 2;
         var op = document.elementFromPoint(cx, cy - 21), ned = document.elementFromPoint(cx, cy + 21);
         if ((op && b.contains(op)) && (ned && b.contains(ned))) return;
+        if (!b.isConnected) return;   /* udskiftet undervejs (gentegning) — ikke en fejl i fladen */
         var ramt = function (e) { return e ? (e.id || String(e.className).split(" ")[0] || e.tagName) : "ingenting"; };
         console.log("SELE SIDER FEJL " + navn + " trykfelt under 44 px: " + (b.textContent.trim().slice(0, 24) || b.className.split(" ")[0] || b.tagName) + " (" + Math.round(q.width) + "x" + Math.round(q.height) + ", over: " + ramt(op) + ", under: " + ramt(ned) + ")"); fejl++;
       });
@@ -102,7 +104,7 @@ setTimeout(async function () {
          chips (egen laast form), ikon-knapper uden tekst (klokke, mappe, mikrofon, send, naal, kryds),
          bundnavet og fanerne, fliser der er trykfelter (en flise er ikke en knap), sendefeltets
          cirkler, dagbogstaver og alt inde i en tabel. Alt andet SKAL vaere langt. */
-      var UNDT = ".chip-btn,.chip,.ark-chip,.bs-chip,.cf-chip,.mood-chip,.hilsen-pill,.pr-chip,.dept-btn,.scale-btn,.esr-pill,"
+      var UNDT = ".chip-btn,.chip,.ark-chip,.bs-chip,.cf-chip,.mood-chip,.hilsen-pill,.pr-chip,.dept-btn,.scale-btn,.esr-pill,.ib-chip,.ib-forslag,"
         + ".bottom-nav,#dashBundnav,#woNavHost,.mobile-tabs,.ch-faner,.bs-spor,.cf-prikker,.bs-prik,.ib-faner,"
         + ".bs-doer,.bsm-flise,.bsam-flise,.hf-kort,.bs-kf,.gv,.mr-prog-r,.idea-kort,.lek-kort,.kv-flise,.post-card,.uge-dag,.cal-dag,.mr-flise,.bs-rk,"
         + ".sendfelt,.ark-send,.ark-rund,.bs-tjek,.hf-done,.hf-klokke,.vt-knap,.modal-close,.bdrop-knap,.cal-periode,.dsb-item,.dsb-under,table,"
