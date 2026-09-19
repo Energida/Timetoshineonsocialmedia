@@ -48,7 +48,8 @@ setTimeout(async function () {
       var modal = document.querySelector(".modal-back.on");
       var hel = document.querySelector(".plus-menu.open");
       var delt = document.getElementById("deltDialog"); var deltAaben = delt && delt.style.display === "flex";
-      var rod = ark ? ark.querySelector(".ark") : (modal ? modal.querySelector(".modal") : (deltAaben ? delt.firstElementChild : null));
+      var flyt = document.getElementById("bsFlytMenu"); var flytAaben = flyt && flyt.style.display === "flex";   /* det lille ark i #bsFlytMenu (v2126–v2129: planlaegningsdagen m.fl.) */
+      var rod = ark ? ark.querySelector(".ark") : (modal ? modal.querySelector(".modal") : (deltAaben ? delt.firstElementChild : (flytAaben ? flyt.querySelector(".bs-flyt-ark") : null)));
       if (hel) { console.log("SELE LAAS FEJL " + navn + " helskaerm (.plus-menu.open)"); fejl++; }
       if (deltAaben) { console.log("SELE LAAS FEJL " + navn + " lille dialog (deltPrompt) i stedet for arket"); fejl++; }
       if (art === "skriv" && !ark) { console.log("SELE LAAS FEJL " + navn + " skriveform er ikke arket"); fejl++; }
@@ -66,6 +67,7 @@ setTimeout(async function () {
       try { if (hel) togglePlus(); } catch (e) {}
       try { deltDialogLuk(); } catch (e) {}
       try { drejebogTomLuk(); } catch (e) {}
+      try { bsFlytLuk(); } catch (e) {}
       document.querySelectorAll(".modal-back.on").forEach(function (m) { m.classList.remove("on"); });
       await new Promise(function (r) { setTimeout(r, 150); });
     }
