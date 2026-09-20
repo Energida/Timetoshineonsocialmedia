@@ -728,3 +728,6 @@ Målt 390 + 1440 i selen med Hans' data (opslag, aftaler, to-dos, Næste skridt)
 
 ## v2150 — UNDERLINJERNE I FLISERNE ER DEN MØRKE GRÅ (Idas klik 20/9 kl. ~21.10 efter »vis mig det«: FWoEcCoUR9Q192ht4nHyoU)
 Underlinjerne i Hjems fliser (»Kl. 10.00 · Opslag · Planlagt«, »Torsdag 24. september · kl. 09.00«, »senest søn. 20. september«, ringenes tekst, den tomme dags sætning) står i den mørke grå `--gray2` (#6F6B66, 4,9 mod hvidt) i stedet for den lyse `--gray3` (#9A9590, 3,0). Versalerne (etiketterne) bliver i den lyse grå, som porten måler. »i dag« i rødt på dagens aftale består. Målt 390 + 1440, porten OK. Udestår: samme grå i briefens guide-linjer (`.sk-forkl`) og andre små grå linjer uden for Hjem — ét klik.
+
+## v2151 — SMÅ GRÅ HJÆLPELINJER I HELE APPEN ER DEN MØRKE GRÅ (Idas klik 20/9 kl. ~21.25)
+Samme mørke grå (`--gray2`, #6F6B66) i briefens guide-linjer under spørgsmålene (`.sk-forkl`, alle fire caption-trin og resten af briefen), first thing first-forklaringen (`.ftf-forkl`) og flisernes hjælpelinjer (`.hf-hjaelp`, `.db-under`). Hvid tekst på rødt består. Én regel for små grå linjer i hele appen: reglen står SIDST i CSS'en, efter telefonkopien, fordi ni ældre regler satte den lyse grå med !important (målt 20/9: den tidlige placering virkede kun på computeren). Versaler (etiketter) bliver i den lyse grå. Målt 390 + 1440, porten OK.
