@@ -50,6 +50,16 @@ RAA4=$($TO "$C" $HL --no-sandbox --disable-gpu --window-size=1480,1000 --virtual
 UD4=$(echo "$RAA4" | grep -a 'CONSOLE' | sed -E 's/^.*CONSOLE[:(][0-9]+\)?\] //; s/", source:.*$//; s/^"//' | grep -a 'SELE SIDER')
 echo "$UD4" | sed 's/^SELE SIDER/SELE SMAL/'
 [ -z "$UD4" ] && { echo "SELE SMAL FEJL: ingen maaling fra chromium — de foerste linjer:"; echo "$RAA4" | head -20; }
+# BUD-LAASEN (LOVET Ida 20/9 kl. 21.50): det klikkede buds loefter som maalinger — paa 390 og 1440, fuld og tom forside.
+K5=$(python3 -c "import urllib.parse,sys;print(urllib.parse.quote(open(sys.argv[1]).read()))" "$ROD/tools/designlaas/probe-bud.js")
+RAA5=$($TO "$C" $HL --no-sandbox --disable-gpu --window-size=390,1200 --virtual-time-budget=30000 --enable-logging=stderr --v=0 --screenshot="$MAAL/bud390.png" "http://127.0.0.1:$PORT/sele.html?vis=kunde&fil=index-sele.html%3Fselekode%3DHINGES2026&bred=390&hoej=1600&kode=$K5" 2>&1)
+UD5=$(echo "$RAA5" | grep -a 'CONSOLE' | sed -E 's/^.*CONSOLE[:(][0-9]+\)?\] //; s/", source:.*$//; s/^"//' | grep -a 'SELE BUD')
+echo "$UD5"
+[ -z "$UD5" ] && { echo "SELE BUD FEJL (390): ingen maaling fra chromium"; echo "$RAA5" | grep -a 'CONSOLE' | tail -10 | cut -c1-300; }
+RAA6=$($TO "$C" $HL --no-sandbox --disable-gpu --window-size=1480,1000 --virtual-time-budget=30000 --enable-logging=stderr --v=0 --screenshot="$MAAL/bud1440.png" "http://127.0.0.1:$PORT/sele.html?vis=kunde&fil=index-sele.html%3Fselekode%3DHINGES2026&bred=1440&hoej=940&kode=$K5" 2>&1)
+UD6=$(echo "$RAA6" | grep -a 'CONSOLE' | sed -E 's/^.*CONSOLE[:(][0-9]+\)?\] //; s/", source:.*$//; s/^"//' | grep -a 'SELE BUD')
+echo "$UD6"
+[ -z "$UD6" ] && { echo "SELE BUD FEJL (1440): ingen maaling fra chromium"; echo "$RAA6" | grep -a 'CONSOLE' | tail -10 | cut -c1-300; }
 # ENS-PORTEN FOR BRIEFEN (17/9, Idas ord: »inden der bygges noget, kontrolleres systemet for hvordan de andre funktioner omkring ser ud«):
 # briefen paa 1440 — forsiden + alle skrivetrin — piller, chips, versaler, fliser, felter og bjaelker skal vaere ens, og intet maa vaere rosa.
 K3=$(python3 -c "import urllib.parse,sys;print(urllib.parse.quote(open(sys.argv[1]).read()))" "$ROD/tools/designlaas/probe-brief.js")
@@ -57,5 +67,5 @@ RAA3=$($TO "$C" $HL --no-sandbox --disable-gpu --window-size=1480,1000 --virtual
 UD3=$(echo "$RAA3" | grep -a 'CONSOLE' | sed -E 's/^.*CONSOLE[:(][0-9]+\)?\] //; s/", source:.*$//; s/^"//' | grep -a 'SELE BRIEF')
 echo "$UD3"
 [ -z "$UD3" ] && { echo "SELE BRIEF FEJL: ingen maaling fra chromium — de SIDSTE 30 konsollinjer (18/9: de foerste 20 var kun opstartsstoej):"; echo "$RAA3" | grep -a 'CONSOLE' | tail -30 | cut -c1-400; echo "--- og de foerste 5 raa linjer:"; echo "$RAA3" | head -5; }
-echo "$UD" | grep -q "SELE LAAS OK" && echo "$UD2" | grep -q "SELE SIDER OK" && echo "$UD4" | grep -q "SELE SIDER OK" && echo "$UD3" | grep -q "SELE BRIEF OK" && exit 0
+echo "$UD" | grep -q "SELE LAAS OK" && echo "$UD2" | grep -q "SELE SIDER OK" && echo "$UD4" | grep -q "SELE SIDER OK" && echo "$UD5" | grep -q "SELE BUD OK" && echo "$UD6" | grep -q "SELE BUD OK" && echo "$UD3" | grep -q "SELE BRIEF OK" && exit 0
 echo "SELE LAAS FEJL: maalingen sagde ikke OK"; exit 1
