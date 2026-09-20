@@ -4381,6 +4381,7 @@ body.funk-fra-energi #burgerEnergi,
 body.funk-fra-indbakke #indbakkeKort,
 body.funk-fra-content #ugenKortStrip,
 body.funk-fra-content #burgerContent,   /* burger-menuen følger funktions-låsen (selvkøb 20/8) */
+body.funk-fra-content #burgerPlan, body.rejse-laas #burgerPlan,   /* Planlaegning foelger Kalenderens laas (20/9) */
 body.funk-fra-indbakke #burgerIndbakke,
 body.funk-fra-resultat #burgerPerformance,
 body.funk-fra-strategi #burgerTema,
@@ -8798,6 +8799,7 @@ body.plan-open .burger-btn, body.plan-open .bottom-nav, body.plan-open .dash-fab
     <button class="burger-item" onclick="toggleBurger(); showTab(3)">Hjem</button>
     <button class="burger-item" id="burgerEnergi" onclick="toggleBurger(); energiAaben()">Energi</button>
     <button class="burger-item" id="burgerContent" onclick="toggleBurger(); showTab(8)">Kalenderen</button>
+    <button class="burger-item" id="burgerPlan" onclick="toggleBurger(); planRitStart()">Planlægning</button>   <!-- PLANLAEGNING = EET MENUPUNKT (Idas klik 20/9): aabner Planlaegningsdagen direkte; foelger Kalenderens laas -->
     <button class="burger-item" id="burgerPerformance" onclick="toggleBurger(); openMaal()">Performance</button>
     <button class="burger-item" id="burgerForloeb" style="display:none;" onclick="toggleBurger(); showTab(12)">Forløbet</button>
     <button class="burger-item" id="burgerVaerktoej" onclick="toggleBurger(); vaerktoejAaben()">Værktøjskassen</button>
@@ -23817,6 +23819,7 @@ function perfMoedeOpslag() {
 /* UGENTLIG CONTENTPLANLAEGNING (Idas ord efter kundemoedet 15/9 kl. 10.40): fysisk eller online (link kun ved online),
    en agenda for det, man skal igennem, og Start, der traekker een gennem siderne. Form og link gemmes paa kunden
    (MAALS.moedeForm / MAALS.moedeLink). */
+/* ARKIV 20/9 (Idas klik): moedeformularen (klokkeslaet · deltagere · fysisk/online · agenda · noter) linkes ikke laengere — Hjems raekke, kalenderens kort og menupunktet Planlaegning aabner planRitStart() direkte. Koden staar, til det besluttes, om kunder med medarbejdere skal have den tilbage. */
 function perfMoedeStartHtml() {
   /* MOEDEDETALJERNE KAN RETTES (Ida 15/9 kl. 11.25: »her skal jeg kunne redigere i mødedetaljerne — tilføje deltagerne,
      indsætte link hvis det er online, klokkeslæt og ændre i agendaen … det skal tydeligt fremgå at det er Succesraketten
@@ -30912,7 +30915,7 @@ function dagensProgramItems() {
     const pd = (typeof planDato === "function") ? planDato() : "";
     if (typeof perfAabn === "function" && typeof funkTaendt === "function" && funkTaendt(CURRENT_DEF, "content")) {
       let n = 0; try { n = perfMoedeOpslag().length; } catch (e) {}
-      items.unshift({ ik: "kalender", id: "moede-" + idag, t: (pd === idag ? "I dag er planlægningsdag" : "Ugentlig contentplanlægning"), navn: (pd === idag ? "Ugentlig contentplanlægning" : ""), sub: n ? n + " opslag postet siden sidste møde · tryk for at starte" : "Siden sidst · ugens tema · ugen · hvem gør hvad · tryk for at starte", kn: "Start", fn: () => { showTab(9); perfAabn("moedeStart"); } });
+      items.unshift({ ik: "kalender", id: "moede-" + idag, t: (pd === idag ? "I dag er planlægningsdag" : "Ugentlig contentplanlægning"), navn: (pd === idag ? "Ugentlig contentplanlægning" : ""), sub: n ? n + " opslag postet siden sidste møde · tryk for at starte" : "Siden sidst · ugens tema · ugen · hvem gør hvad · tryk for at starte", kn: "Start", fn: () => { planRitStart(); } });   /* PLANLÆGNING = ÉT MENUPUNKT, ÉN INDGANG (Idas klik 20/9 kl. ~16.50, Hans-testen runde 3): Start aabner moedet direkte — foer landede Hans paa Performance med moedeformularen (klokkeslaet, deltagere, agenda) foer selve Planlaegningsdagen */
     }
   } catch (e) {}
   /* I DATORAEKKEFOELGE (Ida 5/9: "hvorfor er den foerste ikke det der skal postes i
@@ -42560,6 +42563,7 @@ function buildSideNav(def) {
     + ((rejseLaas || kursusLaas) ? laastPunkt("d8", "Content Studio", IK.kal)
        : !F("content") ? '' : gruppe("d8", "Content Studio", IK.kal, "showTab(8)", "snContentUnder",   /* kalenderen, ikke paeren (Ida 17/9 kl. 14.20: »paere-symbolet stemmer ikke overens med at det er Content Studio«) — samme ikon som bundmenuens Content */   /* showTab aabner gruppen — snFold bagefter lukkede den igen (maalt 16/9 kl. 21.10) */
         uPkt("", "Kalenderen", "showTab(8)")
+      + ((typeof CURRENT_DEF !== "undefined" && CURRENT_DEF && CURRENT_DEF.type === "contentplanner") ? "" : uPkt("", "Planlægning", "planRitStart()"))   /* PLANLÆGNING = ÉT MENUPUNKT, ÉN INDGANG (Idas klik 20/9 kl. ~16.50, Hans-testen runde 3): punktet aabner Planlaegningsdagen direkte — samme sted som Hjems raekke og kalenderens kort */
       + uPkt("", "Idébanken", "showTab(2);ibVis('ideer')")
       /* CONTENT STUDIO = BUD 1 »UGEN FOERST« (b2b-runden 16/9): chip-raekken Kalender · Idébanken · Inspiration · Arkiv er ude af siderne paa
          computeren — de fire er underpunkter her, og gruppen staar aaben, naar man er paa en af dem (showTab 8/2). */
@@ -48940,7 +48944,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2137";
+const APP_VERSION = "2138";
 let NY_VERSION_KLAR = false;
 let NY_VERSION_AFVIST = false;
 function nyVersionSkjul() {
@@ -50971,7 +50975,7 @@ function energidaUgeGrid(mandag, o) {
        det er tre kort af samme slags (appens egne markeringer i dagen). */
     const planDagGaelder = !(typeof CURRENT_DEF !== "undefined" && CURRENT_DEF && CURRENT_DEF.type === "contentplanner");
     const planDag = (planDagGaelder && planDato() === dateStr)
-      ? '<div onclick="event.stopPropagation();vaelgPlanDagModal()" style="border:1px dashed var(--border);border-radius:12px;padding:7px 9px;font-size:10.5px;color:var(--gray3);line-height:1.4;margin-bottom:10px;cursor:pointer;">Planlæg næste uges indhold<div style="font-size:9.5px;color:var(--gray3);margin-top:3px;">Ugens aftale med dig selv</div></div>'
+      ? '<div onclick="event.stopPropagation();planRitStart()" style="border:1px dashed var(--border);border-radius:12px;padding:7px 9px;font-size:10.5px;color:var(--gray3);line-height:1.4;margin-bottom:10px;cursor:pointer;">Planlæg næste uges indhold<div style="font-size:9.5px;color:var(--gray3);margin-top:3px;">Ugens aftale med dig selv</div></div>'
       : '';
     const blivKlar = "";   /* "Bliv klar til at optage i morgen" bor ogsaa under I DAG nu (18/8) */
     const traek = ' ondragover="event.preventDefault();this.classList.add(\'trakover\')" ondragleave="this.classList.remove(\'trakover\')" ondrop="ugeDrop(event,\'' + dateStr + '\')"';
@@ -54021,6 +54025,7 @@ function applyCustomerView(def) {
         '<button class="burger-item" onclick="toggleBurger(); openSkema(\'baseline_energi\')">Baseline-skema</button>'
       + '<button class="burger-item" onclick="toggleBurger(); openSkema(\'evaluering_energi\')">Evaluerings-skema</button>';
   }
+  try { const bp = document.getElementById("burgerPlan"); if (bp) bp.style.display = (def.type === "contentplanner") ? "none" : ""; } catch (e) {}   /* PLANLÆGNING = ÉT MENUPUNKT, ÉN INDGANG (Idas klik 20/9 kl. ~16.50, Hans-testen runde 3): Content Planner-kunder har ingen planlaegningsdag i appen (samme regel som kalenderens kort) */
   if (def.type === "klipper") {                        // klipperen: kun Tip Top Studio
     const bm = document.getElementById("burgerItems");
     if (bm) bm.innerHTML = '<button class="burger-item" onclick="toggleBurger(); showTab(11)">Energida Studio</button>';
@@ -66878,7 +66883,9 @@ async function prTemaHent() {
 function planRitStart() {
   const man = planRitUge();
   const mkey = planRitMaanedKey(man);
-  const maanedNu = !(PR_STATUS && PR_STATUS.maanedPlan === mkey);
+  /* HVER FJERDE PLANLAEGNING ER MAANEDENS (Idas ord 20/9: »Hver 4. ugentlige skal være månedens«) — foer var det den foerste i en ny kalendermaaned. Taelleren ugerSidenMaaned bor i plan_ritual sammen med resten. */
+  const ugerSiden = (PR_STATUS && PR_STATUS.ugerSidenMaaned) || 0;
+  const maanedNu = !(PR_STATUS && PR_STATUS.maanedPlan) || ugerSiden >= 3;
   PR = { uge: man, ugeKey: planRitUgeKey(man), mkey: mkey, maaned: maanedNu, mq: 0, msvar: {}, trin: maanedNu ? 0 : 1, forslag: null, nye: [], optag: { dag: 1, tid: "Formiddag", hverForSig: false }, book: { dag: null, tid: "10:00" }, refl: null, tema: "" };
   let el = document.getElementById("planRit");
   if (!el) {
@@ -67387,7 +67394,7 @@ function prBookHtml() {
     + '<div class="pr-sub">Én uge ad gangen. Det er din aftale med dig selv.</div>'
     + '<div class="pr-kort"><div class="pr-lbl">Dag</div><div class="pr-chips">' + dage.map(function (iso, di) { return '<button type="button" class="pr-chip' + (PR.book.dag === di + 1 ? ' on' : '') + '" onclick="PR.book.dag=' + (di + 1) + ';planRitTegn()">' + PR_DAGE[di] + ' ' + iso.slice(8, 10).replace(/^0/, "") + '.</button>'; }).join("") + '</div>'
     + '<div class="pr-lbl" style="margin-top:14px;">Klokken</div><div class="pr-chips">' + tider.map(function (t) { return '<button type="button" class="pr-chip' + (PR.book.tid === t ? ' on' : '') + '" onclick="PR.book.tid=\'' + t + '\';planRitTegn()">' + t + '</button>'; }).join("") + '</div></div>'
-    + (maanedNaeste ? '<div class="pr-kort"><div class="pr-lbl">Næste gang</div><div style="font-size:13.5px;line-height:1.55;">Næste planlægning er den første i ' + esc(maanedNavnDK(naesteM + "-15")) + '. Du får fem spørgsmål om måneden, før ugen lægges.</div></div>' : '')
+    + (function () { const tilbage = PR.maanedGjort ? 3 : Math.max(0, 3 - (((PR_STATUS && PR_STATUS.ugerSidenMaaned) || 0) + 1)); return '<div class="pr-kort"><div class="pr-lbl">Næste gang</div><div style="font-size:13.5px;line-height:1.55;">' + (tilbage === 0 ? 'Næste gang starter vi med månedens fem spørgsmål, før ugen lægges.' : (tilbage === 1 ? 'Om én planlægning er det månedens tur igen — fem spørgsmål om måneden, før ugen lægges.' : 'Om ' + tilbage + ' planlægninger er det månedens tur igen — fem spørgsmål om måneden, før ugen lægges.')) + '</div></div>'; })()   /* hver fjerde planlaegning er maanedens (20/9) — foer: »den foerste i <maaned>« */
     + '<a class="dbtn ghost" style="display:flex;align-items:center;justify-content:center;background:#fff;min-height:44px;text-decoration:none;margin-top:4px;" download="planlaegning.ics" href="' + prIcsHref() + '">Læg i min kalender (.ics)</a>'
     + '<div class="pr-bar"><button type="button" class="dbtn primary" onclick="prBookGem()">Færdig</button></div>';
 }
@@ -67404,6 +67411,7 @@ async function prBookGem() {
   try { await setPlanDato(iso); } catch (e) {}
   const patch = { sidst: datoDK(), uge: PR.ugeKey, tid: PR.book.tid };
   if (PR.maanedGjort) patch.maanedPlan = PR.mkey;
+  patch.ugerSidenMaaned = PR.maanedGjort ? 0 : (((PR_STATUS && PR_STATUS.ugerSidenMaaned) || 0) + 1);   /* hver fjerde er maanedens (20/9) */
   const ok = await planRitStatusGem(patch);
   /* MOEDET ER AFSLUTTET HER (15/9): naeste »Siden sidst« starter fra i dag. Foer laa knappen »Afslut moedet« paa Siden sidst. */
   try { await maalsHent(); } catch (e) {}
@@ -67456,6 +67464,6 @@ function prFaerdigHtml() {
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 20. september · 2137</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 20. september · 2138</div>
 </body>
 </html>
