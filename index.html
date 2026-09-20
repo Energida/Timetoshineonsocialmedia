@@ -1388,7 +1388,7 @@ body.mb .fs-vaelg { font-size:14px; width:44px; }
 .ark-titel-felt:focus { border-color:var(--red); }
 .ark.ark-ide .ark-felt { border-radius:14px; padding:10px 12px 8px 14px; }
 .ark.ark-ide .ark-felt textarea { min-height:64px; font-size:14px; font-weight:400; padding:2px 0; }
-.ark-slor .ark.ark-ide .ark-chips.i-fladen { flex-wrap:wrap; overflow:visible; margin:12px 0 0; padding:0; row-gap:8px; }   /* soejlerne ombrydes (MAALT 19/9: en rullende raekke stod rullet skaevt og skjulte 1A) */
+.ark-slor .ark .ark-chips.i-fladen { flex-wrap:wrap; overflow:visible; margin:12px 0 0; padding:0; row-gap:8px; }   /* gaelder alle ark, ogsaa Toem hovedet (20/9: Format-chippen stod klippet i hoejre kant) */   /* soejlerne ombrydes (MAALT 19/9: en rullende raekke stod rullet skaevt og skjulte 1A) */
 .ark.ark-ide .ark-ekstra { display:flex; flex-direction:column; }
 .ark.ark-ide .ark-ekstra .ark-soejler { order:1; }
 .ark-ekstra .ark-plads { order:1; }
@@ -1419,6 +1419,7 @@ body.mb .fs-vaelg { font-size:14px; width:44px; }
 .ark .ark-greb { order:0; } .ark .ark-eye, .ark .ark-t, .ark .ark-u, .ark .ark-streg { order:0; }
 .ark .ark-chips { order:1; margin:14px 0 12px; padding:0; justify-content:center; flex-wrap:wrap; overflow:visible; }
 .ark .ark-felt { order:2; border-radius:14px; }
+.ark .ark-titel-felt { order:2; }   /* titlen staar lige over beskrivelsen — efter chipsene (Toem hovedet = Ny idé, 20/9) */
 .ark .ark-ekstra, .ark .ark-kvit { order:3; }
 .ark .ark-send-pille { order:4; margin-top:14px; }
 .ark .ark-knap:not(.ark-send-pille) { order:4; }
@@ -48973,7 +48974,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2146";
+const APP_VERSION = "2147";
 let NY_VERSION_KLAR = false;
 let NY_VERSION_AFVIST = false;
 function nyVersionSkjul() {
@@ -60495,6 +60496,9 @@ function arkVaelg(b) {
   if (!ARK) return; ARK.valgt = b.dataset.k || "";
   Array.prototype.forEach.call(b.parentElement.querySelectorAll(".ark-chip"), function (x) { x.classList.toggle("on", x === b); });
   if (ARK.underAf) { const u = document.getElementById("arkUnder"); if (u) u.textContent = ARK.underAf(ARK.valgt) || ""; }
+  /* TITEL OG PLACEHOLDER FOELGER CHIPPEN (Idas klik 20/9, Toem hovedet = samme ark som Ny idé): titelfeltet staar kun paa idé-chippen */
+  if (ARK.titelKun) { const tf = document.getElementById("arkTitel"); if (tf) tf.style.display = (ARK.valgt === ARK.titelKun) ? "" : "none"; }
+  if (ARK.phAf) { const tt = document.getElementById("arkTekst"); if (tt) tt.placeholder = ARK.phAf(ARK.valgt) || ""; }
   ARK_PLUS_AABEN = false;   /* ny chip = mulighederne foldes sammen igen */
   if (ARK.ekstraAf) { const x = document.getElementById("arkEkstra"); if (x) x.innerHTML = ARK.ekstraAf(ARK.valgt) || ""; }
   if (ARK.plusAf) { const pl = document.getElementById("arkPlus"); if (pl) pl.innerHTML = ARK.plusAf(ARK.valgt) || ""; }
@@ -60615,13 +60619,17 @@ function kundeArkAabn(valgt, paaFoto, tekst, kun) {
   let titel = "Tøm hovedet";
   if (kun) { const c = chips.find(function (x) { return x.k === valgt; }); if (c) { chips = [c]; titel = c.n || titel; } }
   /* FRA IDÉBANKEN (Ida 18/9 kl. 14.35: »der skal ikke staa toem hovedet og lander i idebanken naar man staar i idebanken«): arket hedder Ny idé, ingen underlinje, ingen slags-chip */
-  const fraBanken = !!kun && valgt === "ide"; if (fraBanken) { titel = "Ny idé"; chips = []; KUNDE_ARK_TAGS = []; KUNDE_ARK_FORMAT = ""; }
+  const fraBanken = !!kun && valgt === "ide"; if (fraBanken) { titel = "Ny idé"; chips = []; }
+  KUNDE_ARK_TAGS = []; KUNDE_ARK_FORMAT = "";
+  /* TOEM HOVEDET = SAMME ARK SOM NY IDÉ (Idas klik 20/9 kl. ~18.55, Hans-testen: »Hvor skriver jeg, hvad det hedder?«): paa idé-chippen staar Titel · Beskriv idéen ·
+     indholdssoejle · Format · Tags — som computerens »+ Ny idé«. Intet kraeves ud over teksten; titlen fyldes af de foerste ord, hvis den staar tom (kundeArkGem). */
+  const idePaa = fraBanken || (valgt || "ide") === "ide";
   /* Staar arket paa dagskortets foto, ligger kortets roede »Content Studio« BAG det (Ida 14/9).
      Knappen kommer med ind i arket, saa man ikke skal lukke for at komme videre. Samme handling
      som kortets egen: luk kortet, og appen staar der. */
   const kortKnap = (paaFoto && document.getElementById("dagensKort"))
     ? { tekst: "Content Studio", klik: "arkLuk(true);dagensKortLuk()" } : null;
-  arkAabn({ titel: titel, ph: fraBanken ? "Beskriv idéen" : "Hvad har du på hjertet?", titelFelt: fraBanken ? "Titel" : "", ide: fraBanken, send: "Gem", chips: chips, valgt: valgt || "ide", paaFoto: !!paaFoto, tekst: tekst || "", knap: kortKnap,
+  arkAabn({ titel: titel, ph: idePaa ? "Beskriv idéen" : "Hvad har du på hjertet?", titelFelt: idePaa ? "Titel" : "", titelKun: fraBanken ? "" : "ide", phAf: function (k) { return k === "ide" ? "Beskriv idéen" : "Hvad har du på hjertet?"; }, ide: fraBanken, send: "Gem", chips: chips, valgt: valgt || "ide", paaFoto: !!paaFoto, tekst: tekst || "", knap: kortKnap,
     underAf: function (k) { if (fraBanken) return ""; const c = chips.find(function (x) { return x.k === k; }); return c ? c.u : ""; },
     /* Plusset staar KUN paa den chip, der kan vedhaefte noget (Set noget fedt). */
     plusAf: function (k) { return k === "fedt" ? arkPlusKnap() : ""; },
@@ -60631,7 +60639,7 @@ function kundeArkAabn(valgt, paaFoto, tekst, kun) {
       /* DREJEBOGEN SOM VAERKTOEJ I IDEBANKEN (Idas klik 14/9 kl. 22.50): er soejlen valgt, staar der EEN lang knap under
          chipsene, der aabner de samme tre spoergsmaal som paa planlaegningsdagen (bud 3, v1929). Det skrevne foelger med
          som svar paa det foerste spoergsmaal, saa ingenting tabes. */
-      if (k === "ide") return kundeArkPladsHtml() + (fraBanken ? kundeArkFormatHtml() + kundeArkTagsHtml() : "") + '<div id="fangSkaermVis" style="display:none;"></div>';   /* pladsen som dropdown (19/9) — samme form i Ny idé og Toem hovedet */   /* tags-raekken (Idas klik 19/9: »med det samme, i Ny idé-arket«) */   /* »Find idéen med Drejebogen« er UDE (Ida 18/9 kl. 16.05: ordet Drejebogen skal ikke staa nogen steder) */
+      if (k === "ide") return kundeArkPladsHtml() + kundeArkFormatHtml() + kundeArkTagsHtml() + '<div id="fangSkaermVis" style="display:none;"></div>';   /* Format + Tags ogsaa i Toem hovedet (20/9) */   /* pladsen som dropdown (19/9) — samme form i Ny idé og Toem hovedet */   /* tags-raekken (Idas klik 19/9: »med det samme, i Ny idé-arket«) */   /* »Find idéen med Drejebogen« er UDE (Ida 18/9 kl. 16.05: ordet Drejebogen skal ikke staa nogen steder) */
       if (k !== "fedt") return '<div id="fangSkaermVis" style="display:none;"></div>';
       /* VEDHAEFT-RAEKKEN (Idas klik 13/9): kamera og kamerarulle gaar direkte paa vaeggen som billede;
          skaermbilledet foelger linket i teksten, naar der trykkes Gem. Samme motorer som foer.
@@ -67493,6 +67501,6 @@ function prFaerdigHtml() {
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 20. september · 2146</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 20. september · 2147</div>
 </body>
 </html>
