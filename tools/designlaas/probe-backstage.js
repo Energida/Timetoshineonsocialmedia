@@ -2,7 +2,7 @@
    (bsSideGaa + Teknik + Soeg + To-do + Indbakken) mod DESIGNLÅS.md og designmanualen:
    - siden har tekst (ikke tom) · ingen vandret sejlads · trykfelter mindst 44 px (paa telefon) · intet synligt kryds ·
      ingen emoji · ingen streg inde i en flise · kun lange knapper paa telefonen (samme undtagelser som kundeappen)
-   - ADMIN: heroen er 52 px (Ida 11/9) · 32 px luft under heroen (12/9) · ingen billeder i Backstage (11/9) ·
+   - ADMIN: markbaandet er heroen (20/9: Backstage i b2b-laasen; navn 56/34 px Didot, kant til kant, siden hvid) · 32 px luft under baandet · ingen billeder i Backstage (11/9) ·
      ingen fast topbar/fod paa telefonen (8/9) — bundmenuen og flyt-menuen er navigation og undtaget
    Koeres i selen: sele.html?vis=dash&side=overblik&fil=index-sele.html&bred=390&kode=<denne fil>. Skriver
    SELE BACKSTAGE OK / SELE BACKSTAGE FEJL <side> <hvad>. Ny side i Backstage? Tilfoej dens doer i SIDER. */
@@ -66,31 +66,35 @@ setTimeout(async function () {
       try { var al = document.getElementById("appLoader"); if (al) al.remove(); } catch (e) {}
       try { if (typeof studieVaelgerLuk === "function") studieVaelgerLuk(); } catch (e) {}
       try { if (typeof bsFlytLuk === "function") bsFlytLuk(); } catch (e) {}
+      try { if (typeof arkLuk === "function") arkLuk(true); } catch (e) {}   /* Toem hovedet-arket aabner ved app-start paa telefonen (20/9) */
       try { window.scrollTo(0, 0); var dm = document.getElementById("dashMain"); if (dm) dm.scrollTop = 0; } catch (e) {}
       var r = bsRod(); var txt = (r.innerText || "").replace(/\s+/g, " ");
       var felter = r.querySelectorAll("input,textarea,select").length;   /* en side med kun et soegefelt har ingen innerText */
       if (txt.length < 20 && !felter) { console.log("SELE BACKSTAGE FEJL " + navn + " er tom (" + (r.id || r.className || "?") + ")"); fejl++; }
       if (document.documentElement.scrollWidth > innerWidth + 1) { console.log("SELE BACKSTAGE FEJL " + navn + " vandret sejlads: siden er bredere end skaermen"); fejl++; }
-      /* heroen: EEN hero paa 52 px (Ida 11/9) */
-      var heroer = [].filter.call(r.querySelectorAll(".bs-hero, .ch-titel, .ov-h1, .ws-welcome h2"), function (h) { var q = h.getBoundingClientRect(); return q.height > 0 && q.width > 0 && getComputedStyle(h).visibility !== "hidden"; });
-      var hero = heroer[0];
-      if (!hero) { console.log("SELE BACKSTAGE FEJL " + navn + " ingen hero fundet"); fejl++; }
+      /* HEROEN ER MARKBAANDET (Backstage i b2b-laasen, 20/9): baandet oeverst i #dashMain med sidens navn i hvid Didot (56 px computer / 34 px telefon),
+         den gamle hero og stien skjult, 32 px luft under baandet, siden ren hvid. */
+      var baand = document.querySelector("#dashMain > .bs-baand");
+      var bq = baand ? baand.getBoundingClientRect() : null;
+      if (!baand || !bq || bq.height < 100 || getComputedStyle(baand).display === "none") { console.log("SELE BACKSTAGE FEJL " + navn + " intet markbaand oeverst"); fejl++; }
       else {
-        var fs = Math.round(parseFloat(getComputedStyle(hero).fontSize));
-        if (fs !== 52) { console.log("SELE BACKSTAGE FEJL " + navn + " heroen er " + fs + " px, ikke 52 (" + (hero.className.toString().split(" ")[0]) + ")"); fejl++; }
-        /* 32 px luft under heroen (12/9): naermeste synlige blok under heroen */
-        var hr = hero.getBoundingClientRect(); var naermest = null, nEl = null;
+        var mn = baand.querySelector(".mb-navn"); var mfs = mn ? Math.round(parseFloat(getComputedStyle(mn).fontSize)) : 0; var mt = mn ? (mn.textContent || "").trim() : "";
+        if (!mt) { console.log("SELE BACKSTAGE FEJL " + navn + " baandet har intet navn"); fejl++; }
+        if (mfs !== (telefon ? 34 : 56)) { console.log("SELE BACKSTAGE FEJL " + navn + " baandets navn er " + mfs + " px, ikke " + (telefon ? 34 : 56)); fejl++; }
+        if (!/Didot|Bodoni/.test(getComputedStyle(mn || baand).fontFamily)) { console.log("SELE BACKSTAGE FEJL " + navn + " baandets navn er ikke Didot"); fejl++; }
+        var gamle = [].filter.call(r.querySelectorAll(".bs-hero, .ch-titel, .ov-h1, .ws-welcome h2"), function (h) { var q = h.getBoundingClientRect(); return q.height > 0 && q.width > 0 && parseFloat(getComputedStyle(h).fontSize) >= 30; });
+        if (gamle.length) { console.log("SELE BACKSTAGE FEJL " + navn + " den gamle hero staar stadig under baandet (" + gamle[0].className.toString().split(" ")[0] + ")"); fejl++; }
+        var sti = document.querySelector("#dashMain > .navsti"); if (sti && sti.getBoundingClientRect().height > 0) { console.log("SELE BACKSTAGE FEJL " + navn + " den gamle sti-bjaelke er synlig"); fejl++; }
+        if (Math.abs(bq.left - (telefon ? 0 : (document.querySelector(".dash-sidebar") ? document.querySelector(".dash-sidebar").getBoundingClientRect().right : 0))) > 1 || Math.abs(bq.right - innerWidth) > 1) { console.log("SELE BACKSTAGE FEJL " + navn + " baandet gaar ikke kant til kant (" + Math.round(bq.left) + "-" + Math.round(bq.right) + ")"); fejl++; }
+        /* 32 px luft under baandet: naermeste synlige blok under det */
+        var naermest = null, nEl = null;
         [].forEach.call(r.querySelectorAll("div,section,button,ul,table,p,input,form"), function (e) {
-          if (e === hero || hero.contains(e) || e.contains(hero)) return;
           var q = e.getBoundingClientRect(); if (!(q.height > 6 && q.width > 60)) return;
           if (getComputedStyle(e).visibility === "hidden") return;
-          if (q.top >= hr.bottom - 1 && (naermest === null || q.top < naermest)) { naermest = q.top; nEl = e; }
+          if (q.top >= bq.bottom - 1 && (naermest === null || q.top < naermest)) { naermest = q.top; nEl = e; }
         });
-        if (naermest !== null) {
-          var luft = Math.round(naermest - hr.bottom);
-          var erEtiket = nEl.classList && (nEl.classList.contains("bs-eye") || nEl.classList.contains("ch-label") || nEl.classList.contains("bs-hero-streg"));
-          if (!erEtiket && luft < 28) { console.log("SELE BACKSTAGE FEJL " + navn + " luft under heroen er " + luft + " px, ikke 32 (" + (nEl.id || nEl.className.toString().split(" ")[0] || nEl.tagName) + ")"); fejl++; }
-        }
+        if (naermest !== null) { var luft = Math.round(naermest - bq.bottom); if (luft < 28 || luft > 36) { console.log("SELE BACKSTAGE FEJL " + navn + " luft under baandet er " + luft + " px, ikke 32 (" + (nEl.id || nEl.className.toString().split(" ")[0] || nEl.tagName) + ")"); fejl++; } }
+        var bg = getComputedStyle(document.body).backgroundColor; if (!/rgb\(255, 255, 255\)/.test(bg)) { console.log("SELE BACKSTAGE FEJL " + navn + " siden er ikke ren hvid (" + bg + ")"); fejl++; }
       }
       /* ingen billeder i Backstage (Ida 11/9) — vandmaerket og ikoner er ikke billeder */
       var billeder = [].filter.call(r.querySelectorAll("img"), function (im) { var q = im.getBoundingClientRect(); return q.width > 40 && q.height > 40 && !/logo-hjerte/.test(im.src) && !im.closest(".hjerte-pynt"); });

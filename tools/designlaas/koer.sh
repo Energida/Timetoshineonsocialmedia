@@ -60,6 +60,30 @@ RAA6=$($TO "$C" $HL --no-sandbox --disable-gpu --window-size=1480,1000 --virtual
 UD6=$(echo "$RAA6" | grep -a 'CONSOLE' | sed -E 's/^.*CONSOLE[:(][0-9]+\)?\] //; s/", source:.*$//; s/^"//' | grep -a 'SELE BUD')
 echo "$UD6"
 [ -z "$UD6" ] && { echo "SELE BUD FEJL (1440): ingen maaling fra chromium"; echo "$RAA6" | grep -a 'CONSOLE' | tail -10 | cut -c1-300; }
+# UX-POLITIET (Ida 20/9 kl. 22.28): hele b2b paa 390 og 1440 (fast + frigjort) — Didot uden for heroen, fed Poppins, »skriv«, lange streger, I/jer, koen, native vaelgere, klip, lys graa paa laeselinjer. Nul fund er kravet.
+K7=$(python3 -c "import urllib.parse,sys;print(urllib.parse.quote(open(sys.argv[1]).read()))" "$ROD/tools/designlaas/probe-ux.js")
+K8=$(python3 -c "import urllib.parse,sys;print(urllib.parse.quote('window.SELE_SMAL=1;' + open(sys.argv[1]).read()))" "$ROD/tools/designlaas/probe-ux.js")
+UX_OK=1
+for UXK in "390 1200 $K7" "1440 940 $K7" "1440 940 $K8"; do
+  set -- $UXK
+  RAAX=$($TO "$C" $HL --no-sandbox --disable-gpu --window-size=$(($1+40)),$(($2+60)) --virtual-time-budget=60000 --enable-logging=stderr --v=0 --screenshot="$MAAL/ux-$1.png" "http://127.0.0.1:$PORT/sele.html?vis=kunde&fil=index-sele.html%3Fselekode%3DHINGES2026&bred=$1&hoej=$2&kode=$3" 2>&1)
+  UDX=$(echo "$RAAX" | grep -a 'CONSOLE' | sed -E 's/^.*CONSOLE[:(][0-9]+\)?\] //; s/", source:.*$//; s/^"//' | grep -a 'SELE UX')
+  echo "$UDX" | grep -v "SELE UX SUM 0 " | head -30
+  echo "$UDX" | grep -q "SELE UX SUM 0 " || UX_OK=0
+done
+[ "$UX_OK" = "1" ] && echo "SELE UX OK: nul fund paa 390, 1440 og 1440 frigjort" || echo "SELE UX FEJL: fund staar ovenfor"
+# BACKSTAGE (20/9, Idas ord: »hver eneste side i loop«): probe-backstage.js paa 390 og 1440 — markbaandet som hero, 32 px luft, hvid side, trykfelter, streger, kryds, emoji.
+K9=$(python3 -c "import urllib.parse,sys;print(urllib.parse.quote(open(sys.argv[1]).read()))" "$ROD/tools/designlaas/probe-backstage.js")
+K10=$(python3 -c "import urllib.parse,sys;print(urllib.parse.quote(sys.argv[2] + open(sys.argv[1]).read()))" "$ROD/tools/designlaas/probe-backstage.js" "document.body.classList.add('dash-nav');")
+BS_OK=1
+for BSK in "390 1200 $K9" "1440 1300 $K10"; do
+  set -- $BSK
+  RAAB=$($TO "$C" $HL --no-sandbox --disable-gpu --window-size=$(($1+40)),$(($2+40)) --virtual-time-budget=120000 --enable-logging=stderr --v=0 --screenshot="$MAAL/backstage-$1.png" "http://127.0.0.1:$PORT/sele.html?vis=dash&side=overblik&fil=index-sele.html&bred=$1&hoej=$2&kode=$3" 2>&1)
+  UDB=$(echo "$RAAB" | grep -a 'CONSOLE' | sed -E 's/^.*CONSOLE[:(][0-9]+\)?\] //; s/", source:.*$//; s/^"//' | grep -a 'SELE BACKSTAGE')
+  echo "$UDB" | sed "s/^/[$1] /"
+  echo "$UDB" | grep -q "SELE BACKSTAGE OK" || BS_OK=0
+done
+[ "$BS_OK" = "1" ] && echo "SELE BACKSTAGE OK: alle sider holder laasen paa 390 og 1440" || echo "SELE BACKSTAGE FEJL: fund staar ovenfor"
 # ENS-PORTEN FOR BRIEFEN (17/9, Idas ord: »inden der bygges noget, kontrolleres systemet for hvordan de andre funktioner omkring ser ud«):
 # briefen paa 1440 — forsiden + alle skrivetrin — piller, chips, versaler, fliser, felter og bjaelker skal vaere ens, og intet maa vaere rosa.
 K3=$(python3 -c "import urllib.parse,sys;print(urllib.parse.quote(open(sys.argv[1]).read()))" "$ROD/tools/designlaas/probe-brief.js")
@@ -67,5 +91,5 @@ RAA3=$($TO "$C" $HL --no-sandbox --disable-gpu --window-size=1480,1000 --virtual
 UD3=$(echo "$RAA3" | grep -a 'CONSOLE' | sed -E 's/^.*CONSOLE[:(][0-9]+\)?\] //; s/", source:.*$//; s/^"//' | grep -a 'SELE BRIEF')
 echo "$UD3"
 [ -z "$UD3" ] && { echo "SELE BRIEF FEJL: ingen maaling fra chromium — de SIDSTE 30 konsollinjer (18/9: de foerste 20 var kun opstartsstoej):"; echo "$RAA3" | grep -a 'CONSOLE' | tail -30 | cut -c1-400; echo "--- og de foerste 5 raa linjer:"; echo "$RAA3" | head -5; }
-echo "$UD" | grep -q "SELE LAAS OK" && echo "$UD2" | grep -q "SELE SIDER OK" && echo "$UD4" | grep -q "SELE SIDER OK" && echo "$UD5" | grep -q "SELE BUD OK" && echo "$UD6" | grep -q "SELE BUD OK" && echo "$UD3" | grep -q "SELE BRIEF OK" && exit 0
+echo "$UD" | grep -q "SELE LAAS OK" && echo "$UD2" | grep -q "SELE SIDER OK" && echo "$UD4" | grep -q "SELE SIDER OK" && echo "$UD5" | grep -q "SELE BUD OK" && echo "$UD6" | grep -q "SELE BUD OK" && [ "$UX_OK" = "1" ] && [ "$BS_OK" = "1" ] && echo "$UD3" | grep -q "SELE BRIEF OK" && exit 0
 echo "SELE LAAS FEJL: maalingen sagde ikke OK"; exit 1

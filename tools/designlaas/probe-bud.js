@@ -44,6 +44,7 @@ setTimeout(async function () {
           if (!(xH.left > xV.right - 1)) F(tilstand + ": Kommende aktiviteter og To-do staar ikke i hoejre spalte ved siden af dagen");
           if (Math.abs(xH.top - xV.top) > 60) F(tilstand + ": hoejre spalte starter ikke oppe ved dagen (" + Math.round(xH.top - xV.top) + " px)");
           if (!(yAft < yOpg)) F(tilstand + ": To-do staar over Kommende aktiviteter");
+          var xT = document.getElementById("hjemTop").getBoundingClientRect(); if (xH.width < xT.width * 0.29) F(tilstand + ": hoejre spalte er for smal (" + Math.round(xH.width) + " af " + Math.round(xT.width) + " px, skal vaere knap en tredjedel)");
           var strip = document.getElementById("ugenKortStrip"); if (synlig(strip) && strip.getBoundingClientRect().top < yUge) F(tilstand + ": Ugens indhold staar foer Denne uge");
         }
       }
