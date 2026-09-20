@@ -18077,7 +18077,7 @@ function briefForsideTegn(G, grupper, wrap, navM) {
     + '<div class="pf-flise pf-cap"><div class="pf-eye"><span>Caption</span>' + (true ? '<button type="button" class="pf-ik" data-ikon="1" title="Kopiér captionen" aria-label="Kopiér captionen" onclick="ktpKopier(' + JSON.stringify(capFuld).replace(/"/g, "&quot;") + ', this)"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/></svg></button>' : '') + '</div>'
     + '<div class="pf-cap-tekst pf-klik" role="button" tabindex="0" onclick="briefMbVisFelt(\'#bf_captionFoerste, #bf_caption\')">' + (cap ? [capF, capH, capA].filter(Boolean).map(x => '<p>' + esc(x).replace(/\n/g, "<br>") + '</p>').join("") : '<p class="pf-tom">Mangler</p>') + (tags ? '<div class="pf-cap-tags">' + esc(tags) + '</div>' : '') + '</div></div>'   /* tom = doerens ord i graat, samme form som udfyldt (Ida 18/9 kl. 15.02) */
     + dialogF
-    + '<div class="pf-ret"><button type="button" onclick="briefMbVis(\'skriv\', 0)">' + (briefHarHook() ? 'Ret briefen' : 'Skriv briefen') + '</button></div>';   /* »Skriv briefen«, til der staar et hook (20/9) */
+    + (function () { const hul = briefNaesteHul(); return '<div class="pf-ret"><button type="button" onclick="' + (hul ? 'briefMbVisFelt(\'' + hul.sel + '\')' : 'briefMbVis(\'skriv\', 0)') + '">' + (hul ? esc(hul.navn) : 'Ret briefen') + '</button></div>'; })();   /* knappen ER naeste skridt: hedder det foerste hul og aabner dér; intet hul = »Ret briefen« → Retning (Idas klik 20/9, v2143) */
   let fs = document.getElementById("briefForside");
   if (!fs) { fs = document.createElement("div"); fs.id = "briefForside"; }
   fs.innerHTML = html;
@@ -25531,6 +25531,38 @@ function briefSeVaerdi(v) {
    dermed er VAELTET af denne — den er nyere og udtrykkelig. */
 /* »noget« ud over selve idé-beskrivelsen: en ny idé fra Idébanken har kun beskrivelsen og lander paa skrivesiden (20/9); en gammel brief med indhold lander paa forsiden som foer */
 function briefHarNogetUdOverIdeen() { try { const b = BRIEF_STATE || {}; return BRIEF_TEKSTFELTER.some(k => k !== "beskrivelse" && k !== "ide" && k !== "maal" && k !== "udbytte" && String(b[k] == null ? "" : b[k]).trim()) || (Array.isArray(b.klip) && b.klip.some(k => k && String(k.ser || k.tekst || "").trim())); } catch (e) { return false; } }
+/* DEN ROEDE KNAP PAA FORSIDEN ER NAESTE SKRIDT (Idas klik 20/9 kl. ~17.15, Hans-testen fund »Skriv briefen → hullet«: »Jeg trykkede paa
+   den roede knap, og saa var jeg tilbage ved det, jeg allerede havde skrevet«). Det foerste hul i forsidens raekkefoelge — hook · klip/slide/
+   billede · CTA · caption — giver knappen navn og maal; briefMbVisFelt aabner den side og det trin, feltet bor paa (begge flader). Intet hul =
+   »Ret briefen« → Retning som foer. Samme »tomt«-regler som forsiden (kun hook med flueben; tom-ord er aldrig data). */
+function briefNaesteHul() {
+  try {
+    const B = BRIEF_STATE || {};
+    const T = x => { const t = String(x == null ? "" : x).trim(); return briefErTomOrd(t) ? "" : t; };
+    const harListe = Array.isArray(B.hookTekstListe) && B.hookTekstListe.some(function (t) { return String(t || "").trim(); });
+    let hook = (harListe && !(B.hookTekstValgt > -1)) ? "" : T(B.hookTekst);
+    if (!hook && B.hookTekstValgt > -1 && Array.isArray(B.hookTekstListe)) hook = T(B.hookTekstListe[B.hookTekstValgt]);
+    if (!hook) return { navn: "Skriv hooket", sel: "#koHookUd, #forslag_hookTekst, #bf_hookTekst" };
+    if (B.format === "Karrusel") {
+      const sl = (Array.isArray(B.slides) ? B.slides : []).map((t, i) => ({ t: T(t), b: T(Array.isArray(B.slideBilleder) ? B.slideBilleder[i] : ""), i: i }));
+      const fyldt = sl.filter(p => p.t || p.b);
+      if (!fyldt.length) return { navn: "Beskriv slide 1", sel: "#bf_slide_0" };
+      if (!T(B.ctaVideo)) return { navn: "Vælg, hvad de skal gøre", sel: "#bf_ctaVideo, #briefKlipHolder" };
+    } else if (B.format === "Billede") {
+      if (!T(B.hook)) return { navn: "Beskriv billedet", sel: "#bf_indhold" };
+    } else {
+      const liste = briefKlipListe();
+      const alle = liste.map((k, i) => ({ k: k, i: i })).filter(p => p.k);
+      const fyldte = alle.filter(p => T(p.k.ser) || T(p.k.tekst) || T(p.k.siger));
+      const vis = fyldte.length ? fyldte : alle.slice(0, 1);
+      for (let n = 0; n < vis.length; n++) { if (!T(vis[n].k.ser)) return { navn: "Beskriv klip " + (n + 1), sel: "#bf_klip_" + vis[n].i + "_ser" }; }
+      if (!T(B.ctaVideo)) return { navn: "Vælg, hvad de skal gøre", sel: "#bf_ctaVideo, #briefKlipHolder" };
+    }
+    const cap = [T(B.captionFoerste), T(B.captionHistorie), T(B.ctaCaption)].filter(Boolean).join("");
+    if (!cap) return { navn: "Skriv captionen", sel: "#bf_captionFoerste, #bf_caption" };
+  } catch (e) {}
+  return null;
+}
 function briefHarHook() { try { const b = BRIEF_STATE || {}; return !!String(b.hookTekst == null ? "" : b.hookTekst).trim(); } catch (e) { return false; } }
 function briefHarNoget() {
   try {
@@ -48921,7 +48953,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2142";
+const APP_VERSION = "2143";
 let NY_VERSION_KLAR = false;
 let NY_VERSION_AFVIST = false;
 function nyVersionSkjul() {
@@ -67441,6 +67473,6 @@ function prFaerdigHtml() {
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 20. september · 2142</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 20. september · 2143</div>
 </body>
 </html>
