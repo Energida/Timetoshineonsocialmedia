@@ -59,6 +59,29 @@ setTimeout(async function () {
     for (var v = 0; v < 40 && !document.body.classList.contains("app-klar"); v++) await vent(150);
     if (!document.body.classList.contains("app-klar")) { console.log("SELE SIDER FEJL taeppet: appLoader lettede ikke af sig selv paa 6 sek."); fejl++; }
     ["appLoader", "turOverlay", "dagensKort"].forEach(function (id) { var e = document.getElementById(id); if (e) e.remove(); });
+    /* SKINNE-MAALINGEN (LOVET Ida 20/9 kl. 21.50 efter v2149: »lav en gate … saa dette aldrig sker igen«).
+       Koeres koer.sh med window.SELE_SMAL, maales hver side med FRIGJORT menu (body.nav-smal: ikonskinnen ligger OVENPAA
+       indholdet, .content skal have 118 px til venstre). INTET synligt maa ligge under skinnen eller vaere klippet i en kant. */
+    var SMAL = !!window.SELE_SMAL;
+    if (SMAL) { document.body.classList.add("nav-smal"); try { var sn = document.getElementById("sideNav"); if (sn) sn.classList.remove("aaben"); } catch (e) {} }
+    var klipTjek = function (navn, r) {
+      var skinne = 0; try { if (SMAL) { var sn = document.getElementById("sideNav"); if (sn) skinne = sn.getBoundingClientRect().right; } } catch (e) {}
+      var ud = [];
+      [].forEach.call(r.querySelectorAll("*"), function (e) {
+        if (!e.childNodes.length) return;
+        var harTekst = [].some.call(e.childNodes, function (n) { return n.nodeType === 3 && n.textContent.trim(); });
+        if (!harTekst) return;
+        var cs = getComputedStyle(e); if (cs.display === "none" || cs.visibility === "hidden" || parseFloat(cs.opacity) === 0) return;
+        var q = e.getBoundingClientRect(); if (q.width < 4 || q.height < 4) return;
+        if (e.closest("#sideNav, #burgerMenu, .bottom-nav, #versionsFod, .mb-baand")) return;   /* baandet maa gaa til kanten */
+        var p = e.parentElement, ruller = false; while (p && p !== document.body) { var pc = getComputedStyle(p); if (/(auto|scroll)/.test(pc.overflowX) && p.scrollWidth > p.clientWidth + 1) { ruller = true; break; } p = p.parentElement; }
+        if (ruller) return;   /* en raekke, der ruller vandret (chips, kolonner paa 300 px), er ikke klippet — den rulles frem */
+        if (q.left < skinne - 0.5) ud.push("under skinnen: " + (e.innerText || "").trim().slice(0, 24) + " (x " + Math.round(q.left) + " < " + Math.round(skinne) + ")");
+        else if (q.left < -0.5) ud.push("klippet venstre: " + (e.innerText || "").trim().slice(0, 24));
+        if (q.right > innerWidth + 0.5) ud.push("klippet hoejre: " + (e.innerText || "").trim().slice(0, 24));
+      });
+      return ud;
+    };
     for (var i = 0; i < SIDER.length; i++) {
       var navn = SIDER[i][0];
       try { SIDER[i][1](); } catch (e) { console.log("SELE SIDER FEJL " + navn + " kunne ikke aabnes: " + e.message); fejl++; continue; }
@@ -68,6 +91,16 @@ setTimeout(async function () {
       if (txt.length < 20) { console.log("SELE SIDER FEJL " + navn + " er tom (" + (r.id || "?") + ")"); fejl++; }
       var c = document.querySelector(".content");
       if (document.documentElement.scrollWidth > innerWidth + 1 || (c && c.scrollWidth > c.clientWidth + 1)) { console.log("SELE SIDER FEJL " + navn + " vandret sejlads: siden er bredere end skaermen"); fejl++; }
+      var kl = klipTjek(navn, r); if (kl.length) { console.log("SELE SIDER FEJL " + navn + (SMAL ? " (frigjort menu)" : "") + " klippet: " + kl.slice(0, 4).join(" · ")); fejl++; }
+      if (SMAL) {   /* skinne-passet maaler kun taeppet, sejlads og klip — telefonens regler (44 px, lange knapper, streger) hoerer til 390-passet */
+        try { if (typeof lukLektion === "function") lukLektion(); } catch (e) {}
+        try { if (typeof arkLuk === "function") arkLuk(true); } catch (e) {}
+        try { if (typeof closeModal === "function") closeModal(); } catch (e) {}
+        try { if (typeof drejebogTomLuk === "function") drejebogTomLuk(); } catch (e) {}
+        document.querySelectorAll(".modal-back").forEach(function (m) { if (m.style.display === "flex") m.style.display = "none"; });
+        document.querySelectorAll(".modal-back.on").forEach(function (m) { m.classList.remove("on"); });
+        continue;
+      }
       var kn = [].filter.call(r.querySelectorAll("button, a[onclick], [role=button], .row-btn, label.ark-knap"), function (b) { var q = b.getBoundingClientRect(); return q.height > 0 && q.width > 0; });
       /* RUNDT ER RUNDT (HAARD, Ida 18/9 kl. 13.37): en cirkel under 60 px uden ord (hoejst to tegn) skal have samme bredde og hoejde — 28 x 44 er en oval. */
       [].forEach.call(r.querySelectorAll("button, span, i, div"), function (e) {
@@ -205,6 +238,6 @@ setTimeout(async function () {
       document.querySelectorAll(".modal-back").forEach(function (m) { if (m.style.display === "flex") m.style.display = "none"; });
       document.querySelectorAll(".modal-back.on").forEach(function (m) { m.classList.remove("on"); });
     }
-    console.log(fejl ? "SELE SIDER FEJL i alt: " + fejl : "SELE SIDER OK: " + SIDER.length + " sider holder designlaasen");
+    console.log(fejl ? "SELE SIDER FEJL i alt: " + fejl : "SELE SIDER OK: " + SIDER.length + " sider holder designlaasen" + (SMAL ? " med frigjort menu paa " + innerWidth : ""));
   } catch (e) { console.log("SELE SIDER FEJL probe: " + e.message); }
 }, 1200);

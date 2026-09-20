@@ -44,6 +44,12 @@ RAA2=$($TO "$C" $HL --no-sandbox --disable-gpu --window-size=390,1200 --virtual-
 UD2=$(echo "$RAA2" | grep -a 'CONSOLE' | sed -E 's/^.*CONSOLE[:(][0-9]+\)?\] //; s/", source:.*$//; s/^"//' | grep -a 'SELE SIDER')
 echo "$UD2"
 [ -z "$UD2" ] && { echo "SELE SIDER FEJL: ingen maaling fra chromium — de foerste linjer:"; echo "$RAA2" | head -20; }
+# SKINNE-MAALINGEN (LOVET Ida 20/9 kl. 21.50): samme sideprobe paa 1440 med FRIGJORT menu (body.nav-smal) — intet under skinnen, intet klippet.
+K4=$(python3 -c "import urllib.parse,sys;print(urllib.parse.quote('window.SELE_SMAL=1;' + open(sys.argv[1]).read()))" "$ROD/tools/designlaas/probe-sider.js")
+RAA4=$($TO "$C" $HL --no-sandbox --disable-gpu --window-size=1480,1000 --virtual-time-budget=40000 --enable-logging=stderr --v=0 --screenshot="$MAAL/smal.png" "http://127.0.0.1:$PORT/sele.html?vis=kunde&fil=index-sele.html&bred=1440&hoej=940&kode=$K4" 2>&1)
+UD4=$(echo "$RAA4" | grep -a 'CONSOLE' | sed -E 's/^.*CONSOLE[:(][0-9]+\)?\] //; s/", source:.*$//; s/^"//' | grep -a 'SELE SIDER')
+echo "$UD4" | sed 's/^SELE SIDER/SELE SMAL/'
+[ -z "$UD4" ] && { echo "SELE SMAL FEJL: ingen maaling fra chromium — de foerste linjer:"; echo "$RAA4" | head -20; }
 # ENS-PORTEN FOR BRIEFEN (17/9, Idas ord: »inden der bygges noget, kontrolleres systemet for hvordan de andre funktioner omkring ser ud«):
 # briefen paa 1440 — forsiden + alle skrivetrin — piller, chips, versaler, fliser, felter og bjaelker skal vaere ens, og intet maa vaere rosa.
 K3=$(python3 -c "import urllib.parse,sys;print(urllib.parse.quote(open(sys.argv[1]).read()))" "$ROD/tools/designlaas/probe-brief.js")
@@ -51,5 +57,5 @@ RAA3=$($TO "$C" $HL --no-sandbox --disable-gpu --window-size=1480,1000 --virtual
 UD3=$(echo "$RAA3" | grep -a 'CONSOLE' | sed -E 's/^.*CONSOLE[:(][0-9]+\)?\] //; s/", source:.*$//; s/^"//' | grep -a 'SELE BRIEF')
 echo "$UD3"
 [ -z "$UD3" ] && { echo "SELE BRIEF FEJL: ingen maaling fra chromium — de SIDSTE 30 konsollinjer (18/9: de foerste 20 var kun opstartsstoej):"; echo "$RAA3" | grep -a 'CONSOLE' | tail -30 | cut -c1-400; echo "--- og de foerste 5 raa linjer:"; echo "$RAA3" | head -5; }
-echo "$UD" | grep -q "SELE LAAS OK" && echo "$UD2" | grep -q "SELE SIDER OK" && echo "$UD3" | grep -q "SELE BRIEF OK" && exit 0
+echo "$UD" | grep -q "SELE LAAS OK" && echo "$UD2" | grep -q "SELE SIDER OK" && echo "$UD4" | grep -q "SELE SIDER OK" && echo "$UD3" | grep -q "SELE BRIEF OK" && exit 0
 echo "SELE LAAS FEJL: maalingen sagde ikke OK"; exit 1
