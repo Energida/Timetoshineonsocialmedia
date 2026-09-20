@@ -164,6 +164,23 @@ setTimeout(async function () {
         if (!ok) svaever.push((el.className.toString().split(" ")[0] || "etiket") + ' "' + (el.textContent || "").trim().slice(0, 16) + '" over=' + gOver + " (" + overEl.tagName + "." + (overEl.className.toString().split(" ")[0] || "") + ") under=" + gUnder + " (" + underEl.tagName + "." + (underEl.className.toString().split(" ")[0] || "") + ")");   /* 16/9: naboerne staar med, saa fundet kan findes */
       });
       if (svaever.length) { console.log("SELE SIDER FEJL " + navn + " etiket svaever (" + svaever.length + "): " + svaever.slice(0, 5).join(", ")); fejl++; }
+      /* SIDESTILLEDE ELEMENTER HAR SAMME STOERRELSE (HAARD, Ida 20/9 kl. 12.28): ens elementer i samme raekke maa ikke have forskellig hoejde.
+         Maales paa kolonnehovederne i Idebanken, kortene i sporet paa Hjem/Forloebet (computeren) og ringfliserne — tolerance 2 px. */
+      try {
+        var grupper = [".ibb-1 .ibh", ".db-deck > .db-kort", ".db-ringe > .db-ringflise", ".pb-ringe > .pb-rg", ".ov-grid > .ws-card"];
+        grupper.forEach(function (sel) {
+          var els = [].filter.call(r.querySelectorAll(sel), function (e) { var q = e.getBoundingClientRect(); return q.height > 0 && getComputedStyle(e).display !== "none"; });
+          if (els.length < 2) return;
+          /* kun elementer, der faktisk staar paa samme raekke (samme top +/- 4 px) */
+          var raekker = {}; els.forEach(function (e) { var t = Math.round(e.getBoundingClientRect().top / 8) * 8; (raekker[t] = raekker[t] || []).push(e); });
+          Object.keys(raekker).forEach(function (t) {
+            var rk = raekker[t]; if (rk.length < 2) return;
+            var hs = rk.map(function (e) { return e.getBoundingClientRect().height; });
+            var mn = Math.min.apply(null, hs), mx = Math.max.apply(null, hs);
+            if (mx - mn > 2) { console.log("SELE SIDER FEJL " + navn + " sidestillede elementer i forskellig hoejde: " + sel + " " + Math.round(mn) + "–" + Math.round(mx) + " px"); fejl++; }
+          });
+        });
+      } catch (e) {}
       var kryds = [].filter.call(r.querySelectorAll(".modal-close"), function (k) { return getComputedStyle(k).display !== "none" && k.getBoundingClientRect().height > 0; });
       if (kryds.length) { console.log("SELE SIDER FEJL " + navn + " synligt kryds paa siden"); fejl++; }
       var emoji = txt.match(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{2B50}\u{2728}]/gu);
