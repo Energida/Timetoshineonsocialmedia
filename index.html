@@ -1346,6 +1346,9 @@ select.cal-periode:not([multiple]):not([size]) {
 .ftf-hint { text-align:center; font-size:12px; color:var(--gray3); margin:0 0 12px; }
 .hus-kvit { position:fixed; left:50%; bottom:calc(24px + env(safe-area-inset-bottom, 0px)); transform:translateX(-50%) translateY(8px); background:#fff; box-shadow:var(--mb-skygge, 0 0 4px rgba(46,44,41,.10), 0 0 36px rgba(46,44,41,.20)); border-radius:999px; height:44px; padding:0 18px; display:flex; align-items:center; gap:8px; font-family:Poppins,sans-serif; font-size:13px; color:var(--black); z-index:1200; opacity:0; pointer-events:none; transition:opacity .2s ease-out, transform .2s ease-out; white-space:nowrap; max-width:calc(100vw - 32px); }
 .hus-kvit.on { opacity:1; transform:translateX(-50%) translateY(0); }
+/* HUSK-LINJEN VED HOOKET (Idas klik 20/9 kl. ~16.30, bud 1 af fem — Hans-testen runde 3): */
+.husk-linje { font-family:Poppins,sans-serif; font-size:12.5px; font-weight:400; color:var(--red); margin:6px 0 0 38px; line-height:1.5; }
+.husk-hook button.mq-tap[onclick^="briefForslagVaelg"] { box-shadow:0 0 0 3px #fff, 0 0 0 4.5px var(--red); }
 @media (max-width:899px) { .hus-kvit { bottom:calc(124px + env(safe-area-inset-bottom, 0px)); } body:has(#dagensKort:not(.vaek)) .hus-kvit { bottom:calc(176px + env(safe-area-inset-bottom, 0px)); } }   /* over bundmenuen paa telefonen; /* HANS-TESTEN 20/9 eftermiddag (runde 3): pillen laa hen over plusset (96) og over »Swipe op for en ny idé« paa startskaermen */
 .ark-eye { font-size:10px; letter-spacing:1.8px; text-transform:uppercase; color:var(--gray3); margin:0 0 6px; text-align:center; }   /* centreret som titlen (Ida 18/9 kl. 14.40: »den oeverste tekst i venstre side og den naeste centreret — det sejler«) */
 /* DET LILLE ARK (16/9): een linje i Poppins, eet felt paa een linje, Luk som tekst — maks. 420 px */
@@ -18427,6 +18430,7 @@ function briefTjekSvar(k, v, knap) {
   try { saveBrief(true); } catch (e) {}
 }
 function briefTrinGaa(d) {
+  if (d > 0 && !briefHookHuskTjek()) return;   /* HUSK-LINJEN VED HOOKET (Idas klik 20/9 kl. ~16.30, bud 1 af fem — Hans-testen runde 3): telefonens trin-knap */
   const i = BRIEF_TRIN_INFO || { t: 0, n: 1 };
   if (d > 0) { if (i.t < i.n - 1) BRIEF_TRIN_AKTIV = i.t + 1; else { BRIEF_SIDE_AKTIV = BRIEF_SIDE_AKTIV + 1; BRIEF_TRIN_AKTIV = 0; } }
   else { if (i.t > 0) BRIEF_TRIN_AKTIV = i.t - 1; else { BRIEF_SIDE_AKTIV = Math.max(0, BRIEF_SIDE_AKTIV - 1); BRIEF_TRIN_AKTIV = 999; } }
@@ -18486,7 +18490,22 @@ function briefVidenPunkter(kort) {
 }
 function briefVidenSkift(h) { const kort = h.nextElementSibling; if (!kort || !kort.classList.contains("rk-hvorfor")) return; const aaben = !kort.classList.contains("aaben"); kort.classList.toggle("aaben", aaben); h.classList.toggle("aaben", aaben); h.setAttribute("aria-expanded", aaben ? "true" : "false"); }
 /* Bladring mellem skrivesiderne: gem, tegn siden igen (ALDRIG briefSamletVis — den gamle oversigt), og start i toppen */
-function briefSideGaa(n) { try { saveBrief(true); } catch (e) {} briefMbVis("skriv", n); }
+/* HUSK-LINJEN VED HOOKET (Idas klik 20/9 kl. ~16.30, bud 1 af fem — Hans-testen runde 3): skriver kunden et eller flere hooks og gaar videre uden at saette flueben, bliver siden staaende: ringene faar husets roede kant (hvidt mellemrum + roed haarfin, 3/9), og under listen staar EEN linje: »Tryk paa ringen ved det hook, du vil bruge.« Linjen forsvinder, i det sekund et hook vaelges. 18/9-reglen (kun flueben taeller) staar uroert — ingen vaelges for kunden. Gaelder begge flader og alle formater, der har hook-listen paa siden. */
+function briefHookHuskTjek() {
+  try { briefForslagLaes("hookTekst"); } catch (e) {}
+  const b = BRIEF_STATE; if (!b) return true;
+  const v = document.getElementById("forslag_hookTekst"); if (!v || !v.offsetParent) return true;   /* kun naar hook-listen staar paa den side, man forlader */
+  const liste = Array.isArray(b.hookTekstListe) ? b.hookTekstListe : [];
+  if (!liste.some(function (t) { return String(t || "").trim(); })) return true;   /* intet skrevet = ingenting at vaelge; siden maa gerne forlades */
+  if (b.hookTekstValgt > -1) return true;
+  v.classList.add("husk-hook");
+  let l = v.parentElement && v.parentElement.querySelector(".husk-linje");
+  if (!l) { l = document.createElement("div"); l.className = "husk-linje"; l.textContent = "Tryk på ringen ved det hook, du vil bruge."; v.insertAdjacentElement("afterend", l); }
+  try { v.scrollIntoView({ block: "center", behavior: "smooth" }); } catch (e) {}
+  return false;
+}
+function briefHookHuskVaek() { try { const v = document.getElementById("forslag_hookTekst"); if (v) { v.classList.remove("husk-hook"); const l = v.parentElement && v.parentElement.querySelector(".husk-linje"); if (l) l.remove(); } } catch (e) {} }
+function briefSideGaa(n) { if (n > BRIEF_SIDE_AKTIV && !briefHookHuskTjek()) return; try { saveBrief(true); } catch (e) {} briefMbVis("skriv", n); }
 /* Gem paa sidste skriveside foerer tilbage til forsiden — KUN naar det faktisk blev gemt (4/8: ingen navigation vaek fra en fejlet gemning) */
 async function briefSkrivGem(knap) {
   if (!knap || knap.disabled) return;
@@ -19436,6 +19455,7 @@ function briefForslagVaelg(key, i) {
   briefForslagLaes(key);
   const b = BRIEF_STATE;
   b[key + "Valgt"] = (b[key + "Valgt"] === i) ? -1 : i;   /* klik igen fravaelger */
+  if (key === "hookTekst" && b[key + "Valgt"] > -1) briefHookHuskVaek();   /* HUSK-LINJEN VED HOOKET (Idas klik 20/9 kl. ~16.30, bud 1 af fem — Hans-testen runde 3): linjen forsvinder ved valget */
   briefForslagTegn(key);
   try { saveBrief(true); } catch (e) {}
 }
@@ -48920,7 +48940,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2136";
+const APP_VERSION = "2137";
 let NY_VERSION_KLAR = false;
 let NY_VERSION_AFVIST = false;
 function nyVersionSkjul() {
@@ -67436,6 +67456,6 @@ function prFaerdigHtml() {
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 20. september · 2136</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 20. september · 2137</div>
 </body>
 </html>
