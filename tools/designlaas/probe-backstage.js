@@ -13,6 +13,8 @@ const SIDER = [
   ["pipeline", function () { bsSalgAabnListe("pipeline"); }],
   ["contentstudio", function () { mrGaaTil("contentstudio"); }],
   ["energidastudio", function () { visDashSide("klip"); }],
+  ["timetoshine", function () { bf3TtsAabn(); }],   /* Time to Shine = B2C-studiernes side (21/9) */
+  ["saadangaardet", function () { visDashSide("klip"); klipVisningSaet("data"); }],   /* Energida Studios tal (21/9) */
   ["workout", function () { mrGaaTil("oevelser"); }],
   ["food", function () { mrGaaTil("food"); }],
   ["mindful", function () { mrGaaTil("mindful"); }],
