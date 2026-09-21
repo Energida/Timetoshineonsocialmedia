@@ -50675,7 +50675,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2208";
+const APP_VERSION = "2209";
 let NY_VERSION_KLAR = false;
 let NY_VERSION_AFVIST = false;
 function nyVersionSkjul() {
@@ -69773,14 +69773,36 @@ function bf3BeskedKunder() {
   let koder = []; try { koder = Object.keys(VIRKSOMHEDSKODER).filter(function (k) { return erRigtigKunde(k) && VIRKSOMHEDSKODER[k].aktiv !== false; }); } catch (e) {}
   return koder.map(function (k) { return { k: k, n: venterKundeNavn(k) }; }).sort(function (a, b) { return a.n.localeCompare(b.n, "da"); });
 }
+/* BESKED TIL EN ELLER FLERE (Ida 22/9 kl. 00.55: »sende beskeder ud til flere på en gang … til alle Content Studio-kunder«): modtager-chips oeverst —
+   Én kunde (dropdown) · Alle · Content Studio · I GOT YOU · WE GOT THIS · YOU GOT THIS. Beskeden lander i hver kundes Indbakke under Til orientering. */
+const BF3_BESKED_TIL = [["en", "Én kunde"], ["alle", "Alle kunder"], ["contentstudio", "Content Studio"], ["igotyou", "I GOT YOU"], ["ldit", "WE GOT THIS"], ["ygt", "YOU GOT THIS"]];
+function bf3BeskedKoder(til) {
+  let koder = []; try { koder = Object.keys(VIRKSOMHEDSKODER).filter(function (k) { return erRigtigKunde(k) && VIRKSOMHEDSKODER[k].aktiv !== false; }); } catch (e) {}
+  if (til === "alle") return koder;
+  return koder.filter(function (k) { const p = String((VIRKSOMHEDSKODER[k] || {}).pakke || ""); if (til === "ygt") return p === "detaildrift" || p === "ttsosm"; return p === til; });
+}
 function bf3BeskedArk() {
-  BF3_DROP_VALG.bf3BeskedKunde = "";
-  arkAabn({ titel: "Besked til kunden", ph: "Hvad vil du sige?", send: "Send", tekst: "", chips: [],
-    under: "Landet i kundens Indbakke under Til orientering.",
-    ekstraAf: function () { return bf3DropHtml("bf3BeskedKunde", "Vælg kunde", bf3BeskedKunder(), ""); },
-    gem: async function (t) { const k = BF3_DROP_VALG.bf3BeskedKunde; if (!k) throw new Error("!Vælg en kunde."); return await bf3BeskedGem(k, t); },
+  BF3_DROP_VALG.bf3BeskedKunde = ""; window.__BF3_BESKED_TIL = "en";
+  arkAabn({ titel: "Besked til kunder", ph: "Hvad vil du sige?", send: "Send", tekst: "", chips: [],
+    under: "Lander i Indbakken under Til orientering.",
+    ekstraAf: function () {
+      const til = window.__BF3_BESKED_TIL || "en";
+      return '<div class="ark-chips" style="margin:0 0 10px;">' + BF3_BESKED_TIL.map(function (c) { return '<button type="button" class="ark-chip' + (til === c[0] ? ' on' : '') + '" onclick="window.__BF3_BESKED_TIL=\'' + c[0] + '\';bf3BeskedTilTegn(this)">' + c[1] + (c[0] === "en" ? "" : " · " + bf3BeskedKoder(c[0]).length) + '</button>'; }).join("") + '</div>'
+        + '<div id="bf3BeskedKundeRk" style="' + (til === "en" ? "" : "display:none;") + '">' + bf3DropHtml("bf3BeskedKunde", "Vælg kunde", bf3BeskedKunder(), "") + '</div>';
+    },
+    gem: async function (t) {
+      const til = window.__BF3_BESKED_TIL || "en";
+      if (til === "en") { const k = BF3_DROP_VALG.bf3BeskedKunde; if (!k) throw new Error("!Vælg en kunde."); return await bf3BeskedGem(k, t); }
+      const koder = bf3BeskedKoder(til); if (!koder.length) throw new Error("!Ingen kunder i den gruppe.");
+      let ok = 0; for (const k of koder) { try { if (await bf3BeskedGem(k, t)) ok++; } catch (e) {} }
+      if (!ok) return false; BF3_BESKEDER = null;
+      return "Sendt til " + ok + (ok === 1 ? " kunde." : " kunder.");
+    },
     efterLuk: function () { try { indbakkeTegn(); } catch (e) {} } });
   bf3ArkDropOp();
+}
+function bf3BeskedTilTegn(knap) {
+  try { const rk = knap.closest(".ark-chips"); rk.querySelectorAll(".ark-chip").forEach(function (c) { c.classList.toggle("on", c === knap); }); const d = document.getElementById("bf3BeskedKundeRk"); if (d) d.style.display = (window.__BF3_BESKED_TIL === "en") ? "" : "none"; } catch (e) {}
 }
 async function bf3BeskedGem(kode, tekst) {
   const t = String(tekst || "").trim(); if (!t || !sb || !kode) return false;
@@ -70544,6 +70566,6 @@ function bsTodoRet(id) {
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 21. september · 2208</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 21. september · 2209</div>
 </body>
 </html>
