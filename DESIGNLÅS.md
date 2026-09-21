@@ -1,3 +1,12 @@
+## POPUPPEN, VERSION 3 (LÅST 21/9 kl. 20.46, Idas kommentarer; LIVE v2213)
+Alle popup-overskrifter i VERSALER, Poppins 24, 2 px spatiering, luft under. Popuppen er altid bredere end høj (560 px på computeren, bundark på telefonen). Ingen etiketter over felterne. Personer som chips med forbogstav i cirkel + »Alle« først (valgt, når ingen er valgt). Dagen som pille med kalender-tegn → husets dato-ark (alle steder, begge flader). To-do: pladsholder »What to do?«, hvem og dag på én række. Afvist: etiketter (OPGAVEN · HVEM · HVORNÅR), høje popups, rødt hoved/ramme.
+
+## MØDEAGENDAEN (Idas ord 21/9 kl. 21.15–21.20; LIVE v2213)
+Mødet i Kommende aktiviteter åbner IKKE mødet — det åbner agendaen: dag · tid · dagsorden (1–6) · idéer til mødet (fra Idébanken, dropdown + chips) · husk at sige (tekst) · »Start mødet«. Dagen før står »Bliv klar til dit ugentlige contentplanlægningsmøde i morgen« under I DAG og åbner agendaen. Gemmes i plan_ritual.moede.
+
+## CAPTION-FLISEN = TITEL · ÉN STREG · TEKSTEN (LÅST, Idas klik »lås A« 21/9 kl. 20.50, LIVE v2212)
+På briefens forside har Caption-flisen én hårfin streg under ordet »Caption« (flisens låste form), kopi-tegnet i hovedet, teksten og hashtags under. Ordet »Caption« kopieres ikke med. Afvist: »Caption« som sektionslinje over flisen (B).
+
 ## KRYDS I EN CHIP = SLET (SÆRTILFÆLDE, Idas beslutning 21/9 kl. 20.18)
 Ida: *»særtilfælde: slet i chips skal bare være kryds og ikke skraldespand«*. I en chip (hashtagbanken, tags) er det lille kryds til højre = slet (spørger først). Undtagelsen gælder KUN chips; alle andre steder er slet stadig skraldespanden (17/9). Ny hashtag = det røde plus i hjørnet + arket Hashtag · Kategori · Antal brug (hurtig-tilføj-feltet er ude).
 
