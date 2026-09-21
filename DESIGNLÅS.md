@@ -16,6 +16,9 @@ Filen er kort med vilje. Hver regel kan måles. Målingen står i `tools/designl
 
 ## Låsene (dato = den dag, Ida låste)
 
+**CONTENTETS TITEL ER ALTID DIDOT KURSIV — ALLE STEDER (HÅRD, Ida 21/9 kl. 22.18, kommentar i bilaget »Planlægning: fem greb«).** Hvor et opslags/en idés titel står som titel (Hjems dagsliste »Skal du poste: *1 nederdel …*«, Kommende opslag, briefoversigtens røde flise, briefens titel, kalenderens kort, Idébankens kort, planlægningens lister, bud og mockups) skrives den i Didot kursiv — i forlængelse af sætningen efter kolon, ikke på ny linje. Feltnavne, etiketter og knapper er stadig Poppins. Justerer 15/9-reglen »Didot kun i heroen«: titlen på content er undtagelsen. Endnu ikke lagt om: kalenderens kort og Idébankens kort (Poppins) — tages i næste runde.
+
+
 **BRIEFEN, AFTENEN 21/9 (v2190–v2191, Idas ord i tråden kl. 18.38–20.20):**
 - **Briefoversigten:** »Rediger« (grå, fuld bredde) står OVER fakta-boksen; den røde knap nederst er ude. Linket i fakta-boksen står rødt med streg under. »MANGLER« står i HØJRE HJØRNE af feltets ord-linje som røde versaler — aldrig inde i feltet; feltet viser dørens ord i gråt (som fakta-boksen). Captionen: MANGLER ved siden af kopiér-symbolet. »Næste skridt«-flisen er UDE (»det har jeg aldrig bedt om« — vælter Hans-runde 4 fund 1). **Indholdsopbygning er en hvid foldeflise** (Idas klik kl. 20.20): hoved i Poppins 15 + pil i cirkel, lukket til man trykker, åbningen huskes i fanen — man ser kun den røde flise, fakta-boksen og captionen først.
 - **Titlen i briefen:** Didot 28 med blyant (cirkel) på ALLE skrivesider; forsidens røde flise bærer titlen i Didot 24 (Idas ønske 21/9 — undtagelse fra 19/7's »aldrig Didot på rødt«). Den røde flise inde i briefen har samme form som forsidens: etiket · streg · Poppins 300/14.
