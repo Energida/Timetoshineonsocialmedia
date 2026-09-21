@@ -63,6 +63,10 @@ setTimeout(async function () {
        Koeres koer.sh med window.SELE_SMAL, maales hver side med FRIGJORT menu (body.nav-smal: ikonskinnen ligger OVENPAA
        indholdet, .content skal have 118 px til venstre). INTET synligt maa ligge under skinnen eller vaere klippet i en kant. */
     var SMAL = !!window.SELE_SMAL;
+    /* INGEN OVERGANG PAA SKINNEN I MAALINGEN (22/9): #sideNav har transition: width 190ms — paa GitHubs langsomme maskine blev Hjem maalt,
+       mens skinnen stadig var 236 px bred (»under skinnen: I DAG (x 136 < 236)«), selv om intet paa siden var aendret (v2221). Maalingen slaar
+       overgangen fra, saa skinnen ER 62 px, naar der maales — praecis som hos kunden et sekund senere. */
+    if (SMAL) { try { var stS = document.createElement("style"); stS.textContent = "#sideNav{transition:none!important}"; document.head.appendChild(stS); } catch (e) {} }
     if (SMAL) { document.body.classList.add("nav-smal"); try { var sn = document.getElementById("sideNav"); if (sn) sn.classList.remove("aaben"); } catch (e) {} }
     var klipTjek = function (navn, r) {
       var skinne = 0; try { if (SMAL) { var sn = document.getElementById("sideNav"); if (sn) skinne = sn.getBoundingClientRect().right; } } catch (e) {}
