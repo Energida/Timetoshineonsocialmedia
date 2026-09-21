@@ -809,3 +809,7 @@ Workout · Food · Mindful Studio: hvert kort er en flise (skygge, ingen kant, h
 - **Arket:** tomme rækker fylder ikke (mindre luft mellem felt og Gem); på iPhone følger arket den synlige skærm, så Gem · Annuller står over tastaturet (`visualViewport`).
 - **Loadingsiden i Backstage = markbilledet** (Ida: »Min loading i admin skal også være marken«; vælter 15/9's »kun kundeappen«).
 Porten grøn 8/8 (13 Backstage-sider; Get shit done er taget ud af listen).
+
+## v2168 — IDAS HILSEN · SWIPE NED LUKKER ALLE POPUPS (21/9 kl. 10.41–10.43)
+- **Backstages hero = Idas egen hilsen** (Ida: »min egen personlige velkomstbesked hero … hvor systemet kalder mig superstjerne«): »Go' morgen, *superstjerne* ✧« — samme form som kundens (tidsbestemt hilsen, navnet i kursiv, glimtet), datoen under. Båndet kan nu bære heroens egen form (`data-mb-html`).
+- **Swipe ned lukker enhver popup, b2b og admin** (Ida: »Hver gang der er en pop up som dette skal jeg kunne swipe den ned som mulighed også«): arket kan trækkes ned fra hele fladen (kun et felt, der skrives i, holder fingeren); det lille ark (`.modal-lille`) det samme — et træk over 110 px lukker ad Annuller/Luk-vejen. Trækket er en genvej; Annuller bliver (14/9).

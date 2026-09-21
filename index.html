@@ -8638,6 +8638,12 @@ body.bs-forfra #mro_oevelser .wo-handling .dbtn { min-height:48px; }
   body.bs-forfra .dash-sidebar .dsb-item[data-side="crm"], body.bs-forfra .dash-sidebar .dsb-item[data-side="energida"], body.bs-forfra .dash-sidebar .dsb-item[data-side="soeg"], body.bs-forfra .dash-sidebar .dsb-item[data-side="klip"], body.bs-forfra .dash-sidebar .dsb-item[data-side="gsd"], body.bs-forfra .dash-sidebar #dsbMaskinUnder { display:none !important; }
 }
 @media (max-width:999px) { body.klip-bud6 #klipPageList .bs3-hoejre, body.klip-bud6 #klipList .bs3-hoejre { padding-right:56px; } }   /* plads til ⋯-knappen (21/9) */
+
+/* Idas hilsen i baandet (21/9): navnet i kursiv, glimtet efter */
+.mb-navn .bs3-hils { font-style:italic; color:#fff; }
+.mb-navn .hjem-glimt { display:inline-block; vertical-align:middle; margin-left:6px; }
+.mb-navn .hjem-glimt svg { width:26px; height:26px; }
+@media (max-width:760px) { .mb-navn .hjem-glimt svg { width:20px; height:20px; } }
 </style>
 <script type="text/javascript">(function(){var h=(location.hostname||"").toLowerCase();var skip=h.split(".")[0]==="ole"||h.indexOf("admin")!==-1||h.indexOf("crm")!==-1||h.indexOf("dashboard")!==-1;document.documentElement.classList.add("b2b-foto");/* LOADINGSIDEN = MARKBILLEDET, ogsaa i Backstage (Ida 21/9 kl. 10.30: »Min loading i admin skal også være marken«; vaelter 15/9's »kun kundeappen«) */if(!skip){window.$crisp=[];window.CRISP_WEBSITE_ID="cf531a0a-b805-4172-bfc1-e2c1c1f7bcb1";var d=document,s=d.createElement("script");s.src="https://client.crisp.chat/l.js";s.async=1;d.getElementsByTagName("head")[0].appendChild(s);window.$crisp.push(["do","chat:hide"]);/* ingen chat-boble paa login-siderne (Ida 28/7) — vises igen i enterApp */}})();</script>
 
@@ -49566,7 +49572,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2167";
+const APP_VERSION = "2168";
 let NY_VERSION_KLAR = false;
 let NY_VERSION_AFVIST = false;
 function nyVersionSkjul() {
@@ -55384,7 +55390,7 @@ function bsBaandTegn() {
     document.body.classList.add("bs-mb");
     const navn = (hero.textContent || "").trim();
     let dato = ""; const over = hero.previousElementSibling; if (over && over.classList.contains("bs-eye-over")) { dato = (over.textContent || "").trim(); if (!over.hasAttribute("data-mb-skjult")) over.setAttribute("data-mb-skjult", "1"); }
-    const nv = b.querySelector(".mb-navn"); const ny = esc(navn) + (dato ? '<div class="mb-dato">' + esc(dato) + '</div>' : ''); if (nv.innerHTML !== ny) nv.innerHTML = ny;
+    const nv = b.querySelector(".mb-navn"); const ny = (hero.hasAttribute("data-mb-html") ? hero.innerHTML : esc(navn)) + (dato ? '<div class="mb-dato">' + esc(dato) + '</div>' : ''); if (nv.innerHTML !== ny) nv.innerHTML = ny;   /* data-mb-html: heroen baerer selv sin form (Idas hilsen m. navn i kursiv + glimt, 21/9) */
     if (!hero.hasAttribute("data-mb-skjult")) hero.setAttribute("data-mb-skjult", "1");
     const bar = dm.querySelector(":scope > .navsti"); const sti = b.querySelector(".mb-sti"); const stiHtml = (bar && bar.style.display !== "none") ? bar.innerHTML : ""; if (sti.innerHTML !== stiHtml) sti.innerHTML = stiHtml;
     /* baandet gaar kant til kant: sidens polstring traekkes fra, menuens plads bliver */
@@ -61160,7 +61166,8 @@ function arkGrebTraek(slor) {
   let y0 = 0, x0 = 0, dy = 0, traek = false;
   const start = function (e) {
     const t = e.touches ? e.touches[0] : e; if (!t) return;
-    try { if (e.target && e.target.closest && e.target.closest("textarea, input, select, .ark-chips, .mr-prog-liste, button")) return; } catch (x) {}
+    /* TRAEK NED LUKKER FRA HELE ARKET (Ida 21/9 kl. 10.43: »skal jeg kunne swipe den ned som mulighed også … alle pop ups på b2b og admin«) — kun et felt, der skrives i, og en liste, der ruller, holder fingeren */
+    try { if (e.target && e.target.closest && e.target.closest("textarea:focus, input:focus, select, .mr-prog-liste")) return; } catch (x) {}
     if (kort.scrollTop > 2) return;
     y0 = t.clientY; x0 = t.clientX; dy = 0; traek = true;
     kort.style.transition = "none";
@@ -61196,6 +61203,37 @@ function arkGrebTraek(slor) {
   kort.addEventListener("touchcancel", slut, { passive: true });
 }
 function arkEsc(e) { if (e.key === "Escape") arkLuk(); }
+/* DET LILLE ARK (.modal-lille) KAN OGSAA TRAEKKES NED (Ida 21/9 kl. 10.43): et traek paa mere end 110 px lukker det — samme vej som Annuller/Luk-knappen eller sloeret. */
+(function () {
+  let y0 = 0, x0 = 0, dy = 0, kort = null;
+  document.addEventListener("touchstart", function (e) {
+    kort = null; const t = e.touches && e.touches[0]; if (!t || !e.target || !e.target.closest) return;
+    const k = e.target.closest(".modal-lille"); if (!k) return;
+    if (e.target.closest("textarea:focus, input:focus, select")) return;
+    if (k.scrollTop > 2) return;
+    kort = k; y0 = t.clientY; x0 = t.clientX; dy = 0; k.style.transition = "none";
+  }, { passive: true });
+  document.addEventListener("touchmove", function (e) {
+    if (!kort) return; const t = e.touches && e.touches[0]; if (!t) return;
+    dy = t.clientY - y0; if (Math.abs(t.clientX - x0) > Math.abs(dy) || dy <= 0) { kort.style.transform = ""; return; }
+    if (e.cancelable) e.preventDefault(); kort.style.transform = "translateY(" + Math.round(dy) + "px)";
+  }, { passive: false });
+  const slut = function () {
+    if (!kort) return; const k = kort; kort = null;
+    if (dy > 110) {
+      k.style.transition = "transform 220ms cubic-bezier(0.32,0.72,0,1)"; k.style.transform = "translateY(110%)";
+      setTimeout(function () {
+        k.style.transition = ""; k.style.transform = "";
+        const knap = Array.prototype.find.call(k.querySelectorAll("button"), function (b) { return /^(Annuller|Luk)$/.test((b.textContent || "").trim()); });
+        if (knap) { knap.click(); return; }
+        const back = k.closest(".modal-back"); if (back) { try { back.dispatchEvent(new MouseEvent("click", { bubbles: true })); } catch (e) {} }
+      }, 210);
+      return;
+    }
+    k.style.transition = "transform 180ms cubic-bezier(0.23,1,0.32,1)"; k.style.transform = ""; setTimeout(function () { k.style.transition = ""; }, 200);
+  };
+  document.addEventListener("touchend", slut, { passive: true }); document.addEventListener("touchcancel", slut, { passive: true });
+})();
 function arkVoks(t) { t.style.height = "auto"; t.style.height = Math.min(t.scrollHeight, 220) + "px"; }
 function arkVaelg(b) {
   if (!ARK) return; ARK.valgt = b.dataset.k || "";
@@ -68334,7 +68372,11 @@ async function dashForsideTegn() {
   try { if (!(CRM_AFTALER || []).length && typeof refreshKundeAftaler === "function") await refreshKundeAftaler(); } catch (e) {}
   try { if ((typeof KLIP_OPGAVER === "undefined" || !KLIP_OPGAVER.length) && typeof klipHent === "function") await klipHent(); } catch (e) {}
   try { if ((typeof CUSTOMERS === "undefined" || !CUSTOMERS || !CUSTOMERS.length) && typeof fetchCustomers === "function") CUSTOMERS = await fetchCustomers(); } catch (e) {}
-  const nu = new Date(), t = nu.getHours(); const hilsen = t < 10 ? "Godmorgen" : (t < 17 ? "Goddag" : "Godaften");
+  /* IDAS EGEN HILSEN I HEROEN (Ida 21/9 kl. 10.41: »min egen personlige velkomstbesked hero fra starten af: hvor systemet kalder mig superstjerne«):
+     samme form som kundens (dagensHilsen + navnet i roed kursiv + glimtet), navnet er hendes hilsen fra loginet, ellers »superstjerne« */
+  const nu = new Date();
+  const hilsNavn = "superstjerne";   /* Idas ord (21/9): »hvor systemet kalder mig superstjerne« */
+  const hilsen = (typeof dagensHilsen === "function" ? dagensHilsen() : "Goddag") + ', <i class="bs3-hils">' + esc(hilsNavn) + '</i>' + (typeof HJEM_GLIMT_SVG !== "undefined" ? HJEM_GLIMT_SVG : '');
   let dato = ""; try { dato = dkDatoKort(energidaKalDato(nu)); } catch (e) {}
   let ugeS = ""; try { ugeS = " · Uge " + ugeNr(new Date()); } catch (e) {}
   const idag = bf3Idag(); const tlf = bf3Tlf();
@@ -68394,7 +68436,7 @@ async function dashForsideTegn() {
      Venter paa dig og ugens ringe bor i Indbakken og paa kundens side. Hjem = dagen: I dag · To-do · Kommende aftaler · Forretningen. */
   const venstre = bf3Ver("I dag") + idagHtml + '<div class="bs3-afsnit">' + bf3Ver("To-do") + '</div>' + todoHtml;
   const hoejre = bf3Ver("Kommende aftaler") + aftHtml + bf3Send("bsAftNy", "Tilføj aftale …", "bf3AftaleArk()", "Tilføj aftale") + (forr ? '<div class="bs3-afsnit">' + bf3Ver("Forretningen") + '</div>' + forr : '');
-  el.innerHTML = '<div class="bs-hjem-c bs3"><div class="bs-eye bs-eye-over">' + esc(dato) + esc(ugeS) + '</div><div class="bs-hero bs-hero-streg">' + hilsen + '</div>'
+  el.innerHTML = '<div class="bs-hjem-c bs3"><div class="bs-eye bs-eye-over">' + esc(dato) + esc(ugeS) + '</div><div class="bs-hero bs-hero-streg" data-mb-html="1">' + hilsen + '</div>'
     + toem + pinHtml
     + (tlf ? venstre + '<div class="bs3-afsnit">' + hoejre + '</div>' : '<div class="bs3-to"><div>' + venstre + '</div><div>' + hoejre + '</div></div>')
     + '</div>';
@@ -68898,6 +68940,6 @@ function bsTodoRet(id) {
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 21. september · 2167</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 21. september · 2168</div>
 </body>
 </html>
