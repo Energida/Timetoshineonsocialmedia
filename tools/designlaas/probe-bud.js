@@ -41,9 +41,13 @@ setTimeout(async function () {
         if (tlf) { if (!(yDag < yAft && yAft < yUge && yUge < yOpg)) F(tilstand + ": telefonens raekkefoelge er ikke I dag · Kommende aktiviteter · Denne uge · To-do"); }   /* To-do sidst (Ida 21/9 kl. 21.42) */
         else {
           var xV = document.getElementById("hjemVenstre").getBoundingClientRect(), xH = document.getElementById("hjemHoejre").getBoundingClientRect();
-          if (!(xH.left > xV.right - 1)) F(tilstand + ": Kommende aktiviteter og To-do staar ikke i hoejre spalte ved siden af dagen");
+          if (!(xH.left > xV.right - 1)) F(tilstand + ": Kommende opslag og To-do staar ikke i hoejre spalte ved siden af dagen");
           if (Math.abs(xH.top - xV.top) > 60) F(tilstand + ": hoejre spalte starter ikke oppe ved dagen (" + Math.round(xH.top - xV.top) + " px)");
-          if (!(yAft < yOpg)) F(tilstand + ": To-do staar over Kommende aktiviteter");
+          /* KOMMENDE AKTIVITETER UNDER RINGENE i venstre spalte (Ida 21/9 kl. 19.50); Kommende opslag oeverst th., To-do under (Idas kommentar 21/9 kl. 19.12) */
+          var aftEl = document.getElementById("aftaleForside"); if (aftEl && aftEl.parentElement && aftEl.parentElement.id !== "hjemVenstre") F(tilstand + ": Kommende aktiviteter staar ikke i venstre spalte");
+          if (yUge !== null && !(yAft > yUge)) F(tilstand + ": Kommende aktiviteter staar ikke under Denne uge (ringene)");
+          var yOps = y("#kommendeOpslagKort"); if (yOps === null) F(tilstand + ": Kommende opslag mangler th."); else if (!(yOps < yOpg)) F(tilstand + ": To-do staar over Kommende opslag");
+          if (synlig(r.querySelector("#aftaleForside .aft-send, #aftaleForside #kundeAftNyKnap, #kundeOpgaverKort .kort-plus"))) F(tilstand + ": et sendefelt/plus staar i en Hjem-flise — alt tilfoejes via plusset (Ida 21/9 kl. 20.20)");
           var xT = document.getElementById("hjemTop").getBoundingClientRect(); if (xH.width < xT.width * 0.29) F(tilstand + ": hoejre spalte er for smal (" + Math.round(xH.width) + " af " + Math.round(xT.width) + " px, skal vaere knap en tredjedel)");
           var strip = document.getElementById("ugenKortStrip"); if (synlig(strip) && strip.getBoundingClientRect().top < yUge) F(tilstand + ": Ugens indhold staar foer Denne uge");
         }
@@ -71,7 +75,8 @@ setTimeout(async function () {
         if (!/Ingen to-dos/.test(tekst) && !synlig(r.querySelector("#kundeOpgaverKort .opg-rk"))) F("tom: To-do siger hverken »Ingen to-dos.« eller viser en raekke");
       }
       /* 4b) SAMME BREDDE: aftale-fliser, to-do-fliser og sendfelter i samme spalte er lige brede (16/9-reglen; Idas kommentar 20/9 kl. 21.55) */
-      var bredder = [].map.call(r.querySelectorAll("#aftaleListHome .aft-rk, #aftaleListHome .aft-tom, #aftaleListHome .sendfelt, #kundeOpgaverKort .opg-rk, #kundeOpgaverKort .opg-tom, #kundeOpgaverKort .sendfelt, #kundeOpgaverKort .hf-gaa"), function (e) { return synlig(e) ? Math.round(e.getBoundingClientRect().width) : null; }).filter(function (x) { return x !== null; });
+      /* paa computeren staar aktiviteterne i venstre spalte (21/9) — bredden maales pr. spalte: aktiviteter mod dagen, to-do mod opslagene */
+      var bredder = [].map.call(r.querySelectorAll(tlf ? "#aftaleListHome .aft-rk, #aftaleListHome .aft-tom, #kundeOpgaverKort .opg-rk, #kundeOpgaverKort .opg-tom, #kundeOpgaverKort .hf-gaa" : "#kommendeOpslagKort .kop-rk, #kundeOpgaverKort .opg-rk, #kundeOpgaverKort .opg-tom, #kundeOpgaverKort .hf-gaa"), function (e) { return synlig(e) ? Math.round(e.getBoundingClientRect().width) : null; }).filter(function (x) { return x !== null; });
       if (bredder.length && Math.max.apply(null, bredder) - Math.min.apply(null, bredder) > 2) F(tilstand + ": fliserne i Kommende aktiviteter og To-do er ikke lige brede (" + Math.min.apply(null, bredder) + "–" + Math.max.apply(null, bredder) + " px)");
       /* 4d) UX-POLITIET: ingen lange streger i kundens linjer, Poppins aldrig fed, ingen kant paa fliser (15/9) */
       if (/\u2014/.test(tekst)) F(tilstand + ": en lang streg (\u2014) staar i Hjems tekst");

@@ -1,3 +1,12 @@
+## KRYDS I EN CHIP = SLET (SÆRTILFÆLDE, Idas beslutning 21/9 kl. 20.18)
+Ida: *»særtilfælde: slet i chips skal bare være kryds og ikke skraldespand«*. I en chip (hashtagbanken, tags) er det lille kryds til højre = slet (spørger først). Undtagelsen gælder KUN chips; alle andre steder er slet stadig skraldespanden (17/9). Ny hashtag = det røde plus i hjørnet + arket Hashtag · Kategori · Antal brug (hurtig-tilføj-feltet er ude).
+
+## ALT TILFØJES VIA PLUSSET (HÅRD, Ida 21/9 kl. 20.20)
+Ida: *»ALT der skal tilføjes fremadrettet går via plusset — enten i bundmenuen på mobilen eller i hjørnet på desktop«*. Hjems fliser (Kommende aktiviteter, To-do) har ingen sendefelter og ingen små plusser; »Tilføj ny aktivitet…« er ude. Plusset åbner »Hvad skal der ske, makker?« og derfra chips: To-do · Aktivitet · Planlægning · content-idé · set noget fedt · skrevet ned · ugens tema · besked til Ida. Gælder alle sider i b2b.
+
+## TILFØJ = DET RØDE PLUS, ALDRIG »SKRIV …« (HÅRD, Ida 21/9 kl. 20.08)
+Ida: *»skriv temaet er ulovligt — det skal altid være det røde plus for tilføj«*. Enhver knap, der lægger noget nyt til (et tema, en idé, en aftale, en række), er husets røde plus (rød cirkel, hvidt plus, 36 px i en række · 44 px i hjørnet), aldrig ordet »Skriv«, »Skriv temaet« eller en grå »Tilføj …«-pille på en række. »Ret« består, når der ER noget at rette. Første sted: Tema-siden (måned + uge). Gælder app, admin og b2b.
+
 # DESIGNLÅS — det senest låste design (gælder for enhver tråd)
 
 **Læs denne fil, før du bygger eller ændrer noget, kunden ser.** Den seneste lås vinder altid over ældre kode, ældre kommentarer og ældre mockups. Finder du kode, der bryder en lås, er det en fejl, der skal rettes, ikke et design, der skal bevares.
