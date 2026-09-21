@@ -9311,6 +9311,8 @@ html body.mb .cf-sek.sd-sek::after { order:1; }
 html body.mb .cf-sek.sd-sek .sd-tidl { order:2; margin-left:0; }
 html body.mb .sd-flise.sd-md .sd-flue::before { border-color:rgba(255,255,255,.85); background:transparent; }
 html body.mb .sd-flise.sd-md .sd-flue.ok::before { background:#fff; border-color:#fff; }
+/* INGEN STREG UD FOR PILENE paa Hjem (Ida 21/9 kl. 22.30: »denne skillelinje ud for pilen skal slettes«) */
+html body.mb .hjem-dag-hoved .hjem-dag-streg, html body .hjem-dag-streg { display:none !important; }
 </style>
 <script type="text/javascript">(function(){var h=(location.hostname||"").toLowerCase();var skip=h.split(".")[0]==="ole"||h.indexOf("admin")!==-1||h.indexOf("crm")!==-1||h.indexOf("dashboard")!==-1;document.documentElement.classList.add("b2b-foto");/* LOADINGSIDEN = MARKBILLEDET, ogsaa i Backstage (Ida 21/9 kl. 10.30: »Min loading i admin skal også være marken«; vaelter 15/9's »kun kundeappen«) */if(!skip){window.$crisp=[];window.CRISP_WEBSITE_ID="cf531a0a-b805-4172-bfc1-e2c1c1f7bcb1";var d=document,s=d.createElement("script");s.src="https://client.crisp.chat/l.js";s.async=1;d.getElementsByTagName("head")[0].appendChild(s);window.$crisp.push(["do","chat:hide"]);/* ingen chat-boble paa login-siderne (Ida 28/7) — vises igen i enterApp */}})();</script>
 
@@ -30467,9 +30469,16 @@ function planDashTegn() {
   const briefs = ugens.filter(function (x) { return x.status !== "Klar til post"; });
   const optag = (IDEER || []).filter(function (x) { const od = x && x.brief && (x.brief.optagedag || x.brief.optageDato); return od && od >= a && od <= b; });
   const titel = function (x) { return '<i class="fokus-navn">' + esc(storStart(titelVis(x.titel || "Uden titel"))) + '</i>'; };
-  const ugeHtml = (briefs.length ? '<div class="idag-flise" onclick="openBriefSide(\'' + esc(String(briefs[0].id)) + '\')"><span class="idag-tekst"><span class="idag-titel">Udfyld ' + briefs.length + (briefs.length === 1 ? ' brief' : ' briefs') + '</span><span class="idag-sub">' + briefs.map(function (x) { return dkDatoKort(x.dato) + ' · ' + esc(storStart(titelVis(x.titel || "Uden titel"))); }).join(' · ') + '</span></span></div>' : '')
+  /* UGENS TEMA paa Planlaegning (Ida 21/9 kl. 22.10): denne uges tema som flise under Denne uge; naeste uges, naar den er sat (fra moedet) */
+  let temaHtml = ""; try {
+    if (typeof MAALS === "undefined" || !MAALS) { if (!window.__PD_MAALS_HENT && typeof maalsHent === "function") { window.__PD_MAALS_HENT = 1; maalsHent().then(function () { try { planDashTegn(); } catch (e) {} }); } }
+    else { const ut = (MAALS.ugetemaer || {}); const nu = ut[planRitUgeKey(man0)] || ""; const nk = planRitUgeKey(naesteUge); const nt = ut[nk] || "";
+      if (nu) temaHtml += '<div class="idag-flise pd-tema" onclick="tilpasAaben(\'tema\')"><span class="idag-tekst"><span class="idag-titel">Ugens tema: <i class="fokus-navn">' + esc(nu) + '</i></span></span></div>';
+      if (nt) temaHtml += '<div class="idag-flise pd-tema" onclick="tilpasAaben(\'tema\')"><span class="idag-tekst"><span class="idag-titel">Uge ' + esc(String(nk).split("-")[1]) + ': <i class="fokus-navn">' + esc(nt) + '</i></span><span class="idag-sub">Ugens tema, sat på planlægningen</span></span></div>'; }
+  } catch (e) {}
+  const ugeHtml = temaHtml + (briefs.length ? '<div class="idag-flise" onclick="openBriefSide(\'' + esc(String(briefs[0].id)) + '\')"><span class="idag-tekst"><span class="idag-titel">Udfyld ' + briefs.length + (briefs.length === 1 ? ' brief' : ' briefs') + '</span><span class="idag-sub">' + briefs.map(function (x) { return dkDatoKort(x.dato) + ' · ' + esc(storStart(titelVis(x.titel || "Uden titel"))); }).join(' · ') + '</span></span></div>' : '')
     + (optag.length ? optag.map(function (x) { const od = x.brief.optagedag || x.brief.optageDato; const hv = (x.brief && Array.isArray(x.brief.hvem) ? x.brief.hvem : (x.brief && x.brief.ansvarlig ? [x.brief.ansvarlig] : [])).filter(Boolean); return '<div class="idag-flise" onclick="openBriefSide(\'' + esc(String(x.id)) + '\')"><span class="idag-tekst"><span class="idag-titel">Optag: ' + titel(x) + '</span><span class="idag-sub">' + esc(dkDatoKort(od)) + (hv.length ? ' · ' + esc(hv.join(", ")) : '') + '</span></span></div>'; }).join("") : '')
-    + (!briefs.length && !optag.length ? '<div class="idag-flise tom">Ingen briefs eller optagelser i denne uge.</div>' : '');
+    + (!briefs.length && !optag.length && !temaHtml ? '<div class="idag-flise tom">Ingen briefs eller optagelser i denne uge.</div>' : '');
   /* butiksruden: gjort i denne uge = en aftale med vanens ord i ugen, som er passeret (eller maanedens planlaegning) */
   const aft = (window.__kundeAftaler || []);
   const vaner = PD_VANER.filter(function (v) { return v.k !== "plan" && v.k !== "maaned"; }).map(function (v) {   /* ugen og maaneden bor i »En struktur der dur'!« (21/9) */
@@ -37416,7 +37425,11 @@ function kbManusNu() {
 }
 function kbDeleFra(o) {
   const d = o && o.manus_dele;
-  return (d && typeof d === "object" && !Array.isArray(d)) ? d : null;
+  if (!(d && typeof d === "object" && !Array.isArray(d))) return null;
+  /* SIKRING (Ida 21/9 kl. 22.40: »alle lektioner er tomme — kun overskrifterne står der«): er ALLE sektioner tomme, men manus_tekst har tekst,
+     er lektionen IKKE delt op — saa vises den fulde tekst, og autogem i den opdelte visning kan ikke skrive tomt oven i teksten. */
+  try { const harDele = Object.keys(d).some(function (k) { return String(d[k] || "").trim(); }); if (!harDele && String((o && o.manus_tekst) || "").trim()) return null; } catch (e) {}
+  return d;
 }
 /* ER LEKTIONEN DELT OP? Saa er manus_tekst AFLEDT af sektionerne, og enhver anden vej,
    der skriver direkte i feltet — quizzens manus-felt, et manus-forslag, et sweep, en
@@ -50944,7 +50957,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2214";
+const APP_VERSION = "2215";
 let NY_VERSION_KLAR = false;
 let NY_VERSION_AFVIST = false;
 function nyVersionSkjul() {
@@ -54675,11 +54688,15 @@ async function maalsUgeGem(key) {
 /* NYT TEMA-ARKET (Idas kommentar 21/9 kl. 20.16: »det skal være det røde plus med cirkel om som vi plejer«): plusset i hjoernet aabner det lille ark — Maaned eller Uge som chips, temaet som tekst */
 function temaNyArk(slags) {
   const uge = (typeof energidaUgeMandag === "function") ? energidaUgeMandag(new Date()) : null; const ugeKey = uge ? planRitUgeKey(uge) : "";
-  arkAabn({ titel: "Nyt tema", ph: "Skriv temaet", send: "Gem", chips: [{ k: "maaned", n: "Månedens tema" }, { k: "uge", n: "Ugens tema" }], valgt: slags || "maaned",
+  const uger = []; for (let o = 0; o < 4; o++) { const k = maalsUgeKey(o); uger.push({ k: k, n: "Uge " + String(k).split("-")[1] + (o === 0 ? " · denne uge" : o === 1 ? " · næste uge" : "") }); }
+  window.BF3_DROP_VALG = window.BF3_DROP_VALG || {}; window.BF3_DROP_VALG.temaUgeDrop = ugeKey;
+  arkAabn({ titel: "Nyt tema", ph: "Skriv temaet", send: "Gem", chips: [{ k: "maaned", n: "Månedens tema" }, { k: "uge", n: "Ugens tema" }], valgt: slags || "maaned", klasse: "ark-bred",
+    ekstraAf: function (k) { return k === "uge" ? bf3DropHtml("temaUgeDrop", "Hvilken uge?", uger, window.BF3_DROP_VALG.temaUgeDrop || ugeKey) : ""; },   /* hvilken uge (21/9): moedet saetter naeste uge, siden viser fire */
     gem: async function (t, k) {
       const tekst = String(t || "").trim(); if (!tekst) return false;
       try { await maalsHent(); } catch (e) {}
-      if (k === "uge") { if (!MAALS.ugetemaer) MAALS.ugetemaer = {}; MAALS.temaUge = true; MAALS.ugetemaer[ugeKey] = tekst; const ok = await maalsGem(); if (!ok) return false; }
+      const valgtUge = (window.BF3_DROP_VALG && window.BF3_DROP_VALG.temaUgeDrop) || ugeKey;
+      if (k === "uge") { if (!MAALS.ugetemaer) MAALS.ugetemaer = {}; MAALS.temaUge = true; MAALS.ugetemaer[valgtUge] = tekst; const ok = await maalsGem(); if (!ok) return false; }
       else { MAALS.temaMaaned = true; try { await maalsGem(); } catch (e) {} const ok = await mtemaGemTekst(tekst); if (!ok) return false; }
       try { tilpasMaalTegn(); } catch (e) {}
       return "Temaet er sat.";
@@ -54847,13 +54864,18 @@ async function tilpasMaalTegn() {
       + '</div>'
       + (MAALS.temaUge
           ? (function () {
-              const uk = maalsUgeKey(0);
-              const ut = ((MAALS.ugetemaer || {})[uk] || "");
-              return '<div class="maals-ugeraekke" style="display:flex;align-items:baseline;gap:16px;padding:14px 0;border-top:1px solid #F2F0ED;">'
-                + '<span style="font-size:10px;letter-spacing:1.6px;text-transform:uppercase;color:var(--gray3);width:62px;flex-shrink:0;">Uge ' + esc(String(uk).split("-")[1] || "") + '</span>'
-                + '<span style="font-size:14px;flex:1;min-width:0;' + (ut ? '' : 'color:#B5B0AA;') + '">' + (ut ? esc(ut) : 'Ikke sat endnu') + '</span>'
-                + (ut ? retKn('Ret', "maalsUgeRet('" + uk + "',0)") : '')
-              + '</div>';
+              /* DENNE UGE + DE NAESTE TRE (maalt 21/9: moedet saetter temaet for NAESTE uge, og siden viste kun denne uge — saa temaet var usynligt) */
+              let ud = "";
+              for (let o = 0; o < MAALS_VIS_UGER; o++) {
+                const uk = maalsUgeKey(o);
+                const ut = ((MAALS.ugetemaer || {})[uk] || "");
+                ud += '<div class="maals-ugeraekke" id="maalsUge_' + uk + '" style="display:flex;align-items:baseline;gap:16px;padding:14px 0;border-top:1px solid #F2F0ED;">'
+                  + '<span style="font-size:10px;letter-spacing:1.6px;text-transform:uppercase;color:var(--gray3);width:62px;flex-shrink:0;">Uge ' + esc(String(uk).split("-")[1] || "") + '</span>'
+                  + '<span style="font-size:14px;flex:1;min-width:0;' + (ut ? '' : 'color:#B5B0AA;') + '">' + (ut ? esc(ut) : 'Ikke sat endnu') + '</span>'
+                  + (ut ? retKn('Ret', "maalsUgeRet('" + uk + "'," + o + ")") : '')
+                + '</div>';
+              }
+              return ud;
             })()
           : '')
       + ugerHtml
@@ -55387,6 +55409,8 @@ async function mtemaContentVis() {
   let ugeKey = "", ugeTema = "", ugeNr = "";
   try { ugeKey = maalsUgeKey(0); ugeNr = String(ugeKey).split("-")[1] || ""; } catch(e) {}
   try { ugeTema = ((M && M.ugetemaer) || {})[ugeKey] || ""; } catch(e) {}
+  /* INTET TEMA I DENNE UGE → NAESTE UGES TEMA MED UGENUMMER FORAN (maalt 21/9: moedet saetter temaet for NAESTE uge, og overlinjen viste ingenting) */
+  if (!ugeTema) { try { const nk = maalsUgeKey(1); const nt = ((M && M.ugetemaer) || {})[nk] || ""; if (nt) ugeTema = "uge " + String(nk).split("-")[1] + ": " + nt; } catch (e) {} }
   /* OVERLINJEN LAANER TEMAET HERFRA (4/9) \u2014 een kilde, to steder. */
   UGE_TEMA_NU = ugeTema || "";
   try { kalLabelTegn(); } catch(e) {}
@@ -69425,7 +69449,7 @@ async function prTemaGem() {
   if (MAALS) {
     if (!MAALS.ugetemaer || typeof MAALS.ugetemaer !== "object") MAALS.ugetemaer = {};
     const foer = MAALS.ugetemaer[PR.ugeKey];
-    if (v) MAALS.ugetemaer[PR.ugeKey] = v; else delete MAALS.ugetemaer[PR.ugeKey];
+    if (v) { MAALS.ugetemaer[PR.ugeKey] = v; MAALS.temaUge = true; } else delete MAALS.ugetemaer[PR.ugeKey];   /* temaet skal kunne SES bagefter: Tema-siden viser kun ugerne, naar temaUge er slaaet til (maalt 21/9) */
     const ok = await maalsGem();
     if (!ok) { if (foer != null) MAALS.ugetemaer[PR.ugeKey] = foer; else delete MAALS.ugetemaer[PR.ugeKey]; try { visSyncFejl(); } catch (e) {} }
     try { mtemaContentVis(); } catch (e) {}
@@ -69801,9 +69825,22 @@ function prIcsHref() {
     return "data:text/calendar;charset=utf-8," + encodeURIComponent(ics);
   } catch (e) { return "#"; }
 }
+/* MOEDET SOM AFTALE (21/9): een kilde — kunde_aftaler »Ugentlig contentplanlægning« — som Kommende aktiviteter, agendaen, strukturen og Hjem laeser. Opdaterer den naeste kommende, ellers opretter */
+async function planMoedeAftaleSaet(dato, tid, slut) {
+  if (!sb || !currentKode || !dato) return false;
+  let ma = null; try { ma = planMoedeAftale(); } catch (e) {}
+  const rec = { dato: dato, tid: tid || "10:00", tid_slut: slut || planMoedeTidPlus(tid || "10:00", 60) };
+  try {
+    if (ma && ma.id) { const u = await sb.from("kunde_aftaler").update(rec).eq("id", ma.id).eq("kode", currentKode).select(); if (u.error || !u.data || !u.data.length) return false; }
+    else { const i = await sb.from("kunde_aftaler").insert(Object.assign({ kode: currentKode, titel: "Ugentlig contentplanlægning" }, rec)).select(); if (i.error || !i.data || !i.data.length) return false; }
+  } catch (e) { return false; }
+  try { await renderAftaler(); } catch (e) {}
+  return true;
+}
 async function prBookGem() {
   const iso = planRitUgeDage(PR.uge)[(PR.book.dag || 1) - 1];
   try { await setPlanDato(iso); } catch (e) {}
+  try { await planMoedeAftaleSaet(iso, PR.book.tid || "10:00"); } catch (e) {}   /* moedet i kalenderen (21/9) */
   const patch = { sidst: datoDK(), uge: PR.ugeKey, tid: PR.book.tid };
   try { const g = Array.isArray(PR_STATUS && PR_STATUS.gjorte) ? PR_STATUS.gjorte.slice() : []; if (g.indexOf(PR.ugeKey) < 0) g.push(PR.ugeKey); patch.gjorte = g.slice(-60); } catch (e) {}   /* ringene + streaken paa Planlaegning (21/9) */
   if (PR.maanedGjort) patch.maanedPlan = PR.mkey;
@@ -69908,7 +69945,7 @@ function bf3SwipeLyt(el) {
 }
 
 /* ---------- HUSETS DROPDOWN (fuld bredde; i arket under teksten) ---------- */
-let BF3_DROP_VALG = {};
+let BF3_DROP_VALG = {}; window.BF3_DROP_VALG = BF3_DROP_VALG;   /* samme objekt paa window — nyIdeGem/temaNyArk laeser window.BF3_DROP_VALG (maalt 21/9: valget naaede aldrig frem) */
 /* ONLINEKURSET til en idé til manus (Ida 21/9 kl. 19.21: »skal kunne vælge hvilket onlinekursus det er til«): dropdown under »Hvor hører det hjemme?«, kun naar manus er valgt */
 function bf3KursusRkHtml(valgt) { return '<div id="bf3KursusRk" class="bs3-ark-drop" style="margin-top:8px;' + (valgt === "manus" ? '' : 'display:none;') + '">' + bf3DropHtml("nyIdeKursus", "Hvilket onlinekursus?", (typeof manusKursusValg === "function" ? manusKursusValg() : []), (window.BF3_DROP_VALG || {}).nyIdeKursus || "") + '</div>'; }
 window.bf3Drop_bf3ArkDrop = function (k) { const r = document.getElementById("bf3KursusRk"); if (r) r.style.display = (k === "manus") ? "" : "none"; };
@@ -70968,6 +71005,6 @@ function bsTodoRet(id) {
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 21. september · 2214</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 21. september · 2215</div>
 </body>
 </html>
