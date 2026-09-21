@@ -16,7 +16,7 @@ Filen er kort med vilje. Hver regel kan måles. Målingen står i `tools/designl
 
 ## Låsene (dato = den dag, Ida låste)
 
-**CONTENTETS TITEL ER ALTID DIDOT KURSIV — ALLE STEDER (HÅRD, Ida 21/9 kl. 22.18, kommentar i bilaget »Planlægning: fem greb«).** Hvor et opslags/en idés titel står som titel (Hjems dagsliste »Skal du poste: *1 nederdel …*«, Kommende opslag, briefoversigtens røde flise, briefens titel, kalenderens kort, Idébankens kort, planlægningens lister, bud og mockups) skrives den i Didot kursiv — i forlængelse af sætningen efter kolon, ikke på ny linje. Feltnavne, etiketter og knapper er stadig Poppins. Justerer 15/9-reglen »Didot kun i heroen«: titlen på content er undtagelsen. Endnu ikke lagt om: kalenderens kort og Idébankens kort (Poppins) — tages i næste runde.
+**CONTENTETS TITEL ER ALTID RØD DIDOT KURSIV — ALLE STEDER (HÅRD, Ida 21/9 kl. 22.18 + kl. 23.50: »indholdstitel på content altid rød Didot og kursiv«).** På hvidt: rød (`--red`) Didot kursiv. På rødt (forsidens røde flise): hvid Didot kursiv — rød på rød findes ikke. Hvor et opslags/en idés titel står som titel (Hjems dagsliste »Skal du poste: *1 nederdel …*«, Kommende opslag, briefoversigtens røde flise, briefens titel, kalenderens kort, Idébankens kort, planlægningens lister, bud og mockups) skrives den i Didot kursiv — i forlængelse af sætningen efter kolon, ikke på ny linje. Feltnavne, etiketter og knapper er stadig Poppins. Justerer 15/9-reglen »Didot kun i heroen«: titlen på content er undtagelsen. Endnu ikke lagt om: kalenderens kort og Idébankens kort (Poppins) — tages i næste runde.
 
 
 **BRIEFEN, AFTENEN 21/9 (v2190–v2191, Idas ord i tråden kl. 18.38–20.20):**
