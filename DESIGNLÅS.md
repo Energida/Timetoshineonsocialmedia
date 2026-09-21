@@ -795,3 +795,17 @@ Workout · Food · Mindful Studio: hvert kort er en flise (skygge, ingen kant, h
 ## v2166 — LUFTEN UNDER BÅNDET MÅLES FRA BUEN · SWIPE SOM BESKEDER (Ida 21/9 kl. 10.20–10.22)
 **LÅST: 32 px fra båndets bue til det første element** (Ida: »for meget luft mellem cover og pinnet kunde. Der vil jeg også gerne vi kan låse en fast afstand«). Båndets hvide bue (28 px) hører til siden, så båndets margin er 4 px; porten (`probe-backstage.js`) måler 32 px fra buen på alle Backstage-sider, 390 + 1440. Før: 32 px under båndets kant = 60 px for øjet.
 **SWIPE SOM BESKEDER PÅ iOS (Ida: »se Beskeder på iOS hvordan det fungerer! Og den røde ramme der må ikke være nogle steder«):** flisen glider til venstre og blotter husets røde, runde skraldespand bag den; tryk på den sletter (flisen glider ud og lukker sig), tryk på flisen lukker igen, et langt swipe sletter direkte. Ingen rød ramme, ingen tekst. Gælder alle fliser med swipe i Backstage (to-do, Indbakkens noter, idéer til manus, citater). Målt med rigtige touch-events i browserruden på 390.
+
+## v2167 — IDAS RUNDE PÅ TELEFONEN, 10.20–10.40 (ti beskeder, ét deploy)
+- **Chippen er LÅST: 36 px høj, overalt i b2b og admin** (Ida: »disse knapper er alle steder for høje … låse et endeligt design«): Poppins 12.5 · 1 px kant · hjørner 999 · 0 14 px · valgt = rød flade, hvid tekst; trykfeltet 44 via usynlig kant (porten måler det). Undtagelse: klippets små chips (28) og små grå handlinger (28).
+- **Mikrofonen: aldrig en cirkel, altid grå, i feltets nederste højre hjørne** — b2b og admin (`.ark-mik`, `.tale-knap`, `.brief-mik`); lytter = rød, ingen puls-ramme.
+- **Ordene:** »Jeg skal bare have skrevet det ned« alle steder (aldrig »Skrevet ned«/»Indbakken« i dropdownen) · »Idé til manus · Energida Studio« i dropdownen · hele dropdownen står fremme (ingen rulle).
+- **Indbakken = to afsnit** (Ida: »tydeligere overblik over opgaver fra kunder og noget jeg selv har skrevet ned«): OPGAVER FRA KUNDER · n og JEG SKAL BARE HAVE SKREVET DET NED · n; ingen chips.
+- **Energida Studio på telefonen:** produkt-chipsene er ude (de filtrerede ingenting; produkterne bor bag ⋯), »Sådan går det« som grå knap, status som én flise med tre linjer.
+- **Menuen på telefonen:** søgefelt øverst (Ida: »Søg skal ikke ligge som punkt i menuen men som søgefelt«), derefter Hjem og de samme døre som på computeren; de gamle punkter (Kunder · Energida · Søg · Energida Studio · Get shit done) er væk.
+- **Get shit done-siden er ude:** to-do bor på Hjem, det skrevne i Indbakken, app-ønsker i Teknik, idéer i Mine rum › Idéer; gamle veje lander på Hjem.
+- **Hjem:** ingen etiket over de pinnede (»det siger nålen i flisen jo«).
+- **To-do med dato og klokkeslæt** (Ida: »vælge tidspunkt via kalenderhjul«): dato- og tidsfelt under teksten i to-do-arket; på iPhone kommer hjulet; chips sætter datoen.
+- **Arket:** tomme rækker fylder ikke (mindre luft mellem felt og Gem); på iPhone følger arket den synlige skærm, så Gem · Annuller står over tastaturet (`visualViewport`).
+- **Loadingsiden i Backstage = markbilledet** (Ida: »Min loading i admin skal også være marken«; vælter 15/9's »kun kundeappen«).
+Porten grøn 8/8 (13 Backstage-sider; Get shit done er taget ud af listen).

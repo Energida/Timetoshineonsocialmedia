@@ -19,7 +19,6 @@ const SIDER = [
   ["minerum", function () { visDashSide("energida"); }],
   ["teknik", function () { bsTeknikAabn(); }],
   ["soeg", function () { visDashSide("soeg"); }],
-  ["todo", function () { visDashSide("gsd"); }],
   ["indbakken", function () { visDashSide("indbakke"); }]
 ];
 const FLISER = ".ws-card,.kort,.card,.hf-kort,.bsam-flise,.idea-kort,.post-card,.bs-doer,.kv-flise,.ib-kol,.lek-kort,.mr-flise,.bs-kf,.bs-rk,.brik,[class$=-flise],[class$=-kort]";
@@ -62,6 +61,8 @@ setTimeout(async function () {
       var navn = SIDER[i][0];
       try { SIDER[i][1](); } catch (e) { console.log("SELE BACKSTAGE FEJL " + navn + " kunne ikke aabnes: " + e.message); fejl++; continue; }
       await vent(900);
+      /* startkortet og rundvisningen kan komme frem EFTER foerste oprydning (21/9: startkortet tegnes, naar forfra-blokken er klar) — ryddes foer hver maaling, ellers rammer hit-testen kortet */
+      ["dagensKort", "turOverlay", "arkSlor"].forEach(function (id) { var e = document.getElementById(id); if (e) e.remove(); });
       /* taeppet: i selen har siderne ingen moebler, saa sideKlarNaar loefter det aldrig — det er selens vilkaar, ikke sidens. Maal bag det. */
       try { var al = document.getElementById("appLoader"); if (al) al.remove(); } catch (e) {}
       try { if (typeof studieVaelgerLuk === "function") studieVaelgerLuk(); } catch (e) {}
