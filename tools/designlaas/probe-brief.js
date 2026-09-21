@@ -30,12 +30,12 @@ function maal(trin){
     }
     if(tag==="BUTTON"&&!/\b(bdrop-knap|pf-ik|bt-blyant|kort-plus|fs-cirkel|fs-slet|fs-fjern|ko-plus|klip-flyt|klip-slet|bdrop-rk|chip-btn|ark-luk|ark-send|ark-rund|tale-knap|bsam-ret-link|klip-knap|bs-flyt-luk|fb-rk)\b/.test(cl)&&!e.closest(".bdrop-kort,.fb-rk,.ark,#bsFlytMenu,.sk-input")&&(e.innerText||"").trim()){   /* kun knapper med ORD — ikon-knapper (skraldespand, mikrofon, flueben) har hver sin laaste form */
       if(Math.abs(px(r.width)-h)<=8) return;   /* runde ikon-knapper (flueben, mikrofon, skraldespand, Del/Slet) har hver sin laaste stoerrelse og maales ikke som chips */
-      if(rad>=99||rad>=h/2-1){ if(h>40) laeg("pille","h"+h2(h)+" fs"+Math.round(parseFloat(cs.fontSize))+" rad999 bd"+px(cs.borderTopWidth),e,trin); else laeg("chip","h"+h2(h)+" fs"+Math.round(parseFloat(cs.fontSize))+" bd"+px(cs.borderTopWidth),e,trin); }
+      if(rad>=99||rad>=h/2-1){ if(h>=40) laeg("pille","h"+h2(h)+" fs"+Math.round(parseFloat(cs.fontSize))+" rad999 bd"+px(cs.borderTopWidth),e,trin); else laeg("chip","h"+h2(h)+" fs"+Math.round(parseFloat(cs.fontSize))+" bd"+px(cs.borderTopWidth),e,trin); }
       else laeg("knap-uden-pille","rad"+rad+" h"+h,e,trin);
     }
     if(cs.textTransform==="uppercase"&&parseFloat(cs.fontSize)<=12.5&&tag!=="BUTTON"&&e.children.length<=2&&txt(e)&&!e.closest("button,.brief-raketkort,.brief-dbog-hoved,.bss-top,.pf-kort")&&!/mangler/i.test(txt(e))) laeg("versal","fs"+Math.round(parseFloat(cs.fontSize)*10)/10+" ls"+Math.round(parseFloat(cs.letterSpacing)*10)/10+" col"+rgb(cs.color),e,trin);
     if(/(^|\s)(sk-q|pf-flise|pf-kf|fb-boks|brief-dbog-flise|klip-kort)(\s|$)/.test(cl)&&!/\bpf-kort\b/.test(cl)&&r.width>300&&!e.parentElement.closest(".sk-q:not(:has(#briefKlipHolder))")&&!e.querySelector("#briefKlipHolder, #briefKlip1")) laeg("flise","rad"+rad+" bd"+px(cs.borderTopWidth)+" sk"+(cs.boxShadow==="none"?"0":"1")+" bg"+rgb(cs.backgroundColor),e,trin);
-    if(tag==="TEXTAREA"&&synlig(e)&&!/display:\s*none/.test(e.getAttribute("style")||"")&&!e.classList.contains("sendfelt-felt")) laeg("felt","rad"+rad+" bd"+px(cs.borderTopWidth)+"/"+rgb(cs.borderTopColor)+" fs"+Math.round(parseFloat(cs.fontSize)),e,trin);
+    if(tag==="TEXTAREA"&&synlig(e)&&!/display:\s*none/.test(e.getAttribute("style")||"")&&!e.classList.contains("sendfelt-felt")&&!e.closest(".kk-laast")) laeg("felt","rad"+rad+" bd"+px(cs.borderTopWidth)+"/"+rgb(cs.borderTopColor)+" fs"+Math.round(parseFloat(cs.fontSize)),e,trin);
     if(/\b(brief-raketkort|brief-dbog-hoved)\b/.test(cl)) laeg("bjaelke","rad"+rad+" h"+h2(h)+" bg"+rgb(cs.backgroundColor),e,trin);
   });
 }
@@ -64,7 +64,7 @@ setTimeout(async function(){ try {
     briefForslagVaelg("hookTekst",1); await vent(150); briefMbVis("forside"); await vent(200);
     var h1=hookPaaForsiden(); if(h1.indexOf("Min kollega vælger altid det modsatte af mig")<0) FUND.push("SYNK: forsiden viser ikke det valgte hook — staar: "+h1.slice(0,60));
     BRIEF_SIDE_AKTIV=1; briefMbVis("skriv"); await vent(150); briefForslagVaelg("hookTekst",1); await vent(150); briefMbVis("forside"); await vent(200);
-    var h0=hookPaaForsiden(); if(h0.indexOf("Mangler")<0) FUND.push("SYNK: hooket er fravalgt, men forsiden viser stadig: "+h0.slice(0,60));
+    var h0=hookPaaForsiden(); var hPh=document.querySelector("#briefForside .pf-kf .pf-felt .pf-ph"); if(h0.indexOf("Mangler")<0 && !hPh) FUND.push("SYNK: hooket er fravalgt, men forsiden viser stadig: "+h0.slice(0,60));
     var k1=document.querySelectorAll("#briefForside .pf-kf")[1]; var k1t=k1?(k1.innerText||""):""; if(/modsatte af mig|farver — og det er derfor/.test(k1t)) FUND.push("SYNK: klip 1 baerer det fravalgte hook paa forsiden");
     BRIEF_SIDE_AKTIV=1; briefMbVis("skriv"); await vent(150); var f0=document.getElementById("bf_hookTekst_f0"); if(f0){ f0.value="Nyt hook skrevet i selen"; briefForslagLaes("hookTekst"); briefForslagVaelg("hookTekst",0); await vent(150); briefMbVis("forside"); await vent(200); var h2=hookPaaForsiden(); if(h2.indexOf("Nyt hook skrevet i selen")<0) FUND.push("SYNK: hooket blev rettet, men forsiden viser: "+h2.slice(0,60)); }
     SIDSTE="synk maalt";
