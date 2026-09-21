@@ -770,3 +770,10 @@ Kørt som rigtige tryk i browserruden på 1440 og 390 (idé → brief → dato �
 
 ## v2161 — NÆSTE SKRIDT PÅ BRIEFOVERSIGTEN BLIVER STÅENDE OG SKIFTER (Idas klik 21/9 kl. 08.17, Hans runde 4 fund 1)
 Flisen »NÆSTE SKRIDT« forsvinder aldrig, når hooket er skrevet: dato mangler → »Sæt en dato, så står opslaget i kalenderen« · Vælg dato; platform mangler → »Hvor skal det ud?« · Vælg platform (åbner fakta-rækken); alt sat → »Opslaget står i kalenderen fredag 25. september. Optag det, og sæt Postet, når det er ude.« · Sæt Postet; Postet → væk. Samme flise, samme form (`briefNaesteSkridtHtml`), begge flader. Sagt højt: på telefonen står fakta-boksen over flisen, så Næste skridt ses først efter et scroll (forsidens rækkefølge er låst; et klik, hvis den skal op). Porten grøn 8/8.
+
+## v2162 — IDAS FIRE KLIK PÅ HANS RUNDE 4, I ÉT DEPLOY (21/9 kl. 08.30–08.55)
+1. **Hjem: den røde flise har altid samme form** — også når rejsen er gjort og dagens første punkt er rødt: »NÆSTE SKRIDT« · én streg (hvid ved lav opacitet) · titlen, cirklen (ring) til højre i flisen. Vælter 20/9's »dagsflise malet rød«.
+2. **Briefens fliser på computeren = etiket · én streg · spørgsmålet** (IDÉEN · streg · »Hvad er idéen?« i Poppins 15), som telefonen fik i v2158/v2160; `briefEtiketterTegn` kører på begge flader, split-reglerne er globale.
+3. **Tøm hovedet: kladde begge steder.** Fundet bag »Kunne ikke gemme« var ikke basen: `kundeArkGem` afviste en idé med titel men uden beskrivelse. Nu er titlen nok (som arket lover, 18/9); fejler basen, ligger idéen i Idébanken som kladde med den røde bjælke på begge flader, og en gentegning kan aldrig vælte svaret.
+4. **Briefoversigten på telefonen: Næste skridt øverst under titlen**, fakta-boksen under (`pf-naeste-top`; skjult uden for forsiden; skinnen ankrer under flisen).
+**MÅLT UNDERVEJS (ren fejl, rettet):** på telefonen slettede `openBriefSide` fakta-boksen — skinnen var flyttet ind i wrap, og næste gentegning (fx efter First thing first) skrev wrap forfra; forsiden stod uden fakta til næste genindlæsning. Nu reddes `#briefRail` tilbage til gitteret før gentegningen. Alt set på 390 og 1440 i browserruden; porten grøn 8/8.
