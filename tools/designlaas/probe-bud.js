@@ -38,7 +38,7 @@ setTimeout(async function () {
       if (yOpg === null) F(tilstand + ": To-do mangler");
       if (yUge === null) F(tilstand + ": Denne uge mangler");
       if (yDag !== null && yAft !== null && yOpg !== null && yUge !== null) {
-        if (tlf) { if (!(yDag < yAft && yAft < yOpg && yOpg < yUge)) F(tilstand + ": telefonens raekkefoelge er ikke I dag · Kommende aktiviteter · To-do · Denne uge"); }
+        if (tlf) { if (!(yDag < yAft && yAft < yUge && yUge < yOpg)) F(tilstand + ": telefonens raekkefoelge er ikke I dag · Kommende aktiviteter · Denne uge · To-do"); }   /* To-do sidst (Ida 21/9 kl. 21.42) */
         else {
           var xV = document.getElementById("hjemVenstre").getBoundingClientRect(), xH = document.getElementById("hjemHoejre").getBoundingClientRect();
           if (!(xH.left > xV.right - 1)) F(tilstand + ": Kommende aktiviteter og To-do staar ikke i hoejre spalte ved siden af dagen");

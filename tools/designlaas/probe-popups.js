@@ -52,6 +52,8 @@ setTimeout(async function () {
       var rod = ark ? ark.querySelector(".ark") : (modal ? modal.querySelector(".modal") : (deltAaben ? delt.firstElementChild : (flytAaben ? flyt.querySelector(".bs-flyt-ark") : null)));
       if (hel) { console.log("SELE LAAS FEJL " + navn + " helskaerm (.plus-menu.open)"); fejl++; }
       if (deltAaben) { console.log("SELE LAAS FEJL " + navn + " lille dialog (deltPrompt) i stedet for arket"); fejl++; }
+      /* TOEM HOVEDET PAA TELEFONEN AABNER FOERST »Hvad vil du tilfoeje?« (det lille ark m. chips, Ida 21/9 kl. 21.35) — trin 2 er arket; proben trykker paa foerste chip */
+      if (navn === "togglePlus" && flytAaben && !ark) { try { var c1 = flyt.querySelector(".toem-chips .ark-chip"); if (c1) { c1.click(); await new Promise(function (r) { setTimeout(r, 450); }); ark = document.getElementById("arkSlor"); rod = ark ? ark.querySelector(".ark") : rod; } } catch (e) {} }
       if (art === "skriv" && !ark) { console.log("SELE LAAS FEJL " + navn + " skriveform er ikke arket"); fejl++; }
       if (!rod) { console.log("SELE LAAS FEJL " + navn + " ingen popup fundet"); fejl++; }
       if (rod) {
