@@ -132,6 +132,9 @@ setTimeout(async function () {
       }
       var kryds = [].filter.call(r.querySelectorAll(".modal-close"), function (k) { return getComputedStyle(k).display !== "none" && k.getBoundingClientRect().height > 0; });
       if (kryds.length) { console.log("SELE BACKSTAGE FEJL " + navn + " synligt kryds paa siden"); fejl++; }
+      /* RUNDT ER RUNDT — OGSAA UDEN FOR POPUPS (MAALT 21/9 paa Idas telefon: to-do-cirklerne var ovaler, fordi mq-tap gav min-height 44). Alt med border-radius 50 % maales. */
+      var ovale = [].filter.call(r.querySelectorAll("*"), function (e) { var cs = getComputedStyle(e); if (!/50%/.test(cs.borderRadius) || cs.display === "none") return false; var b = e.getBoundingClientRect(); if (b.width < 8 || b.height < 8 || b.width > 120) return false; var tegn = cs.borderTopWidth !== "0px" || (cs.backgroundColor !== "rgba(0, 0, 0, 0)" && cs.backgroundColor !== "transparent"); if (!tegn) return false; return Math.abs(b.width - b.height) > 1.5; }).map(function (e) { return (e.className && String(e.className).split(" ")[0]) || e.tagName; });
+      if (ovale.length) { console.log("SELE BACKSTAGE FEJL " + navn + " oval cirkel (" + ovale.length + "): " + ovale.slice(0, 5).join(", ")); fejl++; }
       var emoji = txt.match(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{2B50}\u{2728}]/gu);
       if (emoji) { console.log("SELE BACKSTAGE FEJL " + navn + " emoji i teksten: " + emoji.slice(0, 3).join(" ")); fejl++; }
       var st = bsStreger(r);
