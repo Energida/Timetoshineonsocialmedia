@@ -91,6 +91,8 @@ setTimeout(async function () {
       if (txt.length < 20) { console.log("SELE SIDER FEJL " + navn + " er tom (" + (r.id || "?") + ")"); fejl++; }
       /* BAGGRUNDEN UNDER MARKBAANDET ER HVID (Ida 21/9: »baggrunden skiller … mange sider«) */
       try { var mb = [].filter.call(document.querySelectorAll(".mb-baand"), function (e) { return e.getClientRects().length; })[0]; if (mb) { var cb = getComputedStyle(document.body); if (cb.backgroundColor !== "rgb(255, 255, 255)" || cb.backgroundImage !== "none") { console.log("SELE SIDER FEJL " + navn + " baggrund under baandet er ikke hvid (" + cb.backgroundColor + " / " + cb.backgroundImage.slice(0, 30) + ")"); fejl++; } } } catch (e) {}
+      /* PIL PAA COMPUTEREN = FEJL (HAARD, Ida 21/9 kl. 14.00): tilfoej-felter viser Enter-tegnet paa 900+ */
+      try { if (innerWidth >= 900) { var pil = [].filter.call(document.querySelectorAll(".sendfelt-knap, .htb-send-knap, .hs-send-knap"), function (e) { return e.getClientRects().length && !e.closest(".bs3-soeg") && getComputedStyle(e).display !== "none"; }); if (pil.length) { console.log("SELE SIDER FEJL " + navn + " pil paa computeren i " + pil.length + " tilfoej-felt(er) — skal vaere Enter-tegnet"); fejl++; } } } catch (e) {}
       var c = document.querySelector(".content");
       if (document.documentElement.scrollWidth > innerWidth + 1 || (c && c.scrollWidth > c.clientWidth + 1)) { console.log("SELE SIDER FEJL " + navn + " vandret sejlads: siden er bredere end skaermen"); fejl++; }
       var kl = klipTjek(navn, r); if (kl.length) { console.log("SELE SIDER FEJL " + navn + (SMAL ? " (frigjort menu)" : "") + " klippet: " + kl.slice(0, 4).join(" · ")); fejl++; }
@@ -111,7 +113,7 @@ setTimeout(async function () {
         var rad = parseFloat(ce.borderTopLeftRadius) || 0; if (rad < Math.min(q.width, q.height) / 2 - 1) return;
         var ordL = (e.innerText || "").trim().length; if (ordL > 2) return;
         if (/rgba\(0, 0, 0, 0\)|transparent/.test(ce.backgroundColor) && (ce.borderTopStyle === "none" || parseFloat(ce.borderTopWidth) === 0)) return;   /* usynlig flade: intet at maale */
-        if (ordL === 0 ? Math.abs(q.width - q.height) > 1.5 : q.height - q.width > 1.5) FUND.push("OVAL " + navn + " · " + e.tagName + "[" + String(e.className).split(" ")[0] + "] " + Math.round(q.width) + "x" + Math.round(q.height) + " — en cirkel skal vaere rund");
+        if (ordL === 0 ? Math.abs(q.width - q.height) > 1.5 : q.height - q.width > 1.5) (function (m) { console.log("SELE SIDER FEJL " + m); fejl++; })("OVAL " + navn + " · " + e.tagName + "[" + String(e.className).split(" ")[0] + "] " + Math.round(q.width) + "x" + Math.round(q.height) + " — en cirkel skal vaere rund");
       });
       kn.forEach(function (b) {
         if (!b.isConnected) return;   /* elementet blev tegnet om, efter listen blev samlet (MAALT 19/9: Idébankens chips) — det nye element maales i naeste runde */

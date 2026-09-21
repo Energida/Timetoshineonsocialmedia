@@ -54,7 +54,9 @@ setTimeout(async function () {
       if (!r.querySelector('input[placeholder^="Tilføj to-do"]')) F(tilstand + ": sendfeltet »Tilføj to-do…« mangler");
       if (!/Gå til to-do/.test(tekst)) F(tilstand + ": knappen »Gå til to-do« mangler");
       /* 4) DAGEN: syv prikker, hele dagen, den roede flise oeverst naar der er noget */
-      var prik = r.querySelectorAll(".hjem-prik-rk span"); if (prik.length !== 7) F(tilstand + ": prikkerne er " + prik.length + ", ikke 7");
+      /* PILENE I OVERSKRIFTEN (Idas klik 21/9 kl. 13.55, bud 2): ingen prikker — to pile ved dagens navn */
+      var pil2 = r.querySelectorAll(".hjem-dag-hoved .hjem-pil"); if (pil2.length !== 2) F(tilstand + ": pilene i I dag-overskriften er " + pil2.length + ", ikke 2");
+      if (r.querySelector(".hjem-prik-rk")) F(tilstand + ": prikkerne under listen skulle vaere vaek (bud 2, 21/9)");
       var fliser = [].filter.call(r.querySelectorAll(".hjem-dag .idag-flise"), synlig);
       var pkt = ((window.__HJEM_FOKUS || {}).pkt || []).filter(function (x) { return !/^snart-/.test(String(x.dagsId || "")) && !x.haeng; });
       if (tilstand === "fuld") {
@@ -79,7 +81,8 @@ setTimeout(async function () {
       if (sub && getComputedStyle(sub).color !== "rgb(111, 107, 102)") F(tilstand + ": underlinjen er ikke den moerke graa (" + getComputedStyle(sub).color + ")");
       /* 5b) 32 PX UNDER HEROEN paa begge flader (afstandsreglen; Idas kommentar 20/9 kl. 21.55) */
       var heroEl = tlf ? document.querySelector(".hf-hero") : document.querySelector("#screen3 .mb-baand"), linjeEl = r.querySelector(".hjem-dag-linje");
-      if (heroEl && linjeEl) { var luft = Math.round(linjeEl.getBoundingClientRect().top - heroEl.getBoundingClientRect().bottom); if (Math.abs(luft - 32) > 2) F(tilstand + ": luften under heroen er " + luft + " px, ikke 32"); }
+      /* LUFTEN MAALES FRA BUEN (Ida 21/9 kl. 10.20 + 14.10): baandets hvide bue (28 px) er allerede luft — 32 fra buen = 4 under baandet (paa telefonen ligger arket selv 28 op i fotoet) */
+      if (heroEl && linjeEl) { var bue = heroEl.classList.contains("mb-baand") ? 28 : 0; var luft = Math.round(linjeEl.getBoundingClientRect().top - (heroEl.getBoundingClientRect().bottom - bue)); if (Math.abs(luft - 32) > 4) F(tilstand + ": luften fra buen til I dag er " + luft + " px, ikke 32"); }
       /* 6) INTET KLIPPET I VENSTRE KANT (skinnen maales i SELE SMAL; her: fast menu) */
       [].forEach.call(r.querySelectorAll(".cf-sek, .idag-flise, .aft-rk, .opg-rk"), function (e) { if (synlig(e) && e.getBoundingClientRect().left < 0) F(tilstand + ": klippet i venstre kant: " + (e.innerText || "").trim().slice(0, 20)); });
     };

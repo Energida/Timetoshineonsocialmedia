@@ -810,6 +810,11 @@ Workout · Food · Mindful Studio: hvert kort er en flise (skygge, ingen kant, h
 - **Loadingsiden i Backstage = markbilledet** (Ida: »Min loading i admin skal også være marken«; vælter 15/9's »kun kundeappen«).
 Porten grøn 8/8 (13 Backstage-sider; Get shit done er taget ud af listen).
 
+## POPUPPENS KRYDS OG SLET — HÅRD (Ida 21/9 kl. 13.12 + 14.15: »krydset i hjørnet af denne pop up er helt rigtig. skynd dig at lås det i designlåsen!!!«)
+- **Krydset i cirkel står i hjørnet af ENHVER popup** (arket, det lille ark, bs-flyt-ark) — også når der står Annuller (vælter 19/9 kl. 10.37). Referencen er hashtag-arket 21/9.
+- **Slet i en popup er en RIGTIG knap**: fuld bredde, grå, **under Annuller**, kun skraldespanden som tegn (aldrig ordet, aldrig en cirkel ved titlen, aldrig oppe i hjørnet).
+- Knapperne i popups er 44 høje (21/9); briefens piller 48 (18/9-låsen) — de to må ikke blandes.
+
 ## v2170 — BESKED TIL KUNDEN FRA INDBAKKEN (Idas klik 21/9 kl. 11.30 »Fra Indbakken«, live kl. 11.45)
 - **Backstage › Indbakken** har sektionen »Beskeder til kunder · n«: den grå knap »+ Tilføj besked« åbner det lille ark »Besked til kunden« (tekstfelt m. grå mikrofon · husets dropdown »Vælg kunde« under feltet · Send (rød) · Annuller); de sendte står som fliser (KUNDE · DATO · teksten). Ingen sletning endnu (klik, hvis det ønskes).
 - **Data:** kundens config-række (kode = kunden · navn = config · skema = beskeder · svar = { liste: [{id, t, af, dato}] }) — samme rækkeform og RLS som ugens_fokus/profil; ingen ny tabel, ingen ny policy (`beskeder`-tabellen fra SQL-kortene 4/9 er ikke taget i brug). Læs først, læg til, skriv, kvittér med .select().

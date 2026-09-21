@@ -77,6 +77,8 @@ setTimeout(async function () {
       if (document.documentElement.scrollWidth > innerWidth + 1) { console.log("SELE BACKSTAGE FEJL " + navn + " vandret sejlads: siden er bredere end skaermen"); fejl++; }
       /* BAGGRUNDEN UNDER BAANDET ER HVID (Ida 21/9: »baggrunden skiller«): buen (::after) staar paa hvidt, aldrig paa gradienten */
       try { var bb = document.querySelector("#dashMain > .bs-baand"); if (bb && bb.getClientRects().length) { var cb = getComputedStyle(document.body); if (cb.backgroundColor !== "rgb(255, 255, 255)" || cb.backgroundImage !== "none") { console.log("SELE BACKSTAGE FEJL " + navn + " baggrund under baandet er ikke hvid (" + cb.backgroundColor + " / " + cb.backgroundImage.slice(0, 30) + ")"); fejl++; } } } catch (e) {}
+      /* PIL PAA COMPUTEREN = FEJL (HAARD, Ida 21/9 kl. 14.00): tilfoej-felter viser Enter-tegnet paa 900+ */
+      try { if (innerWidth >= 900) { var pil = [].filter.call(document.querySelectorAll(".sendfelt-knap, .htb-send-knap, .hs-send-knap"), function (e) { return e.getClientRects().length && !e.closest(".bs3-soeg") && getComputedStyle(e).display !== "none"; }); if (pil.length) { console.log("SELE BACKSTAGE FEJL " + navn + " pil paa computeren i " + pil.length + " tilfoej-felt(er) — skal vaere Enter-tegnet"); fejl++; } } } catch (e) {}
       /* HEROEN ER MARKBAANDET (Backstage i b2b-laasen, 20/9): baandet oeverst i #dashMain med sidens navn i hvid Didot (56 px computer / 34 px telefon),
          den gamle hero og stien skjult, 32 px luft under baandet, siden ren hvid. */
       var baand = document.querySelector("#dashMain > .bs-baand");
