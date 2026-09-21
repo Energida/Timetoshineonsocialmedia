@@ -16,6 +16,10 @@ Filen er kort med vilje. Hver regel kan måles. Målingen står i `tools/designl
 
 ## Låsene (dato = den dag, Ida låste)
 
+**»ANNULLÉR« MED ACCENT — ALLE STEDER (Ida 21/9 kl. 19.06).** Den grå knap nederst i alle ark og popups hedder »Annullér«. Porten accepterer begge stavemåder i `probe-ux.js`, men fladen skriver kun den med accent.
+
+**PLUSSET HEDDER »HVAD SKAL DER SKE, MAKKER?« (Ida 21/9 kl. 18.25 + 01.05).** Telefonens bundmenu-plus og computerens Hjem-plus åbner det lille ark med den overskrift og alle chips; på computeren er arket 560 px, så chipsene flyder (undtagelse fra popup-låsens 360).
+
 **CONTENTETS TITEL ER ALTID RØD DIDOT KURSIV — ALLE STEDER (HÅRD, Ida 21/9 kl. 22.18 + kl. 23.50: »indholdstitel på content altid rød Didot og kursiv«).** På hvidt: rød (`--red`) Didot kursiv. På rødt (forsidens røde flise): hvid Didot kursiv — rød på rød findes ikke. Hvor et opslags/en idés titel står som titel (Hjems dagsliste »Skal du poste: *1 nederdel …*«, Kommende opslag, briefoversigtens røde flise, briefens titel, kalenderens kort, Idébankens kort, planlægningens lister, bud og mockups) skrives den i Didot kursiv — i forlængelse af sætningen efter kolon, ikke på ny linje. Feltnavne, etiketter og knapper er stadig Poppins. Justerer 15/9-reglen »Didot kun i heroen«: titlen på content er undtagelsen. Endnu ikke lagt om: kalenderens kort og Idébankens kort (Poppins) — tages i næste runde.
 
 
