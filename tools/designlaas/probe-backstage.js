@@ -76,7 +76,8 @@ setTimeout(async function () {
          den gamle hero og stien skjult, 32 px luft under baandet, siden ren hvid. */
       var baand = document.querySelector("#dashMain > .bs-baand");
       var bq = baand ? baand.getBoundingClientRect() : null;
-      if (!baand || !bq || bq.height < 100 || getComputedStyle(baand).display === "none") { console.log("SELE BACKSTAGE FEJL " + navn + " intet markbaand oeverst"); fejl++; }
+      if (!window.BS_FORFRA) { /* Backstage i b2b-designet er slaaet fra, til »Backstage forfra« er bygget (21/9) — baandet maales foerst da */ }
+      else if (!baand || !bq || bq.height < 100 || getComputedStyle(baand).display === "none") { console.log("SELE BACKSTAGE FEJL " + navn + " intet markbaand oeverst"); fejl++; }
       else {
         var mn = baand.querySelector(".mb-navn"); var mfs = mn ? Math.round(parseFloat(getComputedStyle(mn).fontSize)) : 0; var mt = mn ? (mn.textContent || "").trim() : "";
         if (!mt) { console.log("SELE BACKSTAGE FEJL " + navn + " baandet har intet navn"); fejl++; }
