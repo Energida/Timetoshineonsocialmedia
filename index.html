@@ -30251,6 +30251,15 @@ function indbakkeRegn() {
       orientering.push({ t: esc(String(w.svar.af || "Ida")) + ' har svaret på dit ønske: ' + esc(storStart(String(w.t))), s: esc(String(w.svar.t)) + (w.svar.dato ? ' · ' + esc(dkDatoKort(String(w.svar.dato))) : ''), aabn: "", knap: "Set", klik: "ibSetMark('" + n + "');indbakkenAaben()" });
     });
   } catch (e) {}
+  /* BESKED FRA IDA (21/9): staar under Til orientering, til kunden trykker Set. */
+  try {
+    const set = ibSetLaes();
+    (Array.isArray(KUNDE_BESKEDER) ? KUNDE_BESKEDER : []).forEach(function (b) {
+      const n = "besked:" + String(b.id).replace(/[^A-Za-z0-9_-]/g, "");
+      if (!b || !b.t || set[n]) return;
+      orientering.push({ t: 'Besked fra ' + esc(String(b.af || "Ida")), s: esc(String(b.t)) + (b.dato ? ' · ' + esc(dkDatoKort(String(b.dato))) : ''), aabn: "", knap: "Set", klik: "ibSetMark('" + n + "');indbakkenAaben()" });
+    });
+  } catch (e) {}
   /* TIL DIG (Ida 6/9 kl. 10.22: "saa skal hun jo faa en notifikation oppe i klokken og det skal
      staa i indbakken"). En to-do tagget med dit navn staar her, til den er klaret. Samme regel som
      opgaveErTilMig — men KUN dem med navn paa; dem uden navn er til alle og stoejer ikke. */
@@ -30291,6 +30300,7 @@ function renderIndbakkeKort() {
   const el = document.getElementById("indbakkeKort"); if (!el) return;
   if (!CURRENT_DEF || CURRENT_DEF.type === "kursus") { el.style.display = "none"; return; }
   if (!Array.isArray(APP_OENSKER)) { try { appOenskerHent(); } catch (e) {} }   /* tegner selv om, naar de er hjemme (13/9) */
+  if (!Array.isArray(KUNDE_BESKEDER)) { try { kundeBeskederHent(); } catch (e) {} }   /* Idas beskeder (21/9) */
   const ib = indbakkeRegn();
   /* sidebar-badgen følger med (FINAL 5a: Indbakken øverst m. rød badge) */
   try { ibBadgeTegn(ib); } catch (e) {}
@@ -30428,6 +30438,22 @@ async function appOenskeSvarGem(v, tekst) {
 }
 /* Kundens side: egne oensker (med Idas svar) hentes een gang pr. session, saa Indbakken kan
    vise svaret. Samme moenster som KUNDE_NOTER. */
+/* BESKEDER FRA IDA (Idas klik 21/9 kl. 11.30: »Fra Indbakken«): Ida skriver i sin Indbakke (Tilfoej besked), beskeden bor paa kundens
+   config-raekke (kode = kunden · navn = config · skema = beskeder · svar = { liste: [{id, t, af, dato}] }) — samme raekkeform og RLS som
+   ugens_fokus/profil, ingen ny tabel, ingen ny policy. Kunden ser den i Indbakken under Til orientering, til der trykkes Set. */
+let KUNDE_BESKEDER = null;
+async function kundeBeskederHent() {
+  if (Array.isArray(KUNDE_BESKEDER)) return KUNDE_BESKEDER;
+  KUNDE_BESKEDER = [];
+  if (!sb || !currentKode) return KUNDE_BESKEDER;
+  try {
+    const { data } = await sb.from("skema_svar").select("svar").eq("kode", currentKode).eq("navn", "config").eq("skema", "beskeder").maybeSingle();
+    if (data && data.svar && Array.isArray(data.svar.liste)) KUNDE_BESKEDER = data.svar.liste;
+  } catch (e) {}
+  try { renderIndbakkeKort(); } catch (e) {}
+  try { if (typeof hjemFacitTegn === "function") hjemFacitTegn(); } catch (e) {}
+  return KUNDE_BESKEDER;
+}
 let APP_OENSKER = null;
 async function appOenskerHent() {
   if (Array.isArray(APP_OENSKER)) return APP_OENSKER;
@@ -30490,6 +30516,7 @@ function indbakkenAaben() {
   /* Noterne hentes een gang og tegnes med det samme, naar de er hjemme. */
   if (!Array.isArray(KUNDE_NOTER)) { kundeNoterHent().then(function () { try { indbakkenAaben(); } catch (e) {} }); }
   if (!Array.isArray(APP_OENSKER)) { appOenskerHent().then(function () { try { indbakkenAaben(); } catch (e) {} }); }   /* Idas svar paa oensker (13/9) */
+  if (!Array.isArray(KUNDE_BESKEDER)) { kundeBeskederHent().then(function () { try { indbakkenAaben(); } catch (e) {} }); }   /* Idas beskeder (21/9) */
   /* HELE RAEKKEN ER KLIKBAR (Ida 31/7): teksten aabner briefen, knappen til hoejre goer
      det, raekken foreslaar. Foer kunne man kun ramme knappen. */
   /* ALTID FLISER, ALDRIG EN LISTE I EEN KASSE (Ida 5/9, CLAUDE.md §4) — SET 5/9 paa 375: "Det du
@@ -49578,7 +49605,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2169";
+const APP_VERSION = "2170";
 let NY_VERSION_KLAR = false;
 let NY_VERSION_AFVIST = false;
 function nyVersionSkjul() {
@@ -61887,6 +61914,7 @@ function nulstilBrugerCache() {
   try { MAALS = null; MAALS_KODE = null; } catch (e) {}
   try { DELT_INDEX = null; DELT_ITEMS = []; DELT_AKTIV = null; } catch (e) {}
   try { RODEBUTIK = []; HAENG = []; APP_FUNK = []; } catch (e) {}
+  try { KUNDE_BESKEDER = null; APP_OENSKER = null; } catch (e) {}   /* Idas beskeder + oensker er kundens egne (21/9) */
   try { ENERGIDA_IDEER = []; MANUS_IDEER = []; } catch (e) {}
   try { BRIEF_ID = null; BRIEF_STATE = {}; } catch (e) {}
   /* Skaermene tegnes af de lister, vi lige toemte — staar en gammel side fremme, viser den
@@ -68472,6 +68500,7 @@ async function indbakkeTegn() {
   const el = document.getElementById("bsIndbakke"); if (!el) return;
   try { await rodebutikHent(); } catch (e) {}
   let venter = []; try { venter = await venterHent(); } catch (e) { venter = []; }
+  let beskeder = []; try { beskeder = await bf3BeskederHent(); } catch (e) { beskeder = []; }
   const noter = (RODEBUTIK || []).slice();
   const kunderHtml = venter.length ? venter.map(function (v, i) {
       const h = []; if (v.ja) h.push([v.ja, "venterJa(" + i + ")"]); if (v.nej) h.push([v.nej, "venterNej(" + i + ")"]); if (v.id && v.kode && v.slags !== "oenske" && v.slags !== "todo") h.push(["Åbn", "godkKoeAabn('" + esc(String(v.kode)) + "','" + esc(String(v.id)) + "')"]);
@@ -68481,14 +68510,66 @@ async function indbakkeTegn() {
       const dato = r.dato ? (/^\d{4}-\d{2}-\d{2}/.test(String(r.dato)) ? dkDatoKort(String(r.dato).slice(0, 10)) : String(r.dato)) : "";
       return bf3Etfl(dato || "Jeg skal bare have skrevet det ned", esc(String(r.t || r.tekst || "")), "", [["Flyt", "bf3FlytAabn('" + esc(String(r.id)) + "')"]], ' data-slet="bsRodeSlet(\'' + esc(String(r.id)) + '\')"');
     }).join('') : bf3Tom("Ingenting at placere.");
+  /* BESKEDER TIL KUNDER (Idas klik 21/9 kl. 11.30: »Fra Indbakken«): den graa knap aabner det lille ark med kundevaelger + tekst; de sendte staar som fliser under */
+  const beskederHtml = '<button type="button" class="dbtn mq-tap bs3-lang" style="margin-bottom:10px;" onclick="bf3BeskedArk()">+ Tilføj besked</button>'
+    + (beskeder.length ? beskeder.slice(0, 10).map(function (b) { return bf3Etfl(esc(venterKundeNavn(b.kode)) + (b.dato ? " · " + esc(dkDatoKort(String(b.dato))) : ""), esc(String(b.t || "")), "", []); }).join('') : '');
   el.innerHTML = '<div class="bs-hero bs-hero-streg">Indbakken</div><div class="bs3">'
     + bf3Ver("Opgaver fra kunder" + (venter.length ? " · " + venter.length : "")) + kunderHtml
     + '<div class="bs3-afsnit">' + bf3Ver("Jeg skal bare have skrevet det ned" + (noter.length ? " · " + noter.length : "")) + '</div>' + noterHtml
+    + '<div class="bs3-afsnit">' + bf3Ver("Beskeder til kunder" + (beskeder.length ? " · " + beskeder.length : "")) + '</div>' + beskederHtml
     + '</div>';
   bf3Swipe(el);
   try { navstiBackstage("indbakke"); } catch (e) {}
   try { bsIndbakkeBadge(); } catch (e) {}
   try { bsBaandPlanlaeg(); } catch (e) {}
+}
+/* BESKED TIL EN KUNDE (21/9): raekken kode = kunden · navn = config · skema = beskeder · svar = { liste } — samme form og RLS som ugens_fokus.
+   Kunden ser den i Indbakken under Til orientering (kundeBeskederHent). Laes foerst, laeg til, skriv — aldrig i blinde (4/8-reglen). */
+let BF3_BESKEDER = null;
+async function bf3BeskederHent() {
+  if (Array.isArray(BF3_BESKEDER)) return BF3_BESKEDER;
+  BF3_BESKEDER = [];
+  if (!sb) return BF3_BESKEDER;
+  try {
+    const { data } = await sb.from("skema_svar").select("kode,svar").eq("navn", "config").eq("skema", "beskeder");
+    (data || []).forEach(function (r) { ((r.svar && r.svar.liste) || []).forEach(function (b) { BF3_BESKEDER.push(Object.assign({ kode: r.kode }, b)); }); });
+    BF3_BESKEDER.sort(function (a, b) { return String(b.dato || "").localeCompare(String(a.dato || "")) || String(b.id).localeCompare(String(a.id)); });
+  } catch (e) {}
+  return BF3_BESKEDER;
+}
+function bf3BeskedKunder() {
+  let koder = []; try { koder = Object.keys(VIRKSOMHEDSKODER).filter(function (k) { return erRigtigKunde(k) && VIRKSOMHEDSKODER[k].aktiv !== false; }); } catch (e) {}
+  return koder.map(function (k) { return { k: k, n: venterKundeNavn(k) }; }).sort(function (a, b) { return a.n.localeCompare(b.n, "da"); });
+}
+function bf3BeskedArk() {
+  BF3_DROP_VALG.bf3BeskedKunde = "";
+  arkAabn({ titel: "Besked til kunden", ph: "Hvad vil du sige?", send: "Send", tekst: "", chips: [],
+    under: "Landet i kundens Indbakke under Til orientering.",
+    ekstraAf: function () { return bf3DropHtml("bf3BeskedKunde", "Vælg kunde", bf3BeskedKunder(), ""); },
+    gem: async function (t) { const k = BF3_DROP_VALG.bf3BeskedKunde; if (!k) throw new Error("!Vælg en kunde."); return await bf3BeskedGem(k, t); },
+    efterLuk: function () { try { indbakkeTegn(); } catch (e) {} } });
+  bf3ArkDropOp();
+}
+async function bf3BeskedGem(kode, tekst) {
+  const t = String(tekst || "").trim(); if (!t || !sb || !kode) return false;
+  const mig = (typeof godkMig === "function") ? (godkMig() || "Ida") : "Ida";
+  const ny = { id: "b" + Date.now(), t: t, af: mig, dato: new Date().toISOString().slice(0, 10) };
+  let liste = [];
+  try {
+    const r = await sb.from("skema_svar").select("svar").eq("kode", kode).eq("navn", "config").eq("skema", "beskeder").maybeSingle();
+    if (r.error) return false;
+    if (r.data) {
+      liste = (r.data.svar && Array.isArray(r.data.svar.liste)) ? r.data.svar.liste.concat([ny]) : [ny];
+      const u = await sb.from("skema_svar").update({ svar: { liste: liste } }).eq("kode", kode).eq("navn", "config").eq("skema", "beskeder").select();
+      if (!(u.data && u.data.length)) return false;
+    } else {
+      liste = [ny];
+      const i = await sb.from("skema_svar").insert({ kode: kode, navn: "config", skema: "beskeder", svar: { liste: liste } }).select();
+      if (!(i.data && i.data.length)) return false;
+    }
+  } catch (e) { return false; }
+  BF3_BESKEDER = null;
+  return "Sendt til " + venterKundeNavn(kode) + ".";
 }
 function bf3FlytAabn(id) {
   const r = (RODEBUTIK || []).find(function (x) { return String(x.id) === String(id); }); if (!r) return;
@@ -68993,6 +69074,6 @@ function bsTodoRet(id) {
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 21. september · 2169</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 21. september · 2170</div>
 </body>
 </html>
