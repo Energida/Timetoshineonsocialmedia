@@ -89,6 +89,8 @@ setTimeout(async function () {
       try { var ct = document.querySelector(".content"); if (ct) ct.scrollTop = 0; window.scrollTo(0, 0); } catch (e) {}
       var r = siderRod(); var txt = (r.innerText || "").replace(/\s+/g, " ");
       if (txt.length < 20) { console.log("SELE SIDER FEJL " + navn + " er tom (" + (r.id || "?") + ")"); fejl++; }
+      /* BAGGRUNDEN UNDER MARKBAANDET ER HVID (Ida 21/9: »baggrunden skiller … mange sider«) */
+      try { var mb = [].filter.call(document.querySelectorAll(".mb-baand"), function (e) { return e.getClientRects().length; })[0]; if (mb) { var cb = getComputedStyle(document.body); if (cb.backgroundColor !== "rgb(255, 255, 255)" || cb.backgroundImage !== "none") { console.log("SELE SIDER FEJL " + navn + " baggrund under baandet er ikke hvid (" + cb.backgroundColor + " / " + cb.backgroundImage.slice(0, 30) + ")"); fejl++; } } } catch (e) {}
       var c = document.querySelector(".content");
       if (document.documentElement.scrollWidth > innerWidth + 1 || (c && c.scrollWidth > c.clientWidth + 1)) { console.log("SELE SIDER FEJL " + navn + " vandret sejlads: siden er bredere end skaermen"); fejl++; }
       var kl = klipTjek(navn, r); if (kl.length) { console.log("SELE SIDER FEJL " + navn + (SMAL ? " (frigjort menu)" : "") + " klippet: " + kl.slice(0, 4).join(" · ")); fejl++; }
