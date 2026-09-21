@@ -94,7 +94,8 @@ setTimeout(async function () {
           if (getComputedStyle(e).visibility === "hidden") return;
           if (q.top >= bq.bottom - 1 && (naermest === null || q.top < naermest)) { naermest = q.top; nEl = e; }
         });
-        if (naermest !== null) { var luft = Math.round(naermest - bq.bottom); if (luft < 28 || luft > 36) { console.log("SELE BACKSTAGE FEJL " + navn + " luft under baandet er " + luft + " px, ikke 32 (" + (nEl.id || nEl.className.toString().split(" ")[0] || nEl.tagName) + ")"); fejl++; } }
+        /* LUFTEN MAALES FRA BUEN (Idas laas 21/9 kl. 10.20): baandets hvide bue er 28 px hoej og hoerer til siden — 32 px fra buen, ikke fra baandets kant */
+        if (naermest !== null) { var luft = Math.round(naermest - (bq.bottom - 28)); if (luft < 28 || luft > 36) { console.log("SELE BACKSTAGE FEJL " + navn + " luft under baandet er " + luft + " px, ikke 32 (" + (nEl.id || nEl.className.toString().split(" ")[0] || nEl.tagName) + ")"); fejl++; } }
         var bg = getComputedStyle(document.body).backgroundColor; if (!/rgb\(255, 255, 255\)/.test(bg)) { console.log("SELE BACKSTAGE FEJL " + navn + " siden er ikke ren hvid (" + bg + ")"); fejl++; }
       }
       /* ingen billeder i Backstage (Ida 11/9) — vandmaerket og ikoner er ikke billeder */
