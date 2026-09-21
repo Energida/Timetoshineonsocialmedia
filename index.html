@@ -9164,6 +9164,9 @@ html body.mb #screen23 #indbakkenWrap { position:relative; }   /* plusset maales
 @keyframes dkOp { 0%,100% { transform:translateY(0); } 50% { transform:translateY(-5px); } }
 @keyframes dkHoejre { 0%,100% { transform:translateX(0); } 50% { transform:translateX(6px); } }
 @media (prefers-reduced-motion: reduce) { #dagensKort .dk-swipe svg { animation:none; } }
+/* »NY« paa Idébankens kort (Ida 22/9 kl. 00.35): roed chip, hvid tekst */
+html body .ibb-chip.ibb-ny { background:var(--red) !important; border-color:var(--red) !important; color:#fff !important; }
+html body .bs-kf-n .ibb-chip.ibb-ny { height:20px; padding:0 8px; font-size:10px; vertical-align:2px; margin-right:4px; }
 </style>
 <script type="text/javascript">(function(){var h=(location.hostname||"").toLowerCase();var skip=h.split(".")[0]==="ole"||h.indexOf("admin")!==-1||h.indexOf("crm")!==-1||h.indexOf("dashboard")!==-1;document.documentElement.classList.add("b2b-foto");/* LOADINGSIDEN = MARKBILLEDET, ogsaa i Backstage (Ida 21/9 kl. 10.30: »Min loading i admin skal også være marken«; vaelter 15/9's »kun kundeappen«) */if(!skip){window.$crisp=[];window.CRISP_WEBSITE_ID="cf531a0a-b805-4172-bfc1-e2c1c1f7bcb1";var d=document,s=d.createElement("script");s.src="https://client.crisp.chat/l.js";s.async=1;d.getElementsByTagName("head")[0].appendChild(s);window.$crisp.push(["do","chat:hide"]);/* ingen chat-boble paa login-siderne (Ida 28/7) — vises igen i enterApp */}})();</script>
 
@@ -40714,7 +40717,22 @@ let INSP_VEDHAEFT = "";
 function inspAaben() { const f = document.getElementById("inspSendFelt"); const t = f ? String(f.value || "").trim() : ""; kundeArkAabn("fedt", false, t, true); if (f) f.value = ""; }   /* det skrevne foelger med ind i arket (20/9) */   /* "Gem inspirationen"-kortet var en dublet af Set noget fedt — arket (Ida 13/9). Kortet i DOM'en baerer kun filfelterne. */
 function inspLuk() { const b = document.getElementById("inspBack"); if (b) b.classList.remove("on"); }
 function inspMsg(t) { const m = document.getElementById("inspMsg"); if (m) { m.textContent = t; if (t) setTimeout(() => { if (m.textContent === t) m.textContent = ""; }, 5000); } try { const k = document.getElementById("arkKvit"); if (k && ARK && t) k.textContent = t; } catch (e) {} }
+/* »NY« PAA IDÉER FRA ANDRE (Ida 22/9 kl. 00.35): naar et teammedlem lander paa Idébanken, baerer idéer, der er tilfoejet af andre siden sidste besoeg, chippen »Ny«.
+   Sidste besoeg gemmes i browseren pr. kode + navn (ib_set_*); saettet beregnes ved aabningen og holder, til banken aabnes igen. */
+let IB_NY = null;
+function ibNyNoegle() { const navn = String((typeof CURRENT_NAVN !== "undefined" && CURRENT_NAVN) || (typeof SOM_KUNDE !== "undefined" && SOM_KUNDE ? "Ida" : "")).trim().toLowerCase(); return "ib_set_" + String(currentKode || "X") + "_" + navn; }
+function ibNyBeregn() {
+  try {
+    const mig = String((typeof CURRENT_NAVN !== "undefined" && CURRENT_NAVN) || (typeof SOM_KUNDE !== "undefined" && SOM_KUNDE ? "Ida" : "")).trim().toLowerCase();
+    const sidst = localStorage.getItem(ibNyNoegle()) || "";
+    IB_NY = new Set();
+    if (sidst) (IDEER || []).forEach(function (x) { const af = String(ideAf(x) || "").trim().toLowerCase(); if (x && x.oprettet && x.oprettet > sidst && af && af !== mig && !(mig && af.indexOf(mig) === 0)) IB_NY.add(String(x.id)); });
+    localStorage.setItem(ibNyNoegle(), new Date().toISOString());
+  } catch (e) { IB_NY = new Set(); }
+}
+function ibErNy(it) { try { if (IB_NY === null) ibNyBeregn(); return IB_NY.has(String(it && it.id)); } catch (e) { return false; } }
 function ibVis(hvad) {
+  if (hvad === "ideer" || !hvad) { try { if (IB_VISNING !== "ideer" || IB_NY === null) ibNyBeregn(); } catch (e) {} }
   /* FINAL 5c/5cb/5cc (Task 6): tre visninger paa Content-siden — Idébanken · Inspiration · Arkivet */
   hvad = hvad || "ideer";
   IB_VISNING = hvad;
@@ -47353,7 +47371,7 @@ function ideerFraCache() {
   try { const c = JSON.parse(localStorage.getItem(nsKey("ideer_cache")) || "null"); if (Array.isArray(c) && c.length) return c; } catch (e) {}
   return loadLocalIdeer();
 }
-function mapIdeRow(r) { return { id:r.id, titel:r.titel, type:r.type, soejle:r.soejle, status:r.status, dato:r.dato, brief:r.brief || null }; }
+function mapIdeRow(r) { return { id:r.id, titel:r.titel, type:r.type, soejle:r.soejle, status:r.status, dato:r.dato, brief:r.brief || null, oprettet: r.created_at || "" }; }   /* oprettet: »Ny«-chippen (22/9) */
 
 /* Hent firmaets content house (delt via Supabase pr. kode) — fallback til localStorage hvis tabellen ikke findes endnu */
 /* ===== OFFLINE-KLADDE (Idas klik-valg 5/9, foer et fly: "Byg det nu alligevel") =====
@@ -48993,7 +49011,7 @@ function ibMobilTegn() {
        staar under "Andet" til sidst. Samme fliser, samme klik — kun grupperingen er ny. */
     const flise = function (it) {
       const linje = [it.type, it.status && it.status !== "Idé" ? it.status : ""].concat(ideTags(it)).filter(Boolean).join(" · ");   /* tags med i linjen (19/9) */
-      return '<button type="button" class="bs-kf" onclick="openBrief(\'' + esc(String(it.id)) + '\')"><span class="bs-kf-tekst"><span class="bs-kf-n">' + esc(storStart(titelVis(it.titel || "Uden titel"))) + '</span>' + (linje ? '<span class="bs-kf-s">' + esc(linje) + '</span>' : '') + '</span>' + ideAfHtml(it) + '</button>';
+      return '<button type="button" class="bs-kf" onclick="openBrief(\'' + esc(String(it.id)) + '\')"><span class="bs-kf-tekst"><span class="bs-kf-n">' + (ibErNy(it) ? '<span class="ibb-chip ibb-ny">Ny</span> ' : '') + esc(storStart(titelVis(it.titel || "Uden titel"))) + '</span>' + (linje ? '<span class="bs-kf-s">' + esc(linje) + '</span>' : '') + '</span>' + ideAfHtml(it) + '</button>';   /* »Ny« ogsaa paa telefonen (22/9) */
     };
     /* DE FIRE SOEJLER STAAR ALTID (Ida 15/9: »idébanken er ikke opdateret med indholdssøjlerne men står stadig
        på feed osv« — set hos en ny kunde uden idéer). Foer blev en soejle kun tegnet, naar den havde idéer, saa
@@ -50657,7 +50675,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2207";
+const APP_VERSION = "2208";
 let NY_VERSION_KLAR = false;
 let NY_VERSION_AFVIST = false;
 function nyVersionSkjul() {
@@ -52353,7 +52371,7 @@ function ibTomSoejleHtml(k) {
 }
 function ibBudHtml(grupper, bud) {
   const kode = n => { const m = soejleModel(n); return m ? m.kode : ""; };
-  const fmtChip = it => it.type ? '<span class="ibb-chip">' + esc(it.type) + '</span>' : '';
+  const fmtChip = it => (ibErNy(it) ? '<span class="ibb-chip ibb-ny">Ny</span>' : '') + (it.type ? '<span class="ibb-chip">' + esc(it.type) + '</span>' : '');   /* »Ny« (Ida 22/9 kl. 00.35): tilfoejet af et andet teammedlem, siden jeg sidst saa banken */
   const statusChip = it => (!it.status || it.status === "Idé") ? '' : '<span class="ibb-chip ibb-status">' + esc(it.status) + '</span>';   /* det ER idébanken — »Idé« staar der ikke (Ida 16/9 kl. 13.54) */
   const thumb = (it, k) => '';   /* ingen billeder (Ida 16/9 kl. 13.54) */
   const aabn = it => 'onclick="openBriefSide(\'' + esc(String(it.id)) + '\')"';
@@ -62741,7 +62759,8 @@ const NY_IDE_CHIPS = [
   { k: "food",    n: "Food Studio",     u: "Lander i Idéer under Food Studio" },
   { k: "workout", n: "Workout Studio",  u: "Lander i Idéer under Workout Studio" },
   { k: "mindful", n: "Mindful Studio",  u: "Lander i Idéer under Mindful Studio" },
-  { k: "app",     n: "App-ønske",       u: "Lander på App-ønskelisten" }
+  { k: "app",     n: "App-ønske",       u: "Lander på App-ønskelisten" },
+  { k: "kundeide", n: "Content-idé til kunde", u: "Lander i kundens Idébank med dit navn på" }   /* Ida 22/9 kl. 00.35 */
 ];
 function nyIdeAabn(valgt, paaFoto) {
   let kortKnap = (paaFoto && document.getElementById("dagensKort"))
@@ -62749,6 +62768,7 @@ function nyIdeAabn(valgt, paaFoto) {
   if (!kortKnap && typeof indkoebHubAaben === "function" && document.getElementById("indkoebHub")) kortKnap = { tekst: "Indkøbslister", klik: "arkLuk(true);indkoebHubAaben()" };   /* Indkoeb sad i den gamle fuldskaerm (22/8) — bevaret som arkets graa knap (20/9) */
   arkAabn({ titel: "Tøm hovedet", ph: "Hvad har du på hjertet?", send: "Gem", chips: NY_IDE_CHIPS, valgt: valgt || "note", paaFoto: !!paaFoto, knap: kortKnap,
     underAf: function (k) { const c = NY_IDE_CHIPS.find(function (x) { return x.k === k; }); return c ? c.u : ""; },
+    ekstraAf: function (k) { if (k !== "kundeide") return ""; try { return (typeof bf3DropHtml === "function") ? bf3DropHtml("nyIdeKunde", "Vælg kunde", bf3BeskedKunder(), (window.BF3_DROP_VALG || {}).nyIdeKunde || "") : ""; } catch (e) { return ""; } },
     gem: nyIdeGem, efterLuk: function () { try { studieVaelgerRetur(); } catch (e) {} } });
 }
 async function nyIdeGem(tekst, k) {
@@ -69541,6 +69561,15 @@ function studieVaelgerVis(tving) { bf3StartVis(tving); }
 /* nyIdeGem: to nye landinger (Indkoebslister · Vidensbank) */
 const bf3_nyIdeGemGammel = window.BF3_GAMMEL.nyIdeGem;
 async function nyIdeGem(tekst, k) {
+  /* CONTENT-IDÉ TIL EN KUNDE (Ida 22/9 kl. 00.35): lander i kundens Idébank (content_ideer) med Idas navn paa — kunden ser det er Ida, og teamet ser »Ny« */
+  if (k === "kundeide") {
+    const kode = (window.BF3_DROP_VALG || {}).nyIdeKunde || ""; if (!kode) throw new Error("!Vælg en kunde.");
+    if (!sb) return false;
+    const t = String(tekst || "").trim(); const titel = (function () { const x = t.split(/[.!?\n]/)[0].trim(); return x.length > 70 ? x.slice(0, 70).replace(/\s\S*$/, "") + "…" : x; })();
+    const r = await sb.from("content_ideer").insert({ kode: kode, titel: titel || "Idé fra Ida", type: "Reel", soejle: "", status: "Idé", dato: null, brief: { beskrivelse: t, af: "Ida" } }).select();
+    if (r.error || !r.data || !r.data.length) return false;
+    return "Lagt i " + venterKundeNavn(kode) + "s Idébank.";
+  }
   /* ET RUM I BACKSTAGE (21/9): »rum:<id>« → note i rummet (mr_rum_noter) */
   if (k && String(k).indexOf("rum:") === 0) {
     if (!sb) return false;
@@ -70515,6 +70544,6 @@ function bsTodoRet(id) {
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 21. september · 2207</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 21. september · 2208</div>
 </body>
 </html>
