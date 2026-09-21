@@ -1,3 +1,6 @@
+## EN STRUKTUR DER DUR'! (LÅST, Idas klik 21/9 kl. 21.40 »A uden cirklen« + kommentarer kl. 21.50–22.00; LIVE v2214)
+Planlægning › afsnittet »En struktur der dur'!«: tre ugefliser (Uge NN · »Ugentlig contentplanlægning · 1 time«) + månedens røde flise (»Måneden · Månedsplanlægning · 2 timer«). Husets flueben til højre for titlen sættes selv (rødt = holdt); pillen i fuld bredde under teksten viser dag + klokkeslæt, »Vælg dag« åbner husets kalender og lægger mødet i kunde_aftaler (kl. 10.00, ugen 1 t, måneden 2 t). »Tidligere« i sektionslinjen viser de fire forrige uger øverst (dæmpede). De øvrige vaner står under »Sæt også tid af til«. Afvist: cirklen foran, ordet »holdt«, greb 1–4 (fire pladser, tidslinje, kalenderstribe, ringe).
+
 ## POPUPPEN, VERSION 3 (LÅST 21/9 kl. 20.46, Idas kommentarer; LIVE v2213)
 Alle popup-overskrifter i VERSALER, Poppins 24, 2 px spatiering, luft under. Popuppen er altid bredere end høj (560 px på computeren, bundark på telefonen). Ingen etiketter over felterne. Personer som chips med forbogstav i cirkel + »Alle« først (valgt, når ingen er valgt). Dagen som pille med kalender-tegn → husets dato-ark (alle steder, begge flader). To-do: pladsholder »What to do?«, hvem og dag på én række. Afvist: etiketter (OPGAVEN · HVEM · HVORNÅR), høje popups, rødt hoved/ramme.
 
