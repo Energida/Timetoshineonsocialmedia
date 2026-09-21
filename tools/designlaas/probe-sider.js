@@ -189,6 +189,7 @@ setTimeout(async function () {
         });
         if (over === null || under === null) return;
         var gOver = Math.round(lr.top - over), gUnder = Math.round(under - lr.bottom);
+        if (overEl.classList && (overEl.classList.contains("hf-hero") || overEl.classList.contains("mb-baand"))) gOver += 28;   /* baandets bue er luft — etiketten staar 32 fra buen (21/9) */
         if (gOver < 0 || gUnder < 0 || gOver > 120 || gUnder > 120) return;   /* langt fra hinanden: ikke een rytme */
         /* HVAD etiketten ER afgoer, hvad den hoerer til — ikke hvad der tilfaeldigvis staar over den.
            Kun sidens IDENTITETS-etiket (.bs-eye lige under heroen, fx »ENERGIDA« under »Dine rum«)
