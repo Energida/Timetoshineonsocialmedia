@@ -1,3 +1,11 @@
+## INDHOLDSSOEJLERNE GENNEM SAMME MOELLE SOM B2B (Idas klik 22/9 aften; LIVE v2246)
+Ida: »kunne du ikke køre denne del gennem samme test som hele b2b lige har været igennem? synes det team var gode«. De fem bud blev tegnet i selen med Hinges Hus' egne ord og MAALT paa 1440 + 390 fra Hans' stol. Dom: artifact VVvv2Mwx4LjzzdunyLV4bJ · bygget: 9JxfmANseyNNFkQtMwDynd.
+**MAALT (1A · Produkt, 1440):** bud 1 Opslagsvaerket 273 ord / 17 versaler / 2,2 skaerme paa 390 · bud 2 Fire spoergsmaal 247 / 15 / 2,1 · bud 3 Dine egne foerst **59 ord** / 7 / 1,0 men TOM · bud 4 Goer det til dit eget 190 / 11 / **13 fliser + 18 knapper** · bud 5 Fra byggesten til content 148 / 11 / 1,6. Ingen sejler vandret paa 390.
+**OBS: siden var allerede bygget og live** (IS_TIL = true) med Idas kommentarer fra 22/9 formiddag — buddene fra natten var forbi. Holdets to rettelser blev derfor bygget oven paa den rigtige side:
+1. **Husets idéer folder sammen bag een graa knap (»Se husets idéer · n«), NAAR kunden selv har skrevet noget** — og staar AABNE, naar der ingenting er, for saa ER de den tomme rubriks opgave (greb 1, v2238). `IS_HUS_AABEN` + `isHusSkift()`; med egne staar kundens liste i FULD bredde (`.is-1`), uden egne bliver det to spalter som foer.
+2. **Man skal kunne se, hvad der er ens eget:** kundens egne i SORT m. skraldespanden, husets forslag i GRAAT m. plusset. Foer saa de to lister ens ud, og efter en uge kunne kunden ikke se, hvad hun selv havde valgt.
+**Forkastet af holdet:** husets hooks som forslag i briefen (15/9 staar) · en femte chip »Alle søjler« · at flytte De 4 byggesten herind · tal paa soejle-chippen · at lade siden foreslaa idéer ud fra kundens egne ord.
+
 ## BESKEDEN OM DETAIL-UDGAVEN ER VAEK — OG VAERKTOEJSKASSEN AABNER FOR ALLE (Ida 22/9 kl. 15.06; LIVE v2245)
 Ida paa artifact-kommentaren: **»Denne tekst skal ikke med nogle steder!«** om beskeden »Værktøjskassen er ikke med endnu … kan lægges til. Skriv en besked, hvis vi skal have den med.«
 Teksten fandtes kun for at sige nej til en kunde — og den modsagde hendes egen nyere regel fra samme dag: **Vaerktoejskassen staar i menuen for ALLE, og fluebenet »vaerktoej« gaelder KUN lektionerne, aldrig doeren til Google Drive · De 4 byggesten · Hashtagbanken.** En doer i menuen, der kun aabner et nej, er en blindgyde.
