@@ -36,7 +36,7 @@ function maal(trin){
     if(cs.textTransform==="uppercase"&&parseFloat(cs.fontSize)<=12.5&&tag!=="BUTTON"&&e.children.length<=2&&txt(e)&&!e.closest("button,.brief-raketkort,.brief-dbog-hoved,.bss-top,.pf-kort")&&!/mangler/i.test(txt(e))) laeg("versal","fs"+Math.round(parseFloat(cs.fontSize)*10)/10+" ls"+Math.round(parseFloat(cs.letterSpacing)*10)/10+" col"+rgb(cs.color),e,trin);
     if(/(^|\s)(sk-q|pf-flise|pf-kf|fb-boks|brief-dbog-flise|klip-kort)(\s|$)/.test(cl)&&!/\bpf-kort\b/.test(cl)&&r.width>300&&!e.parentElement.closest(".sk-q:not(:has(#briefKlipHolder))")&&!e.querySelector("#briefKlipHolder, #briefKlip1")) laeg("flise","rad"+rad+" bd"+px(cs.borderTopWidth)+" sk"+(cs.boxShadow==="none"?"0":"1")+" bg"+rgb(cs.backgroundColor),e,trin);
     if(tag==="TEXTAREA"&&synlig(e)&&!/display:\s*none/.test(e.getAttribute("style")||"")&&!e.classList.contains("sendfelt-felt")&&!e.closest(".kk-laast")) laeg("felt","rad"+rad+" bd"+px(cs.borderTopWidth)+"/"+rgb(cs.borderTopColor)+" fs"+Math.round(parseFloat(cs.fontSize)),e,trin);
-    if(/\b(brief-raketkort|brief-dbog-hoved)\b/.test(cl)) laeg("bjaelke","rad"+rad+" h"+h2(h)+" bg"+rgb(cs.backgroundColor),e,trin);
+    if(/\b(brief-raketkort|brief-dbog-hoved)\b/.test(cl)&&!/\bbrief-ide-hoved-titel\b/.test(cl)) laeg("bjaelke","rad"+rad+" h"+h2(h)+" bg"+rgb(cs.backgroundColor),e,trin);   /* Kort fortalt-flisen vokser med teksten (22/9) og er ikke en bjaelke */
   });
 }
 var SIDSTE="start";   /* vagten (18/9): naar proben aldrig naar i maal, skal loggen sige HVOR den stod — ikke bare »ingen maaling« */
@@ -77,7 +77,7 @@ setTimeout(async function(){ try {
     SIDSTE="brief-former maalt";
     /* VEJEN TILBAGE FRA EN SKRIVESIDE ER OEJET VED TITLEN (v2089; Ida 18/9 kl. 14.50 fjernede en uoensket pille): oejet skal vaere synligt paa skrivesiderne, og ingen »Tilbage til forsiden«-pille */
     try { BRIEF_SIDE_AKTIV=1; BRIEF_TRIN_AKTIV=0; briefMbVis("skriv"); await vent(200);
-      var oeje=document.querySelector(".bt-oeje"); if(!oeje||!synlig(oeje)) FUND.push("OEJET (Briefoversigten) mangler paa skrivesiden (det bor i baandet fra 18/9 kl. 14.28)");
+      var oeje=document.querySelector(".bt-oeje"); if(!oeje||!synlig(oeje)) FUND.push("OEJET (Briefoversigten) mangler paa skrivesiden (i baandet 18/9, i titelraekken over den roede flise fra 22/9)");
       var pille=[].find.call(document.querySelectorAll("#briefWrap button"),function(b){return /tilbage til forsiden/i.test(b.innerText||"")&&synlig(b)}); if(pille) FUND.push("PILLE »Tilbage til forsiden« staar paa skrivesiden — den er fjernet (Ida 18/9 kl. 14.50)"); } catch(e){ FUND.push("OEJE-proben fejlede: "+(e&&e.message)); }
     SIDSTE="oeje maalt";
   } catch(e){ FUND.push("SYNK-proben fejlede: "+(e&&e.message)); }
