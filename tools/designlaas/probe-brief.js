@@ -59,12 +59,13 @@ setTimeout(async function(){ try {
   /* SYNK-PORTEN (Ida 18/9 kl. 12.31: »den synkroniserer ikke automatisk naar jeg til/fravaelger eller aendrer i hooket??«): resultatet maales, ikke mekanikken —
      vaelg et andet hook paa Fang dem → forsiden viser det · fravaelg → forsiden siger »Mangler« (Ida 18/9 kl. 15.10), og klip 1 baerer ikke det gamle · ret ordlyden → forsiden foelger. */
   try {
-    var hookPaaForsiden=function(){ var f=document.querySelector("#briefForside .pf-kf .pf-felt span:last-child"); return f?(f.innerText||"").replace(/\s+/g," ").trim():"(ingen hook-flise)"; };
+    /* FORSIDEN ER EN PRODUKTIONSSEDDEL (22/9): feltet er afloest af linjen »ordet: vaerdien« — .pf-felt/.pf-ph findes ikke mere paa forsiden */
+    var hookPaaForsiden=function(){ var f=document.querySelector("#briefForside .pf-kf .pf-v"); return f?(f.innerText||"").replace(/\s+/g," ").trim():"(ingen hook-flise)"; };
     BRIEF_SIDE_AKTIV=1; BRIEF_TRIN_AKTIV=0; briefMbVis("skriv"); await vent(150);
     briefForslagVaelg("hookTekst",1); await vent(150); briefMbVis("forside"); await vent(200);
     var h1=hookPaaForsiden(); if(h1.indexOf("Min kollega vælger altid det modsatte af mig")<0) FUND.push("SYNK: forsiden viser ikke det valgte hook — staar: "+h1.slice(0,60));
     BRIEF_SIDE_AKTIV=1; briefMbVis("skriv"); await vent(150); briefForslagVaelg("hookTekst",1); await vent(150); briefMbVis("forside"); await vent(200);
-    var h0=hookPaaForsiden(); var hPh=document.querySelector("#briefForside .pf-kf .pf-felt .pf-ph"); if(h0.indexOf("Mangler")<0 && !hPh) FUND.push("SYNK: hooket er fravalgt, men forsiden viser stadig: "+h0.slice(0,60));
+    var h0=hookPaaForsiden(); var hPh=document.querySelector("#briefForside .pf-kf .pf-mangler"); if(h0.indexOf("Mangler")<0 && !hPh) FUND.push("SYNK: hooket er fravalgt, men forsiden viser stadig: "+h0.slice(0,60));
     var k1=document.querySelectorAll("#briefForside .pf-kf")[1]; var k1t=k1?(k1.innerText||""):""; if(/modsatte af mig|farver — og det er derfor/.test(k1t)) FUND.push("SYNK: klip 1 baerer det fravalgte hook paa forsiden");
     BRIEF_SIDE_AKTIV=1; briefMbVis("skriv"); await vent(150); var f0=document.getElementById("bf_hookTekst_f0"); if(f0){ f0.value="Nyt hook skrevet i selen"; briefForslagLaes("hookTekst"); briefForslagVaelg("hookTekst",0); await vent(150); briefMbVis("forside"); await vent(200); var h2=hookPaaForsiden(); if(h2.indexOf("Nyt hook skrevet i selen")<0) FUND.push("SYNK: hooket blev rettet, men forsiden viser: "+h2.slice(0,60)); }
     SIDSTE="synk maalt";

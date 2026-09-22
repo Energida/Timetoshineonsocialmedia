@@ -1,3 +1,12 @@
+## BRIEFOVERSIGTEN ER EN PRODUKTIONSSEDDEL (Idas klik 22/9; LIVE v2244)
+Ida: »det her er det sværeste i hele systemet — jeg har virkelig brug for hjælp«. Hun bad om hjaelp i stedet for flere bud, saa der blev truffet et valg og vist et FOER/EFTER paa den samme brief (artifact XMMTnoBeStcBa9tHmW8fVb).
+**MAALT paa en brief med to klip:** 14 graa versaler om 3 felter · 4 fyldte roede cirkler · 2 »Mangler« ude i hoejre kant — fire lag etiketter over hinanden i samme graa versal (SCENE 1 · KLIP 1 · DET, MAN SER I KLIPPET · MANGLER).
+**Princippet:** forsiden er det, man skal PRODUCERE (16/9) — man staar i butikken med telefonen og skal filme. Feltnavne i versaler, lysblaa flader og roede cirkler er systemets egne ord om sine egne felter; de hjaelper ikke med at filme.
+**Formen nu:** flisen baerer sit navn (HOOK · KLIP 1 · KLIP 2 · CTA I VIDEOEN) · een haarfin streg · og hvert felt er EEN LINJE: **ordet i graat foran, vaerdien i sort efter** (»Det, man ser i klippet: Tre pander stilles op paa bordet«). Replikker staar i kursiv m. »«. Ingen flade, intet tegn. »Mangler« staar i roedt lige efter det, der mangler. Scene-etiketten er ude — raekkefoelgen siger det selv. Kroppen er EEN spalte (`.pf-krop:has(.pf-linje)`), fordi to spalter hoerte til de lysblaa felter.
+**EFTER: 4 versaler · 0 lysblaa felter · 0 roede cirkler · 0 felter fjernet fra briefen.**
+**VAELTER — men KUN paa forsiden:** 15/9 (feltfladen #F0F5F8) og 18/9 (tegnet inde i feltet, ordet som graa versal over). **Skrivesiderne er uroerte**: den laaste 6a-form med det lysblaa felt og den fyldte roede cirkel staar praecis som foer — og dermed betyder blaat igen »her kan du skrive«.
+**Porten fulgte med:** `probe-brief.js` laeste hooket paa forsiden gennem `.pf-felt span:last-child` og `.pf-ph`, som ikke findes mere — den laeser nu `.pf-v` og `.pf-mangler`.
+
 ## GREB 10: »UGEN ER I HUS« — HUSETS ENE ROS (Idas klik 22/9 paa bud 1 af fem; LIVE v2243)
 Der var ingen steder i appen, hvor en kunde kunne se sig selv lykkes over tid — kun tal, der maalte, om de var bagud.
 **Formen:** husets flise lige under den roede paa dagslisten, begge flader — etiket »UGEN ER I HUS« · een haarfin streg · »3 af 3 opslag planlagt« (Poppins 18) · »4 uger i traek« i graat.
