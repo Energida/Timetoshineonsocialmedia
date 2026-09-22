@@ -1,3 +1,12 @@
+## GREB 3 + 4: SPOERGSMAALET STAAR SOM OVERSKRIFT · HOEJST EEN ROED TING I FAKTA-BOKSEN (Idas klik 22/9; LIVE v2239)
+**GREB 3 — briefens felt er den laaste 6a-form (15/9): etiket i graa versal · EEN haarfin streg · spoergsmaalet i Poppins 18 · feltet som sin egen ramme.**
+Spoergsmaalet bliver staaende, mens man skriver. Guiden er tilbage i feltet som pladsholder, og de roede »?«-ringe (`.sk-guide`) er skjult.
+**DET VAELTER 21/9 kl. 15.30** (Idas egne ord: »versal teksten fjernes, skillelinjen fjernes, der hvor der står Hvad er ideen skal der stå Idéen, spørgsmålet som placeholder, guiden bag rødt spørgsmålstegn i højre øvre hjørne«). Konflikten blev vist som to former ved siden af hinanden (artifact PY5owQHEoqqyiqffNS19sP), og **Ida valgte bud B** — spoergsmaalet som overskrift. Begrundelsen: en tekst, der forsvinder ved det foerste bogstav, er det eneste sted i huset, hvor fladen holder op med at sige, hvad den spoerger om; og Hans skriver over flere dage.
+Motor: `briefEtiketterTegn` saetter `.med-spm` med `<span class="sk-eti">` + `<span class="sk-spm">`; CSS i bf3-blokken. Porten: BRIEF gik fra 83 til 87 ens elementer (fire nye graa versaler).
+**LAEREN:** naar et greb vaelter noget, Ida selv har bedt om med sine egne ord, bygges det ALDRIG paa klikket alene — hendes ord citeres, de to former vises ved siden af hinanden, og hun vaelger.
+
+**GREB 4 — kun den FOERSTE raekke, der mangler, er roed i fakta-boksen; resten er graa.** Fire roede MANGLER paa een gang (Postes · Platform · Hvem laver · Lyd) gjorde det umuligt at se, hvad der var naeste skridt. `rowsFarvet` saetter `.fb-naeste` paa den foerste `.fb-v.tom`; `html body .fb-v.tom` er nu `--gray3`, og `.fb-v.tom.fb-naeste` er roed. Foelger husets egne to regler: hoejst EEN roed ting pr. kort (22/8) og roedt er ALTID naeste skridt (20/9). **Ikke bygget:** tallet »4 ting mangler« oeverst i boksen — boksen har ingen overskrift at haenge det paa, og en ny ville vaere et element uden klik.
+
 ## GREB 1 + 8 + 2: EN TOM RUBRIK ER EN OPGAVE · EEN ARBEJDSBREDDE (Idas klik 22/9 kl. ~16; LIVE v2238)
 **Designkonkurrencen** (rapport: artifact GrLS8gMKTKJfmBKQdAUTtN, ti greb). Idas klik: alle fire runder, i anbefalingens raekkefoelge. Foerste runde bygget:
 
