@@ -56,7 +56,8 @@ setTimeout(async function () {
       [].forEach.call(r.querySelectorAll("input, textarea"), function (i) { var ph = i.placeholder || ""; if (/skriv/i.test(ph)) F(tilstand + ": pladsholder med ordet skriv: " + ph); });
       if (!r.querySelector('input[placeholder^="Tilføj ny aktivitet"]')) F(tilstand + ": sendfeltet »Tilføj ny aktivitet…« mangler");
       if (!r.querySelector('input[placeholder^="Tilføj to-do"]')) F(tilstand + ": sendfeltet »Tilføj to-do…« mangler");
-      if (!/Gå til to-do/.test(tekst)) F(tilstand + ": knappen »Gå til to-do« mangler");
+      /* GREB 1 (Idas klik 22/9): »Gå til to-do« staar kun, naar der ER to-dos at gaa til — en tom liste baerer i stedet spoergsmaalet og den graa knap. */
+      if (tilstand === "fuld" && !/Gå til to-do/.test(tekst)) F(tilstand + ": knappen »Gå til to-do« mangler");
       /* 4) DAGEN: syv prikker, hele dagen, den roede flise oeverst naar der er noget */
       /* PILENE I OVERSKRIFTEN (Idas klik 21/9 kl. 13.55, bud 2): ingen prikker — to pile ved dagens navn */
       var pil2 = [].filter.call(r.querySelectorAll(".hjem-dag-hoved .hjem-pil"), function (e) { return e.getClientRects().length; }); var vilPile = innerWidth >= 900 ? 2 : 0;   /* telefonen swiper (Ida 21/9 kl. 17.40) */
@@ -71,12 +72,20 @@ setTimeout(async function () {
         if (!synlig(r.querySelector("#aftaleListHome .aft-rk"))) F("fuld: aftalen staar ikke som flise");
         if (!synlig(r.querySelector("#kundeOpgaverKort .opg-rk"))) F("fuld: to-do'en staar ikke som flise");
       } else {
-        if (!synlig(r.querySelector("#aftaleListHome .aft-tom"))) F("tom: »Ingen kommende aktiviteter.« mangler som flise");
-        if (!/Ingen to-dos/.test(tekst) && !synlig(r.querySelector("#kundeOpgaverKort .opg-rk"))) F("tom: To-do siger hverken »Ingen to-dos.« eller viser en raekke");
+        /* GREB 1 (Idas klik 22/9): EN TOM RUBRIK ER EN OPGAVE. Den siger ikke »Ingen …« mere —
+           den stiller ET spoergsmaal og baerer EEN graa knap, i husets ene form (.tom-kort). */
+        var tomAkt = r.querySelector("#aftaleListHome .tom-kort");
+        if (!synlig(tomAkt)) F("tom: Kommende aktiviteter mangler den tomme rubrik som flise");
+        else if (!synlig(tomAkt.querySelector(".tom-spm")) || !synlig(tomAkt.querySelector(".tom-knap"))) F("tom: den tomme rubrik i Kommende aktiviteter mangler spoergsmaalet eller knappen");
+        var tomTodo = r.querySelector("#kundeOpgaverKort .tom-kort");
+        if (!synlig(tomTodo) && !synlig(r.querySelector("#kundeOpgaverKort .opg-rk"))) F("tom: To-do viser hverken den tomme rubrik eller en raekke");
+        else if (synlig(tomTodo) && (!synlig(tomTodo.querySelector(".tom-spm")) || !synlig(tomTodo.querySelector(".tom-knap")))) F("tom: den tomme rubrik i To-do mangler spoergsmaalet eller knappen");
+        var tomOps = r.querySelector("#kommendeOpslagKort .tom-kort");
+        if (innerWidth >= 900 && !synlig(tomOps)) F("tom: Kommende opslag mangler den tomme rubrik som flise");
       }
       /* 4b) SAMME BREDDE: aftale-fliser, to-do-fliser og sendfelter i samme spalte er lige brede (16/9-reglen; Idas kommentar 20/9 kl. 21.55) */
       /* paa computeren staar aktiviteterne i venstre spalte (21/9) — bredden maales pr. spalte: aktiviteter mod dagen, to-do mod opslagene */
-      var bredder = [].map.call(r.querySelectorAll(tlf ? "#aftaleListHome .aft-rk, #aftaleListHome .aft-tom, #kundeOpgaverKort .opg-rk, #kundeOpgaverKort .opg-tom, #kundeOpgaverKort .hf-gaa" : "#kommendeOpslagKort .kop-rk, #kundeOpgaverKort .opg-rk, #kundeOpgaverKort .opg-tom, #kundeOpgaverKort .hf-gaa"), function (e) { return synlig(e) ? Math.round(e.getBoundingClientRect().width) : null; }).filter(function (x) { return x !== null; });
+      var bredder = [].map.call(r.querySelectorAll(tlf ? "#aftaleListHome .aft-rk, #aftaleListHome .tom-kort, #kundeOpgaverKort .opg-rk, #kundeOpgaverKort .tom-kort, #kundeOpgaverKort .hf-gaa" : "#kommendeOpslagKort .kop-rk, #kommendeOpslagKort .tom-kort, #kundeOpgaverKort .opg-rk, #kundeOpgaverKort .tom-kort, #kundeOpgaverKort .hf-gaa"), function (e) { return synlig(e) ? Math.round(e.getBoundingClientRect().width) : null; }).filter(function (x) { return x !== null; });
       if (bredder.length && Math.max.apply(null, bredder) - Math.min.apply(null, bredder) > 2) F(tilstand + ": fliserne i Kommende aktiviteter og To-do er ikke lige brede (" + Math.min.apply(null, bredder) + "–" + Math.max.apply(null, bredder) + " px)");
       /* 4d) UX-POLITIET: ingen lange streger i kundens linjer, Poppins aldrig fed, ingen kant paa fliser (15/9) */
       if (/\u2014/.test(tekst)) F(tilstand + ": en lang streg (\u2014) staar i Hjems tekst");
