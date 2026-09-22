@@ -1,3 +1,13 @@
+## BESKEDEN OM DETAIL-UDGAVEN ER VAEK — OG VAERKTOEJSKASSEN AABNER FOR ALLE (Ida 22/9 kl. 15.06; LIVE v2245)
+Ida paa artifact-kommentaren: **»Denne tekst skal ikke med nogle steder!«** om beskeden »Værktøjskassen er ikke med endnu … kan lægges til. Skriv en besked, hvis vi skal have den med.«
+Teksten fandtes kun for at sige nej til en kunde — og den modsagde hendes egen nyere regel fra samme dag: **Vaerktoejskassen staar i menuen for ALLE, og fluebenet »vaerktoej« gaelder KUN lektionerne, aldrig doeren til Google Drive · De 4 byggesten · Hashtagbanken.** En doer i menuen, der kun aabner et nej, er en blindgyde.
+`vkPermanentLaast()`-gaten i `showTab(6)` er ude; `vkStandardBesked()` er arkiveret (kaldes ikke). Maaneds-laasen `igyVkBesked()` (»Vaerktoejskassen aabner efter din foerste maaned«) er uroert — den handler om forloebet, ikke om et produkt.
+
+**TRE FEJL, PORTEN FANDT, DA SIDEN BLEV SYNLIG FOR DEN:**
+1. **Stregstubben:** `.post-card .post-title` bar flisens ene streg, men titlen er flex-barn — stregen var 118 px, ikke fuld bredde. Stregen er flyttet til `.post-hoved`, der nu ER etiketten (10 px graa versal), saa flisen er etiket · EEN streg i fuld bredde · indhold.
+2. **»Til forløbet« var 92 px** paa telefonen — nu husets graa knap i fuld bredde m. 44 px trykfelt (`::before`), 40 px tegning.
+3. **Porten maalte en DAEKKET side:** med drejebogens popup aaben ramte `elementFromPoint` sloeret, saa hver knap paa siden bagved blev meldt for lille — `probe-sider.js` springer nu knapper bag en aaben `.modal-back` over. Og etiket-taelleren stod som en egenskab PAA flisen og blev aldrig nulstillet, saa den samme flise blev taelt igen paa naeste side og meldt som dobbeltlinje — den er nu en `Map` pr. maaling.
+
 ## BRIEFOVERSIGTEN ER EN PRODUKTIONSSEDDEL (Idas klik 22/9; LIVE v2244)
 Ida: »det her er det sværeste i hele systemet — jeg har virkelig brug for hjælp«. Hun bad om hjaelp i stedet for flere bud, saa der blev truffet et valg og vist et FOER/EFTER paa den samme brief (artifact XMMTnoBeStcBa9tHmW8fVb).
 **MAALT paa en brief med to klip:** 14 graa versaler om 3 felter · 4 fyldte roede cirkler · 2 »Mangler« ude i hoejre kant — fire lag etiketter over hinanden i samme graa versal (SCENE 1 · KLIP 1 · DET, MAN SER I KLIPPET · MANGLER).

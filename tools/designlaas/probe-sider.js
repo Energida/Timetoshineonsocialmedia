@@ -30,6 +30,9 @@ const FLISER = ".ws-card,.kort,.card,.hf-kort,.bsam-flise,.idea-kort,.post-card,
 function siderRod() { var lv = document.getElementById("lekVis"); if (lv && lv.classList.contains("on")) return lv; return document.querySelector(".screen.active") || document.body; }
 function siderStreger(r) {
   var ud = [];
+  /* TAELLEREN ER PR. MAALING (22/9): den stod som en egenskab PAA flisen og blev aldrig nulstillet, saa den samme flise —
+     fx Vaerktoejskassens kort, der ligger bag drejebogens popup — blev taelt igen paa naeste side og meldt som dobbeltlinje. */
+  var taelt = new Map();
   r.querySelectorAll("*").forEach(function (e) {
     if (/^(INPUT|TEXTAREA|BUTTON|SELECT|svg|path|line|circle)$/i.test(e.tagName)) return;
     var b = e.getBoundingClientRect(); if (b.width < 40) return;
@@ -47,7 +50,7 @@ function siderStreger(r) {
        sin ene streg under sig — det er reglen, ikke fejlen. 12/9-forbuddet gjaldt dobbeltlinjer og doere. */
     /* 15/9: ringflisens etiket staar UNDER ringen med stregen OVER sig (FLISEN: »ringe under m. etiket 14 px under«) — den ene streg maa vende begge veje, men aldrig begge. */
     var erEtiket = cs.textTransform === "uppercase" && parseFloat(cs.fontSize) <= 11.5 && ((bb && !bt) || (bt && !bb));
-    if (erEtiket) { var etiketter = fl.__etiketStreger = (fl.__etiketStreger || 0) + 1; if (etiketter === 1) return; }
+    if (erEtiket) { var etiketter = (taelt.get(fl) || 0) + 1; taelt.set(fl, etiketter); if (etiketter === 1) return; }
     ud.push((fl.id || fl.className.toString().split(" ")[0]) + ">" + (e.id || e.className.toString().split(" ")[0] || e.tagName));
   });
   return ud;
@@ -119,7 +122,11 @@ setTimeout(async function () {
         if (/rgba\(0, 0, 0, 0\)|transparent/.test(ce.backgroundColor) && (ce.borderTopStyle === "none" || parseFloat(ce.borderTopWidth) === 0)) return;   /* usynlig flade: intet at maale */
         if (ordL === 0 ? Math.abs(q.width - q.height) > 1.5 : q.height - q.width > 1.5) (function (m) { console.log("SELE SIDER FEJL " + m); fejl++; })("OVAL " + navn + " · " + e.tagName + "[" + String(e.className).split(" ")[0] + "] " + Math.round(q.width) + "x" + Math.round(q.height) + " — en cirkel skal vaere rund");
       });
+      /* EN DAEKKET SIDE ER IKKE DET, KUNDEN SER (22/9): er der en aaben popup (.modal-back.on), ligger siden bagved under sloeret,
+         og elementFromPoint rammer sloeret i stedet for knappen — hver eneste knap paa siden ville blive meldt som for lille. */
+      var aabenModal = [].some.call(document.querySelectorAll(".modal-back"), function (m) { var mq = m.getBoundingClientRect(); return mq.width > 0 && mq.height > 0 && getComputedStyle(m).display !== "none"; });
       kn.forEach(function (b) {
+        if (aabenModal && !b.closest(".modal-back")) return;
         if (!b.isConnected) return;   /* elementet blev tegnet om, efter listen blev samlet (MAALT 19/9: Idébankens chips) — det nye element maales i naeste runde */
         var q = b.getBoundingClientRect(); if (q.height >= 44) return;
         if (innerWidth > 760) {   /* computeren: 44 er telefonens maal. Husets egne computer-maal er 28-34 px (karrusel-pil 30, vaerktoejer 32-34, plus 33), og roede ord som knapper er tilladt dér (13/9). Kun det, der er mindre end 28 px OG ikke et rent ord, er en fejl. */
