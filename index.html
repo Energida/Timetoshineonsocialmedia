@@ -9633,6 +9633,12 @@ html body.mb .is-hus-knap { width:auto; margin:4px 0 0; }
 @media (max-width:899px) { html body.mb .is-hus-knap { width:100%; } }
 html body.mb .is-hus > span { color:var(--gray2); }
 html body.mb .is-egen > span { color:var(--black); }
+
+/* ===== ENERGIDA STUDIO: PRODUKTERNE PAA FORSIDEN (Idas klik 22/9) ===== */
+.bs3-venter { color:var(--red); }
+.bs3-modulfl.nu { box-shadow:var(--mb-skygge), inset 0 0 0 1px var(--red); }
+.bs3-modulfl .bs3-n { font-size:15px; }
+@media (max-width:899px) { .bs3-prodgrid { grid-template-columns:1fr; } }
 </style>
 <script type="text/javascript">(function(){var h=(location.hostname||"").toLowerCase();var skip=h.split(".")[0]==="ole"||h.indexOf("admin")!==-1||h.indexOf("crm")!==-1||h.indexOf("dashboard")!==-1;document.documentElement.classList.add("b2b-foto");/* LOADINGSIDEN = MARKBILLEDET, ogsaa i Backstage (Ida 21/9 kl. 10.30: »Min loading i admin skal også være marken«; vaelter 15/9's »kun kundeappen«) */if(!skip){window.$crisp=[];window.CRISP_WEBSITE_ID="cf531a0a-b805-4172-bfc1-e2c1c1f7bcb1";var d=document,s=d.createElement("script");s.src="https://client.crisp.chat/l.js";s.async=1;d.getElementsByTagName("head")[0].appendChild(s);window.$crisp.push(["do","chat:hide"]);/* ingen chat-boble paa login-siderne (Ida 28/7) — vises igen i enterApp */}})();</script>
 
@@ -51534,7 +51540,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2246";
+const APP_VERSION = "2247";
 let NY_VERSION_KLAR = false;
 let NY_VERSION_AFVIST = false;
 function nyVersionSkjul() {
@@ -71429,6 +71435,35 @@ function klipAnsvarlig() { return "Ida"; }
 function bf3Laengde(o) { try { const t = String(o.manus_tekst || o.manus || ""); const ord = t.trim() ? t.trim().split(/\s+/).length : 0; if (!ord) return ""; const min = Math.max(1, Math.round(ord / 140)); return "ca. " + min + " min."; } catch (e) { return ""; } }
 let BF3_KLIP_FILTER = "";
 function bf3KlipFilter(k) { BF3_KLIP_FILTER = BF3_KLIP_FILTER === k ? "" : k; renderKlipperum(); }
+/* PRODUKTERNE PAA FORSIDEN AF ENERGIDA STUDIO (Idas klik 22/9: »Ja — forsiden som produktfliser«).
+   Vaelter 21/9-noten »ingen produkt-chips oeverst« — den faldt, fordi chipsene filtrerede INGENTING.
+   Her er produktet en flise, der filtrerer modullisten: produkt -> modul -> lektion.
+   Data findes allerede (produkter / lektioner / produkt_lektioner); prodHent() henter kun,
+   naar #prodPanel staar paa siden, saa Studiet henter selv — een gang, aldrig i ring. */
+let BF3_PROD_VALGT = "";
+function bf3ProdVaelg(id) { BF3_PROD_VALGT = BF3_PROD_VALGT === id ? "" : id; KLIP_MODUL_CHIP = null; renderKlipperum(); }
+function bf3ProdHent() {
+  if (window.__BF3_PROD_HENT) return; window.__BF3_PROD_HENT = 1;
+  if (typeof sb === "undefined" || !sb) return;
+  try {
+    Promise.all([
+      sb.from("produkter").select("id,navn,sortering").order("sortering"),
+      sb.from("lektioner").select("id,modul,titel,sortering").order("sortering"),
+      sb.from("produkt_lektioner").select("produkt_id,lektion_id")
+    ]).then(function (r) {
+      if (r[0] && r[0].data) PROD_LISTE = r[0].data;
+      if (r[1] && r[1].data) PROD_LEK = r[1].data;
+      if (r[2] && r[2].data) PROD_KOBL = new Set(r[2].data.map(function (x) { return x.produkt_id + "|" + x.lektion_id; }));
+      try { renderKlipperum(); } catch (e) {}
+    }).catch(function () {});
+  } catch (e) {}
+}
+/* modulerne i et produkt — lektioner og videoer deler modulnavnet (»Modul 10«), saa gruppen er faelles */
+function bf3ProdModuler(pid) {
+  const ud = new Set();
+  try { (PROD_LEK || []).forEach(function (l) { if (PROD_KOBL.has(pid + "|" + l.id)) ud.add(klipModulGruppe(l.modul)); }); } catch (e) {}
+  return ud;
+}
 function klipBud6Tegn(el) {
   document.body.classList.add("klip-bud6");
   if (!window.__MODUL_INFO_HENTET && typeof modulerHent === "function") { window.__MODUL_INFO_HENTET = 1; try { modulerHent().then(function () { try { renderKlipperum(); } catch (e) {} }); } catch (e) {} }
@@ -71438,27 +71473,50 @@ function klipBud6Tegn(el) {
   (MODUL_EKSTRA || []).forEach(function (k) { if (k && !grupper[k]) grupper[k] = []; });
   const moduler = Object.keys(grupper).sort(function (a, b) { return klipModulSortNr(a) - klipModulSortNr(b) || a.localeCompare(b, "da"); });
   const venterPaaIda = function (o) { const st = klipStatusNorm(o.status); return st === "Klippet" || st === "Manus ikke godkendt"; };
-  if (!KLIP_MODUL_CHIP || !grupper[KLIP_MODUL_CHIP]) KLIP_MODUL_CHIP = moduler.find(function (k) { return grupper[k].some(venterPaaIda); }) || moduler[0] || null;
+  if (!PROD_LISTE.length) bf3ProdHent();
+  if (BF3_PROD_VALGT && !PROD_LISTE.some(function (p) { return p.id === BF3_PROD_VALGT; })) BF3_PROD_VALGT = "";
+  const prodMod = BF3_PROD_VALGT ? bf3ProdModuler(BF3_PROD_VALGT) : null;
+  const modulerVis = prodMod ? moduler.filter(function (k) { return prodMod.has(k); }) : moduler;
+  if (!KLIP_MODUL_CHIP || !grupper[KLIP_MODUL_CHIP] || modulerVis.indexOf(KLIP_MODUL_CHIP) < 0) KLIP_MODUL_CHIP = modulerVis.find(function (k) { return grupper[k].some(venterPaaIda); }) || modulerVis[0] || null;
   const navnAf = function (k) { let t = ""; try { const nr = (String(k).match(/(\d+)/) || [])[1]; const inf = nr != null ? modulInfoFor(nr) : null; t = (inf && inf.titel) || modulNavnVis(k) || ""; } catch (e) {} return t || k; };
   const nrAf = function (k) { return (String(k).match(/(\d+)/) || [])[1] || ""; };
   const st = function (o) { return klipStatusNorm(o.status); };
   const nManus = KLIP_OPGAVER.filter(function (o) { return st(o) === "Manus ikke godkendt"; }).length, nOptag = KLIP_OPGAVER.filter(function (o) { return st(o) === "Manus godkendt"; }).length, nKlip = KLIP_OPGAVER.filter(function (o) { return st(o) === "Råfiler klar" || st(o) === "Rettelser"; }).length;
-  const talRk = [[nManus === 1 ? "1 lektion venter på manus" : nManus + " lektioner venter på manus", "manus"], [nOptag + " klar til optagelse", "optag"], [nKlip + " klar til klip", "klip"]];
+  const lekOrd = function (n, efter) { return (n === 1 ? "1 lektion " : n + " lektioner ") + efter; };
+  const talRk = [["Manus", lekOrd(nManus, "venter"), lekOrd(nManus, "venter på manus"), "manus"], ["Optagelse", lekOrd(nOptag, "klar"), lekOrd(nOptag, "klar til optagelse"), "optag"], ["Klip", lekOrd(nKlip, "klar"), lekOrd(nKlip, "klar til klip"), "klip"]];
+  /* DE TRE TAL ER FLISER MED ETIKET OG EEN STREG (Idas klik 22/9) — foer stod tallet helt bart i flisen */
   const tal = tlf
-    ? '<div class="bs3-fl"><div class="bs3-et"><span>Status</span></div>' + talRk.map(function (t) { return '<div class="bs3-linje bs3-klik' + (BF3_KLIP_FILTER === t[1] ? ' on' : '') + '" role="button" tabindex="0" onclick="bf3KlipFilter(\'' + t[1] + '\')">' + esc(t[0]) + '</div>'; }).join('') + '</div>'
-    : '<div class="bs3-grid3">' + talRk.map(function (t) { return bf3Fl(esc(t[0]), "", "bf3KlipFilter('" + t[1] + "')", BF3_KLIP_FILTER === t[1] ? ' data-on="1"' : ''); }).join('') + '</div>';
+    ? '<div class="bs3-fl"><div class="bs3-et"><span>Status</span></div>' + talRk.map(function (t) { return '<div class="bs3-linje bs3-klik' + (BF3_KLIP_FILTER === t[3] ? ' on' : '') + '" role="button" tabindex="0" onclick="bf3KlipFilter(\'' + t[3] + '\')">' + esc(t[2]) + '</div>'; }).join('') + '</div>'
+    : bf3Ver("Status") + '<div class="bs3-grid3">' + talRk.map(function (t) { return bf3Etfl(t[0], esc(t[1]), "", null, ' data-klik="1" role="button" tabindex="0" onclick="bf3KlipFilter(&quot;' + t[3] + '&quot;)"' + (BF3_KLIP_FILTER === t[3] ? ' data-on="1"' : '')); }).join('') + '</div>';
   const filt = function (o) { if (!BF3_KLIP_FILTER) return true; const s = st(o); return BF3_KLIP_FILTER === "manus" ? s === "Manus ikke godkendt" : BF3_KLIP_FILTER === "optag" ? s === "Manus godkendt" : (s === "Råfiler klar" || s === "Rettelser"); };
-  /* INGEN PRODUKT-CHIPS OEVERST (Ida 21/9 kl. 10.34: »Hvad er det lige jeg skal bruge dette rod til«): de filtrerede ingenting. Produkterne bor bag ⋯; »Saadan gaar det« er den graa knap. */
   const produkter = '<div class="bs3-hoejre"><button type="button" class="dbtn mq-tap" onclick="klipVisningSaet(\'data\')">Sådan går det</button></div>';
+  /* PRODUKTFLISEN: etiket = udgivet eller ej · een streg · navnet · modulerne · det roede tal, der venter paa Ida */
+  const prodFl = function (px) {
+    const mods = bf3ProdModuler(px.id);
+    let venter = 0;
+    KLIP_OPGAVER.forEach(function (o) { if (mods.has(klipModulGruppe(o.modul)) && venterPaaIda(o)) venter++; });
+    /* MAALT 22/9: produkt_lektioner er TOM — ingen af de syv produkter ved, hvad de indeholder.
+       Derfor er en tom flise en OPGAVE (v2238-reglen), ikke et filter, der filtrerer ingenting (21/9). */
+    const s2 = mods.size
+      ? (mods.size === 1 ? "1 modul" : mods.size + " moduler") + (venter ? ' \u00b7 <span class="bs3-venter">' + venter + ' venter på dig</span>' : '')
+      : 'Vælg modulerne';
+    let udgivet = false; try { udgivet = PUB_PRODUKTER.has(px.id); } catch (e) {}
+    const fn = mods.size ? 'bf3ProdVaelg(&quot;' + esc(String(px.id)) + '&quot;)' : 'klipVisningSaet(&quot;produkter&quot;)';
+    return bf3Etfl(udgivet ? "Udgivet" : "Ikke udgivet", esc(px.navn), s2, null,
+      ' data-klik="1" role="button" tabindex="0" onclick="' + fn + '"' + (BF3_PROD_VALGT === px.id ? ' data-on="1"' : ''));
+  };
+  const prodHtml = PROD_LISTE.length ? bf3Ver("Produkter") + '<div class="bs3-grid3 bs3-prodgrid">' + PROD_LISTE.map(prodFl).join('') + '</div>' : '';
   if (!BF3_DATA && !window.__BF3_DATA_HENT) { try { bf3DataHent(); } catch (e) {} }   /* tallene i fliserne hentes een gang (bud 1) */
-  const railRk = moduler.map(function (k) { const alleF = grupper[k].length && grupper[k].every(function (o) { return st(o) === "Godkendt"; }); return '<div class="bs3-rail-rk' + (k === KLIP_MODUL_CHIP ? ' nu' : '') + '" role="button" tabindex="0" onclick="klipModulChip(\'' + esc(k).replace(/'/g, "\\'") + '\')"><span class="bs3-cirk-l' + (alleF ? ' set' : '') + '">' + (alleF ? BF3_SVG.tjek : esc(nrAf(k) || "·")) + '</span><span>' + esc(navnAf(k)) + '</span></div>'; }).join('');
-  const rail = tlf ? '<div class="ark-chips i-fladen bs3-chips">' + moduler.map(function (k) { return '<button type="button" class="mq-tap ark-chip' + (k === KLIP_MODUL_CHIP ? ' on' : '') + '" onclick="klipModulChip(\'' + esc(k).replace(/'/g, "\\'") + '\')">' + esc(navnAf(k)) + '</button>'; }).join('') + (KLIP_ER_IDA ? '<button type="button" class="mq-tap ark-chip" onclick="modulNyArk()">+ Nyt modul</button>' : '') + '</div>'
-    : '<div class="bs3-rail">' + bf3Ver("Moduler") + '<div class="bs3-fl bs3-railfl">' + railRk + '</div>' + (KLIP_ER_IDA ? '<button type="button" class="dbtn mq-tap" style="margin-top:10px;" onclick="modulNyArk()">+ Nyt modul</button>' : '') + '</div>';
+  /* MODULLISTEN ER FLISER, IKKE RAEKKER I EEN KASSE — og der staar ingen tal i cirklen (Idas klik 22/9).
+     Fluebenet staar kun, naar HELE modulet er godkendt; ellers ingen tom ring. */
+  const railRk = modulerVis.map(function (k) { const alleF = grupper[k].length && grupper[k].every(function (o) { return st(o) === "Godkendt"; }); const nL = grupper[k].length; return '<div class="bs3-fl bs3-klik bs3-modulfl' + (k === KLIP_MODUL_CHIP ? ' nu' : '') + '" role="button" tabindex="0" onclick="klipModulChip(\'' + esc(k).replace(/'/g, "\\'") + '\')"><div class="bs3-rk"><div class="bs3-t"><div class="bs3-n">' + esc(navnAf(k)) + '</div><div class="bs3-s">' + (nL === 1 ? "1 lektion" : nL + " lektioner") + '</div></div>' + (alleF ? '<span class="bs3-cirk-l set">' + BF3_SVG.tjek + '</span>' : '') + '</div></div>'; }).join('');
+  const rail = tlf ? '<div class="ark-chips i-fladen bs3-chips">' + modulerVis.map(function (k) { return '<button type="button" class="mq-tap ark-chip' + (k === KLIP_MODUL_CHIP ? ' on' : '') + '" onclick="klipModulChip(\'' + esc(k).replace(/'/g, "\\'") + '\')">' + esc(navnAf(k)) + '</button>'; }).join('') + (KLIP_ER_IDA ? '<button type="button" class="mq-tap ark-chip" onclick="modulNyArk()">+ Nyt modul</button>' : '') + '</div>'
+    : '<div class="bs3-rail">' + bf3Ver("Moduler") + railRk + (KLIP_ER_IDA ? '<button type="button" class="dbtn mq-tap" style="margin-top:10px;" onclick="modulNyArk()">+ Nyt modul</button>' : '') + '</div>';
   const liste = (grupper[KLIP_MODUL_CHIP] || []).filter(filt).slice().sort(klipSortCmp);
   const nrK = KLIP_MODUL_CHIP ? nrAf(KLIP_MODUL_CHIP) : "";
   const hoved = KLIP_MODUL_CHIP ? '<div class="bs3-h"><span>' + esc(navnAf(KLIP_MODUL_CHIP)) + '</span>' + (KLIP_ER_IDA && nrK ? '<button type="button" class="bt-blyant kv-modul-blyant" onclick="mrModulRet(\'' + esc(String(parseInt(nrK, 10))) + '\')" title="Ret modulets navn og beskrivelse" aria-label="Ret modulets navn og beskrivelse"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>' : '') + (KLIP_ER_IDA ? '<button type="button" class="bt-blyant kv-modul-blyant" onclick="modulSlet(\'' + esc(KLIP_MODUL_CHIP).replace(/'/g, "\\'") + '\')" title="Slet modulet" aria-label="Slet modulet"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg></button>' : '') + '</div>' : '';
   const fliser = liste.length ? liste.map(function (o) { return '<div class="bs3-fl bs3-klik kv-flise" data-vid="' + esc(String(o.id)) + '" role="button" tabindex="0" onclick="klipBriefAaben(\'' + esc(String(o.id)) + '\')"><div class="bs3-rk"><div class="bs3-t"><div class="bs3-n">' + esc(titelVis(o.titel || "Uden titel")) + '</div><div class="bs3-s">' + esc([klipLinje(o), bf3Laengde(o), bf3LekTal(o)].filter(Boolean).join(" · ")) + '</div></div>' + klipRinge(o) + '</div></div>'; }).join('')
-    : bf3Tom(moduler.length ? (BF3_KLIP_FILTER ? "Ingen lektioner i dette skridt." : "Ingen lektioner i modulet. Tilføj den første i feltet under.") : "Ingen moduler endnu. Opret det første med + Nyt modul.");
+    : bf3Tom(modulerVis.length ? (BF3_KLIP_FILTER ? "Ingen lektioner i dette skridt." : "Ingen lektioner i modulet. Tilføj den første i feltet under.") : (BF3_PROD_VALGT ? "Ingen moduler i produktet endnu." : "Ingen moduler endnu. Opret det første med + Nyt modul."));
   const send = sendFeltHtml({ id: "klip_ny_titel", ph: "Ny lektion" + (KLIP_MODUL_CHIP ? " i " + navnAf(KLIP_MODUL_CHIP) : "") + " …", fn: "klipNy()", aria: "Læg lektionen i Energida Studio", klasse: "bs-sendfelt bs3-send" }) + '<input type="hidden" id="klip_ny_modul" value="' + esc(KLIP_MODUL_CHIP || "") + '"><input type="hidden" id="klip_ny_raafiler" value="">';
   const ideer = '<div class="bs3-afsnit">' + bf3Ver("Idéer til manus") + '</div>' + ((MANUS_IDEER || []).length ? MANUS_IDEER.map(function (r) { return '<div class="bs3-fl bs3-klik" data-slet="manusIdeSlet(\'' + esc(String(r.id)) + '\')" role="button" tabindex="0" onclick="manusIdeRet(\'' + esc(String(r.id)) + '\')"><div class="bs3-rk"><div class="bs3-t"><div class="bs3-n">' + esc(r.t || "") + '</div>' + ((r.kursus || r.dato) ? '<div class="bs3-s">' + esc([r.kursus, r.dato ? dkDatoKort(String(r.dato)) : ""].filter(Boolean).join(" · ")) + '</div>' : '') + '</div>' + (tlf ? '' : '<button type="button" class="bs-skrald bs3-skrald" aria-label="Slet" title="Slet" onclick="event.stopPropagation();manusIdeSlet(\'' + esc(String(r.id)) + '\')">' + BS_SKRALD_SVG + '</button>') + '</div></div>'; }).join('') : bf3Tom("Ingen idéer endnu."))
     + sendFeltHtml({ id: "bf3ManusIde", ph: "Tilføj idé …", fn: "bf3ManusIdeGem()", aria: "Gem idéen", klasse: "bs-sendfelt bs3-send" });
@@ -71466,7 +71524,12 @@ function klipBud6Tegn(el) {
   if (!MANUS_IDEER_HENTET && !window.__BF3_MANUS_HENT && typeof manusIdeHent === "function") { window.__BF3_MANUS_HENT = 1; try { manusIdeHent().then(function () { try { renderKlipperum(); } catch (e) {} }); } catch (e) {} }
   const ht = document.getElementById("klipHeadTgl");
   if (ht) ht.innerHTML = '<button type="button" class="kv-menuknap mq-tap" aria-label="Menu" title="Værktøjer og visninger" onclick="klipMenuSkift()">···</button>';
-  el.innerHTML = '<div class="bs3">' + produkter + tal + (tlf ? rail + hoved + fliser + send + ideer : '<div class="bs3-studio"><div>' + rail + '</div><div>' + hoved + fliser + send + ideer + '</div></div>') + '</div>';
+  /* TO FLADER: paa computeren staar produkterne oeverst (de koster to raekker af bredden).
+     Paa telefonen ville syv fliser skubbe dagens arbejde under folden — dér staar de nederst. */
+  el.innerHTML = '<div class="bs3">' + produkter
+    + (tlf ? tal + rail + hoved + fliser + send + ideer + '<div class="bs3-afsnit">' + prodHtml + '</div>'
+           : prodHtml + tal + '<div class="bs3-studio"><div>' + rail + '</div><div>' + hoved + fliser + send + ideer + '</div></div>')
+    + '</div>';
   try { klipLangTrykLyt(el); } catch (e) {}
   bf3Swipe(el);
   try { sideKlarNaar("klipPageList"); } catch (e) {}
@@ -71966,6 +72029,6 @@ function bsTodoRet(id) {
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 22. september · 2246</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 22. september · 2247</div>
 </body>
 </html>

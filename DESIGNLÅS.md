@@ -1,3 +1,47 @@
+## v2247 — 22. september 2026, aften · ENERGIDA STUDIO: PRODUKTERNE HAR FÅET EN PLADS (Idas klik)
+
+**Idas klik:** »Ja — forsiden som produktfliser (anbefalet)«, på skærmbilleder af det BYGGEDE
+(artifact PifWPfMCB18jgwTzr4wfDV). Dommen over siden: HUkhxG93FpwfdjiASJdpo6.
+
+**MÅLT FØRST: `produkt_lektioner` har NUL rækker.** Syv produkter findes, 53 lektioner findes —
+ingen af dem er koblet sammen. Det var derfor, produktchipsene 21/9 filtrerede ingenting, og
+derfor noten »INGEN PRODUKT-CHIPS OEVERST« blev skrevet i koden. Det var aldrig et
+designproblem; det var tomme data. **Noten fra 21/9 er hermed væltet.**
+
+**Produktflisen** (øverst på computeren, nederst på telefonen):
+etiket »Udgivet« / »Ikke udgivet« · én hårfin streg · navnet · »n moduler · *n venter på dig*« (rødt).
+Et tryk filtrerer modullisten og lektionerne nedenunder til produktets moduler; tryk igen ophæver.
+Produkt og lektion mødes på modulnavnet (`lektioner.modul` = `video_opgaver.modul`).
+
+**En tom produktflise er en OPGAVE, ikke et dødt filter** (v2238-reglen): står der ingen moduler,
+siger flisen »Vælg modulerne« i gråt, og hele flisen fører til koblingssiden
+(`klipVisningSaet('produkter')`). **Rødt er reserveret til det, der venter i produktionen** —
+en opgave, der endnu ikke er sat i gang, er grå.
+
+**Fire låsebrud rettet i samme skive:**
+1. **Ingen tal i cirklerne** i modullisten (6/9-reglen). Fluebenet står kun, når HELE modulet er
+   godkendt; ellers ingen cirkel og ingen tom ring (v2146).
+2. **Modullisten er fliser**, ikke rækker i én kasse (5/9). `.bs3-modulfl`, den valgte med rød
+   inderramme som de øvrige filterfliser.
+3. **De tre statustal har fået etiket og streg** på computeren: MANUS · OPTAGELSE · KLIP,
+   med sektionslinjen »Status« over. Telefonen beholder sin ene flise med tre linjer.
+4. **Produkterne findes overhovedet på siden.**
+
+**TO FLADER:** computeren har produkterne øverst (de koster to rækker af bredden). Telefonen har
+dem NEDERST — syv fliser øverst ville skubbe dagens arbejde under folden; telefonen åbner på
+Status → moduler → lektioner.
+
+**Kode:** `$S/forfra/bf3.js` (bf3-blokken — aldrig direkte i index.html; kør `byg.sh` bagefter).
+`BF3_PROD_VALGT` · `bf3ProdVaelg()` · `bf3ProdHent()` (henter selv, fordi `prodHent()` kræver
+`#prodPanel`) · `bf3ProdModuler(pid)`. CSS: `.bs3-venter`, `.bs3-modulfl`, `.bs3-prodgrid`.
+
+**Porten grøn** på alle seks prober. Set i selen på 1440 og 390 med de rigtige produktnavne,
+både uden og med kobling. Etiketten »Udgivet« er gættet i skuddet — `skema_svar`-konfigurationen
+kan ikke læses med anon-nøglen; den viser det rigtige i Idas egen Backstage.
+
+**Venter stadig på klik:** produktsiden med chips (Indhold · Deltagere · Pris · Efter købet ·
+Se som kunden) · lektionens produkt-chips · udgivelse pr. lektion.
+
 ## INDHOLDSSOEJLERNE GENNEM SAMME MOELLE SOM B2B (Idas klik 22/9 aften; LIVE v2246)
 Ida: »kunne du ikke køre denne del gennem samme test som hele b2b lige har været igennem? synes det team var gode«. De fem bud blev tegnet i selen med Hinges Hus' egne ord og MAALT paa 1440 + 390 fra Hans' stol. Dom: artifact VVvv2Mwx4LjzzdunyLV4bJ · bygget: 9JxfmANseyNNFkQtMwDynd.
 **MAALT (1A · Produkt, 1440):** bud 1 Opslagsvaerket 273 ord / 17 versaler / 2,2 skaerme paa 390 · bud 2 Fire spoergsmaal 247 / 15 / 2,1 · bud 3 Dine egne foerst **59 ord** / 7 / 1,0 men TOM · bud 4 Goer det til dit eget 190 / 11 / **13 fliser + 18 knapper** · bud 5 Fra byggesten til content 148 / 11 / 1,6. Ingen sejler vandret paa 390.
