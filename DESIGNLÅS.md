@@ -1,3 +1,13 @@
+## GREB 9: SYSTEMETS ORD I KUNDENS MUND (Idas klik 22/9 »alle fem«; LIVE v2241)
+Fem saetninger, en kunde moeder, fortalte hvordan maskinen virker i stedet for hvad man skal goere. Foer/efter-listen: artifact FBQ9dy1xHGqjM3J8S4Lz9Y.
+1. **Vaerktoejskassen, naar den er laast:** »Værktøjskassen følger med DETAIL-koden … (hashtagbank, skabeloner og prompts) følger med DETAIL-udgaven. Skriv til Ida i chatten« → »Værktøjskassen er ikke med endnu … hashtagbanken, skabelonerne og guiderne — kan lægges til. Skriv en besked, hvis vi skal have den med.« Et internt produktnavn og en chat, kunden ikke har, er ude — og der er nu en VEJ: den graa knap »Skriv en besked« under den roede aabner `kundeBeskedArk()`. **Titlen stod i versaler** (popup-laasen 19/9: Poppins 16 centreret, aldrig versal) — rettet paa begge laaste flader med `.modal h2.modal-t`.
+2. **Planlaegningsdagen, trin 1:** »Når overspringsfrekvensen er tastet på et opslag, står de hooks, der fangede bedst, her, pr. søjle.« → »Dine bedste hooks står her, så snart du har tastet tal ind på et opslag.«
+3. **Maanedens tjek uden tal:** »Der er ikke registreret organiske opslag i perioden …« → »Der er ikke postet noget i perioden. Så snart der er, kan vi måle på det.«
+4. **Plej profilen:** »Hvad serverer algoritmen for dig lige nu?« → »Hvad bliver du selv vist lige nu?« · »algoritmen belønner samtale« → »Instagram viser dit indhold til flere, når der er samtale«.
+5. **Dubletten:** »Ida optager lektionerne …« stod i to ordlyd — nu een (den, der lover en besked).
+**IKKE ROERT (Idas egne valg 31/8):** maaltallet »en overspringsfrekvens under 40 %« i Succesraketten og feltnavnet »Overspringsfrekvens« under Indblik. Og hook · thumbnail · CTA som feltnavne — husets ord, der bliver forklaret i briefen.
+**REGLEN:** ordlyd aendres aldrig uden Idas ja — ogsaa naar et greb er klikket. Aendringerne blev vist som foer/efter FOER de blev bygget.
+
 ## DAGENS OPSLAG STOD HVIDT PAA HVIDT I KALENDEREN PAA TELEFONEN (ren fejl, MAALT 22/9; LIVE v2240)
 Kalenderens I dag-flise er roed med hvid tekst (`.cf-idag`, l. 996). Ensretteren `ensTegn()` saetter `.mb-flise` paa ENHVER `.hf-kort` — ogsaa den roede — og `body.mb .mb-flise { background:#fff !important }` (0-2-0, senere i arket) vandt over `.cf-idag`'s `background:var(--red) !important` (0-1-0). Teksten blev staaende hvid: **MAALT `color: rgb(255,255,255)` paa `background: rgb(255,255,255)`** — dagens opslag var usynligt paa kundens telefon.
 Rettet med to regler lige efter den brede: `.mb-flise.cf-idag` / `.mb-flise.hf-kort-idag` er roede igen, og `.cf-idag .mb-flise` er gennemsigtig (ensretteren rammer ogsaa `.hf-kort-krop`, fordi `\bhf-kort\b` matcher inde i »hf-kort-krop«, saa der laa en hvid kasse oven i den roede flise).
