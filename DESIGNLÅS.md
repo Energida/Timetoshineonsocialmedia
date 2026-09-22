@@ -1,3 +1,22 @@
+## v2250 — 22. september 2026, nat · SQL-KORTENE: RØD ELLER GRÅ RAMME BETØD INGENTING (Idas fund)
+
+**Idas fund:** »begge disse??? fejl dato?« på to kort med rød ramme i Maskinrummet.
+
+**Målt på alle 78 kort:** 45 havde rød 1,5 px ramme, 33 havde grå 1 px. **Farven betød ingenting** —
+både SQL-kort og Edge-kort fandtes i begge farver (40 røde / 31 grå SQL, 5 røde / 2 grå Edge).
+Listen viser i forvejen kun det, der ikke er kørt, så rammen sagde intet, den ikke allerede sagde.
+Og røde rammer er forbudt i huset (Ida 21/9: »den røde ramme der må ikke være nogle steder«).
+
+**Rettet:** alle 78 kort bærer nu husets hårfine grå ramme, `1px solid var(--border)`. Målt i selen:
+78 af 78 står med `rgb(222,218,212) 1px`.
+
+**Datoen var ikke forkert, men formatet var tre forskellige:** 42 med kort måned og tid, 26 med kort
+måned uden tid, 10 med lang måned. **Alle 78 skriver nu måneden fuldt ud** (»22. september 2026 22.10«).
+70 datoer normaliseret. De 26 gamle kort uden klokkeslæt beholder deres dato uden tid — et
+klokkeslæt, der ikke findes, opfindes ikke.
+
+**Porten grøn** på alle seks prober. Listen set i selen på 1440.
+
 ## v2249 — 22. september 2026, nat · ØVELSERNE: KODEN OG BASEN VAR TO FORSKELLIGE KURSER (Ida: »alle øvelser i appen er forældet«)
 
 **Målt 22/9 på det levende system.** Kurset findes i to udgaver, og de er ikke enige:
