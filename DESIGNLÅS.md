@@ -1,3 +1,37 @@
+## v2249 — 22. september 2026, nat · ØVELSERNE: KODEN OG BASEN VAR TO FORSKELLIGE KURSER (Ida: »alle øvelser i appen er forældet«)
+
+**Målt 22/9 på det levende system.** Kurset findes i to udgaver, og de er ikke enige:
+- `lektioner`-tabellen (53 lektioner, 9 moduler) følger DET SAMLEDE MANUSKRIPT: Energibanken 1·2·3,
+  De fire byggesten, Content-Strategien, Værktøjskassen.
+- `KURSUS_MODULER` i koden (48 lektioner) står på den gamle: Hvorfor er du som du er, Brandstrategien.
+
+`kursusHentLektioner()` lader **basen vinde på TITLEN** og **koden vinde på SPØRGSMÅLET**
+(`ekstra[r.id]`). Resultat: **syv lektioner stillede kunden et spørgsmål fra en anden lektion.**
+Værst: under »Fysisk pause: ro, hvile og din søvn« blev kunden bedt om at beskrive sin drømmekunde,
+og under »Kost og væske« blev der spurgt »Hvorfor har du din forretning?«.
+Det er nøjagtig samme fejl som 13/8 (»titlerne var roteret ét trin«) — nu på modulniveau.
+
+**Rettet i koden:** `ovelse` er fjernet fra 3-2, 3-4, 5-2, 5-3, 5-4, 5-5, 6-1 og 6-6.
+**Intet spørgsmål er bedre end det forkerte spørgsmål.** Efter rettelsen: nul id'er hvor kodens
+øvelse hører til en anden lektion end basens. Øvelserne kommer nu kun fra `lektion_oevelser`.
+
+**Nyt SQL-kort i Maskinrummet: »Øvelserne fra det samlede manuskript«** (`sqlk_oevelser_manus_2209`).
+39 spørgsmål med hjælpetekst fra manuskriptets egne »ØVELSER I APPEN«, lagt på de **elleve**
+lektioner, hvor basens titel er ORDRET den samme som manuskriptets afsnit: 2-2, 2-3, 2-4, 2-5,
+3-2, 3-4, 4-3, 4-5, 5-2, 5-3, 5-4. Kan køres igen uden skade.
+
+**Det, kortet IKKE rører — og hvorfor:** manuskriptets Modul 6 er USP · Målgruppe · Drivkraft ·
+Værdier · Retning. Basens Modul 6 bærer stadig den gamle Brandstrategi-rækkefølge (Drivkraft ·
+Kernekunde · Værdier · USP · Succeskriteriet) og siger stadig »Jeres«. Rækkefølgen er en
+beslutning, fordi kundernes gemte svar hænger på lektions-id'et — den venter på Idas klik.
+
+**Målt om manuskriptet (59.208 ord):** 86 afsnit, 19 med markerede øvelser, 85 spørgsmål.
+Medianen på en sætning er 8 ord, 2,5 % er over 30. Modul 9, Modul 10 og Værktøjskassen
+(13.957 ord, 37 afsnit) har nul pausemarkeringer og intet ord/tid-stempel — sømmen mellem de to
+kildedokumenter er stadig synlig. Øvelsessvarene når ikke Drejebogen i dag; broen findes ikke.
+
+**Porten grøn** på alle seks prober. Kortet set i selen på 1440.
+
 ## v2248 — 22. september 2026, aften · MASKINRUMMET: KOPIÉR-KNAPPEN MANGLEDE PÅ TRE KORT (Idas fund)
 
 **Idas fund:** »kopier funktionen mangler?« på kortet »Hinges Hus: målgruppen hedder Rikke og Per«.
