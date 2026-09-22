@@ -1,3 +1,10 @@
+## DAGENS OPSLAG STOD HVIDT PAA HVIDT I KALENDEREN PAA TELEFONEN (ren fejl, MAALT 22/9; LIVE v2240)
+Kalenderens I dag-flise er roed med hvid tekst (`.cf-idag`, l. 996). Ensretteren `ensTegn()` saetter `.mb-flise` paa ENHVER `.hf-kort` — ogsaa den roede — og `body.mb .mb-flise { background:#fff !important }` (0-2-0, senere i arket) vandt over `.cf-idag`'s `background:var(--red) !important` (0-1-0). Teksten blev staaende hvid: **MAALT `color: rgb(255,255,255)` paa `background: rgb(255,255,255)`** — dagens opslag var usynligt paa kundens telefon.
+Rettet med to regler lige efter den brede: `.mb-flise.cf-idag` / `.mb-flise.hf-kort-idag` er roede igen, og `.cf-idag .mb-flise` er gennemsigtig (ensretteren rammer ogsaa `.hf-kort-krop`, fordi `\bhf-kort\b` matcher inde i »hf-kort-krop«, saa der laa en hvid kasse oven i den roede flise).
+**SAMME FAELDE SOM MANUS-FELTERNE 21/9: en bred hvid-flise-regel skal ALTID undtage det, der har sin egen farve.**
+
+**GREB 5 OG 6 VAR MINE FEJL — maalt paa en TOM side i selen.** »Performance er to forskellige sider« kom af, at selen aabnede skaermen med `showTab(9)` i stedet for `openMaal()`, saa `perfBud1Tegn()` aldrig koerte: kunden ser den SAMME side paa begge flader, og den overlappende »Ny rapport«-knap findes ikke. »Telefonen kan ikke se ugen« kom af en kalender UDEN opslag: med data viser telefonen I dag · Kommende indhold (swipe) · Kommende opslag — agenda-listen, Ida selv laaste 16/8. **Laeren staar fra 4/9 og gjaldt igen: et tomt kort i selen er ikke noedvendigvis tomt — aabn fladen, som kunden goer, og fyld den med data, foer du kalder noget en fejl.**
+
 ## GREB 3 + 4: SPOERGSMAALET STAAR SOM OVERSKRIFT · HOEJST EEN ROED TING I FAKTA-BOKSEN (Idas klik 22/9; LIVE v2239)
 **GREB 3 — briefens felt er den laaste 6a-form (15/9): etiket i graa versal · EEN haarfin streg · spoergsmaalet i Poppins 18 · feltet som sin egen ramme.**
 Spoergsmaalet bliver staaende, mens man skriver. Guiden er tilbage i feltet som pladsholder, og de roede »?«-ringe (`.sk-guide`) er skjult.
