@@ -8569,6 +8569,13 @@ html body.lek-mb .lk-felt-ramme .tale-knap { right:6px !important; bottom:6px !i
 .ibb-chip { display:inline-flex; align-items:center; height:24px; padding:0 10px; border-radius:999px; border:1px solid var(--border); font-size:10.5px; color:var(--black); background:#fff; white-space:nowrap; }
 .bs-kf-tags { display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }
 
+/* GREB 10 (22/9): »Ugen er i hus« — husets flise: etiket · een haarfin streg · titel · graa linje */
+.rytme-flise { display:block !important; }
+.rytme-flise .rytme-eti { display:block; font-size:10px; letter-spacing:1.5px; text-transform:uppercase; color:var(--gray3);
+  padding-bottom:8px; border-bottom:1px solid var(--border); margin-bottom:10px; }
+.rytme-flise .rytme-titel { display:block; font-family:Poppins,sans-serif; font-weight:400; font-size:18px; line-height:1.3; color:var(--black); }
+.rytme-flise .rytme-sub { display:block; font-size:12.5px; line-height:1.5; color:var(--gray2); margin-top:4px; }
+
 /* ===== BACKSTAGE FORFRA (Idas godkendte tegning 21/9): flisen = etiket · een streg · indhold · smaa graa handlinger; hvid side; Poppins overalt uden for heroen ===== */
 body.bs-forfra.dash-mode { background:#fff !important; }
 body.bs-forfra.dash-mode #dashMain { background:#fff !important; }
@@ -31097,6 +31104,40 @@ function hjemDagLinje() {
   const UD = ["s\u00f8n.", "man.", "tirs.", "ons.", "tors.", "fre.", "l\u00f8r."]; const ud = UD[d.getDay()] || "";
   return (HJEM_DAG === 1 ? "I morgen · " : "") + (ud + " " + dato).trim();
 }
+/* ===== GREB 10 (Idas klik 22/9, bud 1): UGEN ER I HUS =====
+   Husets egen flise oeverst paa dagslisten — etiket · een haarfin streg · »n af m opslag planlagt« · »N uger i traek«.
+   Den staar KUN, naar ugens maal er naaet, og forsvinder resten af tiden: en ros, ikke en maaler.
+   Ingen »0 uger i traek«, ingen pokal, ingen tal i cirkler. Braekkes raekken, forsvinder flisen bare.
+   »Uger i traek« taeller de FORUDGAAENDE uger, hvor opslagene FAKTISK kom ud (Postet/Maalt) — huset roser aldrig for noget, der ikke er sket. */
+function hjemRytmeHtml() {
+  try {
+    if (HJEM_DAG !== 0) return "";
+    const maal = Number(maalUge() || 0); if (!maal) return "";
+    const man = energidaUgeMandag(new Date());
+    const spand = function (start) { const e = new Date(start); e.setDate(e.getDate() + 6); return [datoDK(start), datoDK(e)]; };
+    const tael = function (fra, til, kunUde) {
+      return (IDEER || []).filter(function (x) {
+        if (!x || !x.dato || x.dato < fra || x.dato > til) return false;
+        const st = String(x.status || ""); if (st === "Arkiveret") return false;
+        if (String(x.type || "") === "Story") return false;
+        return kunUde ? (st === "Postet" || st === "Målt") : true;
+      }).length;
+    };
+    const nu = spand(man); const n = tael(nu[0], nu[1], false);
+    if (n < maal) return "";
+    let raekke = 0;
+    for (let i = 1; i <= 26; i++) {
+      const s = new Date(man); s.setDate(s.getDate() - 7 * i);
+      const r = spand(s);
+      if (tael(r[0], r[1], true) >= maal) raekke++; else break;
+    }
+    return '<div class="idag-flise rytme-flise">'
+      + '<span class="rytme-eti">Ugen er i hus</span>'
+      + '<span class="rytme-titel">' + n + ' af ' + maal + ' opslag planlagt</span>'
+      + (raekke >= 2 ? '<span class="rytme-sub">' + raekke + ' uger i træk</span>' : '')
+      + '</div>';
+  } catch (e) { return ""; }
+}
 function hjemDagHtml(flade) {
   const F = window.__HJEM_FOKUS || { pkt: [], klarede: 0 };
   let liste = "";
@@ -31115,7 +31156,7 @@ function hjemDagHtml(flade) {
         + (function () { const sub = x.dagsId ? String(x.sub || "").trim() : ""; /* kun dagens programs fakta-linjer, aldrig en saetning (v2155) */ const tid = x.tid ? 'Kl. ' + String(x.tid).replace(":", ".") + (x.tidSlut ? '–' + String(x.tidSlut).replace(":", ".") : '') : ''; const v = sub || tid; return v ? '<div class="idag-roed-sub">' + esc(v) + '</div>' : ''; })() + '</div>'   /* detaljerne under titlen (Ida 22/9): tidspunktet, kun fakta */
         + '<button type="button" class="idag-cirk mq-tap' + (gjort ? ' ok' : '') + '" aria-label="' + (gjort ? 'Fortryd gjort' : 'Gjort') + '" onclick="event.stopPropagation();hjemIdagCirk(' + f.i + ')"></button></div>';
       rest = alle.slice(1); }
-    liste = roed + klarede + rest.map(function (o) { return hjemDagFlise(o.x, o.i); }).join("");
+    liste = roed + hjemRytmeHtml() + klarede + rest.map(function (o) { return hjemDagFlise(o.x, o.i); }).join("");   /* greb 10: ugen er i hus staar lige under den roede */
     if (!alle.length && !klarede && !window.__HJEM_NAESTE) liste = '<div class="idag-flise tom">' + (F.klarede ? "Alt er i mål for i dag." : "Ingenting mangler i dag. Nyd det.") + '</div>';
   } else liste = hjemDagFremHtml(hjemDagIso(HJEM_DAG));
   const pilSvg = function (d_) { return '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="' + (d_ === 'v' ? 'M15 6l-6 6 6 6' : 'M9 6l6 6-6 6') + '"/></svg>'; };
@@ -51454,7 +51495,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2242";
+const APP_VERSION = "2243";
 let NY_VERSION_KLAR = false;
 let NY_VERSION_AFVIST = false;
 function nyVersionSkjul() {
@@ -71874,6 +71915,6 @@ function bsTodoRet(id) {
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 22. september · 2242</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 22. september · 2243</div>
 </body>
 </html>

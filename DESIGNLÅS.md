@@ -1,3 +1,10 @@
+## GREB 10: »UGEN ER I HUS« — HUSETS ENE ROS (Idas klik 22/9 paa bud 1 af fem; LIVE v2243)
+Der var ingen steder i appen, hvor en kunde kunne se sig selv lykkes over tid — kun tal, der maalte, om de var bagud.
+**Formen:** husets flise lige under den roede paa dagslisten, begge flader — etiket »UGEN ER I HUS« · een haarfin streg · »3 af 3 opslag planlagt« (Poppins 18) · »4 uger i traek« i graat.
+**Den staar KUN, naar ugens maal er naaet** (`hjemRytmeHtml()`, `HJEM_DAG === 0`), og forsvinder resten af tiden: en ros, ikke en maaler. Braekkes raekken, forsvinder flisen bare — **ingen »0 uger i traek«, ingen »du mistede din streak«, ingen pokal, ingen konfetti, ingen tal i cirkler.**
+**Saadan taelles der:** forsiden = denne uges opslag i kalenderen (alt undtagen Arkiveret og Story) mod `maalUge()`. Raekken = de FORUDGAAENDE uger, hvor opslagene faktisk kom ud (Postet/Maalt) — huset roser aldrig for noget, der ikke er sket. Linjen staar foerst fra to uger; een uge er ikke en raekke.
+**Fem bud vist** (artifact 7sf7ZMaCFFC5CHYKVqqW1X): 1 flisen paa dagslisten (valgt) · 2 ringen i heroen · 3 linjen i Denne uge · 4 fire streger · 5 den roede flise. Bud 2 og 3 blev fravalgt, fordi de staar ALTID og dermed ogsaa fortaeller, at man er bagud; bud 5, fordi roedt er handling i huset. Bygget: C9psbXn15rQNvaqUhB1cEz.
+
 ## GREB 7: IDEBANKEN PAA COMPUTEREN = DE FIRE SOEJLER FREMME, STEDERNE SOM CHIPS (Idas klik 22/9 paa bud 3; LIVE v2242)
 MAALT paa 1440: seks kolonner a 300 px kunne ikke staa paa en 1204 px arbejdsflade — man saa tre en halv, og den fjerde var klippet midt i ordet (»2B · Bag om forretnin«). Story og Uden plads var slet ikke paa skaermen.
 **Formen (kun ≥900, telefonen har sin egen motor `ibMobilTegn`):** `#ideBank > .ibb-1` er et gitter med `repeat(4,minmax(0,1fr))` — de fire indholdssoejler fylder bredden, alle synlige, navnene helt ud. Over gitteret staar chipsene **De fire søjler · Story · Uden plads** (`ibSted(n)`, `IB_STED`). **Ingen tal i chippen** (21/9).
