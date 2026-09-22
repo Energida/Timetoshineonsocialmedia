@@ -1,3 +1,8 @@
+## IDÉBANKEN: SLET FRA FLISEN · MØDET TAGER DET ÆLDSTE FØRST · ARKET OVERLØB (Ida 22/9 kl. 09.40; LIVE v2236)
+Hver flise i Idébanken har husets lille cirkel i nederste højre hjørne — **med skraldespanden, ikke et kryds** (17/9-reglen: krydset lukker, skraldespanden sletter; sig det, hvis den alligevel skal være et kryds). Tryk = »Er du sikker?« → Slet · Annullér, og idéen ryger i Arkivet med kvittering. På computeren kommer den frem, når musen er over flisen; på telefonen står den altid.
+Planlægningsdagens trin 1 tager **det ældste opslag først** (vi gennemgår i den rækkefølge, de blev postet).
+Ny idé-arket på computeren: gitteret er `minmax(0,1fr)`, chips må ombryde, og tag-forslagene har ingen negative margener — lange chips skubbede højre spalte uden for arket, så popuppen så »helt anderledes ud«.
+
 ## IDÉEN BLIVER I BANKEN (Ida 22/9 kl. 09.30: »fordi jeg vil snakke om den, betyder det jo ikke, at vi beslutter den«; LIVE v2235)
 Idébanken viser alt, der ikke er postet, arkiveret eller målt — også det planlagte. Er datoen sat, står den som rød chip på flisen (telefonen: først i underlinjen). Kalenderens »Mangler dato« viser stadig det planlagte UDEN dato. Vælter morgenens snævre regel (bank = kun status Idé), som fjernede idéen i samme sekund, mødet planlagde den.
 
