@@ -51321,7 +51321,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2231";
+const APP_VERSION = "2232";
 let NY_VERSION_KLAR = false;
 let NY_VERSION_AFVIST = false;
 function nyVersionSkjul() {
@@ -70197,6 +70197,7 @@ function prForslagHtml() {
   const t = prT2();
   if (t.skaerm === "antal") return prAntalHtml();
   if (!t.forslag) prForslagByg();
+  if (t.skaerm === "bank") return prBankHtml();
   if (t.skaerm === "mg") return prMgHtml();
   if (t.skaerm === "spm") return prSpmHtml();
   if (t.skaerm === "ide") return prIdeHtml();
@@ -70258,7 +70259,31 @@ function prStartOpslag(i) {
   t.aktiv = i; t.q = 0; t.svar = ["", "", ""]; t.valg = [null, null, null]; t.skriv = ""; t.titel = ""; t.format = "";
   const n = prMgNavne();
   if (n.length > 1) { t.mg = ""; t.skaerm = "mg"; } else { t.mg = n[0] || ""; t.skaerm = "spm"; }
+  /* BANKENS IDEER FOERST (Idas klik 22/9 kl. ~08.45, Hans-testen fund 1): har kunden egne idéer for soejlen i Idébanken, staar de foerst — tryk = planlagt paa dagen; »Nej, find en ny« → de tre spoergsmaal */
+  t.bankValg = null; if (!PR.solo && prBankIdeer(t.forslag[i].kode).length) t.skaerm = "bank";
   planRitTegn(); const el = document.getElementById("planRit"); if (el) el.scrollTop = 0;
+}
+function prBankIdeer(kode) {
+  try { return (IDEER || []).filter(function (x) { if (!ideErIBanken(x) || !x.soejle) return false; const m = soejleModel(x.soejle); return !!m && String(m.kode).toUpperCase() === String(kode).toUpperCase(); }); } catch (e) { return []; }
+}
+function prBankHtml() {
+  const t = prT2(); const f = t.forslag[t.aktiv]; const liste = prBankIdeer(f.kode);
+  const kort = liste.map(function (x) { return prSvarKort(storStart(titelVis(x.titel || ideNote(x).split(/\n/)[0] || "Uden titel")), [x.type || "", ideNote(x) ? ideNote(x).slice(0, 90) : ""].filter(Boolean).join(" · "), t.bankValg === String(x.id), "PR.t2.bankValg=PR.t2.bankValg==='" + esc(String(x.id)) + "'?null:'" + esc(String(x.id)) + "';planRitTegn()"); }).join("");
+  return prBjaelke(3) + '<div class="pr-eye">' + esc(f.kode) + ' · ' + esc(prEyeSted(f)) + '</div><div class="pr-h1">Har du allerede idéen?</div>'
+    + '<div class="pr-sub">Dine idéer til ' + esc(f.kode + " · " + prNavnVis(f)) + ' fra Idébanken. Vælg én, så lander den ' + esc(PR_DAGE_LANG[f.dag - 1] || "på dagen") + '.</div>'
+    + kort
+    + '<div class="pr-bar"><button type="button" class="dbtn ghost" style="background:#fff;" onclick="prBankNy()">Nej, find en ny</button><button type="button" class="dbtn primary"' + (t.bankValg ? '' : ' disabled') + ' onclick="prBankPlanlaeg()">Planlæg denne</button></div>';
+}
+function prBankNy() { const t = prT2(); const n = prMgNavne(); if (n.length > 1) { t.mg = ""; t.skaerm = "mg"; } else { t.mg = n[0] || ""; t.skaerm = "spm"; } planRitTegn(); const el = document.getElementById("planRit"); if (el) el.scrollTop = 0; }
+async function prBankPlanlaeg() {
+  const t = prT2(); const f = t.forslag[t.aktiv]; if (!f || f.gemt || !t.bankValg) return;
+  const x = (IDEER || []).find(function (y) { return String(y.id) === String(t.bankValg); }); if (!x) return;
+  const dage = planRitUgeDage(PR.uge); const dato = dage[f.dag - 1];
+  x.status = "Planlagt"; x.dato = dato;
+  try { await ideUpdate(x.id, { status: "Planlagt", dato: dato }); } catch (e) {}
+  PR.nye.push(x.id); f.gemt = x.id; f.titel = String(x.titel || "").trim() || (f.kode + " · " + prNavnVis(f));
+  try { husKvit("»" + f.titel + "« ligger " + (PR_DAGE_LANG[f.dag - 1] || "på dagen") + "."); } catch (e) {}
+  t.skaerm = "raekke"; planRitTegn(); const el = document.getElementById("planRit"); if (el) el.scrollTop = 0;
 }
 /* Skaerm 3 (kun ved flere maalgrupper, Idas ord kl. 21.30): kunden vaelger foerst, hvem opslaget taler til, og Content
    Studio saetter den maalgruppe oeverst, der har faaet faerrest opslag de sidste fire uger. Valget gemmes paa idéen
@@ -71669,6 +71694,6 @@ function bsTodoRet(id) {
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 22. september · 2231</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 22. september · 2232</div>
 </body>
 </html>
