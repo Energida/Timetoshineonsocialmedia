@@ -1,3 +1,26 @@
+## v2248 — 22. september 2026, aften · MASKINRUMMET: KOPIÉR-KNAPPEN MANGLEDE PÅ TRE KORT (Idas fund)
+
+**Idas fund:** »kopier funktionen mangler?« på kortet »Hinges Hus: målgruppen hedder Rikke og Per«.
+
+**Målt på alle 77 SQL-kort:** tre af dem manglede husets knapper — og alle tre var mine.
+- `sqlk_hinges_rikke_2209` havde én håndlavet »Vis SQL«-knap med en inline-toggle og ingen Kopiér.
+- `sqlk_beskeder_v1` og `sqlk_beskeder_rolletest_v1` havde **slet ingen knap**: deres `<pre>` stod
+  `display:none` og kunne aldrig åbnes. To døde kort, det ene et sikkerhedskort (RLS og policies).
+
+**Rettet:** alle tre har nu husets knaprække, kopieret ORDRET fra `sqlk_modul11til10_2209`:
+»Kørt ✓ — fjern kortet« (`sqlKortKoert`) · »Vis koden« (`sqlVis`) · den røde »Kopiér koden«
+(`sqlKopier`). Ordet »Vis SQL« findes ikke længere på nogen knap — kortene siger »Vis koden«
+alle 77 steder (navne 1:1).
+
+**Samme runde: badge-pillen brækkede over to linjer på 390.** »KØR DENNE« stod som »( KØR« /
+»DENNE )«. Alle **75** badge-spans har fået `white-space:nowrap;display:inline-block;` — pillen
+er nu hel og ombryder som sin egen linje. Gælder hvert kort, ikke kun det Ida så.
+
+**Læren:** et kort, jeg selv lægger ind, arver ikke husets knapper af sig selv. Nye SQL-kort
+bygges ved at kopiere knaprækken fra et eksisterende kort — aldrig ved at skrive en ny knap.
+
+**Porten grøn** på alle seks prober. Set i selen på 1440 og 390, kortet åbnet med listens egen række.
+
 ## v2247 — 22. september 2026, aften · ENERGIDA STUDIO: PRODUKTERNE HAR FÅET EN PLADS (Idas klik)
 
 **Idas klik:** »Ja — forsiden som produktfliser (anbefalet)«, på skærmbilleder af det BYGGEDE
