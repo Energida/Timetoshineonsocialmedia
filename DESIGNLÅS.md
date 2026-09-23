@@ -1,3 +1,19 @@
+## v2272 — 23. september 2026 · EN NY IDÉ FRA TØM HOVEDET SES MED DET SAMME
+
+**Idas spørgsmål:** »når jeg tilføjer via Tøm hovedet, bliver den så også placeret korrekt?«
+
+**Svaret:** nej — og det er med vilje. Fra Tøm hovedet får idéen kun tekst, dato og onlinekursus.
+Den lander i **rummet** Idéer til manus uden lektion, og derfra placeres den. Ét sted, som aftalt.
+
+**Men spørgsmålet afslørede en fejl (MÅLT):** både `nyIdeGem("manus")` og `manusIdeGem()` kaldte
+kun `renderManusIdeer()`, som tegner den **gamle** kasse — den er skjult i rummet. Stod man i
+Idéer til manus, kom den nye idé først frem efter en genindlæsning. Nøjagtig samme fund som ved
+sletning og rettelse (v2252). Begge veje tegner nu rummet med.
+
+**Mønstret, tredje gang:** en gammel tegnefunktion, der lever videre ved siden af en ny, ser ud
+til at virke — helt til nogen står i det nye rum. Tilføjer man en skrivning, skal man spørge:
+**hvilke flader viser det her, og tegnes de alle?**
+
 ## v2271 — 23. september 2026 · EN IDÉ STÅR KUN ÉT STED
 
 **Ida:** »den skal kun stå et sted, og det er der, jeg flytter den hen.«
