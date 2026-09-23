@@ -1,3 +1,23 @@
+## v2270 — 23. september 2026 · EN IDÉ TIL MANUS KAN PLACERES PÅ EN LEKTION
+
+**Ida:** »jeg vil gerne at jeg inde på idéer til manus kan vælge modul/lektion at placere den på,
+og så ligger den inde på modulet som idéer til manus der, når den er flyttet.«
+
+**Bygget:** idéens ark (»Ret idéen«) har fået **»Hvor hører den til?«** — først modulet, så
+lektionen i netop det modul. Vælges *Ingen*, bliver idéen i rummet som før. Idéen husker
+`lekModul`, `lek` (lektionens id) og `lekNavn`.
+
+- **I rummet Idéer til manus** står lektionens navn først i idéens underlinje, før onlinekurset
+  og datoen — det er dens plads nu.
+- **På lektionen** står de som et kort »IDÉER TIL MANUS« med antallet, i højre spalte under
+  bolden. Er der ingen, findes kortet ikke.
+
+Modullisten sorteres på nummeret (Modul 2 før Modul 11), og lektionerne står i modulets egen
+rækkefølge. Skiftes modulet, tømmes lektionsvalget — en lektion fra et andet modul er ikke et valg.
+
+**MÅLT:** tre moduler sorteret rigtigt, lektionerne filtreret pr. modul, idéen lander på den
+valgte lektion, og kortet findes kun, hvor der er idéer.
+
 ## v2269 — 23. september 2026 · EN LISTE HÆNGER FAST I SIN KNAP
 
 **Idas fund:** »når jeg klikker på status drop down og scroller ned på siden, følger drop downen med?«

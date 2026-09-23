@@ -40980,7 +40980,7 @@ function klipKort3b(o) {
     + (KLIP_MANUS_AABEN && manus ? '<div style="background:#fff;border:1px solid var(--border);border-radius:20px;padding:20px 24px;margin-bottom:16px;font-size:13px;line-height:1.7;white-space:pre-wrap;">' + esc(manus) + '</div>' : '')
     + '<div class="klipkort-grid">'
       + '<div style="display:flex;flex-direction:column;gap:16px;min-width:0;">' + versionKort + noteKort + '</div>'
-      + '<div style="display:flex;flex-direction:column;gap:16px;min-width:0;">' + boldKort + histKort + '</div>'
+      + '<div style="display:flex;flex-direction:column;gap:16px;min-width:0;">' + boldKort + (typeof miLekKortHtml === "function" ? miLekKortHtml(o) : "") + histKort + '</div>'
     + '</div></div>';
 }
 
@@ -53219,7 +53219,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2269";
+const APP_VERSION = "2270";
 let NY_VERSION_KLAR = false;
 let NY_VERSION_AFVIST = false;
 function nyVersionSkjul() {
@@ -63770,6 +63770,49 @@ async function manusIdeGem(tekst, kursus) {
   renderManusIdeer();
   return ok !== false;
 }
+/* ===== EN IDÉ TIL MANUS KAN PLACERES PÅ EN LEKTION (Ida 23/9: »jeg vil gerne at jeg inde på idéer
+   til manus kan vælge modul/lektion at placere den på, og så ligger den inde på modulet som idéer
+   til manus der, når den er flyttet«) =====
+   Idéen faar to felter: lek (lektionens id i Energida Studio) og lekNavn (titlen, saa listen kan
+   tegnes uden opslag). Er de tomme, ligger idéen som foer i rummet Idéer til manus. */
+function miModulListe() {
+  const set = {};
+  (typeof KLIP_OPGAVER !== "undefined" ? KLIP_OPGAVER : []).forEach(function (o) {
+    const m = String(o.modul || "").trim(); if (m) set[m] = 1;
+  });
+  const nr = function (m) { const x = String(m).match(/(\d+)/); return x ? parseInt(x[1], 10) : 999; };
+  return Object.keys(set).sort(function (a, b) { return nr(a) - nr(b) || a.localeCompare(b, "da"); }).map(function (m) { return { k: m, n: m }; });
+}
+function miLekListe(modul) {
+  return (typeof KLIP_OPGAVER !== "undefined" ? KLIP_OPGAVER : [])
+    .filter(function (o) { return String(o.modul || "") === String(modul || ""); })
+    .slice().sort(function (a, b) { try { return klipSortCmp(a, b); } catch (e) { return 0; } })
+    .map(function (o) { return { k: String(o.id), n: String(o.titel || "Uden titel") }; });
+}
+function miLekDropHtml(modul, valgt) {
+  const liste = miLekListe(modul);
+  if (!liste.length) return '<div class="mi-graa">Vælg et modul først.</div>';
+  return bf3DropHtml("miLek", "Vælg lektion", [{ k: "", n: "Ingen lektion" }].concat(liste), valgt || "");
+}
+/* Idéerne, der er placeret paa EN lektion */
+function miPaaLektion(id) {
+  return (typeof MANUS_IDEER !== "undefined" ? MANUS_IDEER : []).filter(function (x) { return x && String(x.lek || "") === String(id); });
+}
+function miLekKortHtml(o) {
+  const liste = miPaaLektion(o.id);
+  if (!liste.length) return "";
+  const rk = liste.map(function (x) {
+    return '<div style="padding:13px 22px;border-top:1px solid var(--border);font-size:13px;line-height:1.55;color:var(--black);">'
+      + esc(String(x.t || "")).replace(/\n/g, "<br>")
+      + '<div style="font-size:11px;color:var(--gray3);margin-top:4px;">' + esc(String(x.dato || "")) + '</div></div>';
+  }).join("");
+  return '<div style="background:#fff;border:1px solid var(--border);border-radius:20px;overflow:hidden;">'
+    + '<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:15px 22px;">'
+      + '<span style="font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--gray3);">Idéer til manus</span>'
+      + '<span style="font-size:12px;color:var(--gray3);">' + liste.length + '</span>'
+    + '</div>' + rk + '</div>';
+}
+
 function manusIdeRet(id) {
   /* Klik paa idé-teksten -> ret + Gem (Ida 29/7) */
   const r = MANUS_IDEER.find(x => x.id === id); if (!r) return;
@@ -63778,14 +63821,40 @@ function manusIdeRet(id) {
     + '<h2 style="font-size:19px;margin:2px 0 4px;">Ret idéen</h2>'
     + '<textarea id="miTekst" ' + DF_FELT.replace('style="', 'style="min-height:90px;') + '></textarea>'
     + taleKnapHtml("miTekst")
+    /* HVOR HOERER DEN TIL (Ida 23/9): modul foerst, saa lektionen i det modul. Tomt = idéen bliver i rummet. */
+    + '<div style="font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--gray3);margin:16px 0 8px;">Hvor hører den til?</div>'
+    + '<div id="miModulHolder">' + bf3DropHtml("miModul", "Vælg modul", [{ k: "", n: "Ingen" }].concat(miModulListe()), String(r.lekModul || "")) + '</div>'
+    + '<div id="miLekHolder" style="margin-top:8px;">' + (r.lekModul ? miLekDropHtml(r.lekModul, String(r.lek || "")) : '') + '</div>'
     + '<button class="dbtn primary" style="width:100%;margin-top:12px;" onclick="manusIdeRetGem(\'' + id + '\')">Gem</button>';
   document.getElementById("modalBack").classList.add("on");
   const felt = document.getElementById("miTekst"); if (felt) { felt.value = r.t || ""; setTimeout(() => felt.focus(), 100); }
+  try {
+    window.BF3_DROP_VALG = window.BF3_DROP_VALG || {};
+    BF3_DROP_VALG.miModul = String(r.lekModul || "");
+    BF3_DROP_VALG.miLek = String(r.lek || "");
+    window.bf3Drop_miModul = function (k) {
+      BF3_DROP_VALG.miLek = "";
+      const h = document.getElementById("miLekHolder"); if (h) h.innerHTML = k ? miLekDropHtml(k, "") : "";
+    };
+  } catch (e) {}
 }
 async function manusIdeRetGem(id) {
   const el = document.getElementById("miTekst"); const tekst = (el ? el.value : "").trim();
   if (!tekst) { if (el) el.focus(); return; }
-  const r = MANUS_IDEER.find(x => x.id === id); if (r) r.t = tekst;
+  const r = MANUS_IDEER.find(x => x.id === id);
+  if (r) {
+    r.t = tekst;
+    /* Modul og lektion foelger med (23/9). Vaelges »Ingen«, bliver idéen i rummet. */
+    try {
+      const V = (window.BF3_DROP_VALG || {});
+      const mo = String(V.miModul == null ? (r.lekModul || "") : V.miModul);
+      const le = mo ? String(V.miLek == null ? (r.lek || "") : V.miLek) : "";
+      r.lekModul = mo || "";
+      r.lek = le || "";
+      const o = le ? (KLIP_OPGAVER || []).find(function (x) { return String(x.id) === le; }) : null;
+      r.lekNavn = o ? String(o.titel || "") : "";
+    } catch (e) {}
+  }
   await manusIdeGemListe();
   renderManusIdeer();
   try { if (typeof renderKlipperum === "function") renderKlipperum(); } catch(e) {}
@@ -73198,7 +73267,8 @@ function klipIdeerTegn(el) {
   const n = (MANUS_IDEER || []).length;
   const fliser = n ? MANUS_IDEER.map(function (r) {
     return '<div class="bs3-fl bs3-klik" data-slet="manusIdeSlet(\'' + esc(String(r.id)) + '\')" role="button" tabindex="0" onclick="manusIdeRet(\'' + esc(String(r.id)) + '\')"><div class="bs3-rk"><div class="bs3-t"><div class="bs3-n">' + esc(r.t || "") + '</div>'
-      + ((r.kursus || r.dato) ? '<div class="bs3-s">' + esc([r.kursus, r.dato ? dkDatoKort(String(r.dato)) : ""].filter(Boolean).join(" · ")) + '</div>' : '')
+      /* LIGGER IDEEN PAA EN LEKTION, STAAR DEN DER (Ida 23/9) — foerst, for det er dens plads */
+      + ((r.lekNavn || r.kursus || r.dato) ? '<div class="bs3-s">' + esc([r.lekNavn, r.kursus, r.dato ? dkDatoKort(String(r.dato)) : ""].filter(Boolean).join(" · ")) + '</div>' : '')
       + '</div>' + (tlf ? '' : '<button type="button" class="bs-skrald bs3-skrald" aria-label="Slet idéen" title="Slet idéen" onclick="event.stopPropagation();manusIdeSlet(\'' + esc(String(r.id)) + '\')">' + BS_SKRALD_SVG + '</button>') + '</div></div>';
   }).join('') : tomKortHtml("Hvad skal der laves manus til?", "", "");
   const send = sendFeltHtml({ id: "bf3ManusIde", ph: "Tilføj idé …", fn: "bf3ManusIdeGem()", aria: "Gem idéen", klasse: "bs-sendfelt bs3-send" });
@@ -73852,6 +73922,6 @@ function bf3StudieRum(v, filter) {
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 23. september · 2269</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 23. september · 2270</div>
 </body>
 </html>
