@@ -51902,7 +51902,10 @@ const BS_KUNDE_KATEGORIER = [
 let BS_KUNDE_KAT = "";
 /* PINNEDE KUNDER (Ida 9/9): »dem jeg arbejder med nu« oeverst. Gemmes i basen gennem vaneGemRow (ingen ny tabel — Ida kan ikke koere SQL paa ferien). */
 let KUNDE_PINS = [], KUNDE_PINS_HENTET = false;
-async function kundePinsHent() { if (KUNDE_PINS_HENTET) return; KUNDE_PINS_HENTET = true; try { const svar = (await vaneRow("kunde_pins")) || vaneLocal("kunde_pins", []); KUNDE_PINS = Array.isArray(svar) ? svar : []; } catch (e) { KUNDE_PINS = []; } }
+/* PINNENE HENTES EEN GANG, OG ALLE VENTER PAA DEN SAMME HENTNING (MAALT 23/9, Idas fund: »kun Acorns var pinnet«). Foer blev
+   »hentet« sat, FOER svaret var i hus — saa fik kalder nr. 2 en tom liste og tegnede Hjem uden pins. Samme fejl som bsFlytHent 14/9. */
+let KUNDE_PINS_LOFTE = null;
+function kundePinsHent() { if (KUNDE_PINS_LOFTE) return KUNDE_PINS_LOFTE; KUNDE_PINS_HENTET = true; KUNDE_PINS_LOFTE = (async function () { try { const svar = (await vaneRow("kunde_pins")) || vaneLocal("kunde_pins", []); KUNDE_PINS = Array.isArray(svar) ? svar : []; } catch (e) { KUNDE_PINS = []; } })(); return KUNDE_PINS_LOFTE; }
 async function kundePinSkift(k) {
   const i = KUNDE_PINS.indexOf(k); if (i > -1) KUNDE_PINS.splice(i, 1); else KUNDE_PINS.unshift(k);
   try { kunderneTegn(); } catch (e) {}
@@ -53219,7 +53222,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2272";
+const APP_VERSION = "2273";
 let NY_VERSION_KLAR = false;
 let NY_VERSION_AFVIST = false;
 function nyVersionSkjul() {
@@ -59299,6 +59302,7 @@ let BS_FORFRA = false;   /* Backstage i b2b-designet taendes, naar »Backstage f
 function bsBaandTegn() {
   try {
     if (!BS_FORFRA) return;
+    if (BS_HOLD) return;   /* siden skifter foerst, naar den nye er klar (23/9) — baandet foelger med i samme oejeblik */
     if (!document.body.classList.contains("dash-mode")) return;
     const dm = document.getElementById("dashMain"); if (!dm) return;
     const vis = function (e) { return !!(e && e.getClientRects().length); };
@@ -59341,7 +59345,8 @@ function bsBaandTegn() {
 }
 /* PINNEDE SIDER (21/9): { id, navn } i vane-raekken side_pins — Hjem viser dem som doere ved siden af de pinnede kunder */
 let SIDE_PINS = [], SIDE_PINS_HENTET = false;
-async function sidePinsHent() { if (SIDE_PINS_HENTET) return; SIDE_PINS_HENTET = true; try { const svar = (await vaneRow("side_pins")) || vaneLocal("side_pins", []); SIDE_PINS = Array.isArray(svar) ? svar : []; } catch (e) { SIDE_PINS = []; } }
+let SIDE_PINS_LOFTE = null;   /* alle venter paa den samme hentning (23/9, som kundePinsHent) */
+function sidePinsHent() { if (SIDE_PINS_LOFTE) return SIDE_PINS_LOFTE; SIDE_PINS_HENTET = true; SIDE_PINS_LOFTE = (async function () { try { const svar = (await vaneRow("side_pins")) || vaneLocal("side_pins", []); SIDE_PINS = Array.isArray(svar) ? svar : []; } catch (e) { SIDE_PINS = []; } })(); return SIDE_PINS_LOFTE; }
 function sidePinnet(id) { return (SIDE_PINS || []).some(function (x) { return x && x.id === id; }); }
 async function sidePinSkift(id, navn) {
   await sidePinsHent();
@@ -59375,6 +59380,57 @@ function bsSkraldespandTegn() {
     });
   } catch (e) {}
 }
+/* ===== SIDEN SKIFTER FOERST, NAAR DEN NYE ER KLAR (Idas klik 23/9: »Bliv stående«) =====
+   MAALT 23/9 i Idas Chrome: ved hvert klik viste den nye side sit GAMLE billede fra sidste besoeg (0–40 ms), tegnede sig om, naar
+   dataene kom (400–650 ms), og baandet stod med den FORRIGE sides navn i op til 1,1 sek. — det var »spoegelsessiden mellem hvert klik«.
+   Nu bliver den side, man kom fra, staaende med sit baand, mens den nye tegner sig usynligt bag den. Naar den nye har vaeret
+   stille i 150 ms (dens data er tegnet), skifter side og baand i samme oejeblik. Loft: 1,5 sek. Gaelder begge flader. */
+let BS_HOLD = null;
+function bsHoldSynlig() { const dm = document.getElementById("dashMain"); if (!dm) return null; let r = null; [].forEach.call(dm.children, function (d) { if (!r && d.id && d.id.indexOf("dside-") === 0 && d.style.display !== "none" && d.getClientRects().length && !d.hasAttribute("data-bs-hold")) r = d; }); return r; }
+function bsHoldSlip() {
+  const h = BS_HOLD; if (!h) return; BS_HOLD = null;
+  clearTimeout(h.ro); clearTimeout(h.loft); try { h.mo.disconnect(); } catch (e) {}
+  const n = h.ny;
+  if (n) { n.removeAttribute("data-bs-hold"); ["position", "visibility", "left", "top", "width", "pointer-events"].forEach(function (k) { n.style.removeProperty(k); }); }
+  if (h.gammel && h.gammel !== n && n && n.style.display !== "none") h.gammel.style.display = "none";
+  try { window.scrollTo(0, 0); } catch (e) {}
+  try { bsBaandTegn(); bsSkraldespandTegn(); } catch (e) {}
+  try { heroPas(); } catch (e) {}
+}
+function bsHoldRo() { const h = BS_HOLD; if (!h) return; clearTimeout(h.ro); h.ro = setTimeout(bsHoldSlip, 150); }
+(function () {
+  const pak = function () {
+    const gV = window.visDashSide; if (typeof gV !== "function" || gV.__bsHold) return;
+    const ny = function (side) {
+      const dm = document.getElementById("dashMain");
+      const gammel = BS_HOLD ? BS_HOLD.gammel : bsHoldSynlig();
+      const y = window.scrollY || 0;
+      const r = gV.apply(this, arguments);
+      try {
+        if (!dm || !gammel || !document.body.classList.contains("dash-mode")) return r;
+        const nyEl = (function () { let x = null; [].forEach.call(dm.children, function (d) { if (!x && d !== gammel && d.id && d.id.indexOf("dside-") === 0 && d.style.display !== "none") x = d; }); return x; })();
+        if (!nyEl) { if (BS_HOLD) bsHoldSlip(); return r; }   /* samme side igen: tegnes paa stedet som foer */
+        if (BS_HOLD && BS_HOLD.ny && BS_HOLD.ny !== nyEl) { const g = BS_HOLD.ny; g.removeAttribute("data-bs-hold"); ["position", "visibility", "left", "top", "width", "pointer-events"].forEach(function (k) { g.style.removeProperty(k); }); }
+        const bredde = gammel.getBoundingClientRect().width;
+        gammel.style.display = "";
+        nyEl.setAttribute("data-bs-hold", "1");
+        nyEl.style.position = "absolute"; nyEl.style.visibility = "hidden"; nyEl.style.left = "0"; nyEl.style.top = "0"; nyEl.style.width = bredde + "px"; nyEl.style.pointerEvents = "none";
+        try { window.scrollTo(0, y); } catch (e) {}
+        if (!BS_HOLD) {
+          BS_HOLD = { gammel: gammel, ny: nyEl };
+          BS_HOLD.mo = new MutationObserver(function () { bsHoldRo(); });
+          BS_HOLD.mo.observe(dm, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ["style", "class"] });
+          BS_HOLD.loft = setTimeout(bsHoldSlip, 1500);
+        } else { BS_HOLD.ny = nyEl; }
+        bsHoldRo();
+      } catch (e) { try { bsHoldSlip(); } catch (e2) {} }
+      return r;
+    };
+    ny.__bsHold = true;
+    window.visDashSide = ny;
+  };
+  if (document.readyState === "complete") pak(); else window.addEventListener("load", pak);
+})();
 function bsBaandPlanlaeg() { clearTimeout(BS_BAAND_TIMER); BS_BAAND_TIMER = setTimeout(function () { bsBaandTegn(); bsSkraldespandTegn(); }, 80); }
 (function () {
   const start = function () {
@@ -73771,8 +73827,8 @@ window.__BF3_KLAR = true;
 function bf3GentegnSynlig() {
   try {
     if (!document.body.classList.contains("dash-mode")) return;
-    const sider = document.querySelectorAll('[id^="dside-"]'); let synlig = null;
-    for (let i = 0; i < sider.length; i++) { if (sider[i].style.display !== "none" && getComputedStyle(sider[i]).display !== "none") { synlig = sider[i]; break; } }
+    const sider = document.querySelectorAll('[id^="dside-"]'); let synlig = document.querySelector('[id^="dside-"][data-bs-hold]');   /* er en side paa vej frem (23/9), er det DEN, der skal tegnes — ikke den, der holdes fremme */
+    for (let i = 0; !synlig && i < sider.length; i++) { if (sider[i].style.display !== "none" && getComputedStyle(sider[i]).display !== "none") { synlig = sider[i]; break; } }
     if (!synlig) return;
     const id = synlig.id;
     if (id === "dside-overblik") dashForsideTegn();
@@ -73931,6 +73987,6 @@ function bf3StudieRum(v, filter) {
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 23. september · 2272</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 23. september · 2273</div>
 </body>
 </html>
