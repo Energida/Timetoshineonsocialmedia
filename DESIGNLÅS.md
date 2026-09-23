@@ -1,3 +1,27 @@
+## v2258 — 23. september 2026 · DELLINKET PEGER PÅ KUNDENS APP, ALDRIG PÅ ADMIN
+
+**Ida:** »Når jeg står på noget content — på en kundes profil i admin — skal jeg kunne klikke på
+del, kopiere linket, og så skal kunden kunne komme ind på indholdet via linket og ikke ende på
+min admin login side.«
+
+**MÅLT:** begge dele-veje (`briefDelKopier` og `godkVisDel`) byggede adressen af
+`location.origin + location.pathname`. Står Ida i en kundes Content Studio på
+**admin.energida.dk**, blev linket »https://admin.energida.dk/?brief=…« — og kunden landede på
+**hendes** login.
+
+**Nu:** én fælles `delLink(id, kode)`. Er værten en admin-adresse (`admin` · `crm` · `dashboard`),
+peger linket på `https://b2b.energida.dk/`. Alle andre værter er urørte, også localhost og selen.
+
+**MÅLT i selen:** på `admin.localhost` giver Del
+`https://b2b.energida.dk/?brief=abc-123&kunde=ACORNS`; på `localhost` er adressen uændret.
+
+**Sikkerhed (kontraktens §8):** ingen af felterne er krydset — hverken tabeller, RLS, auth, Edge
+Functions, service-role, storage, signup eller forbrug. **Kun værten i en kopieret adresse er
+ændret.** Linket giver fortsat ingen adgang i sig selv: modtageren skal være logget ind, og
+briefen skal ligge i deres egen hentede (RLS-afgrænsede) liste — ellers siger appen det.
+**INFERERET:** at `?brief=` overlever kundens egen login på b2b (adressen skiftes ikke undervejs);
+det måles først, når en kunde åbner et link.
+
 ## v2257 — 23. september 2026 · MIKROFONEN ÅNDER, MENS DEN OPTAGER
 
 **Ida:** »Jeg mangler også den effekt at når man har aktiveret mikrofonen at den skal pulse, så
