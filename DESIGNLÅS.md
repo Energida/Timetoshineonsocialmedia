@@ -1,3 +1,30 @@
+## v2255 — 23. september 2026 · ET VALG ER IKKE ET ARBEJDE (HÅRD, Idas fund)
+
+**Ida:** »fordi jeg havde disse med til mødet — planlægningsmødet i går — står de nu inde over
+kalenderen. Det skal de ikke. Fordi de kommer med på et planlægningsmøde skal status ikke ændres
+fra idé til planlagt.«
+
+**MÅLT:** `briefAutosavePlan()` løfter en rå idé fra **Idé** til **Brief i gang** — og den kaldes
+af en **`change`-hændelse** i `#briefGrid`, altså hver gang der vælges en chip eller en dropdown.
+På et planlægningsmøde vælges indholdssøjle, format og CTA. Der bliver ikke skrevet ét ord, men
+status flytter sig alligevel. Og `ideManglerDato()` viser alt uden dato, hvis status ikke er Idé —
+derfor stod fire af kundens idéer pludselig i kalenderen under »Mangler dato«.
+
+**HÅRD REGEL: en idé løftes FØRST, når der er SKREVET noget.** Ny vagt `briefHarSkrevet()` ser
+kun på kundens egne ord: `hook · hookTekst · caption · beskrivelse · indhold · medIIndhold · klip ·
+slides · slideBilleder · hashtags · ctaVideo`. Maskinens egne felter (`id, scene, nr, dag, tid,
+type, format, hvem, person, kode`) springes over, så et klip, der kun har et id, ikke tæller som
+skrevet. Valg — format, målgruppe, lyd, CTA — løfter **aldrig** status.
+
+**MÅLT i selen:** kun valg → `false` (ingen `ideUpdate`) · hooket skrevet → `true` →
+`ideUpdate {"status":"Brief i gang"}` · tekst i ét klip → `true`.
+
+**Dataene rettes i appen, ikke med SQL.** `ideErIBanken()` er alt, der ikke er postet, arkiveret
+eller målt — de fire ligger altså stadig i Idébanken. Sættes status tilbage til **Idé**, forsvinder
+de fra kalenderens »Mangler dato« af sig selv (`ideManglerDato` undtager Idé).
+
+**Porten grøn.**
+
 ## v2254 — 23. september 2026 · MÅL LOADINGSKÆRMEN UDEN KONSOL
 
 **Idas konsol-svar talte ikke.** Linjen blev indsat på en side, der allerede var indlæst, så den
