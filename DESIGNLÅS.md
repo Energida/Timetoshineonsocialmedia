@@ -1,3 +1,22 @@
+## v2257 — 23. september 2026 · MIKROFONEN ÅNDER, MENS DEN OPTAGER
+
+**Ida:** »Jeg mangler også den effekt at når man har aktiveret mikrofonen at den skal pulse, så
+man kan se den optager.«
+
+**MÅLT:** pulsen fandtes i forvejen (`talePuls`, 26/8) — men den åndede en **baggrund**, og
+21/9-reglen (»mikrofonen må aldrig have en cirkel omkring sig … altid grå«) tog både baggrunden
+(`background:transparent !important`) og animationen (`animation:none !important`) fra den. Der
+var altså en puls i koden, som ingen kunne se.
+
+**Nu:** selve tegningen ånder — `mikAander` skifter stregen mellem rød (#FC2404) og husets lyse
+røde (#FF7A5C) på 1,4 sekunder. Størrelsen røres aldrig (Ida 17/9), og mikrofonen får aldrig en
+cirkel (21/9). Gælder alle tre mikrofoner (`.ark-mik` · `.tale-knap` · `.brief-mik`), b2b og admin.
+
+**MÅLT i selen:** ved 50 % af pulsen står stregen i rgb(255, 122, 92). Porten grøn.
+
+**Læren:** en `!important`-oprydning kan slukke en funktion, ingen har bedt om at få slukket. Den
+grå streg havde ikke brug for `!important` — den vandt allerede over svg'ens `stroke`-attribut.
+
 ## v2256 — 23. september 2026 · FAKTA KAN RETTES FRA FORSIDEN · HASHTAGS KAN BYTTES RUNDT
 
 **Ida:** »Jeg kan ikke finde ud af hvordan jeg kan tilpasse fakta på mobilen??«
