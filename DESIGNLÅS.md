@@ -1,3 +1,43 @@
+## v2260 — 23. september 2026 · HENT MANUSKRIPTET IND (Energida Studio)
+
+**Ida:** »Det er blevet fuldstændig helt uoverskueligt at arbejde med manuskriptet på denne måde
+når det er 1 langt dokument. Jeg har derfor brug for at du sætter vedhæftede ind i Energida Studio
+under YOU GOT THIS, delt op på lektionerne, så jeg kan tage det modul for modul.«
+**Idas klik 23/9** på skærmbilledet af det byggede (artifact MRPkHC1jDWBYxB2591rRWT): *Ja, deploy.*
+
+**MÅLT** på filen `SUCCESFULD DETAILDRIFT - hele manuskriptet (23. september).docx` og på
+eksporten fra Energida Studio 20/9 (60 rækker):
+
+| | |
+|---|---|
+| Manuskriptet | **86 lektioner**, 11 moduler, 73 videoer + 13 guider (= dokumentets eget tal) |
+| Studiet | **60 lektioner** |
+| Rammer | **56** · **oprettes 30** · **urørt 4** |
+
+**Gamle Modul 9 er blevet Modul 10 i manuskriptet.** Derfor matches der på **titlen**, ikke på
+nummeret — ellers ville 10.2 Analysér få 9.1 Fra opslag til omsætnings manus. Nummeret bruges kun
+som reserve i Modul 1–8, hvor numrene stadig betyder det samme. Titelmatch fanger også 1.4/1.5,
+der har byttet plads. De 30, der oprettes, er hele Modul 9 og hele Værktøjskassen (V1–V18 + V4A +
+V15A) plus 6.2 og 8.2. De 4 urørte er de gamle Værktøjskasse-rækker (Edit · HOOKS ·
+Kameraindstillinger · Udstyr du skal bruge) — de står, til Ida selv flytter eller sletter dem.
+
+**MANUSKRIPTET LIGGER ALDRIG I KODEN OG ALDRIG SOM FIL PÅ SERVEREN (HÅRD).** Alt på
+b2b.energida.dk kan hentes af hvem som helst, og kurset er betalt indhold. Ida vælger selv
+Word-filen; den læses i hendes egen browser (JSZip hentes først ved tryk) og skrives ind som
+hende selv — samme vej som resten af klipperummet. Ingen ny adgang, ingen service-role.
+
+**Formen:** ét ark i ⋯-menuen ved siden af »Eksportér alle manusser«, i Backstages egen arkform
+(`bs-sek` · `bs-felt` · rød primær + grå »Annullér«) — ikke b2b's `ark-*`-klasser. To trin:
+vælg filen, se tallene, tryk »Skriv det ind«. **Intet slettes**, og der hentes automatisk en
+eksport som sikkerhedskopi, før der skrives. Kan gentages, hver gang manuskriptet rettes.
+
+**Sikkerhed (kontraktens §8):** ingen felter krydset — ingen nye tabeller eller kolonner, ingen
+RLS, ingen auth, ingen Edge Function, ingen service-role, ingen storage, ingen signup. Der skrives
+til `video_opgaver` gennem klientens eksisterende vej, som Ida (admin), under de policies der
+allerede gælder. Testen, der var defineret FØR deploy: selve preview-trinnet (tallene og listen
+vises, før der skrives) + den automatiske sikkerhedskopi + kørslen af parse og plan mod det
+RIGTIGE dokument og de RIGTIGE rækker (56/30/4, stikprøver på 1.1, 1.4, 6.2, 8.2 og 10.2 rigtige).
+
 ## v2259 — 23. september 2026 · IDÉBANKEN PÅ TELEFONEN = SØJLER, MAN SWIPER MELLEM
 
 **Ida:** »Idebanken på mobilen skal være søjler man kan swipe mellem.«

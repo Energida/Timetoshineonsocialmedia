@@ -8555,6 +8555,13 @@ body.dash-mode.bs-mb .bs-kf.bs-tom, body.dash-mode.bs-mb .bs-kf-s, body.dash-mod
 html body .ark-chip { height:36px; min-height:36px; max-height:36px; padding:0 14px; font-size:12.5px; line-height:34px; box-sizing:border-box; position:relative; }
 html body .ark-chip::before { content:""; position:absolute; left:0; right:0; top:-5px; bottom:-5px; }   /* 44 px trykfelt maalt fra kantens yderside (border 1 px) */
 html body #briefWrap .klip-hoved .ark-chip.kk-chip { height:28px; min-height:28px; max-height:28px; line-height:26px; padding:0 10px; }
+/* Hent manuskriptet ind: husets lille ark, listen som rolige linjer (23/9) */
+.mi-ark .mi-sp { font-size:16px; line-height:1.35; text-align:center; margin:0 0 14px; }
+.mi-ark .mi-vaelg { width:100%; box-sizing:border-box; text-align:left; cursor:pointer; }
+.mi-ark .mi-tom { color:var(--gray3); }
+.mi-ark .mi-liste { font-size:13px; line-height:1.7; color:var(--black); margin:0 0 4px; }
+.mi-ark .mi-liste b { font-weight:400; color:var(--red); }
+.mi-ark .mi-graa { font-size:12px; line-height:1.6; color:var(--gray3); margin-top:8px; }
 /* ===== IDÉBANKEN PAA TELEFONEN = SOEJLER, MAN SWIPER MELLEM (Ida 23/9) =====
    En telefonregel bor under max-width:899px (17/9). Soejlen fylder skaermen paa naer 28 px, saa den
    naeste kigger frem og siger, at der er mere. Sporet snapper; siden selv ruller aldrig til siden. */
@@ -37892,6 +37899,7 @@ function klipMenuSkift() {
     + (modul ? r("Print dette modul", "printModul('" + esc(modul) + "')") : '')
     + r("Print manus", "printAlleManus()")
     + r("Eksportér alle manusser", "manusEksport()")
+    + (typeof manusImportAaben === "function" ? r("Hent manuskriptet ind", "manusImportAaben()") : "")
     + r("Søg i manus", "mqSoegAaben(true)")
     + r("B-roll til optagelse", "brollAaben()")
     + r("Opgaver", "visAlleOevelser()")
@@ -38366,6 +38374,196 @@ function klipNaesteAaben() {   // hop direkte til den video, der venter på Idas
 }
 function klipLocal() { try { return (JSON.parse(localStorage.getItem("video_opgaver")) || []).map(o => { o.status = klipStatusNorm(o.status); return o; }); } catch(e) { return []; } }
 function klipSaveLocal() { localStorage.setItem("video_opgaver", JSON.stringify(KLIP_OPGAVER)); }
+/* ===== HENT MANUSKRIPTET IND (Ida 23/9: »det er blevet fuldstændig helt uoverskueligt at arbejde med
+   manuskriptet paa denne maade naar det er 1 langt dokument … saet vedhaeftede ind i Energida Studio
+   under YOU GOT THIS, delt op paa lektionerne, saa jeg kan tage det modul for modul«).
+   Manuskriptet ligger ALDRIG i koden og aldrig som en fil paa serveren — kurset er betalt indhold, og
+   alt paa b2b.energida.dk kan hentes af enhver. Ida vaelger selv Word-filen; den laeses her i browseren,
+   deles op paa lektionerne og skrives ind i Energida Studio som hende selv (samme vej som resten af
+   klipperummet — ingen ny adgang, ingen service-role).
+   INTET SLETTES. Raekker i basen, manuskriptet ikke kender, staar uroert og staar paa listen bagefter.
+   Der hentes en eksport som sikkerhedskopi, FOER der skrives. */
+let MI = null;
+function miEsc(t) { try { return esc(t); } catch (e) { return String(t == null ? "" : t); } }
+function miNorm(t) {
+  return String(t || "").toLowerCase()
+    .replace(/^(?:\d+\.\d+|v\d+[a-zæøå]?)\s*[·.\-–]?\s*/i, "")
+    .replace(/[^a-z0-9æøåéèüö]+/gi, " ").trim();
+}
+function miModulNr(t) { const m = String(t || "").match(/(\d+)/); return m ? parseInt(m[1], 10) : null; }
+function miLekNr(t) { const m = String(t || "").match(/^\s*(\d+\.\d+|V\d+[A-Z]?)/i); return m ? m[1].toUpperCase() : ""; }
+function miJSZip() {
+  return new Promise(function (ok, fejl) {
+    if (window.JSZip) { ok(window.JSZip); return; }
+    const s = document.createElement("script");
+    s.src = "https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js";
+    s.onload = function () { window.JSZip ? ok(window.JSZip) : fejl(new Error("JSZip kom ikke med")); };
+    s.onerror = function () { fejl(new Error("Kunne ikke hente læseren til Word-filer")); };
+    document.head.appendChild(s);
+  });
+}
+function miAfsnit(xml) {
+  const ud = [];
+  const re = /<w:p[ >][\s\S]*?<\/w:p>|<w:p\/>/g;
+  let m;
+  while ((m = re.exec(xml))) {
+    let t = "";
+    const tre = /<w:t[^>]*>([\s\S]*?)<\/w:t>/g;
+    let n;
+    while ((n = tre.exec(m[0]))) t += n[1];
+    t = t.replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&apos;/g, "'")
+         .replace(/&#(\d+);/g, function (_, d) { return String.fromCharCode(parseInt(d, 10)); })
+         .replace(/&amp;/g, "&");
+    ud.push(t);
+  }
+  return ud;
+}
+/* Manuskriptets egen opbygning: MODUL n · modulnavn · »1.1   Titel« · »N ORD · CA. m:ss MIN«
+   (eller »GUIDE · SKRIVES, OPTAGES IKKE · N ORD«) · »SIGES IKKE  formålet« · selve manus. */
+function miDel(linjer) {
+  const MOD = /^MODUL (\d+)$/, LEK = /^((?:\d+\.\d+)|(?:V\d+[A-ZÆØÅ]?))\s{2,}(\S.*)$/;
+  const ORD = /^(\d+) ORD\s+·\s+CA\. (\d+:\d+) MIN$/, GUI = /^GUIDE\s+·\s+SKRIVES, OPTAGES IKKE\s+·\s+(\d+) ORD$/;
+  const lekt = []; let nu = null, modnr = null, modnavn = "";
+  for (let i = 0; i < linjer.length; i++) {
+    const t = String(linjer[i] || "").trim();
+    let m = t.match(MOD);
+    if (m) { modnr = parseInt(m[1], 10); modnavn = String(linjer[i + 1] || "").trim(); nu = null; continue; }
+    m = t.match(LEK);
+    if (m) { nu = { nr: m[1].toUpperCase(), titel: m[2].trim(), modul: modnr, modulnavn: modnavn, hoved: "", formaal: "", krop: [] }; lekt.push(nu); continue; }
+    if (!nu) continue;
+    if (!nu.hoved) {
+      const mg = t.match(GUI); if (mg) { nu.hoved = t; continue; }
+      const mo = t.match(ORD); if (mo) { nu.hoved = t; continue; }
+    }
+    if (!nu.formaal && t.indexOf("SIGES IKKE") === 0) { nu.formaal = t; continue; }
+    nu.krop.push(String(linjer[i] || "").replace(/\s+$/, ""));
+  }
+  lekt.forEach(function (l) {
+    while (l.krop.length && !l.krop[0].trim()) l.krop.shift();
+    while (l.krop.length && !l.krop[l.krop.length - 1].trim()) l.krop.pop();
+    l.tekst = [l.hoved, l.formaal].filter(Boolean).join("\n") + (l.hoved || l.formaal ? "\n\n" : "") + l.krop.join("\n");
+    l.modulNavn = l.modul != null ? ("Modul " + l.modul + (l.modulnavn ? " · " + l.modulnavn : "")) : "";
+    l.fuldTitel = l.nr + " · " + l.titel;
+  });
+  return lekt;
+}
+function miPlan(lekt) {
+  const rows = (typeof KLIP_OPGAVER !== "undefined" && Array.isArray(KLIP_OPGAVER)) ? KLIP_OPGAVER.slice() : [];
+  const taget = {};                       /* raekke-id, der allerede er brugt */
+  const efterNavn = {};
+  rows.forEach(function (o) { const n = miNorm(o.titel); if (n) (efterNavn[n] = efterNavn[n] || []).push(o); });
+  const opdater = [], nye = [];
+  lekt.forEach(function (l) {
+    const n = miNorm(l.titel);
+    let traf = null;
+    const kand = (efterNavn[n] || []).filter(function (o) { return !taget[o.id]; });
+    if (kand.length === 1) traf = kand[0];
+    /* Nummeret er kun en reserve i Modul 1-8, hvor numrene betyder det samme i basen og i
+       manuskriptet. Modul 9 og 10 er rykket, saa dér ville nummeret give det forkerte manus. */
+    if (!traf && l.modul != null && l.modul >= 1 && l.modul <= 8) {
+      const ens = rows.filter(function (o) { return !taget[o.id] && miLekNr(o.titel) === l.nr; });
+      if (ens.length === 1) traf = ens[0];
+    }
+    if (traf) { taget[traf.id] = true; opdater.push({ o: traf, l: l }); }
+    else nye.push(l);
+  });
+  const uroert = rows.filter(function (o) { return !taget[o.id]; });
+  return { opdater: opdater, nye: nye, uroert: uroert };
+}
+function manusImportAaben() {
+  MI = { fil: "", lekt: null, plan: null, koerer: false, svar: null };
+  miTegn();
+}
+function miTegn() {
+  let m = document.getElementById("bsFlytMenu");
+  if (!m) { m = document.createElement("div"); m.id = "bsFlytMenu"; document.body.appendChild(m); }
+  const S = MI || {};
+  /* SAMME ARK SOM RESTEN AF BACKSTAGE (modulNyArk): bs-sek som overskrift, bs-felt i fuld bredde,
+     roed primaer og graa sekundaer nederst — og »Annullér« sidst (popup-laasen 19/9). */
+  const roed = function (navn, fn) { return '<button type="button" class="bsam-mobknap bs-knap" style="display:block;width:100%;margin:12px 0 0;background:var(--red);color:#fff;border:0;" onclick="' + fn + '">' + navn + '</button>'; };
+  const graa = function (navn, fn) { return '<button type="button" class="bsam-mobknap bsam-mobknap-sek bs-knap" style="display:block;width:100%;margin:6px 0 0;" onclick="' + fn + '">' + navn + '</button>'; };
+  let krop = "";
+  if (S.svar) {
+    krop = '<div class="mi-liste">' + S.svar + '</div>' + graa("Luk", "bsFlytLuk()");
+  } else if (!S.plan) {
+    krop = '<div class="mi-sp">Vælg Word-filen med hele manuskriptet.</div>'
+      + '<button type="button" class="bs-felt mi-vaelg" onclick="document.getElementById(\'miFil\').click()">'
+      + (S.fil ? miEsc(S.fil) : '<span class="mi-tom">Ingen fil valgt</span>') + '</button>'
+      + '<input type="file" id="miFil" accept=".docx" style="display:none;" onchange="miLaes(this)">'
+      + (S.koerer ? '<div class="mi-graa">Læser filen …</div>' : '')
+      + graa("Annullér", "bsFlytLuk()");
+  } else {
+    const p = S.plan;
+    krop = '<div class="mi-liste">'
+      + '<div><b>' + p.opdater.length + '</b> lektioner får manuskriptets tekst</div>'
+      + '<div><b>' + p.nye.length + '</b> lektioner bliver oprettet</div>'
+      + '<div><b>' + p.uroert.length + '</b> står urørt, fordi manuskriptet ikke kender dem</div>'
+      + (p.uroert.length ? '<div class="mi-graa">' + p.uroert.map(function (o) { return miEsc(o.titel || "(uden titel)"); }).join("<br>") + '</div>' : '')
+      + '</div>'
+      + (S.koerer ? '<div class="mi-graa">Skriver …</div>' : roed("Skriv det ind", "miSkriv()") + graa("Annullér", "bsFlytLuk()"));
+  }
+  m.innerHTML = '<div class="bs-flyt-ark mi-ark"><div class="bs-sek" style="margin:0 2px 14px;text-align:center;">Hent manuskriptet ind</div>' + krop + '</div>';
+  m.style.display = "flex";
+  m.onclick = function (e) { if (e.target === m) bsFlytLuk(); };
+}
+async function miLaes(inp) {
+  const f = inp && inp.files && inp.files[0]; if (!f) return;
+  MI.fil = f.name; MI.koerer = true; miTegn();
+  try {
+    const Z = await miJSZip();
+    const zip = await Z.loadAsync(f);
+    const fil = zip.file("word/document.xml");
+    if (!fil) throw new Error("Filen ser ikke ud som et Word-dokument");
+    const xml = await fil.async("text");
+    const lekt = miDel(miAfsnit(xml));
+    if (!lekt.length) throw new Error("Fandt ingen lektioner i filen");
+    MI.lekt = lekt; MI.plan = miPlan(lekt); MI.koerer = false; miTegn();
+  } catch (e) {
+    MI.koerer = false; miTegn();
+    try { husBesked("Kunne ikke læse filen: " + ((e && e.message) || e)); } catch (x) {}
+  }
+}
+async function miSkriv() {
+  if (!MI || !MI.plan || MI.koerer) return;
+  if (!sb) { try { husBesked("Ingen forbindelse til basen."); } catch (e) {} return; }
+  MI.koerer = true; miTegn();
+  /* SIKKERHEDSKOPI FOERST: husets egen eksport af alt, der staar i Energida Studio lige nu. */
+  try { manusEksport(); } catch (e) {}
+  const p = MI.plan;
+  let opd = 0, fejlOpd = [], oprettet = 0, fejlNye = "";
+  for (const par of p.opdater) {
+    const patch = { manus_tekst: par.l.tekst, titel: par.l.fuldTitel };
+    if (par.l.modulNavn) patch.modul = par.l.modulNavn;
+    try {
+      const r = await sb.from("video_opgaver").update(patch).eq("id", par.o.id).select("id");
+      if (r && !r.error && r.data && r.data.length) opd++; else fejlOpd.push(par.l.fuldTitel);
+    } catch (e) { fejlOpd.push(par.l.fuldTitel); }
+  }
+  if (p.nye.length) {
+    const tael = {};
+    const rows = p.nye.map(function (l) {
+      const k = l.modulNavn || "";
+      tael[k] = (tael[k] || 0) + 1;
+      const rec = { titel: l.fuldTitel, modul: k, manus_tekst: l.tekst, status: "Manus ikke godkendt", kommentarer: [], kode: "THOMAS2026" };
+      if (typeof KLIP_HAR_SORT !== "undefined" && KLIP_HAR_SORT) rec.sort_nr = tael[k];
+      return rec;
+    });
+    try {
+      const r = await sb.from("video_opgaver").insert(rows).select("id");
+      if (r && !r.error && r.data) oprettet = r.data.length;
+      if (r && r.error) fejlNye = String(r.error.message || r.error);
+    } catch (e) { fejlNye = String((e && e.message) || e); }
+  }
+  MI.koerer = false;
+  MI.svar = '<div><b>' + opd + '</b> lektioner fik manuskriptets tekst</div>'
+    + '<div><b>' + oprettet + '</b> lektioner blev oprettet</div>'
+    + (fejlOpd.length ? '<div class="mi-graa">Kunne ikke skrives: ' + fejlOpd.map(miEsc).join(", ") + '</div>' : '')
+    + (fejlNye ? '<div class="mi-graa">De nye kunne ikke oprettes: ' + miEsc(fejlNye) + '</div>' : '')
+    + '<div class="mi-graa">Sikkerhedskopien af det gamle ligger i din Overførsler-mappe.</div>';
+  miTegn();
+  try { klipHent(); } catch (e) {}
+}
+
 function manusEksport() {   // dumper alle live manusser (video_opgaver) til én fil — så Claude kan læse præcis det, der er i Tip Top Studio
   const msg = document.getElementById("manusEksportMsg");
   const rows = (typeof KLIP_OPGAVER !== "undefined" && Array.isArray(KLIP_OPGAVER)) ? KLIP_OPGAVER.slice() : [];
@@ -52725,7 +52923,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2259";
+const APP_VERSION = "2260";
 let NY_VERSION_KLAR = false;
 let NY_VERSION_AFVIST = false;
 function nyVersionSkjul() {
@@ -72788,7 +72986,7 @@ function klipMenuSkift() {
   const modul = String(KLIP_MODUL_CHIP || "").replace(/\\/g, "\\\\").replace(/'/g, "\\'");
   m.innerHTML = '<div class="bs-flyt-ark"><div class="bs-sek" style="margin:0 2px 10px;">Værktøjer og visninger</div>'
     + (modul ? r("Print dette modul", "printModul('" + esc(modul) + "')") : '')
-    + r("Print manus", "printAlleManus()") + r("Eksportér alle manusser", "manusEksport()") + r("Søg i manus", "mqSoegAaben(true)") + r("B-roll til optagelse", "brollAaben()") + r("Opgaver", "visAlleOevelser()")
+    + r("Print manus", "printAlleManus()") + r("Eksportér alle manusser", "manusEksport()") + (typeof manusImportAaben === "function" ? r("Hent manuskriptet ind", "manusImportAaben()") : "") + r("Søg i manus", "mqSoegAaben(true)") + r("B-roll til optagelse", "brollAaben()") + r("Opgaver", "visAlleOevelser()")
     + (mqErIda() ? r("Manus-quizzen", "klipVisningSaet('quiz')") : '')
     + (KLIP_VISNING !== "moduler" ? r("Modulerne", "klipVisningSaet('moduler')") : '')
     + (KLIP_VISNING !== "ideer" ? r("Idéer til manus", "klipVisningSaet('ideer')") : '')
@@ -73274,6 +73472,6 @@ function bsTodoRet(id) {
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 23. september · 2259</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 23. september · 2260</div>
 </body>
 </html>
