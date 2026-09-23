@@ -1,3 +1,52 @@
+## v2251 — 23. september 2026, nat · STRATEGIBYGGEREN FLYTTES TIL MODUL 6 (Idas klik + »sæt systemet op«)
+
+**Idas klik** på kortlægningen VU21gtmcLBivu6A1aCKhB8, og derefter: »kan du sætte systemet op?
+og ændre noget inden min manusændring?«
+
+**RODEN TIL HELE PROBLEMET: registret var låst i koden.** Hver gang en øvelse skiftede ordlyd,
+krævede det BÅDE et kodedeploy OG et SQL-kort. Gik de to ting ikke i takt, drev de fra hinanden —
+og det er præcis det, der skete mellem Modul 5 og Modul 6.
+
+**Nu ligger BEGGE registre i koden, og BASEN bestemmer.** `BS_REGISTER_M5` (35, lektion 5-1…5-6)
+og `BS_REGISTER_M6` (42, lektion 6-1…6-6). `bsRegisterVaelg()` slår op i `lektion_oevelser`:
+findes ALLE 42 af Modul 6-registrets opgave-id'er, bruges det; ellers bliver Modul 5 stående.
+Halvvejs tæller ikke — et halvt register ville give en halv strategi uden at sige det.
+**MÅLT i selen:** »register: Modul 5 (0 af 42 fundet i basen)« — koden kan deployes uden at ændre
+noget, og skiftet sker af sig selv, når SQL-kortet køres. Rækkefølgen er dermed ligegyldig, og
+**en ny ordlyd kræver fremover KUN et SQL-kort.**
+
+**MÅLT UNDERVEJS — Strategibyggeren er blokeret i dag:** ingen af M5-registrets 35 opgave-id'er
+findes i `lektion_oevelser` (0 af 35, læst som anonym). Ventevagten i `bsSvarFor` kaster derfor
+»Strategien er ved at blive opdateret«. SQL-kortet er første gang, registrets ordlyd rent faktisk
+kommer i basen.
+
+**Kortlægningen manuskript → byggesten:** 6.1 Grundlaget 4 · 6.2 USP 6 · 6.3 Målgruppen 13 ·
+6.4 Drivkraften 8 · 6.5 Værdierne 6 · 6.6 Retningen 5 = **42**. Værdier og Retning 1:1.
+**Seks nøgler er nye for motoren:** business_store_count · usp_selection_criteria ·
+usp_same_elsewhere · audience_why_good · team_size · partner_values.
+**To stod allerede i instruksen uden nogensinde at have haft et spørgsmål:** team_differences og
+team_mood_words. **`value_words` er pensioneret** — motoren har selv udledt værdierne siden 26/8,
+men nøglen stod stadig i registret. De 34 øvrige bærer `genbrugt_fra`, så kundernes gamle svar
+følger med.
+
+**To nye kort i Maskinrummet, begge inerte til Ida kører dem:**
+1. **»Modul 6 bliver manuskriptets«** (SQL) — lektionerne 6-1…6-6 får manuskriptets titler
+   (»Jeres« forsvinder), og de 42 spørgsmål lander med hjælpetekst og registrets egne opgave-id'er.
+2. **»Motoren skal kende Modul 6's nye spørgsmål«** (Edge) — `drejebog-generator` v10.
+
+**SIKKERHEDSPORTEN (kontraktens §8):** to krydser — Edge Functions og AI-forbrug.
+Testen var defineret før: de seks dokumenterede sikkerhedslinjer sammenlignet tegn for tegn
+før/efter. **MÅLT: identiske.** Verify JWT til · `getUser(jwt)` som egen adgangskontrol ·
+ingen service-role · ingen databaseadgang · ét modelkald pr. anmodning. Kun instruksteksten er
+udvidet: **+2.077 tegn, ca. 500 tokens pr. kald** (MÅLT). Ida deployer selv Edge-kortet.
+
+**Fulgte med til Modul 6:** `DREJEBOG_LEKTIONER` (stod på 5-x, som nu er Energibanken) og de otte
+`DREJEBOG_HULLER`, flyttet efter INDHOLD, ikke efter det gamle nummer. **Åbent:** hul-listen er
+kortlagt 31/7 og er ikke holdt op mod det nye manuskript; ét hul peger stadig på »5-7«, en lektion
+der ikke findes.
+
+**Porten grøn** på alle seks prober. Kortene set i selen på 1440 og 390.
+
 ## v2250 — 22. september 2026, nat · SQL-KORTENE: RØD ELLER GRÅ RAMME BETØD INGENTING (Idas fund)
 
 **Idas fund:** »begge disse??? fejl dato?« på to kort med rød ramme i Maskinrummet.
