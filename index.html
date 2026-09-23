@@ -37899,7 +37899,7 @@ function klipMenuSkift() {
     + (modul ? r("Print dette modul", "printModul('" + esc(modul) + "')") : '')
     + r("Print manus", "printAlleManus()")
     + r("Eksportér alle manusser", "manusEksport()")
-    + (typeof manusImportAaben === "function" ? r("Hent manuskriptet ind", "manusImportAaben()") : "")
+    + (typeof manusImportAaben === "function" ? r("Hent manuskriptet ind", "manusImportAaben()") + r("Byg kurset efter manuskriptet", "manusImportAaben('kursus')") : "")
     + r("Søg i manus", "mqSoegAaben(true)")
     + r("B-roll til optagelse", "brollAaben()")
     + r("Opgaver", "visAlleOevelser()")
@@ -38487,8 +38487,86 @@ function miPlan(lekt) {
   const uroert = rows.filter(function (o) { return !taget[o.id]; });
   return { opdater: opdater, nye: nye, uroert: uroert };
 }
-function manusImportAaben() {
-  MI = { fil: "", lekt: null, plan: null, koerer: false, svar: null };
+/* ===== BYG KURSET EFTER MANUSKRIPTET (Idas klik 23/9) =====
+   To lister har levet hver sit liv: produktionen (video_opgaver, Energida Studio) og SELVE KURSET
+   (lektioner), som kunderne moeder i YOU GOT THIS. MAALT 23/9: kurset stod paa 53 lektioner i
+   Modul 0-8, mens manuskriptet har 86 i elleve moduler — og produkt_lektioner var TOM, saa intet
+   produkt vidste, hvad det indeholdt. Derfor kom modulerne aldrig frem paa produktflisen.
+   INTET SLETTES. Gamle lektioner uden modstykke bliver liggende (kunderne ser kun det, der er
+   koblet til produktet), og oevelser, hvis lektion forsvinder, parkeres paa »arkiv-<id>« —
+   aldrig paa en lektion med et andet navn, hvor de ville dukke op det forkerte sted. */
+async function miKursusHent() {
+  if (!sb) return { lekt: [], oev: [] };
+  let lek = [], oev = [];
+  try { const r = await sb.from("lektioner").select("id,modul,titel,sortering"); lek = (r && r.data) || []; } catch (e) {}
+  try { const r = await sb.from("lektion_oevelser").select("lektion_id"); oev = (r && r.data) || []; } catch (e) {}
+  return { lekt: lek, oev: oev };
+}
+function miKursusPlan(lekt, nu) {
+  const nyId = {};                                  /* normaliseret titel -> nyt id */
+  const skriv = lekt.map(function (l) {
+    const id = l.modul + "-" + l.plads;
+    nyId[miNorm(l.titel)] = id;
+    return { id: id, modul: l.modulNavn, titel: l.titel, sortering: l.plads };
+  });
+  const nyeIds = {}; skriv.forEach(function (x) { nyeIds[x.id] = true; });
+  const harOev = {}; (nu.oev || []).forEach(function (r) { harOev[String(r.lektion_id)] = true; });
+  const flyt = [], hjemloes = [], udenfor = [];
+  (nu.lekt || []).forEach(function (g) {
+    const gid = String(g.id);
+    const til = nyId[miNorm(g.titel)] || null;
+    if (!nyeIds[gid]) udenfor.push(g);
+    if (!harOev[gid]) return;
+    if (til && til !== gid) flyt.push({ fra: gid, til: til, titel: g.titel });
+    else if (!til) hjemloes.push({ id: gid, titel: g.titel });
+  });
+  return { skriv: skriv, flyt: flyt, hjemloes: hjemloes, udenfor: udenfor };
+}
+async function miKursusSkriv() {
+  if (!MI || !MI.kplan || MI.koerer) return;
+  if (!sb) { try { husBesked("Ingen forbindelse til basen."); } catch (e) {} return; }
+  MI.koerer = true; miTegn();
+  const p = MI.kplan;
+  let skrevet = 0, flyttet = 0, parkeret = 0, koblet = 0, fejl = "";
+  /* 1 · oevelserne FOERST — deres lektion skal findes under sit gamle navn, naar de flyttes */
+  for (const f of p.flyt) {
+    try { const r = await sb.from("lektion_oevelser").update({ lektion_id: f.til }).eq("lektion_id", f.fra).select("lektion_id"); if (r && !r.error && r.data && r.data.length) flyttet++; } catch (e) {}
+  }
+  for (const h of p.hjemloes) {
+    try { const r = await sb.from("lektion_oevelser").update({ lektion_id: "arkiv-" + h.id }).eq("lektion_id", h.id).select("lektion_id"); if (r && !r.error && r.data && r.data.length) parkeret++; } catch (e) {}
+  }
+  /* 2 · kursets lektioner */
+  for (const x of p.skriv) {
+    const rec = { id: x.id, modul: x.modul, titel: x.titel, sortering: x.sortering };
+    try {
+      const u = await sb.from("lektioner").update({ modul: rec.modul, titel: rec.titel, sortering: rec.sortering }).eq("id", rec.id).select("id");
+      if (u && !u.error && u.data && u.data.length) { skrevet++; continue; }
+      const n = await sb.from("lektioner").insert(rec).select("id");
+      if (n && !n.error && n.data && n.data.length) skrevet++;
+      else if (n && n.error && !fejl) fejl = String(n.error.message || n.error);
+    } catch (e) { if (!fejl) fejl = String((e && e.message) || e); }
+  }
+  /* 3 · YOU GOT THIS faar manuskriptets lektioner — kun det produkt, og kun de 86 */
+  try {
+    await sb.from("produkt_lektioner").delete().eq("produkt_id", "yougotthis");
+    const rk = p.skriv.map(function (x, i) { return { produkt_id: "yougotthis", lektion_id: x.id, sortering: i + 1 }; });
+    const r = await sb.from("produkt_lektioner").insert(rk).select("lektion_id");
+    if (r && !r.error && r.data) koblet = r.data.length;
+    if (r && r.error && !fejl) fejl = String(r.error.message || r.error);
+  } catch (e) { if (!fejl) fejl = String((e && e.message) || e); }
+  MI.koerer = false;
+  MI.svar = '<div><b>' + skrevet + '</b> lektioner i kurset står nu som i manuskriptet</div>'
+    + '<div><b>' + koblet + '</b> af dem ligger i YOU GOT THIS</div>'
+    + (flyttet ? '<div><b>' + flyttet + '</b> øvelser flyttede med deres lektion</div>' : '')
+    + (parkeret ? '<div><b>' + parkeret + '</b> øvelser er parkeret, fordi deres lektion ikke findes i manuskriptet</div>' : '')
+    + (p.udenfor.length ? '<div class="mi-graa">' + p.udenfor.length + ' gamle lektioner bliver liggende. De er ikke i YOU GOT THIS, så kunderne ser dem ikke.</div>' : '')
+    + (fejl ? '<div class="mi-graa">Noget gik galt: ' + miEsc(fejl) + '</div>' : '');
+  miTegn();
+  try { if (typeof prodHent === "function") prodHent(); } catch (e) {}
+}
+
+function manusImportAaben(hvad) {
+  MI = { hvad: hvad === "kursus" ? "kursus" : "manus", fil: "", lekt: null, plan: null, kplan: null, koerer: false, svar: null };
   miTegn();
 }
 function miTegn() {
@@ -38502,13 +38580,24 @@ function miTegn() {
   let krop = "";
   if (S.svar) {
     krop = '<div class="mi-liste">' + S.svar + '</div>' + graa("Luk", "bsFlytLuk()");
-  } else if (!S.plan) {
+  } else if (!S.plan && !S.kplan) {
     krop = '<div class="mi-sp">Vælg Word-filen med hele manuskriptet.</div>'
       + '<button type="button" class="bs-felt mi-vaelg" onclick="document.getElementById(\'miFil\').click()">'
       + (S.fil ? miEsc(S.fil) : '<span class="mi-tom">Ingen fil valgt</span>') + '</button>'
       + '<input type="file" id="miFil" accept=".docx" style="display:none;" onchange="miLaes(this)">'
       + (S.koerer ? '<div class="mi-graa">Læser filen …</div>' : '')
       + graa("Annullér", "bsFlytLuk()");
+  } else if (S.hvad === "kursus") {
+    const k = S.kplan;
+    krop = '<div class="mi-liste">'
+      + '<div><b>' + k.skriv.length + '</b> lektioner i kurset kommer til at stå som i manuskriptet</div>'
+      + '<div><b>' + k.skriv.length + '</b> af dem lægges i YOU GOT THIS</div>'
+      + (k.flyt.length ? '<div><b>' + k.flyt.length + '</b> øvelser flytter med deres lektion</div>' : '')
+      + (k.hjemloes.length ? '<div><b>' + k.hjemloes.length + '</b> øvelser mister deres lektion og bliver parkeret</div>'
+          + '<div class="mi-graa">' + k.hjemloes.map(function (h) { return miEsc(h.titel); }).join("<br>") + '</div>' : '')
+      + (k.udenfor.length ? '<div class="mi-graa">' + k.udenfor.length + ' gamle lektioner bliver liggende. De kommer ikke i YOU GOT THIS.</div>' : '')
+      + '</div>'
+      + (S.koerer ? '<div class="mi-graa">Skriver …</div>' : roed("Byg kurset", "miKursusSkriv()") + graa("Annullér", "bsFlytLuk()"));
   } else {
     const p = S.plan;
     krop = '<div class="mi-liste">'
@@ -38519,7 +38608,8 @@ function miTegn() {
       + '</div>'
       + (S.koerer ? '<div class="mi-graa">Skriver …</div>' : roed("Skriv det ind", "miSkriv()") + graa("Annullér", "bsFlytLuk()"));
   }
-  m.innerHTML = '<div class="bs-flyt-ark mi-ark"><div class="bs-sek" style="margin:0 2px 14px;text-align:center;">Hent manuskriptet ind</div>' + krop + '</div>';
+  m.innerHTML = '<div class="bs-flyt-ark mi-ark"><div class="bs-sek" style="margin:0 2px 14px;text-align:center;">'
+    + (S.hvad === "kursus" ? "Byg kurset efter manuskriptet" : "Hent manuskriptet ind") + '</div>' + krop + '</div>';
   m.style.display = "flex";
   m.onclick = function (e) { if (e.target === m) bsFlytLuk(); };
 }
@@ -38534,7 +38624,10 @@ async function miLaes(inp) {
     const xml = await fil.async("text");
     const lekt = miDel(miAfsnit(xml));
     if (!lekt.length) throw new Error("Fandt ingen lektioner i filen");
-    MI.lekt = lekt; MI.plan = miPlan(lekt); MI.koerer = false; miTegn();
+    MI.lekt = lekt;
+    if (MI.hvad === "kursus") { const nu = await miKursusHent(); MI.kplan = miKursusPlan(lekt, nu); }
+    else { MI.plan = miPlan(lekt); }
+    MI.koerer = false; miTegn();
   } catch (e) {
     MI.koerer = false; miTegn();
     try { husBesked("Kunne ikke læse filen: " + ((e && e.message) || e)); } catch (x) {}
@@ -52981,7 +53074,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2263";
+const APP_VERSION = "2264";
 let NY_VERSION_KLAR = false;
 let NY_VERSION_AFVIST = false;
 function nyVersionSkjul() {
@@ -73044,7 +73137,7 @@ function klipMenuSkift() {
   const modul = String(KLIP_MODUL_CHIP || "").replace(/\\/g, "\\\\").replace(/'/g, "\\'");
   m.innerHTML = '<div class="bs-flyt-ark"><div class="bs-sek" style="margin:0 2px 10px;">Værktøjer og visninger</div>'
     + (modul ? r("Print dette modul", "printModul('" + esc(modul) + "')") : '')
-    + r("Print manus", "printAlleManus()") + r("Eksportér alle manusser", "manusEksport()") + (typeof manusImportAaben === "function" ? r("Hent manuskriptet ind", "manusImportAaben()") : "") + r("Søg i manus", "mqSoegAaben(true)") + r("B-roll til optagelse", "brollAaben()") + r("Opgaver", "visAlleOevelser()")
+    + r("Print manus", "printAlleManus()") + r("Eksportér alle manusser", "manusEksport()") + (typeof manusImportAaben === "function" ? r("Hent manuskriptet ind", "manusImportAaben()") + r("Byg kurset efter manuskriptet", "manusImportAaben('kursus')") : "") + r("Søg i manus", "mqSoegAaben(true)") + r("B-roll til optagelse", "brollAaben()") + r("Opgaver", "visAlleOevelser()")
     + (mqErIda() ? r("Manus-quizzen", "klipVisningSaet('quiz')") : '')
     + (KLIP_VISNING !== "moduler" ? r("Modulerne", "klipVisningSaet('moduler')") : '')
     + (KLIP_VISNING !== "ideer" ? r("Idéer til manus", "klipVisningSaet('ideer')") : '')
@@ -73530,6 +73623,6 @@ function bsTodoRet(id) {
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 23. september · 2263</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 23. september · 2264</div>
 </body>
 </html>

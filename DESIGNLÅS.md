@@ -1,3 +1,30 @@
+## v2264 — 23. september 2026 · KURSET BYGGES EFTER MANUSKRIPTET
+
+**Idas klik:** *Byg kurset efter manuskriptet.*
+
+**MÅLT:** to lister havde levet hver sit liv. Produktionen (`video_opgaver`, Energida Studio) har
+manuskriptets 86 lektioner efter v2260–v2262. **Kurset** (`lektioner`) — det kunderne møder i
+YOU GOT THIS — stod stadig på 53 lektioner i Modul 0–8. Og `produkt_lektioner` var **tom**:
+intet produkt vidste, hvad det indeholdt. Derfor kom modulerne aldrig frem på produktflisen.
+
+**Nyt punkt i ⋯-menuen: »Byg kurset efter manuskriptet«.** Samme ark, samme fil, samme regel:
+preview først, intet slettes. Den skriver kursets 86 lektioner (id = modul-plads, `1-1` … `11-20`),
+lægger dem alle i YOU GOT THIS, og **flytter øvelserne med deres lektion**, matchet på titlen.
+
+**Det, der koster (MÅLT på Idas egne data):**
+
+| | |
+|---|---|
+| Lektioner i kurset | 86 (alle unikke id'er) |
+| Øvelser der flytter med | 1 (`5-6` → `5-7`, Din energiplan) |
+| Øvelser der mister deres lektion | **6** — parkeres på `arkiv-<id>`, aldrig slettet |
+| Gamle lektioner der bliver liggende | 7 (de er ikke i YOU GOT THIS, så kunderne ser dem ikke) |
+
+De seks er de tre fra gamle Modul 1 (som manuskriptet har skrevet helt om) og tre fra Modul 6,
+der har fået nye navne. **De parkeres frem for at blive liggende på en lektion med et andet navn** —
+dér ville de dukke op det forkerte sted hos kunden. Deres afløsere ligger i de to SQL-kort,
+der venter på Idas Run.
+
 ## v2263 — 23. september 2026 · EN PRODUKTFLISE MÅ IKKE VÆRE EN BLINDGYDE
 
 **Idas fund:** »der er noget HELT galt. når jeg går ind påny lander jeg på den rigtige side. så
