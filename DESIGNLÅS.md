@@ -1,3 +1,30 @@
+## v2253 — 23. september 2026 · ET MØBEL, MAN IKKE KAN SE, ER IKKE ET MØBEL (Idas fund)
+
+**Ida:** »jeg ser stadig den gamle loadingskærm på desktop« med skærmbillede af en tom,
+lys flade på admin.energida.dk.
+
+**MÅLT:** markbilledet ER slået til på admin (`html.b2b-foto` sættes på alle domæner, 21/9), og
+loaderens baggrund er mørk #2E2C29. Det, Ida så, var derfor **ikke loaderen** — det var den
+**tomme side, efter tæppet var løftet.** Hendes eget skærmbillede et minut senere viser Studiet
+fuldt tegnet.
+
+**To huller i boot-vagten, begge rettet:**
+1. **Møbellisten kendte ikke bf3.** `erAppenDer` og `sideKlarNaar` ledte efter `.bs-doer, .bs-kf,
+   .bs-tom, .ws-card, .kv-flise, .bs-rk …` — ingen af bf3-blokkens egne klasser. En side bygget
+   udelukkende i den nye form (fx **Idéer til manus**, der kun har `.bs3-fl`) ville aldrig kunne
+   melde sig klar. Listen kender nu også `.bs3-fl, .bs3-doer, .bs3-tom, .tom-kort` — **begge steder**.
+2. **`querySelector` finder også SKJULTE elementer.** `#dside-klip` bærer stadig den gamle markups
+   `.ws-card`'er (`#prodKort`, `#manusIdeCard`, tom-tilstanden »Ingen videoer i produktion lige
+   nu.«), som bud 6 skjuler med CSS. Vagten kunne derfor godkende en side, hvis eneste »møbel« lå
+   skjult — og løfte tæppet, før data var hjemme. Nu tæller **kun det, der har en boks**
+   (`getClientRects().length`).
+
+**ÆRLIGT OM MÅLINGEN:** selen fjerner selv `#appLoader` efter 2,4 sek., så den kan ikke måle
+tæppets rigtige levetid. De to huller er MÅLT i koden og i DOM'en; at de er ÅRSAGEN til netop
+Idas skærmbillede er **INFERERET**. Bekræftes på hendes egen maskine med konsol-linjen i chatten.
+
+**Porten grøn** på alle seks prober.
+
 ## v2252 — 23. september 2026 · IDÉER TIL MANUS FIK SIT EGET RUM (Idas klik)
 
 **Ida:** »inde i energida studio har jeg en funktion der hedder idéer til manus — den ligger helt
