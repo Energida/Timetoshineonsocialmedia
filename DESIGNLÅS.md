@@ -1,3 +1,30 @@
+## v2265 — 23. september 2026 · EN SIDE ÅBNER PÅ SIN FORSIDE (HÅRD)
+
+**Ida, tredje gang samme dag:** »det bliver ved med at gå galt! … kan slet ikke se eller finde
+dashboardet og der er pludselig kommet en mærkelig dropdown som sidder oppe i coverbilledet.«
+
+**MÅLT — årsagen:** `KLIP_VISNING` blev **stående** på den visning, man sidst var i. Den nulstilles
+kun, når hele siden hentes forfra. Landede man én gang i *Produkter* eller *Tavlen* — fx ved at
+trykke på en produktflise — mødte man dem hver eneste gang bagefter. Og netop de visninger tegnes
+af den gamle motor, hvor coveret bærer **»Værktøjer«** i stedet for de tre prikker; derfor var
+⋯-menuen, og dermed vejen tilbage til Modulerne, ikke til at finde.
+
+**Nu: `visDashSide("klip")` sætter altid `KLIP_VISNING = "moduler"`** og rydder skridt-filteret.
+**En side åbner på sin forside.** Man kan stadig gå til de andre visninger — man bliver bare ikke
+efterladt i dem.
+
+---
+
+## Kun produkter med indhold på forsiden
+
+**Ida:** »vil du være sød at fjerne alle andre produkter fra Energida Studio og sørge for at jeg
+kan se YOU GOT THIS og modulerne under?«
+
+Seks af de syv produkter har ingen lektioner endnu; de stod som tomme fliser og kunne ikke åbne
+noget. Forsiden viser nu kun produkter, der **har** lektioner — i dag YOU GOT THIS med sine
+elleve moduler. Et produkt dukker op af sig selv, så snart det får sine lektioner.
+**Intet produkt er slettet**; de øvrige findes under »Produkter og onlinekurser«, hvor man kobler dem.
+
 ## v2264 — 23. september 2026 · KURSET BYGGES EFTER MANUSKRIPTET
 
 **Idas klik:** *Byg kurset efter manuskriptet.*
