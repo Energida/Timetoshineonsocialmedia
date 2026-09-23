@@ -8298,6 +8298,13 @@ body.mb .htb-chip.mb-chip { padding:0 12px !important; }   /* saa to chips kan s
 /* briefens caption: fluebenet paa de faste felter (valgt = altid samme maerke, Ida 20/9) */
 .htg-ok { display:none; width:22px; height:22px; border-radius:50%; background:var(--red); align-items:center; justify-content:center; flex-shrink:0; }
 .htg-rk.htg-fast .htg-ok { display:inline-flex; }
+/* GREBET FORAN HASHTAGGET (Ida 23/9) — samme tegning og samme graa som hashtagbankens faste.
+   Trykfeltet er 44 px uden at tegningen vokser (4/9). En tom raekke har intet at flytte: grebet
+   staar usynligt, saa felterne stadig staar i lige linje. */
+.htg-greb-knap { position:relative; width:24px; height:34px; display:inline-flex; align-items:center; justify-content:center; color:var(--gray3); cursor:grab; touch-action:none; flex-shrink:0; }
+.htg-greb-knap::before { content:""; position:absolute; left:50%; top:50%; width:44px; height:44px; transform:translate(-50%,-50%); }
+.htg-rk:not(.htg-har) .htg-greb-knap { visibility:hidden; pointer-events:none; }
+.htg-rk.htg-traek { opacity:.6; }
 /* i planlaegningsmoedet: samme fliser, fuld bredde */
 .htb-i-moedet { max-width:none; }
 @media (min-width:900px) {
@@ -21353,7 +21360,23 @@ function briefKortTlfFlyt() {
 function briefFoldTgl(kn) { const f = kn.closest(".pf-fold"); if (!f) return; const aaben = f.classList.toggle("aaben"); kn.setAttribute("aria-expanded", aaben ? "true" : "false"); try { sessionStorage.setItem("pfFoldAaben_" + BRIEF_ID, aaben ? "1" : "0"); } catch (e) {} }
 function briefFaktaGaa(key) {
   /* PAA BRIEFOVERSIGTEN RETTES INTET (Ida 21/9 kl. 17.30: »på briefoversigten skal man ikke kunne rette i noget … kunne ikke lukke den ned igen«) — links aabner stadig (briefFaktaLinkKlik) */
-  if (document.body.hasAttribute("data-bforside")) { FB_AABEN = null; briefFaktaUdPlacer(); return; }
+  /* TRYKKET FOERER IND I BRIEFEN PAA DET FELT (Idas klik 23/9, efter »jeg kan ikke finde ud af hvordan jeg kan
+     tilpasse fakta paa mobilen«): forsiden retter fortsat intet selv — den aabner briefen og folder raekken ud dér,
+     saa man retter samme sted som altid. Din regel fra 4/9: en flise lander paa sit eget spoergsmaal. */
+  if (document.body.hasAttribute("data-bforside")) {
+    FB_AABEN = null; briefFaktaUdPlacer();
+    try { if (BRIEF_MB_VIS !== "skriv") briefMbVis("skriv", 0); } catch (e) {}   /* samme doer som den roede knap og fliserne (briefMbVisFelt) */
+    setTimeout(function () {
+      try {
+        if (document.body.hasAttribute("data-bforside")) return;
+        if (!window.__FB_FOLD_AABEN && document.querySelector(".fb-fold-linje")) fbFoldSkift();   /* inde i briefen staar fakta foldet paa telefonen — den foldes ud, saa feltet er fremme */
+        FB_AABEN = key; briefFaktaUdPlacer();
+        const r = document.querySelector('.fb-rk[data-key="' + key + '"]');
+        if (r) r.scrollIntoView({ block: "center", behavior: "smooth" });
+      } catch (e) {}
+    }, 80);
+    return;
+  }
   FB_AABEN = (FB_AABEN === key) ? null : key;
   briefFaktaUdPlacer();
 }
@@ -21730,12 +21753,12 @@ const BRIEF_EFTER = [
    den valgte (Idas billed-design). Raekkerne baerer .chip-btn + data-val, saa briefChip
    er den ENE datavej — gem-reglen og format-/lyd-gentegningerne foelger med gratis. */
 /* EEN raekke i hashtag-listen (Ida 21/9 kl. 19.55: »her skal den tilføjes når man klikker enter!«): Enter gemmer og tegner listen igen med en ny tom raekke */
-function briefHashtagRkHtml(hi, hv) { return '<div class="htg-rk"><span class="htg-ok" aria-hidden="true"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span><span>#</span><input type="text" id="bf_htg_' + hi + '" value="' + esc(hv) + '" autocomplete="off" oninput="briefHashtagsSaml();try{briefHashtagMaerk()}catch(e){}" onkeydown="if(event.key===\'Enter\'){event.preventDefault();briefHashtagRkEnter(' + hi + ');}"></div>'; }
+function briefHashtagRkHtml(hi, hv) { return '<div class="htg-rk"><span class="htg-greb-knap" title="Træk for at ændre rækkefølgen">' + HTB_GREB + '</span><span class="htg-ok" aria-hidden="true"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span><span>#</span><input type="text" id="bf_htg_' + hi + '" value="' + esc(hv) + '" autocomplete="off" oninput="briefHashtagsSaml();try{briefHashtagMaerk()}catch(e){}" onkeydown="if(event.key===\'Enter\'){event.preventDefault();briefHashtagRkEnter(' + hi + ');}"></div>'; }
 function briefHashtagRaekkerTegn(fokus) {
   const l = document.querySelector("#briefWrap .htg-liste"); if (!l) return;
   const alle = String((BRIEF_STATE && BRIEF_STATE.hashtags) || "").split(/\s+/).filter(Boolean);
   let felter = ""; for (let hi = 0; hi < Math.min(5, alle.length + 1); hi++) felter += briefHashtagRkHtml(hi, (alle[hi] || "").replace(/^#+/, ""));
-  l.innerHTML = felter; try { briefHashtagMaerk(); } catch (e) {}
+  l.innerHTML = felter; try { briefHashtagMaerk(); } catch (e) {} try { briefHtgTraekInit(); } catch (e) {}
   if (fokus) { const f = document.getElementById("bf_htg_" + Math.min(4, alle.length)); if (f && !String(f.value || "").trim()) f.focus(); }
 }
 function briefHashtagRkEnter(hi) {
@@ -21756,6 +21779,46 @@ function briefHashtagsSaml() {
   const t = document.getElementById("bf_hashtags"); if (t) t.value = str;
   BRIEF_STATE.hashtags = str;
   try { briefAutosavePlan(); } catch (e) {}
+}
+/* BYT RUNDT PAA RAEKKEFOELGEN AF HASHTAGS (Ida 23/9: »paa mobilen og desktop skal man begge steder kunne bytte
+   rundt paa raekkefoelgen af hashtags i briefen under caption«). Samme greb og samme motor som hashtagbankens
+   faste (htbTraekInit): pointer-haendelser, saa traekket virker med finger og mus paa begge flader.
+   Lytterne sidder paa listen, ikke paa grebet, saa de overlever en gentegning. */
+function briefHtgTraekInit() {
+  const liste = document.querySelector("#briefWrap .htg-liste"); if (!liste || liste.__htgTraek) return;
+  liste.__htgTraek = true;
+  let aktiv = null;
+  liste.addEventListener("pointerdown", function (e) {
+    const g = e.target.closest ? e.target.closest(".htg-greb-knap") : null; if (!g) return;
+    aktiv = g.closest(".htg-rk"); if (!aktiv) return;
+    aktiv.classList.add("htg-traek");
+    try { g.setPointerCapture(e.pointerId); } catch (x) {}
+    e.preventDefault();
+  });
+  liste.addEventListener("pointermove", function (e) {
+    if (!aktiv) return;
+    const rk = [].slice.call(liste.querySelectorAll(".htg-rk"));
+    const mig = rk.indexOf(aktiv);
+    const over = rk.find(function (r) { if (r === aktiv) return false; const b = r.getBoundingClientRect(); return e.clientY > b.top && e.clientY < b.bottom; });
+    if (!over) return;
+    const oi = rk.indexOf(over);
+    if (oi < mig) liste.insertBefore(aktiv, over); else liste.insertBefore(aktiv, over.nextSibling);
+  });
+  const slip = function () {
+    if (!aktiv) return;
+    aktiv.classList.remove("htg-traek"); aktiv = null;
+    const dele = [];
+    liste.querySelectorAll(".htg-rk input").forEach(function (f) {
+      const v = String(f.value || "").trim().replace(/^#+/, "").replace(/\s+/g, "");
+      if (v) dele.push("#" + v);
+    });
+    try { BRIEF_STATE.hashtags = dele.join(" "); } catch (e) {}
+    try { briefHashtagRaekkerTegn(); } catch (e) {}
+    try { briefHashtagsSaml(); } catch (e) {}
+    try { briefHashtagBankTegn(); } catch (e) {}
+  };
+  liste.addEventListener("pointerup", slip);
+  liste.addEventListener("pointercancel", slip);
 }
 /* TO ELEMENTER MED SAMME ID (Idas fund 4/9: "jeg kan stadig ikke aendre status ude fra
    brief oversigten?"). MAALT: #bdrop_status findes TO gange samtidig — een i wizarden og
@@ -25046,6 +25109,7 @@ function openBriefSide(id) {
                      med brugstal, filter paa kategori, »Tilfoej hashtag« og den graa knap »Aabn banken«. Tegnes af briefHashtagBankTegn(), naar banken er hentet. */
                   const bankHtml = '<div id="briefHtgBank"></div>';
                   try { setTimeout(briefHashtagBankTegn, 0); } catch (e) {}
+                  try { setTimeout(briefHtgTraekInit, 0); } catch (e) {}
                   return '<div class="sk-label under-etiket" style="margin:16px 0 8px;">Hashtags</div><div class="htg-liste">' + felter + '</div><textarea id="bf_hashtags" style="display:none;">' + esc(BRIEF_STATE.hashtags || "") + '</textarea>' + bankHtml;
                 })());
       })() : q('Caption <span class="sk-forkl">Teksten under opslaget</span>', /* "BOKSEN TIL HØJRE" VAR FORKERT (fundet 17/8). De tre trin står i "Sådan bygges
@@ -25086,7 +25150,7 @@ ta('caption', 'Captionen …', 110, true)
             let felter = "";
             for (let hi = 0; hi < 5; hi++) {
               const hv = (alleHtg[hi] || "").replace(/^#+/, "");
-              felter += '<div class="htg-rk"><span>#</span><input type="text" id="bf_htg_' + hi + '" value="' + esc(hv) + '" oninput="briefHashtagsSaml()"></div>';
+              felter += briefHashtagRkHtml(hi, hv);   /* TVILLINGEN (23/9): een raekke-tegner, saa grebet findes begge steder */
             }
             return '<div class="sk-label under-etiket" style="margin:16px 0 8px;">Hashtags</div>'
               + '<div class="htg-liste">' + felter + '</div>'
@@ -52595,7 +52659,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2255";
+const APP_VERSION = "2256";
 let NY_VERSION_KLAR = false;
 let NY_VERSION_AFVIST = false;
 function nyVersionSkjul() {
@@ -53260,6 +53324,7 @@ function briefHashtagMaerk() {
     const f = document.getElementById("bf_htg_" + i); if (!f) continue;
     const rk = f.closest(".htg-rk"); if (!rk) continue;
     rk.classList.toggle("htg-fast", briefHashtagErFast(f.value));
+    rk.classList.toggle("htg-har", !!String(f.value || "").trim());   /* grebet vises kun paa en raekke med et hashtag (23/9) */
   }
 }
 function briefHashtagBankTegn() {
@@ -73143,6 +73208,6 @@ function bsTodoRet(id) {
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 23. september · 2255</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 23. september · 2256</div>
 </body>
 </html>

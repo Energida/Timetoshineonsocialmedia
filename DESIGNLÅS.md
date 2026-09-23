@@ -1,3 +1,34 @@
+## v2256 — 23. september 2026 · FAKTA KAN RETTES FRA FORSIDEN · HASHTAGS KAN BYTTES RUNDT
+
+**Ida:** »Jeg kan ikke finde ud af hvordan jeg kan tilpasse fakta på mobilen??«
+**Idas klik:** *Tryk = ind i briefen på det felt.*
+
+**MÅLT:** `briefFaktaGaa()` faldt ud med det samme på briefoversigten (21/9-reglen »på
+briefoversigten skal man ikke kunne rette i noget«). Rækken gjorde altså ingenting — hverken på
+telefon eller computer.
+
+**Nu:** et tryk på Postes · Format · Platform · Hvem laver? · Lyd åbner briefen og folder
+rækkens liste ud dér, hvor man retter. Forsiden retter stadig intet selv. Døren er husets egen
+(`briefMbVis("skriv", 0)`, samme som den røde knap og fliserne). På telefonen står fakta foldet
+inde i briefen, så folden åbnes med, og rækken rulles ind i midten. Dropdownen lægger sig
+ovenpå som altid (21/9-reglen). MÅLT på 390 og 1440.
+
+---
+
+**Ida:** »På mobilen og desktop skal man begge steder kunne bytte rundt på rækkefølgen af
+hashtags i briefen under caption.«
+
+**Nu:** hver hashtag-række har husets greb foran — samme tegning, samme grå og samme motor som
+hashtagbankens faste (`htbTraekInit`). Pointer-hændelser, så trækket virker med finger og mus på
+begge flader; trykfeltet er 44 px, tegningen 24. En tom række har intet at flytte: grebet står
+usynligt, så felterne holder lige linje. Når man slipper, samles rækkefølgen om og gemmes.
+
+**Tvillingen:** den gamle caption-blok tegnede sin egen hashtag-række. Nu tegner begge blokke
+gennem `briefHashtagRkHtml()` — ét sted.
+
+**MÅLT i selen:** 390 og 1440, fire rækker, tre synlige greb; et træk fra plads 1 til plads 3 gav
+`#nederdel #hverdagstoej #stylingtips`. Porten grøn.
+
 ## v2255 — 23. september 2026 · ET VALG ER IKKE ET ARBEJDE (HÅRD, Idas fund)
 
 **Ida:** »fordi jeg havde disse med til mødet — planlægningsmødet i går — står de nu inde over
