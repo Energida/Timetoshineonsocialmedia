@@ -1,3 +1,21 @@
+## v2269 — 23. september 2026 · EN LISTE HÆNGER FAST I SIN KNAP
+
+**Idas fund:** »når jeg klikker på status drop down og scroller ned på siden, følger drop downen med?«
+
+**MÅLT:** statuslisten i briefens bånd (`bfStatusBaandKort`) er `position:fixed` og fik sin plads
+**én gang**, ud fra knappens `getBoundingClientRect()`. Rullede siden, blev listen stående midt på
+skærmen, mens pillen gled væk under den.
+
+**Nu:** listen placeres på hver rulning og hver ændring af vinduet — og **forlader pillen skærmen,
+lukker listen**. En liste uden sin knap hører ingen steder til. Rullelytteren er sat med `capture`,
+så den også fanger, når en indre rude (`.content`) ruller.
+
+**MÅLT i selen på 1440:** afstanden fra pillen til listen er 12 px før rulningen og 12 px efter.
+Før rettelsen ville den have været −288 efter 300 px.
+
+**Reglen: et element, der er `fixed` og placeres ud fra en knap, skal placeres igen, hver gang
+noget flytter sig — ellers er det ikke forankret, det er bare tilfældigt placeret.**
+
 ## v2268 — 23. september 2026 · STUDIET SOM DASHBOARD = BUD 1 »DAGENS PRODUKTION«
 
 **Ida:** »byg dashboardet nu.« (Bud 1 af fem, artifact 8TsCENFrbtDBqwfR4JrTga — den anbefalede.)
