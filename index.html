@@ -38622,6 +38622,41 @@ async function miGendanSkriv() {
   try { klipHent(); } catch (e) {}
 }
 
+/* ===== RYD OP EFTER MANUSKRIPTET (Ida 23/9: »Lektionerne skal være 1:1 med det dokument jeg har
+   sendt til dig i dag. Alt andet skal ikke være der!«) =====
+   Fjerner de raekker, manuskriptet ikke kender — baade i produktionen (video_opgaver) og i kurset
+   (lektioner). Listen vises FOERST, og der hentes en sikkerhedskopi, foer der slettes.
+   Oevelser roeres aldrig: de parkerede »arkiv-«-raekker bliver liggende. */
+async function miRydSkriv() {
+  if (!MI || MI.koerer) return;
+  if (!sb) { try { husBesked("Ingen forbindelse til basen."); } catch (e) {} return; }
+  const fraManus = (MI.plan && MI.plan.uroert) || [];
+  const fraKursus = (MI.kplan && MI.kplan.udenfor) || [];
+  if (!fraManus.length && !fraKursus.length) return;
+  MI.koerer = true; miTegn();
+  try { manusEksport(); } catch (e) {}
+  let a = 0, b = 0; const fejl = [];
+  for (const o of fraManus) {
+    try { const r = await sb.from("video_opgaver").delete().eq("id", o.id).select("id"); if (r && !r.error && r.data && r.data.length) a++; else fejl.push(o.titel); }
+    catch (e) { fejl.push(o.titel); }
+  }
+  for (const g of fraKursus) {
+    try {
+      await sb.from("produkt_lektioner").delete().eq("lektion_id", g.id);
+      const r = await sb.from("lektioner").delete().eq("id", g.id).select("id");
+      if (r && !r.error && r.data && r.data.length) b++; else fejl.push(g.titel);
+    } catch (e) { fejl.push(g.titel); }
+  }
+  MI.koerer = false;
+  MI.svar = (a ? '<div><b>' + a + '</b> lektioner er fjernet fra Energida Studio</div>' : '')
+    + (b ? '<div><b>' + b + '</b> lektioner er fjernet fra kurset</div>' : '')
+    + (fejl.length ? '<div class="mi-graa">Kunne ikke fjernes: ' + fejl.map(miEsc).join(", ") + '</div>' : '')
+    + '<div class="mi-graa">Der ligger en sikkerhedskopi af det hele i din Overførsler-mappe.</div>';
+  miTegn();
+  try { klipHent(); } catch (e) {}
+  try { if (typeof prodHent === "function") prodHent(); } catch (e) {}
+}
+
 function manusImportAaben(hvad) {
   MI = { hvad: (hvad === "kursus" || hvad === "gendan") ? hvad : "manus", fil: "", lekt: null, plan: null, kplan: null, gplan: null, koerer: false, svar: null };
   miTegn();
@@ -38663,7 +38698,10 @@ function miTegn() {
           + '<div class="mi-graa">' + k.hjemloes.map(function (h) { return miEsc(h.titel); }).join("<br>") + '</div>' : '')
       + (k.udenfor.length ? '<div class="mi-graa">' + k.udenfor.length + ' gamle lektioner bliver liggende. De kommer ikke i YOU GOT THIS.</div>' : '')
       + '</div>'
-      + (S.koerer ? '<div class="mi-graa">Skriver …</div>' : roed("Byg kurset", "miKursusSkriv()") + graa("Annullér", "bsFlytLuk()"));
+      + (S.koerer ? '<div class="mi-graa">Skriver …</div>'
+        : roed("Byg kurset", "miKursusSkriv()")
+          + (k.udenfor.length ? graa("Fjern de " + k.udenfor.length + ", manuskriptet ikke kender", "miRydSkriv()") : "")
+          + graa("Annullér", "bsFlytLuk()"));
   } else {
     const p = S.plan;
     krop = '<div class="mi-liste">'
@@ -38672,7 +38710,10 @@ function miTegn() {
       + '<div><b>' + p.uroert.length + '</b> står urørt, fordi manuskriptet ikke kender dem</div>'
       + (p.uroert.length ? '<div class="mi-graa">' + p.uroert.map(function (o) { return miEsc(o.titel || "(uden titel)"); }).join("<br>") + '</div>' : '')
       + '</div>'
-      + (S.koerer ? '<div class="mi-graa">Skriver …</div>' : roed("Skriv det ind", "miSkriv()") + graa("Annullér", "bsFlytLuk()"));
+      + (S.koerer ? '<div class="mi-graa">Skriver …</div>'
+        : roed("Skriv det ind", "miSkriv()")
+          + (p.uroert.length ? graa("Fjern de " + p.uroert.length + ", manuskriptet ikke kender", "miRydSkriv()") : "")
+          + graa("Annullér", "bsFlytLuk()"));
   }
   m.innerHTML = '<div class="bs-flyt-ark mi-ark"><div class="bs-sek" style="margin:0 2px 14px;text-align:center;">'
     + (S.hvad === "kursus" ? "Byg kurset efter manuskriptet" : S.hvad === "gendan" ? "Gendan manus fra en sikkerhedskopi" : "Hent manuskriptet ind") + '</div>' + krop + '</div>';
@@ -53152,7 +53193,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2266";
+const APP_VERSION = "2267";
 let NY_VERSION_KLAR = false;
 let NY_VERSION_AFVIST = false;
 function nyVersionSkjul() {
@@ -73717,6 +73758,6 @@ function bsTodoRet(id) {
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 23. september · 2266</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 23. september · 2267</div>
 </body>
 </html>

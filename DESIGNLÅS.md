@@ -1,3 +1,22 @@
+## v2267 — 23. september 2026 · MANUSKRIPTET ER FACIT, 1:1
+
+**Ida:** »Lektionerne skal være 1:1 med det dokument jeg har sendt til dig i dag.
+**Alt andet skal ikke være der!**«
+
+Dermed er spørgsmålet fra v2266 afgjort: dokumentet vinder. Teksten bliver stående som den er,
+og de rækker, manuskriptet ikke kender, fjernes.
+
+**Bygget:** begge preview-trin har nu en grå knap »Fjern de N, manuskriptet ikke kender«. Listen
+står lige over knappen, så man ser præcis hvad der ryger. Der hentes en **sikkerhedskopi først**,
+og **øvelserne røres aldrig** — de parkerede `arkiv-`rækker bliver liggende.
+
+**Det, der fjernes (MÅLT):** fire rækker i Energida Studio (Edit · HOOKS · Kameraindstillinger ·
+Udstyr du skal bruge) og syv i kurset (Modul 0's to, én fra gamle Modul 1 og fire fra gamle
+Modul 8). Ingen af dem har øvelser hængende.
+
+**Læren fra v2266 står ved magt:** en import, der overskriver, skal måle mod det, den overskriver.
+Her er valget truffet med åbne øjne — Ida har set forskellen og har bestemt, at dokumentet er facit.
+
 ## v2266 — 23. september 2026 · JEG SAMMENLIGNEDE ALDRIG MED DET, DER STOD I FORVEJEN
 
 **Idas fund:** »jeg læste lektion 1.1 og kunne se det ikke var det nyeste.«
