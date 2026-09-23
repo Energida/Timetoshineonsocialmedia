@@ -1,3 +1,22 @@
+## v2259 — 23. september 2026 · IDÉBANKEN PÅ TELEFONEN = SØJLER, MAN SWIPER MELLEM
+
+**Ida:** »Idebanken på mobilen skal være søjler man kan swipe mellem.«
+**Idas klik 23/9 kl. 12.34** på skærmbilledet af det byggede (artifact 66FhJfWLaEEijyGrzhcjsu):
+*Ja, deploy* — med prikkerne, og med næste søjle kiggende frem.
+
+**MÅLT:** computeren har haft søjlerne side om side hele tiden (`#ideBank` + `.ibb-1`), men de to
+regler lå i **computerblokken** (`min-width:900px`). Telefonen tegnede sin egen flade liste
+(`ibMobilTegn`), hvor søjlerne lå oven på hinanden — man skulle rulle forbi hele 1A for at nå 1B.
+Endnu et tilfælde af *telefonregler i den kopierede blok*.
+
+**Nu (kun under `max-width:899px`):** hver søjle står i et spor, der snapper. Søjlen fylder
+skærmen på nær 28 px, så den næste kigger frem og siger, at der er mere. Under sporet står husets
+egne prikker fra dagsvisningen (`.kal-prikker`, 25/8, trykfelt 44 px) — man kan både swipe og
+trykke på en prik. Søjlernes indhold, fliserne, rækkefølgen og de tomme søjlers ord er urørt.
+
+**MÅLT i selen på 390:** fem søjler, søjlen 330 px af sporets 358, `document.scrollWidth` = 390
+(siden ruller aldrig til siden), fem prikker. Porten grøn.
+
 ## v2258 — 23. september 2026 · DELLINKET PEGER PÅ KUNDENS APP, ALDRIG PÅ ADMIN
 
 **Ida:** »Når jeg står på noget content — på en kundes profil i admin — skal jeg kunne klikke på
