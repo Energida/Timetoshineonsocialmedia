@@ -1,3 +1,19 @@
+## v2254 — 23. september 2026 · MÅL LOADINGSKÆRMEN UDEN KONSOL
+
+**Idas konsol-svar talte ikke.** Linjen blev indsat på en side, der allerede var indlæst, så den
+målte fra Enter-tasten, ikke fra opstarten (»56 ms — 1113 tegn«). **En måling, der starter efter
+det, den skal måle, er ingen måling.**
+
+**Nyt: `?maalloader=1`.** Åbn `admin.energida.dk/?maalloader=1`, og svaret skrives i
+**versionsfoden nederst til højre** i rødt: »Tæppet løftet efter N ms — siden havde N tegn«.
+Måleren starter ved første byte, kræver ingen DevTools og rører intet andet. Den kører kun,
+når flaget står i adressen.
+
+**`SEED register`-linjen er ude af Idas konsol.** `bsRegisterVaelg()` skrev sin måling i klartekst
+i produktion; den logger nu kun, når selens `window.BS3` findes. Mine måleord hører til i selen.
+
+**Porten grøn.**
+
 ## v2253 — 23. september 2026 · ET MØBEL, MAN IKKE KAN SE, ER IKKE ET MØBEL (Idas fund)
 
 **Ida:** »jeg ser stadig den gamle loadingskærm på desktop« med skærmbillede af en tom,
