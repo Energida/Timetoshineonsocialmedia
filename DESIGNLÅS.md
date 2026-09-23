@@ -1,3 +1,30 @@
+## v2268 — 23. september 2026 · STUDIET SOM DASHBOARD = BUD 1 »DAGENS PRODUKTION«
+
+**Ida:** »byg dashboardet nu.« (Bud 1 af fem, artifact 8TsCENFrbtDBqwfR4JrTga — den anbefalede.)
+
+**Forsiden af Energida Studio er nu tre grupper og intet andet:**
+
+| | |
+|---|---|
+| **VENTER PÅ DIG** | Manus · Optagelse · Klip — tallet stort, etiket og én streg over |
+| **KUNDERNE** | I gang (af N kunder) · Aktive denne uge (har set en lektion) · Færdige (har udfyldt slutskemaet) |
+| **RUM** | Produkter · Idéer til manus · Modulerne · Sådan går det |
+
+**Kundetallene er rigtige, ikke pladsholdere.** De læses af det, `bf3DataHent` allerede henter:
+`lektion_set_*` (hvem har set hvilken lektion og hvornår), `inden_start` og `efter_forloebet`.
+»Aktive denne uge« = en kode med et set-tidspunkt inden for syv døgn. Er tallene ikke hentet endnu,
+står der en streg — **et tal uden data bag er en påstand** (10/9).
+
+**Ingen Næste skridt-flise** (Ida 23/9: »jeg vil ikke have næste skridt på mit energida studio«).
+Den hører til på Hjem og i Forløbet, hvor der er en rejse. Studiet er et produktionsrum.
+
+**Modullisten er nu et rum bag døren »Modulerne«**, og hvert rum har en grå »Tilbage til Studiet«
+øverst. De tre statustal er væk fra modulrummet — de bor på forsiden nu. Et tryk på et af de tre
+produktionstal åbner modulrummet med netop det skridt filtreret.
+
+**⋯ står i coveret ved siden af nålen** (21/9-låsen) — forsiden kalder `bf3StudioRyd()` som de
+øvrige rum. **MÅLT i selen på 390 og 1440**, porten grøn.
+
 ## v2267 — 23. september 2026 · MANUSKRIPTET ER FACIT, 1:1
 
 **Ida:** »Lektionerne skal være 1:1 med det dokument jeg har sendt til dig i dag.
