@@ -1,3 +1,17 @@
+## v2271 — 23. september 2026 · EN IDÉ STÅR KUN ÉT STED
+
+**Ida:** »den skal kun stå et sted, og det er der, jeg flytter den hen.«
+
+Er en idé placeret på en lektion, **forsvinder den fra rummet Idéer til manus**. Den bor på
+lektionen. Også »Kopiér oversigten« viser kun dem, der stadig ligger i rummet — oversigten svarer
+til det, der står på skærmen.
+
+**Vejen tilbage:** et tryk på idéen inde på lektionen åbner den igen. Derfra kan den flyttes til
+en anden lektion eller sættes til *Ingen*, og så ligger den i rummet igen.
+
+**MÅLT:** med to idéer, hvoraf den ene er placeret, står der én i rummet, og oversigten indeholder
+kun den ene.
+
 ## v2270 — 23. september 2026 · EN IDÉ TIL MANUS KAN PLACERES PÅ EN LEKTION
 
 **Ida:** »jeg vil gerne at jeg inde på idéer til manus kan vælge modul/lektion at placere den på,
