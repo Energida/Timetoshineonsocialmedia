@@ -1,3 +1,23 @@
+## v2261 — 23. september 2026 · MODULERNES NAVNE FØLGER MED MANUSKRIPTET
+
+**MÅLT i Idas egen browser efter v2260's import:** de 90 rækker i Energida Studio havde de rigtige
+modultekster (`Modul 9 · Gør sociale medier til din bedste sælger`), men **rullen viste stadig de
+gamle navne** — »En struktur der dur'« stod over Modul 9's ti nye lektioner.
+
+**Årsagen:** modulets navn i rullen kommer ikke fra lektionerne, men fra to ældre navnelag:
+overlayet `modul_titler` (`MODUL_TITLER`) og modul-forsidernes `moduler.titel` (`MODUL_INFO`) —
+og forsidens titel **vinder** over overlayet (`navnAf` i bf3: `modulInfoFor(nr).titel || modulNavnVis(k)`).
+Aflæst: overlayet havde Modul 6 »Forstå sociale medier«, Modul 8 og 11 begge »Gør sociale medier
+til din bedste sælger«, Modul 9 »Succesraketten«; forsiderne havde 8 »Energidas Contentmodel« og
+9 »En struktur der dur'«.
+
+**Nu:** importen skriver modulnavnene med — først overlayet, så forsidens titel, hvis den siger
+noget andet end manuskriptet. **Kun navnet rettes**; modul-forsidens beskrivelse og udbytte røres
+ikke. Arket siger bagefter, hvor mange navne der fulgte med.
+
+**Læren:** en ting med to navnelag har tre steder at være uenig. Når lektionerne flytter modul,
+skal navnene flytte med i samme handling — ellers står det nye indhold under den gamle overskrift.
+
 ## v2260 — 23. september 2026 · HENT MANUSKRIPTET IND (Energida Studio)
 
 **Ida:** »Det er blevet fuldstændig helt uoverskueligt at arbejde med manuskriptet på denne måde

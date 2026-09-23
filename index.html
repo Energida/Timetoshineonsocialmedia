@@ -38554,11 +38554,37 @@ async function miSkriv() {
       if (r && r.error) fejlNye = String(r.error.message || r.error);
     } catch (e) { fejlNye = String((e && e.message) || e); }
   }
+  /* MODULERNES NAVNE BOR I TO GAMLE NAVNELAG (MAALT 23/9 i Idas egen browser): overlayet
+     `modul_titler` og modul-forsidernes `moduler.titel`, som vinder over overlayet. Foelger de
+     ikke med, staar rullen med de gamle navne oven paa de nye lektioner — »En struktur der dur'«
+     over Modul 9's ti nye. Kun NAVNET rettes; modul-forsidens beskrivelse og udbytte roeres ikke. */
+  let navneRettet = 0;
+  try {
+    const navne = {};
+    (MI.lekt || []).forEach(function (l) { if (l.modul != null && l.modulnavn) navne["Modul " + l.modul] = l.modulnavn; });
+    if (typeof modulTitlerHent === "function") await modulTitlerHent();
+    const nuNavne = Object.assign({}, (typeof MODUL_TITLER !== "undefined" && MODUL_TITLER) || {});
+    Object.keys(navne).forEach(function (k) { if (String(nuNavne[k] || "") !== navne[k]) { nuNavne[k] = navne[k]; navneRettet++; } });
+    if (navneRettet && typeof modulOverlayGem === "function") {
+      await modulOverlayGem(nuNavne, (typeof MODUL_EKSTRA !== "undefined" && MODUL_EKSTRA) || []);
+    }
+    for (const k of Object.keys(navne)) {
+      const nr = parseInt(String(k).replace(/\D+/g, ""), 10);
+      const inf = (typeof MODUL_INFO !== "undefined" && MODUL_INFO) ? MODUL_INFO[String(nr)] : null;
+      if (inf && String(inf.titel || "") !== navne[k]) {
+        try {
+          const r = await sb.from("moduler").update({ titel: navne[k] }).eq("nr", nr).select("nr");
+          if (r && !r.error && r.data && r.data.length) inf.titel = navne[k];
+        } catch (e) {}
+      }
+    }
+  } catch (e) {}
   MI.koerer = false;
   MI.svar = '<div><b>' + opd + '</b> lektioner fik manuskriptets tekst</div>'
     + '<div><b>' + oprettet + '</b> lektioner blev oprettet</div>'
     + (fejlOpd.length ? '<div class="mi-graa">Kunne ikke skrives: ' + fejlOpd.map(miEsc).join(", ") + '</div>' : '')
     + (fejlNye ? '<div class="mi-graa">De nye kunne ikke oprettes: ' + miEsc(fejlNye) + '</div>' : '')
+    + (navneRettet ? '<div><b>' + navneRettet + '</b> modulnavne fulgte med</div>' : '')
     + '<div class="mi-graa">Sikkerhedskopien af det gamle ligger i din Overførsler-mappe.</div>';
   miTegn();
   try { klipHent(); } catch (e) {}
@@ -52923,7 +52949,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2260";
+const APP_VERSION = "2261";
 let NY_VERSION_KLAR = false;
 let NY_VERSION_AFVIST = false;
 function nyVersionSkjul() {
@@ -73472,6 +73498,6 @@ function bsTodoRet(id) {
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 23. september · 2260</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 23. september · 2261</div>
 </body>
 </html>
