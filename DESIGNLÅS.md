@@ -1,3 +1,25 @@
+## v2262 — 23. september 2026 · TO NUMMERSYSTEMER KAN IKKE DELE ÉN TITEL
+
+**MÅLT ved anden kørsel af importen** (preview-trinnet fangede det, intet blev skrevet):
+66 · 20 · 24 i stedet for 86 · 0 · 4. Årsagen: studiet nummererer **selv** lektionerne efter
+rækkefølgen (Idas regel 14/9: »når der bliver flyttet rundt på lektioner skal numrene automatisk
+tilpasses«). `klipTitelRest` skræller kun ét `N.N`-lag af, så »V5 · CTA · Få dem til at handle«
+blev til **»11.6 · V5 · CTA · Få dem til at handle«** — dobbelt nummer. Anden kørsel kunne ikke
+genkende dem og ville have oprettet alle tyve værktøjer igen.
+
+**Tre rettelser:**
+1. `miNorm` skræller **alle** numre af, også flere lag — så matchningen holder, uanset hvor mange
+   gange studiet har nummereret om.
+2. **V-koden står i manus, ikke i titlen.** Den er Idas egen henvisning i manuskriptet
+   (»BRUG DENNE GUIDE EFTER 9.5«), så den står som øverste linje i manusteksten i stedet.
+   Titlen overlades til husets egen nummerering: 11.1 … 11.20.
+3. **Manuskriptet bestemmer rækkefølgen** (`sort_nr` = lektionens plads i modulet), også på de
+   rækker, der fandtes i forvejen. Uden den beholdt 1.4 og 1.5 deres gamle pladser og stod byttet
+   om i forhold til manuskriptet.
+
+**Læren: to nummersystemer kan ikke dele én titel.** Har huset en regel, der nummererer, skal
+alt andet nummer bo et andet sted.
+
 ## v2261 — 23. september 2026 · MODULERNES NAVNE FØLGER MED MANUSKRIPTET
 
 **MÅLT i Idas egen browser efter v2260's import:** de 90 rækker i Energida Studio havde de rigtige

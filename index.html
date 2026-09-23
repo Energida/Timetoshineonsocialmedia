@@ -38386,9 +38386,16 @@ function klipSaveLocal() { localStorage.setItem("video_opgaver", JSON.stringify(
 let MI = null;
 function miEsc(t) { try { return esc(t); } catch (e) { return String(t == null ? "" : t); } }
 function miNorm(t) {
-  return String(t || "").toLowerCase()
-    .replace(/^(?:\d+\.\d+|v\d+[a-zæøå]?)\s*[·.\-–]?\s*/i, "")
-    .replace(/[^a-z0-9æøåéèüö]+/gi, " ").trim();
+  /* SKRAEL ALLE NUMRE AF, OGSAA FLERE LAG (MAALT 23/9): studiet nummererer selv lektionerne efter
+     raekkefoelgen (Idas regel 14/9), saa »V5 · CTA …« blev til »11.6 · V5 · CTA …«. Med kun eet lag
+     skrællet matchede titlen ikke anden gang, og de tyve vaerktoejer ville blive oprettet igen. */
+  let t2 = String(t || "").toLowerCase();
+  for (let i = 0; i < 4; i++) {
+    const n = t2.replace(/^(?:\d+\.\d+|v\d+[a-zæøå]?)\s*[·.\-–]\s*/i, "");
+    if (n === t2) break;
+    t2 = n;
+  }
+  return t2.replace(/[^a-z0-9æøåéèüö]+/gi, " ").trim();
 }
 function miModulNr(t) { const m = String(t || "").match(/(\d+)/); return m ? parseInt(m[1], 10) : null; }
 function miLekNr(t) { const m = String(t || "").match(/^\s*(\d+\.\d+|V\d+[A-Z]?)/i); return m ? m[1].toUpperCase() : ""; }
@@ -38438,12 +38445,22 @@ function miDel(linjer) {
     if (!nu.formaal && t.indexOf("SIGES IKKE") === 0) { nu.formaal = t; continue; }
     nu.krop.push(String(linjer[i] || "").replace(/\s+$/, ""));
   }
+  const iModul = {};
   lekt.forEach(function (l) {
+    const k = l.modul == null ? "?" : String(l.modul);
+    iModul[k] = (iModul[k] || 0) + 1;
+    l.plads = iModul[k];   /* MANUSKRIPTET BESTEMMER RAEKKEFOELGEN (23/9): uden denne beholdt de gamle
+                              raekker deres egen plads, saa 1.4 og 1.5 stod byttet om i forhold til manuskriptet. */
     while (l.krop.length && !l.krop[0].trim()) l.krop.shift();
     while (l.krop.length && !l.krop[l.krop.length - 1].trim()) l.krop.pop();
-    l.tekst = [l.hoved, l.formaal].filter(Boolean).join("\n") + (l.hoved || l.formaal ? "\n\n" : "") + l.krop.join("\n");
+    const erV = /^V/i.test(l.nr);
+    /* VAERKTOEJERNES V-KODE STAAR I MANUS, IKKE I TITLEN (23/9): studiet nummererer selv titlerne efter
+       raekkefoelgen, saa en V-kode i titlen giver dobbelt nummer (»11.6 · V5 · CTA …«). Koden er Idas egen
+       henvisning i manuskriptet, saa den staar oeverst i manus i stedet — den er der stadig, og den flytter ikke. */
+    const hoved = [erV ? (l.nr + " · " + l.titel) : "", l.hoved, l.formaal].filter(Boolean).join("\n");
+    l.tekst = hoved + (hoved ? "\n\n" : "") + l.krop.join("\n");
     l.modulNavn = l.modul != null ? ("Modul " + l.modul + (l.modulnavn ? " · " + l.modulnavn : "")) : "";
-    l.fuldTitel = l.nr + " · " + l.titel;
+    l.fuldTitel = erV ? l.titel : (l.nr + " · " + l.titel);
   });
   return lekt;
 }
@@ -38534,18 +38551,16 @@ async function miSkriv() {
   for (const par of p.opdater) {
     const patch = { manus_tekst: par.l.tekst, titel: par.l.fuldTitel };
     if (par.l.modulNavn) patch.modul = par.l.modulNavn;
+    if (typeof KLIP_HAR_SORT !== "undefined" && KLIP_HAR_SORT && par.l.plads) patch.sort_nr = par.l.plads;
     try {
       const r = await sb.from("video_opgaver").update(patch).eq("id", par.o.id).select("id");
       if (r && !r.error && r.data && r.data.length) opd++; else fejlOpd.push(par.l.fuldTitel);
     } catch (e) { fejlOpd.push(par.l.fuldTitel); }
   }
   if (p.nye.length) {
-    const tael = {};
     const rows = p.nye.map(function (l) {
-      const k = l.modulNavn || "";
-      tael[k] = (tael[k] || 0) + 1;
-      const rec = { titel: l.fuldTitel, modul: k, manus_tekst: l.tekst, status: "Manus ikke godkendt", kommentarer: [], kode: "THOMAS2026" };
-      if (typeof KLIP_HAR_SORT !== "undefined" && KLIP_HAR_SORT) rec.sort_nr = tael[k];
+      const rec = { titel: l.fuldTitel, modul: l.modulNavn || "", manus_tekst: l.tekst, status: "Manus ikke godkendt", kommentarer: [], kode: "THOMAS2026" };
+      if (typeof KLIP_HAR_SORT !== "undefined" && KLIP_HAR_SORT && l.plads) rec.sort_nr = l.plads;
       return rec;
     });
     try {
@@ -52949,7 +52964,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2261";
+const APP_VERSION = "2262";
 let NY_VERSION_KLAR = false;
 let NY_VERSION_AFVIST = false;
 function nyVersionSkjul() {
@@ -73498,6 +73513,6 @@ function bsTodoRet(id) {
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 23. september · 2261</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 23. september · 2262</div>
 </body>
 </html>
