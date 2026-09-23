@@ -1,3 +1,33 @@
+## v2252 — 23. september 2026 · IDÉER TIL MANUS FIK SIT EGET RUM (Idas klik)
+
+**Ida:** »inde i energida studio har jeg en funktion der hedder idéer til manus — den ligger helt
+håbløst i bunden af alle lektioner … har du mulighed for at give det sit eget rum og at man derfra
+kan slette dem også og at man også kan kopiere oversigten?«
+
+**Rummet** (`klipIdeerTegn`, visningen `ideer`): sektionslinjen »Idéer til manus« · hver idé som sin
+egen flise med skraldespand (swipe på telefonen) · tryk på idéen retter den · sendefeltet
+»Tilføj idé …« · de to grå knapper **Kopiér oversigten** og **Tilbage til lektionerne**.
+Tom liste = husets tomKortHtml (»Hvad skal der laves manus til?«).
+**Døren** står i båndet ved siden af »Sådan går det« og som punkt i ⋯-menuen.
+Listen er dermed væk fra bunden af modulsiden.
+
+**Kopiér oversigten** (`bf3IdeerKopier`) lægger hele listen på udklipsholderen som
+»- idéen  (kursus · dato)«, med execCommand som reserve og kvittering på knappen.
+
+**TRE RENE FEJL RETTET I SAMME OMBÆRING:**
+1. **Sletning kunne ikke ses.** `manusIdeSlet()` og `manusIdeRetGem()` kaldte kun
+   `renderManusIdeer()` — den gamle `#manusIdeCard`, som er skjult under `klip-bud6`. Listen blev
+   derfor først opdateret ved en genindlæsning. Begge kalder nu også `renderKlipperum()`.
+2. **To Tilbage på samme skærm.** `mobTilbageTegn`'s `harEgen` testede på ordet »Tilbage« ORDRET,
+   så en side med sin egen »Tilbage til lektionerne« fik den generiske lagt ovenpå. Testen er nu
+   `/^Tilbage\b/`. **Det ramte også »Sådan går det«** — rettet for hele huset i samme commit.
+3. **Porten fangede 148×40.** De to grå knapper i `.bs3-hoejre` stod side om side på 390 — under
+   trykfeltet på 44 og ikke i fuld bredde. De står nu under hinanden i fuld bredde under 899 px.
+
+**Navne 1:1:** knappen hedder »Tilbage til lektionerne« som i »Sådan går det« — ikke »til modulerne«.
+
+**Porten grøn** på alle seks prober. Rummet set i selen på 1440 og 390.
+
 ## v2251 — 23. september 2026, nat · STRATEGIBYGGEREN FLYTTES TIL MODUL 6 (Idas klik + »sæt systemet op«)
 
 **Idas klik** på kortlægningen VU21gtmcLBivu6A1aCKhB8, og derefter: »kan du sætte systemet op?
