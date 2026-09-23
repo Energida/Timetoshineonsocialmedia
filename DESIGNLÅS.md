@@ -1,3 +1,21 @@
+## v2263 — 23. september 2026 · EN PRODUKTFLISE MÅ IKKE VÆRE EN BLINDGYDE
+
+**Idas fund:** »der er noget HELT galt. når jeg går ind påny lander jeg på den rigtige side. så
+klikkede jeg ind på you got this og så ender jeg her og kan ikke komme tilbage!!!?«
+
+**MÅLT:** et tryk på en produktflise fører til visningen *Produkter & indholdsbank*. I den visning
+tegnes siden af den gamle motor, og coveret bærer **»Værktøjer«** i stedet for de tre prikker —
+altså ingen ⋯-menu, og det er dér, punktet »Modulerne« bor. Der var ingen vej tilbage.
+
+**Nu:** en grå »Tilbage til lektionerne« øverst i kortet, hver gang visningen står åben.
+Reglen: **en usynlig vej ud er en blindgyde** (designmanualen, »Der skal altid stå Tilbage«).
+
+**Og den egentlige årsag til at flisen ikke viser modulerne (MÅLT 23/9):** `produkt_lektioner` er
+**tom** — ingen af de syv produkter ved endnu, hvilke lektioner de indeholder. Derfor siger hver
+flise »Vælg modulerne«, og trykket fører til vælgeren i stedet for til modulerne. Vælgeren viser
+oven i købet kursuslistens gamle 53 lektioner (`lektioner`), ikke manuskriptets 86
+(`video_opgaver`). Det er næste opgave og venter på Idas klik.
+
 ## v2262 — 23. september 2026 · TO NUMMERSYSTEMER KAN IKKE DELE ÉN TITEL
 
 **MÅLT ved anden kørsel af importen** (preview-trinnet fangede det, intet blev skrevet):
