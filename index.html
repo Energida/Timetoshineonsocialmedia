@@ -37899,7 +37899,7 @@ function klipMenuSkift() {
     + (modul ? r("Print dette modul", "printModul('" + esc(modul) + "')") : '')
     + r("Print manus", "printAlleManus()")
     + r("Eksportér alle manusser", "manusEksport()")
-    + (typeof manusImportAaben === "function" ? r("Hent manuskriptet ind", "manusImportAaben()") + r("Byg kurset efter manuskriptet", "manusImportAaben('kursus')") : "")
+    + (typeof manusImportAaben === "function" ? r("Hent manuskriptet ind", "manusImportAaben()") + r("Byg kurset efter manuskriptet", "manusImportAaben('kursus')") + r("Gendan manus fra en sikkerhedskopi", "manusImportAaben('gendan')") : "")
     + r("Søg i manus", "mqSoegAaben(true)")
     + r("B-roll til optagelse", "brollAaben()")
     + r("Opgaver", "visAlleOevelser()")
@@ -38565,8 +38565,65 @@ async function miKursusSkriv() {
   try { if (typeof prodHent === "function") prodHent(); } catch (e) {}
 }
 
+/* ===== GENDAN MANUS FRA EN SIKKERHEDSKOPI (Idas fund 23/9: »jeg læste lektion 1.1 og kunne se
+   det ikke var det nyeste«) =====
+   MAALT: importen skrev dokumentets tekst ind paa 54 lektioner, der havde tekst i forvejen — og
+   dokumentet var IKKE nyere end studiet paa dem alle. Selve skrivningen var korrekt (tegn for tegn
+   som dokumentet), men jeg sammenlignede aldrig med det, der stod i forvejen. Derfor denne vej
+   tilbage: enhver »energida-manus-eksport«-fil kan laeses ind igen og lægge sit manus tilbage.
+   Kun manus_tekst roeres — titler, moduler, raekkefoelge og status staar. Intet slettes. */
+function miEksportDel(tekst) {
+  const ud = [];
+  const dele = String(tekst || "").split("═".repeat(56));
+  for (let i = 0; i < dele.length - 1; i++) {
+    const h = dele[i].match(/MODUL (.*?)\s{2}·\s{2}(.*)/);
+    if (!h) continue;
+    const krop = dele[i + 1] || "";
+    const m = krop.match(/----- MANUS -----\n([\s\S]*?)\n----- BRIEF/);
+    const t = (m ? m[1] : "").trim();
+    if (!t || t === "(tomt)") continue;
+    ud.push({ titel: h[2].trim(), tekst: t });
+  }
+  return ud;
+}
+function miGendanPlan(fraFil) {
+  const rows = (typeof KLIP_OPGAVER !== "undefined" && Array.isArray(KLIP_OPGAVER)) ? KLIP_OPGAVER : [];
+  const efterNavn = {};
+  rows.forEach(function (o) { const n = miNorm(o.titel); if (n) (efterNavn[n] = efterNavn[n] || []).push(o); });
+  const aendrer = [], ens = [], mangler = [];
+  fraFil.forEach(function (f) {
+    const kand = efterNavn[miNorm(f.titel)] || [];
+    if (kand.length !== 1) { mangler.push(f.titel); return; }
+    const o = kand[0];
+    if (String(o.manus_tekst || "").trim() === f.tekst) ens.push(f.titel);
+    else aendrer.push({ o: o, tekst: f.tekst, titel: f.titel });
+  });
+  return { aendrer: aendrer, ens: ens, mangler: mangler };
+}
+async function miGendanSkriv() {
+  if (!MI || !MI.gplan || MI.koerer) return;
+  if (!sb) { try { husBesked("Ingen forbindelse til basen."); } catch (e) {} return; }
+  MI.koerer = true; miTegn();
+  try { manusEksport(); } catch (e) {}   /* sikkerhedskopi af det, der staar NU, foer vi gaar tilbage */
+  let n = 0; const fejl = [];
+  for (const x of MI.gplan.aendrer) {
+    try {
+      const r = await sb.from("video_opgaver").update({ manus_tekst: x.tekst }).eq("id", x.o.id).select("id");
+      if (r && !r.error && r.data && r.data.length) n++; else fejl.push(x.titel);
+    } catch (e) { fejl.push(x.titel); }
+  }
+  MI.koerer = false;
+  MI.svar = '<div><b>' + n + '</b> lektioner har fået deres gamle manus tilbage</div>'
+    + (MI.gplan.ens.length ? '<div class="mi-graa">' + MI.gplan.ens.length + ' stod allerede sådan.</div>' : '')
+    + (MI.gplan.mangler.length ? '<div class="mi-graa">' + MI.gplan.mangler.length + ' i filen fandtes ikke i studiet.</div>' : '')
+    + (fejl.length ? '<div class="mi-graa">Kunne ikke skrives: ' + fejl.map(miEsc).join(", ") + '</div>' : '')
+    + '<div class="mi-graa">Der ligger en ny sikkerhedskopi af det forrige i din Overførsler-mappe.</div>';
+  miTegn();
+  try { klipHent(); } catch (e) {}
+}
+
 function manusImportAaben(hvad) {
-  MI = { hvad: hvad === "kursus" ? "kursus" : "manus", fil: "", lekt: null, plan: null, kplan: null, koerer: false, svar: null };
+  MI = { hvad: (hvad === "kursus" || hvad === "gendan") ? hvad : "manus", fil: "", lekt: null, plan: null, kplan: null, gplan: null, koerer: false, svar: null };
   miTegn();
 }
 function miTegn() {
@@ -38580,13 +38637,22 @@ function miTegn() {
   let krop = "";
   if (S.svar) {
     krop = '<div class="mi-liste">' + S.svar + '</div>' + graa("Luk", "bsFlytLuk()");
-  } else if (!S.plan && !S.kplan) {
-    krop = '<div class="mi-sp">Vælg Word-filen med hele manuskriptet.</div>'
+  } else if (!S.plan && !S.kplan && !S.gplan) {
+    krop = '<div class="mi-sp">' + (S.hvad === "gendan" ? "Vælg sikkerhedskopien — en energida-manus-eksport-fil." : "Vælg Word-filen med hele manuskriptet.") + '</div>'
       + '<button type="button" class="bs-felt mi-vaelg" onclick="document.getElementById(\'miFil\').click()">'
       + (S.fil ? miEsc(S.fil) : '<span class="mi-tom">Ingen fil valgt</span>') + '</button>'
-      + '<input type="file" id="miFil" accept=".docx" style="display:none;" onchange="miLaes(this)">'
+      + '<input type="file" id="miFil" accept="' + (S.hvad === "gendan" ? ".txt" : ".docx") + '" style="display:none;" onchange="miLaes(this)">'
       + (S.koerer ? '<div class="mi-graa">Læser filen …</div>' : '')
       + graa("Annullér", "bsFlytLuk()");
+  } else if (S.hvad === "gendan") {
+    const g = S.gplan;
+    krop = '<div class="mi-liste">'
+      + '<div><b>' + g.aendrer.length + '</b> lektioner får deres gamle manus tilbage</div>'
+      + (g.ens.length ? '<div>' + g.ens.length + ' står allerede sådan</div>' : '')
+      + (g.mangler.length ? '<div class="mi-graa">' + g.mangler.length + ' i filen findes ikke i studiet.</div>' : '')
+      + '<div class="mi-graa">Kun manus røres. Titler, moduler og rækkefølge står.</div>'
+      + '</div>'
+      + (S.koerer ? '<div class="mi-graa">Skriver …</div>' : roed("Læg det tilbage", "miGendanSkriv()") + graa("Annullér", "bsFlytLuk()"));
   } else if (S.hvad === "kursus") {
     const k = S.kplan;
     krop = '<div class="mi-liste">'
@@ -38609,13 +38675,25 @@ function miTegn() {
       + (S.koerer ? '<div class="mi-graa">Skriver …</div>' : roed("Skriv det ind", "miSkriv()") + graa("Annullér", "bsFlytLuk()"));
   }
   m.innerHTML = '<div class="bs-flyt-ark mi-ark"><div class="bs-sek" style="margin:0 2px 14px;text-align:center;">'
-    + (S.hvad === "kursus" ? "Byg kurset efter manuskriptet" : "Hent manuskriptet ind") + '</div>' + krop + '</div>';
+    + (S.hvad === "kursus" ? "Byg kurset efter manuskriptet" : S.hvad === "gendan" ? "Gendan manus fra en sikkerhedskopi" : "Hent manuskriptet ind") + '</div>' + krop + '</div>';
   m.style.display = "flex";
   m.onclick = function (e) { if (e.target === m) bsFlytLuk(); };
 }
 async function miLaes(inp) {
   const f = inp && inp.files && inp.files[0]; if (!f) return;
   MI.fil = f.name; MI.koerer = true; miTegn();
+  if (MI.hvad === "gendan") {
+    try {
+      const tekst = await f.text();
+      const fra = miEksportDel(tekst);
+      if (!fra.length) throw new Error("Fandt ingen manus i filen");
+      MI.gplan = miGendanPlan(fra); MI.koerer = false; miTegn();
+    } catch (e) {
+      MI.koerer = false; miTegn();
+      try { husBesked("Kunne ikke læse filen: " + ((e && e.message) || e)); } catch (x) {}
+    }
+    return;
+  }
   try {
     const Z = await miJSZip();
     const zip = await Z.loadAsync(f);
@@ -53074,7 +53152,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2265";
+const APP_VERSION = "2266";
 let NY_VERSION_KLAR = false;
 let NY_VERSION_AFVIST = false;
 function nyVersionSkjul() {
@@ -73153,7 +73231,7 @@ function klipMenuSkift() {
   const modul = String(KLIP_MODUL_CHIP || "").replace(/\\/g, "\\\\").replace(/'/g, "\\'");
   m.innerHTML = '<div class="bs-flyt-ark"><div class="bs-sek" style="margin:0 2px 10px;">Værktøjer og visninger</div>'
     + (modul ? r("Print dette modul", "printModul('" + esc(modul) + "')") : '')
-    + r("Print manus", "printAlleManus()") + r("Eksportér alle manusser", "manusEksport()") + (typeof manusImportAaben === "function" ? r("Hent manuskriptet ind", "manusImportAaben()") + r("Byg kurset efter manuskriptet", "manusImportAaben('kursus')") : "") + r("Søg i manus", "mqSoegAaben(true)") + r("B-roll til optagelse", "brollAaben()") + r("Opgaver", "visAlleOevelser()")
+    + r("Print manus", "printAlleManus()") + r("Eksportér alle manusser", "manusEksport()") + (typeof manusImportAaben === "function" ? r("Hent manuskriptet ind", "manusImportAaben()") + r("Byg kurset efter manuskriptet", "manusImportAaben('kursus')") + r("Gendan manus fra en sikkerhedskopi", "manusImportAaben('gendan')") : "") + r("Søg i manus", "mqSoegAaben(true)") + r("B-roll til optagelse", "brollAaben()") + r("Opgaver", "visAlleOevelser()")
     + (mqErIda() ? r("Manus-quizzen", "klipVisningSaet('quiz')") : '')
     + (KLIP_VISNING !== "moduler" ? r("Modulerne", "klipVisningSaet('moduler')") : '')
     + (KLIP_VISNING !== "ideer" ? r("Idéer til manus", "klipVisningSaet('ideer')") : '')
@@ -73639,6 +73717,6 @@ function bsTodoRet(id) {
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 23. september · 2265</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 23. september · 2266</div>
 </body>
 </html>

@@ -1,3 +1,27 @@
+## v2266 — 23. september 2026 · JEG SAMMENLIGNEDE ALDRIG MED DET, DER STOD I FORVEJEN
+
+**Idas fund:** »jeg læste lektion 1.1 og kunne se det ikke var det nyeste.«
+
+**MÅLT, og hun har ret.** Importen skrev dokumentets tekst ind — tegn for tegn korrekt, det målte
+jeg — men på **54 lektioner, der havde tekst i forvejen**, og dokumentet var ikke nyere end
+studiet på dem alle. 1.1 stod i studiet i en mere gennemarbejdet udgave (»Det her er lidt
+nervepirrende, **kan jeg mærke**«) end dokumentets (»Det her er lidt nervepirrende«). Gamle
+Modul 9 (nu 10) skrumpede fra ~4.200 til ~2.100 tegn pr. lektion.
+
+**Fejlen var min, og den var ikke i koden — den var i metoden.** Jeg målte, at det skrevne
+svarede til kilden. Jeg målte aldrig, om kilden var nyere end det, den overskrev. Sikkerhedskopien
+lå der hele tiden; jeg sammenlignede den bare ikke.
+
+**Reglen, der følger af det (HÅRD): en import, der overskriver, skal måle mod det, den
+overskriver — ikke kun mod sin kilde.** Antallet af lektioner, der ændrer sig, og hvor meget de
+vokser eller skrumper, skal stå i preview'et, før der skrives.
+
+**Nyt punkt i ⋯-menuen: »Gendan manus fra en sikkerhedskopi«.** Enhver
+`energida-manus-eksport`-fil kan læses ind igen og lægge sit manus tilbage. Kun `manus_tekst`
+røres; titler, moduler, rækkefølge og status står. Der tages en ny sikkerhedskopi først.
+**MÅLT:** filen fra kl. 13.01 (før første skrivning) indeholder 56 lektioner med manus, og
+matchningen rammer trods omnummereringen (1.1 · Velkommen og gamle 9.2 → 10.2 · Analysér).
+
 ## v2265 — 23. september 2026 · EN SIDE ÅBNER PÅ SIN FORSIDE (HÅRD)
 
 **Ida, tredje gang samme dag:** »det bliver ved med at gå galt! … kan slet ikke se eller finde
