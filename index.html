@@ -19298,7 +19298,8 @@ window.addEventListener("popstate", e => {
 try { if (!history.state) history.replaceState({ t: "start" }, ""); } catch(e) {}
 /* ---------- MIN PROFIL (Ida 27/7): kunden retter selv studionavn (pr. kode) + hvad appen kalder dem (personligt) ---------- */
 async function minProfilAaben() {
-  try { if (!MAALS) await maalsHent(); } catch (e) {}   /* se noten ved "Dine knapper" */
+  try { if (!MAALS) await maalsHent(); } catch (e) {}
+  try { await cvFavHent(); cvFontHent(); window.__PROF_FAV = (CV_FAV || []).slice(); } catch (e) { window.__PROF_FAV = []; }   /* se noten ved "Dine knapper" */
   let bag = document.getElementById("profilBack");
   if (!bag) { bag = document.createElement("div"); bag.id = "profilBack"; bag.className = "modal-back"; document.body.appendChild(bag); }
   bag.style.display = "flex";
@@ -19325,6 +19326,9 @@ async function minProfilAaben() {
        hvis de oensker et andet navn end standarden". Felterne staar TOMME med
        standarden som placeholder — saa er det tydeligt, at man kun skriver, hvis man
        vil noget andet, og et tomt felt kan aldrig slette navnet (gem-reglen 4/8). */
+    /* DINE SKRIFTER (Ida 24/9 kl. 23.34: »man inde i profil vælger favoritter ift skriftstyper! Og det kun er dem der kommer frem«): valgt = roed chip; gemmes med Gem */
+    + '<div class="ml-eye" style="border-top:1px solid var(--border);padding-top:14px;margin:20px 0 8px;">Dine skrifter</div>'
+    + '<div class="ark-chips" id="profilSkrifter" style="display:flex;flex-wrap:wrap;gap:8px;overflow:visible;">' + profilSkrifterHtml() + '</div>'
     + '<div class="ml-eye" style="border-top:1px solid var(--border);padding-top:14px;margin:20px 0 4px;">Dine knapper</div>'
     + '<div style="font-size:11.5px;color:var(--gray3);line-height:1.55;margin-bottom:12px;">De tre knapper på forsiden, hvor du lægger noget fra dig. Lad feltet stå tomt, hvis standarden er fin.</div>'
     + FANG_KNAPPER.map(function (b) {
@@ -19340,7 +19344,13 @@ async function minProfilAaben() {
     + '<button type="button" class="ark-luk" onclick="document.getElementById(\'profilBack\').style.display=\'none\'">Annullér</button>'
     + '</div>';
 }
+function profilSkrifterHtml() {
+  const fav = window.__PROF_FAV || [];
+  return CV_SKRIFTER.map(function (sk) { const on = fav.indexOf(sk[0]) > -1; return '<button type="button" class="ark-chip' + (on ? ' on' : '') + '" style="font-family:\'' + sk[1] + '\';font-weight:' + (sk[2] || 400) + ';" aria-pressed="' + on + '" onclick="profilSkriftSkift(\'' + sk[0] + '\')">' + esc(sk[0]) + '</button>'; }).join("");
+}
+function profilSkriftSkift(n) { const f = window.__PROF_FAV || (window.__PROF_FAV = []); const i = f.indexOf(n); if (i > -1) f.splice(i, 1); else f.push(n); const h = document.getElementById("profilSkrifter"); if (h) h.innerHTML = profilSkrifterHtml(); }
 async function minProfilGem() {
+  try { if (window.__PROF_FAV && JSON.stringify(window.__PROF_FAV) !== JSON.stringify(CV_FAV || [])) { CV_FAV = window.__PROF_FAV.slice(); await cvFavGem(); } } catch (e) {}
   const sf = document.getElementById("profilStudio"), hf = document.getElementById("profilHilsen");
   if (!sf || !sb || !currentKode) return;
   /* Knapnavnene gemmes i MAALS — samme skuffe som resten af kundens opsaetning.
@@ -20628,6 +20638,14 @@ function cvHook() {
   if (!h && B.hookTekstValgt > -1 && Array.isArray(B.hookTekstListe)) h = T(B.hookTekstListe[B.hookTekstValgt]);
   return h;
 }
+/* TEKST PAA COVERBILLEDET = DET VALGTE THUMBNAIL-FORSLAG (Idas klik 24/9 kl. 23.40: »Slå sammen«) — hooket staar ikke laengere paa coveret af sig selv */
+function cvThumb() {
+  const B = BRIEF_STATE || {};
+  const T = function (x) { const t = String(x == null ? "" : x).trim(); return briefErTomOrd(t) ? "" : t; };
+  const liste = Array.isArray(B.thumbListe) ? B.thumbListe : null;
+  if (liste && liste.some(function (t) { return T(t); })) return B.thumbValgt > -1 ? T(liste[B.thumbValgt]) : "";
+  return T(B.thumb);
+}
 function cvSlideTekst(i) { const B = BRIEF_STATE || {}; const t = String((Array.isArray(B.slides) ? B.slides[i] : "") || "").trim(); return briefErTomOrd(t) ? "" : t; }
 function cvSlideIdx() {
   const B = BRIEF_STATE || {};
@@ -20636,13 +20654,14 @@ function cvSlideIdx() {
 }
 function cvTekst(l, noegle) {
   if (l.rettet || !l.kilde) return String(l.t || "");
+  if (noegle === "cover" && (l.kilde === "hook" || l.kilde === "thumb")) return cvThumb();
   if (l.kilde === "hook") return cvHook() || (noegle === "0" ? cvSlideTekst(0) : "");
   if (l.kilde.indexOf("slide:") === 0) return cvSlideTekst(+l.kilde.slice(6));
   return String(l.t || "");
 }
 function cvStart(noegle) {
   const fav = (CV_FAV && CV_FAV[0]) || "Modern";
-  if (noegle === "cover") return { lag: [{ kilde: "hook", t: "", x: 50, y: 42, s: fav, e: "skygge", f: "#FFFFFF", z: 0.075 }] };
+  if (noegle === "cover") return { lag: [{ kilde: "thumb", t: "", x: 50, y: 42, s: fav, e: "skygge", f: "#FFFFFF", z: 0.075 }] };
   const i = +noegle, lag = [];
   if (i === cvSlideIdx()[0]) {
     lag.push({ kilde: "hook", t: "", x: 50, y: 40, s: fav, e: "skygge", f: "#FFFFFF", z: 0.075 });
@@ -20804,7 +20823,10 @@ function cvUI() {
   if (fan) fan.innerHTML = CV.kar ? CV.nogler.map(function (k, n) { return '<button type="button" class="ark-chip' + (k === CV.noegle ? ' on' : '') + '" onclick="cvSlide(\'' + k + '\')">Slide ' + (n + 1) + '</button>'; }).join("") : "";
   const fo = document.getElementById("cvFotoOrd"); if (fo) fo.textContent = cvFotoUrl(CV.noegle) ? "Skift foto" : (CV.kar ? "Vælg fotos" : "Vælg foto");
   const fav = CV_FAV || [];
-  const skr = fav.concat(CV_SKRIFTER.map(function (s) { return s[0]; }).filter(function (n) { return fav.indexOf(n) === -1; }));
+  /* KUN FAVORITTERNE + »ALLE SKRIFTER« (Idas klik 24/9 kl. 23.36): favoritterne vaelges under Min profil; uden favoritter vises alle */
+  const visAlle = !fav.length || CV.alleSkrifter;
+  const skr = visAlle ? fav.concat(CV_SKRIFTER.map(function (s) { return s[0]; }).filter(function (n) { return fav.indexOf(n) === -1; })) : fav.slice();
+  if (l && skr.indexOf(l.s) === -1) skr.push(l.s);
   const chip = function (on, attr, inner, stil) { return '<button type="button" class="ark-chip' + (on ? ' on' : '') + '" ' + attr + (stil ? ' style="' + stil + '"' : '') + '>' + inner + '</button>'; };
   const p = document.getElementById("cvPanel"); if (!p) return;
   p.innerHTML = '<div class="cv-sek">Tekster</div><div class="cv-chips">'
@@ -20812,8 +20834,7 @@ function cvUI() {
     + '<button type="button" class="ark-chip cv-plus" onclick="cvNytLag()">+ Tilføj tekst</button></div>'
     + (l ? '<div class="cv-felt"><textarea id="cvTekst" rows="2" aria-label="Teksten" oninput="cvTekstInd(this)">' + esc(cvTekst(l, CV.noegle)) + '</textarea>'
       + '<button type="button" class="cv-slet" aria-label="Slet teksten" title="Slet teksten" onclick="cvSletLag()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg></button></div>'
-      + '<div class="cv-sek">Skrift</div><div class="cv-chips">' + skr.map(function (n) { return chip(l.s === n, 'onclick="cvSaet(\'s\',\'' + n + '\')"', (fav.indexOf(n) > -1 ? energidaFlueben(12) + ' ' : '') + esc(n), "font-family:'" + cvFam(n) + "';font-weight:" + cvVaegt(n)); }).join("") + '</div>'
-      + '<button type="button" class="dbtn mq-tap cv-fav' + (fav.indexOf(l.s) > -1 ? ' on' : '') + '" onclick="cvFavSkift()">' + (fav.indexOf(l.s) > -1 ? energidaFlueben(14) : '<span class="cv-ring"></span>') + '<span>Favorit</span></button>'
+      + '<div class="cv-sek">Skrift</div><div class="cv-chips">' + skr.map(function (n) { return chip(l.s === n, 'onclick="cvSaet(\'s\',\'' + n + '\')"', esc(n), "font-family:'" + cvFam(n) + "';font-weight:" + cvVaegt(n)); }).join("") + (visAlle ? '' : '<button type="button" class="ark-chip cv-plus" onclick="CV.alleSkrifter=true;cvUI()">Alle skrifter</button>') + '</div>'
       + '<div class="cv-sek">Effekt</div><div class="cv-chips">' + CV_EFFEKTER.map(function (e) { return chip((l.e || "") === e[1], 'onclick="cvSaet(\'e\',\'' + e[1] + '\')"', e[0]); }).join("") + '</div>'
       + '<div class="cv-sek">' + (l.e === "boks" ? "Farve bag teksten" : "Farve") + '</div><div class="cv-farver">' + CV_FARVER.map(function (f) { return '<button type="button" class="cv-fv' + (l.f === f ? ' on' : '') + '" style="background:' + f + '" aria-label="Farve" onclick="cvSaet(\'f\',\'' + f + '\')"></button>'; }).join("") + '</div>'
       : '')
@@ -24089,7 +24110,7 @@ const BRIEF_FELTER = [
   /* GAELDER IKKE KARRUSEL (Ida 25/8) — samme regel som ctaVideo herunder: felterne VISES
      ikke paa en karrusel, saa de maa heller ikke taelle med. Ellers kunne "Fang dem"
      aldrig blive faerdig paa et karrusel-opslag. */
-  { k: "thumb",       navn: "Thumbnail-teksten",     trin: "raket0", gaelder: (b) => b.format !== "Karrusel" && b.format !== "Billede", fyldt: (b) => !!(b.thumb || b.thumbBillede) },
+  { k: "thumb",       navn: "Teksten på coverbilledet",     trin: "raket0", gaelder: (b) => b.format !== "Karrusel" && b.format !== "Billede", fyldt: (b) => !!(b.thumb || b.thumbBillede) },
   { k: "indhold",     navn: "Indholdets opbygning",  trin: "raket1", fyldt: (b) => !!(b.indhold || (Array.isArray(b.klip) && b.klip.some(k => (k && k.ser || "").trim())) || (Array.isArray(b.slides) && b.slides.some(Boolean))) },
   /* GÆLDER KUN KARRUSEL (UX-politiet 4/8). Feltet "Handlingen på sidste slide" VISES kun,
      naar formatet er Karrusel — men det blev talt med paa alle opslag. Paa en reel blev man
@@ -25248,7 +25269,7 @@ function openBriefSide(id) {
          briefs (gem-reglen 4/8). Genindfoerer du feltet, staar teksterne der igen.
          thumb-feltets fyldt-tjek laeser stadig begge, saa intet falder ud af
          fremdriften paa en gammel brief. */
-      qP('cover', 'Thumbnail <span class="sk-forkl">Teksten på billedet. Den skal skabe nysgerrighed og fortælle kunden hvad de får ud af at se indholdet uden at give svaret.</span>',
+      qP('cover', 'Tekst på coverbilledet <span class="sk-forkl">Teksten på billedet. Den skal skabe nysgerrighed og fortælle kunden hvad de får ud af at se indholdet uden at give svaret.</span>',
       briefForslagHtml('thumb')))
     /* FUND 4 (Idas klik 15/9 kl. 21.35): det, der skal FANGE, staar under Fang dem — karrusellens slide 1 og billedets billede. */
     + (BRIEF_STATE.format === "Karrusel"
@@ -29119,7 +29140,7 @@ function briefVisFelter(b, it) {
     /* COVERBILLEDET ER UDE AF HELE BRIEFEN (Ida 4/9) — ogsaa af laesefladen og
        godkendelses-fladen, som laeser den samme liste. Datanoeglen thumbBillede er
        uroert; den tegnes bare ingen steder. */
-    (erKarrusel || b.format === "Billede") ? null : { k: "thumb",       lbl: "Thumbnail",     forkl: "Teksten på billedet. Den skal skabe nysgerrighed og fortælle kunden hvad de får ud af at se indholdet uden at give svaret.", /* DIDOT ER UDE AF FELTERNE (Ida 4/9): overskrifterne er Didot, det UDFYLDTE er
+    (erKarrusel || b.format === "Billede") ? null : { k: "thumb",       lbl: "Tekst på coverbilledet",     forkl: "Teksten på billedet. Den skal skabe nysgerrighed og fortælle kunden hvad de får ud af at se indholdet uden at give svaret.", /* DIDOT ER UDE AF FELTERNE (Ida 4/9): overskrifterne er Didot, det UDFYLDTE er
        Poppins i EEN stoerrelse "for ro". Thumbnail-teksten stod som eneste felt i Didot
        21 px og traak oejet til sig som en overskrift. */
       t: v(b.thumb),        hvor: "0", rum: "hoved", del: 1 },
@@ -30135,7 +30156,7 @@ function briefSamletHtml() {
         const th = f("thumb");
         return rk("Hook", hookT, "Mangler: hook") + (hook ? andreForslag(Object.assign({}, hook, { t: hookT, chips: null })) : "")
           + ((k0 && (k0.ser || "").trim()) ? rk("Hvad ser man i klippet", k0.ser.trim()) : "")   /* klip 1 hoerer til Fang dem (12/9) */
-          + (th ? rk("Thumbnail", tekstAf(th), "Mangler: thumbnail") : "");
+          + (th ? rk("Tekst på coverbilledet", tekstAf(th), "Mangler: tekst på coverbilledet") : "");
       }
       if (o.hvor === "1") {
         const kl = klipFyldte().slice(1);   /* Fasthold dem begynder ved klip 2 (12/9) */
@@ -30179,7 +30200,7 @@ function briefSamletHtml() {
            "Klip 1 · Hook" med "Hvad ser man i klippet" under Fang dem, og Fasthold dem begynder ved klip 2.
            Telefonen viste hooket her OG klip 1 igen under Fasthold dem — samme brief, to opbygninger. */
         if (k0 && (k0.ser || "").trim()) ud.push({ navn: "Hvad ser man i klippet", felt: "klip", forkl: "Det første klip, der skal fange kunden", krop: vaerdi(k0.ser.trim()) });
-        if (th) ud.push({ navn: "Thumbnail", felt: "thumb", forkl: "Teksten på billedet. Den skal skabe nysgerrighed og fortælle kunden hvad de får ud af at se indholdet uden at give svaret.", krop: vaerdi(tekstAf(th), "Mangler: thumbnail") + andreForslag(th) });
+        if (th) ud.push({ navn: "Tekst på coverbilledet", felt: "thumb", forkl: "Teksten på billedet. Den skal skabe nysgerrighed og fortælle kunden hvad de får ud af at se indholdet uden at give svaret.", krop: vaerdi(tekstAf(th), "Mangler: tekst på coverbilledet") + andreForslag(th) });
         return ud;
       }
       if (o.hvor === "1") {
@@ -53640,7 +53661,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2310";
+const APP_VERSION = "2311";
 let NY_VERSION_KLAR = false;
 let NY_VERSION_AFVIST = false;
 function nyVersionSkjul() {
@@ -75117,6 +75138,6 @@ function bf3StudieRum(v, filter) {
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 24. september · 2310</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 24. september · 2311</div>
 </body>
 </html>
