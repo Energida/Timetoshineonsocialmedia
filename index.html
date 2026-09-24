@@ -37783,6 +37783,63 @@ function printModul(noegle) {
   manusPrintAabn(forside + liste.map(function (o) { return manusPrintArtikel(o, null, true); }).join(""), esc(mT));
 }
 
+/* PRINT ET MODUL · ØKO (Ida 24/9: »en mere økonomisk printudgave af modulerne … kun sort hvid og at det er komprimeret så det sparer
+   mest mulig på blækpatronerne — og så en separat side til sidst med idéer til manus som er placeret på det modul … øko versionen behøves
+   så heller ikke have hook mm med — men stadig gerne underoverskrifter med de forskellige afsnit i hver lektion«).
+   Sort-hvid, lille skrift, to spalter, ingen sideskift mellem lektionerne. Uden Hook, formål, B-roll, meta og opgaver. Afsnittenes navne bliver. */
+const MANUS_PRINT_OEKO_CSS =
+  '@page{margin:12mm;}'
+  + 'body{font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;color:#000;background:#fff;margin:0 auto;max-width:186mm;font-size:9.5pt;line-height:1.38;}'
+  + 'h1{font-size:13pt;font-weight:400;margin:0 0 2mm;text-transform:uppercase;letter-spacing:.6pt;}'
+  + '.oeko-sub{font-size:8pt;margin:0 0 4mm;border-bottom:.5pt solid #000;padding-bottom:2mm;}'
+  + '.oeko-spalter{column-count:2;column-gap:7mm;}'
+  + '.oeko-lek{margin:0 0 4mm;}'
+  + '.oeko-lek h2{font-size:10pt;font-weight:700;margin:0 0 1.5mm;break-after:avoid;}'
+  + '.oeko-sek{margin:0 0 2mm;}'
+  + '.oeko-lbl{font-size:7.5pt;text-transform:uppercase;letter-spacing:.5pt;font-weight:700;margin:0 0 .5mm;break-after:avoid;}'
+  + '.oeko-lek p{margin:0 0 1.2mm;} .p-broll{display:none;} .p-pause{margin:0 0 1mm;} .p-overskrift{font-weight:700;margin:1.5mm 0 .5mm;}'
+  + '.oeko-tom{font-style:italic;}'
+  + '.oeko-ideer{break-before:page;} .oeko-ideer h1{margin-bottom:3mm;} .oeko-ideer ol,.oeko-lek ol{margin:0;padding-left:5mm;} .oeko-ideer li,.oeko-lek li{margin:0 0 1.5mm;} .oeko-ideer .hvor{font-size:8pt;}'
+  + '*{color:#000 !important;background:transparent !important;box-shadow:none !important;}';
+function printModulOeko(noegle) {
+  const nk = String(noegle || "");
+  const n = function (x) { const m = String(x.titel || "").match(/^(\d+)\.(\d+)/); return m ? parseInt(m[1],10)*100 + parseInt(m[2],10) : 9999; };
+  const liste = (typeof KLIP_OPGAVER !== "undefined" ? KLIP_OPGAVER : []).filter(function (o) { return klipModulGruppe(o.modul) === nk; }).sort(function (a, b) { return n(a) - n(b); });
+  if (!liste.length) { husBesked("Der er ingen lektioner i " + nk + " endnu."); return; }
+  let mT = nk; try { const nr = (String(nk).match(/(\d+)/) || [])[1]; const inf = nr != null && typeof modulInfoFor === "function" ? modulInfoFor(nr) : null; if (inf && inf.titel) mT = nk + " · " + inf.titel; } catch (e) {}
+  const lek = liste.map(function (o) {
+    const d = kbDeleFra(o);
+    let krop = "";
+    if (d) {
+      krop = KB_SEKTIONER.filter(function (sk) { return sk.key !== "hook"; }).map(function (sk) {
+        const t = String(d[sk.key] || "").trim(); if (!t) return "";
+        return '<div class="oeko-sek"><div class="oeko-lbl">' + esc(sk.navn) + '</div>' + prompterFormat(t) + '</div>';
+      }).join("");
+    } else if (String(o.manus_tekst || "").trim()) krop = prompterFormat(o.manus_tekst);
+    return '<div class="oeko-lek"><h2>' + esc(o.titel || "") + '</h2>' + (krop || '<div class="oeko-tom">Intet manus endnu.</div>') + '</div>';
+  }).join("");
+  /* ØVELSERNE PAA EN SIDE FOR SIG (Ida 24/9: »og jeg vil også gerne have en separat side med de tilhørende øvelser til hvert modul«) — lektion for lektion */
+  const ovDele = liste.map(function (o) {
+    let l = null; try { l = klipLektionFor(o); } catch (e) {}
+    const ov = (l && l.l && Array.isArray(l.l.ovelse)) ? l.l.ovelse : [];
+    if (!ov.length) return "";
+    return '<div class="oeko-lek"><h2>' + esc(o.titel || "") + '</h2><ol>' + ov.map(function (q) { const bk = (typeof ovBesk === "function") ? ovBesk(q) : ""; return '<li>' + esc(typeof ovSpm === "function" ? ovSpm(q) : String(q)) + (bk ? '<div class="hvor">' + esc(bk) + '</div>' : '') + '</li>'; }).join("") + '</ol></div>';
+  }).join("");
+  const ovHtml = '<div class="oeko-ideer"><h1>Øvelser · ' + esc(mT) + '</h1>' + (ovDele ? '<div class="oeko-spalter">' + ovDele + '</div>' : '<div class="oeko-tom">Ingen øvelser i modulet endnu.</div>') + '</div>';
+  /* idéerne, der er placeret paa modulet eller paa en af dets lektioner */
+  const ids = new Set(liste.map(function (o) { return String(o.id); }));
+  const ideer = (typeof MANUS_IDEER !== "undefined" ? MANUS_IDEER : []).filter(function (r) { return r && (String(r.lekModul || "") === nk || ids.has(String(r.lek || ""))); });
+  const ideHtml = '<div class="oeko-ideer"><h1>Idéer til manus · ' + esc(mT) + '</h1>'
+    + (ideer.length ? '<ol>' + ideer.map(function (r) { return '<li>' + esc(String(r.t || "")) + (r.lekNavn ? '<div class="hvor">' + esc(r.lekNavn) + '</div>' : '') + '</li>'; }).join("") + '</ol>' : '<div class="oeko-tom">Ingen idéer er placeret på modulet endnu.</div>')
+    + '</div>';
+  const html = '<h1>' + esc(mT) + '</h1><div class="oeko-sub">' + liste.length + ' lektion' + (liste.length === 1 ? "" : "er") + ' · øko-print</div>'
+    + '<div class="oeko-spalter">' + lek + '</div>' + ovHtml + ideHtml;
+  const w = window.open("", "_blank");
+  if (!w) { husBesked("Browseren blokerede vinduet. Tillad pop op-vinduer for admin.energida.dk, så kan du printe."); return; }
+  w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>' + esc(mT) + ' · øko</title><style>' + MANUS_PRINT_OEKO_CSS + '</style></head><body>' + html + '</body></html>');
+  w.document.close(); w.focus();
+  setTimeout(function () { try { w.print(); } catch (e) {} }, 400);
+}
 /* PRINT ALLE MODULER (Ida 7/8: "Print alle moduler ... samme layout som print dette
    modul ... bare for alle moduler"). Genbruger PRÆCIS printModul's opbygning: hvert
    modul faar sin egen forside (Energida-maerke, Didot-titel, tael-linje) efterfulgt af
@@ -38114,6 +38171,7 @@ function klipPrintDropdown() {
   const modul = String(KLIP_MODUL_CHIP || "");
   const punkter = [];
   if (modul && (KLIP_VISNING === "moduler")) punkter.push(["Print dette modul", function () { printModul(modul); }]);
+  if (modul && (KLIP_VISNING === "moduler")) punkter.push(["Print dette modul · øko", function () { printModulOeko(modul); }]);   /* sort-hvid, komprimeret, idéerne til sidst (Ida 24/9) */
   punkter.push(["Print manus", function () { printAlleManus(); }]);
   if (KLIP_VISNING === "ideer" && typeof bf3IdeerTekst === "function" && bf3IdeerTekst()) punkter.unshift(["Kopiér oversigten", function () { bf3IdeerKopier(null).then(function () { try { husKvit("Oversigten er kopieret."); } catch (e) {} }); }]);
   const dd = document.createElement("div"); dd.id = "klipPrintDd"; dd.className = "klip-print-dd"; dd.setAttribute("role", "menu");
@@ -53488,7 +53546,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2291";
+const APP_VERSION = "2292";
 let NY_VERSION_KLAR = false;
 let NY_VERSION_AFVIST = false;
 function nyVersionSkjul() {
@@ -74690,6 +74748,6 @@ function bf3StudieRum(v, filter) {
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 24. september · 2291</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 24. september · 2292</div>
 </body>
 </html>
