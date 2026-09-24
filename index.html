@@ -10054,7 +10054,10 @@ html body.mb #briefSideNav .bsd-gem { margin-left:auto; margin-right:12px; }
         /* ALDRIG FOR OEJNENE AF HENDE (Ida 24/9 kl. 07.52: »Når jeg lander på en side … ser man pludselig lige igen en anden side og så
            kommer den tilbage«). MAALT: den nye udgave blev hentet efter 45 sek. uden beroering — ogsaa mens hun kiggede paa skaermen, og
            otte deploys gav otte hop. Nu hentes den foerst, naar appen ligger i baggrunden (skiftet app / laast telefon). */
-        if (document.visibilityState === "visible") { if (!window.__nyVentSkjult) { window.__nyVentSkjult = true; document.addEventListener("visibilitychange", function () { if (document.visibilityState === "hidden") hentForfra(); }); } return; }
+        /* HENTES, NAAR HUN KOMMER TILBAGE — ALDRIG I BAGGRUNDEN (24/9 kl. 23.45): iPhone fryser en app i baggrunden, saa en genindlaesning dér blev
+           aldrig faerdig, og hun fik »Appen kunne ikke starte«. Nu huskes den kun, naar appen skjules, og hentes i forgrunden, i det oejeblik hun er tilbage. */
+        if (document.visibilityState === "visible" && !window.__nyVarVaek) { if (!window.__nyVentSkjult) { window.__nyVentSkjult = true; document.addEventListener("visibilitychange", function () { if (document.visibilityState === "hidden") window.__nyVarVaek = true; else if (window.__nyVarVaek) hentForfra(); }); } return; }
+        if (document.visibilityState === "hidden") return;
         if (skriverHun()) { if (!venter) { venter = true; setTimeout(function () { venter = false; hentForfra(); }, 4000); } return; }
         /* SAMME VEJ UD SOM RESTEN (14/9): en adresse uden kopi. Et almindeligt genindlaes kunne
            faa den gamle side igen fra browserens cache — og saa kom beskeden bare igen. */
@@ -10362,6 +10365,7 @@ body.mb .db-kort, #planRit .db-kort { border:0; box-shadow:var(--mb-skygge); }  
   function sluk() {
     if (slukket) return; slukket = true;
     try { document.body.classList.add("app-klar"); } catch (e) {}
+    try { sessionStorage.removeItem("energida_boot_igen"); } catch (e) {}
   }
   window.appLoaderSluk = sluk;
   /* EN KLASSE ER IKKE EN FLADE (Idas fund 4/9: "hjernehjertet kommer fint op men
@@ -10523,6 +10527,7 @@ body.mb .db-kort, #planRit .db-kort { border:0; box-shadow:var(--mb-skygge); }  
      en adresse, ingen har en kopi af, og workeren springer cachen over paa den. Hash'et
      foelger med, saa en Backstage-side ikke lander i kundeappen. */
   window.__energidaGenindlaes = function (maerke) {
+    if (window.__genindlaesIGang) return; window.__genindlaesIGang = true;   /* EEN genindlaesning ad gangen (24/9: to lyttere skod hver sin, og den anden afbroed den foerste) */
     try { location.replace(location.pathname + "?frisk=" + (maerke || Date.now()) + (location.hash || "")); }
     catch (e) { try { location.reload(); } catch (e2) {} }
   };
@@ -10575,12 +10580,26 @@ body.mb .db-kort, #planRit .db-kort { border:0; box-shadow:var(--mb-skygge); }  
   window.addEventListener("load", function () {
     setTimeout(function () { if (erAppenDer()) { clearInterval(tjek); sluk(); } }, 700);
   });
-  setTimeout(function () {
-    if (erAppenDer()) { clearInterval(tjek); sluk(); return; }
-    /* Appen lever, men siden er ikke tegnet endnu (langsomt net): taeppet BLIVER — op til 30 sek. Fejlfladen er kun til en doed app. */
-    if (harFlade()) { setTimeout(function () { if (erAppenDer()) { clearInterval(tjek); sluk(); return; } fejlflade(); }, 21000); return; }
-    fejlflade();
-  }, 9000);
+  /* VAGTEN DOEMMER ALDRIG EN SIDE, DER LAA I BAGGRUNDEN (Ida 24/9 kl. 23.45: »når jeg har hentet ny version … altid skal til at lukke appen ned.
+     Det gælder også for mine kunder«). MAALT i koden: iPhone fryser en app i baggrunden, saa en start dér blev aldrig faerdig, og uret
+     fyrede fejlfladen, i samme sekund hun kom tilbage. Nu taeller uret kun, mens siden er fremme; laa den i baggrunden, starter det forfra.
+     Og en halv opdatering (?frisk= uden app) proever EEN gang stille forfra, foer fejlfladen vises — maerket i sessionStorage forhindrer loop. */
+  var vagtT = null;
+  function vagt(ms, anden) {
+    clearTimeout(vagtT);
+    vagtT = setTimeout(function () {
+      if (erAppenDer()) { clearInterval(tjek); sluk(); return; }
+      if (document.visibilityState === "hidden") {
+        var f = function () { if (document.visibilityState === "visible") { document.removeEventListener("visibilitychange", f); vagt(9000, anden); } };
+        document.addEventListener("visibilitychange", f); return;
+      }
+      /* Appen lever, men siden er ikke tegnet endnu (langsomt net): taeppet BLIVER — op til 30 sek. Fejlfladen er kun til en doed app. */
+      if (!anden && harFlade()) { vagt(21000, true); return; }
+      try { if (!harFlade() && !sessionStorage.getItem("energida_boot_igen")) { sessionStorage.setItem("energida_boot_igen", "1"); location.replace(location.pathname + "?frisk=" + Date.now() + (location.hash || "")); return; } } catch (e) {}
+      fejlflade();
+    }, ms);
+  }
+  vagt(9000, false);
 })();
 </script>
 
@@ -53803,7 +53822,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2312";
+const APP_VERSION = "2313";
 let NY_VERSION_KLAR = false;
 let NY_VERSION_AFVIST = false;
 function nyVersionSkjul() {
@@ -53865,8 +53884,8 @@ function nyVersionVis(ude) {
   try { window.__NY_VERSION_UDE = ude || null; } catch (e) {}
   /* HENTES KUN I BAGGRUNDEN (Ida 24/9): en genindlaesning, mens hun kigger, ER et hop — ogsaa naar hun ikke roerer skaermen.
      Ligger appen i baggrunden, hentes den straks; ellers venter vi, til hun skifter app eller laaser telefonen. */
-  if (document.visibilityState === "hidden" && nyVersionRoligNu()) { nyVersionHent(ude); return; }
-  try { if (!window.__nyVersionVent) { window.__nyVersionVent = true; document.addEventListener("visibilitychange", function () { if (document.visibilityState === "hidden") { try { nyVersionHent(window.__NY_VERSION_UDE); } catch (e) {} } }); } } catch (e) {}
+  /* HENTES I FORGRUNDEN, NAAR HUN KOMMER TILBAGE (24/9 kl. 23.45) — i baggrunden fryser iPhone indlaesningen, og hun fik fejlfladen */
+  try { if (!window.__nyVersionVent) { window.__nyVersionVent = true; document.addEventListener("visibilitychange", function () { if (document.visibilityState === "hidden") window.__nyVersionVarVaek = true; else if (window.__nyVersionVarVaek) { try { nyVersionHent(window.__NY_VERSION_UDE); } catch (e) {} } }); } } catch (e) {}
   if (document.visibilityState === "visible") return;   /* intet banner, intet hop — den nye udgave kommer stille, naeste gang appen har vaeret vaek */
   /* DAGSKORTET DAEKKER SKAERMEN. Er det aabent, hoerer beskeden DER — ikke i et banner, hun
      foerst ser, naar kortet er lukket (Ida 14/9). Kun eet sted ad gangen, aldrig to. */
@@ -75280,6 +75299,6 @@ function bf3StudieRum(v, filter) {
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 24. september · 2312</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 24. september · 2313</div>
 </body>
 </html>
