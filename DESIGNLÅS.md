@@ -1,3 +1,29 @@
+## v2287–v2291 — 24. september 2026 · LÅST I DAG (Idas klik)
+
+**ALDRIG RØDE RINGE ELLER RAMMER (HÅRD, Ida 24/9):** »der må aldrig være de her røde ringe/rammer. det kan jeg ikke lide.«
+En knap eller flise, der er valgt, pinnet eller aktiv, beholder sin grå kant. Farven sidder i indholdet: nålen fyldes rød, en
+valgt chip er fyldt rød. Hvid flade med rød kant findes ikke — nogen steder, admin og b2b.
+
+**POPUPPEN MED BUEN (Idas klik »lås 1 b!«, 1k3H67fjJ4VLXtuCw6fc45 + Idas kommentarer samme dag):** alle husets popups (arkAabn og
+#bsFlytMenu) har en rød top med KUN grebet og titlen. Titlen er centreret med lige meget luft over og under. Krydset er hvidt, uden
+cirkel, inde i det røde øverst til højre ud for titlen. ALDRIG en skillelinje i det røde, ALDRIG knapper eller chips på rødt
+(»aldrig hvide knapper. så rød baggrund er no go«). Valgene står på det hvide. Popups med mange chips er op til 680 px brede på
+computeren. Slet er altid skraldespanden (uden ord) som sidste knap under Annullér. Den hvide del lægger sig over med en bue
+på 24 px. Ingen skygger på rødt. Skygger kun hvor hvidt ligger på hvidt (felter, Annullér, grå knapper, dropdowns) — ingen grå
+kanter dér. Gem er flad rød. Motor: `arkRoedTop()` måler toppen (`--ark-top`), buen er `::before`. Popups har ÉN spalte, 560 px
+på computeren (Ida: »bredere end høj betød ikke 2 kolonner«). Ingen undertitler, der ikke giver værdi.
+
+**KNAPHØJDERNE (Idas klik bud B, KMrfw4Guq9s83TJo8kFNG5):** runde ikonknapper 44 · piller, Gem, Tilbage og dropdowns 40 ·
+chips 36. Trykfeltet er altid mindst 44 (usynligt ::after).
+
+**KNAPPERNE PÅ BUEN (Idas klik bud 1, D524BnmRPeAj2S35cSRgpN):** alle coverknapper sidder på buen mellem foto og hvid flade:
+Tilbage til venstre, nål · ⋯ · plus til højre. Indholdet starter 32 under buen. Tilføj er altid plusset — aldrig et sendefelt.
+Titel og dato i coveret løftes, når der sidder knapper på buen.
+
+**DATOEN UNDER HEROEN PÅ ALLE SIDER** (»lør. 12. september · Uge 37« i Backstage, som Hjem i b2b).
+
+**POPUPS UDEN OM LÅSEN:** en popup bygget i #modalBody i stedet for arkAabn stopper deployen (`tools/designlaas/popup-kilde.py`).
+
 ## v2272 — 23. september 2026 · EN NY IDÉ FRA TØM HOVEDET SES MED DET SAMME
 
 **Idas spørgsmål:** »når jeg tilføjer via Tøm hovedet, bliver den så også placeret korrekt?«
