@@ -6509,6 +6509,21 @@ body.lek-mb #lekVis .mb-sti .mb-tilbage { color:#fff; }
 body.lek-mb #lekVis .mb-sti .mb-skil { color:rgba(255,255,255,.55); }
 body.lek-mb #lekVis .mb-navn { position:absolute; left:48px; right:140px; bottom:36px; font-family:"Didot","Bodoni 72",Georgia,serif; font-size:56px; line-height:1.02; letter-spacing:-.5px; color:#fff; }
 body.lek-mb #lekVis .lek-grid { display:grid; grid-template-columns:340px minmax(0,760px); gap:40px; padding:32px 48px 60px; align-items:start; }
+/* LEKTIONSSIDEN I EEN SPALTE (Idas klik 24/9 efter Hans-testen, bud 1): videoen i fuld bredde, noterne lige under, ingen venstre kolonne */
+body.lek-mb.lek-enspalte #lekVis .lek-grid { grid-template-columns:minmax(0,1fr); max-width:1040px; margin-left:0 !important; margin-right:auto !important; }
+body.lek-mb.lek-enspalte #lekVis .lek-main { grid-column:1; }
+body.lek-mb.lek-enspalte #lekVis .lek-side { display:none !important; }
+.lk-overblik { margin:0 0 16px; }
+.lk-overblik-t { font-family:Poppins,sans-serif; font-size:13px; color:var(--gray2); margin:0 0 8px; }
+.lk-overblik-bar { height:4px; border-radius:4px; background:var(--gray, #F2F0EC); overflow:hidden; }
+.lk-overblik-bar i { display:block; height:100%; background:var(--red); border-radius:4px; }
+.lk-note-etiket { font-size:10px; letter-spacing:1.5px; text-transform:uppercase; color:var(--gray3); }
+body.lek-enspalte #lekNotePanel .lk-note-top { display:block; margin:0 0 12px; }
+.lk-note-fod { display:flex; align-items:center; justify-content:space-between; gap:12px; margin:12px 0 0; flex-wrap:wrap; }
+.lk-note-gemt { font-size:12px; color:var(--gray2); }
+.lk-note-alle { height:40px; padding:0 18px; border-radius:999px; background:#fff; border:1px solid var(--knap-graa-kant, var(--border)); color:var(--knap-graa-tekst, var(--gray2)); font-family:Poppins,sans-serif; font-size:13px; font-weight:400; cursor:pointer; position:relative; }
+.lk-note-alle::after { content:""; position:absolute; inset:-4px 0; }
+@media (max-width:899px) { .lk-note-fod { flex-direction:column; align-items:stretch; } .lk-note-alle { width:100%; } }   /* telefonens piller i fuld bredde */
 body.lek-mb #lekVis .lek-side { grid-column:1; grid-row:1; margin:0; position:sticky; top:24px; display:block; }
 body.lek-mb #lekVis .lek-main { grid-column:2; grid-row:1; }
 body.lek-mb .lk-versal { font-size:10px; letter-spacing:1.5px; text-transform:uppercase; color:var(--gray3); margin:0 0 8px; }
@@ -34853,7 +34868,7 @@ function lekBaandTegn(navn, sti) {
   if (!b) { b = document.createElement("div"); b.className = "mb-baand"; lv.insertBefore(b, lv.firstChild); }
   b.innerHTML = '<div class="mb-foto"></div><img class="mb-hjerte" src="logo-hjerte-hvid.png" alt="">'
     + '<div class="mb-sti">' + sti + '</div>'
-    + '<div class="mb-navn">' + esc(navn) + '</div>';
+    + '<div class="mb-navn">' + esc(navn) + (function () { try { return '<div class="mb-citat mb-datolinje">' + esc(mbDagLinje()) + '</div>'; } catch (e) { return ''; } })() + '</div>';   /* datoen under heroen paa alle sider (24/9), samme form som de andre sider */
 }
 function lekStiTlf() { try { return window.matchMedia("(max-width:899px)").matches; } catch (e) { return false; } }
 function lekStiHtml(modul, sidste) {
@@ -34914,40 +34929,47 @@ function lekMbRender() {
   lekBaandTegn(l.titel, lekStiHtml(modul, null));
   /* den roede knap: samme rejse som foer (set -> feedback-arket -> oevelsen -> naeste) */
   let roed;
-  if (!set) roed = lekMbPil(sidste ? 'Færdig' : 'Færdig · Næste lektion', "lekVidere('" + id + "')", true, "pilH", true);
+  /* KNAPPEN SIGER, HVAD DER SKER (Hans-testen 24/9: »Færdig · Næste lektion« foerte til oevelsen). Oevelsen naevnes ikke, foer videoen er set (Ida 24/9). */
+  if (!set) roed = lekMbPil('Jeg har set videoen', "lekVidere('" + id + "')", true, "pilH", true);
   else if (harOv && !ovTaget) roed = lekMbPil('Tag øvelsen', "startOvelse('" + id + "')", true, "pilH", true);
   else roed = sidste ? lekMbPil('Tilbage til forløbet', "lukLektion()", true) : lekMbPil('Næste lektion', "lekNaeste()", true, "pilH", true);
   const hvid = (harOv && ovTaget ? lekMbPil('Ret dine øvelsessvar', "startOvelse('" + id + "')") : '')
     + (forrige ? lekMbPil('Forrige lektion', "visLektion('" + forrige.id + "')", false, "pilV") : '')
     + (tlf ? lekMbPil('Tilbage', "lukLektion()") : '');
+  /* OVERBLIKKET ER EEN LINJE (Idas klik 24/9, lektions-bud 1): modulets lektioner, ikke alle 48 — og en tynd bjaelke */
+  const modAkt = aktive.filter(x => { const m2 = lekModulFor(x.id); return m2 && modul && m2.titel === modul.titel; });
+  const modIx = Math.max(0, modAkt.findIndex(x => x.id === id));
+  const modSet = modAkt.filter(x => KURSUS_SET[x.id]).length;
+  const overblik = '<div class="lk-overblik"><div class="lk-overblik-t">' + esc(modul ? modul.titel : "") + (modAkt.length ? ' · lektion ' + (modIx + 1) + ' af ' + modAkt.length : '') + (set ? ' · set' : '') + '</div>'
+    + '<div class="lk-overblik-bar"><i style="width:' + (modAkt.length ? Math.round(modSet / modAkt.length * 100) : 0) + '%"></i></div></div>';
   const video = l.video ? lekVideoHtml(l)
     : '<div class="lek-video"><div class="lek-video-ph"><div class="lk-foto"></div>'
       + '<img src="logo-hjerte-hvid.png" alt="" style="height:56px;width:auto;">'
       + '<div style="font-size:18px;">Videoen er på vej</div>'
       + '<div style="font-size:13px;line-height:1.55;color:rgba(255,255,255,.8);max-width:46ch;">Ida optager lektionerne i øjeblikket. Videoen lander her, så snart den er klippet. Du kan allerede nu skrive noter.</div>'
       + '</div></div>';
-  const noteAaben = !tlf || !!(KURSUS_NOTER[id] || []).length;
+  const noteAaben = true;   /* noterne er altid aabne (Hans-testen 24/9: »Kan jeg skrive noget ned?«) */
   const vk = [["H", "lekNoteFormat('H')", "Overskrift"], ["ul", "lekNoteFormat('ul')", "Punkter"], ["ol", "lekNoteFormat('ol')", "Nummereret"], ["B", "lekNoteFormat('B')", "Fed"], ["I", "lekNoteFormat('I')", "Kursiv"], ["tjek", "lekNoteFormat('tjek')", "Tjekliste"]]
     .map(k => '<button type="button" data-f="' + k[0] + '" title="' + k[2] + '" aria-label="' + k[2] + '" onmousedown="event.preventDefault()" onclick="' + k[1] + '">' + LK_SVG[k[0]] + '</button>').join("");
   const gemt = (KURSUS_NOTER[id] || []).find(n => n.html);
   document.getElementById("lekMain").innerHTML =
-      '<div class="lk-versal">Lektion ' + esc(l.id.replace("-", ".")) + (modul ? ' · ' + esc(modul.titel.replace(/\s*·.*$/, "")) : '') + (l.tid ? ' · ' + esc(l.tid) : '') + (set ? ' · gennemført' : '') + '</div>'
-    + '<div class="lk-titel">' + esc(l.titel) + '</div>'
+      overblik   /* titlen staar i heroen — ikke en gang til (Hans-testen 24/9: titlen stod tre gange) */
     + (l.ovelse && erEjerOevelse(id) ? '<div class="lk-versal" style="margin:-8px 0 14px;">Ejerens øvelse</div>' : '')
     + video
-    + (tlf ? '<div class="lek-side-tlf">' + lekMbRingBoks(setAntal, "af " + aktive.length + " lektioner", aktive.length ? setAntal / aktive.length : 0, "", "") + '</div>' : '')
     + '<div class="lk-flise' + (noteAaben ? '' : ' luk') + '" id="lekNotePanel">'
-    + '<div class="lk-note-top"><button type="button" class="lk-note-fold" onclick="lekNoteFold(this)">' + LK_SVG.chev + 'Dine noter til lektionen</button>'
-    + '<button type="button" class="lk-tekstknap" onclick="lekNoterVis()">Alle noter</button></div>'
+    + '<div class="lk-note-top"><span class="lk-note-etiket">Dine noter</span></div>'
     + '<div class="lk-note-krop"><div class="lk-vaerktoej">' + vk + '</div>'
-    + '<div class="lk-felt-ramme"><div class="lk-note-felt" id="lekNoteFelt" contenteditable="true" data-ph="Brug værktøjslinjen til overskrifter, lister og tjekpunkter, eller bare skriv løs." oninput="lekNoteSnart()" onkeyup="lekNoteVaerktoejOpdater()" onmouseup="lekNoteVaerktoejOpdater()" onfocus="lekNoteFokus()">' + (gemt ? lekNoteRen(gemt.html) : '') + '</div></div>'
+    + '<div class="lk-felt-ramme"><div class="lk-note-felt" id="lekNoteFelt" contenteditable="true" data-ph="Tilføj det, du vil huske …" oninput="lekNoteSnart()" onkeyup="lekNoteVaerktoejOpdater()" onmouseup="lekNoteVaerktoejOpdater()" onfocus="lekNoteFokus()">' + (gemt ? lekNoteRen(gemt.html) : '') + '</div></div>'
+    + '<div class="lk-note-fod"><span class="lk-note-gemt">Gemmes af sig selv</span><button type="button" class="lk-note-alle" onclick="lekNoterVis()">Alle noter</button></div>'   /* husets graa knap, ikke et roedt ord i etiketten (Idas kommentar 24/9) */
     + '<div class="lek-note-liste" id="lekNoteListe"></div>'
     + '</div></div>'
     + (l.ovelse && mgErGentagelig(id) ? mgKortHtml() : '')
     + '<div class="lk-knapper lek-bar">' + (tlf ? roed + hvid : hvid + roed) + '</div>';
   const side = document.getElementById("lekSide");
-  side.innerHTML = tlf ? '' : lekMbSide(l, modul, aktive, setAntal, "lektion");
-  side.style.display = tlf ? "none" : "";
+  /* VENSTRE KOLONNE ER VAEK PAA BEGGE FLADER (Idas klik 24/9): stien/buen er vejen tilbage, »Alle noter« staar i noteflisen */
+  side.innerHTML = ''; side.style.display = "none";
+  document.body.classList.add("lek-enspalte");
+  try { if (tlf) { const lv = document.getElementById("lekVis"); const bd = lv && lv.querySelector(":scope > .mb-baand"); if (bd && typeof coverKnapperUd === "function") setTimeout(function () { try { coverKnapperUd(bd, [], 16, null, lv); } catch (e) {} }, 60); } } catch (e) {}
   renderLekNoteListe();
   try { const lv = document.getElementById("lekVis"); if (lv) lv.scrollTop = 0; } catch (e) {}
 }
@@ -53148,7 +53170,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2304";
+const APP_VERSION = "2305";
 let NY_VERSION_KLAR = false;
 let NY_VERSION_AFVIST = false;
 function nyVersionSkjul() {
@@ -74625,6 +74647,6 @@ function bf3StudieRum(v, filter) {
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 24. september · 2304</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 24. september · 2305</div>
 </body>
 </html>
