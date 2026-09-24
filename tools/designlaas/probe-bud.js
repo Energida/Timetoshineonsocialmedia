@@ -97,7 +97,10 @@ setTimeout(async function () {
       /* 5b) 32 PX UNDER HEROEN paa begge flader (afstandsreglen; Idas kommentar 20/9 kl. 21.55) */
       var heroEl = tlf ? document.querySelector(".hf-hero") : document.querySelector("#screen3 .mb-baand"), linjeEl = tlf ? r.querySelector(".hjem-dag .idag-flise") : r.querySelector(".hjem-dag-linje");   /* telefonen: dagens hoved er ude (21/9 kl. 23.58) — luften maales til den foerste flise */
       /* LUFTEN MAALES FRA BUEN (Ida 21/9 kl. 10.20 + 14.10): baandets hvide bue (28 px) er allerede luft — 32 fra buen = 4 under baandet (paa telefonen ligger arket selv 28 op i fotoet) */
-      if (heroEl && linjeEl) { var bue = (heroEl.classList.contains("mb-baand") || heroEl.classList.contains("hf-hero")) ? 28 : 0;   /* telefonens hero: arket ligger 28 op i fotoet */ var luft = Math.round(linjeEl.getBoundingClientRect().top - (heroEl.getBoundingClientRect().bottom - bue)); if (Math.abs(luft - 32) > 4) F(tilstand + ": luften fra buen til I dag er " + luft + " px, ikke 32"); }
+      if (heroEl && linjeEl) { var bue = (heroEl.classList.contains("mb-baand") || heroEl.classList.contains("hf-hero")) ? 28 : 0;   /* telefonens hero: arket ligger 28 op i fotoet */ var luft = Math.round(linjeEl.getBoundingClientRect().top - (heroEl.getBoundingClientRect().bottom - bue));
+        /* KNAPRAEKKEN UNDER COVERET (Ida 24/9: »Alle knapper skal ud af coveret … placeres umiddelbart under«): staar der knapper, er raekken 32 fra buen, og I dag staar 24 under raekken (32 + 44 + 24 = 100) */
+        var rk = document.querySelector("#screen3 #hjemTilfoejBaand"); if (!tlf && rk && rk.getClientRects().length && getComputedStyle(rk).position === "absolute" && document.body.dataset.knapBud === "0") luft -= 44 + 24;   /* bud 1 (laast 24/9): knapperne paa buen, luften er 32 igen */
+        if (Math.abs(luft - 32) > 4) F(tilstand + ": luften fra buen til I dag er " + luft + " px, ikke 32"); }
       /* 6) INTET KLIPPET I VENSTRE KANT (skinnen maales i SELE SMAL; her: fast menu) */
       [].forEach.call(r.querySelectorAll(".cf-sek, .idag-flise, .aft-rk, .opg-rk"), function (e) { if (synlig(e) && e.getBoundingClientRect().left < 0) F(tilstand + ": klippet i venstre kant: " + (e.innerText || "").trim().slice(0, 20)); });
     };

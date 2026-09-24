@@ -10,6 +10,8 @@ set -u
 ROD="$(cd "$(dirname "$0")/../.." && pwd)"
 MAAL="${SELE_MAPPE:-$(mktemp -d)}"
 python3 "$ROD/tools/designlaas/byg-sele.py" "$MAAL" || exit 1
+# POPUP-KILDEN (24/9): en popup bygget uden om arkAabn stopper deployen, ogsaa naar ingen probe aabner den
+UD0=$(python3 "$ROD/tools/designlaas/popup-kilde.py"); echo "$UD0"
 VER=$(grep -o 'const APP_VERSION = "[0-9]*"' "$ROD/index.html" | head -1 | grep -o '[0-9]*')
 [ -z "$VER" ] && { echo "SELE LAAS FEJL: kunne ikke laese APP_VERSION"; exit 1; }
 C="${CHROME:-}"
@@ -91,5 +93,5 @@ RAA3=$($TO "$C" $HL --no-sandbox --disable-gpu --window-size=1480,1000 --virtual
 UD3=$(echo "$RAA3" | grep -a 'CONSOLE' | sed -E 's/^.*CONSOLE[:(][0-9]+\)?\] //; s/", source:.*$//; s/^"//' | grep -a 'SELE BRIEF')
 echo "$UD3"
 [ -z "$UD3" ] && { echo "SELE BRIEF FEJL: ingen maaling fra chromium — de SIDSTE 30 konsollinjer (18/9: de foerste 20 var kun opstartsstoej):"; echo "$RAA3" | grep -a 'CONSOLE' | tail -30 | cut -c1-400; echo "--- og de foerste 5 raa linjer:"; echo "$RAA3" | head -5; }
-echo "$UD" | grep -q "SELE LAAS OK" && echo "$UD2" | grep -q "SELE SIDER OK" && echo "$UD4" | grep -q "SELE SIDER OK" && echo "$UD5" | grep -q "SELE BUD OK" && echo "$UD6" | grep -q "SELE BUD OK" && [ "$UX_OK" = "1" ] && [ "$BS_OK" = "1" ] && echo "$UD3" | grep -q "SELE BRIEF OK" && exit 0
+echo "$UD0" | grep -q "SELE POPUP-KILDE OK" && echo "$UD" | grep -q "SELE LAAS OK" && echo "$UD2" | grep -q "SELE SIDER OK" && echo "$UD4" | grep -q "SELE SIDER OK" && echo "$UD5" | grep -q "SELE BUD OK" && echo "$UD6" | grep -q "SELE BUD OK" && [ "$UX_OK" = "1" ] && [ "$BS_OK" = "1" ] && echo "$UD3" | grep -q "SELE BRIEF OK" && exit 0
 echo "SELE LAAS FEJL: maalingen sagde ikke OK"; exit 1
