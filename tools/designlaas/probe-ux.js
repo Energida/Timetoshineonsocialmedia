@@ -63,7 +63,16 @@ setTimeout(async function () {
       });
       /* fliser med kant paa computeren (15/9: b2b-fliser uden kant m. varm skygge) */
       if (!tlf) [].forEach.call(r.querySelectorAll(".mb-flise, .idag-flise, .hf-kort, .idea-kort, .post-card, .kv-flise, .lek-kort, .db-kort, .pr-kort, .pr-svar"), function (e) { var c = getComputedStyle(e); if (synlig(e) && parseFloat(c.borderTopWidth) > 0 && c.borderTopStyle !== "none" && !/rgba\(0, 0, 0, 0\)/.test(c.borderTopColor)) kanter.push(e.id || e.className.split(" ")[0]); });
+      /* ALDRIG ROEDE RINGE (HAARD, Ida 24/9): en hvid/gennemsigtig flade med roed kant fejler. Valgt = fyldt roed, ellers graa kant. */
+      var ringe = [], ROED = /rgb\(252, 36, 4\)|rgb\(232, 60, 36\)|rgb\(233, 61, 35\)/;
+      [].forEach.call(r.querySelectorAll("*"), function (e) {
+        if (!synlig(e) || e.closest("#sideNav, #burgerMenu, .bottom-nav, #versionsFod")) return;
+        var c = getComputedStyle(e);
+        if ((parseFloat(c.borderTopWidth) || 0) >= 1 && c.borderTopStyle !== "none" && ROED.test(c.borderTopColor) && !ROED.test(c.backgroundColor))
+          ringe.push((e.className && String(e.className).split(" ")[0] || e.tagName) + "=" + (e.textContent || "").replace(/\s+/g, " ").trim().slice(0, 18));
+      });
       var uniq = function (a) { return a.filter(function (x, i) { return a.indexOf(x) === i; }); };
+      if (ringe.length) fund(navn, "roed ring (" + ringe.length + "): " + uniq(ringe).slice(0, 3).join(" | "));
       if (didot.length) fund(navn, "Didot uden for heroen (" + didot.length + "): " + uniq(didot).slice(0, 3).join(" | "));
       if (fed.length) fund(navn, "fed Poppins (" + fed.length + "): " + uniq(fed).slice(0, 3).join(" | "));
       if (skriv.length) fund(navn, "pladsholder med »skriv« (" + skriv.length + "): " + uniq(skriv).slice(0, 3).join(" | "));

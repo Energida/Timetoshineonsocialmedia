@@ -1,24 +1,34 @@
+## v2292–v2302 — 24. september 2026 · RESTEN AF DAGEN (Idas klik)
+
+- **Knaphøjde-låsen gælder overalt:** den gamle `.mb-pil`-regel (48, 18/9) og telefonens chips (44) er sat til 40/36 — trykfeltet er stadig 44 (usynligt). Porten måler det.
+- **Porten stopper røde ringe** (`probe-ux.js`): hvid/gennemsigtig flade med rød kant = fejl. Valgt/»her er du« = fyldt rødt (forløbsprikker, planlægningens trin).
+- **Didot kun i heroen — også i Drejebogens slides** (Poppins, 24/32 px, brydes om).
+- **Lektionens status er en dropdown med fire trin:** Manus mangler · Klar til optagelse · Optaget · Udgivet (Idas klik »Fire trin«; Rettelser/Klippet vises som Optaget).
+- **Modulerne i et produkt = indholdsfortegnelse** (bud 1, lidt mere firkantede): etiket »MODUL n · antal lektioner« · streg · navn · status · øvelser. Tryk åbner modulets side; stien får »Modul n«.
+- **Energida Studio:** døren »Modulerne« er væk (modulerne bor under Produkter).
+- **Indtaling:** »punktum/komma/spørgsmålstegn/udråbstegn/kolon/ny linje/nyt afsnit« bliver til tegn; stort begyndelsesbogstav; på computeren følger en rød streg i feltets bund stemmen.
+- **Admin = CRM · Forretning** (ikke Kunder · Salg).
+
 ## v2287–v2291 — 24. september 2026 · LÅST I DAG (Idas klik)
 
 **ALDRIG RØDE RINGE ELLER RAMMER (HÅRD, Ida 24/9):** »der må aldrig være de her røde ringe/rammer. det kan jeg ikke lide.«
 En knap eller flise, der er valgt, pinnet eller aktiv, beholder sin grå kant. Farven sidder i indholdet: nålen fyldes rød, en
 valgt chip er fyldt rød. Hvid flade med rød kant findes ikke — nogen steder, admin og b2b.
 
-**POPUPPEN MED BUEN (Idas klik »lås 1 b!«, 1k3H67fjJ4VLXtuCw6fc45 + Idas kommentarer samme dag):** alle husets popups (arkAabn og
-#bsFlytMenu) har en rød top med KUN grebet og titlen. Titlen er centreret med lige meget luft over og under. Krydset er hvidt, uden
-cirkel, inde i det røde øverst til højre ud for titlen. ALDRIG en skillelinje i det røde, ALDRIG knapper eller chips på rødt
-(»aldrig hvide knapper. så rød baggrund er no go«). Valgene står på det hvide. Popups med mange chips er op til 680 px brede på
-computeren. Slet er altid skraldespanden (uden ord) som sidste knap under Annullér. Den hvide del lægger sig over med en bue
-på 24 px. Ingen skygger på rødt. Skygger kun hvor hvidt ligger på hvidt (felter, Annullér, grå knapper, dropdowns) — ingen grå
-kanter dér. Gem er flad rød. Motor: `arkRoedTop()` måler toppen (`--ark-top`), buen er `::before`. Popups har ÉN spalte, 560 px
-på computeren (Ida: »bredere end høj betød ikke 2 kolonner«). Ingen undertitler, der ikke giver værdi.
+**POPUPPEN — ENDELIG FORM 24/9 (vælter morgenens »rød top på alle«; Idas kommentarer hele dagen):**
+- **Alle popups er HVIDE** med titlen i **rød Poppins**, centreret med samme luft over og under (målt 22/22 px).
+- **Skillestregen under titlen står KUN, når der er chips under** (»ikke hvis der er tekstfelt«). Motor: `arkRoedTop()` sætter `.ark-streg-af`.
+- **Krydset sidder PÅ stregen/kanten i øverste højre hjørne** (»når jeg 100 gange har sagt det skal ligge på stregen«).
+- **Kun Tøm hovedet har rød top — og kun på telefonen** (»det her design duer kun på mobilen«). Admin og b2b har samme Tøm hovedet-form (v2302).
+- Aldrig knapper/chips på rødt, aldrig en streg i det røde, ingen skygger på rødt.
+- Én spalte, 560 px (680 med mange chips). Skygger i stedet for grå kanter, hvor hvidt ligger på hvidt. Slet = skraldespanden uden ord som sidste knap under Annullér. Mikrofon i hvert tekstfelt.
+- **Feltet passer til indholdet:** navn, titel, link, to-do og aftale = én linje (44 px); beskrivelser = halvt så højt felt (48 px tekst), der vokser (`arkErEnLinje()`).
+- **Kalender, ur og dropdowns kommer UD af popuppen** (z-index over arket; listen fast under knappen) og lukker med popuppen.
 
 **KNAPHØJDERNE (Idas klik bud B, KMrfw4Guq9s83TJo8kFNG5):** runde ikonknapper 44 · piller, Gem, Tilbage og dropdowns 40 ·
 chips 36. Trykfeltet er altid mindst 44 (usynligt ::after).
 
-**KNAPPERNE PÅ BUEN (Idas klik bud 1, D524BnmRPeAj2S35cSRgpN):** alle coverknapper sidder på buen mellem foto og hvid flade:
-Tilbage til venstre, nål · ⋯ · plus til højre. Indholdet starter 32 under buen. Tilføj er altid plusset — aldrig et sendefelt.
-Titel og dato i coveret løftes, når der sidder knapper på buen.
+**COVERKNAPPERNE:** telefonen = på buen (bud 1: Tilbage tv., nål · ⋯ · plus th.). **Computeren = øverst til højre i coverbilledet, gennemsigtige med hvid ring, ingen Tilbage-pille — stien er vejen tilbage** (bud 6). Idébankens filtrér · søg · sortér står i samme række som plusset på computeren, og »+ Ny idé« er en ren »+«-cirkel dér (v2302). Tilføj er altid plusset; Idéer til manus har desuden et hurtigfelt ØVERST (Idas ønske 24/9).
 
 **DATOEN UNDER HEROEN PÅ ALLE SIDER** (»lør. 12. september · Uge 37« i Backstage, som Hjem i b2b).
 
