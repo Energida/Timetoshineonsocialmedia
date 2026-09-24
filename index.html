@@ -42738,6 +42738,7 @@ function klipUploads(arr) {
 
 function renderKlipperum() {
   try { if (KLIP_ER_IDA && typeof bf3BaandKnapVis === "function") bf3BaandKnapVis(null); } catch (e) {}   /* plusset saettes af den visning, der har noget at tilfoeje (24/9) */
+  try { const h = document.querySelector("#dside-klip .klip-hoved .ch-titel"); if (h && !(KLIP_VISNING === "moduler" && typeof BF3_PROD_VALGT !== "undefined" && BF3_PROD_VALGT) && h.textContent !== "Energida Studio") h.textContent = "Energida Studio"; } catch (e) {}   /* produktsiden skriver produktets navn i coveret (24/9) */
   try { renderManusIdeer(); } catch(e) {}
   const badge = document.getElementById("klipCount");
   if (badge) badge.textContent = KLIP_OPGAVER.filter(o => o.status !== "Godkendt").length;
@@ -53417,7 +53418,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2287";
+const APP_VERSION = "2288";
 let NY_VERSION_KLAR = false;
 let NY_VERSION_AFVIST = false;
 function nyVersionSkjul() {
@@ -73956,9 +73957,31 @@ function klipBud6Tegn(el) {
   if (ht) ht.innerHTML = '<button type="button" class="kv-menuknap mq-tap" aria-label="Menu" title="Værktøjer og visninger" onclick="klipMenuSkift()">···</button>';
   /* TO FLADER: paa computeren staar produkterne oeverst (de koster to raekker af bredden).
      Paa telefonen ville syv fliser skubbe dagens arbejde under folden — dér staar de nederst. */
-  el.innerHTML = '<div class="bs3">' + tilbage + produkter
-    + (tlf ? rail + hoved + fliser + send + modIdeHtml + '<div class="bs3-afsnit">' + prodHtml + '</div>'
-           : prodHtml + '<div class="bs3-studio"><div>' + rail + '</div><div>' + hoved + fliser + send + modIdeHtml + '</div></div>')
+  /* PRODUKTSIDEN (Idas klik 24/9 »det må du gerne implementere« = Studio-bud 1): et produkt aabnet fra Produkter faar sit navn i coveret og
+     chips Indhold · Deltagere · Se som kunden. Pris og Efter købet kommer, naar de har et sted at bo i basen — en fane uden indhold vises ikke. */
+  const px0 = BF3_PROD_VALGT ? PROD_LISTE.find(function (p) { return p.id === BF3_PROD_VALGT; }) : null;
+  let prodTop = "", fane = window.BF3_PROD_FANE || "indhold";
+  if (px0) {
+    try { const h = document.querySelector("#dside-klip .klip-hoved .ch-titel"); if (h && h.textContent !== String(px0.navn || "")) h.textContent = String(px0.navn || ""); } catch (e) {}
+    const delt = bf3ProdDeltagere(px0.id);
+    const fanerne = [["indhold", "Indhold"], ["deltagere", "Deltagere"]].concat(delt.length ? [["kunde", "Se som kunden"]] : []);
+    if (!fanerne.some(function (f) { return f[0] === fane; })) fane = "indhold";
+    prodTop = bf3Chips(fanerne, fane, "bf3ProdFane");
+    if (fane === "deltagere") {
+      el.innerHTML = '<div class="bs3">' + prodTop + bf3Ver("Deltagere")
+        + (delt.length ? delt.map(function (k) { return bf3Fl(esc(venterKundeNavn(k)), "", "kundeSideVis('" + esc(k) + "')"); }).join("") : bf3Tom("Ingen deltagere endnu."))
+        + '<div class="bs3-ideer-knap"><button type="button" class="dbtn mq-tap" onclick="klipVisningSaet(\'produkter\')">Tilbage til Produkter</button></div></div>';
+      try { bf3BaandKnapVis(null); } catch (e) {}
+      try { sideKlarNaar("klipPageList"); } catch (e) {}
+      try { bsBaandPlanlaeg(); } catch (e) {}
+      bf3StudioRyd();
+      return;
+    }
+  }
+  el.innerHTML = '<div class="bs3">' + (px0 ? prodTop : tilbage + produkter)
+    + (tlf ? rail + hoved + fliser + send + modIdeHtml + (px0 ? '' : '<div class="bs3-afsnit">' + prodHtml + '</div>')
+           : (px0 ? '' : prodHtml) + '<div class="bs3-studio"><div>' + rail + '</div><div>' + hoved + fliser + send + modIdeHtml + '</div></div>')
+    + (px0 ? '<div class="bs3-ideer-knap"><button type="button" class="dbtn mq-tap" onclick="klipVisningSaet(\'produkter\')">Tilbage til Produkter</button></div>' : '')
     + '</div>';
   try { klipLangTrykLyt(el); } catch (e) {}
   bf3Swipe(el);
@@ -74488,10 +74511,21 @@ function bf3ProdKoblingTegn(el) {
   bf3StudioRyd();
   try { sideKlarNaar("klipPageList"); } catch (e) {}
 }
-function bf3ProdAabn(id) { BF3_PROD_VALGT = id; KLIP_MODUL_CHIP = null; try { BF3_KLIP_FILTER = ""; } catch (e) {} klipVisningSaet("moduler"); }
+/* DELTAGERE PR. PRODUKT — kun de koblinger, der staar i kundens profil (type/pakke); WE GOT THIS har ingen entydig kobling endnu, og saa gaetter vi ikke */
+const BF3_PROD_KUNDE = { yougotthis: function (d) { return d.type === "kursus"; }, igotyou: function (d) { return d.pakke === "igotyou"; }, contentplanner: function (d) { return d.type === "contentplanner"; }, reset: function (d) { return d.type === "reset"; }, medarbejder: function (d) { return d.type === "medarbejder"; } };
+function bf3ProdDeltagere(pid) {
+  const f = BF3_PROD_KUNDE[pid]; if (!f) return [];
+  try { return Object.keys(VIRKSOMHEDSKODER || {}).filter(function (k) { const d = VIRKSOMHEDSKODER[k] || {}; return erRigtigKunde(k) && d.aktiv !== false && f(d); }).sort(function (a, b) { return venterKundeNavn(a).localeCompare(venterKundeNavn(b), "da"); }); } catch (e) { return []; }
+}
+function bf3ProdFane(k) {
+  if (k === "kunde") { const d = bf3ProdDeltagere(BF3_PROD_VALGT); if (d.length) { try { aabnKundensSide(d[0]); } catch (e) {} } return; }
+  window.BF3_PROD_FANE = k; renderKlipperum();
+}
+function bf3ProdAabn(id) { window.BF3_PROD_FANE = "indhold"; BF3_PROD_VALGT = id; KLIP_MODUL_CHIP = null; try { BF3_KLIP_FILTER = ""; } catch (e) {} klipVisningSaet("moduler"); }
 var BF3_STUDIE_TAL = false;   /* Ida 23/9: ingen tal paa Studiets forside lige nu */
 function bf3StudieTegn(el) {
   document.body.classList.add("klip-bud6");
+  try { BF3_PROD_VALGT = ""; } catch (e) {}   /* Studiets forside: Modulerne-doeren viser alle moduler, ikke det sidst aabnede produkt (24/9) */
   if (BF3_STUDIE_TAL && !BF3_DATA && !window.__BF3_DATA_HENT) { try { bf3DataHent(); } catch (e) {} }
   const T = bf3StudieTal();
   const K = bf3StudieKunder();
@@ -74555,6 +74589,6 @@ function bf3StudieRum(v, filter) {
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 24. september · 2287</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 24. september · 2288</div>
 </body>
 </html>
