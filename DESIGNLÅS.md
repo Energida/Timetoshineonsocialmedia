@@ -1,3 +1,12 @@
+## v2325–v2326 — 25. september 2026 aften · HJEM SOM TEGNINGEN · STRIMLEN STARTER I DAG · ØKO-PRINTET MED HOOK
+
+- **Strimlen starter i dag (Ida 25/9 ~21):** Hjems syv datofliser = i dag + seks dage frem; i dag er altid den første, røde. Pilene flytter syv dage. Kalendersiden og ringen »opslag i ugen« er stadig mandag–søndag.
+- **Hjem på computeren følger tegningen bud 5 (DQZBGDJSBUTej2mSpk2Sig):** ringene står KUN over kalenderen (venstre spalte), fokus/to-do i højre spalte ~37 %, siden højst 1560 px bred, datofliserne næsten kvadratiske (min. 86 px, tal 20 px). To-do flugter med »I dag«. Under 1360 px står to-do under dagen.
+- **Aldrig »…«:** dagens titel og to-do toner ud (maske); på telefonen må dagens titel bruge to linjer.
+- **Interaktionsringen er tom, når der ikke er et mål** (en fyldt ring uden mål lyver).
+- **Telefonens Hjem slutter med to-do** — »Siden sidst« bor i Indbakken. Navn + glimt står altid på én linje.
+- **Øko-printet starter med hooket** (vælter 24/9 »uden hook«).
+
 ## v2323–v2324 — 25. september 2026 · HJEM = UGESTRIMLEN OG DAGEN · GET SHIT DONE (Idas klik)
 
 - **Hjem (v2324, klik kl. 20.20 på det byggede, Y6mq4pDxRg1UuAHTtThmQA):** computer = tre lave ring-fliser (ring · tal · ord, centreret) + Ugens fokus (etiket m. rødt sigte · én streg · Didot-kursiv på ÉN linje, bevidst undtagelse fra »Didot kun i heroen«) · linjen »I dag« med pilene lige efter, ingen dato i linjen · syv datofliser (i dag fyldt rød, **valgt dag = rød ramme 2 px**, prik pr. ting) · dagens kort under hinanden: symbol i hvid kasse m. grå hårkant og **rød streg**, etiket + titel = højst to linjer, højst fem + »Se hele dagen · N« · to-do i højre spalte 420 px, flugter med »I dag«, højst fem + »Gå til Get shit done · N«. Under 1360 px står to-do under dagen. Telefon: strimlen, dagen uden kasse, ringene med ordet UNDER ringen, to-do; **ingen ugens fokus og ingen dato i heroen på telefonen**. Tom uge = »Hvad skal der ske i denne uge?« + »Start planlægning«.
