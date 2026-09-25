@@ -1,3 +1,12 @@
+## v2308–v2315 — 25. september 2026 · LÅST (Idas ord)
+
+**KNAPPER I COVERBILLEDET = GENNEMSIGTIG BAGGRUND + HVID STREG/RING (HÅRD, Ida 25/9 kl. 07.45):** »alle knapper, vi beslutter, der skal være oppe i coverbilledet, skal have gennemsigtig baggrund, hvid streg og ring omkring knapperne«. Gælder admin og b2b, computer og telefon. Runde ikonknapper 44, Tilbage-pillen 40.
+- **Ingen sti i coveret på telefonen** (»stier skal ikke være på coveret overhovedet«). Backstage på telefonen: Tilbage = den lave pille (40) øverst til venstre i coveret; nål · plus · ⋯ øverst til højre. Intet sidder på kanten mellem cover og indhold. Computeren: stien, ingen Tilbage-pille (24/9).
+- **Knapper med ord er 52 px / 15 px på HELE telefonen** (b2b + admin; Ida 24/9: »ens på hele mobilversionen«). Chips 36, runde 44, dropdowns uændret. Computeren beholder 40.
+- **Idéer (Get shit done): kryds i hjørnet** — Idas undtagelse fra skraldespand-reglen (slet direkte fra overblikket).
+- **Alle datofelter åbner husets dato-ark** — også i Backstage. Ny to-do: »Deadline«. Ny aftale: ingen mikrofon.
+- **Briefoversigten viser ikke Indholdsopbygning** (kun inde i briefen). Øjet (Briefoversigten) står i coveret inde i briefen, også på telefonen.
+
 ## v2292–v2302 — 24. september 2026 · RESTEN AF DAGEN (Idas klik)
 
 - **Knaphøjde-låsen gælder overalt:** den gamle `.mb-pil`-regel (48, 18/9) og telefonens chips (44) er sat til 40/36 — trykfeltet er stadig 44 (usynligt). Porten måler det.
