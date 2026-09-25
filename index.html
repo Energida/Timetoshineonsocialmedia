@@ -54271,7 +54271,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2329";
+const APP_VERSION = "2330";
 let NY_VERSION_KLAR = false;
 let NY_VERSION_AFVIST = false;
 function nyVersionSkjul() {
@@ -72406,6 +72406,34 @@ function renderVelkomstPanel() {
           + '</div></div>';
       }).join("");
 }
+/* LISTERNE FLETTES, NÅR DE GEMMES — SIDSTE SKRIVNING VINDER IKKE LÆNGERE (Ida 25/9 kl. ~22.40, »Tryghed først«: »Ja, start dér«).
+   To-dos, noter og idéer ligger som EEN liste pr. noegle i skema_svar. Et gem skrev hele listen — saa en gammel fane eller telefonen kunne
+   slette et punkt, der var kommet til et andet sted, eller skrive en gammel udgave oven i en nyere (samme fejltype som manus 25/9).
+   MAALT 25/9: alle 225 punkter i Idas lister har et unikt id. Derfor flettes der pr. punkt, som kundelisten (26/8):
+   · et id i basen, som denne fane ALDRIG har set, er nyt et andet sted fra → det bliver
+   · et id, fanen HAR set og nu ikke har, er slettet med vilje → det slettes
+   · et punkt, fanen ikke har rettet, men som er rettet i basen → basens udgave vinder
+   · et punkt, fanen ikke har rettet, men som er slettet i basen → det slettes ogsaa her
+   VANE_SET[noegle] = Map(id → punktet, som fanen sidst saa det). Uden et aftryk (listen er aldrig hentet her) gemmes der som foer. */
+const VANE_SET = {};
+function vaneIdListe(a) { return Array.isArray(a) && a.every(function (x) { return x && typeof x === "object" && x.id != null; }); }
+function vaneAftryk(skema, liste) { if (!vaneIdListe(liste)) return; const m = new Map(); liste.forEach(function (x) { m.set(String(x.id), JSON.stringify(x)); }); VANE_SET[skema] = m; }
+function vaneFlet(lokal, base, set) {
+  const lokalIds = new Map(lokal.map(function (x, i) { return [String(x.id), i]; }));
+  const ud = lokal.map(function (x) {
+    const id = String(x.id), b = base.find(function (y) { return String(y.id) === id; });
+    const uroert = set.has(id) && set.get(id) === JSON.stringify(x);
+    if (!b && uroert) return null;                                                  /* uroert her, slettet dér → slettes (maalt 25/9: ellers kom det tilbage) */
+    if (b && uroert && JSON.stringify(b) !== JSON.stringify(x)) return b;           /* uroert her, rettet dér */
+    return x;
+  }).filter(function (x) { return x !== null; });
+  base.forEach(function (b, bi) {
+    const id = String(b.id);
+    if (lokalIds.has(id) || set.has(id)) return;   /* har den selv, eller slettet med vilje her */
+    ud.splice(Math.min(bi, ud.length), 0, b);        /* ny et andet sted fra — samme plads som i basen */
+  });
+  return ud;
+}
 async function vaneRow(skema) {
   if (!sb) return null;
   try {
@@ -72413,7 +72441,9 @@ async function vaneRow(skema) {
        raekker og svarede null, saa Idas to-dos kom fra browserens localStorage — 10 i Chrome, 1 i basen, og ingen af de ni naaede
        basen. Nu laeses den foerste raekke; vaneGemRow opdaterer alle raekker med samme noegle, saa de holder samme indhold. */
     const { data } = await sb.from("skema_svar").select("svar").eq("kode", "ENERGIDA").eq("navn", "Ida").eq("skema", skema).limit(1);
-    return (data && data.length) ? data[0].svar : null;
+    const v = (data && data.length) ? data[0].svar : null;
+    try { vaneAftryk(skema, v); } catch (e) {}
+    return v;
   } catch(e) { return null; }
 }
 /* KVITTERING (Ida 3/8). Basen AFVISER skrivninger, den ikke tillader — og den kaster ikke:
@@ -72455,10 +72485,23 @@ async function vaneGemRow(skema, svar) {
       } catch (e) {}
       try { Object.keys(svar).forEach(function (k) { DYN_KODER_SET.add(k); }); } catch (e) {}
     }
+    /* FLET LISTEN (se VANE_SET) — kun lister af punkter med id, og kun naar fanen har et aftryk */
+    if (vaneIdListe(svar) && VANE_SET[skema]) {
+      try {
+        const frisk = await sb.from("skema_svar").select("svar").eq("kode", "ENERGIDA").eq("navn", "Ida").eq("skema", skema).limit(1);
+        const base = (frisk && frisk.data && frisk.data.length) ? frisk.data[0].svar : null;
+        if (vaneIdListe(base)) {
+          const flettet = vaneFlet(svar, base, VANE_SET[skema]);
+          svar.length = 0; flettet.forEach(function (x) { svar.push(x); });   /* samme array — appens egen liste faar det nye med */
+          try { localStorage.setItem("vane_" + skema, JSON.stringify(svar)); } catch (e) {}
+        }
+      } catch (e) {}
+    }
     const { data } = await sb.from("skema_svar").update({ svar: svar }).eq("kode", "ENERGIDA").eq("navn", "Ida").eq("skema", skema).select();
-    if (data && data.length) return true;
+    if (data && data.length) { try { vaneAftryk(skema, svar); } catch (e) {} return true; }
     const ny = await sb.from("skema_svar").insert({ kode: "ENERGIDA", navn: "Ida", skema: skema, svar: svar }).select();
-    return !!(ny.data && ny.data.length);
+    const okNy = !!(ny.data && ny.data.length); if (okNy) { try { vaneAftryk(skema, svar); } catch (e) {} }
+    return okNy;
   } catch(e) { return false; }
 }
 /* Kundens definition paa kundens EGEN raekke — det er den, login slaar op i. Findes den
@@ -75962,6 +76005,6 @@ function bf3StudieRum(v, filter) {
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-hvid.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 25. september · 2329</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 25. september · 2330</div>
 </body>
 </html>
