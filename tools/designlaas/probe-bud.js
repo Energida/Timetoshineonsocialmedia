@@ -57,7 +57,7 @@ setTimeout(async function () {
       if (!r.querySelector('input[placeholder^="Tilføj ny aktivitet"]')) F(tilstand + ": sendfeltet »Tilføj ny aktivitet…« mangler");
       if (!r.querySelector('input[placeholder^="Tilføj to-do"]')) F(tilstand + ": sendfeltet »Tilføj to-do…« mangler");
       /* GREB 1 (Idas klik 22/9): »Gå til to-do« staar kun, naar der ER to-dos at gaa til — en tom liste baerer i stedet spoergsmaalet og den graa knap. */
-      if (tilstand === "fuld" && !/Gå til to-do/.test(tekst)) F(tilstand + ": knappen »Gå til to-do« mangler");
+      if (tilstand === "fuld" && !/Gå til Get shit done/.test(tekst)) F(tilstand + ": knappen »Gå til Get shit done« mangler");   /* omdøbt 25/9 (Get shit done i menuen) */
       /* 4) DAGEN: syv prikker, hele dagen, den roede flise oeverst naar der er noget */
       /* PILENE I OVERSKRIFTEN (Idas klik 21/9 kl. 13.55, bud 2): ingen prikker — to pile ved dagens navn */
       var pil2 = [].filter.call(r.querySelectorAll(".hjem-dag-hoved .hjem-pil"), function (e) { return e.getClientRects().length; }); var vilPile = innerWidth >= 900 ? 2 : 0;   /* telefonen swiper (Ida 21/9 kl. 17.40) */
