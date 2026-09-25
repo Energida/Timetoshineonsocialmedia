@@ -19056,6 +19056,10 @@ select titel,
 
 
     </div>
+    <!-- PAPIRKURVEN (Idas klik 25/9 ~23.58): alt slettet i Backstage, 30 dage, tryk = Gendan i det lille ark -->
+    <div class="mr-omr" id="mro_papirkurv" style="display:none;">
+    <div id="papirkurvHost"></div>
+    </div>
     <div class="mr-omr" id="mro_model" style="display:none;">
     <div class="ws-card" style="margin-bottom:24px;">
       <div class="ws-head">Forretningsmodellen</div>
@@ -52957,7 +52961,7 @@ const BS_DOER_DEF = {
   indbakke: { n: "Indbakken", k: "visDashSide('indbakke')", hjem: "hjem" },   /* Indbakken (Ida 16/9 kl. 10.25) */
   kunder: { n: "CRM", k: "visDashSide('crm')", hjem: "hjem" },
   minerum: { n: "Get shit done", k: "visDashSide('energida')", hjem: "hjem" }, energidastudio: { n: "Energida Studio", k: "visDashSide('klip')", hjem: "hjem" },
-  ideer: { n: "Idéer", k: "mrGaaTil('ideer')", hjem: "energida" }, appoensker: { n: "App-ønskelisten", k: "mrGaaTil('appfunk')", hjem: "energida" },   /* EEN ideliste + EEN app-oenskeliste under Mine rum (Idas klik 16/9 kl. 08.05) */
+  ideer: { n: "Idéer", k: "mrGaaTil('ideer')", hjem: "energida" }, appoensker: { n: "App-ønskelisten", k: "mrGaaTil('appfunk')", hjem: "energida" }, papirkurv: { n: "Papirkurv", k: "mrGaaTil('papirkurv')", hjem: "energida" },   /* EEN ideliste + EEN app-oenskeliste under Mine rum (Idas klik 16/9 kl. 08.05) */
   salg: { n: "Forretning", k: "mrGaaTil('salg')", hjem: "hjem" },
   salg_pipeline: { n: "Pipeline", k: "bsSalgAabn()", hjem: "kunder" },   /* Pipeline under CRM (Ida 25/9 kl. 09.55) */ salg_overblik: { n: "Forretningsoverblikket", k: "mrGaaTil('overblik')", hjem: "salg" },
   /* salg_priser er arkiveret 16/9 — prisen bor paa produktet */ salg_tekster: { n: "Tilbud og salgstekster", k: "bsSalgAabnListe('tekster')", hjem: "salg" },
@@ -54313,7 +54317,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2331";
+const APP_VERSION = "2332";
 let NY_VERSION_KLAR = false;
 let NY_VERSION_AFVIST = false;
 function nyVersionSkjul() {
@@ -63543,6 +63547,7 @@ async function mrNoteFjern(id) {
     const r = await sb.from("mr_rum_noter").delete().eq("id", id).select();
     if (r.error) throw r.error;
     if (!r.data || !r.data.length) throw new Error("Sletningen ramte 0 raekker");
+    try { papirkurvLaeg([{ slags: "note", punkt: r.data[0] }]).catch(function () {}); } catch (e) {}   /* papirkurven (25/9) */
     await mrNoterHent(true);
   } catch (e) { mrNoteBesked("Kunne ikke fjerne: " + esc(String((e && e.message) || e))); }
   mrRumSideTegn();
@@ -64700,7 +64705,7 @@ function dsbUnderVis(side) {
 /* "Senest aabnet" (designpakken 30/7 §2): de tre omraader, Ida sidst var inde i, som roede
    tekstlinks paa Maskinrummets forside — saa er vejen tilbage kort. */
 const MR_NAVNE = { faelles:"Fælles motor", publicering:"Publicering", overblik:"Forretningsoverblikket",
-  model:"Forretningsmodellen", byggekoe:"Byggekøen", appfunk:"App-ønskelisten", ideer:"Idéer",
+  model:"Forretningsmodellen", byggekoe:"Byggekøen", appfunk:"App-ønskelisten", ideer:"Idéer", papirkurv:"Papirkurv",
   ygt:"YOU GOT THIS", energi:"Energimotoren", oevelser:"Workout Studio", motorer:"Skabeloner", food:"Food Studio", contentstudio:"Content Studio", salg:"Forretning", mindful:"Mindful Studio" };   /* Skabeloner (Ida 9/9) — hed Motorer og biblioteker */
 function mrSenesteLaes() {
   try { return (JSON.parse(localStorage.getItem("mr_seneste")) || []).filter(x => MR_NAVNE[x]); } catch(e) { return []; }
@@ -64756,7 +64761,7 @@ function mrStiLed(id) {
   if (id === "produkt")  return MR_PRODUKT ? [hjem, { navn: MR_PRODUKT }] : null;
   if (id === "mappe")    return MR_MAPPE   ? [hjem, { navn: MR_MAPPE }]   : null;
   if (id === "klienter") { let n = ""; try { n = (MR_KLIENT_RUM && MR_KLIENT_RUM.navn) || ""; } catch (e) {} return [hjem, { navn: n || "Klienter" }]; }
-  if (id === "ideer" || id === "appfunk") return [hjem, { navn: BS_SIDER.energida, klik: "visDashSide('energida')" }, { navn: MR_NAVNE[id] }];   /* de bor under Mine rum (16/9) */
+  if (id === "ideer" || id === "appfunk" || id === "papirkurv") return [hjem, { navn: BS_SIDER.energida, klik: "visDashSide('energida')" }, { navn: MR_NAVNE[id] }];   /* de bor under Mine rum (16/9) */
   return MR_NAVNE[id] ? [hjem, { navn: MR_NAVNE[id] }] : null;
 }
 
@@ -64798,8 +64803,9 @@ function mrAabn(id) {
   if (id === "mindful") { try { mindTegn(); } catch(e) {} }
   if (id === "ideer") { try { ideerTegn(); } catch (e) {} }   /* EEN ideliste (16/9) */
   if (id === "appfunk") { try { appFunkRender(); } catch (e) {} }
+  if (id === "papirkurv") { try { papirkurvTegn(); } catch (e) {} }
   /* FOLDEMENUEN FOELGER OMRAADET (MAALT 14/9 i selen: Pipeline aabnet fra Hjem lod »Mine rum« staa roed i menuen) */
-  try { const m = { salg: "salg", contentstudio: "contentstudio", oevelser: "workout", food: "food", mindful: "mindful", ideer: "minerum", appfunk: "minerum" }[id]; if (m && typeof dsbDoereTegn === "function" && !BS_MENU_LAAS) dsbDoereTegn(m); } catch (e) {}
+  try { const m = { salg: "salg", contentstudio: "contentstudio", oevelser: "workout", food: "food", mindful: "mindful", ideer: "minerum", appfunk: "minerum", papirkurv: "minerum" }[id]; if (m && typeof dsbDoereTegn === "function" && !BS_MENU_LAAS) dsbDoereTegn(m); } catch (e) {}
   if (BS_OMR_SIDE["mro_" + id]) { (async function () { try { await bsFlytHent(); await mrRumHent(); } catch (e) {} try { const o = document.getElementById("mro_" + id); const dash = o && o.querySelector(".bs-rumdash"); if (dash) dash.dataset.html = ""; if (o) { bsRumDashboard(o); bsStudioRumTegn(o); } } catch (e) {} })(); }            /* Workout-kontiene hentes friske — ellers ved man ikke, om invitationen blev taget imod */
   const d = document.getElementById("mrDoere"); if (d) d.style.display = "none";
   /* DE SKAERME, DER HAR DESIGNETS EGEN BROEDKRUMME, faar IKKE ogsaa den gamle
@@ -72173,6 +72179,7 @@ async function flytIde(id, enc) {
 }
 
 async function delEnergidaIdea(id) {
+  try { const x = ENERGIDA_IDEER.find(y => String(y.id) === String(id)); if (x && sb) papirkurvLaeg([{ slags: "gsd", punkt: x }]).catch(function () {}); } catch (e) {}   /* papirkurven (25/9) */
   ENERGIDA_IDEER = ENERGIDA_IDEER.filter(x => String(x.id) !== String(id));
   if (sb) { try { await sb.from("energida_ideer").delete().eq("id", id); } catch(e) {} }
   else saveLocalEnergidaIdeas();
@@ -72539,12 +72546,92 @@ async function vaneGemRow(skema, svar) {
         }
       } catch (e) {}
     }
+    /* PAPIRKURVEN (Idas klik 25/9 ~23.58): et punkt, fanen har set, og som nu ikke er i listen, er slettet — det laegges i papirkurven */
+    let pkUd = [];
+    try { if (PK_KILDER[skema] && VANE_SET[skema] && vaneIdListe(svar)) { const nu = new Set(svar.map(function (x) { return String(x.id); })); VANE_SET[skema].forEach(function (json, id) { if (!nu.has(id)) { try { pkUd.push(JSON.parse(json)); } catch (e) {} } }); } } catch (e) { pkUd = []; }
     const { data } = await sb.from("skema_svar").update({ svar: svar }).eq("kode", "ENERGIDA").eq("navn", "Ida").eq("skema", skema).select();
-    if (data && data.length) { try { vaneAftryk(skema, svar); } catch (e) {} return true; }
+    if (data && data.length) { try { vaneAftryk(skema, svar); } catch (e) {} if (pkUd.length) { papirkurvLaeg(pkUd.map(function (x) { return { slags: "liste", skema: skema, punkt: x }; })).catch(function () {}); } return true; }
     const ny = await sb.from("skema_svar").insert({ kode: "ENERGIDA", navn: "Ida", skema: skema, svar: svar }).select();
     const okNy = !!(ny.data && ny.data.length); if (okNy) { try { vaneAftryk(skema, svar); } catch (e) {} }
     return okNy;
   } catch(e) { return false; }
+}
+/* ===== PAPIRKURVEN (Idas klik 25/9 ~23.58: »Én papirkurv, 30 dage«) =====
+   Alt, Ida sletter i Backstage, lander EET sted med Gendan. Ligger i skema_svar »papirkurv« (ingen ny tabel).
+   Lister: vaneGemRow opdager selv, hvad der er slettet (VANE_SET). Noter i rum og Get shit done-idéer: deres egne slet-funktioner laegger dem her.
+   Efter 30 dage ryddes punktet, naar papirkurven skrives eller vises. */
+const PK_KILDER = { manus_ideer: "Idé · Energida Studio", oev_ideer: "Idé · Workout Studio", mind_ideer: "Idé · Mindful Studio",
+  food_ideer: "Idé · Food Studio", food_opskrifter: "Opskrift · Food Studio", food_kogeboeger: "Kogebog · Food Studio",
+  cs_ideer: "Idé · Content Studio", cs_velkomst: "Velkomsthilsen · Content Studio", cs_dashboard: "Citat · Content Studio",
+  app_funktioner: "App-ønskelisten", haengepartier: "To-do", rodebutikken: "Jeg skal bare have skrevet det ned",
+  salg_priser: "Pris · Forretning", salg_tekster: "Salgstekst · Forretning" };
+const PK_DAGE = 30;
+function pkFrisk(liste) { const graense = Date.now() - PK_DAGE * 864e5; return (liste || []).filter(function (x) { const t = Date.parse(x.slettet || ""); return !(t < graense); }); }
+function pkTekst(x) { const p = x.punkt || {}; return String(p.t || p.tekst || p.titel || p.navn || p.tekst_kort || ""); }
+async function papirkurvLaeg(nye) {
+  if (!nye || !nye.length || !sb) return false;
+  const liste = (await vaneRow("papirkurv")) || [];
+  const har = new Set(liste.map(function (x) { return (x.slags || "") + "|" + (x.skema || "") + "|" + String((x.punkt || {}).id); }));
+  const nu = new Date().toISOString();
+  const til = nye.filter(function (x) { return x && x.punkt; }).map(function (x, i) { return Object.assign({ id: "pk" + Date.now() + "_" + i + "_" + Math.random().toString(36).slice(2, 6), slettet: nu }, x); })
+    .filter(function (x) { const k = x.slags + "|" + (x.skema || "") + "|" + String(x.punkt.id); if (har.has(k)) return false; har.add(k); return true; });
+  if (!til.length) return true;
+  const ud = pkFrisk(til.concat(liste));
+  return await vaneGemRow("papirkurv", ud);
+}
+/* Listen i appen skal have punktet tilbage i hukommelsen — ellers ville naeste gem se det som slettet igen */
+function pkSaetListe(skema, rows) {
+  try {
+    if (skema === "manus_ideer") { MANUS_IDEER = rows.slice(); MANUS_IDEER_HENTET = true; try { renderManusIdeer(); } catch (e) {} }
+    else if (skema === "oev_ideer") { OEV_IDEER = rows.slice(); OEV_HENTET = true; }
+    else if (skema === "mind_ideer") { MIND = rows.slice(); MIND_HENTET = true; }
+    else if (skema.indexOf("food_") === 0) { FOOD[skema.slice(5)] = rows.slice(); }
+    else if (skema.indexOf("cs_") === 0) { CS[skema.slice(3)] = rows.slice(); }
+    else if (skema.indexOf("salg_") === 0) { SALG[skema.slice(5)] = rows.slice(); }
+    else if (skema === "app_funktioner") { APP_FUNK = rows.slice(); }
+    else if (skema === "haengepartier") { HAENG = rows.slice(); }
+    else if (skema === "rodebutikken") { RODEBUTIK = rows.slice(); }
+  } catch (e) {}
+}
+async function papirkurvGendan(pkId) {
+  const liste = (await vaneRow("papirkurv")) || [];
+  const x = liste.find(function (y) { return String(y.id) === String(pkId); }); if (!x) { papirkurvTegn(); return; }
+  let ok = false;
+  try {
+    if (x.slags === "liste") {
+      const rows = (await vaneRow(x.skema)) || [];
+      if (!rows.some(function (r) { return String(r.id) === String(x.punkt.id); })) rows.unshift(x.punkt);
+      ok = await vaneGemRow(x.skema, rows); if (ok) pkSaetListe(x.skema, rows);
+    } else if (x.slags === "note") {
+      const p = x.punkt || {}; const felter = { rum_id: p.rum_id, tekst: p.tekst }; ["slags", "url", "klaret", "sortering", "data"].forEach(function (k) { if (p[k] !== undefined) felter[k] = p[k]; });
+      let r = await sb.from("mr_rum_noter").insert(felter).select("id");
+      if (r.error) r = await sb.from("mr_rum_noter").insert({ rum_id: p.rum_id, tekst: p.tekst }).select("id");
+      ok = !!(r.data && r.data.length); if (ok) { try { await mrNoterHent(true); } catch (e) {} }
+    } else if (x.slags === "gsd") {
+      const p = x.punkt || {}; let r = await sb.from("energida_ideer").insert({ tekst: p.t, projekt: p.p || null }).select().single();
+      ok = !!(r && !r.error && r.data); if (ok) { try { ENERGIDA_IDEER.unshift({ id: r.data.id, t: r.data.tekst, p: r.data.projekt || "", d: r.data.created_at || null }); } catch (e) {} }
+    }
+  } catch (e) { ok = false; }
+  if (!ok) { husBesked("Kunne ikke gendanne. Prøv igen."); return; }
+  await vaneGemRow("papirkurv", liste.filter(function (y) { return String(y.id) !== String(pkId); }));
+  try { husKvit("Gendannet"); } catch (e) {}
+  papirkurvTegn();
+}
+function papirkurvSpoerg(pkId) {
+  const x = (window.__PK || []).find(function (y) { return String(y.id) === String(pkId); }); if (!x) return;
+  arkSpoerg({ titel: "Gendan?", tekst: esc(pkTekst(x).slice(0, 160)), jaTekst: "Gendan", nejTekst: "Annuller", ja: function () { papirkurvGendan(pkId); } });
+}
+async function papirkurvTegn() {
+  const el = document.getElementById("papirkurvHost"); if (!el) return;
+  const raa = (await vaneRow("papirkurv")) || [];
+  const liste = pkFrisk(raa); window.__PK = liste;
+  if (liste.length < raa.length) { try { await vaneGemRow("papirkurv", liste.slice()); } catch (e) {} }
+  const fra = function (x) { if (x.slags === "note") { const r = (MR_RUM || []).find(function (y) { return String(y.id) === String((x.punkt || {}).rum_id); }); return "Note · " + ((r && r.navn) || "Rum"); } if (x.slags === "gsd") return "Idé · Get shit done"; return PK_KILDER[x.skema] || "Liste"; };
+  const dato = function (x) { try { return "Slettet " + dkDatoKort(String(x.slettet).slice(0, 10)); } catch (e) { return ""; } };
+  el.innerHTML = '<div class="bs-kf-s" style="margin:0 0 var(--luft-3);">Det, du sletter, ligger her i 30 dage.</div>'
+    + (liste.length ? liste.map(function (x) {
+        return '<div class="bs-kf bs-rum" onclick="papirkurvSpoerg(\'' + esc(String(x.id)) + '\')"><span class="bs-kf-tekst"><span class="bs-kf-n">' + esc(pkTekst(x).replace(/\s+/g, " ").slice(0, 140)) + '</span><span class="bs-kf-s">' + esc(fra(x) + " · " + dato(x)) + '</span></span></div>';
+      }).join("") : '<div class="bs-kf bs-tom">Papirkurven er tom.</div>');
 }
 /* Kundens definition paa kundens EGEN raekke — det er den, login slaar op i. Findes den
    ikke, stopper appen paa en fejlbesked, og kunden kan ikke komme ind. Derfor er det her
@@ -76047,6 +76134,6 @@ function bf3StudieRum(v, filter) {
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-hvid.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 25. september · 2331</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 26. september · 2332</div>
 </body>
 </html>
