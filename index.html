@@ -54317,7 +54317,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2332";
+const APP_VERSION = "2333";
 let NY_VERSION_KLAR = false;
 let NY_VERSION_AFVIST = false;
 function nyVersionSkjul() {
@@ -66027,6 +66027,10 @@ function renderDashFokus() {
 /* TAL IND (Ida 27/7): browserens talegenkendelse (da-DK) skriver direkte i feltet —
    til gåturen og bilen. Findes knappen ikke, understøtter browseren det ikke (brug da tastaturets mikrofon). */
 let TALE_REC = null, TALE_FELT = null, TALE_BASE = "";
+/* RETTER MAN UNDERVEJS, BLIVER RETTELSEN (Ida 26/9: »hvis jeg sletter eller ændrer i teksten, og jeg så snakker videre, så genskaber den det jeg slettede«).
+   Motoren giver HELE sessionens tale hver gang, og feltet blev bygget forfra af den — saa en rettelse blev skrevet over. Nu: retter man i feltet,
+   bliver feltet det nye udgangspunkt, og kun det, der siges EFTER rettelsen, laegges til. */
+let TALE_FRA = 0, TALE_ANTAL = 0, TALE_SIDST = "", TALE_LYT = null;
 function taleKnapHtml(feltId) {
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SR) return "";
@@ -66098,22 +66102,28 @@ function taleToggle(feltId) {
   rec.lang = "da-DK"; rec.continuous = true; rec.interimResults = true;
   /* Teksten, der stod i feltet FOER man trykkede. Alt det talte laegges efter den,
      saa en indtaling aldrig kan slette noget, kunden allerede havde skrevet. */
-  TALE_BASE = felt.value || "";
+  TALE_BASE = felt.value || ""; TALE_FRA = 0; TALE_ANTAL = 0; TALE_SIDST = TALE_BASE;
+  try { if (TALE_LYT) TALE_LYT.el.removeEventListener("input", TALE_LYT.fn); } catch (e) {}
+  const retLyt = function (e) { if (!e.isTrusted || !TALE_REC) return; TALE_BASE = felt.value; TALE_SIDST = felt.value; TALE_FRA = TALE_ANTAL; };   /* kun kundens egne tastetryk — appens egen skrivning er ikke »trusted« */
+  felt.addEventListener("input", retLyt); TALE_LYT = { el: felt, fn: retLyt };
   rec.onresult = ev => {
     const f = document.getElementById(TALE_FELT);
     if (!f) { try { rec.stop(); } catch(e) {} return; }   /* modalen lukket — stop lytningen */
+    if (f.value !== TALE_SIDST) { TALE_BASE = f.value; TALE_FRA = TALE_ANTAL; }   /* rettet uden et input-event (fx indsat tekst) — samme regel */
+    TALE_ANTAL = ev.results.length;
     let talt = "";
     /* ev.results er KUMULATIV, naar continuous er sat: hele sessionen ligger i den.
        Derfor bygges feltet op forfra hver gang — saa retter en uafsluttet stump sig
        selv, naar motoren bliver sikker, i stedet for at blive staaende dobbelt. */
-    for (let i = 0; i < ev.results.length; i++) talt += ev.results[i][0].transcript;
+    for (let i = TALE_FRA; i < ev.results.length; i++) talt += ev.results[i][0].transcript;
     talt = taleTegn(talt.replace(/\s+/g, " ").trim());
+    if (!talt) return;
     const base = TALE_BASE ? TALE_BASE.replace(/\s+$/, "") + (/^[.,?!:;\n]/.test(talt) ? "" : " ") : "";
     if (!TALE_BASE.trim() || /[.?!\n]\s*$/.test(TALE_BASE)) talt = talt.charAt(0).toUpperCase() + talt.slice(1);   /* stort begyndelsesbogstav kun ved en ny saetning */
-    f.value = base + talt;
+    f.value = base + talt; TALE_SIDST = f.value;
     try { f.dispatchEvent(new Event("input")); } catch(e) {}
   };
-  rec.onend = () => { TALE_REC = null; try { taleNiveauStop(); } catch (e) {} taleKnapVis(feltId, false); taleFejlVis(feltId); };
+  rec.onend = () => { TALE_REC = null; try { if (TALE_LYT) TALE_LYT.el.removeEventListener("input", TALE_LYT.fn); TALE_LYT = null; } catch (e) {} try { taleNiveauStop(); } catch (e) {} taleKnapVis(feltId, false); taleFejlVis(feltId); };
   rec.onerror = ev => { window.__TALE_FEJL = (ev && ev.error) || "fejl"; try { rec.stop(); } catch(e) {} };
   /* KNAPPEN BLIVER ROED MED DET SAMME (Ida 19/8, koe-punkt 14: "mikrofonen skal VISE
      optagelse"). MAALT 20/8: naar mikrofonen er blokeret, naaede knappen aldrig at
@@ -76134,6 +76144,6 @@ function bf3StudieRum(v, filter) {
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-hvid.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 26. september · 2332</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 26. september · 2333</div>
 </body>
 </html>
