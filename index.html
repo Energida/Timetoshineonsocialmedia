@@ -8930,6 +8930,11 @@ html body.lek-mb .lk-felt-ramme .tale-knap { right:6px !important; bottom:6px !i
 .pf-ord::after { content:": "; }
 .pf-v { font-family:Poppins,sans-serif; font-size:14px; line-height:1.6; color:var(--black); }
 .pf-v.pf-kursiv { font-style:italic; }
+.pf-start { display:flex; margin:var(--luft-3) 0 0; }   /* Start brief (26/9) */
+html body .pf-start.pf-start-kort { margin:var(--luft-2) 0 0; }
+html body .pf-start.pf-start-kort .pf-start-knap { background:#fff !important; color:var(--black, #1A1816) !important; border:0 !important; }   /* paa roedt: hvid flade, sort tekst (aldrig roed tekst i hvid knap) */
+html body .pf-start .pf-start-knap { min-height:48px !important; height:48px !important; padding:0 32px !important; font-size:14px !important; }
+@media (max-width:899px) { html body .pf-start .pf-start-knap { width:100% !important; } html body #briefForside .pf-start:not(.pf-start-kort) { display:none !important; } .pf-start.pf-start-tlf { margin:var(--luft-2) 0 var(--luft-2); } }
 .pf-linje .pf-mangler { font-family:Poppins,sans-serif; font-weight:400; font-size:10px; letter-spacing:1.5px; text-transform:uppercase; color:var(--red); }
 
 
@@ -20861,6 +20866,15 @@ function briefForsideTegn(G, grupper, wrap, navM) {
   /* KORT FORTALT (bud 1, 17/9): een saetning om hvad opslaget er og for hvem — og soejlens formaal */
   /* BESKRIVELSE AF IDEEN — den roede flise paa forsiden (Ida 18/9 kl. 15.34: »kort fortalt om indholdssoejlen skal heller ikke fremgaa … feltet hvad er ideen skal
      fremgaa der hvor kort fortalt staar nu … Beskrivelse af ideen — og denne skal ogsaa vaere roed«). Kort fortalt (soejlens ord) er ude af forsiden. */
+  /* START / FORTSAET BRIEF (Ida 26/9 ~01.50: »på det tidspunkt er beskrivelsen nødvendigvis heller ikke udfyldt … så kan det være det er oppe i den røde —
+     ellers hvis man er igang kunne vi lave en knap der hed forsæt brief«): uden beskrivelse staar knappen I den roede flise; er man i gang, hedder den »Fortsæt brief«
+     og aabner det foerste hul; er coverbillede og caption faerdige, er der ingen knap. */
+  let cvH0 = ""; try { cvH0 = cvForsideHtml(); } catch (e) { cvH0 = ""; }
+  const cvFaerdig = !!cvH0 && cvH0.indexOf("pf-mangler") < 0;
+  const capFaerdig = !![T(B.captionFoerste), T(B.captionRelevant), T(B.captionHistorie), T(B.ctaCaption)].filter(Boolean).length;
+  const harBeskr = !!(T(B.beskrivelse) || T(B.ide));
+  const iGang = harBeskr || !!hook || (Array.isArray(B.klip) && B.klip.some(function (k) { return k && (T(k.ser) || T(k.tekst) || T(k.siger)); })) || capFaerdig || cvFaerdig;
+  window.__PF_KNAP = (cvFaerdig && capFaerdig) ? null : { tekst: iGang ? "Fortsæt brief" : "Start brief", iKort: !harBeskr };
   let kort = ""; try { kort = briefKortHtml();   /* intet »Mangler« her; stregen + beskrivelsen kun naar den findes (Ida 21/9 kl. 16.55) */ } catch (e) {}
   let godkF = "", dialogF = ""; try { godkF = briefGodkFliseHtml(); dialogF = briefDialogFliseHtml(); } catch (e) {}
   /* EEN SAMLENDE FLISE OM INDHOLDET (Ida 18/9 kl. 13.30: »bag om fliserne der fortaeller omkring indholdet skal de vaere samlet af én flise som viser at denne del
@@ -20875,9 +20889,17 @@ function briefForsideTegn(G, grupper, wrap, navM) {
        den røde flise, faktaboksen og caption man ser inden man klikker den ud?«): hvid flise m. hovedet »Indholdet« + pil; lukket, til man trykker; aabningen huskes i fanen */
     /* INDHOLDSOPBYGNING ER UDE AF BRIEFOVERSIGTEN (Ida 25/9 kl. 07.45: »den her indholdsopbygning behøves ikke at fremgå længere på indholdsbrief-oversigten, men bare inde i briefen«) */
     + (false ? filt + rows : '')
-    + cvForsideHtml()   /* COVERBILLEDET / SLIDES (Idas klik 24/9): det, der skal postes, staar foer captionen — uden for foldeflisen, saa det kan hentes med det samme */
+    /* KUN DET FAERDIGE STAAR PAA BRIEFOVERSIGTEN (Ida 26/9 ~00.55 + 01.15: »ikke et tomt billede eller en caption der mangler … tingene først bliver tilføjet
+       når de er færdige« · »når der ikke er udfyldt noget … en rød knap - start brief«): coverbilledet staar, naar det har tekst; captionen, naar den er skrevet.
+       Er ingen af dem faerdige, staar een roed knap »Start brief«, der aabner briefens foerste side. Vaelter 18/9 (»Mangler« i samme form som udfyldt) paa forsiden. */
+    + (function () {
+        const cvH = cvH0, cvVis = cvFaerdig, capVis = !!cap;
+        const pk = window.__PF_KNAP;
+        return ((pk && !pk.iKort) ? briefStartKnapHtml(pk.tekst, false) : '') + (cvVis ? cvH : '') + (capVis ? ''
     + '<div class="pf-flise pf-cap"><div class="pf-eye"><span>Caption</span>' + (cap ? '' : '<b class="pf-mangler pf-mangler-cap pf-klik" role="button" tabindex="0" onclick="briefMbVisFelt(\'#bf_captionFoerste, #bf_caption\')">Mangler</b>') + (true ? '<button type="button" class="pf-ik" data-ikon="1" title="Kopiér captionen" aria-label="Kopiér captionen" onclick="ktpKopier(' + JSON.stringify(capFuld).replace(/"/g, "&quot;") + ', this)"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/></svg></button>' : '') + '</div>'
     + '<div class="pf-cap-tekst pf-klik" role="button" tabindex="0" onclick="briefMbVisFelt(\'#bf_captionFoerste, #bf_caption\')">' + (cap ? [capF, capR, capH, capA].filter(Boolean).map(x => '<p>' + esc(x).replace(/\n/g, "<br>") + '</p>').join("") : '') + (tags ? '<div class="pf-cap-tags">' + esc(tags) + '</div>' : '') + '</div></div>'   /* tom = doerens ord i graat, samme form som udfyldt (Ida 18/9 kl. 15.02) */
+          : '');
+      })()
     + dialogF
     + '';   /* den roede knap nederst er UDE (Ida 21/9 kl. 18.40) — »Rediger« staar over fakta-boksen */   /* knappen ER naeste skridt: hedder det foerste hul og aabner dér; intet hul = »Ret briefen« → Retning (Idas klik 20/9, v2143) */
   let fs = document.getElementById("briefForside");
@@ -21984,6 +22006,15 @@ async function briefSendTilGem() {
   } catch (e) { return; }
   bsFlytLuk(); try { husKvit("Sendt til " + S.til); } catch (e) {}
 }
+function briefStartKnapHtml(tekst, iKort) {
+  return '<div class="pf-start' + (iKort ? ' pf-start-kort' : '') + '"><button type="button" class="dbtn ' + (iKort ? '' : 'primary ') + 'mq-tap pf-start-knap" onclick="event.stopPropagation();briefStartGaa()">' + esc(tekst) + '</button></div>';
+}
+/* Start brief = briefens foerste side; Fortsaet brief = det foerste hul (samme doer som forsidens fliser) */
+function briefStartGaa() {
+  const pk = window.__PF_KNAP || {};
+  if (pk.tekst === "Fortsæt brief") { let h = null; try { h = briefNaesteHul(); } catch (e) {} if (h && h.sel) { try { briefMbVisFelt(h.sel); return; } catch (e) {} } }
+  briefMbVis("skriv", 0);
+}
 function briefKortHtml() {
   const B = BRIEF_STATE || {}; const T = function (x) { return String(x == null ? "" : x).trim(); };
   const ideTekst = T(B.beskrivelse) || T(B.ide); const it = (IDEER || []).find(function (x) { return String(x.id) === String(BRIEF_ID); }); const bt = String((it && it.titel) || "").trim();
@@ -21991,9 +22022,11 @@ function briefKortHtml() {
   /* titlen i Didot KURSIV; under stregen etiketten BESKRIVELSE i versaler (Ida 21/9 kl. 21.47) */
   return '<div class="pf-flise pf-kort pf-klik" role="button" tabindex="0" onclick="briefMbVisFelt(\'#bf_beskrivelse, #bf_ide\')"><div class="pf-eye pf-eye-titel' + (ideTekst ? '' : ' uden-streg') + '"><span>' + (bt ? esc(bt) : "Uden titel") + '</span></div>' + (ideTekst ? '<div class="pf-kort-et">Beskrivelse</div><p>' + esc(ideTekst).replace(/\n/g, "<br>") + '</p>' : '') + '</div>';
 }
+/* knappen i den roede flise, naar beskrivelsen mangler (26/9) */
+(function () { const org = briefKortHtml; briefKortHtml = function () { const h = org(); const pk = window.__PF_KNAP; if (!(pk && pk.iKort)) return h;   /* briefKortHtml bruges kun paa briefoversigten (forsiden + telefonens kopi) */ return h.replace(/<\/div>\s*$/, briefStartKnapHtml(pk.tekst, true) + '</div>'); }; })();
 function briefKortTlfFlyt() {
   /* paa telefonen tegnes en kopi i fakta-boksens vaert; forsidens egen skjules (CSS) */
-  const v = document.getElementById("fbKortTlf"); if (!v) return; try { v.innerHTML = briefKortHtml(); } catch (e) {}
+  const v = document.getElementById("fbKortTlf"); if (!v) return; try { v.innerHTML = briefKortHtml() + ((window.__PF_KNAP && !window.__PF_KNAP.iKort) ? briefStartKnapHtml(window.__PF_KNAP.tekst, false).replace('class="pf-start"', 'class="pf-start pf-start-tlf"') : ''); } catch (e) {}   /* Start brief lige under den roede flise paa telefonen (26/9) */
 }
 function briefFoldTgl(kn) { const f = kn.closest(".pf-fold"); if (!f) return; const aaben = f.classList.toggle("aaben"); kn.setAttribute("aria-expanded", aaben ? "true" : "false"); try { sessionStorage.setItem("pfFoldAaben_" + BRIEF_ID, aaben ? "1" : "0"); } catch (e) {} }
 function briefFaktaGaa(key) {
@@ -54346,7 +54379,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2338";
+const APP_VERSION = "2339";
 let NY_VERSION_KLAR = false;
 let NY_VERSION_AFVIST = false;
 function nyVersionSkjul() {
@@ -76222,6 +76255,6 @@ function bf3StudieRum(v, filter) {
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-hvid.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 26. september · 2338</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 26. september · 2339</div>
 </body>
 </html>
