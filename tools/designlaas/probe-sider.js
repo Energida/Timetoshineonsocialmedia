@@ -164,7 +164,9 @@ setTimeout(async function () {
            og ikke som en stille tilladelse. */
         + ".kal-fpill,.lek-top,.kort-plus,.uge-opret,.bf-plads,.lk-note-fold,.lk-tekstknap,.lk-vaerktoej,"
         /* .cover-tilbage: Tilbage i knapraekken under coveret er en pille i sin egen bredde (Idas klik 24/9: »I knaprækken«) — samme hoejde (44) som knapperne ved siden af */
-        + ".cover-tilbage";   /* 15/9: tilfoej-knappen er 44 px i egen bredde paa telefonen (Idas klik). Lektionssiden (Idas klik 19.45, mockup v3): note-folden og »Alle noter« er tekstknapper i flisens hoved (44 px hoeje), vaerktoejslinjen er 44 px-cirkler. */
+        + ".cover-tilbage,"
+        /* HJEM = UGESTRIMLEN (25/9): datofliserne er fliser som .uge-dag (trykfelt 44+), og »I dag« er linjens pille som stiens Tilbage */
+        + ".hu-dag,.hu-idag";   /* 15/9: tilfoej-knappen er 44 px i egen bredde paa telefonen (Idas klik). Lektionssiden (Idas klik 19.45, mockup v3): note-folden og »Alle noter« er tekstknapper i flisens hoved (44 px hoeje), vaerktoejslinjen er 44 px-cirkler. */
       var lange = [].filter.call(r.querySelectorAll("button, label.ark-knap, label.dbtn, a.dbtn"), function (b) {
         var q = b.getBoundingClientRect(); if (!(q.height > 0 && q.width > 0)) return false;
         if (b.closest(UNDT)) return false;

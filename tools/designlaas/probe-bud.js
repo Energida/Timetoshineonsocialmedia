@@ -13,96 +13,64 @@ setTimeout(async function () {
     var iso = function (n) { var d = new Date(); d.setDate(d.getDate() + n); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); };
     var synlig = function (e) { if (!e) return false; var q = e.getBoundingClientRect(); var c = getComputedStyle(e); return q.width > 0 && q.height > 0 && c.display !== "none" && c.visibility !== "hidden"; };
     var rod = function () { return tlf ? document.getElementById("hjemFacit") || document.querySelector(".hf-ark") : document.getElementById("screen3"); };
-    var tegn = async function () { try { document.body.classList.remove("hjem-facit"); } catch (e) {} showTab(3); renderHome(); try { renderAftaler(); } catch (e) {} try { renderKundeOpgaver(); } catch (e) {} await vent(1500); };
+    var tegn = async function () { try { document.body.classList.remove("hjem-facit"); } catch (e) {} showTab(3); renderHome(); try { renderAftaler(); } catch (e) {} try { renderKundeOpgaver(); } catch (e) {} try { hjemFacitTegn(); } catch (e) {} try { hjemUgeTegn(); } catch (e) {} await vent(1500); };
+    /* HJEM = UGESTRIMLEN OG DAGEN (Idas valg 25/9, bud 5 + djaevlens advokat STbDzj4hKY7tMKaZaJgWbJ) — de gamle loefter (I dag-listen, Kommende aktiviteter, Denne uge) er afloest i SAMME commit */
     var maal = function (tilstand) {
-      var r = rod(); if (!r) { F(tilstand + ": Hjem ikke fundet"); return; }
+      var r = tlf ? document.getElementById("hjemUgeTlf") : document.getElementById("hjemUge");
+      if (!r || !synlig(r)) { F(tilstand + ": Hjem (ugestrimlen) ikke fundet"); return; }
       var tekst = (r.innerText || "").replace(/\s+/g, " ");
-      /* 1) HEROEN ER HILSNEN + DATOEN, INTET CITAT — begge flader */
+      /* 1) HEROEN: hilsnen; telefonen UDEN dato (Ida 25/9), computeren m. datoen i baandet */
       if (tlf) {
         var hh = document.querySelector(".hf-hero-hilsen"), hd = document.querySelector(".hf-hero-dato");
         if (!synlig(hh) || !/aften|morgen|dag|formiddag|eftermiddag|Go'|God/i.test(hh.textContent)) F(tilstand + ": telefonens hero mangler hilsnen");
-        if (!synlig(hd) || !/\d/.test(hd.textContent)) F(tilstand + ": telefonens hero mangler datoen");
-        if (document.querySelector(".hf-hero-citat")) F(tilstand + ": citatet staar stadig i telefonens hero");
+        if (synlig(hd)) F(tilstand + ": datoen staar stadig i telefonens hero");
       } else {
         var mn = document.querySelector("#screen3 .mb-navn");
         if (!mn || !/aften|morgen|dag|Go'|God/i.test(mn.textContent)) F(tilstand + ": computerens baand mangler hilsnen");
-        var mc = document.querySelector("#screen3 .mb-navn .mb-citat");
-        if (!mc || !/\d/.test(mc.textContent)) F(tilstand + ": computerens baand mangler datoen under hilsnen");
-        if (/»/.test((mn && mn.textContent) || "")) F(tilstand + ": citatet staar stadig i computerens baand");
       }
-      /* 2) SEKTIONERNE I SAMME RAEKKEFOELGE PAA BEGGE FLADER */
-      var y = function (sel) { var e = r.querySelector(sel); return synlig(e) ? e.getBoundingClientRect().top : null; };
-      var yDag = y(".hjem-dag"), yAft = y("#aftaleListHome"), yOpg = y("#kundeOpgaverKort"), yUge = y(tlf ? ".hf-fliser" : "#ugeKortFinal");
-      if (yDag === null) F(tilstand + ": I dag mangler");
-      if (yAft === null) F(tilstand + ": Kommende aktiviteter mangler");
-      if (yOpg === null) F(tilstand + ": To-do mangler");
-      if (yUge === null) F(tilstand + ": Denne uge mangler");
-      if (yDag !== null && yAft !== null && yOpg !== null && yUge !== null) {
-        if (tlf) { if (!(yDag < yAft && yAft < yUge && yUge < yOpg)) F(tilstand + ": telefonens raekkefoelge er ikke I dag · Kommende aktiviteter · Denne uge · To-do"); }   /* To-do sidst (Ida 21/9 kl. 21.42) */
-        else {
-          var xV = document.getElementById("hjemVenstre").getBoundingClientRect(), xH = document.getElementById("hjemHoejre").getBoundingClientRect();
-          if (!(xH.left > xV.right - 1)) F(tilstand + ": Kommende opslag og To-do staar ikke i hoejre spalte ved siden af dagen");
-          if (Math.abs(xH.top - xV.top) > 60) F(tilstand + ": hoejre spalte starter ikke oppe ved dagen (" + Math.round(xH.top - xV.top) + " px)");
-          /* KOMMENDE AKTIVITETER UNDER RINGENE i venstre spalte (Ida 21/9 kl. 19.50); Kommende opslag oeverst th., To-do under (Idas kommentar 21/9 kl. 19.12) */
-          var aftEl = document.getElementById("aftaleForside"); if (aftEl && aftEl.parentElement && aftEl.parentElement.id !== "hjemVenstre") F(tilstand + ": Kommende aktiviteter staar ikke i venstre spalte");
-          if (yUge !== null && !(yAft > yUge)) F(tilstand + ": Kommende aktiviteter staar ikke under Denne uge (ringene)");
-          var yOps = y("#kommendeOpslagKort"); if (yOps === null) F(tilstand + ": Kommende opslag mangler th."); else if (!(yOps < yOpg)) F(tilstand + ": To-do staar over Kommende opslag");
-          if (synlig(r.querySelector("#aftaleForside .aft-send, #aftaleForside #kundeAftNyKnap, #kundeOpgaverKort .kort-plus"))) F(tilstand + ": et sendefelt/plus staar i en Hjem-flise — alt tilfoejes via plusset (Ida 21/9 kl. 20.20)");
-          var xT = document.getElementById("hjemTop").getBoundingClientRect(); if (xH.width < xT.width * 0.29) F(tilstand + ": hoejre spalte er for smal (" + Math.round(xH.width) + " af " + Math.round(xT.width) + " px, skal vaere knap en tredjedel)");
-          var strip = document.getElementById("ugenKortStrip"); if (synlig(strip) && strip.getBoundingClientRect().top < yUge) F(tilstand + ": Ugens indhold staar foer Denne uge");
-        }
-      }
-      /* 3) ORDET »SKRIV« FINDES IKKE, OG SENDFELTERNE HEDDER TILFOEJ */
-      [].forEach.call(r.querySelectorAll("input, textarea"), function (i) { var ph = i.placeholder || ""; if (/skriv/i.test(ph)) F(tilstand + ": pladsholder med ordet skriv: " + ph); });
-      if (!r.querySelector('input[placeholder^="Tilføj ny aktivitet"]')) F(tilstand + ": sendfeltet »Tilføj ny aktivitet…« mangler");
-      if (!r.querySelector('input[placeholder^="Tilføj to-do"]')) F(tilstand + ": sendfeltet »Tilføj to-do…« mangler");
-      /* GREB 1 (Idas klik 22/9): »Gå til to-do« staar kun, naar der ER to-dos at gaa til — en tom liste baerer i stedet spoergsmaalet og den graa knap. */
-      if (tilstand === "fuld" && !/Gå til Get shit done/.test(tekst)) F(tilstand + ": knappen »Gå til Get shit done« mangler");   /* omdøbt 25/9 (Get shit done i menuen) */
-      /* 4) DAGEN: syv prikker, hele dagen, den roede flise oeverst naar der er noget */
-      /* PILENE I OVERSKRIFTEN (Idas klik 21/9 kl. 13.55, bud 2): ingen prikker — to pile ved dagens navn */
-      var pil2 = [].filter.call(r.querySelectorAll(".hjem-dag-hoved .hjem-pil"), function (e) { return e.getClientRects().length; }); var vilPile = innerWidth >= 900 ? 2 : 0;   /* telefonen swiper (Ida 21/9 kl. 17.40) */
-      if (pil2.length !== vilPile) F(tilstand + ": pilene i I dag-overskriften er " + pil2.length + ", ikke " + vilPile);
-      if (r.querySelector(".hjem-prik-rk")) F(tilstand + ": prikkerne under listen skulle vaere vaek (bud 2, 21/9)");
-      var fliser = [].filter.call(r.querySelectorAll(".hjem-dag .idag-flise"), synlig);
-      var pkt = ((window.__HJEM_FOKUS || {}).pkt || []).filter(function (x) { return !/^snart-/.test(String(x.dagsId || "")) && !x.haeng; });
+      /* 2) LINJEN »I dag« m. to pile + syv datofliser, i dag fyldt roed */
+      var linje = r.querySelector(".hu-linje");
+      if (!synlig(linje) || !/^I dag/i.test((linje.innerText || "").trim())) F(tilstand + ": linjen »I dag« mangler");
+      var pile = [].filter.call(r.querySelectorAll(".hu-linje .hu-pil"), synlig); if (pile.length !== 2) F(tilstand + ": pilene ved »I dag« er " + pile.length + ", ikke 2");
+      var dage = [].filter.call(r.querySelectorAll(".hu-strib .hu-dag"), synlig); if (dage.length !== 7) F(tilstand + ": ugestrimlen har " + dage.length + " datofliser, ikke 7");
+      var idag = r.querySelector(".hu-dag.idag"); if (!idag || getComputedStyle(idag).backgroundColor !== "rgb(252, 36, 4)") F(tilstand + ": i dag er ikke fyldt roed");
+      dage.forEach(function (d) { var q = d.getBoundingClientRect(); if (q.width < 44 || q.height < 44) F(tilstand + ": en datoflise er under 44 px (" + Math.round(q.width) + "x" + Math.round(q.height) + ")"); });
+      /* 3) DAGEN: kort med symbol, hoejst to linjer tekst, hoejst fem; tom = spoergsmaal + graa knap */
+      var kort = [].filter.call(r.querySelectorAll(".hu-dagen .hu-kort"), synlig);
       if (tilstand === "fuld") {
-        if (!fliser.length || !fliser[0].classList.contains("idag-roed")) F("fuld: den foerste flise i I dag er ikke roed");
-        if (fliser.length < 2) F("fuld: dagen viser ikke hele listen (" + fliser.length + " fliser)");
-        var tomFlise = r.querySelector(".hjem-dag .idag-flise.tom"); if (synlig(tomFlise)) F("fuld: dagen siger »ingenting«, selv om der er punkter");
-        if (!synlig(r.querySelector("#aftaleListHome .aft-rk"))) F("fuld: aftalen staar ikke som flise");
-        if (!synlig(r.querySelector("#kundeOpgaverKort .opg-rk"))) F("fuld: to-do'en staar ikke som flise");
+        if (!kort.length) F("fuld: dagen viser ingen kort");
+        if (kort.length > 5) F("fuld: dagen viser " + kort.length + " kort, hoejst fem");
+        kort.forEach(function (k) { if (!synlig(k.querySelector(".hu-sym"))) F("fuld: et kort mangler symbolet"); var t = k.querySelector(".hu-titel"); if (t && t.getBoundingClientRect().height > 30) F("fuld: en titel fylder mere end een linje"); });
       } else {
-        /* GREB 1 (Idas klik 22/9): EN TOM RUBRIK ER EN OPGAVE. Den siger ikke »Ingen …« mere —
-           den stiller ET spoergsmaal og baerer EEN graa knap, i husets ene form (.tom-kort). */
-        var tomAkt = r.querySelector("#aftaleListHome .tom-kort");
-        if (!synlig(tomAkt)) F("tom: Kommende aktiviteter mangler den tomme rubrik som flise");
-        else if (!synlig(tomAkt.querySelector(".tom-spm")) || !synlig(tomAkt.querySelector(".tom-knap"))) F("tom: den tomme rubrik i Kommende aktiviteter mangler spoergsmaalet eller knappen");
-        var tomTodo = r.querySelector("#kundeOpgaverKort .tom-kort");
-        if (!synlig(tomTodo) && !synlig(r.querySelector("#kundeOpgaverKort .opg-rk"))) F("tom: To-do viser hverken den tomme rubrik eller en raekke");
-        else if (synlig(tomTodo) && (!synlig(tomTodo.querySelector(".tom-spm")) || !synlig(tomTodo.querySelector(".tom-knap")))) F("tom: den tomme rubrik i To-do mangler spoergsmaalet eller knappen");
-        var tomOps = r.querySelector("#kommendeOpslagKort .tom-kort");
-        if (innerWidth >= 900 && !synlig(tomOps)) F("tom: Kommende opslag mangler den tomme rubrik som flise");
+        var tq = r.querySelector(".hu-dagen .hu-tom"); if (!synlig(tq) || !/\?/.test(tq.innerText) || !synlig(tq.querySelector(".hu-graa"))) F("tom: den tomme dag mangler spoergsmaalet eller den graa knap");
       }
-      /* 4b) SAMME BREDDE: aftale-fliser, to-do-fliser og sendfelter i samme spalte er lige brede (16/9-reglen; Idas kommentar 20/9 kl. 21.55) */
-      /* paa computeren staar aktiviteterne i venstre spalte (21/9) — bredden maales pr. spalte: aktiviteter mod dagen, to-do mod opslagene */
-      var bredder = [].map.call(r.querySelectorAll(tlf ? "#aftaleListHome .aft-rk, #aftaleListHome .tom-kort, #kundeOpgaverKort .opg-rk, #kundeOpgaverKort .tom-kort, #kundeOpgaverKort .hf-gaa" : "#kommendeOpslagKort .kop-rk, #kommendeOpslagKort .tom-kort, #kundeOpgaverKort .opg-rk, #kundeOpgaverKort .tom-kort, #kundeOpgaverKort .hf-gaa"), function (e) { return synlig(e) ? Math.round(e.getBoundingClientRect().width) : null; }).filter(function (x) { return x !== null; });
-      if (bredder.length && Math.max.apply(null, bredder) - Math.min.apply(null, bredder) > 2) F(tilstand + ": fliserne i Kommende aktiviteter og To-do er ikke lige brede (" + Math.min.apply(null, bredder) + "–" + Math.max.apply(null, bredder) + " px)");
-      /* 4d) UX-POLITIET: ingen lange streger i kundens linjer, Poppins aldrig fed, ingen kant paa fliser (15/9) */
-      if (/\u2014/.test(tekst)) F(tilstand + ": en lang streg (\u2014) staar i Hjems tekst");
-      [].forEach.call(r.querySelectorAll(".idag-titel, .idag-roed-titel, .cf-sek, .idag-sub"), function (e) { var fw = parseInt(getComputedStyle(e).fontWeight, 10); if (synlig(e) && fw >= 600) F(tilstand + ": fed Poppins i " + (e.className || e.tagName)); });
-      [].forEach.call(r.querySelectorAll(".idag-flise, #aftaleListHome .aft-rk, #kundeOpgaverKort .opg-rk, #ugeKortFinal"), function (e) { var c = getComputedStyle(e); if (synlig(e) && parseFloat(c.borderTopWidth) > 0 && c.borderTopStyle !== "none") F(tilstand + ": flise med kant: " + (e.id || e.className.split(" ")[0])); });
-      /* 5) UNDERLINJERNE I DEN MOERKE GRAA (v2150), VERSALERNE I DEN LYSE */
-      var sub = r.querySelector(".hjem-dag .idag-flise:not(.idag-roed):not(.idag-roed-dag) .idag-sub");
-      if (sub && getComputedStyle(sub).color !== "rgb(111, 107, 102)") F(tilstand + ": underlinjen er ikke den moerke graa (" + getComputedStyle(sub).color + ")");
-      /* 5b) 32 PX UNDER HEROEN paa begge flader (afstandsreglen; Idas kommentar 20/9 kl. 21.55) */
-      var heroEl = tlf ? document.querySelector(".hf-hero") : document.querySelector("#screen3 .mb-baand"), linjeEl = tlf ? r.querySelector(".hjem-dag .idag-flise") : r.querySelector(".hjem-dag-linje");   /* telefonen: dagens hoved er ude (21/9 kl. 23.58) — luften maales til den foerste flise */
-      /* LUFTEN MAALES FRA BUEN (Ida 21/9 kl. 10.20 + 14.10): baandets hvide bue (28 px) er allerede luft — 32 fra buen = 4 under baandet (paa telefonen ligger arket selv 28 op i fotoet) */
-      if (heroEl && linjeEl) { var bue = (heroEl.classList.contains("mb-baand") || heroEl.classList.contains("hf-hero")) ? 28 : 0;   /* telefonens hero: arket ligger 28 op i fotoet */ var luft = Math.round(linjeEl.getBoundingClientRect().top - (heroEl.getBoundingClientRect().bottom - bue));
-        /* KNAPRAEKKEN UNDER COVERET (Ida 24/9: »Alle knapper skal ud af coveret … placeres umiddelbart under«): staar der knapper, er raekken 32 fra buen, og I dag staar 24 under raekken (32 + 44 + 24 = 100) */
-        var rk = document.querySelector("#screen3 #hjemTilfoejBaand"); if (!tlf && rk && rk.getClientRects().length && getComputedStyle(rk).position === "absolute" && document.body.dataset.knapBud === "0") luft -= 44 + 24;   /* bud 1 (laast 24/9): knapperne paa buen, luften er 32 igen */
-        if (Math.abs(luft - 32) > 4) F(tilstand + ": luften fra buen til I dag er " + luft + " px, ikke 32"); }
-      /* 6) INTET KLIPPET I VENSTRE KANT (skinnen maales i SELE SMAL; her: fast menu) */
-      [].forEach.call(r.querySelectorAll(".cf-sek, .idag-flise, .aft-rk, .opg-rk"), function (e) { if (synlig(e) && e.getBoundingClientRect().left < 0) F(tilstand + ": klippet i venstre kant: " + (e.innerText || "").trim().slice(0, 20)); });
+      /* 4) TRE RING-FLISER; ugens fokus aldrig paa telefonen */
+      var ringe = [].filter.call(r.querySelectorAll(".hu-ring"), synlig); if (ringe.length !== 3) F(tilstand + ": ringene er " + ringe.length + ", ikke 3");
+      if (tlf && synlig(r.querySelector(".hu-fokus"))) F(tilstand + ": ugens fokus staar paa telefonen (ude 25/9)");
+      /* 5) TO-DO: hoejst fem + »Gå til Get shit done«; tom = spoergsmaal + graa knap */
+      var td = [].filter.call(r.querySelectorAll(".hu-td"), synlig);
+      if (td.length > 5) F(tilstand + ": to-do viser " + td.length + ", hoejst fem");
+      if (tilstand === "fuld") { if (!td.length) F("fuld: to-do'en staar ikke som flise"); if (!/Gå til Get shit done/.test(tekst)) F("fuld: knappen »Gå til Get shit done« mangler"); }
+      else if (!/Er der noget, du skal huske\?/.test(tekst)) F("tom: to-do mangler spoergsmaalet");
+      /* 6) RAEKKEFOELGE/SPALTER */
+      var top = function (sel) { var e = r.querySelector(sel); return synlig(e) ? e.getBoundingClientRect() : null; };
+      var L = top(".hu-linje"), S = top(".hu-strib"), D = top(".hu-dagen"), R = top(".hu-ringe"), T = top(".hu-td, .hu-hoejre .hu-tom, .hu-tlf > .hu-tom");
+      if (tlf) { if (L && S && D && R && T && !(L.top < S.top && S.top < D.top && D.top < R.top && R.top < T.top)) F(tilstand + ": telefonens raekkefoelge er ikke linjen · strimlen · dagen · ringene · to-do"); }
+      else if (L && T) {
+        if (innerWidth >= 1360) { if (!(T.left > L.right)) F(tilstand + ": to-do staar ikke i hoejre spalte"); var TL = top(".hu-hoejre .hu-sek"); if (TL && Math.abs(TL.top - L.top) > 6) F(tilstand + ": to-do-linjen flugter ikke med »I dag« (" + Math.round(TL.top - L.top) + " px)"); }
+        else if (!(T.top > D.bottom)) F(tilstand + ": under 1360 px staar to-do ikke under dagen");
+        if (R && !(R.bottom <= L.top)) F(tilstand + ": ringene staar ikke over dagen");
+      }
+      /* 7) UX-POLITIET: ingen lange streger, aldrig fed, fliserne uden kant (skyggeflisen) */
+      if (/—/.test(tekst)) F(tilstand + ": en lang streg (—) staar i Hjems tekst");
+      [].forEach.call(r.querySelectorAll("*"), function (e) { if (e.children.length || !synlig(e)) return; var fw = parseInt(getComputedStyle(e).fontWeight, 10); if (fw >= 600) F(tilstand + ": fed Poppins i " + (e.textContent || "").trim().slice(0, 30)); });
+      [].forEach.call(r.querySelectorAll(".hu-ring, .hu-dag, .hu-fokus, .hu-td"), function (e) { var c = getComputedStyle(e); if (synlig(e) && parseFloat(c.borderTopWidth) > 0 && c.borderTopStyle !== "none") F(tilstand + ": en flise har kant i stedet for skygge"); });
+      /* 8) 32 PX FRA BUEN til det foerste under heroen (buen = 28 px af baandet) */
+      var heroEl = tlf ? document.querySelector(".hf-hero") : document.querySelector("#screen3 .mb-baand");
+      var foerste = tlf ? L : R;
+      if (heroEl && foerste) { var luft = Math.round(foerste.top - (heroEl.getBoundingClientRect().bottom - 28)); if (Math.abs(luft - 32) > 4) F(tilstand + ": luften fra buen til Hjems foerste flise er " + luft + " px, ikke 32"); }
+      /* 9) INTET KLIPPET I VENSTRE KANT */
+      [].forEach.call(r.querySelectorAll(".hu-kort, .hu-dag, .hu-ring, .hu-td"), function (e) { if (synlig(e) && e.getBoundingClientRect().left < 0) F(tilstand + ": klippet i venstre kant"); });
     };
     /* FULD FORSIDE */
     var d0 = iso(0);
