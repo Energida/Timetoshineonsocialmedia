@@ -21477,6 +21477,9 @@ function briefSiderTegn(G, grupper, wrap, navM, bud) {
   wrap.querySelectorAll("[data-bside]").forEach(function (e) { e.removeAttribute("data-bside"); });
   sider.forEach(function (els, n) { els.forEach(function (e) { if (e.id === "briefTitelBlok") return; e.setAttribute("data-bside", String(n)); }); });
   [".brief-ide-hoved"].forEach(function (sel) { const e = wrap.querySelector(sel); if (e) e.setAttribute("data-bside", "0"); });   /* soejle-bjaelken + guiden bor i skinnen (17/9) */
+  /* HANDLINGEN FORSVANDT (Idas fund 26/9: »jeg tilføjede manychat … så forsvandt hele feltet«): briefCtaTilRetning flytter spoergsmaalet ind i Idéen-kortet,
+     men grupperne var talt FOER flytningen, saa det fik side 3 og blev skjult paa Retning ved hver gentegning (fx efter et valg). Det foelger nu sit kort. */
+  try { const cq = wrap.querySelector("#bdrop_cta"); const q = cq && cq.closest(".sk-q"); if (q && q.parentElement && q.parentElement.closest('.basis-kort[data-kort="Idéen"]')) { q.removeAttribute("data-bside"); q.style.display = ""; } } catch (e) {}
   document.body.setAttribute("data-bsider", String(bud));
   const akt = Math.max(0, Math.min(sider.length - 1, BRIEF_SIDE_AKTIV));
   BRIEF_FOLD_LUK = {};
@@ -54317,7 +54320,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2333";
+const APP_VERSION = "2334";
 let NY_VERSION_KLAR = false;
 let NY_VERSION_AFVIST = false;
 function nyVersionSkjul() {
@@ -75108,6 +75111,8 @@ function bf3KundeKat(k) { BS_KUNDE_KAT = k === "alle" ? "" : k; BS_KUNDE_CHIP = 
 async function kunderneTegn(hurtig) {
   const el = document.getElementById("bsKunder"); if (!el) return;
   if (!hurtig) { try { await venterHent(); } catch (e) {} try { await kundePinsHent(); } catch (e) {} }
+  try { if (!hurtig && !plKontakter().length && typeof fetchCustomers === "function") CUSTOMERS = await fetchCustomers(); } catch (e) {}   /* kontakterne fra Notions CRM (26/9) */
+  if (BS_KONTAKT_PROD && KONTAKT_DOERE_TIL) { kontakterTegn(el); return; }
   let koder = [];
   try { koder = Object.keys(VIRKSOMHEDSKODER).filter(function (k) { return erRigtigKunde(k) && VIRKSOMHEDSKODER[k].aktiv !== false; }); } catch (e) {}
   const navnAf = function (k) { return (VIRKSOMHEDSKODER[k] || {}).virksomhed || k; };
@@ -75134,12 +75139,59 @@ async function kunderneTegn(hurtig) {
     + (pinnede.length ? bf3Ver("Pinnede") + '<div class="bs3-grid' + (tlf ? '1' : '2') + '">' + pinnede.map(flise).join('') + '</div>' : '')
     + '<div class="bs3-afsnit">' + bf3Ver(pinnede.length ? "Alle kunder" : "Kunder") + '</div>'
     + (resten.length ? '<div class="bs3-grid' + (tlf ? '1' : '2') + '">' + resten.map(flise).join('') + '</div>' : bf3Tom(q ? "Ingen kunder matcher." : "Ingen kunder her."))
+    + (q ? '' : kontaktDoereHtml(tlf))
     + ''   /* »Ny kunde« = plusset i baandet (Ida 21/9 kl. 13.25: »tilføj-knappen skal ikke være nede i bunden men i højre øvre hjørne oppe i coveret«) */
     + '</div>';
   try { navstiBackstage("crm"); } catch (e) {}
   try { bsBaandPlanlaeg(); } catch (e) {}
   try { const f = document.getElementById("bsKundeSoeg"); if (hurtig && f && q) { f.focus(); f.setSelectionRange(f.value.length, f.value.length); } } catch (e) {}
   try { bf3BaandKnapVis("kunder"); } catch (e) {}
+}
+/* ---------- KONTAKTERNE SOM DOERE PR. PRODUKT (Idas klik 26/9 ~00.35 »Døre i CRM«) ----------
+   MAALT 26/9: 90 af Notions 94 CRM-kort ligger i contacts (importeret 5/7) med produkt og status — men laa i een bunke under Pipeline.
+   Nu faar hvert produkt sin doer i CRM, som Notions visninger; doeren viser kontakterne sorteret efter status. Navnene er Notion-visningernes egne. */
+let BS_KONTAKT_PROD = "", BS_KONTAKT_STATUS = "";
+const KONTAKT_NAVNE = { "Klient": "1:1 Klienter", "GRATIS": "GRATIS DIY SoME", "Reset testperson": "Reset TESTPERSONER" };
+function kontaktProd(c) { const p = c && c.produkt; if (Array.isArray(p)) return String(p[0] || "").trim() || "Uden produkt"; return String(p || "").trim() || "Uden produkt"; }
+function kontaktProdNavn(p) { return KONTAKT_NAVNE[p] || p; }
+const KONTAKT_DOERE_TIL = false;   /* taendes efter Idas klik paa det byggede (Artifact ELsUxJKGK7PQ99Uox9wSHN) */
+function kontaktDoereHtml(tlf) {
+  if (!KONTAKT_DOERE_TIL) return "";
+  const alle = plKontakter(); if (!alle.length) return "";
+  const tal = {}; alle.forEach(function (c) { const p = kontaktProd(c); tal[p] = (tal[p] || 0) + 1; });
+  const prods = Object.keys(tal).sort(function (a, b) { if (a === "Uden produkt") return 1; if (b === "Uden produkt") return -1; return (tal[b] - tal[a]) || kontaktProdNavn(a).localeCompare(kontaktProdNavn(b), "da"); });
+  return '<div class="bs3-afsnit">' + bf3Ver("Kontakter") + '</div><div class="bs3-grid' + (tlf ? '1' : '2') + '">'
+    + prods.map(function (p) { return '<div class="bs3-fl bs3-klik" role="button" tabindex="0" onclick="BS_KONTAKT_PROD=\'' + esc(p).replace(/'/g, "\\'") + '\';BS_KONTAKT_STATUS=\'\';kunderneTegn()"><div class="bs3-n">' + esc(kontaktProdNavn(p)) + '</div></div>'; }).join("")
+    + '</div>';
+}
+function kontakterTegn(el) {
+  const tlf = bf3Tlf(); const p = BS_KONTAKT_PROD; const navn = kontaktProdNavn(p);
+  const orden = plStatusListe();
+  const iProd = plKontakter().filter(function (c) { return kontaktProd(c) === p; });
+  const statusser = orden.filter(function (st) { return iProd.some(function (c) { return String(c.status || "").trim() === st; }); });
+  const liste = iProd.filter(function (c) { return !BS_KONTAKT_STATUS || String(c.status || "").trim() === BS_KONTAKT_STATUS; })
+    .sort(function (a, b) { const ia = orden.indexOf(String(a.status || "").trim()), ib = orden.indexOf(String(b.status || "").trim()); if (ia !== ib) return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib); return String(a.kunde || "").localeCompare(String(b.kunde || ""), "da"); });
+  const flise = function (c) { const s = [String(c.status || "").trim(), c.kontaktperson || ""].filter(Boolean).join(" · "); return '<div class="bs3-fl bs3-klik" role="button" tabindex="0" onclick="openModal(\'' + esc(String(c.id)) + '\')"><div class="bs3-n">' + esc(c.kunde || "Uden navn") + '</div>' + (s ? '<div class="bs3-s">' + esc(s) + '</div>' : '') + '</div>'; };
+  el.innerHTML = '<div class="bs-hero bs-hero-streg">' + esc(navn) + '</div><div class="bs3">'
+    + (statusser.length > 1 ? bf3Chips([["", "Alle"]].concat(statusser.map(function (st) { return [st, st]; })), BS_KONTAKT_STATUS, "kontaktStatus") : '')
+    + (liste.length ? '<div class="bs3-grid' + (tlf ? '1' : '2') + '">' + liste.map(flise).join("") + '</div>' : bf3Tom("Ingen kontakter her."))
+    + '<div style="margin-top:var(--luft-2);">' + sendFeltHtml({ id: "kontaktNyFelt", ph: "Tilføj kontakt …", fn: "kontaktNyGem()", aria: "Tilføj kontakten", klasse: "bs-sendfelt" }) + '</div>'
+    + '</div>';
+  try { bf3BaandKnapVis(""); } catch (e) {}   /* coverets plus er »Ny kunde« — her tilfoejes en kontakt i feltet */
+  const tilbage = function () { BS_KONTAKT_PROD = ""; BS_KONTAKT_STATUS = ""; kunderneTegn(); };
+  try { navstiSaet([{ navn: "Hjem", klik: "visDashSide('overblik')" }, { navn: "CRM", klik: "BS_KONTAKT_PROD='';BS_KONTAKT_STATUS='';kunderneTegn()" }, { navn: navn }], tilbage); } catch (e) {}
+  try { bsBaandPlanlaeg(); } catch (e) {}
+}
+function kontaktStatus(st) { BS_KONTAKT_STATUS = st || ""; kunderneTegn(true); }
+async function kontaktNyGem() {
+  const f = document.getElementById("kontaktNyFelt"); const navn = ((f && f.value) || "").trim(); if (!navn) { if (f) f.focus(); return; }
+  if (!sb) { husBesked("Ingen forbindelse til basen."); return; }
+  const rec = { kunde: navn, status: "Lead", source: "backstage" }; if (BS_KONTAKT_PROD && BS_KONTAKT_PROD !== "Uden produkt") rec.produkt = BS_KONTAKT_PROD;
+  try {
+    const r = await sb.from("contacts").insert(rec).select("id");
+    if (r.error) throw r.error; if (!r.data || !r.data.length) throw new Error("Skrivningen ramte 0 rækker");
+    CUSTOMERS = await fetchCustomers(); kunderneTegn(true);
+  } catch (e) { husBesked("Kunne ikke tilføje: " + String((e && e.message) || e)); }
 }
 /* ---------- EN KUNDE = ET ARBEJDSRUM ---------- */
 async function kundeSideTegn() {
@@ -75977,7 +76029,7 @@ function bf3MenuSoeg() {
 /* GET SHIT DONE-SIDEN ER UDE (Ida 21/9 kl. 10.36: »Skrevet ned skal lande i indbakken. App ønsker skal lande i teknik. To do skal vel også lande i indbakken??«):
    alt paa den side bor et andet sted nu — To-do paa Hjem (dagen, 20/9), det skrevne i Indbakken, app-oensker i Teknik, ideerne i Mine rum › Idéer. Gamle veje ind lander paa Hjem. */
 const bf3_visDashSideGammel = window.BF3_GAMMEL.visDashSide;
-function visDashSide(side) { const a = [].slice.call(arguments); if (a[0] === "gsd") a[0] = "overblik"; return bf3_visDashSideGammel.apply(this, a); }
+function visDashSide(side) { const a = [].slice.call(arguments); if (a[0] === "gsd") a[0] = "overblik"; if (a[0] === "crm") { try { BS_KONTAKT_PROD = ""; BS_KONTAKT_STATUS = ""; } catch (e) {} }   /* menuens CRM = oversigten, aldrig en kontakt-doer, man stod i sidst (26/9) */ return bf3_visDashSideGammel.apply(this, a); }
 
 /* ===== TO-DO MED DATO OG TIDSPUNKT (Ida 21/9 kl. 10.39: »To do skal jeg kunne vælge tidspunkt via kalenderhjul«) =====
    Arket faar en raekke under teksten: dato + klokkeslaet. Paa telefonen er felterne type=date/time, saa iOS' hjul kommer op; chipsene (I dag · I morgen · Om en uge)
@@ -76144,6 +76196,6 @@ function bf3StudieRum(v, filter) {
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-hvid.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 26. september · 2333</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 26. september · 2334</div>
 </body>
 </html>
