@@ -22,6 +22,7 @@
 6o. **ØNSKE (Ida 26/9 ~01.15, uddyber 6k):** er intet udfyldt, er briefoversigten tom med én rød knap »Start brief«.
 6p. **»HVORNÅR SKAL DET LAVES?« ER UDE AF FAKTA (Ida 26/9 ~01.20: »det skal man vælge på den ugentlige planlægningsdag«):** postes-rækken folder kun postedatoen ud; optagedagen bliver skjult i DOM'en, gemte optagedage røres ikke. LIVE v2337, målt i selen.
 6q. **ØNSKE (Ida 26/9 ~01.25, KØ):** en tom dag på Hjem siger, hvad der sker i morgen (»I morgen skal du poste …«) + en guide, fx sæt tid af til at aktivere community.
+6r. **ØNSKE (Ida 26/9 ~01.30, KØ):** ugens tema i det tomme øverste højre hjørne på kundens Hjem (hvor Ugens fokus stod) — hænger sammen med 25/9-klikket »kunden skriver ugens fokus selv«; afklares som ét klik.
 7. **AFTENENS SMÅREGLER:** aldrig »…« i titler (toner ud / to linjer) · en ring uden mål står tom · telefonens Hjem slutter med to-do (»Siden sidst« bor i Indbakken) · navn + glimt på én linje · øko-printet starter med hooket · Betoning findes ikke · nye klasser får aldrig et præfiks, der allerede bruges (`lek-*` = kundens lektionsside; Energida Studios lektion = `kbs-*`).
 
 ## v2327–v2329 — 25. september 2026 aften · LEKTIONEN = SKRIV · OPTAG · MANUS-VAGT · HJERTET PULSERER
