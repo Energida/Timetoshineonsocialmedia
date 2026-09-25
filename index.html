@@ -8862,6 +8862,8 @@ body.dash-mode.bs-mb .bs-kf.bs-tom, body.dash-mode.bs-mb .bs-kf-s, body.dash-mod
 html body .ark-chip { height:36px; min-height:36px; max-height:36px; padding:0 14px; font-size:12.5px; line-height:34px; box-sizing:border-box; position:relative; }
 html body .ark-chip::before { content:""; position:absolute; left:0; right:0; top:-5px; bottom:-5px; }   /* 44 px trykfelt maalt fra kantens yderside (border 1 px) */
 html body #briefWrap .klip-hoved .ark-chip.kk-chip { height:28px; min-height:28px; max-height:28px; line-height:26px; padding:0 10px; }
+html body #briefWrap .klip-hoved .ark-chip.kk-chip.kk-ini { width:32px; min-width:32px; max-width:32px; height:32px; min-height:32px; max-height:32px; line-height:30px; padding:0; border-radius:50%; justify-content:center; font-size:12px; background:#fff; border:1px solid var(--border, #DEDAD4); color:var(--gray2); }   /* initialer i graa ringe (Ida 26/9) */
+html body #briefWrap .klip-hoved .ark-chip.kk-chip.kk-ini.on { background:var(--red); border-color:var(--red); color:#fff; }
 /* Hent manuskriptet ind: husets lille ark, listen som rolige linjer (23/9) */
 .mi-ark .mi-sp { font-size:16px; line-height:1.35; text-align:center; margin:0 0 14px; }
 .mi-ark .mi-vaelg { width:100%; box-sizing:border-box; text-align:left; cursor:pointer; }
@@ -23358,7 +23360,9 @@ function briefKlipFeltHtml(id, ord, ph, vaerdi, ik, kursiv, fjern) {
 function briefKlipKortHtml(i, k, o) {
   const liste = o.liste, folk = briefPersonerListe(), valgt = Array.isArray(k.hvem) ? k.hvem : [];
   const laast = !!o.laast, pre = laast ? 'laast_klip_' : 'bf_klip_';   /* laast = scene 1 vist under Fasthold dem (Ida 21/9 kl. 19.20) */
-  const chips = folk.length >= 2 ? folk.filter(function (n) { return !laast || valgt.indexOf(n) > -1; }).map(function (n) { return '<button type="button" class="ark-chip kk-chip' + (valgt.indexOf(n) > -1 ? ' on' : '') + '"' + (laast ? ' tabindex="-1"' : ' onclick="briefKlipHvemSkift(' + i + ',this)"') + '>' + esc(n) + '</button>'; }).join("") : "";
+  /* INITIALER I GRAA RINGE (Ida 26/9: »kan du lave vores navne om til bare initialer med ringe om? (grå)«): navnet staar i title/aria-label; valgt = fyldt roed (aldrig roed ring, 24/9) */
+  const ini = function (n) { const a = String(n || "").trim(); const f = a.charAt(0).toUpperCase(); return folk.filter(function (x) { return String(x).trim().charAt(0).toUpperCase() === f; }).length > 1 ? (f + a.charAt(1).toLowerCase()) : f; };
+  const chips = folk.length >= 2 ? folk.filter(function (n) { return !laast || valgt.indexOf(n) > -1; }).map(function (n) { return '<button type="button" class="ark-chip kk-chip kk-ini' + (valgt.indexOf(n) > -1 ? ' on' : '') + '" data-navn="' + esc(n) + '" title="' + esc(n) + '" aria-label="' + esc(n) + '"' + (laast ? ' tabindex="-1"' : ' onclick="briefKlipHvemSkift(' + i + ',this)"') + '>' + esc(ini(n)) + '</button>'; }).join("") : "";
   const slet = (liste.length > 1 && !laast) ? '<button type="button" class="kk-slet" title="Fjern klippet" aria-label="Fjern klippet" onclick="briefKlipSlet(' + i + ')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" data-tegn-ok="1"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg></button>' : "";
   let felter = briefKlipFeltHtml(pre + i + '_ser', 'Det, man ser i klippet', 'Beskriv, hvad man ser i klippet', k.ser, FB_IK.kamera, false);
   const visTekst = o.visTekst && (k.tekst != null);   /* TEKST PAA SKAERMEN TILFOEJES VIA PLUSSET (Ida 21/9 kl. 19.00) — et skrevet felt staar altid (gem maa ikke slette, 4/8) */
@@ -23416,7 +23420,23 @@ function briefKlip1Html() {
   const liste = briefKlipListe(); briefScener(liste); if (!liste[0]) return "";
   return '<div id="briefKlip1">' + briefKlipKortHtml(0, liste[0], { liste: liste, visTekst: false, sidste: liste.length === 1 }) + '</div>';   /* intet Hook-felt: hooket staar lige over */
 }
-function briefKlipNyIScene(n) { briefKlipLaes(); const l = briefKlipListe(); briefScener(l); let sidst = -1; l.forEach(function (k, i) { if (k && k.scene === n) sidst = i; }); if (sidst < 0) sidst = l.length - 1; l.splice(sidst + 1, 0, { ser: "", scene: n }); briefKlipRerender(); }   /* uden tekst-felt: det tilfoejes via plusset (Ida 21/9 kl. 19.30) */
+function briefKlipNyIScene(n) { briefKlipLaes(); const l = briefKlipListe(); briefScener(l); let sidst = -1; l.forEach(function (k, i) { if (k && k.scene === n) sidst = i; }); if (sidst < 0) sidst = l.length - 1; l.splice(sidst + 1, 0, { ser: "", scene: n }); briefKlipRerender(); briefKlipVisNyt(sidst + 1); }
+/* DET NYE KLIP SKAL SES (Idas fund 26/9: »kan heller ikke få lov at tilføje et klip?«): et klip tilfoejet fra klip 1 under Fang dem landede paa Fasthold dem,
+   saa der skete tilsyneladende intet. Staar det nye felt ikke fremme, gaar vi til den side og det trin, hvor det staar, og saetter markoeren i det. */
+function briefKlipVisNyt(ix) {
+  setTimeout(function () {
+    try {
+      const find = function () { const f = document.getElementById("bf_klip_" + ix + "_ser"); return f && f.offsetParent ? f : null; };
+      let f = find();
+      if (!f && typeof briefMbVis === "function" && BRIEF_MB_VIS === "skriv") {
+        const s0 = BRIEF_SIDE_AKTIV, t0 = BRIEF_TRIN_AKTIV;
+        for (let s = 0; s < 4 && !f; s++) for (let t = 0; t < 12 && !f; t++) { BRIEF_SIDE_AKTIV = s; BRIEF_TRIN_AKTIV = t; briefMbVis("skriv", undefined, true); f = find(); }
+        if (!f) { BRIEF_SIDE_AKTIV = s0; BRIEF_TRIN_AKTIV = t0; briefMbVis("skriv", undefined, true); }
+      }
+      if (f) { f.scrollIntoView({ block: "center", behavior: "smooth" }); f.focus(); }
+    } catch (e) {}
+  }, 60);
+}   /* uden tekst-felt: det tilfoejes via plusset (Ida 21/9 kl. 19.30) */
 function briefSceneNy() { briefKlipLaes(); const l = briefKlipListe(); l.push({ ser: "", scene: briefScener(l) + 1 }); briefKlipRerender(); }
 /* KLIP I SCENE / SCENE BAG EET ROEDT PLUS TH. (Ida 21/9 kl. 19.32: »disse 2 skal under være i højre side som rødt plussymbol«) */
 function briefSceneArk(sn) { valgFliseArk("Tilføj", [["Klip i scene " + sn, "briefKlipNyIScene(" + sn + ")", "klip"], ["Ny scene", "briefSceneNy()", "scene"]]); }   /* samme fliser uden forvalg (Idas klik bud 2, 25/9) */
@@ -23643,7 +23663,7 @@ function briefKlipHvemHtml(i, k) {
 }
 function briefKlipHvemSkift(i, knap) {
   const liste = briefKlipListe(); const k = liste[i]; if (!k) return;
-  const n = String(knap.textContent || "").trim(); if (!Array.isArray(k.hvem)) k.hvem = [];
+  const n = String(knap.getAttribute("data-navn") || knap.textContent || "").trim(); if (!Array.isArray(k.hvem)) k.hvem = [];
   const ix = k.hvem.indexOf(n); if (ix > -1) k.hvem.splice(ix, 1); else k.hvem.push(n);
   knap.classList.toggle("on", ix === -1);
   try { saveBrief(true); } catch (e) {}
@@ -54325,7 +54345,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2335";
+const APP_VERSION = "2336";
 let NY_VERSION_KLAR = false;
 let NY_VERSION_AFVIST = false;
 function nyVersionSkjul() {
@@ -76201,6 +76221,6 @@ function bf3StudieRum(v, filter) {
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-hvid.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 26. september · 2335</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 26. september · 2336</div>
 </body>
 </html>
