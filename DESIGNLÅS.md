@@ -1,3 +1,20 @@
+## HÅRDE REGLER FRA 25. SEPTEMBER AFTEN — LÆS FØR DU BYGGER (Ida: »Det er enormt vigtigt at alt det vi beslutter bliver opdateret i designlåsen så den ikke skal bruge tid på at rette fejl igen«)
+
+1. **PLUSSET STÅR ALDRIG OPPE I COVERET — b2b OG admin, computer OG telefon** (Ida ~21.15: »jeg har tydeligt sagt at plusset aldrig må være oppe i coveret!!!«). Computer: rækken under coveret (Backstages form v2321); på Hjem står plusset ud for ringene, så luften fra buen stadig er 32. Telefon: plusset bor i bundmenuen. STATUS: bygget, men IKKE live — ligger på grenen `parkeret-v2327-plus` (+ git stash »vagt-oven-paa-v2327«) og skal bygges ind som næste version efter Idas klik på det byggede (5UYyKz2WEmwBGNrewf39dH).
+2. **COMPUTEREN UDFYLDER ALTID HELE BREDDEN — intet max-width-loft på en side** (27/7, brudt af mig i v2326 med 1560 px; Ida så halvdelen af sin skærm tom). Mål altid på Idas bredde (~2000 px) OG 1440 OG 390.
+3. **DET BYGGEDE SKAL FØLGE TEGNINGEN, DER BLEV KLIKKET** — sammenlign skærmbilledet af det byggede med tegningen side om side, før det vises (v2324 afveg: ringe over hele bredden, flade datofliser, smal to-do).
+4. **UGENS FOKUS: KUNDEN SKRIVER DET SELV** (Idas klik ~21.20). Flisen står altid på Hjem; tom = »Hvad er ugens fokus?« + grå knap; det Ida skriver på kundekortet vinder. Kræver sikkerhedstjek (skema_svar navn=config, skema=ugens_fokus) før byg. IKKE bygget.
+5. **HJEMS UGESTRIMMEL STARTER I DAG** (i dag = første, røde flise; pilene flytter 7 dage). Kalendersiden og »opslag i ugen« er stadig mandag–søndag.
+6. **MANUS: EN SKRIVNING RØRER ALTID BÅDE `manus_tekst` OG `manus_dele`** — en opdelt lektion viser manus_dele. Mål mod det felt, der VISES, og mod det, der overskrives. Facit for manus = `Desktop/NY NY NY.docx` (gemt 23/9 14.33). Efter en rettelse i basen: bed Ida lukke alle gamle faner (gammel kode kan skrive tilbage).
+7. **AFTENENS SMÅREGLER:** aldrig »…« i titler (toner ud / to linjer) · en ring uden mål står tom · telefonens Hjem slutter med to-do (»Siden sidst« bor i Indbakken) · navn + glimt på én linje · øko-printet starter med hooket · Betoning findes ikke · nye klasser får aldrig et præfiks, der allerede bruges (`lek-*` = kundens lektionsside; Energida Studios lektion = `kbs-*`).
+
+## v2327–v2329 — 25. september 2026 aften · LEKTIONEN = SKRIV · OPTAG · MANUS-VAGT · HJERTET PULSERER
+
+- **Den åbne lektion i Energida Studio er en hel side (Idas klik bud 1, TEBGG3mHu4t7R2GKfWMexR; bygget YJvnSMQhX9CqHj6zN5s7SV):** cover med titlen i Didot · række under coveret: Tilbage · Skriv|Optag · ⋯ (tlf: Tilbage og ⋯ i coverets hjørner) · på computeren HELE bredden fra sidemenuen. Skriv = sektionerne som fliser (etiket · én streg · tekst 16 px), spørgsmål/hjælpelinjer skjult. Optag = Start optagelse, oplæsning, status, teleprompter, B-roll, link til den færdige video. ⋯ = Åbn i ny fane · Print manus · Se lektionen som kunden · Tilbage til ét samlet manus · Slet. Kun Ida bruger lektionen: Print produktion, Kommentarer & rettelser, Link til råfiler, Antal ord er skjult (data urørt). Indhold og struktur røres aldrig. Klasser `kbs-*` (IKKE `lek-*`, som er kundens lektionsside).
+- **Betoning er ude** (Ida: »det kan du slette«) — gamle *ord* vises stadig.
+- **Et manus-gem skriver aldrig en gammel udgave oven i en nyere (v2327):** uroert lektion gemmes ikke ved luk; ændret andetsteds = intet gem + besked »Hent siden forfra«.
+- **Hjernehjertet på loadingsiden pulserer igen (v2328).**
+
 ## v2325–v2326 — 25. september 2026 aften · HJEM SOM TEGNINGEN · STRIMLEN STARTER I DAG · ØKO-PRINTET MED HOOK
 
 - **Strimlen starter i dag (Ida 25/9 ~21):** Hjems syv datofliser = i dag + seks dage frem; i dag er altid den første, røde. Pilene flytter syv dage. Kalendersiden og ringen »opslag i ugen« er stadig mandag–søndag.
