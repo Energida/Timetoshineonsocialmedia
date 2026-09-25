@@ -1,3 +1,11 @@
+## v2323–v2324 — 25. september 2026 · HJEM = UGESTRIMLEN OG DAGEN · GET SHIT DONE (Idas klik)
+
+- **Hjem (v2324, klik kl. 20.20 på det byggede, Y6mq4pDxRg1UuAHTtThmQA):** computer = tre lave ring-fliser (ring · tal · ord, centreret) + Ugens fokus (etiket m. rødt sigte · én streg · Didot-kursiv på ÉN linje, bevidst undtagelse fra »Didot kun i heroen«) · linjen »I dag« med pilene lige efter, ingen dato i linjen · syv datofliser (i dag fyldt rød, **valgt dag = rød ramme 2 px**, prik pr. ting) · dagens kort under hinanden: symbol i hvid kasse m. grå hårkant og **rød streg**, etiket + titel = højst to linjer, højst fem + »Se hele dagen · N« · to-do i højre spalte 420 px, flugter med »I dag«, højst fem + »Gå til Get shit done · N«. Under 1360 px står to-do under dagen. Telefon: strimlen, dagen uden kasse, ringene med ordet UNDER ringen, to-do; **ingen ugens fokus og ingen dato i heroen på telefonen**. Tom uge = »Hvad skal der ske i denne uge?« + »Start planlægning«.
+- **ALDRIG SORT PÅ ANDET END TEKST (HÅRD, Ida 25/9).** Ingen mørke flader, knapper eller fliser.
+- **Get shit done (v2323):** kundens to-do-side hedder Get shit done og står i menuen efter Indbakken; »Med dato · N« / »Uden dato · N«; »Klaret« hedder »Done«.
+- **TILBAGE STÅR ALDRIG PÅ LINJEN (HÅRD, Ida 25/9):** kundeappen på telefonen = Tilbage øverst til venstre i coveret, 12 px, som Backstage.
+- Motor: `hjemUgeHtml`/`hjemUgeTegn` (HJEM_UGE), porten: probe-bud.js måler de nye løfter.
+
 ## v2321 — 25. september 2026 · KNAPPERNE I BACKSTAGE (Idas klik kl. 18.05)
 
 - **Telefonen:** Tilbage øverst til venstre i coveret, ⋯ øverst til højre — begge gennemsigtige med hvid ring, 12 px fra kanten som kundens klokke. **Nålen står altid efter heroen** (ved sidens navn). **Plusset bor midt i bundmenuen** (Hjem · Indbakken · + · CRM · Mere; Forretning under Mere) og trykker sidens eget plus; har siden intet, åbner det Tøm hovedet. Ingen række under coveret. Swipe fra venstre kant (yderste 24 px) = Tilbage.
