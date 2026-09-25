@@ -3718,6 +3718,8 @@ input[type="date"][data-tom="1"]::-webkit-datetime-edit { opacity:0; }
 /* TO-DO-SIDEN — BEGGE FLADER (Ida 22/9: »hvad POKKER sker der for dette design« — reglerne laa i telefon-blokken, saa computeren fik raa HTML). Flisen hele bredden paa computeren. */
   /* HAENGEPARTI-SIDEN (bud 4 + skillelinje, Ida 6/9) */
   .hf-gaa { display:flex !important; align-items:center; justify-content:center; gap:6px; margin:2px 0 14px; }
+  /* SOEG I AL TEKST (25/9): fundene staar 24 px under soegefeltet, begge flader — foerste etiket klistrede til feltet */
+  #bsSoegHost { margin-top:var(--luft-3); }
   .hs-side { max-width:640px; }
   .hs-titel-stor { font-family:'Didot','Bodoni 72',Georgia,serif; font-size:44px; font-style:italic; letter-spacing:-.5px; line-height:.95; color:var(--black); text-transform:none; margin:6px 0 4px; overflow-wrap:anywhere; }   /* BUD 2 (8/9) */
   .hs-under { font-size:12.5px; color:var(--gray3); margin:0 0 12px; }
@@ -9140,9 +9142,9 @@ body.bs-forfra #mro_oevelser .wo-handling .dbtn { min-height:48px; }
 /* SWIPE SOM BESKEDER: skraldespanden bag flisen (21/9) */
 .bs3-swipe { position:relative; margin:0 0 10px; }
 .bs3-swipe > .bs3-fl { margin:0; position:relative; z-index:1; background:#fff; }
-.bs3-swipe-slet { position:absolute; right:10px; top:50%; transform:translateY(-50%) scale(.6); width:48px; height:48px; border-radius:50%; background:var(--red); color:#fff; border:0; padding:0; display:inline-flex; align-items:center; justify-content:center; cursor:pointer; opacity:0; pointer-events:none; transition:opacity 160ms, transform 160ms cubic-bezier(0.23,1,0.32,1); }
+.bs3-swipe-slet { position:absolute; right:10px; top:50%; transform:translateY(-50%) scale(.6); width:48px; height:48px; border-radius:50%; background:var(--red); color:#fff; border:0; padding:0; display:inline-flex; align-items:center; justify-content:center; cursor:pointer; opacity:0; visibility:hidden; pointer-events:none; transition:opacity 160ms, transform 160ms cubic-bezier(0.23,1,0.32,1), visibility 0s linear 160ms; }   /* skjult = usynlig, ogsaa for porten (25/9: den lukkede knap blev maalt som 29 px trykfelt) */
 .bs3-swipe-slet svg { width:20px; height:20px; }
-.bs3-swipe.aaben .bs3-swipe-slet { opacity:1; pointer-events:auto; transform:translateY(-50%) scale(1); }
+.bs3-swipe.aaben .bs3-swipe-slet { opacity:1; visibility:visible; pointer-events:auto; transform:translateY(-50%) scale(1); transition:opacity 160ms, transform 160ms cubic-bezier(0.23,1,0.32,1), visibility 0s; }
 
 .bs3-linje.bs3-klik { min-height:44px; display:flex; align-items:center; padding:0; box-sizing:border-box; }   /* trykfelt 44 (porten) */
 .bs3-linje.bs3-klik.on { color:var(--red); }
@@ -52298,15 +52300,39 @@ async function soegTegn() {
   try { if (!(window.__ALLE_OPSLAG || []).length) await venterHent(); } catch (e) {}
   try { await mrKoeHent(); } catch (e) {}
   try { await mrNoterHent(); } catch (e) {}
+  /* SOEG I AL TEKST (Idas klik 25/9 kl. ~23.40, trin 1 i Notion-planen): idéerne, to-dos, App-ønskelisten og lektionernes manus hentes med */
+  try { await ideerHent(); } catch (e) {}
+  try { if (!(HAENG || []).length) await haengHent(); } catch (e) {}
+  try { if (!(APP_FUNK || []).length) APP_FUNK = (await vaneRow("app_funktioner")) || []; } catch (e) {}
+  try { if (!(KLIP_OPGAVER || []).length) await klipHent(); } catch (e) {}
   soegKoer();
+}
+let BS_SOEG_ALLE = {};   /* sektioner, hvor Ida har trykket »Vis alle« */
+function soegAlle(n) { BS_SOEG_ALLE[n] = true; soegKoer(); }
+/* Udsnittet omkring ordet — et fund dybt i en lang tekst vises dér, hvor ordet står, ikke fra begyndelsen */
+function soegUdsnit(tekst, q) {
+  const t = String(tekst || "").replace(/\s+/g, " ").trim(); const i = t.toLowerCase().indexOf(q);
+  if (i < 0) return t.slice(0, 110);
+  let fra = Math.max(0, i - 40), til = Math.min(t.length, i + q.length + 80);
+  if (fra > 0) { const m = t.indexOf(" ", fra); if (m > -1 && m < i) fra = m + 1; }   /* start og slut paa et helt ord */
+  if (til < t.length) { const m = t.lastIndexOf(" ", til); if (m > i + q.length) til = m; }
+  return (fra > 0 ? "…" : "") + t.slice(fra, til).trim() + (til < t.length ? " …" : "");
 }
 function soegKoer() {
   const host = document.getElementById("bsSoegHost"); if (!host) return;
   const q = (BS_SOEG_Q || "").trim().toLowerCase();
+  if (q !== window.__BS_SOEG_SIDST) { BS_SOEG_ALLE = {}; window.__BS_SOEG_SIDST = q; }
   if (q.length < 2) { host.innerHTML = ""; return; }
   const har = function (s) { return String(s || "").toLowerCase().indexOf(q) > -1; };
   const rk = function (navn, sub, klik) { return '<div class="bs-kf bs-rum" onclick="' + klik + '"><span class="bs-kf-tekst"><span class="bs-kf-n">' + esc(navn) + '</span>' + (sub ? '<span class="bs-kf-s">' + esc(sub) + '</span>' : '') + '</span></div>'; };
   const sek = function (titel, rows) { return rows.length ? '<div class="bs-sek">' + titel + '</div>' + rows.join("") : ""; };
+  /* Mange fund: seks vises, resten bag den grå knap »Vis alle« */
+  const sekAlle = function (titel, rows) {
+    if (!rows.length) return "";
+    const alle = BS_SOEG_ALLE[titel] || rows.length <= 6;
+    return '<div class="bs-sek">' + titel + '</div>' + (alle ? rows : rows.slice(0, 6)).join("")
+      + (alle ? "" : '<button type="button" class="dbtn hf-gaa mq-tap" style="width:100%;margin-top:8px;" onclick="soegAlle(\'' + esc(titel) + '\')">Vis alle</button>');
+  };
   const kEsc = function (k) { return esc(String(k)).replace(/'/g, "\\'"); };
   let kunder = [];
   try { kunder = Object.keys(VIRKSOMHEDSKODER).filter(function (k) { return (erRigtigKunde(k) || erEgenKode(k)) && (har(k) || har((VIRKSOMHEDSKODER[k] || {}).virksomhed)); }).slice(0, 6)
@@ -52317,9 +52343,25 @@ function soegKoer() {
     .map(function (o) { let kn = o.kode; try { kn = venterKundeNavn(o.kode); } catch (e) {} return rk(o.titel, [kn, o.status, o.dato ? dkDatoKort(String(o.dato)) : ""].filter(Boolean).join(" · "), "godkKoeAabn('" + kEsc(o.kode) + "','" + kEsc(o.id) + "')"); });
   const koe = (MR_KOE || []).filter(function (k) { return !k.loest && har(k.navn); }).slice(0, 5)
     .map(function (k) { let sti = ""; try { sti = mrKoeSti(k); } catch (e) {} return rk(k.navn || "", sti || "Byggekøen", "mrRumAaben('" + kEsc(k.rum_id) + "')"); });
-  const noter = (MR_NOTER || []).filter(function (x) { return har(x.tekst); }).slice(0, 5)
-    .map(function (x) { const r = (MR_RUM || []).find(function (y) { return String(y.id) === String(x.rum_id); }) || {}; return rk(String(x.tekst || "").slice(0, 90), r.navn || "Note", "mrRumAaben('" + kEsc(x.rum_id) + "')"); });
-  const alt = sek("Kunder", kunder) + sek("Rum", rum) + sek("Opslag og briefs", opslag) + sek("Byggekøen", koe) + sek("Noter", noter);
+  const noter = (MR_NOTER || []).filter(function (x) { return har(x.tekst); })
+    .map(function (x) { const r = (MR_RUM || []).find(function (y) { return String(y.id) === String(x.rum_id); }) || {}; return rk(soegUdsnit(x.tekst, q), r.navn || "Note", "mrRumAaben('" + kEsc(x.rum_id) + "')"); });
+  let ideer = [];
+  try { ideer = ideerAlle().filter(function (x) { return har(x.t); })
+    .map(function (x) { const klik = x.k === "manus" ? "manusIdeRet('" + kEsc(x.id) + "')" : "mrGaaTil('ideer');ideerChip('" + kEsc(x.studio) + "')"; return rk(soegUdsnit(x.t, q), x.studio, klik); }); } catch (e) {}
+  let todos = [];
+  try { todos = (HAENG || []).filter(function (x) { return x && har(x.t); })
+    .map(function (x) { return rk(soegUdsnit(x.t, q), x.dato ? dkDatoKort(String(x.dato)) : "Get shit done", "bsTodoRet('" + kEsc(x.id) + "')"); }); } catch (e) {}
+  let app = [];
+  try { app = (APP_FUNK || []).filter(function (x) { return x && har(x.t); })
+    .map(function (x) { return rk(soegUdsnit(x.t, q), x.studio || "App-ønskelisten", "mrGaaTil('appfunk')"); }); } catch (e) {}
+  let lektioner = [];
+  try { lektioner = (KLIP_OPGAVER || []).map(function (o) {
+      let dele = ""; try { const ud = []; (function saml(v) { if (typeof v === "string") ud.push(v); else if (v && typeof v === "object") Object.keys(v).forEach(function (k) { saml(v[k]); }); })(o.manus_dele); dele = ud.join(" "); } catch (e) {}   /* kun tekstens ord, aldrig feltnavnene */
+      const tekst = har(o.titel) ? o.titel : (har(o.manus_tekst) ? o.manus_tekst : (har(dele) ? dele : ""));
+      return tekst ? rk(o.titel || "Lektion", tekst === o.titel ? "Lektion" : soegUdsnit(tekst, q), "klipBriefAaben('" + kEsc(o.id) + "')") : "";
+    }).filter(Boolean); } catch (e) {}
+  const alt = sek("Kunder", kunder) + sek("Rum", rum) + sekAlle("Noter", noter) + sekAlle("Idéer", ideer) + sekAlle("To-dos", todos)
+    + sekAlle("Lektioner", lektioner) + sekAlle("App-ønskelisten", app) + sek("Opslag og briefs", opslag) + sek("Byggekøen", koe);
   host.innerHTML = alt || '<div class="bs-kf bs-tom">Ingenting matcher „' + esc((BS_SOEG_Q || "").trim()) + '“ endnu.</div>';
 }
 function soegVis() { visDashSide("soeg"); setTimeout(function () { const f = document.getElementById("bsSoegFelt"); if (f) { try { f.focus(); } catch (e) {} } }, 80); }
@@ -54271,7 +54313,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2330";
+const APP_VERSION = "2331";
 let NY_VERSION_KLAR = false;
 let NY_VERSION_AFVIST = false;
 function nyVersionSkjul() {
@@ -76005,6 +76047,6 @@ function bf3StudieRum(v, filter) {
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-hvid.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 25. september · 2330</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 25. september · 2331</div>
 </body>
 </html>

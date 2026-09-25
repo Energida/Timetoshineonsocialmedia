@@ -120,7 +120,7 @@ setTimeout(async function () {
           return true;
         });
         if (faste.length) { console.log("SELE BACKSTAGE FEJL " + navn + " fast bjaelke paa telefonen: " + faste.slice(0, 3).map(function (e) { return e.id || e.className.toString().split(" ")[0] || e.tagName; }).join(", ")); fejl++; }
-        var kn = [].filter.call(r.querySelectorAll("button, a[onclick], [role=button], .row-btn"), function (b) { var q = b.getBoundingClientRect(); return q.height > 0 && q.width > 0; });
+        var kn = [].filter.call(r.querySelectorAll("button, a[onclick], [role=button], .row-btn"), function (b) { var q = b.getBoundingClientRect(); return q.height > 0 && q.width > 0 && getComputedStyle(b).visibility !== "hidden"; });   /* en skjult knap er intet trykfelt (25/9: swipe-sletten i lukket tilstand) — samme regel som luften og bjaelkerne ovenfor */
         var smaa = [];
         kn.forEach(function (b) {
           var q = b.getBoundingClientRect(); if (q.height >= 44) return;
