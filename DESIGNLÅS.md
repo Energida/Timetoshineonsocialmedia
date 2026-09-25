@@ -7,6 +7,16 @@
 - **Alle datofelter åbner husets dato-ark** — også i Backstage. Ny to-do: »Deadline«. Ny aftale: ingen mikrofon.
 - **Briefoversigten viser ikke Indholdsopbygning** (kun inde i briefen). Øjet (Briefoversigten) står i coveret inde i briefen, også på telefonen.
 
+## IDA ER IKKE TOVHOLDER — HVER RETTELSE TÆNKES HELT IGENNEM (HÅRD, Ida 25/9 kl. 11.00)
+
+Idas ord (kommentar på Hjem-tegningen, A–Z-gennemgangen): »Jeg vil gerne at det ikke er mig der er tovholder! Men når jeg siger noget, at du så gør alt for at komme med den bedste løsning og se hele perspektivet og ikke bare retter det jeg påpeger, men tænker: er det her virkelig det bedste? eller kunne vi gøre noget anderledes??«
+
+Reglen: en kommentar fra Ida er et SYMPTOM, ikke en ordre om præcis den rettelse. Før noget rettes, stilles tre spørgsmål højt:
+1. Hvad er det, kunden faktisk har brug for her (Hans-testen)?
+2. Er Idas forslag den bedste løsning, eller findes der en bedre (kør bud gennem holdet: energida-design · emil · ux-pro-max · uxpolitiet)?
+3. Hvad rører den ellers (samme element andre steder, begge flader, låsen)?
+Svaret skrives i chatten som: »Du bad om X. Det bedste er Y, fordi … (eller: X er det bedste, fordi …)«. Ida skal aldrig selv finde den bedre idé, og hun skal aldrig holde tråden i, hvad der mangler. Gælder alle bud, alle rettelser, admin og b2b.
+
 ## v2292–v2302 — 24. september 2026 · RESTEN AF DAGEN (Idas klik)
 
 - **Knaphøjde-låsen gælder overalt:** den gamle `.mb-pil`-regel (48, 18/9) og telefonens chips (44) er sat til 40/36 — trykfeltet er stadig 44 (usynligt). Porten måler det.
