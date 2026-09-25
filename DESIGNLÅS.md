@@ -1,3 +1,9 @@
+## v2321 — 25. september 2026 · KNAPPERNE I BACKSTAGE (Idas klik kl. 18.05)
+
+- **Telefonen:** Tilbage øverst til venstre i coveret, ⋯ øverst til højre — begge gennemsigtige med hvid ring, 12 px fra kanten som kundens klokke. **Nålen står altid efter heroen** (ved sidens navn). **Plusset bor midt i bundmenuen** (Hjem · Indbakken · + · CRM · Mere; Forretning under Mere) og trykker sidens eget plus; har siden intet, åbner det Tøm hovedet. Ingen række under coveret. Swipe fra venstre kant (yderste 24 px) = Tilbage.
+- **Computeren:** ingen knapper i coveret (kun nålen efter navnet); Tilbage · ⋯ · plus i én række under coveret. **Stien viser kun, hvor du er** — ordet Tilbage er ude af stien (dublet af pillen).
+- Motor: `coverKnapperUd` (Backstage: bud 7 tlf / bud 0 computer), `bsCoverKnapperStil` (sidens plus → `__BS_SIDE_PLUS`, `bsBundPlus`), `dashBundnavTegn`. b2b er urørt.
+
 ## v2308–v2315 — 25. september 2026 · LÅST (Idas ord)
 
 **KNAPPER I COVERBILLEDET = GENNEMSIGTIG BAGGRUND + HVID STREG/RING (HÅRD, Ida 25/9 kl. 07.45):** »alle knapper, vi beslutter, der skal være oppe i coverbilledet, skal have gennemsigtig baggrund, hvid streg og ring omkring knapperne«. Gælder admin og b2b, computer og telefon. Runde ikonknapper 44, Tilbage-pillen 40.

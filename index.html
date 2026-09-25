@@ -8679,6 +8679,8 @@ body.dash-mode.bs-mb .bs-baand .mb-foto { position:absolute; inset:0; background
 body.dash-mode.bs-mb .bs-baand .mb-sti { position:absolute; left:48px; top:36px; display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
 body.dash-mode.bs-mb .bs-baand .mb-sti .navsti-tilbage, body.dash-mode.bs-mb .bs-baand .mb-sti .navsti-led, body.dash-mode.bs-mb .bs-baand .mb-sti .navsti-nu, body.dash-mode.bs-mb .bs-baand .mb-sti .navsti-skil { font-family:"Poppins",sans-serif; font-size:10px; letter-spacing:1.5px; text-transform:uppercase; background:none; border:0; padding:0; cursor:pointer; min-height:0; color:rgba(255,255,255,.85); }
 body.dash-mode.bs-mb .bs-baand .mb-sti .navsti-tilbage { color:#fff; min-height:44px; display:inline-flex; align-items:center; }
+/* STIEN VISER KUN, HVOR DU ER (Idas klik 25/9 kl. 18.05: »stien uden Tilbage«): Tilbage staar som pille under coveret, saa ordet i stien var en dublet. Kun Backstage; kilden (#dashMain > .navsti) er uroert, saa pillen stadig kan trykke paa den. */
+body.dash-mode.bs-mb .bs-baand .mb-sti .navsti-tilbage, body.dash-mode.bs-mb .bs-baand .mb-sti .navsti-tilbage + .navsti-skil { display:none !important; }
 body.dash-mode.bs-mb .bs-baand .mb-sti .navsti-nu { cursor:default; }
 body.dash-mode.bs-mb .bs-baand .mb-sti .navsti-skil { color:rgba(255,255,255,.55); }
 body.dash-mode.bs-mb .bs-baand .mb-sti .navsti-fyld, body.dash-mode.bs-mb .bs-baand .mb-sti .navsti-handling { display:none; }
@@ -9066,6 +9068,7 @@ body.dash-mode .sendfelt-felt, body.dash-mode input[type="text"], body.dash-mode
 html body.dash-mode .sendfelt-knap { background:#fff !important; border-color:transparent !important; }
 body.bs-forfra #mro_rum .vt-knap { display:none !important; }   /* rummets ⋯ bor i baandet (21/9) */
 .bs-baand #bf3RumTgl.i-baandet { position:absolute; right:16px; bottom:96px; z-index:5; width:44px; }
+@media (max-width:999px) { body.dash-mode .bs-plus-i-bund { display:none !important; } }   /* plusset bor i bundmenuen paa telefonen (25/9) */
 .bs-baand #bf3RumTgl .kv-menuknap { background:#fff !important; border:1px solid var(--border) !important; color:var(--knap-graa-tekst, #6F6B66) !important; }
 @media (min-width:1000px) { .bs-baand #bf3RumTgl.i-baandet { right:48px; bottom:36px; } }
 .bf3-rum-tilbage { margin-top:var(--luft-4); }
@@ -53934,7 +53937,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2320";
+const APP_VERSION = "2321";
 let NY_VERSION_KLAR = false;
 let NY_VERSION_AFVIST = false;
 function nyVersionSkjul() {
@@ -60096,12 +60099,43 @@ function bsBaandTegn() {
    plus/⋯ yderst, naalen til venstre for dem. Telefon (<1000, som coverets egne maal): 16 px fra hoejre, 96 fra bunden. Computer: 48 / 36. */
 function bsCoverKnapperStil(b) {
   if (!b) return;
-  const kand = [document.getElementById("bf3RumKnap"), document.getElementById("klipHeadTgl"), document.getElementById("bf3RumTgl"), document.getElementById("bf3KundeNaal"), b.querySelector(".bs-side-naal:not(.ved-navn)")];
+  const kand = [document.getElementById("bf3RumKnap"), document.getElementById("klipHeadTgl"), document.getElementById("bf3RumTgl"), document.getElementById("bf3KundeNaal"), b.querySelector(".bs-side-naal:not(.ved-navn)")];   /* NAALEN STAAR ALTID EFTER HEROEN (Ida 25/9 kl. 17.03: »pin skal altid være efter hero«) — den eneste knap, der bliver i coveret */
   const pc = window.matchMedia && window.matchMedia("(min-width:1000px)").matches;
   let rod = null; try { const dm = document.getElementById("dashMain"); [].forEach.call(dm ? dm.children : [], function (d) { if (!rod && d.id && d.id.indexOf("dside-") === 0 && d.getClientRects().length) rod = d; }); } catch (e) {}
-  let hoejreInd = pc ? 48 : 16;
+  let hoejreInd = pc ? 48 : (document.body.classList.contains("dash-mode") ? 12 : 16);   /* Backstage paa telefonen: samme hjoerne som kundens klokke (25/9) */
   try { const bg = document.querySelector(".dash-burger-flyd"); if (!pc && bg && getComputedStyle(bg).display !== "none") hoejreInd = 16 + 42 + 12; } catch (e) {}   /* menuknappen svaever oeverst til hoejre i 761–999 — coverknapperne staar til venstre for den */
+  /* PLUSSET BOR I BUNDMENUEN PAA TELEFONEN (Ida 25/9 kl. 17.04: »Kunne plusfunktionen på mobilen evt. være den i bundmenuen?«): sidens eget plus
+     tages ud af raekken under coveret og gemmes; bundmenuens roede plus trykker paa det (bsBundPlus). Har siden intet plus, aabner det Toem hovedet. */
+  window.__BS_SIDE_PLUS = null;
+  if (document.body.classList.contains("dash-mode") && window.matchMedia && window.matchMedia("(max-width:999px)").matches) {
+    for (let i = 0; i < kand.length; i++) {
+      const e = kand[i]; if (!e) continue;
+      const k = (e.tagName === "BUTTON") ? e : e.querySelector("button, [role=button]"); if (!k) continue;
+      const t = ((k.getAttribute("aria-label") || "") + " " + (k.getAttribute("title") || "") + " " + (k.textContent || "")).trim();
+      if (/^\+$|Tilføj|Ny idé|Ny kunde|Nyt |Opret/i.test(t) && !/Pin/i.test(t)) { window.__BS_SIDE_PLUS = k; e.classList.add("bs-plus-i-bund"); kand[i] = null; }
+    }
+  } else { [].forEach.call(document.querySelectorAll(".bs-plus-i-bund"), function (e) { e.classList.remove("bs-plus-i-bund"); }); }
   b.__knapper = coverKnapperUd(b, kand, hoejreInd, null, rod);
+}
+/* SWIPE FRA VENSTRE KANT = TILBAGE (Ida 25/9 kl. 17.15: »kunne man swipe på mobilen for tilbage«): kun i Backstage paa telefonen, kun naar fingeren
+   starter i de yderste 24 px (saa det ikke stoeder med dagens swipe, to-do-slet og Idébankens kolonner), og kun naar siden har en Tilbage. Samme knap trykkes. */
+(function () {
+  let x0 = null, y0 = 0, t0 = 0;
+  document.addEventListener("touchstart", function (e) {
+    x0 = null; if (!document.body.classList.contains("dash-mode") || !e.touches || e.touches.length !== 1) return;
+    if (document.getElementById("arkSlor") || document.querySelector(".modal-back.open, #bsFlytMenu[style*=flex]")) return;
+    const t = e.touches[0]; if (t.clientX > 24 || window.innerWidth >= 1000) return; x0 = t.clientX; y0 = t.clientY; t0 = Date.now();
+  }, { passive: true });
+  document.addEventListener("touchend", function (e) {
+    if (x0 === null) return; const t = e.changedTouches && e.changedTouches[0]; const x = x0; x0 = null; if (!t) return;
+    const dx = t.clientX - x, dy = Math.abs(t.clientY - y0);
+    if (dx > 80 && dy < 60 && Date.now() - t0 < 800) { const k = document.querySelector(".bs-baand > .cover-tilbage"); if (k && k.getClientRects().length) k.click(); }
+  }, { passive: true });
+})();
+function bsBundPlus() {
+  const k = window.__BS_SIDE_PLUS;
+  if (k && document.body.contains(k)) { k.click(); return; }
+  try { bf3ToemTrin1(); } catch (e) { try { bf3ToemArk(""); } catch (e2) {} }
 }
 /* KNAPPERNE STAAR UNDER COVERET, IKKE I DET — ADMIN OG B2B (Ida 24/9 kl. 10.00: »Alle knapper skal ud af coveret i både admin og b2b
    og placeres umiddelbart under … sørg for at alle symboler, størrelser og farver er ens«). Emil: een raekke, hoejrestillet i
@@ -60162,7 +60196,10 @@ function coverKnapperUd(b, kand, inset, alignEl, rod) {
   const desk = !!(window.matchMedia && window.matchMedia(document.body.classList.contains("dash-mode") ? "(min-width:1000px)" : "(min-width:900px)").matches);
   /* BACKSTAGE PAA TELEFONEN (natten 24/9–25/9, Ida: »der er stadig en masse knapper i min admin på kanten af cover og indhold«): de runde knapper
      (naal · plus · ⋯) staar i coverets oeverste hoejre hjoerne som paa computeren og som b2b's klokke; kun Tilbage bliver paa buen (b2b's greb). Bud 7. */
-  const B0 = (window.__KNAP_BUD != null) ? window.__KNAP_BUD : (desk ? 6 : (document.body.classList.contains("dash-mode") ? 7 : KNAP_BUD));
+  /* INGEN KNAPPER I COVERET I BACKSTAGE (Ida 25/9 kl. 15.50: »der ikke må være nogen knapper oppe i coveret, men … de alle sammen skal flyttes ned under coveret«):
+     bud 0 = een raekke under buen paa begge flader — Tilbage til venstre, naal · plus · ⋯ til hoejre. Vaelter bud 6/7 (coverets hjoerner) for Backstage; b2b er uroert. */
+  /* TELEFONEN (Ida 25/9 kl. 17.55: »det var de 3 prikker jeg mente«): ⋯ op i coverets oeverste hoejre hjoerne som kundens klokke, Tilbage i venstre — ingen raekke under coveret; plusset bor i bundmenuen, naalen efter navnet. Computeren: raekken under coveret (bud 0). */
+  const B0 = (window.__KNAP_BUD != null) ? window.__KNAP_BUD : (document.body.classList.contains("dash-mode") ? (desk ? 0 : 7) : (desk ? 6 : KNAP_BUD));
   const tTop = B0 === 1 ? brT.bottom - 50 : B0 === 2 ? brT.bottom - 88 : B0 === 3 ? brT.bottom + 12 : B0 === 4 ? brT.bottom - 20 : B0 === 5 ? brT.top + (window.innerWidth >= 1000 ? 28 : 16) : brT.bottom + 4;
   let harTilbage = false;
   /* KUN STIEN (Idas kommentar 25/9 kl. 07.14: »Det skulle bare være stien?«): bud 7 (Backstage paa telefonen) har heller ingen Tilbage-pille — stien i coveret er vejen tilbage, som paa computeren */
@@ -60171,13 +60208,16 @@ function coverKnapperUd(b, kand, inset, alignEl, rod) {
   if (B0 === 6) { const px0 = b.querySelector(":scope > .cover-tilbage"); if (px0) px0.remove(); try { const kk = rod ? tilbageKilde(rod) : null; if (kk) kk.setAttribute("data-tilbage-kilde", "1"); } catch (e) {} }
   /* TILBAGE OGSAA VAEK FRA KANTEN (Idas kommentar 25/9 kl. 07.12: »Tilbage står med stor fed på kanten her«): i Backstage paa telefonen staar Tilbage
      oeverst til venstre i coveret, gennemsigtig med hvid ring — samme greb som knapperne til hoejre. Intet sidder laengere paa buen. */
-  else harTilbage = rod ? tilbageUd(b, rod, inset, B0 === 7 ? brT.top + coverSikkerTop() + 16 : tTop) : false;
+  /* TILBAGE I COVERETS OEVERSTE VENSTRE HJOERNE PAA TELEFONEN (Ida 25/9 kl. 17.20: »kunne man så flytte knappen op i venstre hjørne af coveret?«):
+     i Backstage paa telefonen staar Tilbage som den lave, gennemsigtige pille med hvid ring oeverst til venstre i coveret (iPhones plads for »tilbage«);
+     de andre knapper bliver under coveret, og et swipe fra venstre kant gaar ogsaa tilbage (bsKantSwipe). Computeren: Tilbage i raekken under coveret. */
+  else { const tlfTop = B0 === 7 || (B0 === 0 && !desk && document.body.classList.contains("dash-mode")); harTilbage = rod ? tilbageUd(b, rod, tlfTop ? 12 : inset, tlfTop ? brT.top + coverSikkerTop() + 12 : tTop) : false; b.__tlfTop = tlfTop; }   /* samme hjoerne som kundens klokke: 12 px fra statuslinjen og kanten (Ida 25/9 kl. 17.49: »næsten naturligt i hjørnet men stadig med afstand«) */
   try { b.classList.toggle("har-knapper", B0 === 1 && (harTilbage || liste.length > 0)); } catch (e) {}
-  try { const pxT = b.querySelector(":scope > .cover-tilbage"); if (pxT) pxT.classList.toggle("i-toppen", B0 === 7); } catch (e) {}   /* titlen og datoen loeftes, saa knapperne paa buen ikke rammer dem (24/9) */
+  try { const pxT = b.querySelector(":scope > .cover-tilbage"); if (pxT) pxT.classList.toggle("i-toppen", B0 === 7 || !!b.__tlfTop); } catch (e) {}   /* titlen og datoen loeftes, saa knapperne paa buen ikke rammer dem (24/9) */
   const i_band = harTilbage || liste.some(function (e) { return b.contains(e); });
   const ov = i_band ? "visible" : "";
   if (b.style.overflow !== ov) b.style.overflow = ov;
-  if (!liste.length) return harTilbage ? ((B0 === 0) ? 4 + 44 + 24 : (B0 === 4 ? 36 : 0)) : 0;
+  if (!liste.length) return (harTilbage && !b.__tlfTop) ? ((B0 === 0) ? 4 + 44 + 24 : (B0 === 4 ? 36 : 0)) : 0;   /* Tilbage i coverets hjoerne kraever ingen raekke (25/9) */
   /* raekkefoelgen: plusset (roedt eller »Tilføj«) yderst til hoejre, resten i den orden, de stod i */
   const erPlus = function (e) { const t = ((e.getAttribute("aria-label") || "") + " " + (e.querySelector("[aria-label]") ? e.querySelector("[aria-label]").getAttribute("aria-label") : "") + " " + (e.textContent || "")).trim(); return /^\+$|Tilføj|Ny idé|Ny kunde|Besked/i.test(t) && !/Pin/i.test(t); };
   liste.sort(function (a, c) { return (erPlus(c) ? 1 : 0) - (erPlus(a) ? 1 : 0); });
@@ -75069,8 +75109,9 @@ function dashBundnavTegn(aktivSide) {
   const ind = d("indbakke"), kun = d("kunder"), salg = d("salg");
   el.innerHTML = knap("overblik", "Hjem", hjemIk, "visDashSide('overblik')")
     + (ind ? knap(ind.side, ind.n, bsMenuIkon(ind), ind.k, n) : '')
+    + '<button type="button" class="bn-plus" onclick="bsBundPlus()" aria-label="Tilføj"><span class="bn-plus-cirkel">' + sv('<path d="M12 5v14M5 12h14"/>', 2) + '</span></button>'   /* sidens plus / Toem hovedet (25/9) */
     + (kun ? knap(kun.side, kun.n, bsMenuIkon(kun), kun.k) : '')
-    + (salg ? knap(salg.side, salg.n, bsMenuIkon(salg), salg.k) : '')
+    /* FEM PUNKTER MED PLUSSET I MIDTEN (25/9, som kundens bundmenu): Forretning bor under Mere */
     + '<button type="button" onclick="dsbPanelSkift()" aria-label="Mere">' + sv('<path d="M4 7h16M4 12h16M4 17h16"/>') + '<span class="bn-navn">Mere</span></button>';
   try { ov1aTalTegn(); } catch (e) {}
 }
@@ -75574,6 +75615,6 @@ function bf3StudieRum(v, filter) {
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-roed.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 25. september · 2320</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 25. september · 2321</div>
 </body>
 </html>
