@@ -54391,7 +54391,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2343";
+const APP_VERSION = "2344";
 let NY_VERSION_KLAR = false;
 let NY_VERSION_AFVIST = false;
 function nyVersionSkjul() {
@@ -65497,7 +65497,23 @@ function manusIdeFang() {
     } });
 }
 /* ONLINEKURSERNE, en idé til manus kan hoere til (Ida 21/9 kl. 19.21) — produktmodellen, aldrig gaet */
-function manusKursusValg() { return (typeof KLIP_PRODUKTER !== "undefined" ? KLIP_PRODUKTER : ["YOU GOT THIS", "WE GOT THIS", "I GOT YOU"]).map(function (p) { return { k: p, n: p }; }); }
+/* ONLINEKURSERNE ER DEM, DER LIGGER I ENERGIDA STUDIO (Ida 26/9: »den skal jo hente de produkter der ligger i energida studio og ikke andet … der ligger kun you got this lige nu«):
+   et produkt fra tabellen produkter, der har mindst een lektion i produkt_lektioner — aldrig en fast liste i koden. Hentes een gang pr. fane. */
+let MANUS_KURSER = null, MANUS_KURSER_LOFTE = null;
+function manusKurserHent() {
+  if (MANUS_KURSER_LOFTE) return MANUS_KURSER_LOFTE;
+  MANUS_KURSER_LOFTE = (async function () {
+    if (!sb) { MANUS_KURSER = []; return MANUS_KURSER; }
+    try {
+      const [pr, ko] = await Promise.all([sb.from("produkter").select("id,navn,sortering").order("sortering"), sb.from("produkt_lektioner").select("produkt_id")]);
+      const har = {}; (ko.data || []).forEach(function (x) { har[x.produkt_id] = 1; });
+      MANUS_KURSER = (pr.data || []).filter(function (p) { return har[p.id]; }).map(function (p) { return String(p.navn || "").trim(); }).filter(Boolean);
+    } catch (e) { MANUS_KURSER = []; MANUS_KURSER_LOFTE = null; }
+    return MANUS_KURSER;
+  })();
+  return MANUS_KURSER_LOFTE;
+}
+function manusKursusValg() { if (MANUS_KURSER === null) { try { manusKurserHent(); } catch (e) {} } return (MANUS_KURSER || []).map(function (p) { return { k: p, n: p }; }); }
 async function manusIdeGem(tekst, kursus) {
   const t = String(tekst || "").trim();
   if (!t) return false;
@@ -65680,6 +65696,7 @@ async function ideerHent() {
   if (!FOOD_HENTET) { FOOD_HENTET = true; for (const l of FOOD_LISTER) { try { const svar = (await vaneRow("food_" + l[0])) || vaneLocal("food_" + l[0], []); FOOD[l[0]] = Array.isArray(svar) ? svar : []; } catch (e) {} } }
   if (!MIND_HENTET) { MIND_HENTET = true; try { const svar = (await vaneRow("mind_ideer")) || vaneLocal("mind_ideer", []); MIND = Array.isArray(svar) ? svar : []; } catch (e) {} }
   if (!MANUS_IDEER_HENTET) { try { await manusIdeHent(); } catch (e) {} }   /* Manus-ideerne (20/9) */
+  try { await manusKurserHent(); } catch (e) {}   /* onlinekurserne fra Energida Studio, foer Tøm hovedet aabner (26/9) */
   if (!window.__IDEER_GSD_HENTET) { window.__IDEER_GSD_HENTET = true; try { await refreshEnergidaIdeas(); } catch (e) {} }
 }
 function ideerAlle() {
@@ -74798,6 +74815,7 @@ async function nyIdeGem(tekst, k) {
 
 /* ---------- HJEM = DAGEN ---------- */
 async function dashForsideTegn() {
+  try { manusKurserHent(); } catch (e) {}   /* onlinekurserne hentes, naar Backstage aabner, saa Tøm hovedet har dem (26/9) */
   const el = document.getElementById("bsForside"); if (!el) return;
   let venter = []; try { venter = await venterHent(); } catch (e) { venter = []; }
   try { await kundePinsHent(); } catch (e) {}
@@ -76268,6 +76286,6 @@ function bf3StudieRum(v, filter) {
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-hvid.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 26. september · 2343</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 26. september · 2344</div>
 </body>
 </html>
