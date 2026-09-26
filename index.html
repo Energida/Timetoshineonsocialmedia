@@ -44964,7 +44964,8 @@ let HU_OFF = 0, HU_VALGT = null, HU_HELE = false, HU_FOKUS = null, HU_FOKUS_HENT
 const HU_SYM = {
   opslag: '<rect x="3" y="3" width="18" height="18" rx="4"/><circle cx="12" cy="12" r="3.5"/><circle cx="17" cy="7" r=".6"/>',
   aftale: '<rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/>',
-  plan: '<rect x="5" y="4.5" width="14" height="16.5" rx="2.5"/><path d="M9 4.5V3.5h6v1"/><path d="M8.5 12.5l2.3 2.3 4.7-5"/>'
+  plan: '<rect x="5" y="4.5" width="14" height="16.5" rx="2.5"/><path d="M9 4.5V3.5h6v1"/><path d="M8.5 12.5l2.3 2.3 4.7-5"/>',
+  guide: '<circle cx="9" cy="8" r="3"/><circle cx="16.5" cy="9.5" r="2.3"/><path d="M3.5 19c.6-3.2 2.8-5 5.5-5s4.9 1.8 5.5 5"/><path d="M14.8 14.3c2.3-.3 4.4 1.1 5 3.9"/>'
 };
 function huIso(d) { return energidaKalDato(d); }
 function huMandag() { const m = new Date(); m.setHours(0, 0, 0, 0); m.setDate(m.getDate() + 7 * HU_OFF); return m; }   /* STRIMLEN STARTER I DAG (Ida 25/9 kl. ~21: »ugen altid skal starte med idag … den første dato er den røde«); kalendersiden og ringen »opslag i ugen« er stadig mandag-soendag */
@@ -44987,6 +44988,21 @@ function huTing(iso) {
   } catch (e) {}
   try { if (planDato() === iso) ud.push({ ty: "plan", tid: "", et: "Planlægning", t: "Ugens planlægning", chip: "", klik: "showTab(31)" }); } catch (e) {}
   ud.sort(function (a, b) { return String(a.tid || "99").localeCompare(String(b.tid || "99")); });
+  return ud;
+}
+/* EN TOM DAG SIGER, HVAD DER SKER I MORGEN + EEN LILLE GUIDE (Idas klik 26/9 ~08.35 »I morgen + én guide«: »fordi det er lørdag nu - så kunne jeg jo godt tænke mig der stod noget ala.... i morgen skal du poste xxx - og så en guide til sæt tid af til at aktivere community«).
+   Kun paa i dag. Guiden er Idas egen 10:10-regel i hendes ord. */
+function huTomDagHtml(d) {
+  let ud = "";
+  try {
+    const m = new Date(d); m.setDate(m.getDate() + 1); const iso = huIso(m);
+    const post = (IDEER || []).filter(function (x) { return x && x.dato === iso && x.status !== "Arkiveret" && x.status !== "Idé" && x.status !== "Postet"; });
+    post.forEach(function (x) {
+      const fmt = String((x.brief && x.brief.format) || x.type || "").trim();
+      ud += huKort({ ty: "opslag", et: "I morgen skal du poste", t: x.titel || "Uden titel", chip: fmt, klik: "openBriefSide('" + esc(String(x.id)) + "')" });
+    });
+  } catch (e) {}
+  ud += huKort({ ty: "guide", et: "10 minutter på dit community", t: "Svar på kommentarer, og like fem profiler, du gerne vil nå.", chip: "", klik: "" });
   return ud;
 }
 function huKort(x) {
@@ -45063,7 +45079,7 @@ function hjemUgeHtml(tlf) {
   let dagHtml;
   if (!ting.length) dagHtml = ugeTom
     ? '<div class="hu-tom"><div class="hu-tom-q">Hvad skal der ske i denne uge?</div><button type="button" class="hu-graa" onclick="showTab(31)">Start planlægning</button></div>'
-    : '<div class="hu-tom"><div class="hu-tom-q">Hvad skal der ske denne dag?</div><button type="button" class="hu-graa" onclick="togglePlus()">Tilføj</button></div>';
+    : (erIdag ? huTomDagHtml(dage[valgt].d) : '') + '<div class="hu-tom"><div class="hu-tom-q">Hvad skal der ske denne dag?</div><button type="button" class="hu-graa" onclick="togglePlus()">Tilføj</button></div>';
   else dagHtml = (HU_HELE ? ting : ting.slice(0, 5)).map(huKort).join("") + (ting.length > 5 && !HU_HELE ? '<button type="button" class="hu-graa" onclick="HU_HELE=true;hjemUgeTegn()">Se hele dagen · ' + ting.length + '</button>' : '');
   const dag = '<div class="hu-dagen">' + dagHtml + '</div>';
   if (tlf) return '<div class="hu hu-tlf">' + linje + strib + dag + '<div class="cf-sek hu-sek">Dine mål</div><div class="hu-ringe">' + huRinge(true) + '</div>' + huTodoHtml() + '</div>';
@@ -54404,7 +54420,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2347";
+const APP_VERSION = "2348";
 let NY_VERSION_KLAR = false;
 let NY_VERSION_AFVIST = false;
 function nyVersionSkjul() {
@@ -76339,6 +76355,6 @@ function bf3StudieRum(v, filter) {
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-hvid.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 26. september · 2347</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 26. september · 2348</div>
 </body>
 </html>
