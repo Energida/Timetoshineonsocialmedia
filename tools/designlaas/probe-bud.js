@@ -36,13 +36,13 @@ setTimeout(async function () {
       var idag = r.querySelector(".hu-dag.idag"); if (!idag || getComputedStyle(idag).backgroundColor !== "rgb(252, 36, 4)") F(tilstand + ": i dag er ikke fyldt roed");
       dage.forEach(function (d) { var q = d.getBoundingClientRect(); if (q.width < 44 || q.height < 44) F(tilstand + ": en datoflise er under 44 px (" + Math.round(q.width) + "x" + Math.round(q.height) + ")"); });
       /* 3) DAGEN: kort med symbol, hoejst to linjer tekst, hoejst fem; tom = spoergsmaal + graa knap */
-      var kort = [].filter.call(r.querySelectorAll(".hu-dagen .hu-kort"), synlig);
+      var kort = [].filter.call(r.querySelectorAll(".hu-dagen .hu-kort, .hu-kal-top .hu-kort"), synlig);   /* paa computeren staar dagens fliser uden klokkeslaet over datofelterne (26/9) */
       if (tilstand === "fuld") {
         var blokke = [].filter.call(r.querySelectorAll(".hu-dagen .hk-blk"), synlig);   /* KALENDERDAGEN (Idas klik 26/9, bud 1): paa computeren staar dagens punkter med klokkeslaet som blokke i kalenderen */
         if (!kort.length && !blokke.length) F("fuld: dagen viser ingen kort");
-        blokke.forEach(function (k) { if (!synlig(k.querySelector(".hk-ik"))) F("fuld: en blok i kalenderdagen mangler symbolet"); });
+        /* blokkene i kalenderdagen har INTET symbol (Idas kommentar 26/9) */
         if (kort.length > 5) F("fuld: dagen viser " + kort.length + " kort, hoejst fem");
-        kort.forEach(function (k) { if (!synlig(k.querySelector(".hu-sym"))) F("fuld: et kort mangler symbolet"); var t = k.querySelector(".hu-titel"); if (t && t.getBoundingClientRect().height > 52) F("fuld: en titel fylder mere end to linjer");   /* v2324 (Idas klik 25/9): dagens kort har hoejst TO linjer tekst — vaelter 20/9-buddets een linje */ });
+        kort.forEach(function (k) { if (!k.closest(".hu-kal") && !synlig(k.querySelector(".hu-sym"))) F("fuld: et kort mangler symbolet");   /* kalenderdagen paa computeren har intet symbol (Ida 26/9) */ var t = k.querySelector(".hu-titel"); if (t && t.getBoundingClientRect().height > 52) F("fuld: en titel fylder mere end to linjer");   /* v2324 (Idas klik 25/9): dagens kort har hoejst TO linjer tekst — vaelter 20/9-buddets een linje */ });
       } else {
         var tq = r.querySelector(".hu-dagen .hu-tom"); if (!synlig(tq) || !/\?/.test(tq.innerText) || !synlig(tq.querySelector(".hu-graa"))) F("tom: den tomme dag mangler spoergsmaalet eller den graa knap");
       }
