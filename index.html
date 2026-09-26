@@ -54391,7 +54391,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2344";
+const APP_VERSION = "2345";
 let NY_VERSION_KLAR = false;
 let NY_VERSION_AFVIST = false;
 function nyVersionSkjul() {
@@ -74705,7 +74705,11 @@ function bf3SwipeLyt(el) {
 let BF3_DROP_VALG = {}; window.BF3_DROP_VALG = BF3_DROP_VALG;   /* samme objekt paa window — nyIdeGem/temaNyArk laeser window.BF3_DROP_VALG (maalt 21/9: valget naaede aldrig frem) */
 /* ONLINEKURSET til en idé til manus (Ida 21/9 kl. 19.21: »skal kunne vælge hvilket onlinekursus det er til«): dropdown under »Hvor hører det hjemme?«, kun naar manus er valgt */
 function bf3KursusRkHtml(valgt) { return '<div id="bf3KursusRk" class="bs3-ark-drop" style="margin-top:8px;' + (valgt === "manus" ? '' : 'display:none;') + '">' + bf3DropHtml("nyIdeKursus", "Hvilket onlinekursus?", (typeof manusKursusValg === "function" ? manusKursusValg() : []), (window.BF3_DROP_VALG || {}).nyIdeKursus || "") + '</div>'; }
-window.bf3Drop_bf3ArkDrop = function (k) { const r = document.getElementById("bf3KursusRk"); if (r) r.style.display = (k === "manus") ? "" : "none"; };
+window.bf3Drop_bf3ArkDrop = function (k) { const r = document.getElementById("bf3KursusRk"); if (r) r.style.display = (k === "manus") ? "" : "none"; const l = document.getElementById("bf3LeadRk"); if (l) l.style.display = (k === "lead") ? "" : "none"; };
+/* NY LEAD (Ida 26/9 ~08.15): navnet i feltet · hvilket produkt (husets produkter fra tabellen produkter) → contacts med status Lead, lander i CRM under Leads */
+let LEAD_PRODUKTER = null;
+async function leadProdukterHent() { if (LEAD_PRODUKTER) return LEAD_PRODUKTER; try { const r = await sb.from("produkter").select("navn,sortering").order("sortering"); LEAD_PRODUKTER = (r.data || []).map(function (p) { return String(p.navn || "").trim(); }).filter(Boolean); } catch (e) { LEAD_PRODUKTER = []; } return LEAD_PRODUKTER; }
+function bf3LeadRkHtml(valgt) { return '<div id="bf3LeadRk" class="bs3-ark-drop" style="margin-top:8px;' + (valgt === "lead" ? '' : 'display:none;') + '">' + bf3DropHtml("nyLeadProdukt", "Hvilket produkt?", (LEAD_PRODUKTER || []).map(function (p) { return { k: p, n: p }; }), (window.BF3_DROP_VALG || {}).nyLeadProdukt || "") + '</div>'; }
 function bf3DropHtml(id, ph, valg, valgt) {
   const v = valg.find(function (x) { return x.k === valgt; });
   return '<div class="bs3-drop-w" id="' + id + '"><button type="button" class="bs3-drop' + (v ? '' : ' tom') + '" onclick="bf3DropSkift(\'' + id + '\')"><span>' + esc(v ? v.n : ph) + '</span>' + BF3_SVG.ned + '</button>'
@@ -74741,7 +74745,7 @@ function bf3DropVaelg(id, k) {
   try { if (id.indexOf("lekSt_") === 0) { const o = KLIP_OPGAVER.find(function (x) { return String(x.id).replace(/[^A-Za-z0-9_-]/g, "") === id.slice(6); }); if (o) { klipStatus(o.id, k); setTimeout(function () { try { renderKlipperum(); } catch (e) {} }, 0); } } } catch (e) {}
 }
 /* ORDENE ER IDAS (21/9 kl. 10.26): »Jeg skal bare have skrevet det ned« (aldrig »Skrevet ned« eller »Indbakken«) · »Idé til manus« staar med */
-const BF3_HJEM_VALG = [{ k: "note", n: "Jeg skal bare have skrevet det ned" }, { k: "todo", n: "To-do" }, { k: "manus", n: "Idé til manus" }   /* uden »· Energida Studio« (Ida 26/9 08.01) */, { k: "indkoeb", n: "Indkøbslister" }, { k: "cs", n: "Content Studio" }, { k: "workout", n: "Workout Studio" }, { k: "food", n: "Food Studio" }, { k: "mindful", n: "Mindful Studio" }, { k: "vidensbank", n: "Biblioteket" }, { k: "app", n: "App-ønske · Teknik" }];
+const BF3_HJEM_VALG = [{ k: "note", n: "Jeg skal bare have skrevet det ned" }, { k: "todo", n: "To-do" }, { k: "manus", n: "Idé til manus" }   /* uden »· Energida Studio« (Ida 26/9 08.01) */, { k: "lead", n: "Ny lead" }   /* en kommende kunde paa farten (Ida 26/9: »vil du også tilføje lead?«) */, { k: "indkoeb", n: "Indkøbslister" }, { k: "cs", n: "Content Studio" }, { k: "workout", n: "Workout Studio" }, { k: "food", n: "Food Studio" }, { k: "mindful", n: "Mindful Studio" }, { k: "vidensbank", n: "Biblioteket" }, { k: "app", n: "App-ønske · Teknik" }];
 /* TOEM HOVEDET = SENDEFELTET OEVERST PAA HJEM; pilen aabner arket med teksten og dropdownen under (Idas kommentarer 20/9-21/9) */
 function bf3ToemSend() {
   const f = document.getElementById("bf3Toem"); const t = ((f && f.value) || "").trim();
@@ -74754,9 +74758,10 @@ function bf3ToemArk(tekst, valgt) {
   /* SAMME FORM SOM B2B (Ida 24/9: »admin fortsat ikke har samme design på de første sider altså tøm hovedet«): arket ligger ikke
      gennemsigtigt paa fotoet laengere — roed top paa telefonen, hvid bund, ingen ekstra Backstage-knap (startkortet har den). Valgene er Idas egne. */
   const paaFoto = false;
-  arkAabn({ titel: "Tøm hovedet", ph: "Hvad har du på hjertet?", send: "Gem", tekst: tekst || "", chips: [], valgt: valgt || "", paaFoto: paaFoto,
+  try { if (valgt === "lead") BF3_DROP_VALG.nyLeadProdukt = ""; } catch (e) {}
+  arkAabn({ titel: "Tøm hovedet", ph: valgt === "lead" ? "Navn på den kommende kunde" : "Hvad har du på hjertet?", send: "Gem", tekst: tekst || "", chips: [], valgt: valgt || "", paaFoto: paaFoto,
     knap: null,
-    ekstraAf: function () { return bf3DropHtml("bf3ArkDrop", "Hvor hører det hjemme?", BF3_HJEM_VALG.concat(bf3RumValg()), valgt || "") + bf3KursusRkHtml(valgt); },
+    ekstraAf: function () { return bf3DropHtml("bf3ArkDrop", "Hvor hører det hjemme?", BF3_HJEM_VALG.concat(bf3RumValg()), valgt || "") + bf3KursusRkHtml(valgt) + bf3LeadRkHtml(valgt); },
     gem: async function (t) { const k = BF3_DROP_VALG.bf3ArkDrop || "note"; return await nyIdeGem(t, k); } });
   bf3ArkDropOp();
 }
@@ -74785,6 +74790,15 @@ function studieVaelgerVis(tving) { bf3StartVis(tving); }
 /* nyIdeGem: to nye landinger (Indkoebslister · Vidensbank) */
 const bf3_nyIdeGemGammel = window.BF3_GAMMEL.nyIdeGem;
 async function nyIdeGem(tekst, k) {
+  if (k === "lead") {
+    const navn = String(tekst || "").trim(); if (!navn) throw new Error("!Skriv navnet.");
+    if (!sb) return false;
+    const rec = { kunde: navn, status: "Lead", source: "backstage" }; const pr = (window.BF3_DROP_VALG || {}).nyLeadProdukt || ""; if (pr) rec.produkt = pr;
+    const r = await sb.from("contacts").insert(rec).select("id");
+    if (r.error || !r.data || !r.data.length) return false;
+    try { if (typeof fetchCustomers === "function") CUSTOMERS = await fetchCustomers(); } catch (e) {}
+    return "Lagt i CRM under Leads" + (pr ? " · " + pr : "") + ".";
+  }
   /* CONTENT-IDÉ TIL EN KUNDE (Ida 21/9 kl. 18.35): lander i kundens Idébank (content_ideer) med Idas navn paa — kunden ser det er Ida, og teamet ser »Ny« */
   if (k === "kundeide") {
     const kode = (window.BF3_DROP_VALG || {}).nyIdeKunde || ""; if (!kode) throw new Error("!Vælg en kunde.");
@@ -74815,7 +74829,7 @@ async function nyIdeGem(tekst, k) {
 
 /* ---------- HJEM = DAGEN ---------- */
 async function dashForsideTegn() {
-  try { manusKurserHent(); } catch (e) {}   /* onlinekurserne hentes, naar Backstage aabner, saa Tøm hovedet har dem (26/9) */
+  try { manusKurserHent(); leadProdukterHent(); } catch (e) {}   /* onlinekurserne og produkterne hentes, naar Backstage aabner, saa Tøm hovedet har dem (26/9) */
   const el = document.getElementById("bsForside"); if (!el) return;
   let venter = []; try { venter = await venterHent(); } catch (e) { venter = []; }
   try { await kundePinsHent(); } catch (e) {}
@@ -76286,6 +76300,6 @@ function bf3StudieRum(v, filter) {
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-hvid.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 26. september · 2344</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 26. september · 2345</div>
 </body>
 </html>
