@@ -8937,6 +8937,11 @@ html body .cv-upload { width:132px; aspect-ratio:9/16; max-width:100%; border:1.
 html body .cv-upload span { display:block; max-width:84px; }   /* »Upload« over »coverbillede« — aldrig ud til den stiplede kant */
 html body .cv-upload svg { width:36px; height:36px; }   /* billede med bjerg og sol + pil op i cirkel (Idas billede 26/9 07.57), tegnet i husets streg */
 html body .cv-upload:hover { border-color:var(--gray3); }
+.bs3-liste .bs3-nyt-rum { color:var(--gray2) !important; border-top:1px solid var(--border, #DEDAD4) !important; }   /* Opret nyt rum nederst i Tøm hovedets liste (26/9) */
+.bs3-nyt-rum-rk { display:flex; gap:8px; align-items:center; padding:8px 12px; border-top:1px solid var(--border, #DEDAD4); }
+.bs3-nyt-rum-rk .bs3-nyt-rum-felt { flex:1; min-width:0; height:40px; border:1px solid var(--border, #DEDAD4); border-radius:12px; padding:0 12px; font:inherit; font-size:14px; background:#fff; }
+html body .bs3-liste .bs3-nyt-rum-rk .bs3-nyt-rum-ok { flex:0 0 auto !important; width:auto !important; min-width:0 !important; height:40px !important; padding:0 16px !important; border-radius:999px !important; border:0 !important; background:var(--red) !important; color:#fff !important; font:inherit; font-size:13px !important; text-align:center !important; justify-content:center !important; cursor:pointer; }
+html body .bs3-liste .bs3-nyt-rum-rk .bs3-nyt-rum-felt { flex:1 1 auto !important; width:auto !important; min-width:0 !important; }
 .pf-start { display:flex; margin:var(--luft-3) 0 0; }   /* Start brief (26/9) */
 html body .pf-start.pf-start-kort { margin:var(--luft-2) 0 0; }
 @media (min-width:900px) { html body .pf-start { justify-content:flex-end; } }   /* knappen i hoejre nederste hjoerne (Idas kommentar 26/9 ~01.07) — begge knapper, saa de staar ens */
@@ -54391,7 +54396,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2345";
+const APP_VERSION = "2346";
 let NY_VERSION_KLAR = false;
 let NY_VERSION_AFVIST = false;
 function nyVersionSkjul() {
@@ -74713,7 +74718,33 @@ function bf3LeadRkHtml(valgt) { return '<div id="bf3LeadRk" class="bs3-ark-drop"
 function bf3DropHtml(id, ph, valg, valgt) {
   const v = valg.find(function (x) { return x.k === valgt; });
   return '<div class="bs3-drop-w" id="' + id + '"><button type="button" class="bs3-drop' + (v ? '' : ' tom') + '" onclick="bf3DropSkift(\'' + id + '\')"><span>' + esc(v ? v.n : ph) + '</span>' + BF3_SVG.ned + '</button>'
-    + '<div class="bs3-liste" style="display:none;">' + valg.map(function (x) { return '<button type="button"' + (x.k === valgt ? ' class="on"' : '') + ' onclick="bf3DropVaelg(\'' + id + '\',\'' + String(x.k).replace(/'/g, "\\'") + '\')">' + esc(x.n) + '</button>'; }).join('') + '</div></div>';
+    + '<div class="bs3-liste" style="display:none;">' + valg.map(function (x) { return '<button type="button"' + (x.k === valgt ? ' class="on"' : '') + ' onclick="bf3DropVaelg(\'' + id + '\',\'' + String(x.k).replace(/'/g, "\\'") + '\')">' + esc(x.n) + '</button>'; }).join('') + (id === "bf3ArkDrop" ? '<button type="button" class="bs3-nyt-rum" onclick="event.stopPropagation();bf3NytRumFelt(this)">+ Opret nyt rum</button>' : '') + '</div></div>';
+}
+/* OPRET NYT RUM FRA TØM HOVEDET (Ida 26/9 08.18, »lidt ala pinterest«: »hvis den nye ide ikke passer ind nogle steder lige nu? Tilføj ny?«):
+   nederst i »Hvor hører det hjemme?« · navnet skrives i listen · rummet oprettes i Biblioteket og er valgt — arket og teksten bliver staaende. */
+function bf3NytRumFelt(btn) {
+  const w = document.createElement("div"); w.className = "bs3-nyt-rum-rk";
+  w.innerHTML = '<input type="text" class="bs3-nyt-rum-felt" placeholder="Navn på rummet" autocomplete="off" onkeydown="if(event.key===\'Enter\'){event.preventDefault();bf3NytRumOpret(this);}" onclick="event.stopPropagation()"><button type="button" class="bs3-nyt-rum-ok" onclick="event.stopPropagation();bf3NytRumOpret(this)">Opret</button>';
+  btn.replaceWith(w); const f = w.querySelector("input"); setTimeout(function () { try { f.focus(); } catch (e) {} }, 30);
+}
+async function bf3NytRumOpret(el) {
+  const rk = el.closest(".bs3-nyt-rum-rk"); const f = rk && rk.querySelector("input"); const navn = ((f && f.value) || "").trim(); if (!navn) { if (f) f.focus(); return; }
+  if (!sb) { husBesked("Ingen forbindelse til basen."); return; }
+  const ok = rk.querySelector(".bs3-nyt-rum-ok"); if (ok) { ok.disabled = true; ok.textContent = "Opretter …"; }
+  try {
+    const bib = (MR_RUM || []).find(function (x) { return !x.foraelder_id && /^biblioteket$/i.test(String(x.navn || "").trim()); });
+    const rec = { navn: navn, aktiv: true }; if (bib) rec.foraelder_id = bib.id;
+    const r = await sb.from("mr_rum").insert(rec).select("id");
+    if (r.error || !r.data || !r.data.length) throw (r.error || new Error("Skrivningen ramte 0 rækker"));
+    try { await mrRumHent(true); } catch (e) {}
+    const k = "rum:" + r.data[0].id, vis = "Rummet · " + (bib ? "Biblioteket › " : "") + navn;
+    const liste = rk.closest(".bs3-liste"), w = rk.closest(".bs3-drop-w");
+    const nb = document.createElement("button"); nb.type = "button"; nb.textContent = vis; nb.setAttribute("onclick", "bf3DropVaelg('bf3ArkDrop','" + k + "')");
+    liste.insertBefore(nb, rk);
+    const ny = document.createElement("button"); ny.type = "button"; ny.className = "bs3-nyt-rum"; ny.textContent = "+ Opret nyt rum"; ny.setAttribute("onclick", "event.stopPropagation();bf3NytRumFelt(this)"); rk.replaceWith(ny);
+    bf3DropVaelg("bf3ArkDrop", k);
+    try { husKvit("Rummet »" + navn + "« er oprettet"); } catch (e) {}
+  } catch (e) { if (ok) { ok.disabled = false; ok.textContent = "Opret"; } husBesked("Kunne ikke oprette rummet: " + String((e && e.message) || e)); }
 }
 function bf3DropSkift(id) {
   const w = document.getElementById(id); if (!w) return; const l = w.querySelector(".bs3-liste");
@@ -76300,6 +76331,6 @@ function bf3StudieRum(v, filter) {
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-hvid.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 26. september · 2345</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 26. september · 2346</div>
 </body>
 </html>
