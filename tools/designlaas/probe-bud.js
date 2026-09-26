@@ -38,7 +38,9 @@ setTimeout(async function () {
       /* 3) DAGEN: kort med symbol, hoejst to linjer tekst, hoejst fem; tom = spoergsmaal + graa knap */
       var kort = [].filter.call(r.querySelectorAll(".hu-dagen .hu-kort"), synlig);
       if (tilstand === "fuld") {
-        if (!kort.length) F("fuld: dagen viser ingen kort");
+        var blokke = [].filter.call(r.querySelectorAll(".hu-dagen .hk-blk"), synlig);   /* KALENDERDAGEN (Idas klik 26/9, bud 1): paa computeren staar dagens punkter med klokkeslaet som blokke i kalenderen */
+        if (!kort.length && !blokke.length) F("fuld: dagen viser ingen kort");
+        blokke.forEach(function (k) { if (!synlig(k.querySelector(".hk-ik"))) F("fuld: en blok i kalenderdagen mangler symbolet"); });
         if (kort.length > 5) F("fuld: dagen viser " + kort.length + " kort, hoejst fem");
         kort.forEach(function (k) { if (!synlig(k.querySelector(".hu-sym"))) F("fuld: et kort mangler symbolet"); var t = k.querySelector(".hu-titel"); if (t && t.getBoundingClientRect().height > 52) F("fuld: en titel fylder mere end to linjer");   /* v2324 (Idas klik 25/9): dagens kort har hoejst TO linjer tekst — vaelter 20/9-buddets een linje */ });
       } else {
