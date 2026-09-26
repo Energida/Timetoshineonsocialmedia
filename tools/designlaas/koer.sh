@@ -93,5 +93,16 @@ RAA3=$($TO "$C" $HL --no-sandbox --disable-gpu --window-size=1480,1000 --virtual
 UD3=$(echo "$RAA3" | grep -a 'CONSOLE' | sed -E 's/^.*CONSOLE[:(][0-9]+\)?\] //; s/", source:.*$//; s/^"//' | grep -a 'SELE BRIEF')
 echo "$UD3"
 [ -z "$UD3" ] && { echo "SELE BRIEF FEJL: ingen maaling fra chromium — de SIDSTE 30 konsollinjer (18/9: de foerste 20 var kun opstartsstoej):"; echo "$RAA3" | grep -a 'CONSOLE' | tail -30 | cut -c1-400; echo "--- og de foerste 5 raa linjer:"; echo "$RAA3" | head -5; }
-echo "$UD0" | grep -q "SELE POPUP-KILDE OK" && echo "$UD" | grep -q "SELE LAAS OK" && echo "$UD2" | grep -q "SELE SIDER OK" && echo "$UD4" | grep -q "SELE SIDER OK" && echo "$UD5" | grep -q "SELE BUD OK" && echo "$UD6" | grep -q "SELE BUD OK" && [ "$UX_OK" = "1" ] && [ "$BS_OK" = "1" ] && echo "$UD3" | grep -q "SELE BRIEF OK" && exit 0
+# HEROENS PLADS (HAARD, Ida 26/9): titlen 40 px over coverets bund, 20/48 px fra venstre — kundeappen og Backstage, 390 og 1440.
+KH=$(python3 -c "import urllib.parse,sys;print(urllib.parse.quote(open(sys.argv[1]).read()))" "$ROD/tools/designlaas/probe-hero.js")
+HERO_OK=1
+for HK in "390 kunde" "1440 kunde" "390 admin" "1440 admin"; do
+  set -- $HK
+  VIS=""; [ "$2" = "kunde" ] && VIS="vis=kunde&"
+  RAAH=$($TO "$C" $HL --no-sandbox --disable-gpu --window-size=$(($1+40)),900 --virtual-time-budget=60000 --enable-logging=stderr --v=0 --screenshot="$MAAL/hero-$1-$2.png" "http://127.0.0.1:$PORT/sele.html?${VIS}fil=index-sele.html%3Fselekode%3DHINGES2026&bred=$1&hoej=880&kode=$KH" 2>&1)
+  UDH=$(echo "$RAAH" | grep -a 'CONSOLE' | sed -E 's/^.*CONSOLE[:(][0-9]+\)?\] //; s/", source:.*$//; s/^"//' | grep -a 'SELE HERO')
+  echo "[$1 $2] ${UDH:-SELE HERO FEJL: ingen maaling}"
+  echo "$UDH" | grep -q "SELE HERO OK" || HERO_OK=0
+done
+[ "$HERO_OK" = "1" ] && echo "$UD0" | grep -q "SELE POPUP-KILDE OK" && echo "$UD" | grep -q "SELE LAAS OK" && echo "$UD2" | grep -q "SELE SIDER OK" && echo "$UD4" | grep -q "SELE SIDER OK" && echo "$UD5" | grep -q "SELE BUD OK" && echo "$UD6" | grep -q "SELE BUD OK" && [ "$UX_OK" = "1" ] && [ "$BS_OK" = "1" ] && echo "$UD3" | grep -q "SELE BRIEF OK" && exit 0
 echo "SELE LAAS FEJL: maalingen sagde ikke OK"; exit 1
