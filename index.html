@@ -10549,6 +10549,14 @@ body.mb .db-kort, #planRit .db-kort { border:0; box-shadow:var(--mb-skygge); }  
 @media (max-width:899px) { #bdrop_tid { flex-direction:column; align-items:stretch; } #bdrop_tid > .bdrop-kort { position:static; width:100%; margin-top:8px; } }   /* listen aabner UNDER knappen paa telefonen, aldrig ved siden af (26/9) */
 .bdrop-eget .bdrop-tidfelt { font:inherit; font-size:13px; border:1px solid var(--border); border-radius:10px; padding:6px 8px; background:#fff; color:var(--black); min-height:36px; }
 /* KALENDERDAGEN PAA COMPUTEREN (bud 1, 26/9) */
+.hu-kal .hu-kort .hu-sym { display:none; }
+.hk-hel { display:grid; grid-template-columns:56px 1fr; align-items:center; gap:0; padding:2px 0 12px; margin-bottom:10px; border-bottom:1px solid #EEEBE7; }
+.hk-hel-l { font-size:11px; color:var(--gray2); text-align:right; padding-right:12px; line-height:1.2; }
+.hk-hel-c { display:flex; flex-direction:column; gap:8px; padding:0 8px; }
+.hk-hel-chip { display:flex; width:100%; text-align:left; align-items:baseline; gap:10px; background:var(--mb-felt-blaa, #F0F5F8); border:0; box-shadow:none; border-radius:12px;  /* hele bredden + lyseblaa (Ida 26/9) */  padding:8px 12px; font:inherit; font-size:13.5px; color:var(--black); cursor:pointer; min-height:36px; }
+.hk-hel-chip i { font-style:normal; font-size:11.5px; color:var(--gray2); }
+.hu-tj-ark { display:flex; flex-direction:column; gap:12px; }
+.hu-kal-top { display:flex; flex-direction:column; gap:10px; margin:16px 0; } .hu-kal-top .hu-kort, .hu-kal-top .hu-tjek { border-color:transparent; box-shadow:var(--mb-skygge); border-radius:20px; }   /* i dag + i morgen over datofelterne (26/9) */   /* intet symbol inde i kalenderen, heller ikke paa fliserne over timerne (Ida 26/9: »Den er der da stadig«) */
 .hk { display:grid; grid-template-columns:56px 1fr; position:relative; margin-top:4px; }
 .hk-tider { position:relative; }
 .hk-t { position:absolute; right:12px; transform:translateY(-8px); font-size:11px; color:var(--gray2); font-variant-numeric:tabular-nums; }
@@ -10582,6 +10590,7 @@ body.mb .db-kort, #planRit .db-kort { border:0; box-shadow:var(--mb-skygge); }  
 .hu-tj-sv { display:block; font-size:12.5px; color:var(--gray2); margin-top:2px; overflow-wrap:anywhere; }
 .hu-tj-spm { font-size:14px; color:var(--black); }
 .hu-tjek .hu-graa { margin-top:2px; }
+@media (min-width:900px) { html body .hu-pc .hu-kop { margin-top:32px; } html body .hu-pc .hu-kaft { margin-bottom:24px; } html body .hu-pc .hu-kaft > .cf-sek:first-child, html body .hu-pc .hu-kop > .cf-sek:first-child { margin-top:0; } }
 /* KOMMENDE OPSLAG UNDER RINGENE PAA TELEFONEN (Ida 26/9 ~08.30): samme luft over linjen som To-do */
 @media (max-width:899px) { html body .hu-tlf .hu-kop { margin-top:24px; } }
 @media (max-width:899px) { html body .hf-hero .hf-hero-tekst { bottom:40px !important; left:20px !important; } }
@@ -32759,8 +32768,8 @@ function tomKortHtml(spm, knap, kald) {
     + (knap ? '<button type="button" class="dbtn tom-knap mq-tap" onclick="' + kald + '">' + esc(knap) + '</button>' : '')
     + '</div>';
 }
-function kommendeOpslagHtml(antal, hovedKlasse) {
-  const idag = datoDK(); const MDR = ["jan", "feb", "mar", "apr", "maj", "jun", "jul", "aug", "sep", "okt", "nov", "dec"];
+function kommendeOpslagHtml(antal, hovedKlasse, fraImorgen) {
+  let idag = datoDK(); if (fraImorgen) { try { const m = new Date(); m.setDate(m.getDate() + 1); idag = huIso(m); } catch (e) {} }   /* paa computeren viser dagen i dag — listen starter i morgen (26/9) */ const MDR = ["jan", "feb", "mar", "apr", "maj", "jun", "jul", "aug", "sep", "okt", "nov", "dec"];
   const liste = (IDEER || []).filter(function (x) { return x && x.dato && x.dato >= idag && ["Postet", "Arkiveret", "Målt"].indexOf(String(x.status || "")) === -1 && String(x.type || "") !== "Story"; })   /* dagens opslag staar OGSAA her (Ida 21/9 kl. 17.48) */
     .sort(function (a, b) { return a.dato < b.dato ? -1 : 1; }).slice(0, antal || 5);
   return '<div class="cf-sek ' + (hovedKlasse || "hjem-kort-hoved") + '">Kommende opslag</div>'
@@ -45099,21 +45108,33 @@ function huKalDagHtml(iso, erIdag) {
     const t = huKalT(x.brief && x.brief.tid);
     const fmt = String((x.brief && x.brief.format) || x.type || "").trim();
     const klik = "openBriefSide('" + esc(String(x.id)).replace(/'/g, "\\'") + "')";
-    if (t == null) { uden.push({ ty: "opslag", et: "Opslag · " + statusVisNavn(x.status), t: x.titel || "", chip: fmt, klik: klik }); return; }
+    if (t == null) { uden.push({ k: "post", foreslaa: 19, laengde: 0.5, sym: "opslag", n: x.titel || "Uden titel", u: "Vælg tidspunkt" + (fmt ? " · " + fmt : ""), klik: klik }); return; }   /* uden klokkeslaet = foreslaaet tidspunkt kl. 19 (Idas ja 26/9) */
     blk.push({ k: "post", fra: t, til: t + 0.5, sym: "opslag", n: x.titel || "Uden titel", u: [tidVis(x.brief.tid), fmt].filter(Boolean).join(" · "), klik: klik });
   });
   (window.__kundeAftaler || []).forEach(function (a) {
     if (!a || String(a.dato || "").slice(0, 10) !== iso) return;
     const t = huKalT(a.tid); const klik = a.link ? "window.open('" + esc(String(a.link)) + "','_blank')" : "";
-    if (t == null) { uden.push({ ty: "aftale", et: "Aftale", t: a.titel || "", chip: "", klik: klik }); return; }
+    if (t == null) { uden.push({ k: "akt", foreslaa: 9, laengde: 1, sym: "aftale", n: a.titel || "Aftale", u: "Vælg tidspunkt", klik: klik }); return; }
     let til = huKalT(a.tid_slut); if (til == null || til <= t) til = t + 1;
     blk.push({ k: "akt", fra: t, til: til, sym: "aftale", n: a.titel || "Aftale", u: huKalKl(t) + "–" + huKalKl(til), klik: klik });
   });
-  try { if (planDato() === iso) uden.push({ ty: "plan", et: "Planlægning", t: "Ugens planlægning", chip: "", klik: "showTab(31)" }); } catch (e) {}
+  try { if (planDato() === iso) uden.push({ k: "akt", foreslaa: 10, laengde: 1, sym: "plan", n: "Ugens planlægning", u: "Vælg tidspunkt", klik: "showTab(31)" }); } catch (e) {}
+  /* punkter uden klokkeslaet faar et foreslaaet tidspunkt i timerne (Ida 26/9: intet »Hele dagen«-baand) — foerste ledige halve time fra forslaget */
+  uden.forEach(function (u) {
+    let f = u.foreslaa; for (let n = 0; n < 24 && blk.some(function (b) { return f < b.til && f + u.laengde > b.fra; }); n++) f += 0.5;
+    u.fra = f; u.til = f + u.laengde; blk.push(u);
+  });
   /* forslag, der ikke rammer noget, der allerede staar i kalenderen */
   huKalForslag(iso).forEach(function (f) { if (!blk.some(function (b) { return f.fra < b.til && f.til > b.fra; })) blk.push(f); });
   blk.sort(function (a, b) { return a.fra - b.fra; });
-  let T0 = 8, T1 = 18; blk.forEach(function (b) { T0 = Math.min(T0, Math.floor(b.fra)); T1 = Math.max(T1, Math.ceil(b.til)); }); T1 = Math.min(24, Math.max(T1, T0 + 8));
+  /* TIMERNE FOELGER DAGEN (ekspertrunden 26/9): en time foer det foerste til en time efter det sidste, mindst seks timer; i dag er nu altid med; tom dag = 08–18 */
+  let T0 = 8, T1 = 18;
+  if (blk.length) {
+    T0 = Math.floor(Math.min.apply(null, blk.map(function (b) { return b.fra; }))) - 1; T1 = Math.ceil(Math.max.apply(null, blk.map(function (b) { return b.til; }))) + 1;
+    if (erIdag) { const n = new Date(); const nt = n.getHours() + n.getMinutes() / 60; T0 = Math.min(T0, Math.floor(nt)); T1 = Math.max(T1, Math.ceil(nt)); }
+    if (T1 - T0 < 6) { T1 = T0 + 6; }
+    T0 = Math.max(0, T0); T1 = Math.min(24, T1);
+  }
   /* to spor, naar to ting ligger oven i hinanden */
   const spor = []; blk.forEach(function (b) { let i = 0; while (spor[i] != null && spor[i] > b.fra + 1e-6) i++; spor[i] = b.til; b.spor = i; });
   const H = HU_KAL_H;
@@ -45123,17 +45144,44 @@ function huKalDagHtml(iso, erIdag) {
     const top = (b.fra - T0) * H + 1, hh = Math.max(28, (b.til - b.fra) * H - 3);
     const bred = spor.length > 1 ? (b.spor === 0 ? "left:8px;right:calc(50% + 4px)" : "left:calc(50% + 4px);right:8px") : "left:8px;right:8px";
     let klik = b.klik || "";
-    if (b.k === "stip") klik = "huKalLaegInd('" + iso + "','" + esc(b.n).replace(/'/g, "\\'") + "'," + b.fra + "," + b.til + ")";
+    if (b.k === "stip") klik = b.imorgen ? "huTjekArk('" + esc(String(b.imorgen)).replace(/'/g, "\\'") + "')" : "huKalLaegInd('" + iso + "','" + esc(b.n).replace(/'/g, "\\'") + "'," + b.fra + "," + b.til + ")";
     return '<div class="hk-blk hk-' + b.k + (hh < 50 ? ' hk-lav' : '') + '" style="top:' + top + 'px;height:' + hh + 'px;' + bred + '"' + (klik ? ' onclick="' + klik + '"' : '') + '>'
-      + '<span class="hk-ik"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">' + (HU_SYM[b.sym] || "") + '</svg></span>'
+      /* intet symbol i kalenderens blokke (Idas kommentar 26/9: »underligt her med symbolet i selve kalenderen«) */
       + '<span class="hk-tt"><span class="hk-n">' + esc(b.n) + '</span><span class="hk-u">' + esc(b.k === "post" ? b.u : (b.k === "stip" ? huKalKl(b.fra) + " · " + b.u : b.u)) + '</span></span></div>';
   }).join("");
   let nu = "";
   if (erIdag) { const d = new Date(); const t = d.getHours() + d.getMinutes() / 60; if (t >= T0 && t <= T1) nu = '<div class="hk-nu" style="top:' + ((t - T0) * H) + 'px"></div>'; }
   const tom = !blk.length && !uden.length;
-  return uden.map(huKort).join("")
-    + '<div class="hk"><div class="hk-tider" style="height:' + ((T1 - T0) * H) + 'px">' + tider + '</div><div class="hk-spor" style="height:' + ((T1 - T0) * H) + 'px">' + linjer + blokke + nu + '</div></div>'
+  /* HELE DAGEN-BAANDET (Ida 26/9: »det opslag der står øverst idag skal jo selvfølgelig fremgå i kalenderen«): punkter uden klokkeslaet staar oeverst I kalenderen */
+  /* BLIV KLAR-STRIBEN (Ida 26/9: »placere det øverst som en heldagsaktivitet« som i Outlook, og titlen »Bliv klar til at poste i morgen« / »… optage i morgen« / »… det ugentlige contentmøde i morgen«): kun det, der skal forberedes til dagen efter; intet ord »Hele dagen«; alle kan trykkes */
+  const klar = [];
+  try {
+    const m = new Date(iso + "T12:00:00"); m.setDate(m.getDate() + 1); const imIso = huIso(m);
+    huImorgenPost(new Date(iso + "T12:00:00")).forEach(function (x) { klar.push({ n: "Bliv klar til at poste i morgen", u: x.titel || "Uden titel", klik: "huTjekArk('" + esc(String(x.id)).replace(/'/g, "\\'") + "')" }); });
+    const aft = (window.__kundeAftaler || []).filter(function (a) { return a && String(a.dato || "").slice(0, 10) === imIso; });
+    if (aft.some(function (a) { return /optag/i.test(String(a.titel || "")); })) klar.push({ n: "Bliv klar til at optage i morgen", u: (aft.find(function (a) { return /optag/i.test(String(a.titel || "")); }) || {}).titel || "", klik: "showTab(8)" });
+    if (aft.some(function (a) { return /contentplanl|planlægningsdag|contentgennemgang|contentmøde/i.test(String(a.titel || "")); }) || planDato() === imIso) klar.push({ n: "Bliv klar til det ugentlige contentmøde i morgen", u: "", klik: "moedeSideAaben()" });
+  } catch (e) {}
+  const hel = klar.length ? '<div class="hk-hel"><span class="hk-hel-l"></span><div class="hk-hel-c">' + klar.map(function (u) { return '<button type="button" class="hk-hel-chip" onclick="' + u.klik + '"><span>' + esc(u.n) + '</span>' + (u.u ? '<i>' + esc(u.u) + '</i>' : '') + '</button>'; }).join("") + '</div></div>' : '';
+  huKalDagHtml.uden = "";
+  return hel + '<div class="hk"><div class="hk-tider" style="height:' + ((T1 - T0) * H) + 'px">' + tider + '</div><div class="hk-spor" style="height:' + ((T1 - T0) * H) + 'px">' + linjer + blokke + nu + '</div></div>'
     + (tom ? '<div class="hu-tom"><div class="hu-tom-q">Hvad skal der ske denne dag?</div><button type="button" class="hu-graa" onclick="togglePlus()">Tilføj</button></div>' : '');
+}
+/* KOMMENDE AFTALER I HOEJRE SPALTE PAA COMPUTEREN (Idas svar 26/9: »kommende opslag lander under kalenderen og kommende aftaler er øverst i højre side efterfulgt af to-do«) — de naeste 3, samme design som Kommende opslag (kop-rk m. datokassen) */
+function huKommendeAftalerHtml(antal) {
+  const MDR = ["jan", "feb", "mar", "apr", "maj", "jun", "jul", "aug", "sep", "okt", "nov", "dec"];
+  const idag = huIso(new Date());
+  const liste = (window.__kundeAftaler || []).filter(function (a) { return a && a.dato && String(a.dato).slice(0, 10) > idag; })   /* fra i morgen: i dag staar i kalenderen (26/9) */
+    .sort(function (a, b) { const x = String(a.dato).slice(0, 10) + String(a.tid || "99"), y = String(b.dato).slice(0, 10) + String(b.tid || "99"); return x < y ? -1 : 1; }).slice(0, antal || 3);
+  return '<div class="cf-sek hu-sek">Kommende aktiviteter</div>'   /* Idas ord (kommentar 26/9: »kalde den øverste til højre for kommende aktiviteter«) */
+    + (liste.length ? liste.map(function (a) {
+        const d = new Date(String(a.dato).slice(0, 10) + "T12:00:00");
+        const tid = a.tid ? "kl. " + String(a.tid).slice(0, 5).replace(":", ".") + (a.tid_slut ? "–" + String(a.tid_slut).slice(0, 5).replace(":", ".") : "") : "";
+        const erMoede = /contentplanl|planlægningsdag|contentgennemgang/i.test(String(a.titel || ""));
+        const klik = erMoede ? ' onclick="moedeSideAaben()"' : (a.link ? ' onclick="window.open(' + JSON.stringify(String(a.link)).replace(/"/g, "&quot;") + ',\'_blank\',\'noopener\')"' : ' style="cursor:default"');
+        return '<div class="kop-rk"' + klik + '><span class="kop-dato"><b>' + d.getDate() + '</b><i>' + MDR[d.getMonth()] + '</i></span><span class="kop-t"><span class="kop-n">' + esc(a.titel || "Aftale") + '</span>' + (tid ? '<span class="kop-s">' + esc(tid) + '</span>' : '') + '</span></div>';
+      }).join("")
+      : tomKortHtml("Hvad skal der ske de næste dage?", "Tilføj", "togglePlus()"));
 }
 async function huKalLaegInd(iso, titel, fra, til) {
   if (!sb || !currentKode) { try { husBesked("Kunne ikke gemme. Prøv at logge ind igen."); } catch (e) {} return; }
@@ -45152,11 +45200,24 @@ function huImorgenPost(d) {
   } catch (e) { return []; }
 }
 function huTjekAabn(id) { HU_TJEK.id = (String(HU_TJEK.id) === String(id)) ? null : id; HU_TJEK.fane = "brief"; hjemUgeTegn(); }
-function huTjekFane(f) { HU_TJEK.fane = f; hjemUgeTegn(); }
+function huTjekFane(f) { HU_TJEK.fane = f; hjemUgeTegn(); huTjekArkTegn(); }
+/* I MORGEN SOM STIPLET BLOK I DAGENS KALENDER (Idas svar 26/9: alt fra dagen staar i kalenderen; »I morgen« er den ene ting uden plads): tryk = tjeklisten i det lille ark */
+function huTjekArkTegn() {
+  if (!window.__HU_TJEK_ARK) return; const el = document.getElementById("arkEkstra"); if (!el) return;
+  const x = (IDEER || []).find(function (i) { return String(i.id) === String(window.__HU_TJEK_ARK); }); if (!x) return;
+  el.innerHTML = huTjekHtml(x);
+}
+function huTjekArk(id) {
+  const x = (IDEER || []).find(function (i) { return String(i.id) === String(id); }); if (!x) return;
+  HU_TJEK.fane = "brief"; window.__HU_TJEK_ARK = id;
+  const fmt = String((x.brief && x.brief.format) || x.type || "").trim();
+  arkAabn({ lille: true, eye: "Bliv klar til at poste i morgen" + (fmt ? " · " + fmt : ""), titel: x.titel || "Uden titel", ingenTekst: true, send: "Færdig", kvit: "Tjeklisten er gemt.",
+    ekstraAf: function () { return huTjekHtml(x); }, gem: function () { window.__HU_TJEK_ARK = null; return true; } });
+}
 async function huTjekSvar(id, k, v) {
   const it = (IDEER || []).find(function (x) { return String(x.id) === String(id); }); if (!it) return;
   const b = Object.assign({}, it.brief || {}); const t = Object.assign({}, (b.tjek && typeof b.tjek === "object") ? b.tjek : {});
-  t[k] = (t[k] === v) ? "" : v; b.tjek = t; it.brief = b; hjemUgeTegn();
+  t[k] = (t[k] === v) ? "" : v; b.tjek = t; it.brief = b; hjemUgeTegn(); huTjekArkTegn();
   try { await ideUpdate(it.id, { brief: b }); } catch (e) {}
 }
 function huTjekHtml(x) {
@@ -45176,12 +45237,14 @@ function huTjekHtml(x) {
   else if (fane === "tid") indhold = rk("sat", "Har du sat tid af til at poste?", "") + rk("story", "Ved du, hvordan du bygger op i din story?", "") + rk("svar", "Har du sat 10 minutter af til at svare bagefter?", "");
   else indhold = rk("hook", "Ville du selv stoppe for hooket?", hook ? "»" + hook + "«" : "Intet hook valgt endnu") + rk("tid", "Passer tidspunktet til det, de skal gøre?", [tid || "Intet tidspunkt endnu", maal].filter(Boolean).join(" · ")) + rk("cta", "Står CTA'en klart?", cta || "Ingen CTA endnu");
   const fmt = String((b.format) || x.type || "").trim();
-  return '<div class="hu-tjek" onclick="huTjekAabn(\'' + id + '\')">'
-    + '<div class="hu-et hu-tj-et">I morgen skal du poste' + (fmt ? ' · ' + esc(fmt) : '') + '</div>'
-    + '<div class="hu-tj-titel">' + esc(x.titel || "Uden titel") + '</div>'
-    + '<div class="hu-tj-chips">' + fk("brief", "Briefen") + fk("energi", "Energien") + fk("tid", "Tiden") + '</div>'
+  const indre = '<div class="hu-tj-chips">' + fk("brief", "Briefen") + fk("energi", "Energien") + fk("tid", "Tiden") + '</div>'
     + indhold
-    + '<button type="button" class="hu-graa" onclick="event.stopPropagation();openBriefSide(\'' + id + '\')">Åbn briefen</button>'
+    + '<button type="button" class="hu-graa" onclick="event.stopPropagation();' + (window.__HU_TJEK_ARK ? 'arkLuk();' : '') + 'openBriefSide(\'' + id + '\')">Åbn briefen</button>';
+  if (window.__HU_TJEK_ARK) return '<div class="hu-tj-ark">' + indre + '</div>';   /* tjeklisten i det lille ark (kalenderdagen paa computeren, 26/9) */
+  return '<div class="hu-tjek" onclick="huTjekAabn(\'' + id + '\')">'
+    + '<div class="hu-et hu-tj-et">Bliv klar til at poste i morgen' + (fmt ? ' · ' + esc(fmt) : '') + '</div>'
+    + '<div class="hu-tj-titel">' + esc(x.titel || "Uden titel") + '</div>'
+    + indre
     + '</div>';
 }
 function huTomDagHtml(d) {
@@ -45189,7 +45252,7 @@ function huTomDagHtml(d) {
   huImorgenPost(d).forEach(function (x) {
     if (String(HU_TJEK.id) === String(x.id)) { ud += huTjekHtml(x); return; }
     const fmt = String((x.brief && x.brief.format) || x.type || "").trim();
-    ud += huKort({ ty: "opslag", et: "I morgen skal du poste", t: x.titel || "Uden titel", chip: fmt, klik: "huTjekAabn('" + esc(String(x.id)).replace(/'/g, "\\'") + "')" });
+    ud += huKort({ ty: "opslag", et: "Bliv klar til at poste i morgen", t: x.titel || "Uden titel", chip: fmt, klik: "huTjekAabn('" + esc(String(x.id)).replace(/'/g, "\\'") + "')" });
   });
   return ud;
 }
@@ -45281,11 +45344,13 @@ function hjemUgeHtml(tlf) {
   const dag = '<div class="hu-dagen">' + dagHtml + '</div>';
   if (tlf) return '<div class="hu hu-tlf">' + linje + strib + dag + '<div class="cf-sek hu-sek">Dine mål</div><div class="hu-ringe">' + huRinge(true) + '</div>' + '<div class="hu-kop">' + kommendeOpslagHtml(3, "hu-sek") + '</div>' + huTodoHtml() + '</div>';
   const fokus = huFokusHtml();
-  const kalDag = '<div class="hu-dagen hu-kal">' + (erIdag ? huTomDagHtml(dage[valgt].d) : '') + huKalDagHtml(dage[valgt].iso, erIdag) + '</div>';   /* kalenderdagen (26/9) */
+  const kalGrid = huKalDagHtml(dage[valgt].iso, erIdag);
+  const kalTop = '';   /* alt fra dagen staar i kalenderen; i morgen er en stiplet blok i dagen (26/9) */
+  const kalDag = '<div class="hu-dagen hu-kal">' + kalGrid + '</div>';   /* kalenderdagen (26/9) — fliserne staar over datofelterne */
   return '<div class="hu hu-pc' + (fokus ? '' : ' uden-fokus') + '">'
     + '<div class="hu-ringe">' + huRinge(false) + '</div>' + fokus
-    + '<div class="hu-venstre">' + linje + strib + kalDag + '</div>'
-    + '<div class="hu-hoejre">' + huTodoHtml() + '</div></div>';
+    + '<div class="hu-venstre">' + linje + strib + (kalTop ? '<div class="hu-kal-top">' + kalTop + '</div>' : '') + kalDag + '<div class="hu-kop">' + kommendeOpslagHtml(3, "hu-sek", true) + '</div></div>'   /* datofelterne styrer dagen og staar foerst; fliserne under dem, over timerne (ekspertrunden 26/9) */
+    + '<div class="hu-hoejre"><div class="hu-kaft">' + huKommendeAftalerHtml(3) + '</div>' + huTodoHtml() + '</div></div>';
 }
 function hjemUgeTegn() {
   if (!HJEM_UGE || typeof NYT_B2B_DESIGN === "undefined" || !NYT_B2B_DESIGN || !CUSTOMER_NAV) return;
@@ -54618,7 +54683,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2353";
+const APP_VERSION = "2354";
 let NY_VERSION_KLAR = false;
 let NY_VERSION_AFVIST = false;
 function nyVersionSkjul() {
@@ -76553,6 +76618,6 @@ function bf3StudieRum(v, filter) {
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-hvid.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 26. september · 2353</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 26. september · 2354</div>
 </body>
 </html>
