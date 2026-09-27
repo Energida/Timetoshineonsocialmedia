@@ -22119,6 +22119,8 @@ function briefStartKnapHtml(tekst, iKort) {
 function briefStartGaa() {
   const pk = window.__PF_KNAP || {};
   if (pk.tekst === "Fortsæt brief") { let h = null; try { h = briefNaesteHul(); } catch (e) {} if (h && h.sel) { try { briefMbVisFelt(h.sel); return; } catch (e) {} } }
+  /* START BRIEF = SIDEN, HVOR MAN SKRIVER IDÉEN (Ida 27/9: »Når jeg klikker start brief skal faktasiden ikke komme op. Den skal starte med den side hvor man skriver hvad er ideen«) */
+  try { briefMbVisFelt("#bf_beskrivelse, #bf_ide"); setTimeout(function () { try { const f = document.getElementById("bf_beskrivelse") || document.getElementById("bf_ide"); const q = f && (f.closest(".sk-q") || f); if (q && q.offsetParent) q.scrollIntoView({ block: "start", behavior: "smooth" }); } catch (e) {} }, 120); return; } catch (e) {}   /* telefonen: fakta-boksen staar oeverst paa samme side — rul til idéen */
   briefMbVis("skriv", 0);
 }
 function briefKortHtml() {
@@ -23563,7 +23565,12 @@ function briefKlip1Html() {
   const liste = briefKlipListe(); briefScener(liste); if (!liste[0]) return "";
   return '<div id="briefKlip1">' + briefKlipKortHtml(0, liste[0], { liste: liste, visTekst: false, sidste: liste.length === 1 }) + '</div>';   /* intet Hook-felt: hooket staar lige over */
 }
-function briefKlipNyIScene(n) { briefKlipLaes(); const l = briefKlipListe(); briefScener(l); let sidst = -1; l.forEach(function (k, i) { if (k && k.scene === n) sidst = i; }); if (sidst < 0) sidst = l.length - 1; l.splice(sidst + 1, 0, { ser: "", scene: n }); briefKlipRerender(); briefKlipVisNyt(sidst + 1); }
+/* ET TRYK = ET KLIP (Ida 27/9 kl. 07.50: »Jeg klikker bare på tilføj klip en gang… så opretter den 6?!«): to vagter paa ALLE klip-doere.
+   1) et gentaget tryk inden for et sekund taeller kun een gang (telefonens dobbelte klik); 2) har scenen allerede et tomt klip, laves der
+   ikke et nyt — vi gaar til det tomme. Saa kan der aldrig staa en stribe tomme klip, uanset hvad der udloeste trykket. */
+function briefKlipTomIx(l, n) { let ix = -1; l.forEach(function (k, i) { if (i > 0 && k && (n == null || k.scene === n) && !String(k.ser || "").trim() && !String(k.siger || "").trim() && !String(k.tekst || "").trim()) ix = i; }); return ix; }
+function briefKlipVagt() { const nu = Date.now(); if (nu - (window.__KLIP_NY_T || 0) < 1000) return false; window.__KLIP_NY_T = nu; return true; }
+function briefKlipNyIScene(n) { if (!briefKlipVagt()) return; briefKlipLaes(); const l = briefKlipListe(); briefScener(l); const tom = briefKlipTomIx(l, n); if (tom > -1) { briefKlipVisNyt(tom); return; } let sidst = -1; l.forEach(function (k, i) { if (k && k.scene === n) sidst = i; }); if (sidst < 0) sidst = l.length - 1; l.splice(sidst + 1, 0, { ser: "", scene: n }); briefKlipRerender(); briefKlipVisNyt(sidst + 1); }
 /* DET NYE KLIP SKAL SES (Idas fund 26/9: »kan heller ikke få lov at tilføje et klip?«): et klip tilfoejet fra klip 1 under Fang dem landede paa Fasthold dem,
    saa der skete tilsyneladende intet. Staar det nye felt ikke fremme, gaar vi til den side og det trin, hvor det staar, og saetter markoeren i det. */
 function briefKlipVisNyt(ix) {
@@ -23580,7 +23587,7 @@ function briefKlipVisNyt(ix) {
     } catch (e) {}
   }, 60);
 }   /* uden tekst-felt: det tilfoejes via plusset (Ida 21/9 kl. 19.30) */
-function briefSceneNy() { briefKlipLaes(); const l = briefKlipListe(); l.push({ ser: "", scene: briefScener(l) + 1 }); briefKlipRerender(); }
+function briefSceneNy() { if (!briefKlipVagt()) return; briefKlipLaes(); const l = briefKlipListe(); const sidsteSc = briefScener(l); const tom = briefKlipTomIx(l, sidsteSc); if (tom > -1 && l.filter(function (k) { return k && k.scene === sidsteSc; }).length === 1) { briefKlipVisNyt(tom); return; } l.push({ ser: "", scene: sidsteSc + 1 }); briefKlipRerender(); briefKlipVisNyt(l.length - 1); }
 /* KLIP I SCENE / SCENE BAG EET ROEDT PLUS TH. (Ida 21/9 kl. 19.32: »disse 2 skal under være i højre side som rødt plussymbol«) */
 function briefSceneArk(sn) { valgFliseArk("Tilføj", [["Klip i scene " + sn, "briefKlipNyIScene(" + sn + ")", "klip"], ["Ny scene", "briefSceneNy()", "scene"]]); }   /* samme fliser uden forvalg (Idas klik bud 2, 25/9) */
 function briefKlipHtml(enkelt) {
@@ -23881,7 +23888,7 @@ function briefKlipFeltFjern(i, f) {
   liste[i][f] = null;
   briefKlipRerender();
 }
-function briefKlipNy() { briefKlipLaes(); briefKlipListe().push({ ser: "" }); window.__KLIP_NYT_TRIN = true; briefKlipRerender(); }
+function briefKlipNy() { if (!briefKlipVagt()) return; briefKlipLaes(); const l = briefKlipListe(); const tom = briefKlipTomIx(l, null); if (tom > -1 && tom === l.length - 1) { briefKlipVisNyt(tom); return; } l.push({ ser: "" }); window.__KLIP_NYT_TRIN = true; briefKlipRerender(); }
 /* Aabner CTA-feltet paa sidste klip. Flaget bor i hukommelsen, ikke i basen: er der
    skrevet noget, staar feltet af sig selv naeste gang (ctaVideo har indhold). */
 let BRIEF_CTA_AABEN = false;
@@ -54750,7 +54757,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2360";
+const APP_VERSION = "2361";
 let NY_VERSION_KLAR = false;
 let NY_VERSION_AFVIST = false;
 function nyVersionSkjul() {
@@ -76788,6 +76795,6 @@ function bf3StudieRum(v, filter) {
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-hvid.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 27. september · 2360</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 27. september · 2361</div>
 </body>
 </html>
