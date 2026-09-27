@@ -5293,7 +5293,9 @@ body.dash-nav #bsForside { max-width:1500px; }   /* bud G fylder skaermen (Ida 1
 .kv-menuknap.mq-tap { min-height:44px; height:44px; width:44px; padding:0; position:relative; z-index:2; }   /* 44 rund (MAALT 21/9: 36 bred, 44 hoej i dash-mode = oval) */   /* z-index: trykfeltets nederste 4 px laa ellers UNDER det naeste element i DOM (MAALT i Backstage-proben 14/9: elementFromPoint 21 px under midten ramte en DIV) */
 .kv-menuknap.mq-tap::before { content:""; position:absolute; inset:0; }   /* MAALT 14/9: inset regnes fra kanten INDEN for borderen, saa -4 gav 42 px; -5 giver 44 */
 .bs-tjek:active { background:var(--red); color:#fff; border-color:var(--red); }
-.bs-tjek.on { color:var(--red); border-color:var(--red); }   /* Citater paa dashboardet: valgt = roedt flueben (12/9) */
+.bs-tjek.on { color:var(--red); border-color:var(--red); }
+.bs3-fl.bs3-prod { display:flex; align-items:center; gap:12px; } .bs3-fl.bs3-prod .bs3-n { flex:1; min-width:0; }
+.bs-tjek.is-prod { background:var(--red); border-color:var(--red); color:#fff; }   /* B-roll/grafik produceret = husets flueben, fyldt roed (Ida 27/9) */   /* Citater paa dashboardet: valgt = roedt flueben (12/9) */
 .bs-todo { position:relative; overflow:hidden; }
 .bs-hero-streg { margin:0 2px var(--luft-4); }   /* ingen streg (Ida 12/9 kl. 17.00) · 32 px luft under heroen */
 .bs-hero-citat { font-size:32px; line-height:1.15; margin:0 2px 8px; }   /* Hjem: dagens citat som hero (Ida 11/9) */
@@ -54946,7 +54948,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2378";
+const APP_VERSION = "2379";
 let NY_VERSION_KLAR = false;
 let NY_VERSION_AFVIST = false;
 function nyVersionSkjul() {
@@ -76110,6 +76112,28 @@ const BF3_STUDIE_LISTER = {
   kilder: { skema: "studie_kilder", titel: "Kildehenvisninger", ph: "Tilføj kildehenvisning …", tom: "Hvilke kilder bygger dine lektioner på?", ny: "Ny kildehenvisning", ret: "Ret kildehenvisningen", slet: "Slet kildehenvisningen?" },
   brolls: { skema: "studie_brolls", titel: "B-rolls", ph: "Tilføj B-roll …", tom: "Hvilke billeder skal du optage?", ny: "Ny B-roll", ret: "Ret B-rollen", slet: "Slet B-rollen?" }
 };
+/* PRODUCERET-FLUEBENET PAA B-ROLLS OG GRAFIK (Ida 27/9: »jeg skal kunne sætte et flueben ud for dem når de er produceret«).
+   Linjerne laeses ud af manus (B-ROLL:/GRAFIK:) — manus roeres ALDRIG. Fluebenet bor i sin egen liste skema_svar »studie_produceret«
+   (ENERGIDA/Ida, flettes pr. id som de andre lister). Et punkt = type|lektion|tekst; retter man teksten i manus, er det et nyt punkt. */
+let PRODUCERET = [], PRODUCERET_HENTET = false; const PROD_RK = [];
+function prodNoegle(type, lek, t) { return String(type) + "|" + String(lek) + "|" + String(t); }
+function erProduceret(type, lek, t) { const k = prodNoegle(type, lek, t); return PRODUCERET.some(function (r) { return r && r.id === k; }); }
+async function prodHent() {
+  let fra = null; try { fra = await vaneRow("studie_produceret"); } catch (e) { fra = null; }
+  if (fra === null && sb) { try { const r = await sb.from("skema_svar").select("created_at").eq("kode", "ENERGIDA").eq("navn", "Ida").eq("skema", "studie_produceret").limit(1); if (!r.error && Array.isArray(r.data) && !r.data.length) fra = []; } catch (e) {} }
+  if (fra !== null) { PRODUCERET = Array.isArray(fra) ? fra.slice() : []; PRODUCERET_HENTET = true; }
+}
+async function prodSkiftNr(nr) {
+  const x = PROD_RK[nr]; if (!x) return;
+  if (!PRODUCERET_HENTET) await prodHent();
+  if (!PRODUCERET_HENTET) { try { husBesked("Listen kunne ikke hentes. Prøv igen."); } catch (e) {} return; }   /* skriv aldrig en liste, du ikke har laest */
+  const k = prodNoegle(x[0], x[1], x[2]);
+  if (PRODUCERET.some(function (r) { return r && r.id === k; })) PRODUCERET = PRODUCERET.filter(function (r) { return !r || r.id !== k; });
+  else PRODUCERET.push({ id: k, type: x[0], lek: x[1], t: x[2], dato: new Date().toISOString().slice(0, 10) });
+  try { renderKlipperum(); } catch (e) {}
+  let ok = false; try { ok = await vaneGemRow("studie_produceret", PRODUCERET); } catch (e) { ok = false; }
+  if (ok === false) { try { husBesked("Fluebenet blev ikke gemt. Prøv igen."); } catch (e) {} }
+}
 const BF3_SL = {}, BF3_SL_HENTET = {};
 async function bf3SlHent(k) {
   const d = BF3_STUDIE_LISTER[k]; if (!d) return;
@@ -76306,13 +76330,15 @@ function klipBud6Tegn(el) {
       const mods = bf3ProdModuler(px0.id);
       const nrL = function (x) { const m = String(x.titel || "").match(/^(\d+)\.(\d+)/); return m ? parseInt(m[1], 10) * 100 + parseInt(m[2], 10) : 9999; };
       const lek = KLIP_OPGAVER.filter(function (o) { return mods.has(klipModulGruppe(o.modul)); }).sort(function (a, b) { return klipModulSortNr(klipModulGruppe(a.modul)) - klipModulSortNr(klipModulGruppe(b.modul)) || nrL(a) - nrL(b); });
-      let krop = "", modF = null, ialt = 0;
+      let krop = "", modF = null, ialt = 0; PROD_RK.length = 0;
+      if (!PRODUCERET_HENTET && !window.__PROD_HENT) { window.__PROD_HENT = 1; prodHent().then(function () { try { renderKlipperum(); } catch (e) {} }); }
       lek.forEach(function (o) {
         const rr = erG ? kbGrafikFraManus(o.manus_tekst) : kbBrollsFraManus(o.manus_tekst);
         if (!rr.length) return;
         const g = klipModulGruppe(o.modul);
         if (g !== modF) { krop += bf3Ver(esc(navnAf(g) ? (g + " · " + navnAf(g)) : g)); modF = g; }
-        krop += '<div class="bs3-mi-lek">' + esc(titelVis(o.titel || "Uden titel")) + '</div>' + rr.map(function (t) { ialt++; return bf3Fl(esc(t), "", "klipBriefAaben('" + esc(String(o.id)) + "')"); }).join("");
+        krop += '<div class="bs3-mi-lek">' + esc(titelVis(o.titel || "Uden titel")) + '</div>' + rr.map(function (t) { ialt++; const nr = PROD_RK.push([erG ? "grafik" : "broll", String(o.id), t]) - 1, on = erProduceret(erG ? "grafik" : "broll", o.id, t);
+          return '<div class="bs3-fl bs3-klik bs3-prod" role="button" tabindex="0" onclick="klipBriefAaben(\'' + esc(String(o.id)) + '\')"><button type="button" class="mq-tap bs-tjek' + (on ? ' is-prod' : '') + '" aria-label="' + (on ? 'Produceret' : 'Markér som produceret') + '" title="' + (on ? 'Produceret' : 'Markér som produceret') + '" onclick="event.stopPropagation();prodSkiftNr(' + nr + ')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></button><div class="bs3-n">' + esc(t) + '</div></div>'; }).join("");
       });
       el.innerHTML = '<div class="bs3">' + prodTop + (ialt ? krop : bf3Ver(navnF) + bf3Tom(erG ? "Ingen grafik endnu. Skriv GRAFIK: i starten af en linje i manus." : "Ingen B-rolls endnu. Skriv B-ROLL: i starten af en linje i manus."))
         + '<div class="bs3-ideer-knap"><button type="button" class="dbtn mq-tap" onclick="klipVisningSaet(\'produkter\')">Tilbage til Produkter</button></div></div>';
@@ -77016,6 +77042,6 @@ function bf3StudieRum(v, filter) {
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-hvid.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 27. september · 2378</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 27. september · 2379</div>
 </body>
 </html>
