@@ -10566,6 +10566,16 @@ body.mb .db-kort, #planRit .db-kort { border:0; box-shadow:var(--mb-skygge); }  
 }
 /* COVERETS BESKAERING PAA TELEFONEN (Idas klik 26/9 bud 1, artifact 3r2u25AQghNfWa78QFjV5N): terrassens kant nederst, navnet paa kornet. Gaelder alle covere med .mb-foto under 900 px (b2b, Backstage, lektionen, planlaegningsdagen). Hjems foto er sit eget. */
 @media (max-width:899px) { html body .mb-foto { background-size:230% auto !important; background-position:center 49% !important; } }
+/* KLIP 1 · HOOK = EEN FLISE (Idas klik 26/9 bud 1): hookets egen flise skjules, naar forslagene er flyttet ind i klip 1; efter valget staar kun det valgte, resten foldes under »Andre forslag«. Begge flader. */
+html body .kk-hook-tom { display:none !important; }
+html body .kk-hook-vaert > .kort-plus { display:none !important; }
+html body .kk-hook-vaert.fold .fs-rk:not(:has(button[aria-label="Fravælg"])) { display:none !important; }
+html body .kk-hook-vaert.fold .fs-vaelg-over { display:none !important; }
+html body .kk-hook-vaert .fs-rk:last-child { margin-bottom:0 !important; }
+html body .kk-hook-andre { display:inline-flex; align-items:center; gap:6px; min-height:36px; margin:2px 0 4px 38px; padding:0; background:none; border:0; box-shadow:none; color:var(--gray2); font:400 13px Poppins, sans-serif; cursor:pointer; }
+html body .kk-hook-andre[hidden] { display:none !important; }
+html body .kk-hook-andre svg { width:14px; height:14px; }
+html body #briefKlip1Vaert > #briefKlip1 { flex:1 1 auto; width:100%; min-width:0; }   /* flisen fylder hele bredden, ogsaa naar vaerten er flex */
 /* HEROEN STAAR FAST I COVERET (HAARD, Ida 26/9: »låse hero i coverbilledet fast … uanset hvilke ændringer der kommer; må dette ikke påvirkes, røres«).
    Titel + datolinje staar 40 px over coverets bund og 20 px (tlf) / 48 px (computer) fra venstre paa ALLE sider. Knapper, citater og nye greb flytter den aldrig.
    Denne blok staar SIDST i hovedets CSS og maa ikke overskrives; porten maaler den (probe-hero). */
@@ -20878,6 +20888,7 @@ let BRIEF_SIDE_AKTIV = 0;
    vises ALDRIG paa computeren — den er spaerret nederst i briefSamletVis. */
 let BRIEF_MB_VIS = "forside";
 function briefMbVis(vis, n, behold) {
+  setTimeout(function () { try { briefHookIKlip(); } catch (e) {} }, 0);   /* hook-forslagene i klip 1 (26/9) */
   BRIEF_MB_VIS = vis === "skriv" ? "skriv" : "forside";
   if (typeof n === "number") { BRIEF_SIDE_AKTIV = n; BRIEF_TRIN_AKTIV = 0; }
   /* SKAERMEN STAAR STILLE VED NAESTE/TILBAGE (Ida 17/9: »irriterende at hver gang man klikker paa naeste, rykker hele skaermen sig«): rullepositionen
@@ -23172,6 +23183,31 @@ function briefVaelgOrdOpdater() {
   } catch (e) {}
 }
 
+/* HOOK-FORSLAGENE BOR I KLIP 1 (bud 1, 26/9): forslagslistens egne elementer (plus, #forslag_hookTekst, #bf_hookTekst) FLYTTES ind i klip 1-flisens vaert —
+   samme id'er og samme motor, saa intet gemmes anderledes. Hookets egen flise skjules (kk-hook-tom). Foer klip 1 gentegnes, flyttes de tilbage. */
+function briefHookKilde() { const f = document.getElementById("forslag_hookTekst"); if (!f) return null; return f.__hjem || f.parentElement; }
+function briefHookUdAfKlip() {
+  const f = document.getElementById("forslag_hookTekst"); if (!f || !f.__hjem) return;
+  const hjem = f.__hjem; [f.__plus, f, document.getElementById("bf_hookTekst")].forEach(function (e) { if (e) hjem.appendChild(e); });
+}
+function briefHookIKlip() {
+  const vaert = document.getElementById("kkHookVaert"), f = document.getElementById("forslag_hookTekst"); if (!vaert || !f) return;
+  if (!f.__hjem) { f.__hjem = f.parentElement; f.__plus = f.previousElementSibling && f.previousElementSibling.classList.contains("kort-plus") ? f.previousElementSibling : null; }
+  [f.__plus, f, document.getElementById("bf_hookTekst")].forEach(function (e) { if (e) vaert.appendChild(e); });
+  try { const q = f.__hjem.closest(".sk-q") || f.__hjem; q.classList.add("kk-hook-tom"); } catch (e) {}
+  briefHookFold();
+}
+function briefHookAndre() { window.__HOOK_ANDRE_AABEN = !window.__HOOK_ANDRE_AABEN; briefHookFold(); }
+function briefHookFold() {
+  const vaert = document.getElementById("kkHookVaert"); if (!vaert) return;
+  const b = BRIEF_STATE || {}, v = (typeof b.hookTekstValgt === "number") ? b.hookTekstValgt : -1;
+  const liste = Array.isArray(b.hookTekstListe) ? b.hookTekstListe : [];
+  const andre = liste.filter(function (t, i) { return i !== v && !!String(t || "").trim(); }).length;
+  const fold = v > -1 && !window.__HOOK_ANDRE_AABEN;
+  vaert.classList.toggle("fold", fold);
+  const k = document.getElementById("kkHookAndre");
+  if (k) { k.hidden = !(v > -1); k.innerHTML = (fold ? (andre ? "Andre forslag · " + andre : "Skriv et andet hook") : "Fold sammen") + '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="' + (fold ? "M6 9l6 6 6-6" : "M6 15l6-6 6 6") + '"/></svg>'; }
+}
 function briefForslagTegn(key) {
   const v = document.getElementById("forslag_" + key); if (!v) return;
   v.innerHTML = briefForslagRaekker(key);
@@ -23179,13 +23215,14 @@ function briefForslagTegn(key) {
   try { briefTalendeFelter(); } catch (e) {}   /* greb 3 (15/9): den nye raekke faar ogsaa maalgruppens ord */
   /* Hoejden regnes efter HVER gentegning (6/9 kl. 12.08) — foer stod raekkerne to linjer hoeje efter et valg. */
   try { briefForslagHoejde(); } catch (e) {}
+  if (key === "hookTekst") { try { briefHookFold(); } catch (e) {} }
 }
 
 function briefForslagVaelg(key, i) {
   briefForslagLaes(key);
   const b = BRIEF_STATE;
   b[key + "Valgt"] = (b[key + "Valgt"] === i) ? -1 : i;   /* klik igen fravaelger */
-  if (key === "hookTekst" && b[key + "Valgt"] > -1) briefHookHuskVaek();   /* HUSK-LINJEN VED HOOKET (Idas klik 20/9 kl. ~16.30, bud 1 af fem — Hans-testen runde 3): linjen forsvinder ved valget */
+  if (key === "hookTekst" && b[key + "Valgt"] > -1) { briefHookHuskVaek(); window.__HOOK_ANDRE_AABEN = false; }   /* HUSK-LINJEN VED HOOKET (Idas klik 20/9 kl. ~16.30, bud 1 af fem — Hans-testen runde 3): linjen forsvinder ved valget */
   briefForslagTegn(key);
   try { saveBrief(true); } catch (e) {}
 }
@@ -23544,16 +23581,24 @@ function briefKlipKortHtml(i, k, o) {
   const chips = folk.length >= 2 ? folk.filter(function (n) { return !laast || valgt.indexOf(n) > -1; }).map(function (n) { return '<button type="button" class="ark-chip kk-chip kk-ini' + (valgt.indexOf(n) > -1 ? ' on' : '') + '" data-navn="' + esc(n) + '" title="' + esc(n) + '" aria-label="' + esc(n) + '"' + (laast ? ' tabindex="-1"' : ' onclick="briefKlipHvemSkift(' + i + ',this)"') + '>' + esc(ini(n)) + '</button>'; }).join("") : "";
   const slet = (liste.length > 1 && !laast) ? '<button type="button" class="kk-slet" title="Fjern klippet" aria-label="Fjern klippet" onclick="briefKlipSlet(' + i + ')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" data-tegn-ok="1"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg></button>' : "";
   let felter = briefKlipFeltHtml(pre + i + '_ser', 'Det, man ser i klippet', 'Beskriv, hvad man ser i klippet', k.ser, FB_IK.kamera, false);
-  const visTekst = o.visTekst && (k.tekst != null);   /* TEKST PAA SKAERMEN TILFOEJES VIA PLUSSET (Ida 21/9 kl. 19.00) — et skrevet felt staar altid (gem maa ikke slette, 4/8) */
+  /* KLIP 1 · HOOK = EEN FLISE, TRE LAG (Idas klik 26/9 »Byg bud 1«, 2JdwhENFtWusj5uCzsCQpy): tekst paa skaermen (hook-forslagene flyttes ind i vaerten af briefHookIKlip) ·
+     det, man ser (klip[0].ser) · det, man hoerer (klip[0].siger). Ingen nye datanoegler. Laast (Fasthold dem) viser det valgte hook som tekst. */
+  if (o.hook) {
+    const hookDel = laast ? (o.hookTekst ? briefKlipFeltHtml('laast_hook', 'Tekst på skærmen', 'Vælg dit hook', o.hookTekst, FB_IK.undertekst, false) : '')
+      : '<div class="kk-felt kk-hook-felt"><div class="kk-et">Tekst på skærmen</div><div class="kk-hook-vaert" id="kkHookVaert"></div><button type="button" class="kk-hook-andre" id="kkHookAndre" onclick="briefHookAndre()" hidden></button></div>';
+    felter = hookDel + briefKlipFeltHtml(pre + i + '_ser', 'Det, man ser', 'Beskriv, hvad man ser i klippet', k.ser, FB_IK.kamera, false)
+      + briefKlipFeltHtml(pre + i + '_siger', 'Det, man hører', 'Det, der siges eller høres i de første sekunder', k.siger, FB_IK.boble, false);
+  }
+  const visTekst = !o.hook && o.visTekst && (k.tekst != null);   /* TEKST PAA SKAERMEN TILFOEJES VIA PLUSSET (Ida 21/9 kl. 19.00) — et skrevet felt staar altid (gem maa ikke slette, 4/8) */
   if (visTekst) felter += briefKlipFeltHtml(pre + i + '_tekst', 'Tekst på skærmen', 'Teksten på skærmen', k.tekst, FB_IK.undertekst, true, laast ? '' : 'briefKlipFeltFjern(' + i + ',\'tekst\')');
   const taler = (function () { try { return (Array.isArray(BRIEF_STATE.lyd) ? BRIEF_STATE.lyd : []).indexOf("Tale til kameraet") > -1; } catch (e) { return false; } })();
-  if (k.siger != null) felter += briefKlipFeltHtml(pre + i + '_siger', 'Manus', 'Det, der siges i klippet', k.siger, FB_IK.boble, false, laast ? '' : 'briefKlipFeltFjern(' + i + ',\'siger\')');
+  if (k.siger != null && !o.hook) felter += briefKlipFeltHtml(pre + i + '_siger', 'Manus', 'Det, der siges i klippet', k.siger, FB_IK.boble, false, laast ? '' : 'briefKlipFeltFjern(' + i + ',\'siger\')');
   const ctaTekst = String(BRIEF_STATE.ctaVideo || "");
   const visCta = o.sidste && (ctaTekst.trim() || BRIEF_CTA_AABEN || document.body.classList.contains("mb"));   /* CTA ALTID I SIDSTE KLIP (Idas klik 24/9 kl. 23.20: »Altid i sidste klip«) — ogsaa tom, uden plus foerst */
   if (visCta) felter += briefKlipFeltHtml('bf_ctaVideo', 'CTA i videoen', 'Vælg, hvad de skal gøre', ctaTekst, FB_IK.cta, false);
   /* PLUSSET (Ida 21/9 kl. 19.00: »+ Manus er lige som alle andre knapper for hoeje! … bare en cirkel med plus i og placeres i hoejre side under
      mikrofonen og der skal man saa kunne tilfoeje personer, tilfoeje manus, tilfoeje cta, tilfoeje tekst paa skaerm«) — de lange knapper er UDE */
-  const plusValg = laast ? [] : briefKlipPlusValg(i, k, { visTekst: visTekst, kanTekst: !!o.visTekst, taler: taler, sidste: !!o.sidste, visCta: !!visCta });
+  const plusValg = laast ? [] : briefKlipPlusValg(i, k, { visTekst: visTekst, kanTekst: !!o.visTekst && !o.hook, taler: taler, sidste: !!o.sidste, visCta: !!visCta, hook: !!o.hook });
   const plus = plusValg.length ? '<div class="kk-plus-rk"><button type="button" class="kk-plus" title="Tilføj" aria-label="Tilføj" onclick="briefKlipPlusArk(' + i + ',' + (o.sidste ? 'true' : 'false') + ',' + (o.visTekst ? 'true' : 'false') + ')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button></div>' : '';
   return '<div class="klip-kort">'
     + '<div class="klip-hoved"><span class="kk-titel">' + (o.navn || ("Klip " + (i + 1))) + '</span><span class="kk-hoejre">' + chips + slet + '</span></div>'
@@ -23566,7 +23611,7 @@ function briefKlipPlusValg(i, k, o) {
      »Giv som opgave« er ude af klippet; hvem der laver klippet vaelges paa chipsene i klippets hoved. */
   const rk = [];
   if (o.kanTekst && !o.visTekst) rk.push(["Tekst på skærmen", "briefKlipFelt(" + i + ",'tekst')", "tekst"]);
-  if (k.siger == null) rk.push(["Manus", "briefKlipFelt(" + i + ",'siger')", "manus"]);
+  if (k.siger == null && !o.hook) rk.push(["Manus", "briefKlipFelt(" + i + ",'siger')", "manus"]);
   const sc = (k && k.scene) || (i === 0 ? 1 : 2);
   rk.push(["Nyt klip", "briefKlipNyIScene(" + sc + ")", "klip"]);
   if (o.sidste && !o.visCta) rk.push(["CTA", "briefCtaTilfoej()", "cta"]);
@@ -23578,7 +23623,8 @@ function briefKlipPlusArk(i, sidste, kanTekst) {
   const liste = briefKlipListe(); const k = liste[i]; if (!k) return;
   const taler = (function () { try { return (Array.isArray(BRIEF_STATE.lyd) ? BRIEF_STATE.lyd : []).indexOf("Tale til kameraet") > -1; } catch (e) { return false; } })();
   const visCta = sidste && (String(BRIEF_STATE.ctaVideo || "").trim() || BRIEF_CTA_AABEN || document.body.classList.contains("mb"));
-  const rk = briefKlipPlusValg(i, k, { visTekst: kanTekst && k.tekst != null, kanTekst: kanTekst, taler: taler, sidste: sidste, visCta: !!visCta });
+  const hook = i === 0 && briefKlipScenerPaaComputer();
+  const rk = briefKlipPlusValg(i, k, { visTekst: !hook && kanTekst && k.tekst != null, kanTekst: kanTekst && !hook, taler: taler, sidste: sidste, visCta: !!visCta, hook: hook });
   if (!rk.length) return;
   valgFliseArk("Tilføj til " + (i === 0 ? "klip 1" : "klip " + (i + 1)), rk);
 }
@@ -23597,7 +23643,7 @@ function briefKlipScenerPaaComputer() { try { return briefAltPaaEnSide() && BRIE
 function briefKlip1Html() {
   if (!briefKlipScenerPaaComputer()) return "";
   const liste = briefKlipListe(); briefScener(liste); if (!liste[0]) return "";
-  return '<div id="briefKlip1">' + briefKlipKortHtml(0, liste[0], { liste: liste, visTekst: false, sidste: liste.length === 1 }) + '</div>';   /* intet Hook-felt: hooket staar lige over */
+  return '<div id="briefKlip1">' + briefKlipKortHtml(0, liste[0], { liste: liste, visTekst: false, sidste: liste.length === 1, hook: true, navn: "Klip 1 · Hook" }) + '</div>';   /* intet Hook-felt: hooket staar lige over */
 }
 /* ET TRYK = ET KLIP (Ida 27/9 kl. 07.50: »Jeg klikker bare på tilføj klip en gang… så opretter den 6?!«): to vagter paa ALLE klip-doere.
    1) et gentaget tryk inden for et sekund taeller kun een gang (telefonens dobbelte klik); 2) har scenen allerede et tomt klip, laves der
@@ -23638,8 +23684,7 @@ function briefKlipHtml(enkelt) {
     /* SCENE 1 STAAR MED, MEN LAAST (Ida 21/9 kl. 19.20: »her skal scene være sat ind men markeret som låst«) — hooket + klip 1 daempet m. laas; tryk gaar til Fang dem, hvor den rettes. Egne id'er (laast_), saa Fang dems felter ikke faar dubletter. */
     let ud = '<div class="pf-sc kk-sc-laast">Scene 1<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></div>'
       + '<div class="kk-laast" role="button" tabindex="0" title="Rettes under Fang dem" onclick="briefMbVis(\'skriv\',1)">'
-      + (hookLaast ? '<div class="klip-kort"><div class="klip-hoved"><span class="kk-titel">Hook</span></div>' + briefKlipFeltHtml('laast_hook', 'Tekst på skærmen', 'Vælg dit hook', hookLaast, FB_IK.krog, true) + '</div>' : '')
-      + (liste[0] ? briefKlipKortHtml(0, liste[0], { liste: liste, visTekst: false, sidste: false, laast: true }) : '')
+      + (liste[0] ? briefKlipKortHtml(0, liste[0], { liste: liste, visTekst: false, sidste: false, laast: true, hook: true, navn: "Klip 1 · Hook", hookTekst: hookLaast }) : '')
       + '</div>';
     let forrige = null;
     rest.forEach(function (p, n) {
@@ -23947,7 +23992,7 @@ function briefKlipRerender() {
   /* Formatet skal foelge med i gentegningen — ellers ville en kort-reel faa hele
      klip-opbygningen tilbage, saa snart man tilfoejede "Tekst på skærmen". */
   holder.outerHTML = briefKlipHtml(BRIEF_STATE.format === "Kort-reel");
-  try { const v1 = document.getElementById("briefKlip1Vaert"); if (v1) v1.innerHTML = briefKlip1Html(); } catch (e) {}   /* klip 1 under Fang dem (18/9) */
+  try { const v1 = document.getElementById("briefKlip1Vaert"); if (v1) { briefHookUdAfKlip(); v1.innerHTML = briefKlip1Html(); briefHookIKlip(); } } catch (e) {}   /* klip 1 under Fang dem (18/9) */
   document.querySelectorAll('[id^="bf_klip_"]').forEach(autoGro);
   if (typeof saveBrief === "function") saveBrief(true);
   /* paa computerens skrivesider er hvert klip sit eget trin (17/9) — tegn trinnet igen, og staa paa det klip, der lige kom til */
@@ -25032,6 +25077,7 @@ async function briefTilbage() {
   try { ansvarligVagt(vagtId); } catch(e) {}
 }
 function openBriefSide(id) {
+  setTimeout(function () { try { briefHookIKlip(); } catch (e) {} }, 400);   /* hook-forslagene i klip 1 (26/9) */
   /* Gentegner vi SAMME brief (fx naar man vaelger indholdstype eller soejle), skal siden
      ikke hoppe — scroll-positionen holdes (Ida 30/7: "der skal ikke vaere nogen bevaegelse"). */
   const sammeBrief = (id === BRIEF_ID);
@@ -54795,7 +54841,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2365";
+const APP_VERSION = "2366";
 let NY_VERSION_KLAR = false;
 let NY_VERSION_AFVIST = false;
 function nyVersionSkjul() {
@@ -76833,6 +76879,6 @@ function bf3StudieRum(v, filter) {
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-hvid.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 27. september · 2365</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 27. september · 2366</div>
 </body>
 </html>
