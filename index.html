@@ -28211,6 +28211,7 @@ async function onboardingSkemaTjek() {
     OB_SKEMA = !!(data && data.length);
   } catch (e) { OB_SKEMA = false; }
   try { renderHome(); } catch (e) {}
+  if (OB_SKEMA === true && TUR_VENTER) setTimeout(function () { try { turStart(); } catch (e) {} }, 700);
 }
 async function onboardingStrategiTjek() {
   if (!sb || !currentKode || OB_STRATEGI !== null) return;
@@ -28465,7 +28466,15 @@ function onboardingRender(def) {
   /* Forloebet aabner Drejebogen (13/9): saa laenge lektionerne er det aktive trin, venter
      Drejebog-trinnet. Er der ingen lektioner (paa vej), spaerrer trinnet ikke. */
   if (tLek && tLek.aktiv && t1.aktiv) { t1.aktiv = false; t1.cta = null; t1.laast = "Låses op, når du er igennem forløbet"; }
-  const trin = [visSkema ? tSkema : null, tLek, t1, tDag, tBrief].filter(Boolean);
+  /* SLUTSKEMAET FOER DREJEBOGEN (Idas klik 28/9: skema → rundvisning → lektioner → slutskema → Drejebogen). Er lektionerne set og
+     »Hvor står du nu?« ikke svaret, er slutskemaet det aktive trin, og Drejebog-trinnet venter. OB_EFTER null (ikke hentet) spaerrer ikke. */
+  let tSlut = null;
+  if (tLek && tLek.done && OB_EFTER === false) {
+    tSlut = { done: false, aktiv: true, label: "Hvor står du nu?", tekst: "Sidste skridt: fortæl, hvor du står nu. 6 minutter.",
+      cta: { txt: "Start her", klik: "openSkema('efter_forloebet')" } };
+    if (t1.aktiv) { t1.aktiv = false; t1.cta = null; t1.laast = "Låses op, når du har fortalt, hvor du står nu"; }
+  }
+  const trin = [visSkema ? tSkema : null, tLek, tSlut, t1, tDag, tBrief].filter(Boolean);
   const flueben = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>';
   /* HVIDE FLISER + TYDELIG HAENGELAAS (Ida 27/8 aften: "hvide fliser paa teksten ved
      1 2 3 og en tydelig haengelaas paa 2+3"). Cirklerne bliver PAA den roede streg;
@@ -28730,8 +28739,19 @@ async function turMarker() {
   try { localStorage.setItem(nsKey("tur_set"), "1"); } catch(e) {}
   try { if (sb) await sb.auth.updateUser({ data: { tur_set: true } }); } catch(e) {}   /* huskes på tværs af enheder */
 }
+/* SKEMAET FOER RUNDVISNINGEN (Idas klik 28/9: »Skema, tur, lektioner«). Den automatiske rundvisning venter,
+   til startskemaet er sendt; onboardingSkemaTjek og skemaets Send starter den bagefter. »Se rundvisningen igen« (igen) venter aldrig. */
+let TUR_VENTER = false;
+function turVenterPaaSkema() {
+  const d = typeof CURRENT_DEF !== "undefined" ? CURRENT_DEF : null;
+  if (!d || d.skema === false || d.type === "medarbejder") return false;
+  try { if (typeof onboardingVariant === "function" && !onboardingVariant(d)) return false; } catch (e) { return false; }   /* uden rejse tjekkes skemaet aldrig — saa ventes der ikke */
+  return OB_SKEMA !== true;
+}
 function turStart(igen) {
   if (!igen && turSet()) return;
+  if (!igen && turVenterPaaSkema()) { TUR_VENTER = true; return; }
+  TUR_VENTER = false;
   TUR_STOPS = turStops(typeof CURRENT_DEF !== "undefined" ? CURRENT_DEF : null);
   turVis(0);
 }
@@ -47502,7 +47522,8 @@ async function saveSkema() {
   try { localStorage.removeItem(skemaKladdeNoegle()); } catch (e) {}
   /* NAESTE SKRIDT PAA HJEM FLYTTER SIG, NAAR SKEMAET ER SENDT (21/9): startskemaet saetter rejsens trin, slutskemaet fjerner den roede flise */
   try { if (SKEMA_KEY === "inden_start" || SKEMA_KEY === "inden_workshoppen") OB_SKEMA = true; if (SKEMA_KEY === "efter_forloebet") OB_EFTER = true; } catch (e) {}
-  setTimeout(() => { skemaBack(); refreshSkemaStatus(); try { renderHome(); } catch (e) {} }, 1200);
+  setTimeout(() => { skemaBack(); refreshSkemaStatus(); try { renderHome(); } catch (e) {}
+    try { if ((SKEMA_KEY === "inden_start" || SKEMA_KEY === "inden_workshoppen") && !SOM_KUNDE && !turSet()) setTimeout(function () { try { turStart(); } catch (e2) {} }, 700); } catch (e) {} }, 1200);
 }
 
 async function refreshSkemaStatus() {
@@ -54960,7 +54981,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2380";
+const APP_VERSION = "2381";
 let NY_VERSION_KLAR = false;
 let NY_VERSION_AFVIST = false;
 function nyVersionSkjul() {
@@ -77054,6 +77075,6 @@ function bf3StudieRum(v, filter) {
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-hvid.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 28. september · 2380</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 28. september · 2381</div>
 </body>
 </html>
