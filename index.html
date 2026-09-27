@@ -20811,9 +20811,9 @@ function briefAnbefalet(key, o) {
 }
 /* DEN TRYGGE GUIDE (Idas klik 17/9 kl. 13.15 paa bud 1 + 2 + 12 af tyve): soejlens ord bruges tre steder — »Kort fortalt« paa forsiden,
    maalet i hver bjaelke, og »Foer du sender« paa sidste side. EEN kilde: STRATEGI_TEMAER (kundens egen soejle) + BS_SOEJLER (husets). */
-function briefGuideOrd(it) {
+function briefGuideOrd(it, B0) {
   it = it || (IDEER || []).find(x => String(x.id) === String(BRIEF_ID)) || {};
-  const B = BRIEF_STATE || {};
+  const B = B0 || BRIEF_STATE || {};
   let d = null; try { d = (STRATEGI_TEMAER || []).find(x => x.navn === it.soejle || (x.serie && x.serie === it.soejle)); } catch (e) {}
   let mm = null, bs = null; try { mm = soejleModel(it.soejle); bs = mm ? BS_SOEJLER.filter(x => x.kode === mm.kode)[0] : null; } catch (e) {}
   const T = x => String(x == null ? "" : x).trim();
@@ -21686,7 +21686,7 @@ function briefSiderTegn(G, grupper, wrap, navM, bud) {
     }
     /* FOER DU SENDER (bud 12, 17/9): tre ja/nej-spoergsmaal fra soejlen paa sidste side, lige over knapperne */
     wrap.querySelectorAll("#briefTjek").forEach(function (e) { e.remove(); });
-    if (akt === sider.length - 1) { try { const tj = document.createElement("div"); tj.id = "briefTjek"; tj.className = "sk-q brief-tjek"; tj.innerHTML = briefTjekHtml(); navM.insertAdjacentElement("beforebegin", tj); } catch (e) {} }
+    /* »FØR DU SENDER« BOR I KALENDEREN NU (Ida 27/9 kl. 07.54: »skal fjernes fra briefen fordi vi nu lægger den der i kalenderen … og så skal de komme deri«) — spoergsmaalene staar i tjeklisten dagen foer (huTjekHtml), samme svar (brief.tjek) */
     /* »Tilbage til briefoversigten« er et oeje ved titlen, foran Del (Ida 17/9 kl. 13.35) — pillen nederst er ude */
     navM.innerHTML = '<span class="bsd-venstre">' + (akt > 0 || ti.t > 0 ? '<button type="button" class="dbtn bsd-tilbage" onclick="briefTrinGaa(-1)">Tilbage</button>' : '') + '</span>'
       + ((akt === sider.length - 1 && ti.t === ti.n - 1) ? briefSendKnapHtml() + '<button type="button" class="dbtn primary" onclick="briefSkrivGem(this)">Gem ændringer</button>' : '<button type="button" class="dbtn bsd-gem" onclick="briefSkrivGem(this)">Gem ændringer</button><button type="button" class="dbtn primary" onclick="briefTrinGaa(1)">Næste</button>');   /* GEM AENDRINGER PAA HVER SIDE (Ida 24/9 kl. 23.19: »På hver side i briefen skal man kunne klikke gem ændringer! Og så komme tilbage til briefoversigten«) — graa, roed er Naeste */
@@ -45305,9 +45305,13 @@ function huTjekHtml(x) {
   const fane = HU_TJEK.fane;
   const fk = function (k, n) { return '<button type="button" class="ark-chip' + (fane === k ? ' on' : '') + '" onclick="event.stopPropagation();huTjekFane(\'' + k + '\')">' + n + '</button>'; };
   let indhold = "";
+  const g = (function () { try { return briefGuideOrd(x, b); } catch (e) { return {}; } })();
+  const foerDuSender = (g.foelelse ? rk("foelelse", "Sidder kunden med følelsen »" + String(g.foelelse).replace(/\s[—–]\s/g, ", ") + "«?", "") : "")
+    + (g.handling ? rk("handling", "Gør vi det let for kunden at " + String(g.handling).charAt(0).toLowerCase() + String(g.handling).slice(1) + "?", "") : "")
+    + rk("sjovere", "Er der noget, du kan gøre for at gøre det endnu sjovere for dig selv at lave dette?", "");   /* briefens »Før du sender« flyttet hertil ordret (Ida 27/9) */
   if (fane === "energi") indhold = '<div class="hu-tj-spm">Hvordan er din energi til i morgen?</div><div class="hu-tj-chips">' + ["Høj", "Okay", "Lav"].map(function (v) { return '<button type="button" class="ark-chip' + (t.energi === v ? ' on' : '') + '" onclick="event.stopPropagation();huTjekSvar(\'' + id + '\',\'energi\',\'' + v + '\')">' + v + '</button>'; }).join("") + '</div>';
   else if (fane === "tid") indhold = rk("sat", "Har du sat tid af til at poste?", "") + rk("story", "Ved du, hvordan du bygger op i din story?", "") + rk("svar", "Har du sat 10 minutter af til at svare bagefter?", "");
-  else indhold = rk("hook", "Ville du selv stoppe for hooket?", hook ? "»" + hook + "«" : "Intet hook valgt endnu") + rk("tid", "Passer tidspunktet til det, de skal gøre?", [tid || "Intet tidspunkt endnu", maal].filter(Boolean).join(" · ")) + rk("cta", "Står CTA'en klart?", cta || "Ingen CTA endnu");
+  else indhold = rk("hook", "Ville du selv stoppe for hooket?", hook ? "»" + hook + "«" : "Intet hook valgt endnu") + foerDuSender + rk("tid", "Passer tidspunktet til det, de skal gøre?", [tid || "Intet tidspunkt endnu", maal].filter(Boolean).join(" · ")) + rk("cta", "Står CTA'en klart?", cta || "Ingen CTA endnu");
   const fmt = String((b.format) || x.type || "").trim();
   const indre = '<div class="hu-tj-chips">' + fk("brief", "Briefen") + fk("energi", "Energien") + fk("tid", "Tiden") + '</div>'
     + indhold
@@ -54757,7 +54761,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2361";
+const APP_VERSION = "2362";
 let NY_VERSION_KLAR = false;
 let NY_VERSION_AFVIST = false;
 function nyVersionSkjul() {
@@ -76795,6 +76799,6 @@ function bf3StudieRum(v, filter) {
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-hvid.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 27. september · 2361</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 27. september · 2362</div>
 </body>
 </html>
