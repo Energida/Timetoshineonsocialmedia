@@ -4962,6 +4962,7 @@ textarea:-webkit-autofill, select:-webkit-autofill {
 }
 .insp-kort { transition: transform .12s, box-shadow .12s; }
 .insp-kort:hover { box-shadow: 0 12px 28px rgba(22,32,42,0.12); }
+.bs3-mi-lek { font-size:13px; color:var(--gray2); margin:var(--luft-3) 0 var(--luft-1); } .bs3-ver + .bs3-mi-lek { margin-top:0; } .bs3-mi-lek { margin-left:2px; margin-right:2px; }   /* lektionens navn over dens idéer paa modulsiden (27/9) */
 .mi-forslag { color:var(--red); font-size:12.5px; line-height:1.45; margin-top:4px; }   /* min placering af idéen til manus (27/9) */
 /* INSPIRATIONENS GALLERI (Idas klik 26/9 bud 3): hvid flise m. skygge · det lille staaende opslag · kilde + skraldespand · navnet (to linjer, saa sidestillede fliser er lige hoeje) */
 #inspGrid { grid-template-columns:repeat(2,minmax(0,1fr)) !important; gap:12px !important; align-items:stretch !important; }
@@ -38447,6 +38448,15 @@ function manusPrintIdeer(o) {
     + '</ol></div>';
 }
 
+/* IDÉER, DER KUN LIGGER PAA MODULET, SIDST I MODULETS PRINT (Idas klik 27/9: »ingen idéer mangler nogen steder«) — samme form som lektionens idéer. */
+function manusPrintModulIdeer(nk) {
+  const ideer = (typeof MANUS_IDEER !== "undefined" && Array.isArray(MANUS_IDEER) ? MANUS_IDEER : []).filter(function (r) { return r && r.t && !String(r.lek || "").trim() && klipModulGruppe(String(r.lekModul || "")) === String(nk); });
+  if (!ideer.length) return "";
+  return '<article><h2>' + esc(String(nk)) + ' · idéer til modulet</h2><div class="meta">Ikke placeret på en lektion</div><div class="sek"><div class="seklabel">Idéer til manus (' + ideer.length + ')</div><ol>'
+    + ideer.map(function (r) { return '<li>' + esc(String(r.t)) + (r.forslag ? '<div class="ide-forslag">' + esc(String(r.forslag)) + '</div>' : '') + '</li>'; }).join("")
+    + '</ol></div></article>';
+}
+
 /* SEKTIONERNE SOM PRINT-HTML. Bor eet sted, fordi BAADE produktionsprintet og den
    samlede oversigt tegner dem — kodes de to steder, driver de fra hinanden (dublet-reglen). */
 function manusSektionerHtml(dele) {
@@ -38549,7 +38559,8 @@ function printAlleManus() {
     + '<h1>Manuskripter</h1>'
     + '<div class="sub">' + liste.length + ' lektioner &middot; ' + medManus + ' med manus &middot; ' + ovAntal + ' øvelser &middot; printet '
     + d.getDate() + '. ' + mdr[d.getMonth()] + ' ' + d.getFullYear() + '</div></div>';
-  manusPrintAabn(forside + liste.map(function (o) { return manusPrintArtikel(o, null, true); }).join(""), "Manuskripter");
+  const modSet = []; liste.forEach(function (o) { const g = klipModulGruppe(o.modul); if (g && modSet.indexOf(g) < 0) modSet.push(g); });
+  manusPrintAabn(forside + liste.map(function (o) { return manusPrintArtikel(o, null, true); }).join("") + modSet.map(manusPrintModulIdeer).join(""), "Manuskripter");
 }
 
 /* PRINT OVERSIGT OVER B-ROLLS / KILDEHENVISNINGER (Ida 27/9: »naar jeg klikker paa de 3 prikker paa denne side ikke kommer print manus op
@@ -38595,7 +38606,7 @@ function printModul(noegle) {
     + '<div class="sub">' + liste.length + ' lektion' + (liste.length === 1 ? "" : "er") + ' &middot; ' + medManus + ' med manus &middot; '
     + ovAntal + ' opgave' + (ovAntal === 1 ? "" : "r") + ' &middot; printet '
     + d.getDate() + '. ' + mdr[d.getMonth()] + ' ' + d.getFullYear() + '</div></div>';
-  manusPrintAabn(forside + liste.map(function (o) { return manusPrintArtikel(o, null, true); }).join(""), esc(mT));
+  manusPrintAabn(forside + liste.map(function (o) { return manusPrintArtikel(o, null, true); }).join("") + manusPrintModulIdeer(nk), esc(mT));
 }
 
 /* PRINT ET MODUL · ØKO (Ida 24/9: »en mere økonomisk printudgave af modulerne … kun sort hvid og at det er komprimeret så det sparer
@@ -38683,7 +38694,7 @@ function printModulBlok(nk, foerste) {
     + '<div class="sub">' + liste.length + ' lektion' + (liste.length === 1 ? "" : "er") + ' &middot; ' + medManus + ' med manus &middot; '
     + ovAntal + ' opgave' + (ovAntal === 1 ? "" : "r") + ' &middot; printet '
     + d.getDate() + '. ' + mdr[d.getMonth()] + ' ' + d.getFullYear() + '</div></div>';
-  return forside + liste.map(function (o) { return manusPrintArtikel(o, null, true); }).join("");
+  return forside + liste.map(function (o) { return manusPrintArtikel(o, null, true); }).join("") + manusPrintModulIdeer(nk);
 }
 
 function printAlleModuler() {
@@ -54882,7 +54893,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2372";
+const APP_VERSION = "2373";
 let NY_VERSION_KLAR = false;
 let NY_VERSION_AFVIST = false;
 function nyVersionSkjul() {
@@ -76205,7 +76216,13 @@ function klipBud6Tegn(el) {
     : bf3Tom(modulerVis.length ? (BF3_KLIP_FILTER ? "Ingen lektioner i dette skridt." : "Ingen lektioner i modulet. Tilføj den første i feltet under.") : (BF3_PROD_VALGT ? "Ingen moduler i produktet endnu." : "Ingen moduler endnu. Opret det første med + Nyt modul."));
   /* IDÉER PAA MODULET (Ida 24/9): en idé flyttet til et modul uden lektion bor under modulets lektioner */
   const modIdeer = KLIP_MODUL_CHIP ? (MANUS_IDEER || []).filter(function (r) { return r && !String(r.lek || "").trim() && klipModulGruppe(String(r.lekModul || "")) === String(KLIP_MODUL_CHIP); }) : [];   /* lekModul gemmes med modulets fulde navn — sammenlign paa gruppen (MAALT 24/9) */
-  const modIdeHtml = modIdeer.length ? '<div style="margin-top:var(--luft-4);">' + bf3Ver("Idéer til manus") + modIdeer.map(function (r) { return '<div class="bs3-fl bs3-klik" role="button" tabindex="0" onclick="manusIdeRet(\'' + esc(String(r.id)) + '\')"><div class="bs3-rk"><div class="bs3-t"><div class="bs3-n">' + esc(r.t || "") + '</div>' + miForslagHtml(r) + (r.dato ? '<div class="bs3-s">' + esc(dkDatoKort(String(r.dato))) + '</div>' : '') + '</div></div></div>'; }).join('') + '</div>' : '';
+  /* ALLE MODULETS IDÉER PAA MODULSIDEN (Idas klik 27/9 »Ja, delt op pr. lektion«: »hvorfor ser jeg kun 3 ideer til manus når jeg står på modul 1?«) — foerst dem paa modulet,
+     saa hver lektions idéer under lektionens navn i lektionernes raekkefoelge. De staar ogsaa stadig inde i lektionen. */
+  const miFl = function (r) { return '<div class="bs3-fl bs3-klik" role="button" tabindex="0" onclick="manusIdeRet(\'' + esc(String(r.id)) + '\')"><div class="bs3-rk"><div class="bs3-t"><div class="bs3-n">' + esc(r.t || "") + '</div>' + miForslagHtml(r) + (r.dato ? '<div class="bs3-s">' + esc(dkDatoKort(String(r.dato))) + '</div>' : '') + '</div></div></div>'; };
+  const lekIdeGrp = KLIP_MODUL_CHIP ? (grupper[KLIP_MODUL_CHIP] || []).slice().sort(klipSortCmp).map(function (o) { return { o: o, rr: (MANUS_IDEER || []).filter(function (r) { return r && String(r.lek || "") === String(o.id); }) }; }).filter(function (g) { return g.rr.length; }) : [];
+  const modIdeHtml = (modIdeer.length || lekIdeGrp.length) ? '<div style="margin-top:var(--luft-4);">' + bf3Ver("Idéer til manus")
+    + (modIdeer.length ? (lekIdeGrp.length ? '<div class="bs3-mi-lek">Modulet</div>' : '') + modIdeer.map(miFl).join('') : '')
+    + lekIdeGrp.map(function (g) { return '<div class="bs3-mi-lek">' + esc(titelVis(g.o.titel || "Uden titel")) + '</div>' + g.rr.map(miFl).join(''); }).join('') + '</div>' : '';
   /* NY LEKTION = PLUSSET (Ida 24/9: »på ALLE sider skal jeg kunne tilføje via plusset i højre hjørne«) — sendefeltet er ude, motoren (klipNy) er den samme */
   const send = '<input type="hidden" id="klip_ny_titel" value=""><input type="hidden" id="klip_ny_modul" value="' + esc(KLIP_MODUL_CHIP || "") + '"><input type="hidden" id="klip_ny_raafiler" value="">';
   window.__KLIP_NY_MODUL_NAVN = KLIP_MODUL_CHIP ? navnAf(KLIP_MODUL_CHIP) : "";
@@ -76920,6 +76937,6 @@ function bf3StudieRum(v, filter) {
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-hvid.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 27. september · 2372</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 27. september · 2373</div>
 </body>
 </html>
