@@ -4962,6 +4962,26 @@ textarea:-webkit-autofill, select:-webkit-autofill {
 }
 .insp-kort { transition: transform .12s, box-shadow .12s; }
 .insp-kort:hover { box-shadow: 0 12px 28px rgba(22,32,42,0.12); }
+/* INSPIRATIONENS GALLERI (Idas klik 26/9 bud 3): hvid flise m. skygge · det lille staaende opslag · kilde + skraldespand · navnet (to linjer, saa sidestillede fliser er lige hoeje) */
+#inspGrid { grid-template-columns:repeat(2,minmax(0,1fr)) !important; gap:12px !important; align-items:stretch !important; }
+@media (min-width:900px) { #inspGrid { grid-template-columns:repeat(auto-fill,minmax(200px,240px)) !important; gap:20px !important; } }   /* »Det fylder for meget!« — flisen bliver aldrig bredere end 240 px paa computeren */
+#inspGrid .insp-flise { background:#fff; border:0; border-radius:20px; box-shadow:var(--mb-skygge, 0 0 4px rgba(46,44,41,.10), 0 0 36px rgba(46,44,41,.20)); padding:8px 8px 12px; display:flex; flex-direction:column; gap:10px; min-width:0; cursor:pointer; }
+#inspGrid .insp-flise:hover { box-shadow:var(--mb-skygge, 0 0 4px rgba(46,44,41,.10), 0 0 36px rgba(46,44,41,.20)); }
+#inspGrid .insp-flise:focus-visible { outline:2px solid var(--black); outline-offset:2px; }
+#inspGrid .insp-billede { width:100%; aspect-ratio:4/5; border-radius:14px; overflow:hidden; position:relative; background:#000; }
+#inspGrid .insp-medie { width:100%; height:100%; object-fit:cover; display:block; }
+#inspGrid .insp-mini { position:absolute; inset:0; overflow:hidden; }
+#inspGrid .insp-mini iframe { position:absolute; left:0; top:0; width:318px; height:560px; border:0; transform-origin:0 0; pointer-events:none; }
+#inspGrid .insp-mini-tom { background:#fff; box-shadow:inset 0 0 0 1px var(--border); border-radius:14px; display:flex; align-items:center; justify-content:center; }
+#inspGrid .insp-et { display:flex; align-items:center; justify-content:space-between; gap:6px; padding:0 4px; font-size:10px; letter-spacing:1.5px; text-transform:uppercase; color:var(--gray3); line-height:1.4; }
+#inspGrid .insp-et span { min-width:0; }
+#inspGrid .insp-slet { flex-shrink:0; position:relative; width:28px; height:28px; border:0; background:none; color:var(--gray3); display:inline-flex; align-items:center; justify-content:center; cursor:pointer; padding:0; }
+#inspGrid .insp-slet::before { content:""; position:absolute; inset:-8px; }
+#inspGrid .insp-note { padding:0 4px; font-size:14px; line-height:1.45; color:var(--black); word-break:break-word; min-height:2.9em; }
+.insp-ark .insp-ark-embed { width:100%; border-radius:14px; overflow:hidden; margin:0 0 12px; }
+.insp-ark .insp-ark-embed iframe { display:block; width:100%; height:520px; border:0; }
+.insp-ark .insp-ark-embed.tiktok iframe { height:640px; }
+.insp-ark .insp-ark-medie { width:100%; max-height:60vh; object-fit:contain; display:block; border-radius:14px; margin:0 0 12px; }
 /* TAL-BADGES I BOKSENES HJØRNER ER UDE (Ida 19/8: "alle steder må du gerne fjerne de
    tal der står i hjørnet af de forskellige bokse"). Skjult, ikke slettet — tallene
    ligger stadig i DOM'en og kan tændes igen med én linje. Menu-badgen (Indbakken) er
@@ -44127,6 +44147,7 @@ function ibVis(hvad) {
   const ide = document.getElementById("ibIdeDel"), sek = document.getElementById("inspSektion"), ark = document.getElementById("ibArkivDel");
   if (ide) ide.style.display = hvad === "ideer" ? "" : "none";
   if (sek) sek.style.display = hvad === "insp" ? "" : "none";
+  if (hvad === "insp") setTimeout(function () { try { inspMiniSkaler(); } catch (e) {} }, 0);   /* de smaa opslag maales, naar siden er synlig (26/9) */
   if (ark) ark.style.display = hvad === "arkiv" ? "" : "none";
   const t = document.getElementById("ibTitel");
   if (t) t.textContent = hvad === "insp" ? "Inspiration" : hvad === "arkiv" ? "Arkiv" : "Idébanken";
@@ -44532,6 +44553,49 @@ function inspTilIde(id) {
   document.getElementById("ideBack").classList.add("on");
   renderIdeaWizard();
 }
+/* Instagram-opslag/reels og TikTok-videoer kan vises i appen via deres egne indlejrings-adresser — ingen server, intet skaermbillede (26/9). */
+function inspEmbedUrl(url) {
+  const u = String(url || "");
+  let m = u.match(/instagram\.com\/(?:[^\/?#]+\/)?(p|reel|reels|tv)\/([A-Za-z0-9_-]+)/i);
+  if (m) return "https://www.instagram.com/" + (m[1].toLowerCase() === "reels" ? "reel" : m[1].toLowerCase()) + "/" + m[2] + "/embed/";
+  m = u.match(/tiktok\.com\/@[^\/]+\/video\/(\d+)/i);
+  if (m) return "https://www.tiktok.com/embed/v2/" + m[1];
+  return "";
+}
+/* Flisens navn: kundens egen note — ellers hvad det er (Instagram giver ikke opslagets tekst til en browser, 26/9) */
+function inspNavn(x) {
+  if (x && x.note) return x.note;
+  const u = String((x && x.url) || "");
+  if (x && x.type === "billede") return "Billede";
+  if (/instagram\.com\/(?:[^\/?#]+\/)?(reel|reels)\//i.test(u)) return "Reel på Instagram";
+  if (/instagram\.com/i.test(u)) return "Opslag på Instagram";
+  if (/tiktok\.com/i.test(u)) return "Video på TikTok";
+  return inspVaert(u);
+}
+/* TRYK PAA FLISEN = OPSLAGET STORT I DET LILLE ARK (Galleriet 26/9): opslaget, »Lav til idé« (roed) og, for links uden billede, Tilføj skærmbillede / Åbn linket */
+function inspAabnArk(id) {
+  const x = INSPIRATION.find(y => String(y.id) === String(id)); if (!x) return;
+  const skaerm = (x.type !== "billede" && x.url) ? inspSkaermUrl(x) : "";
+  const emb = (x.type !== "billede" && x.url && !skaerm) ? inspEmbedUrl(x.url) : "";
+  const iv = v => esc(v == null ? "" : String(v)).replace(/"/g, "&quot;");
+  const idS = String(x.id).replace(/'/g, "\\'");
+  let setDato = ""; try { setDato = x.created_at ? dkDatoKort(String(x.created_at).slice(0, 10)) : ""; } catch (e) {}
+  const eye = (x.type === "billede" ? "Billede" : (x.url ? inspVaert(x.url) : "Note")) + (setDato ? " · set " + setDato : "");
+  const udenBillede = x.type !== "billede" && x.url && !skaerm && !emb;
+  arkAabn({ eye: eye, titel: inspNavn(x), ingenTekst: true, udenMik: true, send: "Lav til idé", klasse: "insp-ark",
+    knap: udenBillede ? { tekst: "Åbn linket", klik: "window.open(" + JSON.stringify(String(x.url)) + ",'_blank','noopener')" } : null,
+    ekstraAf: function () { return udenBillede ? '<label class="ark-knap ark-knap-graa">Tilføj skærmbillede<input type="file" accept="image/*" style="display:none;" onchange="arkLuk();inspSkaermTilfoej(\'' + idS + '\', this)"></label>' : ''; },
+    gem: function () { setTimeout(function () { inspTilIde(id); }, 0); return "Åbner idéen …"; } });
+  const st = document.querySelector("#arkSlor .ark-streg");
+  const medie = x.type === "billede" ? '<img src="' + iv(x.url) + '" alt="" class="insp-ark-medie">'
+    : (skaerm ? '<a href="' + iv(x.url) + '" target="_blank" rel="noopener"><img src="' + iv(skaerm) + '" alt="" class="insp-ark-medie"></a>'
+    : (emb ? '<div class="insp-ark-embed' + (/tiktok/.test(emb) ? ' tiktok' : '') + '"><iframe src="' + iv(emb) + '" title="Opslaget" allowfullscreen scrolling="no"></iframe></div>' : ''));
+  if (st && medie) st.insertAdjacentHTML("afterend", medie);
+}
+/* Slet spoerger foerst (skraldespanden, 17/9) — husets spoergsmaal, aldrig confirm() */
+function inspSletSpoerg(id) {
+  try { arkSpoerg({ titel: "Slet inspirationen?", jaTekst: "Ja, slet", nejTekst: "Nej", ja: function () { delInsp(id); } }); } catch (e) { delInsp(id); }
+}
 function inspVaert(url) {
   try { return new URL(url).hostname.replace(/^www\./, ""); } catch(e) { return "link"; }
 }
@@ -44554,32 +44618,31 @@ function renderInspiration() {
       : '<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/>';
     const skaerm = (x.type !== "billede" && x.url) ? inspSkaermUrl(x) : "";
     const idS = String(x.id).replace(/'/g, "\\'");
-    /* LINKKORTET (Idas valg B, 13/9): med skaermbillede staar billedet oeverst og aabner linket.
-       Uden staar det graa felt som EEN stor knap: tryk, vaelg skaermbilledet, og det staar her. */
-    const medie = x.type === "billede"
-      ? '<img src="' + iv(x.url) + '" loading="lazy" alt="" style="width:100%;aspect-ratio:4/3;object-fit:cover;display:block;">'
-      : (x.url
-        ? (skaerm
-          ? '<a href="' + iv(x.url) + '" target="_blank" rel="noopener" style="display:block;text-decoration:none;"><img src="' + iv(skaerm) + '" loading="lazy" alt="" style="width:100%;aspect-ratio:4/3;object-fit:cover;display:block;"></a>'
-          : '<label style="min-height:120px;background:var(--gray);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;cursor:pointer;padding:14px 16px;text-align:center;">'
-            + '<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#9A9590" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">' + pIkon + '</svg>'
-            + '<span style="font-size:11.5px;color:var(--gray3);line-height:1.4;">Tag et skærmbillede af opslaget, så står det her</span>'
-            + '<span class="insp-tilfoej" style="font-size:11px;color:var(--red);border:1px solid var(--red);border-radius:999px;padding:6px 14px;background:#fff;">Tilføj skærmbillede</span>'
-            + '<input type="file" accept="image/*" style="display:none;" onchange="inspSkaermTilfoej(\'' + idS + '\', this)"></label>')
-        : '');
-    return '<div class="insp-kort" style="background:#fff;border:1px solid var(--border);border-radius:20px;overflow:hidden;">'
-      + medie
-      + '<div style="padding:12px 16px;">'
-      + '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:4px;">'
-      + '<span style="font-size:9.5px;letter-spacing:1px;text-transform:uppercase;color:var(--gray3);min-width:0;line-height:1.4;">' + esc(kilde) + '</span>'
-      + '</div>'
-      + (x.note ? '<div style="font-size:12px;line-height:1.5;word-break:break-word;">' + esc(x.note) + '</div>' : '')
-      + '<div class="kort-knapper"><button type="button" class="ib-genbrug" onclick="inspTilIde(\'' + x.id + '\')">Lav til idé</button>'
-      + ((x.type !== "billede" && x.url) ? '<a href="' + iv(x.url) + '" target="_blank" rel="noopener" class="ib-genbrug" style="text-decoration:none;">Åbn linket</a>' : '')
-      + '<button type="button" class="ib-genbrug" style="color:var(--gray3);" onclick="delInsp(\'' + x.id + '\')">Slet</button></div>'
-      + '</div></div>';
+    /* GALLERIET (Idas klik 26/9 ~21.35 »Ok til bud 3 galleriet!«, efter Notions link-visninger; artifact UT8jySSWqb8D4Bv3xUsL4q v2).
+       Foer (samme aften): opslaget i fuld stoerrelse paa flisen — »Det fylder for meget!«. Nu: smaa staaende opslag som en opslagstavle
+       (to pr. raekke paa telefonen), kilden + skraldespanden og navnet under. Tryk = opslaget stort i det lille ark med »Lav til idé«.
+       Navnet er kundens egen note (»Hvad fangede dig?«); Instagram giver ikke opslagets egen tekst til en browser. */
+    const emb = (x.type !== "billede" && x.url && !skaerm) ? inspEmbedUrl(x.url) : "";
+    const billede = x.type === "billede" ? x.url : skaerm;
+    const medie = billede
+      ? '<img src="' + iv(billede) + '" loading="lazy" alt="" class="insp-medie">'
+      : (emb
+        ? '<div class="insp-mini"><iframe src="' + iv(emb) + '" loading="lazy" title="Opslaget" scrolling="no" tabindex="-1" aria-hidden="true"></iframe></div>'
+        : '<div class="insp-mini insp-mini-tom"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#9A9590" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">' + pIkon + '</svg></div>');
+    const slet = '<button type="button" class="insp-slet" title="Slet" aria-label="Slet" onclick="event.stopPropagation();inspSletSpoerg(\'' + idS + '\')"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" data-tegn-ok="1"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg></button>';
+    return '<div class="insp-kort insp-flise" role="button" tabindex="0" onclick="inspAabnArk(\'' + idS + '\')" onkeydown="if(event.key===\'Enter\')inspAabnArk(\'' + idS + '\')">'
+      + '<div class="insp-billede">' + medie + '</div>'
+      + '<div class="insp-et"><span>' + esc(x.type === "billede" ? "Billede" : (vaertNavn || "Note")) + '</span>' + slet + '</div>'
+      + '<div class="insp-note">' + esc(inspNavn(x)) + '</div>'
+      + '</div>';
   }).join("") : '<div style="grid-column:1/-1;">' + tomKortHtml("Hvad har du set, du gerne vil lave din egen version af?", "", "") + '</div>';
+  inspMiniSkaler();
 }
+/* de smaa opslag skaleres til flisens bredde (318 px er Instagrams egen bredde; profil-linjen oeverst skaeres vaek) */
+function inspMiniSkaler() {
+  document.querySelectorAll("#inspGrid .insp-mini iframe").forEach(function (f) { const w = f.parentNode.clientWidth || 0; if (!w) return; const k = w / 318; f.style.transform = "translateY(" + (-56 * k) + "px) scale(" + k + ")"; });
+}
+try { window.addEventListener("resize", function () { try { inspMiniSkaler(); } catch (e) {} }); } catch (e) {}
 
 /* ---------- kundens fælles Drive-mappe: ét link, hele appen kender ---------- */
 let DRIVE_LINK = "";
@@ -54683,7 +54746,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2354";
+const APP_VERSION = "2355";
 let NY_VERSION_KLAR = false;
 let NY_VERSION_AFVIST = false;
 function nyVersionSkjul() {
@@ -76618,6 +76681,6 @@ function bf3StudieRum(v, filter) {
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-hvid.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 26. september · 2354</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 26. september · 2355</div>
 </body>
 </html>
