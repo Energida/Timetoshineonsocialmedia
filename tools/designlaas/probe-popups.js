@@ -20,6 +20,7 @@ const DOERE = [
   ["perfMaalRet", "skriv", function () { perfMaalRet("opslag"); }],
   ["perfStoryDageVis", "valg", function () { perfStoryDageVis(); }],
   ["vaelgPlanDagModal", "valg", function () { vaelgPlanDagModal(); }],
+  ["lekSkemaLaasArk", "valg", function () { lekSkemaLaasArk(); }],   /* laasen foer startskemaet (28/9) */
   ["opslagNyDatoAabn", "valg", function () { opslagNyDatoAabn("dl-ops"); }],
   ["visDagOpslag", "valg", function () { visDagOpslag(datoDK()); }],
   ["drejebogTomVis", "valg", function () { drejebogTomVis(); }],   /* »Drejebogen er tom« (fundet af sidemaalingen 14/9: doeren var ukendt og blev staaende over naeste side) */
