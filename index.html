@@ -55005,7 +55005,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2386";
+const APP_VERSION = "2387";
 let NY_VERSION_KLAR = false;
 let NY_VERSION_AFVIST = false;
 function nyVersionSkjul() {
@@ -76181,14 +76181,15 @@ const BF3_STUDIE_LISTER = {
 let PRODUCERET = [], PRODUCERET_HENTET = false; const PROD_RK = [];
 function prodNoegle(type, lek, t) { return String(type) + "|" + String(lek) + "|" + String(t); }
 function erProduceret(type, lek, t) { const k = prodNoegle(type, lek, t); return PRODUCERET.some(function (r) { return r && r.id === k; }); }
-async function prodHent() {
+/* EGET NAVN (28/9): hed prodHent og overskrev »Produkter og onlinekurser«-panelets hentning fra v2379 */
+async function produdHent() {
   let fra = null; try { fra = await vaneRow("studie_produceret"); } catch (e) { fra = null; }
   if (fra === null && sb) { try { const r = await sb.from("skema_svar").select("created_at").eq("kode", "ENERGIDA").eq("navn", "Ida").eq("skema", "studie_produceret").limit(1); if (!r.error && Array.isArray(r.data) && !r.data.length) fra = []; } catch (e) {} }
   if (fra !== null) { PRODUCERET = Array.isArray(fra) ? fra.slice() : []; PRODUCERET_HENTET = true; }
 }
 async function prodSkiftNr(nr) {
   const x = PROD_RK[nr]; if (!x) return;
-  if (!PRODUCERET_HENTET) await prodHent();
+  if (!PRODUCERET_HENTET) await produdHent();
   if (!PRODUCERET_HENTET) { try { husBesked("Listen kunne ikke hentes. Prøv igen."); } catch (e) {} return; }   /* skriv aldrig en liste, du ikke har laest */
   const k = prodNoegle(x[0], x[1], x[2]);
   if (PRODUCERET.some(function (r) { return r && r.id === k; })) PRODUCERET = PRODUCERET.filter(function (r) { return !r || r.id !== k; });
@@ -76394,7 +76395,7 @@ function klipBud6Tegn(el) {
       const nrL = function (x) { const m = String(x.titel || "").match(/^(\d+)\.(\d+)/); return m ? parseInt(m[1], 10) * 100 + parseInt(m[2], 10) : 9999; };
       const lek = KLIP_OPGAVER.filter(function (o) { return mods.has(klipModulGruppe(o.modul)); }).sort(function (a, b) { return klipModulSortNr(klipModulGruppe(a.modul)) - klipModulSortNr(klipModulGruppe(b.modul)) || nrL(a) - nrL(b); });
       let krop = "", modF = null, ialt = 0; PROD_RK.length = 0;
-      if (!PRODUCERET_HENTET && !window.__PROD_HENT) { window.__PROD_HENT = 1; prodHent().then(function () { try { renderKlipperum(); } catch (e) {} }); }
+      if (!PRODUCERET_HENTET && !window.__PROD_HENT) { window.__PROD_HENT = 1; produdHent().then(function () { try { renderKlipperum(); } catch (e) {} }); }
       lek.forEach(function (o) {
         const rr = erO ? kbOverlayFraManus(o.manus_tekst) : erG ? kbGrafikFraManus(o.manus_tekst) : kbBrollsFraManus(o.manus_tekst);
         if (!rr.length) return;
@@ -76425,9 +76426,29 @@ function klipBud6Tegn(el) {
   if (px0) {
     const modFl = function (k) { const nL = grupper[k].length; const nr = nrAf(k);
       return '<div class="bs3-fl bs3-klik bs3-modulkort" role="button" tabindex="0" onclick="bf3ModulAabn(\'' + esc(k).replace(/'/g, "\\'") + '\')"><div class="bs3-et"><span>' + esc(nr ? "Modul " + parseInt(nr, 10) : "Modul") + '</span><span>' + (nL === 1 ? "1 lektion" : nL + " lektioner") + '</span></div><div class="bs3-n">' + esc(navnAf(k)) + '</div>' + bf3ModulFakta(grupper[k]) + '</div>'; };
+    /* PRODUKTIONEN SAMLET PAA PRODUKTETS FORSIDE (Ida 28/9: »en oversigt, hvor jeg samlet kan se B-rolls, overlays og grafik status … på forsiden«):
+       samme Status-flise med ringe som Content Studio (cf-sek + bs3-ringe) — produceret af alle linjer i produktets manus. Tryk paa en ring = listen. */
+    let prodStatus = "";
+    if (!BF3_MODUL_AABEN) {
+      try {
+        if (!PRODUCERET_HENTET && !window.__PROD_HENT) { window.__PROD_HENT = 1; produdHent().then(function () { try { renderKlipperum(); } catch (e) {} }); }
+        const modsP = bf3ProdModuler(px0.id), tael = { broll: [0, 0], grafik: [0, 0], overlay: [0, 0] };
+        KLIP_OPGAVER.forEach(function (o) {
+          if (!modsP.has(klipModulGruppe(o.modul))) return;
+          [["broll", kbBrollsFraManus], ["grafik", kbGrafikFraManus], ["overlay", kbOverlayFraManus]].forEach(function (x) {
+            (x[1](o.manus_tekst) || []).forEach(function (t) { tael[x[0]][1]++; if (erProduceret(x[0], o.id, t)) tael[x[0]][0]++; });
+          });
+        });
+        if (tael.broll[1] + tael.grafik[1] + tael.overlay[1]) {
+          const tlfP = (function () { try { return window.matchMedia("(max-width:899px)").matches; } catch (e) { return false; } })();
+          const ring = function (k, fane, navn) { const t = tael[k]; return '<div class="bs3-klik" role="button" tabindex="0" style="flex:1;" onclick="bf3ProdFane(\'' + fane + '\')">' + bf3Ring(t[0] + "/" + t[1], navn, t[1] ? t[0] / t[1] : 0, tlfP ? 64 : 76) + '</div>'; };
+          prodStatus = '<div class="bs3-fl"><div class="cf-sek">Produktion</div><div class="bs3-ringe">' + ring("broll", "brolls", "B-rolls produceret") + ring("grafik", "grafik", "grafik produceret") + ring("overlay", "overlays", "overlays produceret") + '</div></div>';
+        }
+      } catch (e) { prodStatus = ""; }
+    }
     const krop = BF3_MODUL_AABEN && KLIP_MODUL_CHIP
       ? hoved + fliser + send + modIdeHtml
-      : bf3Ver("Moduler") + (modulerVis.length ? '<div class="bs3-modulgrid">' + modulerVis.map(modFl).join('') + '</div>' : bf3Tom("Ingen moduler i produktet endnu."));
+      : prodStatus + bf3Ver("Moduler") + (modulerVis.length ? '<div class="bs3-modulgrid">' + modulerVis.map(modFl).join('') + '</div>' : bf3Tom("Ingen moduler i produktet endnu."));
     try { bf3BaandKnapVis(BF3_MODUL_AABEN ? "moduler" : "modnyt"); } catch (e) {}
     el.innerHTML = '<div class="bs3">' + prodTop + krop + '</div>';
     try { klipStiOpdater(); } catch (e) {}
@@ -77105,6 +77126,6 @@ function bf3StudieRum(v, filter) {
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-hvid.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 28. september · 2386</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 28. september · 2387</div>
 </body>
 </html>
