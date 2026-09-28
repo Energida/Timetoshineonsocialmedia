@@ -36050,7 +36050,7 @@ function renderLektionVis() {
     + '<button class="lek-note-slet" style="font-size:20px;" onclick="lukNotePanel()" title="Luk noterne">&times;</button></div>'
     + '<textarea id="lekNoteTekst" class="sk-input" style="min-height:74px;background:var(--gray);width:100%;" placeholder="Din note, mens du ser med&hellip;"></textarea>'
     + '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:8px;flex-wrap:wrap;">'
-    + '<span style="font-size:10.5px;color:var(--gray3);">Videoen ' + (KURSUS_PREF.videoNote === "pause" ? 'sættes på pause, mens du skriver' : 'kører videre, mens du skriver') + ' — ændr det under Indstillinger.</span>'
+    + '<span style="font-size:10.5px;color:var(--gray3);">Videoen ' + (KURSUS_PREF.videoNote !== "koer" ? 'sættes på pause, mens du skriver' : 'kører videre, mens du skriver') + ' — ændr det under Indstillinger.</span>'
     + '<button class="dbtn primary" style="padding:9px 18px;" onclick="gemLekNote()">Gem note</button></div>'
     + '<div class="lek-note-liste" id="lekNoteListe"></div>'
     + '</div>';
@@ -36222,7 +36222,7 @@ function lekNoteGemRig() {
   kursusGemLocal();
   kursusBlobGem("lektion_noter", KURSUS_NOTER);
 }
-function lekNoteFokus() { if (KURSUS_PREF.videoNote === "pause" && !LEK_PAUSET) { lekVideoPause(); LEK_PAUSET = true; } }
+function lekNoteFokus() { if (KURSUS_PREF.videoNote !== "koer" && !LEK_PAUSET) { lekVideoPause(); LEK_PAUSET = true; } }
 function lekNoteFold(kn) {
   const f = kn.closest(".lk-flise"); if (!f) return;
   f.classList.toggle("luk");
@@ -36406,7 +36406,7 @@ async function vaelgVideoPref(v, aabnEfter) {
 function aabnNotePanel() {
   const p = document.getElementById("lekNotePanel"); if (!p) return;
   p.style.display = "block";
-  if (KURSUS_PREF.videoNote === "pause") { lekVideoPause(); LEK_PAUSET = true; }
+  if (KURSUS_PREF.videoNote !== "koer") { lekVideoPause(); LEK_PAUSET = true; }
   const ta = document.getElementById("lekNoteTekst"); if (ta) ta.focus();
 }
 function lukNotePanel(stille) {
@@ -36451,7 +36451,7 @@ function renderLekNoteListe() {
 
 /* ---------- indstillinger (kursist): note-valget kan altid ændres her ---------- */
 function openKursusIndstillinger() {
-  const v = KURSUS_PREF.videoNote;
+  const v = KURSUS_PREF.videoNote || "pause";   /* pause er standard (28/9) */
   const valg = (val, titel, sub) =>
     '<div onclick="vaelgVideoPref(\'' + val + '\');openKursusIndstillinger()" style="border:2px solid ' + (v === val ? 'var(--red)' : 'var(--border)') + ';border-radius:20px;padding:13px 15px;margin-bottom:8px;cursor:pointer;background:#fff;">'
     + '<div style="font-size:13px;font-weight:400;' + (v === val ? 'color:var(--red);' : '') + '">' + titel + (v === val ? ' &#10003;' : '') + '</div>'
@@ -54981,7 +54981,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2381";
+const APP_VERSION = "2382";
 let NY_VERSION_KLAR = false;
 let NY_VERSION_AFVIST = false;
 function nyVersionSkjul() {
@@ -70110,7 +70110,8 @@ async function kkSkemaHent() {
          foer-indeks -> efter-indeks, begge 0-baserede. Platform og markedsfoering stilles
          ikke igen og har derfor intet efter-svar. Der digtes ikke: findes det ikke,
          vises der ingen pil. */
-      const EFTER_FOR = { 8: 5, 6: 6, 4: 7 };
+      /* DET NYE STARTSKEMA (21/9) STILLER q1–q6 IGEN PAA SAMME PLADS i »Hvor står du nu?« — den gamle parring gjaldt kun inden_workshoppen (rettet 28/9: energien viste et spejl-svar) */
+      const EFTER_FOR = harNy ? { 0: 0, 1: 1, 2: 2, 3: 3, 4: 4, 5: 5 } : { 8: 5, 6: 6, 4: 7 };
       const hentEfter = function (i) {
         if (!ef || EFTER_FOR[i] === undefined) return "";
         const v = ef["q" + (EFTER_FOR[i] + 1)];
@@ -70150,9 +70151,12 @@ async function kkSkemaHent() {
              FOER hun laeser citaterne (Ida 2/9). Har kunden sagt nej, siges det tydeligt.
              Der digtes ikke: har de ikke svaret endnu, staar der ingenting. */
           + (function () {
-              const sidste = ((SKEMAER.efter_forloebet || {}).sp || []).length;
+              /* TILLADELSEN FINDES PAA SPOERGSMAALET, IKKE PAA PLADSEN (28/9: det sidste spoergsmaal er »Må jeg ringe«, ikke »Må jeg bruge dine ord«) */
+              const efSp = ((SKEMAER.efter_forloebet || {}).sp || []);
+              let lovIx = efSp.findIndex(function (q) { return /bruge dine ord/i.test(String(q.q || "")); });
+              if (lovIx < 0) lovIx = efSp.length - 1;
               const sv2 = (efterPr[r.navn || ""] || {}).svar;
-              const t = sv2 && sv2["q" + sidste];
+              const t = sv2 && sv2["q" + (lovIx + 1)];
               if (!t) return "";
               const nej = String(t).indexOf("Nej") === 0;
               return '<span style="font-size:10px;letter-spacing:1.2px;text-transform:uppercase;'
@@ -70169,7 +70173,7 @@ async function kkSkemaHent() {
              MAALT paa skaermbilledet 2/9. */
           + '<button type="button" class="rkn" style="background:none;border:none;padding:0;color:var(--red);font-family:Poppins,sans-serif;font-weight:400;cursor:pointer;white-space:nowrap;" onclick="const d=document.getElementById(&#39;' + id + '&#39;);'
             + 'd.style.display=d.style.display===&#39;none&#39;?&#39;&#39;:&#39;none&#39;;'
-            + 'this.textContent=d.style.display===&#39;none&#39;?&#39;SE ALLE 19 SVAR&#39;:&#39;SKJUL DE &Oslash;VRIGE&#39;;">SE ALLE 19 SVAR</button>'
+            + 'this.textContent=d.style.display===&#39;none&#39;?&#39;SE ALLE ' + def.sp.length + ' SVAR&#39;:&#39;SKJUL DE &Oslash;VRIGE&#39;;">SE ALLE ' + def.sp.length + ' SVAR</button>'
         + '</div>'
         + '<div id="' + id + '" style="display:none;">' + resten.map(function (x) { return raekke(x, false); }).join("") + '</div>'
         + '</div>';
@@ -77075,6 +77079,6 @@ function bf3StudieRum(v, filter) {
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-hvid.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 28. september · 2381</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 28. september · 2382</div>
 </body>
 </html>
