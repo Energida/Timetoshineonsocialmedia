@@ -14852,6 +14852,325 @@ Deno.serve(async (req) =&gt; {
   // kunden hedder nu det samme som personen. Det skal ses, ikke opdages senere.
   return svar({ ok: true, oprettet: true, kode, produkt: erYGT ? "yougotthis" : "contentstudio", virksomhed_id: virksomhedId, laast: !!nyId, test: !!erTest, kontakt: kontaktOk, virk_kilde: virkKilde }, 200);
 });
+</pre></div><!-- 3 ADGANGE (28/9, Idas klik: YOU GOT THIS = 3 adgange, Profil › Team). To funktioner: inviter-kollega (NY, Verify JWT TIL, kalderen slaas op paa sit eget token, kode+virksomhed_id KUN fra app_metadata, loft 3, §6 stop ved kendt mail) og signup-med-kode (samme loft for YGT-koder + virksomhed_id i app_metadata). Kortet er inert, til Ida har lagt dem op. --><div id="sqlk_3adgange_2809" data-kode="edge" data-dato="28. september 2026" style="border:1px solid var(--border);border-radius:12px;background:#fff;padding:12px 14px;margin-bottom:8px;"><div><span style="font-size:12.5px;font-weight:400;">YOU GOT THIS: 3 adgange &mdash; to funktioner</span></div><div style="font-size:10px;font-weight:400;letter-spacing:1.4px;text-transform:uppercase;color:var(--gray3);padding-bottom:7px;border-bottom:1px solid var(--red);margin:6px 0 9px;">K&oslash;res i Supabase &rsaquo; Edge Functions</div><div style="font-size:11.5px;color:var(--gray3);line-height:1.65;"><b style="font-weight:400;color:var(--black);">Det her g&oslash;r de 3 adgange rigtige.</b> K&oslash;beren inviterer selv to kolleger under <b style="font-weight:400;color:var(--black);">Min profil &rsaquo; Team</b>. Den fjerde bliver afvist p&aring; serveren, ikke i appen.<br><br><b style="font-weight:400;color:var(--black);">Funktion 1 &middot; inviter-kollega (ny)</b><br>1 &middot; Supabase &rsaquo; Edge Functions &rsaquo; New function, navn pr&aelig;cis <b style="font-weight:400;color:var(--black);">inviter-kollega</b><br>2 &middot; Tryk <b style="font-weight:400;color:var(--black);">Kopi&eacute;r inviter-kollega</b> herunder, s&aelig;t ind, og tryk Deploy<br>3 &middot; <b style="font-weight:400;color:var(--red);">&bdquo;Verify JWT&ldquo; skal st&aring; TIL</b> (det g&oslash;r den som standard)<br><br><b style="font-weight:400;color:var(--black);">Funktion 2 &middot; signup-med-kode (ret den, der findes)</b><br>1 &middot; &Aring;bn <b style="font-weight:400;color:var(--black);">signup-med-kode</b>, slet alt indholdet<br>2 &middot; Tryk <b style="font-weight:400;color:var(--black);">Kopi&eacute;r signup-med-kode</b>, s&aelig;t ind, og tryk Deploy<br>3 &middot; <b style="font-weight:400;color:var(--red);">&bdquo;Verify JWT&ldquo; skal st&aring; FRA</b> &mdash; som f&oslash;r<br>Den f&aring;r samme loft p&aring; 3, s&aring; ingen kan komme uden om det med koden.<br><br><b style="font-weight:400;color:var(--black);">S&aring;dan tester vi den bagefter (jeg guider dig):</b><br>&middot; uden login &rarr; afvist<br>&middot; testkunden inviterer to &rarr; to mails, og begge st&aring;r under Team<br>&middot; en tredje invitation &rarr; &bdquo;Alle 3 adgange er i brug&ldquo;<br>&middot; en mail, der allerede har login &rarr; afvist, kontoen r&oslash;res ikke<br>&middot; en anden kunde ser kun sit eget team<br>&middot; testbrugerne slettes bagefter, og vi t&aelig;ller, at der er 0 tilbage</div><div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap;justify-content:flex-end;"><button class="row-btn" onclick="sqlKortKoert('sqlk_3adgange_2809', this)" title="Er de lagt op, s&aring; fjern kortet">Lagt op <span style="width:14px;height:14px;border-radius:50%;background:var(--red);display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;vertical-align:-2px;"><svg width="7" height="7" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span> &mdash; fjern kortet</button><button class="row-btn" onclick="sqlVis('edgeInviterKollega2809', this)">Vis inviter-kollega</button><button class="dbtn primary" style="padding:7px 15px;" onclick="sqlKopier('edgeInviterKollega2809', this)">Kopi&eacute;r inviter-kollega</button><button class="row-btn" onclick="sqlVis('edgeSignupKode2809', this)">Vis signup-med-kode</button><button class="dbtn primary" style="padding:7px 15px;" onclick="sqlKopier('edgeSignupKode2809', this)">Kopi&eacute;r signup-med-kode</button></div><pre id="edgeInviterKollega2809" style="display:none;margin:9px 0 0;background:#F7F9FB;border:1px solid var(--border);border-radius:12px;padding:12px 14px;font-size:10.5px;line-height:1.5;overflow-x:auto;white-space:pre-wrap;word-break:break-word;font-family:ui-monospace,Menlo,monospace;color:var(--black);">// ============================================================================
+// INVITER EN KOLLEGA · Edge Function "inviter-kollega"
+//
+// YOU GOT THIS giver 3 adgange i samme virksomhed (Ida 28/9, handelsbetingelsernes
+// punkt 2a). Kunden inviterer selv sine kolleger fra Min profil › Team. Denne
+// funktion er den ENESTE vej til de to ekstra adgange, og den er det, der holder
+// loftet: appen viser bare tallet, den bestemmer ingenting.
+//
+// Deploy: Supabase -&gt; Edge Functions -&gt; New function, navn: inviter-kollega
+//         "Verify JWT" skal staa TIL (standard). Ingen secrets skal saettes.
+//
+// ---------------------------------------------------------------------------
+// DE SEKS LINJER · sikkerhedskontraktens §3
+//
+// 1. VERIFY JWT: TIL.
+// 2. HVEM MAA KALDE DEN: en indlogget YOU GOT THIS-kunde. Anon-noeglen alene
+//    duer ikke (§3): kalderen slaas op paa sit EGET token med getUser(jwt).
+// 3. EGEN AUTHORIZATION: JA. Kode og virksomhed_id tages KUN fra kalderens
+//    app_metadata (som brugeren ikke selv kan rette) — aldrig fra kaldet.
+//    Koden skal vaere aktiv, hoere til YOU GOT THIS og til samme virksomhed_id.
+//    Man kan derfor kun invitere ind i sin EGEN virksomhed.
+// 4. SERVICE-ROLE: JA, men foerst EFTER at kalderen er slaaet op og godkendt.
+// 5. RAEKKEVIDDE: laeser virksomhedskoder (een raekke) og auth-brugerne paa
+//    samme kode; opretter KUN en invitation + laaser app_metadata paa den nye.
+//    Listen, der sendes tilbage, indeholder kun navn og e-mail paa folk i
+//    kalderens egen virksomhed.
+// 6. OMKOSTNING: ingen direkte. Ingen AI-kald. Hoejst to invitationsmails pr.
+//    koeb, fordi loftet er 3 inkl. koeberen.
+//
+// §6 · Findes e-mailen i forvejen: STOP. Der saettes aldrig et kodeord — den
+// inviterede vaelger selv sit via mailen.
+//
+// Kendt graense (INFERERET, ikke maalt): to invitationer sendt i praecis samme
+// sekund kan begge naa igennem, foer de taeller hinanden med. Det kan hoejst
+// give een adgang for meget og kun, hvis kunden selv trykker to gange samtidig.
+// ============================================================================
+
+import { createClient } from "npm:@supabase/supabase-js@2";
+
+const MAKS = 3;   // YOU GOT THIS: koeberen + to kolleger
+
+const cors = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+};
+function svar(x: unknown, status: number) {
+  return new Response(JSON.stringify(x), { status, headers: { ...cors, "Content-Type": "application/json" } });
+}
+
+type Bruger = { id: string; email?: string; app_metadata?: Record&lt;string, unknown&gt;; user_metadata?: Record&lt;string, unknown&gt;; last_sign_in_at?: string | null };
+
+Deno.serve(async (req) =&gt; {
+  if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
+  if (req.method !== "POST") return svar({ fejl: "Brug POST." }, 405);
+
+  const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+
+  // ---------- 1) HVEM KALDER? (paa kalderens eget token) ----------
+  const auth = req.headers.get("Authorization") ?? "";
+  const token = auth.toLowerCase().startsWith("bearer ") ? auth.slice(7).trim() : "";
+  if (!token) return svar({ fejl: "Du er ikke logget ind." }, 401);
+  const { data: kd, error: kf } = await admin.auth.getUser(token);
+  const kalder = kd?.user as Bruger | undefined;
+  if (kf || !kalder) return svar({ fejl: "Du er ikke logget ind." }, 401);
+  const am = (kalder.app_metadata ?? {}) as Record&lt;string, unknown&gt;;
+  const kode = String(am.kode ?? "").trim().toUpperCase();
+  const virksomhedId = String(am.virksomhed_id ?? "").trim();
+  if (!kode || !virksomhedId) return svar({ fejl: "Din adgang er ikke koblet til en virksomhed. Skriv til Ida." }, 403);
+
+  // ---------- 2) KODEN: aktiv, YOU GOT THIS, samme virksomhed ----------
+  const { data: kr, error: kodeFejl } = await admin.from("virksomhedskoder")
+    .select("kode, virksomhed, forloeb, aktiv, virksomhed_id").eq("kode", kode).maybeSingle();
+  if (kodeFejl) return svar({ fejl: "Kunne ikke tjekke din adgang. Prøv igen." }, 500);
+  if (!kr || !kr.aktiv || String(kr.virksomhed_id ?? "") !== virksomhedId) {
+    return svar({ fejl: "Din adgang er ikke aktiv. Skriv til Ida." }, 403);
+  }
+  if (String(kr.forloeb ?? "") !== "YOU GOT THIS") {
+    return svar({ fejl: "Invitationer bruges kun i YOU GOT THIS. Skriv til Ida." }, 403);
+  }
+
+  // ---------- 3) HVEM ER MED? (alle brugere paa koden) ----------
+  const alle: Bruger[] = [];
+  for (let side = 1; side &lt;= 20; side++) {
+    const { data, error } = await admin.auth.admin.listUsers({ page: side, perPage: 200 });
+    if (error) return svar({ fejl: "Kunne ikke slå teamet op. Prøv igen." }, 500);
+    const b = (data?.users ?? []) as Bruger[];
+    alle.push(...b);
+    if (b.length &lt; 200) break;
+  }
+  const paaKoden = alle.filter((u) =&gt; String((u.app_metadata ?? {}).kode ?? "").trim().toUpperCase() === kode);
+  const team = paaKoden.map((u) =&gt; ({
+    navn: String((u.user_metadata ?? {}).navn ?? "").trim(),
+    email: String(u.email ?? ""),
+    dig: u.id === kalder.id,
+    venter: !u.last_sign_in_at,
+  }));
+
+  let body: Record&lt;string, unknown&gt; = {};
+  try { body = await req.json(); } catch { body = {}; }
+  const handling = String(body.handling ?? "liste");
+
+  if (handling === "liste") return svar({ ok: true, team, brugt: team.length, maks: MAKS }, 200);
+  if (handling !== "inviter") return svar({ fejl: "Ukendt handling." }, 400);
+
+  // ---------- 4) INVITER ----------
+  const email = String(body.email ?? "").trim().toLowerCase();
+  const navn = String(body.navn ?? "").trim().slice(0, 80);
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return svar({ fejl: "Skriv en rigtig e-mail." }, 400);
+  if (paaKoden.length &gt;= MAKS) {
+    return svar({ fejl: "Alle " + MAKS + " adgange er i brug.", team, brugt: team.length, maks: MAKS }, 409);
+  }
+  // §6: findes e-mailen, stopper vi. Vi kobler ikke og roerer aldrig en konto.
+  if (alle.some((u) =&gt; String(u.email ?? "").toLowerCase() === email)) {
+    return svar({ fejl: "Den e-mail har allerede et login hos Energida. Brug en anden, eller skriv til Ida.", findes: true }, 409);
+  }
+
+  const { data: ny, error: invFejl } = await admin.auth.admin.inviteUserByEmail(email, {
+    data: { navn, kode, virksomhed: kr.virksomhed ?? "", forloeb: "YOU GOT THIS", inviteret_af: kalder.email ?? "" },
+    redirectTo: "https://b2b.energida.dk",
+  });
+  if (invFejl) return svar({ fejl: "Invitationen blev ikke sendt: " + invFejl.message }, 500);
+
+  // Laas koden og virksomheden fast paa den NYE bruger (samme moenster som
+  // stripe-koeb). Kun app_metadata — aldrig et kodeord.
+  const nyId = ny?.user?.id;
+  if (!nyId) return svar({ fejl: "Invitationen er sendt, men brugeren kom ikke tilbage. Skriv til Ida." }, 500);
+  const { error: laasFejl } = await admin.auth.admin.updateUserById(nyId, { app_metadata: { kode, virksomhed_id: virksomhedId } });
+  if (laasFejl) return svar({ fejl: "Invitationen er sendt, men adgangen blev ikke låst fast: " + laasFejl.message }, 500);
+
+  team.push({ navn, email, dig: false, venter: true });
+  return svar({ ok: true, inviteret: email, team, brugt: team.length, maks: MAKS }, 200);
+});
+</pre><pre id="edgeSignupKode2809" style="display:none;margin:9px 0 0;background:#F7F9FB;border:1px solid var(--border);border-radius:12px;padding:12px 14px;font-size:10.5px;line-height:1.5;overflow-x:auto;white-space:pre-wrap;word-break:break-word;font-family:ui-monospace,Menlo,monospace;color:var(--black);">// ============================================================================
+// OPRET LOGIN MED KODE · Edge Function "signup-med-kode"
+// UDGAVE 28. september 2026: + LOFT PAA 3 ADGANGE for YOU GOT THIS-koder og
+// + virksomhed_id i app_metadata (§2). Resten er uaendret fra 24. august.
+//
+// SIKKER UDGAVE — 24. august 2026. Erstatter den udgave, der blev PAUSET
+// 7. august, fordi den kunne saette en NY adgangskode paa en konto, der
+// allerede fandtes (kundens mail + virksomhedskoden = kontoovertagelse).
+//
+// HULLET ER LUKKET VED RODEN: updateUserById med "password" findes ikke
+// laengere i filen. Funktionen kan kun OPRETTE nye konti. Findes e-mailen,
+// bliver den afvist — kontoen roeres aldrig.
+//
+// "Verify JWT" skal fortsat vaere SLAAET FRA. Funktionen bruges nemlig TO
+// steder: kunden opretter selv sit login med en kode (uden at vaere logget
+// ind), OG Ida opretter det fra admin. Derfor kan den ikke laases til admin.
+//
+// DEN ENE HANDLING, DER KRAEVER ADMIN: at rydde et efterladt forsoeg vaek
+// (slet + opret forfra). Den er farlig i en fremmeds haand — derfor
+// udfoeres den KUN, naar kaldet baerer en gyldig administrators token,
+// og kun paa en konto, der aldrig har vaeret brugt og ingen kode har.
+// Et kald uden admin-token kan ikke slette noget som helst.
+//
+// Deploy: Supabase -&gt; Edge Functions -&gt; signup-med-kode -&gt; indsaet denne fil
+//         -&gt; "Verify JWT" SLAAET FRA (som foer)
+// Ingen secrets skal saettes.
+// ============================================================================
+
+import { createClient } from "npm:@supabase/supabase-js@2";
+
+const cors = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+};
+
+function svar(x: unknown, status: number) {
+  return new Response(JSON.stringify(x), {
+    status,
+    headers: { ...cors, "Content-Type": "application/json" },
+  });
+}
+
+Deno.serve(async (req) =&gt; {
+  if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
+  if (req.method !== "POST") return svar({ fejl: "Brug POST." }, 405);
+
+  const admin = createClient(
+    Deno.env.get("SUPABASE_URL")!,
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+  );
+
+  // ---------- 0) ER DET EN ADMINISTRATOR, DER KALDER? ----------
+  // Ikke en spaerring — et flag. Kunden opretter sig selv uden token, og det
+  // skal den kunne. Flaget afgoer KUN, om et efterladt forsoeg maa ryddes.
+  let erAdmin = false;
+  const auth = req.headers.get("Authorization") ?? "";
+  const token = auth.toLowerCase().startsWith("bearer ") ? auth.slice(7).trim() : "";
+  if (token) {
+    try {
+      const { data: kalder } = await admin.auth.getUser(token);
+      const rolle = String(
+        (kalder?.user?.app_metadata as Record&lt;string, unknown&gt; | undefined)?.rolle ?? "",
+      ).trim();
+      erAdmin = rolle === "admin";
+    } catch { erAdmin = false; }
+  }
+
+  // ---------- 1) Kaldet ----------
+  let body: Record&lt;string, unknown&gt;;
+  try {
+    body = await req.json();
+  } catch {
+    return svar({ fejl: "Ugyldigt kald." }, 400);
+  }
+
+  const kode = String(body.kode ?? "").trim().toUpperCase();
+  const email = String(body.email ?? "").trim().toLowerCase();
+  const password = String(body.password ?? "");
+  const navn = String(body.navn ?? "");
+  const ental = body.ental === true;
+  const rydOp = body.ryd_op === true;
+
+  if (!kode || !email || password.length &lt; 6) {
+    return svar({ fejl: "Udfyld kode, brugernavn og en adgangskode paa mindst 6 tegn." }, 400);
+  }
+
+  // ---------- 2) Koden skal findes og vaere aktiv ----------
+  const { data: kodeRow, error: kodeFejl } = await admin
+    .from("virksomhedskoder")
+    .select("kode, virksomhed, forloeb, aktiv, virksomhed_id")
+    .eq("kode", kode)
+    .maybeSingle();
+  if (kodeFejl) return svar({ fejl: "Kunne ikke tjekke koden — proev igen." }, 500);
+  if (!kodeRow || !kodeRow.aktiv) return svar({ fejl: "Koden er ikke gyldig." }, 400);
+
+  const nyBruger = {
+    email,
+    password,
+    email_confirm: true,
+    user_metadata: {
+      navn,
+      virksomhed: kodeRow.virksomhed ?? "",
+      forloeb: kodeRow.forloeb ?? "",
+      kode,
+      ental,
+    },
+    // §2: virksomheden er ejeren. Den foelger med fra foerste sekund, saa en
+    // kollega kan se virksomhedens data (min_virksomhed()) ligesom koeberen.
+    app_metadata: kodeRow.virksomhed_id ? { kode, virksomhed_id: String(kodeRow.virksomhed_id) } : { kode },
+  };
+
+  // ---------- 2b) YOU GOT THIS: HOEJST 3 ADGANGE PAA KODEN ----------
+  // Samme loft som inviter-kollega. Uden det kunne enhver med koden oprette
+  // flere logins end de 3, koebet giver (handelsbetingelsernes punkt 2a).
+  if (String(kodeRow.forloeb ?? "") === "YOU GOT THIS") {
+    let paaKoden = 0;
+    for (let side = 1; side &lt;= 20; side++) {
+      const { data, error: tf } = await admin.auth.admin.listUsers({ page: side, perPage: 200 });
+      if (tf) return svar({ fejl: "Kunne ikke tjekke koden — proev igen." }, 500);
+      const b = data?.users ?? [];
+      paaKoden += b.filter((u) =&gt; String((u.app_metadata as Record&lt;string, unknown&gt; | undefined)?.kode ?? "").trim().toUpperCase() === kode).length;
+      if (b.length &lt; 200) break;
+    }
+    if (paaKoden &gt;= 3) {
+      return svar({ fejl: "Alle 3 adgange er i brug. Bed den, der har koebt, om at skrive til Ida." }, 409);
+    }
+  }
+
+  // ---------- 3) Opret ----------
+  const { error } = await admin.auth.admin.createUser(nyBruger);
+  if (!error) return svar({ ok: true }, 200);
+  if (!/already|exists|registered/i.test(error.message)) {
+    return svar({ fejl: error.message }, 400);
+  }
+
+  // ---------- 4) E-mailen findes allerede ----------
+  // HERFRA OG NED SAETTES DER ALDRIG EN ADGANGSKODE PAA EN KONTO, DER FINDES.
+  let fundet:
+    | { id: string; app_metadata?: Record&lt;string, unknown&gt;; last_sign_in_at?: string | null }
+    | null = null;
+  for (let side = 1; side &lt;= 20 &amp;&amp; !fundet; side++) {
+    const { data, error: listeFejl } = await admin.auth.admin.listUsers({ page: side, perPage: 200 });
+    if (listeFejl) return svar({ fejl: "Kunne ikke slaa brugeren op — proev igen." }, 500);
+    const brugere = data?.users ?? [];
+    fundet = brugere.find((u) =&gt; String(u.email ?? "").toLowerCase() === email) ?? null;
+    if (brugere.length &lt; 200) break;
+  }
+  if (!fundet) {
+    return svar({ fejl: "E-mailen er optaget, men kontoen kunne ikke findes. Proev igen." }, 409);
+  }
+
+  const harKode = String(
+    (fundet.app_metadata as Record&lt;string, unknown&gt; | undefined)?.kode ?? "",
+  ).trim() !== "";
+  const harVaeretBrugt = !!fundet.last_sign_in_at;
+
+  // 4a) En rigtig konto — roeres ALDRIG.
+  if (harKode || harVaeretBrugt) {
+    return svar({
+      fejl: "Den e-mail har allerede et login. Vaelg \"De har allerede et login\" i stedet, " +
+            "eller brug en anden e-mail. Kodeordet kan kun kunden selv skifte.",
+      findes: true,
+    }, 409);
+  }
+
+  // 4b) Et efterladt forsoeg — og KUN en administrator maa rydde det.
+  if (!erAdmin) {
+    return svar({
+      fejl: "Den e-mail er allerede i brug. Bed Ida om at rydde op, eller brug en anden e-mail.",
+      findes: true,
+    }, 409);
+  }
+  if (!rydOp) {
+    return svar({
+      fejl: "efterladt",
+      besked: "Der ligger et halvt oprettet login paa den e-mail, som aldrig er blevet brugt. " +
+              "Skal jeg rydde det vaek og oprette forfra?",
+    }, 409);
+  }
+
+  const { error: sletFejl } = await admin.auth.admin.deleteUser(fundet.id);
+  if (sletFejl) return svar({ fejl: "Kunne ikke rydde det gamle forsoeg: " + sletFejl.message }, 400);
+
+  const { error: paaNyFejl } = await admin.auth.admin.createUser(nyBruger);
+  if (paaNyFejl) return svar({ fejl: paaNyFejl.message }, 400);
+  return svar({ ok: true, ryddet: true }, 200);
+});
 </pre></div><!-- OPRETTELSEN GENAABNET SIKKERT (24/8). Den gamle udgave blev pauset 7/8, fordi den kaldte updateUserById med password paa en KONTO, DER FANDTES: kundens mail + virksomhedskoden = kontoovertagelse. Kaldet findes ikke laengere i filen. Funktionen skal fortsat have Verify JWT SLAAET FRA — den bruges nemlig OGSAA af custSignup(), hvor kunden opretter sit eget login med en kode UDEN at vaere logget ind. Derfor er admin ikke en spaerring men et flag: den ENESTE handling, der kraever admin-token, er at rydde et efterladt forsoeg (slet + opret forfra), og kun paa en konto uden kode, som aldrig har vaeret brugt. Appens tre admin-veje sender Idas session-token via loginMotorOpret(); custSignup sender fortsat anon-noeglen og kan derfor intet slette. --><div id="sqlk_opret_login_2408" data-kode="edge" data-dato="24. august 2026" style="border:1px solid var(--border);border-radius:12px;background:#fff;padding:12px 14px;margin-bottom:8px;"><div><span style="font-size:12.5px;font-weight:400;">Luk kundeoprettelsen op igen &mdash; sikkert</span></div><div style="font-size:10px;font-weight:400;letter-spacing:1.4px;text-transform:uppercase;color:var(--gray3);padding-bottom:7px;border-bottom:1px solid var(--red);margin:6px 0 9px;">K&oslash;res i Supabase &rsaquo; Edge Functions</div><div style="font-size:11.5px;color:var(--gray3);line-height:1.65;"><b style="font-weight:400;color:var(--black);">Det er derfor, du f&aring;r en r&oslash;d fejl, n&aring;r du v&aelig;lger &bdquo;Jeg opretter deres login nu&ldquo;.</b> Motoren blev slukket 7. august, fordi den kunne s&aelig;tte en <b style="font-weight:400;color:var(--black);">ny adgangskode p&aring; en konto, der allerede fandtes</b>. Med en kundes mail plus deres virksomhedskode kunne man overtage kontoen.<br><br><b style="font-weight:400;color:var(--black);">Denne udgave kan kun oprette nye logins.</b> Findes e-mailen, bliver den afvist &mdash; kontoen r&oslash;res aldrig. Ligger der et halvt oprettet fors&oslash;g fra tidligere, siger appen til og rydder det f&oslash;rst, n&aring;r du har sagt ja.<br><br><b style="font-weight:400;color:var(--black);">S&aring;dan g&oslash;r du:</b><br>1 &middot; G&aring; til <b style="font-weight:400;color:var(--black);">Supabase &rsaquo; Edge Functions</b><br>2 &middot; &Aring;bn funktionen <b style="font-weight:400;color:var(--black);">signup-med-kode</b> (findes den ikke, s&aring; opret den med pr&aelig;cis det navn)<br>3 &middot; Slet alt indholdet, s&aelig;t koden herunder ind, og gem<br>4 &middot; <b style="font-weight:400;color:var(--red);">&bdquo;Verify JWT&ldquo; skal v&aelig;re SL&Aring;ET FRA</b> &mdash; som f&oslash;r. Kunder opretter nemlig ogs&aring; deres eget login med koden, uden at v&aelig;re logget ind.<br><br><b style="font-weight:400;color:var(--black);">Bagefter:</b> pr&oslash;v at oprette en kunde med &bdquo;Jeg opretter deres login nu&ldquo;. Virker det, er hullet fra 7. august lukket &mdash; ikke bare slukket.</div><div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap;justify-content:flex-end;"><button class="row-btn" onclick="sqlKortKoert('sqlk_opret_login_2408', this)" title="Er den k&oslash;rt, s&aring; fjern kortet">K&oslash;rt <span style="width:14px;height:14px;border-radius:50%;background:var(--red);display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;vertical-align:-2px;"><svg width="7" height="7" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span> &mdash; fjern kortet</button><button class="row-btn" onclick="sqlVis('edgeOpretLogin2408', this)">Vis koden</button><button class="dbtn primary" style="padding:7px 15px;" onclick="sqlKopier('edgeOpretLogin2408', this)">Kopi&eacute;r koden</button></div><pre id="edgeOpretLogin2408" style="display:none;margin:9px 0 0;background:#F7F9FB;border:1px solid var(--border);border-radius:12px;padding:12px 14px;font-size:10.5px;line-height:1.5;overflow-x:auto;white-space:pre-wrap;word-break:break-word;font-family:ui-monospace,Menlo,monospace;color:var(--black);">// ============================================================================
 // OPRET LOGIN MED KODE · Edge Function "signup-med-kode"
 // SIKKER UDGAVE — 24. august 2026. Erstatter den udgave, der blev PAUSET
@@ -19778,7 +20097,7 @@ async function minProfilAaben() {
   bag.innerHTML = '<div class="modal modal-lille" style="max-width:360px;position:relative;">'
     + '<button class="modal-close" style="position:absolute;top:12px;right:14px;" onclick="document.getElementById(\'profilBack\').style.display=\'none\'">&times;</button>'
     + '<div class="ml-t">Min profil</div>'
-    + (function () { try { const folk = (typeof briefPersonerListe === "function") ? briefPersonerListe() : []; const virk = (CURRENT_DEF && CURRENT_DEF.virksomhed) || ""; return '<div class="ml-eye">Team' + (virk ? ' ' + esc(virk) : '') + '</div><div class="ark-chips" style="margin:0 0 6px;">' + (folk.length ? folk.map(function (x) { return '<span class="ark-chip" style="cursor:default;">' + esc(x) + '</span>'; }).join("") : '<span style="font-size:12px;color:var(--gray2);">Ingen teammedlemmer endnu.</span>') + '</div><div style="font-size:10.5px;color:var(--gray3);line-height:1.5;margin-bottom:14px;">Et nyt teammedlem opretter sig med koden ' + esc(String(currentKode || "")) + ' — så står de her.</div>'; } catch (e) { return ''; } })()   /* TEAMET (Idas klik 21/9 kl. 23.38): loginene paa koden, automatisk */
+    + (function () { try { const folk = (typeof briefPersonerListe === "function") ? briefPersonerListe() : []; const virk = (CURRENT_DEF && CURRENT_DEF.virksomhed) || ""; return '<div class="ml-eye">Team' + (virk ? ' ' + esc(virk) : '') + '</div><div class="ark-chips" style="margin:0 0 6px;">' + (folk.length ? folk.map(function (x) { return '<span class="ark-chip" style="cursor:default;">' + esc(x) + '</span>'; }).join("") : '<span style="font-size:12px;color:var(--gray2);">Ingen teammedlemmer endnu.</span>') + '</div>' + (erYgtTeam() ? '<div id="profilTeamYgt" style="margin-bottom:14px;"></div>' : '<div style="font-size:10.5px;color:var(--gray3);line-height:1.5;margin-bottom:14px;">Et nyt teammedlem opretter sig med koden ' + esc(String(currentKode || "")) + ' — så står de her.</div>'); } catch (e) { return ''; } })()   /* TEAMET (Idas klik 21/9 kl. 23.38): loginene paa koden, automatisk */
     + '<div class="ml-eye">Studioets navn</div>'
     + '<input type="text" id="profilStudio" value="' + String(studio).replace(/"/g, "&quot;") + '" placeholder="' + String(gaet || "Fx Butik Solsikken").replace(/"/g, "&quot;") + '" style="width:100%;background:#fff;border:1px solid var(--border);border-radius:12px;padding:11px 13px;font-family:Poppins,sans-serif;font-size:13px;outline:none;margin-bottom:4px;">'
     + '<div style="font-size:10.5px;color:var(--gray3);line-height:1.5;margin-bottom:12px;">Navnet står i browser-fanen som "&hellip; Studio".</div>'
@@ -19808,6 +20127,55 @@ async function minProfilAaben() {
     + '<button type="button" class="ark-knap ark-knap-roed" onclick="minProfilGem()">Gem</button>'
     + '<button type="button" class="ark-luk" onclick="document.getElementById(\'profilBack\').style.display=\'none\'">Annullér</button>'
     + '</div>';
+  if (erYgtTeam()) profilTeamHent();
+}
+/* ---------- 3 ADGANGE · YOU GOT THIS (Idas klik 28/9: »Profil › Team«) ----------
+   Koebet giver 3 adgange i samme virksomhed (handelsbetingelsernes punkt 2a). Loftet
+   holdes af Edge-funktionen inviter-kollega — appen viser kun tallet og sender kaldet
+   MED kundens eget token. Kode og virksomhed tages paa serveren af tokenet, aldrig
+   herfra (sikkerhedskontrakten §3–§4). */
+function erYgtTeam() { try { return !!(CURRENT_DEF && String(CURRENT_DEF.forloeb || "") === "YOU GOT THIS"); } catch (e) { return false; } }
+async function kollegaKald(krop) {
+  if (!sb) return { fejl: "Ingen forbindelse." };
+  let token = "";
+  try { const { data } = await sb.auth.getSession(); token = data && data.session ? data.session.access_token : ""; } catch (e) {}
+  if (!token) return { fejl: "Du er ikke logget ind." };
+  try {
+    const r = await fetch(window.SUPABASE_URL + "/functions/v1/inviter-kollega", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Authorization": "Bearer " + token, "apikey": window.SUPABASE_ANON_KEY },
+      body: JSON.stringify(krop)
+    });
+    if (r.status === 404) return { fejl: "ikke-klar" };
+    const s = await r.json().catch(function () { return {}; });
+    if (!r.ok) return Object.assign({ fejl: s.fejl || "Det gik galt. Prøv igen." }, s);
+    return s;
+  } catch (e) { return { fejl: "Kunne ikke nå frem. Tjek forbindelsen." }; }
+}
+function profilTeamTegn(s) {
+  const el = document.getElementById("profilTeamYgt"); if (!el) return;
+  if (!s || s.fejl === "ikke-klar" || !Array.isArray(s.team)) { el.innerHTML = ""; return; }
+  const maks = s.maks || 3, brugt = s.brugt || s.team.length;
+  const chips = s.team.map(function (m) {
+    const n = m.navn || m.email || "";
+    return '<span class="ark-chip" style="cursor:default;">' + esc(n + (m.venter && !m.dig ? " · inviteret" : "")) + '</span>';
+  }).join("");
+  const box = el.previousElementSibling; if (box && box.classList.contains("ark-chips") && chips) box.innerHTML = chips;
+  el.innerHTML = '<div style="font-size:12px;color:var(--gray2);margin:4px 0 0;">' + brugt + ' af ' + maks + ' adgange brugt</div>'
+    + (brugt < maks ? '<button type="button" class="ark-knap ark-knap-graa" onclick="kollegaArk()">Inviter en kollega</button>' : '');
+}
+async function profilTeamHent() { profilTeamTegn(await kollegaKald({ handling: "liste" })); }
+function kollegaArk() {
+  const bag = document.getElementById("profilBack"); if (bag) bag.style.display = "none";
+  arkAabn({ lille: true, titel: "Inviter en kollega", titelFelt: "Navn", ph: "E-mail", enLinje: true, udenMik: true, chips: [], send: "Send invitation",
+    gem: async function (email) {
+      const navn = ((document.getElementById("arkTitel") || {}).value || "").trim();
+      const s = await kollegaKald({ handling: "inviter", navn: navn, email: email });
+      if (s.fejl === "ikke-klar") throw new Error("!Invitationer åbner snart. Skriv til Ida.");
+      if (s.fejl) throw new Error("!" + s.fejl);
+      return "Invitationen er sendt til " + email + ".";
+    } });
+  setTimeout(function () { const t = document.getElementById("arkTekst"); if (t) { t.setAttribute("inputmode", "email"); t.setAttribute("autocapitalize", "off"); t.setAttribute("autocorrect", "off"); t.setAttribute("spellcheck", "false"); } }, 0);
 }
 function profilSkrifterHtml() {
   const fav = window.__PROF_FAV || [];
@@ -55005,7 +55373,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2388";
+const APP_VERSION = "2389";
 let NY_VERSION_KLAR = false;
 let NY_VERSION_AFVIST = false;
 function nyVersionSkjul() {
@@ -77127,6 +77495,6 @@ function bf3StudieRum(v, filter) {
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-hvid.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 28. september · 2388</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 28. september · 2389</div>
 </body>
 </html>
