@@ -11129,6 +11129,9 @@ html body #briefKlip1Vaert > #briefKlip1 { flex:1 1 auto; width:100%; min-width:
    HASHEN LAESES HER, foerst i dokumentet. Supabase-klienten rydder adressen, saa snart
    den har brugt engangsnoeglen — venter man til SIGNED_IN naar frem, er beviset vaek. */
 window.__ENERGIDA_INVITATION = /(^|[#&])type=(invite|signup)/.test(location.hash || "");
+/* ET UDLOEBET ELLER BRUGT INVITATIONSLINK (sundhedstjekket 28/9): Supabase sender #error=access_denied&error_code=otp_expired.
+   Foer landede kunden paa loginet uden kodeord og uden forklaring — nu aabner »Glemt adgangskode« med en linje om, hvad der skete. */
+window.__ENERGIDA_LINK_UDLOEBET = /(^|[#&])error_code=otp_expired|(^|[#&])error=access_denied/.test(location.hash || "");
 /* Spoegelsessiden erstattet (Ida 28/7): blaa taenke-side m. hjernehjertet, til kundens version er klar */
 /* IDAS EGET CONTENT STUDIO (8/9): b2b.energida.dk/#studio er den korte adresse til hjemmeskaermen.
    Den oversaettes til husets egen vej (#somkunde=ENERGIDA) FOER noget andet laeser hash'et, saa alle
@@ -14721,7 +14724,9 @@ Deno.serve(async (req) =&gt; {
     pakke: erYGT ? pakke : undefined,           // YOU GOT THIS · DETAIL = lektioner + Drejebog + Værktøjskassen
     forening: forening || undefined,            // fx Ringkøbing Handelsforening
     ental: true,
-    skema: false,
+    // skema: IKKE sat (28/9). »skema: false« betyder i appen »spoergeskemaet er SLAAET FRA
+    // for kunden« (kundekortets flueben) — saa sprang rejsen startskemaet over, og
+    // lektionslaasen virkede ikke for nogen, der koebte via Stripe.
     login_klar: true,
     test: erTest || undefined,          // 0 kr. = tester. Staar ikke i kundelisten (v1318).
     maal: { tekst: "Din målsætning lander her, når du har udfyldt Drejebogen.", opslag_uge: 3 },
@@ -14755,7 +14760,7 @@ Deno.serve(async (req) =&gt; {
   }
   {
     const { error } = await admin.from("virksomhedskoder")
-      .insert({ kode, virksomhed, forloeb: erYGT ? "YOU GOT THIS" : "Content Studio", aktiv: true, virksomhed_id: virksomhedId }).select();
+      .insert({ kode, virksomhed, forloeb: erYGT ? "YOU GOT THIS" : "Content Studio", aktiv: true, virksomhed_id: virksomhedId, login_klar: true }).select();   // login_klar (28/9): koeberen har et login — koden sender til »log ind«, ikke »opret dig«
     if (error) return svar({ fejl: "Kunne ikke oprette koden: " + error.message }, 500);
   }
 
@@ -14771,7 +14776,12 @@ Deno.serve(async (req) =&gt; {
   // 4c · Idas kartotek. HELE listen ligger i EEN raekke, saa den skal laeses,
   // udvides og skrives tilbage — aldrig overskrives med noget, vi selv fandt paa.
   // Appen fletter fra sin side siden v1319, saa de to ikke kan slette hinanden.
-  {
+  // TO KOEB I SAMME SEKUND (28/9, lanceringen): begge laeser listen, og den sidste
+  // skrivning ville slette den foerste kunde af listen. Derfor laeses listen igen
+  // bagefter, og mangler koden, proeves der igen (op til 4 gange, med lidt tilfaeldig pause).
+  let kartotekOk = false;
+  for (let forsoeg = 0; forsoeg &lt; 4 &amp;&amp; !kartotekOk; forsoeg++) {
+    if (forsoeg) await new Promise((r) =&gt; setTimeout(r, 150 + Math.floor(Math.random() * 400)));
     const { data } = await admin.from("skema_svar").select("svar")
       .eq("kode", "ENERGIDA").eq("navn", "Ida").eq("skema", "kunde_koder").maybeSingle();
     const kartotek = (data?.svar &amp;&amp; typeof data.svar === "object" &amp;&amp; !Array.isArray(data.svar))
@@ -14783,6 +14793,10 @@ Deno.serve(async (req) =&gt; {
       await admin.from("skema_svar")
         .insert({ kode: "ENERGIDA", navn: "Ida", skema: "kunde_koder", svar: kartotek }).select();
     }
+    const tjek = await admin.from("skema_svar").select("svar")
+      .eq("kode", "ENERGIDA").eq("navn", "Ida").eq("skema", "kunde_koder").maybeSingle();
+    const efter = tjek.data?.svar as Record&lt;string, unknown&gt; | undefined;
+    kartotekOk = !!(efter &amp;&amp; typeof efter === "object" &amp;&amp; efter[kode]);
   }
 
   // 4d · CRM-kontakten. Gaar den galt, staar kunden der stadig — derfor
@@ -14850,9 +14864,9 @@ Deno.serve(async (req) =&gt; {
   // virk_kilde er ikke pynt: den er beviset for, HVOR virksomhedsnavnet kom fra.
   // Staar der "customer_details.name (noedspor)", fandt vi aldrig firmanavnet, og
   // kunden hedder nu det samme som personen. Det skal ses, ikke opdages senere.
-  return svar({ ok: true, oprettet: true, kode, produkt: erYGT ? "yougotthis" : "contentstudio", virksomhed_id: virksomhedId, laast: !!nyId, test: !!erTest, kontakt: kontaktOk, virk_kilde: virkKilde }, 200);
+  return svar({ ok: true, oprettet: true, kartotek: kartotekOk, kode, produkt: erYGT ? "yougotthis" : "contentstudio", virksomhed_id: virksomhedId, laast: !!nyId, test: !!erTest, kontakt: kontaktOk, virk_kilde: virkKilde }, 200);
 });
-</pre></div><!-- 3 ADGANGE (28/9, Idas klik: YOU GOT THIS = 3 adgange, Profil › Team). To funktioner: inviter-kollega (NY, Verify JWT TIL, kalderen slaas op paa sit eget token, kode+virksomhed_id KUN fra app_metadata, loft 3, §6 stop ved kendt mail) og signup-med-kode (samme loft for YGT-koder + virksomhed_id i app_metadata). Kortet er inert, til Ida har lagt dem op. --><div id="sqlk_3adgange_2809" data-kode="edge" data-dato="28. september 2026" style="border:1px solid var(--border);border-radius:12px;background:#fff;padding:12px 14px;margin-bottom:8px;"><div><span style="font-size:12.5px;font-weight:400;">YOU GOT THIS: 3 adgange &mdash; to funktioner</span></div><div style="font-size:10px;font-weight:400;letter-spacing:1.4px;text-transform:uppercase;color:var(--gray3);padding-bottom:7px;border-bottom:1px solid var(--red);margin:6px 0 9px;">K&oslash;res i Supabase &rsaquo; Edge Functions</div><div style="font-size:11.5px;color:var(--gray3);line-height:1.65;"><b style="font-weight:400;color:var(--black);">Det her g&oslash;r de 3 adgange rigtige.</b> K&oslash;beren inviterer selv to kolleger under <b style="font-weight:400;color:var(--black);">Min profil &rsaquo; Team</b>. Den fjerde bliver afvist p&aring; serveren, ikke i appen.<br><br><b style="font-weight:400;color:var(--black);">Funktion 1 &middot; inviter-kollega (ny)</b><br>1 &middot; Supabase &rsaquo; Edge Functions &rsaquo; New function, navn pr&aelig;cis <b style="font-weight:400;color:var(--black);">inviter-kollega</b><br>2 &middot; Tryk <b style="font-weight:400;color:var(--black);">Kopi&eacute;r inviter-kollega</b> herunder, s&aelig;t ind, og tryk Deploy<br>3 &middot; <b style="font-weight:400;color:var(--red);">&bdquo;Verify JWT&ldquo; skal st&aring; TIL</b> (det g&oslash;r den som standard)<br><br><b style="font-weight:400;color:var(--black);">Funktion 2 &middot; signup-med-kode (ret den, der findes)</b><br>1 &middot; &Aring;bn <b style="font-weight:400;color:var(--black);">signup-med-kode</b>, slet alt indholdet<br>2 &middot; Tryk <b style="font-weight:400;color:var(--black);">Kopi&eacute;r signup-med-kode</b>, s&aelig;t ind, og tryk Deploy<br>3 &middot; <b style="font-weight:400;color:var(--red);">&bdquo;Verify JWT&ldquo; skal st&aring; FRA</b> &mdash; som f&oslash;r<br>Den f&aring;r samme loft p&aring; 3, s&aring; ingen kan komme uden om det med koden.<br><br><b style="font-weight:400;color:var(--black);">S&aring;dan tester vi den bagefter (jeg guider dig):</b><br>&middot; uden login &rarr; afvist<br>&middot; testkunden inviterer to &rarr; to mails, og begge st&aring;r under Team<br>&middot; en tredje invitation &rarr; &bdquo;Alle 3 adgange er i brug&ldquo;<br>&middot; en mail, der allerede har login &rarr; afvist, kontoen r&oslash;res ikke<br>&middot; en anden kunde ser kun sit eget team<br>&middot; testbrugerne slettes bagefter, og vi t&aelig;ller, at der er 0 tilbage</div><div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap;justify-content:flex-end;"><button class="row-btn" onclick="sqlKortKoert('sqlk_3adgange_2809', this)" title="Er de lagt op, s&aring; fjern kortet">Lagt op <span style="width:14px;height:14px;border-radius:50%;background:var(--red);display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;vertical-align:-2px;"><svg width="7" height="7" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span> &mdash; fjern kortet</button><button class="row-btn" onclick="sqlVis('edgeInviterKollega2809', this)">Vis inviter-kollega</button><button class="dbtn primary" style="padding:7px 15px;" onclick="sqlKopier('edgeInviterKollega2809', this)">Kopi&eacute;r inviter-kollega</button><button class="row-btn" onclick="sqlVis('edgeSignupKode2809', this)">Vis signup-med-kode</button><button class="dbtn primary" style="padding:7px 15px;" onclick="sqlKopier('edgeSignupKode2809', this)">Kopi&eacute;r signup-med-kode</button></div><pre id="edgeInviterKollega2809" style="display:none;margin:9px 0 0;background:#F7F9FB;border:1px solid var(--border);border-radius:12px;padding:12px 14px;font-size:10.5px;line-height:1.5;overflow-x:auto;white-space:pre-wrap;word-break:break-word;font-family:ui-monospace,Menlo,monospace;color:var(--black);">// ============================================================================
+</pre></div><!-- 3 ADGANGE (28/9, Idas klik: YOU GOT THIS = 3 adgange, Profil › Team). To funktioner: inviter-kollega (NY, Verify JWT TIL, kalderen slaas op paa sit eget token, kode+virksomhed_id KUN fra app_metadata, loft 3, §6 stop ved kendt mail) og signup-med-kode (samme loft for YGT-koder + virksomhed_id i app_metadata). Kortet er inert, til Ida har lagt dem op. --><div id="sqlk_3adgange_2809" data-kode="edge" data-dato="28. september 2026" style="border:1px solid var(--border);border-radius:12px;background:#fff;padding:12px 14px;margin-bottom:8px;"><div><span style="font-size:12.5px;font-weight:400;">YOU GOT THIS f&oslash;r 1. oktober &mdash; tre funktioner</span></div><div style="font-size:10px;font-weight:400;letter-spacing:1.4px;text-transform:uppercase;color:var(--gray3);padding-bottom:7px;border-bottom:1px solid var(--red);margin:6px 0 9px;">K&oslash;res i Supabase &rsaquo; Edge Functions</div><div style="font-size:11.5px;color:var(--gray3);line-height:1.65;"><b style="font-weight:400;color:var(--black);">Det her g&oslash;r de 3 adgange rigtige.</b> K&oslash;beren inviterer selv to kolleger under <b style="font-weight:400;color:var(--black);">Min profil &rsaquo; Team</b>. Den fjerde bliver afvist p&aring; serveren, ikke i appen.<br><br><b style="font-weight:400;color:var(--black);">Funktion 1 &middot; inviter-kollega (ny)</b><br>1 &middot; Supabase &rsaquo; Edge Functions &rsaquo; New function, navn pr&aelig;cis <b style="font-weight:400;color:var(--black);">inviter-kollega</b><br>2 &middot; Tryk <b style="font-weight:400;color:var(--black);">Kopi&eacute;r inviter-kollega</b> herunder, s&aelig;t ind, og tryk Deploy<br>3 &middot; <b style="font-weight:400;color:var(--red);">&bdquo;Verify JWT&ldquo; skal st&aring; TIL</b> (det g&oslash;r den som standard)<br><br><b style="font-weight:400;color:var(--black);">Funktion 2 &middot; signup-med-kode (ret den, der findes)</b><br>1 &middot; &Aring;bn <b style="font-weight:400;color:var(--black);">signup-med-kode</b>, slet alt indholdet<br>2 &middot; Tryk <b style="font-weight:400;color:var(--black);">Kopi&eacute;r signup-med-kode</b>, s&aelig;t ind, og tryk Deploy<br>3 &middot; <b style="font-weight:400;color:var(--red);">&bdquo;Verify JWT&ldquo; skal st&aring; FRA</b> &mdash; som f&oslash;r<br>Den f&aring;r samme loft p&aring; 3, s&aring; ingen kan komme uden om det med koden.<br><br><b style="font-weight:400;color:var(--black);">Funktion 3 &middot; stripe-koeb (ret den, der findes) &mdash; VIGTIGST</b><br><b style="font-weight:400;color:var(--red);">Uden den springer alle, der k&oslash;ber via Stripe, startsp&oslash;rgeskemaet over, og lektionerne er &aring;bne fra start.</b> K&oslash;bet satte &bdquo;sp&oslash;rgeskema sl&aring;et fra&ldquo; p&aring; kunden. Samtidig: koden sender k&oslash;beren til &bdquo;log ind&ldquo;, og to k&oslash;b i samme sekund kan ikke l&aelig;ngere slette hinanden af din kundeliste.<br>1 &middot; &Aring;bn <b style="font-weight:400;color:var(--black);">stripe-koeb</b>, slet alt indholdet<br>2 &middot; Tryk <b style="font-weight:400;color:var(--black);">Kopi&eacute;r stripe-koeb</b>, s&aelig;t ind, og tryk Deploy<br>3 &middot; <b style="font-weight:400;color:var(--red);">&bdquo;Verify JWT&ldquo; skal st&aring; FRA</b> &mdash; som f&oslash;r<br><br><b style="font-weight:400;color:var(--black);">S&aring;dan tester vi den bagefter (jeg guider dig):</b><br>&middot; uden login &rarr; afvist<br>&middot; testkunden inviterer to &rarr; to mails, og begge st&aring;r under Team<br>&middot; en tredje invitation &rarr; &bdquo;Alle 3 adgange er i brug&ldquo;<br>&middot; en mail, der allerede har login &rarr; afvist, kontoen r&oslash;res ikke<br>&middot; en anden kunde ser kun sit eget team<br>&middot; testbrugerne slettes bagefter, og vi t&aelig;ller, at der er 0 tilbage</div><div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap;justify-content:flex-end;"><button class="row-btn" onclick="sqlKortKoert('sqlk_3adgange_2809', this)" title="Er de lagt op, s&aring; fjern kortet">Lagt op <span style="width:14px;height:14px;border-radius:50%;background:var(--red);display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;vertical-align:-2px;"><svg width="7" height="7" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span> &mdash; fjern kortet</button><button class="row-btn" onclick="sqlVis('edgeInviterKollega2809', this)">Vis inviter-kollega</button><button class="dbtn primary" style="padding:7px 15px;" onclick="sqlKopier('edgeInviterKollega2809', this)">Kopi&eacute;r inviter-kollega</button><button class="row-btn" onclick="sqlVis('edgeSignupKode2809', this)">Vis signup-med-kode</button><button class="dbtn primary" style="padding:7px 15px;" onclick="sqlKopier('edgeSignupKode2809', this)">Kopi&eacute;r signup-med-kode</button><button class="row-btn" onclick="sqlVis('edgeStripeKoeb2809', this)">Vis stripe-koeb</button><button class="dbtn primary" style="padding:7px 15px;" onclick="sqlKopier('edgeStripeKoeb2809', this)">Kopi&eacute;r stripe-koeb</button></div><pre id="edgeInviterKollega2809" style="display:none;margin:9px 0 0;background:#F7F9FB;border:1px solid var(--border);border-radius:12px;padding:12px 14px;font-size:10.5px;line-height:1.5;overflow-x:auto;white-space:pre-wrap;word-break:break-word;font-family:ui-monospace,Menlo,monospace;color:var(--black);">// ============================================================================
 // INVITER EN KOLLEGA · Edge Function "inviter-kollega"
 //
 // YOU GOT THIS giver 3 adgange i samme virksomhed (Ida 28/9, handelsbetingelsernes
@@ -15170,6 +15184,374 @@ Deno.serve(async (req) =&gt; {
   const { error: paaNyFejl } = await admin.auth.admin.createUser(nyBruger);
   if (paaNyFejl) return svar({ fejl: paaNyFejl.message }, 400);
   return svar({ ok: true, ryddet: true }, 200);
+});
+</pre><pre id="edgeStripeKoeb2809" style="display:none;margin:9px 0 0;background:#F7F9FB;border:1px solid var(--border);border-radius:12px;padding:12px 14px;font-size:10.5px;line-height:1.5;overflow-x:auto;white-space:pre-wrap;word-break:break-word;font-family:ui-monospace,Menlo,monospace;color:var(--black);">// ============================================================================
+// STRIPE-KOEB · Edge Function "stripe-koeb"
+//
+// Doeren ind for en kunde, der koeber sig selv ind. Stripe kvitterer for
+// betalingen, og DENNE funktion opretter kunden. Ida roerer ingenting.
+//
+// Deploy: Supabase -&gt; Edge Functions -&gt; New function, navn: stripe-koeb
+//         Secret: STRIPE_WEBHOOK_SECRET (fra Stripes webhook-opsaetning)
+//         "Verify JWT" skal staa FRA. Se de seks linjer nedenfor.
+//
+// ---------------------------------------------------------------------------
+// DE SEKS LINJER · sikkerhedskontraktens §3
+//
+// 1. VERIFY JWT: FRA. Dokumenteret undtagelse. Stripe kan ikke sende et JWT;
+//    de underskriver i stedet hver leverance med en delt hemmelighed.
+// 2. HVEM MAA KALDE DEN: kun Stripes webhook. Bevist ved underskriften,
+//    ikke ved at nogen paastaar det.
+// 3. EGEN AUTHORIZATION: JA — underskriften verificeres som det ALLERFOERSTE.
+//    Fejler den, roeres databasen aldrig. Der findes ikke een sti gennem denne
+//    fil, hvor en uverificeret leverance naar noget som helst.
+// 4. SERVICE-ROLE: JA, men foerst EFTER verificeret underskrift.
+// 5. RAEKKEVIDDE: virksomhedskoder · skema_svar (kunde_def + kunde_koder) ·
+//    contacts · auth (kun invitation, ALDRIG et kodeord).
+// 6. OMKOSTNING: ingen direkte. Ingen AI-kald. Der sendes én invitationsmail
+//    pr. koeb via Supabase.
+//
+// ---------------------------------------------------------------------------
+// §6 · SIGNUP OG INVITATION — DEN VIGTIGSTE REGEL I FILEN
+//
+// Findes e-mailen i forvejen: funktionen STOPPER og opretter INTET. Den roerer
+// under ingen omstaendigheder en eksisterende brugers adgangskode. Kunden
+// saetter selv sit kodeord via invitationsmailen; Ida faar det aldrig at se.
+//
+// Det var praecis den vej, der gjorde signup-med-kode til en kontoovertagelse
+// (fundet 6. august, funktionen slukket 7. august). Moenstret her er kopieret
+// fra opret-workout-bruger — aldrig fra signup-med-kode.
+//
+// IDEMPOTENS: Stripe leverer den samme haendelse igen, hvis den ikke faar
+// 200 tilbage. §6-reglen ER spaerren: anden leverance finder e-mailen og
+// stopper. Derfor svarer vi ALTID 200 paa en verificeret leverance, ogsaa naar
+// vi ikke opretter noget — ellers ville Stripe proeve i dagevis.
+// ============================================================================
+
+import { createClient } from "npm:@supabase/supabase-js@2";
+
+const cors = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "stripe-signature, content-type",
+};
+
+function svar(x: unknown, status: number) {
+  return new Response(JSON.stringify(x), {
+    status,
+    headers: { ...cors, "Content-Type": "application/json" },
+  });
+}
+
+// --- Stripes underskrift, verificeret i haanden ---------------------------
+// Vi importerer ikke Stripes SDK. Underskriften er en HMAC-SHA256 over
+// "&lt;timestamp&gt;.&lt;raa body&gt;", og den kan Web Crypto klare. Faerre afhaengigheder
+// betyder faerre ting, der kan aendre sig under os.
+async function underskriftOk(raa: string, header: string, hemmelighed: string) {
+  if (!header || !hemmelighed) return false;
+  const dele: Record&lt;string, string[]&gt; = {};
+  header.split(",").forEach((p) =&gt; {
+    const i = p.indexOf("=");
+    if (i &lt; 0) return;
+    const k = p.slice(0, i).trim();
+    const v = p.slice(i + 1).trim();
+    (dele[k] = dele[k] || []).push(v);
+  });
+  const t = (dele["t"] || [])[0];
+  const v1 = dele["v1"] || [];
+  if (!t || !v1.length) return false;
+
+  // Genbrugsangreb: en gammel, aegte leverance maa ikke kunne afspilles igen.
+  // Stripe anbefaler fem minutters tolerance.
+  const alder = Math.abs(Math.floor(Date.now() / 1000) - Number(t));
+  if (!Number.isFinite(alder) || alder &gt; 300) return false;
+
+  const noegle = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(hemmelighed),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"],
+  );
+  const sig = await crypto.subtle.sign("HMAC", noegle, new TextEncoder().encode(t + "." + raa));
+  const hex = Array.from(new Uint8Array(sig)).map((b) =&gt; b.toString(16).padStart(2, "0")).join("");
+
+  // Sammenlign i konstant tid. En almindelig === laekker, hvor langt man kom.
+  return v1.some((kandidat) =&gt; {
+    if (kandidat.length !== hex.length) return false;
+    let ulighed = 0;
+    for (let i = 0; i &lt; hex.length; i++) ulighed |= hex.charCodeAt(i) ^ kandidat.charCodeAt(i);
+    return ulighed === 0;
+  });
+}
+
+// --- Virksomhedskoden -----------------------------------------------------
+// Kunden ser den aldrig; den er appens noegle. Bogstaver fra firmanavnet, saa
+// Ida kan genkende den paa et skaermbillede, plus fire tegn der goer den unik.
+// AEEE og lignende er ude: kun A-Z og 0-9, aldrig aeoeaa.
+function kodeAf(navn: string) {
+  const rent = String(navn || "")
+    .toUpperCase()
+    .replace(/[ÆÄ]/g, "AE").replace(/[ØÖ]/g, "OE").replace(/Å/g, "AA")
+    .replace(/[^A-Z0-9]/g, "");
+  const stamme = (rent || "KUNDE").slice(0, 8);
+  const tegn = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";   // uden I, O, 0, 1 — de forveksles
+  let hale = "";
+  const tal = new Uint8Array(4);
+  crypto.getRandomValues(tal);
+  for (let i = 0; i &lt; 4; i++) hale += tegn[tal[i] % tegn.length];
+  return stamme + hale;
+}
+
+Deno.serve(async (req) =&gt; {
+  if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
+  if (req.method !== "POST") return svar({ fejl: "Brug POST." }, 405);
+
+  // --- 1) UNDERSKRIFTEN, FOER ALT ANDET ----------------------------------
+  // Body laeses som RAA tekst. Parser man den foerst, aendres tegnene, og
+  // underskriften passer aldrig igen.
+  const raa = await req.text();
+  const hemmelighed = Deno.env.get("STRIPE_WEBHOOK_SECRET") ?? "";
+  if (!hemmelighed) return svar({ fejl: "Serveren mangler sin hemmelighed." }, 500);
+
+  const ok = await underskriftOk(raa, String(req.headers.get("stripe-signature") ?? ""), hemmelighed);
+  if (!ok) return svar({ fejl: "Underskriften kunne ikke bekræftes." }, 401);
+
+  // Herfra — og FOERST herfra — er service-noeglen i spil.
+  const admin = createClient(
+    Deno.env.get("SUPABASE_URL")!,
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+  );
+
+  let haendelse: Record&lt;string, any&gt;;
+  try { haendelse = JSON.parse(raa); } catch { return svar({ fejl: "Ugyldig body." }, 400); }
+
+  // Vi reagerer KUN paa en gennemfoert betaling. Alt andet kvitteres og ignoreres,
+  // saa Stripe ikke proever igen i dagevis.
+  if (haendelse?.type !== "checkout.session.completed") {
+    return svar({ ok: true, sprunget_over: haendelse?.type ?? "ukendt" }, 200);
+  }
+
+  const s = haendelse?.data?.object ?? {};
+  const felter: Record&lt;string, string&gt; = {};
+  (s.custom_fields ?? []).forEach((f: any) =&gt; {
+    const v = f?.text?.value ?? f?.dropdown?.value ?? f?.numeric?.value ?? "";
+    if (f?.key) felter[String(f.key)] = String(v);
+  });
+
+  const email = String(s.customer_details?.email ?? "").trim().toLowerCase();
+  const navn = String(s.customer_details?.name ?? "").trim();
+  const telefon = String(s.customer_details?.phone ?? felter["telefon"] ?? "").trim();
+
+  // --- VIRKSOMHEDSNAVNET KAN KOMME FLERE STEDER FRA ------------------------
+  // MAALT 26/8: Stripes Payment Links har "Collect business names" INDBYGGET —
+  // det er altsaa IKKE et custom field, som foerste udgave af denne fil antog.
+  // HVOR i sessionen det praecis lander, er IKKE MAALT. Det kan kun afgoeres paa
+  // en rigtig leverance, og et gaet ville betyde, at kundens firma kom til at
+  // hedde hendes eget navn — uden at nogen opdagede det.
+  //
+  // Derfor laeses ALLE de steder, det kan staa, i prioriteret raekkefoelge, og
+  // svaret siger HVILKEN kilde der bar navnet. Foerste testkoeb giver os det
+  // endelige svar, og saa kan listen skaeres ned til den ene rigtige.
+  const virkKilder: Array&lt;[string, string]&gt; = [
+    ["customer_details.business_name", String(((s.customer_details ?? {}) as any).business_name ?? "").trim()],
+    ["business_name", String((s as any).business_name ?? "").trim()],
+    ["custom_fields", String(felter["virksomhedsnavn"] ?? felter["virksomhed"] ?? "").trim()],
+    ["customer_details.name (noedspor)", navn],
+  ];
+  const virkFundet = virkKilder.find((x) =&gt; x[1]);
+  const virksomhed = virkFundet ? virkFundet[1] : "Ny kunde";
+  const virkKilde = virkFundet ? virkFundet[0] : "ingen";
+  // --- HVILKET PRODUKT? (27/9, lanceringen af YOU GOT THIS 1/10) -----------
+  // Betalingslinket i Stripe bærer mærket (metadata) produkt=yougotthis, og Stripe
+  // kopierer et Payment Links metadata over på hver checkout-session. Uden mærket er
+  // det et Content Studio-køb som før. forening + pakke kommer fra samme mærke.
+  const md: Record&lt;string, string&gt; = (s.metadata &amp;&amp; typeof s.metadata === "object") ? s.metadata : {};
+  const erYGT = String(md.produkt ?? "").toLowerCase() === "yougotthis";
+  const forening = String(md.forening ?? "").trim();
+  const pakke = String(md.pakke ?? "detaildrift").trim() || "detaildrift";
+  // 0 kr. = testadgang — MEN ikke for YOU GOT THIS: foreningens 140 butikker køber til
+  // 0 kr. med deres kode og er rigtige kunder. Et YGT-testkøb mærkes med test=ja på linket.
+  const erTest = String(md.test ?? "").toLowerCase() === "ja" || (!erYGT &amp;&amp; String(s.amount_total ?? "0") === "0");
+
+  if (!email || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+    return svar({ ok: true, fejl: "Koebet havde ingen brugbar e-mail." }, 200);
+  }
+
+  // --- 2) FINDES E-MAILEN? SAA STOPPER VI (§6) ---------------------------
+  // Vi kobler ikke, vi opdaterer ikke, og vi roerer aldrig et kodeord.
+  // Det er samtidig spaerren mod, at Stripes gentagne leverance opretter to gange.
+  for (let side = 1; side &lt;= 20; side++) {
+    const { data, error } = await admin.auth.admin.listUsers({ page: side, perPage: 200 });
+    if (error) return svar({ fejl: "Kunne ikke slå e-mailen op." }, 500);
+    const brugere = data?.users ?? [];
+    if (brugere.some((u) =&gt; String(u.email ?? "").toLowerCase() === email)) {
+      return svar({ ok: true, allerede: email, oprettet: false }, 200);
+    }
+    if (brugere.length &lt; 200) break;
+  }
+
+  // --- 3) EN LEDIG KODE ---------------------------------------------------
+  let kode = "";
+  for (let forsoeg = 0; forsoeg &lt; 8; forsoeg++) {
+    const k = kodeAf(virksomhed);
+    const { data } = await admin.from("virksomhedskoder").select("kode").eq("kode", k).limit(1);
+    if (!data || !data.length) { kode = k; break; }
+  }
+  if (!kode) return svar({ fejl: "Kunne ikke finde en ledig kode." }, 500);
+
+  // --- 4) KUNDENS DEFINITION ---------------------------------------------
+  // Samme form som appens egen opretKunde() skriver. Ental: hun er én person,
+  // indtil hun selv siger andet — tiltaleformen gaettes aldrig i Drejebogen,
+  // og "du" er det rigtige for en enkeltmandsforretning.
+  const def: Record&lt;string, unknown&gt; = {
+    virksomhed,
+    oprettet: new Date().toISOString().slice(0, 10),
+    forloeb: erYGT ? "YOU GOT THIS" : "Content Studio",
+    type: erYGT ? "kursus" : "contentstudio",   // lektionerne vises KUN for type kursus
+    pakke: erYGT ? pakke : undefined,           // YOU GOT THIS · DETAIL = lektioner + Drejebog + Værktøjskassen
+    forening: forening || undefined,            // fx Ringkøbing Handelsforening
+    ental: true,
+    // skema: IKKE sat (28/9). »skema: false« betyder i appen »spoergeskemaet er SLAAET FRA
+    // for kunden« (kundekortets flueben) — saa sprang rejsen startskemaet over, og
+    // lektionslaasen virkede ikke for nogen, der koebte via Stripe.
+    login_klar: true,
+    test: erTest || undefined,          // 0 kr. = tester. Staar ikke i kundelisten (v1318).
+    maal: { tekst: "Din målsætning lander her, når du har udfyldt Drejebogen.", opslag_uge: 3 },
+    strategi: { analyse: "", temaer: [] },
+  };
+
+  // 4a · koden i tabellen — det er den, loginet slaar op i.
+  // VIRKSOMHED_ID FRA FOERSTE SEKUND (§2): koden er invitation, aldrig permanent
+  // dataejer. En kunde, der foedes uden virksomhed_id, skal migreres bagefter — og
+  // Drejebogen kan slet ikke bygges uden (den siger det selv og stopper).
+  //
+  // MAALT 26/8: virksomhedskoder.virksomhed_id er en FREMMEDNOEGLE
+  // (virksomhedskoder_virksomhed_id_fkey). Et opfundet uuid bliver afvist af basen —
+  // og det er helt rigtigt: virksomheden ER ejeren, og en ejer skal findes, foer
+  // noget kan pege paa den. Databasen haandhaever selv §2. Derfor oprettes
+  // virksomheden FOERST, og vi bruger DENS id.
+  let virksomhedId = "";
+  {
+    // KOLONNERNE ER LAEST UD AF TRIN 0's egen CREATE TABLE (8. august), ikke gaettet:
+    //   navn  not null, maa ikke vaere tom
+    //   type  not null, check (type in ('kunde','intern'))
+    //   id, aktiv, oprettet har alle en standardvaerdi
+    // "kunde" er den rigtige: en tester ER en kunde i produktet — det er kun Idas
+    // egne koder, der er "intern".
+    const { data, error } = await admin.from("virksomheder")
+      .insert({ navn: virksomhed, type: "kunde" }).select("id").single();
+    if (error || !data?.id) {
+      return svar({ fejl: "Kunne ikke oprette virksomheden: " + (error?.message ?? "intet id tilbage") }, 500);
+    }
+    virksomhedId = String(data.id);
+  }
+  {
+    const { error } = await admin.from("virksomhedskoder")
+      .insert({ kode, virksomhed, forloeb: erYGT ? "YOU GOT THIS" : "Content Studio", aktiv: true, virksomhed_id: virksomhedId, login_klar: true }).select();   // login_klar (28/9): koeberen har et login — koden sender til »log ind«, ikke »opret dig«
+    if (error) return svar({ fejl: "Kunne ikke oprette koden: " + error.message }, 500);
+  }
+
+  // 4b · kundens egen raekke — uden den kan hun ikke komme ind
+  {
+    const { data, error } = await admin.from("skema_svar")
+      .insert({ kode, navn: "config", skema: "kunde_def", svar: def }).select();
+    if (error || !data || !data.length) {
+      return svar({ fejl: "Kunden blev ikke oprettet færdig — sig det til Ida." }, 500);
+    }
+  }
+
+  // 4c · Idas kartotek. HELE listen ligger i EEN raekke, saa den skal laeses,
+  // udvides og skrives tilbage — aldrig overskrives med noget, vi selv fandt paa.
+  // Appen fletter fra sin side siden v1319, saa de to ikke kan slette hinanden.
+  // TO KOEB I SAMME SEKUND (28/9, lanceringen): begge laeser listen, og den sidste
+  // skrivning ville slette den foerste kunde af listen. Derfor laeses listen igen
+  // bagefter, og mangler koden, proeves der igen (op til 4 gange, med lidt tilfaeldig pause).
+  let kartotekOk = false;
+  for (let forsoeg = 0; forsoeg &lt; 4 &amp;&amp; !kartotekOk; forsoeg++) {
+    if (forsoeg) await new Promise((r) =&gt; setTimeout(r, 150 + Math.floor(Math.random() * 400)));
+    const { data } = await admin.from("skema_svar").select("svar")
+      .eq("kode", "ENERGIDA").eq("navn", "Ida").eq("skema", "kunde_koder").maybeSingle();
+    const kartotek = (data?.svar &amp;&amp; typeof data.svar === "object" &amp;&amp; !Array.isArray(data.svar))
+      ? data.svar as Record&lt;string, unknown&gt; : {};
+    kartotek[kode] = def;
+    const opd = await admin.from("skema_svar").update({ svar: kartotek })
+      .eq("kode", "ENERGIDA").eq("navn", "Ida").eq("skema", "kunde_koder").select();
+    if (!opd.data || !opd.data.length) {
+      await admin.from("skema_svar")
+        .insert({ kode: "ENERGIDA", navn: "Ida", skema: "kunde_koder", svar: kartotek }).select();
+    }
+    const tjek = await admin.from("skema_svar").select("svar")
+      .eq("kode", "ENERGIDA").eq("navn", "Ida").eq("skema", "kunde_koder").maybeSingle();
+    const efter = tjek.data?.svar as Record&lt;string, unknown&gt; | undefined;
+    kartotekOk = !!(efter &amp;&amp; typeof efter === "object" &amp;&amp; efter[kode]);
+  }
+
+  // 4d · CRM-kontakten. Gaar den galt, staar kunden der stadig — derfor
+  // stopper vi ikke paa den, men siger det i svaret.
+  // KOLONNENAVNENE ER LAEST UD AF APPENS EGEN KODE, ikke gaettet. Foerste udgave
+  // brugte "virksomhed" og "kilde" — de findes ikke, og indsaettelsen fejlede tavst
+  // (MAALT 26/8: svaret sagde kontakt: false, og kunden stod ikke i CRM'et).
+  // Her bruges KUN felter, appen selv skriver: kunde · status · source · kommentar.
+  // Mail og telefon laegges i kommentaren, saa de er der, selv om jeg ikke kan se
+  // om der findes egne kolonner til dem. Intet gaar tabt.
+  //
+  // DER FINDES INGEN navn-KOLONNE (MAALT 26/8, og dokumenteret i projektets eget
+  // "FUNDET UNDERVEJS": databasen svarer 400 column contacts.navn does not exist).
+  // Kontaktpersonens navn ligger derfor i kommentaren sammen med mail og telefon.
+  let kontaktOk = true;
+  try {
+    const { data, error } = await admin.from("contacts").insert({
+      kunde: virksomhed,
+      status: "Kunde",
+      source: erTest ? "Testlink" : (erYGT ? ("YOU GOT THIS" + (forening ? " · " + forening : "")) : "Stripe"),
+      kommentar: [navn, email, telefon, "Kode: " + kode].filter(Boolean).join(" · "),
+    }).select("id");
+    if (error || !data || !data.length) kontaktOk = false;
+  } catch { kontaktOk = false; }
+
+  // --- 5) INVITATIONEN — ALDRIG ET KODEORD --------------------------------
+  // Hun faar et link, hvor hun saetter sin egen adgangskode. redirectTo er ikke
+  // pynt: uden den lander hun paa projektets Site URL. Adressen skal ogsaa staa
+  // under Authentication -&gt; URL Configuration -&gt; Redirect URLs.
+  const { data: nyBruger, error: invFejl } = await admin.auth.admin.inviteUserByEmail(email, {
+    data: { navn: navn || virksomhed, kode },
+    redirectTo: "https://b2b.energida.dk",
+  });
+  if (invFejl) {
+    return svar({ fejl: "Kunden er oprettet, men invitationen blev ikke sendt: " + invFejl.message, kode }, 500);
+  }
+
+  // --- 6) KODEN LAASES FAST PAA SERVEREN ---------------------------------
+  // MAALT 26/8 paa Idas egen test: uden dette trin fik kunden en kode, hun ikke
+  // MAATTE bruge. Appen kunne godt LAESE koden af user_metadata — men databasen
+  // naegtede hende hendes egen raekke, fordi RLS med vilje kun stoler paa
+  // app_metadata. user_metadata kan brugeren SELV redigere; det var praecis dét,
+  // der væltede et kort 7. august. Hun landede derfor paa "opsaetningen kunne ikke
+  // hentes" umiddelbart efter at have valgt sit kodeord.
+  //
+  // OM updateUserById OG §6: kontrakten forbyder at aendre CREDENTIALS paa en
+  // EKSISTERENDE bruger. Her er ingen af delene i spil — e-mailen er bevist ny
+  // laengere oppe, brugeren er lige oprettet af os selv, og der roeres KUN
+  // app_metadata. Der findes ikke een sti gennem denne fil, der saetter et kodeord.
+  // Samme moenster som signup-med-kode bruger.
+  const nyId = nyBruger?.user?.id;
+  if (nyId) {
+    const { error: laasFejl } = await admin.auth.admin.updateUserById(nyId, {
+      app_metadata: { kode, virksomhed_id: virksomhedId },
+    });
+    if (laasFejl) {
+      return svar({
+        fejl: "Kunden er oprettet og invitationen sendt, men koden blev ikke laast fast: " + laasFejl.message
+            + " — kunden kan ikke komme ind, foer det er rettet.",   /* aldrig koen paa nogen flade (HAARD 27/8) */
+        kode,
+      }, 500);
+    }
+  }
+
+  // virk_kilde er ikke pynt: den er beviset for, HVOR virksomhedsnavnet kom fra.
+  // Staar der "customer_details.name (noedspor)", fandt vi aldrig firmanavnet, og
+  // kunden hedder nu det samme som personen. Det skal ses, ikke opdages senere.
+  return svar({ ok: true, oprettet: true, kartotek: kartotekOk, kode, produkt: erYGT ? "yougotthis" : "contentstudio", virksomhed_id: virksomhedId, laast: !!nyId, test: !!erTest, kontakt: kontaktOk, virk_kilde: virkKilde }, 200);
 });
 </pre></div><!-- OPRETTELSEN GENAABNET SIKKERT (24/8). Den gamle udgave blev pauset 7/8, fordi den kaldte updateUserById med password paa en KONTO, DER FANDTES: kundens mail + virksomhedskoden = kontoovertagelse. Kaldet findes ikke laengere i filen. Funktionen skal fortsat have Verify JWT SLAAET FRA — den bruges nemlig OGSAA af custSignup(), hvor kunden opretter sit eget login med en kode UDEN at vaere logget ind. Derfor er admin ikke en spaerring men et flag: den ENESTE handling, der kraever admin-token, er at rydde et efterladt forsoeg (slet + opret forfra), og kun paa en konto uden kode, som aldrig har vaeret brugt. Appens tre admin-veje sender Idas session-token via loginMotorOpret(); custSignup sender fortsat anon-noeglen og kan derfor intet slette. --><div id="sqlk_opret_login_2408" data-kode="edge" data-dato="24. august 2026" style="border:1px solid var(--border);border-radius:12px;background:#fff;padding:12px 14px;margin-bottom:8px;"><div><span style="font-size:12.5px;font-weight:400;">Luk kundeoprettelsen op igen &mdash; sikkert</span></div><div style="font-size:10px;font-weight:400;letter-spacing:1.4px;text-transform:uppercase;color:var(--gray3);padding-bottom:7px;border-bottom:1px solid var(--red);margin:6px 0 9px;">K&oslash;res i Supabase &rsaquo; Edge Functions</div><div style="font-size:11.5px;color:var(--gray3);line-height:1.65;"><b style="font-weight:400;color:var(--black);">Det er derfor, du f&aring;r en r&oslash;d fejl, n&aring;r du v&aelig;lger &bdquo;Jeg opretter deres login nu&ldquo;.</b> Motoren blev slukket 7. august, fordi den kunne s&aelig;tte en <b style="font-weight:400;color:var(--black);">ny adgangskode p&aring; en konto, der allerede fandtes</b>. Med en kundes mail plus deres virksomhedskode kunne man overtage kontoen.<br><br><b style="font-weight:400;color:var(--black);">Denne udgave kan kun oprette nye logins.</b> Findes e-mailen, bliver den afvist &mdash; kontoen r&oslash;res aldrig. Ligger der et halvt oprettet fors&oslash;g fra tidligere, siger appen til og rydder det f&oslash;rst, n&aring;r du har sagt ja.<br><br><b style="font-weight:400;color:var(--black);">S&aring;dan g&oslash;r du:</b><br>1 &middot; G&aring; til <b style="font-weight:400;color:var(--black);">Supabase &rsaquo; Edge Functions</b><br>2 &middot; &Aring;bn funktionen <b style="font-weight:400;color:var(--black);">signup-med-kode</b> (findes den ikke, s&aring; opret den med pr&aelig;cis det navn)<br>3 &middot; Slet alt indholdet, s&aelig;t koden herunder ind, og gem<br>4 &middot; <b style="font-weight:400;color:var(--red);">&bdquo;Verify JWT&ldquo; skal v&aelig;re SL&Aring;ET FRA</b> &mdash; som f&oslash;r. Kunder opretter nemlig ogs&aring; deres eget login med koden, uden at v&aelig;re logget ind.<br><br><b style="font-weight:400;color:var(--black);">Bagefter:</b> pr&oslash;v at oprette en kunde med &bdquo;Jeg opretter deres login nu&ldquo;. Virker det, er hullet fra 7. august lukket &mdash; ikke bare slukket.</div><div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap;justify-content:flex-end;"><button class="row-btn" onclick="sqlKortKoert('sqlk_opret_login_2408', this)" title="Er den k&oslash;rt, s&aring; fjern kortet">K&oslash;rt <span style="width:14px;height:14px;border-radius:50%;background:var(--red);display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;vertical-align:-2px;"><svg width="7" height="7" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span> &mdash; fjern kortet</button><button class="row-btn" onclick="sqlVis('edgeOpretLogin2408', this)">Vis koden</button><button class="dbtn primary" style="padding:7px 15px;" onclick="sqlKopier('edgeOpretLogin2408', this)">Kopi&eacute;r koden</button></div><pre id="edgeOpretLogin2408" style="display:none;margin:9px 0 0;background:#F7F9FB;border:1px solid var(--border);border-radius:12px;padding:12px 14px;font-size:10.5px;line-height:1.5;overflow-x:auto;white-space:pre-wrap;word-break:break-word;font-family:ui-monospace,Menlo,monospace;color:var(--black);">// ============================================================================
 // OPRET LOGIN MED KODE · Edge Function "signup-med-kode"
@@ -28100,7 +28482,7 @@ function perfMoedeFra() {
   let fra = (MAALS && MAALS.sidsteMoede) ? String(MAALS.sidsteMoede).slice(0, 10) : "";
   try {
     const idag = datoDK(new Date());
-    const afholdt = (window.__kundeAftaler || []).filter(function (a) { return a && a.dato && String(a.dato) < idag && /contentplanl|planlægningsdag|contentgennemgang/i.test(String(a.titel || "")); })
+    const afholdt = (window.__kundeAftalerAlle || window.__kundeAftaler || []).filter(function (a) { return a && a.dato && String(a.dato) < idag && /contentplanl|planlægningsdag|contentgennemgang/i.test(String(a.titel || "")); })
       .map(function (a) { return String(a.dato).slice(0, 10); }).sort().pop();
     if (afholdt && afholdt > fra && !(MAALS && MAALS.sidenValgt)) fra = afholdt;   /* har Ida selv valgt datoen paa Moedesiden, vinder den (21/9) */
   } catch (e) {}
@@ -28584,10 +28966,13 @@ async function onboardingSkemaTjek() {
      staa fast paa et skridt, kunden ikke kan tage — en blindgyde (30/7). */
   if (CURRENT_DEF && CURRENT_DEF.skema === false) { OB_SKEMA = true; try { renderHome(); } catch (e) {} return; }
   try {
-    const { data } = await sb.from("skema_svar").select("created_at")
+    const { data, error } = await sb.from("skema_svar").select("created_at")
       .eq("kode", currentKode).in("skema", ["inden_start", "inden_workshoppen"]).limit(1);   /* det nye eller det gamle startskema (21/9) */
+    /* NETFEJL ER IKKE »IKKE SENDT« (sundhedstjekket 28/9): foer blev en fejl til false — saa var en kunde, der HAVDE sendt skemaet,
+       laast ude af lektionerne til naeste genindlaesning og kunne sende det to gange. Nu bliver vaerdien ukendt (null) og hentes igen. */
+    if (error) { OB_SKEMA = null; return; }
     OB_SKEMA = !!(data && data.length);
-  } catch (e) { OB_SKEMA = false; }
+  } catch (e) { OB_SKEMA = null; return; }
   try { renderHome(); } catch (e) {}
   if (OB_SKEMA === true && TUR_VENTER) setTimeout(function () { try { turStart(); } catch (e) {} }, 700);
 }
@@ -33468,6 +33853,9 @@ async function strukturDagSat(i, inp) {
   try { planDashTegn(); } catch (e) {} try { renderHome(); } catch (e) {}
   try { husKvit(dato ? "Står i kalenderen." : "Fjernet fra kalenderen."); } catch (e) {}
 }
+/* EET MOEDE, EEN REGEL (moedeaudit 28/9): planlaegningsmoedet genkendes paa titlen ens alle steder — og et tryk paa det aabner Mødesiden,
+   ogsaa paa telefonens dagsliste (foer aabnede den kun linket eller ingenting). Linket til onlinemoedet staar paa Mødesiden. */
+function erMoedeTitel(t) { return /contentplanl|planlægningsdag|contentgennemgang|contentmøde/i.test(String(t || "")); }
 function planMoedeAftale() {
   const idag = datoDK();
   const rows = (window.__kundeAftaler || []).filter(function (a) { return a && a.dato && a.dato >= idag && /contentplanl|planlægningsdag|contentgennemgang/i.test(String(a.titel || "")); })
@@ -33559,7 +33947,7 @@ function hjemDagFremHtml(iso) {
   try { (IDEER || []).filter(function (x) { return x.dato === iso && x.status !== "Postet"; }).forEach(function (x) {
     const tid = (x.brief && x.brief.tid) ? (typeof tidVis === "function" ? tidVis(x.brief.tid) : String(x.brief.tid).slice(0, 5)) : "";
     ud.push({ t: "Skal du poste:", navn: (x.titel || "Uden titel"), s: [tid ? (/^\d/.test(tid) ? "Kl. " + tid : tid) : "", "Opslag", x.status || ""].filter(Boolean).join(" · "), klik: "openBriefSide('" + esc(String(x.id)) + "')" }); }); } catch (e) {}
-  try { (window.__kundeAftaler || []).filter(function (a) { return a.dato === iso; }).forEach(function (a) { ud.push({ t: a.titel || "", s: (a.tid ? "Kl. " + String(a.tid).slice(0, 5) + " · " : "") + "Aftale", klik: a.link ? "window.open(" + JSON.stringify(String(a.link)).replace(/"/g, "&quot;") + ",'_blank','noopener')" : "" }); }); } catch (e) {}
+  try { (window.__kundeAftaler || []).filter(function (a) { return a.dato === iso; }).forEach(function (a) { ud.push({ t: a.titel || "", s: (a.tid ? "Kl. " + String(a.tid).slice(0, 5) + " · " : "") + "Aftale", klik: erMoedeTitel(a.titel) ? "moedeSideAaben()" : a.link ? "window.open(" + JSON.stringify(String(a.link)).replace(/"/g, "&quot;") + ",'_blank','noopener')" : "" }); }); } catch (e) {}
   try { (OPGAVER || []).filter(function (o) { return !o.done && o.aktiv !== false && String(o.deadline || "").slice(0, 10) === iso && opgaveErTilMig(o); }).forEach(function (o) { ud.push({ t: o.titel || "", s: "To-do", klik: "haengSideAabn()" }); }); } catch (e) {}
   if (!ud.length) return '<div class="idag-flise tom">Ingenting planlagt.</div>';
   return ud.map(function (r) { return '<div class="idag-flise"' + (r.klik ? ' onclick="' + r.klik + '"' : '') + '><span class="idag-tekst"><span class="idag-titel">' + esc(r.t) + (r.navn ? ' <i class="fokus-navn">' + esc(r.navn) + '</i>' : '') + '</span>' + (r.s ? '<span class="idag-sub">' + esc(r.s) + '</span>' : '') + '</span></div>'; }).join("");
@@ -35670,7 +36058,11 @@ async function kursusHent() {
     try {
       // ældste først, så nyeste række vinder for noter/præference
       const { data, error } = await sb.from("skema_svar").select("skema,svar").eq("kode", currentKode).eq("navn", CURRENT_NAVN || "").order("created_at", { ascending: true });
+      /* INTET GAAR TABT (sundhedstjekket 28/9): det, der kun er gemt paa denne enhed (et »set« eller en note, hvor skrivningen fejlede),
+         flettes med basen og sendes op igen — foer erstattede basens noter de lokale, og et fejlet »set« naaede aldrig de andre enheder. */
+      const lokalSet = Object.assign({}, KURSUS_SET), lokalNoter = JSON.parse(JSON.stringify(KURSUS_NOTER || {})), iBasen = {};
       if (!error && data) data.forEach(r => {
+        if (r.skema.indexOf("lektion_set_") === 0) iBasen[r.skema.slice(12)] = true;
         if (r.skema.indexOf("lektion_set_") === 0) KURSUS_SET[r.skema.slice(12)] = true;
         if (r.skema.indexOf("lektion_svar_") === 0) KURSUS_SVAR[r.skema.slice(13)] = r.svar;
         if (r.skema.indexOf("lektion_udsat_") === 0) KURSUS_UDSAT[r.skema.slice(14)] = true;
@@ -35679,6 +36071,17 @@ async function kursusHent() {
         if (r.skema === "lektion_visninger" && r.svar) KURSUS_VIS = r.svar;
         if (r.skema === "modul_forsider" && r.svar) MODUL_SET = Object.assign({}, MODUL_SET, r.svar);
       });
+      if (!error && data) {
+        let noteMangler = false;
+        Object.keys(lokalNoter).forEach(function (lek) {
+          const ud = Array.isArray(KURSUS_NOTER[lek]) ? KURSUS_NOTER[lek] : [];
+          (lokalNoter[lek] || []).forEach(function (n) { if (n && !ud.some(function (x) { return x && x.dato === n.dato && x.tekst === n.tekst; })) { ud.push(n); noteMangler = true; } });
+          if (ud.length) KURSUS_NOTER[lek] = ud;
+        });
+        if (noteMangler) { try { kursusBlobGem("lektion_noter", KURSUS_NOTER); } catch (e) {} }
+        Object.keys(lokalSet).forEach(function (id) { if (lokalSet[id] && !iBasen[id]) { try { sb.from("skema_svar").insert({ kode: currentKode, navn: CURRENT_NAVN || "", skema: "lektion_set_" + id, svar: { set: true } }).then(function () {}, function () {}); } catch (e) {} } });
+        kursusGemLocal();
+      }
     } catch(e) {}
   }
   modulForsiderInit();
@@ -35824,8 +36227,8 @@ function dagensProgramItems() {
         t: esc(a.titel || "Møde"),
         sub: (a.tid ? "kl. " + esc(String(a.tid).slice(0, 5)) + (a.tid_slut ? "–" + esc(String(a.tid_slut).slice(0, 5)) : "") : "I dag")
              + (a.form ? " · " + esc(a.form) : ""),
-        kn: a.link ? "Åbn mødet" : null,
-        fn: a.link ? () => window.open(a.link, "_blank") : null
+        kn: (erMoedeTitel(a.titel) || a.link) ? "Åbn mødet" : null,
+        fn: erMoedeTitel(a.titel) ? () => moedeSideAaben() : (a.link ? () => window.open(a.link, "_blank") : null)
       });
     });
   } catch(e) {}
@@ -45749,7 +46152,7 @@ function huTing(iso) {
     (window.__kundeAftaler || []).forEach(function (a) {
       if (!a || String(a.dato || "").slice(0, 10) !== iso) return;
       const tid = a.tid ? String(a.tid).slice(0, 5).replace(":", ".") : "";
-      ud.push({ ty: "aftale", tid: tid, et: "Aftale" + (tid ? " · kl. " + tid : ""), t: a.titel || "", chip: "", klik: a.link ? "window.open('" + esc(String(a.link)) + "','_blank')" : "" });
+      ud.push({ ty: "aftale", tid: tid, et: "Aftale" + (tid ? " · kl. " + tid : ""), t: a.titel || "", chip: "", klik: erMoedeTitel(a.titel) ? "moedeSideAaben()" : a.link ? "window.open('" + esc(String(a.link)) + "','_blank')" : "" });
     });
   } catch (e) {}
   try { if (planDato() === iso) ud.push({ ty: "plan", tid: "", et: "Planlægning", t: "Ugens planlægning", chip: "", klik: "showTab(31)" }); } catch (e) {}
@@ -45795,7 +46198,7 @@ function huKalDagHtml(iso, erIdag) {
   });
   (window.__kundeAftaler || []).forEach(function (a) {
     if (!a || String(a.dato || "").slice(0, 10) !== iso) return;
-    const t = huKalT(a.tid); const klik = a.link ? "window.open('" + esc(String(a.link)) + "','_blank')" : "";
+    const t = huKalT(a.tid); const klik = erMoedeTitel(a.titel) ? "moedeSideAaben()" : a.link ? "window.open('" + esc(String(a.link)) + "','_blank')" : "";
     if (t == null) { uden.push({ k: "akt", foreslaa: 9, laengde: 1, sym: "aftale", n: a.titel || "Aftale", u: "Vælg tidspunkt", klik: klik }); return; }
     let til = huKalT(a.tid_slut); if (til == null || til <= t) til = t + 1;
     blk.push({ k: "akt", fra: t, til: til, sym: "aftale", n: a.titel || "Aftale", u: huKalKl(t) + "–" + huKalKl(til), klik: klik });
@@ -55376,7 +55779,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2391";
+const APP_VERSION = "2392";
 let NY_VERSION_KLAR = false;
 let NY_VERSION_AFVIST = false;
 function nyVersionSkjul() {
@@ -60459,6 +60862,17 @@ function authMsgEl() {
 }
 function authErr(msg) { const e=authMsgEl(); e.textContent=msg; e.className="auth-msg err"; e.style.display="block"; }
 function authInfo(msg) { const e=authMsgEl(); e.textContent=msg; e.className="auth-msg ok"; e.style.display="block"; }
+window.addEventListener("load", function () {
+  if (!window.__ENERGIDA_LINK_UDLOEBET) return;
+  setTimeout(function () {
+    try {
+      const g = document.getElementById("authGate"); if (!g || getComputedStyle(g).display === "none") return;
+      authShow("forgot");
+      authInfo("Linket i mailen er udløbet eller allerede brugt. Skriv din mail, så sender vi et nyt.");
+      try { history.replaceState(null, "", location.pathname + location.search); } catch (e) {}
+    } catch (e) {}
+  }, 600);
+});
 
 function authOejeSvg(aaben) {
   return '<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">'
@@ -75500,6 +75914,8 @@ function planRitTilbage() {
     else if (t.skaerm === "ide") { t.skaerm = "spm"; t.q = 2; t.skriv = ""; }
     planRitTegn(); const el = document.getElementById("planRit"); if (el) el.scrollTop = 0; return;
   }
+  /* TILBAGE ER EET TRIN (moedeaudit 28/9, MAALT: fra trin 5 lukkede Tilbage hele planlaegningen midt i moedet) */
+  if (PR.trin > (PR.maaned ? 0 : 1) && PR.trin <= 6) { prGaa(PR.trin - 1); return; }
   planRitLuk();
 }
 /* ---- 4 hvem goer hvad (Idas agenda 15/9: »hvornår laves briefen og hvornår skal de produceres og hvem er ansvarlig«).
@@ -75607,10 +76023,33 @@ async function planMoedeAftaleSaet(dato, tid, slut) {
   try { await renderAftaler(); } catch (e) {}
   return true;
 }
+/* BOOK NAESTE PLANLAEGNING (moedeaudit 28/9, MAALT i selen): »Færdig« kaldte planMoedeAftaleSaet, som opdaterer det NAERMESTE moede fra i dag —
+   altsaa det moede, man sad i. Det forsvandt fra kalenderen og flyttede til naeste uge. Nu: findes der allerede et moede i den valgte uge, flyttes DET;
+   ellers oprettes et nyt, og titel, link og form kopieres fra det nuvaerende. Moeder fra i dag og tidligere roeres aldrig. */
+async function prBookAftale(dato, tid) {
+  if (!sb || !currentKode || !dato) return false;
+  const erM = function (a) { return a && a.dato && /contentplanl|planlægningsdag|contentgennemgang|contentmøde/i.test(String(a.titel || "")); };
+  const idag = datoDK();
+  const alle = (window.__kundeAftalerAlle || window.__kundeAftaler || []);
+  const uge = (PR && PR.uge) ? planRitUgeDage(PR.uge) : [dato];
+  const rec = { dato: dato, tid: tid || "10:00", tid_slut: planMoedeTidPlus(tid || "10:00", 60) };
+  const eks = alle.find(function (a) { return erM(a) && a.id && String(a.dato) > idag && uge.indexOf(String(a.dato).slice(0, 10)) > -1; });
+  try {
+    if (eks) { const u = await sb.from("kunde_aftaler").update(rec).eq("id", eks.id).eq("kode", currentKode).select(); if (u.error || !u.data || !u.data.length) return false; }
+    else {
+      const skabelon = alle.filter(erM).sort(function (x, y) { return String(y.dato).localeCompare(String(x.dato)); })[0] || null;
+      const ny = { kode: currentKode, titel: "Ugentlig contentplanlægning" };
+      if (skabelon) Object.keys(skabelon).forEach(function (k) { if (["id", "created_at", "updated_at", "dato", "tid", "tid_slut", "kode"].indexOf(k) < 0 && skabelon[k] != null) ny[k] = skabelon[k]; });
+      const i = await sb.from("kunde_aftaler").insert(Object.assign(ny, rec)).select(); if (i.error || !i.data || !i.data.length) return false;
+    }
+  } catch (e) { return false; }
+  try { await renderAftaler(); } catch (e) {}
+  return true;
+}
 async function prBookGem() {
   const iso = planRitUgeDage(PR.uge)[(PR.book.dag || 1) - 1];
   try { await setPlanDato(iso); } catch (e) {}
-  try { await planMoedeAftaleSaet(iso, PR.book.tid || "10:00"); } catch (e) {}   /* moedet i kalenderen (21/9) */
+  try { await prBookAftale(iso, PR.book.tid || "10:00"); } catch (e) {}   /* NAESTE moede i kalenderen — aldrig det, man sidder i (moedeaudit 28/9) */
   const patch = { sidst: datoDK(), uge: PR.ugeKey, tid: PR.book.tid };
   try { const g = Array.isArray(PR_STATUS && PR_STATUS.gjorte) ? PR_STATUS.gjorte.slice() : []; if (g.indexOf(PR.ugeKey) < 0) g.push(PR.ugeKey); patch.gjorte = g.slice(-60); } catch (e) {}   /* ringene + streaken paa Planlaegning (21/9) */
   if (PR.maanedGjort) patch.maanedPlan = PR.mkey;
@@ -77508,6 +77947,6 @@ function bf3StudieRum(v, filter) {
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-hvid.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 28. september · 2391</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 28. september · 2392</div>
 </body>
 </html>
