@@ -86,6 +86,10 @@ for BSK in "390 1200 $K9" "1440 1300 $K10"; do
   echo "$UDB" | grep -q "SELE BACKSTAGE OK" || BS_OK=0
 done
 [ "$BS_OK" = "1" ] && echo "SELE BACKSTAGE OK: alle sider holder laasen paa 390 og 1440" || echo "SELE BACKSTAGE FEJL: fund staar ovenfor"
+# GENSTARTEN (28/9, Ida: »Det her må ikke ske« — »Appen kunne ikke starte« i Backstage): admin startes RIGTIGT med hver side gemt; taeppet skal lette uden fejlfladen.
+RAAG=$($TO "$C" $HL --no-sandbox --disable-gpu --window-size=1480,940 --virtual-time-budget=400000 --enable-logging=stderr --v=0 "http://127.0.0.1:$PORT/genstart.html" 2>&1)
+UDG=$(echo "$RAAG" | grep -a 'CONSOLE' | sed -E 's/^.*CONSOLE[:(][0-9]+\)?\] //; s/", source:.*$//; s/^"//' | grep -a 'SELE GENSTART')
+echo "${UDG:-SELE GENSTART FEJL: ingen maaling}"
 # ENS-PORTEN FOR BRIEFEN (17/9, Idas ord: »inden der bygges noget, kontrolleres systemet for hvordan de andre funktioner omkring ser ud«):
 # briefen paa 1440 — forsiden + alle skrivetrin — piller, chips, versaler, fliser, felter og bjaelker skal vaere ens, og intet maa vaere rosa.
 K3=$(python3 -c "import urllib.parse,sys;print(urllib.parse.quote(open(sys.argv[1]).read()))" "$ROD/tools/designlaas/probe-brief.js")
@@ -104,5 +108,5 @@ for HK in "390 kunde" "1440 kunde" "390 admin" "1440 admin"; do
   echo "[$1 $2] ${UDH:-SELE HERO FEJL: ingen maaling}"
   echo "$UDH" | grep -q "SELE HERO OK" || HERO_OK=0
 done
-[ "$HERO_OK" = "1" ] && echo "$UD0" | grep -q "SELE POPUP-KILDE OK" && echo "$UD" | grep -q "SELE LAAS OK" && echo "$UD2" | grep -q "SELE SIDER OK" && echo "$UD4" | grep -q "SELE SIDER OK" && echo "$UD5" | grep -q "SELE BUD OK" && echo "$UD6" | grep -q "SELE BUD OK" && [ "$UX_OK" = "1" ] && [ "$BS_OK" = "1" ] && echo "$UD3" | grep -q "SELE BRIEF OK" && exit 0
+[ "$HERO_OK" = "1" ] && echo "$UDG" | grep -q "SELE GENSTART OK" && echo "$UD0" | grep -q "SELE POPUP-KILDE OK" && echo "$UD" | grep -q "SELE LAAS OK" && echo "$UD2" | grep -q "SELE SIDER OK" && echo "$UD4" | grep -q "SELE SIDER OK" && echo "$UD5" | grep -q "SELE BUD OK" && echo "$UD6" | grep -q "SELE BUD OK" && [ "$UX_OK" = "1" ] && [ "$BS_OK" = "1" ] && echo "$UD3" | grep -q "SELE BRIEF OK" && exit 0
 echo "SELE LAAS FEJL: maalingen sagde ikke OK"; exit 1
