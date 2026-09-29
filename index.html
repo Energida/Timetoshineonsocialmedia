@@ -10006,8 +10006,9 @@ html body .ark.ark-bred .ark-felt textarea, html body .ark.ark-agenda .ark-felt 
 .ark-link-pille { order:2; align-self:stretch; width:100%; display:flex; align-items:center; justify-content:center; gap:8px; min-height:44px; padding:0 16px; margin:0 0 12px; box-sizing:border-box; background:#fff; border:1px solid var(--border); border-radius:999px; color:var(--gray2); font-family:Poppins,sans-serif; font-weight:300; font-size:12.5px; cursor:pointer; }
 .ark-link-pille .ark-link-plus { display:inline-flex; align-items:center; justify-content:center; width:24px; height:24px; border-radius:50%; background:var(--red); color:#fff; font-size:16px; line-height:1; }   /* Tilføj link under feltet, plusset i husets roede cirkel (29/9) */
 .ark-format-top { margin:0 0 14px; }
+html body.mb #briefWrap .brief-titel-over .bt-blyant { border:0 !important; background:none !important; box-shadow:none !important; }   /* ingen cirkel om titlens blyant (Ida 29/9) */
 /* DE SMAA ARK ER BREDERE PAA COMPUTEREN (Ida 29/9: »disse pop-ups bliver for kompakte i desktop designet - de skal være bredere«) — 520 px; dato-arket bliver 360 (kalenderens gitter) */
-@media (min-width:900px) { html body #bsFlytMenu .bs-flyt-ark:not(.dato-ark) { max-width:520px !important; width:520px !important; } }
+@media (min-width:900px) { html body #bsFlytMenu .bs-flyt-ark:not(.dato-ark) { max-width:min(640px, calc(100vw - 48px)) !important; width:640px !important; padding:28px 32px 28px !important; } html body #bsFlytMenu .bs-flyt-ark.dato-ark { max-width:420px !important; width:420px !important; } html body .ark-slor .ark { max-width:min(640px, calc(100vw - 48px)) !important; width:640px !important; } }   /* ALLE POPUPS STOERRE PAA COMPUTEREN (Ida 29/9: »ALLE desktop pop ups skal simpelthen være større!«): 640 px, dato-arket 420 */
 #screen7 .bt-kom { position:relative; } #screen7 .bt-kom .bt-kom-tal { position:absolute; top:-5px; right:-5px; min-width:17px; height:17px; padding:0 4px; border-radius:999px; background:var(--red); color:#fff; font-family:Poppins,sans-serif; font-weight:400; font-size:10px; line-height:17px; text-align:center; box-sizing:border-box; }   /* kommentarer = bud 3 (29/9) */
 #bsFlytMenu .kom-ark .kom-liste { max-height:min(46vh,380px); overflow-y:auto; margin:0 0 12px; display:flex; flex-direction:column; gap:10px; }
 /* TEKSTEN I DEN ROEDE SOEJLE-FLISE KAN LAESES (Ida 29/9: »teksten her i den røde flise er simpelthen for utydelig!«) — MAALT: 14 px i vaegt 300; nu 400 og helt hvid, etiketten 90 % */
@@ -28017,13 +28018,31 @@ async function briefTilGodkendelse(btn) {
    Send = husets ark: hvem skal godkende (chips) · kommentar (med mikrofon) · roed Send. Modtageren ser oeverst paa forsiden en roed flise
    »Til godkendelse« med Godkend / Send retur. Kommentarerne er en dialog paa forsiden (brief.kommentarer = [{af, dato, tekst}]) med
    sendefelt + mikrofon; hver ny kommentar giver besked i den andens Indbakke. Godkendt → status + besked (som foer). */
+/* DIN FAVORIT FOER GODKENDELSEN (Ida 29/9: »når jeg sender en brief til godkendelse - så vil jeg gerne at jeg kan klikke på min favorit … et skridt inden«):
+   er der flere hooks eller cover-tekster, vaelges favoritten her som chips — samme valg som cirklen i briefen (hookTekstValgt / thumbValgt) */
+function briefGodkFavHtml() {
+  const B = BRIEF_STATE || {}; let h = "";
+  [["hookTekst", "Dit favorit-hook"], ["thumb", "Din favorit til coverbilledet"]].forEach(function (r) {
+    let l = []; try { l = briefForslagListe(r[0]); } catch (e) { l = []; }
+    const med = l.map(function (t, i) { return { t: String(t || "").trim(), i: i }; }).filter(function (x) { return x.t; });
+    if (med.length < 2) return;
+    const v = B[r[0] + "Valgt"];
+    h += '<div class="ark-et godk-fav-et">' + r[1] + '</div><div class="ark-chips i-fladen godk-fav" data-key="' + r[0] + '">' + med.map(function (x) { return '<button type="button" class="ark-chip' + (v === x.i ? ' on' : '') + '" data-i="' + x.i + '" onclick="briefGodkFavVaelg(\'' + r[0] + '\',' + x.i + ',this)">' + esc(x.t) + '</button>'; }).join("") + '</div>';
+  });
+  return h ? h + '<div class="ark-streg" style="margin:6px 0 14px;"></div><div class="ark-et">Send til</div>' : '';
+}
+function briefGodkFavVaelg(key, i, chip) {
+  const b = BRIEF_STATE || {}; if (b[key + "Valgt"] === i) return;   /* favoritten fravaelges ikke her — der skal vaere een */
+  try { briefForslagVaelg(key, i); } catch (e) { b[key + "Valgt"] = i; }
+  try { chip.parentElement.querySelectorAll(".ark-chip").forEach(function (c) { c.classList.toggle("on", c === chip); }); } catch (e) {}   /* kun chippen skifter (29/9) */
+}
 function briefGodkArkVis() {
   const modt = godkModtagere();
   let m = document.getElementById("bsFlytMenu"); if (!m) { m = document.createElement("div"); m.id = "bsFlytMenu"; document.body.appendChild(m); }
   window.__GODK_TIL = modt[0] || "";
   const chips = modt.length ? modt.map(n => '<button type="button" class="ark-chip' + (n === window.__GODK_TIL ? ' on' : '') + '" onclick="window.__GODK_TIL=this.textContent;[...this.parentElement.children].forEach(c=>c.classList.toggle(\'on\',c===this))">' + esc(n) + '</button>').join("")
     : '<div class="mg-tekst" style="text-align:center;color:var(--gray3);">Der er ingen at sende til endnu — den anden skal have logget ind på koden.</div>';
-  m.innerHTML = '<div class="bs-flyt-ark brief-soejle-ark brief-godk-ark"><div class="ark-t">Hvem skal godkende?</div><div class="ark-chips i-fladen sa-chips">' + chips + '</div>'
+  m.innerHTML = '<div class="bs-flyt-ark brief-soejle-ark brief-godk-ark"><div class="ark-t">Hvem skal godkende?</div>' + briefGodkFavHtml() + '<div class="ark-chips i-fladen sa-chips">' + chips + '</div>'
     + '<div class="godk-felt-ramme"><textarea id="briefGodkNote" class="tilf-felt godk-felt" rows="2" placeholder="Tilføj en kommentar …"></textarea>' + (typeof taleMikHtml === "function" ? taleMikHtml("briefGodkNote") : "") + '</div>'
     + (modt.length ? '<button type="button" class="ark-knap ark-knap-roed" onclick="briefGodkArkSend(this)">Send til godkendelse</button>' : '')
     + '<button type="button" class="ark-luk" onclick="bsFlytLuk()">Annullér</button></div>';
@@ -28058,7 +28077,7 @@ function briefKomArk() {
   let m = document.getElementById("bsFlytMenu"); if (!m) { m = document.createElement("div"); m.id = "bsFlytMenu"; document.body.appendChild(m); }
   const felt = sendFeltHtml({ id: "briefKomArkFelt", ph: "Tilføj en kommentar …", fn: "briefKomArkSend(this)", aria: "Send kommentaren", klasse: "bs-sendfelt pf-kom-send", textarea: true });
   m.innerHTML = '<div class="bs-flyt-ark brief-soejle-ark kom-ark"><div class="ark-t" style="text-align:center;">Kommentarer</div><div class="kom-liste" id="briefKomListe">' + briefKomListeHtml() + '</div>'
-    + '<div class="pf-kom-felt">' + felt + (typeof taleMikHtml === "function" ? taleMikHtml("briefKomArkFelt") : "") + '</div>'
+    + '<div class="pf-kom-felt">' + felt + '</div>'   /* EEN mikrofon: arkets egen (arkMikFelter) — den ekstra gav to (Ida 29/9) */
     + '<button type="button" class="ark-luk" onclick="bsFlytLuk()">Færdig</button></div>';
   m.style.display = "flex"; m.onclick = function (e) { if (e.target === m) bsFlytLuk(); };
   setTimeout(function () { const f = document.getElementById("briefKomArkFelt"); if (f) f.focus(); }, 120);
@@ -31140,13 +31159,14 @@ function briefTilfoejLinkArk(ret) {
      husets dropdown (bud 3-listen) vaelger, hvad man tilfoejer — Link til indholdet · Link til musik · Link til inspiration · Produkter — feltet under,
      og den roede pille »Tilfoej« gemmer og lukker. Escape og klik udenfor lukker uden at gemme. Retter man noget, der er sat, staar valget og teksten klar. */
   const B = BRIEF_STATE || {};
-  const ALLE = [{ k: "linkIndhold", n: "Link til indholdet", ph: "https://… (Google Drive)" }, { k: "musikLink", n: "Link til musik", ph: "https://…" }, { k: "inspiration", n: "Link til inspiration", ph: "https://…" }, { k: "medIIndhold", n: "Produkt", ph: "Produkt, person eller rekvisit …" }, { k: "tags", n: "Tags", ph: "" }, { k: "kommentar", n: "Kommentar", ph: "" }];   /* TAGS I FAKTA (Ida 29/9: »i fakta skal man også kunne tilføje tags. som kommer op som chips i fakta«) */
+  const ALLE = [{ k: "linkIndhold", n: "Link til indholdet", ph: "https://… (Google Drive)" }, { k: "musikLink", n: "Link til musik", ph: "https://…" }, { k: "inspiration", n: "Link til inspiration", ph: "https://…" }, { k: "medIIndhold", n: "Produkt", ph: "Produkt, person eller rekvisit …" }, { k: "tags", n: "Tags", ph: "" }, { k: "kommentar", n: "Kommentar", ph: "" }, { k: "opgave", n: "Opgave", ph: "" }];   /* TAGS I FAKTA (Ida 29/9: »i fakta skal man også kunne tilføje tags. som kommer op som chips i fakta«) */
   window.__TILF = { valg: ret || "", ret: !!ret };
   let m = document.getElementById("bsFlytMenu"); if (!m) { m = document.createElement("div"); m.id = "bsFlytMenu"; document.body.appendChild(m); }
   m.innerHTML = "";   /* ARKET AABNER TOMT (Ida 21/9 kl. 19.25: »når jeg prøver at tilføje et produkt mere, så er det tidligere produkt allerede der«) — bsFlytLuk skjuler kun, saa det gamle felt stod stadig i DOM'en og blev laest som »det, der allerede er skrevet« */
   const tegn = function () {
     const v = ALLE.find(x => x.k === window.__TILF.valg);
-    if (v && v.k === "kommentar") { briefKomArk(); return; }   /* Tilføj › Kommentar = kommentar-arket (29/9) */
+    if (v && v.k === "kommentar") { briefKomArk(); return; }
+    if (v && v.k === "opgave") { briefOpgaveArk(""); return; }   /* Tilføj › Opgave = »Giv en opgave« (Ida 29/9) — lander hos personen i Indbakken */   /* Tilføj › Kommentar = kommentar-arket (29/9) */
     if (v && v.k === "tags" && !window.__TILF.tagsLaest) { window.__TILF.tagsLaest = true; KUNDE_ARK_TAGS = (Array.isArray(B.tags) ? B.tags : []).map(t => String(t || "").trim().toLowerCase()).filter(Boolean); }
     const nu = (function () { const f = document.getElementById("tilfTekst"); return f ? f.value : null; })();   /* det, der allerede er skrevet, bliver */
     const vaerdi = nu !== null ? nu : (v && v.k !== "medIIndhold" ? String(B[v.k] || "") : "");   /* produkter: listen staar for sig, feltet er til det naeste */
@@ -35019,7 +35039,7 @@ function indbakkeRegn() {
     if (mig) (typeof OPGAVER !== "undefined" && OPGAVER || []).forEach(function (o) {
       const a = String((o && o.ansvarlig) || "").trim().toLowerCase();
       if (!a || o.done || o.aktiv === false || a !== mig) return;
-      tildig.push({ t: esc(o.titel || ""), s: o.deadline ? esc(dkDatoKort(String(o.deadline))) : "", knap: "Åbn", klik: "haengSideAabn()", aabn: "haengSideAabn()" });
+      tildig.push({ t: 'Du har fået en ny opgave: ' + esc(o.titel || ""), s: o.deadline ? esc(dkDatoKort(String(o.deadline))) : "", knap: "Åbn", klik: "haengSideAabn()", aabn: "haengSideAabn()" });   /* Idas ord 29/9 */
     });
     /* SENDT TIL MIG FRA TEAMET (21/9): »Hvad siger du til dette?« / »Du skal lige se dette« — Aabn = briefen; Set fjerner den */
     const set3 = ibSetLaes();
@@ -56140,7 +56160,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2412";
+const APP_VERSION = "2413";
 let NY_VERSION_KLAR = false;
 let NY_VERSION_AFVIST = false;
 function nyVersionSkjul() {
@@ -78460,6 +78480,6 @@ function bf3StudieRum(v, filter) {
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-hvid.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 29. september · 2412</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 29. september · 2413</div>
 </body>
 </html>
