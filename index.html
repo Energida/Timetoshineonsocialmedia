@@ -10373,7 +10373,7 @@ html body.mb #briefSideNav .bsd-gem { margin-left:auto; margin-right:12px; }
       }
       try {
         navigator.serviceWorker.addEventListener("message", function (e) {
-          if (e && e.data && e.data.type === "ny-version") setTimeout(hentForfra, 1200);
+          if (e && e.data && e.data.type === "ny-version") { window.__NY_KLAR_SW = true; setTimeout(hentForfra, 1200); }
         });
       } catch (e) {}
     })();
@@ -10758,6 +10758,7 @@ html body #briefKlip1Vaert > #briefKlip1 { flex:1 1 auto; width:100%; min-width:
   var slukket = false;
   function sluk() {
     if (slukket) return; slukket = true;
+    window.__BOOT_FAERDIG = true;   /* ny version ved Hjem (29/9) maa foerst virke, naar opstarten er ovre */
     try { document.body.classList.add("app-klar"); } catch (e) {}
     try { sessionStorage.removeItem("energida_boot_igen"); } catch (e) {}
   }
@@ -23174,6 +23175,8 @@ function skHoldSlip(tvang) {
   try { heroPas(); } catch (e) {}
 }
 function showTab(n) {
+  /* NY VERSION, NAAR MAN GAAR TIL HJEM (29/9): en ny udgave klar + man trykker sig til Hjem = hent den. Opstarten lander altid paa Hjem, saa man staar, hvor man ville. */
+  if (n === 3 && current !== 3 && window.__BOOT_FAERDIG && nyVersionVedSideskift()) return;
   if (n !== 2 && window.__MO_VAELG) { window.__MO_VAELG = false; try { const l = document.getElementById("moVaelgLinje"); if (l) l.remove(); } catch (e) {} }   /* moedets idé-valg slutter, naar man forlader Idébanken (29/9) */
   /* PLANLAEGNINGSDAGEN LUKKER, NAAR MENUEN BRUGES (Ida 21/9 kl. 21.10: »jeg klikker på performance nu men intet sker«): #planRit er en fast flade oven paa siderne — uden dette skiftede fanen bag den. Planlaegning (31) og selve moedet aabner den selv igen. */
   try { if (typeof PR !== "undefined" && PR && document.getElementById("planRit") && document.getElementById("planRit").classList.contains("on")) planRitLuk(); } catch (e) {}
@@ -56266,7 +56269,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2428";
+const APP_VERSION = "2429";
 let NY_VERSION_KLAR = false;
 let NY_VERSION_AFVIST = false;
 function nyVersionSkjul() {
@@ -56322,6 +56325,27 @@ function nyVersionRoligNu() {
     if (typeof briefErAaben === "function" && briefErAaben()) return false;
   } catch(e) {}
   return true;
+}
+/* NY VERSION, NAAR MAN GAAR TIL HJEM (Idas klik 29/9 »naar man skifter side«, efter manus-SOS'en: rettelsen naaede ikke hende, fordi en aaben app
+   aldrig hentede den nye udgave, mens hun kiggede). Kendes en nyere udgave, hentes den i det oejeblik, man selv trykker sig til Hjem — skaermen
+   skifter alligevel, og opstarten lander paa Hjem. KUN Hjem: MAALT i selen 29/9 gav en genstart direkte paa Idébanken »Appen kunne ikke starte«
+   (boot-vagten kender kun Hjems moebler). ALDRIG naar noget kan gaa tabt: popup, brief eller lektion aaben, markoer i et felt, noget gemmes,
+   eller et kald til basen undervejs. */
+function nyVersionVedSideskift() {
+  try {
+    if (!(NY_VERSION_KLAR || window.__NY_KLAR_SW)) return false;
+    if (window.__genindlaesIGang) return true;
+    const a = document.activeElement;
+    if (a && (/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName) || a.isContentEditable)) return false;
+    if (document.querySelector(".modal-back.on") || document.getElementById("arkSlor")) return false;
+    if (typeof briefErAaben === "function" && briefErAaben()) return false;
+    if (typeof KLIP_BRIEF_ID !== "undefined" && KLIP_BRIEF_ID) return false;
+    if (typeof KB_GEMMER !== "undefined" && KB_GEMMER) return false;
+    if (window.BRIEF_GEMMER || window.__ugemt) return false;
+    if ((window.__NET || 0) > 0) return false;
+    nyVersionHent(window.__NY_VERSION_UDE || null);
+    return true;
+  } catch (e) { return false; }
 }
 function nyVersionVis(ude) {
   if (NY_VERSION_KLAR) return;
@@ -78429,7 +78453,7 @@ function bf3MenuSoeg() {
 /* GET SHIT DONE-SIDEN ER UDE (Ida 21/9 kl. 10.36: »Skrevet ned skal lande i indbakken. App ønsker skal lande i teknik. To do skal vel også lande i indbakken??«):
    alt paa den side bor et andet sted nu — To-do paa Hjem (dagen, 20/9), det skrevne i Indbakken, app-oensker i Teknik, ideerne i Mine rum › Idéer. Gamle veje ind lander paa Hjem. */
 const bf3_visDashSideGammel = window.BF3_GAMMEL.visDashSide;
-function visDashSide(side) { const a = [].slice.call(arguments); if (a[0] === "gsd") a[0] = "overblik"; if (a[0] === "crm") { try { BS_KONTAKT_PROD = ""; BS_KONTAKT_STATUS = ""; } catch (e) {} }   /* menuens CRM = oversigten, aldrig en kontakt-doer, man stod i sidst (26/9) */ return bf3_visDashSideGammel.apply(this, a); }
+function visDashSide(side) { const a = [].slice.call(arguments); if ((a[0] === "overblik" || a[0] === "gsd") && nyVersionVedSideskift()) return; if (a[0] === "gsd") a[0] = "overblik"; if (a[0] === "crm") { try { BS_KONTAKT_PROD = ""; BS_KONTAKT_STATUS = ""; } catch (e) {} }   /* menuens CRM = oversigten, aldrig en kontakt-doer, man stod i sidst (26/9) */ return bf3_visDashSideGammel.apply(this, a); }
 
 /* ===== TO-DO MED DATO OG TIDSPUNKT (Ida 21/9 kl. 10.39: »To do skal jeg kunne vælge tidspunkt via kalenderhjul«) =====
    Arket faar en raekke under teksten: dato + klokkeslaet. Paa telefonen er felterne type=date/time, saa iOS' hjul kommer op; chipsene (I dag · I morgen · Om en uge)
@@ -78598,6 +78622,6 @@ function bf3StudieRum(v, filter) {
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-hvid.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 29. september · 2428</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 29. september · 2429</div>
 </body>
 </html>
