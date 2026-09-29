@@ -8,6 +8,14 @@ Gælder modellerne i lektionsvideoerne (overlays), ikke app-fladerne.
 - **Idas låste symboler:** figur med armene oppe = Overskud · ansigt = Underskud · klokke = Rykker 1 · ringende klokke = Rykker 2 · **klokken, der ringer mest (tre buer i hver side) = Inkasso** (valgt 27/9, afløser den sammenkrøllede figur).
 - Mockup: artifact Y16j1MvUwfpFq1e8XXkNZr (version 11).
 
+## HVER GANG NOGET ER IMPLEMENTERET, SKAL FUNKTIONEN TESTES (HÅRD, Ida 29/9: »vil du ikke være sød at skriv i designlåsen, at hver gang noget er implementeres SKAL funktionen testes!«)
+
+Anledningen: kopiér-knapperne på Edge-kortet sagde »Kopieret«, men koden kom ikke med. Jeg havde kun målt, at kortet viste den rigtige kode — ikke at kopieringen virkede.
+- **Funktionen køres, som kunden eller Ida ville gøre det** — klik, kopiér, gem, send, luk, gå tilbage — og **resultatet måles**: det, der blev gemt i basen, det, der landede i udklipsholderen, siden, man faktisk står på bagefter. Ikke at knappen findes, ikke at teksten står rigtigt, ikke at porten er grøn.
+- **En knap, der siger »Kopieret«, »Gemt« eller »Sendt«, må kun sige det, når det er målt**, at det skete.
+- **Kan funktionen ikke testes her** (udklipsholderen i en baggrundsfane, en rigtig mail, Stripe, en Edge Function Ida ikke har lagt op): sig det højt i svaret som IKKE TESTET, og byg en vej, der virker alligevel.
+- Gælder alt: app, Backstage, kort i Maskinrummet, hjemmesiden, Artifacts.
+
 ## HÅRDE REGLER FRA 25. SEPTEMBER AFTEN — LÆS FØR DU BYGGER (Ida: »Det er enormt vigtigt at alt det vi beslutter bliver opdateret i designlåsen så den ikke skal bruge tid på at rette fejl igen«)
 
 0. **HEROEN STÅR FAST I COVERET — INGEN ÆNDRING MÅ FLYTTE DEN (HÅRD, Ida 26/9 ~08.40: »låse hero i coverbilledet fast … uanset hvilke ændringer der kommer; må dette ikke påvirkes, røres«). LIVE v2350.** På ALLE sider (kundeappen OG Backstage, Hjem medregnet) står titlen med datolinjen 40 px over coverets bund og 20 px fra venstre på telefonen / 48 px på computeren. Knapper i coveret (Tilbage, klokke, ⋯), citater og nye greb løfter den aldrig (v2350 fjernede b2b-telefonens løft på 34 px, når Tilbage stod i coveret, og Backstages 46/54 px). Låsen er en blok SIDST i hovedets CSS (`HEROEN STAAR FAST I COVERET`), og porten måler den på 390 og 1440 i begge apps (`probe-hero.js`, SELE HERO). Skriftstørrelsen er ikke låst her: lektionens lange titler står i 34 på telefonen, Backstage i 34, Hjems hilsen i 40. **Coverets foto på telefonen = bud 1 (v2349): 230 % bredde, center 49 %.**
