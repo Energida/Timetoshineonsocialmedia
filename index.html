@@ -26077,6 +26077,7 @@ async function briefTilbage() {
   try { ansvarligVagt(vagtId); } catch(e) {}
 }
 function openBriefSide(id) {
+  if (ygtBriefLaast()) { ygtLaasArk("Briefen åbner med modul 8 " + ygtDatoOrd(ygtModulAabner("8"))); return; }   /* ti uger (Idas klik 30/9) */
   if (window.__MO_VAELG && typeof current !== "undefined" && current === 2) { moedeIdeSkift(id).then(function () { try { moedeVaelgLinje(); } catch (e) {} }); return; }   /* valg til moedet fra Idébanken (29/9) */
   setTimeout(function () { try { briefHookIKlip(); } catch (e) {} }, 400);   /* hook-forslagene i klip 1 (26/9) */
   /* Gentegner vi SAMME brief (fx naar man vaelger indholdstype eller soejle), skal siden
@@ -36070,6 +36071,42 @@ function pubPanelRender() {
     + raekker;
 }
 
+/* YOU GOT THIS ER ET TI-UGERS FORLOEB (Idas klik 30/9, DESIGNLÅS 6n75–6n76). DATOERNE REGNES FRA KUNDENS EGEN START (Ida 30/9 kl. ~00.40:
+   »når de aktiverer tilbuddet eller laver deres konto, så er det modul 1 og 2, der er aktiv, og så kører resten derfra« — de gamle kunder starter
+   paa hver sin dato): modul 1 og 2 paa dag 0, derefter et modul hver 7. dag; Modul 11 (Vaerktoejskassen) efter modul 10. Idébanken, Toem hovedet
+   og briefen aabner MED MODUL 8, hvor indholdssoejlerne undervises (Ida: »ellers ved de ikke, hvor de skal placere det«); kalenderen med modul 10.
+   Starten gemmes EEN gang pr. kode i skema_svar (config · ygt_start) — samme kilde, som mail-flowet skal laese. Kan starten ikke hentes, er kun
+   modul 1 og 2 aabne, og intet skrives. Gaelder KUN koder med forloeb »YOU GOT THIS« — aldrig Ida, der kigger med som kunde. */
+const YGT_DAG = { "1": 0, "2": 0, "3": 7, "4": 14, "5": 21, "6": 28, "7": 35, "8": 42, "9": 49, "10": 56, "11": 63 };
+let YGT_START = null;
+function ygtHold(def) {
+  try {
+    def = def || (typeof CURRENT_DEF !== "undefined" ? CURRENT_DEF : null);
+    if (!def || def.type !== "kursus" || String(def.forloeb || "") !== "YOU GOT THIS") return false;
+    if (typeof SOM_KUNDE !== "undefined" && SOM_KUNDE) return false;
+    return true;
+  } catch (e) { return false; }
+}
+function ygtPlusDage(iso, n) { const p = String(iso).split("-").map(Number); const d = new Date(p[0], p[1] - 1, p[2] + n); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); }
+function ygtModulAabner(nr) { const n = YGT_DAG[String(nr)]; if (n == null) return null; if (!YGT_START) return n === 0 ? "0000-01-01" : "9999-12-31"; return ygtPlusDage(YGT_START, n); }
+function ygtDatoOrd(iso) { try { if (!iso || iso > "9000") return "senere i forløbet"; const d = new Date(iso + "T12:00:00"); return d.toLocaleDateString("da-DK", { weekday: "long", day: "numeric", month: "long" }); } catch (e) { return iso; } }
+function ygtModulLaast(nr) { if (!ygtHold()) return false; const d = ygtModulAabner(nr); return !!d && datoDK() < d; }
+function ygtIdebankAaben() { return ygtHold() && !ygtModulLaast("8"); }
+function ygtBriefLaast() { return ygtHold() && ygtModulLaast("8"); }
+async function ygtStartHent() {
+  if (!ygtHold() || typeof sb === "undefined" || !sb || !currentKode) return YGT_START;
+  try {
+    const { data, error } = await sb.from("skema_svar").select("svar").eq("kode", currentKode).eq("navn", "config").eq("skema", "ygt_start").maybeSingle();
+    if (error) return YGT_START;   /* fejlet hentning = intet skrives (29/9-reglen) */
+    if (data && data.svar && /^\d{4}-\d{2}-\d{2}$/.test(String(data.svar.dato || ""))) { YGT_START = data.svar.dato; return YGT_START; }
+    const i = await sb.from("skema_svar").insert({ kode: currentKode, navn: "config", skema: "ygt_start", svar: { dato: datoDK() } }).select("svar");
+    if (!i.error && i.data && i.data.length) YGT_START = i.data[0].svar.dato;
+  } catch (e) {}
+  return YGT_START;
+}
+function ygtLaasArk(titel) {
+  arkAabn({ lille: true, titel: titel, ingenTekst: true, udenMik: true, chips: [], send: "OK", gem: function () { return ""; } });
+}
 function kursusAdgang() {
   const a = CURRENT_DEF && CURRENT_DEF.lektion_adgang;
   return (Array.isArray(a) && a.length) ? new Set(a) : null;
@@ -36402,6 +36439,7 @@ async function kursusHent() {
   KURSUS_SET = {}; KURSUS_SVAR = {}; KURSUS_NOTER = {}; KURSUS_PREF = {}; KURSUS_UDSAT = {}; MODUL_SET = {};   /* frisk start pr. kunde — ingen arv fra cachen (Ida 27/7 nat) */
   if (currentKode) try { const v = JSON.parse(localStorage.getItem(kursusLocalKey())); if (v) { KURSUS_SET = v.set || {}; KURSUS_SVAR = v.svar || {}; KURSUS_NOTER = v.noter || {}; KURSUS_PREF = v.pref || {}; KURSUS_UDSAT = v.udsat || {}; } } catch(e) {}
   if (currentKode) try { const mv = JSON.parse(localStorage.getItem(modulSetKey())); if (mv) MODUL_SET = mv; } catch(e) {}
+  try { if (ygtHold()) { await ygtStartHent(); try { buildSideNav(CURRENT_DEF); buildBottomNav(CURRENT_DEF); } catch (e) {} } } catch (e) {}   /* ti uger: kundens egen start (30/9) */
   await modulerHent();   /* Idas modultekster — fejler den, staar appen praecis som foer */
   await oevelserHent();  /* Idas rettede oevelser — fejler den, staar kodens liste */
   if (sb && currentKode) {
@@ -36863,6 +36901,7 @@ function lekSkemaLaasArk() {
 function visLektion(id) {
   if (String(id).indexOf("w-") === 0) { ttsLektionAaben(id); return; }
   if (lekLaastAfSkema()) { lekSkemaLaasArk(); return; }
+  { const mnrL = modulNrFor(id); if (ygtModulLaast(mnrL)) { ygtLaasArk("Modul " + mnrL + " åbner " + ygtDatoOrd(ygtModulAabner(mnrL))); return; } }   /* ti uger (30/9) */
   const adg = kursusAdgang();
   if (adg && !adg.has(id)) return;                       // uden for kodens adgang
   if (!KURSUS_LEKTIONER.some(x => x.id === id)) return;
@@ -49205,7 +49244,9 @@ function buildBottomNav(def) {
      ikke i menuen i stedet for at staa og vaere laast"). KURSUS_LAASTE_SIDER er den ene
      kilde - listen gaettes ikke her. Plus-knappen hoerer til Content og foelger med. */
   if (kursusIGang) {
-    NAV_ITEMS = NAV_ITEMS.filter(it => !(it.k === "d8" || it.k === "plus" || it.k === "d2" || it.k === "d9"));
+    const ygtN = ygtIdebankAaben();   /* YOU GOT THIS (30/9): fra modul 8 staar Idébanken paa kalenderens plads, og plusset (Toem hovedet) bliver */
+    NAV_ITEMS = NAV_ITEMS.map(it => (ygtN && it.k === "d8") ? { k:"d2", i:BN_ICONS.ide, t:"Idébanken", f:() => { showTab(2); try { ibVis("ideer"); } catch (e) {} } } : it)
+      .filter(it => !(it.k === "d8" || (!ygtN && (it.k === "plus" || it.k === "d2")) || it.k === "d9"));
   }
   /* PAA REJSEN ER FORLOEBET/LEKTIONERNE HELT UDE AF BUNDNAVET (Ida 27/8 nat) — et
      laast punkt i bunden er en blindgyde med tommelfingeren (20/8-reglen), saa her
@@ -49218,7 +49259,7 @@ function buildBottomNav(def) {
   if (!harChat(def)) NAV_ITEMS = NAV_ITEMS.filter(it => it.k !== "chat");   // Chat-knap kun for Reset + forløbskunder
   /* Funktions-låsen gælder også bundnavet (selvkøb 20/8): et låst punkt i bunden er en
      blindgyde med tommelfingeren. Plus-knappen hører til content — den følger med. */
-  NAV_ITEMS = NAV_ITEMS.filter(it => (it.k !== "d8" && it.k !== "plus") || funkTaendt(def, "content"))
+  NAV_ITEMS = NAV_ITEMS.filter(it => (it.k !== "d8" && it.k !== "plus") || funkTaendt(def, "content") || (it.k === "plus" && ygtIdebankAaben()))
                        .filter(it => it.k !== "d9" || funkTaendt(def, "resultat"));
   nav.innerHTML = NAV_ITEMS.map((it, ix) =>
     it.plus
@@ -49414,7 +49455,7 @@ function buildSideNav(def) {
        den samme doer en gang til — dublet-reglen. De to flader er UROERTE og naas
        praecis som foer, saa ingen mister en vej ind.
        Idébanken bliver i menuen: Ida bad kun om de to. */
-    + ((rejseLaas || kursusLaas) ? laastPunkt("d8", "Content Studio", IK.kal)
+    + ((rejseLaas || kursusLaas) ? laastPunkt("d8", "Content Studio", IK.kal) + (ygtIdebankAaben() ? ikon("d2", "Idébanken", "showTab(2);ibVis('ideer')", IK.paere) : '')   /* Idébanken med modul 8 i YOU GOT THIS (30/9) */
        : !F("content") ? '' : ikon("d8", "Content kalender", "showTab(8)", IK.kal) + ikon("d2", "Idébanken", "showTab(2);ibVis('ideer')", IK.paere) + (   /* IDÉBANKEN ER SIT EGET PUNKT (Ida 29/9: »idebanken skal ligge som selvstændigt punkt«) — Content kalender har ingen underpunkter */   /* CONTENT KALENDER ER HOVEDPUNKTET (Ida 29/9: »Content skal være content kalender … en funktion man bruger for meget til at det skal være et underpunkt«) — punktet selv aabner kalenderen */   /* kalenderen, ikke paeren (Ida 17/9 kl. 14.20: »paere-symbolet stemmer ikke overens med at det er Content Studio«) — samme ikon som bundmenuens Content */   /* showTab aabner gruppen — snFold bagefter lukkede den igen (maalt 16/9 kl. 21.10) */
         ''   /* »Kalenderen« som underpunkt er ude — hovedpunktet ER kalenderen (29/9) */
       /* PLANLÆGNING = EGEN GRUPPE UNDER CONTENT (Ida 21/9 kl. 15.05: »under planlægning skal der være Årshjulet« + »målsætninger skal flyttes under planlægning«) — for alle pakker */   /* PLANLÆGNING = ÉT MENUPUNKT, ÉN INDGANG (Idas klik 20/9 kl. ~16.50, Hans-testen runde 3): punktet aabner Planlaegningsdagen direkte — samme sted som Hjems raekke og kalenderens kort */
@@ -56313,7 +56354,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2433";
+const APP_VERSION = "2434";
 let NY_VERSION_KLAR = false;
 let NY_VERSION_AFVIST = false;
 function nyVersionSkjul() {
@@ -76816,7 +76857,7 @@ function prFaerdigHtml() {
     origShowTab(n);
     try { if (n === 3 && typeof planRitKortTegn === "function") planRitKortTegn(); } catch (e) {}   /* planlaegningsdagen paa Hjem (13/9) */
     try {
-      if (KURSUS_LAASTE_SIDER[n] && kursusLaasAktiv()) kursusLaasOverlay();   /* een doer: kursusLaasAktiv (13/9) */
+      if (KURSUS_LAASTE_SIDER[n] && kursusLaasAktiv() && !(n === 2 && ygtIdebankAaben())) kursusLaasOverlay();   /* Idébanken aabner med modul 8 i YOU GOT THIS (30/9) */   /* een doer: kursusLaasAktiv (13/9) */
     } catch (e) {}
   };
 })();
@@ -78687,6 +78728,6 @@ function bf3StudieRum(v, filter) {
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-hvid.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 29. september · 2433</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 30. september · 2434</div>
 </body>
 </html>
