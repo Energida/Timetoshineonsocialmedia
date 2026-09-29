@@ -23740,8 +23740,9 @@ function briefAutosavePlan() {
     if (it && (!it.status || it.status === "Idé") && briefHarSkrevet()) ideUpdate(BRIEF_ID, { status: "Brief i gang" });
     else if (it && it.status === "Planlagt" && briefHarSkrevetIFaser()) ideUpdate(BRIEF_ID, { status: "Brief i gang" });   /* Planlagt → Brief i gang, saa snart man er i gang i Fang dem, Fasthold dem eller Få dem til at handle (Ida 29/9) */
   } catch(e) {}
+  briefKladdeNu();   /* kladden paa telefonen fra foerste tastetryk (29/9) */
   clearTimeout(BRIEF_AUTOTIMER);
-  BRIEF_AUTOTIMER = setTimeout(() => { if (BRIEF_ID) saveBrief(true); }, 1200);
+  BRIEF_AUTOTIMER = setTimeout(() => { BRIEF_AUTOTIMER = null; if (BRIEF_ID) saveBrief(true); }, 1200);
 }
 /* MÅL UDEN AT SKÆRMEN SPRINGER (Ida 4/8: "når jeg sletter noget i et manus springer
    skærmen rundt").
@@ -28390,6 +28391,28 @@ function briefCaptionSaml() {
   b.caption = [String(b.captionFoerste || "").trim(), String(b.captionRelevant || "").trim(), String(b.captionHistorie || "").trim()].filter(Boolean).join("\n\n");   /* fire trin (20/9): aabningen · goer det relevant · vis vaerdien */
   const f = document.getElementById("bf_caption"); if (f) f.value = b.caption;
 }
+/* KLADDEN LIGGER PAA TELEFONEN FRA FOERSTE TASTETRYK (MAALT 29/9 i Idas Chrome paa Testbutikken: skrev man i briefen og lukkede appen
+   inden for 1,2 sek. — autosavens ventetid — var teksten VAEK. Praecis det, en telefon goer, naar appen swipes vaek eller skaermen slukker).
+   Nu laegges briefen i idé-koeen (samme koe som »gemt uden net«) ved hvert tastetryk; et bekraeftet gem rydder den, og en genstart sender
+   den. Og naar appen skjules, gemmes der med det samme i stedet for at vente. */
+function briefKladdeNu() {
+  try {
+    if (!BRIEF_ID || typeof ideKoeLaeg !== "function" || !ideerShared()) return;
+    BRIEF_TEKSTFELTER.forEach(function (k) { const el = document.getElementById("bf_" + k); if (el) BRIEF_STATE[k] = el.value.trim(); });
+    if (document.querySelector('[id^="bf_klip_"]')) { try { briefKlipLaes(); } catch (e) {} }
+    const patch = { brief: JSON.parse(JSON.stringify(BRIEF_STATE)) };
+    const titelEl = document.getElementById("bf_titel"); if (titelEl && titelEl.value.trim()) patch.titel = titelEl.value.trim();
+    ideKoeLaeg(BRIEF_ID, patch);
+  } catch (e) {}
+}
+function briefGemVedSkjul() {
+  try { if (typeof BRIEF_ID !== "undefined" && BRIEF_ID && BRIEF_AUTOTIMER) { clearTimeout(BRIEF_AUTOTIMER); BRIEF_AUTOTIMER = null; saveBrief(true); } } catch (e) {}
+  try { if (typeof KLIP_BRIEF_ID !== "undefined" && KLIP_BRIEF_ID && KB_TIMER) { clearTimeout(KB_TIMER); KB_TIMER = null; kbGemNu(false); } } catch (e) {}
+}
+try {
+  document.addEventListener("visibilitychange", function () { if (document.visibilityState === "hidden") briefGemVedSkjul(); });
+  window.addEventListener("pagehide", briefGemVedSkjul);
+} catch (e) {}
 async function saveBrief(stille) {
   BRIEF_TEKSTFELTER.forEach(k => {
     const el = document.getElementById("bf_" + k);
@@ -52940,7 +52963,7 @@ async function ideUpdate(id, patch) {
   /* SVARET SIGES VIDERE (Ida 4/8): funktionen returnerer nu, OM det lykkedes, saa en
      Gem-knap kan sige "Gemt" om noget, der FAKTISK er gemt. Alle aeldre kaldere
      ignorerer returvaerdien og er uroerte. */
-  let gemt = true;
+  let gemt = true; const t0 = Date.now();   /* kladden i koeen ryddes kun, hvis den ikke er skrevet EFTER dette gem startede (29/9) */
   if (ideerShared()) {
     try {
       /* KVITTERING (Ida 4/8: "naar jeg aendre status fra brief igang til ide gemmer den
@@ -52953,7 +52976,7 @@ async function ideUpdate(id, patch) {
        saa en genindlaesning uden net stadig viser det. Naaede det frem, ryddes koeen for id. */
     try {
       if (!gemt) { ideKoeLaeg(id, patch); }
-      else { const k = ideKoeLaes(); if (k[id]) { delete k[id]; ideKoeSkriv(k); } }
+      else { const k = ideKoeLaes(); if (k[id] && !k[id].__ny && !((k[id].__t || 0) > t0)) { delete k[id]; ideKoeSkriv(k); } }
       localStorage.setItem(nsKey("ideer_cache"), JSON.stringify(IDEER));
       ideKladdeStatus();
     } catch (e) {}
@@ -56269,7 +56292,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2429";
+const APP_VERSION = "2430";
 let NY_VERSION_KLAR = false;
 let NY_VERSION_AFVIST = false;
 function nyVersionSkjul() {
@@ -78622,6 +78645,6 @@ function bf3StudieRum(v, filter) {
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-hvid.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 29. september · 2429</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 29. september · 2430</div>
 </body>
 </html>
