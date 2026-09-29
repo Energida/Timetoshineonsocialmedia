@@ -42009,25 +42009,32 @@ async function kbGemNu(luk) {
   if (o && sb) {
     try {
       const nu = await sb.from("video_opgaver").select("manus_tekst,manus_dele").eq("id", id).maybeSingle();
-      if (nu && nu.data && (!sammen(nu.data.manus_tekst, o.manus_tekst) || !sammen(nu.data.manus_dele, o.manus_dele))) {
+      /* FALSK »AENDRET ET ANDET STED« (MAALT 29/9, Idas SOS igen): fanens kopi blev sat FOER gemningen og aldrig rettet efter basens svar,
+         og en genhentning af listen midt i en gemning kunne laegge den gamle raekke tilbage i fanen. Saa saa basen »anderledes« ud ved
+         HVER naeste gemning, og intet blev gemt. Nu er det kun en konflikt, hvis basen hverken er fanens kopi, det denne fane sidst gemte,
+         eller det, der gemmes nu. */
+      const ens = function (r) { return r && sammen(nu.data.manus_tekst, r.manus_tekst) && (!("manus_dele" in patch) || sammen(nu.data.manus_dele, r.manus_dele)); };
+      const sidst = (window.KB_SIDST_GEMT || {})[String(id)];
+      if (nu && nu.data && !ens(o) && !ens(sidst) && !ens(patch)) {
         const st0 = document.getElementById("kbStatus");
-        if (st0) { st0.textContent = "Ikke gemt — manus er ændret et andet sted. Hent siden forfra."; st0.style.color = "var(--red)"; }
-        try { husBesked("Manus er ændret et andet sted, siden du åbnede studiet. Intet er gemt. Hent siden forfra, så du ser den nyeste udgave."); } catch (e) {}
+        if (st0) { st0.textContent = "Ikke gemt — manus er ændret et andet sted. Kopiér din tekst, før du henter siden forfra."; st0.style.color = "var(--red)"; }
+        try { husBesked("Manus er ændret et andet sted, siden du åbnede studiet. Intet er gemt. Kopiér din tekst, før du henter siden forfra."); } catch (e) {}
         return;
       }
     } catch (e) {}
   }
   KB_GEMMER = true;
-  if (o) Object.assign(o, patch);
   /* SAMME KVITTERINGSKRAV SOM I QUIZZEN (Ida 2/8). catch fangede kun en KASTET fejl —
      men en RLS-afvist update kaster ikke, den opdaterer bare nul raekker. Saa stod der
      "gemt", mens manuskriptet aldrig naaede databasen. .select("id") er beviset. */
   let ok = false;
   try {
     if (sb) {
-      const r = await sb.from("video_opgaver").update(patch).eq("id", id).select("id");
+      const r = await sb.from("video_opgaver").update(patch).eq("id", id).select("id,manus_tekst,manus_dele,titel");
       ok = !r.error && Array.isArray(r.data) && r.data.length > 0;
-    } else { klipSaveLocal(); ok = true; }
+      /* Fanens kopi = det, basen svarede — aldrig det, vi haabede, den gemte */
+      if (ok) { const svar = r.data[0]; window.KB_SIDST_GEMT = window.KB_SIDST_GEMT || {}; window.KB_SIDST_GEMT[String(id)] = { manus_tekst: svar.manus_tekst, manus_dele: svar.manus_dele }; if (o) Object.assign(o, patch, { manus_tekst: svar.manus_tekst, manus_dele: svar.manus_dele }); }
+    } else { if (o) Object.assign(o, patch); klipSaveLocal(); ok = true; }
   } catch(e) { ok = false; }
   const st = document.getElementById("kbStatus");
   if (ok) { if (st && !luk) gemStatusVis(st, "gemt"); }
@@ -56259,7 +56266,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2427";
+const APP_VERSION = "2428";
 let NY_VERSION_KLAR = false;
 let NY_VERSION_AFVIST = false;
 function nyVersionSkjul() {
@@ -78591,6 +78598,6 @@ function bf3StudieRum(v, filter) {
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-hvid.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 29. september · 2427</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 29. september · 2428</div>
 </body>
 </html>
