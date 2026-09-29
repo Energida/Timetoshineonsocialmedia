@@ -10000,6 +10000,14 @@ html body .mo-opslag .mo-kvit { margin-top:0; }
 html body.mb #moedeSideRum .mo-noter-chips { display:flex; gap:8px; margin:0 0 10px; }
 html body.mb #moedeSideRum .mo-noter { display:block; width:100%; box-sizing:border-box; border:1px solid var(--border); border-radius:14px; min-height:96px; padding:12px 14px; font-family:Poppins,sans-serif; font-size:14px; line-height:1.5; color:var(--black); background:#fff; resize:vertical; outline:none; }
 html body .ark.ark-bred .ark-felt textarea, html body .ark.ark-agenda .ark-felt textarea { min-height:44px !important; height:auto; max-height:120px; }
+/* Idéer til mødet (29/9): Tilføj idé = den graa knap i fuld bredde; arket med Idébankens idéer ruller */
+#moedeSideRum .mo-link-rk { display:flex; flex-wrap:wrap; gap:8px; margin:0 0 16px; } #moedeSideRum .mo-link-rk .mo-chip { margin:0 !important; display:inline-flex; align-items:center; height:36px; padding:0 16px; text-decoration:none; color:var(--black); }   /* Fysisk/Online + Åbn mødet, begge flader (29/9) */
+.mo-vaelg-linje { display:flex; align-items:center; gap:14px; margin:0 0 16px; }
+.mo-vaelg-linje .idag-tekst { flex:1; }
+.mo-vaelg-linje .mo-tilbage { display:inline-flex !important; align-items:center; justify-content:center; cursor:pointer; min-height:44px; padding:0 18px; background:#fff; border:1px solid var(--border); color:var(--gray2); border-radius:999px; font-family:Poppins,sans-serif; font-weight:300; font-size:13px; white-space:nowrap; }
+@media (max-width:899px) { .mo-vaelg-linje { flex-direction:column; align-items:stretch; } .mo-vaelg-linje .mo-tilbage { width:100%; } }
+/* TEKSTEN STAAR MIDT I FELTET (HAARD, Ida 29/9: »Jeg vil IKKE finde steder hvor teksten ikke står centreret i boksen!«): et felt paa 44 px med een linje (22) har 11 px luft over og under — aldrig teksten klistret til toppen */
+html body .ark.ark-bred .ark-felt textarea, html body .ark.ark-agenda .ark-felt textarea, html body .ark:has(.ark-chips, .ark-ekstra:not(:empty)):not(.ark-ide):not(.ark-lille):not(.ark-blok):not(.ark-en-linje) > .ark-felt textarea { padding-top:11px !important; padding-bottom:11px !important; line-height:22px !important; box-sizing:border-box !important; }
 html body .ark.ark-bred .ark-felt { min-height:0 !important; }
 /* NAALEN I BAANDET paa admin-sider (Ida 21/9 kl. 21.35: pin en side → doer paa Hjem): hvid cirkel som de andre baand-symboler; fyldt roed naal, naar siden er pinnet */
 html body.dash-mode .bs-baand .bs-side-naal { position:absolute; right:104px; bottom:36px; z-index:4; width:44px; height:44px; border-radius:50%; background:transparent !important; border:1px solid rgba(255,255,255,.7) !important; color:#fff !important; display:inline-flex; align-items:center; justify-content:center; padding:0; }
@@ -21522,6 +21530,7 @@ function briefFtfNaeste() {
   const F = window.__FTF; if (!F) return;
   if (!briefFtfSvaret()) { try { husKvit("Vælg først."); } catch (e) {} return; }
   if (F.i >= F.trin.length - 1) { const it = window.__SOEJLE_ARK_IT; briefSoejleArkStart(it ? it.id : null); return; }
+  briefFtfGemDelvis();   /* svaret er gemt, foer naeste trin vises (29/9) */
   F.i++; briefSoejleArkDropTegn();
 }
 function briefFtfTilbage() { const F = window.__FTF; if (!F || F.i === 0) return; F.i--; briefSoejleArkDropTegn(); }
@@ -21597,6 +21606,18 @@ async function briefSoejleArkStart(id) {
   if (F.trin.indexOf("soejle") > -1 && !SOEJLE_ARK_VALG) { try { husKvit("Vælg en indholdssøjle først."); } catch (e) {} return; }
   const it = (IDEER || []).find(x => String(x.id) === String(id)); if (!it) { bsFlytLuk(); return; }
   const foer = it.soejle;
+  await briefFtfSkriv(it, F);
+  window.__SOEJLE_ARK_SET = String(id); SOEJLE_ARK_VALG = "";
+  window.__FTF = null; bsFlytLuk();   /* allerede skrevet — lukningen skriver ikke igen */
+  if (foer && it.soejle !== foer && BRIEF_ID === id && typeof briefBasisSoejle === "function") { try { await briefBasisSoejle(it.soejle); } catch (e) {} }   /* skift paa en aaben brief: samme vej som dropdownen (formaal, CTA) */
+  openBriefSide(id);
+}
+/* HVERT SVAR GEMMES MED DET SAMME (Hinges Hus 29/9: »alt blev slettet« — MAALT: First thing first skrev FOERST ved Naeste paa sjette trin,
+   saa et Annullér, et tryk udenfor eller et swipe ned smed soejle, format, platform, hvem og lyd vaek; 5 af 5 opslag i basen stod uden format).
+   Kaldes efter hvert trin OG naar arket lukkes; skriver kun det, der er svaret. */
+async function briefFtfSkriv(it, F) {
+  if (!it || !F) return false;
+  const id = it.id;
   const opd = {};
   it.brief = it.brief || {};
   if (F.trin.indexOf("soejle") > -1 && SOEJLE_ARK_VALG && SOEJLE_ARK_VALG !== "__ingen") { it.soejle = SOEJLE_ARK_VALG; opd.soejle = SOEJLE_ARK_VALG; }
@@ -21608,12 +21629,14 @@ async function briefSoejleArkStart(id) {
   if (F.trin.indexOf("platform") > -1 && FTF_PLATFORM.length) { it.brief.platform = FTF_PLATFORM.slice(); opd.brief = it.brief; if (S) S.platform = FTF_PLATFORM.slice(); }
   if (F.trin.indexOf("hvem") > -1 && FTF_HVEM.length) { it.brief.hvemPerson = FTF_HVEM.join(" · "); opd.brief = it.brief; if (S) S.hvemPerson = it.brief.hvemPerson; }
   if (F.trin.indexOf("lyd") > -1 && FTF_LYD.length) { it.brief.lyd = FTF_LYD.slice(); opd.brief = it.brief; if (S) S.lyd = FTF_LYD.slice(); }
-  try { if (Object.keys(opd).length) await ideUpdate(id, opd); } catch (e) {}
-  window.__SOEJLE_ARK_SET = String(id); SOEJLE_ARK_VALG = "";
-  bsFlytLuk();
-  if (foer && it.soejle !== foer && BRIEF_ID === id && typeof briefBasisSoejle === "function") { try { await briefBasisSoejle(it.soejle); } catch (e) {} }   /* skift paa en aaben brief: samme vej som dropdownen (formaal, CTA) */
-  openBriefSide(id);
+  /* hele brief-objektet sendes med (gem-maa-ikke-slette): kolonnen skrives samlet — ogsaa naar kun soejle/format er svaret */
+  if (!opd.brief && Object.keys(opd).length && S) { opd.brief = Object.assign({}, it.brief, S); }
+  let ok = true;
+  try { if (Object.keys(opd).length) ok = await ideUpdate(id, opd); } catch (e) { ok = false; }
+  try { if (typeof briefFaktaRkOpdater === "function" && BRIEF_ID === id) briefFaktaRkOpdater(); } catch (e) {}
+  return ok;
 }
+function briefFtfGemDelvis() { const it = window.__SOEJLE_ARK_IT, F = window.__FTF; if (!it || !F) return; try { briefFtfSkriv(it, F); } catch (e) {} }
 /* Er valget o anbefalet af drejebogen for briefens soejle? vibe/format: husets soejle-retning (BS_SOEJLER, Idas klik 3/9) · cta: kundens tema.handling */
 function briefAnbefalet(key, o) {
   try {
@@ -23061,6 +23084,7 @@ function skHoldSlip(tvang) {
   try { heroPas(); } catch (e) {}
 }
 function showTab(n) {
+  if (n !== 2 && window.__MO_VAELG) { window.__MO_VAELG = false; try { const l = document.getElementById("moVaelgLinje"); if (l) l.remove(); } catch (e) {} }   /* moedets idé-valg slutter, naar man forlader Idébanken (29/9) */
   /* PLANLAEGNINGSDAGEN LUKKER, NAAR MENUEN BRUGES (Ida 21/9 kl. 21.10: »jeg klikker på performance nu men intet sker«): #planRit er en fast flade oven paa siderne — uden dette skiftede fanen bag den. Planlaegning (31) og selve moedet aabner den selv igen. */
   try { if (typeof PR !== "undefined" && PR && document.getElementById("planRit") && document.getElementById("planRit").classList.contains("on")) planRitLuk(); } catch (e) {}
   /* SPOEGELSET VED ROTTEN (Ida 12/9 kl. 13.30, fjerde gang: »Jeg så fandme lige strategibyggeren som spøgelsesside igen«):
@@ -25903,6 +25927,7 @@ async function briefTilbage() {
   try { ansvarligVagt(vagtId); } catch(e) {}
 }
 function openBriefSide(id) {
+  if (window.__MO_VAELG && typeof current !== "undefined" && current === 2) { moedeIdeSkift(id).then(function () { try { moedeVaelgLinje(); } catch (e) {} }); return; }   /* valg til moedet fra Idébanken (29/9) */
   setTimeout(function () { try { briefHookIKlip(); } catch (e) {} }, 400);   /* hook-forslagene i klip 1 (26/9) */
   /* Gentegner vi SAMME brief (fx naar man vaelger indholdstype eller soejle), skal siden
      ikke hoppe — scroll-positionen holdes (Ida 30/7: "der skal ikke vaere nogen bevaegelse"). */
@@ -27504,6 +27529,7 @@ async function aiKollegaFelt(knap, felt) {
 }
 
 function openBrief(id) {
+  if (window.__MO_VAELG && typeof current !== "undefined" && current === 2) { moedeIdeSkift(id).then(function () { try { moedeVaelgLinje(); } catch (e) {} }); return; }   /* valg til moedet fra Idébanken (29/9) */
   BRIEF_SIDE = 0; BRIEF_SIDE_ID = id;   // en brief ÅBNER altid på sin forside (auditfund 27/7)
   BRIEF_MOBIL_FORSIDE = true;           // paa telefonen: sektionsfliserne (5/9)
   try { if (typeof shineSkalaHent === "function" && !SHINE_SKALA) shineSkalaHent(); } catch(e) {}
@@ -46212,7 +46238,7 @@ function huTing(iso) {
     (window.__kundeAftaler || []).forEach(function (a) {
       if (!a || String(a.dato || "").slice(0, 10) !== iso) return;
       const tid = a.tid ? String(a.tid).slice(0, 5).replace(":", ".") : "";
-      ud.push({ ty: "aftale", tid: tid, et: "Aftale" + (tid ? " · kl. " + tid : ""), t: a.titel || "", chip: "", klik: erMoedeTitel(a.titel) ? "moedeSideAaben()" : a.link ? "window.open('" + esc(String(a.link)) + "','_blank')" : "" });
+      ud.push({ ty: "aftale", tid: tid, et: "Aftale" + (tid ? " · kl. " + tid : ""), t: a.titel || "", chip: erMoedeTitel(a.titel) ? moedeFormNavn(a) : (a.link ? "Online" : ""), klik: erMoedeTitel(a.titel) ? "moedeSideAaben()" : a.link ? "window.open('" + esc(String(a.link)) + "','_blank')" : "" });
     });
   } catch (e) {}
   try { if (planDato() === iso) ud.push({ ty: "plan", tid: "", et: "Planlægning", t: "Ugens planlægning", chip: "", klik: "showTab(31)" }); } catch (e) {}
@@ -46261,7 +46287,7 @@ function huKalDagHtml(iso, erIdag) {
     const t = huKalT(a.tid); const klik = erMoedeTitel(a.titel) ? "moedeSideAaben()" : a.link ? "window.open('" + esc(String(a.link)) + "','_blank')" : "";
     if (t == null) { uden.push({ k: "akt", foreslaa: 9, laengde: 1, sym: "aftale", n: a.titel || "Aftale", u: "Vælg tidspunkt", klik: klik }); return; }
     let til = huKalT(a.tid_slut); if (til == null || til <= t) til = t + 1;
-    blk.push({ k: "akt", fra: t, til: til, sym: "aftale", n: a.titel || "Aftale", u: huKalKl(t) + "–" + huKalKl(til), klik: klik });
+    blk.push({ k: "akt", fra: t, til: til, sym: "aftale", n: a.titel || "Aftale", u: huKalKl(t) + "–" + huKalKl(til) + (erMoedeTitel(a.titel) ? " · " + moedeFormNavn(a) : (a.link ? " · Online" : "")), klik: klik });   /* fysisk/online i kalenderen (29/9) */
   });
   try { if (planDato() === iso) uden.push({ k: "akt", foreslaa: 10, laengde: 1, sym: "plan", n: "Ugens planlægning", u: "Vælg tidspunkt", klik: "showTab(31)" }); } catch (e) {}
   /* punkter uden klokkeslaet faar et foreslaaet tidspunkt i timerne (Ida 26/9: intet »Hele dagen«-baand) — foerste ledige halve time fra forslaget */
@@ -52502,7 +52528,7 @@ async function ideKoeSend() {
       const it = IDEER.find(x => String(x.id) === String(id));
       if (!it) { const k0 = ideKoeLaes(); delete k0[id]; ideKoeSkriv(k0); continue; }
       try {
-        const rk = { kode: currentKode, titel: it.titel || "", type: it.type || "Reel", soejle: it.soejle || "", status: it.status || "Idé", dato: it.dato || null };
+        const rk = { kode: currentKode, titel: it.titel || "", type: it.type || "", soejle: it.soejle || "", status: it.status || "Idé", dato: it.dato || null };   /* intet forvalg (22/9) */
         let r = await sb.from("content_ideer").insert(Object.assign({ brief: it.brief || null }, rk)).select().single();
         if (r.error) r = await sb.from("content_ideer").insert(rk).select().single();
         if (!r.error && r.data) {
@@ -52532,6 +52558,9 @@ try { window.addEventListener("online", function () { setTimeout(function () { t
 async function refreshIdeer() {
   if (ideerShared()) {
     try {
+      /* KOPIEN LAESES FOER DEN OVERSKRIVES (Hinges Hus 29/9 »alt blev slettet«): nye opslag, der kun ligger paa telefonen (koeen __ny), blev
+         slettet af linjen nedenfor, foer de blev hentet tilbage — cachen var allerede den hentede. */
+      try { window.__IDEER_CACHE_FOER = ideerFraCache(); } catch (e) { window.__IDEER_CACHE_FOER = []; }
       const { data, error } = await sb.from("content_ideer").select("*").eq("kode", currentKode).order("created_at", { ascending: true });
       if (!error && Array.isArray(data)) {
         IDEER = data.map(mapIdeRow);
@@ -52541,7 +52570,7 @@ async function refreshIdeer() {
     } catch(e) { IDEER = ideerFraCache(); }
     /* Det, der ligger i koeen, er nyere end det hentede — laeg det ovenpaa, og send det. */
     try {
-      const k = ideKoeLaes(); const cache = ideerFraCache();
+      const k = ideKoeLaes(); const cache = (window.__IDEER_CACHE_FOER && window.__IDEER_CACHE_FOER.length) ? window.__IDEER_CACHE_FOER : ideerFraCache();
       Object.keys(k).forEach(function (id) {
         if (k[id].__ny && !IDEER.some(x => String(x.id) === String(id))) { const c = cache.find(x => String(x.id) === String(id)); if (c) IDEER.push(c); }
       });
@@ -52632,7 +52661,10 @@ async function ideAdd(rec) {
       try { visSyncFejl(); } catch(e2) {}
     } catch(e) { try { visSyncFejl(); } catch(e2) {} }
   }
-  rec.id = newId(); IDEER.push(rec); try { saveLocalIdeer(); } catch (e) {} try { renderIdeas(); renderCalendar(); } catch (e) {} return rec;   /* kladden er gemt, selv om en gentegning fejler (21/9) */
+  rec.id = newId(); IDEER.push(rec);
+  /* AFVIST OPRETTELSE LANDER I KOEEN (Hinges Hus 29/9): foer fik den kun et lokalt id og blev aldrig sendt igen — naeste genindlaesning slettede den. Nu sendes den, naar login/net er tilbage. */
+  if (ideerShared()) { try { ideKoeLaeg(rec.id, { __ny: true }); localStorage.setItem(nsKey("ideer_cache"), JSON.stringify(IDEER)); ideKladdeStatus(); } catch (e) {} }
+  try { saveLocalIdeer(); } catch (e) {} try { renderIdeas(); renderCalendar(); } catch (e) {} return rec;   /* kladden er gemt, selv om en gentegning fejler (21/9) */
 }
 
 async function ideUpdate(id, patch) {
@@ -54954,7 +54986,7 @@ function bsFlytMenu(noegle, side) {
     + '<button type="button" class="bsam-mobknap bsam-mobknap-sek bs-knap ark-luk" style="display:block;width:100%;margin:6px 0 0;" onclick="bsFlytLuk()">Annullér</button></div>';   /* Luk er ikke en handling — hvid (12/9) */
   m.style.display = "flex";
 }
-function bsFlytLuk() { const m = document.getElementById("bsFlytMenu"); if (m) m.style.display = "none"; }
+function bsFlytLuk() { const m = document.getElementById("bsFlytMenu"); if (m) { if (m.style.display !== "none" && m.querySelector(".ftf-ark")) { try { briefFtfGemDelvis(); } catch (e) {} } m.style.display = "none"; } }   /* lukkes First thing first, er svarene gemt (Hinges Hus 29/9) */
 /* DET LILLE VALGARK KAN SWIPES NED (Ida 24/9 kl. 09.45: »På disse skal jeg også kunne lukke boksen ved at swipe ned« — reglen fra 21/9:
    alle popups kan swipes ned). Samme greb som husets ark (arkGrebTraek), lagt EEN gang paa dokumentet, saa det gaelder hvert
    valgark i #bsFlytMenu, uanset hvem der tegner det. Emil: kun transform, et hurtigt svirp (> 0,11 px/ms) lukker ogsaa, drawer-kurven. */
@@ -55938,7 +55970,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2400";
+const APP_VERSION = "2401";
 let NY_VERSION_KLAR = false;
 let NY_VERSION_AFVIST = false;
 function nyVersionSkjul() {
@@ -59194,7 +59226,7 @@ function somKundeFejl(kode) {
   const knap = (utenKode
     ? '<button onclick="location.href=\'https://admin.energida.dk\'" style="background:var(--red);color:#fff;border:none;border-radius:999px;padding:11px 20px;font-family:Poppins,sans-serif;font-size:12px;font-weight:400;cursor:pointer;">Gå til Energida Studio</button>'
     : '<button onclick="location.href=\'https://admin.energida.dk\'" style="background:var(--red);color:#fff;border:none;border-radius:999px;padding:11px 20px;font-family:Poppins,sans-serif;font-size:12px;font-weight:400;cursor:pointer;">Til Energida Studio</button>')
-    + '<button onclick="(async function(){ try { if (sb) await sb.auth.signOut(); } catch(e) {}; location.href = location.pathname; })()" style="background:#fff;color:var(--red);border:1.5px solid var(--red);border-radius:999px;padding:11px 20px;font-family:Poppins,sans-serif;font-size:12px;font-weight:400;cursor:pointer;margin-left:10px;">Log ud og skift bruger</button>';
+    + '<button onclick="(async function(){ try { if (sb) await sb.auth.signOut({ scope: "local" }); } catch(e) {}; location.href = location.pathname; })()" style="background:#fff;color:var(--red);border:1.5px solid var(--red);border-radius:999px;padding:11px 20px;font-family:Poppins,sans-serif;font-size:12px;font-weight:400;cursor:pointer;margin-left:10px;">Log ud og skift bruger</button>';
   d.innerHTML = '<div style="background:#fff;border:1px solid var(--border);border-radius:20px;padding:28px 30px;max-width:460px;">'
     + '<div style="font-size:10px;letter-spacing:1.8px;text-transform:uppercase;font-weight:400;color:var(--gray3);margin-bottom:8px;">Kunne ikke åbne</div>'
     + '<div style="font-size:19px;font-weight:400;margin-bottom:8px;">' + titel + '</div>'
@@ -61258,7 +61290,7 @@ async function custForgot() {
 }
 
 async function custLogout() {
-  if (sb) { try { await sb.auth.signOut(); } catch(e) {} }
+  if (sb) { try { await sb.auth.signOut({ scope: "local" }); } catch(e) {} }
   clearSbSession();
   location.reload();
 }
@@ -61694,7 +61726,7 @@ async function renderDash() {
        browser-session, og så logger vi ud. */
     let husk = "1", aktiv = "";
     try { husk = localStorage.getItem("energida_husk") || "1"; aktiv = sessionStorage.getItem("energida_aktiv") || ""; } catch(e) {}
-    if (husk === "0" && !aktiv) { await sb.auth.signOut(); showLogin(); return; }
+    if (husk === "0" && !aktiv) { await sb.auth.signOut({ scope: "local" }); showLogin(); return; }   /* KUN DENNE ENHED (Hinges Hus 29/9, MAALT: den delte bruger havde 0 sessioner efter moedet): signOut() uden scope er GLOBAL og smed den anden telefon ud midt i briefen — derfor »ikke gemt«. Alle log ud i appen er nu scope:"local". */
     try { sessionStorage.setItem("energida_aktiv", "1"); } catch(e) {}
   }
   showMain();
@@ -63106,7 +63138,7 @@ async function woStudioVis() {
   try { await ttsInit(); } catch(e) {}
 }
 async function woLogUd() {
-  try { if (sb) await sb.auth.signOut(); } catch(e) {}
+  try { if (sb) await sb.auth.signOut({ scope: "local" }); } catch(e) {}
   try { location.reload(); } catch(e) {}
 }
 async function woDoerStart() {
@@ -69520,7 +69552,7 @@ function nulstilBrugerCache() {
   try { const h = document.getElementById("mrVenterHost"); if (h) h.innerHTML = ""; } catch (e) {}
   try { const h = document.getElementById("mrNoterHost"); if (h) h.innerHTML = ""; } catch (e) {}
 }
-async function doLogout() { if (sb) await sb.auth.signOut(); nulstilBrugerCache(); showLogin(); }
+async function doLogout() { if (sb) await sb.auth.signOut({ scope: "local" }); nulstilBrugerCache(); showLogin(); }
 
 async function refresh() {
   CUSTOMERS = await fetchCustomers();
@@ -75385,7 +75417,9 @@ function moedeNaarLinje() {
   return naar + (form ? " · " + form : "") + " · " + moedeDeltagere();
 }
 /* LINKET TIL MOEDET = EN PILLE UNDER »START MOEDET« paa Moedesiden, naar moedet er online */
-function moedeLinkHtml() { let ma = null; try { ma = planMoedeAftale(); } catch (e) {} if (!ma || !ma.link) return ""; return '<a class="ark-chip mo-chip mo-link" href="' + esc(String(ma.link)) + '" target="_blank" rel="noopener">Åbn mødet</a>'; }
+/* FYSISK/ONLINE + LINKET SOM CHIPS PAA MOEDESIDEN (Ida 29/9: »Hvorfor kan jeg så ikke se linket til mødet og se om mødet er fysisk eller online«) — samme ord som i kalenderen */
+function moedeFormNavn(ma) { if (!ma) return ""; return ma.link ? "Online" : (ma.form ? storStart(String(ma.form).toLowerCase()) : "Fysisk"); }
+function moedeLinkHtml() { let ma = null; try { ma = planMoedeAftale(); } catch (e) {} if (!ma) return ""; return '<span class="ark-chip mo-chip mo-stille">' + esc(moedeFormNavn(ma)) + '</span>' + (ma.link ? '<a class="ark-chip mo-chip mo-link" href="' + esc(String(ma.link)) + '" target="_blank" rel="noopener">Åbn mødet</a>' : ''); }
 /* ALENE = MAKKEREN SIDDER MED (Ida 21/9 kl. 23.15: »for at synliggøre mødet som vigtigt også selvom det er med en selv«): er teamet én person, står der »dig · din content makker«; ellers navnene */
 function moedeDeltagere() { let folk = []; try { folk = briefPersonerListe(); } catch (e) {} return folk.length > 1 ? folk.join(" · ") : "dig · din content makker"; }
 function moedeSideAaben() {
@@ -75472,9 +75506,13 @@ function moedeSideTegn() {
   /* Idéer til mødet: fra Idébankens ⋯ (aldrig et soegefelt, Idas kommentar 21/9 kl. 22.45) */
   const alle = (IDEER || []).filter(function (x) { return x && x.status !== "Arkiveret"; });
   const valgte = M.ideer.map(function (id) { return alle.find(function (x) { return String(x.id) === String(id); }); }).filter(Boolean);
-  const ideer = '<div class="cf-sek">Idéer til mødet</div>'
-    + (valgte.length ? valgte.map(function (x) { const so = x.soejle ? soejleVis(x.soejle) : ""; return '<div class="idag-flise mo-fl mo-ide" role="button" tabindex="0" onclick="openBrief(\'' + esc(String(x.id)) + '\')"><button type="button" class="idag-cirk ok mq-tap" aria-label="Tag ud af mødet" onclick="event.stopPropagation();moedeIdeSkift(\'' + esc(String(x.id)) + '\')"></button><span class="idag-tekst"><span class="idag-titel">' + esc(storStart(titelVis(x.titel || "Uden titel"))) + '</span><span class="idag-sub">' + esc([x.type, so].filter(Boolean).join(" · ")) + '</span></span></div>'; }).join("") : '')
-    + '<div class="mo-hint">' + (valgte.length ? 'Cirklen tager idéen ud af mødet igen.' : 'Åbn en idé, og tryk på møde-ikonet ved siden af Del.') + '</div>';
+  /* ROEDT FLUEBEN = PLANLAGT (Ida 29/9 under moedet med ACORNS: »dem man klikker af med rød flueben det er dem der bliver planlagt — de andre bliver både på mødet men også forbliver i idebanken«):
+     idéerne staar paa moedet uden flueben; et tryk paa cirklen aabner dato-arket, og datoen planlaegger idéen. Et tryk paa et flueben tager planen af igen. Idéen bliver paa moedet begge veje. */
+  const moPlanlagt = function (x) { return !!x.dato; };
+  const ideer = '<div class="cf-sek mo-sek-plus">Idéer til mødet<button type="button" class="kv-menuknap mq-tap mo-plus" aria-label="Tilføj idéer til mødet" title="Tilføj idéer til mødet" onclick="moedeIdeerFraBanken()">+</button></div>'
+    + (valgte.length ? valgte.map(function (x) { const so = x.soejle ? soejleVis(x.soejle) : ""; const pl = moPlanlagt(x); return '<div class="idag-flise mo-fl mo-ide" role="button" tabindex="0" onclick="openBrief(\'' + esc(String(x.id)) + '\')"><button type="button" class="idag-cirk' + (pl ? ' ok' : '') + ' mq-tap" aria-label="' + (pl ? 'Planlagt · tryk for at tage planen af' : 'Planlæg') + '" onclick="event.stopPropagation();moedeIdePlan(\'' + esc(String(x.id)) + '\')"></button><span class="idag-tekst"><span class="idag-titel">' + esc(storStart(titelVis(x.titel || "Uden titel"))) + '</span><span class="idag-sub">' + esc([pl ? dkDatoKort(x.dato) : "", x.type, so].filter(Boolean).join(" · ")) + '</span></span></div>'; }).join("") : '')
+    + '<input type="date" id="moIdeDato" class="bf-dato-mo" value="" style="position:absolute;width:0;height:0;opacity:0;pointer-events:none;" tabindex="-1" onchange="moedeIdePlanGem(this.value)">'
+    + '<div class="mo-hint">' + (valgte.length ? 'Flueben = planlagt. Resten bliver i Idébanken.' : 'Plusset åbner Idébanken. Tryk på de idéer, der skal med.') + '</div>';
   /* Forberedelse til mødet: to-do'er med teammedlem, lander under To-do hos den, der er valgt */
   const forb = M.forb.map(function (id) { return (OPGAVER || []).find(function (o) { return String(o.id) === String(id); }); }).filter(function (o) { return o && o.aktiv !== false; });
   const forbHtml = '<div class="cf-sek mo-sek-plus">Forberedelse til mødet<button type="button" class="kv-menuknap mq-tap mo-plus" aria-label="Tilføj forberedelse" title="Tilføj forberedelse" onclick="moedeForbArk()">+</button></div>'
@@ -75487,6 +75525,42 @@ function moedeSideTegn() {
   try { rum.querySelectorAll(".mo-spm textarea").forEach(function (t) { t.style.height = "auto"; t.style.height = t.scrollHeight + "px"; }); } catch (e) {}
   try { markbaandTegn(24); } catch (e) {}
 }
+function moedeIdePlan(id) {
+  const it = (IDEER || []).find(function (x) { return String(x.id) === String(id); }); if (!it) return;
+  if (it.dato) { moedeIdePlanGem("", id); return; }   /* flueben af = planen af, idéen bliver paa moedet og i Idébanken */
+  window.__MO_PLAN_ID = String(id);
+  const inp = document.getElementById("moIdeDato"); if (!inp) return; inp.value = "";
+  try { datoArkVis(inp); } catch (e) {}
+  try { const t = document.querySelector("#bsFlytMenu .dato-titel"); if (t) t.textContent = "Hvornår skal det postes?"; else { const ark = document.querySelector("#bsFlytMenu .dato-ark"); if (ark) ark.insertAdjacentHTML("afterbegin", '<div class="ark-t dato-titel" style="text-align:center;margin:0 0 12px;">Hvornår skal det postes?</div>'); } } catch (e) {}
+}
+async function moedeIdePlanGem(dato, id) {
+  id = String(id || window.__MO_PLAN_ID || ""); if (!id) return;
+  const it = (IDEER || []).find(function (x) { return String(x.id) === id; }); if (!it) return;
+  const patch = { dato: dato || null };
+  if (!it.status || it.status === "Idé" || it.status === "Planlagt") patch.status = dato ? "Planlagt" : "Idé";   /* fremskredne statusser roeres aldrig (27/7) */
+  const ok = await ideUpdate(id, patch);
+  try { husKvit(ok === false ? "Kunne ikke gemme. Prøv igen." : (dato ? "Planlagt " + dkDatoKort(dato) + "." : "Planen er taget af. Idéen er stadig i Idébanken.")); } catch (e) {}
+  window.__MO_PLAN_ID = null;
+  try { moedeSideTegn(); } catch (e) {}
+}
+/* PLUSSET SENDER DIG TIL IDÉBANKEN (Ida 29/9: »direkte fra planlægningsmødet kunne klikke på tilføj ideer til mødet og så blive sendt direkte til idebanken«):
+   i Idébanken laegger et tryk paa en idé den paa moedet (tryk igen tager den af); linjen oeverst siger det og fører »Tilbage til mødet«. */
+function moedeIdeerFraBanken() {
+  window.__MO_VAELG = true;
+  try { showTab(2); } catch (e) {}
+  try { ibVis("ideer"); } catch (e) {}
+  try { renderIdeas(); } catch (e) {}
+  moedeVaelgLinje();
+}
+function moedeVaelgLinje() {
+  const bank = document.getElementById("ideBank"); if (!bank) return;
+  let l = document.getElementById("moVaelgLinje");
+  if (!window.__MO_VAELG) { if (l) l.remove(); return; }
+  if (!l) { l = document.createElement("div"); l.id = "moVaelgLinje"; l.className = "idag-flise mo-vaelg-linje"; bank.parentNode.insertBefore(l, bank); }
+  const n = moedeAgendaHent().ideer.length;
+  l.innerHTML = '<span class="idag-tekst"><span class="idag-titel">Tryk på de idéer, der skal med til mødet.</span><span class="idag-sub">' + n + (n === 1 ? ' idé' : ' idéer') + ' på mødet</span></span><button type="button" class="mo-tilbage mq-tap" onclick="moedeVaelgFaerdig()">Tilbage til mødet</button>';
+}
+function moedeVaelgFaerdig() { window.__MO_VAELG = false; moedeVaelgLinje(); try { moedeSideAaben(); } catch (e) {} }
 function moedeIdeErMed(id) { const M = moedeAgendaHent(); return M.ideer.indexOf(String(id)) > -1; }
 async function moedeIdeSkift(id) {
   const M = moedeAgendaHent(); id = String(id); const med = M.ideer.indexOf(id) > -1;
@@ -78118,6 +78192,6 @@ function bf3StudieRum(v, filter) {
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-hvid.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 29. september · 2400</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 29. september · 2401</div>
 </body>
 </html>
