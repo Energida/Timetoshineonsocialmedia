@@ -10352,6 +10352,7 @@ html body.mb #briefSideNav .bsd-gem { margin-left:auto; margin-right:12px; }
           if (a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)) return true;
           if (a && a.isContentEditable) return true;
           if (window.BRIEF_GEMMER || window.__ugemt) return true;
+          if (typeof nyVersionSikkert === "function" && !nyVersionSikkert()) return true;   /* aabent ark, brief, lektion eller et gem undervejs (29/9) */
         } catch (e) {}
         return false;
       }
@@ -28408,6 +28409,7 @@ function briefKladdeNu() {
 function briefGemVedSkjul() {
   try { if (typeof BRIEF_ID !== "undefined" && BRIEF_ID && BRIEF_AUTOTIMER) { clearTimeout(BRIEF_AUTOTIMER); BRIEF_AUTOTIMER = null; saveBrief(true); } } catch (e) {}
   try { if (typeof KLIP_BRIEF_ID !== "undefined" && KLIP_BRIEF_ID && KB_TIMER) { clearTimeout(KB_TIMER); KB_TIMER = null; kbGemNu(false); } } catch (e) {}
+  try { if (window.__MO_NOTER_T) { clearTimeout(window.__MO_NOTER_T); window.__MO_NOTER_T = null; const f = document.getElementById("moedeNoter"); if (f) moedeNoterGem(f.value); } } catch (e) {}
 }
 try {
   document.addEventListener("visibilitychange", function () { if (document.visibilityState === "hidden") briefGemVedSkjul(); });
@@ -41988,9 +41990,9 @@ function kbAuto(feltId) {
   if (st) { st.textContent = "Gemmer\u2026"; st.style.color = "var(--gray3)"; }
   KB_TIMER = setTimeout(() => kbGemNu(false), 1200);
 }
-async function kbGemNu(luk) {
+async function kbGemNu(luk, forud) {
   clearTimeout(KB_TIMER);
-  const id = KLIP_BRIEF_ID; if (!id || KB_GEMMER) return;
+  const id = (forud && forud.id) || KLIP_BRIEF_ID; if (!id) return;
   const felt = x => { const e = document.getElementById(x); return e ? e.value : null; };
   /* ET MANUS MÅ ALDRIG SLETTES AF EN GEMNING, DER IKKE KAN SE FELTET (Ida 4/8:
      "den anden dag fandt jeg en lektion hvor manus helt var slettet").
@@ -42003,7 +42005,8 @@ async function kbGemNu(luk) {
      De må IKKE med i patchen — felterne findes ikke, så de ville gemme tomt
      oveni det, der allerede ligger i databasen. */
   let patch;
-  if (KLIP_BRIEF_STRUKTUR) {
+  if (forud && forud.patch) { patch = forud.patch; }
+  else if (KLIP_BRIEF_STRUKTUR) {
     /* SAMME SPAERRE, NY FORM: kan sektionerne ikke laeses, gemmer vi ingenting.
        manus_tekst skrives som det samlede speak — uden formaal og uden sektionsnavne —
        saa teleprompter, print, oplaesning, B-roll-kassen og eksporten laeser videre
@@ -42021,6 +42024,9 @@ async function kbGemNu(luk) {
     const nr = tEl.getAttribute("data-nr");
     if (t) patch.titel = (nr ? nr + " · " : "") + t;   // nummeret sættes altid tilbage
   }
+  /* ET GEM, DER KOMMER, MENS ET ANDET GEMMER, FORSVINDER IKKE (gem-gennemgangen 29/9): foer returnerede det bare — de sidste ord
+     gik tabt, isaer naar man trykkede Gem/lukkede, mens autosaven stod og ventede paa basen. Nu huskes den nyeste udgave og sendes bagefter. */
+  if (KB_GEMMER) { window.__KB_VENTER = { id: id, patch: patch, luk: luk }; return; }
   const o = KLIP_OPGAVER.find(x => String(x.id) === String(id));
   /* ET GEM SKRIVER ALDRIG EN GAMMEL UDGAVE OVEN I EN NYERE (MAALT 25/9 kl. ~21.20, Ida: »det er STADIG ikke det rigtige manus«):
      at lukke en lektion gemte ALTID editorens indhold — ogsaa uroert. Stod studiet aabent fra FOER manus blev rettet (importen),
@@ -42063,9 +42069,11 @@ async function kbGemNu(luk) {
     } else { if (o) Object.assign(o, patch); klipSaveLocal(); ok = true; }
   } catch(e) { ok = false; }
   const st = document.getElementById("kbStatus");
-  if (ok) { if (st && !luk) gemStatusVis(st, "gemt"); }
+  if (ok) { try { if (st && !luk) gemStatusVis(st, "gemt"); } catch (e) {} }   /* en fejl i kvitteringen maa aldrig lade KB_GEMMER staa paa true (29/9) */
   else if (st) { st.textContent = "Manuskriptet blev IKKE gemt \u2014 kopiér din tekst, før du lukker"; st.style.color = "var(--red)"; }
   KB_GEMMER = false;
+  const venter = window.__KB_VENTER; window.__KB_VENTER = null;
+  if (venter) { try { await kbGemNu(venter.luk, venter); } catch (e) {} }
 }
 /* Browserens tilbage-pil må ikke smide Ida ud af appen (hendes 20/7).
    Vi holder altid én ekstra history-post: første tilbage lukker en åben popup
@@ -50819,8 +50827,9 @@ async function bsGemByggestenFraBygger(bygg) {
   let eks = {};
   try {
     const r = await sb.from("kunde_strategi").select("byggesten").eq("kode", kd).maybeSingle();
+    if (r && r.error) throw r.error;
     eks = (r && r.data && r.data.byggesten) || {};
-  } catch (e) {}
+  } catch (e) { throw new Error("Kunne ikke hente Drejebogen. Intet er gemt — prøv igen om et øjeblik."); }   /* ellers slettede gemmet kundens egne eksempler (29/9) */
   /* ET GEM MAA ALDRIG SLETTE DET, MAN IKKE KAN SE (HAARD, 4/8). Hele objektet skrives
      paa een gang, saa alt det, previewet IKKE viser, skal med uroert: soejlernes egne
      lister under "egne", og maalgruppens situationer. */
@@ -52939,8 +52948,8 @@ async function ideAdd(rec) {
              sit indhold, og det skal siges. */
           try {
             const b = await sb.from("content_ideer").update({ brief: rec.brief }).eq("id", data.id).select();
-            if (b.error || !b.data || !b.data.length) { try { visSyncFejl(); } catch(e2) {} }
-          } catch(e) { try { visSyncFejl(); } catch(e2) {} }
+            if (b.error || !b.data || !b.data.length) { try { visSyncFejl(); } catch(e2) {} try { ideKoeLaeg(data.id, { brief: rec.brief }); } catch (e3) {} }
+          } catch(e) { try { visSyncFejl(); } catch(e2) {} try { ideKoeLaeg(data.id, { brief: rec.brief }); } catch (e3) {} }   /* briefen i koeen, saa den sendes igen (29/9) */
         }
         IDEER.push(m); try { renderIdeas(); renderCalendar(); } catch (e) {} return m;
       }
@@ -56292,7 +56301,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2430";
+const APP_VERSION = "2431";
 let NY_VERSION_KLAR = false;
 let NY_VERSION_AFVIST = false;
 function nyVersionSkjul() {
@@ -56354,18 +56363,29 @@ function nyVersionRoligNu() {
    skifter alligevel, og opstarten lander paa Hjem. KUN Hjem: MAALT i selen 29/9 gav en genstart direkte paa Idébanken »Appen kunne ikke starte«
    (boot-vagten kender kun Hjems moebler). ALDRIG naar noget kan gaa tabt: popup, brief eller lektion aaben, markoer i et felt, noget gemmes,
    eller et kald til basen undervejs. */
+/* ER DER NOGET, DER KAN GAA TABT? Een vagt til alle tre veje, der henter en ny udgave (Hjem, tilbage fra baggrunden, service-workeren).
+   MAALT i gem-gennemgangen 29/9: vejen »tilbage fra baggrunden« genindlaeste UDEN at se efter — et aabent ark med tekst forsvandt,
+   naar kunden var en tur i Instagram for at hente et link. */
+function nyVersionSikkert() {
+  try {
+    const a = document.activeElement;
+    if (a && (/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName) || a.isContentEditable)) return false;
+    if (document.querySelector(".modal-back.on") || document.getElementById("arkSlor")) return false;
+    const fm = document.getElementById("bsFlytMenu"); if (fm && fm.style.display !== "none" && fm.innerHTML) return false;
+    if (typeof briefErAaben === "function" && briefErAaben()) return false;
+    if (document.querySelector("#screen7.active, #screen24.active")) return false;   /* briefen staar fremme (BRIEF_ID bliver staaende efter briefen — maa ikke bruges) */
+    if ([].some.call(document.querySelectorAll('[id^="kbSek_"], #kbManusTekst'), function (e) { return !!e.offsetParent; })) return false;   /* en lektions manus staar fremme */
+    if (typeof KB_GEMMER !== "undefined" && KB_GEMMER) return false;
+    if (window.BRIEF_GEMMER || window.__ugemt) return false;
+    if ((window.__NET || 0) > 0) return false;
+    return true;
+  } catch (e) { return false; }
+}
 function nyVersionVedSideskift() {
   try {
     if (!(NY_VERSION_KLAR || window.__NY_KLAR_SW)) return false;
     if (window.__genindlaesIGang) return true;
-    const a = document.activeElement;
-    if (a && (/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName) || a.isContentEditable)) return false;
-    if (document.querySelector(".modal-back.on") || document.getElementById("arkSlor")) return false;
-    if (typeof briefErAaben === "function" && briefErAaben()) return false;
-    if (typeof KLIP_BRIEF_ID !== "undefined" && KLIP_BRIEF_ID) return false;
-    if (typeof KB_GEMMER !== "undefined" && KB_GEMMER) return false;
-    if (window.BRIEF_GEMMER || window.__ugemt) return false;
-    if ((window.__NET || 0) > 0) return false;
+    if (!nyVersionSikkert()) return false;
     nyVersionHent(window.__NY_VERSION_UDE || null);
     return true;
   } catch (e) { return false; }
@@ -56377,7 +56397,7 @@ function nyVersionVis(ude) {
   /* HENTES KUN I BAGGRUNDEN (Ida 24/9): en genindlaesning, mens hun kigger, ER et hop — ogsaa naar hun ikke roerer skaermen.
      Ligger appen i baggrunden, hentes den straks; ellers venter vi, til hun skifter app eller laaser telefonen. */
   /* HENTES I FORGRUNDEN, NAAR HUN KOMMER TILBAGE (24/9 kl. 23.45) — i baggrunden fryser iPhone indlaesningen, og hun fik fejlfladen */
-  try { if (!window.__nyVersionVent) { window.__nyVersionVent = true; document.addEventListener("visibilitychange", function () { if (document.visibilityState === "hidden") window.__nyVersionVarVaek = true; else if (window.__nyVersionVarVaek) { try { nyVersionHent(window.__NY_VERSION_UDE); } catch (e) {} } }); } } catch (e) {}
+  try { if (!window.__nyVersionVent) { window.__nyVersionVent = true; document.addEventListener("visibilitychange", function () { if (document.visibilityState === "hidden") window.__nyVersionVarVaek = true; else if (window.__nyVersionVarVaek && nyVersionSikkert()) { try { nyVersionHent(window.__NY_VERSION_UDE); } catch (e) {} } }); } } catch (e) {}   /* ikke sikkert = den kommer ved naeste tryk paa Hjem (29/9) */
   if (document.visibilityState === "visible") return;   /* intet banner, intet hop — den nye udgave kommer stille, naeste gang appen har vaeret vaek */
   /* DAGSKORTET DAEKKER SKAERMEN. Er det aabent, hoerer beskeden DER — ikke i et banner, hun
      foerst ser, naar kortet er lukket (Ida 14/9). Kun eet sted ad gangen, aldrig to. */
@@ -56758,12 +56778,14 @@ async function htbHent() {
   if (HTB_HENTER) return HTB_HENTER;
   HTB_HENTER = (async function () {
     let ud = htbStandard();
+    /* EN FEJLET HENTNING ER IKKE »INTET GEMT« (gem-gennemgangen 29/9): svarede basen med en fejl, blev standardvaerdien lagt frem, og naeste gem skrev den oven paa kundens rigtige data. Nu: fejl = intet hentet = intet gemmes, og der hentes igen naeste gang. */
     try {
       if (sb && currentKode) {
-        const { data } = await sb.from("skema_svar").select("svar").eq("kode", currentKode).eq("navn", "config").eq("skema", "hashtagbank").maybeSingle();
-        if (data && data.svar && Array.isArray(data.svar.liste)) ud = { liste: data.svar.liste };
+        const { data, error } = await sb.from("skema_svar").select("svar").eq("kode", currentKode).eq("navn", "config").eq("skema", "hashtagbank").maybeSingle();
+        if (error) throw error;
+        if (data && data.svar && Array.isArray(data.svar.liste)) ud = Object.assign({}, data.svar, { liste: data.svar.liste });
       }
-    } catch (e) {}
+    } catch (e) { HTB = null; HTB_HENTER = null; return null; }
     /* FOERSTE GANG: Idas forslag fra Vaerktoejskassens gamle tekst (VK_CONFIG.hashtags) og hashtags fra kundens briefs lander i banken,
        saa den aldrig staar tom hos en kunde, der allerede har skrevet captions. Brugt = antal briefs, de staar i. */
     if (!ud.liste.length) {
@@ -56990,7 +57012,7 @@ function briefHashtagMaerk() {
 }
 function briefHashtagBankTegn() {
   const v = document.getElementById("briefHtgBank"); if (!v) return;
-  if (!HTB) { htbHent().then(function () { briefHashtagBankTegn(); }); return; }
+  if (!HTB) { htbHent().then(function () { if (HTB) briefHashtagBankTegn(); }); return; }
   try { if (briefHashtagFasteInd()) {} } catch (e) {}
   briefHashtagMaerk();
   const kats = htbKategorier();
@@ -60093,13 +60115,15 @@ async function maalsHent() {
   if (MAALS_HENTER) return MAALS_HENTER;
   MAALS_HENTER = (async function () {
     let ud = maalsStandard();
+    /* EN FEJLET HENTNING ER IKKE »INTET GEMT« (gem-gennemgangen 29/9): svarede basen med en fejl, blev standardvaerdien lagt frem, og naeste gem skrev den oven paa kundens rigtige data. Nu: fejl = intet hentet = intet gemmes, og der hentes igen naeste gang. */
     try {
       if (sb && currentKode) {
-        const { data } = await sb.from("skema_svar").select("svar").eq("kode", currentKode).eq("navn", "config").eq("skema", "maalsaetninger").maybeSingle();
+        const { data, error } = await sb.from("skema_svar").select("svar").eq("kode", currentKode).eq("navn", "config").eq("skema", "maalsaetninger").maybeSingle();
+        if (error) throw error;
         if (data && data.svar) ud = Object.assign(maalsStandard(), data.svar);
       }
-    } catch(e) {}
-    MAALS = ud;
+    } catch(e) { MAALS = ud; MAALS_HENTER = null; MAALS_KODE = ""; window.__MAALS_UHENTET = true; return MAALS; }   /* vises som standard, men maa ALDRIG gemmes — og hentes igen naeste gang */
+    MAALS = ud; window.__MAALS_UHENTET = false;
     MAALS_HENTER = null;
     return MAALS;
   })();
@@ -60109,9 +60133,9 @@ async function maalsGem(besked) {
   const m = document.getElementById("maalsMsg");
   /* ALDRIG GEM ET TOMT SKELET (4/8). Er maalsaetningerne ikke hentet endnu, ville
      skrivningen laegge standardvaerdier oven paa det, kunden faktisk har staaende. */
-  if (!MAALS) {
+  if (!MAALS || window.__MAALS_UHENTET) {
     try { await maalsHent(); } catch (e) {}
-    if (!MAALS) { if (m) { m.style.color = "var(--red)"; m.textContent = "Kunne ikke hente dine målsætninger — prøv igen om et øjeblik."; } return false; }
+    if (!MAALS || window.__MAALS_UHENTET) { if (m) { m.style.color = "var(--red)"; m.textContent = "Kunne ikke hente dine målsætninger — prøv igen om et øjeblik."; } return false; }
   }
   let ok = false;
   try {
@@ -75803,10 +75827,13 @@ function planRitMaanedKey(man) { const t = new Date(man); t.setDate(man.getDate(
 async function planRitStatusHent() {
   if (PR_STATUS_HENTET || !sb || !currentKode) return PR_STATUS;
   PR_STATUS_HENTET = true;
+  /* EN FEJLET HENTNING ER IKKE »INTET GEMT« (gem-gennemgangen 29/9): svarede basen med en fejl, blev standardvaerdien lagt frem, og naeste gem skrev den oven paa kundens rigtige data. Nu: fejl = intet hentet = intet gemmes, og der hentes igen naeste gang. */
   try {
-    const { data } = await sb.from("skema_svar").select("svar").eq("kode", currentKode).eq("navn", "config").eq("skema", "plan_ritual").maybeSingle();
+    const { data, error } = await sb.from("skema_svar").select("svar").eq("kode", currentKode).eq("navn", "config").eq("skema", "plan_ritual").maybeSingle();
+    if (error) throw error;
     if (data && data.svar) PR_STATUS = data.svar;
-  } catch (e) {}
+    window.__PR_HENTET_OK = currentKode;
+  } catch (e) { PR_STATUS_HENTET = false; }
   try { renderHome(); } catch (e) {}
   try { planRitKortTegn(); } catch (e) {}
   return PR_STATUS;
@@ -75960,7 +75987,7 @@ function moedeSideTegn() {
   const mig = moedeBruger();
   const noteTekst = MOEDE_NOTER_VIS === "alle" ? M.noter : String(M.noterMig[mig] || "");
   const noter = '<div class="cf-sek">Noter til mødet</div><div class="ark-chips mo-noter-chips"><button type="button" class="ark-chip' + (MOEDE_NOTER_VIS === "mig" ? ' on' : '') + '" onclick="moedeNoterSkift(\'mig\')">Kun til mig</button><button type="button" class="ark-chip' + (MOEDE_NOTER_VIS === "alle" ? ' on' : '') + '" onclick="moedeNoterSkift(\'alle\')">Alle kan se</button></div>'
-    + '<textarea id="moedeNoter" class="mo-noter" rows="3" placeholder="Andet, du skal huske at sige …" onblur="moedeNoterGem(this.value)">' + esc(noteTekst) + '</textarea>';
+    + '<textarea id="moedeNoter" class="mo-noter" rows="3" placeholder="Andet, du skal huske at sige …" oninput="moedeNoterAuto(this)" onblur="clearTimeout(window.__MO_NOTER_T);window.__MO_NOTER_T=null;moedeNoterGem(this.value)">' + esc(noteTekst) + '</textarea>';
   rum.innerHTML = '<button type="button" class="dbtn primary mo-start-tlf" onclick="planRitStart(\'uge\')">Start mødet</button>' + (moedeLinkHtml() ? '<div class="mo-link-rk">' + moedeLinkHtml() + '</div>' : '') + '<div class="mo-to"><div class="mo-venstre">' + venstre + '</div><div class="mo-hoejre">' + ideer + forbHtml + noter + '</div></div>';
   try { rum.querySelectorAll(".mo-spm textarea").forEach(function (t) { t.style.height = "auto"; t.style.height = t.scrollHeight + "px"; }); } catch (e) {}
   try { markbaandTegn(24); } catch (e) {}
@@ -76048,6 +76075,8 @@ async function moedeForbGjort(id, til) {
   try { renderKundeOpgaver(); } catch (e) {} try { moedeSideTegn(); } catch (e) {}
 }
 function moedeNoterSkift(v) { MOEDE_NOTER_VIS = v === "alle" ? "alle" : "mig"; moedeSideTegn(); }
+/* MOEDETS NOTER GEMMES MENS MAN SKRIVER (gem-gennemgangen 29/9): foer kun ved blur — blev appen lukket eller skjult midt i en note, var den vaek. */
+function moedeNoterAuto(el) { clearTimeout(window.__MO_NOTER_T); window.__MO_NOTER_T = setTimeout(function () { window.__MO_NOTER_T = null; moedeNoterGem(el.value); }, 1200); }
 async function moedeNoterGem(v) {
   const M = moedeAgendaHent(); v = String(v || "");
   const mo = Object.assign({}, (PR_STATUS && PR_STATUS.moede) || {});
@@ -76056,6 +76085,7 @@ async function moedeNoterGem(v) {
   if (ok === false) { try { husKvit("Kunne ikke gemme — prøv igen"); } catch (e) {} }
 }
 async function planRitStatusGem(patch) {
+  if (sb && currentKode && window.__PR_HENTET_OK !== currentKode) { PR_STATUS_HENTET = false; PR_STATUS = null; try { await planRitStatusHent(); } catch (e) {} if (window.__PR_HENTET_OK !== currentKode) { try { husBesked("Det blev ikke gemt — prøv igen om et øjeblik."); } catch (e) {} return false; } }   /* aldrig et gem oven paa en fejlet hentning (29/9) */
   PR_STATUS = Object.assign({}, PR_STATUS || {}, patch || {});
   if (!sb || !currentKode) return false;
   try {
@@ -78645,6 +78675,6 @@ function bf3StudieRum(v, filter) {
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-hvid.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 29. september · 2430</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 29. september · 2431</div>
 </body>
 </html>
