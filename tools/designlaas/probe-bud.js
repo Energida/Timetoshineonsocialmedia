@@ -49,10 +49,10 @@ setTimeout(async function () {
       /* 4) TRE RING-FLISER; ugens fokus aldrig paa telefonen */
       var ringe = [].filter.call(r.querySelectorAll(".hu-ring"), synlig); if (ringe.length !== 3) F(tilstand + ": ringene er " + ringe.length + ", ikke 3");
       if (tlf && synlig(r.querySelector(".hu-fokus"))) F(tilstand + ": ugens fokus staar paa telefonen (ude 25/9)");
-      /* 5) TO-DO: hoejst fem + »Gå til Get shit done«; tom = spoergsmaal + graa knap */
+      /* 5) OPGAVER: hoejst fem + »Se alle« for enden af stregen (29/9); tom = spoergsmaal + graa knap */
       var td = [].filter.call(r.querySelectorAll(".hu-td"), synlig);
       if (td.length > 5) F(tilstand + ": to-do viser " + td.length + ", hoejst fem");
-      if (tilstand === "fuld") { if (!td.length) F("fuld: to-do'en staar ikke som flise"); if (!/Gå til Get shit done/.test(tekst)) F("fuld: knappen »Gå til Get shit done« mangler"); }
+      if (tilstand === "fuld") { if (!td.length) F("fuld: to-do'en staar ikke som flise"); if (!/se alle/i.test(tekst)) F("fuld: »Se alle« ved Opgaver mangler");   /* bud 1 29/9 afloeser »Gå til Get shit done« */ }
       else if (!/Er der noget, du skal huske\?/.test(tekst)) F("tom: to-do mangler spoergsmaalet");
       /* 6) RAEKKEFOELGE/SPALTER */
       var top = function (sel) { var e = r.querySelector(sel); return synlig(e) ? e.getBoundingClientRect() : null; };
