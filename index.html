@@ -31301,11 +31301,19 @@ function datoArkTegn() {
   /* ingen overskrift, naar den bare siger »Vælg dato« (Ida 22/9) — kalenderen siger det selv; de specifikke spoergsmaal bliver */
   m.innerHTML = '<div class="bs-flyt-ark brief-soejle-ark dato-ark">' + (datoTitel === "Vælg dato" ? '' : '<div class="ark-t dato-titel" style="text-align:center;margin:0 0 12px;">' + datoTitel + '</div>') + '<div class="dato-hoved"><button type="button" class="dato-pil" aria-label="Forrige måned" onclick="datoArkSkift(-1)"><svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg></button><span class="ark-t">' + DATO_MDR[S.m] + ' ' + S.y + '</span><button type="button" class="dato-pil" aria-label="Næste måned" onclick="datoArkSkift(1)"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button></div>'
     + '<div class="dato-uge">' + ["M", "T", "O", "T", "F", "L", "S"].map(x => '<span>' + x + '</span>').join("") + '</div><div class="dato-grid">' + celler + '</div>'
-    + (val ? '<button type="button" class="ark-knap" onclick="datoArkVaelg(\'\')">Fjern datoen</button>' : '') + '<button type="button" class="ark-luk" onclick="bsFlytLuk()">Annullér</button></div>';
-  m.style.display = "flex"; m.onclick = function (e) { if (e.target === m) bsFlytLuk(); };
+    + (val ? '<button type="button" class="ark-knap" onclick="datoArkVaelg(\'\')">Fjern datoen</button>' : '') + '<button type="button" class="ark-luk" onclick="datoArkLuk()">Annullér</button></div>';
+  m.style.display = "flex"; m.onclick = function (e) { if (e.target === m) datoArkLuk(); };
   try { m.style.zIndex = (inp.closest && inp.closest(".modal-back, .modal, #kundeSide")) ? "10070" : ""; } catch (e) {}   /* over Backstages gamle modaler, saa kalenderen aldrig ligger bagved */
 }
+/* DATO-ARKET FRA FIRST THING FIRST (MAALT 30/9, Idas skaermbilleder kl. 12.21: »Alt jeg har valgt i first thing first skal man taste igen! Specielt datoen«):
+   paa telefonen aabner dato-arket i SAMME vindue (#bsFlytMenu) som First thing first og erstatter det; valget lukkede saa ALT med bsFlytLuk — datoen naaede
+   aldrig tilbage (feltet var revet ud af siden), og platform, hvem og lyd blev aldrig vist. Nu: kommer arket fra First thing first, sendes datoen tilbage
+   dertil, og First thing first tegnes igen paa samme trin — ogsaa ved Annullér og tryk udenfor. */
+function datoArkFraFtf() { const S = window.__DATO; return !!(S && S.inp && S.inp.id === "ftfDato" && window.__FTF); }
+function datoArkTilbageTilFtf(iso) { try { if (iso != null) FTF_DATO = String(iso || ""); window.__DATO = null; briefSoejleArkDropTegn(); } catch (e) {} }
+function datoArkLuk() { if (datoArkFraFtf()) { datoArkTilbageTilFtf(null); return; } bsFlytLuk(); }
 function datoArkVaelg(iso) {
+  if (datoArkFraFtf()) { datoArkTilbageTilFtf(iso); return; }
   const S = window.__DATO; if (!S) return; const inp = S.inp; inp.value = iso;
   try { inp.dispatchEvent(new Event("input", { bubbles: true })); inp.dispatchEvent(new Event("change", { bubbles: true })); } catch (e) {}
   const erBrief = /^bf_/.test(String(inp.id || "")) || (inp.classList && inp.classList.contains("bf-dato"));   /* arket bruges nu overalt (21/9) — briefens gem kun for briefens felter */
@@ -55471,7 +55479,8 @@ function bsFlytMenu(noegle, side) {
     + '<button type="button" class="bsam-mobknap bsam-mobknap-sek bs-knap ark-luk" style="display:block;width:100%;margin:6px 0 0;" onclick="bsFlytLuk()">Annullér</button></div>';   /* Luk er ikke en handling — hvid (12/9) */
   m.style.display = "flex";
 }
-function bsFlytLuk() { const m = document.getElementById("bsFlytMenu"); if (m) { if (m.style.display !== "none" && m.querySelector(".ftf-ark")) { try { briefFtfGemDelvis(); } catch (e) {} } m.style.display = "none"; } }   /* lukkes First thing first, er svarene gemt (Hinges Hus 29/9) */
+function bsFlytLuk() { const m = document.getElementById("bsFlytMenu"); try { if (m && m.querySelector(".dato-ark") && typeof datoArkFraFtf === "function" && datoArkFraFtf()) { datoArkTilbageTilFtf(null); return; } } catch (e) {}   /* swipe ned paa dato-arket fra First thing first = tilbage til First thing first (30/9) */
+  if (m) { if (m.style.display !== "none" && m.querySelector(".ftf-ark")) { try { briefFtfGemDelvis(); } catch (e) {} } m.style.display = "none"; } }   /* lukkes First thing first, er svarene gemt (Hinges Hus 29/9) */
 /* DET LILLE VALGARK KAN SWIPES NED (Ida 24/9 kl. 09.45: »På disse skal jeg også kunne lukke boksen ved at swipe ned« — reglen fra 21/9:
    alle popups kan swipes ned). Samme greb som husets ark (arkGrebTraek), lagt EEN gang paa dokumentet, saa det gaelder hvert
    valgark i #bsFlytMenu, uanset hvem der tegner det. Emil: kun transform, et hurtigt svirp (> 0,11 px/ms) lukker ogsaa, drawer-kurven. */
@@ -56455,7 +56464,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2444";
+const APP_VERSION = "2445";
 let NY_VERSION_KLAR = false;
 let NY_VERSION_AFVIST = false;
 function nyVersionSkjul() {
@@ -78887,6 +78896,6 @@ function bf3StudieRum(v, filter) {
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-hvid.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 30. september · 2444</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 30. september · 2445</div>
 </body>
 </html>
