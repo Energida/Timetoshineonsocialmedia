@@ -20691,10 +20691,13 @@ async function minProfilGem() {
   } catch (e) {}
   const studio = sf.value.trim();
   const svar = { studioNavn: studio };
+  let profilOk = false;
   try {
     const eks = await sb.from("skema_svar").update({ svar: svar }).eq("kode", currentKode).eq("navn", "config").eq("skema", "profil").select();
-    if (!eks.data || !eks.data.length) await sb.from("skema_svar").insert({ kode: currentKode, navn: "config", skema: "profil", svar: svar });
+    profilOk = !!(eks.data && eks.data.length);
+    if (!profilOk) { const ny = await sb.from("skema_svar").insert({ kode: currentKode, navn: "config", skema: "profil", svar: svar }).select(); profilOk = !!(ny.data && ny.data.length); }
   } catch(e) {}
+  if (!profilOk) { const m0 = document.getElementById("profilMsg"); if (m0) { m0.textContent = "Det blev ikke gemt. Prøv igen."; m0.style.color = "var(--red)"; } return; }   /* aldrig »Gemt«, naar basen sagde nej (29/9) */
   /* Indholdsmappe-linket (Ida 31/8) — samme gemmevej som driveKortGem, og forsidens
      knap gentegnes, saa den foelger med det samme. */
   try {
@@ -45935,7 +45938,12 @@ async function tilfoejInspLink() {
   }
   lf.value = ""; nf.value = "";
   if (sb && currentKode) {
-    try { const { error } = await sb.from("inspiration").insert(rec); if (!error) { inspSkaermNulstil(); refreshInspiration(); inspLuk(); return; } } catch(e) {}
+    try { const r = await sb.from("inspiration").insert(rec).select("id"); if (!r.error && r.data && r.data.length) { inspSkaermNulstil(); refreshInspiration(); inspLuk(); return; } } catch(e) {}
+    /* GEM-GENNEMGANGEN 29/9: foer faldt et afvist gem tavst ned paa telefonen alene — teamet saa det aldrig, og det kunne forsvinde.
+       Nu bliver arket staaende med det skrevne, og der siges til. */
+    lf.value = url; nf.value = note;
+    inspMsg("Linket blev ikke gemt. Prøv igen om et øjeblik.");
+    return;
   }
   inspSkaermNulstil();
   rec.id = "i" + Date.now(); rec.created_at = new Date().toISOString();
@@ -48878,7 +48886,9 @@ async function toggleOpgave(id) {
     const d = opgLocal(); d[o.id] = o.done;
     localStorage.setItem("opg_" + currentKode, JSON.stringify(d));
   } else if (sb) {
-    try { await sb.from("kunde_opgaver").update({ done: o.done }).eq("id", o.id); } catch(e) {}
+    let ok = false;
+    try { const r = await sb.from("kunde_opgaver").update({ done: o.done }).eq("id", o.id).select("id"); ok = !r.error && r.data && r.data.length > 0; } catch(e) {}
+    if (!ok) { o.done = !o.done; try { husBesked("Det blev ikke gemt. Prøv igen."); } catch (e) {} }   /* aldrig et flueben, basen ikke har (29/9) */
   }
   renderOpgaver();
 }
@@ -56369,7 +56379,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2435";
+const APP_VERSION = "2436";
 let NY_VERSION_KLAR = false;
 let NY_VERSION_AFVIST = false;
 function nyVersionSkjul() {
@@ -78743,6 +78753,6 @@ function bf3StudieRum(v, filter) {
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-hvid.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 30. september · 2435</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 30. september · 2436</div>
 </body>
 </html>
