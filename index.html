@@ -28425,6 +28425,7 @@ function briefKladdeNu() {
 function briefGemVedSkjul() {
   try { if (typeof BRIEF_ID !== "undefined" && BRIEF_ID && BRIEF_AUTOTIMER) { clearTimeout(BRIEF_AUTOTIMER); BRIEF_AUTOTIMER = null; saveBrief(true); } } catch (e) {}
   try { if (typeof KLIP_BRIEF_ID !== "undefined" && KLIP_BRIEF_ID && KB_TIMER) { clearTimeout(KB_TIMER); KB_TIMER = null; kbGemNu(false); } } catch (e) {}
+  try { if (typeof VK_NOTER_TIMER !== "undefined" && VK_NOTER_TIMER) vkNoterGemNu(); } catch (e) {}
   try { if (window.__MO_NOTER_T) { clearTimeout(window.__MO_NOTER_T); window.__MO_NOTER_T = null; const f = document.getElementById("moedeNoter"); if (f) moedeNoterGem(f.value); } } catch (e) {}
 }
 try {
@@ -28535,18 +28536,25 @@ async function vkNoterHent() {
   } catch(e) { return ""; }
 }
 let VK_NOTER_TIMER = null;
+/* NOTERNE KVITTERER KUN FOR DET, DER ER GEMT (gem-gennemgangen 29/9): foer blev indsaettelsen aldrig tjekket, og en fejl blev slugt.
+   Gemmet koeres ogsaa straks, naar appen skjules (briefGemVedSkjul), saa de sidste ord ikke venter paa en timer, der aldrig naar at koere. */
+async function vkNoterGemNu() {
+  clearTimeout(VK_NOTER_TIMER); VK_NOTER_TIMER = null;
+  const felt = document.getElementById("vkNoterFelt"); if (!felt || !sb || !currentKode) return;
+  const svar = { tekst: felt.value };
+  let ok = false;
+  try {
+    const { data } = await sb.from("skema_svar").update({ svar: svar }).eq("kode", currentKode).eq("navn", "faelles").eq("skema", "vk_noter").select();
+    ok = !!(data && data.length);
+    if (!ok) { const ny = await sb.from("skema_svar").insert({ kode: currentKode, navn: "faelles", skema: "vk_noter", svar: svar }).select(); ok = !!(ny.data && ny.data.length); }
+  } catch(e) { ok = false; }
+  const st = document.getElementById("vkNoterStatus");
+  if (st && ok) { st.innerHTML = "Gemt " + energidaFlueben(13); setTimeout(() => { if (st) st.textContent = "gemmer selv"; }, 2000); }
+  else if (st) { st.textContent = "Ikke gemt. Prøv igen."; }
+}
 function vkNoterAuto() {
   clearTimeout(VK_NOTER_TIMER);
-  VK_NOTER_TIMER = setTimeout(async () => {
-    const felt = document.getElementById("vkNoterFelt"); if (!felt || !sb || !currentKode) return;
-    const svar = { tekst: felt.value };
-    try {
-      const { data } = await sb.from("skema_svar").update({ svar: svar }).eq("kode", currentKode).eq("navn", "faelles").eq("skema", "vk_noter").select();
-      if (!data || !data.length) await sb.from("skema_svar").insert({ kode: currentKode, navn: "faelles", skema: "vk_noter", svar: svar });
-      const st = document.getElementById("vkNoterStatus");
-      if (st) { st.innerHTML = "Gemt " + energidaFlueben(13); setTimeout(() => { if (st) st.textContent = "gemmer selv"; }, 2000); }
-    } catch(e) {}
-  }, 1200);
+  VK_NOTER_TIMER = setTimeout(vkNoterGemNu, 1200);
 }
 function vkKopier(knap, felt) {
   const tekst = VK_CONFIG[felt] || "";
@@ -56379,7 +56387,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2436";
+const APP_VERSION = "2437";
 let NY_VERSION_KLAR = false;
 let NY_VERSION_AFVIST = false;
 function nyVersionSkjul() {
@@ -78753,6 +78761,6 @@ function bf3StudieRum(v, filter) {
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-hvid.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 30. september · 2436</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 30. september · 2437</div>
 </body>
 </html>
