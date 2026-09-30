@@ -26,3 +26,14 @@ Denne fil ligger i repo-roden, fordi en tråd, der starter direkte her, ikke nø
 - **`ENERGIDA SECURITY CONTRACT.md` gælder uændret.** Rører en ændring database, auth, storage eller Edge Functions, læses kontrakten først.
 
 Historik: den oprindelige lås og baggrunden står i git-historikken for denne fil og i `../HÆNDELSESLOG - RLS (6.-7. august).md`. Grenen `parkeret-v1013-hjem-design-49b7654` er urørt.
+
+# SUPABASE: DEN AKTIVE TRÅD LÆGGER SELV OP (Ida 30. september 2026 kl. ~01.15)
+
+Idas ord: »er der noget vi kan gøre for at jeg ikke selv skal lægge de kort op?«. Hendes klik: **»Ja, via CLI«**. Det vælter reglen om, at Ida selv ændrer Edge Functions og kører SQL-kortene.
+
+- Ida logger selv ind én gang med `npx supabase@latest login`. Tråden bruger det login, men ser aldrig tokenet.
+- Tråden deployer selv Edge Functions (`npx supabase@latest functions deploy <navn> --project-ref eikcvvppuphnananxcvp`) og kører selv databaseændringer.
+- **ALDRIG:** API-nøgler, hemmeligheder eller adgangskoder. Dem sætter Ida selv i Supabase › Edge Functions › Secrets. Tråden sætter aldrig en secret med en værdi.
+- **`ENERGIDA SECURITY CONTRACT.md` gælder uændret.** Hver funktion skal have de seks linjer, rolletesten skal være defineret FØR deploy, og der må være 0 testdata tilbage.
+- **Hver ændring skrives i `../HÆNDELSESLOG - Supabase (fra 30. september).md` samme tur:** hvad, hvornår, hvorfor og hvordan det er målt. Ida skal kunne se alt, der er lagt ud, bagefter.
+- Kortet i Maskinrummet skrives stadig som dokumentation og markeres »Lagt op af Claude«.
