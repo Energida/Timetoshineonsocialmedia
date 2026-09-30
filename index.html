@@ -21579,12 +21579,34 @@ function briefFtfTidVaelg(v) { briefFtfDatoLaes(); FTF_TID = v; window.__FTF_EGE
 function briefFtfTidEget() { briefFtfDatoLaes(); window.__FTF_EGET = true; briefSoejleArkDropTegn(); setTimeout(function () { try { const f = document.querySelector(".ftf-tidfelt"); if (f) f.focus(); } catch (e) {} }, 60); }
 function briefFtfTidInd(v) { FTF_TID = String(v || ""); const h = document.getElementById("ftfTid"); if (h) h.value = FTF_TID; }
 function briefFtfDatoLaes() { try { const d = document.getElementById("ftfDato"); if (d) FTF_DATO = String(d.value || ""); const t = document.getElementById("ftfTid"); if (t) FTF_TID = String(t.value || ""); } catch (e) {} }
-/* MAALGRUPPERNE (samme kilde som wizarden: Drejebogens droemmekunde + sekundaer): navne, »Begge«/»Alle« og teksten om droemmekunden */
+/* Én læser til den nye liste og de ældre felter. Gamle kunders tekst flyttes ikke
+   automatisk; først når målgruppen rettes, gemmes listen som selvstændige records. */
+function kundeMaalgrupper(k) {
+  if (!k || typeof k !== "object") return [];
+  const ren = function (m) { return Object.assign({}, m || {}, {
+    id: String((m && m.id) || "").trim(),
+    navn: String((m && m.navn) || "").trim(),
+    tekst: String((m && m.tekst) || "").trim(),
+    situationer: Array.isArray(m && m.situationer) ? m.situationer.filter(Boolean) : [],
+    prioritet: String((m && m.prioritet) || "").trim()
+  }); };
+  if (Array.isArray(k.maalgrupper)) return k.maalgrupper.map(ren).filter(function (m) { return m.navn || m.tekst || m.situationer.length; });
+  const ud = [];
+  if (k.navn || k.tekst || (k.situationer || []).length) ud.push(ren(k));
+  if (k.sekundaer) {
+    const t = String(k.sekundaer).trim();
+    const m = t.match(/^([^—]{2,80}?)\s+—\s+([\s\S]*)$/);
+    ud.push(ren(m ? { navn: m[1], tekst: m[2], prioritet: "secondary" } : { navn: t, prioritet: "secondary" }));
+  }
+  return ud;
+}
+function kundeMaalgruppeNavne(k) {
+  return kundeMaalgrupper(k).map(function (m) { return m.navn.split(",")[0].trim().split(" ")[0]; }).filter(Boolean);
+}
+/* MAALGRUPPERNE (samme kilde som wizarden, Drejebogen og Performance). */
 function briefMaalgrupper() {
   const k = (CURRENT_DEF && CURRENT_DEF.strategi && CURRENT_DEF.strategi.kunde) || null;
-  const navne = [];
-  if (k && k.navn) navne.push(String(k.navn).split(",")[0].trim().split(" ")[0]);
-  if (k && k.sekundaer) navne.push(String(k.sekundaer).split(",")[0].trim().split(" ")[0]);
+  const navne = kundeMaalgruppeNavne(k);
   const alle = navne.length === 2 ? "Begge" : (navne.length > 2 ? "Alle" : null);
   return { navne: navne, chips: alle ? navne.concat([alle]) : navne, tekst: k ? String(k.tekst || "").trim() : "", fornavn: navne[0] || "" };
 }
@@ -22431,10 +22453,7 @@ function briefMaalgruppeArk() {
 function briefSaetninger(t) { return String(t || "").replace(/\s+/g, " ").split(/(?<=[.!?])\s+(?=[A-ZÆØÅ0-9„»"])/).map(x => x.trim()).filter(Boolean); }
 function briefMaalgruppePersonaer() {
   const k = (CURRENT_DEF && CURRENT_DEF.strategi && CURRENT_DEF.strategi.kunde) || null; if (!k) return [];
-  const ud = [];
-  if (k.navn || k.tekst) ud.push({ navn: String(k.navn || "").trim(), tekst: String(k.tekst || "").trim(), situationer: Array.isArray(k.situationer) ? k.situationer.filter(Boolean) : [] });
-  if (k.sekundaer) { const t = String(k.sekundaer).trim(); const m = t.match(/^([^—.]{2,60}?)\s+—\s+([\s\S]*)$/); ud.push(m ? { navn: m[1].trim(), tekst: m[2].trim(), situationer: [] } : { navn: t.split(",")[0].trim(), tekst: t, situationer: [] }); }
-  return ud;
+  return kundeMaalgrupper(k);
 }
 function briefMaalgruppeVis() {
   const mg = briefMaalgrupper(); const alle = briefMaalgruppePersonaer(); if (!alle.length) return;
@@ -26407,9 +26426,7 @@ function openBriefSide(id) {
   // Adaptive spørgsmål: søjlens art + den valgte målgruppes navn (fra målgruppe-lektionen)
   const briefArt = briefSoejleArt(dnaTema);
   const stKunde = (CURRENT_DEF && CURRENT_DEF.strategi && CURRENT_DEF.strategi.kunde) || null;
-  const mgNavne = [];
-  if (stKunde && stKunde.navn) mgNavne.push(String(stKunde.navn).split(",")[0].trim().split(" ")[0]);
-  if (stKunde && stKunde.sekundaer) mgNavne.push(String(stKunde.sekundaer).split(",")[0].trim().split(" ")[0]);
+  const mgNavne = kundeMaalgruppeNavne(stKunde);
   /* Flere målgrupper: "Begge" ved præcis 2 · "Alle" ved flere end 2 (Ida 25/7) */
   const mgAlle = mgNavne.length === 2 ? "Begge" : (mgNavne.length > 2 ? "Alle" : null);
   const mgChips = mgAlle ? mgNavne.concat([mgAlle]) : mgNavne;
@@ -27538,7 +27555,8 @@ function aiKollegaBrand() {
       navn: k.navn || "",
       tekst: k.tekst || "",
       situationer: Array.isArray(k.situationer) ? k.situationer : [],
-      sekundaer: k.sekundaer || ""
+      sekundaer: Array.isArray(k.maalgrupper) ? "" : (k.sekundaer || ""),
+      maalgrupper: kundeMaalgrupper(k)
     },
     /* Vaerdierne med navn OG beskrivelse — tre stk. i drejebogen */
     vaerdier: (Array.isArray(st.pillars) ? st.pillars : [])
@@ -43188,7 +43206,10 @@ async function klipOpgGem(lekId, tomOK) {
      LYKKEDES — beskeden naaede bare aldrig at blive set. Nu tegnes kun oevelses-boksene om,
      og beskeden skrives BAGEFTER, saa den bliver staaende. */
   if (ok) {
-    klipOpgTegn(lekId);
+    /* GEMMET MAA ALDRIG AFBRYDE SKRIVNINGEN (Ida 30/9: »hver gang den gemmer nederst - afbryder den mig i at skrive!«): listen blev tegnet forfra,
+       og feltet, hun skrev i, forsvandt under fingrene. Staar markoeren i et felt i boksen, tegnes der ikke om — felterne ER allerede det gemte. */
+    const skriver = klipOpgVaerter(lekId).some(function (v) { const a = document.activeElement; return a && v.contains(a) && /^(INPUT|TEXTAREA)$/.test(a.tagName); });
+    if (!skriver) klipOpgTegn(lekId);
     klipOpgAntalOpdater(lekId);   /* fold-overskriften skal sige det samme som listen (Ida 4/8) */
     klipOpgBesked(lekId, true, spm.length);
   }
@@ -47240,9 +47261,7 @@ function renderPerf5f() {
    Reglen for "Begge"/"Alle" er Idas fra 25/7: "Begge" ved praecis to, "Alle" ved flere. */
 function maalgruppeNavne() {
   const st = (CURRENT_DEF && CURRENT_DEF.strategi && CURRENT_DEF.strategi.kunde) || null;
-  const n = [];
-  if (st && st.navn) n.push(String(st.navn).split(",")[0].trim().split(" ")[0]);
-  if (st && st.sekundaer) n.push(String(st.sekundaer).split(",")[0].trim().split(" ")[0]);
+  const n = kundeMaalgruppeNavne(st);
   return { navne: n, alle: n.length === 2 ? "Begge" : (n.length > 2 ? "Alle" : null) };
 }
 /* ===== HVORDAN FORDELER INDHOLDET SIG PAA MAALGRUPPERNE? (Idas oenske 17/8) ========
@@ -47276,7 +47295,8 @@ function perfMaalgruppeFordelingHtml() {
       + '<div style="border-bottom:1px solid var(--border);padding-bottom:9px;margin-bottom:12px;"><span style="font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--gray3);">Fordelingen på målgrupperne</span></div>'
       + '<div style="font-size:12px;color:var(--gray3);line-height:1.6;">Ingen postede opslag har fået en målgruppe endnu. Vælg "Hvem er opslaget til?" i briefen, så bygger fordelingen sig selv.</div></div>';
   }
-  const raekker = mg.navne.concat(mg.alle ? [mg.alle] : [])
+  const andreValg = [...new Set(talt.map(mgAf))].filter(function (n) { return mg.navne.indexOf(n) < 0 && n !== mg.alle; });
+  const raekker = mg.navne.concat(mg.alle ? [mg.alle] : [], andreValg)
     .map(n => ({ navn: n, antal: talt.filter(x => mgAf(x) === n).length }));
   const maks = Math.max.apply(null, raekker.map(r => r.antal)) || 1;
   const bar = (r, sidste) => '<div style="padding:9px 0;' + (sidste ? '' : 'border-bottom:1px solid #F2F0ED;') + '">'
@@ -50584,11 +50604,13 @@ function bsMarkdown(st, navn, tiltale) {
   })();
   if (live.usp) raastof.usp = [String(live.usp)];
   if (live.why) raastof.drive = [String(live.why)];
-  if (live.kunde && (live.kunde.navn || live.kunde.tekst || (live.kunde.situationer || []).length)) {
-    const lk = live.kunde;
-    const sit = liste(lk.situationer);
-    raastof.audience = [[lk.navn, lk.tekst].filter(Boolean).join(" — ")].filter(Boolean)
-      .concat(sit ? ["**Situationer**\n\n" + sit] : []);
+  const liveGrupper = kundeMaalgrupper(live.kunde);
+  if (liveGrupper.length) {
+    raastof.audience = liveGrupper.flatMap(function (g, i) {
+      const sit = liste(g.situationer);
+      return ["**Målgruppe " + (i + 1) + "**", [g.navn, g.tekst].filter(Boolean).join(" — ")]
+        .concat(sit ? ["**Situationer**\n\n" + sit] : []).filter(Boolean);
+    });
   }
   if (Array.isArray(live.pillars) && live.pillars.length) {
     const pv = live.pillars.filter(function (v) { return v && (v.name || v.desc); })
@@ -50868,12 +50890,15 @@ async function bsGeneratorDel(navn, tiltale, udfyldte, token, delNavn, tidligere
 function bsByggestenAfBB(bb) {
   bb = bb || {};
   const d = bb.drive || {}, u = bb.usp || {};
-  const a = ((bb.audiences || [])[0]) || {};
-  const navn = [a.label || a.identity, a.age_or_life_stage].filter(Boolean).join(" · ");
+  const grupper = (Array.isArray(bb.audiences) ? bb.audiences : []).map(function (a) {
+    return { id: String(a.id || ""), navn: [a.label || a.identity, a.age_or_life_stage].filter(Boolean).join(" · "),
+      tekst: String(a.core_challenge || ""), prioritet: String(a.priority || "") };
+  }).filter(function (a) { return a.navn || a.tekst; });
+  const a = grupper[0] || {};
   return {
     why: String(d.statement || ""),
     usp: String(u.statement || ""),
-    kunde: (navn || a.core_challenge) ? { navn: navn, tekst: String(a.core_challenge || "") } : null,
+    kunde: grupper.length ? { navn: a.navn, tekst: a.tekst, maalgrupper: grupper } : null,
     pillars: (bb.values || []).filter(function (v) { return v && (v.name || v.meaning); })
       .map(function (v) { return { icon: "", name: String(v.name || ""), desc: String(v.meaning || "") }; })
   };
@@ -50922,8 +50947,21 @@ async function bsGemByggestenFraBygger(bygg) {
   /* ET GEM MAA ALDRIG SLETTE DET, MAN IKKE KAN SE (HAARD, 4/8). Hele objektet skrives
      paa een gang, saa alt det, previewet IKKE viser, skal med uroert: soejlernes egne
      lister under "egne", og maalgruppens situationer. */
+  const gamleGrupper = kundeMaalgrupper(eks.kunde);
+  const foreslaaedeGrupper = bygg.kunde && Array.isArray(bygg.kunde.maalgrupper)
+    ? bygg.kunde.maalgrupper.map(function (g, i) {
+        const gammel = gamleGrupper.find(function (x) { return x.id && x.id === g.id; }) || gamleGrupper[i] || {};
+        return Object.assign({}, gammel, g, { situationer: Array.isArray(g.situationer) ? g.situationer : (gammel.situationer || []) });
+      })
+    : gamleGrupper;
+  const nyeGrupper = foreslaaedeGrupper.concat(gamleGrupper.filter(function (g, i) {
+    return !foreslaaedeGrupper.some(function (ny, j) { return (g.id && ny.id && g.id === ny.id) || i === j; });
+  }));
+  const foersteGruppe = nyeGrupper[0] || bygg.kunde || {};
   const kunde = bygg.kunde
-    ? Object.assign({}, eks.kunde || {}, { navn: String(bygg.kunde.navn || ""), tekst: String(bygg.kunde.tekst || "") })
+    ? Object.assign({}, eks.kunde || {}, { navn: String(foersteGruppe.navn || ""), tekst: String(foersteGruppe.tekst || ""),
+        maalgrupper: nyeGrupper,
+        sekundaer: nyeGrupper[1] ? [nyeGrupper[1].navn, nyeGrupper[1].tekst].filter(Boolean).join(" — ") : "" })
     : (eks.kunde || null);
   const ny = {
     why: bygg.why != null ? String(bygg.why) : String(eks.why || ""),
@@ -51164,9 +51202,10 @@ function bsBogRaastof(st, T) {
 
   /* MAALGRUPPEN. Har Ida rettet kunden under "Tilpas drejebog", vinder hendes ord. */
   let mgStat = "", mg = [];
-  if (live.kunde && (live.kunde.navn || live.kunde.tekst)) {
-    mg.push({ t: live.kunde.navn || "Målgruppen", v: live.kunde.tekst || "" });
-    mgStat = String(live.kunde.tekst || "").split(/(?<=\.)\s/)[0] || "";
+  const liveGrupper = kundeMaalgrupper(live.kunde);
+  if (liveGrupper.length) {
+    mg = liveGrupper.map(function (g) { return { t: g.navn || "Målgruppen", v: g.tekst || "" }; });
+    mgStat = String(liveGrupper[0].tekst || "").split(/(?<=\.)\s/)[0] || "";
   } else {
     arr(bb.audiences).forEach(function (a) {
       const navn = [a.label || a.identity, a.age_or_life_stage].filter(Boolean).join(" · ");
@@ -56390,7 +56429,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2440";
+const APP_VERSION = "2441";
 let NY_VERSION_KLAR = false;
 let NY_VERSION_AFVIST = false;
 function nyVersionSkjul() {
@@ -58001,9 +58040,7 @@ function quizStart() {
   QUIZ_SVAR = {}; QUIZ_TRIN = 0; QUIZ_STEPS = [];
   /* 1) Målgruppen først (Ida 21/7) — springes over, hvis der kun er én */
   const ku = (CURRENT_DEF && CURRENT_DEF.strategi && CURRENT_DEF.strategi.kunde) || null;
-  const navne = [];
-  if (ku && ku.navn) navne.push(String(ku.navn).split(",")[0].trim().split(" ")[0]);
-  if (ku && ku.sekundaer) navne.push(String(ku.sekundaer).split(",")[0].trim().split(" ")[0]);
+  const navne = kundeMaalgruppeNavne(ku);
   if (navne.length > 1) QUIZ_STEPS.push({ key: "maalgruppe", type: "valg", spm: "Hvem er opslaget til?", hint: "Vælg målgruppen — så rammer både spørgsmålene og idéerne skarpere.", valg: navne });
   else QUIZ_SVAR.maalgruppe = navne[0] || "";
   /* 2) Indholdstypen — med overblik over hvad der trænger til kærlighed */
@@ -59072,12 +59109,13 @@ function kalFordelSamletHtml() {
   let mg = "";
   try {
     const k = (CURRENT_DEF && CURRENT_DEF.strategi && CURRENT_DEF.strategi.kunde) || null;
-    const navne = [];
-    if (k && k.navn) navne.push(String(k.navn).split(",")[0].trim().split(" ")[0]);
-    if (k && k.sekundaer) navne.push(String(k.sekundaer).split(",")[0].trim().split(" ")[0]);
+    const navne = kundeMaalgruppeNavne(k);
     if (navne.length > 1) {
       const medMg = alle.filter(function (x) { return x.brief && x.brief.maalgruppe; });
-      mg = navne.map(function (n) { return ringRk(n, medMg.filter(function (x) { const v = String(x.brief.maalgruppe); return v === n || v === "Begge" || v === "Alle"; }).length, medMg.length); }).join("");
+      mg = navne.map(function (n) { return ringRk(n, medMg.filter(function (x) {
+        const v = String(x.brief.maalgruppe);
+        return v === n || v === "Begge" || v === "Alle" || v.split(/\s+og\s+/).indexOf(n) >= 0;
+      }).length, medMg.length); }).join("");
     }
   } catch (e) {}
   /* 4 · maalsaetninger — kun de, der er sat (Performance: opslag om ugen · proevereels om maaneden) */
@@ -60609,12 +60647,16 @@ function byggVis(bs, st) {
   if (bs === "drive") return st.why ? esc(st.why) : tom;
   if (bs === "usp") return st.usp ? esc(st.usp) : tom;
   if (bs === "audience") {
-    const k = st.kunde || {};
-    const sit = (k.situationer || []).filter(Boolean);
-    if (!k.navn && !k.tekst && !sit.length) return tom;
-    return (k.navn ? '<div>' + esc(k.navn) + '</div>' : '')
-      + (k.tekst ? graa(k.tekst) : '')
-      + (sit.length ? graa(sit.join(" · ")) : '');
+    const grupper = kundeMaalgrupper(st.kunde);
+    if (!grupper.length) return tom;
+    return '<div class="bygg-vaerdier">' + grupper.map(function (k, i) {
+      const sit = (k.situationer || []).filter(Boolean);
+      return '<div class="bygg-vaerdi">'
+        + (grupper.length > 1 ? '<div class="bygg-graa">Målgruppe ' + (i + 1) + '</div>' : '')
+        + (k.navn ? '<div class="bygg-vaerdi-n">' + esc(k.navn) + '</div>' : '')
+        + (k.tekst ? graa(k.tekst) : '')
+        + (sit.length ? graa(sit.join(" · ")) : '') + '</div>';
+    }).join("") + '</div>';
   }
   const p = (st.pillars || []).filter(function (x) { return x && (x.name || x.desc); });
   if (!p.length) return tom;
@@ -60627,7 +60669,7 @@ function byggVis(bs, st) {
 function byggErTom(bs, st) {
   if (bs === "drive") return !st.why;
   if (bs === "usp") return !st.usp;
-  if (bs === "audience") { const k = st.kunde || {}; return !k.navn && !k.tekst && !(k.situationer || []).filter(Boolean).length; }
+  if (bs === "audience") return !kundeMaalgrupper(st.kunde).length;
   return !(st.pillars || []).filter(function (x) { return x && (x.name || x.desc); }).length;
 }
 /* Fladen foelger Maalsaetninger-siden (v1177, Idas godkendte reference): fuld bredde,
@@ -60890,8 +60932,9 @@ function byggRet(bs) {
   }
   let felter = "";
   if (bs === "audience") {
-    const k = st.kunde || {};
-    felter = et("Navn og alder") + inp("byggF_kNavn", k.navn, "Navn og alder, fx Charlotte, 35-50 år") + et("Hvem er kunden") + omr("byggF_kTekst", k.tekst, "Hvem er kunden? Fx: Har en travl hverdag og …") + et("Situationer, én pr. linje") + omr("byggF_kSit", (k.situationer || []).filter(Boolean).join("\n"), "Situationer, én pr. linje. Fx: Skal til fest og har ingenting");
+    const grupper = kundeMaalgrupper(st.kunde);
+    felter = '<div id="byggMgListe">' + (grupper.length ? grupper : [{}]).map(function (g, i) { return byggMgFelter(g, i); }).join("") + '</div>'
+      + '<button type="button" class="row-btn mq-tap" style="margin-top:14px;" onclick="byggMgTilfoej()">Tilføj en målgruppe</button>';
   } else {
     /* TRE VAERDIER (Idas standard) — men har kunden flere gemt, vises de ALLE. Et felt, man ikke kan se, maa aldrig blive slettet af et gem. */
     const p = (st.pillars || []).filter(function (x) { return x && (x.name || x.desc); });
@@ -60902,6 +60945,23 @@ function byggRet(bs) {
     ekstraAf: function () { return '<div class="bygg-ark">' + felter + '</div>'; },
     gem: async function () { const ok = await byggGem(bs); return ok ? "Gemt. Den står nu i briefen også." : false; } });
   try { document.querySelectorAll("#arkEkstra textarea").forEach(function (t) { byggVoks(t); }); const f = document.querySelector("#arkEkstra input, #arkEkstra textarea"); if (f) setTimeout(function () { f.focus(); }, 160); } catch (e) {}
+}
+function byggMgFelter(g, i) {
+  const inp = function (id, v, ph) { return '<input type="text" id="' + id + i + '" class="ark-titel-felt" value="' + esc(v || "") + '" placeholder="' + esc(ph) + '" aria-label="Målgruppe ' + (i + 1) + ': ' + esc(ph) + '" autocomplete="off">'; };
+  const omr = function (id, v, ph) { return '<textarea id="' + id + i + '" class="ark-titel-felt bygg-ark-omr" rows="3" placeholder="' + esc(ph) + '" aria-label="Målgruppe ' + (i + 1) + ': ' + esc(ph) + '" oninput="byggVoks(this)">' + esc(v || "") + '</textarea>'; };
+  const et = function (t) { return '<div class="ark-et">' + t + '</div>'; };
+  return '<div class="bygg-mg" style="' + (i ? 'border-top:1px solid var(--border);padding-top:16px;margin-top:16px;' : '') + '">'
+    + '<div class="ark-eye">Målgruppe ' + (i + 1) + '</div>'
+    + et('Navn og alder') + inp('byggF_kNavn', g.navn, 'Navn og alder')
+    + et('Hvem er kunden') + omr('byggF_kTekst', g.tekst, 'Beskriv kunden')
+    + et('Situationer, én pr. linje') + omr('byggF_kSit', (g.situationer || []).filter(Boolean).join('\n'), 'Hvornår kommer kunden til forretningen?')
+    + '</div>';
+}
+function byggMgTilfoej() {
+  const liste = document.getElementById("byggMgListe"); if (!liste) return;
+  const i = liste.querySelectorAll(".bygg-mg").length;
+  liste.insertAdjacentHTML("beforeend", byggMgFelter({}, i));
+  const f = document.getElementById("byggF_kNavn" + i); if (f) f.focus();
 }
 function byggVoks(t) {
   if (!t) return;
@@ -60931,13 +60991,18 @@ async function byggGem(bs, vaerdier) {
   if (bs === "drive") ny.why = v("byggF_why");
   else if (bs === "usp") ny.usp = v("byggF_usp");
   else if (bs === "audience") {
-    /* Object.assign paa den GAMLE kunde: felter som "sekundaer" staar ikke paa fladen,
-       og et gem maa aldrig skrive null fra et felt, man ikke kan se. */
-    ny.kunde = Object.assign({}, st.kunde || {}, {
-      navn: v("byggF_kNavn"),
-      tekst: v("byggF_kTekst"),
-      situationer: v("byggF_kSit").split("\n").map(function (x) { return x.trim(); }).filter(Boolean)
-    });
+    const gamle = kundeMaalgrupper(st.kunde);
+    const grupper = Array.from(document.querySelectorAll("#byggMgListe .bygg-mg")).map(function (_, i) {
+      const g = Object.assign({}, gamle[i] || {}, {
+        navn: v("byggF_kNavn" + i), tekst: v("byggF_kTekst" + i),
+        situationer: v("byggF_kSit" + i).split("\n").map(function (x) { return x.trim(); }).filter(Boolean)
+      });
+      return (!g.navn && !g.tekst && !g.situationer.length && gamle[i]) ? gamle[i] : g;
+    }).filter(function (g) { return g.navn || g.tekst || g.situationer.length; });
+    const f = grupper[0] || {};
+    ny.kunde = Object.assign({}, st.kunde || {}, { navn: f.navn || "", tekst: f.tekst || "",
+      situationer: f.situationer || [], maalgrupper: grupper,
+      sekundaer: grupper[1] ? [grupper[1].navn, grupper[1].tekst].filter(Boolean).join(" — ") : "" });
   } else {
     const ud = [];
     for (let i = 0; ; i++) {
@@ -61359,6 +61424,7 @@ async function loadForloebStrategi(j, kode) {
     if (j.usp) { setTxt("stratUsp", j.usp); document.getElementById("uspCard").style.display = "block"; }
     if (j.kunde) {
       const k = j.kunde;
+      const grupper = kundeMaalgrupper(k);
       const medAar = nv => String(nv || "").replace(/,\s*(\d{1,3})\s*$/, ", $1 år");
       const personaKort = (navn, tekst, situationer) =>
         '<div style="background:#fff;border:1px solid var(--border);border-radius:20px;padding:20px 22px;">'
@@ -61366,16 +61432,21 @@ async function loadForloebStrategi(j, kode) {
         + '<div>' + esc(tekst || "") + '</div>'
         + (situationer && situationer.length ? '<div style="margin-top:10px;font-size:11.5px;color:var(--gray3);"><b>Situationer:</b> ' + situationer.map(esc).join(" · ") + '</div>' : '')
         + '</div>';
-      document.getElementById("stratKunde").innerHTML = personaKort(k.navn, k.tekst, k.situationer);
-      document.getElementById("kundeCard").style.display = "block";
-      /* Flere målgrupper: nummerér dem "Målgruppe 1/2"; kun én = "Målgruppen" (Ida 23/7) */
-      const kt = document.getElementById("kundeTitel"); if (kt) kt.textContent = k.sekundaer ? "Målgruppe 1" : "Målgruppen";
-      if (k.sekundaer) {
-        const bindestreg = k.sekundaer.indexOf("—");
-        const navn2 = bindestreg > 0 ? k.sekundaer.slice(0, bindestreg).trim() : "";
-        const tekst2 = bindestreg > 0 ? k.sekundaer.slice(bindestreg + 1).trim() : k.sekundaer;
-        document.getElementById("stratKunde2").innerHTML = personaKort(navn2, tekst2, null);
-        document.getElementById("kundeCard2").style.display = "block";
+      document.querySelectorAll("[data-bygg-mg-extra]").forEach(function (el) { el.remove(); });
+      const foerste = grupper[0] || {};
+      document.getElementById("stratKunde").innerHTML = personaKort(foerste.navn, foerste.tekst, foerste.situationer);
+      document.getElementById("kundeCard").style.display = grupper.length ? "block" : "none";
+      const kt = document.getElementById("kundeTitel"); if (kt) kt.textContent = grupper.length > 1 ? "Målgruppe 1" : "Målgruppen";
+      const kort2 = document.getElementById("kundeCard2");
+      if (kort2) {
+        kort2.style.display = grupper.length > 1 ? "block" : "none";
+        if (grupper[1]) document.getElementById("stratKunde2").innerHTML = personaKort(grupper[1].navn, grupper[1].tekst, grupper[1].situationer);
+        let sidsteKort = kort2;
+        grupper.slice(2).forEach(function (g, i) {
+          const kort = document.createElement("section"); kort.className = "bs-slide"; kort.setAttribute("data-bygg-mg-extra", "");
+          kort.innerHTML = '<div class="bs-h">Målgruppe ' + (i + 3) + '</div><div class="bs-tekst">' + personaKort(g.navn, g.tekst, g.situationer) + '</div>';
+          sidsteKort.after(kort); sidsteKort = kort;
+        });
       }
     }
     // værdier
@@ -61391,7 +61462,7 @@ async function loadForloebStrategi(j, kode) {
     if (j.temaer && j.temaer.length) {
       // hver søjle bærer sin egen byggesten fra brandstrategien — ingen bladren tilbage
       const byggFor = function(type) {
-        if (type === "udfordring") return j.kunde ? { kilde: "Målgruppen", tekst: '<b>' + esc(j.kunde.navn || "") + '</b> — ' + esc(j.kunde.tekst || "") + (j.kunde.sekundaer ? '<br><b>' + esc(j.kunde.sekundaer.split("—")[0].trim()) + '</b> — ' + esc(j.kunde.sekundaer.split("—").slice(1).join("—").trim()) : '') } : null;
+        if (type === "udfordring") return j.kunde ? { kilde: "Målgruppen", tekst: kundeMaalgrupper(j.kunde).map(function (g) { return '<b>' + esc(g.navn) + '</b> — ' + esc(g.tekst); }).join('<br>') } : null;
         if (type === "behov") return j.usp ? { kilde: "USP'en", tekst: esc(j.usp) } : null;
         if (type === "branding") return j.why ? { kilde: "Drivkraften", tekst: esc(j.why) } : null;
         if (type === "relation") return (j.pillars && j.pillars.length) ? { kilde: "Værdierne", tekst: j.pillars.map(pl => '<b>' + esc(pl.name) + '</b> — ' + esc(pl.desc)).join('<br>') } : null;
@@ -78773,6 +78844,6 @@ function bf3StudieRum(v, filter) {
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-hvid.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 30. september · 2440</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 30. september · 2441</div>
 </body>
 </html>
