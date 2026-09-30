@@ -41749,7 +41749,7 @@ function kbPrompterVis() {
   const s = document.getElementById("kbSkrift");
   if (s) s.textContent = "Tekst " + PR_SKRIFT + " px";
 }
-function kbFartSaet(n) { PR_FART = Math.max(1, Math.min(10, n)); try { prompterFartVis(); } catch(e) {} kbPrompterVis(); }
+function kbFartSaet(n) { PR_FART = (n === 1 && PR_FART === 1) ? 0.5 : (n === 1 && PR_FART === 0.5) ? 0.25 : Math.max(1, Math.min(10, n)); try { prompterFartVis(); } catch(e) {} kbPrompterVis(); }
 function kbSkriftSkift(d) { try { prompterSkrift(d); } catch(e) {} kbPrompterVis(); }
 function kbVaerktoejHtml() {
   const chip = (t, lbl) => '<button type="button" onclick="kbIndsaet(\'' + t + '\')" style="background:#fff;color:var(--red);border:1px solid var(--red-line);border-radius:99px;padding:5px 13px;font-family:Poppins,sans-serif;font-size:11.5px;font-weight:400;cursor:pointer;white-space:nowrap;">' + lbl + '</button>';
@@ -42354,11 +42354,25 @@ function prompterToggle() {
   clearInterval(PR_TIMER);
   if (PR_KOERER) {
     const el = document.getElementById("prompterTekst");
-    PR_TIMER = setInterval(() => { el.scrollTop += PR_FART * 0.35; }, 16);
+    /* FART 1 STOD STILLE VED SKAERMDUBLERING (Ida 30/9): 0,35 px pr. skridt blev rundet ned til 0 paa en skaerm
+       med hele pixels (dubleret/ekstern skaerm). Nu taeller vi positionen selv og regner i px pr. sekund. */
+    let pos = el.scrollTop, sidst = performance.now();
+    PR_TIMER = setInterval(() => {
+      const nu = performance.now(), dt = Math.min(100, nu - sidst); sidst = nu;
+      if (Math.abs(el.scrollTop - Math.round(pos)) > 2) pos = el.scrollTop;   /* man har selv rullet */
+      pos += PR_FART * 0.35 * (dt / 16);
+      el.scrollTop = pos;
+    }, 16);
   }
 }
-function prompterFart(d) { PR_FART = Math.max(1, Math.min(10, PR_FART + d)); prompterFartVis(); }
-function prompterFartVis() { const f = document.getElementById("prompterFart"); if (f) f.textContent = "fart " + PR_FART; }
+/* To langsommere trin under fart 1 (Ida 30/9): ½ og ¼ */
+const PR_FART_TRIN = [0.25, 0.5, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+function prompterFart(d) {
+  let i = PR_FART_TRIN.indexOf(PR_FART); if (i < 0) i = PR_FART_TRIN.indexOf(Math.round(PR_FART));
+  PR_FART = PR_FART_TRIN[Math.max(0, Math.min(PR_FART_TRIN.length - 1, i + d))];
+  prompterFartVis(); try { kbPrompterVis(); } catch(e) {}
+}
+function prompterFartVis() { const f = document.getElementById("prompterFart"); if (f) f.textContent = "fart " + (PR_FART === 0.5 ? "½" : PR_FART === 0.25 ? "¼" : PR_FART); }
 function prompterSkrift(d) {
   PR_SKRIFT = Math.max(18, Math.min(64, PR_SKRIFT + d * 4));
   const el = document.getElementById("prompterTekst"); if (el) el.style.fontSize = PR_SKRIFT + "px";
@@ -56473,7 +56487,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2446";
+const APP_VERSION = "2447";
 let NY_VERSION_KLAR = false;
 let NY_VERSION_AFVIST = false;
 function nyVersionSkjul() {
@@ -78905,6 +78919,6 @@ function bf3StudieRum(v, filter) {
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-hvid.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 30. september · 2446</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 30. september · 2447</div>
 </body>
 </html>
