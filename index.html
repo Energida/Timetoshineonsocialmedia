@@ -20693,6 +20693,8 @@ function kollegaArk() {
   arkAabn({ lille: true, titel: "Inviter en kollega", titelFelt: "Navn", ph: "E-mail", enLinje: true, udenMik: true, chips: [], send: "Send invitation",
     gem: async function (email) {
       const navn = ((document.getElementById("arkTitel") || {}).value || "").trim();
+      /* NAVNET ER NOEGLEN (1/10): uden navn kunne kollegaen arve ejerens raekker via person_info-opslaget */
+      if (!navn) throw new Error("!Skriv din kollegas navn.");
       const s = await kollegaKald({ handling: "inviter", navn: navn, email: email });
       if (s.fejl === "ikke-klar") throw new Error("!Invitationer åbner snart. Skriv til Ida.");
       if (s.fejl) throw new Error("!" + s.fejl);
@@ -29853,7 +29855,7 @@ function turStops(def) {
      (menuen viser ikke de laaste punkter for YGT, og Drejebogen er ikke det, der laaser op). */
   let ygtTur = false; try { ygtTur = (typeof ygtHold === "function") && ygtHold(d); } catch (e) {}
   const rejseLaasTur = !ygtTur && (typeof rejseLaast === "function") && rejseLaast(d);
-  let liste = ygtTur ? TUR_STOPS_FORLOEB.filter(function (st) { return st.k !== "d9" && !(st.m && st.m[0] === "#onboardKort .db-ringe"); }) :   /* forsidens lektionsringe findes ikke paa YGT-Hjem — de bor paa Lektionerne */ ((laast && !rejseLaasTur) ? TUR_STOPS_FORLOEB : TUR_STOPS_AABENT);
+  let liste = ygtTur ? TUR_STOPS_FORLOEB.filter(function (st) { return st.k !== "d9" && !(st.k === "d8" && typeof ygtBriefLaast === "function" && ygtBriefLaast()) && !(st.m && st.m[0] === "#onboardKort .db-ringe"); }) :   /* forsidens lektionsringe findes ikke paa YGT-Hjem — de bor paa Lektionerne */ ((laast && !rejseLaasTur) ? TUR_STOPS_FORLOEB : TUR_STOPS_AABENT);
   try { if (typeof maaRedigereByggesten === "function" && !maaRedigereByggesten(d)) liste = liste.map(function (st) { return st.tMedIda ? Object.assign({}, st, { t: st.tMedIda }) : st; }); } catch (e) {}
   /* PAA TELEFONEN FINDES SIDEMENUENS PIN IKKE (Ida 8/9: »Rundvisningen virker overhovedet ikke på mobilen«) — trinnet springes over. */
   try { if (window.matchMedia && window.matchMedia("(max-width: 760px)").matches) liste = liste.filter(function (st) { return st.k !== "pin"; }); } catch (e) {}
@@ -35787,6 +35789,8 @@ async function kursusHentLektioner() {
     if (typeof renderKursusHjem === "function") renderKursusHjem();
     if (typeof renderHome === "function" && typeof CUSTOMER_NAV !== "undefined" && CUSTOMER_NAV) renderHome();
     if (typeof buildSideNav === "function" && typeof CURRENT_DEF !== "undefined" && CURRENT_DEF && typeof CUSTOMER_NAV !== "undefined" && CUSTOMER_NAV) buildSideNav(CURRENT_DEF);
+    /* TVILLINGEN (1/10): bundmenuen blev bygget, foer lektionerne var hjemme, og viste de laaste doere paa telefonen */
+    if (typeof buildBottomNav === "function" && typeof CURRENT_DEF !== "undefined" && CURRENT_DEF && typeof CUSTOMER_NAV !== "undefined" && CUSTOMER_NAV) buildBottomNav(CURRENT_DEF);
   } catch(e) {}
   return true;
 }
@@ -48945,7 +48949,7 @@ async function saveSkema() {
   try { localStorage.removeItem(skemaKladdeNoegle()); } catch (e) {}
   /* NAESTE SKRIDT PAA HJEM FLYTTER SIG, NAAR SKEMAET ER SENDT (21/9): startskemaet saetter rejsens trin, slutskemaet fjerner den roede flise */
   try { if (SKEMA_KEY === "inden_start" || SKEMA_KEY === "inden_workshoppen") OB_SKEMA = true; if (SKEMA_KEY === "efter_forloebet") OB_EFTER = true; } catch (e) {}
-  setTimeout(() => { skemaBack(); refreshSkemaStatus(); try { renderHome(); } catch (e) {}
+  setTimeout(() => { skemaBack(); refreshSkemaStatus(); try { renderHome(); } catch (e) {} try { if (typeof renderKursusHjem === "function") renderKursusHjem(); } catch (e) {}   /* Lektionernes Næste skridt flytter sig ogsaa (1/10: stod paa »Spørgeskema« efter send) */
     try { if ((SKEMA_KEY === "inden_start" || SKEMA_KEY === "inden_workshoppen") && !SOM_KUNDE && !turSet()) setTimeout(function () { try { turStart(); } catch (e2) {} }, 700); } catch (e) {} }, 1200);
 }
 
@@ -53329,7 +53333,7 @@ async function begivenhedTilAarshjul() {
   window.__BEG_AH = null; bsFlytLuk();
   try { husKvit(ok === false ? "Kunne ikke gemme. Prøv igen." : "Står i dit årshjul."); } catch (e) {}
 }
-function toemHovedetTrin2(k) { if (k === "besked") { try { kundeBeskedArk(); } catch (e) {} return; } try { kundeArkAabn(k, false, "", true); } catch (e) {} }
+function toemHovedetTrin2(k) { if (k === "besked") { try { kundeBeskedArk(); } catch (e) {} return; } if ((k === "note" || k === "ide") && typeof ygtContentLaasVis === "function" && ygtContentLaasVis("Idébanken")) return;   /* samme laas som dagensKortToemHovedet (1/10) */ try { kundeArkAabn(k, false, "", true); } catch (e) {} }
 function togglePlus() {
   /* PLUSSET AABNER ARKET (Ida 13/9, alle otte skriveformer): helskaerms-menuen brød "aldrig hele skaermen" (11/9).
      Staar den gamle menu aaben (kun muligt paa computeren fra foer), lukkes den som foer. */
@@ -56586,7 +56590,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2456";
+const APP_VERSION = "2457";
 let NY_VERSION_KLAR = false;
 let NY_VERSION_AFVIST = false;
 function nyVersionSkjul() {
@@ -62226,7 +62230,7 @@ async function enterApp() {
             const raekker = (r && r.data) || [];
             const mig = (minMail && raekker.find(x => String((x.svar && x.svar.email) || "").trim().toLowerCase() === minMail))
                      || (CURRENT_NAVN && raekker.find(x => String(x.navn || "").trim().toLowerCase() === String(CURRENT_NAVN).trim().toLowerCase()))
-                     || (raekker.length === 1 ? raekker[0] : null);
+                     || ((raekker.length === 1 && !(minMail && String((raekker[0].svar && raekker[0].svar.email) || "").trim() && String(raekker[0].svar.email).trim().toLowerCase() !== minMail)) ? raekker[0] : null);   /* den eneste person er kun mig, hvis e-mailen ikke siger andet (1/10: en kollega uden navn arvede ejeren) */
             if (!mig) return;
             const kn = String((mig.svar && mig.svar.kaldenavn) || "").trim();
             const pn = String(mig.navn || "").trim();
@@ -79026,6 +79030,6 @@ function bf3StudieRum(v, filter) {
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-hvid.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 1. oktober · 2456</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 1. oktober · 2457</div>
 </body>
 </html>
