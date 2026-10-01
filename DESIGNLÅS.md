@@ -1,3 +1,6 @@
+## KUNDENS IKON HEDDER CONTENT STUDIO — LIVE v2458 (Idas klik 1/10)
+På b2b sætter et script i hovedet `apple-mobile-web-app-title` til »Content Studio« og bytter manifestet til `manifest-b2b.webmanifest` (name/short_name »Content Studio«). Admin beholder »Energida«. Mails og vejledninger kalder appen Content Studio: Time to shine er forløbet, og forløbet ligger i Content Studio.
+
 ## LANCERINGSTJEKKET 1/10 — LIVE v2457 (rene fejl fra tre testhold)
 Startskemaet sendt → Lektionernes Næste skridt tegnes om (`renderKursusHjem` i send-koden). Lektionerne hjemme → bundmenuen bygges om sammen med sidemenuen (tvillingen; telefonen viste låste døre). YGT-rundvisningen viser ikke Kalenderen-stoppet, mens Content Studio er låst. Plusset → »skrevet ned« / ny idé har samme YGT-lås som Tøm hovedet. »Inviter en kollega« kræver navn (navnet er nøglen; uden navn kunne kollegaen arve ejerens rækker). **Regel:** alt, der tegner menuen, kalder BÅDE `buildSideNav` og `buildBottomNav`.
 
