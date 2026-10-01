@@ -1,3 +1,6 @@
+## MODUL 0 · INTRODUKTION — LIVE v2456 1. oktober 2026 (Ida: »modul 1 nu laves om til modul 0 - Introduktion«, »værktøjskassen bliver modul 10«)
+Kunden ser modulerne ét nummer lavere: basens Modul 1 = **Modul 0 · Introduktion** (0.1 Velkommen · 0.2 Energi · Strategi · Resultat), basens Modul 2 = Modul 1 · Mennesket … basens Modul 11 = **Modul 10 · Værktøjskassen**. Lektion 1-3 Strategi og 1-4 Resultat er skjult for kunderne (`LEK_SKJULT_KUNDE`), ikke slettet; 1-5 er skjult af data som før. **KUN VISNINGEN:** `modulVisNr` · `lekVisNr` · `lekVisTitel` · `modulVisNavn` ved `modulNrFor`. Nøglerne (lektions-id 1-1, `ygtModulAabner("8")`, `lektion_register`, kundernes rækker, Energida Studio) er urørte. Låseteksterne siger »modul 7« (nøglen er stadig 8). Ny visning af et modul- eller lektionsnummer for kunden går ALTID gennem de fire hjælpere. Energida Studio (admin) viser stadig basens numre.
+
 ## MODELLERNE · SHINEBAROMETERET SOM VIDEOOVERLAY — LÅST 27. september 2026 (Idas ord: »Vil du låse denne nu?«)
 
 Gælder modellerne i lektionsvideoerne (overlays), ikke app-fladerne.
