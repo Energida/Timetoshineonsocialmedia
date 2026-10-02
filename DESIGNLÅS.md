@@ -1,3 +1,14 @@
+## IDAS TELEFON-RUNDE 2/10 — LIVE v2460 (Idas klik på skærmbillederne KPZqSiPGaDrHVEmEaK4anq)
+1. Admin Tøm hovedet: overskriften følger valget (»Hvad skal tilføjes til manus?« ved Idé til manus).
+2. »Hvilket onlinekursus?« har »+ Opret nyt produkt« nederst (som »Opret nyt rum«); produktet oprettes i produkter og vælges.
+3. **HÅRD: en dropdown på telefonen (≤760) er en HEL SKÆRM** — tastaturet lukkes, valgene centreret, kryds øverst til højre, valgt = rød tekst (`.bs3-liste.bs3-fuld`). Computeren beholder listen under knappen.
+4. Arket og de små ark holder sig i den synlige del over tastaturet og ruller; feltet rulles frem ved fokus. Luft (12 px) over »Tilføj link«.
+6. Chips i Ny idé (Indholdssøjle, Format) er ÉN knap på telefonen, der åbner samme helskærmsliste (`arkChipsTilKnap`, `fuldValgAabn`).
+7. **HÅRD: ALLE popups står MIDT på telefonen** (vælter bundark-låsen 15/9 + 19/9).
+8. Siderne i Ny idé glider kun vandret (`touch-action:pan-x`).
+9. Vibe har »Reflekterende«.
+STATUS: punkt 5 »Tilpas content« (søg i planlagt + Idébanken) er IKKE bygget — fem bud først.
+
 ## ENERGIDA STUDIO VISER KUNDENS NUMRE — LIVE v2459 (Ida 2/10)
 Produktsiden (YOU GOT THIS › Indhold): modulkort, modulhoved og sti siger »Modul 0 · Introduktion« … »Modul 10«; lektionstitler vises via `studieTitelVis` (»1.2 · Energi« → »0.2 · Energi · Strategi · Resultat«). Kun visningen — titler, manus og nøgler i basen er urørte; i redigeringsfelter står basens titel.
 
