@@ -1,3 +1,6 @@
+## ENERGIDA STUDIO VISER KUNDENS NUMRE — LIVE v2459 (Ida 2/10)
+Produktsiden (YOU GOT THIS › Indhold): modulkort, modulhoved og sti siger »Modul 0 · Introduktion« … »Modul 10«; lektionstitler vises via `studieTitelVis` (»1.2 · Energi« → »0.2 · Energi · Strategi · Resultat«). Kun visningen — titler, manus og nøgler i basen er urørte; i redigeringsfelter står basens titel.
+
 ## KUNDENS IKON HEDDER CONTENT STUDIO — LIVE v2458 (Idas klik 1/10)
 På b2b sætter et script i hovedet `apple-mobile-web-app-title` til »Content Studio« og bytter manifestet til `manifest-b2b.webmanifest` (name/short_name »Content Studio«). Admin beholder »Energida«. Mails og vejledninger kalder appen Content Studio: Time to shine er forløbet, og forløbet ligger i Content Studio.
 
