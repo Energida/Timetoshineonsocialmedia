@@ -1,3 +1,9 @@
+## ALT ER FLISER — OGSÅ I MAILS OG BUD (HÅRD, Ida 4/10 kl. 08.32: »Jeg forstår slet ikke du forslår dette ulovlige design igen … Alt skal jo være fliser har jeg sagt!«)
+- Indhold står ALDRIG løst på en hvid flade: hvert stykke er en hvid flise med husets skygge på den lyse grund (#F2F0ED), etiket · én streg · indhold. Gælder appen, mails, Artifacts og alle bud.
+- **Hvorfor det slap igennem:** holdet, der tegnede login-mailens bud, fik CLAUDE.md og lockup-hukommelsen, men ikke DESIGNLÅS.md. Og jeg tjekkede ikke buddene mod låsen, før de blev sendt.
+- **Fremover:** hvert bud-hold får DESIGNLÅS.md (de hårde regler øverst + regel 5/9 »altid fliser«) i sin opgave. Før noget sendes til Ida, kontrollerer jeg det mod: fliser · ét skillelinje-greb · rigtigt logo · Didot kun i hero · ingen fyldtekst.
+- Kun Idas rigtige logo (sort hjerte + rødt »energida«), aldrig en ændret kopi (Ida 4/10).
+
 ## VELKOMSTEN = TRE SKRIDT I HUSETS ARK FØR SPØRGESKEMAET — BESLUTTET 4/10 (Idas klik på PPPQqM3mQftE6nZWMQ9mqt) · STATUS: IKKE BYGGET
 - Første gang kunden åbner Content Studio: husets ark over Hjem, »Trin n af 3«. 1: navn og butik (Fysisk butik · Fysisk butik + Webshop · Webshop). 2: teamet (kan springes over). 3: hilsen — overskriften er ordret »Vælg de velkomster, der giver dig mest energi« (Idas klik 4/10); kunden vælger flere, de skifter fra dag til dag. Derefter spørgeskemaet som i dag.
 - **HÅRD: intet coverbillede i velkomsten** (Ida 4/10: »det er fast i b2b — kun i TTS, som vi bygger senere, skal de kunne skifte cover«).
