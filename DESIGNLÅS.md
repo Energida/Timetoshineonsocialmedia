@@ -1,3 +1,6 @@
+## ÉT VALG = TOM CIRKEL — LIVE v2467 (Idas klik 4/10)
+- Lister med ét valg har den tomme grå cirkel ud for hver række; flere valg (Platform, Lyd) har cirklen med plus; valgt = rød cirkel med hvidt flueben. Vælter v2466's »ingen cirkel«: det var plusset, Ida ikke ville have, ikke cirklen.
+
 ## FAKTA STÅR STILLE · ÉT VALG UDEN PLUS — LIVE v2466 (Idas klik 4/10, skærmbilleder Nnpky61DVMLe1MJPoLaaqn)
 - **HÅRD: intet på siden bevæger sig, når man arbejder i fakta** (Ida 4/10). Et valg i fakta-boksen tegner KUN fakta-boksen om (`briefFraFakta`, `briefFaktaSyncIdee`, `briefFaktaRkOpdater`). Skifter valget briefens skabelon (format, lyd, målgruppe, indholdssøjle, status), gentegnes briefen med rullepositionen holdt over flere billeder (`briefGentegnStille`, `briefHoldStille`). Målt 150 → 150 på 390 og 1440.
 - **HÅRD: et enkeltvalg har aldrig plusset** (Ida 4/10: »skal ikke være pinterest select muligheden«). Plus i cirkel kun på lister med flere valg (`.bdrop-multi`: Platform, Lyd); et enkeltvalg er en ren liste, det valgte bærer husets flueben.
