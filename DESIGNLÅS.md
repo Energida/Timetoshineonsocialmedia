@@ -1,3 +1,7 @@
+## AFTALETYPERNE + PLUSSET I BACKSTAGE — LIVE v2464 (Idas klik 4/10, skærmbilleder BLEFYJixKRCG4PmeRvpyn7)
+**Ny aftale:** typen øverst — Aftale (frit) · Screening · Energien bag strategien (3 t) · Strategiworkshop (3 t) · Opstart i Content Studio (1,5 t) · Ugentlig contentplanlægning (1 t) · Månedens planlægning (2 t) · Optagedag (4 t) · Opfølgning (1 t) · Afslutning (1 t). Typen giver titel, sluttid og agenda (i `note`), kræver kunde, skjuler tekstfeltet. `BF3_AFT_SLAGS`. YOU GOT THIS-kunder: »Lektionstid« først i hurtigvalget. STATUS: agendaen vises endnu ikke på mødesiden.
+**Plusset i Backstage = kundens form:** felt · »Vælg« · Idas 14 valg (BF3_HJEM_VALG) som fliser med ikon (telefon: hel skærm; computer: to og to). Skrevet ned gemmes direkte; Aftale åbner Ny aftale med teksten; resten åbner `bf3ToemArk(tekst, k)`.
+
 ## 4/10 — LIVE v2463 (Idas »deploy opdateringerne«, skærmbilleder REMzrZBX2fqAfxbwToh7uP)
 - Backstages Hjem på computeren: genvejene er 52 px og står lige under coveret; plusset står ud for dem (`coverKnapperUd` med genvejsrækken som `alignEl`), ingen egen række.
 - Ny aftale: typen (Aftale · Ugentlig contentplanlægning) står ØVERST; »Slutter« (tid_slut); et skjult tekstfelt kræver ikke tekst (`arkSend`) — Ugentlig contentplanlægning kan nu gemmes.

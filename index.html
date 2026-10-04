@@ -56777,7 +56777,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2463";
+const APP_VERSION = "2464";
 let NY_VERSION_KLAR = false;
 let NY_VERSION_AFVIST = false;
 function nyVersionSkjul() {
@@ -69834,7 +69834,8 @@ const KUNDE_ARK_CHIPS = [
 ];
 /* HURTIGVALG I »AKTIVITET« (27/9): de typer, computerens gamle Hjem-plus havde. Et tryk skriver ordet i feltet; planlaegningen har sit eget ark. */
 function kundeArkAktHurtig() {
-  const typer = ["Optag", "Udfyld briefs", "Aktivér dit community", "Søg inspiration", "Opdater profilen"];
+  let typer = ["Optag", "Udfyld briefs", "Aktivér dit community", "Søg inspiration", "Opdater profilen"];
+  try { if (CURRENT_DEF && CURRENT_DEF.type === "kursus") typer = ["Lektionstid"].concat(typer); } catch (e) {}   /* YOU GOT THIS: en fast time hver uge til modulet (Idas klik 4/10) */
   return '<div class="ark-akt-hurtig" style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:0 0 10px;">'
     + typer.map(function (t) { return '<button type="button" class="ark-chip" onclick="kundeArkAktVaelg(this)">' + esc(t) + '</button>'; }).join("")
     + '<button type="button" class="ark-chip" onclick="arkLuk(true);planMoedeTidArk()">Ugentlig contentplanlægning</button></div>';
@@ -77602,14 +77603,61 @@ function bf3ToemArk(tekst, valgt) {
    kortet kommer, hver gang appen aabnes paa telefonen. Den gamle fuldskaerm (studieVaelger) tegnes aldrig mere. */
 /* TOEM HOVEDET I BACKSTAGE = KUNDENS FORM (Ida 25/9 kl. 10.17: »mit eget system er endnu heller ikke magen til b2b ift tøm hovedet«):
    foerst »Hvad skal der ske?« med Idas egne valg som chips (samme ark som kundens toemHovedetTrin1), saa arket kun med den form. */
+/* PLUSSET I BACKSTAGE = KUNDENS FORM (Ida 4/10: »kan vi ikke lave plusfunktionen på min admin til samme design som på b2b?«): feltet oeverst,
+   »Vælg« under, Idas egne valg (BF3_HJEM_VALG) som husets fliser med ikon — over hele skaermen paa telefonen, to og to paa computeren.
+   Skrevet ned gemmes her; Aftale aabner Ny aftale med teksten; de andre aabner Toem hovedet-arket med teksten og valget sat (bf3ToemArk). */
+const BF3_TOEM_IK = { note: TOEM_IK.note, todo: TOEM_IK.todo, aftale: TOEM_IK.akt, manus: '<path d="M6 3h9l4 4v14H6z"/><path d="M15 3v4h4M9 12h7M9 16h5"/>', broll: '<rect x="3" y="6" width="13" height="12" rx="2"/><path d="M16 10l5-3v10l-5-3"/>',
+  kundeide: TOEM_IK.ide, lead: '<circle cx="12" cy="8" r="4"/><path d="M4 20a8 8 0 0 1 16 0"/>', indkoeb: '<path d="M5 7h14l-1.5 12h-11z"/><path d="M9 7a3 3 0 0 1 6 0"/>', cs: TOEM_IK.ide,
+  workout: '<path d="M4 9v6M8 7v10M16 7v10M20 9v6M8 12h8"/>', food: '<path d="M7 3v8a2 2 0 0 0 4 0V3M9 11v10M16 3c-2 2-2 6 0 8v10"/>', mindful: TOEM_IK.fedt, vidensbank: '<path d="M4 5h6a2 2 0 0 1 2 2v12a2 2 0 0 0-2-2H4zM20 5h-6a2 2 0 0 0-2 2v12a2 2 0 0 1 2-2h6z"/>', app: '<rect x="6.5" y="2.5" width="11" height="19" rx="2.5"/><path d="M10.5 18.5h3"/>' };
+let BF3_TOEM_VALG = "";
+function bf3ToemValgListe() { return (typeof BF3_HJEM_VALG !== "undefined" ? BF3_HJEM_VALG : (NY_IDE_CHIPS || [])).slice(); }
+function bf3ToemFlise(c, on) { return '<button type="button" class="valg-flise' + (on ? ' on' : '') + '" onclick="event.stopPropagation();bf3ToemValg(\'' + c.k + '\')"><span class="valg-ik"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' + (BF3_TOEM_IK[c.k] || TOEM_IK.note) + '</svg></span><span class="valg-ord">' + esc(c.n) + '</span></button>'; }
+function bf3ToemKnapTegn() { const b = document.getElementById("toemValgKnap"); if (!b) return; const c = bf3ToemValgListe().find(function (x) { return x.k === BF3_TOEM_VALG; }); b.classList.toggle("tom", !c); b.innerHTML = '<span>' + esc(c ? c.n : "Vælg") + '</span>' + FV_PIL; }
+function bf3ToemValgAabn() {
+  const valg = bf3ToemValgListe();
+  if (window.matchMedia && window.matchMedia("(max-width: 760px)").matches) {
+    try { if (document.activeElement && document.activeElement.blur) document.activeElement.blur(); } catch (e) {}
+    let l = document.getElementById("toemFuld"); if (l) l.remove();
+    l = document.createElement("div"); l.id = "toemFuld"; l.className = "bs3-liste bs3-fuld toem-fuld";
+    l.innerHTML = '<div class="fv-titel">Hvor skal det hen?</div>' + valg.map(function (c) { return bf3ToemFlise(c, c.k === BF3_TOEM_VALG); }).join("")
+      + '<div class="bs3-fuld-luk" role="button" aria-label="Luk" onclick="event.stopPropagation();document.getElementById(\'toemFuld\').remove()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></div>';
+    document.body.appendChild(l); return;
+  }
+  const w = document.getElementById("toemValgListe"); if (!w) return;
+  if (w.style.display !== "none") { w.style.display = "none"; return; }
+  w.innerHTML = valg.map(function (c) { return bf3ToemFlise(c, c.k === BF3_TOEM_VALG); }).join(""); w.style.display = "";
+}
+function bf3ToemValg(k) {
+  try { const l = document.getElementById("toemFuld"); if (l) l.remove(); } catch (e) {}
+  try { const w = document.getElementById("toemValgListe"); if (w) w.style.display = "none"; } catch (e) {}
+  const tekst = String(((document.getElementById("toemTekst") || {}).value) || "").trim();
+  if (k === "note") { BF3_TOEM_VALG = "note"; bf3ToemKnapTegn(); return; }
+  try { bsFlytLuk(); } catch (e) {}
+  if (k === "aftale") { try { bf3AftaleArk(tekst); } catch (e) {} return; }
+  try { bf3ToemArk(tekst, k); } catch (e) {}
+}
+async function bf3ToemGem() {
+  const f = document.getElementById("toemTekst"); const tekst = String((f && f.value) || "").trim();
+  if (!tekst) { if (f) f.focus(); return; }
+  const k = BF3_TOEM_VALG || "note";
+  if (k !== "note") { bf3ToemValg(k); return; }
+  const b = document.getElementById("toemGemKnap"); if (b) { b.disabled = true; b.textContent = "Gemmer …"; }
+  let svar = false; try { svar = await nyIdeGem(tekst, "note"); } catch (e) { svar = false; }
+  if (svar) { try { bsFlytLuk(); } catch (e) {} try { husKvit(svar); } catch (e) {} try { dashForsideTegn(); } catch (e) {} }
+  else { if (b) { b.disabled = false; b.textContent = "Gem"; } try { husBesked("Kunne ikke gemme. Prøv igen."); } catch (e) {} }
+}
 function bf3ToemTrin1() {
   let m = document.getElementById("bsFlytMenu"); if (!m) { m = document.createElement("div"); m.id = "bsFlytMenu"; document.body.appendChild(m); }
-  /* Idas EGNE lister — de samme, som arkets dropdown »Hvor hører det hjemme?« kender (BF3_HJEM_VALG), saa valget i trin 1 og arket er ét og samme */
-  const chips = (typeof BF3_HJEM_VALG !== "undefined" ? BF3_HJEM_VALG : (NY_IDE_CHIPS || [])).slice();
-  m.innerHTML = '<div class="bs-flyt-ark toem-trin1"><div class="ark-t" style="text-align:center;margin:0 0 14px;">Hvad skal der ske, makker?</div>'
-    + '<div class="ark-chips toem-chips">' + chips.map(function (c) { return '<button type="button" class="ark-chip mq-tap" onclick="bsFlytLuk();' + (c.k === "aftale" ? 'bf3AftaleArk()' : 'bf3ToemArk(\'\',\'' + c.k + '\')') + '">' + esc(c.n) + '</button>'; }).join("") + '</div>'
+  BF3_TOEM_VALG = "";
+  m.innerHTML = '<div class="bs-flyt-ark toem-trin1 toem-ny"><div class="ark-t" style="text-align:center;margin:0 0 14px;">Tøm hovedet</div>'
+    + '<textarea id="toemTekst" class="toem-felt" rows="3" placeholder="Hvad har du på hjertet?"></textarea>'
+    + '<button type="button" id="toemValgKnap" class="fv-knap tom" onclick="event.stopPropagation();bf3ToemValgAabn()"></button>'
+    + '<div id="toemValgListe" class="toem-liste valg-fliser" style="display:none;"></div>'
+    + '<button type="button" id="toemGemKnap" class="ark-knap ark-knap-roed" onclick="bf3ToemGem()">Gem</button>'
     + '<button type="button" class="ark-luk" onclick="bsFlytLuk()">Annullér</button></div>';
   m.style.display = "flex"; m.onclick = function (e) { if (e.target === m) bsFlytLuk(); };
+  bf3ToemKnapTegn();
+  try { if (!(window.matchMedia && window.matchMedia("(max-width: 760px)").matches)) setTimeout(function () { const t = document.getElementById("toemTekst"); if (t) t.focus(); }, 60); } catch (e) {}
 }
 function bf3StartVis(tving) {
   if (typeof SOM_KUNDE !== "undefined" && SOM_KUNDE && SOM_KUNDE !== "ENERGIDA") return;
@@ -77794,14 +77842,29 @@ function bf3HjemTilfoejArk() {
    dropdown »Hvad er det?« (Aftale · Ugentlig contentplanlægning) + kunde. Planlaegningen gemmes PAA KUNDEN (kunde_aftaler, kode = kunden, titlen
    »Ugentlig contentplanlægning«) og saetter kundens planlaegningsdag (kunde_maal.plan_dato) — saa staar den i kundens kalender, paa kundens Hjem
    som Naeste skridt med klokkeslaet, og i Idas Kommende aftaler med kundens navn. */
-const BF3_AFT_SLAGS = [{ k: "aftale", n: "Aftale" }, { k: "plan", n: "Ugentlig contentplanlægning" }];
+/* AFTALETYPERNE (Idas klik 4/10: »Ja, byg de otte typer«): typen giver titel, varighed og agenda (i note) og lander i kundens kalender.
+   WE GOT THIS: Screening · Strategiworkshop · Opstart. I GOT YOU: de tre + Ugentlig · Måned · Optagedag · Opfølgning · Afslutning. Aftale = det frie valg. */
+const BF3_AFT_SLAGS = [
+  { k: "aftale", n: "Aftale", min: 60 },
+  { k: "screening", n: "Screening · Energien bag strategien", min: 180, agenda: "Spørgeskemaet · Energien i dag · Personen bag forretningen · Værdier og vision" },
+  { k: "workshop", n: "Strategiworkshop", min: 180, agenda: "Drejebogen præsenteres · Målgruppen og USP · De fire indholdssøjler · Tilpasning" },
+  { k: "opstart", n: "Opstart i Content Studio", min: 90, agenda: "Content Studio · Idébanken og briefen · Ugerytmen · Hvem gør hvad" },
+  { k: "plan", n: "Ugentlig contentplanlægning", min: 60 },
+  { k: "maaned", n: "Månedens planlægning", min: 120, agenda: "Månedens performance · Det, der virkede · Næste måneds tema · Hashtagbanken" },
+  { k: "optag", n: "Optagedag", min: 240, agenda: "Dagens briefs · Rekvisitter · Rækkefølgen · Hvem er med" },
+  { k: "opfoelg", n: "Opfølgning", min: 60, agenda: "Siden sidst · Drejebogen · Arbejdsgangene · Næste skridt" },
+  { k: "afslut", n: "Afslutning", min: 60, agenda: "De seks måneder · Resultaterne · Det, der virker · Sådan fortsætter vi" }
+];
+function bf3AftSlutKl(start, min) { const m = String(start || "10:00").match(/^(\d{1,2}):(\d{2})/); let t = (m ? parseInt(m[1], 10) * 60 + parseInt(m[2], 10) : 600) + (min || 60); t = Math.min(t, 23 * 60 + 30); return String(Math.floor(t / 60)).padStart(2, "0") + ":" + String(t % 60).padStart(2, "0"); }
 /* UGENTLIG CONTENTPLANLAEGNING HAR SIN TITEL (Ida 24/9: »så skal tekstfeltet jo ikke komme op«): feltet — med mikrofonen — skjules helt */
 function bf3AftSlagsSkift(k) {
-  try { const ta = document.getElementById("arkTekst"); if (!ta) return; const v = ta.closest(".ark-mik-vaert") || ta;
-    v.style.display = k === "plan" ? "none" : ""; if (k === "plan") ta.value = ""; } catch (e) {}
+  /* typerne har deres egen titel — feltet skjules for alle andre end det frie valg; sluttiden foelger typens varighed */
+  try { const ta = document.getElementById("arkTekst"); if (ta) { const v = ta.closest(".ark-felt") || ta.closest(".ark-mik-vaert") || ta; v.style.display = (k && k !== "aftale") ? "none" : ""; } } catch (e) {}
+  try { const kb = document.querySelector("#bf3AftKunde .bs3-drop.tom span"); if (kb) kb.textContent = (k && k !== "aftale") ? "Vælg kunde" : "Kunde (kan udelades)"; } catch (e) {}   /* typerne kraever en kunde */
+  try { const ty = BF3_AFT_SLAGS.find(function (x) { return x.k === k; }); const rk = document.querySelector(".bf3-slut-rk"); if (ty && rk) { const st = (document.getElementById("bf3AftTid") || {}).value || "10:00"; rk.outerHTML = '<div class="bf3-slut-rk"><span class="bf3-slut-l">Slutter</span>' + husDatoTidHtml("", "bf3AftSlut", "", bf3AftSlutKl(st, ty.min), false, true) + '</div>'; } } catch (e) {}
 }
-function bf3AftaleArk() {
-  const f = document.getElementById("bsAftNy"); const t = ((f && f.value) || "").trim();
+function bf3AftaleArk(pre) {
+  const f = document.getElementById("bsAftNy"); const t = (typeof pre === "string" && pre.trim()) ? pre.trim() : ((f && f.value) || "").trim();   /* teksten fra plusset foelger med (4/10) */
   BF3_DROP_VALG.bf3AftSlags = "aftale"; BF3_DROP_VALG.bf3AftKunde = "";
   arkAabn({ titel: "Ny aftale", ph: "Hvad handler aftalen om?", tekst: t, send: "Gem", chips: [], udenMik: true,
     ekstraAf: function () { return bf3DropHtml("bf3AftSlags", "Hvad er det?", BF3_AFT_SLAGS, "aftale") + bf3DropHtml("bf3AftKunde", "Kunde (kan udelades)", bf3BeskedKunder(), "") + husDatoTidHtml("bf3AftDato", "bf3AftTid", bf3Idag(), "10:00")
@@ -77815,17 +77878,18 @@ function bf3AftaleArk() {
 async function bf3AftaleGem(tekst, f) {
       const dato = (document.getElementById("bf3AftDato") || {}).value || bf3Idag(); const tid = (document.getElementById("bf3AftTid") || {}).value || "";
       const slags = BF3_DROP_VALG.bf3AftSlags || "aftale"; const kunde = BF3_DROP_VALG.bf3AftKunde || "";
-      if (slags === "plan" && !kunde) throw new Error("!Vælg kunden, planlægningen er for.");
-      const titel = slags === "plan" ? "Ugentlig contentplanlægning" : String(tekst || "").trim();
+      const ty = BF3_AFT_SLAGS.find(function (x) { return x.k === slags; }) || BF3_AFT_SLAGS[0];
+      if (slags !== "aftale" && !kunde) throw new Error("!Vælg kunden, aftalen er for.");
+      const titel = slags === "aftale" ? String(tekst || "").trim() : ty.n;
       if (!titel) throw new Error("!Hvad handler aftalen om?");
       if (!sb) return false;
       const slut = (document.getElementById("bf3AftSlut") || {}).value || "";
       if (tid && slut && slut <= tid) throw new Error("!Sluttidspunktet skal ligge efter start.");
-      try { const rec = { kode: kunde || "ENERGIDA", titel: titel, dato: dato }; if (tid) rec.tid = tid; if (slut) rec.tid_slut = slut; const r = await sb.from("kunde_aftaler").insert(rec).select(); if (r.error || !r.data || !r.data.length) return false; } catch (e) { return false; }
+      try { const rec = { kode: kunde || "ENERGIDA", titel: titel, dato: dato }; if (tid) rec.tid = tid; if (slut) rec.tid_slut = slut; if (ty.agenda) rec.note = "Agenda: " + ty.agenda; const r = await sb.from("kunde_aftaler").insert(rec).select(); if (r.error || !r.data || !r.data.length) return false; } catch (e) { return false; }
       if (slags === "plan") { try { await sb.from("kunde_maal").upsert({ kode: kunde, plan_dato: dato }, { onConflict: "kode" }); } catch (e) {} }
       try { await refreshKundeAftaler(); } catch (e) {}
       try { dashForsideTegn(); } catch (e) {} if (f) f.value = "";
-      return slags === "plan" ? "Planlægningen står i kalenderen hos " + venterKundeNavn(kunde) + " " + dkDatoKort(dato) + (tid ? " kl. " + tid.replace(":", ".") : "") + "." : "Aftalen er i kalenderen.";
+      return slags !== "aftale" && kunde ? ty.n + " står i kalenderen hos " + venterKundeNavn(kunde) + " " + dkDatoKort(dato) + (tid ? " kl. " + tid.replace(":", ".") : "") + "." : "Aftalen er i kalenderen.";
 }
 async function kundePinSkift(k) { const i = (KUNDE_PINS || []).indexOf(k); if (i > -1) KUNDE_PINS.splice(i, 1); else KUNDE_PINS.unshift(k); try { const ok = await vaneGemRow("kunde_pins", KUNDE_PINS.slice()); if (ok === false) console.warn("kunde_pins: ikke gemt i basen (kun lokalt)"); } catch (e) {} try { dashForsideTegn(); } catch (e) {} try { const ks = document.getElementById("dside-crm"); if (ks && ks.style.display !== "none") kunderneTegn(); } catch (e) {} try { const kd = document.getElementById("dside-kundeside"); if (kd && kd.style.display !== "none") kundeSideTegn(); } catch (e) {} }
 
@@ -79294,6 +79358,6 @@ function bf3StudieRum(v, filter) {
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-hvid.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 1. oktober · 2463</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 1. oktober · 2464</div>
 </body>
 </html>
