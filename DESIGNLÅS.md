@@ -1,3 +1,9 @@
+## 4/10 — LIVE v2463 (Idas »deploy opdateringerne«, skærmbilleder REMzrZBX2fqAfxbwToh7uP)
+- Backstages Hjem på computeren: genvejene er 52 px og står lige under coveret; plusset står ud for dem (`coverKnapperUd` med genvejsrækken som `alignEl`), ingen egen række.
+- Ny aftale: typen (Aftale · Ugentlig contentplanlægning) står ØVERST; »Slutter« (tid_slut); et skjult tekstfelt kræver ikke tekst (`arkSend`) — Ugentlig contentplanlægning kan nu gemmes.
+- De stiplede forslag i kalenderdagen ÅBNER RÅD, de bliver ALDRIG en aftale (`HU_RAAD`, `huRaadArk`). Første hedder »Opbygning til deling af {opslaget}« (Idas valg; »Teaser« fravalgt som fagord). Aktivér/Vær aktiv bygger på Idas 10-minutters-regel.
+- Højttaleren er fjernet fra ida-06.jpg / kort.jpg (startkort og dagens billede).
+
 ## TØM HOVEDET = FELT + »HVOR SKAL DET HEN?« · TILPAS CONTENT — LIVE v2461 (Idas klik 4/10: bud 1 U5JEv9714RnzatfvdAjB7g + bud 1 1wDqdSJqo5yBqvpne2aj4b, skærmbilleder 5gTQ7drafTjSfW5MfFgqrs)
 **HÅRD:** kundens Tøm hovedet er ALDRIG chips igen. Feltet øverst, én dropdown »Vælg« under (Ida 4/10), Gem + Annullér. Telefon: tryk lukker tastaturet, valgene som husets fliser med ikon over hele skærmen (`toemValgAabn`, `.toem-fuld`). Computer: fliserne folder ud under knappen, to og to. Skrevet ned gemmes direkte (også uden valg); de andre valg åbner deres eget ark med teksten (`toemHovedetTrin2(k, tekst)`); »Tilpas noget, jeg har lavet« åbner søgningen med teksten som søgeord.
 Tilpas content: søg i titel og al tekst i idéer og briefs; grupper Planlagt (har dato, ikke postet) og Idébanken (uden dato); tryk = `openBrief`. Låst for YOU GOT THIS før modul 7. Porten (probe-popups) godkender `.toem-ny`-arket som skriveform.
