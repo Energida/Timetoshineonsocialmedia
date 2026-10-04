@@ -2,7 +2,7 @@
 - Forsiden: søg i det hele (rum + al tekst) · chips »Bruges til« (rummets felter.brug, som Notions »Brug til«) · Ikke placeret endnu (noter i Bibliotekets rod) · rummene fra A til Å (hele træet).
 - Et rum starter TOMT: »Hvad skal stå i rummet?« · Modellen · Pointen · Brug · Mine eksempler · Kilde · Eget navn. Afsnit = blok type »afsnit« (titel + noter-rækkefølge); tingene = rækker i mr_rum_noter (søgning, papirkurv og Tøm hovedet uændret). Ikke sorteret = noter uden afsnit. Rum i rum = døre.
 - Alt rettes i arket Ret: tekst (med billeder/link) · Afsnit · Rum · Samme idé som (kilde-kobling, url »rum:<id>«) · Flyt op/ned · skraldespand (papirkurv 30 dage). Afsnit: omdøb · flyt op/ned · slet (tingene bliver under Ikke sorteret). Plus i coveret: Afsnit / Rum herinde. Gælder KUN rum i Biblioteket.
-- STATUS: BYGGET v2474 lokalt, porten grøn, skærmbilleder JkEzzrDeChxXKrSkGTnKbk — venter på Idas klik.
+- STATUS: LIVE v2474 (Idas klik 4/10 på skærmbillederne JkEzzrDeChxXKrSkGTnKbk).
 
 ## v2472 · KUNDENS TØM HOVEDET = DROPDOWN SOM ADMIN (Idas kommentar 4/10 kl. 21.26 + klik: »vi skal have lavet dette ligesom admin versionen med dropdown«)
 - »Hvor hører det hjemme?« (bf3DropHtml) lige under feltet, samme order som feltet; chipsene ligger skjult i arket og trykkes af valget, så titel/emne/indholdssøjle/dato/plus skifter som før. Kun når arket har flere valg (ikke fra Idébanken/én chip). STATUS: LIVE.
