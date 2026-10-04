@@ -1,5 +1,5 @@
 ## VELKOMSTEN = TRE SKRIDT I HUSETS ARK FØR SPØRGESKEMAET — BESLUTTET 4/10 (Idas klik på PPPQqM3mQftE6nZWMQ9mqt) · STATUS: IKKE BYGGET
-- Første gang kunden åbner Content Studio: husets ark over Hjem, »Trin n af 3«. 1: navn og butik (Fysisk butik · Fysisk butik + Webshop · Webshop). 2: teamet (kan springes over). 3: hilsen. Derefter spørgeskemaet som i dag.
+- Første gang kunden åbner Content Studio: husets ark over Hjem, »Trin n af 3«. 1: navn og butik (Fysisk butik · Fysisk butik + Webshop · Webshop). 2: teamet (kan springes over). 3: hilsen — overskriften er ordret »Vælg de velkomster, der giver dig mest energi« (Idas klik 4/10); kunden vælger flere, de skifter fra dag til dag. Derefter spørgeskemaet som i dag.
 - **HÅRD: intet coverbillede i velkomsten** (Ida 4/10: »det er fast i b2b — kun i TTS, som vi bygger senere, skal de kunne skifte cover«).
 - **HÅRD: bud tegnes med appens egne dele og viser kun beslutningen** (Ida 4/10: »jeg kunne slet ikke kende mit energida design«).
 
