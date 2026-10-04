@@ -10846,6 +10846,10 @@ html body .godk-flise .godk-knapper { display:grid; grid-template-columns:1fr 1f
 html body .godk-flise .godk-retur, html body .godk-flise .godk-ja { min-height:44px; border-radius:999px; font-family:Poppins,sans-serif; font-size:13.5px; font-weight:400; cursor:pointer; }
 html body .godk-flise .godk-retur { background:#fff; color:var(--gray2); border:1px solid var(--border, #DEDAD4); }
 html body .godk-flise .godk-ja { background:var(--red); color:#fff; border:0; }
+
+/* ÉT VALG = INGEN PLUS (Ida 4/10: »når det er steder hvor der kun skal vælges 1 ting skal det ikke være pinterest select muligheden«):
+   plusset i cirklen findes kun i lister med flere valg (.bdrop-multi: Platform, Lyd). Et enkeltvalg er en ren liste; det valgte bærer husets flueben. */
+html body .bdrop:not(.bdrop-multi) .bdrop-kort .bdrop-rk:not(.on):not([aria-selected="true"])::after { display:none !important; }
 </style>
 </head>
 <body>
@@ -23178,7 +23182,7 @@ async function briefStatusVaelgFakta(id, st) {
   FB_AABEN = null;
   try { if (document.body.classList.contains("mb")) markbaandTegn(7); } catch (e) {}   /* baandets status foelger med (21/9) */
   try { const rail = document.getElementById("briefRail"); if (rail) briefFaktaBoksTegn(rail); } catch (e) {}
-  try { if (document.body.hasAttribute("data-bforside")) briefMbVis("forside"); } catch (e) {}
+  try { if (document.body.hasAttribute("data-bforside")) briefHoldStille(function () { briefMbVis("forside"); }); } catch (e) {}   /* intet bevaeger sig ved valg i fakta (Ida 4/10) */
 }
 function briefFaktaUdPlacer() {
   const rail = document.getElementById("briefRail"); if (!rail) return;
@@ -23845,8 +23849,32 @@ function briefDropVaelg(el, key, multi) {
      gentegnes her, saa den lukkede pille viser det nye valg. Scroll bevares (30/7). */
   if (["format", "maalgruppe", "lyd"].indexOf(key) === -1 && typeof openBriefSide === "function" && document.getElementById("briefWrap")) {
     try { saveBrief(true); } catch (e) {}
+    /* INTET BEVAEGER SIG, NAAR MAN ARBEJDER I FAKTA (Ida 4/10: »når jeg vælger i faktaboksen - hopper siden?«): et valg i fakta-boksen
+       tegner KUN fakta-boksen om — aldrig hele briefen. Valget skrives i IDEER-posten med det samme, saa det ikke springer tilbage. */
+    if (briefFraFakta(el)) { briefFaktaSyncIdee(); briefFaktaRkOpdater(); return; }
     openBriefSide(BRIEF_ID);
   }
+}
+function briefFraFakta(el) { try { return !!(el && el.closest && el.closest("#fbBoks, .fb-ud, #briefRail")); } catch (e) { return false; } }
+function briefFaktaSyncIdee() {
+  try { const it = (IDEER || []).find(x => String(x.id) === String(BRIEF_ID)); if (it) it.brief = Object.assign({}, it.brief, JSON.parse(JSON.stringify(BRIEF_STATE))); } catch (e) {}
+}
+/* en gentegning fra fakta (format/lyd/maalgruppe skifter skabelonen) holder rullepositionen over flere billeder — eet billede var for tidligt */
+function briefHoldStille(fn) {
+  const cEl = document.querySelector(".content");
+  const sc = cEl ? cEl.scrollTop : window.scrollY;
+  const hold = function () { try { if (cEl) cEl.scrollTop = sc; else window.scrollTo(0, sc); } catch (e) {} };
+  try { fn(); } catch (e) {}
+  hold(); requestAnimationFrame(function () { hold(); requestAnimationFrame(hold); }); setTimeout(hold, 120); setTimeout(hold, 400);
+}
+function briefGentegnStille() {
+  const cEl = document.querySelector(".content");
+  const sc = cEl ? cEl.scrollTop : window.scrollY;
+  const hold = function () { try { if (cEl) cEl.scrollTop = sc; else window.scrollTo(0, sc); } catch (e) {} };
+  briefFaktaSyncIdee();
+  window.__BRIEF_STILLE = true;
+  try { openBriefSide(BRIEF_ID); } finally { window.__BRIEF_STILLE = false; }
+  hold(); requestAnimationFrame(function () { hold(); requestAnimationFrame(hold); }); setTimeout(hold, 120); setTimeout(hold, 400);
 }
 function briefChip(el, key, multi) {
   /* data-val er VÆRDIEN; teksten kan bære en visnings-etiket ("Kort-reel (4-6 sek.)") */
@@ -23856,12 +23884,12 @@ function briefChip(el, key, multi) {
     const ix = arr.indexOf(v);
     if (ix === -1) arr.push(v); else arr.splice(ix, 1);
     el.classList.toggle("on", ix === -1);
-    if (key === "lyd" && document.getElementById("briefWrap")) { try { saveBrief(true); } catch(e) {} openBriefSide(BRIEF_ID); return; }   /* manus-/musik-felterne folder ud på siden (Ida 28/7) */
+    if (key === "lyd" && document.getElementById("briefWrap")) { try { saveBrief(true); } catch(e) {} if (briefFraFakta(el)) { briefGentegnStille(); return; } openBriefSide(BRIEF_ID); return; }   /* manus-/musik-felterne folder ud på siden (Ida 28/7) */
   } else {
     BRIEF_STATE[key] = v;
     if (key === "cta") delete BRIEF_STATE.ctaAuto;   // nu er valget kundens eget
     if (window.BASIS_EDIT && window.BASIS_EDIT[key]) { delete window.BASIS_EDIT[key]; try { saveBrief(true); } catch(e) {} openBriefSide(BRIEF_ID); return; }
-    if ((key === "format" || key === "maalgruppe" || key === "lyd") && document.getElementById("briefWrap")) { try { saveBrief(true); } catch(e) {} openBriefSide(BRIEF_ID); return; }
+    if ((key === "format" || key === "maalgruppe" || key === "lyd") && document.getElementById("briefWrap")) { try { saveBrief(true); } catch(e) {} if (briefFraFakta(el)) { briefGentegnStille(); return; } openBriefSide(BRIEF_ID); return; }
     [...el.parentElement.querySelectorAll(".chip-btn")].forEach(b => b.classList.toggle("on", b === el));
     if (key === "format") {
       /* openBriefSide genlæser IDEER-posten — uden dette lå det nye format kun
@@ -25467,6 +25495,7 @@ async function briefBasisSoejle(navn) {
     skalGemme = true;
   }
   if (skalGemme) { try { await saveBrief(true); } catch(e) {} }
+  if (document.getElementById("briefWrap")) { briefGentegnStille(); return; }   /* intet bevaeger sig ved valg i fakta (Ida 4/10) */
   openBriefSide(BRIEF_ID);
 }
 /* "VED IK'"-VALGET (Ida 19/8): rydder søjlen og husker, at det var et VALG — så chippen
@@ -25477,6 +25506,7 @@ async function briefBasisSoejleVedIk() {
   if (it && it.soejle) { it.soejle = ""; try { await ideUpdate(BRIEF_ID, { soejle: "" }); } catch(e) {} }
   if (BRIEF_STATE) BRIEF_STATE.soejleVedIk = true;
   try { await saveBrief(true); } catch(e) {}
+  if (document.getElementById("briefWrap")) { briefGentegnStille(); return; }
   openBriefSide(BRIEF_ID);
 }
 /* soejleReminderVis er UDGAAET (Ida 30/7) — den roede kasse tegnes nu af briefMetaByg ud fra
@@ -26347,7 +26377,7 @@ function openBriefSide(id) {
     /* GEM MAA IKKE SLETTE (4/8): et gemt valg uden for listen laegges ind oeverst */
     if (!multi && val && !grp.some(g => g.opts.indexOf(val) > -1)) grp[0].opts = [val].concat(grp[0].opts);
     const erOn = o => multi ? val.indexOf(o) > -1 : val === o;
-    return '<div class="bdrop" id="' + id + '">'
+    return '<div class="bdrop' + (multi ? ' bdrop-multi' : '') + '" id="' + id + '">'
       + '<button type="button" class="bdrop-knap' + (harValg ? ' valgt' : ' tom') + '" onclick="briefDropAaben(\'' + id + '\')">' + esc(tekst) + '<span class="bdrop-pil">\u25be</span></button>'
       + '<div class="bdrop-kort" style="display:none;">'
       + grp.map(g => (g.lbl ? '<div class="bdrop-lbl">' + esc(g.lbl) + '</div>' : '') + g.opts.map(o => dropRk(key, o, erOn(o), multi, visning)).join('')).join('')
@@ -56802,7 +56832,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2465";
+const APP_VERSION = "2466";
 let NY_VERSION_KLAR = false;
 let NY_VERSION_AFVIST = false;
 function nyVersionSkjul() {
@@ -79383,7 +79413,7 @@ function bf3StudieRum(v, filter) {
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-hvid.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 4. oktober · 2465</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 4. oktober · 2466</div>
 <script>
 /* DROPDOWNEN RULLER SELV (Ida 4/10) — maal den aabne liste og klip den ved skaermens bund */
 (function () {

@@ -1,3 +1,7 @@
+## FAKTA STÅR STILLE · ÉT VALG UDEN PLUS — LIVE v2466 (Idas klik 4/10, skærmbilleder Nnpky61DVMLe1MJPoLaaqn)
+- **HÅRD: intet på siden bevæger sig, når man arbejder i fakta** (Ida 4/10). Et valg i fakta-boksen tegner KUN fakta-boksen om (`briefFraFakta`, `briefFaktaSyncIdee`, `briefFaktaRkOpdater`). Skifter valget briefens skabelon (format, lyd, målgruppe, indholdssøjle, status), gentegnes briefen med rullepositionen holdt over flere billeder (`briefGentegnStille`, `briefHoldStille`). Målt 150 → 150 på 390 og 1440.
+- **HÅRD: et enkeltvalg har aldrig plusset** (Ida 4/10: »skal ikke være pinterest select muligheden«). Plus i cirkel kun på lister med flere valg (`.bdrop-multi`: Platform, Lyd); et enkeltvalg er en ren liste, det valgte bærer husets flueben.
+
 ## GODKENDELSEN = HUSETS FLISE · DROPDOWNEN RULLER SELV · GRÅ VÆRKTØJSKNAPPER — LIVE v2465 (Idas klik 4/10, bud 1 2C6J5SBhz3HrM9srPbynzx, skærmbilleder W7WiprJwPfSmpTuJPh4vnP)
 - **HÅRD: godkendelsen i briefen er husets flise** — hvid m. skygge, etiket · én grå streg · én linje · feltet · Send retur (grå) og Godkend (rød) lige store i fuld bredde. Aldrig rød ramme, aldrig rød streg under etiketten. Gælder alle tre tilstande (til godkendelse · venter · svaret), b2b og admin (`.godk-flise`).
 - **HÅRD: en dropdown ruller altid inde i sig selv** (Ida 4/10: »jeg skal altid kunne scrolle i en dropdown uden at scrolle ned på siden«) — `listeKap` klipper en åben `.bs3-liste`/`.bdrop-kort` 16 px over skærmens bund; `overscroll-behavior:contain`.
