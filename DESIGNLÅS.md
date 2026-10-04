@@ -1,3 +1,6 @@
+## v2470 · SPØRGESKEMAETS 1. SPØRGSMÅL: »INGEN ENDNU« + »VÆLG GERNE FLERE.« (Idas klik 4/10)
+- Ny chip sidst »Ingen endnu«, der slår de andre fra (og omvendt) · grå linje »Vælg gerne flere.« under spørgsmålet · samme i slutskemaets tvilling. Intro-sætningen »Det er dét, vi måler din fremgang på« bliver (den gælder hele skemaet). STATUS: LIVE.
+
 ## v2469 · ADGANGSKODE-SKÆRMEN: ØJET, FEJL PÅ DANSK, KODEN GEMMES (kunderejsen, Ida 4/10)
 - Øjet som på loginet (samme tegning, samme greb) · Supabases engelske fejl oversat (for kort · samme som før · for nem · linket udløbet · ingen forbindelse) · skjult mailfelt (autocomplete username) så telefonen gemmer koden på kontoen.
 - Ordlyd og form urørt. Udløbet/brugt link er MÅLT live: åbner Glemt adgangskode med forklaringen. STATUS: LIVE.
