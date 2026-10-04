@@ -1,3 +1,8 @@
+## VELKOMSTEN = TRE SKRIDT I HUSETS ARK FØR SPØRGESKEMAET — BESLUTTET 4/10 (Idas klik på PPPQqM3mQftE6nZWMQ9mqt) · STATUS: IKKE BYGGET
+- Første gang kunden åbner Content Studio: husets ark over Hjem, »Trin n af 3«. 1: navn og butik (Fysisk butik · Fysisk butik + Webshop · Webshop). 2: teamet (kan springes over). 3: hilsen. Derefter spørgeskemaet som i dag.
+- **HÅRD: intet coverbillede i velkomsten** (Ida 4/10: »det er fast i b2b — kun i TTS, som vi bygger senere, skal de kunne skifte cover«).
+- **HÅRD: bud tegnes med appens egne dele og viser kun beslutningen** (Ida 4/10: »jeg kunne slet ikke kende mit energida design«).
+
 ## ÉT VALG = TOM CIRKEL — LIVE v2467 (Idas klik 4/10)
 - Lister med ét valg har den tomme grå cirkel ud for hver række; flere valg (Platform, Lyd) har cirklen med plus; valgt = rød cirkel med hvidt flueben. Vælter v2466's »ingen cirkel«: det var plusset, Ida ikke ville have, ikke cirklen.
 
