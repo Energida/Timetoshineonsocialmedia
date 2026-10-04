@@ -1,3 +1,9 @@
+## GODKENDELSEN = HUSETS FLISE · DROPDOWNEN RULLER SELV · GRÅ VÆRKTØJSKNAPPER — LIVE v2465 (Idas klik 4/10, bud 1 2C6J5SBhz3HrM9srPbynzx, skærmbilleder W7WiprJwPfSmpTuJPh4vnP)
+- **HÅRD: godkendelsen i briefen er husets flise** — hvid m. skygge, etiket · én grå streg · én linje · feltet · Send retur (grå) og Godkend (rød) lige store i fuld bredde. Aldrig rød ramme, aldrig rød streg under etiketten. Gælder alle tre tilstande (til godkendelse · venter · svaret), b2b og admin (`.godk-flise`).
+- **HÅRD: en dropdown ruller altid inde i sig selv** (Ida 4/10: »jeg skal altid kunne scrolle i en dropdown uden at scrolle ned på siden«) — `listeKap` klipper en åben `.bs3-liste`/`.bdrop-kort` 16 px over skærmens bund; `overscroll-behavior:contain`.
+- Værktøjsknapperne (filter, søg, mappe — `.vt-knap`) er grå på hele b2b; valgt = rød.
+- Kalenderdagen: aftaler gemt fra et gammelt stiplet forslag (før v2463) vises ikke som aftaler — det stiplede forslag står der selv (`GL_FORSLAG`). Data røres ikke.
+
 ## AFTALETYPERNE + PLUSSET I BACKSTAGE — LIVE v2464 (Idas klik 4/10, skærmbilleder BLEFYJixKRCG4PmeRvpyn7)
 **Ny aftale:** typen øverst — Aftale (frit) · Screening · Energien bag strategien (3 t) · Strategiworkshop (3 t) · Opstart i Content Studio (1,5 t) · Ugentlig contentplanlægning (1 t) · Månedens planlægning (2 t) · Optagedag (4 t) · Opfølgning (1 t) · Afslutning (1 t). Typen giver titel, sluttid og agenda (i `note`), kræver kunde, skjuler tekstfeltet. `BF3_AFT_SLAGS`. YOU GOT THIS-kunder: »Lektionstid« først i hurtigvalget. STATUS: agendaen vises endnu ikke på mødesiden.
 **Plusset i Backstage = kundens form:** felt · »Vælg« · Idas 14 valg (BF3_HJEM_VALG) som fliser med ikon (telefon: hel skærm; computer: to og to). Skrevet ned gemmes direkte; Aftale åbner Ny aftale med teksten; resten åbner `bf3ToemArk(tekst, k)`.
