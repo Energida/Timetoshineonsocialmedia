@@ -1,3 +1,7 @@
+## v2469 · ADGANGSKODE-SKÆRMEN: ØJET, FEJL PÅ DANSK, KODEN GEMMES (kunderejsen, Ida 4/10)
+- Øjet som på loginet (samme tegning, samme greb) · Supabases engelske fejl oversat (for kort · samme som før · for nem · linket udløbet · ingen forbindelse) · skjult mailfelt (autocomplete username) så telefonen gemmer koden på kontoen.
+- Ordlyd og form urørt. Udløbet/brugt link er MÅLT live: åbner Glemt adgangskode med forklaringen. STATUS: LIVE.
+
 ## v2468 · ET ONLINEKURSUS FORSVINDER ALDRIG FRA LISTEN (HÅRD, Ida 4/10 kl. 17.27: »har tidligere idag oprettet produkt her?!! Som ikke er her nu«)
 - MÅLT: TTS lå i produkter, men listen »Hvilket onlinekursus?« viste kun produkter MED lektioner. Idas klik: alt, der oprettes under Idé til manus, ER et onlinekursus.
 - Id'et gemmes i skema_svar »onlinekurser« ved oprettelsen og står i listen uden lektioner; TTS er seedet. Pakkerne (I GOT YOU, Content-planner …) holdes ude.

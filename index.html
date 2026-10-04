@@ -56940,7 +56940,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2468";
+const APP_VERSION = "2469";
 let NY_VERSION_KLAR = false;
 let NY_VERSION_AFVIST = false;
 function nyVersionSkjul() {
@@ -60025,7 +60025,11 @@ function visNyAdgangskode(foersteGang) {
     + '<div style="font-size:10px;font-weight:400;letter-spacing:2px;text-transform:uppercase;color:var(--gray3);">' + (foersteGang ? 'Velkommen' : 'Ny adgangskode') + '</div>'
     + '<div style="font-family:Poppins,sans-serif;font-weight:400;font-size:24px;line-height:1.25;color:var(--red);margin:8px 0 16px;">' + (foersteGang ? 'Vælg din adgangskode' : 'Vælg din nye adgangskode') + '</div>'
     + '<div style="height:1px;background:var(--border);margin:0 0 18px;"></div>'
-    + '<input type="password" id="nyKodeFelt" placeholder="Mindst 6 tegn" style="width:100%;box-sizing:border-box;background:#fff;border:0;border-radius:14px;box-shadow:0 0 3px rgba(46,44,41,.10),0 0 12px rgba(46,44,41,.08);padding:14px 16px;font-size:15px;font-family:Poppins,sans-serif;text-align:left;">'
+    /* ADGANGSKODEN GEMMES PAA TELEFONEN (4/10, kunderejsen): et skjult mailfelt fortaeller noeglering/adgangskodeprogrammer, hvilken konto koden hoerer til — ellers gemmes den uden navn, og kunden staar uden kode naeste gang */
+    + '<input type="email" id="nyKodeMail" autocomplete="username" value="" aria-hidden="true" tabindex="-1" style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;">'
+    /* OEJET SOM PAA LOGINET (4/10): man kan se den kode, man skriver — samme tegning, samme greb */
+    + '<div style="position:relative;"><input type="password" id="nyKodeFelt" autocomplete="new-password" placeholder="Mindst 6 tegn" style="padding-right:48px !important;width:100%;box-sizing:border-box;background:#fff;border:0;border-radius:14px;box-shadow:0 0 3px rgba(46,44,41,.10),0 0 12px rgba(46,44,41,.08);padding:14px 16px;font-size:15px;font-family:Poppins,sans-serif;text-align:left;">'
+    + '<button type="button" id="nyKodeVis" onclick="nyKodeVisSkift()" title="Vis adgangskoden" aria-label="Vis adgangskoden" style="position:absolute;right:4px;top:0;bottom:0;width:44px;background:none;border:0;padding:0;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--gray2);">' + authOejeSvg(true) + '</button></div>'
     + '<div id="nyKodeMsg" style="font-size:11px;font-weight:400;margin-top:6px;color:var(--red);"></div>'
     /* KNAPPEN HEDDER DET, DEN GOER. "Gem NY adgangskode" til en, der aldrig har haft
        en, er en saetning der lyver (2/8) — og "Log ud i stedet" er meningsloest for en,
@@ -60035,6 +60039,21 @@ function visNyAdgangskode(foersteGang) {
     + (foersteGang ? '' : '<button class="dbtn ghost" style="width:100%;margin-top:8px;" onclick="custLogout()">Log ud i stedet</button>')
     + '</div>';
   document.body.appendChild(d);
+  try { sb.auth.getUser().then(function (r) { const m = document.getElementById("nyKodeMail"); const u = r && r.data && r.data.user; if (m && u && u.email) m.value = u.email; }); } catch (e) {}
+}
+function nyKodeVisSkift() {
+  const i = document.getElementById("nyKodeFelt"), b = document.getElementById("nyKodeVis"); if (!i || !b) return;
+  const vist = i.type === "text"; i.type = vist ? "password" : "text"; b.innerHTML = authOejeSvg(!vist);   /* samme tegning som loginets øje */
+}
+/* FEJLEN PAA DANSK (4/10): Supabase svarer paa engelsk — kunden skal vide, hvad der er galt, og hvad de goer nu */
+function nyKodeFejl(error) {
+  const t = String((error && error.message) || "").toLowerCase();
+  if (/different from the old|same as/.test(t)) return "Vælg en anden adgangskode end den, du havde før.";
+  if (/at least|too short|characters/.test(t)) return "Adgangskoden skal være mindst 6 tegn.";
+  if (/weak|pwned|easy to guess|known/.test(t)) return "Den adgangskode er for nem at gætte. Prøv en længere.";
+  if (/session|jwt|expired|not authenticated|missing/.test(t)) return "Linket er udløbet. Luk siden, og bed om et nyt link under Glemt adgangskode.";
+  if (/network|fetch|failed/.test(t)) return "Ingen forbindelse lige nu. Prøv igen om lidt.";
+  return "Adgangskoden blev ikke gemt. Prøv igen.";
 }
 async function gemNyAdgangskode() {
   const v = document.getElementById("nyKodeFelt").value;
@@ -60045,7 +60064,7 @@ async function gemNyAdgangskode() {
     try { await sb.from("skema_svar").update({ svar: { skal: false } }).eq("kode", currentKode).eq("navn", window.__SKIFT_KODE_TVUNGET).eq("skema", "skift_kode"); } catch(e) {}
     window.__SKIFT_KODE_TVUNGET = null;
   }
-  if (error) { m2.textContent = "Kunne ikke gemme: " + error.message; return; }
+  if (error) { m2.textContent = nyKodeFejl(error); return; }
   m2.style.color = "#000000"; m2.textContent = "Gemt — du er logget ind.";
   setTimeout(() => { const b = document.getElementById("nyKodeBoks"); if (b) b.remove(); }, 1200);
 }
@@ -79533,7 +79552,7 @@ function bf3StudieRum(v, filter) {
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-hvid.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 4. oktober · 2468</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 4. oktober · 2469</div>
 <script>
 /* DROPDOWNEN RULLER SELV (Ida 4/10) — maal den aabne liste og klip den ved skaermens bund */
 (function () {
