@@ -1,3 +1,7 @@
+## TØM HOVEDET = FELT + »HVOR SKAL DET HEN?« · TILPAS CONTENT — LIVE v2461 (Idas klik 4/10: bud 1 U5JEv9714RnzatfvdAjB7g + bud 1 1wDqdSJqo5yBqvpne2aj4b, skærmbilleder 5gTQ7drafTjSfW5MfFgqrs)
+**HÅRD:** kundens Tøm hovedet er ALDRIG chips igen. Feltet øverst, én dropdown »Hvor skal det hen? · Vælg« under, Gem + Annullér. Telefon: tryk lukker tastaturet, valgene som husets fliser med ikon over hele skærmen (`toemValgAabn`, `.toem-fuld`). Computer: fliserne folder ud under knappen, to og to. Skrevet ned gemmes direkte (også uden valg); de andre valg åbner deres eget ark med teksten (`toemHovedetTrin2(k, tekst)`); »Tilpas noget, jeg har lavet« åbner søgningen med teksten som søgeord.
+Tilpas content: søg i titel og al tekst i idéer og briefs; grupper Planlagt (har dato, ikke postet) og Idébanken (uden dato); tryk = `openBrief`. Låst for YOU GOT THIS før modul 7. Porten (probe-popups) godkender `.toem-ny`-arket som skriveform.
+
 ## IDAS TELEFON-RUNDE 2/10 — LIVE v2460 (Idas klik på skærmbillederne KPZqSiPGaDrHVEmEaK4anq)
 1. Admin Tøm hovedet: overskriften følger valget (»Hvad skal tilføjes til manus?« ved Idé til manus).
 2. »Hvilket onlinekursus?« har »+ Opret nyt produkt« nederst (som »Opret nyt rum«); produktet oprettes i produkter og vælges.
