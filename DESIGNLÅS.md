@@ -1,3 +1,8 @@
+## v2468 · ET ONLINEKURSUS FORSVINDER ALDRIG FRA LISTEN (HÅRD, Ida 4/10 kl. 17.27: »har tidligere idag oprettet produkt her?!! Som ikke er her nu«)
+- MÅLT: TTS lå i produkter, men listen »Hvilket onlinekursus?« viste kun produkter MED lektioner. Idas klik: alt, der oprettes under Idé til manus, ER et onlinekursus.
+- Id'et gemmes i skema_svar »onlinekurser« ved oprettelsen og står i listen uden lektioner; TTS er seedet. Pakkerne (I GOT YOU, Content-planner …) holdes ude.
+- Samme deploy: velkomsten er SLUKKET (VELKOMST_TIL = false, kun ?velkomst=1) til Idas klik. STATUS: LIVE.
+
 ## ALT ER FLISER — OGSÅ I MAILS OG BUD (HÅRD, Ida 4/10 kl. 08.32: »Jeg forstår slet ikke du forslår dette ulovlige design igen … Alt skal jo være fliser har jeg sagt!«)
 - Indhold står ALDRIG løst på en hvid flade: hvert stykke er en hvid flise med husets skygge på den lyse grund (#F2F0ED), etiket · én streg · indhold. Gælder appen, mails, Artifacts og alle bud.
 - **Hvorfor det slap igennem:** holdet, der tegnede login-mailens bud, fik CLAUDE.md og lockup-hukommelsen, men ikke DESIGNLÅS.md. Og jeg tjekkede ikke buddene mod låsen, før de blev sendt.
