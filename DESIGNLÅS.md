@@ -1,3 +1,6 @@
+## v2472 · KUNDENS TØM HOVEDET = DROPDOWN SOM ADMIN (Idas kommentar 4/10 kl. 21.26 + klik: »vi skal have lavet dette ligesom admin versionen med dropdown«)
+- »Hvor hører det hjemme?« (bf3DropHtml) lige under feltet, samme order som feltet; chipsene ligger skjult i arket og trykkes af valget, så titel/emne/indholdssøjle/dato/plus skifter som før. Kun når arket har flere valg (ikke fra Idébanken/én chip). STATUS: LIVE.
+
 ## BILLEDER OG LINK SOM EN BESKED, I ALLE POPUPS (HÅRD, Idas klik 4/10 kl. 19.45 på tegningen KZ1hvoW4KZP2s8VVX1JGAD v3: »rul dette ud i ALLE pop ups på admin og b2b«)
 - Plusset (48 px, hvid m. skygge) står til venstre for skrivefeltet og åbner telefonens fotovælger · billeder (84×112, skraldespand) og link (kæde · adresse · skraldespand) øverst i feltet · én streg · teksten for sig nedenunder med mikrofonen.
 - Et link sættes ind i teksten; appen flytter det op (ved indsætning, ved mellemrum efter, ved forudfyldt tekst). Ny idé-arkets »+ Tilføj link« viger (dublet).
