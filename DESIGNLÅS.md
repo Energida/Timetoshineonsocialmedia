@@ -1,3 +1,10 @@
+## BILLEDER OG LINK SOM EN BESKED, I ALLE POPUPS (HÅRD, Idas klik 4/10 kl. 19.45 på tegningen KZ1hvoW4KZP2s8VVX1JGAD v3: »rul dette ud i ALLE pop ups på admin og b2b«)
+- Plusset (48 px, hvid m. skygge) står til venstre for skrivefeltet og åbner telefonens fotovælger · billeder (84×112, skraldespand) og link (kæde · adresse · skraldespand) øverst i feltet · én streg · teksten for sig nedenunder med mikrofonen.
+- Et link sættes ind i teksten; appen flytter det op (ved indsætning, ved mellemrum efter, ved forudfyldt tekst). Ny idé-arkets »+ Tilføj link« viger (dublet).
+- Plusset viger på felter på én linje (navn, rum, to-do, begivenhed) og på »Jeg har set noget fedt« (eget plus). Bygget i arkAabn (alle ark-popups); de 21 modalBody-popups følger, når de lægges om til arket.
+- Gemmes som linjer sidst i teksten; billeder i lageret »inspiration« under kundens mappe (Backstage: ENERGIDA/) — samme vej som Inspiration, ingen ny bucket/policy. Visningen: vedhVis i tegnTilSvg-motoren gør adresser til billeder/link-linjer overalt (skriveflader, kode og redigerbart undtaget).
+- STATUS: BYGGET LOKALT, porten grøn, skærmbilleder RswNFKvnQoRvsm3ow11WfH — venter på Idas klik før deploy. IKKE testet: rigtig upload til lageret, iPhone-fotovælgeren, visningen på hvert landingssted.
+
 ## v2470 · SPØRGESKEMAETS 1. SPØRGSMÅL: »INGEN ENDNU« + »VÆLG GERNE FLERE.« (Idas klik 4/10)
 - Ny chip sidst »Ingen endnu«, der slår de andre fra (og omvendt) · grå linje »Vælg gerne flere.« under spørgsmålet · samme i slutskemaets tvilling. Intro-sætningen »Det er dét, vi måler din fremgang på« bliver (den gælder hele skemaet). STATUS: LIVE.
 
