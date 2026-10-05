@@ -1,3 +1,7 @@
+## v2499 · 5. oktober · Noter i et afsnit via plusset
+- Biblioteket: afsnittets »Tilføj til …«-felt er skjult; plusset i rummet giver »Note i <afsnit>« for hvert afsnit + Afsnit + Rum herinde.
+- Runde 2 af gennemgangen (selen m. testdata): Bibliotekets forside, rum, underrum, Notion-rum, database-rum og Content Studios undersider. Citater + Velkomsthilsner beholder deres felt øverst (Idas eget ønske 5/10) — venter på klik.
+
 ## v2498 · 5. oktober · Backstage-gennemgangen: plusset overtager tilføj-felter overalt
 - HÅRD: på en side uden eget plus overtager plusset (coveret på computer, bundmenuen på telefon) sidens tilføj-felt eller tilføj-knapper (Ny … / Nyt … / Tilføj …); feltet/knapperne skjules. Flere = det lille ark »Tilføj« med valgene. Søgefelter (Find/Søg) røres aldrig.
 - Gennemgang af 21 sider på 390 + 1440 (selen, automatisk tjek): fundet og rettet Idéer, App-ønskelisten, Økonomi (Tilføj post), Food Studio (Ny opskrift · Ny kogebog · Tilføj fødevare). Ingen dobbelt søgning, ingen menu-underpunkter, ingen vandret scroll.
