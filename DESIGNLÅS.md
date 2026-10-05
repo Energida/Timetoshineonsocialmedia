@@ -1,3 +1,6 @@
+## v2486 · 5/10 · »HVOR HØRER DET HJEMME?« SOM MAPPER (HÅRD, Ida 5/10: »ligesom på pinterest får man jo ikke alle undersiderne op først de kommer når man har valgt en folder«)
+- Rum-delen af listen: søgefelt øverst (søger i alle rum, viser stien) · kun de øverste rum · pil = åbn mappen (Tilbage · mappen selv · dens rum) · »+ Opret nyt rum« opretter i den mappe, man står i. Rumnavne med versaler.
+
 ## v2485 · 5/10 · TILFØJ ØVERST · PLUSSET = NY CHIP · TRÆK I BIBLIOTEKET · NOTION-CHIPS (HÅRD, Ida 5/10)
 - Tilføj-feltet står ALDRIG nederst: på Citater/Velkomsthilsner står »Ny · til« + Tilføj citat øverst, listen under (»denne bar må aldrig være i bunden«).
 - Plusset på Citater/Velkomsthilsner laver en ny chip (vane cs_produkter), ikke et rum.
