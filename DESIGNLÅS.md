@@ -1,3 +1,7 @@
+## v2487 · 5/10 · TRÆK MED MUS UDEN AT HOLDE-MENUEN AFBRYDER · RUMNAVNE MED VERSALER OVERALT (HÅRD, Ida 5/10)
+- Biblioteket, mus: at holde nede åbner aldrig menuen midt i et træk; menuen kommer ved slip uden bevægelse eller højreklik (»her kan jeg ikke merge fliser?«).
+- Rumnavne med versaler også i stien (navsti) på et rum og på studiernes rum-døre (»alle titler i alle rum bliver skrevet automatisk med versaler«). Kun visningen.
+
 ## v2486 · 5/10 · »HVOR HØRER DET HJEMME?« SOM MAPPER (HÅRD, Ida 5/10: »ligesom på pinterest får man jo ikke alle undersiderne op først de kommer når man har valgt en folder«)
 - Rum-delen af listen: søgefelt øverst (søger i alle rum, viser stien) · kun de øverste rum · pil = åbn mappen (Tilbage · mappen selv · dens rum) · »+ Opret nyt rum« opretter i den mappe, man står i. Rumnavne med versaler.
 
