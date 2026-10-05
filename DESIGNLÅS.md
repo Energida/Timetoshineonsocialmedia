@@ -1,3 +1,9 @@
+## v2485 · 5/10 · TILFØJ ØVERST · PLUSSET = NY CHIP · TRÆK I BIBLIOTEKET · NOTION-CHIPS (HÅRD, Ida 5/10)
+- Tilføj-feltet står ALDRIG nederst: på Citater/Velkomsthilsner står »Ny · til« + Tilføj citat øverst, listen under (»denne bar må aldrig være i bunden«).
+- Plusset på Citater/Velkomsthilsner laver en ny chip (vane cs_produkter), ikke et rum.
+- Biblioteket: træk en flise over kanten af en anden = flyt rundt (gemmes i doer_orden.bib); over midten = læg ind (rød) → det rum/studie, man lagde i, åbnes. Mus: træk straks; telefon: hold, så løftes flisen.
+- »Bruges til« + »Gennemgået« kun i rum under Notion. Tryk på en ting: i Notion = Flyt til; ellers = Ret teksten. Langt tryk = det andet.
+
 ## v2484 · 5/10 · FLYT TIL = HELE BACKSTAGE · STUDIERNE SOM FLISER · RUMNAVNE MED VERSALER (HÅRD, Ida 5/10)
 - Flyt til viser ALLE rum, grupperet: Biblioteket · Content Studio · Time to Shine · Mine rum (som tavler i Pinterest). Søgning på tværs.
 - Food Studio har målet »Opskrifter«: tingen bliver en opskrift i Food Studio, og tingen i Biblioteket går i papirkurven (30 dage). Studie-rum, der fører til en side uden noter, er ikke mål.
