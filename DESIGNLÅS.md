@@ -1,3 +1,7 @@
+## v2478 LIVE 5/10 · Et nyt rum er HELT tomt · langt tryk på en blok = husets menu
+- Ida 5/10: »når jeg opretter rum og underrum skal de være helt tomme! Dette skal fjernes« → mrFelterBlok (Type · Status · Beskrivelse) tegnes kun, hvis rummet allerede har noget i felterne. Rene fejl mod reglen 4/10.
+- Ida 5/10: »jeg kan stadig hverken slette eller flytte fliser rundt?« → langt tryk (450 ms) eller højreklik på en blok i et rum åbner bf3ValgArk: Flyt op · Flyt ned · Omdøb · Duplikér · skraldespand (spørger først). 12/9-reglen (én menu, samme fem) gælder nu rummets blokke; træk er ikke bygget.
+
 ## HÅRD 5/10 kl. ~13 · DREJEBOGEN ER ALDRIG DESIGNFORLÆG
 Ida: »du måtte på ingen måde kigge i drejebogen for design. designet i drejebogen duer på ingen måde! … fjern ALT design fra den gamle drejebog! … sæt dig i kundens sted! lav det til min kunde! Kald på alle designskills du har.« Drejebogen (HTML 25/8) bruges KUN som kilde til ordene. Bud på kundesider tegnes fra kundens stol (Hans-testen) og køres gennem brainstorming · emil · ui-ux-pro-max · energida-design FØR de tegnes.
 
