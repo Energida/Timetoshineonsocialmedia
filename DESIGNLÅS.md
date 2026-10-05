@@ -1,3 +1,6 @@
+## v2479 LIVE 5/10 · kundens egne eksempler overlever genindlæsning
+- MÅLT i koden + basen (hold 5/10): hentStrategiOverride kopierede why/usp/kunde/pillars, men ALDRIG egne → Indholdssøjlernes »Dine eksempler« og »Din egen måde« stod tomme efter reload, selv om de lå i kunde_strategi.byggesten.egne (én kunde havde ét eksempel på 2B). Nu kopieres egne med. Ren datafejl.
+
 ## v2478 LIVE 5/10 · Et nyt rum er HELT tomt · langt tryk på en blok = husets menu
 - Ida 5/10: »når jeg opretter rum og underrum skal de være helt tomme! Dette skal fjernes« → mrFelterBlok (Type · Status · Beskrivelse) tegnes kun, hvis rummet allerede har noget i felterne. Rene fejl mod reglen 4/10.
 - Ida 5/10: »jeg kan stadig hverken slette eller flytte fliser rundt?« → langt tryk (450 ms) eller højreklik på en blok i et rum åbner bf3ValgArk: Flyt op · Flyt ned · Omdøb · Duplikér · skraldespand (spørger først). 12/9-reglen (én menu, samme fem) gælder nu rummets blokke; træk er ikke bygget.
