@@ -9703,6 +9703,8 @@ html body.mb #ibPlusSide { position:absolute; right:16px; top:calc(288px - 36px 
 html body.mb #ibPlusSide .vt-primaer { margin:0 !important; width:44px; height:44px !important; min-height:44px !important; padding:0 !important; border-radius:50% !important; font-size:0 !important; display:inline-flex !important; align-items:center; justify-content:center; background:var(--red) !important; border-color:var(--red) !important; color:#fff !important; }
 html body.mb #ibPlusSide .vt-primaer::before { content:"+"; font-size:22px; line-height:1; }
 @media (max-width:899px) { html body.mb #ibPlusSide { display:none !important; } }
+.ah-dato-rk { display:flex; gap:12px; margin:0 0 12px; } .ah-dato-rk > div { flex:1; min-width:0; } .ah-dato-rk select { width:100%; min-height:44px; }
+.ah-dato { font-size:12.5px; color:var(--gray2); margin-top:4px; } .ah-plan-rk .ah-dato { display:inline; margin:0; }   /* datoer paa aarshjulets punkter (5/10 aften) */
 button[data-slet-ord] { display:inline-flex !important; align-items:center; justify-content:center; gap:8px; }
 button[data-slet-ord] .slet-ord { font-family:Poppins,sans-serif; font-weight:400; font-size:13px; }   /* ordet ved skraldespanden (5/10 aften) */
 /* KUNDENS SIDE: aftale-formularen og forloebs-skabelonen bor i plusset (Idas klik 5/10 aften) */
@@ -50370,21 +50372,32 @@ function ahOverblikHtml() {
     const m = ((nu - 1 + k) % 12) + 1, l = ahMaaned(m), navn = AH_MAANED[m - 1].charAt(0).toUpperCase() + AH_MAANED[m - 1].slice(1);
     h += '<div class="ibb-kol" data-kol="' + m + '"><div class="ibb-kol-plus"><button type="button" class="ibb-plus mq-tap" onclick="ahTilfoejArk(' + m + ')">+ Tilføj</button></div><div class="ibb-kol-ramme">'
       + '<div class="ibb-eye ibh"><span class="ibh-navn">' + esc(navn) + '</span></div>'
-      + l.map(function (x, i) { return '<div class="ibb-foto" onclick="ahRetArk(' + m + ',' + i + ')"><div class="ibb-foto-t">' + esc(x.t) + '</div></div>'; }).join("")
+      + l.map(function (x, i) { const dv = ahDatoVis(x, m); return '<div class="ibb-foto" onclick="ahRetArk(' + m + ',' + i + ')"><div class="ibb-foto-t">' + esc(x.t) + '</div>' + (dv ? '<div class="ah-dato">' + esc(dv) + '</div>' : '') + '</div>'; }).join("")
       + '</div></div>';
   }
   return h + '</div><button type="button" class="dbtn tom-knap mq-tap ah-guide-knap" onclick="aarshjulLav()">Gå året igennem</button>';
 }
+/* DATOER PAA ET PUNKT (Ida 5/10 aften: »man kan tilføje datoer til og fra eller bare enkelte på de forskellige ting«): dag i maaneden, Fra + valgfri Til.
+   Gemmes som { t, fra, til } (dag-numre, ingen aarstal — aarshjulet gentager sig). Punkterne sorteres efter dato; uden dato staar sidst. */
+function ahDageI(m) { return [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][m - 1]; }
+function ahDatoVis(x, m) { if (!x || !x.fra) return ""; const md = ["jan.", "feb.", "mar.", "apr.", "maj", "jun.", "jul.", "aug.", "sep.", "okt.", "nov.", "dec."][m - 1]; return (x.til && x.til > x.fra) ? x.fra + ".–" + x.til + ". " + md : x.fra + ". " + md; }
+function ahSorter(l) { return l.slice().sort(function (a, b) { return (a.fra || 99) - (b.fra || 99); }); }
+function ahDatoFelter(m, x) {
+  const n = ahDageI(m); const opt = function (v, tom, ord) { let h = '<option value="">' + tom + '</option>'; for (let d = 1; d <= n; d++) h += '<option value="' + d + '"' + (Number(v) === d ? ' selected' : '') + '>' + ord + ' ' + d + '.</option>'; return h; };   /* ingen etiketter i popuppen (21/9) — valget siger selv Fra/Til */
+  return '<div class="ah-dato-rk"><div><select id="ahFra" class="select-nice">' + opt(x && x.fra, "Fra dag", "Fra") + '</select></div>'
+    + '<div><select id="ahTil" class="select-nice">' + opt(x && x.til, "Til dag", "Til") + '</select></div></div>';
+}
+function ahDatoLaes() { const f = Number((document.getElementById("ahFra") || {}).value) || 0, t = Number((document.getElementById("ahTil") || {}).value) || 0; const o = {}; if (f) { o.fra = f; if (t > f) o.til = t; } return o; }
 function ahTilfoejArk(m) {
   const navn = AH_MAANED[m - 1];
-  arkAabn({ titel: "Tilføj til " + navn, ph: "Hvad sker der?", tekst: "", send: "Gem", enLinje: true,
-    gem: async function (t) { const v = String(t || "").trim(); if (!v) return false; const d = ahData(); if (!d) return false; const l = ahMaaned(m).slice(); if (!l.some(function (x) { return x.t === v; })) l.push({ t: v }); d.m[String(m)] = l; const ok = await maalsGem(); ahTegn(); return ok === false ? false : "Står i årshjulet."; } });
+  arkAabn({ titel: "Tilføj til " + navn, ph: "Hvad sker der?", tekst: "", send: "Gem", enLinje: true, ekstraAf: function () { return ahDatoFelter(m, null); },
+    gem: async function (t) { const v = String(t || "").trim(); if (!v) return false; const d = ahData(); if (!d) return false; const l = ahMaaned(m).slice(); if (!l.some(function (x) { return x.t === v; })) l.push(Object.assign({ t: v }, ahDatoLaes())); d.m[String(m)] = ahSorter(l); const ok = await maalsGem(); ahTegn(); return ok === false ? false : "Står i årshjulet."; } });
 }
 function ahRetArk(m, i) {
   const l = ahMaaned(m); const x = l[i]; if (!x) return;
   arkAabn({ titel: AH_MAANED[m - 1].charAt(0).toUpperCase() + AH_MAANED[m - 1].slice(1), ph: "Hvad sker der?", tekst: x.t, send: "Gem", enLinje: true,
-    ekstraAf: function () { return '<button type="button" class="ark-knap ah-slet" aria-label="Slet" title="Slet" onclick="ahSlet(' + m + ',' + i + ')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg></button>'; },
-    gem: async function (t) { const v = String(t || "").trim(); const d = ahData(); if (!d) return false; const ny = ahMaaned(m).slice(); if (v) ny[i] = { t: v }; else ny.splice(i, 1); d.m[String(m)] = ny; const ok = await maalsGem(); ahTegn(); return ok === false ? false : "Gemt."; } });
+    ekstraAf: function () { return ahDatoFelter(m, x); }, knap: { slet: true, tekst: "Slet", klik: "ahSlet(" + m + "," + i + ")" },   /* Slet under Annullér (24/9) */
+    gem: async function (t) { const v = String(t || "").trim(); const d = ahData(); if (!d) return false; const ny = ahMaaned(m).slice(); if (v) ny[i] = Object.assign({}, ny[i], { t: v, fra: undefined, til: undefined }, ahDatoLaes()); else ny.splice(i, 1); ny.forEach(function (y) { if (y.fra === undefined) delete y.fra; if (y.til === undefined) delete y.til; }); d.m[String(m)] = ahSorter(ny); const ok = await maalsGem(); ahTegn(); return ok === false ? false : "Gemt."; } });
 }
 async function ahSlet(m, i) { const d = ahData(); if (!d) return; const ny = ahMaaned(m).slice(); ny.splice(i, 1); d.m[String(m)] = ny; try { arkLuk(true); } catch (e) {} await maalsGem(); ahTegn(); try { husKvit("Slettet fra årshjulet."); } catch (e) {} }
 function ahTrinHtml() {
@@ -50434,7 +50447,7 @@ function ahMaanedsplanHtml(mkey) {
     const m = parseInt(String(mkey || "").slice(5, 7), 10); if (!m) return "";
     const l = ahMaaned(m); const navn = AH_MAANED[m - 1];
     if (!l.length) return '<div class="ah-plan"><div class="ah-et">Fra dit årshjul</div><div class="ah-plan-tom">Der står ikke noget i årshjulet for ' + esc(navn) + '. <button type="button" class="ah-link" onclick="planRitLuk();aarshjulAabn(' + m + ')">Tilføj</button></div></div>';
-    return '<div class="ah-plan"><div class="ah-et">Fra dit årshjul · Det sker i ' + esc(navn) + '</div>' + l.map(function (x) { return '<div class="ah-plan-rk">' + esc(x.t) + '</div>'; }).join("") + '</div>';
+    return '<div class="ah-plan"><div class="ah-et">Fra dit årshjul · Det sker i ' + esc(navn) + '</div>' + l.map(function (x) { const dv = ahDatoVis(x, m); return '<div class="ah-plan-rk">' + esc(x.t) + (dv ? ' <span class="ah-dato">· ' + esc(dv) + '</span>' : '') + '</div>'; }).join("") + '</div>';
   } catch (e) { return ""; }
 }
 function snGruppeKlik(tab, underId) {
@@ -57380,7 +57393,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2504";
+const APP_VERSION = "2505";
 let NY_VERSION_KLAR = false;
 let NY_VERSION_AFVIST = false;
 function nyVersionSkjul() {
@@ -80997,7 +81010,7 @@ function bf3StudieRum(v, filter) {
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-hvid.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 5. oktober · 2504</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 5. oktober · 2505</div>
 <script>
 /* DROPDOWNEN RULLER SELV (Ida 4/10) — maal den aabne liste og klip den ved skaermens bund */
 (function () {
