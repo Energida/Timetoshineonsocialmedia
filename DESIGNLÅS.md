@@ -1,3 +1,9 @@
+## v2477 LIVE 5/10 (Idas klik) · Hashtagbanken = foldede grupper (bud 3) · ÉT GREB: det røde flueben låser · højst fem låste · popuppen om ny version i husets form
+- Hashtagbanken (Idas klik 5/10 på U1sk4p1TXTR2oxU1zfjDrJ, bud 3): låste øverst (»n af 5 i hver caption«), banken under som én foldbar flise pr. kategori med rigtig tabel (Låst · Hashtag · Brugt · Sidst brugt · skraldespand) + sendefelt i hver; chips Mest brugt · A til Å · Sidst brugt · Fold alle ud; siden i fuld bredde på computeren (vælter 20/9's to spalter på denne side). Mødet (iMoedet) uændret.
+- HÅRD (Ida 5/10 kl. ~09.30): »der skal ikke være sliders nogle steder og cirkler andre steder« → én kontrol = den røde cirkel m. flueben (.htb-ok), betyder låst. HÅRD (kl. ~09.45): »der kan kun være 5 i hver caption« → HTB_MAKS_FASTE = 5, den sjette afvises med husBesked.
+- Popuppen »Der er kommet en ny version« (Ida kl. 09.40): rød »Hent den nu« + grå »Ikke nu«, 44 høje, lang streg → punktum.
+- Nyt datafelt hashtagbank.liste[].sidst (ISO-dato), sættes i htbTaelBrief.
+
 ## v2476 LIVE 5/10 (Idas klik) · Bibliotekets forside = dine rum · søgningen som symbol i båndet
 - Forsiden viser KUN rummene lige under Biblioteket (fliser, A–Å, grønt flueben), intet chips-bånd; tags bor på rummet (Ida 5/10 kl. 08.20: »Bibliotekets dashboard skal være en lækkert og overskuelig side med mine rum … alle disse chips skal ikke stå fremme her«).
 - Søgningen = rund knap (#bibSoegTgl) foran ⋯ og plusset, samme form som ⋯; tryk åbner feltet øverst og søger i alle rum (navn + tags) og al tekst; resultater viser stien. Feltets egen kant (bred dash-mode-regel) var klippet i venstre side — rettet med border:0 !important i .bib-soeg.
