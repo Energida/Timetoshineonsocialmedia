@@ -57358,7 +57358,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2499";
+const APP_VERSION = "2500";
 let NY_VERSION_KLAR = false;
 let NY_VERSION_AFVIST = false;
 function nyVersionSkjul() {
@@ -80252,15 +80252,13 @@ async function contentStudioTegn() {
   if (CS_AABEN === "velkomst" || CS_AABEN === "dashboard") {
     const n = CS_AABEN; const liste = (CS[n] || []).filter(function (x) { return !BF3_CS_FILTER || (x.produkt || "Content Studio") === BF3_CS_FILTER; });
     const rk = function (x) { return '<div class="bs3-fl" data-slet="csSlet(\'' + n + '\',\'' + esc(String(x.id)) + '\')"><div class="bs3-rk"><button type="button" class="mq-tap bs3-cirk' + (x.brug !== false ? ' set' : '') + '" aria-label="' + (x.brug !== false ? 'Bruges' : 'Bruges ikke') + '" title="' + (x.brug !== false ? 'Bruges · tryk for at tage den ud' : 'Bruges ikke · tryk for at bruge den') + '" onclick="csBrug(\'' + n + '\',\'' + esc(String(x.id)) + '\')">' + (x.brug !== false ? BF3_SVG.tjek : '') + '</button><div class="bs3-t"><div class="bs3-n">' + esc(String(x.t || "")) + '</div><div class="bs3-tags"><button type="button" class="bs3-tag" onclick="bf3CsProdSkift(\'' + n + '\',\'' + esc(String(x.id)) + '\')">' + esc(x.produkt || "Content Studio") + '</button></div></div>' + (tlf ? '' : '<button type="button" class="bs-skrald bs3-skrald" aria-label="Slet" title="Slet" onclick="csSlet(\'' + n + '\',\'' + esc(String(x.id)) + '\')">' + BS_SKRALD_SVG + '</button>') + '</div></div>'; };
-    /* TILFOEJ STAAR OEVERST (Ida 5/10: »denne bar må aldrig være i bunden - skal være i toppen så man ikke skal scrolle hele siden igennem først!«) */
+    /* PLUSSET ER VEJEN (Ida 5/10 aften, klik »Plusset, feltet væk«): feltet og »Ny · til« er ude af siden — plusset giver Citat/Velkomsthilsen (produktet vælges i arket) og Chip */
     el.innerHTML = '<div class="bs3">'
-      + '<div class="bs3-afsnit cs-ny-top">' + bf3Ver("Ny · til") + '</div>' + bf3Chips(BF3_CS_PROD.map(function (p) { return [p, p]; }), BF3_CS_NYPROD, "bf3CsNyProd")
-      + sendFeltHtml({ id: "csFelt_" + n, ph: n === "velkomst" ? "Tilføj velkomsthilsen …" : "Tilføj citat …", fn: "bf3CsGem('" + n + "')", aria: "Gem", klasse: "bs-sendfelt bs3-send", textarea: true })
       + bf3Chips([["", "Alle"]].concat(BF3_CS_PROD.map(function (p) { return [p, p]; })), BF3_CS_FILTER, "bf3CsFilter")
       + (liste.length ? liste.map(rk).join('') : bf3Tom(n === "velkomst" ? "Ingen velkomsthilsner endnu." : "Ingen citater endnu."))
       + '<button type="button" class="bsam-mobknap bsam-mobknap-sek bs-knap bs-tilbage" style="display:block;width:100%;margin:12px 0 0;" onclick="CS_AABEN=\'\';contentStudioTegn()">Tilbage</button></div>';
     bf3Swipe(el);
-    try { bf3BaandKnapVis("contentstudio"); const kb = document.querySelector("#bf3RumKnap button"); if (kb) { kb.title = "Tilføj"; kb.setAttribute("aria-label", "Ny chip"); kb.onclick = function () { bf3CsProdNyArk(); }; } } catch (e) {}
+    try { bf3BaandKnapVis("contentstudio"); const kb = document.querySelector("#bf3RumKnap button"); if (kb) { kb.title = "Tilføj"; kb.setAttribute("aria-label", "Tilføj"); kb.onclick = function () { bf3ValgArk("Tilføj", [[n === "velkomst" ? "Velkomsthilsen" : "Citat", "bf3CsNyArk('" + n + "')"], ["Chip", "bf3CsProdNyArk()"]]); }; } } catch (e) {}
     try { bsBaandPlanlaeg(); } catch (e) {} return;
   }
   const cit = (CS.dashboard || []).filter(function (x) { return x.brug !== false; }).slice(0, 5), vel = (CS.velkomst || []).filter(function (x) { return x.brug !== false; }).slice(0, 3);
@@ -80276,6 +80274,18 @@ async function contentStudioTegn() {
   bf3BaandKnapVis("contentstudio");
   void kort; void linjer; void soejler; void typer; void cit; void vel;
   try { bsBaandPlanlaeg(); } catch (e) {}
+}
+function bf3CsNyArk(n) {
+  arkAabn({ titel: n === "velkomst" ? "Ny velkomsthilsen" : "Nyt citat", ph: n === "velkomst" ? "Skriv velkomsthilsenen" : "Skriv citatet", send: "Gem", tekst: "", udenVedh: true,
+    chips: BF3_CS_PROD.map(function (p) { return { k: p, n: p }; }), valgt: BF3_CS_FILTER || BF3_CS_NYPROD,
+    gem: async function (t, valgt) {
+      const v = String(t || "").trim(); if (!v) return false;
+      BF3_CS_NYPROD = valgt || BF3_CS_NYPROD;
+      CS[n] = [{ id: "c" + Date.now(), t: v, dato: dkDatoKort(new Date().toISOString().slice(0, 10)), produkt: BF3_CS_NYPROD }].concat(CS[n] || []);
+      setTimeout(contentStudioTegn, 0);
+      const ok = await vaneGemRow("cs_" + n, CS[n].slice()); if (ok === false) return "Kun gemt her i browseren.";
+      return "Gemt.";
+    } });
 }
 async function bf3CsGem(n) {
   const f = document.getElementById("csFelt_" + n); const t = ((f && f.value) || "").trim(); if (!t) { if (f) f.focus(); return; }
@@ -80909,7 +80919,7 @@ function bf3StudieRum(v, filter) {
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-hvid.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 5. oktober · 2499</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 5. oktober · 2500</div>
 <script>
 /* DROPDOWNEN RULLER SELV (Ida 4/10) — maal den aabne liste og klip den ved skaermens bund */
 (function () {

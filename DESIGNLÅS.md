@@ -1,3 +1,6 @@
+## v2500 · 5. oktober · Citater og Velkomsthilsner: plusset er vejen
+- HÅRD (Idas klik 5/10 aften »Plusset, feltet væk«): feltet og »Ny · til«-chipsene øverst på Citater og Velkomsthilsner er ude. Plusset giver det lille ark »Tilføj« med Citat/Velkomsthilsen (produktet vælges som chip i arket) og Chip. Filterchipsene (Alle · produkter) står øverst. Set på 390 + 1440 i selen.
+
 ## v2499 · 5. oktober · Noter i et afsnit via plusset
 - Biblioteket: afsnittets »Tilføj til …«-felt er skjult; plusset i rummet giver »Note i <afsnit>« for hvert afsnit + Afsnit + Rum herinde.
 - Runde 2 af gennemgangen (selen m. testdata): Bibliotekets forside, rum, underrum, Notion-rum, database-rum og Content Studios undersider. Citater + Velkomsthilsner beholder deres felt øverst (Idas eget ønske 5/10) — venter på klik.
