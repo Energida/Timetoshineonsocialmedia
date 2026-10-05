@@ -1,4 +1,4 @@
-## v2475 (lokalt, 5/10 nat) · Opskrifterne (bud 1+3) · Gennemgået-markøren i Biblioteket · fire-linjers klip — STATUS: bygget, port grøn, venter på klik
+## v2475 LIVE 5/10 (Idas klik kl. ~08) · Opskrifterne (bud 1+3) · Gennemgået-markøren i Biblioteket · fire-linjers klip — STATUS: bygget, port grøn, venter på klik
 - Food Studio › Opskrifter: billedfliser, søg, kategorier + Mest protein/Under 400 kcal/Under 15 min; opskriftens side m. portion −/+; ny opskrift = sæt ind/indtal → appen deler op (foodDel) + næring fra ingrediensbiblioteket (skema_svar food_ingredienser). Artifact T8aikdZH8fXg2PiRj1KtMv.
 - Biblioteket: felter.gennemgaaet; chip »Gennemgået« m. GRØNT flueben (#2E8B57 — Idas eget ønske 5/10 kl. 00.20 vinder husets røde), grønt flueben på flisen i A–Å, chip »Ikke gennemgået« som filter. Døre urørt (en dør er kun navnet). Lange ting klippes til fire linjer i flisen (hele teksten i Ret-arket).
 - ÉN SAMLET BANK: kopi fra Notion/skrivebord/ChatGPT ind i Biblioteket som rum = kildens struktur; kilder røres aldrig; importlog skema_svar »bibliotek_import« = fortryd. Hukommelsen en-samlet-bank-natten-4-5-oktober.
