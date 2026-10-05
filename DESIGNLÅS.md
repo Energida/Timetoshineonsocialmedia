@@ -1,3 +1,7 @@
+## v2490 · 5/10 · RUMMET SOM DATABASE (Ida 5/10: »en form for database ala mit crm - så jeg kunne filtrere på hvilket produkt de har udtalt sig fra og en der hedder se alle«)
+- Biblioteks-rum kan vises som database (⋯ › Vis som database / Vis som side); Udtalelser er database fra start. Tilføj øverst · chips Se alle + produkter · én flise pr. ting (produkt som etiket, teksten, hvem under) · tryk = ret i det lille ark (tekst, hvem, produkt-chips, slet).
+- Data: teksten i mr_rum_noter; hvem + produkt i rummets felter.db[noteId]. Hvem falder tilbage på afsnittets navn.
+
 ## v2489 · 5/10 · KONTAKTERNE I CRM · DET RIGTIGE BIBLIOTEK · KUN ONLINEKURSER I STUDIET (Ida 5/10)
 - CRM: afsnittet Kontakter med én dør pr. produkt (KONTAKT_DOERE_TIL tændt; »De kontakter skal flyttes ind i mit crm«). Kun visning.
 - Biblioteket: roden er altid det øverste rum »Biblioteket« (et rum med samme navn inde i det blev valgt, og forsiden stod tom).

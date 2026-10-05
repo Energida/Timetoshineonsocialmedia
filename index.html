@@ -57328,7 +57328,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2489";
+const APP_VERSION = "2490";
 let NY_VERSION_KLAR = false;
 let NY_VERSION_AFVIST = false;
 function nyVersionSkjul() {
@@ -66341,6 +66341,7 @@ function mrSideMenu(r) {
   return '<div style="background:#fff;border:1px solid var(--border);border-radius:20px;overflow:hidden;margin:0 0 16px auto;max-width:440px;">'
     + raekke('Omd&oslash;b siden', 'mrSideMenuSkift();mrOmdoebStart()')
     + raekke(pin ? 'Fjern genvejen' : 'Fastg&oslash;r som genvej', 'mrSidePin(\'' + id + '\',' + (pin ? 'false' : 'true') + ')')
+    + (bibErI(r) && String(r.id) !== String((bibRod() || {}).id) ? raekke(bibErDb(r) ? 'Vis som side' : 'Vis som database', 'bibVisningSkift(\'' + id + '\')') : '')
     + '<div style="display:flex;align-items:center;justify-content:flex-end;gap:10px;padding:13px 18px;flex-wrap:wrap;">'
       + '<span style="flex:1;min-width:150px;font-size:11.5px;color:var(--gray3);line-height:1.5;">' + (MR_SIDE_FEJL ? '<span style="color:var(--red);">' + esc(MR_SIDE_FEJL) + '</span>' : 'Siden skjules &mdash; indholdet slettes ikke.') + '</span>'
       + slet
@@ -67045,6 +67046,7 @@ function bibRumHtml(r) {
   const brugHtml = !bibINotion(r) ? '' : '<div class="ark-chips i-fladen bs3-chips bib-brug">' + brug.map(function (b) { return '<button type="button" class="ark-chip mq-tap" onclick="bibBrugArk(\'' + bibE(rid) + '\')">' + esc(b) + '</button>'; }).join("")
     + '<button type="button" class="ark-chip mq-tap bib-brug-ny" onclick="bibBrugArk(\'' + bibE(rid) + '\')">' + (brug.length ? 'Ret' : 'Bruges til') + '</button>'
     + '<button type="button" class="ark-chip mq-tap bib-gennem' + (bibGennem(r) ? ' er-gennem' : '') + '" aria-pressed="' + (bibGennem(r) ? 'true' : 'false') + '" onclick="bibGennemSkift(\'' + bibE(rid) + '\')">' + (bibGennem(r) ? BIB_GRON_SVG + 'Gennemgået' : 'Gennemgået') + '</button></div>';
+  if (bibErDb(r)) return brugHtml + bibDbHtml(r);   /* database-visning (5/10) */
   /* ET NYT RUM ER HELT TOMT (Ida 5/10 kl. ~16: »sagde jeg ikke lige at siderne jeg bygger skal være tomme? heller ikke sådan noget her?!«): ingen forslag, ingen spørgsmål. Afsnit tilføjes via plusset (bibTilfoejArk). Bruges til/Gennemgået er rummets egne chips og bliver. */
   if (!afs.length && !noter.length && !boern.length) return brugHtml + (BIB_RUM_NY ? bibSek("Rummene herinde") + '<div class="bs3-grid2 mr-underrum-grid">' + bibRumNyHtml(rid) + '</div>' : "");
   const brugt = {};
@@ -67063,6 +67065,59 @@ function bibRumHtml(r) {
   if (boern.length || BIB_RUM_NY) h += bibSek("Rummene herinde") + '<div class="bs3-grid2 mr-underrum-grid">' + boern.map(function (b) { return bf3Doer(b.navn || "Uden navn", "mrRumAaben('" + bibE(b.id) + "')", { doer: "rum:" + b.id }); }).join("") + (BIB_RUM_NY ? bibRumNyHtml(rid) : "") + '</div>';
   h += '<button type="button" class="hu-graa bib-afsnit-knap" onclick="bibAfsnitNyPaaSiden(\'' + bibE(rid) + '\')">Tilføj afsnit</button>';
   return h;
+}
+/* RUMMET SOM DATABASE (Ida 5/10: »en form for database ala mit crm - så jeg kunne filtrere på hvilket produkt de har udtalt sig fra og en der hedder se alle.... og så kunne tilføje nye udtaler på de forskellige produkter«).
+   Hver ting er en raekke i mr_rum_noter (teksten); hvem og produkt ligger i rummets felter.db[noteId] — intet nyt bord. Hvem falder tilbage paa afsnittets navn, saa det gamle indhold kommer med.
+   Slaas til i ⋯ (»Vis som database«); rummet »Udtalelser« er database fra start. Tilføj staar oeverst (5/10-reglen). */
+let BIB_DB_FILTER = "";
+function bibErDb(r) { const f = (r && r.felter) || {}; return f.visning === "database" || (f.visning !== "side" && /^udtalelser?$/i.test(String((r && r.navn) || "").trim())); }
+function bibDbOrd(r) { return /^udtalelser?$/i.test(String((r && r.navn) || "").trim()) ? "udtalelse" : "ting"; }
+function bibDbRaekker(r) {
+  const rid = String(r.id); const meta = ((r.felter || {}).db && typeof r.felter.db === "object") ? r.felter.db : {};
+  const afsAf = function (id) { const b = bibAfsnit(r).find(function (x) { return (x.noter || []).map(String).indexOf(String(id)) > -1; }); return b ? String(b.titel || "") : ""; };
+  return bibNoter(rid).map(function (n) { const m = meta[n.id] || {}; return { n: n, hvem: m.hvem || afsAf(n.id), prod: m.produkt || "" }; })
+    .sort(function (a, b) { return String(b.n.oprettet || "").localeCompare(String(a.n.oprettet || "")); });
+}
+function bibDbFilter(k) { BIB_DB_FILTER = k; mrRumSideTegn(); }
+function bibDbHtml(r) {
+  const rid = String(r.id); const alle = bibDbRaekker(r); const ord = bibDbOrd(r);
+  const prods = alle.map(function (x) { return x.prod; }).filter(function (p, i, a) { return p && a.indexOf(p) === i; }).sort(function (a, b) { return a.localeCompare(b, "da"); });
+  if (BIB_DB_FILTER && prods.indexOf(BIB_DB_FILTER) < 0) BIB_DB_FILTER = "";
+  const vis = alle.filter(function (x) { return !BIB_DB_FILTER || x.prod === BIB_DB_FILTER; });
+  const flise = function (x) { return '<div class="bs3-fl bs3-klik bib-db-fl" role="button" tabindex="0" onclick="bibDbArk(\'' + bibE(rid) + '\',\'' + bibE(String(x.n.id)) + '\')"><div class="bs3-et"><span>' + esc(x.prod || "Uden produkt") + '</span></div><div class="bs3-n" style="white-space:pre-wrap">' + esc(String(x.n.tekst || "")) + '</div>' + (x.hvem ? '<div class="bs3-s">' + esc(x.hvem) + '</div>' : '') + '</div>'; };
+  return '<button type="button" class="hu-graa bib-afsnit-knap bib-db-ny" onclick="bibDbArk(\'' + bibE(rid) + '\')">Tilføj ' + ord + '</button>'
+    + (prods.length ? bf3Chips([["", "Se alle"]].concat(prods.map(function (p) { return [p, p]; })), BIB_DB_FILTER, "bibDbFilter") : '')
+    + (vis.length ? bibGrid(vis.map(flise)) : '<div class="bs3-fl"><div class="bs3-n">Ingen endnu.</div></div>');
+}
+async function bibDbArk(rid, nid) {
+  try { await leadProdukterHent(); } catch (e) {}
+  const r = bibRumAf(rid); if (!r) return; const ord = bibDbOrd(r);
+  const x = nid ? bibDbRaekker(r).find(function (y) { return String(y.n.id) === String(nid); }) : null;
+  window.BIB_DB_PROD = x ? x.prod : (BIB_DB_FILTER || "");
+  const prods = (LEAD_PRODUKTER || []).slice();
+  if (window.BIB_DB_PROD && prods.indexOf(window.BIB_DB_PROD) < 0) prods.push(window.BIB_DB_PROD);
+  arkAabn({ titel: x ? "Ret " + ord + "en" : "Ny " + ord, ph: ord === "udtalelse" ? "Udtalelsen …" : "Tekst …", send: "Gem", tekst: x ? String(x.n.tekst || "") : "", chips: [],
+    ekstraAf: function () {
+      return '<input type="text" id="bibDbHvem" class="sendfelt-felt" placeholder="Hvem er den fra?" autocomplete="off" value="' + esc(x ? x.hvem : "") + '" style="width:100%;height:44px;margin-top:10px;border:1px solid var(--border);border-radius:22px;padding:0 16px;font:14px Poppins,sans-serif;background:#fff">'
+        + '<div class="bs3-ver" style="margin-top:14px">Produkt</div><div class="ark-chips i-fladen bs3-chips" style="margin-top:8px">' + prods.map(function (p) { return '<button type="button" class="ark-chip mq-tap' + (p === window.BIB_DB_PROD ? ' on' : '') + '" data-p="' + esc(p) + '" onclick="bibDbProdValg(this)">' + esc(p) + '</button>'; }).join('') + '</div>';
+    },
+    knap: x ? { slet: true, tekst: "Slet", klik: "bibTingSlet('" + bibE(String(nid)) + "')" } : undefined,
+    gem: async function (t) {
+      const tekst = String(t || "").trim(); if (!tekst) return false; if (!sb) throw new Error("!Ingen forbindelse til basen.");
+      const hf = document.getElementById("bibDbHvem"); const hvem = ((hf && hf.value) || "").trim(); const prod = window.BIB_DB_PROD || "";
+      let id = nid;
+      if (id) { const u = await sb.from("mr_rum_noter").update({ tekst: tekst }).eq("id", id).select("id"); if (u.error || !u.data || !u.data.length) throw new Error("!Kunne ikke gemme. Prøv igen."); }
+      else { const ins = await sb.from("mr_rum_noter").insert({ rum_id: rid, tekst: tekst, slags: "note" }).select("id"); if (ins.error || !ins.data || !ins.data.length) throw new Error("!Kunne ikke gemme. Prøv igen."); id = ins.data[0].id; }
+      await bibFelterGem(rid, function (f) { f.db = (f.db && typeof f.db === "object") ? f.db : {}; f.db[id] = { hvem: hvem, produkt: prod }; });
+      try { await mrNoterHent(true); } catch (e) {}
+      setTimeout(mrRumSideTegn, 0); return "Gemt.";
+    } });
+}
+function bibDbProdValg(b) { const p = b.getAttribute('data-p') || ''; window.BIB_DB_PROD = (window.BIB_DB_PROD === p) ? '' : p; b.parentNode.querySelectorAll('.ark-chip').forEach(function (x) { x.classList.toggle('on', x.getAttribute('data-p') === window.BIB_DB_PROD); }); }
+async function bibVisningSkift(rid) {
+  const r = bibRumAf(rid); const nu = bibErDb(r);
+  try { await bibFelterGem(rid, function (f) { f.visning = nu ? "side" : "database"; }); } catch (e) { mrBlokFejl(e); return; }
+  MR_SIDE_MENU = false; mrRumSideTegn(); try { husKvit(nu ? "Rummet vises som side." : "Rummet vises som database."); } catch (e) {}
 }
 function bibForsideHtml(rod) {
   /* FORSIDEN ER DINE RUM (Ida 5/10 kl. 08.20: »Bibliotekets dashboard skal være en lækkert og overskuelig side med mine rum … alle disse chips skal ikke stå fremme her«):
@@ -80699,7 +80754,7 @@ function bf3StudieRum(v, filter) {
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-hvid.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 5. oktober · 2489</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 5. oktober · 2490</div>
 <script>
 /* DROPDOWNEN RULLER SELV (Ida 4/10) — maal den aabne liste og klip den ved skaermens bund */
 (function () {
