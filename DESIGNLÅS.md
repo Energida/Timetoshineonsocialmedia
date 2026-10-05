@@ -1,3 +1,7 @@
+## v2483 LIVE 5/10 · loadinghjertet står stille
+- Ida: »loading hjernehjertet hopper i placeringen når den loader!« MÅLT: fire dækflader (#privCover · #appLoader · #energidaLoader · #somkundeLoader) viste hjertet forskelligt (absolut midt vs. gruppe med tekst = skubbet op; 96 vs 150 px). Nu ÉN regel (#hjerteFast sidst i head): præcis midt, 150 px, fast forhold 820/646, samme puls; teksten absolut under. MÅLT efter: alle fire 720,450 (1440) og 195,422 (390).
+- Biblioteket: knappen »Tilføj afsnit« nederst i rummet skriver også overskriften direkte på siden (som plusset, v2482).
+
 ## v2482 LIVE 5/10 · nyt rum og nyt afsnit skrives direkte på siden (ingen popup)
 - Ida: »kunne man spare et klik ved at den bare sætter flisen ind og man så selv skriver rummets navn direkte på flisen frem for at den kommer med pop up?« → plus › Rum herinde = en tom dør med markøren i; Enter/klik væk gemmer, tomt = fjernes.
 - Ida: »hvis jeg tilføjer et afsnit er det ALT for forvirrende dette kommer op … alt for låst at du har givet det navne … ligesom i Notion hvor man kan designe siden på selve siden« → plus › Afsnit = en tom overskrift i sektionslinjen, skrives direkte; ingen faste navne (Modellen/Pointen/… er UDE). Næste (klik): afsnit vælges efter FORMAT (tekst · liste · tjekliste · link · billede), ikke indhold.
