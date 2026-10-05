@@ -1,3 +1,11 @@
+## HJEMMESIDEN · BEREGNEREN »HVAD KOSTER DET DIG AT SPILLE HYGGETENNIS?« (LÅST, Ida 5/10 kl. 14.50: »ENDLIG - FEDT! LÅS«)
+- Hvid kasse (husets flise) med Didot-spørgsmålet, »hyggetennis« i rød kursiv og 30 % større.
+- To HVIDE fliser side om side (TID · MONEY): etiket i SORT Poppins 14 px uden spatiering · én hårfin streg · spørgsmål Poppins 400 16 px · hjælpelinje grå 14 px · stort rødt tal 44 px + grå enhed · rød skyder på grå bane · skala (1 / 20 · 100 / 1.000). Skyderne står i SAMME højde (spørgsmål og hjælp har fast min-højde på computeren). Telefon: stablet.
+- Under fliserne: én LANG rød Beregn-knap (52 px, fuld bredde). Svaret vises først ved tryk; derefter følger det skyderne, knappen hedder »Beregn igen«.
+- Svaret er TEKST i den hvide flade, ingen flise: tre centrerede linjer i grå Poppins 19 px med tallene i rød Poppins 400, 45 % større (»Du bruger 208 timer om året på content.« · »Det svarer til 5 hele arbejdsuger.« · »Din content-tid er værd 52.000 kr. om året.«), hårfine streger MELLEM de tre linjer (ingen streg under den sidste, ingen streg før spørgsmålet). Til sidst »Hvad fik du for dem?« i Didot 44 px sort, »dem« i rød kursiv.
+- Afvist undervejs (byg aldrig igen): rød kvitteringsflise under fliserne · fire hvide fliser med tal · regnestykke inde i de røde fliser · hvid kasse inde i rød flise · etiketter grå/versal med spatiering · tal i Bodoni · chips/tællere/sætning-felt som input · animationer (fade/tæller/skrivemaskine) som eneste forskel.
+- Gælder hjemmesiden (Succesfuld Detaildrift). Beregneren på Time to Shine følger samme form, når den rettes. Status: bygget i artifact v169, kladde 3324 afventer Idas ja.
+
 ## v2487 · 5/10 · TRÆK MED MUS UDEN AT HOLDE-MENUEN AFBRYDER · RUMNAVNE MED VERSALER OVERALT (HÅRD, Ida 5/10)
 - Biblioteket, mus: at holde nede åbner aldrig menuen midt i et træk; menuen kommer ved slip uden bevægelse eller højreklik (»her kan jeg ikke merge fliser?«).
 - Rumnavne med versaler også i stien (navsti) på et rum og på studiernes rum-døre (»alle titler i alle rum bliver skrevet automatisk med versaler«). Kun visningen.
