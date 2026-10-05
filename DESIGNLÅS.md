@@ -1,3 +1,10 @@
+## v2493–v2494 · 5. oktober · Plusset er vejen, menuen ryddet, flyt og merge overalt i Biblioteket
+- Menuen: Get shit done har ingen underpunkter; Content Studio og Time to Shine står ikke i menuen (de bor i Biblioteket).
+- HÅRD: tilføj-felterne nederst i rummene (note-chips + sendefelt, Tilføj produkt, Ny tekst, Tilføj afsnit) er væk — plusset i coveret er vejen. På Forretnings lister åbner plusset listens eget ark (Nyt produkt · Ny tekst), aldrig Kontakt/Rum.
+- Langt tryk på en dør i registret (fx Tilbud og salgstekster) giver »Slet siden« med skraldespand; spørger først og arkiverer.
+- Slet et rum → man lander dér, hvor Tilbage fører (ikke Teknik).
+- Rummene inde i et rum i Biblioteket kan flyttes og merges som på forsiden; hvert rum har sin egen rækkefølge.
+
 ## v2492 · 5. oktober · Udtalelser: plusset er knappen, produktet vælges som Pinterest
 - Databaserum (Udtalelser): ingen »Tilføj udtalelse«-knap på siden, når der er indhold — plusset i coveret (computer) og bundmenuens plus (telefon) åbner »Ny udtalelse«. Tom side: én grå knap med 32 px luft.
 - Produktet vælges i en dropdown med søgefelt og »+ Opret nyt produkt« (som »Hvor hører det hjemme?«). Et nyt produkt her er kun et ord på udtalelsen — det oprettes ALDRIG i Energida Studio.
