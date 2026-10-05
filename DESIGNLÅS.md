@@ -1,3 +1,6 @@
+## v2488 · 5/10 · ALLE PRODUKTER I ENERGIDA STUDIO (HÅRD, Ida 5/10: »vis alle produkter også dem uden lektioner!«)
+- Produkter-siden viser alle produkter fra tabellen produkter; dem med lektioner først, resten efter (før: kun med lektioner = kun YOU GOT THIS).
+
 ## HJEMMESIDEN · HEROEN PÅ SUCCESFULD DETAILDRIFT (LÅST, Ida 5/10 kl. 15.30: »PISSE FLOT HERO NU«)
 - Computer (min-width 900): heroen starter 48 px fra venstre kant (ikke i .wrap's 192), Didot 60 px (clamp 44–60), maks 24ch, linjer ikke balanceret, 40 px luft under knapperne. Fotoet skubbet (background-size 120 % auto, position 0 % 24 %), så Ida står til højre for teksten, midt i billedet. Foto i 2.600 px (1.500 blev uskarpt ved 120 %).
 - Telefon: uændret (20 px fra venstre, foto 60 % 0 / auto 62 %).
