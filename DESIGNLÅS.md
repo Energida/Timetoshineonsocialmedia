@@ -1,3 +1,8 @@
+## v2497 · 5. oktober · ⋯ med Slet på Forretnings undersider, lange noter klippes
+- Produkter og Tilbud og salgstekster har ⋯ i coveret med »Slet siden« (spørger først, arkiverer). ⋯ følger ikke med ud på andre sider.
+- En note på en flise i Biblioteket viser højst fire linjer under titlen.
+- DATA 5/10 (Idas klik): Notion-indholdet lagt ind i »Den kreative hjerne« og »Afføring – Pernille Høegh«; 53 tomme noter i Notion-rummet slettet til papirkurven (Idas ordre).
+
 ## v2496 · 5. oktober · Flyt til: opret rum, Mindful og Workout
 - Flyt til: skriv et navn i søgefeltet → »Opret “navn”« (Enter virker, når intet rum passer). En sti med / opretter underrum; første led kan være Get shit done, Biblioteket eller et eksisterende rum.
 - Flyt til har Idéer i Mindful Studio og Workout Studio som mål (som Opskrifter i Food Studio); de huskes under Sidst brugt.
