@@ -1,3 +1,6 @@
+## v2480 LIVE 5/10 · et nyt rum i Biblioteket er HELT tomt
+- Ida: »sagde jeg ikke lige at siderne jeg bygger skal være tomme? heller ikke sådan noget her?!« → flisen »Hvad skal stå i rummet?« med afsnitsforslag er væk; et tomt rum viser kun sine egne chips (Bruges til · Gennemgået). Afsnit tilføjes via plusset.
+
 ## v2479 LIVE 5/10 · kundens egne eksempler overlever genindlæsning
 - MÅLT i koden + basen (hold 5/10): hentStrategiOverride kopierede why/usp/kunde/pillars, men ALDRIG egne → Indholdssøjlernes »Dine eksempler« og »Din egen måde« stod tomme efter reload, selv om de lå i kunde_strategi.byggesten.egne (én kunde havde ét eksempel på 2B). Nu kopieres egne med. Ren datafejl.
 
