@@ -1,3 +1,7 @@
+## v2482 LIVE 5/10 · nyt rum og nyt afsnit skrives direkte på siden (ingen popup)
+- Ida: »kunne man spare et klik ved at den bare sætter flisen ind og man så selv skriver rummets navn direkte på flisen frem for at den kommer med pop up?« → plus › Rum herinde = en tom dør med markøren i; Enter/klik væk gemmer, tomt = fjernes.
+- Ida: »hvis jeg tilføjer et afsnit er det ALT for forvirrende dette kommer op … alt for låst at du har givet det navne … ligesom i Notion hvor man kan designe siden på selve siden« → plus › Afsnit = en tom overskrift i sektionslinjen, skrives direkte; ingen faste navne (Modellen/Pointen/… er UDE). Næste (klik): afsnit vælges efter FORMAT (tekst · liste · tjekliste · link · billede), ikke indhold.
+
 ## v2481 LIVE 5/10 · Biblioteket: Flyt til som Pinterest · træk rum ind i rum · plusset = Billede eller Link
 - Tryk på en ting i et rum = KUN »Flyt til« (Ida: »når jeg klikker på en fra notion skal jeg kun skulle vælge hvor den skal flyttes hen!«): arket som Pinterests »Choose board« (Ida: »gå ind i pinterest og find inspiration«): søgefelt øverst, »Sidst brugt« (de tre seneste, localStorage), alle rum A–Å med sti, mappeikon, rød »Flyt« ved mus-over, tryk = flyttet + kvittering. Ret (tekst · afsnit · samme idé) bor bag langt tryk/højreklik.
 - Forsiden: træk en rumflise 10 px og slip den på et andet rum → underrum (Ida: »jeg skal kunne trække fliserne rundt og også merge dem. fx flytte energibanken ind i redskaber og modeller«); slip-målet fyldt rødt; langt tryk = Åbn · Flyt til et andet rum · skraldespand.
