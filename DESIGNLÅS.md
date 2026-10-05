@@ -1,3 +1,6 @@
+## HÅRD 5/10 kl. ~13 · DREJEBOGEN ER ALDRIG DESIGNFORLÆG
+Ida: »du måtte på ingen måde kigge i drejebogen for design. designet i drejebogen duer på ingen måde! … fjern ALT design fra den gamle drejebog! … sæt dig i kundens sted! lav det til min kunde! Kald på alle designskills du har.« Drejebogen (HTML 25/8) bruges KUN som kilde til ordene. Bud på kundesider tegnes fra kundens stol (Hans-testen) og køres gennem brainstorming · emil · ui-ux-pro-max · energida-design FØR de tegnes.
+
 ## HÅRD 5/10 kl. ~12 · ALDRIG UDEN FOR BRANDFARVERNE
 Ida: »siden hvornår har de farver været en del af min design lås du må jo aldrig nogensinde gå uden for mine brand farver« (efter fem modeller med sand/fersken/salvie/himmel). Alt, der tegnes (app, bud, mockups, mails): KUN rød #FC2404 (den ene accent) · hvid · husets grå (#F2F0ED · #DEDAD4 · #9A9590 · #6F6B66, sort kun på tekst) · stilarkets slate #C9DBE7/#E9EFF4. Ingen ny palet, heller ikke »til beslutning«. Betydning bæres af størrelse, placering, typografi og den ene røde. Hukommelsen aldrig-uden-for-brandfarverne.
 
