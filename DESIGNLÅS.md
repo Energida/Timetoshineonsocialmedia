@@ -1,3 +1,7 @@
+## v2503 · 5. oktober · Kundens side i CRM: aftaler og forløb via plusset
+- KLIK (Ida 5/10 aften »Bag plusset«): formularen »Aftaler med kunden« og forløbs-skabelonen står ikke længere på kundens side, og »Tilføj aftale …«-feltet er væk. Plusset (coveret på computer, bundmenuen på telefon) giver »Aftale« og, på I GOT YOU, »Forløb« — formularen åbner i det lille ark med felterne i fuld bredde (samme gem som før: kkTilfoejAftale / kkIndsaetForloeb). Tom titel eller dato holder arket åbent. Set på 390 + 1440 i selen.
+- Åbent: forløbs-arkets forklaring siger »når I booker den« (I/jer) — Idas ordlyd, ikke rettet.
+
 ## v2502 · 5. oktober · Idébankens top på computeren = én række
 - KLIK (Ida 5/10 aften på buddet »Idébanken, toppen«: »Byg det«): på computeren står søjlevalgene (De fire søjler · Story · Uden plads) til venstre og filtrér · søg · sortér · Inspiration · plusset til højre i SAMME række 32 px under heroen. Plusset er ude af rækken under coveret på Idébanken (det stod alene og gav 72 px luft). Telefonen er urørt. Set på 1440 (med søjler) + 390 i selen.
 - Åbent: søjlernes røde hoveder (Ida i tvivl) — næste klik.
