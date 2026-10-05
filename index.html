@@ -10971,6 +10971,7 @@ html body .ark button.vk-link .vk-kop { flex:0 0 auto; color:var(--gray2); }
 .bib .bib-gron { vertical-align:-3px; margin-left:8px; flex:0 0 auto; }
 .bib .bib-rum { user-select:none; -webkit-user-select:none; }
 .bib .bib-db-top { margin:0 0 var(--luft-4, 32px); }
+#dashMain .plus-ejer { display:none !important; }   /* plusset har overtaget (5/10) */
 .bib .bib-ting .bs3-s { display:-webkit-box; -webkit-line-clamp:4; -webkit-box-orient:vertical; overflow:hidden; }   /* en lang note fylder aldrig hele siden — fire linjer paa flisen, resten naar den aabnes (5/10) */
 #bsFlytMenu .bib-flyt-ny { margin:0 0 12px; }
 #mrNoterHost > .ark-chips, #mrNoterHost > .bs-sendfelt, #mro_salg .bs-sendfelt:has(#salgProduktFelt), #mro_salg .bs-sendfelt:has(#salgTekstFelt) { display:none !important; }   /* plusset er vejen (Ida 5/10) */   /* knappen staar for sig, med husets luft til chips og fliser (Ida 5/10: »vær omhyggelig med placering af knapper«) */
@@ -57356,7 +57357,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2497";
+const APP_VERSION = "2498";
 let NY_VERSION_KLAR = false;
 let NY_VERSION_AFVIST = false;
 function nyVersionSkjul() {
@@ -80494,6 +80495,33 @@ function bf3SalgListePlus() {
   const k = document.querySelector("#bf3RumKnap button"); if (!k) return;
   k.title = "Tilføj"; k.setAttribute("aria-label", "Tilføj"); k.onclick = function () { bf3PlusSendfelt(x[0], x[1]); };
 }
+/* PLUSSET OVERTAGER SIDENS TILFOEJ-FELT/KNAP (Ida 5/10: »denne tilføj funktion skal slettes fra alle rum fordi man skal bruge plusset« + Backstage-gennemgangen:
+   Idéer, App-ønskelisten, Økonomi, Food Studio havde felt/knap og intet plus). Paa en side UDEN eget plus: find feltet eller knapperne (Ny … / Nyt … / Tilføj …),
+   skjul dem og lad plusset i coveret (computer) / bundmenuen (telefon) goere det samme. Soegefelter (Find/Søg) roeres aldrig. */
+let BF3_PLUS_AUTO_T = null;
+function bf3PlusAuto() {
+  try {
+    const main = document.getElementById("dashMain"); if (!main || main.style.display === "none") return;
+    const vis = function (e) { if (!e) return false; const r = e.getBoundingClientRect(); return r.width > 0 && r.height > 0 && getComputedStyle(e).visibility !== "hidden"; };
+    if (typeof MR_RUM_AABEN !== "undefined" && MR_RUM_AABEN && vis(document.getElementById("mrRumSideHost"))) return;   /* rummene har deres eget plus (kun naar rummet faktisk vises) */
+    if (typeof SALG_AABEN !== "undefined" && BF3_SALG_PLUS[SALG_AABEN] && vis(document.getElementById("salgHost"))) return;
+    const k0 = document.querySelector("#bf3RumKnap"); const egetPlus = k0 && k0.style.display !== "none" && vis(k0) && !k0.dataset.auto;
+    if (egetPlus) return;
+    const felter = Array.prototype.filter.call(main.querySelectorAll(".sendfelt"), function (f) { const i = f.querySelector("input,textarea"); return i && i.id && (vis(f) || f.classList.contains("plus-ejer")) && !/^(Find|Søg)/i.test(i.placeholder || "") && !f.closest(".ark,#bsFlytMenu,.bs-baand"); });
+    const knapper = Array.prototype.filter.call(main.querySelectorAll("button"), function (b) { return (vis(b) || b.classList.contains("plus-ejer")) && /^(\+ )?(Tilføj|Ny|Nyt) /.test(String(b.textContent || "").trim()) && !b.closest(".ark,#bsFlytMenu,.bs-baand,.dash-sidebar,.sendfelt,#bf3RumKnap"); });
+    const valg = felter.map(function (f) { const i = f.querySelector("input,textarea"); const ph = String(i.placeholder || "Tilføj").replace(/\s*…$/, ""); return [ph.replace(/^(Vælg et studio, og )?/i, "").replace(/^./, function (c) { return c.toUpperCase(); }), function () { bf3PlusSendfelt(i.id, ph.replace(/^(Vælg et studio, og )/i, "").replace(/^./, function (c) { return c.toUpperCase(); })); }]; })
+      .concat(knapper.map(function (b) { return [String(b.textContent || "").trim().replace(/^\+ /, ""), function () { b.click(); }]; }));
+    if (!valg.length) { if (k0 && k0.dataset.auto) { k0.style.display = "none"; delete k0.dataset.auto; } return; }
+    felter.forEach(function (f) { f.classList.add("plus-ejer"); f.style.setProperty("display", "none", "important"); }); knapper.forEach(function (b) { b.classList.add("plus-ejer"); b.style.setProperty("display", "none", "important"); });
+    bf3BaandKnapVis("auto"); const k = document.getElementById("bf3RumKnap"); if (!k) return; k.dataset.auto = "1";
+    const b2 = k.querySelector("button"); b2.title = "Tilføj"; b2.setAttribute("aria-label", "Tilføj");
+    window.__BF3_PLUS_VALG = valg;
+    b2.onclick = function () { if (valg.length === 1) { valg[0][1](); return; } valgFliseArk("Tilføj", valg.map(function (v, ix) { return [v[0], "bsFlytLuk&&bsFlytLuk();window.__BF3_PLUS_VALG[" + ix + "][1]()", "tekst"]; })); };
+  } catch (e) {}
+}
+(function () { const go = function () { clearTimeout(BF3_PLUS_AUTO_T); BF3_PLUS_AUTO_T = setTimeout(bf3PlusAuto, 180); };
+  const start = function () { const m = document.getElementById("dashMain"); if (!m) return; new MutationObserver(go).observe(m, { childList: true, subtree: true }); go(); };
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", start); else start(); })();
 function bf3PlusSendfelt(id, titel) {
   const f = document.getElementById(id); if (!f) return; const w = f.closest(".sendfelt"); const knap = w && w.querySelector(".sendfelt-knap");
   arkAabn({ titel: titel, ph: String(f.placeholder || "").replace(/\s*…$/, ""), send: "Gem", tekst: "", chips: [],
@@ -80513,7 +80541,8 @@ function bf3BaandKnapVis(side, iRummet) {
     if (String(side).indexOf("sl_") === 0) { const sk = side.slice(3); b2.title = sk === "kilder" ? "Tilføj kildehenvisning" : "Tilføj B-roll";   /* ordet »Tilføj« lader telefonens bundmenu-plus finde knappen (bsCoverKnapperStil) — plusset staar aldrig i coveret */ b2.setAttribute("aria-label", b2.title); b2.onclick = function () { try { bf3SlNyArk(sk); } catch (e) {} }; }   /* Kildehenvisninger + B-rolls (27/9) */
   } catch (e) {}
 }
-(function () { const g = bf3BaandKnapVis; bf3BaandKnapVis = function (side) { const r = g.apply(this, arguments); try { if (side === "salg") bf3SalgListePlus(); } catch (e) {} return r; }; })();   /* hver tegning af plusset paa Forretning ser, om en liste er aaben */
+(function () { const g = bf3BaandKnapVis; bf3BaandKnapVis = function (side) { const r = g.apply(this, arguments); try { if (side === "salg") bf3SalgListePlus(); } catch (e) {} return r; }; })();
+(function () { const g = bf3BaandKnapVis; bf3BaandKnapVis = function (side) { try { const k = document.getElementById("bf3RumKnap"); if (k && side !== "auto") delete k.dataset.auto; } catch (e) {} return g.apply(this, arguments); }; })();   /* en side med eget plus tager det tilbage fra auto-plusset */   /* hver tegning af plusset paa Forretning ser, om en liste er aaben */
 function bf3NytRumArk(side) {
   arkAabn({ titel: "Nyt rum", ph: "Navn på rummet", send: "Opret", tekst: "", chips: [],
     gem: async function (t) {
@@ -80559,7 +80588,7 @@ function bf3NytRumArk(side) {
 /* SOEGNINGEN ER ET SYMBOL I BAANDET (Ida 5/10 kl. 08.20: »søgefeltet må gerne bare være et symbol oppe foran plusset og de 3 prikker«):
    samme runde knap som ⋯; tryk aabner feltet oeverst paa siden og soeger i hele Biblioteket. Kun i Biblioteket. */
 let BIB_SOEG_AABEN = false;
-(function () { const g = window.mrGaaTil; if (typeof g === "function") window.mrGaaTil = function () { try { bibSoegKnapTgl(false); bf3RumBaandTgl(false); } catch (e) {} return g.apply(this, arguments); }; const v = window.visDashSide; if (typeof v === "function") window.visDashSide = function () { try { bibSoegKnapTgl(false); bf3RumBaandTgl(false); } catch (e) {} return v.apply(this, arguments); }; })();   /* Bibliotekets soegesymbol fulgte med ud paa Food Studio = dobbelt soegning (Ida 5/10) */
+(function () { const g = window.mrGaaTil; if (typeof g === "function") window.mrGaaTil = function () { try { bibSoegKnapTgl(false); bf3RumBaandTgl(false); } catch (e) {} [400, 1200].forEach(function (t) { setTimeout(function () { try { bf3PlusAuto(); } catch (e) {} }, t); }); return g.apply(this, arguments); }; const v = window.visDashSide; if (typeof v === "function") window.visDashSide = function () { try { bibSoegKnapTgl(false); bf3RumBaandTgl(false); } catch (e) {} [400, 1200].forEach(function (t) { setTimeout(function () { try { bf3PlusAuto(); } catch (e) {} }, t); }); return v.apply(this, arguments); }; })();   /* Bibliotekets soegesymbol fulgte med ud paa Food Studio = dobbelt soegning (Ida 5/10) */
 function bibSoegKnapTgl(vis) {
   try {
     const b = document.querySelector("#dashMain > .bs-baand"); if (!b) return;
@@ -80876,7 +80905,7 @@ function bf3StudieRum(v, filter) {
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-hvid.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 5. oktober · 2497</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 5. oktober · 2498</div>
 <script>
 /* DROPDOWNEN RULLER SELV (Ida 4/10) — maal den aabne liste og klip den ved skaermens bund */
 (function () {
