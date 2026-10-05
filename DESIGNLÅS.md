@@ -1,3 +1,7 @@
+## v2502 · 5. oktober · Idébankens top på computeren = én række
+- KLIK (Ida 5/10 aften på buddet »Idébanken, toppen«: »Byg det«): på computeren står søjlevalgene (De fire søjler · Story · Uden plads) til venstre og filtrér · søg · sortér · Inspiration · plusset til højre i SAMME række 32 px under heroen. Plusset er ude af rækken under coveret på Idébanken (det stod alene og gav 72 px luft). Telefonen er urørt. Set på 1440 (med søjler) + 390 i selen.
+- Åbent: søjlernes røde hoveder (Ida i tvivl) — næste klik.
+
 ## v2501 · 5. oktober · Ny idé i Idébanken: kun titel + beskrivelse, resten bag »Tilføj mere«
 - HÅRD (Ida 5/10 aften: »når jeg … tilføjer en ide direkte på plusset over en indholdssøjle - så skal jeg ikke se indholdssøjlerne her i pop-uppen. alt andet skal komme frem som mulighed ala "tilføj mere" … ligesom i den tilføj knap under fakta«): »+ Tilføj« over en søjle sætter søjlen FØR arket åbner → ingen søjle-chips. Ny idé fra Idébanken viser kun titel · beskrivelse · pillen »+ Tilføj mere«, der åbner fliserne »Hvad vil du tilføje?« (Indholdssøjle når ingen er valgt · Format · Emne · Vibe · Målgruppe). Det valgte kommer frem i arket; pillen forsvinder, når alt er vist. Afløser 29/9 »formatet først«. Tøm hovedet (bundmenuens plus) er urørt.
 - Telefonen: én sektion = ingen pager-prik; arket bladrer til den sektion, der lige er tilføjet. Set på 390 + 1440 i selen (gemt med søjle 2B + Karrusel).
