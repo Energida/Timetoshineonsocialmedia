@@ -10110,6 +10110,7 @@ html body .ark.ark-bred .ark-felt textarea, html body .ark.ark-agenda .ark-felt 
 /* Idéer til mødet (29/9): Tilføj idé = den graa knap i fuld bredde; arket med Idébankens idéer ruller */
 #moedeSideRum .mo-link-rk { display:flex; flex-wrap:wrap; gap:8px; margin:0 0 16px; } #moedeSideRum .mo-link-rk .mo-chip { margin:0 !important; display:inline-flex; align-items:center; height:36px; padding:0 16px; text-decoration:none; color:var(--black); }   /* Fysisk/Online + Åbn mødet, begge flader (29/9) */
 .ark-link-pille { order:2; align-self:stretch; width:100%; display:flex; align-items:center; justify-content:center; gap:8px; min-height:44px; padding:0 16px; margin:0 0 12px; box-sizing:border-box; background:#fff; border:1px solid var(--border); border-radius:999px; color:var(--gray2); font-family:Poppins,sans-serif; font-weight:300; font-size:12.5px; cursor:pointer; }
+#arkEkstra.ark-mere:not([data-vis~="soejle"]) > .ark-soejler, #arkEkstra.ark-mere:not([data-vis~="format"]) > .ark-format, #arkEkstra.ark-mere:not([data-vis~="emne"]) > .ark-tags, #arkEkstra.ark-mere:not([data-vis~="vibe"]) > .ark-afd-vibe, #arkEkstra.ark-mere:not([data-vis~="mg"]) > .ark-afd-mg { display:none !important; }   /* Tilføj mere i Ny idé (Ida 5/10 aften) */
 .ark-link-pille .ark-link-plus { display:inline-flex; align-items:center; justify-content:center; width:24px; height:24px; border-radius:50%; background:var(--red); color:#fff; font-size:16px; line-height:1; }   /* Tilføj link under feltet, plusset i husets roede cirkel (29/9) */
 .ark-format-top { margin:0 0 14px; }
 /* ARKENE HAR INGEN SYNLIG RULLEBJAELKE (29/9, MAALT i CI): paa Linux/Windows tog bjaelken 15 px af bredden, saa knapperne blev 303 af 366 — man ruller med fingeren/hjulet som foer */
@@ -57358,7 +57359,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2500";
+const APP_VERSION = "2501";
 let NY_VERSION_KLAR = false;
 let NY_VERSION_AFVIST = false;
 function nyVersionSkjul() {
@@ -59266,12 +59267,11 @@ async function ibSletFlise(id) {
   } });
 }
 function ibNyIdeI(navn) {
+  /* SOEJLEN SAETTES FOER ARKET AABNER (Ida 5/10 aften: »når jeg står på b2b siden og tilføjer en ide direkte på plusset over en indholdssøjle - så skal jeg ikke se indholdssøjlerne her i pop-uppen«) — saa kender kundeArkAabn den og viser ingen soejle-chips */
+  KUNDE_ARK_SOEJLE = navn === "Uden plads" ? "" : String(navn || "");
   try { kundeArkAabn("ide", false, "", true); } catch (e) { return; }
   try {
-    if (navn === "Story") { KUNDE_ARK_SOEJLE = "Story"; KUNDE_ARK_FORMAT = "Story"; }
-    else if (navn === "Uden plads") { KUNDE_ARK_SOEJLE = ""; }
-    else { KUNDE_ARK_SOEJLE = String(navn || ""); }
-    const r = document.getElementById("arkSoejler"); if (r) r.outerHTML = kundeArkSoejleChips();
+    if (navn === "Story") { KUNDE_ARK_FORMAT = "Story"; }
     const f = document.getElementById("arkFormat"); if (f) f.outerHTML = kundeArkFormatHtml();
     const t = document.getElementById("arkTitel") || document.getElementById("arkTekst"); if (t) t.focus();
   } catch (e) {}
@@ -71301,10 +71301,13 @@ function kundeArkAabn(valgt, paaFoto, tekst, kun) {
     },
     gem: kundeArkGem, efterLuk: function () { KUNDE_ARK_SOEJLE = ""; INSP_VEDHAEFT = ""; inspSkaermNulstil(); try { if (typeof current === "number" && current === 2) renderIdeas(); } catch (e) {} } });
   /* FORMATET FOERST, naar soejlen er valgt (29/9): formatet flyttes op over titlen */
-  if (fraSoejle) { try { const f = document.getElementById("arkFormat"), t = document.getElementById("arkTitel"); if (f && t) { f.classList.add("ark-format-top"); t.parentNode.insertBefore(f, t); } } catch (e) {} }
+  /* (29/9 »formatet først« er afloest 5/10 aften af »Tilføj mere« — formatet bor bag pillen som resten) */
   try { arkPagerPrikker(); } catch (e) {}
   /* TILFOEJ LINK UNDER FELTET (Ida 29/9: »linket i tekstfeltet skal også være et andet sted. måske tilføj plusknappen«) — uden for arkEkstra, som bladrer vandret paa telefonen */
   if (idePaa) { try { const felt = document.querySelector("#arkSlor .ark-felt"); if (felt && !document.getElementById("arkLinkPille") && !arkVedhAktiv()) felt.insertAdjacentHTML("afterend", '<button type="button" id="arkLinkPille" class="ark-link-pille mq-tap" onclick="arkLinkSkift()"><span class="ark-link-plus">+</span>Tilføj link</button>'); } catch (e) {} }
+  /* TILFOEJ MERE (Ida 5/10 aften: »alt andet skal komme frem som mulighed ala "tilføj mere" end bare beskrivelsen... ligesom i den tilføj knap under fakta... det her bliver alt for uoverskueligt«):
+     i Ny idé fra Idébanken staar kun titel + beskrivelse; soejle · format · emne · vibe · maalgruppe ligger bag een pille, der aabner fliserne »Hvad vil du tilføje?« (som Tilføj under fakta) */
+  if (fraBanken) { try { kundeArkMereStart(); } catch (e) {} }
   /* MARKOEREN STARTER I TITLEN (Ida 29/9) — ikke i »Beskriv idéen« */
   if (idePaa) setTimeout(function () { const t = document.getElementById("arkTitel"); if (t) t.focus(); }, 200);
   /* SOM ADMIN: DROPDOWNEN »HVOR HØRER DET HJEMME?« UNDER FELTET (Idas kommentar 4/10 kl. 21.26 paa skaermbillederne RswNFKvnQoRvsm3ow11WfH:
@@ -71325,8 +71328,8 @@ function arkPagerPrikker() {
   if (!(ARK && ARK.valgt === "ide")) return;
   let p = document.getElementById("arkPagerPrikker");
   if (!p) { p = document.createElement("div"); p.id = "arkPagerPrikker"; p.className = "ark-pager-prikker"; e.insertAdjacentElement("afterend", p); }
-  const sider = [].filter.call(e.children, function (c) { return c.classList.contains("ark-soejler") || c.classList.contains("ark-format") || c.classList.contains("ark-tags") || c.classList.contains("ark-afd"); });   /* vibe + maalgruppe er ogsaa sider (29/9) */
-  p.innerHTML = sider.map(function (c, i) { return '<button type="button" class="ark-prik' + (i === 0 ? ' on' : '') + '" aria-label="Side ' + (i + 1) + '" onclick="arkPagerTil(' + i + ')"></button>'; }).join("");
+  const sider = [].filter.call(e.children, function (c) { return (c.classList.contains("ark-soejler") || c.classList.contains("ark-format") || c.classList.contains("ark-tags") || c.classList.contains("ark-afd")) && getComputedStyle(c).display !== "none"; });   /* skjulte bag Tilføj mere tælles ikke (5/10) */   /* vibe + maalgruppe er ogsaa sider (29/9) */
+  p.innerHTML = sider.length < 2 ? "" : sider.map(function (c, i) { return '<button type="button" class="ark-prik' + (i === 0 ? ' on' : '') + '" aria-label="Side ' + (i + 1) + '" onclick="arkPagerTil(' + i + ')"></button>'; }).join("");
   if (!e.__pager) { e.__pager = true; e.addEventListener("scroll", function () { try { const w = e.clientWidth || 1; const i = Math.round(e.scrollLeft / w); [].forEach.call(p.children, function (b, j) { b.classList.toggle("on", j === i); }); } catch (x) {} }, { passive: true }); }
 }
 /* CHIPS BLIVER EEN KNAP PAA TELEFONEN (Ida 2/10: »komprimeres så der ikke er så meget spildplads. Evt samme nye dropdown«):
@@ -71427,8 +71430,29 @@ function kundeArkAfdHtml() {
   const VIBER = ["Underholdende", "Inspirerende", "Informativ", "Uddannende", "Reflekterende"];   /* Reflekterende (Ida 2/10) */
   let mg = { chips: [] }; try { mg = briefMaalgrupper(); } catch (e) {}
   const chip = function (grp, v, on) { return '<button type="button" class="ark-chip mq-tap' + (on ? ' on' : '') + '" onclick="kundeArkAfdSkift(\'' + grp + '\',' + JSON.stringify(v).replace(/"/g, "&quot;") + ',this)">' + esc(v) + '</button>'; };
-  return '<div class="ark-afd"><span class="ark-eye ark-format-eye">Vibe</span><div class="ark-chips i-fladen">' + VIBER.map(function (v) { return chip("vibe", v, KUNDE_ARK_VIBE === v); }).join("") + '</div></div>'
-    + ((mg.chips || []).length > 1 ? '<div class="ark-afd"><span class="ark-eye ark-format-eye">Målgruppe</span><div class="ark-chips i-fladen">' + mg.chips.map(function (v) { return chip("mg", v, KUNDE_ARK_MG === v); }).join("") + '</div></div>' : '');
+  return '<div class="ark-afd ark-afd-vibe"><span class="ark-eye ark-format-eye">Vibe</span><div class="ark-chips i-fladen">' + VIBER.map(function (v) { return chip("vibe", v, KUNDE_ARK_VIBE === v); }).join("") + '</div></div>'
+    + ((mg.chips || []).length > 1 ? '<div class="ark-afd ark-afd-mg"><span class="ark-eye ark-format-eye">Målgruppe</span><div class="ark-chips i-fladen">' + mg.chips.map(function (v) { return chip("mg", v, KUNDE_ARK_MG === v); }).join("") + '</div></div>' : '');
+}
+const KUNDE_ARK_MERE = [["soejle", "Indholdssøjle", ".ark-soejler", "mappe"], ["format", "Format", ".ark-format", "klip"], ["emne", "Emne", ".ark-tags", "tags"], ["vibe", "Vibe", ".ark-afd-vibe", "stemning"], ["mg", "Målgruppe", ".ark-afd-mg", "hvem"]];
+function kundeArkMereStart() {
+  const e = document.getElementById("arkEkstra"); if (!e) return;
+  e.classList.add("ark-mere"); e.setAttribute("data-vis", "");
+  const felt = document.querySelector("#arkSlor .ark-felt"); if (!felt || document.getElementById("arkMerePille")) return;
+  (document.getElementById("arkLinkPille") || felt).insertAdjacentHTML("afterend", '<button type="button" id="arkMerePille" class="ark-link-pille mq-tap" onclick="kundeArkMereValg()"><span class="ark-link-plus">+</span>Tilføj mere</button>');
+  kundeArkMereOpdat();
+}
+function kundeArkMereMulige() {
+  const e = document.getElementById("arkEkstra"); if (!e) return [];
+  const vis = String(e.getAttribute("data-vis") || "").split(" ");
+  return KUNDE_ARK_MERE.filter(function (m) { return vis.indexOf(m[0]) < 0 && !!e.querySelector(":scope > " + m[2]); });
+}
+function kundeArkMereOpdat() { const p = document.getElementById("arkMerePille"); if (p) p.style.display = kundeArkMereMulige().length ? "" : "none"; try { arkPagerPrikker(); } catch (e) {} }
+function kundeArkMereValg() { const m = kundeArkMereMulige(); if (!m.length) return; valgFliseArk("Hvad vil du tilføje?", m.map(function (x) { return [x[1], "kundeArkMereVis('" + x[0] + "')", x[3]]; })); }
+function kundeArkMereVis(k) {
+  const e = document.getElementById("arkEkstra"); if (!e) return;
+  e.setAttribute("data-vis", (String(e.getAttribute("data-vis") || "") + " " + k).trim());
+  kundeArkMereOpdat();
+  try { const m = KUNDE_ARK_MERE.find(function (x) { return x[0] === k; }); const sek = m && e.querySelector(":scope > " + m[2]); if (sek) { if (window.matchMedia("(max-width:899px)").matches) [0, 150].forEach(function (t) { setTimeout(function () { e.scrollLeft = sek.offsetLeft; }, t); }); else sek.scrollIntoView({ block: "nearest", behavior: "smooth" }); const f = sek.querySelector("input"); if (f) f.focus(); } } catch (x) {}
 }
 function kundeArkAfdSkift(grp, v, b) {
   if (grp === "vibe") KUNDE_ARK_VIBE = KUNDE_ARK_VIBE === v ? "" : v; else KUNDE_ARK_MG = KUNDE_ARK_MG === v ? "" : v;
@@ -79500,7 +79524,7 @@ function bf3KontaktNyArk() {
 }
 /* TILFOEJ-MENUEN = FLISER MED IKON (Idas klik 25/9 kl. ~09.00, bud 2 af fem QVZUa7JWr328LqNWj2ty7w: »den røde viser jo lidt et forvalg, og her kan det jo være alle«):
    hvert valg er sin egen hvide flise med husets ikon (samme som feltet i klippet) og ordet; ingen roed knap, intet forvalg; Annullér graa sidst */
-const VALG_IK = { mappe: '<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>', tjek: '<path d="M5 12.5l4.5 4.5L19 7"/>', liste: '<path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>', link: '<path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1"/>', tekst: '<path d="M4 7V5h16v2M9 19h6M12 5v14"/>', manus: '<path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/>', klip: '<rect x="3" y="6" width="13" height="12" rx="2"/><path d="M16 10l5-3v10l-5-3"/>', cta: '<path d="M5 12h14M13 6l6 6-6 6"/>', hvem: '<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>', scene: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18"/>' };
+const VALG_IK = { tags: '<path d="M3 12V4h8l10 10-8 8L3 12z"/><circle cx="7.5" cy="8.5" r="1.3"/>', stemning: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>', mappe: '<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>', tjek: '<path d="M5 12.5l4.5 4.5L19 7"/>', liste: '<path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>', link: '<path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1"/>', tekst: '<path d="M4 7V5h16v2M9 19h6M12 5v14"/>', manus: '<path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/>', klip: '<rect x="3" y="6" width="13" height="12" rx="2"/><path d="M16 10l5-3v10l-5-3"/>', cta: '<path d="M5 12h14M13 6l6 6-6 6"/>', hvem: '<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>', scene: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18"/>' };
 function valgFliseArk(titel, rk) {
   let m = document.getElementById("bsFlytMenu"); if (!m) { m = document.createElement("div"); m.id = "bsFlytMenu"; document.body.appendChild(m); }
   m.innerHTML = '<div class="bs-flyt-ark bs-valg-ark valg-fliser">' + (String(titel || "").trim() ? '<div class="ark-t">' + esc(titel) + '</div>' : '')
@@ -80919,7 +80943,7 @@ function bf3StudieRum(v, filter) {
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-hvid.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 5. oktober · 2500</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 5. oktober · 2501</div>
 <script>
 /* DROPDOWNEN RULLER SELV (Ida 4/10) — maal den aabne liste og klip den ved skaermens bund */
 (function () {

@@ -1,3 +1,7 @@
+## v2501 · 5. oktober · Ny idé i Idébanken: kun titel + beskrivelse, resten bag »Tilføj mere«
+- HÅRD (Ida 5/10 aften: »når jeg … tilføjer en ide direkte på plusset over en indholdssøjle - så skal jeg ikke se indholdssøjlerne her i pop-uppen. alt andet skal komme frem som mulighed ala "tilføj mere" … ligesom i den tilføj knap under fakta«): »+ Tilføj« over en søjle sætter søjlen FØR arket åbner → ingen søjle-chips. Ny idé fra Idébanken viser kun titel · beskrivelse · pillen »+ Tilføj mere«, der åbner fliserne »Hvad vil du tilføje?« (Indholdssøjle når ingen er valgt · Format · Emne · Vibe · Målgruppe). Det valgte kommer frem i arket; pillen forsvinder, når alt er vist. Afløser 29/9 »formatet først«. Tøm hovedet (bundmenuens plus) er urørt.
+- Telefonen: én sektion = ingen pager-prik; arket bladrer til den sektion, der lige er tilføjet. Set på 390 + 1440 i selen (gemt med søjle 2B + Karrusel).
+
 ## v2500 · 5. oktober · Citater og Velkomsthilsner: plusset er vejen
 - HÅRD (Idas klik 5/10 aften »Plusset, feltet væk«): feltet og »Ny · til«-chipsene øverst på Citater og Velkomsthilsner er ude. Plusset giver det lille ark »Tilføj« med Citat/Velkomsthilsen (produktet vælges som chip i arket) og Chip. Filterchipsene (Alle · produkter) står øverst. Set på 390 + 1440 i selen.
 
