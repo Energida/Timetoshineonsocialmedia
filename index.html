@@ -10969,6 +10969,9 @@ html body .ark button.vk-link .vk-kop { flex:0 0 auto; color:var(--gray2); }
 .bib .bib-grid > .bs3-fl { margin:0; }
 .bib .bib-gron { vertical-align:-3px; margin-left:8px; flex:0 0 auto; }
 .bib .bib-rum { user-select:none; -webkit-user-select:none; }
+.bib .bib-db-top { margin:0 0 var(--luft-4, 32px); }   /* knappen staar for sig, med husets luft til chips og fliser (Ida 5/10: »vær omhyggelig med placering af knapper«) */
+.bib .bib-db-top + .bs3-chips { margin-bottom:var(--luft-3, 24px); }
+.bib .bib-db-top .bib-db-ny { margin:0 !important; }
 .bib .bib-rum.bs-loeftet { position:relative; z-index:5; box-shadow:0 14px 34px rgba(0,0,0,.16); }
 .bib .bib-rum-ny { padding:0 !important; }
 .bib .bib-sek-ny input { border:0 !important; background:transparent !important; box-shadow:none !important; outline:none; font:inherit; letter-spacing:inherit; text-transform:inherit; color:var(--black); padding:0; min-width:160px; }
@@ -57329,7 +57332,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2491";
+const APP_VERSION = "2492";
 let NY_VERSION_KLAR = false;
 let NY_VERSION_AFVIST = false;
 function nyVersionSkjul() {
@@ -66898,6 +66901,7 @@ async function mrBlokPunktFjern(rid, bid, pid) {
 let MR_BLOK_NY = "";
 function mrBlokTilfoejArk(rid) {
   const r = (MR_RUM || []).find(function (x) { return String(x.id) === String(rid); }); if (!r) return;
+  if (bibErI(r) && bibErDb(r)) { bibDbArk(rid); return; }   /* en database: plusset i coveret ER »Tilføj udtalelse« — ingen knap ekstra paa siden (Ida 5/10: »vær omhyggelig med placering af knapper«) */
   if (bibErI(r)) { if (String(r.id) === String((bibRod() || {}).id)) { mrBlokTilfoejArkGl(rid, "underrum"); return; } bibTilfoejArk(rid); return; }   /* Biblioteket: afsnit eller rum herinde; forsiden: et nyt rum (4/10) */
   const IK = { tekst: "tekst", tjek: "tjek", liste: "liste", underrum: "scene", link: "link", hjaelp: "manus", program: "klip" };
   valgFliseArk("Tilføj til rummet", MR_BLOK_TYPER.map(function (x) { return [x.n, (x.k === "underrum" || x.k === "program") ? "mrBlokTilfoejArkGl('" + esc(rid) + "','" + x.k + "')" : "mrBlokTilfoejNu('" + esc(rid) + "','" + x.k + "')", IK[x.k] || "tekst"]; }));
@@ -67088,7 +67092,7 @@ function bibDbHtml(r) {
   if (BIB_DB_FILTER && prods.indexOf(BIB_DB_FILTER) < 0) BIB_DB_FILTER = "";
   const vis = alle.filter(function (x) { return !BIB_DB_FILTER || x.prod === BIB_DB_FILTER; });
   const flise = function (x) { return '<div class="bs3-fl bs3-klik bib-db-fl" role="button" tabindex="0" onclick="bibDbArk(\'' + bibE(rid) + '\',\'' + bibE(String(x.n.id)) + '\')"><div class="bs3-et"><span>' + esc(x.prod || "Uden produkt") + '</span></div><div class="bs3-n" style="white-space:pre-wrap">' + esc(String(x.n.tekst || "")) + '</div>' + (x.hvem ? '<div class="bs3-s">' + esc(x.hvem) + '</div>' : '') + '</div>'; };
-  return '<button type="button" class="hu-graa bib-afsnit-knap bib-db-ny" onclick="bibDbArk(\'' + bibE(rid) + '\')">Tilføj ' + ord + '</button>'
+  return (vis.length || prods.length ? '' : '<div class="bib-db-top"><button type="button" class="hu-graa bib-afsnit-knap bib-db-ny" onclick="bibDbArk(\'' + bibE(rid) + '\')">Tilføj ' + ord + '</button></div>')   /* kun i et tomt rum; ellers er plusset i coveret vejen */
     + (prods.length ? bf3Chips([["", "Se alle"]].concat(prods.map(function (p) { return [p, p]; })), BIB_DB_FILTER, "bibDbFilter") : '')
     + (vis.length ? bibGrid(vis.map(flise)) : '<div class="bs3-fl"><div class="bs3-n">Ingen endnu.</div></div>');
 }
@@ -67096,7 +67100,7 @@ async function bibDbArk(rid, nid) {
   try { await leadProdukterHent(); } catch (e) {}
   const r = bibRumAf(rid); if (!r) return; const ord = bibDbOrd(r);
   const x = nid ? bibDbRaekker(r).find(function (y) { return String(y.n.id) === String(nid); }) : null;
-  window.BIB_DB_PROD = x ? x.prod : (BIB_DB_FILTER || "");
+  window.BIB_DB_PROD = x ? x.prod : (BIB_DB_FILTER || ""); window.BF3_DROP_VALG = window.BF3_DROP_VALG || {}; BF3_DROP_VALG.bibDbProd = window.BIB_DB_PROD;
   /* PRODUKTERNE = husets produkter + dem, der allerede er brugt i rummet (Ida 5/10: »og hvor er we got this«) — og »+ Andet« til et nyt */
   const prods = (LEAD_PRODUKTER || []).slice();
   bibDbRaekker(r).forEach(function (y) { if (y.prod && prods.indexOf(y.prod) < 0) prods.push(y.prod); });
@@ -67104,12 +67108,12 @@ async function bibDbArk(rid, nid) {
   arkAabn({ titel: x ? "Ret " + ord + "en" : "Ny " + ord, ph: ord === "udtalelse" ? "Udtalelsen …" : "Tekst …", send: "Gem", tekst: x ? String(x.n.tekst || "") : "", chips: [],
     ekstraAf: function () {
       return '<input type="text" id="bibDbHvem" class="sendfelt-felt" placeholder="Hvem er den fra?" autocomplete="off" value="' + esc(x ? x.hvem : "") + '" style="width:100%;height:44px;margin-top:10px;border:1px solid var(--border);border-radius:22px;padding:0 16px;font:14px Poppins,sans-serif;background:#fff">'
-        + '<div class="bs3-ver" style="margin-top:14px">Produkt</div><div class="ark-chips i-fladen bs3-chips" style="margin-top:8px">' + prods.map(function (p) { return '<button type="button" class="ark-chip mq-tap' + (p === window.BIB_DB_PROD ? ' on' : '') + '" data-p="' + esc(p) + '" onclick="bibDbProdValg(this)">' + esc(p) + '</button>'; }).join('') + '<button type="button" class="ark-chip mq-tap" onclick="bibDbProdNy(this)">+ Andet</button></div>';
+        + '<div class="bs3-ark-drop" style="margin-top:10px">' + bf3DropHtml("bibDbProd", "Hvilket produkt?", prods.map(function (p) { return { k: p, n: p }; }), window.BIB_DB_PROD || "") + '</div>';
     },
     knap: x ? { slet: true, tekst: "Slet", klik: "bibTingSlet('" + bibE(String(nid)) + "')" } : undefined,
     gem: async function (t) {
       const tekst = String(t || "").trim(); if (!tekst) return false; if (!sb) throw new Error("!Ingen forbindelse til basen.");
-      const hf = document.getElementById("bibDbHvem"); const hvem = ((hf && hf.value) || "").trim(); const prod = window.BIB_DB_PROD || "";
+      const hf = document.getElementById("bibDbHvem"); const hvem = ((hf && hf.value) || "").trim(); const prod = (window.BF3_DROP_VALG || {}).bibDbProd || "";
       let id = nid;
       if (id) { const u = await sb.from("mr_rum_noter").update({ tekst: tekst }).eq("id", id).select("id"); if (u.error || !u.data || !u.data.length) throw new Error("!Kunne ikke gemme. Prøv igen."); }
       else { const ins = await sb.from("mr_rum_noter").insert({ rum_id: rid, tekst: tekst, slags: "note" }).select("id"); if (ins.error || !ins.data || !ins.data.length) throw new Error("!Kunne ikke gemme. Prøv igen."); id = ins.data[0].id; }
@@ -78840,19 +78844,26 @@ function bf3DropHtml(id, ph, valg, valgt) {
   if (mapper) { BF3_RUMNIV[id] = { par: "", q: "" }; }
   const vis = mapper ? valg.filter(function (x) { return !/^rum:/.test(String(x.k)); }) : valg;
   return '<div class="bs3-drop-w" id="' + id + '"><button type="button" class="bs3-drop' + (v ? '' : ' tom') + '" onclick="bf3DropSkift(\'' + id + '\')"><span>' + esc(v ? v.n : ph) + '</span>' + BF3_SVG.ned + '</button>'
-    + '<div class="bs3-liste" style="display:none;">' + (mapper ? '<div class="bs3-rum-soeg" onclick="event.stopPropagation()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/></svg><input type="search" placeholder="Søg efter et rum" autocomplete="off" aria-label="Søg efter et rum" oninput="bf3RumSoeg(\'' + id + '\',this.value)"></div>' : '') + vis.map(function (x) { return '<button type="button"' + (x.k === valgt ? ' class="on"' : '') + ' onclick="bf3DropVaelg(\'' + id + '\',\'' + String(x.k).replace(/'/g, "\\'") + '\')">' + esc(x.n) + '</button>'; }).join('') + (mapper ? '<div class="bs3-rum-sek">Rum</div><div class="bs3-rumvalg">' + bf3RumNiveauHtml(id) + '</div>' : '') + (id === "bf3ArkDrop" ? '<button type="button" class="bs3-nyt-rum" onclick="event.stopPropagation();bf3NytRumFelt(this)">+ Opret nyt rum</button>' : '') + (id === "nyIdeKursus" ? '<button type="button" class="bs3-nyt-rum" onclick="event.stopPropagation();bf3NytProduktFelt(this)">+ Opret nyt produkt</button>' : '') + '</div></div>';
+    + '<div class="bs3-liste" style="display:none;">' + (id === "bibDbProd" ? '<div class="bs3-rum-soeg" onclick="event.stopPropagation()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/></svg><input type="search" placeholder="Søg efter et produkt" autocomplete="off" aria-label="Søg efter et produkt" oninput="bf3DropSoeg(\'' + id + '\',this.value)"></div>' : '') + (mapper ? '<div class="bs3-rum-soeg" onclick="event.stopPropagation()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/></svg><input type="search" placeholder="Søg efter et rum" autocomplete="off" aria-label="Søg efter et rum" oninput="bf3RumSoeg(\'' + id + '\',this.value)"></div>' : '') + vis.map(function (x) { return '<button type="button"' + (x.k === valgt ? ' class="on"' : '') + ' onclick="bf3DropVaelg(\'' + id + '\',\'' + String(x.k).replace(/'/g, "\\'") + '\')">' + esc(x.n) + '</button>'; }).join('') + (mapper ? '<div class="bs3-rum-sek">Rum</div><div class="bs3-rumvalg">' + bf3RumNiveauHtml(id) + '</div>' : '') + (id === "bf3ArkDrop" ? '<button type="button" class="bs3-nyt-rum" onclick="event.stopPropagation();bf3NytRumFelt(this)">+ Opret nyt rum</button>' : '') + (id === "nyIdeKursus" ? '<button type="button" class="bs3-nyt-rum" onclick="event.stopPropagation();bf3NytProduktFelt(this)">+ Opret nyt produkt</button>' : '') + (id === "bibDbProd" ? '<button type="button" class="bs3-nyt-rum" onclick="event.stopPropagation();bf3NytProduktFelt(this,\'bibDbProd\')">+ Opret nyt produkt</button>' : '') + '</div></div>';
 }
 /* OPRET NYT RUM FRA TØM HOVEDET (Ida 26/9 08.18, »lidt ala pinterest«: »hvis den nye ide ikke passer ind nogle steder lige nu? Tilføj ny?«):
    nederst i »Hvor hører det hjemme?« · navnet skrives i listen · rummet oprettes i Biblioteket og er valgt — arket og teksten bliver staaende. */
 /* OPRET NYT PRODUKT FRA TØM HOVEDET (Ida 2/10, »ligesom på pinterest«): nederst i »Hvilket onlinekursus?« · navnet skrives i listen ·
    produktet oprettes i produkter og er valgt, saa idéen kan gemmes paa det med det samme. */
-function bf3NytProduktFelt(btn) {
+function bf3DropSoeg(id, q) { q = String(q || "").trim().toLowerCase(); const w = document.getElementById(id); if (!w) return; w.querySelectorAll(".bs3-liste > button:not(.bs3-nyt-rum)").forEach(function (b) { b.style.display = (!q || b.textContent.toLowerCase().indexOf(q) > -1) ? "" : "none"; }); }
+function bf3NytProduktFelt(btn, dropId) {
   const w = document.createElement("div"); w.className = "bs3-nyt-rum-rk";
-  w.innerHTML = '<input type="text" class="bs3-nyt-rum-felt" placeholder="Navn på produktet" autocomplete="off" onkeydown="if(event.key===\'Enter\'){event.preventDefault();bf3NytProduktOpret(this);}" onclick="event.stopPropagation()"><button type="button" class="bs3-nyt-rum-ok" onclick="event.stopPropagation();bf3NytProduktOpret(this)">Opret</button>';
+  w.innerHTML = '<input type="text" class="bs3-nyt-rum-felt" placeholder="Navn på produktet" autocomplete="off" onkeydown="if(event.key===\'Enter\'){event.preventDefault();bf3NytProduktOpret(this' + (dropId ? ',\'' + dropId + '\'' : '') + ');}" onclick="event.stopPropagation()"><button type="button" class="bs3-nyt-rum-ok" onclick="event.stopPropagation();bf3NytProduktOpret(this' + (dropId ? ',\'' + dropId + '\'' : '') + ')">Opret</button>';
   btn.replaceWith(w); const f = w.querySelector("input"); setTimeout(function () { try { f.focus(); } catch (e) {} }, 30);
 }
-async function bf3NytProduktOpret(el) {
+async function bf3NytProduktOpret(el, dropId) {
   const rk = el.closest(".bs3-nyt-rum-rk"); const f = rk && rk.querySelector("input"); const navn = ((f && f.value) || "").trim(); if (!navn) { if (f) f.focus(); return; }
+  if (dropId === "bibDbProd") {   /* udtalelsens produkt er kun et ord paa udtalelsen; det opretter aldrig et produkt i Energida Studio (Ida 5/10) */
+    const nb = document.createElement("button"); nb.type = "button"; nb.textContent = navn; nb.setAttribute("onclick", "bf3DropVaelg('bibDbProd','" + navn.replace(/'/g, "\\'") + "')");
+    rk.parentNode.insertBefore(nb, rk);
+    const ny = document.createElement("button"); ny.type = "button"; ny.className = "bs3-nyt-rum"; ny.textContent = "+ Opret nyt produkt"; ny.setAttribute("onclick", "event.stopPropagation();bf3NytProduktFelt(this,'bibDbProd')"); rk.replaceWith(ny);
+    bf3DropVaelg("bibDbProd", navn); return;
+  }
   if (!sb) { husBesked("Ingen forbindelse til basen."); return; }
   const ok = rk.querySelector(".bs3-nyt-rum-ok"); if (ok) { ok.disabled = true; ok.textContent = "Opretter …"; }
   try {
@@ -80773,7 +80784,7 @@ function bf3StudieRum(v, filter) {
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-hvid.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 5. oktober · 2491</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 5. oktober · 2492</div>
 <script>
 /* DROPDOWNEN RULLER SELV (Ida 4/10) — maal den aabne liste og klip den ved skaermens bund */
 (function () {

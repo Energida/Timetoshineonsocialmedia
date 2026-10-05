@@ -1,3 +1,7 @@
+## v2492 · 5. oktober · Udtalelser: plusset er knappen, produktet vælges som Pinterest
+- Databaserum (Udtalelser): ingen »Tilføj udtalelse«-knap på siden, når der er indhold — plusset i coveret (computer) og bundmenuens plus (telefon) åbner »Ny udtalelse«. Tom side: én grå knap med 32 px luft.
+- Produktet vælges i en dropdown med søgefelt og »+ Opret nyt produkt« (som »Hvor hører det hjemme?«). Et nyt produkt her er kun et ord på udtalelsen — det oprettes ALDRIG i Energida Studio.
+
 ## v2491 · 5/10 · RELOAD BLIVER I RUMMET · HJERTET PÅ GRAFIKKORTET · EGNE PRODUKTER I UDTALELSER (Ida 5/10)
 - Reload i et rum: sedlen er »rum:<id>« og rummet genåbnes (før landede man på Get shit done).
 - Loader-hjertet: will-change transform/opacity, så pulsen ikke venter på opstarten (»hjertet står stille, så kommer siden«). IKKE målt på Idas maskine.
