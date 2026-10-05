@@ -1,3 +1,8 @@
+## v2491 · 5/10 · RELOAD BLIVER I RUMMET · HJERTET PÅ GRAFIKKORTET · EGNE PRODUKTER I UDTALELSER (Ida 5/10)
+- Reload i et rum: sedlen er »rum:<id>« og rummet genåbnes (før landede man på Get shit done).
+- Loader-hjertet: will-change transform/opacity, så pulsen ikke venter på opstarten (»hjertet står stille, så kommer siden«). IKKE målt på Idas maskine.
+- Udtalelser: produkt-chips = husets produkter + allerede brugte + »+ Andet« (»og hvor er we got this«).
+
 ## v2490 · 5/10 · RUMMET SOM DATABASE (Ida 5/10: »en form for database ala mit crm - så jeg kunne filtrere på hvilket produkt de har udtalt sig fra og en der hedder se alle«)
 - Biblioteks-rum kan vises som database (⋯ › Vis som database / Vis som side); Udtalelser er database fra start. Tilføj øverst · chips Se alle + produkter · én flise pr. ting (produkt som etiket, teksten, hvem under) · tryk = ret i det lille ark (tekst, hvem, produkt-chips, slet).
 - Data: teksten i mr_rum_noter; hvem + produkt i rummets felter.db[noteId]. Hvem falder tilbage på afsnittets navn.

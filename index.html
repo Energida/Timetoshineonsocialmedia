@@ -11048,6 +11048,7 @@ html body #privCover img, html body #appLoader:not([data-fejl="1"]) > img.al-hvi
   position:absolute !important; left:50% !important; top:50% !important; right:auto !important; margin:0 !important;
   width:150px !important; height:auto !important; aspect-ratio:820/646; opacity:1 !important;
   transform:translate(-50%,-50%); animation:hjertePulsMidt 1.6s ease-in-out infinite !important; z-index:1;
+  will-change:transform, opacity; backface-visibility:hidden;   /* PULSEN KOERER PAA GRAFIKKORTET (Ida 5/10: »hjertet står stille, så kommer siden«): mens appen arbejder ved opstart, maa hjertet ikke vente paa den */
 }
 html body #appLoader:not([data-fejl="1"]) > div, html body #energidaLoader > span, html body #somkundeLoader > div {
   position:absolute !important; left:0; right:0; top:calc(50% + 86px); text-align:center; margin:0 !important; z-index:1;
@@ -57328,7 +57329,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2490";
+const APP_VERSION = "2491";
 let NY_VERSION_KLAR = false;
 let NY_VERSION_AFVIST = false;
 function nyVersionSkjul() {
@@ -66248,6 +66249,8 @@ async function rodebutikTilRumGem(id, rumId) {
 async function mrRumAaben(rumId) {
   if (!MR_RUM.length) { try { await mrRumHent(); } catch (e) {} }
   const r = MR_RUM.find(x => String(x.id) === String(rumId)); if (!r) return;
+  /* RELOAD BLIVER I RUMMET (Ida 5/10: »hver gang jeg loader ender jeg på admin siden get shit done«): sedlen siger hvilket rum, ikke bare »maskinrum« */
+  setTimeout(function () { try { if (MR_RUM_AABEN && String(MR_RUM_AABEN) === String(rumId)) sessionStorage.setItem("dash_side_reload", "rum:" + rumId); } catch (e) {} }, 0);
   if (r.navn === "Økonomi") { visDashSide("budget"); return; }
   /* KLIENTER = TYPE-FILTRERET KLIENTLISTE (A6, Idas klik-svar 19/8: "her skal alle i crm
      komme frem som har den kundetype — her skal jeg kunne tilgå dem, deres forløbsoversigt,
@@ -67094,12 +67097,14 @@ async function bibDbArk(rid, nid) {
   const r = bibRumAf(rid); if (!r) return; const ord = bibDbOrd(r);
   const x = nid ? bibDbRaekker(r).find(function (y) { return String(y.n.id) === String(nid); }) : null;
   window.BIB_DB_PROD = x ? x.prod : (BIB_DB_FILTER || "");
+  /* PRODUKTERNE = husets produkter + dem, der allerede er brugt i rummet (Ida 5/10: »og hvor er we got this«) — og »+ Andet« til et nyt */
   const prods = (LEAD_PRODUKTER || []).slice();
+  bibDbRaekker(r).forEach(function (y) { if (y.prod && prods.indexOf(y.prod) < 0) prods.push(y.prod); });
   if (window.BIB_DB_PROD && prods.indexOf(window.BIB_DB_PROD) < 0) prods.push(window.BIB_DB_PROD);
   arkAabn({ titel: x ? "Ret " + ord + "en" : "Ny " + ord, ph: ord === "udtalelse" ? "Udtalelsen …" : "Tekst …", send: "Gem", tekst: x ? String(x.n.tekst || "") : "", chips: [],
     ekstraAf: function () {
       return '<input type="text" id="bibDbHvem" class="sendfelt-felt" placeholder="Hvem er den fra?" autocomplete="off" value="' + esc(x ? x.hvem : "") + '" style="width:100%;height:44px;margin-top:10px;border:1px solid var(--border);border-radius:22px;padding:0 16px;font:14px Poppins,sans-serif;background:#fff">'
-        + '<div class="bs3-ver" style="margin-top:14px">Produkt</div><div class="ark-chips i-fladen bs3-chips" style="margin-top:8px">' + prods.map(function (p) { return '<button type="button" class="ark-chip mq-tap' + (p === window.BIB_DB_PROD ? ' on' : '') + '" data-p="' + esc(p) + '" onclick="bibDbProdValg(this)">' + esc(p) + '</button>'; }).join('') + '</div>';
+        + '<div class="bs3-ver" style="margin-top:14px">Produkt</div><div class="ark-chips i-fladen bs3-chips" style="margin-top:8px">' + prods.map(function (p) { return '<button type="button" class="ark-chip mq-tap' + (p === window.BIB_DB_PROD ? ' on' : '') + '" data-p="' + esc(p) + '" onclick="bibDbProdValg(this)">' + esc(p) + '</button>'; }).join('') + '<button type="button" class="ark-chip mq-tap" onclick="bibDbProdNy(this)">+ Andet</button></div>';
     },
     knap: x ? { slet: true, tekst: "Slet", klik: "bibTingSlet('" + bibE(String(nid)) + "')" } : undefined,
     gem: async function (t) {
@@ -67112,6 +67117,17 @@ async function bibDbArk(rid, nid) {
       try { await mrNoterHent(true); } catch (e) {}
       setTimeout(mrRumSideTegn, 0); return "Gemt.";
     } });
+}
+function bibDbProdNy(btn) {
+  const w = document.createElement("span"); w.className = "bs3-nyt-rum-rk"; w.style.cssText = "display:inline-flex;gap:6px;align-items:center;border:0;padding:0";
+  w.innerHTML = '<input type="text" class="bs3-nyt-rum-felt" placeholder="Produktets navn" autocomplete="off" style="height:36px;border:1px solid var(--border);border-radius:18px;padding:0 14px;font:13px Poppins,sans-serif" onkeydown="if(event.key===\'Enter\'){event.preventDefault();bibDbProdNyOk(this)}"><button type="button" class="ark-chip mq-tap" onclick="bibDbProdNyOk(this.previousSibling)">Tilføj</button>';
+  btn.replaceWith(w); setTimeout(function () { try { w.querySelector("input").focus(); } catch (e) {} }, 30);
+}
+function bibDbProdNyOk(inp) {
+  const navn = String((inp && inp.value) || "").trim(); if (!navn) { if (inp) inp.focus(); return; }
+  const w = inp.parentNode, liste = w.parentNode;
+  const b = document.createElement("button"); b.type = "button"; b.className = "ark-chip mq-tap"; b.setAttribute("data-p", navn); b.textContent = navn; b.onclick = function () { bibDbProdValg(b); };
+  liste.insertBefore(b, w); w.remove(); bibDbProdValg(b);
 }
 function bibDbProdValg(b) { const p = b.getAttribute('data-p') || ''; window.BIB_DB_PROD = (window.BIB_DB_PROD === p) ? '' : p; b.parentNode.querySelectorAll('.ark-chip').forEach(function (x) { x.classList.toggle('on', x.getAttribute('data-p') === window.BIB_DB_PROD); }); }
 async function bibVisningSkift(rid) {
@@ -71758,6 +71774,9 @@ function showMain() {
           try { openKundeKort(rlKode, nr0); } catch(e) { visDashSide("overblik"); }
         })
         .catch(() => { if (DASH_SIDE_NR === nr0) visDashSide("overblik"); });   // fejler opslaget, skal hun ikke staa paa en tom skaerm
+    } else if (rl && rl.indexOf("rum:") === 0) {
+      const rlRum = rl.slice(4); genskabt = true; const nr1 = DASH_SIDE_NR;
+      (async function () { try { await mrRumHent(); } catch (e) {} if (DASH_SIDE_NR !== nr1 && DASH_SIDE_NR !== nr1 + 1) return; const fundet = (MR_RUM || []).some(function (x) { return String(x.id) === rlRum && x.aktiv !== false; }); if (fundet) { try { await mrRumAaben(rlRum); } catch (e) { visDashSide("overblik"); } } else { try { sessionStorage.removeItem("dash_side_reload"); } catch (e) {} visDashSide("overblik"); } })();
     } else if (rl && rl !== "overblik") {
       try { visDashSide(rl); genskabt = true; } catch(e) {}
     }
@@ -80754,7 +80773,7 @@ function bf3StudieRum(v, filter) {
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-hvid.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 5. oktober · 2490</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 5. oktober · 2491</div>
 <script>
 /* DROPDOWNEN RULLER SELV (Ida 4/10) — maal den aabne liste og klip den ved skaermens bund */
 (function () {
