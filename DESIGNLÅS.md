@@ -1,3 +1,8 @@
+## v2481 LIVE 5/10 · Biblioteket: Flyt til som Pinterest · træk rum ind i rum · plusset = Billede eller Link
+- Tryk på en ting i et rum = KUN »Flyt til« (Ida: »når jeg klikker på en fra notion skal jeg kun skulle vælge hvor den skal flyttes hen!«): arket som Pinterests »Choose board« (Ida: »gå ind i pinterest og find inspiration«): søgefelt øverst, »Sidst brugt« (de tre seneste, localStorage), alle rum A–Å med sti, mappeikon, rød »Flyt« ved mus-over, tryk = flyttet + kvittering. Ret (tekst · afsnit · samme idé) bor bag langt tryk/højreklik.
+- Forsiden: træk en rumflise 10 px og slip den på et andet rum → underrum (Ida: »jeg skal kunne trække fliserne rundt og også merge dem. fx flytte energibanken ind i redskaber og modeller«); slip-målet fyldt rødt; langt tryk = Åbn · Flyt til et andet rum · skraldespand.
+- Plusset i alle ark: »Billede« eller »Link« (Ida: »når jeg klikker på plus, så kan jeg ikke tilføje link? den åbner bare finder??«); Link giver et felt, Enter/Tilføj lægger linket i beskeden.
+
 ## v2480 LIVE 5/10 · et nyt rum i Biblioteket er HELT tomt
 - Ida: »sagde jeg ikke lige at siderne jeg bygger skal være tomme? heller ikke sådan noget her?!« → flisen »Hvad skal stå i rummet?« med afsnitsforslag er væk; et tomt rum viser kun sine egne chips (Bruges til · Gennemgået). Afsnit tilføjes via plusset.
 
