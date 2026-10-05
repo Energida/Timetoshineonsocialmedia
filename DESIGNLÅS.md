@@ -1,3 +1,8 @@
+## v2489 · 5/10 · KONTAKTERNE I CRM · DET RIGTIGE BIBLIOTEK · KUN ONLINEKURSER I STUDIET (Ida 5/10)
+- CRM: afsnittet Kontakter med én dør pr. produkt (KONTAKT_DOERE_TIL tændt; »De kontakter skal flyttes ind i mit crm«). Kun visning.
+- Biblioteket: roden er altid det øverste rum »Biblioteket« (et rum med samme navn inde i det blev valgt, og forsiden stod tom).
+- Energida Studio › Produkter: kun onlinekurser = med lektioner ELLER markeret i »onlinekurser« (v2488 viste alle 9; »disse produkter er IKKE alle nogle der skal ligge i energida studio!!!«). Nyt produkt i studiet markeres altid.
+
 ## v2488 · 5/10 · ALLE PRODUKTER I ENERGIDA STUDIO (HÅRD, Ida 5/10: »vis alle produkter også dem uden lektioner!«)
 - Produkter-siden viser alle produkter fra tabellen produkter; dem med lektioner først, resten efter (før: kun med lektioner = kun YOU GOT THIS).
 
