@@ -1,3 +1,9 @@
+## v2484 · 5/10 · FLYT TIL = HELE BACKSTAGE · STUDIERNE SOM FLISER · RUMNAVNE MED VERSALER (HÅRD, Ida 5/10)
+- Flyt til viser ALLE rum, grupperet: Biblioteket · Content Studio · Time to Shine · Mine rum (som tavler i Pinterest). Søgning på tværs.
+- Food Studio har målet »Opskrifter«: tingen bliver en opskrift i Food Studio, og tingen i Biblioteket går i papirkurven (30 dage). Studie-rum, der fører til en side uden noter, er ikke mål.
+- Biblioteket viser Content Studio, Food Studio og Time to Shine som fliser blandt rummene (A–Å); et tryk åbner studiet.
+- Rumnavne står ALTID med versaler (fliser, døre, Flyt til, coverets titel på et rum). Kun visningen; navnet i basen røres ikke.
+
 ## v2483 LIVE 5/10 · loadinghjertet står stille
 - Ida: »loading hjernehjertet hopper i placeringen når den loader!« MÅLT: fire dækflader (#privCover · #appLoader · #energidaLoader · #somkundeLoader) viste hjertet forskelligt (absolut midt vs. gruppe med tekst = skubbet op; 96 vs 150 px). Nu ÉN regel (#hjerteFast sidst i head): præcis midt, 150 px, fast forhold 820/646, samme puls; teksten absolut under. MÅLT efter: alle fire 720,450 (1440) og 195,422 (390).
 - Biblioteket: knappen »Tilføj afsnit« nederst i rummet skriver også overskriften direkte på siden (som plusset, v2482).
