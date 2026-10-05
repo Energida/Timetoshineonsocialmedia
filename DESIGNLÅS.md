@@ -1,3 +1,7 @@
+## v2504 · 5. oktober · »Slet« ved skraldespanden på knapper · Enter gemmer en hashtags kategori
+- HÅRD (Ida 5/10 aften: »Vil du tilføje ordet slet foran alle skraldespande på appen? altså kun knapper«): VÆLTER 20/9 »skraldespanden bærer aldrig tekst«. Alle knapper (mindst 120 px brede) med husets skraldespand får ordet »Slet« efter ikonet — én motor (sletOrdTegn) for hele appen, admin og b2b. De små ikoner på fliser og rækker er urørte. Skraldespanden er stadig tegnet; krydset er stadig kun luk.
+- Hashtag-arket: Enter i hashtag-, kategori- og (ny hashtag) kategorifeltet gemmer. MÅLT: kategorien gemte allerede ved tryk på Gem; Enter gjorde intet. Set på 390 + 1440.
+
 ## v2503 · 5. oktober · Kundens side i CRM: aftaler og forløb via plusset
 - KLIK (Ida 5/10 aften »Bag plusset«): formularen »Aftaler med kunden« og forløbs-skabelonen står ikke længere på kundens side, og »Tilføj aftale …«-feltet er væk. Plusset (coveret på computer, bundmenuen på telefon) giver »Aftale« og, på I GOT YOU, »Forløb« — formularen åbner i det lille ark med felterne i fuld bredde (samme gem som før: kkTilfoejAftale / kkIndsaetForloeb). Tom titel eller dato holder arket åbent. Set på 390 + 1440 i selen.
 - Åbent: forløbs-arkets forklaring siger »når I booker den« (I/jer) — Idas ordlyd, ikke rettet.
