@@ -1,3 +1,10 @@
+## v2495 · 5. oktober · Menuen uden underpunkter, hjertet uden procent, Slet i Flyt til
+- Menuen: Get shit done, Forretning og CRM har ingen underpunkter; et tryk på en åben fane ruller den op.
+- Hjertets puls: ingen translate(-50%) i animationen (centreret med margin) — procent i en transform-animation kan fryse under opstarten. IKKE målt på Idas maskine.
+- Flyt til-arket i Notion-rummet har Slet (skraldespand, spørger først). Sidst brugt husker Opskrifter i Food Studio.
+- Food Studio: filterchipsene Mest protein · Under 400 kcal · Under 15 min er ude; Bibliotekets søgesymbol følger ikke med ud på andre sider.
+- Foldet hjælp: overskriften står som flisetitel (Poppins 15, ikke versal-etiket), og der kan skrives i den, når den er foldet ud.
+
 ## v2493–v2494 · 5. oktober · Plusset er vejen, menuen ryddet, flyt og merge overalt i Biblioteket
 - Menuen: Get shit done har ingen underpunkter; Content Studio og Time to Shine står ikke i menuen (de bor i Biblioteket).
 - HÅRD: tilføj-felterne nederst i rummene (note-chips + sendefelt, Tilføj produkt, Ny tekst, Tilføj afsnit) er væk — plusset i coveret er vejen. På Forretnings lister åbner plusset listens eget ark (Nyt produkt · Ny tekst), aldrig Kontakt/Rum.
