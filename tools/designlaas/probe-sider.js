@@ -134,7 +134,7 @@ setTimeout(async function () {
           if (q.height >= 28 || rentOrd) return;
         }
         /* elementFromPoint ser kun det, der er inde i vinduet: rul knappen ind i midten foerst */
-        if (q.top < 30 || q.bottom > innerHeight - 30) { try { b.scrollIntoView({ block: "center" }); } catch (e) {} q = b.getBoundingClientRect(); }
+        if (q.top < 30 || q.bottom > innerHeight - 30) { try { b.scrollIntoView({ block: "center", behavior: "instant" }); } catch (e) {} q = b.getBoundingClientRect(); }   /* instant (5/10): en blød rulning naaede ikke frem, foer der blev maalt */
         var cx = q.left + q.width / 2, cy = q.top + q.height / 2;
         var op = document.elementFromPoint(cx, cy - 21), ned = document.elementFromPoint(cx, cy + 21);
         if ((op && b.contains(op)) && (ned && b.contains(ned))) return;
