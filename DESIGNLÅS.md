@@ -1,3 +1,7 @@
+## v2496 · 5. oktober · Flyt til: opret rum, Mindful og Workout
+- Flyt til: skriv et navn i søgefeltet → »Opret “navn”« (Enter virker, når intet rum passer). En sti med / opretter underrum; første led kan være Get shit done, Biblioteket eller et eksisterende rum.
+- Flyt til har Idéer i Mindful Studio og Workout Studio som mål (som Opskrifter i Food Studio); de huskes under Sidst brugt.
+
 ## v2495 · 5. oktober · Menuen uden underpunkter, hjertet uden procent, Slet i Flyt til
 - Menuen: Get shit done, Forretning og CRM har ingen underpunkter; et tryk på en åben fane ruller den op.
 - Hjertets puls: ingen translate(-50%) i animationen (centreret med margin) — procent i en transform-animation kan fryse under opstarten. IKKE målt på Idas maskine.
