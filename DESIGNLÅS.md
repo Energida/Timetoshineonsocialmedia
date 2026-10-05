@@ -1,3 +1,9 @@
+## v2508 · 5. oktober aften · Forbind Instagram i »Ugens tal fra Instagram« (kun testere)
+- **Idas klik 5/10 aften: »Husets tomme flise«.** Øverst i interaktionsrate-arket: ikke forbundet = tomKortHtml »Vil du hente tallene direkte fra Instagram?« + Forbind Instagram; udløbet = »Forbindelsen til Instagram er udløbet.« + Forbind Instagram; forbundet = »Forbundet som @navn« + Hent tallene. Den manuelle indtastning står uændret under (spec §4, permanent).
+- **Kun testere:** vises først efter `?igtest=1` (gemmes på enheden), fordi Meta-appen er i udviklingstilstand. Fjernes, når App Review er godkendt.
+- Tokenet når aldrig klienten; appen læser kun brugernavn/udløb, filtreret på egen virksomhed_id. Retur fra Instagram: ?code&state tjekkes mod gemt state, adressen ryddes straks.
+- IKKE MÅLT: hjemmeskærms-appen på iPhone (Instagram åbner i Safari) og selve forbindelsen (kræver redirect-adressen hos Meta + i Secrets og @energida som tester).
+
 ## v2507 · 5. oktober · Tilføj aftale (kundeappen): sluttid, fysisk/online, sted, ret ved tryk · kvarterer · streger i datovælgeren
 - Idas fund 5/10 aften: (1) planlægningens chips (Optag, Udfyld briefs …) er UDE af »Tilføj aftale« — de hører kun til under Planlægning · (2) arket har dag · start · »Slutter« · Fysisk møde / Onlinemøde · ét felt (»Hvor? Fx adressen« / »Mødelink«), gemt i kunde_aftaler (tid_slut, sted, link — link er kun et link, når det starter med http) · (3) klokkeslæt i kvarterer (06.00–21.45) i ALLE husets tidsvælgere · (4) en aftale under Kommende aktiviteter kan trykkes og rettes (samme ark, Slet under Annullér) — møder åbner stadig agendaen · (5) datovælgeren har hårfine streger (#DEDAD4) mellem dage og uger.
 - Set på 390 + 1440 i selen; gem og ret målt på det, der sendes til basen. IKKE målt mod den rigtige base (kundens ret til at rette/slette egne aftaler).
