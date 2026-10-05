@@ -1,3 +1,10 @@
+## HÅRD 5/10 kl. ~11 · EN GUIDE TIL KUNDEN ER EN MODEL, ALDRIG KASSER MED TEKST
+Ida (efter fem tekst-i-fliser-bud på Indholdssøjlerne): »Vi taler til en kunde der intet kender til indholdssøjlerne, de er stresset … intet tydeligt hierarki eller farver der hjælper kunden med at forstå … det her skal være deres guide hvor de let kan afkode hvad er det den her indholdssøjle går ud på og hvad er det jeg skal huske … et sammensurium af tekst i fliser … de forstår i modeller og billeder ikke i kasser med tekst oven på kasserne med tekst … husk altid at du kan kigge i SoMe App-mappen under Designstil.«
+- Lære-/guide-sider (Indholdssøjlerne, De 4 byggesten, Drejebogen, Værktøjskassens guides): MODELLEN først (figur, lærred, ring, farveflader, store ord), teksten er bisætning. Kunden skal kunne svare på to sekunder: hvad går det ud på, og hvad skal jeg huske.
+- Tabeller og regneark er til VÆRKTØJ (hashtagbanken), aldrig til guides. »Flise med etiket + tekst« er FORBUDT som grundgreb på en guide.
+- Før ethvert bud: åbn SoMe App/Designstil (App · Drejebogen · hjemmeside) og tegn med Idas egne greb. Et hold, der tegner bud, får mappen og denne regel med.
+- Hukommelsen kunden-forstaar-i-modeller-ikke-kasser.
+
 ## v2477 LIVE 5/10 (Idas klik) · Hashtagbanken = foldede grupper (bud 3) · ÉT GREB: det røde flueben låser · højst fem låste · popuppen om ny version i husets form
 - Hashtagbanken (Idas klik 5/10 på U1sk4p1TXTR2oxU1zfjDrJ, bud 3): låste øverst (»n af 5 i hver caption«), banken under som én foldbar flise pr. kategori med rigtig tabel (Låst · Hashtag · Brugt · Sidst brugt · skraldespand) + sendefelt i hver; chips Mest brugt · A til Å · Sidst brugt · Fold alle ud; siden i fuld bredde på computeren (vælter 20/9's to spalter på denne side). Mødet (iMoedet) uændret.
 - HÅRD (Ida 5/10 kl. ~09.30): »der skal ikke være sliders nogle steder og cirkler andre steder« → én kontrol = den røde cirkel m. flueben (.htb-ok), betyder låst. HÅRD (kl. ~09.45): »der kan kun være 5 i hver caption« → HTB_MAKS_FASTE = 5, den sjette afvises med husBesked.
