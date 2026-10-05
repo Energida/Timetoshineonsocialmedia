@@ -1,3 +1,11 @@
+## HJEMMESIDEN · HEROEN PÅ SUCCESFULD DETAILDRIFT (LÅST, Ida 5/10 kl. 15.30: »PISSE FLOT HERO NU«)
+- Computer (min-width 900): heroen starter 48 px fra venstre kant (ikke i .wrap's 192), Didot 60 px (clamp 44–60), maks 24ch, linjer ikke balanceret, 40 px luft under knapperne. Fotoet skubbet (background-size 120 % auto, position 0 % 24 %), så Ida står til højre for teksten, midt i billedet. Foto i 2.600 px (1.500 blev uskarpt ved 120 %).
+- Telefon: uændret (20 px fra venstre, foto 60 % 0 / auto 62 %).
+- Gælder SD; forsiden og undersiderne følger samme greb, når de rettes.
+
+## HÅRD 5/10 · ALDRIG SMÅ VERSALER PÅ RØDT (Ida: »det er virkelig svært for mig at læse de hvide poppins versaler på rød baggrund«)
+- På rødt står etiketter i almindelig skrift, fuld hvid, 14–16 px; skillelinjen hvid ved 50 %. Små grå versaler kun på hvidt. STATUS: indført i Indholdssøjle-buddet (runde 16); appens eksisterende røde fliser er ikke gennemgået endnu.
+
 ## HJEMMESIDEN · BEREGNEREN »HVAD KOSTER DET DIG AT SPILLE HYGGETENNIS?« (LÅST, Ida 5/10 kl. 14.50: »ENDLIG - FEDT! LÅS«)
 - Hvid kasse (husets flise) med Didot-spørgsmålet, »hyggetennis« i rød kursiv og 30 % større.
 - To HVIDE fliser side om side (TID · MONEY): etiket i SORT Poppins 14 px uden spatiering · én hårfin streg · spørgsmål Poppins 400 16 px · hjælpelinje grå 14 px · stort rødt tal 44 px + grå enhed · rød skyder på grå bane · skala (1 / 20 · 100 / 1.000). Skyderne står i SAMME højde (spørgsmål og hjælp har fast min-højde på computeren). Telefon: stablet.
