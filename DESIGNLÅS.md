@@ -1,3 +1,8 @@
+## v2530 · 7. oktober · Briefen: »Hvem laver?« kun ved to eller flere, statuslisten er husets enkeltvalg (revision 6/10 fund 48, 61; nat-køen)
+- FIRST THING FIRST (fund 48): »Hvem laver?« spørges kun, når der er to eller flere personer. Med én person udfyldes feltet selv med den person (samme felt og værdi som et tryk på den ene chip; kun når intet er sat). »Ved ikke endnu« på alle trin er IKKE bygget (ny ordlyd/struktur — Idas valg).
+- STATUSLISTEN (fund 61): husets enkeltvalg (v2467) — tom grå cirkel pr. række, valgt = rød cirkel med hvidt flueben, teksten sort; listen står under pillen i pillens fulde bredde på begge flader (før hang den fra højre kant på computeren). »Postet sættes selv« er IKKE bygget (ny funktion).
+- Set på 390 + 1440 i selen. Kilde: NAT-6-10/fund.md.
+
 ## v2529 · 7. oktober · Briefen: et produkt uden link står i fakta, Tilbage på telefonen, slet-teksten siger sandheden, ingen små versaler på rødt, runde anførselstegn (revision 6/10 fund 5, 49, 55, 60, 114, 116; nat-køen)
 - PRODUKT UDEN LINK (fund 5): det, der skrives i Tilføj › Produkt, bliver produktets titel (samme felt som Omdøb), så fakta-rækken »Produkter« viser det — en fysisk butik har varen i hånden, ikke et link. Kun Omdøb udfyldt = navnet. Gammel fritekst i produkter har ingen titel og er stadig ikke et produkt (Ida 24/9) og tæller ikke med i antallet. Ordlyden i arket (»Indsæt link til produktet«, »Omdøb«) og »1 link« i rækken er IKKE rørt (Idas ord / bud 1 låst 29/9).
 - TILBAGE PÅ TELEFONEN (fund 49): briefoversigten har husets lange grå Tilbage nederst (fører dertil, man kom fra), og skrivesidens første side har Tilbage ved Næste (fører til briefoversigten). Kun telefonen; computeren har stien.

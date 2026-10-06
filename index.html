@@ -9563,6 +9563,11 @@ html body .bs3-liste.bs3-liste-flyd { position:fixed; z-index:990; min-width:220
 html body .bs3-liste.bs3-liste-flyd button { display:block; width:100%; text-align:left; background:none; border:0; border-top:1px solid var(--gray); padding:12px 16px; font-family:Poppins,sans-serif; font-size:13px; color:var(--black); cursor:pointer; min-height:44px; }
 html body .bs3-liste.bs3-liste-flyd button:first-child { border-top:0; }
 html body .bs3-liste.bs3-liste-flyd button.on { color:var(--red); }
+/* STATUSLISTEN ER HUSETS ENKELTVALG (v2467: tom graa cirkel, valgt = roed cirkel m. hvidt flueben; natten 7/10, revision fund 61) — begge flader */
+html body #bfStatusBaandKort button { display:flex; align-items:center; gap:12px; }
+html body #bfStatusBaandKort button.on { color:var(--black); }
+html body #bfStatusBaandKort button::after { content:""; width:24px; height:24px; flex-shrink:0; margin-left:auto; border-radius:50%; border:1.5px solid var(--border); background:#fff center/12px 12px no-repeat; box-sizing:border-box; }
+html body #bfStatusBaandKort button.on::after { border-color:var(--red); background-color:var(--red); background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'><path d='M5 12.5l4.5 4.5L19 7'/></svg>"); }
 html body.mb #screen7 > .mb-baand .bt-ik-baand .bt-status-baand button.bs3-drop { width:auto !important; height:36px !important; border-radius:999px !important; display:inline-flex; align-items:center; gap:8px; }
 /* DEN ROEDE FLISE I BRIEFEN: titel · hvid streg · Kort fortalt (Ida 21/9 kl. 16.12) — beskrivelsen VISES her (undtagelse fra 16/9 kl. 19.55) */
 html body.mb #briefWrap .brief-ide-hoved.brief-ide-hoved-titel .rk-fold-tekst small { display:block !important; margin-top:8px; padding-top:8px; border-top:1px solid rgba(255,255,255,.35); font-size:13px; line-height:1.5; color:#fff; white-space:normal; }
@@ -22145,7 +22150,8 @@ function briefFtfTrin(it) {
      Postes (dag + tidspunkt) · Platform · Hvem skal lave det · Lyd (kun video). Kun det, der mangler. */
   if (it && !it.dato) trin.push("postes");
   if (!(Array.isArray(b.platform) ? b.platform.length : String(b.platform || "").trim())) trin.push("platform");
-  try { if (briefPersonerListe().length >= 1 && !String(b.hvemPerson || b.hvemLaver || "").trim()) trin.push("hvem"); } catch (e) {}
+  /* »HVEM LAVER?« KUN VED TO ELLER FLERE (natten 7/10, revision fund 48: »Hvem laver? Det er da mig, der er kun mig.«) — med een person udfyldes det selv i briefFtfSkriv */
+  try { if (briefPersonerListe().length >= 2 && !String(b.hvemPerson || b.hvemLaver || "").trim()) trin.push("hvem"); } catch (e) {}
   const fmtNu = String(b.format || (FTF_FORMATER.indexOf(String(it && it.type || "")) > -1 ? it.type : "") || "");
   if ((!fmtNu || /reel/i.test(fmtNu)) && !(Array.isArray(b.lyd) ? b.lyd.length : String(b.lyd || "").trim())) trin.push("lyd");
   return trin;
@@ -22361,6 +22367,8 @@ async function briefFtfSkriv(it, F) {
   if (F.trin.indexOf("postes") > -1) { briefFtfDatoLaes(); if (FTF_DATO) { it.dato = FTF_DATO; opd.dato = FTF_DATO; } if (FTF_TID) { it.brief.tid = FTF_TID; opd.brief = it.brief; if (S) S.tid = FTF_TID; } }
   if (F.trin.indexOf("platform") > -1 && FTF_PLATFORM.length) { it.brief.platform = FTF_PLATFORM.slice(); opd.brief = it.brief; if (S) S.platform = FTF_PLATFORM.slice(); }
   if (F.trin.indexOf("hvem") > -1 && FTF_HVEM.length) { it.brief.hvemPerson = FTF_HVEM.join(" · "); opd.brief = it.brief; if (S) S.hvemPerson = it.brief.hvemPerson; }
+  /* EEN PERSON = DEN PERSON (fund 48, natten 7/10): samme felt og samme vaerdi, som et tryk paa den ene chip gav — kun naar intet er sat */
+  else if (F.trin.indexOf("hvem") < 0) { try { const folk = briefPersonerListe(); if (folk.length === 1 && !String(it.brief.hvemPerson || it.brief.hvemLaver || "").trim() && !(S && String(S.hvemPerson || S.hvemLaver || "").trim())) { it.brief.hvemPerson = folk[0]; opd.brief = it.brief; if (S) S.hvemPerson = folk[0]; } } catch (e) {} }
   if (F.trin.indexOf("lyd") > -1 && FTF_LYD.length) { it.brief.lyd = FTF_LYD.slice(); opd.brief = it.brief; if (S) S.lyd = FTF_LYD.slice(); }
   if (F.trin.indexOf("titel") > -1 && String(FTF_TITEL).trim() && String(FTF_TITEL).trim() !== String(it.titel || "").trim()) { it.titel = storStart(String(FTF_TITEL).trim().slice(0, 90)); opd.titel = it.titel; try { if (BRIEF_ID === id) setTimeout(briefHovedOpdater, 50); } catch (e) {} }
   /* hele brief-objektet sendes med (gem-maa-ikke-slette): kolonnen skrives samlet — ogsaa naar kun soejle/format er svaret */
@@ -23624,8 +23632,9 @@ function briefStatusBaandAabn(knap) {
     if (r.bottom < 0 || r.top > (window.innerHeight || 0)) { luk(); return; }
     k.style.top = (r.bottom + 6) + "px";
     /* paa telefonen ligger pillen tv. — listen forankres i pillens venstre kant, saa den aldrig klipper (maalt 21/9) */
-    if (r.left < 240) { k.style.left = Math.max(8, r.left) + "px"; k.style.right = "auto"; }
-    else { k.style.right = Math.max(8, (window.innerWidth || 0) - r.right) + "px"; k.style.left = "auto"; }
+    /* I PILLENS FULDE BREDDE (natten 7/10, revision fund 61): paa computeren hang listen fra pillens hoejre kant i halv bredde — nu staar den under pillen, lige saa bred */
+    const vb = window.innerWidth || 0; const bredde = Math.min(Math.max(r.width, 220), vb - 16);
+    k.style.width = bredde + "px"; k.style.left = Math.max(8, Math.min(r.left, vb - 8 - bredde)) + "px"; k.style.right = "auto";
   };
   const udenfor = function (e) { if (!k.contains(e.target) && e.target !== knap && !knap.contains(e.target)) luk(); };
   function luk() {
@@ -58023,7 +58032,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2529";
+const APP_VERSION = "2530";
 let NY_VERSION_KLAR = false;
 let NY_VERSION_AFVIST = false;
 function nyVersionSkjul() {
@@ -81900,7 +81909,7 @@ function bf3StudieRum(v, filter) {
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-hvid.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 7. oktober · 2529</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 7. oktober · 2530</div>
 <script>
 /* DROPDOWNEN RULLER SELV (Ida 4/10) — maal den aabne liste og klip den ved skaermens bund */
 (function () {
