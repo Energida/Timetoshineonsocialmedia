@@ -1,3 +1,7 @@
+## v2517 · 6. oktober · Alle MANGLER i fakta er røde fra start (Ida: »når jeg udfylder en mangler i fakta - så kommer der bare en ny når jeg har udfyldt den... alle mangler skal stå der fra start så man har hele overblikket«) — VÆLTER greb 4 (22/9 »kun den første, der mangler, er rød«)
+- Fakta-boksen i briefen: hvert felt, der mangler, står med rødt MANGLER fra start. Ingen grå MANGLER.
+- v2514–v2516 samme dag: mikrofonens tekst gemmes i briefen · sted ved fysisk møde (Energida Studio · Andet sted) · Story ude af First thing first (SOS).
+
 ## v2513 · 6. oktober · Hjems ringe = kun denne uge, kun opløftende (Ida: »vi skal have flyttet interaktionesraten om på planlægningssiden og fjernet fra forsiden. de ringe der står der skal kun være motiverende og opløftende for denne uge«)
 - Hjem: to ringe — »opslag i ugen« (planlagt af ugemålet) + »postet« (postet af ugemålet). Interaktionsraten og »uger i træk« er UDE af Hjem.
 - Planlægning: flisen »Din interaktionsrate« (tal Poppins 300 + »Sidste måling …«) under Næste skridt / under fluebenet; et tryk åbner Performance.
