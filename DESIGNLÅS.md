@@ -1,3 +1,7 @@
+## v2523 · 6. oktober · 30 rene fejl fra revisionen »Kundeappen A til Z« (rapport 6cdLHGLAYJ3XHjhLYvKXgK)
+- Rene fejl uden nye valg: klip/overløb (Din uge, lektionstitler, hashtagbankens hero), aldrig røde ringe (Idébankens dato-chip, filter/sortér), to streger i De 4 byggesten, stort begyndelsesbogstav (é/ü), Billede/Prøvereel får deres eget format i briefen, Lyd kun ved formater med lyd, Story står som Story (ikke 2B), træk til Story lander i Story, Annullér på første trin af et nyt tomt opslag efterlader intet, »Link kopieret« kun når det lykkes, .ics siger 1 time, m.fl. Fuld liste: scratchpad revision/R/rettet.md.
+- IKKE med (kræver Idas klik): kalenderkortets to-linjers-loft (2/9) mod »aldrig … i titler«, rød Didot (21/9) mod »Didot kun i heroen«, Kort reel/Kort-reel, den døde Kalenderen-chip, m.fl. (15 + B6).
+
 ## v2522 · 6. oktober · Idébanken: »+ Tilføj« over de fire indholdssøjler igen (Ida: »tilføj plusserne over hver indholdssøje igen i idebanken«) — v2519 gælder kun Story og Uden plads
 - Over 1A · 1B · 2A · 2B: den grå »+ Tilføj« (åbner Ny idé med søjlen valgt). Over Story og Uden plads: ingen — kun plusset i hjørnet.
 
