@@ -1,3 +1,14 @@
+## v2535 · 7. oktober · Done får kvittering med Fortryd, overskredne to-dos står røde, Indbakken: Besked fra Ida øverst og »Set«/»Placér« med stort, ny dato starter tom, Profilens kontakter gemmer med det samme, »Dine knapper« virker (revision 6/10 fund 12, 13, 14, 16, 17, 22 + 91b, 92; nat-køen)
+- DONE (fund 13): flueben på en to-do (Hjem og Get shit done) giver husets kvittering »Done.« med »Fortryd« i rødt i 4 sek. — kun når basen har fluebenet. Fortryd vender det tilbage (samme motor). Begge flader.
+- OVERSKREDET (fund 14): en to-do med en dato, der er gået, står med datoen i rødt + »· N dage over« (fx »Fre. 2. oktober · 5 dage over«). Kun ordet i rødt — ingen ny flade. Hjem + Get shit done, begge flader.
+- STORT BEGYNDELSESBOGSTAV (fund 92, HÅRD 6/10): to-do-datoer og Indbakkens datolinjer starter med stort (»Tirs. 6. oktober«). dkDatoKort er IKKE rørt (bruges midt i sætninger).
+- INDBAKKEN (fund 16): Idas beskeder står øverst under »Besked fra Ida« med beskeden i sort som titel og datoen under. »Set« og »Placér« står med stort begyndelsesbogstav, ikke som små versaler (de blev sorteret som tekstknapper). »Placér« er IKKE omdøbt (Idas ord 16/9), og om kunden skal kunne svare Ida, er Idas valg.
+- SE ALLE (fund 91b): »Se alle« for enden af stregen er ens på begge flader (stod SE ALLE på computeren).
+- NEJ, NY DATO (fund 17): arket spørger »Hvornår lægger du den op?« med opslagets titel i gråt under; en overskreden dato står ikke i feltet, og samme gamle dag giver »Vælg en ny dag.«.
+- PROFIL (fund 22): kontakten »Helligdage i årshjulet« og skrift-chipsene gemmer med det samme (»Gemt.«); fejler det, vender kontakten tilbage. Tekstfelterne bruger stadig »Gem ændringer«.
+- DINE KNAPPER (fund 12): kundens egne navne til de tre knapper står nu i plussets valg (Tøm hovedet), hvor knapperne bor — før skete der intet synligt. Uden eget navn er ordene uændrede. Forklaringen siger »i plusset« (før »på forsiden«). Om flisen skal ud af Profil, er Idas valg.
+- Set på 390 + 1440 i selen med to-dos (én overskreden), Idas besked, en note og et overskredet opslag. Kilde: NAT-6-10/fund.md.
+
 ## v2534 · 7. oktober · Telefonen: kalenderens datolinje kun én gang, »Næste uge« over spørgsmålet om næste uge, fliser med skygge (ikke kant), Idébankens chips til venstre (revision 6/10 fund 103, 104; nat-køen)
 - KALENDEREN PÅ TELEFONEN (fund 104): linjen »uge 41 · ons. 7. oktober« under heroen er ude — heroen bærer datoen. Er der intet i dag, hedder rubrikken »Næste uge« (før »I dag« over »Hvad skal ud i næste uge?«).
 - FLISEN ER HVID MED SKYGGE (fund 103, HÅRD 25/9): telefonens idéfliser og »Kommende opslag« har husets skygge (--mb-skygge) i stedet for grå kant — som computerens idéfliser. Kun telefonen (max-width:899px).
