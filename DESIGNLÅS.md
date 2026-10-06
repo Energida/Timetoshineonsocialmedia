@@ -1,3 +1,8 @@
+## v2518 · 6. oktober · Planlægningens første kort = contentmødet (Idas klik »Contentmødet i alt«) + »På mødet« slipper efter mødet
+- Etiket »Dit ugentlige contentmøde« · spørgsmål »Hvornår vil du holde dit ugentlige contentmøde?« · linje »Én time hver uge, hvor du planlægger næste uges opslag. Vi lægger møderne i din kalender.« · knap »Sæt mødet i kalenderen«.
+- Mødesiden: hver idé under Idéer til mødet har husets skraldespand helt ude til højre (Ida: »Vil du tilføje skraldespanden?!!? helt ude i højre side?«) — tager idéen af mødet, idéen bliver i Idébanken.
+- Idébanken: »På mødet«/»Møde …« på en idé gælder kun et kommende møde. Den datoløse liste (moede.ideer) får ideerFra og tæller ikke, når et møde er holdt efter den dag (Ida: »de opslag jeg engang havde med på et møde står nu stadig i idebanken«).
+
 ## v2517 · 6. oktober · Alle MANGLER i fakta er røde fra start (Ida: »når jeg udfylder en mangler i fakta - så kommer der bare en ny når jeg har udfyldt den... alle mangler skal stå der fra start så man har hele overblikket«) — VÆLTER greb 4 (22/9 »kun den første, der mangler, er rød«)
 - Fakta-boksen i briefen: hvert felt, der mangler, står med rødt MANGLER fra start. Ingen grå MANGLER.
 - v2514–v2516 samme dag: mikrofonens tekst gemmes i briefen · sted ved fysisk møde (Energida Studio · Andet sted) · Story ude af First thing first (SOS).
