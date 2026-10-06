@@ -1,3 +1,6 @@
+## v2522 · 6. oktober · Idébanken: »+ Tilføj« over de fire indholdssøjler igen (Ida: »tilføj plusserne over hver indholdssøje igen i idebanken«) — v2519 gælder kun Story og Uden plads
+- Over 1A · 1B · 2A · 2B: den grå »+ Tilføj« (åbner Ny idé med søjlen valgt). Over Story og Uden plads: ingen — kun plusset i hjørnet.
+
 ## v2521 · 6. oktober · Planlægningsdagen: datolinjen i heroen + »Planlæg uge 42« (Idas klik »Uge 42«: »datoerne i dette planlægnings er slet ikke synkroniseret«)
 - Heroen bærer datolinjen som de andre sider (»Tirsdag 6. oktober · Uge 41«). Rygraden siger »Planlæg uge 42« (ugen, der planlægges), mødets dag og tid står i pillen under.
 
