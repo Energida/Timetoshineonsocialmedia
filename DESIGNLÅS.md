@@ -1,3 +1,6 @@
+## v2521 · 6. oktober · Planlægningsdagen: datolinjen i heroen + »Planlæg uge 42« (Idas klik »Uge 42«: »datoerne i dette planlægnings er slet ikke synkroniseret«)
+- Heroen bærer datolinjen som de andre sider (»Tirsdag 6. oktober · Uge 41«). Rygraden siger »Planlæg uge 42« (ugen, der planlægges), mødets dag og tid står i pillen under.
+
 ## v2520 · 6. oktober · Stories åbner i briefen (Ida: »når jeg opretter en story ide kan jeg slet ikke arbejde i den eller klikke på den!??! vil jo gerne tilføje det til mødet også og så skal vi have lavet en brief til storyformatet«) — VÆLTER 28/7 »stories briefes ikke«
 - En story-idé åbner briefen som alle andre idéer (fakta, tags, dato, ⋯ › Tilføj til møde). Story er tilbage i First thing first.
 - STATUS: story-briefens egne spørgsmål findes ikke endnu — fem bud på vej. Indtil da får en story briefens almindelige spørgsmål.
