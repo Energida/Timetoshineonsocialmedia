@@ -1,3 +1,10 @@
+## v2526 · 7. oktober · Planlægningsdagen flytter aldrig et møde ubedt, rører aldrig et opslag i gang, og bruger idéerne til mødet (revision 6/10 fund 6, 7, 8, 125 + 80 i trin 6; nat-køen)
+- Trin 6 læser mødet, der allerede ligger i ugen, ellers den faste tid (rytme().uge): »Næste gang · Torsdag 15. oktober kl. 9.00« + grå Ret + rød Færdig. Færdig uden Ret skriver intet i kalenderen. Ret viser dagene og husets tidsvælger i kvarterer (ikke fire chips). Et flyt beholder mødets varighed (månedens = 2 timer).
+- Trin 3 »Har du allerede idéen?« viser kun idéer UDEN dato; »Planlæg denne« rører aldrig en status længere fremme end Planlagt (vagten fra moedeIdePlanGem, 27/7).
+- Idéerne til mødet: deres søjler kommer først i trin 3 (»Idé til mødet«), og idéen står øverst i »Har du allerede idéen?«. Planlægning viser »n idéer venter på mødet« under Næste skridt.
+- ÉN REGEL FOR »ER DET ET MØDE?«: erMoedeTitel kender også månedens planlægning; planMoedeAftale, planKortHtml og trin 6 læser den.
+- Set på 390 + 1440 i selen med møde, fast tid og idéer på mødet. Kilde: NAT-6-10/fund.md.
+
 ## v2525 · 6. oktober · En idé MED dato står på dagen i kalenderen (Idas klik »Opslaget vises på dagen«, revision B fund 1) — VÆLTER HÅRD 31/8 »en idé må aldrig komme frem i kalenderen« for idéer med dato
 - Plusset på en dag giver et opslag med dato og status Idé (2C: datoen reserverer dagen). Det står nu på dagen i uge/14 dage/måned og på Hjems dag, med status »Idé« synlig. En idé UDEN dato står stadig aldrig i kalenderen. Ringene (planlagt/postet) tæller ikke idéer.
 
