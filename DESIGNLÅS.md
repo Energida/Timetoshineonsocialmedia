@@ -1,3 +1,6 @@
+## v2525 · 6. oktober · En idé MED dato står på dagen i kalenderen (Idas klik »Opslaget vises på dagen«, revision B fund 1) — VÆLTER HÅRD 31/8 »en idé må aldrig komme frem i kalenderen« for idéer med dato
+- Plusset på en dag giver et opslag med dato og status Idé (2C: datoen reserverer dagen). Det står nu på dagen i uge/14 dage/måned og på Hjems dag, med status »Idé« synlig. En idé UDEN dato står stadig aldrig i kalenderen. Ringene (planlagt/postet) tæller ikke idéer.
+
 ## v2524 · 6. oktober · Hjem på telefonen: Kommende aktiviteter under I dag (Idas klik »Kommende aktiviteter under I dag«, revision A fund 2)
 - Det ugentlige møde og andre aftaler (højst 3, »Se alle«) står under dagens kort, før Forslag. Samme flise som computeren (huKommendeAftalerHtml). Før skulle kunden trykke på netop den dag.
 
