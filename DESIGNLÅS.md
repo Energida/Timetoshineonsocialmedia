@@ -1,3 +1,6 @@
+## v2519 · 6. oktober · Idébanken: ingen »+ Tilføj« i kolonnerne (Ida: »fjern denne tilføj knap! Det er kun plusset i hjørnet der skal være her«)
+- Hverken over søjlerne, Story eller Uden plads. Ny idé = plusset i hjørnet.
+
 ## v2518 · 6. oktober · Planlægningens første kort = contentmødet (Idas klik »Contentmødet i alt«) + »På mødet« slipper efter mødet
 - Etiket »Dit ugentlige contentmøde« · spørgsmål »Hvornår vil du holde dit ugentlige contentmøde?« · linje »Én time hver uge, hvor du planlægger næste uges opslag. Vi lægger møderne i din kalender.« · knap »Sæt mødet i kalenderen«.
 - Mødesiden: hver idé under Idéer til mødet har husets skraldespand helt ude til højre (Ida: »Vil du tilføje skraldespanden?!!? helt ude i højre side?«) — tager idéen af mødet, idéen bliver i Idébanken.
