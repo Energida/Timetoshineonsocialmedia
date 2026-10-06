@@ -1,3 +1,12 @@
+## v2529 · 7. oktober · Briefen: et produkt uden link står i fakta, Tilbage på telefonen, slet-teksten siger sandheden, ingen små versaler på rødt, runde anførselstegn (revision 6/10 fund 5, 49, 55, 60, 114, 116; nat-køen)
+- PRODUKT UDEN LINK (fund 5): det, der skrives i Tilføj › Produkt, bliver produktets titel (samme felt som Omdøb), så fakta-rækken »Produkter« viser det — en fysisk butik har varen i hånden, ikke et link. Kun Omdøb udfyldt = navnet. Gammel fritekst i produkter har ingen titel og er stadig ikke et produkt (Ida 24/9) og tæller ikke med i antallet. Ordlyden i arket (»Indsæt link til produktet«, »Omdøb«) og »1 link« i rækken er IKKE rørt (Idas ord / bud 1 låst 29/9).
+- TILBAGE PÅ TELEFONEN (fund 49): briefoversigten har husets lange grå Tilbage nederst (fører dertil, man kom fra), og skrivesidens første side har Tilbage ved Næste (fører til briefoversigten). Kun telefonen; computeren har stien.
+- SLET-DIALOGEN (fund 55): »Arkivér kan.« er ude — arket har ingen Arkivér-knap, og sletningen er hård. Idas øvrige ord står. Arkivering i arket er Idas valg.
+- TJEKLISTEN (fund 60): et flueben, sat mens briefen er åben, overskrives ikke længere af briefens næste gem. Hooket og følelsen står i “…”.
+- ALDRIG SMÅ VERSALER PÅ RØDT (fund 114, HÅRD 5/10): »Beskrivelse« og »Om indholdssøjlen … · kort fortalt« i hvid Poppins 14 px. Begge flader. Titlen i Didot på rødt er IKKE rørt (to låste regler strider).
+- RUNDE ANFØRSELSTEGN (fund 116, HÅRD 4/10): briefens citater og »Følelsen: …« står i “…”.
+- Set på 390 + 1440 i selen med en udfyldt brief (hook, klip, caption, hashtags, fakta, tags, gammel fritekst i produkter): udfyldt, gemt, åbnet igen. Kilde: NAT-6-10/fund.md.
+
 ## v2528 · 7. oktober · Planlægning: ét tidsformat, trin 5 uden dobbelt-spørgsmål, ét notefelt når man er alene (revision 6/10 fund 68, 75, 80; nat-køen)
 - ÉT FORMAT »kl. 9.00« (fund 80): Mødesidens datolinje, Planlægningsdagens rygrad og Næste skridt skrev »09.00« — nu »9.00« som kortet og trin 6.
 - Trin 5 »Ugens mål«: rækken »Opslag i uge N« er ude — tallet sættes på hjulet i trin 3 (fund 68). »Sæt et mål« med stort (HÅRD 6/10). Ordlyden »Prøvereels«/»Story-dage« er IKKE rørt (venter på Ida).
