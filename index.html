@@ -9936,6 +9936,7 @@ html body.mb .pd-side { max-width:none; }
 .pk-ul { font-size:15px; line-height:1.55; color:#3B3835; margin-top:8px; }
 .pk-chips { display:flex; flex-wrap:wrap; gap:8px; margin-top:18px; }
 .pk-roedk { width:100%; height:52px; border:0; border-radius:999px; background:var(--red); color:#fff; font:400 16px Poppins,sans-serif; margin-top:20px; cursor:pointer; }
+.pk-roedk:disabled { background:#fff; border:1px solid var(--knap-graa-kant,#DEDAD4); color:var(--gray3); cursor:default; }   /* INTET FORVALG (18/9; revision fund 126, natten 7/10): graa, til dag og tid er valgt — samme slukkede form som popupperne (rosa er doed) — begge flader */
 .pk-roed { background:var(--red); color:#fff; border-radius:24px; padding:22px 20px; }
 .pk-roed .pk-eti { color:#fff; border-color:rgba(255,255,255,.5); }
 .pk-roed .pk-sp { color:#fff; } .pk-roed .pk-ul { color:rgba(255,255,255,.92); }
@@ -34987,9 +34988,19 @@ async function rytmeGem(k, valgt, tid) {
   }
 }
 /* FOERSTE GANG: kortets chips (dag + tid) gemmes direkte — samme vej som arket */
-let PK_DAG = "1", PK_TID = "09:00";
-function pkVaelg(hvad, v, knap) { if (hvad === "d") PK_DAG = v; else PK_TID = v; try { knap.parentNode.querySelectorAll(".ark-chip").forEach(function (b) { b.classList.toggle("on", b === knap); }); } catch (e) {} }
+/* INTET FORVALG (18/9-reglen; Ida/natten 7/10, revision fund 126): dag og tid er tomme, knappen er graa, til begge er valgt. »Anden tid« viser husets tidsvaelger (kvarterer). */
+let PK_DAG = "", PK_TID = "";
+function pkKnapOpdater() { try { const k = document.getElementById("pkGemKnap"); if (k) k.disabled = !(PK_DAG && PK_TID); } catch (e) {} }
+function pkVaelg(hvad, v, knap) {
+  if (hvad === "d") PK_DAG = v; else PK_TID = v;
+  try { knap.parentNode.querySelectorAll(".ark-chip").forEach(function (b) { b.classList.toggle("on", b === knap); }); } catch (e) {}
+  if (hvad === "t") { const a = document.getElementById("pkAndenTid"); if (a) a.style.display = v === "__anden" ? "" : "none"; if (v === "__anden") { const f = document.getElementById("pkTid"); PK_TID = (f && f.value) ? String(f.value).slice(0, 5) : ""; } }
+  pkKnapOpdater();
+}
+function pkAndenLaes() { try { const f = document.getElementById("pkTid"); if (f && f.value) { PK_TID = String(f.value).slice(0, 5); pkKnapOpdater(); } } catch (e) {} }
 async function pkGem(knap) {
+  if (document.getElementById("pkAndenTid") && document.getElementById("pkAndenTid").style.display !== "none") pkAndenLaes();
+  if (!PK_DAG || !PK_TID) { pkKnapOpdater(); return; }
   if (knap) { knap.disabled = true; knap.textContent = "Gemmer …"; }
   let svar = false; try { svar = await rytmeGem("uge", PK_DAG, PK_TID); } catch (e) { svar = false; }
   if (!svar) { if (knap) { knap.disabled = false; knap.textContent = "Sæt mødet i kalenderen"; } try { husKvit("Det blev ikke gemt. Prøv igen."); } catch (e) {} return; }
@@ -35004,9 +35015,8 @@ async function planMoedeSkiftType(id, tilMd) {
   try { await renderAftaler(); } catch (e) {}
   try { planDashTegn(); } catch (e) {} try { husKvit(tilMd ? "Mødet er nu månedens planlægning." : "Mødet er nu ugens planlægning."); } catch (e) {}
 }
-function planRetTid() {
-  valgFliseArk("Hvad vil du rette?", [["Din faste tid til planlægning", "rytmeArk('uge')"], ["Aktivér dit community", "rytmeArk('community')"], ["Søg inspiration", "rytmeArk('inspiration')"], ["Opdater profilen", "rytmeArk('profil')"]]);
-}
+/* »RET DIN FASTE TID« AABNER DEN FASTE TID (Ida/natten 7/10, revision fund 78: »Aktivér dit community? Det har jeg aldrig hørt om.«) — de tre vaner staar ingen andre steder paa siden */
+function planRetTid() { rytmeArk('uge'); }
 async function rytmeFjern(k) {
   if (!MAALS) return;
   const foer = Object.assign({}, rytme()); const ny = Object.assign({}, foer); delete ny[k];
@@ -35087,10 +35097,14 @@ function planKortHtml(man0, gjorte) {
   /* 1 · FOERSTE GANG */
   if (!(r.uge && r.uge.d)) {
     const dage = ["Mandag", "Tirsdag", "Onsdag", "Torsdag", "Fredag", "Lørdag", "Søndag"].map(function (n, i) { return '<button type="button" class="ark-chip mq-tap' + (String(i + 1) === PK_DAG ? ' on' : '') + '" onclick="pkVaelg(\'d\',\'' + (i + 1) + '\',this)">' + n + '</button>'; }).join("");
-    const tider = ["08:00", "09:00", "10:00", "13:00", "16:00"].map(function (t) { return '<button type="button" class="ark-chip mq-tap' + (t === PK_TID ? ' on' : '') + '" onclick="pkVaelg(\'t\',\'' + t + '\',this)">kl. ' + t.replace(/^0/, "").replace(":", ".") + '</button>'; }).join("");
+    const kendt = ["08:00", "09:00", "10:00", "13:00", "16:00"];
+    const tider = kendt.map(function (t) { return '<button type="button" class="ark-chip mq-tap' + (t === PK_TID ? ' on' : '') + '" onclick="pkVaelg(\'t\',\'' + t + '\',this)">kl. ' + t.replace(/^0/, "").replace(":", ".") + '</button>'; }).join("")
+      + '<button type="button" class="ark-chip mq-tap' + (PK_TID && kendt.indexOf(PK_TID) < 0 ? ' on' : '') + '" onclick="pkVaelg(\'t\',\'__anden\',this)">Anden tid</button>';
+    const anden = PK_TID && kendt.indexOf(PK_TID) < 0;
     return '<div class="pk-fl pk-stor"><div class="pk-eti">Dit ugentlige contentmøde</div><div class="pk-sp">Hvornår vil du holde dit ugentlige contentmøde?</div><div class="pk-ul">Én time hver uge, hvor du planlægger næste uges opslag. Vi lægger møderne i din kalender.</div>'
       + '<div class="pk-chips">' + dage + '</div><div class="pk-chips">' + tider + '</div>'
-      + '<button type="button" class="pk-roedk mq-tap" onclick="pkGem(this)">Sæt mødet i kalenderen</button></div>';
+      + '<div id="pkAndenTid" onchange="pkAndenLaes()" oninput="pkAndenLaes()" style="margin-top:12px;' + (anden ? '' : 'display:none;') + '">' + husDatoTidHtml("", "pkTid", "", anden ? PK_TID : "", false, true) + '</div>'
+      + '<button type="button" id="pkGemKnap" class="pk-roedk mq-tap" onclick="pkGem(this)"' + (PK_DAG && PK_TID ? '' : ' disabled') + '>Sæt mødet i kalenderen</button></div>';
   }
   const naesteUge = new Date(man0); naesteUge.setDate(man0.getDate() + 7);
   const planlagt = gjorte.indexOf(planRitUgeKey(naesteUge)) > -1;
@@ -57987,7 +58001,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2526";
+const APP_VERSION = "2527";
 let NY_VERSION_KLAR = false;
 let NY_VERSION_AFVIST = false;
 function nyVersionSkjul() {
@@ -78838,7 +78852,8 @@ function moedeSideTegn() {
     + fl(1, "How did it go?", 'Siden <button type="button" class="ark-chip mo-chip mo-siden" onclick="moedeSidenVaelg()" title="Vælg, hvornår vi kigger fra">' + esc(dkDatoKort(fra)) + '</button><input type="date" id="moSidenDato" value="' + esc(fra) + '" style="position:absolute;width:0;height:0;opacity:0;pointer-events:none;" tabindex="-1" onchange="moedeSidenGem(this.value)">', sortChip)
     /* PUNKTERNE SOM EN PUNKTOPSTILLING (Ida 22/9): navn i sort, det, der er sat, i graat, haarfine streger imellem */
     + fl(2, "Den kommende uge", [["Ressourcer", "hvor mange opslag kan vi lave i uge " + uge + ", og hvem har tid?"], ["Ugens tema", tema ? esc(tema) : "ikke sat endnu"], ["Næste uge", "forslag pr. søjle ud fra ressourcerne"], ["Hvem gør hvad", ""], ["Ugens mål", ""]].map(function (r) { return '<div class="mo-pkt"><span class="mo-pkt-n">' + r[0] + '</span>' + (r[1] ? '<span class="mo-pkt-s">' + r[1] + '</span>' : '') + '</div>'; }).join(""), ugemaal ? '<span class="ark-chip mo-chip mo-stille">Mål: ' + ugemaal + (ugemaal === 1 ? " opslag" : " opslag") + '</span>' : '')
-    + fl(3, "Næste planlægning", "");
+    /* PUNKT 3 VISER NAESTE MOEDE (Ida/natten 7/10, revision fund 74: flisen var tom): moedet efter dette som pille i hovedet — samme greb som punkt 1; et tryk retter det i moede-arket */
+    + fl(3, "Næste planlægning", "", (function () { try { const k = moedeKommende(); const n = k[1] || null; if (!n || !n.id) return ""; return '<button type="button" class="ark-chip mo-chip" onclick="planMoedeTidArk(\'' + esc(String(n.id)) + '\')">' + esc(dkDatoKort(n.dato) + (n.tid ? " kl. " + String(n.tid).slice(0, 5).replace(":", ".").replace(/^0/, "") : "")) + '</button>'; } catch (e) { return ""; } })());
   /* Idéer til mødet: fra Idébankens ⋯ (aldrig et soegefelt, Idas kommentar 21/9 kl. 22.45) */
   const alle = (IDEER || []).filter(function (x) { return x && x.status !== "Arkiveret"; });
   const valgte = M.ideer.map(function (id) { return alle.find(function (x) { return String(x.id) === String(id); }); }).filter(Boolean);
@@ -78848,11 +78863,11 @@ function moedeSideTegn() {
   const ideer = '<div class="cf-sek mo-sek-plus">Idéer til mødet<button type="button" class="kv-menuknap mq-tap mo-plus" aria-label="Tilføj idéer til mødet" title="Tilføj idéer til mødet" onclick="moedeIdeerFraBanken()">+</button></div>'
     + (valgte.length ? valgte.map(function (x) { const so = x.soejle ? soejleVis(x.soejle) : ""; const pl = moPlanlagt(x); return '<div class="idag-flise mo-fl mo-ide" role="button" tabindex="0" onclick="openBrief(\'' + esc(String(x.id)) + '\')"><button type="button" class="idag-cirk' + (pl ? ' ok' : '') + ' mq-tap" aria-label="' + (pl ? 'Planlagt · tryk for at tage planen af' : 'Planlæg') + '" onclick="event.stopPropagation();moedeIdePlan(\'' + esc(String(x.id)) + '\')"></button><span class="idag-tekst"><span class="idag-titel">' + esc(storStart(titelVis(x.titel || "Uden titel"))) + '</span><span class="idag-sub">' + esc([pl ? dkDatoKort(x.dato) : "", x.type, so].filter(Boolean).join(" · ")) + '</span></span><button type="button" class="mo-ide-af mq-tap" aria-label="Tag af mødet" title="Tag af mødet" onclick="event.stopPropagation();moedeIdeAf(\'' + esc(String(x.id)) + '\')">' + BS_SKRALD_SVG + '</button></div>'; }).join("") : '')
     + '<input type="date" id="moIdeDato" class="bf-dato-mo" value="" style="position:absolute;width:0;height:0;opacity:0;pointer-events:none;" tabindex="-1" onchange="moedeIdePlanGem(this.value)">'
-    + '<div class="mo-hint">' + (valgte.length ? 'Flueben = planlagt. Resten bliver i Idébanken.' : 'Plusset åbner Idébanken. Tryk på de idéer, der skal med.') + '</div>';
+    + (valgte.length ? '<div class="mo-hint">Flueben = planlagt. Resten bliver i Idébanken.</div>' : tomKortHtml("Hvilke idéer skal med?", "Tilføj", "moedeIdeerFraBanken()"));   /* EN TOM RUBRIK ER EN OPGAVE (22/9; revision fund 77, natten 7/10): systemets historie ude — tomKortHtml herunder */
   /* Forberedelse til mødet: to-do'er med teammedlem, lander under To-do hos den, der er valgt */
   const forb = M.forb.map(function (id) { return (OPGAVER || []).find(function (o) { return String(o.id) === String(id); }); }).filter(function (o) { return o && o.aktiv !== false; });
   const forbHtml = '<div class="cf-sek mo-sek-plus">Forberedelse til mødet<button type="button" class="kv-menuknap mq-tap mo-plus" aria-label="Tilføj forberedelse" title="Tilføj forberedelse" onclick="moedeForbArk()">+</button></div>'
-    + (forb.length ? forb.map(function (o) { const sub = [o.ansvarlig, o.deadline ? "inden " + dkDatoKort(o.deadline) : ""].filter(Boolean).join(" · "); return '<div class="idag-flise mo-fl' + (o.done ? ' gjort' : '') + '"><button type="button" class="idag-cirk mq-tap' + (o.done ? ' ok' : '') + '" aria-label="' + (o.done ? 'Gjort — tryk for at fortryde' : 'Markér som gjort') + '" onclick="moedeForbGjort(\'' + esc(String(o.id)) + '\', ' + (o.done ? 'false' : 'true') + ')"></button><span class="idag-tekst"><span class="idag-titel">' + esc(o.titel || "") + '</span>' + (sub ? '<span class="idag-sub">' + esc(sub) + '</span>' : '') + '</span></div>'; }).join("") : '<div class="mo-hint">Plusset åbner To-do-arket. Opgaven lander under To-do hos den, der er valgt.</div>');
+    + (forb.length ? forb.map(function (o) { const sub = [o.ansvarlig, o.deadline ? "inden " + dkDatoKort(o.deadline) : ""].filter(Boolean).join(" · "); return '<div class="idag-flise mo-fl' + (o.done ? ' gjort' : '') + '"><button type="button" class="idag-cirk mq-tap' + (o.done ? ' ok' : '') + '" aria-label="' + (o.done ? 'Gjort — tryk for at fortryde' : 'Markér som gjort') + '" onclick="moedeForbGjort(\'' + esc(String(o.id)) + '\', ' + (o.done ? 'false' : 'true') + ')"></button><span class="idag-tekst"><span class="idag-titel">' + esc(o.titel || "") + '</span>' + (sub ? '<span class="idag-sub">' + esc(sub) + '</span>' : '') + '</span></div>'; }).join("") : tomKortHtml("Hvad skal forberedes?", "Tilføj", "moedeForbArk()"));
   const mig = moedeBruger();
   const noteTekst = MOEDE_NOTER_VIS === "alle" ? M.noter : String(M.noterMig[mig] || "");
   const noter = '<div class="cf-sek">Noter til mødet</div><div class="ark-chips mo-noter-chips"><button type="button" class="ark-chip' + (MOEDE_NOTER_VIS === "mig" ? ' on' : '') + '" onclick="moedeNoterSkift(\'mig\')">Kun til mig</button><button type="button" class="ark-chip' + (MOEDE_NOTER_VIS === "alle" ? ' on' : '') + '" onclick="moedeNoterSkift(\'alle\')">Alle kan se</button></div>'
@@ -79348,12 +79363,12 @@ function prRaekkeHtml() {
      under hvert foreslaaet opslag staar ugens dage som chips; »Her er idéen« har ikke laengere sin egen dag-raekke (dublet). */
   const kort = t.forslag.map(function (f, i) {
     const chips = f.gemt ? "" : '<div class="pr-chips pr-dagvalg">' + PR_DAGE.map(function (d, di) { return '<button type="button" class="pr-chip' + (f.dag === di + 1 ? ' on' : '') + '" onclick="PR.t2.forslag[' + i + '].dag=' + (di + 1) + ';planRitTegn()">' + d + ' ' + dage[di].slice(8, 10).replace(/^0/, "") + '.</button>'; }).join("") + '</div>';
-    return prSvarKort(f.kode + " · " + prNavnVis(f), f.gemt ? "Planlagt · " + f.titel + " · " + PR_DAGE_LANG[f.dag - 1] : f.grund + " · " + PR_DAGE_LANG[f.dag - 1], i === naeste, f.gemt ? "" : "prStartOpslag(" + i + ")", !!f.gemt) + chips;
+    return prSvarKort(f.kode + " · " + prNavnVis(f), f.gemt ? "Planlagt · " + f.titel + " · " + PR_DAGE_LANG[f.dag - 1] : f.grund + " · " + PR_DAGE_LANG[f.dag - 1], false,   /* FLUEBENET BETYDER GJORT (revision fund 71, natten 7/10): den naeste markeres ikke med et flueben — den roede knap nederst siger, hvilken der er den naeste */ f.gemt ? "" : "prStartOpslag(" + i + ")", !!f.gemt) + chips;
   }).join("");
   const alle = t.forslag.length && naeste === -1;
   const ingen = !t.forslag.length;
   return prBjaelke(3) + '<div class="pr-eye">Trin 3 af 6 · uge ' + uge + '</div><div class="pr-h1">' + (alle ? 'Ugen er lagt' : ingen ? 'Ugen er fuld' : 'Start med det, ugen mangler') + '</div>'
-    + '<div class="pr-sub">' + (alle ? t.forslag.length + (t.forslag.length === 1 ? ' nyt opslag' : ' nye opslag') + ' i kalenderen som Planlagt.' : ingen ? 'Der ligger allerede ' + (t.eksisterende || []).length + ' opslag i uge ' + uge + ', og ugemålet er ' + t.antal + '.' : 'Appen foreslår ud fra fordelingen mellem de fire søjler og det, der sidst blev postet. Flyt et opslag til en anden dag med dagene under det. Tryk på opslaget for at finde idéen.') + '</div>'
+    + '<div class="pr-sub">' + (alle ? t.forslag.length + (t.forslag.length === 1 ? ' nyt opslag' : ' nye opslag') + ' i kalenderen som Planlagt.' : ingen ? 'Der ligger allerede ' + (t.eksisterende || []).length + ' opslag i uge ' + uge + ', og ugemålet er ' + t.antal + '.' : 'Tryk på et opslag for at finde idéen.') + '</div>'
     + eks + kort
     + '<div class="pr-bar">' + (alle || ingen ? '' : '<button type="button" class="dbtn ghost" style="background:#fff;" onclick="prGaa(4)">Spring over</button>')
     + (alle || ingen ? '<button type="button" class="dbtn primary" onclick="prGaa(4)">Videre til hvem gør hvad</button>' : '<button type="button" class="dbtn primary" onclick="prStartOpslag(' + naeste + ')">Find idéen til ' + esc(t.forslag[naeste].kode + " · " + prNavnVis(t.forslag[naeste])) + '</button>') + '</div>';
@@ -79643,15 +79658,15 @@ function prBookHtml() {
     + (visValg ? '<div class="pr-kort"><div class="pr-lbl">Dag</div><div class="pr-chips">' + dage.map(function (iso, di) { return '<button type="button" class="pr-chip' + (PR.book.dag === di + 1 ? ' on' : '') + '" onclick="prBookTidLaes();PR.book.dag=' + (di + 1) + ';planRitTegn()">' + PR_DAGE[di] + ' ' + iso.slice(8, 10).replace(/^0/, "") + '.</button>'; }).join("") + '</div>'
     + '<div class="pr-lbl" style="margin-top:14px;">Klokken</div>' + husDatoTidHtml("", "prBookTid", "", String(PR.book.tid || "").slice(0, 5), false, true) + '</div>' : '')
     + (function () { const tilbage = PR.maanedGjort ? 3 : Math.max(0, 3 - (((PR_STATUS && PR_STATUS.ugerSidenMaaned) || 0) + 1)); return '<div class="pr-kort"><div class="pr-lbl">Næste gang</div>' + (visValg ? '' : '<div style="font-size:16px;line-height:1.45;margin:0 0 6px;">' + esc(langNu) + '</div>') + '<div style="font-size:13.5px;line-height:1.55;">' + (tilbage === 0 ? 'Næste gang starter vi med månedens fem spørgsmål, før ugen lægges.' : (tilbage === 1 ? 'Om én planlægning er det månedens tur igen — fem spørgsmål om måneden, før ugen lægges.' : 'Om ' + tilbage + ' planlægninger er det månedens tur igen — fem spørgsmål om måneden, før ugen lægges.')) + '</div></div>'; })()   /* hver fjerde planlaegning er maanedens (20/9) — foer: »den foerste i <maaned>« */
-    + '<a class="dbtn ghost" style="display:flex;align-items:center;justify-content:center;background:#fff;min-height:44px;text-decoration:none;margin-top:4px;" download="planlaegning.ics" href="' + prIcsHref() + '">Læg i min kalender (.ics)</a>'
+    + '<a class="dbtn ghost" style="display:flex;align-items:center;justify-content:center;background:#fff;min-height:44px;text-decoration:none;margin-top:4px;" download="planlaegning.ics" href="' + prIcsHref() + '">Læg i min telefons kalender</a>'
     + '<div class="pr-bar">' + (visValg ? '' : '<button type="button" class="dbtn ghost" style="background:#fff;" onclick="PR.book.ret=true;planRitTegn()">Ret</button>') + '<button type="button" class="dbtn primary" onclick="prBookGem()">Færdig</button></div>';
 }
 /* FORKERT TAL I .ICS (Ida/revision 6/10): beskrivelsen sagde »25 minutter«, mens aftalen varer en time (DTEND = start + 1 t) og appen siger »Én time hver uge« (v2518) */
 function prIcsHref() {
   try {
     const iso = planRitUgeDage(PR.uge)[(PR.book.dag || 1) - 1]; const t = String(PR.book.tid || "10:00").replace(":", "");
-    const st = iso.replace(/-/g, "") + "T" + t + "00"; const sl = iso.replace(/-/g, "") + "T" + String(parseInt(t.slice(0, 2), 10) + 1).padStart(2, "0") + t.slice(2) + "00";
-    const ics = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Energida//Content Studio//DA", "BEGIN:VEVENT", "UID:plan-" + iso + "@energida", "DTSTART:" + st, "DTEND:" + sl, "SUMMARY:Planlægningsdag · næste uges content", "DESCRIPTION:Én time i Content Studio: siden sidst, ugens tema, ugen, hvem gør hvad, mål.", "END:VEVENT", "END:VCALENDAR"].join("\r\n");
+    const st = iso.replace(/-/g, "") + "T" + t + "00"; const tPlus = (function () { try { const e = prBookEks(); if (e && /månedsplan|maanedsplan/i.test(String(e.titel || ""))) return 2; } catch (x) {} return 1; })(); const sl = iso.replace(/-/g, "") + "T" + String(parseInt(t.slice(0, 2), 10) + tPlus).padStart(2, "0") + t.slice(2) + "00";   /* revision fund 81 (natten 7/10): varigheden foelger moedet — maanedens er 2 timer (RYTME_DEF) */
+    const ics = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Energida//Content Studio//DA", "BEGIN:VEVENT", "UID:plan-" + iso + "@energida", "DTSTART:" + st, "DTEND:" + sl, "SUMMARY:" + (function () { try { const e = prBookEks(); return String((e && e.titel) || RYTME_DEF[0].titel); } catch (x) { return "Ugentlig contentplanlægning"; } })(), "DESCRIPTION:Én time i Content Studio: siden sidst, ugens tema, ugen, hvem gør hvad, mål.", "END:VEVENT", "END:VCALENDAR"].join("\r\n");
     return "data:text/calendar;charset=utf-8," + encodeURIComponent(ics);
   } catch (e) { return "#"; }
 }
@@ -79713,7 +79728,7 @@ function prFaerdigHtml() {
   const iso = planRitUgeDage(PR.uge)[(PR.book.dag || 1) - 1];
   return '<div class="lek-moment" style="margin-top:30px;"><div class="lek-moment-ring"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div>'
     + '<div class="lek-moment-lbl">Uge ' + energidaUgeNr(PR.uge) + ' er planlagt</div><div class="lek-moment-titel">Godt gået</div>'
-    + '<div class="lek-moment-txt">' + (PR.nye.length ? PR.nye.length + (PR.nye.length === 1 ? ' nyt opslag' : ' nye opslag') + ' i kalenderen. ' : '') + 'Næste planlægning: ' + esc(dkDatoKort(iso)) + ' kl. ' + esc(String(PR.book.tid || "").slice(0, 5).replace(":", ".").replace(/^0/, "")) + '.' + (PR.gemtOk === false ? ' Aftalen blev ikke gemt i basen — den gælder her på enheden.' : '') + '</div>'
+    + '<div class="lek-moment-txt">' + (PR.nye.length ? PR.nye.length + (PR.nye.length === 1 ? ' nyt opslag' : ' nye opslag') + ' i kalenderen. ' : '') + 'Næste planlægning: ' + esc(dkDatoKort(iso)) + ' kl. ' + esc(String(PR.book.tid || "").slice(0, 5).replace(":", ".").replace(/^0/, "")) + '.' + (PR.gemtOk === false ? ' Det blev ikke gemt. Prøv igen.' : '') + '</div>'
     + '<button type="button" class="dbtn primary lek-moment-knap" onclick="planRitLuk(); try { showTab(3); } catch (e) {}">Tilbage til Hjem</button></div>';
 }
 
@@ -81858,7 +81873,7 @@ function bf3StudieRum(v, filter) {
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-hvid.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 7. oktober · 2526</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 7. oktober · 2527</div>
 <script>
 /* DROPDOWNEN RULLER SELV (Ida 4/10) — maal den aabne liste og klip den ved skaermens bund */
 (function () {

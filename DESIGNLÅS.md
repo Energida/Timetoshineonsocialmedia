@@ -1,3 +1,11 @@
+## v2527 · 7. oktober · Planlægning og Mødesiden: intet forvalg, Anden tid, tomme rubrikker er opgaver, næste møde på agendaen (revision 6/10 fund 71, 74, 77, 78, 81, 126; nat-køen)
+- Første gang (»Hvornår vil du holde dit ugentlige contentmøde?«): ingen dag eller tid forvalgt, knappen er grå (slukket form), til begge er valgt; »Anden tid« viser husets tidsvælger i kvarterer (18/9-reglen).
+- »Ret din faste tid« åbner den faste tid direkte (de tre vaner community/inspiration/profil stod ingen andre steder på siden).
+- Mødesiden: tom »Idéer til mødet« og »Forberedelse til mødet« = tomKortHtml (»Hvilke idéer skal med?« / »Hvad skal forberedes?« + grå Tilføj) i stedet for systemets historie. Punkt 3 »Næste planlægning« viser mødet efter dette som pille (tryk = mødets ark).
+- Trin 3: den næste søjle har ikke længere et flueben (fluebenet betyder gjort); underteksten er »Tryk på et opslag for at finde idéen.«
+- Trin 6 og færdig-skærmen: »Læg i min telefons kalender«; .ics bærer mødets titel og varighed (måned = 2 t); fejlteksten »Det blev ikke gemt. Prøv igen.«
+- Set på 390 + 1440 i selen. Kilde: NAT-6-10/fund.md.
+
 ## v2526 · 7. oktober · Planlægningsdagen flytter aldrig et møde ubedt, rører aldrig et opslag i gang, og bruger idéerne til mødet (revision 6/10 fund 6, 7, 8, 125 + 80 i trin 6; nat-køen)
 - Trin 6 læser mødet, der allerede ligger i ugen, ellers den faste tid (rytme().uge): »Næste gang · Torsdag 15. oktober kl. 9.00« + grå Ret + rød Færdig. Færdig uden Ret skriver intet i kalenderen. Ret viser dagene og husets tidsvælger i kvarterer (ikke fire chips). Et flyt beholder mødets varighed (månedens = 2 timer).
 - Trin 3 »Har du allerede idéen?« viser kun idéer UDEN dato; »Planlæg denne« rører aldrig en status længere fremme end Planlagt (vagten fra moedeIdePlanGem, 27/7).
