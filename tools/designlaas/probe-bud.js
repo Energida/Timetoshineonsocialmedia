@@ -47,7 +47,7 @@ setTimeout(async function () {
         var tq = r.querySelector(".hu-dagen .hu-tom"); if (!synlig(tq) || !/\?/.test(tq.innerText) || !synlig(tq.querySelector(".hu-graa"))) F("tom: den tomme dag mangler spoergsmaalet eller den graa knap");
       }
       /* 4) TRE RING-FLISER; ugens fokus aldrig paa telefonen */
-      var ringe = [].filter.call(r.querySelectorAll(".hu-ring"), synlig); if (ringe.length !== 3) F(tilstand + ": ringene er " + ringe.length + ", ikke 3");
+      var ringe = [].filter.call(r.querySelectorAll(".hu-ring"), synlig); if (ringe.length !== 2) F(tilstand + ": ringene er " + ringe.length + ", ikke 2");   /* to ringe, kun denne uge (Ida 6/10, v2513) */
       if (tlf && synlig(r.querySelector(".hu-fokus"))) F(tilstand + ": ugens fokus staar paa telefonen (ude 25/9)");
       /* 5) OPGAVER: hoejst fem + »Se alle« for enden af stregen (29/9); tom = spoergsmaal + graa knap */
       var td = [].filter.call(r.querySelectorAll(".hu-td"), synlig);
