@@ -1,3 +1,9 @@
+## v2528 · 7. oktober · Planlægning: ét tidsformat, trin 5 uden dobbelt-spørgsmål, ét notefelt når man er alene (revision 6/10 fund 68, 75, 80; nat-køen)
+- ÉT FORMAT »kl. 9.00« (fund 80): Mødesidens datolinje, Planlægningsdagens rygrad og Næste skridt skrev »09.00« — nu »9.00« som kortet og trin 6.
+- Trin 5 »Ugens mål«: rækken »Opslag i uge N« er ude — tallet sættes på hjulet i trin 3 (fund 68). »Sæt et mål« med stort (HÅRD 6/10). Ordlyden »Prøvereels«/»Story-dage« er IKKE rørt (venter på Ida).
+- Mødesidens noter (fund 75): med ét teammedlem og kun én slags note står ét felt uden »Kun til mig / Alle kan se«, og den fælles note er ikke længere skjult. Findes begge noter, bliver chipsene, så intet skjules.
+- Set på 390 + 1440 i selen. Kilde: NAT-6-10/fund.md.
+
 ## v2527 · 7. oktober · Planlægning og Mødesiden: intet forvalg, Anden tid, tomme rubrikker er opgaver, næste møde på agendaen (revision 6/10 fund 71, 74, 77, 78, 81, 126; nat-køen)
 - Første gang (»Hvornår vil du holde dit ugentlige contentmøde?«): ingen dag eller tid forvalgt, knappen er grå (slukket form), til begge er valgt; »Anden tid« viser husets tidsvælger i kvarterer (18/9-reglen).
 - »Ret din faste tid« åbner den faste tid direkte (de tre vaner community/inspiration/profil stod ingen andre steder på siden).

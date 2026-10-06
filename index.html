@@ -35044,7 +35044,7 @@ function planDashTegn() {
   /* naeste skridt */
   let ma = null; try { ma = planMoedeAftale(); } catch (e) {}
   const naesteUge = new Date(man0); naesteUge.setDate(man0.getDate() + 7);
-  const naesteTekst = ma ? ("Planlæg uge " + energidaUgeNr(naesteUge) + " · " + dkDatoKort(ma.dato) + (ma.tid ? " kl. " + String(ma.tid).slice(0, 5).replace(":", ".") : "") + " · 1 time") : "Vælg dato for din næste ugentlige contentplanlægning (1 time)";   /* Idas ord 21/9 kl. 19.27 */
+  const naesteTekst = ma ? ("Planlæg uge " + energidaUgeNr(naesteUge) + " · " + dkDatoKort(ma.dato) + (ma.tid ? " kl. " + String(ma.tid).slice(0, 5).replace(":", ".").replace(/^0/, "") : "") + " · 1 time") : "Vælg dato for din næste ugentlige contentplanlægning (1 time)";   /* Idas ord 21/9 kl. 19.27 */
   const naesteKlik = ma ? "moedeSideAaben()" : (rytme().uge ? "planMoedeTidArk()" : "rytmeArk('uge')");   /* uden fast tid aabner Næste skridt rytmen (bud 1, 6/10) */   /* MOEDET AABNER MOEDESIDEN (Ida 29/9, Acorns) — agendaen, idéerne og »Start mødet« staar dér */
   const roed = '<div class="idag-flise idag-roed idag-roed-dag" onclick="' + naesteKlik + '"><div class="idag-roed-tekst"><div class="idag-roed-eti">Næste skridt</div><div class="idag-roed-titel">' + esc(naesteTekst) + '</div></div><span class="idag-pil" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></span></div>';
   /* denne uge: briefs + optag */
@@ -58001,7 +58001,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2527";
+const APP_VERSION = "2528";
 let NY_VERSION_KLAR = false;
 let NY_VERSION_AFVIST = false;
 function nyVersionSkjul() {
@@ -78741,7 +78741,7 @@ function moedeBruger() { try { if (typeof CURRENT_NAVN === "string" && CURRENT_N
 let MOEDE_SORT = "dato", MOEDE_NOTER_VIS = "mig";   /* Mødesiden: sortering af opslagene · hvilke noter der vises (Kun til mig / Alle kan se) */
 function moedeNaarLinje() {
   let ma = null; try { ma = planMoedeAftale(); } catch (e) {}
-  const kl = function (t) { return String(t).slice(0, 5).replace(":", "."); };
+  const kl = function (t) { return String(t).slice(0, 5).replace(":", ".").replace(/^0/, ""); };   /* EET FORMAT »kl. 9.00« (revision fund 80, natten 7/10) */
   let naar = "Ingen dato sat endnu";
   if (ma) { try { naar = new Date(String(ma.dato).slice(0, 10) + "T12:00:00").toLocaleDateString("da-DK", { weekday: "short", day: "numeric", month: "long" }); } catch (e) { naar = dkDatoKort(ma.dato); } if (ma.tid) naar += " · kl. " + kl(ma.tid) + (ma.tid_slut ? "–" + kl(ma.tid_slut) : ""); }
   /* FYSISK ELLER ONLINE STAAR I LINJEN (Ida 22/9 kl. 09.15: »jeg mangler det der med om det er fysisk eller online og linket til mødet«) */
@@ -78869,8 +78869,13 @@ function moedeSideTegn() {
   const forbHtml = '<div class="cf-sek mo-sek-plus">Forberedelse til mødet<button type="button" class="kv-menuknap mq-tap mo-plus" aria-label="Tilføj forberedelse" title="Tilføj forberedelse" onclick="moedeForbArk()">+</button></div>'
     + (forb.length ? forb.map(function (o) { const sub = [o.ansvarlig, o.deadline ? "inden " + dkDatoKort(o.deadline) : ""].filter(Boolean).join(" · "); return '<div class="idag-flise mo-fl' + (o.done ? ' gjort' : '') + '"><button type="button" class="idag-cirk mq-tap' + (o.done ? ' ok' : '') + '" aria-label="' + (o.done ? 'Gjort — tryk for at fortryde' : 'Markér som gjort') + '" onclick="moedeForbGjort(\'' + esc(String(o.id)) + '\', ' + (o.done ? 'false' : 'true') + ')"></button><span class="idag-tekst"><span class="idag-titel">' + esc(o.titel || "") + '</span>' + (sub ? '<span class="idag-sub">' + esc(sub) + '</span>' : '') + '</span></div>'; }).join("") : tomKortHtml("Hvad skal forberedes?", "Tilføj", "moedeForbArk()"));
   const mig = moedeBruger();
+  /* EET FELT, NAAR MAN ER ALENE (Ida/natten 7/10, revision fund 75: »Min note er væk!«): med eet teammedlem er »Kun til mig / Alle kan se« uklart, og den faelles note stod skjult bag standarden. Er der kun den ene slags note, vises den uden chips; findes begge, bliver chipsene, saa intet skjules. */
+  let ene = true; try { ene = briefPersonerListe().length <= 1; } catch (e) {}
+  const harMig = !!String(M.noterMig[mig] || "").trim(), harAlle = !!String(M.noter || "").trim();
+  const etFelt = ene && !(harMig && harAlle);
+  if (etFelt) MOEDE_NOTER_VIS = harMig ? "mig" : "alle";
   const noteTekst = MOEDE_NOTER_VIS === "alle" ? M.noter : String(M.noterMig[mig] || "");
-  const noter = '<div class="cf-sek">Noter til mødet</div><div class="ark-chips mo-noter-chips"><button type="button" class="ark-chip' + (MOEDE_NOTER_VIS === "mig" ? ' on' : '') + '" onclick="moedeNoterSkift(\'mig\')">Kun til mig</button><button type="button" class="ark-chip' + (MOEDE_NOTER_VIS === "alle" ? ' on' : '') + '" onclick="moedeNoterSkift(\'alle\')">Alle kan se</button></div>'
+  const noter = '<div class="cf-sek">Noter til mødet</div>' + (etFelt ? '' : '<div class="ark-chips mo-noter-chips"><button type="button" class="ark-chip' + (MOEDE_NOTER_VIS === "mig" ? ' on' : '') + '" onclick="moedeNoterSkift(\'mig\')">Kun til mig</button><button type="button" class="ark-chip' + (MOEDE_NOTER_VIS === "alle" ? ' on' : '') + '" onclick="moedeNoterSkift(\'alle\')">Alle kan se</button></div>')
     + '<textarea id="moedeNoter" class="mo-noter" rows="3" placeholder="Andet, du skal huske at sige …" oninput="moedeNoterAuto(this)" onblur="clearTimeout(window.__MO_NOTER_T);window.__MO_NOTER_T=null;moedeNoterGem(this.value)">' + esc(noteTekst) + '</textarea>';
   rum.innerHTML = '<button type="button" class="dbtn primary mo-start-tlf" onclick="planRitStart(\'uge\')">Start mødet</button>' + (moedeLinkHtml() ? '<div class="mo-link-rk">' + moedeLinkHtml() + '</div>' : '') + '<div class="mo-to"><div class="mo-venstre">' + venstre + '</div><div class="mo-hoejre">' + ideer + forbHtml + noter + '</div></div>';
   try { rum.querySelectorAll(".mo-spm textarea").forEach(function (t) { t.style.height = "auto"; t.style.height = t.scrollHeight + "px"; }); } catch (e) {}
@@ -79079,7 +79084,7 @@ function prRail() {
   const r = document.getElementById("prRail"); if (!r) return;
   const gjort = Math.max(0, Math.min(6, PR.trin - 1));
   /* DAG OG KLOKKESLAET SAETTES HER (Ida 21/9 kl. 16.18: »det er jo her jeg skal sætte datoen og tidspunktet, og det skal komme frem på forsiden under kommende aktiviteter«): samme aftale som Hjems flise (planMoedeAftale) */
-  let tid = ""; try { const ma = planMoedeAftale(); tid = ma ? dkDatoKort(ma.dato) + (ma.tid ? " kl. " + String(ma.tid).slice(0, 5).replace(":", ".") : "") : "Vælg dag og tidspunkt"; } catch (e) {}
+  let tid = ""; try { const ma = planMoedeAftale(); tid = ma ? dkDatoKort(ma.dato) + (ma.tid ? " kl. " + String(ma.tid).slice(0, 5).replace(":", ".").replace(/^0/, "") : "") : "Vælg dag og tidspunkt"; } catch (e) {}
   r.innerHTML = '<div class="pr-eye">Planlæg uge ' + energidaUgeNr(PR.uge) + '</div><div class="pr-h1">Ugentlig contentplanlægning</div>'
     + '<button type="button" class="dbtn mq-tap bs3-lang pr-tid-knap" style="margin:0 0 12px;" onclick="planMoedeTidArk()">' + esc(tid) + '</button>'
     + '<div class="pr-kort">'
@@ -79617,10 +79622,10 @@ function prMaalHtml() {
   let ugem = 0; try { ugem = maalUge(); } catch (e) {}
   const pm = PERF_MAAL || {};
   const sd = (MAALS && Array.isArray(MAALS.storyDage)) ? MAALS.storyDage.slice().sort(function (a, b) { return a - b; }).map(function (n) { return PR_DAGE[n - 1]; }).join(" · ") : "";
-  const fl = function (k, n, v) { return '<div class="pb-maal mq-tap" role="button" tabindex="0" onclick="perfMaalRet(\'' + k + '\')" style="background:#fff;border:1px solid var(--border);border-radius:20px;padding:12px 16px;margin:0 0 8px;min-height:44px;display:flex;justify-content:space-between;align-items:baseline;cursor:pointer;"><span style="font-size:13.5px;">' + n + '</span><span style="font-size:14px;font-weight:400;color:' + (v ? 'var(--black)' : 'var(--gray3)') + ';">' + (v || 'sæt et mål') + '</span></div>'; };
+  const fl = function (k, n, v) { return '<div class="pb-maal mq-tap" role="button" tabindex="0" onclick="perfMaalRet(\'' + k + '\')" style="background:#fff;border:1px solid var(--border);border-radius:20px;padding:12px 16px;margin:0 0 8px;min-height:44px;display:flex;justify-content:space-between;align-items:baseline;cursor:pointer;"><span style="font-size:13.5px;">' + n + '</span><span style="font-size:14px;font-weight:400;color:' + (v ? 'var(--black)' : 'var(--gray3)') + ';">' + (v || 'Sæt et mål') + '</span></div>'; };
   return prBjaelke(5) + '<div class="pr-eye">Trin 5 af 6</div><div class="pr-h1">Ugens mål</div>'
     + '<div class="pr-sub">De samme som på Performance. Ret dem her, hvis ugen er anderledes.</div>'
-    + fl("uge", "Opslag i uge " + energidaUgeNr(PR.uge), ugem ? String(ugem) : "")
+    /* OPSLAG I UGEN ER UDE AF TRIN 5 (revision fund 68, natten 7/10: »Det svarede jeg jo lige på i trin 3.«) — tallet saettes paa hjulet i trin 3 */
     + fl("proeve", "Prøvereels om måneden", pm.proeve ? String(pm.proeve) : "")
     + fl("story", "Story-dage", sd)
     + fl("fokus", "Ugens fokus", pm.fokus ? esc(String(pm.fokus)) : "")
@@ -81873,7 +81878,7 @@ function bf3StudieRum(v, filter) {
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-hvid.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 7. oktober · 2527</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 7. oktober · 2528</div>
 <script>
 /* DROPDOWNEN RULLER SELV (Ida 4/10) — maal den aabne liste og klip den ved skaermens bund */
 (function () {
