@@ -9918,6 +9918,23 @@ html body #maalsSideRum.maals-kun-tema .maals-stor, html body #maalsSideRum.maal
 html body.mb .arkiv-flise .arkiv-titel { font-family:"Didot","Bodoni 72",Georgia,serif; font-style:italic; font-size:19px; line-height:1.2; letter-spacing:-.2px; color:var(--black); }
 /* ===== PLANLAEGNING — DASHBOARDET (Idas klik 21/9 kl. 23.05: greb 1 + 4) — samme fliser som Hjem ===== */
 html body.mb .pd-side { max-width:none; }
+/* DIN FASTE RYTME (Idas klik 6/10): flisen = etiket · én streg · indhold; rækker med husets grå knap; døre = kun navnet */
+.pdr-fl { background:#fff; border-radius:20px; box-shadow:var(--mb-skygge); padding:16px 18px; margin:0 0 12px; }
+.pdr-eti { display:flex; align-items:center; justify-content:space-between; gap:10px; padding-bottom:10px; border-bottom:1px solid var(--border); margin-bottom:12px; }
+.pdr-trin { font-size:10px; letter-spacing:1.5px; text-transform:uppercase; color:var(--red); }
+.pdr-ok { width:22px; height:22px; border-radius:50%; background:var(--red); display:inline-flex; align-items:center; justify-content:center; flex:0 0 auto; }
+.pdr-ok svg { width:12px; height:12px; }
+.pdr-tom { width:22px; height:22px; border-radius:50%; border:1.5px solid var(--border); background:#fff; flex:0 0 auto; }
+.pdr-t { font-size:15px; line-height:1.35; color:var(--black); }
+.pdr-s { font-size:12.5px; line-height:1.45; color:var(--gray2); margin-top:3px; }
+.pdr-rk { display:flex; align-items:center; gap:12px; padding:11px 0; border-top:1px solid #F2F0ED; }
+.pdr-fl > .pdr-rk:first-child, .pdr-indre > .pdr-rk:first-child { border-top:0; padding-top:0; }
+.pdr-indre { margin-top:12px; }
+.pdr-x { flex:1; min-width:0; }
+.pdr-knap { flex:0 0 auto; }
+.pdr-knap-u { margin-top:12px; }
+.pdr-doere { display:grid; grid-template-columns:1fr; gap:12px; margin:0 0 12px; }   /* én spalte: »Målsætninger« må aldrig deles i ordet (doerene deles aldrig, 8/9) */
+.pdr-doer { background:#fff; border:0; border-radius:20px; box-shadow:var(--mb-skygge); padding:16px 18px; min-height:56px; display:flex; align-items:center; text-align:left; font:400 15px/1.3 Poppins,sans-serif; min-width:0; color:var(--black); cursor:pointer; white-space:normal; }
 @media (min-width:900px) { html body.mb .pd-side.pd-to { display:flex; gap:24px; align-items:flex-start; } html body.mb .pd-side .pd-v { flex:1 1 auto; min-width:0; } html body.mb .pd-side .pd-h { flex:0 0 clamp(340px, 31%, 560px); min-width:0; } html body.mb .pd-vane .pd-laeg { width:100% !important; margin-top:6px; } }   /* to spalter som Hjem (Ida 21/9 kl. 19.15) */
 html body.mb .pd-ringe { display:flex; align-items:center; gap:14px; flex-wrap:wrap; margin:0 0 16px; }
 html body.mb .pd-ring { display:flex; flex-direction:column; align-items:center; gap:6px; }
@@ -34734,6 +34751,127 @@ const PD_VANER = [
   { k: "inspiration", n: "Søg inspiration",        tid: "20 min",            m: /inspiration/i },
   { k: "profil",      n: "Opdater profilen",       tid: "1 gang om måneden", m: /profil/i }
 ];
+/* ===== DIN FASTE RYTME (Idas klik 6/10 »Bud 1 + bud 5's trin«, Artifact RrjcfAh3regM4q1B543PJR) =====
+   Kunden saetter tiderne EEN gang — appen laegger selv moederne i kalenderen (kunde_aftaler, samme raekker og titler som foer,
+   saa Hjem, kalenderen, Mødesiden og planMoedeAftale laeser dem uaendret). Gemmes i MAALS.rytme (skema_svar · maalsaetninger),
+   intet nyt bord. d = ugedag 1-7 (man = 1); maanedlige = »første <ugedag> i måneden«.
+   Udrulning: 4 uger frem for de ugentlige, 2 maaneder frem for de maanedlige. Der oprettes ALDRIG to i samme uge/maaned:
+   findes et moede med samme slags titel, bliver det staaende (det kan vaere flyttet med vilje). */
+const RYTME_DEF = [
+  { k: "uge",         n: "Ugentlig planlægning",   titel: "Ugentlig contentplanlægning", rx: /contentplanl|planlægningsdag/i, min: 60,  md: false, varighed: "1 time" },
+  { k: "maaned",      n: "Månedens planlægning",   titel: "Månedsplanlægning",           rx: /månedsplan|maanedsplan/i,      min: 120, md: true,  varighed: "2 timer" },
+  { k: "community",   n: "Aktivér dit community",  titel: "Aktivér dit community",       rx: /community/i,                   min: 30,  md: false, varighed: "30 min" },
+  { k: "inspiration", n: "Søg inspiration",        titel: "Søg inspiration",             rx: /inspiration/i,                 min: 20,  md: false, varighed: "20 min" },
+  { k: "profil",      n: "Opdater profilen",       titel: "Opdater profilen",            rx: /profil/i,                      min: 30,  md: true,  varighed: "30 min" }
+];
+const RYTME_DAGE = ["mandag", "tirsdag", "onsdag", "torsdag", "fredag", "lørdag", "søndag"];
+function rytme() { return (typeof MAALS !== "undefined" && MAALS && MAALS.rytme && typeof MAALS.rytme === "object") ? MAALS.rytme : {}; }
+function rytmeIso(d) { return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); }
+function rytmeTidPlus(t, min) { const p = String(t || "09:00").split(":"); let m = (+p[0]) * 60 + (+p[1] || 0) + min; if (m > 23 * 60 + 59) m = 23 * 60 + 59; return String(Math.floor(m / 60)).padStart(2, "0") + ":" + String(m % 60).padStart(2, "0"); }
+function rytmeTekst(def, r) {
+  if (!r || !r.d) return "";
+  const dag = RYTME_DAGE[(+r.d) - 1] || ""; const tid = r.t ? " kl. " + String(r.t).slice(0, 5).replace(":", ".").replace(/^0/, "") : "";
+  return (def.md ? "Første " + dag + " i måneden" : "Hver " + dag) + tid + " · " + def.varighed;
+}
+/* datoerne frem: ugentlige = de naeste 4 forekomster fra i dag; maanedlige = foerste <ugedag> i denne og naeste 2 maaneder, der ikke er passeret */
+function rytmeDatoer(def, r) {
+  const ud = []; const idag = datoDK(); const d0 = new Date(); d0.setHours(12, 0, 0, 0);
+  if (!def.md) {
+    const d = new Date(d0); const js = (+r.d) % 7;   /* JS: son = 0 */
+    while (d.getDay() !== js) d.setDate(d.getDate() + 1);
+    /* i dag, men tidspunktet er gaaet → foerste gang er naeste uge */
+    try { const nu = new Date(); const hhmm = String(nu.getHours()).padStart(2, "0") + ":" + String(nu.getMinutes()).padStart(2, "0"); if (rytmeIso(d) === idag && (r.t || "09:00") <= hhmm) d.setDate(d.getDate() + 7); } catch (e) {}
+    for (let i = 0; i < 4; i++) { ud.push(rytmeIso(d)); d.setDate(d.getDate() + 7); }
+  } else {
+    for (let i = 0; i < 3 && ud.length < 2; i++) {
+      const d = new Date(d0.getFullYear(), d0.getMonth() + i, 1, 12); const js = (+r.d) % 7;
+      while (d.getDay() !== js) d.setDate(d.getDate() + 1);
+      if (rytmeIso(d) >= idag) ud.push(rytmeIso(d));
+    }
+  }
+  return ud;
+}
+/* samme uge (man-son) eller samme maaned */
+function rytmeSammePeriode(def, a, b) {
+  if (def.md) return String(a).slice(0, 7) === String(b).slice(0, 7);
+  try { return planRitUgeKey(energidaUgeMandag(new Date(a + "T12:00:00"))) === planRitUgeKey(energidaUgeMandag(new Date(b + "T12:00:00"))); } catch (e) { return false; }
+}
+let RYTME_UDRULLER = false;
+async function rytmeUdrul(kunK) {
+  if (RYTME_UDRULLER || typeof sb === "undefined" || !sb || !currentKode) return 0;
+  const r0 = rytme(); RYTME_UDRULLER = true; let nye = 0;
+  try {
+    const aft = (window.__kundeAftalerAlle || window.__kundeAftaler || []).slice();
+    for (const def of RYTME_DEF) {
+      if (kunK && kunK !== def.k) continue;
+      const r = r0[def.k]; if (!r || !r.d) continue;
+      /* MAANEDENS UGE HAR KUN MAANEDENS PLANLAEGNING (»hver fjerde planlægning er månedens«, v2138): den ugentlige springes over i den uge */
+      const mdDef = RYTME_DEF[1]; const mdDatoer = (def.k === "uge" && r0.maaned && r0.maaned.d) ? rytmeDatoer(mdDef, r0.maaned) : [];
+      for (const dato of rytmeDatoer(def, r)) {
+        if (def.k === "uge" && (mdDatoer.some(function (m) { return rytmeSammePeriode(def, m, dato); }) || aft.some(function (x) { return x && x.dato && mdDef.rx.test(String(x.titel || "")) && rytmeSammePeriode(def, x.dato, dato); }))) continue;
+        if (aft.some(function (x) { return x && x.dato && def.rx.test(String(x.titel || "")) && rytmeSammePeriode(def, x.dato, dato); })) continue;
+        const noegle = def.k + ":" + dato; window.__RYT_LAVET = window.__RYT_LAVET || {}; if (window.__RYT_LAVET[noegle]) continue;   /* aldrig to gange i samme session, selv hvis listen ikke er hentet igen */
+        const rec = { kode: currentKode, titel: def.titel, dato: dato, tid: r.t || "09:00", tid_slut: rytmeTidPlus(r.t || "09:00", def.min) };
+        /* sættes maaneden efter ugen, BLIVER ugens moede i den uge til maanedens (samme raekke, ingen dublet samme dag) */
+        const ugeDef = RYTME_DEF[0];
+        const ugensMoede = def.k === "maaned" ? aft.filter(function (x) { return x && x.id && x.dato && x.dato >= datoDK() && ugeDef.rx.test(String(x.titel || "")) && rytmeSammePeriode(ugeDef, x.dato, dato); })[0] : null;
+        const res = ugensMoede
+          ? await sb.from("kunde_aftaler").update({ titel: rec.titel, dato: rec.dato, tid: rec.tid, tid_slut: rec.tid_slut }).eq("id", ugensMoede.id).eq("kode", currentKode).select()
+          : await sb.from("kunde_aftaler").insert(rec).select();
+        if (ugensMoede) ugensMoede.titel = rec.titel;
+        if (res && !res.error && res.data && res.data.length) { aft.push(res.data[0]); window.__RYT_LAVET[noegle] = 1; nye++; }
+      }
+    }
+  } catch (e) {} finally { RYTME_UDRULLER = false; }
+  if (nye) { try { await renderAftaler(); } catch (e) {} try { const ma = planMoedeAftale(); const pd = (typeof planDato === "function") ? planDato() : ""; if (ma && (!pd || pd < datoDK())) await setPlanDato(ma.dato); } catch (e) {} }
+  return nye;
+}
+/* skifter kunden dag eller tid, flyttes de KOMMENDE moeder af samme slags med (i deres egen uge/maaned) — aldrig de afholdte */
+async function rytmeFlyt(def, r) {
+  if (!sb || !currentKode || !r || !r.d) return;
+  const idag = datoDK(); const aft = (window.__kundeAftalerAlle || window.__kundeAftaler || []).filter(function (x) { return x && x.id && x.dato && x.dato >= idag && def.rx.test(String(x.titel || "")); });
+  for (const x of aft) {
+    let ny;
+    if (def.md) { const d = new Date(String(x.dato).slice(0, 7) + "-01T12:00:00"); const js = (+r.d) % 7; while (d.getDay() !== js) d.setDate(d.getDate() + 1); ny = rytmeIso(d); }
+    else { const m = energidaUgeMandag(new Date(x.dato + "T12:00:00")); const d = new Date(m); d.setDate(m.getDate() + ((+r.d) - 1)); ny = rytmeIso(d); }
+    if (ny < idag) continue;
+    try { await sb.from("kunde_aftaler").update({ dato: ny, tid: r.t || "09:00", tid_slut: rytmeTidPlus(r.t || "09:00", def.min) }).eq("id", x.id).eq("kode", currentKode).select(); } catch (e) {}
+  }
+}
+function rytmeArk(k) {
+  const def = RYTME_DEF.filter(function (x) { return x.k === k; })[0]; if (!def) return;
+  const r = rytme()[k] || {};
+  arkAabn({ titel: def.n, under: def.md ? "Første dag af den slags i måneden · " + def.varighed : "Samme dag hver uge · " + def.varighed, ingenTekst: true, ph: "",
+    chips: RYTME_DAGE.map(function (n, i) { return { k: String(i + 1), n: n.charAt(0).toUpperCase() + n.slice(1) }; }), valgt: r.d ? String(r.d) : "", typeFoerst: !r.d,
+    ekstraAf: function () { return husDatoTidHtml("", "rytTid", "", r.t || "09:00", false, true); },
+    knap: r.d ? { tekst: "Ingen fast dag", klik: "rytmeFjern('" + k + "')" } : null,
+    gem: async function (t, valgt) {
+      if (!valgt) throw new Error("!Vælg en dag.");
+      if (!MAALS || window.__MAALS_UHENTET) { try { await maalsHent(); } catch (e) {} }
+      if (!MAALS) throw new Error("!Kunne ikke hente dine indstillinger. Prøv igen.");
+      const tid = ((document.getElementById("rytTid") || {}).value || "09:00").slice(0, 5);
+      const foer = Object.assign({}, rytme());
+      const ny = { d: +valgt, t: tid };
+      MAALS.rytme = Object.assign({}, foer, { [k]: ny });
+      const ok = await maalsGem();
+      if (!ok) { MAALS.rytme = foer; throw new Error("!Det blev ikke gemt. Prøv igen."); }
+      const skift = foer[k] && foer[k].d && (foer[k].d !== ny.d || foer[k].t !== ny.t);
+      window.__RYT_DAG = datoDK();   /* den automatiske udrulning i renderAftaler maa ikke koere oven i denne */
+      if (skift) await rytmeFlyt(def, ny);
+      try { await renderAftaler(); } catch (e) {}
+      await rytmeUdrul(k);
+      try { planDashTegn(); } catch (e) {} try { renderHome(); } catch (e) {}
+      return "Står i kalenderen.";
+    } });
+}
+async function rytmeFjern(k) {
+  if (!MAALS) return;
+  const foer = Object.assign({}, rytme()); const ny = Object.assign({}, foer); delete ny[k];
+  MAALS.rytme = ny; const ok = await maalsGem();
+  if (!ok) { MAALS.rytme = foer; try { husKvit("Det blev ikke gemt. Prøv igen."); } catch (e) {} return; }
+  try { arkLuk(true); } catch (e) {} try { planDashTegn(); } catch (e) {}
+  try { husKvit("Ingen fast dag. Det, der allerede står i kalenderen, bliver stående."); } catch (e) {}
+}
 function planDashTegn() {
   const w = document.getElementById("planDashWrap"); if (!w) return;
   if (!PR_STATUS_HENTET && typeof planRitStatusHent === "function") { try { planRitStatusHent().then(function () { try { planDashTegn(); } catch (e) {} }); } catch (e) {} }
@@ -34754,7 +34892,7 @@ function planDashTegn() {
   let ma = null; try { ma = planMoedeAftale(); } catch (e) {}
   const naesteUge = new Date(man0); naesteUge.setDate(man0.getDate() + 7);
   const naesteTekst = ma ? ("Planlæg uge " + energidaUgeNr(naesteUge) + " · " + dkDatoKort(ma.dato) + (ma.tid ? " kl. " + String(ma.tid).slice(0, 5).replace(":", ".") : "") + " · 1 time") : "Vælg dato for din næste ugentlige contentplanlægning (1 time)";   /* Idas ord 21/9 kl. 19.27 */
-  const naesteKlik = ma ? "moedeSideAaben()" : "planMoedeTidArk()";   /* MOEDET AABNER MOEDESIDEN (Ida 29/9, Acorns) — agendaen, idéerne og »Start mødet« staar dér */
+  const naesteKlik = ma ? "moedeSideAaben()" : (rytme().uge ? "planMoedeTidArk()" : "rytmeArk('uge')");   /* uden fast tid aabner Næste skridt rytmen (bud 1, 6/10) */   /* MOEDET AABNER MOEDESIDEN (Ida 29/9, Acorns) — agendaen, idéerne og »Start mødet« staar dér */
   const roed = '<div class="idag-flise idag-roed idag-roed-dag" onclick="' + naesteKlik + '"><div class="idag-roed-tekst"><div class="idag-roed-eti">Næste skridt</div><div class="idag-roed-titel">' + esc(naesteTekst) + '</div></div><span class="idag-pil" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></span></div>';
   /* denne uge: briefs + optag */
   const ugeSlut = new Date(man0); ugeSlut.setDate(man0.getDate() + 6); const a = iso(man0), b = iso(ugeSlut);
@@ -34791,11 +34929,30 @@ function planDashTegn() {
     + '</div><div class="pd-h">'
     /* EN STRUKTUR DER DUR'! (Idas ord + klik 21/9 kl. 21.40: greb A uden cirklen): tre ugentlige moeder + eet maanedligt som fliser med datopille → husets kalender; de oevrige vaner under »Saet tid af til« */
     /* CHIPPEN OVER LINJEN (Ida 22/9: »tidligere chips skal komme op over linjen«) — en chip-raekke som paa Idébanken, saa sektionslinjen staar rent */
-    + '<div class="ark-chips i-fladen sd-tidl-rk"><button type="button" class="ark-chip' + (window.__SD_TIDL ? ' on' : '') + '" onclick="window.__SD_TIDL=!window.__SD_TIDL;planDashTegn()">' + (window.__SD_TIDL ? 'Skjul tidligere' : 'Tidligere') + '</button></div>'
-    + '<div class="cf-sek">En struktur der dur\'!</div>' + strukturHtml(man0, gjorte, maanedGjort, aft)   /* »Tidligere« viser de fire forrige uger oeverst (Idas kommentar 21/9 kl. 22.00) */
-    + '<div class="cf-sek">Sæt også tid af til</div>' + vaner   /* Idas ord 21/9 kl. 21.55 */
+    /* DIN FASTE RYTME (Idas klik 6/10 »Bud 1 + bud 5's trin«): »En struktur der dur'!« (dag for dag, uge for uge) og »Sæt også tid af til« er afloest af
+       tiderne, der saettes EEN gang. Saa laenge ugen og maaneden ikke har en fast tid, staar bud 5's fire trin; bagefter rytmen. Doerene til Tema · Målsætninger · Årshjulet staar paa siden. */
+    + planRytmeHtml()
+    + '<div class="cf-sek">Planlægning</div><div class="pdr-doere"><button type="button" class="pdr-doer mq-tap" onclick="tilpasAaben(\'tema\')">Tema</button><button type="button" class="pdr-doer mq-tap" onclick="tilpasAaben(\'maal\')">Målsætninger</button><button type="button" class="pdr-doer mq-tap" onclick="aarshjulAabn()">Årshjulet</button></div>'
     + '</div></div>';
   try { bsBaandPlanlaeg(); } catch (e) {}
+  try { if (Object.keys(rytme()).length && window.__RYT_DAG !== datoDK()) { window.__RYT_DAG = datoDK(); rytmeUdrul().then(function (n) { if (n) { try { planDashTegn(); } catch (e) {} } }); } } catch (e) {}
+}
+function planRytmeHtml() {
+  const r = rytme(); const ok = '<span class="pdr-ok" aria-label="Gjort"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>';
+  const tom = '<span class="pdr-tom" aria-hidden="true"></span>';
+  const def = function (k) { return RYTME_DEF.filter(function (x) { return x.k === k; })[0]; };
+  const raekke = function (k) { const d = def(k); const t = rytmeTekst(d, r[k]); return '<div class="pdr-rk"><div class="pdr-x"><div class="pdr-t">' + esc(d.n) + '</div>' + (t ? '<div class="pdr-s">' + esc(t) + '</div>' : '') + '</div><button type="button" class="dbtn mq-tap pdr-knap" onclick="rytmeArk(\'' + k + '\')">' + (r[k] && r[k].d ? 'Ret' : 'Vælg dag') + '</button></div>'; };
+  if (!(r.uge && r.uge.d && r.maaned && r.maaned.d)) {
+    const trin = function (nr, titel, under, gjort, indre) { return '<div class="pdr-fl"><div class="pdr-eti"><span class="pdr-trin">Trin ' + nr + ' af 4</span>' + (gjort ? ok : tom) + '</div><div class="pdr-t">' + esc(titel) + '</div>' + (under ? '<div class="pdr-s">' + esc(under) + '</div>' : '') + (indre || '') + '</div>'; };
+    const vaner = ["community", "inspiration", "profil"]; const vGjort = vaner.some(function (k) { return r[k] && r[k].d; });
+    let ah = false; try { ah = ahErLavet(); } catch (e) {}
+    return '<div class="cf-sek">Gør din planlægning klar</div>'
+      + trin(1, "Fast tid til ugens planlægning", rytmeTekst(def("uge"), r.uge), !!(r.uge && r.uge.d), '<button type="button" class="dbtn mq-tap pdr-knap pdr-knap-u" onclick="rytmeArk(\'uge\')">' + (r.uge && r.uge.d ? 'Ret' : 'Vælg dag') + '</button>')
+      + trin(2, "Månedens planlægning", rytmeTekst(def("maaned"), r.maaned), !!(r.maaned && r.maaned.d), '<button type="button" class="dbtn mq-tap pdr-knap pdr-knap-u" onclick="rytmeArk(\'maaned\')">' + (r.maaned && r.maaned.d ? 'Ret' : 'Vælg dag') + '</button>')
+      + trin(3, "Tid til community, inspiration og profilen", "Læg dem i kalenderen, så de bliver til vaner", vGjort, '<div class="pdr-indre">' + vaner.map(raekke).join("") + '</div>')
+      + trin(4, "Dit årshjul", "Det, der sker i din forretning året rundt", ah, ah ? '' : '<button type="button" class="dbtn mq-tap pdr-knap pdr-knap-u" onclick="aarshjulAabn()">Lav dit årshjul</button>');
+  }
+  return '<div class="cf-sek">Din rytme</div><div class="pdr-fl">' + RYTME_DEF.map(function (d) { return raekke(d.k); }).join("") + '</div>';
 }
 /* ---- En struktur der dur'! — 3 uger + 1 maaned (21/9) ---- */
 function strukturHtml(man0, gjorte, maanedGjort, aft) {
@@ -49817,7 +49974,8 @@ async function renderAftaler() {
   const idag = nuA.getFullYear() + "-" + String(nuA.getMonth() + 1).padStart(2, "0") + "-" + String(nuA.getDate()).padStart(2, "0");
   const klA = String(nuA.getHours()).padStart(2, "0") + ":" + String(nuA.getMinutes()).padStart(2, "0");
   const erAfholdt = a => a.dato < idag || (a.dato === idag && String(a.tid_slut || a.tid || "23:59").slice(0, 5) <= klA);
-  window.__kundeAftalerAlle = rows.filter(a => a.dato);   /* ogsaa de afholdte: »En struktur der dur'!« viser ugens dag, selv naar den er gaaet (Ida 24/9: valgte tirsdag, torsdag — dagen kom aldrig frem, og hvert nyt forsoeg lagde en aftale til) */
+  window.__kundeAftalerAlle = rows.filter(a => a.dato);
+  try { if (typeof rytme === "function" && Object.keys(rytme()).length && window.__RYT_DAG !== datoDK()) { window.__RYT_DAG = datoDK(); setTimeout(function () { rytmeUdrul(); }, 50); } } catch (e) {}   /* DIN FASTE RYTME (6/10) */   /* ogsaa de afholdte: »En struktur der dur'!« viser ugens dag, selv naar den er gaaet (Ida 24/9: valgte tirsdag, torsdag — dagen kom aldrig frem, og hvert nyt forsoeg lagde en aftale til) */
   rows = rows.filter(a => a.dato && !erAfholdt(a));
   window.__kundeAftaler = rows;
   try { hjemUgeTegn(); } catch (e) {}
@@ -57592,7 +57750,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2509";
+const APP_VERSION = "2510";
 let NY_VERSION_KLAR = false;
 let NY_VERSION_AFVIST = false;
 function nyVersionSkjul() {
@@ -81379,7 +81537,7 @@ function bf3StudieRum(v, filter) {
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-hvid.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 5. oktober · 2509</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 5. oktober · 2510</div>
 <script>
 /* DROPDOWNEN RULLER SELV (Ida 4/10) — maal den aabne liste og klip den ved skaermens bund */
 (function () {
