@@ -1,3 +1,7 @@
+## v2520 · 6. oktober · Stories åbner i briefen (Ida: »når jeg opretter en story ide kan jeg slet ikke arbejde i den eller klikke på den!??! vil jo gerne tilføje det til mødet også og så skal vi have lavet en brief til storyformatet«) — VÆLTER 28/7 »stories briefes ikke«
+- En story-idé åbner briefen som alle andre idéer (fakta, tags, dato, ⋯ › Tilføj til møde). Story er tilbage i First thing first.
+- STATUS: story-briefens egne spørgsmål findes ikke endnu — fem bud på vej. Indtil da får en story briefens almindelige spørgsmål.
+
 ## v2519 · 6. oktober · Idébanken: ingen »+ Tilføj« i kolonnerne (Ida: »fjern denne tilføj knap! Det er kun plusset i hjørnet der skal være her«)
 - Hverken over søjlerne, Story eller Uden plads. Ny idé = plusset i hjørnet.
 
