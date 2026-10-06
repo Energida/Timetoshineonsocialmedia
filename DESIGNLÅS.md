@@ -1,3 +1,22 @@
+## v2511 · 6. oktober · Planlægning = ét kort, der skifter (Idas klik »1 · Ét kort, der skifter« + »Ja, byg det« + »Ja, læg den ud«) — VÆLTER v2510's kolonne
+- **Kunden (65, travl, hader sociale medier) ser kun én ting ad gangen:** (1) første gang »Hvornår har du en time i ro hver uge?« m. dag- og tidschips + rød »Sæt den i kalenderen« · (2) før timen rød Næste skridt »Planlæg næste uge · <dag dato kl.> · cirka 1 time« + hvid »Start nu« + »Sådan går timen« (fem fliser m. minutter) · (3) efter timen flueben »Næste uge er planlagt« + »Godt gået. Næste gang er …« + »Din uge« (de næste 7 dage: Skriv briefen · Optag · Post). »Ret din faste tid« som link nederst.
+- **HVERT FJERDE MØDE ER MÅNEDENS (Ida 6/10):** kunden sætter KUN den ugentlige tid; udrulningen tæller fra ugerSidenMaaned og lægger hvert 4. ind som Månedsplanlægning, **cirka 2 timer** (Ida: »anbefale 2 timer til mdr«); månedens kort hedder »Planlæg næste måned« m. seks skridt (»Kig på måneden« først). Kunden kan skifte det enkelte møde (»Gør det til månedens/ugens planlægning«).
+- **Ude af siden:** Denne uge, Kommende planlægning, Din rytme-listen, Overblik og dørene (de bor i menuen og i timen). Spec: docs/superpowers/specs/2026-10-06-planlaegning-et-kort-design.md.
+
+## LÅST · 6. oktober · Den røde flise på hjemmesiden (Ida: »markant bedre struktur! … låse dette i designlåsen? Ift røde fliser hvad der skal bruges af font og størrelse mm?«)
+- **Flade:** brand-rød #FC2404, hjørner 28, ingen skygge, polstring 34/40 computer · 26/20 telefon, maks. 720 px bred.
+- **Skrift: Poppins 400 (aldrig 300) i ALT på rødt** — tynd skrift forsvinder på rød. Al tekst hvid; sekundær tekst hvid 88 %.
+- **Hierarki:** navn 22 px versal, spatiering .08em, hvid · én hårfin streg (hvid 35 %) · pris 44 px (telefon 38) · enhed 17 px hvid 88 % (telefon: egen linje, 16 px) · underlinje 15 px hvid 88 %.
+- **Punkter:** ÉN kolonne, startet af en hårfin streg (hvid 35 %); hvert punkt 16 px, linjehøjde 1,45, 7 px luft, med hvid cirkel 22 px og rødt flueben foran. Aldrig to kolonner uden tegn.
+- **Knap:** hvid, rød tekst, fuld bredde, 52 px. **Note under knappen:** 14 px, centreret, hvid 88 %.
+- **Andre røde flader** (»Hvad har du på hjertet?«, resultater, udtalelser): samme regel om Poppins 400 og hvid/hvid 88 %.
+- Bygget i bud 3 (undersider v14, Artifact BEg5AAo9AJNEhGBa6cbQt3 v19+) og site5-v208. Ikke i appen.
+
+## HÅRD REGEL · 6. oktober · Stort begyndelsesbogstav, altid (Ida: »vil du skrive i designlåsen at vi aldrig må lave noget hvor første bogstav ikke starter med stort?«)
+- **Alt, der står for sig selv på en flade, starter med stort bogstav:** overskrifter, linjer, underlinjer i fliser, punkter, tabelceller, chips, knapper, etiketter, hjælpetekster, placeholders. Gælder app (admin + b2b), hjemmesiden, mails, bud og mockups.
+- **Undtagelse:** kun når teksten grammatisk fortsætter en sætning, der står lige før på SAMME linje (fx »Til dig, der kan selv …« i én sætning). Står fortsættelsen i sin egen celle/linje, starter den med stort.
+- Anledning: Drejebog-flisen på undersiderne (»drivkraften, målgruppen …«, »sådan skal forretningen lyde …«) og skemarækken »Til dig, der | kan selv …«. Rettet i hjemmeside-filerne samme dag. **STATUS:** appen er ikke gennemgået for småt begyndelsesbogstav endnu.
+
 ## v2510 · 6. oktober · Planlægning = Din faste rytme (Idas klik »Bud 1 + bud 5's trin«, bygget og klikket »Ja, læg den ud«)
 - **Rytmen sættes ÉN gang** (det lille ark: ugedag som chips + tid): Ugentlig planlægning · Månedens planlægning (første <ugedag> i måneden) · Aktivér dit community · Søg inspiration · Opdater profilen. Gemmes i MAALS.rytme (skema_svar · maalsaetninger).
 - **Appen lægger møderne i kalenderen selv** (kunde_aftaler, samme titler som før): ugentlige 4 uger frem, månedlige 2 måneder frem; aldrig to af samme slags i samme uge/måned; i månedens uge bliver ugemødet til månedens planlægning. Skift af dag/tid flytter de KOMMENDE møder; afholdte røres aldrig. »Ingen fast dag« sletter intet i kalenderen.
