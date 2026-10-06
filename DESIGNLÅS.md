@@ -1,3 +1,10 @@
+## v2509 · 6. oktober · Indholdssøjlerne: ny side (alle fire søjler) — Idas klik »Ja, læg den ud« på 1A
+- **Bygget af det, Ida har sagt ja til 5/10:** chips · den røde flise (søjlens fokus i Idas ord) · nummererede hvide paneler med luft på hvid side (runde 16) · den fine skala (overskrift 28/22 · underlinje 16/15 · brød 15/14 · korttitel 18/17 · rød flises sætning 30/22 · etiket 11 versal grå) · Poppins 400.
+- **Afsnittene:** 1 Kort fortalt (søjlens egen byggesten · Formålet + »Kunden skal tænke« · Hvilken søjle? = skel-reglen) · 2 Find produktet/idéen (1A Den rene trekant med USP øverst · 1B to cirkler, der mødes i »Det, du poster« · 2A/2B kun Spørg dig selv) · 3 Sig det (kun 1A er »Trin 1–3«) · 4 Handlingen (CTA forklaret som begreb + CTA_ANBEFALET for kundens type, første rød) + format/vibe i én flise med manus' forbehold · 5 Brug den strategisk · 6 Dine eksempler (kundens egne, uændrede data).
+- **HÅRD (Ida 6/10 »Ret alt efter manus«): teksterne er ordret fra Manuskripter modul 5–8** med linjenummer i koden (IS3). Format er en anbefaling, aldrig en regel; 1B-byggestenen hedder målgruppe; ingen hooks, ingen husets idéer, ingen opfundne sætninger. Hjørnerne i modellen bærer kun navnet (spørgsmålene står under).
+- Set på 390 + 1440 med testdata og med Hinges Hus' rigtige byggesten (læst i SQL Editor, intet skrevet). Telefonen får større ord i modellen (svg'en skaleres ned).
+- Pladsholdere i IS3 skrives {vi-form|du-form} (isDu = altid du-form).
+
 ## v2508 · 5. oktober aften · Forbind Instagram i »Ugens tal fra Instagram« (kun testere)
 - **Idas klik 5/10 aften: »Husets tomme flise«.** Øverst i interaktionsrate-arket: ikke forbundet = tomKortHtml »Vil du hente tallene direkte fra Instagram?« + Forbind Instagram; udløbet = »Forbindelsen til Instagram er udløbet.« + Forbind Instagram; forbundet = »Forbundet som @navn« + Hent tallene. Den manuelle indtastning står uændret under (spec §4, permanent).
 - **Kun testere:** vises først efter `?igtest=1` (gemmes på enheden), fordi Meta-appen er i udviklingstilstand. Fjernes, når App Review er godkendt.
