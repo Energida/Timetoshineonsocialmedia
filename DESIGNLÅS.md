@@ -1,3 +1,11 @@
+## v2537 · 7. oktober · Hjems ringe 50/50 på telefonen og med stort, rundvisningen uden rød ring, Tøm hovedets valg på hvidt, en vej til Ida på login (revision 6/10 fund 18b, 24, 90a, 92, 97; nat-køen)
+- DINE MÅL PÅ TELEFONEN (fund 90a): to ringe = to fliser i fuld bredde 50/50 (før et gitter med tre pladser og et tomt hul). Gitteret får lige så mange spalter, som der er ringe. Kun telefonen.
+- STORT BEGYNDELSESBOGSTAV (fund 92, HÅRD 6/10): ringenes ord »Opslag i ugen« · »Postet« (og YOU GOT THIS' »Lektioner set« · »Øvelser«). »af 3« står med lille, fordi det fortsætter tallet (låsens undtagelse). Begge flader.
+- RUNDVISNINGEN (fund 97, aldrig røde ringe 24/9): det udpegede punkt står løftet i hvidt (hvid kant 3 px i hullet), resten dæmpet — ingen rød ring. Begge flader. Ordene og stoppene er IKKE rørt (Idas ord).
+- TØM HOVEDET PÅ TELEFONEN (fund 18b): valgene står på en hvid, uigennemsigtig flade (Hjem skinnede igennem). Den røde top på telefonen er IKKE rørt (LÅST 24/9: kun Tøm hovedet har rød top, kun på telefonen), og »Vælg« er Idas ord (4/10).
+- LOGIN (fund 24): under »Glemt adgangskode?« står »Ikke fået dit login? Skriv til kontakt@energida.dk« (mail-link) i samme hvide 12 px. Kun tekst — intet auth-flow er rørt.
+- Set på 390 + 1440 i selen. Kilde: NAT-6-10/fund.md.
+
 ## v2536 · 7. oktober · Runde anførselstegn i kundeteksten, Get shit done tom = spørgsmål + knap, Mere har sine egne døre og tre prikker, ny version-popuppen over bundmenuen, søgningen finder postede opslag (revision 6/10 fund 19, 21, 26, 93, 95, 96; nat-køen)
 - RUNDE ANFØRSELSTEGN (fund 93 + tvillinger, HÅRD 4/10): “…” i briefens pladsholdere (»siger selv: “…”« m.fl.) og tjekliste-spørgsmålet om følelsen, godkendelsens note, Hashtagbankens tom-linje, Idébankens slet-dialog og søjlens følelse, planlægningens kvittering og »Dit svar før«, Profilens “… Studio” og Opret brugers “vi” og “vores”. Admins egne kvitteringer (Backstage) er ikke rørt.
 - GET SHIT DONE (fund 95): tom Åbne = husets tom-kort »Er der noget, du skal huske?« + grå »Tilføj opgave« (samme ord som Hjem). Sendefeltet står kun på Åbne. Computeren viser Enter-tegnet ↵ i feltet (HÅRD 21/9 — pilen findes kun på telefonen). Slet-arket siger »Annullér« (før »Fortryd«). Titlens farve, skraldespand på »Ja, slet«, ark-knapperne og »Alle« → »Hele teamet« er IKKE rørt (fælles arkSpoerg / Idas ord).
