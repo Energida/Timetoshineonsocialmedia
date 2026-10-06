@@ -1,3 +1,11 @@
+## v2531 · 7. oktober · Værktøjskassen har de døre, menuen lover; modulnavnet i lektionens sti kan trykkes (revision 6/10 fund 9, 85, 88, 89, 124; nat-køen)
+- VÆRKTØJSKASSEN (fund 9, alvor 1): siden har nu dørene De 4 byggesten og Indholdssøjlerne (husets dør, kun navnet) — samme gate og rækkefølge som sidemenuens underpunkter (Drive · De 4 byggesten · Indholdssøjlerne · Hashtagbanken). Noterne står under dørene. »Til lektionerne«, Drejebogen og et nyt døre-design er IKKE rørt (venter på Idas klik).
+- SIDEMENUEN PÅ COMPUTEREN (fund 9 + 124): står man på Værktøjskassen eller Planlægning, er gruppens underpunkter foldet ud (samme greb som Content Studio og Indholdssøjlerne, én gruppe ad gangen). Kun ≥ 900 px.
+- DE 4 BYGGESTEN (fund 85): stien siger »Værktøjskassen / De 4 byggesten« (før »Content kalender«). Tom-teksten er IKKE rørt (Idas ord).
+- LEKTIONEN (fund 88): på computeren kan modulnavnet i stien trykkes — det åbner listen med alle moduler (samme som leddet »Lektionerne«). Telefonens sti er stadig tekst (6/9). Modullisten på siden Lektionerne er IKKE bygget (ny struktur).
+- MODULNUMMERET (fund 89): modulVisNr viser aldrig under 0 (gamle 0-lektioner stod som »Modul -1«). Lange titler ombrydes allerede (v2523).
+- Set på 390 + 1440 i selen. Kilde: NAT-6-10/fund.md.
+
 ## v2530 · 7. oktober · Briefen: »Hvem laver?« kun ved to eller flere, statuslisten er husets enkeltvalg (revision 6/10 fund 48, 61; nat-køen)
 - FIRST THING FIRST (fund 48): »Hvem laver?« spørges kun, når der er to eller flere personer. Med én person udfyldes feltet selv med den person (samme felt og værdi som et tryk på den ene chip; kun når intet er sat). »Ved ikke endnu« på alle trin er IKKE bygget (ny ordlyd/struktur — Idas valg).
 - STATUSLISTEN (fund 61): husets enkeltvalg (v2467) — tom grå cirkel pr. række, valgt = rød cirkel med hvidt flueben, teksten sort; listen står under pillen i pillens fulde bredde på begge flader (før hang den fra højre kant på computeren). »Postet sættes selv« er IKKE bygget (ny funktion).

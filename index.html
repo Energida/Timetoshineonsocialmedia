@@ -23904,6 +23904,8 @@ function showTab(n) {
   current = n;
   /* Content Studio-gruppen i sidemenuen staar aaben paa Kalender/Idébanken (bud 1, 16/9) — kun i det nye design paa computeren */
   try { if (document.body.classList.contains("mb") && window.innerWidth >= 900 && (n === 8 || n === 2) && window.__SN_LUKKET !== "snContentUnder") snFold("snContentUnder", true); } catch (e) {}
+  /* VAERKTOEJSKASSEN OG PLANLAEGNING FOLDER OGSAA UD (Ida/natten 7/10, revision fund 9 + 124): stod man paa siden, var underpunkterne skjult paa computeren — samme greb som Content Studio og Indholdssøjlerne (een gruppe ad gangen) */
+  try { const gU = n === 6 ? "snVaerktoejUnder" : n === 31 ? "snPlanUnder" : ""; if (gU && document.body.classList.contains("mb") && window.innerWidth >= 900 && window.__SN_LUKKET !== gU) { ["snContentUnder", "snPlanUnder", "snVaerktoejUnder"].forEach(function (id) { const e = document.getElementById(id); if (e && id !== gU) e.style.display = "none"; }); window.__SN_AABEN = gU; snFold(gU, true); } } catch (e) {}
   /* "reload bliver paa fanen" er UDGAAET (Ida 30/7) — kunden lander altid paa Hjem */
   if (n === 1) {
     /* EN TOM BOG VISES ALDRIG (8/9): uden strategi staar »Strategien er paa vej« i stedet for tomme sider. */
@@ -29304,9 +29306,15 @@ async function renderVaerktoej() {
     + '</div>';
   /* GUIDES FRA ENERGIDA OG OVERSKRIFTEN »DIN EGEN VAERKTOEJSKASSE« ER UDE (Ida 21/9 kl. 12.55: »Slet guides fra energida. slet overskriften din egen værktøjskasse«) */
   void alle; void guideKort;
+  /* VAERKTOEJSKASSEN HAR DE DOERE, MENUEN LOVER (Ida/natten 7/10, revision fund 9: »Hvor er De 4 byggesten og Indholdssøjlerne? Menuen siger, de er i Værktøjskassen.«):
+     samme gate og samme raekkefoelge som sidemenuens underpunkter (Drive · De 4 byggesten · Indholdssøjlerne · Hashtagbanken), husets doer (idag-flise, kun navnet) */
+  const vkDoer = function (navn, klik) { return '<div class="idag-flise" role="button" tabindex="0" onclick="' + klik + '" style="cursor:pointer;"><span class="idag-tekst"><span class="idag-titel">' + esc(navn) + '</span></span></div>'; };
+  let vkF = function () { return true; }; try { const dd = CURRENT_DEF; vkF = function (k) { return funkTaendt(dd, k); }; } catch (e) {}
+  const byggeDoer = vkF("strategi") ? vkDoer("De 4 byggesten", "tilpasAaben('drejebog')") : '';
+  let soejleDoer = ''; try { soejleDoer = (IS_TIL && vkF("content")) ? vkDoer("Indholdssøjlerne", "isAabn()") : ''; } catch (e) {}
   list.innerHTML =
     ((CURRENT_DEF && (CURRENT_DEF.type === "kursus" || CURRENT_DEF.type === "medarbejder")) ? '' : driveDoerHtml())   /* bud 1 (16/9): Indholdsmappen som doer */
-    + hashtagsKort + noterKort;
+    + byggeDoer + soejleDoer + hashtagsKort + noterKort;
 }
 
 /* ---------- kunde-hjem: målsætning + fremdrift ---------- */
@@ -37259,7 +37267,7 @@ const MODUL_FASER = [{ n: "energi", t: "Energi" }, { n: "strategi", t: "Strategi
 function modulNrFor(lekId) { const m = String(lekId || "").match(/^(\d+)-/); return m ? m[1] : ""; }
 /* MODUL 0 · INTRODUKTION (Ida 1/10): kunden ser modulerne et nummer lavere (basens 1 = Modul 0 · Introduktion,
    basens 11 = Modul 10 · Værktøjskassen). KUN visningen — noeglerne (1-1, ygtModulAabner("8"), lektion_register) er uroerte. */
-function modulVisNr(nr) { const n = parseInt(nr, 10); return isNaN(n) ? String(nr || "") : String(n - 1); }
+function modulVisNr(nr) { const n = parseInt(nr, 10); return isNaN(n) ? String(nr || "") : String(Math.max(0, n - 1)); }   /* ALDRIG UNDER 0 (natten 7/10, revision fund 89): gamle 0-lektioner stod som »Modul -1« */
 function lekVisNr(id) { const m = String(id || "").match(/^(\d+)-(\d+)/); return m ? modulVisNr(m[1]) + "." + m[2] : String(id || ""); }
 function lekVisTitel(l) { return (l && l.id === "1-2") ? "Energi · Strategi · Resultat" : ((l && l.titel) || ""); }
 function modulVisNavn(nr, raa) { if (String(nr) === "1") return "Introduktion"; return String(raa || "").replace(/^Modul\s*\d+\s*·\s*/i, ""); }
@@ -38393,7 +38401,7 @@ function lekStiHtml(modul, sidste) {
   if (lekStiTlf()) return '<span class="mb-tilbage">Tilbage</span>' + skil + '<span>' + lekSideNavn() + '</span>' + (modul ? skil + '<span>' + esc(modul.titel) + '</span>' : '') + (sidste ? skil + '<span>' + esc(sidste) + '</span>' : '');
   return '<button type="button" class="mb-tilbage" onclick="lukLektion()">Tilbage</button>' + skil
     + '<button type="button" onclick="lekForloebVis()">' + lekSideNavn() + '</button>'
-    + (modul ? skil + '<span>' + esc(modul.titel) + '</span>' : '')
+    + (modul ? skil + '<button type="button" onclick="lekForloebVis()">' + esc(modul.titel) + '</button>' : '')   /* MODULNAVNET KAN TRYKKES (natten 7/10, revision fund 88/9): det aabner listen med modulerne, som leddet foran — fra en lektion kunne man kun gaa videre */
     + (sidste ? skil + '<span>' + esc(sidste) + '</span>' : '');
 }
 function lekMbPil(tekst, klik, roed, ik, ikBag) {
@@ -58032,7 +58040,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2530";
+const APP_VERSION = "2531";
 let NY_VERSION_KLAR = false;
 let NY_VERSION_AFVIST = false;
 function nyVersionSkjul() {
@@ -62874,7 +62882,7 @@ function tilpasAaben(fokus, felt) {
   const tt = document.getElementById("tilpasSideTitel"); if (tt) tt.textContent = (del === "drejebog") ? "De 4 byggesten" : (del === "tema" ? "Tema" : "Målsætninger");   /* »Tema« er sin egen flade i menuen (Ida 21/9 kl. 19.19: »klikker på tema og der sker ingenting«) */
   /* Etiketten foelger OMRAADET (navstiens foraelder): Maalsaetninger hoerer til
      Performance (Ida 26/8), drejebogen til Strategi. */
-  const tl = document.getElementById("tilpasSideLabel"); if (tl) tl.textContent = contentOmraadeNavn();   /* begge bor under Content Studio (15/9) */
+  const tl = document.getElementById("tilpasSideLabel"); if (tl) tl.textContent = (del === "drejebog") ? navstiMenuNavn("d6", "Værktøjskassen") : contentOmraadeNavn();   /* DE 4 BYGGESTEN BOR UNDER VAERKTOEJSKASSEN (Ida 16/9 + natten 7/10, revision fund 85): stien sagde »Content kalender / De 4 byggesten« — foraelderen er menuens, som Indholdssøjlerne */
   /* DE FIRE BYGGESTEN (Ida 25/8). Fladen er IKKE den gamle mellemside fra foer 22/8 —
      den bar to linjer tekst og en knap videre, og den blev nedlagt med rette. Her rettes
      selve teksten, saa siden GOER noget. Strategibyggeren staar stadig som vej videre. */
@@ -81909,7 +81917,7 @@ function bf3StudieRum(v, filter) {
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-hvid.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 7. oktober · 2530</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 7. oktober · 2531</div>
 <script>
 /* DROPDOWNEN RULLER SELV (Ida 4/10) — maal den aabne liste og klip den ved skaermens bund */
 (function () {
