@@ -1,3 +1,9 @@
+## v2534 · 7. oktober · Telefonen: kalenderens datolinje kun én gang, »Næste uge« over spørgsmålet om næste uge, fliser med skygge (ikke kant), Idébankens chips til venstre (revision 6/10 fund 103, 104; nat-køen)
+- KALENDEREN PÅ TELEFONEN (fund 104): linjen »uge 41 · ons. 7. oktober« under heroen er ude — heroen bærer datoen. Er der intet i dag, hedder rubrikken »Næste uge« (før »I dag« over »Hvad skal ud i næste uge?«).
+- FLISEN ER HVID MED SKYGGE (fund 103, HÅRD 25/9): telefonens idéfliser og »Kommende opslag« har husets skygge (--mb-skygge) i stedet for grå kant — som computerens idéfliser. Kun telefonen (max-width:899px).
+- IDÉBANKENS CHIPS (fund 103): »Idébanken · Inspiration · Arkiv« står til venstre som på kalenderen (før højrestillet bag en tom titel-plads). Kun telefonen.
+- Set på 390 + 1440 i selen (computeren urørt). Kilde: NAT-6-10/fund.md.
+
 ## v2533 · 7. oktober · Kalenderens søgning finder alle opslag, langt tryk på en idé, kvitteringen siger stedet, Gem uden navn siger det, aftalens starttid (revision 6/10 fund 28, 31, 32, 33, 37, 42, 43, 100; nat-køen)
 - SØGNINGEN (fund 33): skriver man i kalenderens søgefelt, står ALLE opslag med dato, der matcher, som fliser over gitteret (titel · dato · status, tryk = briefen) — samme fliser som »Mangler dato«. Ingen træf = én linje »Ingen opslag med “…”.«. Gitteret filtreres som før. Kun computeren (telefonen har ingen søgning i kalenderen).
 - LANGT TRYK PÅ EN IDÉFLISE (fund 28 + 31, CLAUDE.md §3): hold 450 ms (eller højreklik) på en idé i Idébanken → husets menu (bf3ValgArk): Flyt til · Omdøb · Duplikér · Slet (spørger først; idéen ryger i Arkivet som før). Flyt til viser de fire søjler, Story og Uden plads — vejen ud af Uden plads. Duplikér = en idé uden dato med samme søjle, format og brief. Begge flader. Flyt rundt = træk mellem søjlerne på computeren (fandtes); inden for en søjle styrer sorteringen.
