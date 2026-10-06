@@ -35192,23 +35192,28 @@ function planMoedeTidArk(aftaleId) {
   const tid0 = (ma && ma.tid) ? String(ma.tid).slice(0, 5) : "09:00";
   /* FYSISK / ONLINE · SLUTTID · LINK TIL MOEDET (Ida 21/9 kl. 22.12): chips vaelger formen; Online viser linkfeltet; sluttiden gemmes i tid_slut, linket i link */
   const slut0 = (ma && ma.tid_slut) ? String(ma.tid_slut).slice(0, 5) : planMoedeTidPlus(tid0, 60);   /* sluttiden foreslaas som start + 1 time (Ida 21/9 kl. 19.30) */
-  const link0 = (ma && ma.link) ? String(ma.link) : "";
-  window.__PM_FORM = link0 ? "online" : "fysisk";
+  /* STEDET VED ET FYSISK MOEDE (Ida 6/10: »kan vi tilføje placeringer ift. fysisk? … Energida Studio som mulighed«): gemmes i link som tekst
+     (et link er kun et link, naar det starter med http — samme regel som aftalerne) og sted = fysisk */
+  const ms0 = moedeSted(ma);
+  const link0 = ms0.online ? String(ma.link || "") : "";
+  window.__PM_FORM = ms0.online ? "online" : "fysisk";
+  window.__PM_STED = ms0.sted;
   arkAabn({ titel: ma ? "Ret det ugentlige contentmøde" : "Tilføj næste ugentlige contentmøde", ph: "", tekst: "", send: "Gem", chips: [], ingenTekst: true,   /* Idas ord 25/9 kl. 09.20 */
     ekstraAf: function () {
-      const chip = function (k, navn) { return '<button type="button" class="ark-chip' + (window.__PM_FORM === k ? ' on' : '') + '" onclick="window.__PM_FORM=\'' + k + '\';document.querySelectorAll(\'.pm-form .ark-chip\').forEach(function(x){x.classList.toggle(\'on\',x.dataset.k===\'' + k + '\')});var l=document.getElementById(\'pmLinkRk\');if(l)l.style.display=(\'' + k + '\'===\'online\')?\'\':\'none\';" data-k="' + k + '">' + navn + '</button>'; };
+      const chip = function (k, navn) { return '<button type="button" class="ark-chip' + (window.__PM_FORM === k ? ' on' : '') + '" onclick="window.__PM_FORM=\'' + k + '\';document.querySelectorAll(\'.pm-form .ark-chip\').forEach(function(x){x.classList.toggle(\'on\',x.dataset.k===\'' + k + '\')});var l=document.getElementById(\'pmLinkRk\');if(l)l.style.display=(\'' + k + '\'===\'online\')?\'\':\'none\';var s=document.getElementById(\'pmStedRk\');if(s)s.style.display=(\'' + k + '\'===\'online\')?\'none\':\'\';" data-k="' + k + '">' + navn + '</button>'; };
       return '<div class="ark-chips pm-form" style="margin:0 0 12px;">' + chip("fysisk", "Fysisk") + chip("online", "Online") + '</div>'
         /* DAG · FRA · TIL med etiketter (Ida 21/9 kl. 19.30: »tidspunktet og måden man vælger det på lige være lidt mere ux venligt«); Til viser aldrig tider foer Fra */
         + '<div class="ark-et pm-et">Dag</div>' + husDatoTidHtml("pmDato", "", dato0, "", true)
         + '<div class="pm-tider"><div><div class="ark-et pm-et">Fra</div>' + husDatoTidHtml("", "pmTid", "", tid0, false, true) + '</div><div><div class="ark-et pm-et">Til</div>' + husDatoTidHtml("", "pmTidSlut", "", slut0, false, true) + '</div></div>'
-        + '<div id="pmLinkRk" style="' + (window.__PM_FORM === "online" ? '' : 'display:none;') + '"><input type="text" id="pmLink" class="bs3-felt" inputmode="url" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Link til mødet" value="' + esc(link0) + '" style="width:100%;box-sizing:border-box;min-height:44px;margin:0 0 10px;"></div>';
+        + '<div id="pmLinkRk" style="' + (window.__PM_FORM === "online" ? '' : 'display:none;') + '"><input type="text" id="pmLink" class="bs3-felt" inputmode="url" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Link til mødet" value="' + esc(link0) + '" style="width:100%;box-sizing:border-box;min-height:44px;margin:0 0 10px;"></div>'
+        + moedeStedHtml(window.__PM_FORM === "online");
     },
     gem: async function () {
       const dato = (document.getElementById("pmDato") || {}).value || ""; const tid = (document.getElementById("pmTid") || {}).value || "";
-      let slut = (document.getElementById("pmTidSlut") || {}).value || ""; if (tid && slut && slut <= tid) slut = planMoedeTidPlus(tid, 60);   /* aldrig slut foer start */ const link = window.__PM_FORM === "online" ? String((document.getElementById("pmLink") || {}).value || "").trim() : "";
+      let slut = (document.getElementById("pmTidSlut") || {}).value || ""; if (tid && slut && slut <= tid) slut = planMoedeTidPlus(tid, 60);   /* aldrig slut foer start */ const link = window.__PM_FORM === "online" ? String((document.getElementById("pmLink") || {}).value || "").trim() : moedeStedLaes();
       if (!dato) throw new Error("!Vælg en dag.");
       if (!sb || !currentKode) return false;
-      const rec = { dato: dato, tid: tid || null, tid_slut: slut || null, link: link || null };
+      const rec = { dato: dato, tid: tid || null, tid_slut: slut || null, link: link || null, sted: window.__PM_FORM === "online" ? "online" : "fysisk" };
       try {
         if (ma && ma.id) { const u = await sb.from("kunde_aftaler").update(rec).eq("id", ma.id).select(); if (u.error || !u.data || !u.data.length) return false; }
         else { const i = await sb.from("kunde_aftaler").insert(Object.assign({ kode: currentKode, titel: "Ugentlig contentplanlægning" }, rec)).select(); if (i.error || !i.data || !i.data.length) return false; }
@@ -35262,7 +35267,7 @@ function hjemDagFremHtml(iso) {
   try { (IDEER || []).filter(function (x) { return x.dato === iso && x.status !== "Postet"; }).forEach(function (x) {
     const tid = (x.brief && x.brief.tid) ? (typeof tidVis === "function" ? tidVis(x.brief.tid) : String(x.brief.tid).slice(0, 5)) : "";
     ud.push({ t: "Skal du poste:", navn: (x.titel || "Uden titel"), s: [tid ? (/^\d/.test(tid) ? "Kl. " + tid : tid) : "", "Opslag", x.status || ""].filter(Boolean).join(" · "), klik: "openBriefSide('" + esc(String(x.id)) + "')" }); }); } catch (e) {}
-  try { (window.__kundeAftalerAlle || window.__kundeAftaler || []).filter(function (a) { return a.dato === iso; }).forEach(function (a) { ud.push({ t: a.titel || "", s: (a.tid ? "Kl. " + String(a.tid).slice(0, 5) + " · " : "") + "Aftale", klik: erMoedeTitel(a.titel) ? "moedeSideAaben()" : a.link ? "window.open(" + JSON.stringify(String(a.link)).replace(/"/g, "&quot;") + ",'_blank','noopener')" : "" }); }); } catch (e) {}
+  try { (window.__kundeAftalerAlle || window.__kundeAftaler || []).filter(function (a) { return a.dato === iso; }).forEach(function (a) { ud.push({ t: a.titel || "", s: (a.tid ? "Kl. " + String(a.tid).slice(0, 5) + " · " : "") + "Aftale", klik: erMoedeTitel(a.titel) ? "moedeSideAaben()" : aftErUrl(a.link) ? "window.open(" + JSON.stringify(String(a.link)).replace(/"/g, "&quot;") + ",'_blank','noopener')" : "" }); }); } catch (e) {}
   try { (OPGAVER || []).filter(function (o) { return !o.done && o.aktiv !== false && String(o.deadline || "").slice(0, 10) === iso && opgaveErTilMig(o); }).forEach(function (o) { ud.push({ t: o.titel || "", s: "To-do", klik: "haengSideAabn()" }); }); } catch (e) {}
   if (!ud.length) return '<div class="idag-flise tom">Ingenting planlagt.</div>';
   return ud.map(function (r) { return '<div class="idag-flise"' + (r.klik ? ' onclick="' + r.klik + '"' : '') + '><span class="idag-tekst"><span class="idag-titel">' + esc(r.t) + (r.navn ? ' <i class="fokus-navn">' + esc(r.navn) + '</i>' : '') + '</span>' + (r.s ? '<span class="idag-sub">' + esc(r.s) + '</span>' : '') + '</span></div>'; }).join("");
@@ -47636,7 +47641,7 @@ function huTing(iso) {
     (window.__kundeAftalerAlle || window.__kundeAftaler || []).forEach(function (a) {   /* MOEDET BLIVER I KALENDEREN, OGSAA NAAR SLUTTIDEN ER GAAET (Ida 29/9: »Den må aldrig blive fjernet fra kalenderen«) — dagens visning laeser alle aftaler */
       if (!a || String(a.dato || "").slice(0, 10) !== iso) return;
       const tid = a.tid ? String(a.tid).slice(0, 5).replace(":", ".") : "";
-      ud.push({ ty: "aftale", tid: tid, et: "Aftale" + (tid ? " · kl. " + tid : ""), t: a.titel || "", chip: erMoedeTitel(a.titel) ? moedeFormNavn(a) : (a.link ? "Online" : ""), klik: erMoedeTitel(a.titel) ? "moedeSideAaben()" : a.link ? "window.open('" + esc(String(a.link)) + "','_blank')" : "" });
+      ud.push({ ty: "aftale", tid: tid, et: "Aftale" + (tid ? " · kl. " + tid : ""), t: a.titel || "", chip: erMoedeTitel(a.titel) ? moedeFormNavn(a) : (aftErUrl(a.link) ? "Online" : ""), klik: erMoedeTitel(a.titel) ? "moedeSideAaben()" : aftErUrl(a.link) ? "window.open('" + esc(String(a.link)) + "','_blank')" : "" });
     });
   } catch (e) {}
   try { if (false && planDato() === iso && !harMoedeDag(iso)) ud.push({ ty: "plan", tid: "", et: "Planlægning", t: "Ugens planlægning", chip: "", klik: "moedeSideAaben()" });   /* ET TRYK PAA MOEDET AABNER MOEDET (Ida 29/9, Acorns-moedet: »kom ikke ind på selve mødet men planlægningssiden«) */ } catch (e) {}
@@ -47705,10 +47710,10 @@ function huKalDagHtml(iso, erIdag) {
   (window.__kundeAftalerAlle || window.__kundeAftaler || []).forEach(function (a) {
     if (!a || String(a.dato || "").slice(0, 10) !== iso) return;
     if (GL_FORSLAG[String(a.titel || "").trim().toLowerCase()]) return;
-    const t = huKalT(a.tid); const klik = erMoedeTitel(a.titel) ? "moedeSideAaben()" : a.link ? "window.open('" + esc(String(a.link)) + "','_blank')" : "";
+    const t = huKalT(a.tid); const klik = erMoedeTitel(a.titel) ? "moedeSideAaben()" : aftErUrl(a.link) ? "window.open('" + esc(String(a.link)) + "','_blank')" : "";
     if (t == null) { uden.push({ k: "akt", foreslaa: 9, laengde: 1, sym: "aftale", n: a.titel || "Aftale", u: "Vælg tidspunkt", klik: klik }); return; }
     let til = huKalT(a.tid_slut); if (til == null || til <= t) til = t + 1;
-    blk.push({ k: "akt", fra: t, til: til, sym: "aftale", n: a.titel || "Aftale", u: huKalKl(t) + "–" + huKalKl(til) + (erMoedeTitel(a.titel) ? " · " + moedeFormNavn(a) : (a.link ? " · Online" : "")), klik: klik });   /* fysisk/online i kalenderen (29/9) */
+    blk.push({ k: "akt", fra: t, til: til, sym: "aftale", n: a.titel || "Aftale", u: huKalKl(t) + "–" + huKalKl(til) + (erMoedeTitel(a.titel) ? " · " + moedeFormNavn(a) : (aftErUrl(a.link) ? " · Online" : "")), klik: klik });   /* fysisk/online i kalenderen (29/9) */
   });
   /* »Ugens planlægning · Vælg tidspunkt« er UDE af dagskalenderen (Ida 29/9: »denne hører egentlig slet ikke hjemme i dagskalenderen«) — moedet staar der selv, naar det er booket */
   try { if (false && planDato() === iso && !harMoedeDag(iso)) uden.push({ k: "akt", foreslaa: 10, laengde: 1, sym: "plan", n: "Ugens planlægning", u: "Vælg tidspunkt", klik: "moedeSideAaben()" });   /* moedet, ikke Planlaegning-siden (29/9) */ } catch (e) {}
@@ -57913,7 +57918,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2514";
+const APP_VERSION = "2515";
 let NY_VERSION_KLAR = false;
 let NY_VERSION_AFVIST = false;
 function nyVersionSkjul() {
@@ -71934,13 +71939,17 @@ function aftFelterHtml(a) {
   return husDatoTidHtml("hjTfDato", "hjTfTid", a.dato || "", a.tid ? String(a.tid).slice(0, 5) : "")
     + '<div class="bf3-slut-rk"><span class="bf3-slut-l">Slutter</span>' + husDatoTidHtml("", "hjTfSlut", "", a.tid_slut ? String(a.tid_slut).slice(0, 5) : "", false, true) + '</div>'
     + '<div class="aft-sted-blok"><div class="ark-chips i-fladen aft-sted" style="justify-content:flex-start;margin:4px 0 10px;"><button type="button" class="ark-chip' + (a.sted === "fysisk" ? ' on' : '') + '" onclick="aftStedSkift(\'fysisk\')">Fysisk møde</button><button type="button" class="ark-chip' + (a.sted === "online" ? ' on' : '') + '" onclick="aftStedSkift(\'online\')">Onlinemøde</button></div>'
-    + '<input type="text" id="hjTfSted" class="aft-sted-felt" value="' + esc(a.link || "") + '" placeholder="' + (a.sted === "online" ? "Mødelink" : "Hvor? Fx adressen") + '" autocomplete="off" style="' + (a.sted ? '' : 'display:none;') + '"></div>';
+    + '<input type="text" id="hjTfSted" class="aft-sted-felt" value="' + esc(a.link || "") + '" placeholder="' + (a.sted === "online" ? "Mødelink" : "Hvor? Fx adressen") + '" autocomplete="off" style="' + (a.sted ? '' : 'display:none;') + '">'
+    + '<div class="ark-chips i-fladen aft-sted-hurtig" style="justify-content:flex-start;margin:8px 0 10px;' + (a.sted === "fysisk" ? '' : 'display:none;') + '">' + MOEDE_STEDER.map(function (n) { return '<button type="button" class="ark-chip' + (a.link === n ? ' on' : '') + '" data-s="' + esc(n) + '" onclick="aftStedHurtig(this)">' + esc(n) + '</button>'; }).join("") + '</div></div>';
 }
 function aftStedSkift(v) {
   window.__AFT_STED = (window.__AFT_STED === v) ? "" : v;
   document.querySelectorAll(".aft-sted .ark-chip").forEach(function (b) { b.classList.toggle("on", (/Fysisk/.test(b.textContent) ? "fysisk" : "online") === window.__AFT_STED); });
   const f = document.getElementById("hjTfSted"); if (f) { f.style.display = window.__AFT_STED ? "" : "none"; f.placeholder = window.__AFT_STED === "online" ? "Mødelink" : "Hvor? Fx adressen"; if (window.__AFT_STED) f.focus(); }
+  const h = document.querySelector(".aft-sted-hurtig"); if (h) h.style.display = window.__AFT_STED === "fysisk" ? "" : "none";
 }
+/* ENERGIDA STUDIO MED ET TRYK (Ida 6/10): chippen skriver stedet i feltet; et tryk mere toemmer det */
+function aftStedHurtig(b) { const f = document.getElementById("hjTfSted"); if (!f || !b) return; const n = b.dataset.s; const paa = f.value.trim() !== n; f.value = paa ? n : ""; document.querySelectorAll(".aft-sted-hurtig .ark-chip").forEach(function (x) { x.classList.toggle("on", paa && x === b); }); }
 function aftFelterLaes() {
   const v = function (id) { return ((document.getElementById(id) || {}).value || "").trim(); };
   const o = { dato: v("hjTfDato"), tid: v("hjTfTid"), tid_slut: v("hjTfSlut"), sted: window.__AFT_STED || "", link: window.__AFT_STED ? v("hjTfSted") : "" };
@@ -78631,13 +78640,31 @@ function moedeNaarLinje() {
   let naar = "Ingen dato sat endnu";
   if (ma) { try { naar = new Date(String(ma.dato).slice(0, 10) + "T12:00:00").toLocaleDateString("da-DK", { weekday: "short", day: "numeric", month: "long" }); } catch (e) { naar = dkDatoKort(ma.dato); } if (ma.tid) naar += " · kl. " + kl(ma.tid) + (ma.tid_slut ? "–" + kl(ma.tid_slut) : ""); }
   /* FYSISK ELLER ONLINE STAAR I LINJEN (Ida 22/9 kl. 09.15: »jeg mangler det der med om det er fysisk eller online og linket til mødet«) */
-  const form = ma ? (ma.link ? "online" : (ma.form ? String(ma.form).toLowerCase() : "fysisk")) : "";
+  const form = ma ? (moedeSted(ma).online ? "online" : (moedeSted(ma).sted || (ma.form ? String(ma.form).toLowerCase() : "fysisk"))) : "";
   return naar + (form ? " · " + form : "") + " · " + moedeDeltagere();
 }
 /* LINKET TIL MOEDET = EN PILLE UNDER »START MOEDET« paa Moedesiden, naar moedet er online */
 /* FYSISK/ONLINE + LINKET SOM CHIPS PAA MOEDESIDEN (Ida 29/9: »Hvorfor kan jeg så ikke se linket til mødet og se om mødet er fysisk eller online«) — samme ord som i kalenderen */
-function moedeFormNavn(ma) { if (!ma) return ""; return ma.link ? "Online" : (ma.form ? storStart(String(ma.form).toLowerCase()) : "Fysisk"); }
-function moedeLinkHtml() { let ma = null; try { ma = planMoedeAftale(); } catch (e) {} if (!ma) return ""; return '<span class="ark-chip mo-chip mo-stille">' + esc(moedeFormNavn(ma)) + '</span>' + (ma.link ? '<a class="ark-chip mo-chip mo-link" href="' + esc(String(ma.link)) + '" target="_blank" rel="noopener">Åbn mødet</a>' : ''); }
+function moedeSted(ma) { if (!ma) return { online: false, sted: "" }; const l = String(ma.link || "").trim(); const online = ma.sted === "online" || aftErUrl(l); return { online: online, sted: online ? "" : l }; }
+function moedeFormNavn(ma) { if (!ma) return ""; const m = moedeSted(ma); return m.online ? "Online" : (m.sted || (ma.form ? storStart(String(ma.form).toLowerCase()) : "Fysisk")); }
+const MOEDE_STEDER = ["Energida Studio"];
+function moedeStedHtml(skjul) {
+  const v = window.__PM_STED || "", kendt = MOEDE_STEDER.indexOf(v) > -1, andet = !!v && !kendt;
+  window.__PM_STED_ANDET = andet;
+  return '<div id="pmStedRk" style="' + (skjul ? 'display:none;' : '') + '"><div class="ark-et pm-et">Hvor?</div><div class="ark-chips pm-sted" style="margin:0 0 10px;">'
+    + MOEDE_STEDER.map(function (n) { return '<button type="button" class="ark-chip' + (v === n ? ' on' : '') + '" data-s="' + esc(n) + '" onclick="moedeStedVaelg(this.dataset.s)">' + esc(n) + '</button>'; }).join("")
+    + '<button type="button" class="ark-chip' + (andet ? ' on' : '') + '" data-s="__andet" onclick="moedeStedVaelg(\'__andet\')">Andet sted</button></div>'
+    + '<input type="text" id="pmSted" class="bs3-felt" autocomplete="off" placeholder="Adressen" value="' + esc(andet ? v : "") + '" style="width:100%;box-sizing:border-box;min-height:44px;margin:0 0 10px;' + (andet ? '' : 'display:none;') + '"></div>';
+}
+function moedeStedVaelg(n) {
+  const f = document.getElementById("pmSted");
+  if (n === "__andet") { window.__PM_STED_ANDET = !window.__PM_STED_ANDET; window.__PM_STED = ""; }
+  else { window.__PM_STED_ANDET = false; window.__PM_STED = (window.__PM_STED === n) ? "" : n; }
+  document.querySelectorAll(".pm-sted .ark-chip").forEach(function (b) { b.classList.toggle("on", b.dataset.s === "__andet" ? window.__PM_STED_ANDET : b.dataset.s === window.__PM_STED); });
+  if (f) { f.style.display = window.__PM_STED_ANDET ? "" : "none"; if (window.__PM_STED_ANDET) f.focus(); }
+}
+function moedeStedLaes() { if (window.__PM_STED_ANDET) return String((document.getElementById("pmSted") || {}).value || "").trim(); return window.__PM_STED || ""; }
+function moedeLinkHtml() { let ma = null; try { ma = planMoedeAftale(); } catch (e) {} if (!ma) return ""; return '<button type="button" class="ark-chip mo-chip" onclick="planMoedeTidArk(\'' + esc(String(ma.id || "")) + '\')">' + esc(moedeFormNavn(ma)) + '</button>' + (moedeSted(ma).online && ma.link ? '<a class="ark-chip mo-chip mo-link" href="' + esc(String(ma.link)) + '" target="_blank" rel="noopener">Åbn mødet</a>' : ''); }
 /* ALENE = MAKKEREN SIDDER MED (Ida 21/9 kl. 23.15: »for at synliggøre mødet som vigtigt også selvom det er med en selv«): er teamet én person, står der »dig · din content makker«; ellers navnene */
 function moedeDeltagere() { let folk = []; try { folk = briefPersonerListe(); } catch (e) {} return folk.length > 1 ? folk.join(" · ") : "dig · din content makker"; }
 function moedeSideAaben() {
@@ -81700,7 +81727,7 @@ function bf3StudieRum(v, filter) {
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-hvid.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 5. oktober · 2514</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 5. oktober · 2515</div>
 <script>
 /* DROPDOWNEN RULLER SELV (Ida 4/10) — maal den aabne liste og klip den ved skaermens bund */
 (function () {
