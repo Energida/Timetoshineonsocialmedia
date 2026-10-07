@@ -1,3 +1,6 @@
+## v2553 · 7. oktober · Sidste side i First thing first hedder Gem (Ida 7/10: »ved 6 af 6 skal der selvfølgelig ikke stå Næste men Gem«)
+- Knappen på sidste trin (computer og telefon) hedder Gem; de øvrige trin Næste. Fakta-rækkens enkelt-spørgsmål hedder også Gem (v2550).
+
 ## v2552 · 7. oktober · Der tilføjes kun øverst: »Hvad skal der ske denne dag? · Tilføj« er væk nederst i dagen (Ida 7/10: »dette skal fjernes — der skal altid kun tilføjes øverst«)
 - Hjem, dagsvisningen på computer og telefon: en tom dag viser ikke længere spørgsmålet med en grå Tilføj-knap. Plusset øverst er eneste vej. »Start planlægning« i en helt tom uge består. Målt 390 og 1440.
 - Mødesiden (Ugentlig contentplanlægning): chippen »Fysisk« er slettet (stedet står kun i coveret); i stedet står den rigtige Tilbage-knap (computeren, øverst til venstre i indholdet; telefonen har Tilbage i coverets hjørne). »Åbn mødet« vises stadig ved online-møder. Portens måling af den tomme dags Tilføj-knap er taget ud (probe-bud.js, Idas ord 7/10).
