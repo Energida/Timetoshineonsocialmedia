@@ -1,3 +1,7 @@
+## v2540 · 7. oktober · Briefen: kvittering ved »Idé« og Tilbage-knap på computerens briefoversigt (Ida: »flyttet en brief tilbage til status: Idé — så må den gerne komme med en lille kvittering som: Flyttet tilbage i idebanken« · »her på briefoversigten mangler jeg en tilbageknap«)
+- Status sat til Idé giver kvitteringen »Flyttet tilbage i Idébanken.« (Idé tager datoen af, så opslaget forlader kalenderen). Kun ved Idé.
+- Computeren: husets grå pille »Tilbage« står til venstre i rækken over fakta på briefoversigten (36 px, samme vej som stien: briefTilbage). Telefonen har sin egen Tilbage nederst (v2529). Pillen er undtaget fra Tilbage-motorens kildesøgning (tilbageKilde), som ellers skjuler den.
+
 ## v2539 · 7. oktober · Afbryd forbindelsen til Instagram (Idas klik »Ja, byg og læg op«; Metas og privatlivspolitikkens krav)
 - Rate-arket (kun bag ?igtest=1, til Meta er godkendt): når kunden er forbundet, står der under »Hent tallene« en grå knap »Afbryd forbindelsen« (husets grå knap, 44 trykfelt). Tryk åbner det lille ark: titlen »Afbryd forbindelsen til Instagram?«, rød »Afbryd forbindelsen«, grå »Annullér«; kvittering »Forbindelsen er afbrudt.«.
 - Serverdelen: Edge Function `instagram-frakobl` (Verify JWT til; sletter kun kalderens egen række i ig_forbindelser; målingerne bliver stående). Sikkerhedstest F1/F2 målt (401), F3–F7 venter på demo-login — se INSTAGRAM-INTEGRATION/TESTPLAN tillæg 7/10.
