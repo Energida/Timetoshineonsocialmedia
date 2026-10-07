@@ -1,3 +1,6 @@
+## v2570 · 7. oktober · HÅRD: kalenderen tilføjer ALDRIG bare en idé (Ida 7/10: »jeg må ALDRIG kunne tilføje bare en idé direkte i kalenderen«) — vælter v2566
+- Plusset på en dag åbner igen First thing first (navn · indholdssøjle · format, kun de tre) og derefter briefen; der oprettes aldrig et opslag uden format og søjle på en dag. Titel-arket fra v2566 er væk. Idéer med dato fra før (status Idé) står stadig i kalenderen, til Ida beslutter, hvad de skal være.
+
 ## v2569 · 7. oktober · Tilbage i samme bredde som status; ingen versaloverskrifter over briefens spørgsmål (Ida 7/10)
 - Computer: Tilbage-pillen over status er lige så bred som statusfeltet (fuld kolonnebredde). Faktakolonnen er uændret 340 px.
 - Briefens spørgsmålsfliser (Idéen · Udbyttet · Målet · Handlingen): den grå versal-etiket og skillestregen under den er væk, spørgsmålet er overskriften. (Vælter 15/9 »etiket · én skillelinje · indhold« kun for disse spørgsmålsfliser, på Idas ord.)
