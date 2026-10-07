@@ -61,7 +61,10 @@ setTimeout(async function () {
       if (!rod) { console.log("SELE LAAS FEJL " + navn + " ingen popup fundet"); fejl++; }
       if (rod) {
         var kryds = rod.querySelector(".modal-close"); if (kryds && getComputedStyle(kryds).display !== "none") { console.log("SELE LAAS FEJL " + navn + " synligt kryds"); fejl++; }
-        if (!rod.querySelector(".modal-luk-mobil, .ark-luk")) { console.log("SELE LAAS FEJL " + navn + " ingen lang Luk"); fejl++; }
+        /* INGEN ANNULLER, KUN BANKENS KRYDS (Ida 7/10): krydset skal staa, og ingen synlig knap maa hedde Annuller */
+        var synligKryds = [].some.call(document.querySelectorAll(".ark-kryds"), function (k) { var r = k.getBoundingClientRect(); return r.width > 30 && r.height > 30; });
+        if (!synligKryds) { console.log("SELE LAAS FEJL " + navn + " intet kryds"); fejl++; }
+        [].forEach.call(rod.querySelectorAll("button"), function (b) { var r = b.getBoundingClientRect(); if (r.height > 0 && /^\s*annull?[eé]r\s*$/i.test(b.textContent || "")) { console.log("SELE LAAS FEJL " + navn + " Annuller-knap"); fejl++; } });
         var rb = rod.getBoundingClientRect();
         var knapper = [].filter.call(rod.querySelectorAll("button, label.ark-knap, a.ib-genbrug"), function (b) { var r = b.getBoundingClientRect(); return r.height > 0 && !b.classList.contains("ark-kryds") && !b.classList.contains("ark-chip") && !b.classList.contains("ark-send") && !b.classList.contains("ark-tag-send") /* sendepilen i tag-feltet (22/9) er feltets symbol, ikke en knap */ && !b.classList.contains("ark-prik") /* pager-prikkerne (22/9): 8 px prik m. 44 px trykfelt */ && !b.classList.contains("ark-link") && !b.classList.contains("ark-rund") && !b.classList.contains("modal-close") && !b.classList.contains("pr-chip") && !/^(Ma|Ti|On|To|Fr|Lø|Sø)$/.test(b.textContent.trim()); });
         /* TRYKFELTET 44, TEGNINGEN 40 (4/9-reglen + Ida 21/9 kl. 19.20: knapperne 40 hoeje): maales som Backstage-proben — er punktet 21 px over og under midten stadig knappen (::after), er trykfeltet 44 */

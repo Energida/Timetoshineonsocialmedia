@@ -1,3 +1,9 @@
+## v2556 · 7. oktober · Ingen Annuller i popups — bankens kryds i alle; Gem/Tilføj flere; Kalenderen hedder det samme overalt (Ida 7/10)
+- **ALLE popups:** knappen Annullér er væk (CSS + en vagt, der skjuler enhver knap, der hedder Annullér/Annuller). Det gamle kryds (28 px, grå kant) er ændret til bankens: hvid cirkel 40 px, blød skygge, ingen kant, stort tyndt sort kryds, inde i øverste højre hjørne. Krydset er eneste vej ud (og tryk udenfor / swipe ned). Vælter 18/9, 19/9 og 24/9 (kryds på kanten + Annullér).
+- Porten (probe-popups.js) kræver nu et synligt kryds og forbyder en synlig Annullér-knap i hver popup.
+- **Produkt-popuppen:** den hvide »Tilføj flere« står først, den røde »Gem« under.
+- **Menu og hero:** menupunktet hedder Kalenderen (som siden, stien og bundmenuen). Stien viser to ens led i træk kun én gang.
+
 ## v2555 · 7. oktober · Kort fortalt i den røde flise: ingen streg, teksten i en hvid flise inde i den røde (Ida 7/10)
 - »Om indholdssøjlen … · kort fortalt«: skillestregen under etiketten er væk; teksten står i en hvid, afrundet flise (14 px, sort) inde i den røde. En tom tekst tegner ingen tom hvid flise. Målt 390 og 1440.
 
