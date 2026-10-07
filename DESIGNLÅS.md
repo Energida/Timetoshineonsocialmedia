@@ -1,3 +1,7 @@
+## v2586 · 7. oktober · Tastaturet skubber ikke arket ud af skærmen (Ida 7/10: titlen klippet, hul under arket)
+- Når tastaturet kommer, ruller iPhone siden. Slørets top følger nu den synlige del (visualViewport.offsetTop), så titel og kryds ikke havner uden for skærmen, og arket står lige over tastaturet. Gælder alle ark og det lille ark.
+- Porten har ikke et rigtigt tastatur: tastaturadfærd skal ses i iOS-simulatoren eller på telefonen.
+
 ## v2582 · 7. oktober · Kalenderen på telefonen: ingen »Næste uge · Hvad skal ud i næste uge?« øverst; næste uges tema som egen række (Ida 7/10)
 - Den tomme »Næste uge«-flise med »Planlæg et opslag« er fjernet fra Content kalenderen (der står kun I dag og Kommende indhold). Under temaerne står en række »Næste uges tema · Uge 42« (trykket åbner Planlægning). - »Hvem taler opslaget til?« på idésiden kommer KUN frem ved to eller flere målgrupper (v2574's »også med én« er rullet tilbage).
 - »Om indholdssøjlen … · kort fortalt« viser kun søjlens formål, første sætning (højst 150 tegn); følelse og handling er ude af flisen.
