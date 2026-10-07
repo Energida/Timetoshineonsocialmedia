@@ -1,3 +1,7 @@
+## v2559 · 7. oktober · Klip: kun »Hvad ser man i klippet?« som standard; manus og tekst på skærmen via chips; ingen »Hvem er med« (Ida 7/10)
+- Et klip (fra klip 2) viser kun feltet »Hvad ser man i klippet?«. Manus og tekst på skærmen står kun fremme, hvis der er skrevet noget eller kunden har trykket på chippen under (klip[f + "Aaben"]; et tomt felt fra før vises ikke længere). Chips: Tilføj manus · Tilføj tekst på skærm (altid, ikke kun ved tale til kameraet).
+- »Hvem er med«: overskriften er slettet; personerne står som grå chips i samme størrelse som »+ Tekst på skærmen« (valgt = rød).
+
 ## v2558 · 7. oktober · Fakta: tags uden overskrift og symbol, grå og fordelt; knapafstand; åbnet række ruller i syne (Ida 7/10)
 - Sidste række i fakta (tags): ingen overskrift »Tags«, intet symbol; tagsene står som grå chips fordelt i feltet.
 - Navigationsknapperne (Gem ændringer · Næste) står 12 px fra hinanden, ikke 24.

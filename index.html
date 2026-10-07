@@ -5431,6 +5431,9 @@ html body .ark-kryds { width:40px; height:40px; border:0; background:#fff; color
 html body .ark-kryds svg { width:18px; height:18px; }
 html body .ark-kryds::after { inset:-4px; }
 html body .ark-luk, html body .modal-luk-mobil { display:none !important; }
+html body .klip-hvem { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
+html body .klip-hvem .klip-hvem-chip { width:auto; }
+html body .klip-hvem .klip-hvem-chip.on { background:var(--red) !important; border-color:var(--red) !important; color:#fff !important; }
 @media (min-width: 900px) { html body #briefRail { max-height:calc(100vh - 48px); overflow-y:auto; overscroll-behavior:contain; scrollbar-width:thin; } }   /* faktalisten ruller i sig selv, naar en aaben raekke goer den hoejere end skaermen */
 html body .fb-rk[data-key="tags"] { display:block; padding-left:0; }
 html body .fb-rk[data-key="tags"] .fb-chips { display:flex; flex-wrap:wrap; gap:8px; }
@@ -25389,10 +25392,10 @@ function briefKlipKortHtml(i, k, o) {
       + del("ser", briefKlipFeltHtml(pre + i + '_ser', 'Det, man ser', 'Beskriv, hvad man ser i klippet', k.ser, FB_IK.kamera, false, '', true))
       + del("siger", briefKlipFeltHtml(pre + i + '_siger', 'Det, jeg siger', 'Det, der siges i de første sekunder', k.siger, FB_IK.boble, false, '', true));
   }
-  const visTekst = !o.hook && o.visTekst && (k.tekst != null);   /* TEKST PAA SKAERMEN TILFOEJES VIA PLUSSET (Ida 21/9 kl. 19.00) — et skrevet felt staar altid (gem maa ikke slette, 4/8) */
+  const visTekst = !o.hook && o.visTekst && klipFeltFremme(k, "tekst");   /* TEKST PAA SKAERMEN TILFOEJES VIA PLUSSET (Ida 21/9 kl. 19.00) — et skrevet felt staar altid (gem maa ikke slette, 4/8) */
   if (visTekst) felter += briefKlipFeltHtml(pre + i + '_tekst', 'Tekst på skærmen', 'Teksten på skærmen', k.tekst, FB_IK.undertekst, true, laast ? '' : 'briefKlipFeltFjern(' + i + ',\'tekst\')');
   const taler = (function () { try { return (Array.isArray(BRIEF_STATE.lyd) ? BRIEF_STATE.lyd : []).indexOf("Tale til kameraet") > -1; } catch (e) { return false; } })();
-  if (k.siger != null && !o.hook) felter += briefKlipFeltHtml(pre + i + '_siger', 'Manus', 'Det, der siges i klippet', k.siger, FB_IK.boble, false, laast ? '' : 'briefKlipFeltFjern(' + i + ',\'siger\')');
+  if (klipFeltFremme(k, "siger") && !o.hook) felter += briefKlipFeltHtml(pre + i + '_siger', 'Manus', 'Det, der siges i klippet', k.siger, FB_IK.boble, false, laast ? '' : 'briefKlipFeltFjern(' + i + ',\'siger\')');
   const ctaTekst = String(BRIEF_STATE.ctaVideo || "");
   const visCta = false;   /* CTA I VIDEOEN BOR PAA »FÅ DEM TIL AT HANDLE« (Ida 29/9: »den skal jo i virkeligheden slet ikke være med på fang dem«) — vaelter 24/9 »Altid i sidste klip« */ void ctaTekst;
   if (visCta) felter += briefKlipFeltHtml('bf_ctaVideo', 'CTA i videoen', 'Vælg, hvad de skal gøre', ctaTekst, FB_IK.cta, false);
@@ -25495,8 +25498,8 @@ function briefKlipHtml(enkelt) {
     /* TILFOEJ = TRE GRAA CHIPS I STEDET FOR ET PLUS OG ET ARK (Ida 7/10: »spare kunden for et klip … Tilføj klip · Tilføj manus · Tilføj tekst på skærm«): manus og tekst lander paa det sidste klip, klippet i dets scene */
     { const sidst = rest.length ? rest[rest.length - 1] : null; const sc = forrige !== null ? forrige : antal;
       ud += '<div class="kk-tilfoej-chips"><button type="button" class="ark-chip mq-tap" onclick="briefKlipNyIScene(' + sc + ')">Tilføj klip</button>'
-        + (sidst && sidst.k.siger == null ? '<button type="button" class="ark-chip mq-tap" onclick="briefKlipFelt(' + sidst.i + ',\'siger\')">Tilføj manus</button>' : '')
-        + (sidst && sidst.k.tekst == null ? '<button type="button" class="ark-chip mq-tap" onclick="briefKlipFelt(' + sidst.i + ',\'tekst\')">Tilføj tekst på skærm</button>' : '')
+        + (sidst && !klipFeltFremme(sidst.k, "siger") ? '<button type="button" class="ark-chip mq-tap" onclick="briefKlipFelt(' + sidst.i + ',\'siger\')">Tilføj manus</button>' : '')
+        + (sidst && !klipFeltFremme(sidst.k, "tekst") ? '<button type="button" class="ark-chip mq-tap" onclick="briefKlipFelt(' + sidst.i + ',\'tekst\')">Tilføj tekst på skærm</button>' : '')
         + '</div>'; }
     ud += '<div class="kk-plus-rk kk-plus-scene"><button type="button" class="kk-plus kk-plus-roed kk-scene-pille mq-tap" onclick="briefSceneNy()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg><span>Tilføj scene</span></button></div>';   /* det røde plus hedder »Tilføj scene« (Ida 7/10) */
     return '<div id="briefKlipHolder" class="kk-scener"><div id="briefKlip">' + ud + '</div></div>';
@@ -25547,8 +25550,8 @@ function briefKlipHtml(enkelt) {
   };
   const kort = (enkelt ? liste.slice(0, 1) : liste).map(function (k, i) {
     const harSiger = (k.siger || "").length > 0 || k.siger === "";
-    const visSiger = k.siger != null;
-    const visTekst = k.tekst != null;
+    const visSiger = klipFeltFremme(k, "siger");
+    const visTekst = (i === 0 && k.tekst != null) || klipFeltFremme(k, "tekst");   /* klip 1's tekst er hooket og staar som foer */
     /* VAELTET 4/9: "HVAD SER MAN I KLIPPET" STAAR NU OEVERST (Idas ord: "der skal i
        briefen byttes rundt paa tekst og hvad ser man"). Det vaelter hendes egen
        2/9-beslutning om det modsatte.
@@ -25601,7 +25604,7 @@ function briefKlipHtml(enkelt) {
       try { return (Array.isArray(BRIEF_STATE.lyd) ? BRIEF_STATE.lyd : []).indexOf("Tale til kameraet") > -1; }
       catch (e) { return false; }
     })();
-    if (!visSiger && taler) tilfoej += '<button type="button" class="bf-plads mq-tap" onclick="briefKlipFelt(' + i + ',\'siger\')"><svg width=\'14\' height=\'14\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'1.9\' stroke-linecap=\'round\'><path d=\'M12 5v14M5 12h14\'/></svg> Manus</button>';
+    if (!visSiger) tilfoej += '<button type="button" class="bf-plads mq-tap" onclick="briefKlipFelt(' + i + ',\'siger\')"><svg width=\'14\' height=\'14\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'1.9\' stroke-linecap=\'round\'><path d=\'M12 5v14M5 12h14\'/></svg> Manus</button>';
     return '<div class="klip-kort" style="background:#fff;border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:10px;">'
       /* Nummeret og "Klip 1 af N" hoerer til en opbygning. Er der kun eet klip, siger de
          ingenting — og "af 1" laeser som om noget mangler. */
@@ -25694,7 +25697,8 @@ function briefPersonerListe() { let f = Array.isArray(BRIEF_PERSONER) ? BRIEF_PE
 function briefKlipHvemHtml(i, k) {
   const folk = briefPersonerListe(); if (folk.length < 2) return "";
   const valgt = Array.isArray(k.hvem) ? k.hvem : [];
-  return '<div class="klip-hvem"><span class="klip-hvem-eye">Hvem er med</span>' + folk.map(function (n) { return '<button type="button" class="ark-chip' + (valgt.indexOf(n) > -1 ? ' on' : '') + '" onclick="briefKlipHvemSkift(' + i + ',this)">' + esc(n) + '</button>'; }).join("") + '</div>';
+  /* INGEN OVERSKRIFT; NAVNENE ER GRAA CHIPS I SAMME STOERRELSE SOM »+ TEKST PAA SKAERMEN« (Ida 7/10) */
+  return '<div class="klip-hvem">' + folk.map(function (n) { return '<button type="button" class="bf-plads mq-tap klip-hvem-chip' + (valgt.indexOf(n) > -1 ? ' on' : '') + '" onclick="briefKlipHvemSkift(' + i + ',this)">' + esc(n) + '</button>'; }).join("") + '</div>';
 }
 function briefKlipHvemSkift(i, knap) {
   const liste = briefKlipListe(); const k = liste[i]; if (!k) return;
@@ -25761,7 +25765,9 @@ function briefKlipNyFra(el) {
   setTimeout(function () { const f = document.getElementById('bf_klip_' + n + '_ser'); if (f) { try { f.focus(); f.setSelectionRange(f.value.length, f.value.length); } catch (e) {} } }, 30);
 }
 function briefKlipSletStille(i) { briefKlipLaes(); const l = briefKlipListe(); if (l.length <= 1) { l[0].ser = ""; } else { l.splice(i, 1); } delete window.__KS_AABEN[i]; briefKlipRerender(); }
-function briefKlipFelt(i, f) { briefKlipLaes(); briefKlipListe()[i][f] = ""; briefKlipRerender(); }
+/* KUN »HVAD SER MAN I KLIPPET?« STAAR SOM STANDARD (Ida 7/10): manus og tekst paa skaermen staar kun fremme, hvis der er skrevet noget, eller kunden har trykket paa chippen under (klip[f + "Aaben"]). Et tomt felt fra tidligere vises ikke af sig selv. */
+function klipFeltFremme(k, f) { return !!k && (String(k[f] == null ? "" : k[f]).trim() !== "" || k[f + "Aaben"] === true); }
+function briefKlipFelt(i, f) { briefKlipLaes(); const k = briefKlipListe()[i]; k[f] = k[f] == null ? "" : k[f]; k[f + "Aaben"] = true; briefKlipRerender(); }
 /* GEM MAA IKKE SLETTE (4/8): staar der noget i feltet, spoerges der foerst. Er det
    tomt, forsvinder det uden at spoerge — der er ingenting at miste. */
 function briefKlipFeltFjern(i, f) {
@@ -25770,7 +25776,7 @@ function briefKlipFeltFjern(i, f) {
   if (!liste[i]) return;
   const har = String(liste[i][f] || "").trim();
   if (har && !arkOk("briefKlipFeltFjern", arguments, { titel: "Fjern feltet?", tekst: "Det, der står i det, forsvinder fra briefen.", jaTekst: "Ja, fjern" })) return;
-  liste[i][f] = null;
+  liste[i][f] = null; liste[i][f + "Aaben"] = false;
   briefKlipRerender();
 }
 function briefKlipNy() { if (!briefKlipVagt()) return; briefKlipLaes(); const l = briefKlipListe(); const tom = briefKlipTomIx(l, null); if (tom > -1 && tom === l.length - 1) { briefKlipVisNyt(tom); return; } l.push({ ser: "" }); window.__KLIP_NYT_TRIN = true; briefKlipRerender(); }
@@ -58262,7 +58268,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2558";
+const APP_VERSION = "2559";
 let NY_VERSION_KLAR = false;
 let NY_VERSION_AFVIST = false;
 function nyVersionSkjul() {
@@ -82270,7 +82276,7 @@ function bf3StudieRum(v, filter) {
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-hvid.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 7. oktober · 2558</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 7. oktober · 2559</div>
 <script>
 /* DROPDOWNEN RULLER SELV (Ida 4/10) — maal den aabne liste og klip den ved skaermens bund */
 (function () {
