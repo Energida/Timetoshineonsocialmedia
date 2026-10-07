@@ -21861,6 +21861,7 @@ const FB_IK = {
   plus: '<path d="M12 5v14M5 12h14"/>',
   cta: '<path d="M3 11v2a1 1 0 0 0 1 1h2l5 4V6L6 10H4a1 1 0 0 0-1 1z"/><path d="M15 9a4 4 0 0 1 0 6"/><path d="M18 6a8 8 0 0 1 0 12"/>',
   soejle: '<path d="M4 20V10M12 20V4M20 20v-7"/>',
+  person: '<circle cx="12" cy="8" r="3.6"/><path d="M5 20c.8-4 3.6-6 7-6s6.2 2 7 6"/>',
   oeje: '<path d="M2 12s3.5-6.5 10-6.5S22 12 22 12s-3.5 6.5-10 6.5S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
   blyant: '<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/>',
   kamera: '<rect x="3" y="7" width="13" height="10" rx="2"/><path d="M16 10l5-3v10l-5-3z"/>',   /* klip (forsiden, Idas klik 17/9 bud 1) */
@@ -21890,7 +21891,14 @@ function briefFaktaBoksHtml() {
   let sjlRk = ""; try { const sv = it.soejle ? soejleVis(it.soejle) : ""; sjlRk = '<div class="fb-rk" data-key="soejle" onclick="try{SOEJLE_ARK_VALG=(IDEER.find(x=>String(x.id)===String(BRIEF_ID))||{}).soejle||\'\';briefSoejleArkVis(IDEER.find(x=>String(x.id)===String(BRIEF_ID)))}catch(e){}"><span class="fb-ik"><svg viewBox="0 0 24 24">' + FB_IK.soejle + '</svg></span><div style="min-width:0;"><div class="fb-n">Indholdssøjle</div><div class="fb-v' + (sv ? '' : ' tom') + '">' + (sv ? esc(sv) : 'Ikke sat') + '</div></div></div>'; } catch (e) {}
   /* EN STORY HAR INGEN INDHOLDSSOEJLE (Ida 7/10 + 19/9): raekken vises ikke (ellers staar der et roedt »Ikke sat« paa noget, der ikke skal saettes) */
   try { if (/^story$/i.test(String(it.type || B.format || ""))) sjlRk = ""; } catch (e) {}
-  const rows = sjlRk + rk("postes", "Postes", postes, "postes")   /* datoen under soejlen (Ida 16/9 kl. 16.47 → 17/9) */
+  /* MAALGRUPPEN ER ALTID EN RAEKKE (Ida 7/10: »jeg kan ikke tilpasse eller aendre maalgruppen nogen steder?« — klik: altid en raekke med tryk til at rette).
+     Raekken staar ogsaa med EN maalgruppe; trykket aabner det lille ark med navn, beskrivelse og situationer (samme som De 4 byggesten) og gemmer dér. */
+  let mgRk = ""; try {
+    const mgl = briefMaalgrupper().navne || []; const mgV = String(B.maalgruppe || "").trim();
+    const mgTekst = mgl.length ? ((mgV && mgl.indexOf(mgV) > -1) ? mgV : (mgV === "Begge" || mgV === "Alle") ? mgV : mgl.join(" og ")) : "";
+    mgRk = '<div class="fb-rk" data-key="maalgruppe" onclick="briefMaalgruppeRet()"><span class="fb-ik"><svg viewBox="0 0 24 24">' + FB_IK.person + '</svg></span><div style="min-width:0;"><div class="fb-n">Målgruppe</div><div class="fb-v">' + esc(mgTekst || "Tilføj målgruppe") + '</div></div></div>';
+  } catch (e) { mgRk = ""; }
+  const rows = sjlRk + mgRk + rk("postes", "Postes", postes, "postes")   /* datoen under soejlen (Ida 16/9 kl. 16.47 → 17/9) */
     /* STATUS KAN SKIFTES BAADE PAA BRIEFOVERSIGTEN OG INDE I BRIEFEN (Ida 18/9 kl. 14.00: »jeg mangler ogsaa at kunne aendre status baade paa briefoversigten og inde i briefen«) — en raekke i fakta-boksen, listen aabner direkte under */
     /* STATUS BOR I COVERBILLEDET SOM DROPDOWN (Ida 21/9 kl. 15.35) — ikke i fakta-boksen */
     + rk("format", "Format", fmt, "format")
@@ -23121,6 +23129,7 @@ function briefMaalgruppePersonaer() {
   const k = (CURRENT_DEF && CURRENT_DEF.strategi && CURRENT_DEF.strategi.kunde) || null; if (!k) return [];
   return kundeMaalgrupper(k);
 }
+function briefMaalgruppeRet() { try { byggRet("audience"); } catch (e) { try { tilpasAaben("drejebog"); } catch (e2) {} } }   /* rettes i det lille ark, ogsaa inde fra briefen */
 function briefMaalgruppeVis() {
   const mg = briefMaalgrupper(); const alle = briefMaalgruppePersonaer(); if (!alle.length) return;
   const valgt = String((BRIEF_STATE && BRIEF_STATE.maalgruppe) || (mg.navne.length === 1 ? mg.navne[0] : "")).trim().toLowerCase();
@@ -58131,7 +58140,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2544";
+const APP_VERSION = "2545";
 let NY_VERSION_KLAR = false;
 let NY_VERSION_AFVIST = false;
 function nyVersionSkjul() {
@@ -63068,6 +63077,7 @@ async function byggGem(bs, vaerdier) {
   try { await hentStrategiOverride(kode, byggStrategi()); } catch (e) {}
   try { await loadForloebStrategi(byggStrategi(), kode); } catch (e) {}
   byggTegn();
+  try { if (typeof BRIEF_ID !== "undefined" && BRIEF_ID && document.getElementById("briefForside")) briefMbVis("forside"); } catch (e) {}   /* rettet inde fra en brief: raekken viser det nye med det samme */
   return true;
 }
 /* felt = valgfrit: hvilket felt paa siden man skal lande i. "Maanedens tema" og
@@ -82134,7 +82144,7 @@ function bf3StudieRum(v, filter) {
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-hvid.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 7. oktober · 2544</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 7. oktober · 2545</div>
 <script>
 /* DROPDOWNEN RULLER SELV (Ida 4/10) — maal den aabne liste og klip den ved skaermens bund */
 (function () {

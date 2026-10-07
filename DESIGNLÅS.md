@@ -1,3 +1,6 @@
+## v2545 · 7. oktober · Målgruppen er altid en række i briefens fakta (Ida: »jeg kan ikke tilpasse eller ændre målgruppen nogen steder?«)
+- Fakta-boksen har altid rækken Målgruppe (under Indholdssøjle): navnet, eller »Tilføj målgruppe«. Tryk åbner det lille ark fra De 4 byggesten (navn · beskrivelse · situationer) og gemmer dér; briefen tegnes om bagefter. Gælder med kun én målgruppe (før stod rækken kun ved to eller flere). Målt 390 og 1440.
+
 ## v2544 · 7. oktober · Efter en slettet brief lander man på forsiden (Ida: »slettede briefen … så lander jeg på idebanken — her skal jeg lande på forsiden«)
 - Slet en brief (⋯/skraldespand › Ja, slet): kunden lander på Hjem (forsiden), ikke Idébanken. Arkivér lander stadig i Idébanken. Papirkurv (30 dage) er tænkt, ikke bygget: se backlog.
 
