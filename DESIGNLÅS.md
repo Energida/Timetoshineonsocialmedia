@@ -1,3 +1,6 @@
+## v2551 · 7. oktober · Dato og tidspunkt i fakta kan afsluttes (Ida 7/10: »når tidspunktet er valgt bliver det bare stående? der mangler måske en knap?«)
+- Rækken Postes folder datoen og tidspunktet ud; nu står en Gem-knap under dem. Den gemmer, lukker rækken og viser den nye dag og tid i listen. Målt 1440.
+
 ## v2550 · 7. oktober · Fakta-rækken Indholdssøjle åbner kun det ene spørgsmål; format-beskrivelsen er væk (Ida 7/10)
 - Tryk på Indholdssøjle i faktalisten (og blyanten ved siden af) åbner arket med kun spørgsmålet »Vælg indholdssøjle«, uden »First thing first · 1 af 3«, uden prikker, og knappen hedder Gem. Før startede et manglende format hele First thing first-rækken.
 - Den grå linje »Video · kort video · flere billeder · ét billede« under formatvalget er slettet.
