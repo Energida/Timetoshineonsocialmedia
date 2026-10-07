@@ -1,3 +1,6 @@
+## v2572 · 7. oktober · HÅRD: altid en skillelinje under en versal-etiket, før teksten (Ida 7/10; vælter 12/9 »ingen streg i en flise« for disse)
+- Måls­ætninger (Månedens tema · Ugens tema · Idéer til tema …) og forsidens Dine mål-kort har en hårfin linje under versalen. Gælder alle fliser med en versal-etiket; sektionslinjer (ord + streg ud til højre) er en anden ting. Nye fliser uden linje er et brud. NB: briefens spørgsmålsfliser har ingen versal-etiket (v2569), så der er intet at sætte linjen under.
+
 ## v2571 · 7. oktober · Kalender: vælg Opslag · Story · Prøvereel først; næste uges tema; tryk på temaet = Planlægning; korte bekræftelsesknapper (Ida 7/10)
 - Plusset på en dag i kalenderen åbner først valget Opslag · Story · Prøvereel; formatet er dermed valgt og First thing first springer det spørgsmål over (Story uden søjle).
 - Ugens tema har en kasse ved siden af: »Næste uges tema · Uge 42« (vises, når denne uges tema er sat). Tryk på en temakasse åbner Planlægning.
