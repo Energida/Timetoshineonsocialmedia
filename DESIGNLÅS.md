@@ -1,3 +1,6 @@
+## v2544 · 7. oktober · Efter en slettet brief lander man på forsiden (Ida: »slettede briefen … så lander jeg på idebanken — her skal jeg lande på forsiden«)
+- Slet en brief (⋯/skraldespand › Ja, slet): kunden lander på Hjem (forsiden), ikke Idébanken. Arkivér lander stadig i Idébanken. Papirkurv (30 dage) er tænkt, ikke bygget: se backlog.
+
 ## v2543 · 7. oktober · First thing first: FORMATET er det første valg, navnet kommer derefter (Ida: »når jeg klikker på plus her på en dato kunne jeg også godt tænke mig at det første jeg skulle vælge det var hvad jeg ville tilføje. altså format«) — VÆLTER 29/9 »Giv opslaget et navn« som første spørgsmål
 - Nyt opslag (plus på en dag, Nyt opslag, Tøm hovedet): første trin = »Hvilket format skal det være?«, derefter navn. **RESTEN FØLGER FORMATET** (Idas ord: »hvis det er story skal man jo fx ikke vælge indholdssøjle … at tilpasse resten af first thing first efter hvad der er relevant for formatet«): trinene regnes ud igen, når formatet er valgt. Story: format · navn · (postes) · platform — ingen indholdssøjle, ingen lyd; Karrusel/Billede: søjle, ingen lyd; Reel/Kort reel/Prøvereel: alle trin inkl. lyd; »Jeg ved det ikke endnu«: alle trin. »Hvem laver?« kun ved to eller flere. En story har heller ingen søjle-række i fakta-boksen. ÅBENT: er der trin, der også ikke giver mening for Billede (fx platform)? — Ida afgør.
 
