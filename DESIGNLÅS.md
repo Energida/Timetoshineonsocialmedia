@@ -1,3 +1,8 @@
+## v2571 · 7. oktober · Kalender: vælg Opslag · Story · Prøvereel først; næste uges tema; tryk på temaet = Planlægning; korte bekræftelsesknapper (Ida 7/10)
+- Plusset på en dag i kalenderen åbner først valget Opslag · Story · Prøvereel; formatet er dermed valgt og First thing first springer det spørgsmål over (Story uden søjle).
+- Ugens tema har en kasse ved siden af: »Næste uges tema · Uge 42« (vises, når denne uges tema er sat). Tryk på en temakasse åbner Planlægning.
+- Bekræftelsesark (»Er du sikker?«): ja og nej er korte knapper side om side i et smalt ark, ikke to lange.
+
 ## v2570 · 7. oktober · HÅRD: kalenderen tilføjer ALDRIG bare en idé (Ida 7/10: »jeg må ALDRIG kunne tilføje bare en idé direkte i kalenderen«) — vælter v2566
 - Plusset på en dag åbner igen First thing first (navn · indholdssøjle · format, kun de tre) og derefter briefen; der oprettes aldrig et opslag uden format og søjle på en dag. Titel-arket fra v2566 er væk. Idéer med dato fra før (status Idé) står stadig i kalenderen, til Ida beslutter, hvad de skal være.
 
