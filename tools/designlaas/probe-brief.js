@@ -28,7 +28,7 @@ function maal(trin){
       /* en chip med ord er en pille (bredere end hoej) — kun hoejere end bred er en strakt cirkel; en usynlig flade (rent tegn uden kant/baggrund) har ingen form at maale */
       if(!usynligFlade&&(ordL===0?Math.abs(px(r.width)-h)>1.5:(ordL<=2&&h-px(r.width)>1.5))) FUND.push("OVAL "+trin+" · "+tag+"["+cl.split(" ")[0]+"] "+px(r.width)+"x"+h+" — en cirkel skal vaere rund");
     }
-    if(tag==="BUTTON"&&!/\b(bdrop-knap|pf-ik|bt-blyant|kort-plus|fs-cirkel|fs-slet|fs-fjern|ko-plus|klip-flyt|klip-slet|bdrop-rk|chip-btn|ark-luk|ark-send|ark-rund|tale-knap|bsam-ret-link|kk-hook-andre|klip-knap|bs-flyt-luk|fb-rk)\b/.test(cl)&&!e.closest(".bdrop-kort,.fb-rk,.ark,#bsFlytMenu,.sk-input")&&(e.innerText||"").trim()){   /* kun knapper med ORD — ikon-knapper (skraldespand, mikrofon, flueben) har hver sin laaste form */
+    if(tag==="BUTTON"&&!/\b(bdrop-knap|pf-ik|bt-blyant|kort-plus|fs-cirkel|fs-slet|fs-fjern|ko-plus|klip-flyt|klip-slet|bdrop-rk|chip-btn|ark-luk|ark-send|ark-rund|tale-knap|bsam-ret-link|kk-hook-andre|klip-knap|bs-flyt-luk|fb-rk|bp-trin)\b/.test(cl)&&!e.closest(".bdrop-kort,.fb-rk,.ark,#bsFlytMenu,.sk-input")&&(e.innerText||"").trim()){   /* kun knapper med ORD — ikon-knapper (skraldespand, mikrofon, flueben) har hver sin laaste form */
       if(Math.abs(px(r.width)-h)<=8) return;   /* runde ikon-knapper (flueben, mikrofon, skraldespand, Del/Slet) har hver sin laaste stoerrelse og maales ikke som chips */
       if(rad>=99||rad>=h/2-1){ if(h>=40) laeg("pille","h"+h2(h)+" fs"+Math.round(parseFloat(cs.fontSize))+" rad999 bd"+px(cs.borderTopWidth),e,trin); else laeg("chip","h"+h2(h)+" fs"+Math.round(parseFloat(cs.fontSize))+" bd"+px(cs.borderTopWidth),e,trin); }
       else laeg("knap-uden-pille","rad"+rad+" h"+h,e,trin);

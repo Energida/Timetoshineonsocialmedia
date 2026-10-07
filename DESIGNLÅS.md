@@ -1,3 +1,6 @@
+## v2576 · 7. oktober · Procesbar med briefens fire trin: prikker på en linje (Ida 7/10, Del 2 bud 3 af fem; »alle prikker røde og tekst grå«)
+- Øverst på briefens skrivesider (ikke forsiden): fire røde prikker på en grå linje, navnene i grå Poppins: Idéen · Fang dem · Fasthold dem · Få dem til at handle (telefon: Idéen · Fang dem · Fasthold · Handle). Det åbne trin har en lysere rød glorie. Tryk på en prik hopper til trinnet (gemmer først). Vælter 2/9 »procesbaren ud« på Idas eget ønske 7/10.
+
 ## v2575 · 7. oktober · Stien er væk på b2b; Tilbage er en hvid chip øverst til venstre i coveret (Ida 7/10, Del 1 bud 1 af fem, Artifact RsNEiw42oKpUcf4Wvtezis)
 - Computer: i bånd-stien står kun Tilbage, som en hvid, gennemsigtig pille (32 px) øverst til venstre i coveret; leddene (Hjem / Content kalenderen / Briefen) er skjult. Tilbage-pillerne over status på briefen og på mødesiden er væk (én vej tilbage, ikke to). Backstage (admin) har fortsat stien. Telefonen har Tilbage i coverets hjørne som før.
 - Procesbaren med briefens fire trin er ikke valgt endnu (venter på Idas valg blandt fem).
