@@ -1,3 +1,7 @@
+## v2538 · 7. oktober · Skift adgangskode siger fejlen på dansk (revision 6/10 fund 20, kun teksten; nat-køen)
+- Fejlen fra Supabase vises aldrig rå på engelsk: »Den nye kode skal være forskellig fra den gamle.« når koden er den samme, ellers »Det gik ikke. Prøv igen.«. Selve skiftet (auth) er IKKE rørt. Øjet og et gentag-felt er IKKE bygget (ændring i auth-formularen — Security Contract, venter på Ida).
+- Målt i selen med en afvist kode (390 + 1440).
+
 ## v2537 · 7. oktober · Hjems ringe 50/50 på telefonen og med stort, rundvisningen uden rød ring, Tøm hovedets valg på hvidt, en vej til Ida på login (revision 6/10 fund 18b, 24, 90a, 92, 97; nat-køen)
 - DINE MÅL PÅ TELEFONEN (fund 90a): to ringe = to fliser i fuld bredde 50/50 (før et gitter med tre pladser og et tomt hul). Gitteret får lige så mange spalter, som der er ringe. Kun telefonen.
 - STORT BEGYNDELSESBOGSTAV (fund 92, HÅRD 6/10): ringenes ord »Opslag i ugen« · »Postet« (og YOU GOT THIS' »Lektioner set« · »Øvelser«). »af 3« står med lille, fordi det fortsætter tallet (låsens undtagelse). Begge flader.
