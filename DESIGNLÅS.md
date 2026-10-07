@@ -1,3 +1,8 @@
+## v2558 · 7. oktober · Fakta: tags uden overskrift og symbol, grå og fordelt; knapafstand; åbnet række ruller i syne (Ida 7/10)
+- Sidste række i fakta (tags): ingen overskrift »Tags«, intet symbol; tagsene står som grå chips fordelt i feltet.
+- Navigationsknapperne (Gem ændringer · Næste) står 12 px fra hinanden, ikke 24.
+- Computer: faktalisten har en maks. højde (skærmen minus 48 px) og ruller i sig selv, og en åbnet række (fx Lyd) scrolles ind i det synlige. Før kom listen frem uden for skærmen. Målt: scrollbar i listen; ikke prøvet med en lang rigtig liste.
+
 ## v2557 · 7. oktober · Tilbage over status og ens titel på briefoversigt og brief; kryds efter hver tag (Ida 7/10)
 - Computeren: den grå Tilbage-pille står øverst i venstre spalte, OVER status, på både briefoversigten og briefen (før i ikonrækken på oversigten). Titlen på briefoversigten står som i briefen: sort Didot-kursiv over den røde flise (ikke hvid inde i den); en rød flise uden andet end titlen tegnes ikke.
 - Tags (Emne i arket): hver valgt tag har et lille kryds efter navnet, så den let fjernes. (Lokalt valg: Ida bad om kryds; reglen om skraldespand gælder fortsat for sletning af indhold.)
