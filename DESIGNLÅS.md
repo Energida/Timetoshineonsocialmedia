@@ -1,3 +1,8 @@
+## v2550 · 7. oktober · Fakta-rækken Indholdssøjle åbner kun det ene spørgsmål; format-beskrivelsen er væk (Ida 7/10)
+- Tryk på Indholdssøjle i faktalisten (og blyanten ved siden af) åbner arket med kun spørgsmålet »Vælg indholdssøjle«, uden »First thing first · 1 af 3«, uden prikker, og knappen hedder Gem. Før startede et manglende format hele First thing first-rækken.
+- Den grå linje »Video · kort video · flere billeder · ét billede« under formatvalget er slettet.
+- First thing first kommer stadig kun, når et nyt opslag oprettes.
+
 ## v2549 · 7. oktober · HÅRD: en gammel udgave af en brief må ALDRIG overskrive en nyere (Ida: »det her må IKKE kunne ske« — Freja udfyldte en brief i Hinges Hus; Idas åbne, ældre udgave i admin gemte sit gamle indhold ovenpå, og det udfyldte forsvandt; i basen stod kun det, Ida selv havde skrevet dagen før)
 - Hvert gem af en brief skrev HELE briefen (last write wins). Nu hentes den gemte brief lige før skrivningen, og hvert felt flettes (ideBriefFlet): et felt, der er urørt her siden briefen blev åbnet, beholder det, der ligger i basen; kun det, personen selv har rettet, skrives. Kendes udgangspunktet ikke, overskriver et tomt felt aldrig et udfyldt. Udgangspunktet sættes, når briefen åbnes (IDE_BASE), og den åbne brief beholder det, også når listen hentes forfra i baggrunden.
 - Er noget bevaret fra en nyere udgave, siger appen det: »En nyere udgave var gemt. Det, du ikke har rettet, er bevaret.« Tværfaglig regel: gem må aldrig slette det, man ikke selv skrev (4/8, 29/9, 7/10).
