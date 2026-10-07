@@ -2,6 +2,7 @@
 - Den tomme »Næste uge«-flise med »Planlæg et opslag« er fjernet fra Content kalenderen (der står kun I dag og Kommende indhold). Under temaerne står en række »Næste uges tema · Uge 42« (trykket åbner Planlægning). - »Hvem taler opslaget til?« på idésiden kommer KUN frem ved to eller flere målgrupper (v2574's »også med én« er rullet tilbage).
 - »Om indholdssøjlen … · kort fortalt« viser kun søjlens formål, første sætning (højst 150 tegn); følelse og handling er ude af flisen.
 - Captionens fire felter: overskrifterne Åbningen · Gør det relevant · Vis værdien · Vis vejen er væk; spørgsmålet er overskriften (»Hvad får [målgruppen] til at stoppe op?«, »Hvorfor betyder det noget for dem?«, »Hvordan hjælper vi dem?«, »Hvad skal de gøre nu?«), og placeholderen er kun forklaringen.
+- Forslagsfelter på telefonen (fx tekst på coverbilledet): et tomt felt er højt nok til hele placeholderen; den klippes ikke længere til én linje.
 - Det låste hook-felt i Scene 1 (Fasthold dem) står i fuld bredde uden indryk, når der ikke er en cirkel foran.
 - Telefonen: fliserne har en tydeligere skygge (to lag) og siden en meget lys sandfarvet baggrund, så fliserne ikke flyder sammen.
 - Briefoversigten på telefonen: titlen står i sort Didot-kursiv (28 px) uden rød flade, og »Start brief« (er man i gang: »Fortsæt brief«) er en rød knap i fuld bredde. Beskrivelsen står som almindelig grå tekst under titlen.
