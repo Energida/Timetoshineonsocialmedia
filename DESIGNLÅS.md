@@ -1,3 +1,6 @@
+## v2577 · 7. oktober · Ny kunde: forretningstypernes liste viser ikke længere en tankestreg uden tekst (Ida 7/10: »hvorfor er der streger her i enden?«)
+- Noten bag hver type var tom, så »Fysisk butik —« stod med en streg for enden. Nu står kun navnet, når noten er tom.
+
 ## v2576 · 7. oktober · Procesbar med briefens fire trin: prikker på en linje (Ida 7/10, Del 2 bud 3 af fem; »alle prikker røde og tekst grå«)
 - Øverst på briefens skrivesider (ikke forsiden): fire røde prikker på en grå linje, navnene i grå Poppins: Idéen · Fang dem · Fasthold dem · Få dem til at handle (telefon: Idéen · Fang dem · Fasthold · Handle). Det åbne trin har en lysere rød glorie. Tryk på en prik hopper til trinnet (gemmer først). Vælter 2/9 »procesbaren ud« på Idas eget ønske 7/10.
 
