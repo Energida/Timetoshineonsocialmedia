@@ -1,3 +1,7 @@
+## v2564 · 7. oktober · Checklisten (»Bliv klar til at poste i morgen«): almindelige punkter med skillelinjer, titlen hedder Checkliste (Ida 7/10)
+- Punkterne er ikke længere cirkler, man krydser af: en lille rød prik pr. punkt og en hårfin skillelinje mellem punkterne (begge flader). Tidligere svar (brief.tjek) ligger urørt i basen.
+- Den røde Poppins-titel i popuppen hedder »Checkliste«; overlinjen »Bliv klar til at poste i morgen · format« består.
+
 ## v2563 · 7. oktober · Telefonens Kalender, mødesiden og Hjem (Ida 7/10)
 - **Kalenderen på telefonen:** I dag-flisen har en skillelinje under »Skal du poste:« (etiket · én streg · indhold); tidspunkt, status og format står som chips; »Kommende aktiviteter« står under, og »Kommende opslag« står altid. Coverets foto har en blød mørk overgang nederst på telefonen, så titlen kan læses.
 - **Mødesiden:** infoen om mødet (dag, tid, sted, deltagere) står som chips i coveret; en skraldespand (spørger først) sletter mødet (aftalen) og går tilbage.
