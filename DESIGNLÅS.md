@@ -1,3 +1,7 @@
+## v2565 · 7. oktober · Tjeklisten er en quiz; ugedag i alle datokasser (Ida 7/10)
+- **»I morgen skal du poste: [titel] · Er opslaget klar? Tag testen«** erstatter »Bliv klar til at poste i morgen« (blå stribe på computer; Forslag-flisen på telefon har chippen »Tag testen«). Tryk åbner QUIZZEN i det lille ark: ét spørgsmål ad gangen (»Tag testen · 1 af 11«), startende med »Ville du selv stoppe op ved dette hook?« og briefens egne ord (hook, følelse, handling, tidspunkt, CTA) under spørgsmålet. Ét tryk på Ja eller Nej gemmer svaret og går videre; Spring over, Tilbage og Åbn briefen på hver side; til sidst »Testen er taget · n af m svaret Ja«. Svarene ligger i brief.tjek som før (gamle svar urørt). Listen »Checkliste« (v2564) findes som huTjekListeArk, men åbnes ikke.
+- **Datokasser:** ugedagen står i alle datokasser (Kommende opslag, Kommende aktiviteter, aftalelisten), fx »TOR OKT«.
+
 ## v2564 · 7. oktober · Checklisten (»Bliv klar til at poste i morgen«): almindelige punkter med skillelinjer, titlen hedder Checkliste (Ida 7/10)
 - Punkterne er ikke længere cirkler, man krydser af: en lille rød prik pr. punkt og en hårfin skillelinje mellem punkterne (begge flader). Tidligere svar (brief.tjek) ligger urørt i basen.
 - Den røde Poppins-titel i popuppen hedder »Checkliste«; overlinjen »Bliv klar til at poste i morgen · format« består.
