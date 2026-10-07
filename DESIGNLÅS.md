@@ -1,3 +1,6 @@
+## v2555 · 7. oktober · Kort fortalt i den røde flise: ingen streg, teksten i en hvid flise inde i den røde (Ida 7/10)
+- »Om indholdssøjlen … · kort fortalt«: skillestregen under etiketten er væk; teksten står i en hvid, afrundet flise (14 px, sort) inde i den røde. En tom tekst tegner ingen tom hvid flise. Målt 390 og 1440.
+
 ## v2554 · 7. oktober · First thing first = kun det, der afgør, hvordan briefen bygges: navn · indholdssøjle · format (Ida 7/10); målgruppen vælges på idésiden
 - First thing first har kun tre spørgsmål: navn, indholdssøjle og format (Story uden søjle). Målgruppe, dato/tid, platform, hvem laver og lyd er ude af arket; de står som rækker i fakta (MANGLER, til de er sat) og rettes dér med ét tryk.
 - Målgruppen vælges nu på idésiden, i en egen flise lige under »Hvad er idéen?« (chips, kun ved to eller flere; med én vælges den af sig selv). Rækken Målgruppe i fakta åbner samme valg ved flere, ellers rettelsen af målgruppen.
