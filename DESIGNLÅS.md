@@ -1,3 +1,6 @@
+## v2568 · 7. oktober · Datokassen: ugedag over datoen, måned under (Ida 7/10: »ugedag flyttes op over datoen«; »MAN OKT« stod ud over kanten)
+- Kommende opslag, Kommende aktiviteter og aftalelisten: kassen er 48 × 60 px med tre linjer: ugedag (lille versal) · dato (18 px) · måned (lille versal). Intet står ud over kanten.
+
 ## v2567 · 7. oktober · Ringene: »Opslag planlagt« og »Postet« (Ida 7/10)
 - Den første ring hedder »Opslag planlagt« (antal opslag med dato i ugen mod ugens mål), den anden »Postet« (antal postet). Før hed den første »Opslag i ugen«.
 - **Ugens tema (og Månedens tema):** overlinjen »Ugens tema · Uge 41« står i den lysegrå versal (ikke rød), som alle andre etiketter (Ida 7/10; vælter 25/8 »hele overskriften er rød«).
