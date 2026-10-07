@@ -1,3 +1,9 @@
+## v2563 · 7. oktober · Telefonens Kalender, mødesiden og Hjem (Ida 7/10)
+- **Kalenderen på telefonen:** I dag-flisen har en skillelinje under »Skal du poste:« (etiket · én streg · indhold); tidspunkt, status og format står som chips; »Kommende aktiviteter« står under, og »Kommende opslag« står altid. Coverets foto har en blød mørk overgang nederst på telefonen, så titlen kan læses.
+- **Mødesiden:** infoen om mødet (dag, tid, sted, deltagere) står som chips i coveret; en skraldespand (spørger først) sletter mødet (aftalen) og går tilbage.
+- **Hjem:** rækken af ringe hedder »Denne uge« (computer og telefon).
+- **NAVNET: »Content kalenderen« (HÅRD, Ida 7/10: »det skulle hedde content kalenderen begge steder — ikke kalenderen«; vælter v2556 og 20/9):** menuen, sidens hero, stien, chips og Mere-menuen hedder Content kalenderen. Telefonens bundmenu hedder stadig Kalenderen (pladsen); sig til, hvis den også skal ændres.
+
 ## v2562 · 7. oktober · Menuen: Kalenderen og Get shit done har byttet plads (Ida 7/10)
 - Computerens sidemenu: Hjem · Indbakken · Kalenderen · Get shit done · Idébanken · Planlægning · Performance · Værktøjskassen. Telefonens bund- og Mere-menu er ikke rørt.
 
