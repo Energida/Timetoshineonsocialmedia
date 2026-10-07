@@ -1,3 +1,7 @@
+## v2575 · 7. oktober · Stien er væk på b2b; Tilbage er en hvid chip øverst til venstre i coveret (Ida 7/10, Del 1 bud 1 af fem, Artifact RsNEiw42oKpUcf4Wvtezis)
+- Computer: i bånd-stien står kun Tilbage, som en hvid, gennemsigtig pille (32 px) øverst til venstre i coveret; leddene (Hjem / Content kalenderen / Briefen) er skjult. Tilbage-pillerne over status på briefen og på mødesiden er væk (én vej tilbage, ikke to). Backstage (admin) har fortsat stien. Telefonen har Tilbage i coverets hjørne som før.
+- Procesbaren med briefens fire trin er ikke valgt endnu (venter på Idas valg blandt fem).
+
 ## v2574 · 7. oktober · First thing first med sort titel og »Vælg format«; ingen tags på Idébankens fliser; målgruppen ud af fakta (Ida 7/10)
 - First thing first: titlen i arket er sort (ikke rød); formatspørgsmålet hedder »Vælg format«.
 - Idébanken: tags står ikke længere på fliserne (dato, format og status består).
