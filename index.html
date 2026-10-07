@@ -54322,6 +54322,10 @@ try { window.addEventListener("online", function () { setTimeout(function () { t
    er datoen gaaet, og opslaget ikke postet, bliver idéen en idé uden dato igen. Status (Brief i gang, Godkendt …) bliver staaende; Planlagt bliver Idé. Een gang pr. indlaesning. */
 let IDE_GAMLE_RYDDET = "";
 async function ideGamleDatoerRyd() {
+  /* SLAAET FRA 7/10 (Ida: »der er pludselig forsvundet indhold fra de seneste dage i Acorns kalenderen … det må det ikke!«): reglen fra 29/9 fjernede datoen paa HVERT opslag, hvis dag var gaaet og som ikke var markeret Postet — ved hver indlaesning, for alle kunder.
+     Et opslag, der blev planlagt og lavet men ikke markeret Postet, mistede sin dato og forsvandt fra kalenderen (MAALT hos Acorns: ingen opslag med dato efter 28/9, 20 opslag i Brief i gang uden dato). Data maa ALDRIG fjernes af sig selv.
+     De gamle »spoegelsesdatoer« fra ugentlige moeder (29/9-fundet) haandteres ikke laengere ved at slette datoer. */
+  return;
   if (!ideerShared() || IDE_GAMLE_RYDDET === currentKode) return; IDE_GAMLE_RYDDET = currentKode;
   const idag = datoDK();
   const gamle = (IDEER || []).filter(function (x) { return x && x.dato && String(x.dato).slice(0, 10) < idag && ["Postet", "Målt", "Arkiveret"].indexOf(x.status) < 0; });
@@ -58109,7 +58113,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2540";
+const APP_VERSION = "2541";
 let NY_VERSION_KLAR = false;
 let NY_VERSION_AFVIST = false;
 function nyVersionSkjul() {
@@ -58206,15 +58210,17 @@ function nyVersionVis(ude) {
      Ligger appen i baggrunden, hentes den straks; ellers venter vi, til hun skifter app eller laaser telefonen. */
   /* HENTES I FORGRUNDEN, NAAR HUN KOMMER TILBAGE (24/9 kl. 23.45) — i baggrunden fryser iPhone indlaesningen, og hun fik fejlfladen */
   try { if (!window.__nyVersionVent) { window.__nyVersionVent = true; document.addEventListener("visibilitychange", function () { if (document.visibilityState === "hidden") window.__nyVersionVarVaek = true; else if (window.__nyVersionVarVaek && nyVersionSikkert()) { try { nyVersionHent(window.__NY_VERSION_UDE); } catch (e) {} } }); } } catch (e) {}   /* ikke sikkert = den kommer ved naeste tryk paa Hjem (29/9) */
-  if (document.visibilityState === "visible") return;   /* intet banner, intet hop — den nye udgave kommer stille, naeste gang appen har vaeret vaek */
   /* DAGSKORTET DAEKKER SKAERMEN. Er det aabent, hoerer beskeden DER — ikke i et banner, hun
-     foerst ser, naar kortet er lukket (Ida 14/9). Kun eet sted ad gangen, aldrig to. */
+     foerst ser, naar kortet er lukket (Ida 14/9). Kun eet sted ad gangen, aldrig to.
+     FOER SYNLIGHEDSTJEKKET (Ida 7/10: »der er kommet en ny version skal komme op på den allerførste tøm hovedet side og ikke først når man lander inde på forsiden«):
+     appen er synlig, naar kortet staar — beskeden hoerer til paa kortet, ogsaa naar versionstjekket blev faerdigt efter, at kortet var tegnet. */
   const kort = document.getElementById("dagensKort");
   if (kort) {
     const b = kort.querySelector(".dk-bund");
     if (b && !b.querySelector(".dk-ny")) b.insertAdjacentHTML("afterbegin", dagensKortNyHtml());
     if (b) return;
   }
+  if (document.visibilityState === "visible") return;   /* intet banner, intet hop — den nye udgave kommer stille, naeste gang appen har vaeret vaek */
   const e = document.getElementById("nyVersion"); if (e) e.style.display = "block";
 }
 async function versionVagtTjek() {
@@ -72208,8 +72214,10 @@ function dagensKortIgen() {
   document.addEventListener("touchstart", function (e) { try { if (typeof current === "undefined" || current !== 3) { x0 = null; return; } if (e.target.closest("#dagensKort, #arkSlor, .modal-back, #planRit, .uge-grid, .hjem-prikker, .opg-swipe, .kop-rk, .aft-rk")) { x0 = null; return; } if (e.target.closest(".hjem-dag") && typeof HJEM_DAG !== "undefined" && HJEM_DAG > 0) { x0 = null; return; }   /* dagslisten swiper dage; kun paa I dag gaar hoejre-swipet til startkortet */ x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; } catch (x) { x0 = null; } }, { passive: true });
   document.addEventListener("touchend", function (e) { try { if (x0 == null) return; const t = e.changedTouches[0]; const dx = t.clientX - x0, dy = t.clientY - y0; x0 = null; if (dx > 70 && Math.abs(dx) > Math.abs(dy) * 1.5) dagensKortIgen(); } catch (x) {} }, { passive: true });
 })();
-function dagensKortKunde() {
+function dagensKortKunde(tving) {
   try {
+    /* HVER GANG APPEN AABNES, IKKE HVER GANG MAN TRYKKER PAA HJEM: kortet staar een gang pr. indlaesning (koldt start fra hjemmeskaermen) og igen, naar appen kommer frem fra baggrunden (tving, fra studieVaelgerHjem) */
+    if (!tving && window.__DK_VIST) return;
     if (!NYT_B2B_DESIGN) return;
     if (!CUSTOMER_NAV) return;
     if (!window.matchMedia || !window.matchMedia("(max-width: 760px)").matches) return;
@@ -72219,10 +72227,11 @@ function dagensKortKunde() {
        Backstage-reglen fra 23/7 gaelder for hende: hver aabning, ogsaa fra baggrunden (se pageshow nedenfor).
        Kunderne beholder een gang om dagen. */
     const egen = (typeof erEgenKode === "function" && typeof currentKode !== "undefined" && erEgenKode(currentKode));
-    if (!egen && localStorage.getItem("dagensKort") === idag) return;
-    if (!egen) localStorage.setItem("dagensKort", idag);
+    /* ALLE KUNDER FAAR TOEM HOVEDET HVER GANG (Ida 7/10: »tøm hovedet ikke kontinuerligt kom op når man klikkede på appen ude fra hjemmeskærmen — nogle gange kom man direkte ind på forsiden. Tøm hovedet skal komme op hver gang«):
+       een-gang-om-dagen-reglen (kun for kunder) er vaek — det er Idas egen regel fra 12/9 for alle. */
     /* SWIPE = ARKET (Ida 13/9: »swiper op her kommer jeg ind paa den helt gamle Toem hovedet-skaerm«).
        ALLE paa b2b faar KUNDENS ark (Ida 14/9): de admin-chips, egne koder fik i v1875, hoerer i Backstage. */
+    window.__DK_VIST = true;
     dagensKortVis({ navn: (typeof hilsenFornavn === "function" ? hilsenFornavn() : "") || "", swipe: "dagensKortToemHovedet()", foto: "dagens/kort.jpg", midt: true, citat: true, citatTekst: false });   /* CITATET ER SLAAET FRA (Ida 22/9 kl. 08.16: »indtil jeg har været ordentligt igennem de rigtige quotes«) — hilsnen staar i stedet; swipe-linjerne bliver */   /* citatet tilbage paa startkortet (Ida 21/9 kl. 18.30) */
   } catch (e) {}
 }
@@ -72671,7 +72680,7 @@ function dagensKortVis(o) {
       : '<div class="dk-dato">' + esc(dato) + ' · Uge ' + ugeNr(nu) + '</div><div class="dk-h">' + hilsen + (navn ? ', ' + esc(navn) : '') + '</div>') + '</div>'   /* kun hilsen + dato (Ida 11/9 kl. 14.05) — citatet bor paa Hjem */
     + '<div class="dk-bund">' + dagensKortNyHtml() + ((swipe === "dagensKortToemHovedet()" && ygtBriefLaast()) ? '' : '<button type="button" class="dk-swipe" onclick="' + swipe.replace(/"/g, '&quot;') + '"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 18l6-6 6 6M6 11l6-6 6 6"/></svg>Swipe op for en ny idé</button>')   /* ti uger (30/9): ingen løfte om en ny idé før modul 8 */
     + (o.citat
-      ? '<button type="button" class="dk-swipe dk-swipe-h" onclick="dagensKortLuk()">' + (dagensKortFoersteGang() ? 'Swipe for at komme i gang' : 'Swipe for Content Studio') + '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l6 6-6 6M13 6l6 6-6 6"/></svg></button></div>'   /* Ida 22/9 kl. 08.15: »Swipe for Content Studio«, to pile EFTER saetningen */   /* Ida 21/9 kl. 18.30: samme form som »Swipe op« — pilen peger mod hoejre, ingen roed knap */
+      ? '<button type="button" class="dk-swipe dk-swipe-h" onclick="dagensKortLuk()">' + (o.swipeTekst || (dagensKortFoersteGang() ? 'Swipe for at komme i gang' : 'Swipe for Content Studio')) + '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l6 6-6 6M13 6l6 6-6 6"/></svg></button></div>'   /* Ida 22/9 kl. 08.15: »Swipe for Content Studio«, to pile EFTER saetningen */   /* Ida 21/9 kl. 18.30: samme form som »Swipe op« — pilen peger mod hoejre, ingen roed knap */
       : '<button type="button" class="dk-knap" onclick="dagensKortLuk()">' + esc(o.knap || "Content Studio") + ' <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="margin-left:8px;"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button></div>');   /* Ida 12/9 kl. 12.50: »Content Studio« + pil (som Login-knappen) */
   document.body.appendChild(d);
   try { if (o.citat && o.citatTekst !== false && !citat && typeof dashCitaterHent === "function") dashCitaterHent().then(function () { try { const h = d.querySelector(".dk-h"); if (h && Array.isArray(DASH_CITATER) && DASH_CITATER.length) { h.className = "dk-h dk-citat"; h.textContent = String(DASH_CITATER[dagensNr(DASH_CITATER.length)] || ""); const st = d.querySelector(".dk-streg"), da = d.querySelector(".dk-dato"); if (st) st.remove(); if (da) da.remove(); } } catch (e) {} }); } catch (e) {}   /* citaterne kommer fra basen — saettes ind, naar de er hjemme */
@@ -72820,8 +72829,9 @@ function studieVaelgerHjem() {
   if (DEPLOY !== "crm") {
     /* B2B: Idas eget studio faar dagens kort (= Toem hovedet ved aabning, v1827) igen, hver gang appen kommer
        frem (Ida 12/9). dagensKortKunde afgoer selv, om koden er hendes egen; kunderne faar det een gang om dagen. */
-    try { if (typeof CUSTOMER_NAV !== "undefined" && CUSTOMER_NAV && typeof erEgenKode === "function" && erEgenKode(currentKode)) dagensKortKunde(); } catch (e) {}
-    return;   // KUN Idas admin-app faar Toem hovedet-skaermen — aldrig hos rigtige B2B-kunder
+    /* OGSAA KUNDERNE (Ida 7/10): hver gang appen kommer frem fra hjemmeskaermen eller baggrunden */
+    try { if (typeof CUSTOMER_NAV !== "undefined" && CUSTOMER_NAV && window.__DK_VIST) dagensKortKunde(true); } catch (e) {}   /* frem fra baggrunden/hjemmeskaermen: kortet igen (den foerste visning er showTab(3)) */
+    return;   // KUN Idas admin-app (crm) faar studie-oversigten
   }
   try { studieVaelgerVis(); } catch(e) {}
 }
@@ -80290,7 +80300,7 @@ function bf3StartVis(tving) {
   if (!tving && (!window.matchMedia || !window.matchMedia("(max-width: 760px)").matches)) return;
   try { const g = document.getElementById("studieVaelger"); if (g) g.remove(); } catch (e) {}
   if (document.getElementById("dagensKort") || document.getElementById("arkSlor")) return;
-  try { dagensKortVis({ navn: "Ida", swipe: "bf3ToemTrin1()", foto: "dagens/kort.jpg", midt: true, knap: "Backstage" }); } catch (e) {}
+  try { dagensKortVis({ navn: "Ida", swipe: "bf3ToemTrin1()", foto: "dagens/kort.jpg", midt: true, citat: true, citatTekst: false, swipeTekst: "Swipe for Backstage" });   /* SAMME STARTKORT SOM B2B (Ida 7/10: »bytte den røde knap ud med den hvide tekst der siger swipe«): hvid swipe-tekst, swipe til venstre = Backstage */ } catch (e) {}
 }
 function studieVaelgerVis(tving) { bf3StartVis(tving); }
 /* nyIdeGem: to nye landinger (Indkoebslister · Vidensbank) */
@@ -82107,7 +82117,7 @@ function bf3StudieRum(v, filter) {
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-hvid.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 7. oktober · 2540</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 7. oktober · 2541</div>
 <script>
 /* DROPDOWNEN RULLER SELV (Ida 4/10) — maal den aabne liste og klip den ved skaermens bund */
 (function () {
