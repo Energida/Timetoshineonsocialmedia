@@ -21888,6 +21888,8 @@ function briefFaktaBoksHtml() {
   /* VAERDIERNE SOM TEKST UNDER NAVNET, IKKE CHIPS (Ida 16/9 kl. 19.05 — vaelter bud A fra kl. 11.52) */
   /* INDHOLDSSOEJLEN ER DEN OEVERSTE RAEKKE I FAKTA-BOKSEN (Ida 17/9 kl. 11.47) — trykket aabner soejle-arket (samme som blyanten foer) */
   let sjlRk = ""; try { const sv = it.soejle ? soejleVis(it.soejle) : ""; sjlRk = '<div class="fb-rk" data-key="soejle" onclick="try{SOEJLE_ARK_VALG=(IDEER.find(x=>String(x.id)===String(BRIEF_ID))||{}).soejle||\'\';briefSoejleArkVis(IDEER.find(x=>String(x.id)===String(BRIEF_ID)))}catch(e){}"><span class="fb-ik"><svg viewBox="0 0 24 24">' + FB_IK.soejle + '</svg></span><div style="min-width:0;"><div class="fb-n">Indholdssøjle</div><div class="fb-v' + (sv ? '' : ' tom') + '">' + (sv ? esc(sv) : 'Ikke sat') + '</div></div></div>'; } catch (e) {}
+  /* EN STORY HAR INGEN INDHOLDSSOEJLE (Ida 7/10 + 19/9): raekken vises ikke (ellers staar der et roedt »Ikke sat« paa noget, der ikke skal saettes) */
+  try { if (/^story$/i.test(String(it.type || B.format || ""))) sjlRk = ""; } catch (e) {}
   const rows = sjlRk + rk("postes", "Postes", postes, "postes")   /* datoen under soejlen (Ida 16/9 kl. 16.47 → 17/9) */
     /* STATUS KAN SKIFTES BAADE PAA BRIEFOVERSIGTEN OG INDE I BRIEFEN (Ida 18/9 kl. 14.00: »jeg mangler ogsaa at kunne aendre status baade paa briefoversigten og inde i briefen«) — en raekke i fakta-boksen, listen aabner direkte under */
     /* STATUS BOR I COVERBILLEDET SOM DROPDOWN (Ida 21/9 kl. 15.35) — ikke i fakta-boksen */
@@ -22189,6 +22191,14 @@ function briefFtfTrin(it) {
   try { if (briefPersonerListe().length >= 2 && !String(b.hvemPerson || b.hvemLaver || "").trim()) trin.push("hvem"); } catch (e) {}
   const fmtNu = String(b.format || (FTF_FORMATER.indexOf(String(it && it.type || "")) > -1 ? it.type : "") || "");
   if ((!fmtNu || /reel/i.test(fmtNu)) && !(Array.isArray(b.lyd) ? b.lyd.length : String(b.lyd || "").trim())) trin.push("lyd");
+  /* FORMATET FOERST (Ida 7/10: »når jeg klikker på plus her på en dato kunne jeg også godt tænke mig at det første jeg skulle vælge det var hvad jeg ville tilføje. altså format«) — vaelter 29/9 »Giv opslaget et navn« som foerste spoergsmaal: formatet er det foerste valg, navnet kommer derefter */
+  const fi = trin.indexOf("format"); if (fi > 0) { trin.splice(fi, 1); trin.unshift("format"); }
+  /* RESTEN FOELGER FORMATET (Ida 7/10: »hvis det er story skal man jo fx ikke vælge indholdssøjle. så opgaven er ikke bare at flytte format først! Det er at tilpasse resten af first thing first efter hvad der er relevant for formatet«):
+     Story har ingen indholdssoejle (Ida 19/9) · lyd kun ved video (reel, kort reel, proevereel) · det valgte format (FTF_FORMAT) tæller, ogsaa foer det er gemt */
+  const fm = String(fmtNu || ((FTF_FORMAT && FTF_FORMAT !== "__ingen") ? FTF_FORMAT : "") || "");
+  if (/^story$/i.test(fm)) { const si = trin.indexOf("soejle"); if (si > -1) trin.splice(si, 1); }
+  if (fm && !/reel/i.test(fm)) { const li = trin.indexOf("lyd"); if (li > -1) trin.splice(li, 1); }
+  else if (fm && /reel/i.test(fm) && trin.indexOf("lyd") < 0 && !(Array.isArray(b.lyd) ? b.lyd.length : String(b.lyd || "").trim())) trin.push("lyd");
   return trin;
 }
 let FTF_DATO = "", FTF_TID = "", FTF_PLATFORM = [], FTF_HVEM = [], FTF_LYD = [], FTF_TITEL = "";
@@ -22271,7 +22281,8 @@ function briefFtfTilbage() { const F = window.__FTF; if (!F || F.i === 0) return
 function briefFtfFormatVaelg(f) {
   FTF_FORMAT = f;
   /* LYD-TRINNET FOELGER FORMATET (Ida/revision 6/10): trinene blev regnet ud, foer formatet var valgt, saa en karrusel/et billede/en story blev spurgt »Hvad skal man høre?«. Samme regel som briefFtfTrin (kun video = /reel/); vaelges en reel igen, kommer trinnet tilbage. */
-  try { const F = window.__FTF; if (F) { if (F.lydFraStart == null) F.lydFraStart = F.trin.indexOf("lyd") > -1; const ix = F.trin.indexOf("lyd"); const lyd = !f || f === "__ingen" || /reel/i.test(f); if (!lyd && ix > F.i) F.trin.splice(ix, 1); else if (lyd && F.lydFraStart && ix < 0) F.trin.push("lyd"); } } catch (e) {}
+  /* HELE LISTEN REGNES UD IGEN, NAAR FORMATET ER VALGT (Ida 7/10): Story → ingen soejle; lyd kun ved video; resten uaendret. Formatet staar stadig foerst, og pladsen i listen holdes. */
+  try { const F = window.__FTF, it0 = window.__SOEJLE_ARK_IT; if (F && it0 && F.trin[F.i] === "format") { const ny = briefFtfTrin(it0); const ix = ny.indexOf("format"); if (ix > -1) { F.trin = ny; F.i = ix; } } } catch (e) {}
   briefSoejleArkDropTegn(); if (briefTelefonBred()) briefFtfNaeste();
 }
 function briefSoejleArkDropTegn() {
@@ -58120,7 +58131,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2542";
+const APP_VERSION = "2543";
 let NY_VERSION_KLAR = false;
 let NY_VERSION_AFVIST = false;
 function nyVersionSkjul() {
@@ -82123,7 +82134,7 @@ function bf3StudieRum(v, filter) {
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-hvid.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 7. oktober · 2542</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 7. oktober · 2543</div>
 <script>
 /* DROPDOWNEN RULLER SELV (Ida 4/10) — maal den aabne liste og klip den ved skaermens bund */
 (function () {
