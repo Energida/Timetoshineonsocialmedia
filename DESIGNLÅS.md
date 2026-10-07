@@ -1,3 +1,7 @@
+## v2539 · 7. oktober · Afbryd forbindelsen til Instagram (Idas klik »Ja, byg og læg op«; Metas og privatlivspolitikkens krav)
+- Rate-arket (kun bag ?igtest=1, til Meta er godkendt): når kunden er forbundet, står der under »Hent tallene« en grå knap »Afbryd forbindelsen« (husets grå knap, 44 trykfelt). Tryk åbner det lille ark: titlen »Afbryd forbindelsen til Instagram?«, rød »Afbryd forbindelsen«, grå »Annullér«; kvittering »Forbindelsen er afbrudt.«.
+- Serverdelen: Edge Function `instagram-frakobl` (Verify JWT til; sletter kun kalderens egen række i ig_forbindelser; målingerne bliver stående). Sikkerhedstest F1/F2 målt (401), F3–F7 venter på demo-login — se INSTAGRAM-INTEGRATION/TESTPLAN tillæg 7/10.
+
 ## v2538 · 7. oktober · Skift adgangskode siger fejlen på dansk (revision 6/10 fund 20, kun teksten; nat-køen)
 - Fejlen fra Supabase vises aldrig rå på engelsk: »Den nye kode skal være forskellig fra den gamle.« når koden er den samme, ellers »Det gik ikke. Prøv igen.«. Selve skiftet (auth) er IKKE rørt. Øjet og et gentag-felt er IKKE bygget (ændring i auth-formularen — Security Contract, venter på Ida).
 - Målt i selen med en afvist kode (390 + 1440).
