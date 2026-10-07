@@ -1,3 +1,7 @@
+## v2560 · 7. oktober · CTA i videoen flyttet tilbage til indholdet (klippene) fra »Få dem til at handle« (Ida 7/10: »for forvirrende — den skal flyttes om til resten af indholdet«; vælter 29/9)
+- Reel, kort reel og prøvereel: feltet »CTA i videoen« er en egen flise under klippene (Fasthold dem) og står kun fremme, hvis der er skrevet noget, eller kunden trykker chippen »Tilføj CTA« (grå, i rækken Tilføj klip · manus · tekst på skærm). Under »Få dem til at handle« står det ikke længere.
+- Karrusel beholder »Handlingen på sidste slide« på »Få dem til at handle« (samme felt, ét sted ad gangen — lærdommen fra 29/9 om to felter med samme id). Billede: ingen CTA-felt, medmindre der allerede er skrevet noget.
+
 ## v2559 · 7. oktober · Klip: kun »Hvad ser man i klippet?« som standard; manus og tekst på skærmen via chips; ingen »Hvem er med« (Ida 7/10)
 - Et klip (fra klip 2) viser kun feltet »Hvad ser man i klippet?«. Manus og tekst på skærmen står kun fremme, hvis der er skrevet noget eller kunden har trykket på chippen under (klip[f + "Aaben"]; et tomt felt fra før vises ikke længere). Chips: Tilføj manus · Tilføj tekst på skærm (altid, ikke kun ved tale til kameraet).
 - »Hvem er med«: overskriften er slettet; personerne står som grå chips i samme størrelse som »+ Tekst på skærmen« (valgt = rød).
