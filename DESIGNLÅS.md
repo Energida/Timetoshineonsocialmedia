@@ -1,3 +1,7 @@
+## v2552 · 7. oktober · Der tilføjes kun øverst: »Hvad skal der ske denne dag? · Tilføj« er væk nederst i dagen (Ida 7/10: »dette skal fjernes — der skal altid kun tilføjes øverst«)
+- Hjem, dagsvisningen på computer og telefon: en tom dag viser ikke længere spørgsmålet med en grå Tilføj-knap. Plusset øverst er eneste vej. »Start planlægning« i en helt tom uge består. Målt 390 og 1440.
+- Mødesiden (Ugentlig contentplanlægning): chippen »Fysisk« er slettet (stedet står kun i coveret); i stedet står den rigtige Tilbage-knap (computeren, øverst til venstre i indholdet; telefonen har Tilbage i coverets hjørne). »Åbn mødet« vises stadig ved online-møder. Portens måling af den tomme dags Tilføj-knap er taget ud (probe-bud.js, Idas ord 7/10).
+
 ## v2551 · 7. oktober · Dato og tidspunkt i fakta kan afsluttes (Ida 7/10: »når tidspunktet er valgt bliver det bare stående? der mangler måske en knap?«)
 - Rækken Postes folder datoen og tidspunktet ud; nu står en Gem-knap under dem. Den gemmer, lukker rækken og viser den nye dag og tid i listen. Målt 1440.
 

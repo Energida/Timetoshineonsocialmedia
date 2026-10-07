@@ -44,7 +44,7 @@ setTimeout(async function () {
         if (kort.length > 5) F("fuld: dagen viser " + kort.length + " kort, hoejst fem");
         kort.forEach(function (k) { if (!k.closest(".hu-kal") && !synlig(k.querySelector(".hu-sym"))) F("fuld: et kort mangler symbolet");   /* kalenderdagen paa computeren har intet symbol (Ida 26/9) */ var t = k.querySelector(".hu-titel"); if (t && t.getBoundingClientRect().height > 52) F("fuld: en titel fylder mere end to linjer");   /* v2324 (Idas klik 25/9): dagens kort har hoejst TO linjer tekst — vaelter 20/9-buddets een linje */ });
       } else {
-        var tq = r.querySelector(".hu-dagen .hu-tom"); if (!synlig(tq) || !/\?/.test(tq.innerText) || !synlig(tq.querySelector(".hu-graa"))) F("tom: den tomme dag mangler spoergsmaalet eller den graa knap");
+        /* TOM DAG (Ida 7/10: »der skal altid kun tilføjes øverst«): ingen spørgsmål + Tilføj-knap nederst i en tom dag mere — plusset øverst er eneste vej; intet at måle her */
       }
       /* 4) TRE RING-FLISER; ugens fokus aldrig paa telefonen */
       var ringe = [].filter.call(r.querySelectorAll(".hu-ring"), synlig); if (ringe.length !== 2) F(tilstand + ": ringene er " + ringe.length + ", ikke 2");   /* to ringe, kun denne uge (Ida 6/10, v2513) */
