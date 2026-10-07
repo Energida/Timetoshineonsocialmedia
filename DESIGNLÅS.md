@@ -1,3 +1,6 @@
+## v2580 · 7. oktober · Rundvisningen i husets ark-form (Ida 7/10: »rundvisningen passer slet ikke ind i vores nye design«)
+- Kortet er 400 px, afrundet 28, med bankens kryds i hjørnet (lukker rundvisningen), 14 px tekst, etiket + hårfin streg, knapperne 44 px høje og centrerede (Spring over grå, Næste rød). Telefonen uændret ud over kryds og højde. Stoppenes tekster er ikke rørt (de siger fortsat »Kalenderen«; sig til, hvis de skal hedde Content kalenderen).
+
 ## v2579 · 7. oktober · YOU GOT THIS: Hjem er et lektionsdashboard med kun forløbet, lektionerne og opgaverne (Ida 7/10: »ikke noget kommende opslag, ikke noget kommende aktiviteter — en lækker lektionsdashboard«)
 - For kunder af typen kursus (YOU GOT THIS) viser Hjem kun: det næste skridt (Forløbet), Lektionerne (ringe) og Opgaver. Ingen ugestrimmel, kalender, Denne uge, Kommende aktiviteter eller Kommende opslag. Dette er første skridt; det færdige lektionsdashboard tegnes som fem bud (Artifact) og bygges efter Idas valg.
 
