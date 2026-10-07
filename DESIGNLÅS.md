@@ -1,3 +1,6 @@
+## v2546 · 7. oktober · Klip 1 · Hook: chipsene flugter med spørgsmålet (Ida: »det her layout synes jeg også er rodet«)
+- Hook-chipsene (Tekst-hook · Visuelt hook · Noget jeg siger) stod 24 px inde for spørgsmålet (.ark-chips' indvendige luft uden den negative margen). Nu står de i flugt med spørgsmålet og teksten. Målt 1440.
+
 ## v2545 · 7. oktober · Målgruppen er altid en række i briefens fakta (Ida: »jeg kan ikke tilpasse eller ændre målgruppen nogen steder?«)
 - Fakta-boksen har altid rækken Målgruppe (under Indholdssøjle): navnet, eller »Tilføj målgruppe«. Tryk åbner det lille ark fra De 4 byggesten (navn · beskrivelse · situationer) og gemmer dér; briefen tegnes om bagefter. Gælder med kun én målgruppe (før stod rækken kun ved to eller flere). Målt 390 og 1440.
 
