@@ -1,3 +1,12 @@
+## v2582 · 7. oktober · Kalenderen på telefonen: ingen »Næste uge · Hvad skal ud i næste uge?« øverst; næste uges tema som egen række (Ida 7/10)
+- Den tomme »Næste uge«-flise med »Planlæg et opslag« er fjernet fra Content kalenderen (der står kun I dag og Kommende indhold). Under temaerne står en række »Næste uges tema · Uge 42« (trykket åbner Planlægning). - »Hvem taler opslaget til?« på idésiden kommer KUN frem ved to eller flere målgrupper (v2574's »også med én« er rullet tilbage).
+- »Om indholdssøjlen … · kort fortalt« viser kun søjlens formål, første sætning (højst 150 tegn); følelse og handling er ude af flisen.
+- Captionens fire felter: overskrifterne Åbningen · Gør det relevant · Vis værdien · Vis vejen er væk; spørgsmålet er overskriften (»Hvad får [målgruppen] til at stoppe op?«, »Hvorfor betyder det noget for dem?«, »Hvordan hjælper vi dem?«, »Hvad skal de gøre nu?«), og placeholderen er kun forklaringen.
+- Det låste hook-felt i Scene 1 (Fasthold dem) står i fuld bredde uden indryk, når der ikke er en cirkel foran.
+- Telefonen: fliserne har en tydeligere skygge (to lag) og siden en meget lys sandfarvet baggrund, så fliserne ikke flyder sammen.
+- Briefoversigten på telefonen: titlen står i sort Didot-kursiv (28 px) uden rød flade, og »Start brief« (er man i gang: »Fortsæt brief«) er en rød knap i fuld bredde. Beskrivelsen står som almindelig grå tekst under titlen.
+En mobilgennemgang af hele kundeappen er sat i gang; fundene lægges i NAT-6-10/mobil-gennemgang.md.
+
 ## v2581 · 7. oktober · YOU GOT THIS: den røde flise hedder »Næste skridt« og er den næste lektion (Ida 7/10: »idag skal jo heller ikke stå der«)
 - På lektionsdashboardet står etiketten »Næste skridt« (ikke »I dag«), og flisen er »Fortsæt med: [næste lektion]«. Drejebogen står ikke som næste skridt, før lektionerne er gennemført (så tegnes flisen ikke).
 
