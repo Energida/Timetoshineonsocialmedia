@@ -1,3 +1,8 @@
+## v2574 · 7. oktober · First thing first med sort titel og »Vælg format«; ingen tags på Idébankens fliser; målgruppen ud af fakta (Ida 7/10)
+- First thing first: titlen i arket er sort (ikke rød); formatspørgsmålet hedder »Vælg format«.
+- Idébanken: tags står ikke længere på fliserne (dato, format og status består).
+- Målgruppe: rækken er fjernet fra fakta (vælter v2545) og vælges på idésiden under »Hvad er idéen?« (også med én målgruppe). Briefens procesbar med de fire trin og en ny sti/Tilbage-chip er ikke bygget (venter på bud).
+
 ## v2573 · 7. oktober · Til/fra = on/off-knappen, aldrig cirklen (Ida 7/10)
 - Målsætninger: »Slå månedens tema til« og »Slå ugens tema til« bruger husets on/off-knap (60 × 34 pille). Alt, kunden skal slå til eller fra, er en on/off-knap; en cirkel med flueben er kun et VALG (valgt = fyldt rød cirkel). Månedens og Ugens tema står hver i sin egen flise (var allerede delt).
 
