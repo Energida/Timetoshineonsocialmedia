@@ -1,3 +1,7 @@
+## v2567 · 7. oktober · Ringene: »Opslag planlagt« og »Postet« (Ida 7/10)
+- Den første ring hedder »Opslag planlagt« (antal opslag med dato i ugen mod ugens mål), den anden »Postet« (antal postet). Før hed den første »Opslag i ugen«.
+- **Ugens tema (og Månedens tema):** overlinjen »Ugens tema · Uge 41« står i den lysegrå versal (ikke rød), som alle andre etiketter (Ida 7/10; vælter 25/8 »hele overskriften er rød«).
+
 ## v2566 · 7. oktober · Tilføj på en dato = kun titlen (Ida 7/10; klik »Tilføj på en dato: kun titel, 2 tryk«)
 - Plusset på en dag i kalenderen åbner et lille ark med ét felt, »Hvad skal ud den dag?«, og Gem. Opslaget lægges på dagen som idé (uden format og søjle) og kalenderen bliver stående; briefen og First thing first åbner ikke. Tryk på kortet åbner briefen, hvor format, søjle og resten sættes i fakta. Fra op til seks spørgsmål til dato + titel + Gem. »+ Nyt opslag« uden dato er uændret.
 
