@@ -1,3 +1,8 @@
+## v2554 · 7. oktober · First thing first = kun det, der afgør, hvordan briefen bygges: navn · indholdssøjle · format (Ida 7/10); målgruppen vælges på idésiden
+- First thing first har kun tre spørgsmål: navn, indholdssøjle og format (Story uden søjle). Målgruppe, dato/tid, platform, hvem laver og lyd er ude af arket; de står som rækker i fakta (MANGLER, til de er sat) og rettes dér med ét tryk.
+- Målgruppen vælges nu på idésiden, i en egen flise lige under »Hvad er idéen?« (chips, kun ved to eller flere; med én vælges den af sig selv). Rækken Målgruppe i fakta åbner samme valg ved flere, ellers rettelsen af målgruppen.
+- Frejas-lærdommen (v2549) er uændret: en gammel udgave overskriver aldrig en nyere.
+
 ## v2553 · 7. oktober · Sidste side i First thing first hedder Gem (Ida 7/10: »ved 6 af 6 skal der selvfølgelig ikke stå Næste men Gem«)
 - Knappen på sidste trin (computer og telefon) hedder Gem; de øvrige trin Næste. Fakta-rækkens enkelt-spørgsmål hedder også Gem (v2550).
 

@@ -22197,18 +22197,11 @@ function briefFtfTrin(it) {
   const trin = [];
   /* NAVNET FOERST (Ida 29/9: »I First thing first skal det aller første spørgsmål være "Giv opslaget et navn"«) — kun naar opslaget ikke har et navn endnu */
   if (it && !String(it.titel || "").trim()) trin.push("titel");
-  /* MAALGRUPPEN LIGE EFTER NAVNET (Ida 29/9: »efter man har givet indholdet et navn - så skal man vælge hvilken målgruppe opslaget taler til«) */
-  try { const mg = briefMaalgrupper(); if (mg.navne.length > 1 && !(b.maalgruppe)) trin.push("mg"); } catch (e) {}
+  /* MAALGRUPPEN VAELGES IKKE HER LAENGERE (Ida 7/10): den bor paa idésiden under »Hvad er idéen?« */
   if (it && !it.soejle && alle.length) trin.push("soejle");
   if (!harFormat) trin.push("format");
-  /* ALLE FAKTA FOER BRIEFEN (Ida 22/9 kl. 08.10: »alle fakta tingene skal komme her som næste side i pop-uppen så man først lander på briefen når den del er udfyldt«):
-     Postes (dag + tidspunkt) · Platform · Hvem skal lave det · Lyd (kun video). Kun det, der mangler. */
-  if (it && !it.dato) trin.push("postes");
-  if (!(Array.isArray(b.platform) ? b.platform.length : String(b.platform || "").trim())) trin.push("platform");
-  /* »HVEM LAVER?« KUN VED TO ELLER FLERE (natten 7/10, revision fund 48: »Hvem laver? Det er da mig, der er kun mig.«) — med een person udfyldes det selv i briefFtfSkriv */
-  try { if (briefPersonerListe().length >= 2 && !String(b.hvemPerson || b.hvemLaver || "").trim()) trin.push("hvem"); } catch (e) {}
+  /* FIRST THING FIRST ER KUN DET, DER AFGOER, HVORDAN BRIEFEN BYGGES (Ida 7/10: »kun navn, indholdssoejle og format«): dato, platform, hvem laver og lyd udfyldes i fakta-raekkerne, naar de skal bruges (de staar som MANGLER, til de er sat) — maalgruppen paa idésiden */
   const fmtNu = String(b.format || (FTF_FORMATER.indexOf(String(it && it.type || "")) > -1 ? it.type : "") || "");
-  if ((!fmtNu || /reel/i.test(fmtNu)) && !(Array.isArray(b.lyd) ? b.lyd.length : String(b.lyd || "").trim())) trin.push("lyd");
   /* FORMATET FOERST (Ida 7/10: »når jeg klikker på plus her på en dato kunne jeg også godt tænke mig at det første jeg skulle vælge det var hvad jeg ville tilføje. altså format«) — vaelter 29/9 »Giv opslaget et navn« som foerste spoergsmaal: formatet er det foerste valg, navnet kommer derefter */
   const fi = trin.indexOf("format"); if (fi > 0) { trin.splice(fi, 1); trin.unshift("format"); }
   /* RESTEN FOELGER FORMATET (Ida 7/10: »hvis det er story skal man jo fx ikke vælge indholdssøjle. så opgaven er ikke bare at flytte format først! Det er at tilpasse resten af first thing first efter hvad der er relevant for formatet«):
@@ -22216,7 +22209,6 @@ function briefFtfTrin(it) {
   const fm = String(fmtNu || ((FTF_FORMAT && FTF_FORMAT !== "__ingen") ? FTF_FORMAT : "") || "");
   if (/^story$/i.test(fm)) { const si = trin.indexOf("soejle"); if (si > -1) trin.splice(si, 1); }
   if (fm && !/reel/i.test(fm)) { const li = trin.indexOf("lyd"); if (li > -1) trin.splice(li, 1); }
-  else if (fm && /reel/i.test(fm) && trin.indexOf("lyd") < 0 && !(Array.isArray(b.lyd) ? b.lyd.length : String(b.lyd || "").trim())) trin.push("lyd");
   return trin;
 }
 let FTF_DATO = "", FTF_TID = "", FTF_PLATFORM = [], FTF_HVEM = [], FTF_LYD = [], FTF_TITEL = "";
@@ -23148,7 +23140,13 @@ function briefMaalgruppePersonaer() {
   const k = (CURRENT_DEF && CURRENT_DEF.strategi && CURRENT_DEF.strategi.kunde) || null; if (!k) return [];
   return kundeMaalgrupper(k);
 }
-function briefMaalgruppeRet() { try { byggRet("audience"); } catch (e) { try { tilpasAaben("drejebog"); } catch (e2) {} } }   /* rettes i det lille ark, ogsaa inde fra briefen */
+function briefIdeMgVaelg(knap) {
+  const n = String((knap && knap.getAttribute("data-mg")) || ""); if (!n || !BRIEF_STATE) return;
+  BRIEF_STATE.maalgruppe = n;
+  try { document.querySelectorAll("#ideMgRk .ark-chip").forEach(function (c) { c.classList.toggle("on", c.getAttribute("data-mg") === n); }); } catch (e) {}
+  try { saveBrief(true); } catch (e) {}
+}
+function briefMaalgruppeRet() { try { if (briefMaalgrupper().navne.length > 1) { briefMaalgruppeArk(); return; } byggRet("audience"); } catch (e) { try { tilpasAaben("drejebog"); } catch (e2) {} } }   /* rettes i det lille ark, ogsaa inde fra briefen */
 function briefMaalgruppeVis() {
   const mg = briefMaalgrupper(); const alle = briefMaalgruppePersonaer(); if (!alle.length) return;
   const valgt = String((BRIEF_STATE && BRIEF_STATE.maalgruppe) || (mg.navne.length === 1 ? mg.navne[0] : "")).trim().toLowerCase();
@@ -27290,7 +27288,9 @@ function openBriefSide(id) {
   /* FAKTA ER DELT I TO SIDER (Ida 31/8): Idé-feltet bor paa Idéen-siden — men i ENKEL
      tilstand (telefon, frisk idé) er idéen selve kortet og bliver paa Fakta. EEN
      definition, saa feltets id aldrig findes to gange (saveBrief hoester paa id). */
-  const IDEFELT = qE('Hvad er idéen?', ta('beskrivelse', 'Idéen, som du ville fortælle den til en kollega, og de produkter, der skal fremhæves …', 90, true));
+  /* MAALGRUPPEN VAELGES HER, UNDER »HVAD ER IDÉEN?« (Ida 7/10: »valg af målgruppe skal komme på den side hvor vi har hvad er idéen«) — kun naar der er to eller flere; med een er den valgt af sig selv */
+  const mgIde = (function () { try { const m = briefMaalgrupper(); if (m.navne.length < 2) return ""; const nu = String((BRIEF_STATE && BRIEF_STATE.maalgruppe) || ""); return '<div class="sk-q sk-enkel" id="ideMgRk"><div class="sk-label">Hvem taler opslaget til?</div><div class="ark-chips i-fladen">' + m.chips.map(function (n) { return '<button type="button" class="ark-chip' + (nu === n ? ' on' : '') + '" data-mg="' + esc(n) + '" onclick="briefIdeMgVaelg(this)">' + esc(n) + '</button>'; }).join("") + '</div></div>'; } catch (e) { return ""; } })();
+  const IDEFELT = qE('Hvad er idéen?', ta('beskrivelse', 'Idéen, som du ville fortælle den til en kollega, og de produkter, der skal fremhæves …', 90, true)) + mgIde;
   /* DEN ROEDE HERO PAA ALLE WIZARD-SIDER (mockup 708d4fda — Idas paapegning 31/8:
      "den røde store flise jeg godkendte i mockup er der heller ikke"). Samme klasser
      som overblikkets hero, med KUN de valgte chips (format · postes · ansvar). */
@@ -58222,7 +58222,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2553";
+const APP_VERSION = "2554";
 let NY_VERSION_KLAR = false;
 let NY_VERSION_AFVIST = false;
 function nyVersionSkjul() {
@@ -82227,7 +82227,7 @@ function bf3StudieRum(v, filter) {
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-hvid.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 7. oktober · 2553</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 7. oktober · 2554</div>
 <script>
 /* DROPDOWNEN RULLER SELV (Ida 4/10) — maal den aabne liste og klip den ved skaermens bund */
 (function () {
