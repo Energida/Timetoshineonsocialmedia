@@ -1,3 +1,8 @@
+## v2557 · 7. oktober · Tilbage over status og ens titel på briefoversigt og brief; kryds efter hver tag (Ida 7/10)
+- Computeren: den grå Tilbage-pille står øverst i venstre spalte, OVER status, på både briefoversigten og briefen (før i ikonrækken på oversigten). Titlen på briefoversigten står som i briefen: sort Didot-kursiv over den røde flise (ikke hvid inde i den); en rød flise uden andet end titlen tegnes ikke.
+- Tags (Emne i arket): hver valgt tag har et lille kryds efter navnet, så den let fjernes. (Lokalt valg: Ida bad om kryds; reglen om skraldespand gælder fortsat for sletning af indhold.)
+- **FORSLAG ERSTATTER DET SKREVNE (HÅRD, Ida 7/10 — gælder ALLE felter med forslag mens man skriver: tags, hashtagbanken, og alt nyt):** vælger man et forslag, erstatter det det halve ord i feltet. Feltet tømmes, FØR forslaget tilføjes, så der aldrig kommer både forslaget og det halvskrevne. Kilde: Tags-arket tilføjede »Humor« OG »Humo« (feltets blur læste det halve ord, da listen blev tegnet om). Ny funktion med forslag skal testes: skriv halvt, vælg forslaget, kun ét skal stå.
+
 ## v2556 · 7. oktober · Ingen Annuller i popups — bankens kryds i alle; Gem/Tilføj flere; Kalenderen hedder det samme overalt (Ida 7/10)
 - **ALLE popups:** knappen Annullér er væk (CSS + en vagt, der skjuler enhver knap, der hedder Annullér/Annuller). Det gamle kryds (28 px, grå kant) er ændret til bankens: hvid cirkel 40 px, blød skygge, ingen kant, stort tyndt sort kryds, inde i øverste højre hjørne. Krydset er eneste vej ud (og tryk udenfor / swipe ned). Vælter 18/9, 19/9 og 24/9 (kryds på kanten + Annullér).
 - Porten (probe-popups.js) kræver nu et synligt kryds og forbyder en synlig Annullér-knap i hver popup.

@@ -397,6 +397,13 @@ body.hjem-facit .hf-naeste .db-kort { min-height:0; border:0; box-shadow:var(--m
 }
 @media (min-width: 900px) { .bsd-tilbage-tlf, .pf-tilbage-tlf { display: none !important; } }
 .bt-tilbage-pc { display:none; }
+@media (min-width: 900px) {
+  html body #briefTilbageOverStatus { display:inline-flex; align-items:center; height:36px; padding:0 18px; margin:0 0 12px; border-radius:999px; border:1px solid var(--knap-graa-kant, var(--border)); background:#fff; color:var(--knap-graa-tekst, var(--gray2)); font:300 12px Poppins,sans-serif; font-size:12px !important; cursor:pointer; }
+  html body #briefForside .fb-ik-host { display:flex; align-items:center; }
+  html body .bt-titel-forside { margin-right:auto; font-family:"Didot","Bodoni 72",Georgia,serif; font-style:italic; font-size:32px; line-height:1.1; letter-spacing:-.2px; color:var(--black); }   /* samme sorte Didot-titel som inde i briefen */
+  html body #briefForside .pf-kort > .pf-eye.pf-eye-titel { display:none !important; }
+  html body #briefForside .pf-kort:not(:has(> :not(.pf-eye-titel))) { display:none !important; }   /* en roed flise uden andet end titlen tegnes ikke tom */
+}
 @media (min-width: 900px) { html body #moedeSideRum .mo-tilbage-pc { display:inline-flex; align-items:center; height:36px; padding:0 18px; border-radius:999px; border:1px solid var(--knap-graa-kant, var(--border)); background:#fff; color:var(--knap-graa-tekst, var(--gray2)); font:300 13px Poppins,sans-serif; cursor:pointer; } }
 @media (min-width: 900px) { html body .fb-ik-host .bt-tilbage-pc { display:inline-flex; align-items:center; height:36px; padding:0 18px; margin-right:auto; border-radius:999px; border:1px solid var(--knap-graa-kant, var(--border)); background:#fff; color:var(--knap-graa-tekst, var(--gray2)); font:300 13px Poppins,sans-serif; cursor:pointer; } }   /* fund 49 (natten 7/10): Tilbage-knapperne paa briefen er kun telefonens — computeren har stien */
 #briefTilbageM, #bsamTilbageM { display: none; align-items: center; gap: 6px; background: #fff;
@@ -5424,6 +5431,9 @@ html body .ark-kryds { width:40px; height:40px; border:0; background:#fff; color
 html body .ark-kryds svg { width:18px; height:18px; }
 html body .ark-kryds::after { inset:-4px; }
 html body .ark-luk, html body .modal-luk-mobil { display:none !important; }
+/* KRYDS EFTER HVER VALGT TAG, SAA DEN LET FJERNES (Ida 7/10) */
+html body .ark-tag.on { display:inline-flex; align-items:center; gap:8px; }
+html body .ark-tag.on svg { width:12px; height:12px; flex:none; color:var(--gray2); }
 html body .ark-kryds.paa-roedt { background:transparent !important; border-color:transparent !important; color:#fff !important; }   /* hvidt kryds paa roedt — ingen hvid knap paa roed baggrund (24/9) */
 html body .ark-kryds.paa-roedt svg { width:16px; height:16px; }
 .modal-back .modal { position:relative; }
@@ -21818,7 +21828,17 @@ function briefBaandIk() {
   if (host && window.matchMedia("(min-width:900px)").matches) {
     if (!host.contains(ny)) { ny.classList.remove("mb-vt"); ny.classList.add("i-forside"); host.appendChild(ny); }
     /* TILBAGE SYNLIGT PAA COMPUTERENS BRIEFOVERSIGT (Ida 7/10: »her på briefoversigten mangler jeg en tilbageknap« — stien oeverst er ikke en knap; CLAUDE.md §4 »Der skal altid staa Tilbage«): husets graa pille til venstre i raekken over fakta, samme vej som stien (briefTilbage) */
-    if (erForside && !host.querySelector(".bt-tilbage-pc")) { const tbk = document.createElement("button"); tbk.type = "button"; tbk.className = "bt-tilbage-pc mq-tap"; tbk.textContent = "Tilbage"; tbk.setAttribute("onclick", "briefTilbage()"); host.insertBefore(tbk, host.firstChild); }
+    /* TILBAGE OVER STATUS, PAA BEGGE SIDER; TITLEN ENS (Ida 7/10: »flyt tilbageknappen over status — og titlen skal vaere ens som i briefen: sort Didot«) */
+    try { const gl = host.querySelector(".bt-tilbage-pc"); if (gl) gl.remove(); } catch (e) {}
+    try {
+      const shT = document.getElementById("fbStatusHost");
+      if (shT && shT.parentNode && !document.getElementById("briefTilbageOverStatus")) { const tbk = document.createElement("button"); tbk.type = "button"; tbk.id = "briefTilbageOverStatus"; tbk.className = "bt-tilbage-pc mq-tap"; tbk.textContent = "Tilbage"; tbk.setAttribute("onclick", "briefTilbage()"); shT.parentNode.insertBefore(tbk, shT); }
+      if (erForside) {
+        const itT = (IDEER || []).find(function (x) { return String(x.id) === String(BRIEF_ID); }) || {};
+        let tt = host.querySelector(".bt-titel-forside"); if (!tt) { tt = document.createElement("span"); tt.className = "bt-titel-forside"; host.insertBefore(tt, host.firstChild); }
+        tt.textContent = storStart(titelVis(itT.titel || "Nyt opslag"));
+      }
+    } catch (e) {}
     /* COVERETS MAAL FOELGER IKKE MED (Hans-testen 29/9, MAALT: efter et valg under Handlingen laa ikonerne oven i »Hvad er idéen?«): raekken kan have
        vaeret et oejeblik i baandet, hvor coverKnapperUd satte position/top/right inline — de fjernes, naar den staar ved titlen */
     ["position", "top", "right", "bottom", "left", "inset", "margin", "transform", "z-index", "width"].forEach(function (q) { ny.style.removeProperty(q); });
@@ -58234,7 +58254,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2556";
+const APP_VERSION = "2557";
 let NY_VERSION_KLAR = false;
 let NY_VERSION_AFVIST = false;
 function nyVersionSkjul() {
@@ -72619,8 +72639,10 @@ function kundeArkTagForslag(q) {
   const valgt = KUNDE_ARK_TAGS.map(function (t) { return String(t).toLowerCase(); });
   let l = kundeTagsSenest().filter(function (t) { return valgt.indexOf(t.toLowerCase()) < 0; });
   if (q) { const start = l.filter(function (t) { return t.toLowerCase().indexOf(q) === 0; }); const inde = l.filter(function (t) { return t.toLowerCase().indexOf(q) > 0; }); l = start.concat(inde); }
-  return l.slice(0, 8).map(function (t) { return '<button type="button" class="ark-tag" onmousedown="event.preventDefault()" onclick="kundeArkTagTilfoej(\'' + esc(t).replace(/'/g, "\\'") + '\')">' + esc(htbStor(t)) + '</button>'; }).join("");
+  return l.slice(0, 8).map(function (t) { return '<button type="button" class="ark-tag" onmousedown="event.preventDefault()" onclick="kundeArkTagForslagVaelg(\'' + esc(t).replace(/'/g, "\\'") + '\')">' + esc(htbStor(t)) + '</button>'; }).join("");
 }
+/* ET FORSLAG ERSTATTER DET, DER ER SKREVET — ALDRIG BEGGE (HAARD, Ida 7/10: »når jeg vælger det, den foreslår, tilføjer den både det foreslåede OG det, jeg var i gang med at skrive«): feltet tømmes FØR tagget tilføjes (ellers læste feltets blur det halve ord ind som endnu et tag, da listen tegnedes om) */
+function kundeArkTagForslagVaelg(t) { const f = document.getElementById("arkTagFelt"); if (f) f.value = ""; kundeArkTagTilfoej(t); }
 function kundeArkTagSkriv(f) { const x = document.getElementById("arkTagForslag"); if (x) x.innerHTML = kundeArkTagForslag(f.value); }
 /* TAGS I AFDELINGER (Idas klik 29/9: Emne · Vibe · Målgruppe): emne = de frie tags ovenfor; vibe og maalgruppe er briefens egne felter (brief.vibe, brief.maalgruppe) som chips — et tryk vaelger, et tryk igen fravaelger */
 let KUNDE_ARK_VIBE = "", KUNDE_ARK_MG = "";
@@ -72660,7 +72682,7 @@ function kundeArkAfdSkift(grp, v, b) {
 function kundeArkTagsHtml() {
   const forslag = kundeArkTagForslag("");
   return '<div class="ark-tags" id="arkTags"><span class="ark-eye ark-format-eye ark-tags-eye">Emne</span>'
-    + '<div class="ark-tags-valgte">' + KUNDE_ARK_TAGS.map((t, i) => '<button type="button" class="ark-tag on" title="Fjern" aria-label="Fjern ' + esc(t) + '" onclick="kundeArkTagFjern(' + i + ')">' + esc(htbStor(t)) + '</button>').join("")
+    + '<div class="ark-tags-valgte">' + KUNDE_ARK_TAGS.map((t, i) => '<button type="button" class="ark-tag on" title="Fjern" aria-label="Fjern ' + esc(t) + '" onclick="kundeArkTagFjern(' + i + ')"><span>' + esc(htbStor(t)) + '</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true" data-tegn-ok="1"><path d="M6 6l12 12M18 6L6 18"/></svg></button>').join("")
     + '<input type="text" id="arkTagFelt" class="ark-tag-felt" placeholder="' + (KUNDE_ARK_TAGS.length ? "" : "Tags · fx strik, julefrokost") + '" autocomplete="off" onkeydown="kundeArkTagTast(event)" oninput="kundeArkTagSkriv(this)" onblur="kundeArkTagLaes()">'   /* ingen pladsholder, naar der staar tags (Ida 22/9) */
     + '<button type="button" class="ark-tag-send" aria-label="Tilføj tag" title="Tilføj tag" onclick="kundeArkTagLaes()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button></div>'
     + '<div class="ark-tags-forslag" id="arkTagForslag">' + forslag + '</div>'
@@ -82240,7 +82262,7 @@ function bf3StudieRum(v, filter) {
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-hvid.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 7. oktober · 2556</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 7. oktober · 2557</div>
 <script>
 /* DROPDOWNEN RULLER SELV (Ida 4/10) — maal den aabne liste og klip den ved skaermens bund */
 (function () {
