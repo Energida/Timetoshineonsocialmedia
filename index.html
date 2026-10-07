@@ -26884,6 +26884,7 @@ function openBriefSide(id) {
   if (komUdefra) BRIEF_FRA = current;
   BRIEF_ID = id;
   BRIEF_STATE = JSON.parse(JSON.stringify(it.brief || {}));
+  try { ideBaseSaet(it.id, it.brief); } catch (e) {}   /* det, der staar paa skaermen ved aabning = udgangspunktet for fletningen ved gem (ideBriefFlet) */
   /* Gammelt gemt svar hed "Energida laver den" — ellers ville chippen stå tom
      på briefs, der allerede er udfyldt. */
   if (BRIEF_STATE.hvemLaver === "Energida laver den") BRIEF_STATE.hvemLaver = "Ida laver den";
@@ -54406,6 +54407,7 @@ async function refreshIdeer() {
       const { data, error } = await sb.from("content_ideer").select("*").eq("kode", currentKode).order("created_at", { ascending: true });
       if (!error && Array.isArray(data)) {
         IDEER = data.map(mapIdeRow);
+        try { IDEER.forEach(function (x) { if (x.brief && !(String(x.id) === String(BRIEF_ID) && window.IDE_BASE[x.id])) ideBaseSaet(x.id, x.brief); }); } catch (e) {}   /* den aabne brief beholder sit udgangspunkt, ogsaa naar listen hentes forfra */   /* udgangspunktet for fletningen (ideBriefFlet) */
         try { localStorage.setItem(nsKey("ideer_cache"), JSON.stringify(IDEER)); } catch (e) {}
       }
       else IDEER = ideerFraCache();
@@ -54510,6 +54512,26 @@ async function ideAdd(rec) {
   try { saveLocalIdeer(); } catch (e) {} try { renderIdeas(); renderCalendar(); } catch (e) {} return rec;   /* kladden er gemt, selv om en gentegning fejler (21/9) */
 }
 
+/* EN GAMMEL UDGAVE MAA ALDRIG OVERSKRIVE EN NYERE (Ida 7/10, SOS: »det her må IKKE kunne ske« — Freja udfyldte en brief; Idas aabne, aeldre udgave i admin gemte sit gamle indhold ovenpaa, og det udfyldte forsvandt).
+   Aarsagen: hvert gem skrev HELE briefen. Nu hentes den gemte brief lige foer skrivningen, og hvert felt flettes: er et felt UROERT her siden briefen blev hentet (IDE_BASE),
+   beholdes det, der ligger i basen; kun det, DU har rettet, skrives. Kendes udgangspunktet ikke, overskriver et tomt felt aldrig et udfyldt. */
+window.IDE_BASE = window.IDE_BASE || {};
+function ideBaseSaet(id, brief) { try { window.IDE_BASE[id] = JSON.parse(JSON.stringify(brief || {})); } catch (e) {} }
+function ideBriefFlet(id, lokal, remote) {
+  const base = window.IDE_BASE[id] || null;
+  const ens = function (a, b) { return JSON.stringify(a) === JSON.stringify(b); };
+  const tom = function (v) { return v == null || v === "" || (Array.isArray(v) && !v.some(function (x) { return String(x == null ? "" : (typeof x === "object" ? JSON.stringify(x) : x)).replace(/[\s"{}\[\],:]|ser|siger|tekst|scene|\d/g, "") !== ""; })); };
+  const ud = {}, fra = [];
+  const nogler = {}; Object.keys(lokal || {}).concat(Object.keys(remote || {})).forEach(function (k) { nogler[k] = 1; });
+  Object.keys(nogler).forEach(function (k) {
+    const l = (lokal || {})[k], r = (remote || {})[k];
+    if (ens(l, r)) { if (l !== undefined) ud[k] = l; return; }
+    const beholdBase = base ? ens(l, base[k]) : (tom(l) && !tom(r));
+    if (beholdBase) { if (r !== undefined) ud[k] = r; fra.push(k); }
+    else if (l !== undefined) ud[k] = l;
+  });
+  return { brief: ud, fra: fra };
+}
 async function ideUpdate(id, patch) {
   const it = IDEER.find(x => x.id === id); if (it) Object.assign(it, patch);
   /* SVARET SIGES VIDERE (Ida 4/8): funktionen returnerer nu, OM det lykkedes, saa en
@@ -54521,8 +54543,25 @@ async function ideUpdate(id, patch) {
       /* KVITTERING (Ida 4/8: "naar jeg aendre status fra brief igang til ide gemmer den
          ikke valget"). Foer blev der kun set efter en KASTET fejl — men en afvist
          opdatering kaster ikke: den rammer nul raekker og svarer error = null. */
+      /* FLET MED DET GEMTE, FOER DER SKRIVES (se ideBriefFlet) */
+      if (patch && patch.brief && typeof patch.brief === "object" && navigator.onLine) {
+        try {
+          const rr = await sb.from("content_ideer").select("brief").eq("id", id).maybeSingle();
+          const remote = rr && rr.data && rr.data.brief;
+          if (remote && typeof remote === "object") {
+            const f = ideBriefFlet(id, patch.brief, remote);
+            if (f.fra.length) {
+              const levende = patch.brief;   /* samme objekt som briefen paa skaermen: det flettede staar der ogsaa bagefter */
+              Object.keys(f.brief).forEach(function (k) { levende[k] = f.brief[k]; });
+              try { if (window.BRIEF_STATE && BRIEF_ID === id && BRIEF_STATE !== levende) Object.keys(f.brief).forEach(function (k) { BRIEF_STATE[k] = f.brief[k]; }); } catch (e) {}
+              try { window.__BRIEF_FLETTET = { id: id, felter: f.fra.slice(0, 12), tid: Date.now() }; husBesked("En nyere udgave var gemt. Det, du ikke har rettet, er bevaret."); } catch (e) {}
+            }
+          }
+        } catch (e2) {}
+      }
       const r = await sb.from("content_ideer").update(patch).eq("id", id).select();
       if (r.error || !r.data || !r.data.length) { visSyncFejl(); gemt = false; }
+      else if (patch && patch.brief) ideBaseSaet(id, patch.brief);
     } catch(e) { visSyncFejl(); gemt = false; }
     /* OFFLINE-KLADDEN (5/9): naaede det ikke databasen, ligger det i koeen — og i cachen,
        saa en genindlaesning uden net stadig viser det. Naaede det frem, ryddes koeen for id. */
@@ -58176,7 +58215,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2548";
+const APP_VERSION = "2549";
 let NY_VERSION_KLAR = false;
 let NY_VERSION_AFVIST = false;
 function nyVersionSkjul() {
@@ -82180,7 +82219,7 @@ function bf3StudieRum(v, filter) {
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-hvid.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 7. oktober · 2548</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 7. oktober · 2549</div>
 <script>
 /* DROPDOWNEN RULLER SELV (Ida 4/10) — maal den aabne liste og klip den ved skaermens bund */
 (function () {

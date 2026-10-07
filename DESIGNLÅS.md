@@ -1,3 +1,9 @@
+## v2549 · 7. oktober · HÅRD: en gammel udgave af en brief må ALDRIG overskrive en nyere (Ida: »det her må IKKE kunne ske« — Freja udfyldte en brief i Hinges Hus; Idas åbne, ældre udgave i admin gemte sit gamle indhold ovenpå, og det udfyldte forsvandt; i basen stod kun det, Ida selv havde skrevet dagen før)
+- Hvert gem af en brief skrev HELE briefen (last write wins). Nu hentes den gemte brief lige før skrivningen, og hvert felt flettes (ideBriefFlet): et felt, der er urørt her siden briefen blev åbnet, beholder det, der ligger i basen; kun det, personen selv har rettet, skrives. Kendes udgangspunktet ikke, overskriver et tomt felt aldrig et udfyldt. Udgangspunktet sættes, når briefen åbnes (IDE_BASE), og den åbne brief beholder det, også når listen hentes forfra i baggrunden.
+- Er noget bevaret fra en nyere udgave, siger appen det: »En nyere udgave var gemt. Det, du ikke har rettet, er bevaret.« Tværfaglig regel: gem må aldrig slette det, man ikke selv skrev (4/8, 29/9, 7/10).
+- Kendt rest: rettes samme felt (fx klippene) af to personer samtidig, vinder den, der gemmer sidst, for netop det felt.
+- Målt: fletningen kørt på Hinges-scenariet (urørt lokal + fuld brief i basen = den fulde bevares; lokal rettelse bevares; bevidst tømt felt bliver tomt). IKKE målt mod den rigtige base fra to enheder samtidig.
+
 ## v2548 · 7. oktober · Fasthold dem: grå chips + »Tilføj scene« + runde låste felter (Ida 7/10)
 - Det røde plus og popuppen »Klip i scene n / Ny scene« er væk. I stedet tre grå chips under det sidste klip: Tilføj klip · Tilføj manus · Tilføj tekst på skærm (manus og tekst kun hvis klippet mangler dem), og en rød pille »Tilføj scene« til højre under dem.
 - De låste felter i scene 1 (hook-tekst og det, man ser) var firkantede på computeren; nu runde som alle felter. Målt 1440.
