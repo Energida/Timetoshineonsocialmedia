@@ -1,3 +1,7 @@
+## v2569 · 7. oktober · Tilbage i samme bredde som status; ingen versaloverskrifter over briefens spørgsmål (Ida 7/10)
+- Computer: Tilbage-pillen over status er lige så bred som statusfeltet (fuld kolonnebredde). Faktakolonnen er uændret 340 px.
+- Briefens spørgsmålsfliser (Idéen · Udbyttet · Målet · Handlingen): den grå versal-etiket og skillestregen under den er væk, spørgsmålet er overskriften. (Vælter 15/9 »etiket · én skillelinje · indhold« kun for disse spørgsmålsfliser, på Idas ord.)
+
 ## v2568 · 7. oktober · Datokassen: ugedag over datoen, måned under (Ida 7/10: »ugedag flyttes op over datoen«; »MAN OKT« stod ud over kanten)
 - Kommende opslag, Kommende aktiviteter og aftalelisten: kassen er 48 × 60 px med tre linjer: ugedag (lille versal) · dato (18 px) · måned (lille versal). Intet står ud over kanten.
 
