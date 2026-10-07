@@ -1,3 +1,6 @@
+## v2562 · 7. oktober · Menuen: Kalenderen og Get shit done har byttet plads (Ida 7/10)
+- Computerens sidemenu: Hjem · Indbakken · Kalenderen · Get shit done · Idébanken · Planlægning · Performance · Værktøjskassen. Telefonens bund- og Mere-menu er ikke rørt.
+
 ## v2561 · 7. oktober · »Hvem laver?« hedder »Hvem laver indholdet?« (Ida 7/10); næste skridt: »Hvem skal være med i indholdet?« + beskeder og kalender pr. person (spec i hukommelsen hvem-laver-og-med-i-indholdet)
 - Rækken i fakta og spørgsmålet i First thing first hedder »Hvem laver indholdet?«. Resten (nyt felt »Hvem skal være med i indholdet?«, besked i indbakken til den, der skal lave det, og kalenderlinjer pr. person) er ikke bygget; kræver Idas klik på rækkefølgen.
 
