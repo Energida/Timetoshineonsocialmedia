@@ -1,3 +1,7 @@
+## v2548 · 7. oktober · Fasthold dem: grå chips + »Tilføj scene« + runde låste felter (Ida 7/10)
+- Det røde plus og popuppen »Klip i scene n / Ny scene« er væk. I stedet tre grå chips under det sidste klip: Tilføj klip · Tilføj manus · Tilføj tekst på skærm (manus og tekst kun hvis klippet mangler dem), og en rød pille »Tilføj scene« til højre under dem.
+- De låste felter i scene 1 (hook-tekst og det, man ser) var firkantede på computeren; nu runde som alle felter. Målt 1440.
+
 ## v2547 · 7. oktober · Forslag-felterne i briefen: »Tilføj forslag«, Vælg en eller flere øverst, upload på briefoversigten (Ida 7/10)
 - Klip 1 · Hook: »Vælg en eller flere« står OVER valgene. Er et hook valgt, foldes de andre og det tomme felt til teksten »Tilføj forslag« (ingen pil, tættere på feltet over); åbnet står »Fold sammen«.
 - Tekst på coverbilledet: samme greb (kun computeren; telefonen tegner ikke tomme felter).
