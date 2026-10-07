@@ -1,3 +1,6 @@
+## v2573 · 7. oktober · Til/fra = on/off-knappen, aldrig cirklen (Ida 7/10)
+- Målsætninger: »Slå månedens tema til« og »Slå ugens tema til« bruger husets on/off-knap (60 × 34 pille). Alt, kunden skal slå til eller fra, er en on/off-knap; en cirkel med flueben er kun et VALG (valgt = fyldt rød cirkel). Månedens og Ugens tema står hver i sin egen flise (var allerede delt).
+
 ## v2572 · 7. oktober · HÅRD: altid en skillelinje under en versal-etiket, før teksten (Ida 7/10; vælter 12/9 »ingen streg i en flise« for disse)
 - Måls­ætninger (Månedens tema · Ugens tema · Idéer til tema …) og forsidens Dine mål-kort har en hårfin linje under versalen. Gælder alle fliser med en versal-etiket; sektionslinjer (ord + streg ud til højre) er en anden ting. Nye fliser uden linje er et brud. NB: briefens spørgsmålsfliser har ingen versal-etiket (v2569), så der er intet at sætte linjen under.
 
