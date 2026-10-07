@@ -1,3 +1,7 @@
+## v2578 · 7. oktober · Drejebogen-popuppen: skillelinje, rigtig titelstørrelse, smalt ark; YOU GOT THIS venter på sidste lektion (Ida 7/10)
+- Titlen »Drejebogen« er 18 px med en hårfin skillelinje under; arket er 420 px bredt på computeren (var ca. 860).
+- YOU GOT THIS-kunder, der ikke har gennemført sidste lektion, ser kun »Åbner, når du har gennemført sidste lektion.« — ingen knapper til spørgsmål eller Lav Drejebogen.
+
 ## v2577 · 7. oktober · Ny kunde: forretningstypernes liste viser ikke længere en tankestreg uden tekst (Ida 7/10: »hvorfor er der streger her i enden?«)
 - Noten bag hver type var tom, så »Fysisk butik —« stod med en streg for enden. Nu står kun navnet, når noten er tom.
 
