@@ -1,3 +1,6 @@
+## v2581 · 7. oktober · YOU GOT THIS: den røde flise hedder »Næste skridt« og er den næste lektion (Ida 7/10: »idag skal jo heller ikke stå der«)
+- På lektionsdashboardet står etiketten »Næste skridt« (ikke »I dag«), og flisen er »Fortsæt med: [næste lektion]«. Drejebogen står ikke som næste skridt, før lektionerne er gennemført (så tegnes flisen ikke).
+
 ## v2580 · 7. oktober · Rundvisningen i husets ark-form (Ida 7/10: »rundvisningen passer slet ikke ind i vores nye design«)
 - Kortet er 400 px, afrundet 28, med bankens kryds i hjørnet (lukker rundvisningen), 14 px tekst, etiket + hårfin streg, knapperne 44 px høje og centrerede (Spring over grå, Næste rød). Telefonen uændret ud over kryds og højde. Stoppenes tekster er ikke rørt (de siger fortsat »Kalenderen«; sig til, hvis de skal hedde Content kalenderen).
 
