@@ -1,3 +1,6 @@
+## v2561 · 7. oktober · »Hvem laver?« hedder »Hvem laver indholdet?« (Ida 7/10); næste skridt: »Hvem skal være med i indholdet?« + beskeder og kalender pr. person (spec i hukommelsen hvem-laver-og-med-i-indholdet)
+- Rækken i fakta og spørgsmålet i First thing first hedder »Hvem laver indholdet?«. Resten (nyt felt »Hvem skal være med i indholdet?«, besked i indbakken til den, der skal lave det, og kalenderlinjer pr. person) er ikke bygget; kræver Idas klik på rækkefølgen.
+
 ## v2560 · 7. oktober · CTA i videoen flyttet tilbage til indholdet (klippene) fra »Få dem til at handle« (Ida 7/10: »for forvirrende — den skal flyttes om til resten af indholdet«; vælter 29/9)
 - Reel, kort reel og prøvereel: feltet »CTA i videoen« er en egen flise under klippene (Fasthold dem) og står kun fremme, hvis der er skrevet noget, eller kunden trykker chippen »Tilføj CTA« (grå, i rækken Tilføj klip · manus · tekst på skærm). Under »Få dem til at handle« står det ikke længere.
 - Karrusel beholder »Handlingen på sidste slide« på »Få dem til at handle« (samme felt, ét sted ad gangen — lærdommen fra 29/9 om to felter med samme id). Billede: ingen CTA-felt, medmindre der allerede er skrevet noget.
