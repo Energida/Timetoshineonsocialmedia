@@ -1,3 +1,8 @@
+## v2547 · 7. oktober · Forslag-felterne i briefen: »Tilføj forslag«, Vælg en eller flere øverst, upload på briefoversigten (Ida 7/10)
+- Klip 1 · Hook: »Vælg en eller flere« står OVER valgene. Er et hook valgt, foldes de andre og det tomme felt til teksten »Tilføj forslag« (ingen pil, tættere på feltet over); åbnet står »Fold sammen«.
+- Tekst på coverbilledet: samme greb (kun computeren; telefonen tegner ikke tomme felter).
+- Upload coverbillede er flyttet fra skrivesiden til briefoversigtens Coverbillede-flise (stiplet felt ved siden af forhåndsvisningen, kun når billedet mangler; karrusel: »Upload billeder«). Samme foto (cvFotos), så skrivesiden og forsiden synker af sig selv. Målt 390 og 1440.
+
 ## v2546 · 7. oktober · Klip 1 · Hook: chipsene flugter med spørgsmålet (Ida: »det her layout synes jeg også er rodet«)
 - Hook-chipsene (Tekst-hook · Visuelt hook · Noget jeg siger) stod 24 px inde for spørgsmålet (.ark-chips' indvendige luft uden den negative margen). Nu står de i flugt med spørgsmålet og teksten. Målt 1440.
 
