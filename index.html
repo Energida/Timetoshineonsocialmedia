@@ -11478,6 +11478,14 @@ html body .ark button.vk-link .vk-kop { flex:0 0 auto; color:var(--gray2); }
   .bib2 .bb-felter .bb-vaelg { max-width:none; }
   .bib2 .bb-handl .bb-knap { max-width:200px; }
 }
+.bib2 .bb-imp { margin:0 0 var(--luft-2,16px); display:flex; flex-direction:column; gap:12px; }
+.bib2 .bb-imp .bs3-et { margin-bottom:0; }
+.bib2 .bb-imp-l { font-size:15px; line-height:1.6; color:var(--black); overflow-wrap:anywhere; }
+.bib2 .bb-fil { position:relative; cursor:pointer; }
+.bib2 .bb-fil input { position:absolute; inset:0; opacity:0; width:100%; height:100%; cursor:pointer; }
+.bib2 .bb-roed { background:var(--red); border-color:var(--red); color:#fff; margin:0 0 12px; }
+.bib2 .bb-roed[disabled] { opacity:.4; cursor:default; }
+.bib2 .bb-imp + .bb-knap { margin-bottom:12px; }
 /* BIB2-CSS-SLUT */
 </style>
 <style id="vedhCss">
@@ -58780,7 +58788,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2599";
+const APP_VERSION = "2600";
 let NY_VERSION_KLAR = false;
 let NY_VERSION_AFVIST = false;
 function nyVersionSkjul() {
@@ -82786,7 +82794,7 @@ function bf3StudieRum(v, filter) {
    og rettes DIREKTE (ingen popups). Laeser/skriver KUN public.bib_emne og public.bib_ting (admin, er_admin()). Det gamle Bibliotek (mr_rum / mr_rum_noter)
    staar urort og naas fra Teknik (Det gamle Bibliotek). Gem: felt for felt, 600 ms efter sidste tast, rettet-tidsstemplet opdager at en anden fane har
    aendret raekken (saa overskrives intet), et mislykket gem siges hoejt og ligger i localStorage (bib2_ugemt) til det er sendt. Sletning = slettet-kolonnen (papirkurv, 30 dage). */
-const BIB2 = { emner: [], ting: [], klar: false, henter: null, vis: { dor: null, emne: null, q: "", fra: "", papirkurv: false, aabenTing: "" }, aabne: {}, tomme: {}, vent: {}, status: null, gammel: false, flusher: false, gemT: null, retryT: null, genstartet: false, papir: [] };
+const BIB2 = { emner: [], ting: [], klar: false, henter: null, vis: { dor: null, emne: null, q: "", fra: "", papirkurv: false, importer: false, aabenTing: "" }, aabne: {}, tomme: {}, vent: {}, status: null, gammel: false, flusher: false, gemT: null, retryT: null, genstartet: false, papir: [] };
 const B2_HVAD = { manus: "Manus", model: "Model", eksempel: "Eksempel", citat: "Citat", oevelse: "Øvelse", skabelon: "Skabelon", research: "Research", formulering: "Formulering", note: "Note" };
 const B2_GRIB = '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="9" cy="6" r="1.7"/><circle cx="15" cy="6" r="1.7"/><circle cx="9" cy="12" r="1.7"/><circle cx="15" cy="12" r="1.7"/><circle cx="9" cy="18" r="1.7"/><circle cx="15" cy="18" r="1.7"/></svg>';
 const B2_LS = "bib2_ugemt", B2_VIS = "bib2_vis";
@@ -82996,7 +83004,8 @@ function b2Tegn() {
   const host = b2Lag(); if (!host || !bib2Aktiv()) return;
   const v = BIB2.vis; let navn = "Biblioteket", ind = "";
   const e = v.emne ? b2Emne(v.emne) : null, d = v.dor ? b2Emne(v.dor) : null;
-  if (v.papirkurv) { navn = "Papirkurv"; ind = b2PapirHtml(); }
+  if (v.importer) { navn = "Importér til Biblioteket"; ind = b2ImpHtml(); }
+  else if (v.papirkurv) { navn = "Papirkurv"; ind = b2PapirHtml(); }
   else if (e) { navn = e.navn; ind = b2EmneHtml(e); }
   else if (d) { navn = d.navn; ind = b2DorHtml(d); }
   else ind = b2ForsideHtml();
@@ -83005,7 +83014,7 @@ function b2Tegn() {
   try { sessionStorage.setItem(B2_VIS, JSON.stringify({ dor: v.dor, emne: v.emne })); } catch (x) {}
   host.querySelectorAll("textarea.bb-tekst").forEach(b2Vokse);
   b2Sti();
-  try { bf3RumBaandTgl(false); bibSoegKnapTgl(false); bf3BaandKnapVis("rum:" + MR_RUM_AABEN, true); } catch (x) {}
+  try { bf3RumBaandTgl(false); bibSoegKnapTgl(false); if (v.importer) bf3BaandKnapVis(false); else bf3BaandKnapVis("rum:" + MR_RUM_AABEN, true); } catch (x) {}
   try { document.body.classList.remove("rum-versal"); } catch (x) {}
   setTimeout(heroPas, 30); try { bsBaandPlanlaeg(); } catch (x) {}
   if (v.aabenTing) { const el = host.querySelector('.bb-fl[data-id="' + v.aabenTing + '"]'); v.aabenTing = ""; if (el) setTimeout(function () { try { el.scrollIntoView({ block: "start" }); window.scrollBy(0, -110); } catch (x) {} }, 60); }
@@ -83017,15 +83026,16 @@ function b2Behold() { BIB2.vis.holdScroll = true; b2Tegn(); }
 function b2Sti() {
   try {
     const v = BIB2.vis; const e = v.emne ? b2Emne(v.emne) : null; const d = e ? b2Dor(e) : (v.dor ? b2Emne(v.dor) : null);
-    const inde = !!(e || d || v.papirkurv);
+    const inde = !!(e || d || v.papirkurv || v.importer);
     const led = [{ navn: "Hjem", klik: "visDashSide('overblik')" }, { navn: "Biblioteket", klik: inde ? "bib2Gaa('forside')" : undefined }];
-    if (v.papirkurv) led.push({ navn: "Papirkurv" });
+    if (v.importer) { led.splice(1, 1, { navn: "Teknik", klik: "bsTeknikAabn()" }); led.push({ navn: "Importér til Biblioteket" }); }
+    else if (v.papirkurv) led.push({ navn: "Papirkurv" });
     else { if (d) led.push({ navn: d.navn, klik: e ? "bib2Gaa('dor','" + d.id + "')" : undefined }); if (e) led.push({ navn: e.navn }); }
     navstiSaet(led, bib2Tilbage);
   } catch (x) {}
 }
 function bib2Gaa(hvor, id) {
-  const v = BIB2.vis; BIB2.fokus = null; v.papirkurv = false; v.holdScroll = false;
+  const v = BIB2.vis; BIB2.fokus = null; v.papirkurv = false; v.importer = false; v.holdScroll = false;
   if (hvor === "forside") { v.dor = null; v.emne = null; v.fra = ""; }
   else if (hvor === "dor") { v.dor = id; v.emne = null; v.fra = ""; }
   else if (hvor === "emne") { const e = b2Maal(b2Emne(id)); v.emne = e ? e.id : null; v.dor = e && b2Dor(e) ? b2Dor(e).id : v.dor; }
@@ -83033,6 +83043,7 @@ function bib2Gaa(hvor, id) {
 }
 function bib2Tilbage() {
   const v = BIB2.vis;
+  if (v.importer) { v.importer = false; bsTeknikAabn(); return; }
   if (v.papirkurv) { bib2Gaa("forside"); return; }
   if (v.emne) { if (v.fra === "soeg") { const q = v.q; bib2Gaa("forside"); v.q = q; b2Tegn(); } else { const e = b2Emne(v.emne), d = e && b2Dor(e); if (d) bib2Gaa("dor", d.id); else bib2Gaa("forside"); } return; }
   if (v.dor) { bib2Gaa("forside"); return; }
@@ -83050,7 +83061,7 @@ async function bib2SideTegn() {
 (function () { const g = window.vidensbankAabn; window.vidensbankAabn = function () { BIB2.gammel = false; return g.apply(this, arguments); }; })();
 async function bib2Gammel() { const r = (typeof bibRod === "function") ? bibRod() : null; if (!r) { try { husBesked("Det gamle Bibliotek findes ikke."); } catch (e) {} return; } BIB2.gammel = true; BIB2.vis.papirkurv = false; mrRumAaben(r.id); }
 async function bib2PapirkurvAabn() {
-  const r = bibRod(); if (!r) return; BIB2.gammel = false; BIB2.vis.papirkurv = true; BIB2.vis.dor = null; BIB2.vis.emne = null;
+  const r = bibRod(); if (!r) return; BIB2.gammel = false; BIB2.vis.papirkurv = true; BIB2.vis.importer = false; BIB2.vis.dor = null; BIB2.vis.emne = null;
   try { const fra = new Date(Date.now() - 30 * 86400000).toISOString(); const x = await sb.from("bib_ting").select("*").not("slettet", "is", null).gte("slettet", fra).order("slettet", { ascending: false }).range(0, 499); BIB2.papir = x.data || []; } catch (e) { BIB2.papir = []; }
   await mrRumAaben(r.id);
 }
@@ -83067,8 +83078,9 @@ async function b2NyTing(emneId, afsnit, titel, extra) {
   if (BIB2.tomme[emneId]) BIB2.tomme[emneId] = BIB2.tomme[emneId].filter(function (n) { return n !== afsnit; });
   b2Status("gemt"); return r.data[0];
 }
-async function b2NyEmne(forId, niveau, navn, rk, beskrivelse) {
+async function b2NyEmne(forId, niveau, navn, rk, beskrivelse, tag) {
   const rec = { foraelder_id: forId || null, niveau: niveau, navn: navn, beskrivelse: beskrivelse || "", raekkefolge: rk || 0 };
+  if (tag) rec.doer_navn = tag;
   const r = await sb.from("bib_emne").insert(rec).select("*");
   if (r.error || !r.data || !r.data.length) { b2Status("fejl", (r.error && r.error.message) || "ingen forbindelse"); throw new Error("Ikke gemt"); }
   BIB2.emner.push(r.data[0]); b2Selects.c = null; return r.data[0];
@@ -83107,7 +83119,7 @@ function b2NyInput(holder, ph, ok, val) {
   setTimeout(function () { try { inp.focus(); if (val) inp.select(); holder.scrollIntoView({ block: "center" }); } catch (e) {} }, 30);
 }
 function bib2Plus() {
-  const v = BIB2.vis; const host = b2Lag(); if (!host || v.papirkurv) return;
+  const v = BIB2.vis; const host = b2Lag(); if (!host || v.papirkurv || v.importer) return;
   const holder = host.querySelector("#bbNy");
   if (v.emne) {
     const e = b2Emne(v.emne); if (!e) return;
@@ -83200,6 +83212,7 @@ function b2Haandter(host) {
       if (k === "proev-hent") { BIB2.klar = false; bib2SideTegn(); return; }
       b2Handl(k, a); return;
     }
+    const im = t.closest("[data-imp]"); if (im) { b2ImpKlik(im); return; }
     const dor = t.closest("[data-dor]"); if (dor) { bib2Gaa("dor", dor.dataset.dor); return; }
     const em = t.closest("[data-emne]"); if (em) { BIB2.vis.fra = ""; bib2Gaa("emne", em.dataset.emne); return; }
     const ga = t.closest("[data-ga]"); if (ga) { const q = BIB2.vis.q; BIB2.vis.fra = "soeg"; if (ga.dataset.gaTing) { const tg = b2Ting(ga.dataset.gaTing); if (tg) { BIB2.aabne["r|" + tg.id] = true; BIB2.aabne[ga.dataset.ga + "|" + (tg.afsnit || "")] = true; BIB2.vis.aabenTing = tg.id; } } bib2Gaa("emne", ga.dataset.ga); BIB2.vis.q = q; return; }
@@ -83223,6 +83236,7 @@ function b2Haandter(host) {
   });
   host.addEventListener("change", function (ev) {
     const t = ev.target; if (!t.dataset) return;
+    if (t.id === "impFil") { b2ImpFiler(t.files); return; } if (t.dataset.impValg !== undefined) { B2I.valg[t.dataset.impValg] = t.value; return; }
     if (t.dataset.a) { b2Handl(t.dataset.a, t); return; }
     if (t.tagName === "SELECT" && t.dataset.f) { const fl = t.closest(".bb-fl"); const post = fl && b2Ting(fl.dataset.id); if (post) { b2Kø("bib_ting", post, t.dataset.f, t.value); b2Flush().then(function () { b2Behold(); }); } }
   });
@@ -83305,7 +83319,7 @@ async function b2OmdoebSek(e, gammel, ny) {
 /* hero-navnet kan trykkes: omdoeb doeren/emnet, man staar i */
 document.addEventListener("click", function (ev) {
   try {
-    if (!bib2Aktiv() || BIB2.vis.papirkurv) return; const v = BIB2.vis; const id = v.emne || v.dor; if (!id) return;
+    if (!bib2Aktiv() || BIB2.vis.papirkurv || BIB2.vis.importer) return; const v = BIB2.vis; const id = v.emne || v.dor; if (!id) return;
     const n = document.querySelector("#dashMain .bs-baand .mb-navn"); if (!n || !n.firstChild) return;
     const rg = document.createRange(); rg.selectNodeContents(n.firstChild); const q = rg.getBoundingClientRect();   /* kun selve ordet, ikke hele linjen (naalen ligger lige efter) */
     if (ev.clientX >= q.left && ev.clientX <= q.right && ev.clientY >= q.top && ev.clientY <= q.bottom) { ev.stopPropagation(); ev.preventDefault(); b2Omdoeb("node", id); }
@@ -83466,6 +83480,167 @@ async function b2NodeTraekGem(id, slipId) {
   const sv = await Promise.all(dem.map(function (x) { const patch = { foraelder_id: x[1].par, raekkefolge: x[1].rk }; return b2Opdater("bib_emne", x[0], patch).then(function (r) { if (r.ok) Object.assign(x[0], patch); return r; }).catch(function (er) { return { fejl: er }; }); }));
   b2Status(sv.some(function (r) { return r.konflikt; }) ? "konflikt" : sv.some(function (r) { return r.fejl; }) ? "fejl" : "gemt", "ingen forbindelse"); b2Selects.c = null; b2Behold();
 }
+/* ---------- IMPORTÉR (Teknik › Importér til Biblioteket): vaelg .json-filer → forhaandsvisning (intet skrives) → Importér → Fortryd ---------- */
+const B2I = { trin: "vaelg", filer: [], fejl: [], ting: [], nye: [], fandtes: 0, dubl: 0, fund: {}, mangler: [], valg: {}, ukendte: {}, ogsaSprunget: 0, prefix: "", tid: "", fremdrift: "", fejlTekst: "", kvit: null, hist: null, histBusy: "", laeser: false };
+const B2I_HVAD = ["manus", "model", "eksempel", "citat", "oevelse", "skabelon", "research", "formulering", "note"];
+const B2I_UDD = ["instagram akademiet", "reels akademiet", "vip instagramklubben", "instagram live", "content marketing"];
+function bib2ImportAabn() {
+  const r = bibRod(); if (!r) return; BIB2.gammel = false; const v = BIB2.vis; v.importer = true; v.papirkurv = false; v.dor = null; v.emne = null;
+  if (B2I.trin !== "laegger") { B2I.trin = "vaelg"; B2I.filer = []; B2I.fejl = []; B2I.ting = []; B2I.kvit = null; B2I.fejlTekst = ""; B2I.hist = null; }
+  mrRumAaben(r.id); setTimeout(b2ImpHist, 400);
+}
+function b2ImpGrupper() {
+  const ud = []; b2Boern(null).forEach(function (s) { b2Boern(s.id).filter(function (d) { return d.niveau === "doer"; }).forEach(function (d) { const g = b2Boern(d.id).filter(function (x) { return x.niveau === "gruppe"; }); if (!g.length) ud.push({ id: d.id, navn: d.navn }); g.forEach(function (x) { ud.push({ id: x.id, navn: d.navn + " · " + x.navn }); }); }); });
+  return ud;
+}
+function b2ImpStd(navn, grupper) {
+  const lav = String(navn).toLowerCase(); const mal = B2I_UDD.indexOf(lav) > -1 ? "uddannelser, andres materiale" : "indhold";
+  let g = grupper.find(function (x) { return /^social media · /i.test(x.navn) && x.navn.toLowerCase().split(" · ")[1] === mal; });
+  if (!g) g = grupper.find(function (x) { return /^social media/i.test(x.navn); }) || grupper[0]; return g ? g.id : "";
+}
+function b2ImpFiler(liste) {
+  const fil = [].slice.call(liste || []); if (!fil.length) return; B2I.laeser = true; B2I.fejl = []; B2I.filer = []; B2I.ting = []; b2Tegn();
+  let rest = fil.length; const klar = function () { if (--rest === 0) b2ImpForbered(); };
+  fil.forEach(function (f) {
+    const fr = new FileReader();
+    fr.onload = function () { try { const d = JSON.parse(String(fr.result)); if (!Array.isArray(d)) throw new Error("filen er ikke en liste"); B2I.filer.push({ navn: f.name, data: d }); } catch (e) { B2I.fejl.push(f.name + ": kan ikke læses som en liste af ting (" + e.message + ")"); } klar(); };
+    fr.onerror = function () { B2I.fejl.push(f.name + ": kunne ikke åbnes"); klar(); };
+    fr.readAsText(f, "utf-8");
+  });
+}
+async function b2ImpEksist() {
+  const s = new Set();
+  for (let fra = 0; ; fra += 1000) { const r = await sb.from("bib_ting").select("kilde_id").neq("kilde_id", "").range(fra, fra + 999); if (r.error) throw r.error; (r.data || []).forEach(function (x) { s.add(x.kilde_id); }); if ((r.data || []).length < 1000) break; }
+  return s;
+}
+async function b2ImpForbered() {
+  try {
+    await b2Hent(true); const eks = await b2ImpEksist();
+    const fejl = B2I.fejl.slice(), ting = [], set = new Set(); let dubl = 0, fandtes = 0;
+    const tekst = function (x) { return typeof x === "string"; };
+    B2I.filer.sort(function (a, b) { return a.navn.localeCompare(b.navn); }).forEach(function (f) {
+      f.data.forEach(function (x, i) {
+        const nr = f.navn + " · nr. " + (i + 1); const m = [];
+        if (!x || typeof x !== "object") { fejl.push(nr + ": er ikke et objekt"); return; }
+        if (!tekst(x.emne) || !x.emne.trim()) m.push("emne mangler"); if (!tekst(x.titel) || !x.titel.trim()) m.push("titel mangler"); if (!tekst(x.tekst)) m.push("tekst mangler");
+        if (!tekst(x.afsnit)) m.push("afsnit mangler"); if (!tekst(x.kilde_id) || !x.kilde_id.trim()) m.push("kilde_id mangler"); if (!tekst(x.kilde)) m.push("kilde mangler");
+        if (B2I_HVAD.indexOf(x.hvad) < 0) m.push("hvad »" + x.hvad + "« er ugyldig"); if (["egne", "andres"].indexOf(x.hvis_ord) < 0) m.push("hvis_ord »" + x.hvis_ord + "« er ugyldig"); if (["gaelder", "tidligere"].indexOf(x.status) < 0) m.push("status »" + x.status + "« er ugyldig");
+        if (!Array.isArray(x.bruges_til) || x.bruges_til.some(function (y) { return !tekst(y); })) m.push("bruges_til skal være en liste"); if (x.ogsa_emner !== undefined && (!Array.isArray(x.ogsa_emner) || x.ogsa_emner.some(function (y) { return !tekst(y); }))) m.push("ogsa_emner skal være en liste");
+        if (m.length) { fejl.push(nr + ": " + m.join(", ")); return; }
+        if (eks.has(x.kilde_id)) { fandtes++; return; }
+        if (set.has(x.kilde_id)) { dubl++; return; }
+        set.add(x.kilde_id); ting.push(Object.assign({}, x, { fil: f.navn }));
+      });
+    });
+    const primaer = {}; BIB2.emner.forEach(function (e) { if (e.niveau === "emne" && !e.alias_af && !primaer[e.navn.toLowerCase()]) primaer[e.navn.toLowerCase()] = e; });
+    const alle = []; B2I.filer.forEach(function (f) { f.data.forEach(function (x) { if (x && typeof x.emne === "string") alle.push(x); }); });
+    const talt = {}; alle.forEach(function (x) { const k = x.emne.trim(); talt[k] = talt[k] || { ialt: 0, nye: 0 }; talt[k].ialt++; });
+    ting.forEach(function (x) { talt[x.emne.trim()].nye++; });
+    const mangler = Object.keys(talt).filter(function (n) { return !primaer[n.toLowerCase()]; });
+    const grupper = b2ImpGrupper(); const valg = {}; mangler.forEach(function (n) { valg[n] = (B2I.valg[n] && grupper.some(function (g) { return g.id === B2I.valg[n]; })) ? B2I.valg[n] : b2ImpStd(n, grupper); });
+    const ukendte = {}; let sprunget = 0; const kendt = function (n) { return !!primaer[n.toLowerCase()] || mangler.some(function (m) { return m.toLowerCase() === n.toLowerCase(); }); };
+    ting.forEach(function (x) { (x.ogsa_emner || []).forEach(function (n) { if (!kendt(n)) { ukendte[n] = (ukendte[n] || 0) + 1; sprunget++; } }); });
+    Object.assign(B2I, { fejl: fejl, ting: ting, fandtes: fandtes, dubl: dubl, fund: talt, mangler: mangler, valg: valg, ukendte: ukendte, ogsaSprunget: sprunget, grupper: grupper, trin: "forhaand", laeser: false, fejlTekst: "" });
+  } catch (e) { B2I.laeser = false; B2I.trin = "vaelg"; B2I.fejl.push("Kunne ikke sammenligne med Biblioteket: " + ((e && e.message) || "ingen forbindelse")); }
+  if (bib2Aktiv() && BIB2.vis.importer) b2Tegn();
+}
+function b2ImpHtml() {
+  const I = B2I; const nu = function (e, t, b) { return '<div class="bs3-fl bb-imp"><div class="bs3-et"><span>' + esc(e) + '</span></div>' + t + (b || "") + '</div>'; };
+  const lin = function (t) { return '<div class="bb-imp-l">' + t + '</div>'; };
+  let h = "";
+  if (I.laeser) return nu("Læser", lin("Læser filerne …"));
+  if (I.trin === "laegger") return nu("Importerer", lin(esc(I.fremdrift)) + lin("Luk ikke siden, før den er færdig."));
+  if (I.trin === "kvit" && I.kvit) {
+    const k = I.kvit; h += nu(k.stop ? "Stoppet" : "Færdig", lin(esc(k.tekst)) + (k.stop ? lin("Det, der er lagt ind, ligger i Biblioteket. Vælg filerne igen og tryk Importér for at lægge resten ind. De allerede lagte springes over.") : "") + '<button type="button" class="bb-knap" data-imp="ny">' + (k.stop ? "Vælg filerne igen" : "Færdig") + '</button>');
+    return h;
+  }
+  if (I.trin === "forhaand") {
+    const fn = I.filer.map(function (f) { return esc(f.navn) + " · " + f.data.length + " ting"; }).join("<br>");
+    h += nu("Filerne", lin(fn));
+    if (I.fejl.length) h += nu("Kan ikke bruges", lin(I.fejl.slice(0, 20).map(esc).join("<br>") + (I.fejl.length > 20 ? "<br>og " + (I.fejl.length - 20) + " flere" : "")) + lin("Disse springes over."));
+    h += nu("Det der lægges ind", lin(I.ting.length + " nye ting.") + lin(I.fandtes + " findes allerede og springes over. De overskrives aldrig." + (I.dubl ? " " + I.dubl + " er dobbelt i filerne." : "")));
+    const emn = Object.keys(I.fund).sort(function (a, b) { return a.localeCompare(b, "da"); });
+    h += nu("Pr. emne", emn.map(function (n) { const f = I.fund[n]; const mgl = I.mangler.indexOf(n) > -1; return lin(esc(n) + " · " + f.nye + " nye af " + f.ialt + (mgl ? " · oprettes" : " · findes")); }).join(""));
+    if (I.mangler.length) h += nu("Emner der oprettes", I.mangler.map(function (n) { return '<label class="bb-lbl">' + esc(n) + '<select class="bb-vaelg" data-imp-valg="' + esc(n) + '">' + I.grupper.map(function (g) { return '<option value="' + g.id + '"' + (I.valg[n] === g.id ? " selected" : "") + '>' + esc(g.navn) + '</option>'; }).join("") + '</select></label>'; }).join(""));
+    const uk = Object.keys(I.ukendte); if (uk.length) h += nu("Også-emner der ikke findes", lin(uk.map(function (n) { return esc(n) + " (" + I.ukendte[n] + ")"; }).join(", ")) + lin("Oprettes ikke. Tingene lægges i deres hovedemne."));
+    h += '<button type="button" class="bb-knap bb-roed" data-imp="start"' + (I.ting.length ? "" : " disabled") + '>Importér</button><button type="button" class="bb-knap" data-imp="ny">Vælg andre filer</button>';
+    return h;
+  }
+  h += nu("Vælg filer", '<label class="bb-knap bb-fil">Vælg .json-filer<input type="file" id="impFil" accept=".json,application/json" multiple></label>' + (I.fejl.length ? lin(I.fejl.map(esc).join("<br>")) : ""));
+  h += b2ImpHistHtml();
+  return h;
+}
+function b2ImpHistHtml() {
+  const I = B2I; if (!I.hist) return ""; if (!I.hist.length) return ""; const mnd = ["jan.", "feb.", "mar.", "apr.", "maj", "jun.", "jul.", "aug.", "sep.", "okt.", "nov.", "dec."];
+  return I.hist.map(function (g, i) {
+    const m = /^\[import (\d{4})-(\d\d)-(\d\d) (\d\d):(\d\d) (.*)\]$/.exec(g.prefix); const navn = m ? (+m[3]) + ". " + mnd[+m[2] - 1] + " kl. " + m[4] + "." + m[5] + " · " + m[6] : g.prefix;
+    return '<div class="bs3-fl bb-imp"><div class="bs3-et"><span>Tidligere import</span></div><div class="bb-imp-l">' + esc(navn) + '</div><div class="bb-imp-l">' + g.urorte + ' urørte · ' + g.rettede + ' rettet af dig · ' + g.slettede + ' fortrudt</div>'
+      + (g.urorte ? '<button type="button" class="bb-knap bb-slet" data-imp="fortryd" data-i="' + i + '" aria-label="Fortryd denne import">' + BS_SKRALD_SVG + '<span class="slet-ord">Fortryd denne import</span></button>' : "") + '</div>';
+  }).join("");
+}
+async function b2ImpHist() {
+  try {
+    const rk = []; for (let fra = 0; ; fra += 1000) { const r = await sb.from("bib_ting").select("id,kilde,oprettet,rettet,slettet").like("kilde", "[import %").range(fra, fra + 999); if (r.error) throw r.error; (r.data || []).forEach(function (x) { rk.push(x); }); if ((r.data || []).length < 1000) break; }
+    const g = {}; rk.forEach(function (x) { const m = /^(\[import [^\]]*\]) /.exec(x.kilde); if (!m) return; const o = g[m[1]] = g[m[1]] || { prefix: m[1], rk: [], urorte: 0, rettede: 0, slettede: 0 }; o.rk.push(x);
+      if (x.slettet) o.slettede++; else if (b2ImpUroert(x)) o.urorte++; else o.rettede++; });
+    B2I.hist = Object.keys(g).sort().reverse().map(function (k) { return g[k]; });
+  } catch (e) { B2I.hist = []; }
+  if (bib2Aktiv() && BIB2.vis.importer && B2I.trin === "vaelg") b2Tegn();
+}
+function b2ImpUroert(x) { return new Date(x.rettet).getTime() <= new Date(x.oprettet).getTime() + 2000; }
+function b2ImpKlik(el) {
+  const k = el.dataset.imp;
+  if (k === "ny") { B2I.trin = "vaelg"; B2I.filer = []; B2I.ting = []; B2I.fejl = []; B2I.kvit = null; b2Tegn(); b2ImpHist(); return; }
+  if (k === "start") { b2ImpKoer(); return; }
+  if (k === "fortryd") { const g = (B2I.hist || [])[+el.dataset.i]; if (!g) return; arkSpoerg({ titel: "Fortryd denne import?", tekst: "Kun det, du ikke har rettet, slettes (papirkurven, 30 dage). Det du har rettet, bliver. Intet slettes hårdt.", jaTekst: "Slet", nejTekst: "Annullér", ja: function () { b2ImpFortryd(g.prefix); } }); }
+}
+function b2ImpDato() { const d = new Date(), p = function (n) { return String(n).padStart(2, "0"); }; return d.getFullYear() + "-" + p(d.getMonth() + 1) + "-" + p(d.getDate()) + " " + p(d.getHours()) + ":" + p(d.getMinutes()); }
+async function b2ImpKoer() {
+  const I = B2I; I.trin = "laegger"; I.fremdrift = "Forbereder …"; I.tid = b2ImpDato(); b2Tegn();
+  let lagt = 0, oprettet = 0; const total = I.ting.length;
+  try {
+    await b2Flush(); const tag = "[import " + I.tid;
+    const emneId = {}; BIB2.emner.forEach(function (e) { if (e.niveau === "emne" && !e.alias_af && !emneId[e.navn.toLowerCase()]) emneId[e.navn.toLowerCase()] = e.id; });
+    const rkPr = {};
+    for (let i = 0; i < I.mangler.length; i++) { const n = I.mangler[i]; const g = I.valg[n]; if (!g) throw new Error("Vælg en gruppe til »" + n + "«"); rkPr[g] = (rkPr[g] === undefined ? b2Boern(g).length : rkPr[g] + 1); I.fremdrift = "Opretter emnet " + n + " …"; b2Tegn(); const e = await b2NyEmne(g, "emne", n, rkPr[g], "", tag); emneId[n.toLowerCase()] = e.id; oprettet++; }
+    const pos = {}, taeller = {};
+    const rec = I.ting.map(function (x) {
+      const pid = emneId[x.emne.trim().toLowerCase()]; const emner = [pid]; (x.ogsa_emner || []).forEach(function (n) { const id = emneId[n.toLowerCase()]; if (id && emner.indexOf(id) < 0) emner.push(id); });
+      const pk = pid; if (!pos[pk]) { const gr = b2Afsnit(pid); pos[pk] = { map: {}, n: gr.length }; gr.forEach(function (g, i) { pos[pk].map[g.navn] = { p: i, i: g.ting.length ? Math.max.apply(null, g.ting.map(function (t) { return (t.raekkefolge || 0) % 1000; })) + 1 : 0 }; }); }
+      let a = pos[pk].map[x.afsnit]; if (!a) a = pos[pk].map[x.afsnit] = { p: pos[pk].n++, i: 0 };
+      const rk = a.p * 1000 + a.i++;
+      return { titel: x.titel, tekst: x.tekst, afsnit: x.afsnit, hvad: x.hvad, hvis_ord: x.hvis_ord, status: x.status, gennemgaaet: false, bruges_til: x.bruges_til, emner: emner, kilde: tag + " " + x.fil + "] " + x.kilde, kilde_id: x.kilde_id, raekkefolge: rk };
+    });
+    let i = 0;
+    while (i < rec.length) {
+      const batch = []; let bytes = 0; while (i < rec.length && batch.length < 40 && (batch.length === 0 || bytes + JSON.stringify(rec[i]).length < 600000)) { bytes += JSON.stringify(rec[i]).length; batch.push(rec[i]); i++; }
+      I.fremdrift = "Lægger ind … " + lagt + " af " + total; b2Tegn();
+      const r = await sb.from("bib_ting").insert(batch).select("id"); if (r.error || !r.data || r.data.length !== batch.length) throw new Error((r.error && r.error.message) || "svaret manglede rækker");
+      lagt += batch.length;
+    }
+    I.kvit = { stop: false, tekst: "Lagt ind: " + lagt + " ting. Sprunget over: " + I.fandtes + " fandtes allerede." + (I.fejl.length ? " " + I.fejl.length + " kunne ikke bruges." : "") + " Oprettet: " + oprettet + " nye emner." + (I.ogsaSprunget ? " " + I.ogsaSprunget + " også-henvisninger til ukendte emner blev sprunget over." : "") };
+  } catch (e) {
+    I.kvit = { stop: true, tekst: "Stoppede ved " + lagt + " af " + total + ": " + ((e && e.message) || "ingen forbindelse") + ". Emner oprettet: " + oprettet + "." };
+  }
+  I.trin = "kvit"; try { await b2Hent(true); } catch (e) {} if (bib2Aktiv() && BIB2.vis.importer) b2Tegn();
+}
+async function b2ImpFortryd(prefix) {
+  const I = B2I; if (I.histBusy) return; I.histBusy = prefix;
+  try {
+    const rk = []; for (let fra = 0; ; fra += 1000) { const r = await sb.from("bib_ting").select("id,kilde,oprettet,rettet,slettet").like("kilde", prefix + " %").range(fra, fra + 999); if (r.error) throw r.error; (r.data || []).forEach(function (x) { rk.push(x); }); if ((r.data || []).length < 1000) break; }
+    const dem = rk.filter(function (x) { return !x.slettet && b2ImpUroert(x); }); const beholdt = rk.filter(function (x) { return !x.slettet && !b2ImpUroert(x); }).length;
+    const nu = new Date().toISOString(); let ok = 0, fejl = 0;
+    for (let i = 0; i < dem.length; i += 10) { const res = await Promise.all(dem.slice(i, i + 10).map(function (x) { return b2Opdater("bib_ting", x, { slettet: nu }).catch(function (e) { return { fejl: e }; }); })); res.forEach(function (r) { if (r.ok) ok++; else fejl++; }); }
+    await b2Hent(true);
+    const tagMin = (/^\[import \d{4}-\d\d-\d\d \d\d:\d\d/.exec(prefix) || [""])[0]; let emnerSlettet = 0;
+    BIB2.emner.filter(function (e) { return e.doer_navn === tagMin && e.niveau === "emne"; }).forEach(function (e) { e.__tom = !BIB2.ting.some(function (t) { return (t.emner || []).indexOf(e.id) > -1; }) && !(e.beskrivelse || "").trim() && !BIB2.emner.some(function (x) { return x.foraelder_id === e.id || x.alias_af === e.id; }); });
+    const tomme = BIB2.emner.filter(function (e) { return e.__tom; });
+    for (let i = 0; i < tomme.length; i++) { const r = await sb.from("bib_emne").delete().eq("id", tomme[i].id).select("id"); if (!r.error) emnerSlettet++; }
+    if (emnerSlettet) { BIB2.emner = BIB2.emner.filter(function (e) { return !e.__tom; }); b2Selects.c = null; }
+    try { husKvit("Fortrudt: " + ok + " ting i papirkurven" + (beholdt ? ", " + beholdt + " rettede beholdt" : "") + (fejl ? ", " + fejl + " kunne ikke" : "") + (emnerSlettet ? ", " + emnerSlettet + " tomme emner fjernet" : "")); } catch (e) {}
+  } catch (e) { try { husBesked("Fortryd stoppede: " + ((e && e.message) || "ingen forbindelse")); } catch (x) {} }
+  I.histBusy = ""; await b2ImpHist();
+}
 /* ---------- TEKNIK: vejen tilbage til det gamle Bibliotek og papirkurven ---------- */
 (function () {
   const g = window.teknikDoereTegn; if (typeof g !== "function") return;
@@ -83473,7 +83648,7 @@ async function b2NodeTraekGem(id, slipId) {
     const r = g.apply(this, arguments);
     try {
       const kr = document.getElementById("mrKoeRaekke"); const gr = kr && kr.querySelector(".bs-grid"); if (!gr || gr.querySelector("[data-doer='bib2gammel']")) return r;
-      gr.insertAdjacentHTML("beforeend", '<div class="bs-doer" data-doer="bib2gammel" role="button" tabindex="0" onclick="bib2Gammel()"><span class="bs-doer-n">Det gamle Bibliotek</span><span class="bs-doer-s"></span></div><div class="bs-doer" data-doer="bib2papir" role="button" tabindex="0" onclick="bib2PapirkurvAabn()"><span class="bs-doer-n">Bibliotekets papirkurv</span><span class="bs-doer-s"></span></div>');
+      gr.insertAdjacentHTML("beforeend", '<div class="bs-doer" data-doer="bib2gammel" role="button" tabindex="0" onclick="bib2Gammel()"><span class="bs-doer-n">Det gamle Bibliotek</span><span class="bs-doer-s"></span></div><div class="bs-doer" data-doer="bib2papir" role="button" tabindex="0" onclick="bib2PapirkurvAabn()"><span class="bs-doer-n">Bibliotekets papirkurv</span><span class="bs-doer-s"></span></div><div class="bs-doer" data-doer="bib2import" role="button" tabindex="0" onclick="bib2ImportAabn()"><span class="bs-doer-n">Importér til Biblioteket</span><span class="bs-doer-s"></span></div>');
     } catch (e) {}
     return r;
   };
@@ -83505,7 +83680,7 @@ async function b2NodeTraekGem(id, slipId) {
   </div>
 </div>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-hvid.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 8. oktober · 2596</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 8. oktober · 2600</div>
 <script>
 /* DROPDOWNEN RULLER SELV (Ida 4/10) — maal den aabne liste og klip den ved skaermens bund */
 (function () {
