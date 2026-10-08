@@ -1,3 +1,8 @@
+## v2605 · 8. oktober · Mødesiden: Hvem kan rettes, de røde plusser er væk (Ida 8/10: »jeg kan ikke redigere i personer«, »slet disse røde plusser«)
+- HVEM er en trykbar række: et tryk åbner »Hvem deltager?« med holdets navne som chips (flere kan vælges) og Gem. Deltagerne gemmes på selve mødet i den eksisterende kolonne kunde_aftaler.deltagere (tekst, navne med komma) — ingen ny kolonne. Er ingen valgt, står hele holdet som før. Uden et møde åbner trykket først dag og tid.
+- De røde plusser ved Idéer til mødet og Forberedelse til mødet er væk. I stedet står én grå »Tilføj« i selve feltet — også når der allerede er idéer eller forberedelse (ordner Idas »ikke to tilføj«: ét tegn pr. felt).
+- Gemte felter der berøres: kunde_aftaler.deltagere (findes i forvejen). Intet andet.
+
 ## v2603 · 8. oktober · Mødesiden: »Start mødet« er den lange røde knap lige under coveret, på computer og telefon (Ida 8/10: »start mødet skulle være den lange røde knap?«)
 - Rettelse til v2601: på computeren stod en lille hvid knap i coveret. Nu den samme lange røde knap i fuld bredde som på telefonen, over de fire fliser. Rører ingen data.
 

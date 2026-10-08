@@ -11149,6 +11149,7 @@ html body.mb #moedeSideRum .mo-top-aabn .mo-link { height:32px; min-height:32px;
 @media (max-width:899px) { html body.mb #moedeSideRum .mo-top-rk { flex-wrap:wrap; } html body.mb #moedeSideRum .mo-top-aabn { flex:0 0 100%; margin-left:54px; } html body.mb #moedeSideRum .mo-top-pil { display:none; } }
 html body.mb #moedeSideRum .mo-to { grid-template-columns:1fr !important; }
 html body.mb #moedeSideRum .mo-igennem { margin-top:24px; }
+html body.mb #moedeSideRum .mo-tilfoej { margin:2px 0 6px; }
 html body.mb #moedeSideRum .mo-igennem { display:block !important; padding:16px 20px 8px; }
 html body.mb #moedeSideRum .mo-igennem .mo-hoved { display:block; border-bottom:1px solid #EEEBE7; padding:0 0 12px; margin:0 0 2px; }
 html body.mb #moedeSideRum .mo-igennem .mo-titel { font-size:15px; }
@@ -58813,7 +58814,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2603";
+const APP_VERSION = "2605";
 let NY_VERSION_KLAR = false;
 let NY_VERSION_AFVIST = false;
 function nyVersionSkjul() {
@@ -79793,6 +79794,34 @@ function moedeOpslagListe() {
   return l;
 }
 /* TOPPEN AF MØDET = HVORNÅR · HVOR · HVEM · GENTAGES, hver i sin flise (Idas valg 8/10, bud B, efter en Outlook-begivenhed) */
+/* HVEM DELTAGER = chips med holdets navne, flere kan vælges; gemmes paa mødet (kunde_aftaler.deltagere) (Ida 8/10) */
+function moedeHvemArk() {
+  let ma = null; try { ma = planMoedeAftale(); } catch (e) {}
+  if (!ma || !ma.id) { try { planMoedeTidArk(); } catch (e) {} return; }   /* uden et møde sættes dag og tid først */
+  const folk = (function () { try { return briefPersonerListe(); } catch (e) { return []; } })();
+  const nu = String(ma.deltagere || "").split(/\s*,\s*/).filter(Boolean);
+  window.__MO_HVEM = (nu.length ? nu : folk.slice()).filter(function (n) { return folk.indexOf(n) > -1 || nu.indexOf(n) > -1; });
+  const alle = folk.concat(nu.filter(function (n) { return folk.indexOf(n) < 0; }));
+  arkAabn({ titel: "Hvem deltager?", ph: "", tekst: "", send: "Gem", chips: [], ingenTekst: true,
+    ekstraAf: function () {
+      return '<div class="ark-chips mo-hvem-chips">' + alle.map(function (n) { return '<button type="button" class="ark-chip' + (window.__MO_HVEM.indexOf(n) > -1 ? ' on' : '') + '" data-n="' + esc(n) + '" onclick="moedeHvemSkift(this)">' + esc(n) + '</button>'; }).join("") + '</div>';
+    },
+    gem: async function () {
+      const valgt = window.__MO_HVEM || [];
+      if (!valgt.length) throw new Error("!Vælg mindst én.");
+      if (!sb || !currentKode) return false;
+      try { const u = await sb.from("kunde_aftaler").update({ deltagere: valgt.join(", ") }).eq("id", ma.id).select(); if (u.error || !u.data || !u.data.length) return false; } catch (e) { return false; }
+      try { await renderAftaler(); } catch (e) {}
+      try { moedeSideTegn(); } catch (e) {}
+      return "Deltagerne er gemt.";
+    } });
+  try { const f0 = document.querySelector("#arkSlor .ark-felt"); const f = f0 && (f0.closest(".ark-vrk") || f0); if (f) f.style.display = "none"; } catch (e) {}
+}
+function moedeHvemSkift(b) {
+  const n = b.getAttribute("data-n"); const l = window.__MO_HVEM = window.__MO_HVEM || [];
+  const i = l.indexOf(n); if (i > -1) l.splice(i, 1); else l.push(n);
+  b.classList.toggle("on", i < 0);
+}
 function moedeTopHtml() {
   let ma = null; try { ma = planMoedeAftale(); } catch (e) {}
   const SV = function (d) { return '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">' + d + '</svg>'; };
@@ -79810,7 +79839,9 @@ function moedeTopHtml() {
     const korLink = ms.online && ma.link ? String(ma.link).replace(/^https?:\/\//, "").slice(0, 38) : "";
     hvor = rk(ms.online ? IK.sted : IK.fysisk, "Hvor", ms.online ? "Online møde" : "Fysisk møde", esc(ms.online ? korLink : (ms.sted || "")), "planMoedeTidArk()", link);
   }
-  const hvem = rk(IK.folk, "Hvem", esc(storStart(moedeDeltagere())), "", "");
+  /* HVEM KAN RETTES (Ida 8/10: »jeg kan ikke redigere i personer«): deltagerne staar paa selve mødet (kunde_aftaler.deltagere, tekst, navne med komma) — er der ingen, er det hele holdet som før */
+  const hvemTxt = (ma && String(ma.deltagere || "").trim()) ? String(ma.deltagere).split(/\s*,\s*/).filter(Boolean).join(" · ") : moedeDeltagere();
+  const hvem = rk(IK.folk, "Hvem", esc(storStart(hvemTxt)), "", "moedeHvemArk()");
   let gentag = rk(IK.gen, "Gentages", "Ikke sat endnu", "", "rytmeArk('uge')");
   try { if (rytme().uge) gentag = rk(IK.gen, "Gentages", "Hver uge", "", "rytmeArk('uge')"); } catch (e) {}
   return '<div class="mo-top">' + hvornaar + hvor + hvem + gentag + '</div>';
@@ -79843,14 +79874,14 @@ function moedeSideTegn() {
   /* ROEDT FLUEBEN = PLANLAGT (Ida 29/9 under moedet med ACORNS: »dem man klikker af med rød flueben det er dem der bliver planlagt — de andre bliver både på mødet men også forbliver i idebanken«):
      idéerne staar paa moedet uden flueben; et tryk paa cirklen aabner dato-arket, og datoen planlaegger idéen. Et tryk paa et flueben tager planen af igen. Idéen bliver paa moedet begge veje. */
   const moPlanlagt = function (x) { return !!x.dato; };
-  const ideer = '<div class="cf-sek mo-sek-plus">Idéer til mødet<button type="button" class="kv-menuknap mq-tap mo-plus" aria-label="Tilføj idéer til mødet" title="Tilføj idéer til mødet" onclick="moedeIdeerFraBanken()">+</button></div>'
+  const ideer = '<div class="cf-sek">Idéer til mødet</div>'
     + (valgte.length ? valgte.map(function (x) { const so = x.soejle ? soejleVis(x.soejle) : ""; const pl = moPlanlagt(x); return '<div class="idag-flise mo-fl mo-ide" role="button" tabindex="0" onclick="openBrief(\'' + esc(String(x.id)) + '\')"><button type="button" class="idag-cirk' + (pl ? ' ok' : '') + ' mq-tap" aria-label="' + (pl ? 'Planlagt · tryk for at tage planen af' : 'Planlæg') + '" onclick="event.stopPropagation();moedeIdePlan(\'' + esc(String(x.id)) + '\')"></button><span class="idag-tekst"><span class="idag-titel">' + esc(storStart(titelVis(x.titel || "Uden titel"))) + '</span><span class="idag-sub">' + esc([pl ? dkDatoKort(x.dato) : "", x.type, so].filter(Boolean).join(" · ")) + '</span></span><button type="button" class="mo-ide-af mq-tap" aria-label="Tag af mødet" title="Tag af mødet" onclick="event.stopPropagation();moedeIdeAf(\'' + esc(String(x.id)) + '\')">' + BS_SKRALD_SVG + '</button></div>'; }).join("") : '')
     + '<input type="date" id="moIdeDato" class="bf-dato-mo" value="" style="position:absolute;width:0;height:0;opacity:0;pointer-events:none;" tabindex="-1" onchange="moedeIdePlanGem(this.value)">'
-    + (valgte.length ? '<div class="mo-hint">Flueben = planlagt. Resten bliver i Idébanken.</div>' : tomKortHtml("Hvilke idéer skal med?", "", ""));   /* EN TOM RUBRIK ER EN OPGAVE (22/9; revision fund 77, natten 7/10): systemets historie ude — tomKortHtml herunder */
+    + (valgte.length ? '<div class="mo-hint">Flueben = planlagt. Resten bliver i Idébanken.</div><button type="button" class="ark-chip mo-tilfoej" onclick="moedeIdeerFraBanken()">Tilføj</button>' : tomKortHtml("Hvilke idéer skal med?", "Tilføj", "moedeIdeerFraBanken()"));   /* EN TOM RUBRIK ER EN OPGAVE (22/9; revision fund 77, natten 7/10): systemets historie ude — tomKortHtml herunder */
   /* Forberedelse til mødet: to-do'er med teammedlem, lander under To-do hos den, der er valgt */
   const forb = M.forb.map(function (id) { return (OPGAVER || []).find(function (o) { return String(o.id) === String(id); }); }).filter(function (o) { return o && o.aktiv !== false; });
-  const forbHtml = '<div class="cf-sek mo-sek-plus">Forberedelse til mødet<button type="button" class="kv-menuknap mq-tap mo-plus" aria-label="Tilføj forberedelse" title="Tilføj forberedelse" onclick="moedeForbArk()">+</button></div>'
-    + (forb.length ? forb.map(function (o) { const sub = [o.ansvarlig, o.deadline ? "inden " + dkDatoKort(o.deadline) : ""].filter(Boolean).join(" · "); return '<div class="idag-flise mo-fl' + (o.done ? ' gjort' : '') + '"><button type="button" class="idag-cirk mq-tap' + (o.done ? ' ok' : '') + '" aria-label="' + (o.done ? 'Gjort — tryk for at fortryde' : 'Markér som gjort') + '" onclick="moedeForbGjort(\'' + esc(String(o.id)) + '\', ' + (o.done ? 'false' : 'true') + ')"></button><span class="idag-tekst"><span class="idag-titel">' + esc(o.titel || "") + '</span>' + (sub ? '<span class="idag-sub">' + esc(sub) + '</span>' : '') + '</span></div>'; }).join("") : tomKortHtml("Hvad skal forberedes?", "", ""));
+  const forbHtml = '<div class="cf-sek">Forberedelse til mødet</div>'
+    + (forb.length ? forb.map(function (o) { const sub = [o.ansvarlig, o.deadline ? "inden " + dkDatoKort(o.deadline) : ""].filter(Boolean).join(" · "); return '<div class="idag-flise mo-fl' + (o.done ? ' gjort' : '') + '"><button type="button" class="idag-cirk mq-tap' + (o.done ? ' ok' : '') + '" aria-label="' + (o.done ? 'Gjort — tryk for at fortryde' : 'Markér som gjort') + '" onclick="moedeForbGjort(\'' + esc(String(o.id)) + '\', ' + (o.done ? 'false' : 'true') + ')"></button><span class="idag-tekst"><span class="idag-titel">' + esc(o.titel || "") + '</span>' + (sub ? '<span class="idag-sub">' + esc(sub) + '</span>' : '') + '</span></div>'; }).join("") + '<button type="button" class="ark-chip mo-tilfoej" onclick="moedeForbArk()">Tilføj</button>' : tomKortHtml("Hvad skal forberedes?", "Tilføj", "moedeForbArk()"));
   const mig = moedeBruger();
   /* EET FELT, NAAR MAN ER ALENE (Ida/natten 7/10, revision fund 75: »Min note er væk!«): med eet teammedlem er »Kun til mig / Alle kan se« uklart, og den faelles note stod skjult bag standarden. Er der kun den ene slags note, vises den uden chips; findes begge, bliver chipsene, saa intet skjules. */
   let ene = true; try { ene = briefPersonerListe().length <= 1; } catch (e) {}
