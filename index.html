@@ -11179,6 +11179,17 @@ html body #briefKlip1Vaert > #briefKlip1 { flex:1 1 auto; width:100%; min-width:
 .hk-stip .hk-n { color:var(--gray2); }
 .hk-u { font-size:11.5px; color:var(--gray2); overflow:hidden; text-overflow:ellipsis; }
 .hk-nu { position:absolute; left:0; right:0; border-top:2px solid var(--red); z-index:3; pointer-events:none; }
+/* UGEN I DAGSKORTET (Idas »Lås bud A« 8/10) */
+.hk-visning { display:flex; gap:8px; margin:0 0 8px; }
+.hk-uge { grid-template-columns:44px 1fr; }
+.hk-uge .hk-t { right:6px; }
+.hk-ugespor { display:grid; grid-template-columns:repeat(7, minmax(0,1fr)); gap:6px; position:relative; }
+.hk-uk { position:relative; border-left:1px solid #EEEBE7; }
+.hk-uk .hk-hl { left:0; right:0; }
+.hk-uge .hk-blk { padding:4px 6px; border-radius:10px; align-items:flex-start; }
+.hk-uge .hk-blk .hk-tt { white-space:normal; flex-direction:column; }
+.hk-uge .hk-blk .hk-n { font-size:11px; line-height:1.25; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; white-space:normal; }
+.hk-uge .hk-blk.hk-lav { align-items:flex-start; }
 .hk-nu::before { content:""; position:absolute; left:-5px; top:-6px; width:10px; height:10px; border-radius:50%; background:var(--red); }
 /* TJEKLISTEN DAGEN FOER (bud 1, 26/9): flisen folder sig ud — etiket · een streg · titel · faner · spoergsmaal med husets flueben */
 .hu-tjek { background:#fff; border:1px solid var(--border); border-radius:16px; padding:14px 16px 16px; display:flex; flex-direction:column; gap:12px; cursor:pointer; min-width:0; }
@@ -48330,7 +48341,7 @@ function huKalForslag(iso) {
   });
   return ud;
 }
-function huKalDagHtml(iso, erIdag) {
+function huKalBlokke(iso) {
   const blk = [], uden = [];
   (IDEER || []).forEach(function (x) {
     if (!x || x.dato !== iso || x.status === "Arkiveret") return;   /* EN IDÉ MED DATO STAAR PAA DAGEN (Idas klik 6/10, revision B fund 1: plus paa en dag gav datoen men status Idé, og dagen stod tom) */
@@ -48361,6 +48372,10 @@ function huKalDagHtml(iso, erIdag) {
   /* forslag, der ikke rammer noget, der allerede staar i kalenderen */
   huKalForslag(iso).forEach(function (f) { if (!blk.some(function (b) { return f.fra < b.til && f.til > b.fra; })) blk.push(f); });
   blk.sort(function (a, b) { return a.fra - b.fra; });
+  return { blk: blk, uden: uden };
+}
+function huKalDagHtml(iso, erIdag) {
+  const _b = huKalBlokke(iso), blk = _b.blk, uden = _b.uden;
   /* TIMERNE FOELGER DAGEN (ekspertrunden 26/9): en time foer det foerste til en time efter det sidste, mindst seks timer; i dag er nu altid med; tom dag = 08–18 */
   let T0 = 8, T1 = 18;
   if (blk.length) {
@@ -48403,6 +48418,28 @@ function huKalDagHtml(iso, erIdag) {
   huKalDagHtml.uden = "";
   return hel + '<div class="hk"><div class="hk-tider" style="height:' + ((T1 - T0) * H) + 'px">' + tider + '</div><div class="hk-spor" style="height:' + ((T1 - T0) * H) + 'px">' + linjer + blokke + nu + '</div></div>'
     + '';   /* DER TILFOEJES ALTID KUN OEVERST (Ida 7/10: »dette skal fjernes«): ingen »Hvad skal der ske denne dag? · Tilføj« nederst i dagen */
+}
+/* UGEN I DET SAMME KORT (Idas »Lås bud A« 8/10): dagskortets timer bliver til syv søjler, én pr. dato-flise; samme blokke, samme timeakse. Kun rigtige opslag og aftaler (de stiplede forslag hører til dagen). */
+let HU_UGEVIS = (function () { try { return localStorage.getItem("hjemUgeVis") === "1"; } catch (e) { return false; } })();
+function huUgeVis(paa) { HU_UGEVIS = !!paa; try { localStorage.setItem("hjemUgeVis", paa ? "1" : "0"); } catch (e) {} try { hjemUgeTegn(); } catch (e) {} }
+function huKalUgeHtml(dage, idagIso) {
+  const H = HU_KAL_H, kol = dage.map(function (d) { return huKalBlokke(d.iso).blk.filter(function (b) { return b.k !== "stip"; }); });
+  const alle = [].concat.apply([], kol);
+  let T0 = 8, T1 = 18;
+  if (alle.length) { T0 = Math.floor(Math.min.apply(null, alle.map(function (b) { return b.fra; }))) - 1; T1 = Math.ceil(Math.max.apply(null, alle.map(function (b) { return b.til; }))) + 1; if (T1 - T0 < 6) T1 = T0 + 6; T0 = Math.max(0, T0); T1 = Math.min(24, T1); }
+  let tider = "", linjer = "";
+  for (let h = T0; h <= T1; h++) { tider += '<div class="hk-t" style="top:' + ((h - T0) * H) + 'px">' + String(h).padStart(2, "0") + '.00</div>'; linjer += '<div class="hk-hl" style="top:' + ((h - T0) * H) + 'px"></div>'; }
+  const soejler = kol.map(function (blk, di) {
+    const spor = []; blk.forEach(function (b) { let i = 0; while (spor[i] != null && spor[i] > b.fra + 1e-6) i++; spor[i] = b.til; b.spor = i; });
+    const bl = blk.map(function (b) {
+      const top = (b.fra - T0) * H + 1, hh = Math.max(34, (b.til - b.fra) * H - 3);
+      const bred = spor.length > 1 ? (b.spor === 0 ? "left:2px;right:calc(50% + 1px)" : "left:calc(50% + 1px);right:2px") : "left:2px;right:2px";
+      return '<div class="hk-blk hk-' + b.k + ' hk-lav" style="top:' + top + 'px;height:' + hh + 'px;' + bred + '"' + (b.klik ? ' onclick="' + b.klik + '"' : '') + ' title="' + esc(b.n) + '"><span class="hk-tt"><span class="hk-n">' + esc(b.n) + '</span></span></div>';
+    }).join("");
+    let nu = ""; if (dage[di].iso === idagIso) { const d = new Date(); const t = d.getHours() + d.getMinutes() / 60; if (t >= T0 && t <= T1) nu = '<div class="hk-nu" style="top:' + ((t - T0) * H) + 'px"></div>'; }
+    return '<div class="hk-uk' + (dage[di].iso === idagIso ? ' idag' : '') + '" style="height:' + ((T1 - T0) * H) + 'px">' + linjer + bl + nu + '</div>';
+  }).join("");
+  return '<div class="hk hk-uge"><div class="hk-tider" style="height:' + ((T1 - T0) * H) + 'px">' + tider + '</div><div class="hk-ugespor">' + soejler + '</div></div>';
 }
 /* KOMMENDE AFTALER I HOEJRE SPALTE PAA COMPUTEREN (Idas svar 26/9: »kommende opslag lander under kalenderen og kommende aftaler er øverst i højre side efterfulgt af to-do«) — de naeste 3, samme design som Kommende opslag (kop-rk m. datokassen) */
 function huKommendeAftalerHtml(antal) {
@@ -48688,7 +48725,10 @@ function hjemUgeHtml(tlf) {
       + '<div class="hu-kaft">' + huKommendeAftalerHtml(3) + '</div>'   /* KOMMENDE AKTIVITETER OGSAA PAA TELEFONEN, UNDER I DAG (Idas klik 6/10 »Kommende aktiviteter under I dag«, revision A fund 2): det ugentlige moede og andre aftaler stod kun paa computeren; paa telefonen skulle kunden trykke paa netop den dag */
       + forslagBlok + '<div class="cf-sek hu-sek">' + (huYgtFoer8() ? 'Lektionerne' : 'Denne uge') + '</div><div class="hu-ringe">' + huRinge(true) + '</div>' + (huYgtFoer8() ? '' : '<div class="hu-kop">' + kommendeOpslagHtml(3, "hu-sek") + '</div>') + huTodoHtml() + '</div>';
   const fokus = huFokusHtml();
-  const kalGrid = huKalDagHtml(dage[valgt].iso, erIdag);
+  const dagFuld = huKalDagHtml(dage[valgt].iso, erIdag);
+  const heldel = dagFuld.indexOf('<div class="hk">') > 0 ? dagFuld.slice(0, dagFuld.indexOf('<div class="hk">')) : "";   /* »Bliv klar«-striben staar ogsaa over ugen */
+  const ugeChips = '<div class="hk-visning"><button type="button" class="ark-chip' + (HU_UGEVIS ? '' : ' on') + '" onclick="huUgeVis(false)">Dag</button><button type="button" class="ark-chip' + (HU_UGEVIS ? ' on' : '') + '" onclick="huUgeVis(true)">Uge</button></div>';
+  const kalGrid = ugeChips + (HU_UGEVIS ? heldel + huKalUgeHtml(dage, idagIso) : dagFuld);
   const kalTop = '';   /* alt fra dagen staar i kalenderen; i morgen er en stiplet blok i dagen (26/9) */
   const kalDag = '<div class="hu-dagen hu-kal">' + kalGrid + '</div>';   /* kalenderdagen (26/9) — fliserne staar over datofelterne */
   return '<div class="hu hu-pc' + (fokus ? '' : ' uden-fokus') + '">'
@@ -58728,7 +58768,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2596";
+const APP_VERSION = "2597";
 let NY_VERSION_KLAR = false;
 let NY_VERSION_AFVIST = false;
 function nyVersionSkjul() {
