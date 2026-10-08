@@ -5454,6 +5454,29 @@ html body.mb #briefWrap .kk-laast .kk-ik-tom, html body.mb #briefWrap .kk-laast 
   html body :is(#briefForside, #fbKortTlf, #screen7) .pf-besk-rk .pf-start.pf-start-kort button.pf-start-knap.pf-start-knap.pf-start-knap.pf-start-knap { background:#fff !important; color:var(--black, #1A1816) !important; border:0 !important; width:100% !important; }
   html body.mb #briefWrap { background:transparent !important; }   /* sandfladen staar ikke som en indsat kasse i det hvide ark */
 }
+/* SOEJLEHJAELP I BRIEFEN (KLADDE 8/10): lyseblaa hjaelpefliser — Idas ord i opdraget; feltfladen #F0F5F8 er husets egen lyseblaa. Kolonne til hoejre paa computer >= 1400; ellers en graa chip, der folder ud. */
+.soh-kol { display:none; }
+.soh-fold { margin:0 0 16px; }
+.soh-knap { gap:8px; }
+.soh-knap svg { transition:transform 160ms cubic-bezier(.23,1,.32,1); }
+.soh-knap[aria-expanded="true"] svg { transform:rotate(180deg); }
+.soh-panel { display:none; margin-top:12px; }
+.soh-fold.aaben .soh-panel { display:block; }
+.soh-fl { background:#F0F5F8; border-radius:20px; padding:16px 18px 18px; margin:0 0 12px; font-family:Poppins,sans-serif; }
+.soh-et { font-size:10px; letter-spacing:1.5px; text-transform:uppercase; color:#9A9590; border-bottom:1px solid rgba(26,24,22,.10); padding-bottom:9px; margin-bottom:11px; }
+.soh-t { font-size:13.5px; color:#1A1816; line-height:1.4; margin:0 0 3px; }
+.soh-p { font-size:13.5px; color:#1A1816; line-height:1.6; margin:0 0 8px; }
+.soh-p:last-child, .soh-fire:last-child { margin-bottom:0; }
+.soh-gra { color:#6F6B66; }
+.soh-fire { margin:10px 0 8px; }
+.soh-fire > div { font-size:13.5px; line-height:1.55; color:#1A1816; padding:7px 0; border-top:1px solid rgba(26,24,22,.08); }
+.soh-fire > div:first-child { border-top:0; padding-top:0; }
+.soh-fire > div > span { display:block; font-size:11.5px; color:#6F6B66; margin-bottom:1px; }
+@media (min-width:1400px) {
+  body.mb #briefGrid:has(> #briefHjaelp) { grid-template-columns:260px minmax(0,560px) 280px; gap:20px; }
+  .soh-kol { display:block; position:sticky; top:24px; align-self:start; max-height:calc(100vh - 48px); overflow-y:auto; scrollbar-width:thin; }
+  .soh-fold { display:none !important; }
+}
 html body .ch-faner { margin-bottom:22px !important; }
 /* TELEFONENS BRIEFOVERSIGT: TITLEN I SORT DIDOT, START/FORTSAET BRIEF ER BARE EN ROED KNAP (Ida 7/10) — ingen roed flise om titlen */
 @media (max-width:899px) {
@@ -22834,6 +22857,64 @@ function briefProcesTegn() {
 function briefProcesGaa(i) { try { briefKlipLaes(); } catch (e) {} BRIEF_SIDE_AKTIV = i; BRIEF_TRIN_AKTIV = 0; briefMbVis("skriv"); }
 const __briefMbVisOrig = briefMbVis;
 briefMbVis = function () { const r = __briefMbVisOrig.apply(this, arguments); setTimeout(function () { try { briefProcesTegn(); } catch (e) {} }, 30); return r; };
+
+/* ===== SØJLEHJÆLP I BRIEFEN — KLADDE 8/10 (lokal, ikke udgivet) =====
+   Lyseblaa hjaelpefliser til hoejre i briefens fire skrivesider: byggestenen soejlen bygger paa (kundens EGNE ord, laest) + hjaelp til det aktuelle trin
+   + et tænkt eksempel (altid maerket). Teksterne bor i BS_SOEJLE_HJAELP. Computer >= 1400 px: kolonne til hoejre; ellers (og paa telefon) en
+   graa chip »Hjælp til dette trin« under procesbaren, der folder fliserne ud — den blokerer aldrig felterne. Intet gemmes, intet i basen. */
+if (window.SOEJLE_HJAELP_KLADDE === undefined) window.SOEJLE_HJAELP_KLADDE = true;
+const SOH_TRIN = ["ide", "fang", "fasthold", "handle"], SOH_NAVN = ["Idéen", "Fang dem", "Fasthold dem", "Få dem til at handle"];
+let SOH_AABEN = false;
+function sohFliserHtml(kode, ix) {
+  const H = BS_SOEJLE_HJAELP[kode], bs = BS_SOEJLER.filter(function (x) { return x.kode === kode; })[0]; if (!H || !bs) return "";
+  const t = H.trin[SOH_TRIN[ix]]; if (!t) return "";
+  const ental = (function () { try { return duI(true, false); } catch (e) { return true; } })();
+  const T = function (x) { return esc(storStart(bsTiltale(x, ental))); };
+  const fl = function (et, indhold) { return '<div class="soh-fl"><div class="soh-et">' + et + '</div>' + indhold + '</div>'; };
+  let h = "";
+  /* 1 · byggestenen — kundens egne ord, kun laest. Ingen byggestenstekst = ingen flise (ingenting at sige). */
+  try {
+    const bd = brandDelData(kode), items = (bd.items || []).filter(function (x) { return x && (x.t || x.d); }).slice(0, 4);
+    if (items.length) h += fl(esc(bsTiltale(bs.label, ental)), items.map(function (x) {
+      const dub = x.t && bsTiltale(bs.label, ental).toLowerCase().slice(-String(x.t).length) === String(x.t).toLowerCase();   /* »USP« under »Vores USP« er en dublet */
+      return (x.t && !dub ? '<div class="soh-t">' + esc(x.t) + '</div>' : '') + (x.d ? '<div class="soh-p">' + esc(x.d) + '</div>' : '');
+    }).join(""));
+  } catch (e) {}
+  /* 2 · hjaelp til trinnet */
+  let b = '<div class="soh-p">' + T(t.h) + '</div>';
+  if (t.fire) b += '<div class="soh-fire">' + t.fire.map(function (r) { return '<div><span>' + T(r[0]) + '</span>' + T(r[1]) + '</div>'; }).join("") + '</div>';
+  if (t.v) b += '<div class="soh-p soh-gra">' + T(t.v) + '</div>';
+  h += fl("Hjælp · " + SOH_NAVN[ix], b);
+  /* 3 · tænkt eksempel — altid maerket, aldrig et svar fra kunden */
+  if (t.eks) h += fl("Tænkt eksempel", '<div class="soh-p">' + T(t.eks) + '</div>' + (t.cta ? '<div class="soh-fire"><div><span>CTA</span>' + T(t.cta) + '</div></div>' : ''));
+  return h;
+}
+function sohSkift(kn) {
+  SOH_AABEN = !SOH_AABEN;
+  const f = document.getElementById("briefHjaelpFold"); if (f) f.classList.toggle("aaben", SOH_AABEN);
+  if (kn) kn.setAttribute("aria-expanded", SOH_AABEN ? "true" : "false");
+}
+function soejleHjaelpTegn() {
+  const fjern = function () { ["briefHjaelp", "briefHjaelpFold"].forEach(function (id) { const e = document.getElementById(id); if (e) e.remove(); }); };
+  const wrap = document.getElementById("briefWrap"), grid = document.getElementById("briefGrid");
+  if (!window.SOEJLE_HJAELP_KLADDE || !wrap || !grid || BRIEF_MB_VIS !== "skriv" || document.body.hasAttribute("data-bforside")) { fjern(); return; }
+  let kode = ""; try { const it = (IDEER || []).find(function (x) { return String(x.id) === String(BRIEF_ID); }); const mm = it && it.soejle ? soejleModel(it.soejle) : null; kode = mm ? mm.kode : ""; } catch (e) {}
+  const html = kode ? sohFliserHtml(kode, BRIEF_SIDE_AKTIV) : "";
+  if (!html) { fjern(); return; }
+  let kol = document.getElementById("briefHjaelp");
+  if (!kol) { kol = document.createElement("aside"); kol.id = "briefHjaelp"; kol.className = "soh-kol"; kol.setAttribute("aria-label", "Hjælp til dette trin"); grid.appendChild(kol); }
+  kol.innerHTML = html;
+  let fold = document.getElementById("briefHjaelpFold");
+  if (!fold) { fold = document.createElement("div"); fold.id = "briefHjaelpFold"; fold.className = "soh-fold" + (SOH_AABEN ? " aaben" : ""); }
+  const pr = document.getElementById("briefProces");
+  if (pr && pr.parentNode === wrap) { if (pr.nextSibling !== fold) wrap.insertBefore(fold, pr.nextSibling); } else if (fold.parentNode !== wrap) wrap.insertBefore(fold, wrap.firstChild);
+  fold.innerHTML = '<button type="button" class="ark-chip soh-knap mq-tap" aria-expanded="' + (SOH_AABEN ? "true" : "false") + '" onclick="sohSkift(this)">Hjælp til dette trin<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button><div class="soh-panel">' + html + '</div>';
+}
+(function () {
+  const sen = function () { clearTimeout(window.__sohT); window.__sohT = setTimeout(function () { try { soejleHjaelpTegn(); } catch (e) {} }, 70); };
+  const o1 = briefMbVis; briefMbVis = function () { const r = o1.apply(this, arguments); sen(); return r; };
+  const o2 = briefSideVis; briefSideVis = function () { const r = o2.apply(this, arguments); sen(); return r; };
+})();
 function briefMbVis(vis, n, behold) {
   setTimeout(function () { try { briefHookIKlip(); } catch (e) {} }, 0);   /* hook-forslagene i klip 1 (26/9) */
   setTimeout(function () { try { briefThumbFold(); } catch (e) {} }, 0);   /* coverteksten foldes som hooket (7/10) */
@@ -24493,17 +24574,20 @@ const EFU_VIS = [
     h: "Gør det foran kameraet. Før og efter. Hånden, der viser hvordan." }
 ];
 function efuAaben() {
-  EFU = { trin: 0, egenskab: "", fordel: "", udbytte: "", vis: "", visTekst: "" };
+  /* KLADDE 8/10 (opsamlingsdokumentet): to besluttede indgange foer vinkelguiden — »Jeg ved, hvad jeg vil vise« og »Hjælp mig med at vælge produkt«. ix -1 = valget af indgang. */
+  EFU = { ix: -1, indgang: "", valg: "", forskel: "", egenskab: "", fordel: "", udbytte: "", vis: "", visTekst: "" };
   efuTegn();
 }
 function efuLuk() { const b = document.getElementById("efuBack"); if (b) b.remove(); EFU = null; }
 function efuSaet(felt, v) { if (EFU) EFU[felt] = v; }
+function efuListe() { return (EFU && EFU.indgang === "vaelg" ? ["valg"] : []).concat(["forskel", "egenskab", "fordel", "udbytte", "vis"]); }
+function efuIndgang(k) { if (!EFU) return; EFU.indgang = k; EFU.ix = 0; efuTegn(); }
 function efuGaa(d) {
-  if (!EFU) return;
-  const t = EFU.trin + d;
-  if (t < 0) return;
-  if (t > 3) { efuIndsaet(); return; }
-  EFU.trin = t; efuTegn();
+  if (!EFU || EFU.ix < 0) return;
+  const l = efuListe(), t = EFU.ix + d;
+  if (t < 0) { EFU.ix = -1; EFU.indgang = ""; efuTegn(); return; }
+  if (t >= l.length) { efuIndsaet(); return; }
+  EFU.ix = t; efuTegn();
 }
 function efuTegn() {
   if (!EFU) return;
@@ -24511,44 +24595,59 @@ function efuTegn() {
   if (!b) { b = document.createElement("div"); b.id = "efuBack"; b.className = "modal-back"; document.body.appendChild(b); }
   b.style.display = "flex";
   const mgn = (typeof EFU_MGN !== "undefined" && EFU_MGN) ? EFU_MGN : "kunden";
-  const TRIN = [
-    { label: "1 · Egenskab", sp: "Hvad <i>er</i> produktet? Helt konkret.",
-      h: "Det, man kan se og måle. Materialet, størrelsen, hvor lang tid det tager, hvad det består af. Ikke noget om, hvor godt det er — bare hvad det er.",
+  const ental = (function () { try { return duI(true, false); } catch (e) { return true; } })();
+  const T = x => bsTiltale(x, ental);
+  const TA = 'width:100%;background:#fff;border:1px solid var(--border);border-radius:12px;padding:11px 13px;font-family:Poppins,sans-serif;font-size:13px;min-height:70px;outline:none;box-sizing:border-box;';
+  const kort = (onclk, navn, under, valgt) => '<button type="button" onclick="' + onclk + '" style="text-align:left;background:' + (valgt ? 'var(--rosa,#FBFAF9)' : '#fff') + ';border:1px solid ' + (valgt ? 'var(--red)' : 'var(--border)') + ';border-radius:14px;padding:12px 15px;cursor:pointer;font-family:Poppins,sans-serif;">'
+    + '<div style="font-size:13.5px;color:var(--black);">' + esc(navn) + '</div><div style="font-size:11.5px;color:var(--gray3);line-height:1.5;margin-top:3px;">' + esc(under) + '</div></button>';
+  const TRIN = {
+    valg: { label: "Produktvalg", sp: "Hvilke varer er aktuelle for årstiden lige nu?",
+      h: T("Begynd med kalenderoversigten og sæsonen. Andre spor: Hvad efterspørger kunderne faktisk? Hvad sælger godt? Hvilke varer står stille, eller har {vi|du} meget på lager? Hvad solgte godt på samme tid sidste år, hvis der er salgstal? Brug det spor, der passer. {Vi|Du} skal ikke svare på alle. Målgruppen og {vores|din} USP hjælper med at vurdere relevansen, men vælger ikke automatisk mellem flere lige relevante varer."),
+      felt: "valg", ph: "Skriv de varer, du overvejer. Ét produkt, flere produkter eller en kategori." },
+    forskel: { label: "Find forskellen", sp: "Hvorfor bliver kunden glad for den her vare?",
+      h: T("Det kan være et faktisk kundespørgsmål eller en indvending om varen. Det kan også være det, {vi|du} viser eller forklarer, når {vi|du} anbefaler varen i butikken. {Vi|Du} kan vise ét produkt, flere produkter eller en kategori, når de underbygger den samme pointe. Stop ved et konkret, relevant svar."),
+      felt: "forskel", ph: "Fordi …" },
+    egenskab: { label: "1 · Egenskab", sp: "Hvad <i>er</i> produktet? Helt konkret.",
+      h: "Det, man kan se og måle. Materialet, størrelsen, hvor lang tid det tager, hvad det består af. Ikke noget om, hvor godt det er — bare hvad det er. Tjek egenskaben på den faktiske vare.",
       felt: "egenskab", ph: "Fx: håndlavet, 100 % uld, syet i Portugal…" },
-    { label: "2 · Fordel", sp: "Og hvad gør det så?",
+    fordel: { label: "2 · Fordel", sp: "Og hvad gør det så?",
       h: "Ikke hvad det <b style=\"font-weight:400;\">er</b> — hvad det <b style=\"font-weight:400;\">betyder</b>. „Fordi den er af uld, holder den på varmen.“ „Fordi den er skåret på skrå, falder den blødt.“",
       felt: "fordel", ph: "Fordi den er …, så …" },
-    { label: "3 · Udbytte", sp: "Og hvad betyder det for " + esc(mgn) + "?",
-      h: "Nu er vi ude hos kunden. Hvad kan de, føler de eller slipper de for — som de ikke kunne før? <b style=\"font-weight:400;\">Det er udbyttet.</b> Det er det, opslaget skal handle om.",
+    udbytte: { label: "3 · Udbytte", sp: "Og hvad betyder det for " + esc(mgn) + "?",
+      h: "Nu er vi ude hos kunden. Hvad kan de, føler de eller slipper de for — som de ikke kunne før? <b style=\"font-weight:400;\">Det er udbyttet.</b> Det er produktets forskel for kunden, og det opslaget skal få kunden til at forstå." + (EFU.forskel ? '<br><span style="color:var(--gray3);">Din forskel indtil nu: ' + esc(EFU.forskel) + '</span>' : ""),
       felt: "udbytte", ph: "Nu kan de …" },
-    { label: "4 · Vis det", sp: "Godt. Hvordan viser vi det?",
-      h: "Du skal ikke fortælle kunden udbyttet. Du skal vise det. Vælg én vej:",
+    vis: { label: "4 · Vis det", sp: "Godt. Hvordan viser vi det?",
+      h: T("{Vi|Du} må gerne fortælle udbyttet først og derefter underbygge det. Vis det på den faktiske vare, så det bliver konkret. Et billede alene beviser ikke komfort eller en følelse, så lad en ærlig erfaring forklare den. Viser {vi|du} flere varer, skal de alle underbygge den samme pointe. Vælg én vej:"),
       felt: "visTekst", ph: "" }
-  ];
-  const t = TRIN[EFU.trin];
-  const prikker = TRIN.map((_, i) =>
-    '<span style="width:6px;height:6px;border-radius:50%;background:' + (i === EFU.trin ? 'var(--red)' : 'var(--border)') + ';"></span>').join("");
-  let krop;
-  if (EFU.trin === 3) {
-    krop = '<div style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px;">'
-      + EFU_VIS.map(v => '<button type="button" onclick="efuVisVaelg(\'' + v.k + '\')" style="text-align:left;background:' + (EFU.vis === v.k ? 'var(--rosa,#FBFAF9)' : '#fff') + ';border:1px solid ' + (EFU.vis === v.k ? 'var(--red)' : 'var(--border)') + ';border-radius:14px;padding:12px 15px;cursor:pointer;font-family:Poppins,sans-serif;">'
-          + '<div style="font-size:13.5px;color:var(--black);">' + esc(v.navn) + '</div>'
-          + '<div style="font-size:11.5px;color:var(--gray3);line-height:1.5;margin-top:3px;">' + esc(v.h) + '</div></button>').join("")
-      + '</div>'
-      + (EFU.vis ? '<textarea id="efuFelt" oninput="efuSaet(\'visTekst\',this.value)" placeholder="Den ene ting, du vil vise…" style="width:100%;background:#fff;border:1px solid var(--border);border-radius:12px;padding:11px 13px;font-family:Poppins,sans-serif;font-size:13px;min-height:62px;outline:none;box-sizing:border-box;">' + esc(EFU.visTekst) + '</textarea>' : '');
+  };
+  let tittel, krop, sidste = false, prikker = "";
+  if (EFU.ix < 0) {
+    tittel = { label: "1A · Produkt", sp: "Hvor vil du begynde?", h: "" };
+    krop = '<div style="display:flex;flex-direction:column;gap:8px;margin-bottom:4px;">'
+      + kort("efuIndgang('vis')", "Jeg ved, hvad jeg vil vise", "Gå direkte til hjælpen med vinklen.", false)
+      + kort("efuIndgang('vaelg')", "Hjælp mig med at vælge produkt", "Find produktet og fortsæt til den samme vinkelguide.", false) + '</div>';
   } else {
-    krop = '<textarea id="efuFelt" oninput="efuSaet(\'' + t.felt + '\',this.value)" placeholder="' + esc(t.ph) + '" style="width:100%;background:#fff;border:1px solid var(--border);border-radius:12px;padding:11px 13px;font-family:Poppins,sans-serif;font-size:13px;min-height:70px;outline:none;box-sizing:border-box;">' + esc(EFU[t.felt]) + '</textarea>';
+    const liste = efuListe(), nøgle = liste[EFU.ix]; tittel = TRIN[nøgle]; sidste = EFU.ix === liste.length - 1;
+    if (nøgle === "vis") {
+      krop = '<div style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px;">'
+        + EFU_VIS.map(v => kort("efuVisVaelg('" + v.k + "')", v.navn, v.h, EFU.vis === v.k)).join("")
+        + '</div>'
+        + (EFU.vis ? '<textarea id="efuFelt" oninput="efuSaet(\'visTekst\',this.value)" placeholder="Den ene ting, du vil vise…" style="' + TA + 'min-height:62px;">' + esc(EFU.visTekst) + '</textarea>' : '');
+    } else {
+      krop = '<textarea id="efuFelt" oninput="efuSaet(\'' + tittel.felt + '\',this.value)" placeholder="' + esc(tittel.ph) + '" style="' + TA + '">' + esc(EFU[tittel.felt]) + '</textarea>';
+    }
+    prikker = liste.map((_, i) => '<span style="width:6px;height:6px;border-radius:50%;background:' + (i === EFU.ix ? 'var(--red)' : 'var(--border)') + ';"></span>').join("");
   }
-  const sidste = EFU.trin === 3;
   b.innerHTML = '<div class="modal" style="max-width:440px;position:relative;">'
     + '<button class="modal-close" style="position:absolute;top:12px;right:14px;" onclick="efuLuk()">&times;</button>'
-    + '<div style="font-size:10px;letter-spacing:1.8px;text-transform:uppercase;font-weight:400;color:var(--red);border-bottom:1px solid var(--border);padding-bottom:9px;margin-bottom:12px;">' + t.label + '</div>'
-    + '<div style="font-size:16px;line-height:1.35;margin-bottom:7px;">' + t.sp + '</div>'
-    + '<div style="font-size:12px;color:var(--gray3);line-height:1.6;margin-bottom:12px;">' + t.h + '</div>'
+    + '<div style="font-size:10px;letter-spacing:1.8px;text-transform:uppercase;font-weight:400;color:var(--red);border-bottom:1px solid var(--border);padding-bottom:9px;margin-bottom:12px;">' + tittel.label + '</div>'
+    + '<div style="font-size:16px;line-height:1.35;margin-bottom:7px;">' + tittel.sp + '</div>'
+    + (tittel.h ? '<div style="font-size:12px;color:var(--gray3);line-height:1.6;margin-bottom:12px;">' + tittel.h + '</div>' : '')
     + krop
-    + '<div style="display:flex;align-items:center;gap:8px;margin-top:16px;">' + prikker
-    + (EFU.trin > 0 ? '<button type="button" class="row-btn view" style="margin-left:auto;font-weight:400;" onclick="efuGaa(-1)">Tilbage</button>' : '<span style="margin-left:auto;"></span>')
-    + '<button type="button" class="dbtn primary" style="padding:9px 18px;border-radius:999px;" onclick="efuGaa(1)">' + (sidste ? 'Sæt det ind i briefen' : 'Næste') + '</button></div></div>';
+    + (EFU.ix < 0 ? '' : '<div style="display:flex;align-items:center;gap:8px;margin-top:16px;">' + prikker
+      + '<button type="button" class="row-btn view" style="margin-left:auto;font-weight:400;" onclick="efuGaa(-1)">Tilbage</button>'
+      + '<button type="button" class="dbtn primary" style="padding:9px 18px;border-radius:999px;" onclick="efuGaa(1)">' + (sidste ? 'Sæt det ind i briefen' : 'Næste') + '</button></div>')
+    + '</div>';
   setTimeout(function () { const f = document.getElementById("efuFelt"); if (f) f.focus(); }, 30);
 }
 function efuVisVaelg(k) { if (!EFU) return; EFU.vis = (EFU.vis === k) ? "" : k; efuTegn(); }
@@ -52437,10 +52536,10 @@ function postnrOgBy(info) {
 }
 const BS_SOEJLER = [
   { kode: "1A", navn: "Produkt", formaal: "Skabe behov", byggesten: "usp", label: "{Vores|Din} USP", afsaet: "USP",
-    om: "At skabe behov for et konkret produkt eller en ydelse ved at gøre det tydeligt, hvilken forskel det gør for kunden.",
+    om: "I 1A viser {vi|du}, hvilken forskel produktet gør for kunden, så kunden forstår, hvorfor varen er relevant.",   /* KLADDE 8/10: enkel og ens med de tre andre; ingen arbejdsraekkefoelge (»start i produktet«). Opsamlingsdokumentet 8/10. */
     vibe: "Primært inspirerende eller informativ.",   /* Idas klik 3/9: viben foelger "Energidas drejebog - arbejdsdokument", som markerer afsnittet LAAST/AFTALT. "Primaert" siger, at der ER et valg, og at det foerste er hovedsporet — appens ene ord blev laest som en regel uden undtagelse. */
     foelelse: "Mit liv bliver bedre med det produkt.",
-    ideer: "Tag udgangspunkt i det, {vi|du} gerne vil skabe efterspørgsel på. Find derefter den konkrete forskel, kunden får: Hvad løser det? Hvad gør det lettere? Hvornår bliver det relevant? Hvad opdager kunden først, når de ser det i brug?",
+    ideer: "Find den konkrete forskel, kunden får af varen: Hvad løser den? Hvad gør den lettere? Hvornår bliver den relevant? Hvad opdager kunden først, når de ser den i brug? Ved {vi|du} allerede, hvad {vi|du} vil vise, går {vi|du} direkte til forskellen. Har {vi|du} brug for hjælp til at vælge produkt, begynder {vi|du} dér og finder derefter forskellen.",   /* KLADDE 8/10: de to indgange, ingen fast raekkefoelge */
     eksempler: "Ét produkt i tre situationer, hvor det løser tre forskellige behov · den vare, kunderne typisk overser, og hvad de går glip af ved kun at se hurtigt på den · forskellen på produktbilledet og virkeligheden · én detalje, og hvad den betyder for kunden · to valg — hvem passer de hver især til?",
     format: "Reel.",
     cta: "Tre niveauer, så siden kan bruges uanset hvor kunden er. LAV FRIKTION: gem den · send den til én, den passer til. DIALOG: skriv, hvis du vil se den · spørg om det, du er i tvivl om. KØB: den handling, der passer til den kanal, kunden faktisk kan købe i.",
@@ -52449,10 +52548,10 @@ const BS_SOEJLER = [
             "Den her gør en forskel, fordi …"],
     /* EFU, ikke EFO (Ida 13/8). Oversigten skrev EFO; brandbogens egen soejleside har
        altid sagt EFU — egenskab, fordel, udbytte. Ida bekraeftede EFU. */
-    note: "Brug EFU-modellen — egenskab, fordel, udbytte. Oversæt altid til spørgsmålet: hvilken forskel gør det for kunden? Formidl derefter udbyttet gennem storytelling, en lille historie eller en genkendelig situation — ikke som en varedeklaration." },
+    note: "Hvorfor bliver kunden glad for den her vare? Det er spørgsmålet, EFU hjælper med at svare på. Udbyttet må gerne fortælles først og derefter underbygges med varen. EFU er en hjælp, ikke en øvelse, hver vare skal igennem." },   /* KLADDE 8/10 */
   /* Labelen hedder KERNEKUNDE (ret-arkets A5, Ida 19/8) — tvilling til SOEJLER[1] i DREJEBOG-SKABELON */
   { kode: "1B", navn: "Målgruppens situation", formaal: "Skabe behov", byggesten: "audience", label: "{Vores|Din} kernekunde", afsaet: "Målgruppen",
-    om: "Indholdet tager udgangspunkt i {din|vores} målgruppes situation lige nu ({målgruppe}). Hvilke udfordringer står {målgruppe} i lige nu? Hvilke spørgsmål eller overbevisninger har de, og hvordan kan {du|vi} hjælpe dem og skabe værdi?",   /* Idas ord 22/9 — synkroniseres alle steder via BS_SOEJLER; {målgruppe} = kundens persona */
+    om: "I 1B hjælper {vi|du} kunden med en situation, et spørgsmål eller en udfordring i kundens liv. Et produkt må gerne indgå, men hjælpen behøver ikke ende i en vare.",   /* KLADDE 8/10: definitionen fra opsamlingsdokumentet afloeser Idas 22/9-tekst (»Indholdet tager udgangspunkt i … {målgruppe}«) — Idas gamle ord skal bekraeftes */   /* Idas ord 22/9 — synkroniseres alle steder via BS_SOEJLER; {målgruppe} = kundens persona */
     vibe: "Primært uddannende eller inspirerende.",   /* Idas klik 13/9: samme form som de tre andre (3/9): "Primaert" siger, at det foerste er hovedsporet */
     foelelse: "Det var lige det input, jeg havde brug for.",
     ideer: "Start i en situation, et problem eller et behov, kunden genkender fra sin egen hverdag. Det kan være noget, de spørger om, kæmper med, udskyder eller endnu ikke har sat ord på. Hjælp først. Produktet kommer bagefter.",
@@ -52463,7 +52562,7 @@ const BS_SOEJLER = [
             "3 tegn på, at du måske kæmper med …",
             "Hvis du oplever det her lige nu, så prøv det her."] },
   { kode: "2A", navn: "Menneskene bag", formaal: "Danne relation", byggesten: "drive", label: "{Vores|Din} drivkraft", afsaet: "Drivkraften",
-    om: "At gøre det tydeligt, at der er rigtige mennesker bag forretningen, og lade kunden mærke personligheden, energien og dynamikken mellem menneskene.",
+    om: "I 2A lader {vi|du} kunden lære menneskene bag at kende gennem personlighed, reaktioner og samspil.",   /* KLADDE 8/10: FORSLAG fra opsamlingsdokumentet, ikke laast — Idas tidligere tekst: »At goere det tydeligt, at der er rigtige mennesker bag forretningen, og lade kunden maerke personligheden, energien og dynamikken mellem menneskene.« */
     vibe: "Primært underholdende eller inspirerende.",   /* VAELTER 25/8 ("viben er kun underholdende") — dokumentet 3/9 er nyere. "uformel" er stadig ude. */
     foelelse: "Dem kan jeg godt lide.",
     note: "2A behøver ikke lære kunden noget. Det skal først og fremmest gøre menneskene værd at følge.",
@@ -52479,7 +52578,7 @@ const BS_SOEJLER = [
             "Spørg os tre om det samme, og få tre forskellige svar.",
             "Der er altid én af os, der får skylden for det her."] },
   { kode: "2B", navn: "Bag om forretningen", formaal: "Danne relation", byggesten: "values", label: "{Vores|Dine} værdier", afsaet: "Værdierne",
-    om: "At tage kunden med bag facaden og vise, hvordan forretningens værdier kommer til udtryk gennem hverdagens valg, beslutninger, processer og kundeoplevelser. Indholdet skal give kunden mere dybde og indsigt i, hvilken forretning det er.",
+    om: "I 2B viser {vi|du} værdierne gennem konkrete valg, handlinger og tankerne eller læringen bag.",   /* KLADDE 8/10: FORSLAG fra opsamlingsdokumentet, ikke laast — Idas tidligere tekst: »At tage kunden med bag facaden og vise, hvordan forretningens vaerdier kommer til udtryk gennem hverdagens valg, beslutninger, processer og kundeoplevelser. Indholdet skal give kunden mere dybde og indsigt i, hvilken forretning det er.« */
     vibe: "Primært inspirerende eller informativ.",
     foelelse: "Dem vil jeg vælge.",
     ideer: "Kig efter de valg, detaljer og arbejdsgange, kunden normalt ikke ser. Især dér, hvor {vi|du} gør {os|dig} umage, vælger noget fra, bruger ekstra tid eller gør noget på en bestemt måde, fordi det betyder noget for den oplevelse, kunden ender med at få.",
@@ -52494,6 +52593,108 @@ const BS_SOEJLER = [
             "Vi bruger længere tid på det her, end vi behøver. Det er med vilje.",
             "Det tog længere tid end planlagt. Vi ville ikke gøre det anderledes."] }
 ];
+
+/* INDHOLDSSØJLERNES HJÆLP — KLADDE 8/10 (lokal, ikke udgivet).
+   Kilde: Indholdssoejlerne_samlet_kladde_2026-10-08.docx + Idas opdrag samme dag.
+   Markører: {vi|du} {os|dig} {vores|din} afgøres af bsTiltale() — aldrig I/jer, aldrig køn, aldrig kundenavne.
+   Hvert trin: h = hjælpelinjer (kort, konkrete) · eks = tænkt eksempel (altid mærket) · cta (kun trin 4). */
+const BS_SOEJLE_HJAELP = {
+  "1A": {
+    kort: "I 1A viser {vi|du}, hvilken forskel produktet gør for kunden, så kunden forstår, hvorfor varen er relevant.",
+    trin: {
+      ide: {
+        h: "I 1A skal kunden efter opslaget forstå produktets konkrete forskel. Det er svaret på spørgsmålet her, og det skal ikke opfindes forfra i hvert felt.",
+        fire: [
+          ["Produktets udbytte", "Forskellen ved at bruge varen."],
+          ["Kundens udbytte af opslaget", "Det, kunden forstår efter at have set det."],
+          ["Forretningens mål", "Det, {vi|du} vil opnå."],
+          ["CTA", "Den ene konkrete handling, kunden opfordres til."]
+        ],
+        v: "Har {vi|du} ikke valgt vare, kan produkthjælpen finde den. EFU kan hjælpe med at finde varens udbytte.",
+        eks: "Kunden forstår, hvorfor den faktiske striktrøje kan være rar direkte mod huden, hvis egenskaben og erfaringen underbygger det."
+      },
+      fang: {
+        h: "Åbn med den forskel, du lige har fundet, eller med et ærligt spørgsmål om den. Resten af opslaget skal vise det, åbningen peger på. Lov ikke mere, end varen kan holde.",
+        eks: "Hvordan føles den her strik direkte mod huden?"
+      },
+      fasthold: {
+        h: "Hvordan viser {vi|du} den konkrete forskel med den faktiske vare? Find den egenskab, demonstration eller ærlige erfaring, der underbygger pointen. Et billede af brug beviser ikke komfort eller en følelse. Viser {vi|du} flere varer, skal de alle underbygge den samme pointe.",
+        eks: "Vis trøjen i brug direkte mod huden. Fortæl ærligt om komforten og den egenskab, der gør den mulig."
+      },
+      handle: {
+        h: "Lad captionen føre den samme pointe videre og slutte med én konkret handling. Der er ingen ny øvelse i udbytte, genkendelse og følelser her.",
+        eks: "En strik skal være rar at have på. Her viser vi trøjen direkte mod huden og fortæller om vores faktiske erfaring.",
+        cta: "Kom ind og prøv striktrøjen."
+      }
+    }
+  },
+  "1B": {
+    kort: "I 1B hjælper {vi|du} kunden med en situation, et spørgsmål eller en udfordring i kundens liv. Et produkt må gerne indgå, men hjælpen behøver ikke ende i en vare.",
+    trin: {
+      ide: {
+        h: "Hvilken situation hjælper {vi|du} med, og hvad kan kunden bruge hjælpen til? Skeln mellem et faktisk spørgsmål, en observation og en antagelse. En faglig guide kan hjælpe kunden med at forstå et spørgsmål eller en proces.",
+        eks: "Kunden får en enkel måde at vælge tøj til både at være vært og gå en tur uden at skifte det hele."
+      },
+      fang: {
+        h: "Gør situationen genkendelig, og lov kun den hjælp, indholdet giver. Opfind ikke en bekymring for at skabe et salg.",
+        eks: "Gæster i sommerhuset og en tur ud bagefter? Begynd med det her."
+      },
+      fasthold: {
+        h: "Vis rådet i brug. En demonstration, en sammenligning eller en enkel forklaring gør hjælpen anvendelig. Et produkt er valgfrit.",
+        eks: "Vis det samme enkle sæt ved bordet og med et ekstra lag på vej ud, og forklar valget."
+      },
+      handle: {
+        h: "Saml hjælpen i captionen uden at starte idéarbejdet forfra. Vælg én naturlig handling, fx at gemme opslaget til den konkrete situation.",
+        eks: "Begynd med et enkelt sæt og tilføj et lag, når du skal ud.",
+        cta: "Gem idéen til næste gang, du får gæster."
+      }
+    }
+  },
+  "2A": {
+    kort: "I 2A lader {vi|du} kunden lære menneskene bag at kende gennem personlighed, reaktioner og samspil.",
+    trin: {
+      ide: {
+        h: "Hvilken side af personen eller samspillet skal kunden lære at kende? Find en konkret situation frem for et CV.",
+        eks: "Kunden lærer to forskellige personligheder at kende gennem deres valg og reaktioner på hinanden."
+      },
+      fang: {
+        h: "Åbn med et faktisk personligt valg, en forskel eller en reaktion. Lov ikke en sjov konflikt, hvis den ikke findes.",
+        eks: "Samme strik. Helt forskellige svar."
+      },
+      fasthold: {
+        h: "Vis de ærlige svar og reaktioner. De medvirkende bestemmer selv, hvor grænsen til det private går. Underholdende betyder ikke, at nogen skal være sjove på kommando.",
+        eks: "Stil det samme spørgsmål til to personer, og vis svarene og reaktionerne på hinanden."
+      },
+      handle: {
+        h: "Lad captionen bære den samme personlige pointe. Et naturligt spørgsmål kan passe, men er ikke en pligt.",
+        eks: "Samme strik, men to helt forskellige personlige valg.",
+        cta: "Hvilket valg ligner mest dit?"
+      }
+    }
+  },
+  "2B": {
+    kort: "I 2B viser {vi|du} værdierne gennem konkrete valg, handlinger og tankerne eller læringen bag.",
+    trin: {
+      ide: {
+        h: "Hvilket konkret valg eller hvilken handling viser en værdi? Hvad skal kunden forstå om begrundelsen eller læringen?",
+        eks: "Kunden forstår, hvad det betyder i praksis, at vi står inde for sortimentet, også når vi vælger en vare fra."
+      },
+      fang: {
+        h: "Væk nysgerrighed om valget eller om hvorfor. Lov ikke en afsløring, der ikke findes.",
+        eks: "Den her strik kom ikke med hjem. Her er hvorfor."
+      },
+      fasthold: {
+        h: "Vis handlingen, og forklar hvorfor eller hvad der blev lært. Et værdiord, en pakke eller en indkøbstur er ikke nok alene.",
+        eks: "Vis det konkrete tjek, og forklar, hvad der gjorde, at varen blev valgt fra."
+      },
+      handle: {
+        h: "Saml perspektivet i captionen. Vælg én handling, der passer til historien. En vare skal ikke presses ind i afslutningen.",
+        eks: "At stå inde for sortimentet betyder også at vælge noget fra.",
+        cta: "Del tanken med en, der også går op i kvalitet."
+      }
+    }
+  }
+};
 
 /* ===== TILTALEFORMEN — ÉN GLOBAL KILDE (Ida 14/8, HÅRD) =====================
    addressing_mode er en SPROGLIG indstilling paa kunden, ikke et strategispoergsmaal.
@@ -53306,7 +53507,7 @@ function bsBogRaastof(st, T) {
 /* ---------- DE TRETTEN SIDER ---------- */
 /* ORDBOGEN — EEN KILDE (8/9): bogen paa computeren og telefonen laeser den samme liste. */
 const BS_ORDBOG = [
-  ['Indholdssøjle', 'En af de fire slags indhold, alt content hører til. Koden — 1A · 1B · 2A · 2B — siger, hvilken byggesten søjlen kommer af.'],
+  ['Indholdssøjle', 'En af de fire slags indhold, alt content hører til. Koden — 1A · 1B · 2A · 2B — siger, hvilken byggesten søjlen kommer af. Opslagets hovedpointe afgør søjlen, ikke formatet, varen eller personen på billedet.'],   /* KLADDE 8/10: fra opsamlingsdokumentet */
   ['Formål', 'Der findes to: skabe behov og danne relation. Formålet afgør, hvad opslaget skal udrette — ikke hvad det handler om.'],
   ['Format', 'Den form, opslaget har: reel, kort-reel, karrusel eller billede. Det anbefalede format er et udgangspunkt, ikke en regel.'],
   /* ORDBOGEN UDVIDET OG RETTET (Idas klik 13/9, ordlyd godkendt af Ida): bogen brugte Byggesten, EFU-modellen og
@@ -53793,7 +53994,7 @@ function bsBogSider(st, navn, tiltale, butik) {
     + '</div>'
     + '<div style="margin-top:38px;padding-top:22px;border-top:1px solid var(--border);">'
       + '<div style="font-family:\'Caveat\',cursive;font-size:22px;color:var(--red);line-height:1.35;transform:rotate(-1deg);">'
-      + esc(T("Oversæt altid til spørgsmålet: hvilken forskel gør det for kunden? Formidl derefter udbyttet gennem storytelling, en lille historie eller en genkendelig situation — ikke som en varedeklaration."))
+      + esc(T(String((bsSoejle("1A") || {}).note || "Oversæt altid til spørgsmålet: hvilken forskel gør det for kunden? Formidl derefter udbyttet gennem storytelling, en lille historie eller en genkendelig situation — ikke som en varedeklaration.")))   /* KLADDE 8/10: EEN kilde — 1A-noten (var en hardkodet tvilling) */
       + '</div></div>'
     + '</div>' + B.fod(navn, nrTxt(), "32px"), "#fff", "64px"));
 
@@ -58838,7 +59039,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2619";
+const APP_VERSION = "2621";
 let NY_VERSION_KLAR = false;
 let NY_VERSION_AFVIST = false;
 function nyVersionSkjul() {
@@ -63470,7 +63671,7 @@ const IS3 = {
   "1A": {
     formaal: "behov",
     fokus: "Du skal ikke bare vise, hvad du sælger. Du skal vise, hvilken forskel det gør for kunden.",   /* 5997–5998 */
-    om: "1A tager afsæt i {vores|din} USP. Det, der gør {vores|din} forretning relevant og værd at vælge. Så vælg produkter, der viser det særlige ved {vores|dit} udvalg, {vores|din} kvalitet eller {vores|din} måde at hjælpe kunden på.",   /* 6018–6020 */
+    om: "I 1A viser {vi|du}, hvilken forskel produktet gør for kunden. {Vores|Din} USP skal kunne ses i produktvalget, egenskaberne og det reelle udbytte.",   /* KLADDE 8/10: oev. »1A tager afsaet i USP …« (manus 6018–6020) — Idas manus-ord skal bekraeftes */   /* 6018–6020 */
     foelelse: "Det har jeg brug for.",   /* 5874 */
     findT: "Hvilket produkt skal du vælge?",
     model: "trekant",
@@ -63492,7 +63693,7 @@ const IS3 = {
     formaal: "behov",
     bsNavn: "{Vores|Din} målgruppe",   /* manus siger målgruppe, ikke kernekunde (5702–5703) */
     fokus: "I 1B starter vi ikke i din varehylde. Vi starter i kundens liv.",   /* 6104–6105 */
-    om: "Her starter vi hos kunden. Hvad står kunden i? Hvad har de brug for hjælp eller inspiration til?",   /* 5704–5706 */
+    om: "I 1B hjælper {vi|du} kunden med en situation, et spørgsmål eller en udfordring i kundens liv. Et produkt må gerne indgå, men hjælpen behøver ikke ende i en vare.",   /* KLADDE 8/10: oev. »Her starter vi hos kunden …« (manus 5704–5706) — Idas manus-ord skal bekraeftes */   /* 5704–5706 */
     foelelse: "Det var lige det input, jeg havde brug for.",   /* 6160 */
     findT: "Hvad skal du poste?",
     model: "moede",

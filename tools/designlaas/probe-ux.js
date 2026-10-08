@@ -51,7 +51,7 @@ setTimeout(async function () {
         if (/Didot|Bodoni/i.test(cs.fontFamily) && !e.closest(HERO)) didot.push((e.className && String(e.className).split(" ")[0] || e.tagName) + "=" + t.slice(0, 20));
         if (/Poppins/i.test(cs.fontFamily) && parseInt(cs.fontWeight, 10) >= 600) fed.push(t.slice(0, 26));
         if (/—/.test(t)) { streger++; fund(navn, "STREG: " + t.slice(0, 90)); }
-        if (/(^|[\s»"(])(I|jer|jeres|Jer|Jeres)([\s.,!?»)]|$)/.test(t) && !/^I DAG$/i.test(t) && !/^I dag/.test(t) && !/\bI (dag|morgen|aften|nat|løbet|gang|butikken|kalenderen|Idébanken|Indbakken|Kalenderen|Drejebogen|Arkiv|Inspiration|brief|videoen|captionen|Instagram|feltet|klippet|ugen|måneden|midten|banken)\b/.test(t)) fund(navn, "I/JER: " + t.slice(0, 90));
+        if (/(^|[\s»"(])(I|jer|jeres|Jer|Jeres)([\s.,!?»)]|$)/.test(t) && !/^I DAG$/i.test(t) && !/^I dag/.test(t) && !/\bI (dag|morgen|aften|nat|løbet|gang|butikken|kalenderen|Idébanken|Indbakken|Kalenderen|Drejebogen|Arkiv|Inspiration|brief|videoen|captionen|Instagram|feltet|klippet|ugen|måneden|midten|banken)\b/.test(t) && !/(^|[\s.])I [12][AB]\b/.test(t)) fund(navn, "I/JER: " + t.slice(0, 90));
         if (/\b(hun|hende|hendes|han|ham|hans)\b/i.test(t)) fund(navn, "KOEN: " + t.slice(0, 90));
         if (/^Luk$/.test(t) && e.tagName === "BUTTON") luk.push("Luk-knap");
         var q = e.getBoundingClientRect();
