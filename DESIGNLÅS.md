@@ -1,3 +1,8 @@
+## v2615 · 8. oktober · Appen starter på ældre iPhones (ingen regex-lookbehind) — delelinket hang på dækbilledet
+
+- **HÅRD (Ida 8/10: Anette fra Acorns fik kun dækbilledet med hjertet, da hun åbnede et delt briefLink).** Fire regex'er brugte `(?<=…)` (lookbehind). Safari/Chrome på iOS ældre end 16.4 kan ikke læse det: HELE scriptet fejler ved parsing, appen starter aldrig, og dækbilledet (`privCover`, der ligger i selve HTML'en) bliver stående. Alle fire er skrevet om uden lookbehind (`replace(/([.!?])\s+/g,"$1\u0001").split("\u0001")`).
+- **REGEL: ingen sprogfunktioner i index.html, der ikke kan parses på iOS 15** — ingen lookbehind `(?<=`/`(?<!`, ingen `??=`/`||=`/`&&=`. Tjek: `grep -nE "\(\?<[=!]|\?\?=|\|\|=|&&=" index.html` skal være tom.
+
 ## v2613 · 8. oktober · Telefonen: kalenderen starter på »I dag« (Arkiv i Mere) og beskrivelsen har sin røde flise med hvid knap
 
 - **KALENDEREN STARTER PÅ »I DAG« PÅ TELEFONEN (Ida 8/10).** Chips-rækken (Content kalenderen · Arkiv) er skjult på telefonen; **Arkiv er eget punkt i Mere-menuen**, lige efter Idébanken. Computeren beholder chipsene.
