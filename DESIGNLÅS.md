@@ -1,3 +1,10 @@
+## v2611 · 8. oktober · Datovælgeren i husets form (Idas netbank-reference 7/10 — vælter 5/10 »hårfine streger«)
+- Ingen streger i kalenderen; luft mellem dagene. Valgt dag = rød cirkel, i dag = tynd ring.
+- Passerede dage er grå og kan ikke vælges, hvor det ikke giver mening: mødets dag (pmDato), nyt opslag (First thing first, ftfDato) og optagedag (bf_optagedag). Andre felter (fx opslagets dato, »Hvornår var sidste møde?«) tillader fortiden som før.
+- »Fjern datoen« vises ikke for møde, nyt opslag og optagedag (de skal have en dato).
+- Krydset i hjørnet dækker ikke længere månedspilen (overskriften står 34 px lavere).
+- Rører ingen gemte data: kun visning.
+
 ## v2609 · 8. oktober · Mødesiden: idéer, forberedelse og noter står UNDER »Hvad skal vi igennem?« (Ida 8/10)
 - Rækkefølgen: titel + lang rød Start-knap · HVORNÅR · HVOR · HVEM · GENTAGES · Hvad skal vi igennem? · Idéer til mødet · Forberedelse til mødet · Noter til mødet. Chipsene »Kun til mig / Alle kan se« flugter med feltet. Rører ingen data.
 
