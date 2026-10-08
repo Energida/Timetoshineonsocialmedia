@@ -11117,6 +11117,9 @@ html body #forslag_thumb.kk-fold .fs-rk:not(:has(button[aria-label="Fravælg"]))
 html body .kk-thumb-andre { margin:2px 0 4px 68px !important; }
 @media (max-width:899px) { html body .kk-thumb-andre { display:none !important; } }
 html body .kk-hook-andre svg { width:14px; height:14px; }
+html body #forslag_hookSer.kk-fold .fs-rk:not(:has(button[aria-label="Fravælg"])), html body #forslag_hookSiger.kk-fold .fs-rk:not(:has(button[aria-label="Fravælg"])) { display:none !important; }   /* flere forslag i Det, man ser / Det, jeg siger (8/10) */
+html body .kk-hook-liste > .kort-plus { display:none !important; }
+html body .kk-hook-liste .fs-rk:last-child { margin-bottom:0 !important; }
 html body #briefKlip1Vaert > #briefKlip1 { flex:1 1 auto; width:100%; min-width:0; }   /* flisen fylder hele bredden, ogsaa naar vaerten er flex */
 /* HEROEN STAAR FAST I COVERET (HAARD, Ida 26/9: »låse hero i coverbilledet fast … uanset hvilke ændringer der kommer; må dette ikke påvirkes, røres«).
    Titel + datolinje staar 40 px over coverets bund og 20 px (tlf) / 48 px (computer) fra venstre paa ALLE sider. Knapper, citater og nye greb flytter den aldrig.
@@ -24961,6 +24964,8 @@ function briefForslagListe(key) {
   if (briefErTomOrd(b[key])) b[key] = "";
   if (Array.isArray(b[key + "Liste"])) b[key + "Liste"].forEach(function (t, i) { if (briefErTomOrd(t)) b[key + "Liste"][i] = ""; });
   if (!Array.isArray(b[key + "Liste"])) {
+    /* FLERE FORSLAG I »DET, MAN SER« OG »DET, JEG SIGER« (Ida 8/10): listen starter som det, der allerede staar i klip 1 (ingen databaeseaendring, intet gaar tabt) */
+    if ((key === "hookSer" || key === "hookSiger") && !String(b[key] || "").trim()) { const k0 = Array.isArray(b.klip) ? b.klip[0] : null; const f0 = key === "hookSer" ? "ser" : "siger"; if (k0 && String(k0[f0] || "").trim()) b[key] = String(k0[f0]); }
     const nu = String(b[key] || "");
     b[key + "Liste"] = nu.trim() ? [nu] : [""];
     b[key + "Valgt"] = nu.trim() ? 0 : -1;
@@ -24999,6 +25004,12 @@ function briefForslagSynk(key) {
     const nu0 = String(b.klip[0].tekst || "").trim();
     if (nu0 && liste.some(function (t) { return String(t || "").trim() === nu0; })) { b.klip[0].tekst = ""; const kf0 = document.getElementById("bf_klip_0_tekst"); if (kf0) kf0.value = ""; }
   }
+  if ((key === "hookSer" || key === "hookSiger") && Array.isArray(b.klip) && b.klip[0]) {
+    /* DET VALGTE FORSLAG ER KLIP 1's FELT (som hookTekst er klippets tekst); fravalgt = feltet toemmes kun, hvis det er et af listens forslag (gem maa ikke slette, 4/8) */
+    const f1 = key === "hookSer" ? "ser" : "siger", nu1 = String(b.klip[0][f1] || "").trim();
+    if (b[key]) b.klip[0][f1] = b[key];
+    else if (nu1 && liste.some(function (t) { return String(t || "").trim() === nu1; })) b.klip[0][f1] = "";
+  }
   if (key === "hookTekst" && b[key] && Array.isArray(b.klip) && b.klip[0]) {
     b.klip[0].tekst = b[key];
     b.hookFlettet = true;
@@ -25019,6 +25030,7 @@ function briefForslagLaes(key) {
   });
   briefForslagSynk(key);
   if (key === "hookTekst") briefVaelgOrdOpdater();
+  if (key === "hookTekst" || key === "hookSer" || key === "hookSiger") { try { briefHookChipsOpdater(); } catch (e) {} }
 }
 /* ORDET »Vælg« FOELGER TASTNINGEN (v2140): raekken tegnes, naar feltet er tomt (graa ring) — saa snart der staar noget, og intet hook er valgt, bliver ringen til det roede ord, uden gentegning af listen (markoeren maa ikke miste sin plads). Toemmes feltet, kommer ringen igen. */
 function briefVaelgOrdOpdater() {
@@ -25046,6 +25058,7 @@ function briefHookIKlip() {
   [f.__plus, f, document.getElementById("bf_hookTekst")].forEach(function (e) { if (e) vaert.appendChild(e); });
   try { const q = f.__hjem.closest(".sk-q") || f.__hjem; q.classList.add("kk-hook-tom"); } catch (e) {}
   briefHookFold();
+  try { briefHookListeFold("hookSer"); briefHookListeFold("hookSiger"); briefHookChipsOpdater(); } catch (e) {}
 }
 function briefHookAndre() { window.__HOOK_ANDRE_AABEN = !window.__HOOK_ANDRE_AABEN; briefHookFold(); }
 function briefHookFold() {
@@ -25067,6 +25080,7 @@ function briefForslagTegn(key) {
   try { briefForslagHoejde(); } catch (e) {}
   if (key === "hookTekst") { try { briefHookFold(); } catch (e) {} }
   if (key === "thumb") { try { briefThumbFold(); } catch (e) {} }
+  if (key === "hookSer" || key === "hookSiger") { try { briefHookListeFold(key); } catch (e) {} }
 }
 
 function briefForslagVaelg(key, i) {
@@ -25074,6 +25088,7 @@ function briefForslagVaelg(key, i) {
   const b = BRIEF_STATE;
   b[key + "Valgt"] = (b[key + "Valgt"] === i) ? -1 : i;   /* klik igen fravaelger */
   if (key === "thumb" && b[key + "Valgt"] > -1) window.__THUMB_ANDRE_AABEN = false;
+  if ((key === "hookSer" || key === "hookSiger") && b[key + "Valgt"] > -1) { window.__HOOKLISTE_AABEN = window.__HOOKLISTE_AABEN || {}; window.__HOOKLISTE_AABEN[key] = false; }
   if (key === "hookTekst" && b[key + "Valgt"] > -1) { briefHookHuskVaek(); window.__HOOK_ANDRE_AABEN = false; }   /* HUSK-LINJEN VED HOOKET (Idas klik 20/9 kl. ~16.30, bud 1 af fem — Hans-testen runde 3): linjen forsvinder ved valget */
   briefForslagTegn(key);
   try { saveBrief(true); } catch (e) {}
@@ -25246,7 +25261,7 @@ function briefForslagRaekker(key) {
   const liste = briefForslagListe(key);
   const valgt = b[key + "Valgt"];
   /* FORKLARINGEN ER PLACEHOLDEREN (Ida 21/9 kl. 19.10: »den beskrivende tekst skal laves til placeholder i skrivefeltet — samme størrelser som på første side«) */
-  const ph = (key === "thumb")
+  const ph = (key === "hookSer") ? "Beskriv, hvad man ser i klippet" : (key === "hookSiger") ? "Det, der siges i de første sekunder" : (key === "thumb")
     ? "Det, der skal gøre kunden nysgerrig, inden de har set indholdet"
     : (b.format === "Karrusel" ? "Teksten på slide 1 + 2 der får kunden til at stoppe op" : (b.format === "Billede" ? "Teksten på billedet, der får kunden til at stoppe op" : "Det, der skal få kunden til at stoppe op"));
   /* INGEN TOM FLISE, FOER MAN HAR TRYKKET TILFOEJ (Ida 5/9 kl. 22.43: "Jeg synes ikke der skal
@@ -25325,7 +25340,8 @@ function briefForslagHtml(key) {
       + '<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>'
     + '<div id="forslag_' + key + '">' + (key === "hookTekst" && !(BRIEF_STATE.hookTekstValgt > -1) && (Array.isArray(BRIEF_STATE.hookTekstListe) ? BRIEF_STATE.hookTekstListe : []).some(function (t) { return !!String(t || "").trim(); }) ? '<div class="fs-vaelg-over">Vælg</div>' : '') + briefForslagRaekker(key) + '</div>'
     + '<input type="hidden" id="bf_' + key + '" value="' + esc(BRIEF_STATE[key] || "") + '">'
-    + (key === "thumb" ? '<button type="button" class="kk-hook-andre kk-thumb-andre" id="kkThumbAndre" onclick="briefThumbAndre()" hidden></button>' : '');
+    + (key === "thumb" ? '<button type="button" class="kk-hook-andre kk-thumb-andre" id="kkThumbAndre" onclick="briefThumbAndre()" hidden></button>' : '')
+    + ((key === "hookSer" || key === "hookSiger") ? '<button type="button" class="kk-hook-andre" id="kkAndre_' + key + '" onclick="briefHookListeAndre(\'' + key + '\')" hidden></button>' : '');
 }
 /* TEKST PAA COVERBILLEDET = SAMME GREB SOM HOOKET (Ida 7/10: »helt det samme skal ske alle andre steder i briefen, der har samme design«): er et forslag valgt,
    foldes de andre og det tomme felt sammen til en tekst, »Tilføj forslag« — ingen pil. Kun computeren (paa telefonen tegnes tomme felter ikke). */
@@ -25334,6 +25350,23 @@ function briefThumbFold() {
   const v = document.getElementById("forslag_thumb"), k = document.getElementById("kkThumbAndre"); if (!v || !k) return;
   const b = BRIEF_STATE || {}, valgt = (typeof b.thumbValgt === "number") ? b.thumbValgt : -1;
   const fold = valgt > -1 && !window.__THUMB_ANDRE_AABEN && !(window.matchMedia && window.matchMedia("(max-width: 899px)").matches);
+  v.classList.toggle("kk-fold", fold);
+  k.hidden = !(valgt > -1); k.textContent = fold ? "Tilføj forslag" : "Fold sammen";
+}
+
+/* DET, MAN SER · DET, JEG SIGER = FLERE FORSLAG (Ida 8/10 »i alle 3 hook typer skal jeg kunne tilføje flere«, bud 1 »Ét felt først«): samme greb som tekst-hooket —
+   et valgt forslag foeldes sammen til sig selv, »Tilføj forslag« aabner listen og et nyt tomt felt. Noegler: hookSer/hookSigerListe + Valgt; det valgte staar i klip 1 (ser/siger). */
+function briefHookListeAndre(key) {
+  window.__HOOKLISTE_AABEN = window.__HOOKLISTE_AABEN || {};
+  const aaben = !window.__HOOKLISTE_AABEN[key]; window.__HOOKLISTE_AABEN[key] = aaben;
+  if (aaben) { briefForslagNy(key); return; }   /* aabner listen og lægger et tomt felt klar med markoeren i */
+  briefHookListeFold(key);
+}
+function briefHookListeFold(key) {
+  const v = document.getElementById("forslag_" + key), k = document.getElementById("kkAndre_" + key); if (!v || !k) return;
+  const b = BRIEF_STATE || {}, valgt = (typeof b[key + "Valgt"] === "number") ? b[key + "Valgt"] : -1;
+  const aaben = !!(window.__HOOKLISTE_AABEN && window.__HOOKLISTE_AABEN[key]);
+  const fold = valgt > -1 && !aaben;
   v.classList.toggle("kk-fold", fold);
   k.hidden = !(valgt > -1); k.textContent = fold ? "Tilføj forslag" : "Fold sammen";
 }
@@ -25444,9 +25477,31 @@ function briefHookTyper(k) {
   const B = BRIEF_STATE || {}; if (Array.isArray(B.hookTyper)) return B.hookTyper.slice();
   const t = [];   /* gamle briefs: det, der allerede er skrevet, staar som valgt */
   try { if (briefForslagListe("hookTekst").some(function (x) { return String(x || "").trim(); })) t.push("tekst"); } catch (e) {}
-  if (k && String(k.ser || "").trim()) t.push("ser");
-  if (k && String(k.siger || "").trim()) t.push("siger");
+  if ((k && String(k.ser || "").trim()) || (Array.isArray(B.hookSerListe) && B.hookSerListe.some(function (x) { return String(x || "").trim(); }))) t.push("ser");
+  if ((k && String(k.siger || "").trim()) || (Array.isArray(B.hookSigerListe) && B.hookSigerListe.some(function (x) { return String(x || "").trim(); }))) t.push("siger");
+  if (!t.length) t.push("tekst");   /* tom flise = kun tekst-feltet; de to andre typer tilfoejes via de graa chips nedenunder (bud 1 »Ét felt først«, Ida 8/10) */
   return t;
+}
+/* BUD 1 »ÉT FELT FØRST« (Ida 8/10): tom flise = ét felt (tekst paa skaermen); de graa chips »Tilføj noget man ser / jeg siger« kommer, naar et hook er skrevet, og tilfoejer felten */
+function briefHookEnHook() {
+  const B = BRIEF_STATE || {}, k = (briefKlipListe() || [])[0] || {};
+  const nogen = function (l) { return Array.isArray(l) && l.some(function (x) { return String(x || "").trim(); }); };
+  return nogen(B.hookTekstListe) || String(B.hookTekst || "").trim() !== "" || nogen(B.hookSerListe) || nogen(B.hookSigerListe) || String(k.ser || "").trim() !== "" || String(k.siger || "").trim() !== "";
+}
+function briefHookChipsOpdater() {
+  const r = document.getElementById("kkHookTilfoej"); if (!r) return;
+  const typer = briefHookTyper((briefKlipListe() || [])[0] || {});
+  let ant = 0; r.querySelectorAll(".ark-chip").forEach(function (c) { const skjul = typer.indexOf(c.getAttribute("data-t")) > -1; c.hidden = skjul; if (!skjul) ant++; });
+  r.hidden = !(ant && briefHookEnHook());
+}
+function briefHookTypeTilfoej(b) {
+  const kort = b.closest(".klip-kort"); const k0 = (briefKlipListe() || [])[0] || {};
+  const nu = briefHookTyper(k0); const t = b.getAttribute("data-t");
+  if (nu.indexOf(t) < 0) nu.push(t);
+  BRIEF_STATE.hookTyper = nu;
+  try { const d = kort && kort.querySelector('.kk-hookdel[data-t="' + t + '"]'); if (d) { d.hidden = false; const f = d.querySelector("textarea, input"); if (f) setTimeout(function () { f.focus(); }, 60); } } catch (e) {}
+  briefHookChipsOpdater();
+  try { saveBrief(true); } catch (e) {}
 }
 function briefHookTypeSkift(b) {
   const kort = b.closest(".klip-kort"); const k0 = (briefKlipListe() || [])[0] || {};
@@ -25476,13 +25531,11 @@ function briefKlipKortHtml(i, k, o) {
        felter staar fremme — ingen symboler, ordet over og feltet under. Fravalgte felter ligger skjult i DOM'en, saa intet gemt slettes. */
     const typer = briefHookTyper(k);
     const del = function (t, html) { return '<div class="kk-hookdel" data-t="' + t + '"' + (typer.indexOf(t) > -1 ? '' : ' hidden') + '>' + html + '</div>'; };
-    const HT = [["tekst", "Tekst-hook"], ["ser", "Visuelt hook"], ["siger", "Noget jeg siger"]];
     felter = '<div class="kk-hook-spm">Hvad skal få ' + esc(briefHookMgNavn()) + ' til at stoppe op?</div>'
-      + '<div class="kk-hook-hint">Vælg en eller flere</div>'   /* OVER valgene, ikke under (Ida 7/10) */
-      + '<div class="ark-chips kk-hook-typer">' + HT.map(function (h) { return '<button type="button" class="ark-chip' + (typer.indexOf(h[0]) > -1 ? ' on' : '') + '" data-t="' + h[0] + '" onclick="briefHookTypeSkift(this)">' + h[1] + '</button>'; }).join("") + '</div>'
       + del("tekst", '<div class="kk-felt kk-hook-felt"><div class="kk-et">Tekst på skærmen</div><div class="kk-hook-vaert" id="kkHookVaert"></div><button type="button" class="kk-hook-andre" id="kkHookAndre" onclick="briefHookAndre()" hidden></button></div>')
-      + del("ser", briefKlipFeltHtml(pre + i + '_ser', 'Det, man ser', 'Beskriv, hvad man ser i klippet', k.ser, FB_IK.kamera, false, '', true))
-      + del("siger", briefKlipFeltHtml(pre + i + '_siger', 'Det, jeg siger', 'Det, der siges i de første sekunder', k.siger, FB_IK.boble, false, '', true));
+      + del("ser", '<div class="kk-felt kk-hook-felt"><div class="kk-et">Det, man ser</div><div class="kk-hook-vaert kk-hook-liste">' + briefForslagHtml("hookSer") + '</div></div>')
+      + del("siger", '<div class="kk-felt kk-hook-felt"><div class="kk-et">Det, jeg siger</div><div class="kk-hook-vaert kk-hook-liste">' + briefForslagHtml("hookSiger") + '</div></div>')
+      + '<div class="ark-chips kk-hook-typer" id="kkHookTilfoej">' + [["ser", "Tilføj noget man ser"], ["siger", "Tilføj noget jeg siger"]].map(function (h) { return '<button type="button" class="ark-chip" data-t="' + h[0] + '"' + (typer.indexOf(h[0]) > -1 ? ' hidden' : '') + ' onclick="briefHookTypeTilfoej(this)">' + h[1] + '</button>'; }).join("") + '</div>';
   }
   const visTekst = !o.hook && o.visTekst && klipFeltFremme(k, "tekst");   /* TEKST PAA SKAERMEN TILFOEJES VIA PLUSSET (Ida 21/9 kl. 19.00) — et skrevet felt staar altid (gem maa ikke slette, 4/8) */
   if (visTekst) felter += briefKlipFeltHtml(pre + i + '_tekst', 'Tekst på skærmen', 'Teksten på skærmen', k.tekst, FB_IK.undertekst, true, laast ? '' : 'briefKlipFeltFjern(' + i + ',\'tekst\')');
@@ -29373,6 +29426,7 @@ async function saveBrief(stille) {
   /* Forslags-listerne laeses som klippene — KUN naar felterne findes paa skaermen, saa
      et gem fra en anden side aldrig kan toemme dem. */
   if (document.querySelector('[id^="bf_thumb_f"]')) { try { briefForslagLaes("thumb"); } catch(e) {} }
+  ["hookSer", "hookSiger"].forEach(function (k8) { if (document.querySelector('[id^="bf_' + k8 + '_f"]')) { try { briefForslagLaes(k8); } catch (e) {} } });
   const datoEl = document.getElementById("bf_dato");
   /* GEM MAA IKKE SLETTE (4/8): findes datofeltet ikke paa skaermen, bliver datoen, som den var (MAALT 16/9 kl. 23.30: skrivesidernes
      Naeste satte datoen til null, fordi feltet var flyttet vaek — »Postes · Ikke sat« i fakta-boksen). */
@@ -58452,7 +58506,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2586";
+const APP_VERSION = "2587";
 let NY_VERSION_KLAR = false;
 let NY_VERSION_AFVIST = false;
 function nyVersionSkjul() {

@@ -1,3 +1,9 @@
+## v2587 · 8. oktober · Klip 1 · Hook: ét felt først, flere forslag i alle tre typer (Idas klik på bud 1 »Ét felt først«, Artifact AoTzX5HARVu3wRupdu53TK)
+- En tom flise viser spørgsmålet og ét felt (tekst på skærmen). Typevalget med »Vælg en eller flere« er væk.
+- Når et hook er skrevet, kommer to grå chips under feltet: »Tilføj noget man ser« og »Tilføj noget jeg siger«. Et tryk tilføjer feltet, og chippen forsvinder.
+- Det, man ser, og Det, jeg siger, kan nu hver have flere forslag som tekst-hook: husets cirkel vælger, »Tilføj forslag« folder ud, det valgte står i klip 1. Nøgler: hookSerListe/hookSerValgt og hookSigerListe/hookSigerValgt (brief-JSON, ingen databaseændring). Det, der allerede stod i klip 1, bliver første forslag, valgt.
+- Hverken tekst eller felter slettes af sig selv; fravalgt forslag tømmer kun klip 1, hvis teksten er et af listens forslag.
+
 ## v2586 · 7. oktober · Tastaturet skubber ikke arket ud af skærmen (Ida 7/10: titlen klippet, hul under arket)
 - Når tastaturet kommer, ruller iPhone siden. Slørets top følger nu den synlige del (visualViewport.offsetTop), så titel og kryds ikke havner uden for skærmen, og arket står lige over tastaturet. Gælder alle ark og det lille ark.
 - Porten har ikke et rigtigt tastatur: tastaturadfærd skal ses i iOS-simulatoren eller på telefonen.
