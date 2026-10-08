@@ -1,3 +1,9 @@
+## v2595 · 8. oktober · Lektionssiden: listen over lektionerne er tilbage (Idas valg: lektionssiden bud 1, med listen i VENSTRE side) — vælter 24/9 »venstre kolonne er væk«
+- Computer: hele forløbet står i venstre kolonne (moduler med lektioner, cirkel/flueben og tid), lektionen til højre. Listen er så høj som skærmen, ruller for sig og står på den lektion, man er i. Den aktuelle lektion er en grå flade med rød tekst (aldrig rød ramme eller rosa).
+- Telefon: modulets lektioner står i en flise lige under videoen; tryk går til lektionen.
+- Rører ingen gemte data: kun visning. Svar og »set« gemmes som før (testet på 390 og 1440).
+- Ikke bygget endnu fra bud 1: den faste bundknap der skifter ord (»Næste spørgsmål«) og at feedback-arket forsvinder.
+
 ## v2593 · 8. oktober · To-dos med overskredet dato viser det tydeligt (Ida 7/10, backlog 2)
 - En to-do, hvis dato er passeret, står med røde ord: »Overskredet · 3 dage · man. 5. oktober« (i stedet for den stille »Dato man. 5. oktober«). Gælder alle to-do-lister bygget af bf3TodoListe (Backstage Hjem og Indbakken). Rører ingen data.
 
