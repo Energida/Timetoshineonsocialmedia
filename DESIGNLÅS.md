@@ -1,3 +1,6 @@
+## v2609 · 8. oktober · Mødesiden: idéer, forberedelse og noter står UNDER »Hvad skal vi igennem?« (Ida 8/10)
+- Rækkefølgen: titel + lang rød Start-knap · HVORNÅR · HVOR · HVEM · GENTAGES · Hvad skal vi igennem? · Idéer til mødet · Forberedelse til mødet · Noter til mødet. Chipsene »Kun til mig / Alle kan se« flugter med feltet. Rører ingen data.
+
 ## v2607 · 8. oktober · Mødesiden: »Hvad skal vi igennem?« større, nye ord, punktopstilling, personer som chips (Ida 8/10)
 - Overskriften »Hvad skal vi igennem?« står som større overskrift (20 px). Punkt 1 hedder »Gennemgang af performance af opslag siden sidst.« (med »Siden [dato]«-chippen under). Punkt 2 »Den kommende uge« har punktopstilling (Ressourcer · Ugens tema · Næste uge · Hvem gør hvad · Ugens mål). Punkt 3 hedder »Dato for næste møde« (med datoen som chip).
 - HVEM viser personerne som chips (ikke som tekst); tryk på rækken åbner valget.
