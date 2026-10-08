@@ -1,3 +1,7 @@
+## v2617 · 8. oktober · Dækbilledet løftes altid, når appen er klar (delt link fra sms)
+
+- **HÅRD (Ida 8/10: Anette åbnede et delt briefLink fra en sms og så kun hjertet, til hun trykkede Tilbage).** Siden virkede (v2615 var ikke årsagen); dækbilledet (`privCover`) blev stående, fordi en side åbnet fra en anden app ikke altid får `visibilitychange`/`focus`/`pageshow`. Nu løfter et tjek (hvert sekund + ved tryk, rul, drej) dækbilledet, så snart `APP_KLAR` og siden er synlig. Skjuler stadig appen i app-skifteren (hidden).
+
 ## v2615 · 8. oktober · Appen starter på ældre iPhones (ingen regex-lookbehind) — delelinket hang på dækbilledet
 
 - **HÅRD (Ida 8/10: Anette fra Acorns fik kun dækbilledet med hjertet, da hun åbnede et delt briefLink).** Fire regex'er brugte `(?<=…)` (lookbehind). Safari/Chrome på iOS ældre end 16.4 kan ikke læse det: HELE scriptet fejler ved parsing, appen starter aldrig, og dækbilledet (`privCover`, der ligger i selve HTML'en) bliver stående. Alle fire er skrevet om uden lookbehind (`replace(/([.!?])\s+/g,"$1\u0001").split("\u0001")`).
