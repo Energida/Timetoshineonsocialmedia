@@ -1,3 +1,10 @@
+## v2601 · 8. oktober · MØDESIDEN: toppen som en Outlook-begivenhed, kun ét tilføj-tegn, »Hvad skal vi igennem?« i én flise (Idas valg: bud B, »vi skal virkelig gøre det SIMPELT«)
+- Coveret har titlen »Det ugentlige contentmøde« og »Start mødet« (computer: i coveret nederst til højre; telefon: lige under coveret). Ingen chips i coveret.
+- Under coveret fire fliser, hver sin række med ikon: HVORNÅR (dag, kl. fra–til, varighed; tryk retter) · HVOR (online/fysisk, »Åbn mødet« ved linket; tryk retter) · HVEM (holdet) · GENTAGES (hver uge; tryk åbner rytmen).
+- Så Idéer til mødet, Forberedelse til mødet og Noter til mødet — i højre side står KUN plusset i hjørnet, ingen »Tilføj«-knap i den tomme flise.
+- Nederst, under det sidste planlægningsfelt: én hvid flise »Hvad skal vi igennem?« (etiket · streg) med tre nummererede punkter (How did it go? · Den kommende uge · Næste planlægning). Alt andet fra den gamle agenda er samlet i den flise.
+- Rører ingen gemte data: kun visning. Alle felter hentes fra samme aftale som før.
+
 ## v2599 · 8. oktober · Ugen på telefonen: to chips og én flise pr. dag med den samme datofirkant (Idas valg: »én linje pr. dag«, »datoerne skal have samme design som de normale datofirkanter«)
 - Telefonens Hjem er uændret. To små chips, Dag og Uge, står i rækken »I dag«; Dag er standard. Uge = syv fliser under strimlen, én pr. dag: datofirkanten (tor · 8 · okt, den SAMME som i Kommende aktiviteter: kop-rk + kop-dato), det første der er planlagt og »+ 1 mere«. Tryk på en dag = den dag i dagsvisningen. En tom dag står som »Intet planlagt« i sin egen flise.
 - Valget deles med computeren (localStorage hjemUgeVis). Rører ingen gemte data: kun visning.
