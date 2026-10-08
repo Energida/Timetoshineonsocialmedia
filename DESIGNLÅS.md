@@ -1,3 +1,9 @@
+## v2589 · 8. oktober · Mødesiden kan rettes, Hook på briefoversigten, Klip 1-flisen ryddet op (Ida 8/10: »ALT er off«, »forfærdeligt«, »hvorfor kommer det ikke frem på briefoversigten?«)
+- Mødesiden (Det ugentlige contentmøde): chipsene i coveret (dag, tid, fysisk/online, deltagere) kan trykkes og åbner »Ret det ugentlige contentmøde« (dag, fra/til, Fysisk/Online, mødelink, Slet mødet). Efter chipsene står en tydelig chip »Ret mødet«. Slet-knappen svæver ikke længere på siden; den bor i redigeringen som grå knap med skraldespand og ordet. Sidens titel er »Det ugentlige contentmøde« (kun visningen; aftalens gemte titel røres ikke). »Åbn mødet« står på samme linje som »Start mødet«, uden tom række.
+- Briefoversigten: en Hook-flise (tekst på skærmen · det, man ser · det, jeg siger) står over Coverbilledet, når hooket er valgt/skrevet; tryk åbner hooket. Coverbilledet vises stadig kun, når det har tekst (26/9). I Acorns' rigtige brief er thumbValgt -1 i basen: cover-teksten blev ikke gemt som valgt.
+- Klip 1 · Hook: overskrifterne i flugt med cirklen, ÉN »+ Tilføj forslag« pr. type i overskriftsrækken (ikke en tekstlinje under hver liste), luft mellem typerne.
+- Rører ingen gemte data: kun visning (fliser, chips, titel). Ingen nøgler ændret.
+
 ## v2588 · 8. oktober · Kundens svar i lektionerne flettes og sendes igen — intet kan overskrives eller forsvinde (svar-tryghedstesten 8/10)
 - Rører disse gemte felter: skema_svar lektion_svar_*, maalgrupper, lektion_noter, lektion_set_*. Ingen gamle nøgler slettes eller omskrives; nye nøgler lægges ved siden af (kun lokale: energida_ovelse_beroert_/usendt_<kode>).
 - Svar flettes felt for felt, før de skrives: basens udfyldte felt vindes aldrig af et tomt eller ældre lokalt; kun det kunden selv har rørt, vinder. Hele rækken overskrives ikke mere af en gammel åben side.
