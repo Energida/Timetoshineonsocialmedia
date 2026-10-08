@@ -1,3 +1,6 @@
+## v2603 · 8. oktober · Mødesiden: »Start mødet« er den lange røde knap lige under coveret, på computer og telefon (Ida 8/10: »start mødet skulle være den lange røde knap?«)
+- Rettelse til v2601: på computeren stod en lille hvid knap i coveret. Nu den samme lange røde knap i fuld bredde som på telefonen, over de fire fliser. Rører ingen data.
+
 ## v2601 · 8. oktober · MØDESIDEN: toppen som en Outlook-begivenhed, kun ét tilføj-tegn, »Hvad skal vi igennem?« i én flise (Idas valg: bud B, »vi skal virkelig gøre det SIMPELT«)
 - Coveret har titlen »Det ugentlige contentmøde« og »Start mødet« (computer: i coveret nederst til højre; telefon: lige under coveret). Ingen chips i coveret.
 - Under coveret fire fliser, hver sin række med ikon: HVORNÅR (dag, kl. fra–til, varighed; tryk retter) · HVOR (online/fysisk, »Åbn mødet« ved linket; tryk retter) · HVEM (holdet) · GENTAGES (hver uge; tryk åbner rytmen).
