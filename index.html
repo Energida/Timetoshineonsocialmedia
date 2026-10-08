@@ -37885,7 +37885,8 @@ async function kursusHent() {
       if (!error && data) data.forEach(r => {
         if (r.skema.indexOf("lektion_set_") === 0) iBasen[r.skema.slice(12)] = true;
         if (r.skema.indexOf("lektion_set_") === 0) KURSUS_SET[r.skema.slice(12)] = true;
-        if (r.skema.indexOf("lektion_svar_") === 0) KURSUS_SVAR[r.skema.slice(13)] = r.svar;
+        if (r.skema.indexOf("lektion_svar_") === 0) { const sid = r.skema.slice(13), usendtNu = ovelseLsHent("usendt"), lokalSv = KURSUS_SVAR[sid]; KURSUS_SVAR[sid] = (usendtNu[sid] && lokalSv) ? svarFlet(lokalSv, r.svar || {}, ovelseLsHent("beroert")[sid] || {}) : (r.svar || {}); }   /* et usendt lokalt svar flettes med basen i stedet for at blive overskrevet (8/10, hul 2) */
+        if (r.skema === "maalgrupper" && r.svar && Array.isArray(r.svar.liste)) { const lok = Array.isArray(MAALGRUPPER) ? MAALGRUPPER : []; const bas = r.svar.liste.slice(); lok.forEach(function (m) { if (m && !bas.some(function (x) { return String(x.id) === String(m.id); })) bas.push(m); }); MAALGRUPPER = bas; }   /* malgruppelisten laeses tilbage, saa maalgruppe 2 staar der efter genindlaesning (8/10, hul 3) */
         if (r.skema.indexOf("lektion_udsat_") === 0) KURSUS_UDSAT[r.skema.slice(14)] = true;
         if (r.skema === "lektion_noter" && r.svar) KURSUS_NOTER = r.svar;
         if (r.skema === "kursus_pref" && r.svar) KURSUS_PREF = r.svar;
@@ -37900,7 +37901,9 @@ async function kursusHent() {
           if (ud.length) KURSUS_NOTER[lek] = ud;
         });
         if (noteMangler) { try { kursusBlobGem("lektion_noter", KURSUS_NOTER); } catch (e) {} }
-        Object.keys(lokalSet).forEach(function (id) { if (lokalSet[id] && !iBasen[id]) { try { sb.from("skema_svar").insert({ kode: currentKode, navn: CURRENT_NAVN || "", skema: "lektion_set_" + id, svar: { set: true } }).then(function () {}, function () {}); } catch (e) {} } });
+        try { await ovelseGensend(); } catch (e) {}   /* usendte svar foerst — SÅ lektionens »set« */
+        const usendtBasis = Object.keys(ovelseLsHent("usendt")).map(mgBasisId);
+        Object.keys(lokalSet).forEach(function (id) { if (lokalSet[id] && !iBasen[id] && usendtBasis.indexOf(id) < 0) { try { sb.from("skema_svar").insert({ kode: currentKode, navn: CURRENT_NAVN || "", skema: "lektion_set_" + id, svar: { set: true } }).then(function () {}, function () {}); } catch (e) {} } });
         kursusGemLocal();
       }
     } catch(e) {}
@@ -38238,8 +38241,44 @@ async function refleksionGem(kontekst, refId) {
    uden dens antagelse om at raekken maa overskrives: et svar er et svar, og opdaterer man
    en eksisterende raekke, forsvinder det foerste. Findes raekken, opdateres den (samme
    lektion vurderet igen = hendes nyeste mening), findes den ikke, oprettes den. */
-async function skemaSvarSkriv(skema, svar) {
+/* KUNDENS SVAR FLETTES, ALDRIG OVERSKRIVES (Ida 8/10: »kunders info eller data må IKKE røres«; svar-tryghedstesten 8/10, hul 5): foer skrivning laeses rækken, og svaret
+   flettes felt for felt. Basens udfyldte felt vindes aldrig af et tomt eller ældre lokalt; kun et felt, kunden SELV har rørt (beroert), vinder — også som tomt (kunden slettede det). Intet felt fjernes. */
+function svarTom(v) { return v == null || String(v).trim() === ""; }
+function svarFlet(lokal, remote, beroert) {
+  const ud = Object.assign({}, remote || {});
+  Object.keys(lokal || {}).forEach(function (k) {
+    const l = lokal[k], r = ud[k];
+    if (beroert && beroert[k]) ud[k] = l;
+    else if (svarTom(r)) ud[k] = l;
+    else if (svarTom(l)) { /* basens svar bevares */ }
+    else ud[k] = r;   /* begge udfyldt og kunden har ikke rørt feltet her: basen (nyere paa en anden enhed) bevares */
+  });
+  return ud;
+}
+const SVAR_KOE = {};   /* skrivninger til samme raekke koeres een ad gangen, saa to hurtige gem aldrig laver dobbelte raekker eller overskriver hinanden */
+function skemaSvarSkriv(skema, svar, beroert) {
+  const n = skema + "|" + (typeof currentKode !== "undefined" ? currentKode : "") + "|" + (typeof CURRENT_NAVN !== "undefined" ? CURRENT_NAVN : "");
+  const foer = SVAR_KOE[n] || Promise.resolve();
+  const nu = foer.catch(function () {}).then(function () { return skemaSvarSkrivEn(skema, svar, beroert); });
+  SVAR_KOE[n] = nu;
+  return nu;
+}
+async function skemaSvarSkrivEn(skema, svar, beroert) {
   try {
+    if (skema.indexOf("lektion_svar_") === 0 || skema === "maalgrupper") {
+      const rr = await sb.from("skema_svar").select("svar").eq("kode", currentKode).eq("navn", CURRENT_NAVN || "").eq("skema", skema).order("created_at", { ascending: true });
+      if (rr.error) return false;   /* kan basens svar ikke laeses, skrives der intet — det lokale bevares og sendes igen */
+      if (skema === "maalgrupper") {
+        const liste = Array.isArray(svar && svar.liste) ? svar.liste : [];
+        (rr.data || []).forEach(function (r) { ((r.svar && r.svar.liste) || []).forEach(function (m) { if (m && !liste.some(function (x) { return String(x.id) === String(m.id); })) liste.push(m); }); });   /* ingen maalgruppe forsvinder */
+        svar = Object.assign({}, svar, { liste: liste });
+      } else {
+        let remote = {};
+        (rr.data || []).forEach(function (r) { remote = svarFlet(r.svar || {}, remote, null); });
+        const m = svarFlet(svar, remote, beroert);
+        Object.keys(m).forEach(function (k) { svar[k] = m[k]; });   /* det flettede staar ogsaa paa skaermen */
+      }
+    }
     const u = await sb.from("skema_svar").update({ svar: svar })
       .eq("kode", currentKode).eq("navn", CURRENT_NAVN || "").eq("skema", skema).select();
     if (u.data && u.data.length) return true;
@@ -38252,6 +38291,20 @@ async function skemaSvarSkriv(skema, svar) {
    KVITTERING (Ida 3/8): opretteslen skete foer uden .select(), saa en afvist insert saa
    ud som en vellykket — en RLS-afvist skrivning kaster ikke, den rammer bare nul raekker.
    Returnerer nu true KUN naar basen har svaret med en raekke, saa kaldere kan sige det. */
+/* NOTER FLETTES PR. LEKTION (Ida 8/10, svar-tryghedstesten hul 7): foer blev hele noteblobben for ALLE lektioner skrevet fra denne side — en gammel åben side slettede de andre lektioners noter. Nu laeses basens række først,
+   og kun den lektion, kunden har arbejdet i, skrives; alle andre lektioners noter tages fra basen (eller bevares lokalt, hvis de kun findes her). Kan basen ikke laeses, skrives intet — noterne ligger lokalt og flettes ved næste start. */
+async function noterGemFlettet(lekId) {
+  if (!sb || !currentKode) return false;
+  try {
+    const rr = await sb.from("skema_svar").select("svar").eq("kode", currentKode).eq("navn", CURRENT_NAVN || "").eq("skema", "lektion_noter").order("created_at", { ascending: true });
+    if (rr.error) return false;
+    let remote = {}; (rr.data || []).forEach(function (r) { if (r.svar) remote = Object.assign(remote, r.svar); });
+    const ud = Object.assign({}, KURSUS_NOTER, remote);   /* andre lektioner: basen vinder, lokale-eneste bevares */
+    if (lekId) { if (KURSUS_NOTER[lekId] && KURSUS_NOTER[lekId].length) ud[lekId] = KURSUS_NOTER[lekId]; else delete ud[lekId]; }
+    KURSUS_NOTER = ud; kursusGemLocal();
+    return await kursusBlobGem("lektion_noter", ud);
+  } catch (e) { return false; }
+}
 async function kursusBlobGem(skema, svar) {
   if (!sb || !currentKode) return false;
   try {
@@ -38840,7 +38893,7 @@ function lekNoteGemRig() {
   if (tom) { if (n) arr.splice(arr.indexOf(n), 1); if (!arr.length) delete KURSUS_NOTER[LEK_AABEN]; }
   else { if (!n) { n = { html: "", dato: new Date().toISOString() }; arr.unshift(n); } n.html = html; n.dato = new Date().toISOString(); }
   kursusGemLocal();
-  kursusBlobGem("lektion_noter", KURSUS_NOTER);
+  noterGemFlettet(typeof LEK_AABEN !== "undefined" ? LEK_AABEN : null);
 }
 function lekNoteFokus() { if (KURSUS_PREF.videoNote !== "koer" && !LEK_PAUSET) { lekVideoPause(); LEK_PAUSET = true; } }
 function lekNoteFold(kn) {
@@ -39044,7 +39097,7 @@ async function gemLekNote() {
   (KURSUS_NOTER[LEK_AABEN] = KURSUS_NOTER[LEK_AABEN] || []).push({ t: t, tekst: tekst, dato: new Date().toISOString() });
   ta.value = "";
   kursusGemLocal();
-  kursusBlobGem("lektion_noter", KURSUS_NOTER);
+  noterGemFlettet(typeof LEK_AABEN !== "undefined" ? LEK_AABEN : null);
   renderLekNoteListe();
 }
 async function sletLekNote(lekId, i) {
@@ -39053,7 +39106,7 @@ async function sletLekNote(lekId, i) {
   arr.splice(i, 1);
   if (!arr.length) delete KURSUS_NOTER[lekId];
   kursusGemLocal();
-  kursusBlobGem("lektion_noter", KURSUS_NOTER);
+  noterGemFlettet(typeof LEK_AABEN !== "undefined" ? LEK_AABEN : null);
   renderLekNoteListe();
   renderNotesbog();
 }
@@ -39389,17 +39442,59 @@ function ovelseKladdeSlet(id) {
   delete k[id];
   try { localStorage.setItem(ovelseKladdeKey(), JSON.stringify(k)); } catch (e) {}
 }
+/* DET, KUNDEN SELV HAR RØRT, OG DET, DER IKKE ER SENDT (8/10): beroert[id][noegle] = true bevares paa enheden, saa et svar, der ikke naaede serveren, kan sendes igen efter en genindlaesning
+   uden at et gammelt eller tomt felt overskriver det, en anden enhed har skrevet. usendt[id] = tidspunkt for forste usendte aendring. */
+function ovelseLsKey(n) { return "energida_ovelse_" + n + "_" + (typeof currentKode !== "undefined" && currentKode ? currentKode : "X"); }
+function ovelseLsHent(n) { try { return JSON.parse(localStorage.getItem(ovelseLsKey(n)) || "{}") || {}; } catch (e) { return {}; } }
+function ovelseLsGem(n, v) { try { localStorage.setItem(ovelseLsKey(n), JSON.stringify(v)); } catch (e) {} }
+function ovelseBeroert(id, noegle) {
+  const b = ovelseLsHent("beroert"); if (!b[id]) b[id] = {}; b[id][noegle] = true; ovelseLsGem("beroert", b);
+  const u = ovelseLsHent("usendt"); if (!u[id]) { u[id] = Date.now(); ovelseLsGem("usendt", u); }
+  if (OVELSE && OVELSE.id === id) { OVELSE.beroert = OVELSE.beroert || {}; OVELSE.beroert[noegle] = true; }
+}
+let OVELSE_AUTO_T = null;
+function ovelseServerAuto(straks) {
+  /* AUTOGEM TIL SERVEREN PR. SPOERGSMAAL (hul 1): ikke kun ved Afslut — efter 2,5 s uden tastetryk, ved Naeste/Forrige og naar siden skjules. Stille: fejler det, bliver svaret liggende som usendt og sendes igen. */
+  clearTimeout(OVELSE_AUTO_T);
+  const gaa = function () {
+    const o = OVELSE; if (!o || !sb || !currentKode) return;
+    const id = o.id, svar = o.svar, beroert = ovelseLsHent("beroert")[id] || {};
+    skemaSvarSkriv("lektion_svar_" + id, svar, beroert).then(function (ok) {
+      if (ok) { const u = ovelseLsHent("usendt"); if (u[id] && !(OVELSE && OVELSE.id === id && OVELSE_FAERDIG_SENDER)) { delete u[id]; ovelseLsGem("usendt", u); } }
+    }, function () {});
+  };
+  if (straks) gaa(); else OVELSE_AUTO_T = setTimeout(gaa, 2500);
+}
+let OVELSE_FAERDIG_SENDER = false;
+async function ovelseGensend() {
+  /* ET USENDT SVAR SENDES IGEN (hul 2): ved start og naar nettet kommer tilbage. Lektionens »set« sendes foerst bagefter (kursusHent). */
+  if (!sb || !currentKode) return;
+  const u = ovelseLsHent("usendt"), ids = Object.keys(u); if (!ids.length) return;
+  const beroert = ovelseLsHent("beroert"), kl = ovelseKladdeHent();
+  for (const id of ids) {
+    const svar = Object.assign({}, KURSUS_SVAR[id] || {});
+    Object.keys(kl[id] || {}).forEach(function (k) { if (!svarTom(kl[id][k]) || (beroert[id] || {})[k]) svar[k] = kl[id][k]; });
+    const ok = await skemaSvarSkriv("lektion_svar_" + id, svar, beroert[id] || {});
+    if (ok) { KURSUS_SVAR[id] = svar; const u2 = ovelseLsHent("usendt"); delete u2[id]; ovelseLsGem("usendt", u2); }
+  }
+  try { kursusGemLocal(); } catch (e) {}
+}
+try { window.addEventListener("online", function () { try { ovelseGensend(); } catch (e) {} }); document.addEventListener("visibilitychange", function () { if (document.visibilityState === "hidden") { try { if (OVELSE) ovelseServerAuto(true); } catch (e) {} } }); window.addEventListener("pagehide", function () { try { if (OVELSE) ovelseServerAuto(true); } catch (e) {} }); } catch (e) {}
 function ovelseKladdeInput(ta) {
   const o = OVELSE; if (!o || !ta) return;
   const l = KURSUS_LEKTIONER.find(x => x.id === mgBasisId(o.id)); if (!l) return;
   o.svar[ovNoegle(l, o.i)] = ta.value;
+  ovelseBeroert(o.id, ovNoegle(l, o.i));
   ovelseKladdeGem();
+  ovelseServerAuto(false);
 }
 function startOvelse(id) {
   /* Spoergsmaalene hentes paa BASIS-id'et, svarene paa det virtuelle. Saa deler alle
      maalgrupper de samme elleve spoergsmaal og de samme stabile noegler. */
   const l = KURSUS_LEKTIONER.find(x => x.id === mgBasisId(id)); if (!l || !l.ovelse) return;
-  OVELSE = { id: id, i: 0, svar: Object.assign({}, KURSUS_SVAR[id] || {}, ovelseKladdeHent()[id] || {}) };   /* kladden vinder over det gemte (13/9) */
+  const kl0 = ovelseKladdeHent()[id] || {}, br0 = ovelseLsHent("beroert")[id] || {}, sv0 = Object.assign({}, KURSUS_SVAR[id] || {});
+  Object.keys(kl0).forEach(function (k) { if (!svarTom(kl0[k]) || br0[k]) sv0[k] = kl0[k]; });   /* kladden vinder over det gemte (13/9) — men et tomt kladdefelt tømmer aldrig et gemt svar, medmindre kunden selv har tømt det (8/10) */
+  OVELSE = { id: id, i: 0, svar: sv0, beroert: Object.assign({}, br0) };
   renderOvelse();
 }
 function renderOvelse() {
@@ -39474,6 +39569,7 @@ function ovelseDagToggle(dag) {
   let valgte = ovelseDageValgte(ovSvarFor(o, l, o.i));
   valgte = valgte.indexOf(dag) > -1 ? valgte.filter(d => d !== dag) : OVELSE_DAGE.filter(d => valgte.indexOf(d) > -1 || d === dag);
   o.svar[n] = valgte.join(", ");
+  ovelseBeroert(o.id, n);
   ovelseKladdeGem();   /* dagvalget er ogsaa en kladde (13/9) */
   const el = document.getElementById("ovelseDage");
   if (el) el.innerHTML = ovelseDageHtml(o.svar[n]);
@@ -39484,6 +39580,7 @@ function ovelseGem() {
   const l = KURSUS_LEKTIONER.find(x => x.id === mgBasisId(OVELSE.id)); if (!l) return;
   const noegle = ovNoegle(l, OVELSE.i);
   OVELSE.svar[noegle] = ta.value.trim();
+  ovelseServerAuto(true);   /* Næste/Forrige: svaret sendes til serveren nu, ikke først ved Afslut (8/10) */
   /* NAVNET GEMMES RENT (Ida 14/8). Kundens eget svar bliver staaende ordret —
      det rensede navn skrives ved SIDEN af, i maalgruppens strukturerede navn-felt,
      saa {persona} og alle andre visninger kan genbruge det uden at parse. */
@@ -39511,18 +39608,22 @@ function ovelseGemFejl() {
   b.innerHTML = '<b style="font-weight:400;color:var(--red);">Dine svar nåede ikke frem.</b> De er gemt her på din telefon, så intet er tabt — men de ligger ikke på serveren endnu.'
     + '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:10px;flex-wrap:wrap;">'
     + '<button type="button" class="dbtn primary" style="min-height:44px;padding:10px 18px;" onclick="ovelseNaeste()">Prøv igen</button></div>';
+  try { b.scrollIntoView({ block: "center", behavior: "smooth" }); } catch (e) {}   /* ogsaa paa telefonen er boksen set (8/10: laa uden for skaermen) */
 }
 async function ovelseNaeste() {
   ovelseGem();
   try { const gl = document.getElementById("ovelseFejl"); if (gl) gl.remove(); } catch(e) {}
   const l = KURSUS_LEKTIONER.find(x => x.id === mgBasisId(OVELSE.id));
   if (OVELSE.i < l.ovelse.length - 1) { OVELSE.i++; renderOvelse(); return; }
-  KURSUS_SVAR[OVELSE.id] = OVELSE.svar;
-  try { ovelseKladdeSlet(OVELSE.id); } catch (e) {}   /* faerdig = kladden er ude (13/9) */
+  /* LEKTIONEN OG SVARET LAESES FOER ENHVER VENTETID (8/10, hul 4): skifter kunden lektion, mens dette gemmer, maa intet ramme den nye */
+  const oId = OVELSE.id, oSvar = OVELSE.svar, oBasis = mgBasisId(OVELSE.id);
+  KURSUS_SVAR[oId] = oSvar;
+  /* KLADDEN SLETTES FOERST, NAAR SERVEREN HAR SVARET (8/10, hul 2): foer blev den slettet inden, saa et svar, der ikke naaede frem, kun fandtes i KURSUS_SVAR */
+  try { const u = ovelseLsHent("usendt"); if (!u[oId]) { u[oId] = Date.now(); ovelseLsGem("usendt", u); } } catch (e) {}
   /* "Set" og "venter" hoerer til LEKTIONEN, ikke til den enkelte maalgruppe — ellers saa
      lektionen ugennemfoert ud, saa snart man tilfoejede en maalgruppe mere. */
-  KURSUS_SET[mgBasisId(OVELSE.id)] = true;                        // en gennemført øvelse tæller også som set lektion
-  delete KURSUS_UDSAT[mgBasisId(OVELSE.id)];                      // og fjerner "øvelse venter"-mærket
+  KURSUS_SET[oBasis] = true;                        // en gennemført øvelse tæller også som set lektion
+  delete KURSUS_UDSAT[oBasis];                      // og fjerner "øvelse venter"-mærket
   kursusGemLocal();
   // ugerytme-svaret skriver direkte i ugemålet (kunde_maal.opslag_uge) — øvelsen ER målsætningen
   const dageIx = l.ovelse.findIndex(q => typeof q === "object" && q.type === "dage");
@@ -39537,17 +39638,21 @@ async function ovelseNaeste() {
   if (sb && currentKode) {
     /* Kvittering: en RLS-afvist skrivning kaster ikke — den rammer nul raekker og saa
        praecis ud som en vellykket. Nu siger appen det, hvis oevelsen ikke naaede frem. */
-    const gemt = await skemaSvarSkriv("lektion_svar_" + OVELSE.id, OVELSE.svar);
-    try { await sb.from("skema_svar").insert({ kode: currentKode, navn: CURRENT_NAVN || "", skema: "lektion_set_" + mgBasisId(OVELSE.id), svar: { set: true } }); } catch(e) {}
+    OVELSE_FAERDIG_SENDER = true;
+    let gemt = false;
+    try { gemt = await skemaSvarSkriv("lektion_svar_" + oId, oSvar, ovelseLsHent("beroert")[oId] || {}); } finally { OVELSE_FAERDIG_SENDER = false; }
+    /* »SET« SENDES KUN, NAAR SVARET ER BEKRAEFTET (8/10): basen siger aldrig »lektionen er gjort«, mens svaret mangler */
+    if (gemt) { try { await sb.from("skema_svar").insert({ kode: currentKode, navn: CURRENT_NAVN || "", skema: "lektion_set_" + oBasis, svar: { set: true } }); } catch(e) {} }
     /* Naaede svarene ikke serveren, bliver vinduet staaende. De ER gemt her paa enheden
        (kursusGemLocal ovenfor), saa beskeden siger praecis det — hverken mere eller mindre. */
-    if (!gemt) { ovelseGemFejl(); return; }
-  }
+    if (!gemt) { if (OVELSE && OVELSE.id === oId) ovelseGemFejl(); else { try { husBesked("Svaret til den forrige lektion nåede ikke frem. Det ligger på din enhed og sendes igen."); } catch (e) {} } return; }
+    try { const u = ovelseLsHent("usendt"); delete u[oId]; ovelseLsGem("usendt", u); const b = ovelseLsHent("beroert"); delete b[oId]; ovelseLsGem("beroert", b); ovelseKladdeSlet(oId); } catch (e) {}
+  } else { try { ovelseKladdeSlet(oId); } catch (e) {} }
   closeIdeaWizard();
   renderKursusHjem();
   if (LEK_AABEN) renderLektionVis();
   /* Oevelsen er gjort: faerdig-kortet med tallet, der rykker (13/9). */
-  try { if (LEK_AABEN && LEK_AABEN === mgBasisId(OVELSE.id)) lekMoment(LEK_AABEN, "faerdig"); } catch (e) {}
+  try { if (LEK_AABEN && LEK_AABEN === oBasis) lekMoment(LEK_AABEN, "faerdig"); } catch (e) {}
 }
 const LAAS_SVG = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" style="vertical-align:-1px;"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>';
 function laastBesked() {
@@ -58506,7 +58611,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2587";
+const APP_VERSION = "2588";
 let NY_VERSION_KLAR = false;
 let NY_VERSION_AFVIST = false;
 function nyVersionSkjul() {

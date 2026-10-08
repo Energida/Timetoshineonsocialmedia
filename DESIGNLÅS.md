@@ -1,3 +1,14 @@
+## v2588 · 8. oktober · Kundens svar i lektionerne flettes og sendes igen — intet kan overskrives eller forsvinde (svar-tryghedstesten 8/10)
+- Rører disse gemte felter: skema_svar lektion_svar_*, maalgrupper, lektion_noter, lektion_set_*. Ingen gamle nøgler slettes eller omskrives; nye nøgler lægges ved siden af (kun lokale: energida_ovelse_beroert_/usendt_<kode>).
+- Svar flettes felt for felt, før de skrives: basens udfyldte felt vindes aldrig af et tomt eller ældre lokalt; kun det kunden selv har rørt, vinder. Hele rækken overskrives ikke mere af en gammel åben side.
+- Svaret sendes til serveren ved Næste/Forrige, efter 2,5 s uden tastetryk og når siden skjules — ikke først ved Afslut. Fejler det, ligger det som usendt og sendes igen ved start og når nettet kommer tilbage. Kladden slettes først, når serveren har bekræftet. Lektionens »set« sendes kun, når svaret er bekræftet.
+- Skifter kunden lektion, mens den forrige gemmer, rammer intet den nye. Fejlboksen ruller ind i skærmen på telefonen.
+- Målgruppelisten hentes tilbage i appen og flettes; ingen målgruppe forsvinder. Noter flettes pr. lektion.
+- Testet i selen med en falsk base på 390 og 1440: gennemgang uden at skrive ændrer intet (også med Hinges' rigtige svar), to enheder, offline, afvist gem, hurtigt skift, målgruppe 2, noter.
+
+## HÅRD 8/10 · KUNDERS DATA RØRES ALDRIG AF EN ÆNDRING (Ida: »når vi ændrer noget, så pludselig forsvinder ting — dette må IKKE IKKE ske«)
+- Rører en ændring gemte data (brief, skema_svar, lektion_svar, klip, datoer), testes den mod en kopi af en rigtig kundes data, før den deployes. Gamle nøgler slettes og omskrives aldrig; nye nøgler lægges ved siden af. Gem flettes felt for felt og overskriver aldrig med noget tomt eller ældre. Et mislykket gem siges højt og bevares lokalt. Versionslinjen siger, hvilke gemte felter ændringen rører.
+
 ## v2587 · 8. oktober · Klip 1 · Hook: ét felt først, flere forslag i alle tre typer (Idas klik på bud 1 »Ét felt først«, Artifact AoTzX5HARVu3wRupdu53TK)
 - En tom flise viser spørgsmålet og ét felt (tekst på skærmen). Typevalget med »Vælg en eller flere« er væk.
 - Når et hook er skrevet, kommer to grå chips under feltet: »Tilføj noget man ser« og »Tilføj noget jeg siger«. Et tryk tilføjer feltet, og chippen forsvinder.
