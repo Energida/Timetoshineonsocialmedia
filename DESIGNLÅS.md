@@ -1,3 +1,7 @@
+## v2619 · 8. oktober · Mødesiden: online møde siger »Link til møde« og viser linket (Ida 8/10)
+
+- Hvor-flisen på mødesiden: er mødet online og har et link, står der »Link til møde« og linket under (før: »Online møde«). Uden link står »Online møde«; fysisk uændret. Begge flader.
+
 ## v2617 · 8. oktober · Dækbilledet løftes altid, når appen er klar (delt link fra sms)
 
 - **HÅRD (Ida 8/10: Anette åbnede et delt briefLink fra en sms og så kun hjertet, til hun trykkede Tilbage).** Siden virkede (v2615 var ikke årsagen); dækbilledet (`privCover`) blev stående, fordi en side åbnet fra en anden app ikke altid får `visibilitychange`/`focus`/`pageshow`. Nu løfter et tjek (hvert sekund + ved tryk, rul, drej) dækbilledet, så snart `APP_KLAR` og siden er synlig. Skjuler stadig appen i app-skifteren (hidden).
