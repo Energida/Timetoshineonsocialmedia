@@ -1,3 +1,9 @@
+## v2613 · 8. oktober · Telefonen: kalenderen starter på »I dag« (Arkiv i Mere) og beskrivelsen har sin røde flise med hvid knap
+
+- **KALENDEREN STARTER PÅ »I DAG« PÅ TELEFONEN (Ida 8/10).** Chips-rækken (Content kalenderen · Arkiv) er skjult på telefonen; **Arkiv er eget punkt i Mere-menuen**, lige efter Idébanken. Computeren beholder chipsene.
+- **BESKRIVELSEN = RØD FLISE, KNAPPEN ER HVID (HÅRD, Ida 8/10: »Hvad fuck er denne baggrund … mangler sin røde flise og knappen skal være hvid«).** Briefoversigten på telefonen: titlen i sort Didot over, så ÉN rød flise = Beskrivelse (almindelig hvid tekst) · én hårfin streg · teksten · **hvid knap (Start/Fortsæt brief) inde i flisen**. Markup: `.pf-besk-rk` (computeren: `display:contents`, uændret).
+- **Sandfladen står ikke som en indsat kasse i det hvide ark:** `#briefWrap` er gennemsigtig på telefonen (7/10-sandfladen på `.content` består).
+
 ## v2611 · 8. oktober · Datovælgeren i husets form (Idas netbank-reference 7/10 — vælter 5/10 »hårfine streger«)
 - Ingen streger i kalenderen; luft mellem dagene. Valgt dag = rød cirkel, i dag = tynd ring.
 - Passerede dage er grå og kan ikke vælges, hvor det ikke giver mening: mødets dag (pmDato), nyt opslag (First thing first, ftfDato) og optagedag (bf_optagedag). Andre felter (fx opslagets dato, »Hvornår var sidste møde?«) tillader fortiden som før.
