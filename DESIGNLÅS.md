@@ -1,3 +1,8 @@
+## v2591 · 8. oktober · Den røde flise på briefoversigten: skillelinje under »Beskrivelse«, knappen ude af flisen (Ida 8/10 — vælter 29/9 »knappen bor i den røde flise«)
+- Etiketten Beskrivelse har en hårfin skillelinje under sig (hvid ved lav opacitet på rødt på computer; husets grå på telefon, hvor flisen står på hvidt) og indholdet under.
+- »Start brief« / »Fortsæt brief« er en rød knap i fuld bredde UNDER flisen, ikke inde i den, på computer og telefon.
+- Rører ingen gemte data: kun visning.
+
 ## v2589 · 8. oktober · Mødesiden kan rettes, Hook på briefoversigten, Klip 1-flisen ryddet op (Ida 8/10: »ALT er off«, »forfærdeligt«, »hvorfor kommer det ikke frem på briefoversigten?«)
 - Mødesiden (Det ugentlige contentmøde): chipsene i coveret (dag, tid, fysisk/online, deltagere) kan trykkes og åbner »Ret det ugentlige contentmøde« (dag, fra/til, Fysisk/Online, mødelink, Slet mødet). Efter chipsene står en tydelig chip »Ret mødet«. Slet-knappen svæver ikke længere på siden; den bor i redigeringen som grå knap med skraldespand og ordet. Sidens titel er »Det ugentlige contentmøde« (kun visningen; aftalens gemte titel røres ikke). »Åbn mødet« står på samme linje som »Start mødet«, uden tom række.
 - Briefoversigten: en Hook-flise (tekst på skærmen · det, man ser · det, jeg siger) står over Coverbilledet, når hooket er valgt/skrevet; tryk åbner hooket. Coverbilledet vises stadig kun, når det har tekst (26/9). I Acorns' rigtige brief er thumbValgt -1 i basen: cover-teksten blev ikke gemt som valgt.
