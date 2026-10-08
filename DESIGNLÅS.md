@@ -1,3 +1,7 @@
+## v2599 · 8. oktober · Ugen på telefonen: to chips og én flise pr. dag med den samme datofirkant (Idas valg: »én linje pr. dag«, »datoerne skal have samme design som de normale datofirkanter«)
+- Telefonens Hjem er uændret. To små chips, Dag og Uge, står i rækken »I dag«; Dag er standard. Uge = syv fliser under strimlen, én pr. dag: datofirkanten (tor · 8 · okt, den SAMME som i Kommende aktiviteter: kop-rk + kop-dato), det første der er planlagt og »+ 1 mere«. Tryk på en dag = den dag i dagsvisningen. En tom dag står som »Intet planlagt« i sin egen flise.
+- Valget deles med computeren (localStorage hjemUgeVis). Rører ingen gemte data: kun visning.
+
 ## v2597 · 8. oktober · LÅST: ugen i dagskortet (Idas »Lås bud A«, Artifact Bd5dbHPeNhcv9MZu26Ekjk) — computer
 - Hjems dagskort (dato-fliserne + kortet med timerne) er uændret. To små chips, Dag og Uge, står øverst i kortet; Dag er standard. Uge = samme kort og samme timeakse som syv søjler, én pr. dato-flise (de syv dage fra strimlen); blokkene er dagskortets egne (hvide opslag og aftaler), de stiplede forslag hører kun til dagen. Tryk på en blok åbner den. Nu-linjen står i dagens søjle. Valget huskes på enheden (localStorage hjemUgeVis).
 - Intet nyt felt og ingen flytning af eksisterende fliser. Kun visning, rører ingen gemte data.

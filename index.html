@@ -11181,6 +11181,8 @@ html body #briefKlip1Vaert > #briefKlip1 { flex:1 1 auto; width:100%; min-width:
 .hk-nu { position:absolute; left:0; right:0; border-top:2px solid var(--red); z-index:3; pointer-events:none; }
 /* UGEN I DAGSKORTET (Idas »Lås bud A« 8/10) */
 .hk-visning { display:flex; gap:8px; margin:0 0 8px; }
+.hu-linje .hu-visning { display:inline-flex; gap:6px; margin-left:auto; }
+.hu-linje .hu-visning .ark-chip { height:30px; min-height:30px; padding:0 12px; font-size:12px; }
 .hk-uge { grid-template-columns:44px 1fr; }
 .hk-uge .hk-t { right:6px; }
 .hk-ugespor { display:grid; grid-template-columns:repeat(7, minmax(0,1fr)); gap:6px; position:relative; }
@@ -48421,6 +48423,7 @@ function huKalDagHtml(iso, erIdag) {
 }
 /* UGEN I DET SAMME KORT (Idas »Lås bud A« 8/10): dagskortets timer bliver til syv søjler, én pr. dato-flise; samme blokke, samme timeakse. Kun rigtige opslag og aftaler (de stiplede forslag hører til dagen). */
 let HU_UGEVIS = (function () { try { return localStorage.getItem("hjemUgeVis") === "1"; } catch (e) { return false; } })();
+function huUgeDag(i) { HU_UGEVIS = false; try { localStorage.setItem("hjemUgeVis", "0"); } catch (e) {} try { huDagVaelg(i); } catch (e) { try { hjemUgeTegn(); } catch (e2) {} } }   /* tryk paa en dag i ugen = den dag i dagsvisningen */
 function huUgeVis(paa) { HU_UGEVIS = !!paa; try { localStorage.setItem("hjemUgeVis", paa ? "1" : "0"); } catch (e) {} try { hjemUgeTegn(); } catch (e) {} }
 function huKalUgeHtml(dage, idagIso) {
   const H = HU_KAL_H, kol = dage.map(function (d) { return huKalBlokke(d.iso).blk.filter(function (b) { return b.k !== "stip"; }); });
@@ -48702,7 +48705,9 @@ function hjemUgeHtml(tlf) {
   }).join("") + '</div>';
   const erIdag = valgt === idagIx;
   const pil = '<span class="hu-pile"><button type="button" class="hu-pil" aria-label="Forrige uge" onclick="huUge(-1)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></button><button type="button" class="hu-pil" aria-label="Næste uge" onclick="huUge(1)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button></span>';
-  const linje = '<div class="cf-sek hu-sek hu-linje"><span>' + (erIdag ? "I dag" : DN[valgt]) + '</span>' + pil + (erIdag ? '' : '<button type="button" class="hu-idag" onclick="huIdag()">I dag</button>') + '</div>';
+  let linje = '<div class="cf-sek hu-sek hu-linje"><span>' + (erIdag ? "I dag" : DN[valgt]) + '</span>' + pil + (erIdag ? '' : '<button type="button" class="hu-idag" onclick="huIdag()">I dag</button>') + '</div>';
+  /* DAG/UGE PAA TELEFONEN (Idas valg 8/10): to smaa chips i raekken »I dag«; uge = en linje pr. dag med den samme datofirkant som Kommende aktiviteter */
+  if (tlf) linje = linje.replace(/<\/div>$/, '<span class="hu-visning"><button type="button" class="ark-chip' + (HU_UGEVIS ? '' : ' on') + '" onclick="huUgeVis(false)">Dag</button><button type="button" class="ark-chip' + (HU_UGEVIS ? ' on' : '') + '" onclick="huUgeVis(true)">Uge</button></span></div>');
   const ting = dage[valgt].ting;
   const ugeTom = dage.every(function (x) { return !x.ting.length; });
   let dagHtml;
@@ -48710,7 +48715,14 @@ function hjemUgeHtml(tlf) {
     ? (huYgtFoer8() ? '' : '<div class="hu-tom"><div class="hu-tom-q">Hvad skal der ske i denne uge?</div><button type="button" class="hu-graa" onclick="if (!ygtContentLaasVis(\'Planlægningen\')) showTab(31)">Start planlægning</button></div>')
     : '';   /* Tilføj-knappen i en tom dag er væk: der tilføjes kun øverst (Ida 7/10) */
   else dagHtml = (HU_HELE ? ting : ting.slice(0, 5)).map(huKort).join("") + (ting.length > 5 && !HU_HELE ? '<button type="button" class="hu-graa" onclick="HU_HELE=true;hjemUgeTegn()">Se hele dagen · ' + ting.length + '</button>' : '');
-  const dag = '<div class="hu-dagen">' + dagHtml + '</div>';
+  const MDR3 = ["JAN", "FEB", "MAR", "APR", "MAJ", "JUN", "JUL", "AUG", "SEP", "OKT", "NOV", "DEC"];
+  const ugeLinjer = (tlf && HU_UGEVIS) ? '<div class="hu-ugelinjer">' + dage.map(function (x) {
+    const t0 = x.ting[0]; const tidT = t0 && t0.tid ? String(t0.tid).replace(":", ".").slice(0, 5) + " · " : "";
+    /* SAMME DATOFIRKANT SOM KOMMENDE AKTIVITETER (Ida 8/10): kop-rk + kop-dato — hver dag sin egen flise */
+    return '<div class="kop-rk" role="button" tabindex="0" onclick="huUgeDag(' + x.i + ')"><span class="kop-dato"><em>' + DN[x.i].slice(0, 3).toLowerCase() + '</em><b>' + x.d.getDate() + '</b><i>' + MDR3[x.d.getMonth()].toLowerCase() + '</i></span><span class="kop-t">'
+      + (t0 ? '<span class="kop-n">' + esc(t0.t) + '</span><span class="kop-s">' + esc(tidT + (x.ting.length > 1 ? "+ " + (x.ting.length - 1) + " mere" : (t0.et || ""))) + '</span>' : '<span class="kop-n" style="color:var(--gray3);">Intet planlagt</span>') + '</span></div>';
+  }).join("") + '</div>' : "";
+  const dag = ugeLinjer || ('<div class="hu-dagen">' + dagHtml + '</div>');
   /* FORSLAG STAAR UNDER »FORSLAG« MED STIPLET RAMME (Idas klik 27/9 paa bud 1, 6n9): community-guiden og »Bliv klar til at poste i morgen« er appens forslag, ikke dagens aftaler.
      Samme stiplede sprog som kalenderdagens forslag paa computeren (.hk-stip). Kun telefonen; computerens kalenderdag er uroert. */
   const forslag = (ting.length ? huGuideHtml(dage[valgt].d) : '') + ((erIdag && !(ugeTom && !ting.length)) ? huTomDagHtml(dage[valgt].d) : '');
@@ -58768,7 +58780,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2597";
+const APP_VERSION = "2599";
 let NY_VERSION_KLAR = false;
 let NY_VERSION_AFVIST = false;
 function nyVersionSkjul() {
