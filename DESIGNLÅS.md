@@ -1,3 +1,11 @@
+## v2625 · 8. oktober · Hashtagbanken lukket i briefen, menuens ikoner flugter med rækkerne, søjle-vælgeren har en grå linje, kvittering med »Se idéen«
+
+- **HASHTAGBANKEN ER LUKKET I BRIEFEN (HÅRD, Ida 8/10: »mindst mulige fremme«).** På captionens side står kun de fem hashtagfelter; banken er én grå chip »Vælg fra hashtagbanken« (`HTB_BANK_AABEN`). Åben viser den kategorierne og de 12 mest brugte (+ de valgte), resten bag »Se flere (n)«, og »Skjul banken« lukker den igen. Før stod hele banken som chips på én gang.
+- **MENUEN PÅ COMPUTER (Hans-testen):** ikonerne i den smalle menu står nu på samme højde som rækkerne i den udfoldede menu (stregen holder pladsen, rækkerne er 41,5 px begge steder). Før stod musen over næste række, når menuen foldede ud. Målt i browseren: 105 · 148 · 192 · 235 … begge steder.
+- **SØJLE-VÆLGEREN (Idas ja):** hver søjle har en grå linje under navnet — første sætning af søjlens beskrivelse (samme ord som Idébanken, briefen og Drejebogen).
+- **KVITTERING MED ET TRYK:** »Gemt under Uden plads.« får det røde ord »Se idéen« (`window.__KVIT_HANDLING`, bruges én gang), der åbner idéen.
+- **MÅLT, IKKE FUNDET:** sideskift på 390 og 1440, også med 900 ms ventetid: ingen mellemside blinker forbi, og den gamle side står, til den nye er klar. Mellemstoppet kan ikke genskabes uden Idas konkrete tilfælde.
+
 ## v2623 · 8. oktober · Hans-testen og tjek af dagens ændringer: rene fejl rettet
 
 - **Rettet uden at spørge (rene fejl):** admin-CRM: `kontaktFlush` kaldte en funktion, der ikke findes (`renderFollow` → `renderFollowUp`) — chips på kundelisten blev ikke opdateret, når en kontakt blev rettet · briefens røde flise blev ikke skjult, når den kun havde titel (den tomme `.pf-besk-rk` talte som indhold) · kalenderens Arkiv-/Idébank-chips skjules kun i kundeappen, ikke i Backstage · EFU-hjælperens kort brød ikke linjen på telefon (teksten løb ud over kortet) · »Sat ind i briefen.« som kvittering efter produkthjælpen · dækbilledets sikring (v2617) venter, mens login-tæppet står, og stopper efter 60 sek. · `briefProces`/`briefHjaelpFold` er ikke sider i `briefGrupper` · den ubrugte `kort`-tekst i `BS_SOEJLE_HJAELP` er fjernet (kunne glide fra Beskrivelser).
