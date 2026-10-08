@@ -1,3 +1,6 @@
+## v2593 · 8. oktober · To-dos med overskredet dato viser det tydeligt (Ida 7/10, backlog 2)
+- En to-do, hvis dato er passeret, står med røde ord: »Overskredet · 3 dage · man. 5. oktober« (i stedet for den stille »Dato man. 5. oktober«). Gælder alle to-do-lister bygget af bf3TodoListe (Backstage Hjem og Indbakken). Rører ingen data.
+
 ## v2591 · 8. oktober · Den røde flise på briefoversigten: skillelinje under »Beskrivelse«, knappen ude af flisen (Ida 8/10 — vælter 29/9 »knappen bor i den røde flise«)
 - Etiketten Beskrivelse har en hårfin skillelinje under sig (hvid ved lav opacitet på rødt på computer; husets grå på telefon, hvor flisen står på hvidt) og indholdet under.
 - »Start brief« / »Fortsæt brief« er en rød knap i fuld bredde UNDER flisen, ikke inde i den, på computer og telefon.
