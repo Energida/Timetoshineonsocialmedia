@@ -4,6 +4,12 @@
 - **DAGSORDENEN RETTES PÅ STEDET.** Et penneikon ved hvert punkt åbner punktet: navn, tekst, skraldespand (fjern) og Gem; »Tilføj punkt« lægger et nyt til. Standardpunkterne (performance · den kommende uge · dato for næste møde) står uændrede, til man retter dem. Gemmes i `plan_ritual.moede.dagsorden` (merges, andre nøgler urørte); et rettet punkt bliver statisk tekst, et urørt punkt bliver dynamisk (uge, tema, mål). Ingen Annuller i rettelsen.
 - **ALLE DATOSYMBOLER ER KVADRATER, 56 × 56 (HÅRD, Ida 9/10: »kvadratiske alle steder«):** Kommende opslag (`.kop-dato`), aftalernes dato (`.cf-dato`), Backstages `.bs3-tidb.d` og `.bs-datob`. Ingen dato-boks er højere end bred.
 
+## v2696 (9/10) — ÉN CHIP I HELE APPEN (LÅST, Ida: »ALLE chips skal være ens og det er det hvide/grå design«) · Kommende opslag = bud 3
+- **Chippen:** hvid, 1 px grå kant, grå tekst (`--gray2`) 13 px Poppins, 36 høj, 16 px luft i siderne, ikon/plus gråt 14 px foran ordet. Valgt = rød fyldt med hvid tekst. Aldrig sort tekst, aldrig fyldt grå, aldrig anden størrelse. Gælder kundeapp og Backstage (`.ark-chip`, `.ibb-chip`, `.pr-chip`, `.fb-chip`, `.kop-chip`).
+- **»Tilføj scene« står i rækken med Tilføj klip · manus · tekst på skærm · CTA som den samme hvide/grå chip** (Ida 9/10) — den røde pille fra 7/10 er ude.
+- **Teksten står centreret i højden i klip-felterne** (Ida 9/10): 18 px luft over og under én linje; feltet vokser med flere linjer.
+- **Kommende opslag (Idas klik på bud 3, artifact 5mk5cfFSiaQuEQvXavAwCj):** under titlen én række chips: format · status · de ansvarlige med husets person-ikon foran navnet. Linjen »Reel · Brief i gang« er ude. Ida bad om »mindre« chips her, men låsen »alle chips ens« vinder — vil hun have dem mindre, ændres chippen ét sted for hele appen.
+
 ## v2695 (9/10) — »Fortsæt brief« står nederst på briefoversigten på computeren (Ida: »skal komme nederst … under sidste indhold«), efter hook, coverbillede og caption. Vælter 29/9 (under den røde flise). Telefonen uændret: hvid knap i den røde flise (8/10).
 
 ## v2694 (9/10) — Dagskalenderen stopper ved 24.00 (Ida: »når dagen ikke er længere, skal flisen stoppe«). Ingen luft under midnat; sent på aftenen står nu-stregen lavere i vinduet.
