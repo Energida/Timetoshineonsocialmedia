@@ -4,6 +4,9 @@
 - **DAGSORDENEN RETTES PÅ STEDET.** Et penneikon ved hvert punkt åbner punktet: navn, tekst, skraldespand (fjern) og Gem; »Tilføj punkt« lægger et nyt til. Standardpunkterne (performance · den kommende uge · dato for næste møde) står uændrede, til man retter dem. Gemmes i `plan_ritual.moede.dagsorden` (merges, andre nøgler urørte); et rettet punkt bliver statisk tekst, et urørt punkt bliver dynamisk (uge, tema, mål). Ingen Annuller i rettelsen.
 - **ALLE DATOSYMBOLER ER KVADRATER, 56 × 56 (HÅRD, Ida 9/10: »kvadratiske alle steder«):** Kommende opslag (`.kop-dato`), aftalernes dato (`.cf-dato`), Backstages `.bs3-tidb.d` og `.bs-datob`. Ingen dato-boks er højere end bred.
 
+## v2691 (9/10) — Fakta gemmer selv (Ida: »fakta blev ændret uden jeg skulle klikke Gem ændringer«)
+- Format, platform, dato, tidspunkt, lyd, målgruppe og de øvrige valg i fakta gemte allerede ved valget; **ansvarlig (Hvem skal lave det?)** ventede på Gem og gemmer nu også selv. Reglen: intet valg i fakta kræver Gem.
+
 ## v2690 (9/10) — Dagskalenderen på Hjem (computer) følger klokken (Ida: »hele tiden en streg, hvor man er … ikke se for meget af dagen inden … kunne scrolle op«)
 - I dag viser hele døgnet 00–24 i et vindue på ca. 7 timer, som åbner én time før nu; den røde nu-streg står altid i vinduet og flyttes hvert minut. Man ruller selv op og ned, og rulleplaceringen bevares ved gentegning. Andre dage er uændrede. Telefonens dagsliste er uændret.
 
