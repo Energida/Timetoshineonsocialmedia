@@ -1,3 +1,7 @@
+## v2681 · 9. oktober · Captionen er én model for alle søjler; felt 3 hedder »Hvad får de ud af det?«
+
+- **CAPTIONEN ER ÉN MODEL, ENS I ALLE SØJLER (HÅRD, Ida 9/10: »det er jo vigtigere, at de lærer at opbygge en caption korrekt«).** Fire trin, ens spørgsmål for 1A, 1B, 2A og 2B — ingen versioner pr. søjle. Eneste ændring: felt 3 hedder **»Hvad får de ud af det?«** med linjen **»Hvad gør det lettere, rarere eller klogere for dem?«** (var »Hvordan hjælper vi dem? Ikke hvad varen er …«, som tog en vare for givet). Datanøglen `captionHistorie` og felt 1, 2 og 4 er uændrede. Chats 37 forslag er IKKE gennemført; kun dette ene er godkendt af Ida.
+
 ## v2679 · 9. oktober · Ny idé = ét felt, Billede og Link som chips i alle skrive-ruder, YOU GOT THIS åbner gradvist, siden fryser under skift
 
 - **NY IDÉ ER ÉT FELT (HÅRD, Ida 9/10, version 1 af fem bud på artifact YQvfm7wd14JyohGKJAPFnS):** »Hvad er idéen?« med mikrofonen nederst til højre i feltet, derunder hvide chips **Billede · Link · Indholdssøjle · Tags**, og Gem. Titelfeltet og »Tilføj mere« er væk. Titlen laves af første linje/sætning (højst 70 tegn, klippet ved et ord, **aldrig »…«**); hele teksten ligger i beskrivelsen. Indholdssøjle og Tags tænder de samme paneler som før (de står under hinanden på telefonen, ikke som sider at swipe imellem).
