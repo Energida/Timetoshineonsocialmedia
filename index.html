@@ -55429,7 +55429,7 @@ async function ideAdd(rec) {
      __ny og sendes som INSERT, naar nettet er tilbage (ideKoeSend). Ingen roed bjaelke: intet
      er gaaet galt, det venter bare. */
   if (ideerShared() && !navigator.onLine) {
-    rec.id = newId(); IDEER.push(rec);
+    rec.id = newId(); IDEER.push(rec); try { ibSkrollTilNyStart(rec.id); } catch (e) {}   /* Idebanken staar paa den soejle, hvor den nye ide ligger (SOS 9/10: Rene saa den ikke — Uden plads er den sidste kolonne) */
     try { ideKoeLaeg(rec.id, { __ny: true }); localStorage.setItem(nsKey("ideer_cache"), JSON.stringify(IDEER)); ideKladdeStatus(); } catch (e) {}
     renderIdeas(); renderCalendar(); return rec;
   }
@@ -55447,7 +55447,8 @@ async function ideAdd(rec) {
             if (b.error || !b.data || !b.data.length) { try { visSyncFejl(); } catch(e2) {} try { ideKoeLaeg(data.id, { brief: rec.brief }); } catch (e3) {} }
           } catch(e) { try { visSyncFejl(); } catch(e2) {} try { ideKoeLaeg(data.id, { brief: rec.brief }); } catch (e3) {} }   /* briefen i koeen, saa den sendes igen (29/9) */
         }
-        IDEER.push(m); try { renderIdeas(); renderCalendar(); } catch (e) {} return m;
+        IDEER.push(m); try { ibSkrollTilNyStart(m.id); } catch (e) {}   /* Idébanken staar paa den soejle, hvor den nye ide ligger (SOS 9/10) */
+        try { renderIdeas(); renderCalendar(); } catch (e) {} return m;
       }
       /* SIG DET MED DET SAMME (Ida 25/8). Foer faldt en afvist oprettelse tavst ned i
          linjen nedenfor: opslaget fik et LOKALT id, saa det ud som oprettet, og forsvandt
@@ -55457,7 +55458,7 @@ async function ideAdd(rec) {
       try { visSyncFejl(); } catch(e2) {}
     } catch(e) { try { visSyncFejl(); } catch(e2) {} }
   }
-  rec.id = newId(); IDEER.push(rec);
+  rec.id = newId(); IDEER.push(rec); try { ibSkrollTilNyStart(rec.id); } catch (e) {}   /* Idebanken staar paa den soejle, hvor den nye ide ligger (SOS 9/10: Rene saa den ikke — Uden plads er den sidste kolonne) */
   /* AFVIST OPRETTELSE LANDER I KOEEN (Hinges Hus 29/9): foer fik den kun et lokalt id og blev aldrig sendt igen — naeste genindlaesning slettede den. Nu sendes den, naar login/net er tilbage. */
   if (ideerShared()) { try { ideKoeLaeg(rec.id, { __ny: true }); localStorage.setItem(nsKey("ideer_cache"), JSON.stringify(IDEER)); ideKladdeStatus(); } catch (e) {} }
   try { saveLocalIdeer(); } catch (e) {} try { renderIdeas(); renderCalendar(); } catch (e) {} return rec;   /* kladden er gemt, selv om en gentegning fejler (21/9) */
@@ -57333,6 +57334,22 @@ function ibSporPrikker() {
   let nu = Math.round(sp.scrollLeft / b);
   if (nu < 0) nu = 0; if (nu > knapper.length - 1) nu = knapper.length - 1;
   knapper.forEach(function (kn, i) { kn.classList.toggle("on", i === nu); });
+}
+/* DEN NYE IDE SKAL SES (SOS 9/10: Rene lagde en idé ind, men »Uden plads« er sidste kolonne og ligger uden for skærmen): en vagt venter, til Idébanken er synlig, og rykker så sporet til søjlen med den nye idé — én gang */
+let IB_VAGT = null;
+function ibSkrollTilNyStart(id) {
+  window.__IB_SCROLL_TIL = { id: id, til: Date.now() + 600000 };
+  if (IB_VAGT) clearInterval(IB_VAGT);
+  IB_VAGT = setInterval(function () {
+    try {
+      const t = window.__IB_SCROLL_TIL; if (!t || Date.now() > t.til) { clearInterval(IB_VAGT); IB_VAGT = null; window.__IB_SCROLL_TIL = null; return; }
+      const sp = document.getElementById("ibSpor"); if (!sp || !sp.getClientRects().length || sp.clientWidth < 50) return;
+      const tile = sp.querySelector('.bs-kf[data-ibid="' + String(t.id).replace(/"/g, "") + '"]'); if (!tile) return;
+      const kol = tile.closest(".ib-soj"), i = Array.prototype.indexOf.call(sp.children, kol), b = ibSporBredde(sp);
+      if (i > 0 && b) { sp.scrollLeft = i * b; try { ibSporPrikker(); } catch (e2) {} }
+      clearInterval(IB_VAGT); IB_VAGT = null; window.__IB_SCROLL_TIL = null;
+    } catch (e) {}
+  }, 350);
 }
 function ibSporGaa(i) {
   const sp = document.getElementById("ibSpor"); if (!sp) return;
@@ -59264,7 +59281,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2655";
+const APP_VERSION = "2657";
 const APP_BYGGET = "9. oktober";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_BYGGET + " · " + APP_VERSION; } catch (e) {} });
 let NY_VERSION_KLAR = false;
@@ -73862,6 +73879,7 @@ async function kundeArkGem(tekst, k) {
     try { if (typeof CURRENT_NAVN === "string" && CURRENT_NAVN.trim()) briefNy.af = CURRENT_NAVN.trim(); else if (typeof SOM_KUNDE !== "undefined" && SOM_KUNDE) briefNy.af = "Ida"; } catch (e) {}   /* hvem tilfoejede — fra loginet (Ida 19/9); fra admin som kunde = Ida (21/9 kl. 00.02) */
     const soejleVal = (KUNDE_ARK_SOEJLE === "__ingen") ? "" : (KUNDE_ARK_SOEJLE || "");
     const rec = await ideAdd({ titel: titel, type: KUNDE_ARK_FORMAT || "", soejle: soejleVal, status: "Idé", dato: null, brief: briefNy });
+    try { if (rec && rec.id) ibSkrollTilNyStart(rec.id); } catch (e) {}   /* Idébanken staar paa den soejle, hvor den nye ide ligger (SOS 9/10: Rene saa den ikke) */
     KUNDE_ARK_FORMAT = "";
     KUNDE_ARK_TAGS = [];   /* intet format, foer kunden vaelger det (Ida 18/9 kl. 14.38) */
     INSP_VEDHAEFT = "";
