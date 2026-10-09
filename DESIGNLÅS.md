@@ -4,6 +4,8 @@
 - **DAGSORDENEN RETTES PÅ STEDET.** Et penneikon ved hvert punkt åbner punktet: navn, tekst, skraldespand (fjern) og Gem; »Tilføj punkt« lægger et nyt til. Standardpunkterne (performance · den kommende uge · dato for næste møde) står uændrede, til man retter dem. Gemmes i `plan_ritual.moede.dagsorden` (merges, andre nøgler urørte); et rettet punkt bliver statisk tekst, et urørt punkt bliver dynamisk (uge, tema, mål). Ingen Annuller i rettelsen.
 - **ALLE DATOSYMBOLER ER KVADRATER, 56 × 56 (HÅRD, Ida 9/10: »kvadratiske alle steder«):** Kommende opslag (`.kop-dato`), aftalernes dato (`.cf-dato`), Backstages `.bs3-tidb.d` og `.bs-datob`. Ingen dato-boks er højere end bred.
 
+## v2695 (9/10) — »Fortsæt brief« står nederst på briefoversigten på computeren (Ida: »skal komme nederst … under sidste indhold«), efter hook, coverbillede og caption. Vælter 29/9 (under den røde flise). Telefonen uændret: hvid knap i den røde flise (8/10).
+
 ## v2694 (9/10) — Dagskalenderen stopper ved 24.00 (Ida: »når dagen ikke er længere, skal flisen stoppe«). Ingen luft under midnat; sent på aftenen står nu-stregen lavere i vinduet.
 
 ## v2693 (9/10) — HOOK-KORTET = BUD 3 (LÅST, Idas klik 9/10, artifact YMy8uLhftrAfPhiiaAgN5q)
