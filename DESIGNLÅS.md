@@ -1,3 +1,7 @@
+## v2637 · 9. oktober · Tøm hovedet på telefonen = fliserne på marken, ét tryk vælger
+
+- **TØM HOVEDET PÅ TELEFONEN ÅBNER FLISERNE PÅ MARKBILLEDET (HÅRD, Ida 9/10: »hvorfor er tøm hovedet på b2b stadig denne og ikke de fliser på mark baggrunden hvor man klikker direkte«).** Plusset åbner markbilledet (`dagens/kort.jpg`, mørkt lag) med spørgsmålet »Hvad har du på hjertet?« og valgene som hvide fliser med ikon (Jeg skal bare have skrevet det ned · Jeg har en god content-idé · Tilføj aftale · Tilføj begivenhed · Tilføj opgave · Jeg har set noget fedt · Idé til tema · Tilpas noget, jeg har lavet). Ét tryk vælger: »Jeg skal bare have skrevet det ned« åbner feltet med valget sat (lander i Indbakken), de andre åbner deres eget ark som før. **Vælter 4/10 (»feltet først, én dropdown Vælg«) på telefonen.** Computeren er uændret (felt + dropdown). MÅLT lokalt på 390: fliserne står på marken, tryk på første flise åbner feltet med fokus og valget sat. IKKE MÅLT: tryk på hver af de øvrige fliser og gem mod den rigtige base.
+
 ## v2635 · 9. oktober · Versionslinjen viser den rigtige version
 
 - **VERSIONSLINJEN NEDERST ER ÆRLIG (Idas skærmbillede 9/10: »er på version 2600«).** Teksten »Version 8. oktober · 2600« stod fast i HTML'en og blev aldrig opdateret, så den lignede en gammel version, selv når appen var ny. Nu sættes den ved opstart ud fra `APP_VERSION` og `APP_BYGGET` (»Version 9. oktober · 2635«). Burgermenuen og sidemenuen læser samme tekst.
