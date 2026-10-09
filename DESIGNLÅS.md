@@ -4,6 +4,8 @@
 - **DAGSORDENEN RETTES PÅ STEDET.** Et penneikon ved hvert punkt åbner punktet: navn, tekst, skraldespand (fjern) og Gem; »Tilføj punkt« lægger et nyt til. Standardpunkterne (performance · den kommende uge · dato for næste møde) står uændrede, til man retter dem. Gemmes i `plan_ritual.moede.dagsorden` (merges, andre nøgler urørte); et rettet punkt bliver statisk tekst, et urørt punkt bliver dynamisk (uge, tema, mål). Ingen Annuller i rettelsen.
 - **ALLE DATOSYMBOLER ER KVADRATER, 56 × 56 (HÅRD, Ida 9/10: »kvadratiske alle steder«):** Kommende opslag (`.kop-dato`), aftalernes dato (`.cf-dato`), Backstages `.bs3-tidb.d` og `.bs-datob`. Ingen dato-boks er højere end bred.
 
+## v2698 (9/10) — »Download billede« (Ida: »gem billede skal i stedet være Download billede«). Knappen under coverbilledet på briefoversigten hedder Download billede / Download alle billeder. Reglen: »Gem« gemmer i appen; en knap, der henter en fil, hedder »Download«.
+
 ## v2697 (9/10) — Månedens hashtags på dagsordenen (Ida: »i mdr. planlægning have hashtags på agendaen«)
 - På hvert fjerde (månedens) contentmøde står punktet »Månedens hashtags« som punkt 3 under »Hvad skal vi igennem?«: én linje + chippen »Åbn hashtagbanken«. Det ugentlige møde er uændret. Punktet kan rettes/fjernes som de andre.
 
