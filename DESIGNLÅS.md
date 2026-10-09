@@ -1,3 +1,7 @@
+## v2633 · 9. oktober · Status står ikke på flisen i Idébanken
+
+- **INGEN STATUS PÅ IDÉFLISEN (HÅRD, Ida 9/10: »slet status på flisen i idébanken«).** Chippen »Brief i gang« (og alle andre statusser) er væk fra flisen i Idébanken. Kun mødechippen (»På mødet« / »Møde <dato>«) og datochippen, når idéen er planlagt, står tilbage. Status ses inde i idéen og i kalenderen. MÅLT lokalt: en idé med status »Brief i gang« viser kun titel og dato.
+
 ## v2631 · 9. oktober · Ugens fokus uden flise, dagens aftale i Kommende aktiviteter, chippen hedder »Opslag«
 
 - **UGENS FOKUS = BARE DIDOT, INGEN FLISE (HÅRD, Ida 9/10: »kunne vi lave layout i ugens fokus uden flise og bare Didot?«).** På computerens Hjem står Ugens fokus uden hvid flade, skygge, streg og aftoning: den lille etiket med det røde sigtekorn og teksten i Didot-kursiv 32 px, som må ombrydes til to linjer (før blev den skåret af med »…«). Bevidst undtagelse til Idas ord 25/9 om fokus-linjen og til reglen »flisen er altid hvid med skygge«. Telefonen er uændret (ingen fokus).
