@@ -19,11 +19,11 @@ setTimeout(async function () {
       var r = tlf ? document.getElementById("hjemUgeTlf") : document.getElementById("hjemUge");
       if (!r || !synlig(r)) { F(tilstand + ": Hjem (ugestrimlen) ikke fundet"); return; }
       var tekst = (r.innerText || "").replace(/\s+/g, " ");
-      /* 1) HEROEN: hilsnen; telefonen UDEN dato (Ida 25/9), computeren m. datoen i baandet */
+      /* 1) HEROEN: hilsnen; telefonen MED dato under hilsenen (Ida 9/10, vaelter 25/9), computeren m. datoen i baandet */
       if (tlf) {
         var hh = document.querySelector(".hf-hero-hilsen"), hd = document.querySelector(".hf-hero-dato");
         if (!synlig(hh) || !/aften|morgen|dag|formiddag|eftermiddag|Go'|God/i.test(hh.textContent)) F(tilstand + ": telefonens hero mangler hilsnen");
-        if (synlig(hd)) F(tilstand + ": datoen staar stadig i telefonens hero");
+        if (!synlig(hd)) F(tilstand + ": datoen mangler under hilsenen i telefonens hero");   /* Ida 9/10: »Dato mangler under cover« — vaelter 25/9 */
       } else {
         var mn = document.querySelector("#screen3 .mb-navn");
         if (!mn || !/aften|morgen|dag|Go'|God/i.test(mn.textContent)) F(tilstand + ": computerens baand mangler hilsnen");
