@@ -4,6 +4,8 @@
 - **DAGSORDENEN RETTES PÅ STEDET.** Et penneikon ved hvert punkt åbner punktet: navn, tekst, skraldespand (fjern) og Gem; »Tilføj punkt« lægger et nyt til. Standardpunkterne (performance · den kommende uge · dato for næste møde) står uændrede, til man retter dem. Gemmes i `plan_ritual.moede.dagsorden` (merges, andre nøgler urørte); et rettet punkt bliver statisk tekst, et urørt punkt bliver dynamisk (uge, tema, mål). Ingen Annuller i rettelsen.
 - **ALLE DATOSYMBOLER ER KVADRATER, 56 × 56 (HÅRD, Ida 9/10: »kvadratiske alle steder«):** Kommende opslag (`.kop-dato`), aftalernes dato (`.cf-dato`), Backstages `.bs3-tidb.d` og `.bs-datob`. Ingen dato-boks er højere end bred.
 
+## v2702 (9/10) — Send til godkendelse fra admin går til kundens folk (fund: »Send til« viste kun Ida). Står Ida med efternavn (CURRENT_NAVN »Ida …«), blev hun regnet som kunden. Nu er »Ida …« altid Ida, og listen er kundens team.
+
 ## v2701 (9/10) — »Hvem skal godkende?« ryddet op (Ida: »det her ser lidt rodet ud«)
 - Favorit-hook og favorit til coverbilledet er rækker med husets flueben-cirkel (valgt = rød cirkel + rød kant), ikke chips — en lang tekst bor aldrig i en chip. Dubletter vises én gang. »Send til« står til venstre som husets chips. Intet »Annullér« — krydset lukker.
 
