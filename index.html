@@ -55550,7 +55550,9 @@ async function ideAdd(rec) {
    Aarsagen: hvert gem skrev HELE briefen. Nu hentes den gemte brief lige foer skrivningen, og hvert felt flettes: er et felt UROERT her siden briefen blev hentet (IDE_BASE),
    beholdes det, der ligger i basen; kun det, DU har rettet, skrives. Kendes udgangspunktet ikke, overskriver et tomt felt aldrig et udfyldt. */
 window.IDE_BASE = window.IDE_BASE || {};
-function ideBaseSaet(id, brief) { try { window.IDE_BASE[id] = JSON.parse(JSON.stringify(brief || {})); } catch (e) {} }
+/* UDGANGSPUNKTET FLYTTES IKKE, MENS ET GEM ER UNDERVEJS (Ida 9/10: »jeg har rettet fra kort reel til reel 100 gange« — formatet hoppede tilbage): en gentegning midt i gemningen satte udgangspunktet til den NYE brief, og fletningen troede saa, at formatet var uroert, og beholdt det gamle fra basen. */
+window.IDE_UNDERVEJS = window.IDE_UNDERVEJS || {};
+function ideBaseSaet(id, brief, tving) { try { if (!tving && window.IDE_UNDERVEJS[id] > 0) return; window.IDE_BASE[id] = JSON.parse(JSON.stringify(brief || {})); } catch (e) {} }
 function ideBriefFlet(id, lokal, remote) {
   const base = window.IDE_BASE[id] || null;
   const ens = function (a, b) { return JSON.stringify(a) === JSON.stringify(b); };
@@ -55571,7 +55573,8 @@ async function ideUpdate(id, patch) {
   /* SVARET SIGES VIDERE (Ida 4/8): funktionen returnerer nu, OM det lykkedes, saa en
      Gem-knap kan sige "Gemt" om noget, der FAKTISK er gemt. Alle aeldre kaldere
      ignorerer returvaerdien og er uroerte. */
-  let gemt = true; const t0 = Date.now();   /* kladden i koeen ryddes kun, hvis den ikke er skrevet EFTER dette gem startede (29/9) */
+  let gemt = true; const t0 = Date.now(); let tael = false; try { if (patch && patch.brief) { window.IDE_UNDERVEJS[id] = (window.IDE_UNDERVEJS[id] || 0) + 1; tael = true; } } catch (e) {}
+  const talNed = function () { if (tael) { tael = false; try { window.IDE_UNDERVEJS[id] = Math.max(0, (window.IDE_UNDERVEJS[id] || 1) - 1); } catch (e) {} } };   /* kladden i koeen ryddes kun, hvis den ikke er skrevet EFTER dette gem startede (29/9) */
   if (ideerShared()) {
     try {
       /* KVITTERING (Ida 4/8: "naar jeg aendre status fra brief igang til ide gemmer den
@@ -55593,10 +55596,10 @@ async function ideUpdate(id, patch) {
           }
         } catch (e2) {}
       }
-      const r = await sb.from("content_ideer").update(patch).eq("id", id).select();
+      const r = await sb.from("content_ideer").update(patch).eq("id", id).select(); talNed();
       if (r.error || !r.data || !r.data.length) { visSyncFejl("ideUpdate " + Object.keys(patch || {}).join(",") + ": " + ((r.error && (r.error.message || r.error.code)) || "0 rækker rammet (rettighed?)")); gemt = false; }
-      else if (patch && patch.brief) ideBaseSaet(id, patch.brief);
-    } catch(e) { visSyncFejl(); gemt = false; }
+      else if (patch && patch.brief) ideBaseSaet(id, patch.brief, true);
+    } catch(e) { talNed(); visSyncFejl(); gemt = false; }
     /* OFFLINE-KLADDEN (5/9): naaede det ikke databasen, ligger det i koeen — og i cachen,
        saa en genindlaesning uden net stadig viser det. Naaede det frem, ryddes koeen for id. */
     try {
@@ -55608,6 +55611,7 @@ async function ideUpdate(id, patch) {
   }
   else saveLocalIdeer();
   renderIdeas(); renderCalendar();
+  talNed();
   return gemt;
 }
 
@@ -59373,7 +59377,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2687";
+const APP_VERSION = "2688";
 const APP_BYGGET = "9. oktober";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_BYGGET + " · " + APP_VERSION; } catch (e) {} });
 let NY_VERSION_KLAR = false;
