@@ -4,6 +4,12 @@
 - **DAGSORDENEN RETTES PÅ STEDET.** Et penneikon ved hvert punkt åbner punktet: navn, tekst, skraldespand (fjern) og Gem; »Tilføj punkt« lægger et nyt til. Standardpunkterne (performance · den kommende uge · dato for næste møde) står uændrede, til man retter dem. Gemmes i `plan_ritual.moede.dagsorden` (merges, andre nøgler urørte); et rettet punkt bliver statisk tekst, et urørt punkt bliver dynamisk (uge, tema, mål). Ingen Annuller i rettelsen.
 - **ALLE DATOSYMBOLER ER KVADRATER, 56 × 56 (HÅRD, Ida 9/10: »kvadratiske alle steder«):** Kommende opslag (`.kop-dato`), aftalernes dato (`.cf-dato`), Backstages `.bs3-tidb.d` og `.bs-datob`. Ingen dato-boks er højere end bred.
 
+## v2700 (9/10) — Procesbaren ER den røde flise · indholdssøjlen i højre side · de blå hjælpebokse ude
+- **Procesbaren** (Ida: »mere simpel. bare en rød flise og så procesbaren i hvid«): en rød flise (radius 20) med de fire trin i hvidt; det aktive trin = hvid fyldt prik med glorie. Intet andet i flisen. Begge flader, alle fire skrivesider.
+- **Indholdssøjlen** (Ida: »flytter indholdssøjlen over i det grå i højre side, så vi samler alt guiding derovre«): den røde »Om indholdssøjlen … kort fortalt« på Retning er ude. Teksten står som første flise i højre skinne med grå versal-etiket »Om indholdssøjlen 2A · …« (ingen røde etiketter i huset). Under 1400 px og på telefonen: chippen »Om indholdssøjlen« under procesbaren folder den ud.
+- **De blå hjælpebokse** (Din drivkraft · Hjælp · Tænkt eksempel) er ude, til Ida har ordene (»slette de blå hjælpebokse, indtil jeg finder det rigtige«). Koden (`sohFliserHtml`, `BS_SOEJLE_HJAELP`) består.
+- Åbent: på Fang dem / Fasthold dem / Få dem til at handle står den røde trin-flise stadig under procesbaren (to røde fliser). Idas klik udestår.
+
 ## v2699 (9/10) — Hook-flisen: rødt (i) i stedet for forklaring · captionen i markeret flise
 - **Hook-flisen på briefoversigten** (Ida: »fjerne alle forslag og lave det der I med cirkel omkring … I skal være rød«): ved »Hook« står et 20 px rødt (i) i rød ring. Hover på computeren / tryk på telefonen viser: »Hvad skal få [målgruppen] til at stoppe op? Hooket er de første 1–2 sekunder. Rammer det ikke, scroller [navn] videre.« Ingen forklaringstekst i flisen.
 - **Captionen** (Ida: »tydeligt have teksten i en markeret flise, så man kan se, det kun er den, man kopierer«): caption + hashtags står i en sandfarvet flade (#F3F0EA, radius 14) inde i flisen — præcis det, kopiér-knappen tager.
