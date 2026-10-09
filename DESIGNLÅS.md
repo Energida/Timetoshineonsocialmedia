@@ -4,6 +4,13 @@
 - **DAGSORDENEN RETTES PÅ STEDET.** Et penneikon ved hvert punkt åbner punktet: navn, tekst, skraldespand (fjern) og Gem; »Tilføj punkt« lægger et nyt til. Standardpunkterne (performance · den kommende uge · dato for næste møde) står uændrede, til man retter dem. Gemmes i `plan_ritual.moede.dagsorden` (merges, andre nøgler urørte); et rettet punkt bliver statisk tekst, et urørt punkt bliver dynamisk (uge, tema, mål). Ingen Annuller i rettelsen.
 - **ALLE DATOSYMBOLER ER KVADRATER, 56 × 56 (HÅRD, Ida 9/10: »kvadratiske alle steder«):** Kommende opslag (`.kop-dato`), aftalernes dato (`.cf-dato`), Backstages `.bs3-tidb.d` og `.bs-datob`. Ingen dato-boks er højere end bred.
 
+## v2693 (9/10) — HOOK-KORTET = BUD 3 (LÅST, Idas klik 9/10, artifact YMy8uLhftrAfPhiiaAgN5q)
+- **Det tomme felt nederst i hver gruppe ER tilføj-knappen** (retur-tegn på computeren, pil på telefonen) — som i Tekst på coverbilledet. Listerne folder aldrig; alle forslag står der.
+- **Ingen plusser**: intet plus ved overskrifterne, ingen »Tilføj forslag«, ingen plus-cirkel nederst på hook-kortet.
+- **De grå chips for det, der ikke er tilføjet endnu** (»Tilføj noget man ser / jeg siger«), står **til højre** under listerne.
+- **ALLE CHIPS I BRIEFEN ER ENS (LÅST, Ida 9/10):** grå tekst (`--gray2`) 13 px, 36 px høj, 16 px luft i siderne, plusset gråt 14 px foran ordet; valgt = rød. Gælder Tilføj klip · Tilføj CTA · Tilføj tekst på skærm · Tilføj noget man ser/jeg siger og alle andre `.ark-chip` i briefen. Aldrig sort tekst i en chip.
+- **Samme flise-stil på hele siden**: Tekst på coverbilledet har klipkortets titel (rød 17, én streg under). Reglen: to fliser på samme side har samme titel, samme streg, samme etiketter.
+
 ## v2692 (9/10) — Knapperne nederst i briefen er ens (Ida: »alle knapper ser forskellige ud«)
 - Tilbage, Gem ændringer og Næste: samme højde (40), skrift (13), tekstfarve på de to grå (mørkegrå), samme minimumsbredde 150 på computeren; Næste har kant i sin egen røde farve.
 
