@@ -4,6 +4,12 @@
 - **DAGSORDENEN RETTES PÅ STEDET.** Et penneikon ved hvert punkt åbner punktet: navn, tekst, skraldespand (fjern) og Gem; »Tilføj punkt« lægger et nyt til. Standardpunkterne (performance · den kommende uge · dato for næste møde) står uændrede, til man retter dem. Gemmes i `plan_ritual.moede.dagsorden` (merges, andre nøgler urørte); et rettet punkt bliver statisk tekst, et urørt punkt bliver dynamisk (uge, tema, mål). Ingen Annuller i rettelsen.
 - **ALLE DATOSYMBOLER ER KVADRATER, 56 × 56 (HÅRD, Ida 9/10: »kvadratiske alle steder«):** Kommende opslag (`.kop-dato`), aftalernes dato (`.cf-dato`), Backstages `.bs3-tidb.d` og `.bs-datob`. Ingen dato-boks er højere end bred.
 
+## v2687 (9/10) — Briefens klipkort: hierarki, plus på Tilføj, dropdown
+- **Hierarki (Ida: »mangler hierarki i teksterne og farver«):** klippets titel rød 17 · spørgsmålet sort 16 · feltetiketter mørkegrå 13.
+- **Plus foran alle »Tilføj«-chips** (hook, klip, manus, tekst på skærm, CTA, møde): tegnet SVG-plus i knappen, ikke pseudo-element.
+- **»Tilføj forslag« står ikke som tekst** — kun plusset (aria-label bærer ordene); åben = »Fold sammen«.
+- Fakta-dropdown i briefen: ugennemsigtigt hvidt kort ovenpå (skubber aldrig). Skjulte chips er skjult (`[hidden]`).
+
 ## v2683 · 9. oktober · Tøm hovedet i Backstage = fliserne på marken, ét tryk vælger
 
 - **TØM HOVEDET I BACKSTAGE PÅ TELEFONEN ÅBNER FLISERNE PÅ MARKBILLEDET (HÅRD, Ida 9/10: »tilpasse admin det nye design for tøm hovedet som i b2b«, valgene »samme som jeg har idag«).** Swipe op fra startkortet og plusset i bundmenuen (når siden ikke har sit eget plus) viser Idas egne valg som fliser (`BF3_HJEM_VALG` uden Aftale): Jeg skal bare have skrevet det ned · To-do · Idé til manus · Idé til B-roll · Content-idé til kunde · Ny lead · Indkøbslister · Content Studio · Workout · Food · Mindful · Biblioteket · App-ønske. Et tryk åbner arket til netop det valg (`bf3ToemFotoValg` → `bf3ToemArk` + `bf3DropVaelg`); dropdownen »Hvor hører det hjemme?« er skjult, kun Biblioteket beholder den (rummet vælges dér). Samme fliser og lukning som kundeappens (`toemFotoAabn("bs")`). Computeren er uændret.
