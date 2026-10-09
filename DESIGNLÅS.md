@@ -1,3 +1,7 @@
+## v2635 · 9. oktober · Versionslinjen viser den rigtige version
+
+- **VERSIONSLINJEN NEDERST ER ÆRLIG (Idas skærmbillede 9/10: »er på version 2600«).** Teksten »Version 8. oktober · 2600« stod fast i HTML'en og blev aldrig opdateret, så den lignede en gammel version, selv når appen var ny. Nu sættes den ved opstart ud fra `APP_VERSION` og `APP_BYGGET` (»Version 9. oktober · 2635«). Burgermenuen og sidemenuen læser samme tekst.
+
 ## v2633 · 9. oktober · Status står ikke på flisen i Idébanken
 
 - **INGEN STATUS PÅ IDÉFLISEN (HÅRD, Ida 9/10: »slet status på flisen i idébanken«).** Chippen »Brief i gang« (og alle andre statusser) er væk fra flisen i Idébanken. Kun mødechippen (»På mødet« / »Møde <dato>«) og datochippen, når idéen er planlagt, står tilbage. Status ses inde i idéen og i kalenderen. MÅLT lokalt: en idé med status »Brief i gang« viser kun titel og dato.
