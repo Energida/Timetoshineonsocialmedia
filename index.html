@@ -59423,7 +59423,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2696";
+const APP_VERSION = "2697";
 const APP_BYGGET = "9. oktober";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_BYGGET + " · " + APP_VERSION; } catch (e) {} });
 let NY_VERSION_KLAR = false;
@@ -80593,7 +80593,9 @@ function moedeTopChipsHtml() {
 }
 /* DAGSORDEN: ret et punkt, tilføj, fjern (Ida 9/10, bud 1) */
 let MOEDE_DS_RET = "", MOEDE_DS_NY = null;
-function moedeDsListeNu() { const m = (PR_STATUS && PR_STATUS.moede) || {}; return Array.isArray(m.dagsorden) ? m.dagsorden.map(function (x) { return Object.assign({}, x); }) : [{ id: "perf", k: "perf" }, { id: "uge", k: "uge" }, { id: "neste", k: "neste" }]; }
+/* standardpunkterne: performance · den kommende uge · (maanedens hashtags, kun hver fjerde moede) · dato for naeste moede */
+function moedeDsStd() { const erMaaned = ((PR_STATUS && PR_STATUS.ugerSidenMaaned) || 0) >= 3; return [{ id: "perf", k: "perf" }, { id: "uge", k: "uge" }].concat(erMaaned ? [{ id: "hash", k: "hash" }] : []).concat([{ id: "neste", k: "neste" }]); }
+function moedeDsListeNu() { const m = (PR_STATUS && PR_STATUS.moede) || {}; return Array.isArray(m.dagsorden) ? m.dagsorden.map(function (x) { return Object.assign({}, x); }) : moedeDsStd(); }
 async function moedeDsGemListe(liste) {
   const mo = Object.assign({}, (PR_STATUS && PR_STATUS.moede) || {}); mo.dagsorden = liste;
   const ok = await planRitStatusGem({ moede: mo });
@@ -80636,9 +80638,9 @@ function moedeSideTegn() {
   /* DAGSORDENEN ER SIDENS HOVEDINDHOLD OG RETTES PÅ STEDET (Ida 9/10, »kør bud 1«): et penneikon ved hvert punkt åbner punktet til rettelse lige dér (navn, tekst, skraldespand, Gem); »Tilføj punkt« lægger et nyt til. Standardpunkterne er uændrede, til man retter dem. Gemmes i moede.dagsorden (kun dette møde). */
   const PEN_IK = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg>';
   const BIN_IK = (typeof BS_SKRALD_SVG !== "undefined") ? BS_SKRALD_SVG : "Slet";
-  const stdTxt = { perf: { t: "Gennemgang af performance af opslag siden sidst.", s: "Siden " + dkDatoKort(fra) }, uge: { t: "Den kommende uge", s: ["Ressourcer: hvor mange opslag kan vi lave i uge " + uge + ", og hvem har tid?", "Ugens tema: " + (tema || "ikke sat endnu"), "Næste uge: forslag pr. søjle ud fra ressourcerne", "Hvem gør hvad", "Ugens mål"].join("\n") }, neste: { t: "Dato for næste møde", s: "" } };
+  const stdTxt = { perf: { t: "Gennemgang af performance af opslag siden sidst.", s: "Siden " + dkDatoKort(fra) }, uge: { t: "Den kommende uge", s: ["Ressourcer: hvor mange opslag kan vi lave i uge " + uge + ", og hvem har tid?", "Ugens tema: " + (tema || "ikke sat endnu"), "Næste uge: forslag pr. søjle ud fra ressourcerne", "Hvem gør hvad", "Ugens mål"].join("\n") }, neste: { t: "Dato for næste møde", s: "" }, hash: { t: "Månedens hashtags", s: "Hvilke hashtags passer til måneden? Læg nye ind i hashtagbanken, og tag dem ud, der ikke passer længere." } };
   const penKnap = function (id) { return '<button type="button" class="mo-ds-pen mq-tap" aria-label="Ret punktet" title="Ret punktet" onclick="event.stopPropagation();moedeDsRet(\'' + id + '\')">' + PEN_IK + '</button>'; };
-  const dsListe = Array.isArray(M.dagsorden) ? M.dagsorden : [{ id: "perf", k: "perf" }, { id: "uge", k: "uge" }, { id: "neste", k: "neste" }];
+  const dsListe = Array.isArray(M.dagsorden) ? M.dagsorden : moedeDsStd();
   const retPkt = function (n, pt, std) {
     const t0 = pt.custom ? pt.t : (std ? std.t : ""), s0 = pt.custom ? pt.s : (std ? std.s : "");
     return '<div class="mo-ig-pkt mo-ds-ret">' + num(n) + '<div class="mo-ig-t"><div class="mo-ds-hoved"><input type="text" id="moDsT" class="mo-ds-felt" value="' + esc(t0) + '" placeholder="Punktets navn" autocomplete="off"><button type="button" class="mo-ds-pen mq-tap" aria-label="Fjern punktet" title="Fjern punktet" onclick="moedeDsSlet(\'' + pt.id + '\')">' + BIN_IK + '</button></div><textarea id="moDsS" class="mo-ds-felt" rows="3" placeholder="Hvad skal med?">' + esc(s0) + '</textarea><button type="button" class="ark-knap ark-knap-roed mo-ds-gem" onclick="moedeDsGem(\'' + pt.id + '\')">Gem</button></div></div>';
@@ -80650,6 +80652,8 @@ function moedeSideTegn() {
     if (pt.k === "perf") return pkt(n, "Gennemgang af performance af opslag siden sidst.", 'Siden <button type="button" class="ark-chip mo-chip mo-siden" onclick="moedeSidenVaelg()" title="Vælg, hvornår vi kigger fra">' + esc(dkDatoKort(fra)) + '</button><input type="date" id="moSidenDato" value="' + esc(fra) + '" style="position:absolute;width:0;height:0;opacity:0;pointer-events:none;" tabindex="-1" onchange="moedeSidenGem(this.value)">', penKnap(pt.id));
     if (pt.k === "uge") return pkt(n, "Den kommende uge", '<ul class="mo-ig-ul"><li><span>Ressourcer</span> hvor mange opslag kan vi lave i uge ' + uge + ', og hvem har tid?</li><li><span>Ugens tema</span> ' + (tema ? esc(tema) : "ikke sat endnu") + '</li><li><span>Næste uge</span> forslag pr. søjle ud fra ressourcerne</li><li><span>Hvem gør hvad</span></li><li><span>Ugens mål</span></li></ul>', (ugemaal ? '<span class="ark-chip mo-chip mo-stille">Mål: ' + ugemaal + ' opslag</span>' : '') + penKnap(pt.id));
     if (pt.k === "neste") return pkt(n, "Dato for næste møde", "", nesteMoede + penKnap(pt.id));
+    /* MAANEDENS HASHTAGS PAA DAGSORDENEN (Ida 9/10: »i mdr. planlægning have hashtags på agendaen — så man opdaterer de hashtags, der passer til måneden«): kun hver fjerde (maanedens) moede; chippen aabner hashtagbanken */
+    if (pt.k === "hash") return pkt(n, "Månedens hashtags", "Hvilke hashtags passer til måneden? Læg nye ind, og tag dem ud, der ikke passer længere.", '<button type="button" class="ark-chip mo-chip" onclick="htbAabn()">Åbn hashtagbanken</button>' + penKnap(pt.id));
     return "";
   }).join("");
   const nyPunkt = MOEDE_DS_NY ? retPkt(dsListe.length + 1, MOEDE_DS_NY, null) : '<button type="button" class="ark-chip mo-tilfoej mo-ds-ny" onclick="moedeDsNy()">' + CHIP_PLUS + 'Tilføj punkt</button>';
