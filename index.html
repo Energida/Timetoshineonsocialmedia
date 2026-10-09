@@ -55647,17 +55647,18 @@ async function toemGem() {
 function toemFotoAabn(variant) {
   /* SWIPE OP FRA STARTKORTET: KUN DE TRE + SØGEFELT (Ida 9/10: »Tøm hovedet når man swiper op skal KUN indeholde ›Jeg har en content idé, jeg har set noget fedt‹ og ›jeg skal bare have skrevet det ned‹ — og så et søgefelt så man kan søge i idébanken og ændre eller tilføje noget til en eksisterende idé«).
      Plusset i bundmenuen viser alle valgene (Tilføj aftale, begivenhed, opgave m.fl.). */
-  const swipe = variant === "swipe";
-  let chips = kundeArkChips();
+  const swipe = variant === "swipe"; const bs = variant === "bs";   /* bs = Backstage (Ida 9/10: »tilpasse admin det nye design for tøm hovedet som i b2b«): Idas egne valg som fliser */
+  const tit = (swipe || bs) ? "Tøm hovedet" : "Hvad skal der ske, makker?";
+  let chips = bs ? BF3_HJEM_VALG.filter(function (c) { return c.k !== "aftale"; }) : kundeArkChips();
   if (swipe) { const orden = ["ide", "fedt", "note"]; chips = orden.map(function (k) { return chips.filter(function (c) { return c.k === k; })[0]; }).filter(Boolean); }
-  else { const ix = chips.map(function (c) { return c.k; }).indexOf("akt"); const pm = [{ k: "pmuge", n: "Ugentligt planlægningsmøde" }, { k: "pmmd", n: "Månedligt planlægningsmøde" }]; chips = ix > -1 ? chips.slice(0, ix + 1).concat(pm, chips.slice(ix + 1)) : chips.concat(pm); }   /* plusset i bundmenuen kan tilføje ugentligt og månedligt planlægningsmøde (Ida 9/10) */
+  else if (!bs) { const ix = chips.map(function (c) { return c.k; }).indexOf("akt"); const pm = [{ k: "pmuge", n: "Ugentligt planlægningsmøde" }, { k: "pmmd", n: "Månedligt planlægningsmøde" }]; chips = ix > -1 ? chips.slice(0, ix + 1).concat(pm, chips.slice(ix + 1)) : chips.concat(pm); }   /* plusset i bundmenuen kan tilføje ugentligt og månedligt planlægningsmøde (Ida 9/10) */
   try { if (document.activeElement && document.activeElement.blur) document.activeElement.blur(); } catch (e) {}
   let l = document.getElementById("toemFoto"); if (l) l.remove();
-  l = document.createElement("div"); l.id = "toemFoto"; l.className = "toem-foto toem-fuld"; l.setAttribute("role", "dialog"); l.setAttribute("aria-label", swipe ? "Tøm hovedet" : "Hvad skal der ske, makker?");
+  l = document.createElement("div"); l.id = "toemFoto"; l.className = "toem-foto toem-fuld"; l.setAttribute("role", "dialog"); l.setAttribute("aria-label", tit);
   l.innerHTML = '<button type="button" class="toem-foto-luk" aria-label="Luk" onclick="toemFotoLuk()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>'
     /* swipe op = Tøm hovedet; plusset i bundmenuen = Hvad skal der ske, makker? (Ida 9/10) — titlen står lige over fliserne i Didot, og stregen foroven viser, at man kan swipe ned */
     + (swipe ? '' : '')
-    + '<div class="toem-foto-liste"><div class="toem-foto-greb" aria-hidden="true"></div><div class="toem-foto-t">' + (swipe ? "Tøm hovedet" : "Hvad skal der ske, makker?") + '</div>' + chips.map(function (c) { return '<button type="button" class="valg-flise" onclick="event.stopPropagation();toemFotoValg(\'' + c.k + '\')"><span class="valg-ik"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' + (TOEM_IK[c.k] || TOEM_IK.note) + '</svg></span><span class="valg-ord">' + esc(c.n) + '</span></button>'; }).join("")
+    + '<div class="toem-foto-liste"><div class="toem-foto-greb" aria-hidden="true"></div><div class="toem-foto-t">' + (tit) + '</div>' + chips.map(function (c) { return '<button type="button" class="valg-flise" onclick="event.stopPropagation();' + (bs ? "bf3ToemFotoValg" : "toemFotoValg") + '(\'' + c.k + '\')"><span class="valg-ik"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' + (TOEM_IK[c.k] || TOEM_IK.note) + '</svg></span><span class="valg-ord">' + esc(c.n) + '</span></button>'; }).join("")
     + (swipe ? '<div class="toem-foto-soeg"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg><input type="search" id="toemFotoSoeg" placeholder="Søg i idébanken" autocomplete="off" oninput="toemFotoSoegTegn()"></div><div id="toemFotoRes"></div>' : '') + '</div>';
   document.body.appendChild(l);
   /* SWIPE NED LUKKER (Ida 9/10: stregen foroven) */
@@ -55673,6 +55674,14 @@ function toemFotoSoegTegn() {
   if (q.length < 2) { r.innerHTML = ""; return; }
   const fund = (IDEER || []).filter(function (x) { if (!x || x.status === "Arkiveret") return false; let h = String(x.titel || ""); try { h += " " + (typeof ideNote === "function" ? ideNote(x) : ""); } catch (e) {} return h.toLowerCase().indexOf(q) > -1; }).slice(0, 6);
   r.innerHTML = fund.length ? fund.map(function (x) { return '<button type="button" class="valg-flise" onclick="event.stopPropagation();toemFotoLuk();openBriefSide(\'' + esc(String(x.id)).replace(/'/g, "") + '\')"><span class="valg-ord">' + esc(storStart(titelVis(x.titel || "Uden titel"))) + '</span></button>'; }).join("") : '<div class="toem-foto-tom">Ingen idéer med det ord.</div>';
+}
+/* TØM HOVEDET I BACKSTAGE = FLISERNE PÅ MARKEN, ÉT TRYK VÆLGER (Ida 9/10: »tilpasse admin det nye design for tøm hovedet som i b2b«, valgene »samme som jeg har i dag«): swipe op og plusset i bundmenuen på telefonen åbner fliserne med Idas egne valg; et tryk åbner arket til netop det valg, og dropdownen »Hvor hører det hjemme?« er skjult (kun Biblioteket beholder den, fordi rummet vælges dér). */
+function bf3ToemFotoAabn() { toemFotoAabn("bs"); }
+function bf3ToemFotoValg(k) {
+  toemFotoLuk(); try { bsFlytLuk(); } catch (e) {}
+  bf3ToemArk("", "");
+  try { bf3DropVaelg("bf3ArkDrop", k); } catch (e) {}
+  try { const w = document.getElementById("bf3ArkDrop"); if (w && k !== "vidensbank") w.style.display = "none"; } catch (e) {}
 }
 function toemFotoLuk() { try { const l = document.getElementById("toemFoto"); if (l) l.remove(); } catch (e) {} }
 function toemFotoValg(k) {
@@ -59330,7 +59339,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2681";
+const APP_VERSION = "2683";
 const APP_BYGGET = "9. oktober";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_BYGGET + " · " + APP_VERSION; } catch (e) {} });
 let NY_VERSION_KLAR = false;
@@ -66045,7 +66054,7 @@ function bsCoverKnapperStil(b) {
 function bsBundPlus() {
   const k = window.__BS_SIDE_PLUS;
   if (k && document.body.contains(k)) { k.click(); return; }
-  try { bf3ToemTrin1(); } catch (e) { try { bf3ToemArk(""); } catch (e2) {} }
+  try { bf3ToemFotoAabn(); } catch (e) { try { bf3ToemTrin1(); } catch (e1) { try { bf3ToemArk(""); } catch (e2) {} } }   /* fliserne på marken (Ida 9/10), de gamle ark som reserve */
 }
 /* KNAPPERNE STAAR UNDER COVERET, IKKE I DET — ADMIN OG B2B (Ida 24/9 kl. 10.00: »Alle knapper skal ud af coveret i både admin og b2b
    og placeres umiddelbart under … sørg for at alle symboler, størrelser og farver er ens«). Emil: een raekke, hoejrestillet i
@@ -81755,7 +81764,7 @@ function bf3StartVis(tving) {
   if (!tving && (!window.matchMedia || !window.matchMedia("(max-width: 760px)").matches)) return;
   try { const g = document.getElementById("studieVaelger"); if (g) g.remove(); } catch (e) {}
   if (document.getElementById("dagensKort") || document.getElementById("arkSlor")) return;
-  try { dagensKortVis({ navn: "Ida", swipe: "bf3ToemTrin1()", foto: "dagens/kort.jpg", midt: true, citat: true, citatTekst: false, swipeTekst: "Swipe for Backstage" });   /* SAMME STARTKORT SOM B2B (Ida 7/10: »bytte den røde knap ud med den hvide tekst der siger swipe«): hvid swipe-tekst, swipe til venstre = Backstage */ } catch (e) {}
+  try { dagensKortVis({ navn: "Ida", swipe: "bf3ToemFotoAabn()", foto: "dagens/kort.jpg", midt: true, citat: true, citatTekst: false, swipeTekst: "Swipe for Backstage" });   /* SAMME STARTKORT SOM B2B (Ida 7/10: »bytte den røde knap ud med den hvide tekst der siger swipe«): hvid swipe-tekst, swipe til venstre = Backstage */ } catch (e) {}
 }
 function studieVaelgerVis(tving) { bf3StartVis(tving); }
 /* nyIdeGem: to nye landinger (Indkoebslister · Vidensbank) */

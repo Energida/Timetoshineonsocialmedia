@@ -1,3 +1,7 @@
+## v2683 · 9. oktober · Tøm hovedet i Backstage = fliserne på marken, ét tryk vælger
+
+- **TØM HOVEDET I BACKSTAGE PÅ TELEFONEN ÅBNER FLISERNE PÅ MARKBILLEDET (HÅRD, Ida 9/10: »tilpasse admin det nye design for tøm hovedet som i b2b«, valgene »samme som jeg har idag«).** Swipe op fra startkortet og plusset i bundmenuen (når siden ikke har sit eget plus) viser Idas egne valg som fliser (`BF3_HJEM_VALG` uden Aftale): Jeg skal bare have skrevet det ned · To-do · Idé til manus · Idé til B-roll · Content-idé til kunde · Ny lead · Indkøbslister · Content Studio · Workout · Food · Mindful · Biblioteket · App-ønske. Et tryk åbner arket til netop det valg (`bf3ToemFotoValg` → `bf3ToemArk` + `bf3DropVaelg`); dropdownen »Hvor hører det hjemme?« er skjult, kun Biblioteket beholder den (rummet vælges dér). Samme fliser og lukning som kundeappens (`toemFotoAabn("bs")`). Computeren er uændret.
+
 ## v2681 · 9. oktober · Captionen er én model for alle søjler; felt 3 hedder »Hvad får de ud af det?«
 
 - **CAPTIONEN ER ÉN MODEL, ENS I ALLE SØJLER (HÅRD, Ida 9/10: »det er jo vigtigere, at de lærer at opbygge en caption korrekt«).** Fire trin, ens spørgsmål for 1A, 1B, 2A og 2B — ingen versioner pr. søjle. Eneste ændring: felt 3 hedder **»Hvad får de ud af det?«** med linjen **»Hvad gør det lettere, rarere eller klogere for dem?«** (var »Hvordan hjælper vi dem? Ikke hvad varen er …«, som tog en vare for givet). Datanøglen `captionHistorie` og felt 1, 2 og 4 er uændrede. Chats 37 forslag er IKKE gennemført; kun dette ene er godkendt af Ida.
