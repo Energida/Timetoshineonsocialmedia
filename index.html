@@ -11318,6 +11318,8 @@ html body #briefKlip1Vaert > #briefKlip1 { flex:1 1 auto; width:100%; min-width:
 .hu-tj-ark { display:flex; flex-direction:column; gap:12px; }
 .hu-kal-top { display:flex; flex-direction:column; gap:10px; margin:16px 0; } .hu-kal-top .hu-kort, .hu-kal-top .hu-tjek { border-color:transparent; box-shadow:var(--mb-skygge); border-radius:20px; }   /* i dag + i morgen over datofelterne (26/9) */   /* intet symbol inde i kalenderen, heller ikke paa fliserne over timerne (Ida 26/9: »Den er der da stadig«) */
 .hk { display:grid; grid-template-columns:56px 1fr; position:relative; margin-top:4px; }
+.hk-ruller { max-height:448px; overflow-y:auto; overscroll-behavior:contain; scrollbar-width:thin; }
+.hk-ruller::after { content:""; grid-column:1 / -1; height:320px; }   /* luft under 24.00, så vinduet kan stå ved nu også om aftenen */   /* seks-syv timer ad gangen; resten rulles til */
 .hk-tider { position:relative; }
 .hk-t { position:absolute; right:12px; transform:translateY(-8px); font-size:11px; color:var(--gray2); font-variant-numeric:tabular-nums; }
 .hk-spor { position:relative; }
@@ -48735,6 +48737,8 @@ function huKalDagHtml(iso, erIdag) {
     if (T1 - T0 < 6) { T1 = T0 + 6; }
     T0 = Math.max(0, T0); T1 = Math.min(24, T1);
   }
+  /* I DAG ER HELE DØGNET MED, OG VINDUET STÅR VED NU (Ida 9/10: »hele tiden en streg, hvor man er … ikke se for meget af dagen inden … mulighed for at scrolle op«): timerne ruller, den røde streg er altid der, og vinduet åbner en time før nu */
+  if (erIdag) { T0 = 0; T1 = 24; }
   /* to spor, naar to ting ligger oven i hinanden */
   const spor = []; blk.forEach(function (b) { let i = 0; while (spor[i] != null && spor[i] > b.fra + 1e-6) i++; spor[i] = b.til; b.spor = i; });
   const H = HU_KAL_H;
@@ -48750,7 +48754,7 @@ function huKalDagHtml(iso, erIdag) {
       + '<span class="hk-tt"><span class="hk-n">' + esc(b.n) + '</span><span class="hk-u">' + esc(b.k === "post" ? b.u : (b.k === "stip" ? huKalKl(b.fra) + " · " + b.u : b.u)) + '</span></span></div>';
   }).join("");
   let nu = "";
-  if (erIdag) { const d = new Date(); const t = d.getHours() + d.getMinutes() / 60; if (t >= T0 && t <= T1) nu = '<div class="hk-nu" style="top:' + ((t - T0) * H) + 'px"></div>'; }
+  if (erIdag) { const d = new Date(); const t = d.getHours() + d.getMinutes() / 60; if (t >= T0 && t <= T1) nu = '<div class="hk-nu" data-t0="' + T0 + '" style="top:' + ((t - T0) * H) + 'px"></div>'; }
   const tom = !blk.length && !uden.length;
   /* HELE DAGEN-BAANDET (Ida 26/9: »det opslag der står øverst idag skal jo selvfølgelig fremgå i kalenderen«): punkter uden klokkeslaet staar oeverst I kalenderen */
   /* BLIV KLAR-STRIBEN (Ida 26/9: »placere det øverst som en heldagsaktivitet« som i Outlook, og titlen »Bliv klar til at poste i morgen« / »… optage i morgen« / »… det ugentlige contentmøde i morgen«): kun det, der skal forberedes til dagen efter; intet ord »Hele dagen«; alle kan trykkes */
@@ -48767,7 +48771,7 @@ function huKalDagHtml(iso, erIdag) {
   } catch (e) {}
   const hel = klar.length ? '<div class="hk-hel"><span class="hk-hel-l"></span><div class="hk-hel-c">' + klar.map(function (u) { return '<button type="button" class="hk-hel-chip" onclick="' + u.klik + '"><span>' + esc(u.n) + '</span>' + (u.u ? '<i>' + esc(u.u) + '</i>' : '') + '</button>'; }).join("") + '</div></div>' : '';
   huKalDagHtml.uden = "";
-  return hel + '<div class="hk"><div class="hk-tider" style="height:' + ((T1 - T0) * H) + 'px">' + tider + '</div><div class="hk-spor" style="height:' + ((T1 - T0) * H) + 'px">' + linjer + blokke + nu + '</div></div>'
+  return hel + '<div class="hk' + (erIdag ? ' hk-ruller' : '') + '"' + (erIdag ? ' data-nu="' + ((function () { const d = new Date(); return d.getHours() + d.getMinutes() / 60; })()) + '"' : '') + '><div class="hk-tider" style="height:' + ((T1 - T0) * H) + 'px">' + tider + '</div><div class="hk-spor" style="height:' + ((T1 - T0) * H) + 'px">' + linjer + blokke + nu + '</div></div>'
     + '';   /* DER TILFOEJES ALTID KUN OEVERST (Ida 7/10: »dette skal fjernes«): ingen »Hvad skal der ske denne dag? · Tilføj« nederst i dagen */
 }
 /* UGEN I DET SAMME KORT (Idas »Lås bud A« 8/10): dagskortets timer bliver til syv søjler, én pr. dato-flise; samme blokke, samme timeakse. Kun rigtige opslag og aftaler (de stiplede forslag hører til dagen). */
@@ -49108,7 +49112,7 @@ function hjemUgeHtml(tlf, kunKal) {
       + forslagBlok + '<div class="cf-sek hu-sek">' + (huYgtFoer8() ? 'Lektionerne' : 'Denne uge') + '</div><div class="hu-ringe">' + huRinge(true) + '</div>' + huTodoHtml() + '</div>';
   const fokus = huFokusHtml();
   const dagFuld = huKalDagHtml(dage[valgt].iso, erIdag);
-  const heldel = dagFuld.indexOf('<div class="hk">') > 0 ? dagFuld.slice(0, dagFuld.indexOf('<div class="hk">')) : "";   /* »Bliv klar«-striben staar ogsaa over ugen */
+  const hkIx = dagFuld.search(/<div class="hk[" ]/); const heldel = hkIx > 0 ? dagFuld.slice(0, hkIx) : "";   /* »Bliv klar«-striben staar ogsaa over ugen */
   const ugeChips = '<div class="hk-visning"><button type="button" class="ark-chip' + (HU_UGEVIS ? '' : ' on') + '" onclick="huUgeVis(false)">Dag</button><button type="button" class="ark-chip' + (HU_UGEVIS ? ' on' : '') + '" onclick="huUgeVis(true)">Uge</button></div>';
   const kalGrid = ugeChips + (HU_UGEVIS ? heldel + huKalUgeHtml(dage, idagIso) : dagFuld);
   const kalTop = '';   /* alt fra dagen staar i kalenderen; i morgen er en stiplet blok i dagen (26/9) */
@@ -49118,6 +49122,14 @@ function hjemUgeHtml(tlf, kunKal) {
     + '<div class="hu-venstre">' + linje + strib + (naesteFlise ? '<div class="hu-dagen hu-naeste">' + naesteFlise + '</div>' : '')   /* under datofliserne som paa telefonen, saa »I dag« flugter med to-do (porten) */ + (kalTop ? '<div class="hu-kal-top">' + kalTop + '</div>' : '') + kalDag + (huYgtFoer8() ? '' : '<div class="hu-kop">' + kommendeOpslagHtml(3, "hu-sek", true) + '</div>') + '</div>'   /* datofelterne styrer dagen og staar foerst; fliserne under dem, over timerne (ekspertrunden 26/9) */
     + '<div class="hu-hoejre"><div class="hu-kaft">' + huKommendeAftalerHtml(3) + '</div>' + huTodoHtml() + '</div></div>';
 }
+/* VINDUET ÅBNER EN TIME FØR NU (har man selv rullet, bevares det); den røde streg flyttes hvert minut uden gentegning */
+function huKalRul(rod, gemt) {
+  const v = rod && rod.querySelector ? rod.querySelector(".hk-ruller") : null; if (!v) return;
+  if (gemt != null && gemt > 0) { v.scrollTop = gemt; return; }
+  const nu = parseFloat(v.getAttribute("data-nu")); if (!isFinite(nu)) return;
+  v.scrollTop = Math.max(0, (nu - 1) * HU_KAL_H);
+}
+setInterval(function () { try { const d = new Date(), t = d.getHours() + d.getMinutes() / 60; document.querySelectorAll(".hk-ruller .hk-nu").forEach(function (l) { l.style.top = ((t - parseFloat(l.getAttribute("data-t0") || "0")) * HU_KAL_H) + "px"; }); } catch (e) {} }, 60000);
 function hjemUgeTegn() {
   if (!HJEM_UGE || typeof NYT_B2B_DESIGN === "undefined" || !NYT_B2B_DESIGN || !CUSTOMER_NAV) return;
   clearTimeout(HU_TIMER);
@@ -49126,7 +49138,9 @@ function hjemUgeTegn() {
       huFokusHent();
       document.body.classList.add("hjem-uge");
       const pc = document.getElementById("hjemUge");
+      const gemtRul = (function () { try { const v = pc && pc.querySelector(".hk-ruller"); return v ? v.scrollTop : null; } catch (e) { return null; } })();
       if (pc) pc.innerHTML = hjemUgeHtml(false);
+      try { huKalRul(pc, gemtRul); } catch (e) {}
       const t = document.getElementById("hjemUgeTlf");
       if (t) t.innerHTML = hjemUgeHtml(true);
       const k8 = document.getElementById("kalUgeTlf"); if (k8) k8.innerHTML = hjemUgeHtml(true, true);
@@ -59377,7 +59391,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2689";
+const APP_VERSION = "2690";
 const APP_BYGGET = "9. oktober";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_BYGGET + " · " + APP_VERSION; } catch (e) {} });
 let NY_VERSION_KLAR = false;
