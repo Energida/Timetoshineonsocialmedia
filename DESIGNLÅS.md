@@ -1,3 +1,8 @@
+## v2627 · 9. oktober · Loginsiden: filteret ligger fast ved rulning, og logoet er væk
+
+- **FILTERET OVER FOTOET RULLER IKKE MED (Idas skærmbillede 9/10: »når jeg scroller ned forsvinder filteret«).** Det mørke lag over loginfotoet (`#authGate.nyt::before`) var `position:absolute` i en container, der selv ruller, så laget fulgte indholdet op og efterlod et lyst bånd nederst. Nu `position:fixed`: laget dækker altid hele skærmen. MÅLT på 1440 og 375 med en 1500 px høj side rullet 600 px: gammel adfærd viser båndet, ny viser jævnt filter.
+- **LOGOET VISES IKKE PÅ LOGINSIDEN (Ida 9/10: »slet mit logo på denne side«).** Både ordmærket (computer) og det røde hjerte (telefon) er skjult i `#authGate.nyt`. Gælder alle login-skærme bag samme port (login, glemt adgangskode, oprettelse).
+
 ## v2625 · 8. oktober · Hashtagbanken lukket i briefen, menuens ikoner flugter med rækkerne, søjle-vælgeren har en grå linje, kvittering med »Se idéen«
 
 - **HASHTAGBANKEN ER LUKKET I BRIEFEN (HÅRD, Ida 8/10: »mindst mulige fremme«).** På captionens side står kun de fem hashtagfelter; banken er én grå chip »Vælg fra hashtagbanken« (`HTB_BANK_AABEN`). Åben viser den kategorierne og de 12 mest brugte (+ de valgte), resten bag »Se flere (n)«, og »Skjul banken« lukker den igen. Før stod hele banken som chips på én gang.
