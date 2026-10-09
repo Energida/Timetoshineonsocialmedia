@@ -1,3 +1,9 @@
+## v2629 · 9. oktober · Alle aftaler kan rettes og slettes af kunden
+
+- **ALLE AFTALER ÅBNER DET LILLE ARK (HÅRD, Idas skærmbillede 9/10: »hvorfor kan jeg ikke redigere i denne aftale? jeg skal jo kunne ændre i alle aftaler«).** Før gjorde et tryk på en aftale kun noget på møder og aftaler med et link; en almindelig aftale (fx »Content struktur gennemgang«) kunne hverken åbnes eller rettes. Nu åbner et tryk på en aftale i dagskalenderen og i »Kommende aktiviteter« arket »Ret aftalen«: titel · dag · start · »Slutter« · Gem · skraldespanden (»Slet«). Møder (Ugentlig contentplanlægning m.fl.) åbner stadig mødesiden. Har aftalen et link, står »Åbn linket« øverst i arket.
+- **SLET SPØRGER FØRST:** første tryk på skraldespanden skriver »Tryk på skraldespanden igen for at slette aftalen.«, andet tryk sletter og lukker.
+- **INGEN NY RET:** gem og slet bruger samme `kunde_aftaler`-rækker og samme `.eq("id").eq("kode", currentKode).select()` som planlægningen; antal rækker tælles (kontrakt §5). Ingen ny policy, ingen ny tabel. MÅLT lokalt på 390 og 1440: ret gemmer med rigtige felter, slet tæller rækken og fjerner aftalen. IKKE MÅLT mod den rigtige base.
+
 ## v2627 · 9. oktober · Loginsiden: filteret ligger fast ved rulning, og logoet er væk
 
 - **FILTERET OVER FOTOET RULLER IKKE MED (Idas skærmbillede 9/10: »når jeg scroller ned forsvinder filteret«).** Det mørke lag over loginfotoet (`#authGate.nyt::before`) var `position:absolute` i en container, der selv ruller, så laget fulgte indholdet op og efterlod et lyst bånd nederst. Nu `position:fixed`: laget dækker altid hele skærmen. MÅLT på 1440 og 375 med en 1500 px høj side rullet 600 px: gammel adfærd viser båndet, ny viser jævnt filter.

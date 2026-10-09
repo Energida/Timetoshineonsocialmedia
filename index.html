@@ -48525,7 +48525,7 @@ function huKalBlokke(iso) {
   (window.__kundeAftalerAlle || window.__kundeAftaler || []).forEach(function (a) {
     if (!a || String(a.dato || "").slice(0, 10) !== iso) return;
     if (GL_FORSLAG[String(a.titel || "").trim().toLowerCase()]) return;
-    const t = huKalT(a.tid); const klik = erMoedeTitel(a.titel) ? "moedeSideAaben()" : aftErUrl(a.link) ? "window.open('" + esc(String(a.link)) + "','_blank')" : "";
+    const t = huKalT(a.tid); const klik = erMoedeTitel(a.titel) ? "moedeSideAaben()" : (a.id != null ? "aftaleRetArk('" + String(a.id).replace(/'/g, "\\'") + "')" : (aftErUrl(a.link) ? "window.open('" + esc(String(a.link)) + "','_blank')" : ""));   /* alle aftaler kan rettes og slettes (Ida 9/10) */
     if (t == null) { uden.push({ k: "akt", foreslaa: 9, laengde: 1, sym: "aftale", n: a.titel || "Aftale", u: "Vælg tidspunkt", klik: klik }); return; }
     let til = huKalT(a.tid_slut); if (til == null || til <= t) til = t + 1;
     blk.push({ k: "akt", fra: t, til: til, sym: "aftale", n: a.titel || "Aftale", u: huKalKl(t) + "–" + huKalKl(til) + (erMoedeTitel(a.titel) ? " · " + moedeFormNavn(a) : (aftErUrl(a.link) ? " · Online" : "")), klik: klik });   /* fysisk/online i kalenderen (29/9) */
@@ -48621,7 +48621,7 @@ function huKommendeAftalerHtml(antal) {
         const d = new Date(String(a.dato).slice(0, 10) + "T12:00:00");
         const tid = a.tid ? "kl. " + String(a.tid).slice(0, 5).replace(":", ".") + (a.tid_slut ? "–" + String(a.tid_slut).slice(0, 5).replace(":", ".") : "") : "";
         const erMoede = /contentplanl|planlægningsdag|contentgennemgang/i.test(String(a.titel || ""));
-        const klik = erMoede ? ' onclick="moedeSideAaben()"' : (a.link ? ' onclick="window.open(' + JSON.stringify(String(a.link)).replace(/"/g, "&quot;") + ',\'_blank\',\'noopener\')"' : ' style="cursor:default"');
+        const klik = erMoede ? ' onclick="moedeSideAaben()"' : (a.id != null ? ' onclick="aftaleRetArk(\'' + esc(String(a.id)).replace(/'/g, "") + '\')"' : (a.link ? ' onclick="window.open(' + JSON.stringify(String(a.link)).replace(/"/g, "&quot;") + ',\'_blank\',\'noopener\')"' : ' style="cursor:default"'));   /* alle aftaler kan rettes og slettes (Ida 9/10) */
         return '<div class="kop-rk"' + klik + '><span class="kop-dato"><em>' + ["søn", "man", "tir", "ons", "tor", "fre", "lør"][d.getDay()] + '</em><b>' + d.getDate() + '</b><i>' + MDR[d.getMonth()] + '</i></span><span class="kop-t"><span class="kop-n">' + esc(a.titel || "Aftale") + '</span>' + (tid ? '<span class="kop-s">' + esc(tid) + '</span>' : '') + '</span></div>';
       }).join("")
       : tomKortHtml("Hvad skal der ske de næste dage?", "", ""));   /* ingen Tilføj-knap i feltet — plusset i hjoernet tilfoejer (Ida 29/9) */
@@ -56562,6 +56562,57 @@ async function aftaleNyGem() {
     try { await renderAftaler(); } catch (e) {}
   } catch (e) { r.msg = "Kunne ikke gemme aftalen — prøv igen."; aftaleNyTegn(); }
 }
+/* ===== RET OG SLET EN AFTALE (Ida 9/10: »hvorfor kan jeg ikke redigere i denne aftale? jeg skal jo kunne ændre i alle aftaler«) =====
+   Foer kunne en almindelig aftale hverken aabnes eller rettes af kunden: trykket gjorde kun noget paa moeder og paa aftaler med et link.
+   Nu aabner ALLE aftaler det lille ark: titel, dag, start, slut og skraldespanden. Moeder (Ugentlig contentplanlaegning m.fl.) aabner stadig moedesiden.
+   Har aftalen et link, staar »Aabn linket« oeverst i arket, saa et online-moede stadig er et tryk fra at aabne.
+   Gem og slet bruger SAMME kunde_aftaler-raekker og samme .eq("id").eq("kode", currentKode) som planlaegningen — ingen ny policy; .select() taeller raekkerne (kontrakt §5). */
+function aftaleRetFind(id) { try { return (window.__kundeAftalerAlle || window.__kundeAftaler || []).find(function (x) { return x && String(x.id) === String(id); }) || null; } catch (e) { return null; } }
+function aftaleRetArk(id) {
+  const a = aftaleRetFind(id); if (!a) return;
+  if (erMoedeTitel(a.titel)) { moedeSideAaben(); return; }
+  const dato = String(a.dato || "").slice(0, 10), tid = String(a.tid || "").slice(0, 5), slut = String(a.tid_slut || "").slice(0, 5);
+  const link = aftErUrl(a.link) ? String(a.link) : "";
+  window.__AFT_SLET_ID = null;
+  arkAabn({ titel: "Ret aftalen", ph: "Hvad?", tekst: a.titel || "", send: "Gem", chips: [], valgt: "akt", udenVedh: true, udenMik: true,
+    klasse: "ark-bred ark-akt",
+    ekstraAf: function () {
+      return (link ? '<button type="button" class="ark-knap ark-knap-graa" style="margin:0 0 10px;" onclick="window.open(' + JSON.stringify(link).replace(/"/g, "&quot;") + ',\'_blank\',\'noopener\')">Åbn linket</button>' : '')
+        + husDatoTidHtml("aRetDato", "aRetTid", dato, tid) + '<div style="display:flex;align-items:center;gap:10px;"><span style="font-size:13px;color:var(--gray2);min-width:58px;">Slutter</span><div style="flex:1;min-width:0;">' + husDatoTidHtml("aRetNul", "aRetSlut", "", slut, false, true, "", "Klokkeslæt") + '</div></div>';
+    },
+    knap: { slet: true, tekst: "Slet", klik: "aftaleRetSlet('" + String(id).replace(/'/g, "") + "')" },
+    gem: async function (t) {
+      const titel = String(t || "").trim(); if (!titel) return false;
+      const d = (document.getElementById("aRetDato") || {}).value || ""; if (!d) throw new Error("!Vælg en dag.");
+      const k1 = (document.getElementById("aRetTid") || {}).value || "", k2 = (document.getElementById("aRetSlut") || {}).value || "";
+      if (k1 && k2 && k2 <= k1) throw new Error("!Slut skal være efter start.");
+      if (!sb || !currentKode) return false;
+      const rec = { titel: titel, dato: d };
+      if (k1 || a.tid) rec.tid = k1 || null;
+      if (k2 || a.tid_slut) rec.tid_slut = k2 || null;
+      try { const u = await sb.from("kunde_aftaler").update(rec).eq("id", a.id).eq("kode", currentKode).select(); if (u.error || !u.data || !u.data.length) return false; } catch (e) { return false; }
+      Object.assign(a, rec);
+      try { await renderAftaler(); } catch (e) {} try { renderHome(); } catch (e) {}
+      return "Aftalen er rettet.";
+    } });
+}
+async function aftaleRetSlet(id) {
+  const kv = function (t) { try { const k = document.getElementById("arkKvit"); if (k) k.textContent = t; } catch (e) {} };
+  if (String(window.__AFT_SLET_ID || "") !== String(id)) {   /* første tryk spørger (Ida 9/10: slet spørger først) */
+    window.__AFT_SLET_ID = String(id); kv("Tryk på skraldespanden igen for at slette aftalen.");
+    setTimeout(function () { if (String(window.__AFT_SLET_ID || "") === String(id)) window.__AFT_SLET_ID = null; }, 6000); return;
+  }
+  window.__AFT_SLET_ID = null;
+  if (!sb || !currentKode) { kv("Kunne ikke slette. Prøv at logge ind igen."); return; }
+  try {
+    const d = await sb.from("kunde_aftaler").delete().eq("id", id).eq("kode", currentKode).select();
+    if (d.error || !d.data || !d.data.length) { kv("Kunne ikke slette aftalen. Prøv igen."); return; }
+  } catch (e) { kv("Kunne ikke slette aftalen. Prøv igen."); return; }
+  ["__kundeAftalerAlle", "__kundeAftaler"].forEach(function (n) { try { if (Array.isArray(window[n])) window[n] = window[n].filter(function (x) { return !x || String(x.id) !== String(id); }); } catch (e) {} });
+  try { arkLuk(); } catch (e) {}
+  try { await renderAftaler(); } catch (e) {} try { renderHome(); } catch (e) {}
+  try { husKvit("Aftalen er slettet."); } catch (e) {}
+}
 /* ===== BACKSTAGE 2027 · ETAPE 1: VENTER PAA DIG + FORSIDEN (spec 8/9, Idas ja) =====
    Een liste over alt, der kraever Idas svar, paa tvaers af kunder: godkendelser, forsinkede opslag
    (Er det postet?), kommentarer fra andre, to-dos tagget Ida. Svares direkte i det roede kort.
@@ -59044,7 +59095,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2627";
+const APP_VERSION = "2629";
 let NY_VERSION_KLAR = false;
 let NY_VERSION_AFVIST = false;
 function nyVersionSkjul() {
