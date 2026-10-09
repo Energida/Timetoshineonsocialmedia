@@ -158,6 +158,13 @@ input[type="date"]::-webkit-calendar-picker-indicator, input[type="time"]::-webk
 #onboardKort:empty { display:none; }
 /* DEN RØDE FLISE STÅR ALENE (Ida 9/10: »lidt underligt at der er en rød flise inde i en hvid«): på YOU GOT THIS-Hjem er den røde flise selv flisen — ingen hvid ramme om den */
 html body .hu.hu-ygt .hu-dagen.hu-naeste { background:transparent !important; box-shadow:none !important; border:0 !important; padding:0 !important; }
+/* DEN GAMLE SIDE FRYSER, MENS DEN NYE BYGGES (Ida 9/10): intet kan trykkes på den gamle side, plusset er skjult, og en tynd rød linje øverst viser, at der loades */
+body.sk-holder #dashMain > *:not([data-bs-hold]), body.sk-holder .screen.active { pointer-events:none !important; }
+body.sk-holder #bf3RumKnap, body.sk-holder #hjemTilfoejBaand, body.sk-holder .bf3-hjem-plus { visibility:hidden !important; }
+body.sk-holder::before { content:""; position:fixed; left:0; top:0; width:100%; height:3px; z-index:2147483000; pointer-events:none;
+  background:linear-gradient(90deg, rgba(252,36,4,0), #FC2404 35%, #FC2404 65%, rgba(252,36,4,0)) no-repeat; background-size:40% 100%; animation:skLinje 1.1s linear infinite; }
+@keyframes skLinje { from { background-position:-40% 0; } to { background-position:140% 0; } }
+@media (prefers-reduced-motion:reduce) { body.sk-holder::before { animation:none; background-size:100% 100%; background-image:linear-gradient(#FC2404,#FC2404); opacity:.6; } }
 #onboardKort .db-deck { display:block; margin:0; padding:0; overflow:visible; }
 #onboardKort .db-kort { flex:none; width:100%; min-height:0; }
 body.hjem-facit .hf-naeste .db-deck { display:block; margin:0; padding:0; overflow:visible; }
@@ -24377,6 +24384,8 @@ function briefFaktaGaa(key) {
 /* en aaben fakta-liste lukkes ved tryk uden for den (21/9) */
 document.addEventListener("click", function (e) { try { if (!FB_AABEN) return; if (e.target.closest(".fb-ud, .fb-rk, .bdrop-kort, #bsFlytMenu, .ark")) return; FB_AABEN = null; briefFaktaUdPlacer(); } catch (err) {} }, true);
 let SK_HOLD = null;
+/* DEN GAMLE SIDE FRYSER, MENS DEN NYE BYGGES (Ida 9/10: »man kommer liiige forbi en gammel side med det åndsvage plus«): så længe et hold står, kan intet trykkes på den gamle side, plusset er skjult, og en tynd rød linje øverst viser, at der loades. Klassen sidder på body, og begge hold (kundeappen og Backstage) bruger den. */
+function holdFrysTjek() { try { const til = !!(SK_HOLD || (typeof BS_HOLD !== "undefined" && BS_HOLD)); document.body.classList.toggle("sk-holder", til); clearTimeout(window.__holdVagt); if (til) window.__holdVagt = setTimeout(function () { document.body.classList.remove("sk-holder"); }, 12000); } catch (e) {} }   /* sikring: frysningen kan aldrig blive stående længere end holdets egne lofter (højst 10 s) */
 function skHoldStart(gammel, ny, y, n) {
   if (document.body.classList.contains("dash-mode")) return;
   if (!gammel || !ny || gammel === ny || n === 0 || gammel.id === "screen0") { if (SK_HOLD) skHoldSlip(true); return; }
@@ -24386,7 +24395,7 @@ function skHoldStart(gammel, ny, y, n) {
   ny.setAttribute("data-bs-hold", "1"); ny.style.position = "absolute"; ny.style.visibility = "hidden"; ny.style.left = "0"; ny.style.top = "0"; ny.style.width = bredde + "px"; ny.style.pointerEvents = "none";
   try { window.scrollTo(0, y); } catch (e) {}
   if (!SK_HOLD) {
-    SK_HOLD = { gammel: gammel, ny: ny };
+    SK_HOLD = { gammel: gammel, ny: ny }; holdFrysTjek();
     SK_HOLD.mo = new MutationObserver(function () { skHoldRo(); });
     SK_HOLD.mo.observe(ny, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ["style", "class"] });
     SK_HOLD.loft = setTimeout(function () { skHoldSlip(true); }, 4000);
@@ -24397,7 +24406,7 @@ function skHoldRo() { const h = SK_HOLD; if (!h) return; clearTimeout(h.ro); h.r
 function skHoldSlip(tvang) {
   const h = SK_HOLD; if (!h) return;
   if (tvang !== true && (window.__NET || 0) > 0) { clearTimeout(h.ro); h.ro = setTimeout(function () { skHoldSlip(); }, 150); return; }
-  SK_HOLD = null; clearTimeout(h.ro); clearTimeout(h.loft); try { h.mo.disconnect(); } catch (e) {}
+  SK_HOLD = null; holdFrysTjek(); clearTimeout(h.ro); clearTimeout(h.loft); try { h.mo.disconnect(); } catch (e) {}
   const n = h.ny; if (n) { n.removeAttribute("data-bs-hold"); ["position", "visibility", "left", "top", "width", "pointer-events"].forEach(function (k) { n.style.removeProperty(k); }); }
   if (h.gammel && h.gammel !== n) h.gammel.style.display = "";
   try { window.scrollTo(0, 0); document.querySelectorAll(".content").forEach(c => { c.scrollTop = 0; }); } catch (e) {}
@@ -59306,7 +59315,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2675";
+const APP_VERSION = "2677";
 const APP_BYGGET = "9. oktober";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_BYGGET + " · " + APP_VERSION; } catch (e) {} });
 let NY_VERSION_KLAR = false;
@@ -66250,7 +66259,7 @@ function bsHoldSynlig() { const dm = document.getElementById("dashMain"); if (!d
 function bsHoldSlip(tvang) {
   const h = BS_HOLD; if (!h) return;
   if (tvang !== true && (BS_VENT.size || (window.__NET || 0) > 0)) { clearTimeout(h.ro); h.ro = setTimeout(function () { bsHoldSlip(); }, 150); return; }   /* der hentes stadig (loefter ELLER aabne kald til basen, 25/9) — vent */
-  BS_HOLD = null;
+  BS_HOLD = null; holdFrysTjek();
   clearTimeout(h.ro); clearTimeout(h.loft); try { h.mo.disconnect(); } catch (e) {}
   const n = h.ny;
   if (n) { n.removeAttribute("data-bs-hold"); ["position", "visibility", "left", "top", "width", "pointer-events"].forEach(function (k) { n.style.removeProperty(k); }); }
@@ -66280,7 +66289,7 @@ window.__NET_RO = function () { try { bsHoldRo(); } catch (e) {} try { skHoldRo(
         nyEl.style.position = "absolute"; nyEl.style.visibility = "hidden"; nyEl.style.left = "0"; nyEl.style.top = "0"; nyEl.style.width = bredde + "px"; nyEl.style.pointerEvents = "none";
         try { window.scrollTo(0, y); } catch (e) {}
         if (!BS_HOLD) {
-          BS_HOLD = { gammel: gammel, ny: nyEl };
+          BS_HOLD = { gammel: gammel, ny: nyEl }; holdFrysTjek();
           BS_HOLD.mo = new MutationObserver(function () { bsHoldRo(); });
           BS_HOLD.mo.observe(dm, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ["style", "class"] });
           /* LOFTET SLIPPER ALDRIG TIL EN TOM SIDE (MAALT 25/9 i selen m. 900 ms latens: Indbakken stod med 0 tegn under Hjems baand, da de 4 s var gaaet).
@@ -70879,7 +70888,7 @@ function mrAabn(id) {
   if (omrHold) { try {
     const dm = document.getElementById("dashMain"); const bredde = gammelOmr.getBoundingClientRect().width;
     el.setAttribute("data-bs-hold", "1"); el.style.position = "absolute"; el.style.visibility = "hidden"; el.style.left = "0"; el.style.top = "0"; el.style.width = bredde + "px"; el.style.pointerEvents = "none";
-    BS_HOLD = { gammel: gammelOmr, ny: el };
+    BS_HOLD = { gammel: gammelOmr, ny: el }; holdFrysTjek();
     BS_HOLD.mo = new MutationObserver(function () { bsHoldRo(); }); BS_HOLD.mo.observe(dm, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ["style", "class"] });
     BS_HOLD.loft = setTimeout(function () { bsHoldSlip(true); }, 4000); bsHoldRo();
   } catch (e) { try { bsHoldSlip(true); } catch (e2) {} } }
