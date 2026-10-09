@@ -1,3 +1,9 @@
+## v2631 · 9. oktober · Ugens fokus uden flise, dagens aftale i Kommende aktiviteter, chippen hedder »Opslag«
+
+- **UGENS FOKUS = BARE DIDOT, INGEN FLISE (HÅRD, Ida 9/10: »kunne vi lave layout i ugens fokus uden flise og bare Didot?«).** På computerens Hjem står Ugens fokus uden hvid flade, skygge, streg og aftoning: den lille etiket med det røde sigtekorn og teksten i Didot-kursiv 32 px, som må ombrydes til to linjer (før blev den skåret af med »…«). Bevidst undtagelse til Idas ord 25/9 om fokus-linjen og til reglen »flisen er altid hvid med skygge«. Telefonen er uændret (ingen fokus).
+- **DAGENS AFTALE STÅR I KOMMENDE AKTIVITETER (Idas skærmbillede 9/10: »hvorfor står dagens aftale ikke i kommende aktiviteter?«).** Listen var »fra i morgen« (kun dagens møde stod der). Nu står alle aftaler fra i dag, og et tryk åbner »Ret aftalen« (v2629). Vælter 29/9-linjen »fra i morgen«.
+- **CHIPPEN »DE FIRE SØJLER« HEDDER »OPSLAG« (Ida 9/10)** i Idébankens rækkefølge (Opslag · Story · Uden plads).
+
 ## v2629 · 9. oktober · Alle aftaler kan rettes og slettes af kunden
 
 - **ALLE AFTALER ÅBNER DET LILLE ARK (HÅRD, Idas skærmbillede 9/10: »hvorfor kan jeg ikke redigere i denne aftale? jeg skal jo kunne ændre i alle aftaler«).** Før gjorde et tryk på en aftale kun noget på møder og aftaler med et link; en almindelig aftale (fx »Content struktur gennemgang«) kunne hverken åbnes eller rettes. Nu åbner et tryk på en aftale i dagskalenderen og i »Kommende aktiviteter« arket »Ret aftalen«: titel · dag · start · »Slutter« · Gem · skraldespanden (»Slet«). Møder (Ugentlig contentplanlægning m.fl.) åbner stadig mødesiden. Har aftalen et link, står »Åbn linket« øverst i arket.
