@@ -4,6 +4,8 @@
 - **DAGSORDENEN RETTES PÅ STEDET.** Et penneikon ved hvert punkt åbner punktet: navn, tekst, skraldespand (fjern) og Gem; »Tilføj punkt« lægger et nyt til. Standardpunkterne (performance · den kommende uge · dato for næste møde) står uændrede, til man retter dem. Gemmes i `plan_ritual.moede.dagsorden` (merges, andre nøgler urørte); et rettet punkt bliver statisk tekst, et urørt punkt bliver dynamisk (uge, tema, mål). Ingen Annuller i rettelsen.
 - **ALLE DATOSYMBOLER ER KVADRATER, 56 × 56 (HÅRD, Ida 9/10: »kvadratiske alle steder«):** Kommende opslag (`.kop-dato`), aftalernes dato (`.cf-dato`), Backstages `.bs3-tidb.d` og `.bs-datob`. Ingen dato-boks er højere end bred.
 
+## v2705 (10/10) — To-dos på Backstages Hjem står efter dato, de overskredne øverst (Ida: »to-dos kommer ikke i rækkefølge efter dato?«). Indbakkens liste var allerede sorteret.
+
 ## v2704 (10/10) — To målere: admin-login siger »Logget ud: <årsag>«, og den røde »ikke gemt«-bjælke siger på admin, hvad der fejlede (og skelner udløbet login fra net). Ingen gætteri mere om login-fejlen på hjemmeskærms-appen.
 ## v2704 (10/10) — Delelinket overlever en genindlæsning (fund ved kontrol af »kan Annette åbne linket?«): ?frisk-genindlæsningen (ny build / fastlåst start) smed ?brief=…&kunde=… væk, så modtageren landede på forsiden. Nu følger brief og kunde med.
 
