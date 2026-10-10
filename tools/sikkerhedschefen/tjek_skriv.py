@@ -24,3 +24,17 @@ def tjek_skriv(repo):
         return Resultat(2, "Hver gemmevej har kvittering", BESTAAET)
     liste = ", ".join(f"{t}.{v} l.{l}" for t, v, l in u[:15])
     return Resultat(2, "Hver gemmevej har kvittering", FEJLET, f"{len(u)} gemmeveje uden kvittering uden for den fælles vagt (mangel; vagten dækker {len(daekket)} tabeller): {liste}{' …' if len(u) > 15 else ''}")
+
+# Tabeller, kunden selv skriver til i b2b (MAALT 10/10 ud fra kaldestederne). Alt andet er Backstage (Idas egne flows).
+KUNDE_TABELLER = {"content_ideer", "skema_svar", "kunde_maal", "kunde_opgaver", "kunde_aftaler", "kunde_strategi", "ig_maalinger", "inspiration", "kunde_kommentarer"}
+
+def tjek_skriv_delt(repo):
+    """Løfte 2 (kritisk) = kundens gemmeveje. Backstages gemmeveje uden kvittering er en mangel under løfte 16 (ikke kritisk for kunderne)."""
+    html = open(os.path.join(repo, "index.html"), encoding="utf-8").read()
+    daekket = daekket_af_doeren(html)
+    u = [x for x in skrivninger_uden_kvittering(html) if x[0] not in daekket and x[1] != "delete"]
+    kunde = [x for x in u if x[0] in KUNDE_TABELLER]; bs = [x for x in u if x[0] not in KUNDE_TABELLER]
+    liste = lambda xs: ", ".join(f"{t}.{v} l.{l}" for t, v, l in xs[:12]) + (" …" if len(xs) > 12 else "")
+    r1 = Resultat(2, "Kundens gemmeveje har kvittering", BESTAAET if not kunde else FEJLET, f"den fælles vagt dækker {len(daekket)} tabeller; resten læses tilbage" if not kunde else f"{len(kunde)} uden kvittering: {liste(kunde)}")
+    r2 = Resultat(16, "Backstages gemmeveje har kvittering", BESTAAET if not bs else FEJLET, "" if not bs else f"{len(bs)} uden kvittering (dine egne flows): {liste(bs)}")
+    return [r1, r2]
