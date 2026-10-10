@@ -4,6 +4,9 @@
 - **DAGSORDENEN RETTES PÅ STEDET.** Et penneikon ved hvert punkt åbner punktet: navn, tekst, skraldespand (fjern) og Gem; »Tilføj punkt« lægger et nyt til. Standardpunkterne (performance · den kommende uge · dato for næste møde) står uændrede, til man retter dem. Gemmes i `plan_ritual.moede.dagsorden` (merges, andre nøgler urørte); et rettet punkt bliver statisk tekst, et urørt punkt bliver dynamisk (uge, tema, mål). Ingen Annuller i rettelsen.
 - **ALLE DATOSYMBOLER ER KVADRATER, 56 × 56 (HÅRD, Ida 9/10: »kvadratiske alle steder«):** Kommende opslag (`.kop-dato`), aftalernes dato (`.cf-dato`), Backstages `.bs3-tidb.d` og `.bs-datob`. Ingen dato-boks er højere end bred.
 
+## v2707 (10/10) — »Vælg din nye adgangskode«: »Log ud i stedet« er ude, krydset lukker (Ida: »skal jeg heller ikke komme ind til en popup, hvor der står log ud«).
+## v2707 (10/10) — Briefens ⋯-menu: titlen »Briefen«, krydset i sin egen række, ingen rød knap (Ida: »kryds i hjørnet … mærkeligt, at det er den øverste, der er markeret«). Regel: en menu af ligestillede valg har ingen rød knap; rød er kun en primær handling. Vælter 24/9 for menuer.
+
 ## v2706 (10/10) — Idébanken = KUN status Idé (HÅRD) · Procesbaren = bud 2 (LÅST)
 - **Idébanken (Ida: »Det er KUN opslag med status idé, der skal være i idébanken«):** kun idéer med status Idé (eller uden status). Planlagt, Brief i gang, Postet, Målt og Arkiveret er ude. En »Brief i gang« uden dato står under »Mangler dato« i kalenderen, så intet forsvinder. Vælter 24/9 (»Brief i gang uden dato bliver i Idébanken«).
 - **Procesbaren (Ida: »lås procesbar bud 2«, artifact PXumJFrmuQEJAwYua7VTQs):** slank rød bjælke (radius 20, 14 px luft over, 12 under) med kun baren i hvidt. Ingen etiket, ingen streg, intet andet i flisen.
