@@ -94,6 +94,17 @@
       localStorage.removeItem("SELE_AFVIS");
     }
     if (FASE === "laes2") {
+      /* LØFTE 20 · LOG UD rydder kundens indhold på enheden, men ikke køen af ikke-sendte gem */
+      try {
+        var k20 = String(currentKode || "");
+        localStorage.setItem("ide_koe_" + k20, '[{"test":1}]');
+        var foer20 = Object.keys(localStorage).filter(function (n) { return n.slice(-k20.length) === k20; });
+        var n20 = rydKundedataLokalt(k20);
+        var efter20 = Object.keys(localStorage).filter(function (n) { return n.indexOf("ideer_cache_") === 0 || n.indexOf("skema_") === 0 || n.indexOf("maal_") === 0 || n.indexOf("opg_") === 0 || n.indexOf("insp_") === 0; }).filter(function (n) { return n.slice(-k20.length) === k20; });
+        tjek(20, "Log ud fjerner kundens indhold fra enheden", efter20.length === 0, n20 + " fjernet · tilbage: " + efter20.join(", "));
+        tjek(20, "Log ud beholder det, der endnu ikke er sendt", localStorage.getItem("ide_koe_" + k20) === '[{"test":1}]', "");
+        localStorage.removeItem("ide_koe_" + k20);
+      } catch (e) { tjek(20, "Log ud-tjekket kunne køre", false, e.message); }
       var tilbage = (window.__kundeAftalerAlle || window.__kundeAftaler || []);
       try { await renderAftaler(); tilbage = (window.__kundeAftalerAlle || window.__kundeAftaler || []); } catch (e) {}
       var n = tilbage.filter(function (a) { return a.dato === d(iMorgen) && erMoedeTitel(a.titel); }).length;

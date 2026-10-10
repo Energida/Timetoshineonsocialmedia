@@ -4,6 +4,8 @@
 - **DAGSORDENEN RETTES PÅ STEDET.** Et penneikon ved hvert punkt åbner punktet: navn, tekst, skraldespand (fjern) og Gem; »Tilføj punkt« lægger et nyt til. Standardpunkterne (performance · den kommende uge · dato for næste møde) står uændrede, til man retter dem. Gemmes i `plan_ritual.moede.dagsorden` (merges, andre nøgler urørte); et rettet punkt bliver statisk tekst, et urørt punkt bliver dynamisk (uge, tema, mål). Ingen Annuller i rettelsen.
 - **ALLE DATOSYMBOLER ER KVADRATER, 56 × 56 (HÅRD, Ida 9/10: »kvadratiske alle steder«):** Kommende opslag (`.kop-dato`), aftalernes dato (`.cf-dato`), Backstages `.bs3-tidb.d` og `.bs-datob`. Ingen dato-boks er højere end bred.
 
+## v2717 (10/10) — Log ud rydder kundens indhold på enheden (sikkerhedschefen løfte 20): gemte kopier af idéer/briefs, svar, mål, opgaver, inspiration, dagsprogram, plandato og Drive-link for koden fjernes ved log ud. Køerne med det, der endnu ikke er sendt (*_koe), bliver — intet arbejde må gå tabt.
+
 ## v2716 (10/10) — Kundens skrivninger til Inspiration og kommentarer har kvittering (sikkerhedschefen løfte 2): de seks steder uden for den fælles vagt læser rækken tilbage; afvist eller 0 rækker giver den røde bjælke. Skriv-tjekket kender nu den fælles vagt (7 tabeller) og melder kun det, den ikke dækker (44 → 38, resten er Backstage-tabeller).
 
 ## v2715 (10/10) — Backstage · Teknik · dør »Selvtest« (sikkerhedschefens lag 3): ét tryk tester i den rigtige base på Testbutikken (kode TEST) — ny idé gemt og læst tilbage, brief, status frem/tilbage, 0-rækker opdages, møde + dublet oprettet og slettet, idéen slettet — og viser BESTÅET / FEJLET / IKKE TESTET pr. tjek i det lille ark med version og tid. Rydder altid sine egne rækker op. Rører kun koden TEST.
