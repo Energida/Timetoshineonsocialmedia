@@ -210,6 +210,49 @@
         tjek(26, "En rød bjælke hos kunden når frem til Ida (én linje, ingen dublet)", f26.length === 1 && !!f26[0].svar.v && !!f26[0].svar.tid, f26.length + " linje(r)" + (f26[0] ? " · v" + f26[0].svar.v : ""));
         var sf26 = document.getElementById("syncFejl"); if (sf26) sf26.remove();
       } catch (e) { tjek(26, "Fejl-tjekket kunne køre", false, e.message); }
+      /* OVERBLIKKETS TAL (Ida 10/10): køb pr. kode, koder sendt, nye kunders fremgang — testkøb tælles aldrig */
+      try {
+        var nu0 = Date.now(), dag0 = 864e5;
+        var db0 = JSON.parse(localStorage.getItem("SELE_DB") || "{}");
+        db0.contacts = (db0.contacts || []).concat([
+          { id: "o1", kunde: "Opdigtet Isenkram", status: "Kunde", source: "YOU GOT THIS · Gamle kunder", kommentar: "Hanne · h@x.dk · Kode: OPDIGTET2026", created_at: new Date(nu0 - 3600e3).toISOString() },
+          { id: "o2", kunde: "Butik Nordlys", status: "Kunde", source: "YOU GOT THIS · Ringkøbing Handelsforening", kommentar: "Kode: NORDLYS2026", created_at: new Date(nu0 - 3 * dag0).toISOString() },
+          { id: "o3", kunde: "Gammel butik", status: "Kunde", source: "YOU GOT THIS · Ringkøbing Handelsforening", kommentar: "Kode: GAMMEL2026", created_at: new Date(nu0 - 40 * dag0).toISOString() },
+          { id: "o4", kunde: "Test", status: "Kunde", source: "Testlink", kommentar: "Kode: TEST", created_at: new Date(nu0).toISOString() },
+          { id: "o5", kunde: "Lead A", status: "Lead", source: "Gamle kunder", created_at: new Date(nu0).toISOString() },
+          { id: "o6", kunde: "Lead B", status: "Lead", source: "Gamle kunder", created_at: new Date(nu0).toISOString() }]);
+        db0.skema_svar = (db0.skema_svar || []).concat([1, 2, 3].map(function (n) { return { id: "ls" + n, kode: "OPDIGTET2026", navn: "Hanne", skema: "lektion_set_1-" + n, svar: { set: true }, created_at: new Date(nu0 - n * 600e3).toISOString() }; }));
+        localStorage.setItem("SELE_DB", JSON.stringify(db0));
+        var ot = await overblikTal(new Date(nu0));
+        var opd = (ot.nye || []).filter(function (x) { return x.kode === "OPDIGTET2026"; })[0];
+        tjek(1, "Overblikket: køb i dag · uge · måned tælles rigtigt (testkøb udenfor)", ot.ok && ot.koeb.iDag === 1 && ot.koeb.uge === 2 && ot.koeb.maaned === 2 && ot.koeb.alle === 3, JSON.stringify(ot.koeb));
+        tjek(1, "Overblikket: køb pr. kode og sendte koder", ot.prKilde["Gamle kunder"] === 1 && ot.prKilde["Ringkøbing Handelsforening"] === 2 && ot.koderSendt === 2, JSON.stringify(ot.prKilde) + " · sendt " + ot.koderSendt);
+        tjek(1, "Overblikket: nye kunders fremgang (lektioner set)", !!(opd && opd.set === 3 && opd.ialt > 0), opd ? opd.set + " af " + opd.ialt : "ingen");
+      } catch (e) { tjek(1, "Overbliks-tjekket kunne køre", false, e.message); }
+      /* GAMLE KUNDER (salgsturnéen): lead gemmes m. kvittering, mailen bærer koden og siden, tom butik siges */
+      try {
+        var mm = window.matchMedia, wo = window.open; window.matchMedia = function () { return { matches: false }; }; window.open = function (u) { window.__GK_MAIL = u; return {}; };
+        gamleKunderArk(); await V(200);
+        await gamleKunderSend(null); var gkTom = (document.getElementById("gkMsg") || {}).textContent || "";
+        document.getElementById("gkNavn").value = "Hanne"; document.getElementById("gkButik").value = "SC Isenkram"; document.getElementById("gkMail").value = "hanne@sc.dk";
+        await gamleKunderSend(null); await V(300);
+        window.matchMedia = mm; window.open = wo; try { bsFlytLuk(); } catch (e) {}
+        var gkRk = ((JSON.parse(localStorage.getItem("SELE_DB") || "{}").contacts) || []).filter(function (x) { return x.source === "Gamle kunder" && x.kunde === "SC Isenkram"; });
+        var gkMail = decodeURIComponent(String(window.__GK_MAIL || "").split("body=")[1] || "");
+        tjek(1, "Gamle kunder: tom butik gemmes ikke og siges", /butikkens navn/i.test(gkTom), gkTom);
+        tjek(1, "Gamle kunder: lead gemt i CRM", gkRk.length === 1 && gkRk[0].status === "Lead", gkRk.length + " række(r)");
+        tjek(1, "Gamle kunder: mailen bærer koden og siden", gkMail.indexOf("JEGERVIGTIGFORIDA") > -1 && gkMail.indexOf("succesfuld-detaildrift") > -1 && /Hej Hanne/.test(gkMail), gkMail.slice(0, 60));
+      } catch (e) { tjek(1, "Gamle kunder-tjekket kunne køre", false, e.message); }
+      /* INSPIRATION: flere links ad gangen, ingen dubletter, linket i noten bliver et Instagram-kort */
+      try {
+        var i0 = ((JSON.parse(localStorage.getItem("SELE_DB") || "{}").inspiration) || []).length;
+        var iSvar = await kundeArkGem("https://www.instagram.com/reel/SCa1/\nwww.instagram.com/reel/SCb2/", "fedt");
+        var iDub = await kundeArkGem("https://instagram.com/reel/SCa1", "fedt");
+        var i1 = ((JSON.parse(localStorage.getItem("SELE_DB") || "{}").inspiration) || []).length;
+        tjek(1, "Inspiration: to links på én gang bliver to kort", i1 - i0 === 2, (i1 - i0) + " nye · " + iSvar);
+        tjek(1, "Inspiration: samme link oprettes ikke igen", /allerede/i.test(String(iDub)) && i1 - i0 === 2, String(iDub));
+        tjek(1, "Inspiration: link i noten genkendes som Instagram", inspErIg({ type: "link", url: null, note: "www.instagram.com/reel/X1/" }), "");
+      } catch (e) { tjek(1, "Inspirations-tjekket kunne køre", false, e.message); }
       localStorage.setItem("energida_skal_ny_kode", "1");   /* som når linket »Glemt adgangskode« i mailen er åbnet — næste fase starter appen forfra */
     }
     if (FASE === "link") {
@@ -236,6 +279,13 @@
         tjek(18, "»Vælg ny adgangskode« kommer igen efter genindlæsning", !!bx, bx ? "" : "arket kom ikke");
         tjek(18, "»Vælg ny adgangskode« kan ikke lukkes (kryds, Esc, klik udenfor)", !!bx && kryds === 0 && staar, "lukkeknapper " + kryds + " · står efter Esc/klik " + staar);
       } catch (e) { tjek(18, "Adgangskode-tjekket kunne køre", false, e.message); }
+      /* KLAR TIL MAIL NR. 3: første valgte adgangskode noteres én gang */
+      try {
+        var nf = document.getElementById("nyKodeFelt"); if (nf) nf.value = "sele-kode-123";
+        await gemNyAdgangskode(); await V(600); await adgangskodeValgtNoter(); await V(300);
+        var av = ((JSON.parse(localStorage.getItem("SELE_DB") || "{}").skema_svar) || []).filter(function (x) { return x.skema === "adgangskode_valgt"; });
+        tjek(1, "Første adgangskode noteres én gang (klar til mail nr. 3)", av.length === 1 && av[0].svar && av[0].svar.mail3_sendt === false, av.length + " række(r)");
+      } catch (e) { tjek(1, "Mail 3-noten kunne køre", false, e.message); }
       localStorage.removeItem("energida_skal_ny_kode");
     }
   } catch (e) { r.fejl = e.message + " @ " + ((e.stack || "").split("\n")[1] || ""); }

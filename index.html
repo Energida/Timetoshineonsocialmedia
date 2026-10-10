@@ -48158,7 +48158,7 @@ async function tilfoejInspLink() {
   const lf = document.getElementById("inspLink"), nf = document.getElementById("inspNote");
   const url = (lf.value || "").trim(); const note = (nf.value || "").trim();
   if (!url && !note) return;
-  if (url && inspFindesAllerede(url)) { inspMsg("Linket står allerede på Inspiration."); return; }   /* ingen dubletter (Ida 10/10) */
+  if (url && (await inspKendteLinks())[inspNorm(url)]) { inspMsg("Linket står allerede på Inspiration."); return; }   /* ingen dubletter (Ida 10/10) */
   if (url && !note) { inspMsg("Skriv et par ord om, hvad der fangede dig — det bliver kortets titel, så du kan kende dem fra hinanden."); nf.focus(); return; }
   const rec = { kode: currentKode || "X", type: "link", url: url || null, note: note || null };
   /* SKAERMBILLEDET (13/9): uploades som de andre billeder (lille, jpeg, bucket inspiration) og
@@ -48299,6 +48299,12 @@ function inspErIg(x) { return !!x && x.type !== "billede" && /instagram\.com\//i
 function inspIgType(u) { return /\/(reel|reels|tv)\//i.test(String(u || "")) ? "Reel" : "Opslag"; }
 function inspIgProfil(u) { const m = String(u || "").match(/instagram\.com\/([^\/?#]+)\/(?:p|reel|reels|tv)\//i); return (m && !/^(p|reel|reels|tv|share)$/i.test(m[1])) ? "@" + m[1] : ""; }
 function inspNorm(u) { u = inspFuldUrl(u); if (!u) return ""; try { const x = new URL(u); return (x.hostname.replace(/^www\./, "") + x.pathname.replace(/\/+$/, "").replace(/\/reels\//, "/reel/")).toLowerCase(); } catch (e) { return u.toLowerCase(); } }
+/* DUBLET-STOPPET SPØRGER BASEN (sikkerhedschefen 10/10: INSPIRATION er kun hentet, når siden har været åben — fra Tøm hovedet var listen tom, og samme link kom ind igen) */
+async function inspKendteLinks() {
+  const set = {}; (INSPIRATION || []).forEach(function (x) { const n = inspNorm(inspUrl(x)); if (n) set[n] = 1; });
+  try { if (sb && currentKode) { const r = await sb.from("inspiration").select("url,note,type").eq("kode", currentKode); (r.data || []).forEach(function (x) { const n = inspNorm(inspUrl(x)); if (n) set[n] = 1; }); } } catch (e) {}
+  return set;
+}
 function inspFindesAllerede(u) { const n = inspNorm(u); return !!n && (INSPIRATION || []).some(function (x) { return inspNorm(inspUrl(x)) === n; }); }
 function inspLinksI(t) { const ud = [], set = {}; (String(t || "").match(new RegExp(INSP_LINK_RX.source, "gi")) || []).forEach(function (u) { const f = inspFuldUrl(u), n = inspNorm(f); if (n && !set[n]) { set[n] = 1; ud.push(f); } }); return ud; }
 /* BILLEDET HENTES IGEN: et Instagram-kort, hvis opslag ikke er kommet frem, prøves igen hver time — og med knappen »Hent billede igen« med det samme */
@@ -59616,7 +59622,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2736";
+const APP_VERSION = "2737";
 const APP_BYGGET = "9. oktober";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_BYGGET + " · " + APP_VERSION; } catch (e) {} });
 let NY_VERSION_KLAR = false;
@@ -63005,6 +63011,18 @@ function nyKodeFejl(error) {
   if (/network|fetch|failed/.test(t)) return "Ingen forbindelse lige nu. Prøv igen om lidt.";
   return "Adgangskoden blev ikke gemt. Prøv igen.";
 }
+/* KLAR TIL MAIL NR. 3 (Ida 10/10: »når kunden har valgt deres adgangskode, og de kommer ind, at de så får en ny e-mail«): første gang en KUNDE vælger
+   sin adgangskode, gemmes tidspunktet én gang (skema_svar · adgangskode_valgt). Mail-motoren læser rækkerne, når den er udrullet — også dem fra i mellemtiden.
+   Stille: lykkes det ikke, mærker kunden intet (ingen bjælke) — det er en note, ikke kundens arbejde. */
+async function adgangskodeValgtNoter() {
+  if (!sb || !sb.__fromUdenVagt || document.body.classList.contains("dash-mode")) return;
+  const kode = String((typeof currentKode !== "undefined" && currentKode) || "").toUpperCase(); if (!kode) return;
+  let mail = ""; try { const u = await sb.auth.getUser(); mail = String((u.data && u.data.user && u.data.user.email) || "").toLowerCase(); } catch (e) {}
+  if (!mail) return;
+  const f = await sb.__fromUdenVagt("skema_svar").select("id").eq("kode", kode).eq("navn", mail).eq("skema", "adgangskode_valgt").limit(1);
+  if (f.data && f.data.length) return;
+  await sb.__fromUdenVagt("skema_svar").insert({ kode: kode, navn: mail, skema: "adgangskode_valgt", svar: { tid: new Date().toISOString(), mail3_sendt: false } });
+}
 async function gemNyAdgangskode() {
   const v = document.getElementById("nyKodeFelt").value;
   const m2 = document.getElementById("nyKodeMsg");
@@ -63016,6 +63034,7 @@ async function gemNyAdgangskode() {
   }
   if (error) { m2.textContent = nyKodeFejl(error); return; }
   try { localStorage.removeItem("energida_skal_ny_kode"); } catch (e) {}
+  try { adgangskodeValgtNoter(); } catch (e) {}
   m2.style.color = "#000000"; m2.textContent = "Gemt — du er logget ind.";
   setTimeout(() => { const b = document.getElementById("nyKodeBoks"); if (b) b.remove(); }, 1200);
 }
@@ -74532,8 +74551,9 @@ async function kundeArkGem(tekst, k) {
   if (k === "fedt") {
     /* FLERE LINKS PAA EEN GANG (Ida 10/10): et link pr. linje → et kort hver; et link, der allerede staar paa siden, oprettes ikke igen */
     const links = inspLinksI(t);
+    const kendte = links.length ? await inspKendteLinks() : {};
     if (links.length > 1) {
-      const nye = links.filter(function (u) { return !inspFindesAllerede(u); }); const sprang = links.length - nye.length;
+      const nye = links.filter(function (u) { return !kendte[inspNorm(u)]; }); const sprang = links.length - nye.length;
       if (!nye.length) return "Alle " + links.length + " links står allerede på Inspiration.";
       if (!sb || !currentKode) return false;
       try { const ri = await sb.from("inspiration").insert(nye.map(function (u) { return { kode: currentKode, type: "link", url: u, note: null }; })).select("id"); if (ri.error || !ri.data || ri.data.length !== nye.length) return false; } catch (e) { return false; }
@@ -74541,7 +74561,7 @@ async function kundeArkGem(tekst, k) {
       return nye.length + " links gemt på Inspiration." + (sprang ? " " + sprang + " stod der allerede." : "");
     }
     const url = links[0] || ""; const note = (url ? t.replace(new RegExp(INSP_LINK_RX.source, "gi"), "") : t).replace(/\s+/g, " ").trim();
-    if (url && inspFindesAllerede(url)) return "Linket står allerede på Inspiration.";
+    if (url && kendte[inspNorm(url)]) return "Linket står allerede på Inspiration.";
     const rec = { kode: currentKode || "X", type: "link", url: url || null, note: note || null };
     if (INSP_SKAERM) {
       if (!sb || !currentKode) return false;
@@ -83691,6 +83711,39 @@ setTimeout(function () { try { bsBaandPlanlaeg(); } catch (e) {} }, 300);
    Alt laeses fra skema_svar, som kunderne selv skriver: lektion_set_<id> (hvem har set) · lektion_visninger (hvor mange gange) ·
    lektion_feedback_<id> (stjerner + kommentar; KLIP_LEKFB) · inden_start og efter_forloebet (foer/efter-tal, citater, tilladelsen).
    Ingen ny tabel, ingen ny policy. Kan admin ikke laese raekkerne, staar tallene paa nul og siger det. */
+/* ===== OVERBLIKKETS TAL (Ida 10/10: »live opdateringer på, hvor mange der gennemfører køb … opretter sig via mine rabatkoder … følge performance af dem, der starter op«) =====
+   Én motor, ingen ny tabel: køb = contacts, som stripe-koeb skriver (status Kunde, kilde »YOU GOT THIS · <forening>«); koder sendt = contacts med kilde
+   »Gamle kunder« (salgsturnéens leads); fremgang = lektion_set pr. kode (samme rækker som bf3DataHent læser). Testkøb og egne koder tælles aldrig.
+   OBS: hjemmesidens knap bruger Ringkøbing-linket, så køb uden kode på hjemmesiden kan ikke skilles fra Ringkøbing — kun linket »Gamle kunder« er sit eget. */
+function overblikKilde(src) { const s = String(src || ""); if (!/^YOU GOT THIS/i.test(s)) return ""; const f = s.split("·").slice(1).join("·").trim(); return f || "Uden kode"; }
+function overblikKode(kommentar) { const m = String(kommentar || "").match(/Kode:\s*([A-Z0-9ÆØÅ_-]+)/i); return m ? m[1].toUpperCase() : ""; }
+async function overblikTal(nu) {
+  nu = nu || new Date();
+  const ud = { ok: false, koeb: { iDag: 0, uge: 0, maaned: 0, alle: 0 }, prKilde: {}, koderSendt: 0, nye: [] };
+  if (!sb) return ud;
+  try {
+    const [kr, sr] = await Promise.all([
+      sb.from("contacts").select("kunde,status,source,kommentar,created_at").order("created_at", { ascending: false }).limit(1000),
+      sb.from("skema_svar").select("kode,skema,created_at").like("skema", "lektion_set_%")
+    ]);
+    if (kr.error) return ud;
+    const dag = energidaKalDato(nu), t = nu.getTime();
+    const set = {}; (sr.data || []).forEach(function (r) { const k = String(r.kode || "").toUpperCase(); (set[k] = set[k] || { n: 0, sidst: "" }).n++; if (String(r.created_at) > set[k].sidst) set[k].sidst = String(r.created_at); });
+    const ialt = (typeof KURSUS_LEKTIONER !== "undefined" && KURSUS_LEKTIONER.length) || 0;
+    (kr.data || []).forEach(function (c) {
+      const src = String(c.source || "");
+      if (src === "Gamle kunder") { ud.koderSendt++; return; }
+      const kilde = overblikKilde(src); if (!kilde || /test/i.test(src)) return;
+      const kode = overblikKode(c.kommentar); try { if (kode && typeof erEgenKode === "function" && erEgenKode(kode)) return; } catch (e) {}
+      const ts = new Date(c.created_at).getTime(), alder = (t - ts) / 864e5;
+      ud.koeb.alle++; if (energidaKalDato(new Date(c.created_at)) === dag) ud.koeb.iDag++; if (alder < 7) ud.koeb.uge++; if (alder < 30) ud.koeb.maaned++;
+      ud.prKilde[kilde] = (ud.prKilde[kilde] || 0) + 1;
+      if (alder < 60 && ud.nye.length < 12) { const s0 = set[kode] || { n: 0, sidst: "" }; ud.nye.push({ navn: c.kunde || kode, kode: kode, kilde: kilde, set: s0.n, ialt: ialt, sidst: s0.sidst, koebt: c.created_at }); }
+    });
+    ud.ok = true;
+  } catch (e) {}
+  return ud;
+}
 let BF3_DATA = null;
 async function bf3DataHent() {
   if (BF3_DATA || window.__BF3_DATA_HENT) return;

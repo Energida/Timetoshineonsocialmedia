@@ -16,7 +16,7 @@
     function match(r) { return st.filtre.every(function (f) { var v = r[f[1]];
       if (f[0] === "eq") return String(v) === String(f[2]); if (f[0] === "neq") return String(v) !== String(f[2]);
       if (f[0] === "in") return (f[2] || []).map(String).indexOf(String(v)) > -1; if (f[0] === "is") return (v == null) === (f[2] == null);
-      if (f[0] === "gte") return v >= f[2]; if (f[0] === "lte") return v <= f[2]; if (f[0] === "gt") return v > f[2]; if (f[0] === "lt") return v < f[2];
+      if (f[0] === "like" || f[0] === "ilike") return new RegExp("^" + String(f[2]).replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/%/g, ".*") + "$", f[0] === "ilike" ? "i" : "").test(String(v == null ? "" : v)); if (f[0] === "gte") return v >= f[2]; if (f[0] === "lte") return v <= f[2]; if (f[0] === "gt") return v > f[2]; if (f[0] === "lt") return v < f[2];
       return true; }); }
     function koer() {
       var d = db(); var rk = d[tabel] = d[tabel] || []; var ud = [];
@@ -42,7 +42,7 @@
       return function () { var a = arguments;
         if (["insert", "upsert", "update", "delete"].indexOf(navn) > -1) { st.op = navn; st.data = a[0]; st.konflikt = a[1] && a[1].onConflict; }
         else if (navn === "select") { st.vilSelect = true; }
-        else if (["eq", "neq", "in", "is", "gte", "lte", "gt", "lt"].indexOf(navn) > -1) st.filtre.push([navn, a[0], a[1]]);
+        else if (["eq", "neq", "in", "is", "gte", "lte", "gt", "lt", "like", "ilike"].indexOf(navn) > -1) st.filtre.push([navn, a[0], a[1]]);
         else if (navn === "match") Object.keys(a[0] || {}).forEach(function (k) { st.filtre.push(["eq", k, a[0][k]]); });
         else if (navn === "order") st.orden = [a[0], !(a[1] && a[1].ascending === false)];
         else if (navn === "limit") st.graense = a[0];
