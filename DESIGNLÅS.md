@@ -4,6 +4,8 @@
 - **DAGSORDENEN RETTES PÅ STEDET.** Et penneikon ved hvert punkt åbner punktet: navn, tekst, skraldespand (fjern) og Gem; »Tilføj punkt« lægger et nyt til. Standardpunkterne (performance · den kommende uge · dato for næste møde) står uændrede, til man retter dem. Gemmes i `plan_ritual.moede.dagsorden` (merges, andre nøgler urørte); et rettet punkt bliver statisk tekst, et urørt punkt bliver dynamisk (uge, tema, mål). Ingen Annuller i rettelsen.
 - **ALLE DATOSYMBOLER ER KVADRATER, 56 × 56 (HÅRD, Ida 9/10: »kvadratiske alle steder«):** Kommende opslag (`.kop-dato`), aftalernes dato (`.cf-dato`), Backstages `.bs3-tidb.d` og `.bs-datob`. Ingen dato-boks er højere end bred.
 
+## v2722 (10/10) — Plusset i Backstage samler kun »Tilføj«-felter og -knapper fra den side, man står på, og hvert valg én gang (Ida: plusset i CRM viste ti »Tilføj rum« fra andre sider i stedet for Ny kunde).
+
 ## v2721 (10/10) — Ny adgangskode kan ikke springes over: når linket i mailen åbnes, huskes det (energida_skal_ny_kode), og arket kommer igen ved hver start og hvert login, til den nye kode er gemt. Selvtesten fjerner igen den røde bjælke, som dens egen 0-rækker-prøve udløser (og tjekker samtidig, at bjælken kom). Ida testede i Chrome og Safari: lukket ark (v2719) eller genindlæst side = inde uden ny kode.
 
 ## v2720 (10/10) — »Vælg din nye adgangskode« kan ikke lukkes (intet kryds, intet Log ud): linket i mailen logger ind, så arket står, til den nye kode er gemt. Vælter v2707's kryds. Ida: »så kunne jeg bare lukke den pop up uden at angive ny kode«.
