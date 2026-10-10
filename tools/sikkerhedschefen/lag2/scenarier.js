@@ -26,11 +26,25 @@
       tjek(3, "Status Idé → Planlagt gemt (kvittering)", ok2 !== false, "");
       try { showTab(2); } catch (e) {} await V(1200);
       LS("SC_ORDEN", IDEER.filter(ideErIBanken).map(function (x) { return String(x.id); }));
+      /* LØFTE 7 + 10 · OPGAVER OG JA/NEJ: en ny to-do (med kvittering), afkrydset, og »Ja, postet« på et planlagt opslag */
+      try {
+        var k7 = await kundeArkGem("SC to-do fra sikkerhedschefen", "todo");
+        tjek(10, "Ny to-do giver en kvittering", typeof k7 === "string" && k7.length > 0, "svar: " + k7);
+        await refreshOpgaver(); var o7 = (OPGAVER || []).find(function (o) { return o.titel === "SC to-do fra sikkerhedschefen"; });
+        if (o7) await toggleOpgave(o7.id);
+        tjek(7, "To-do oprettet og afkrydset (kvittering)", !!(o7 && o7.done), o7 ? "done " + o7.done : "findes ikke");
+        await opslagPostetJa("sc-plan-1"); await V(400); try { bsFlytLuk(); } catch (e) {} try { arkLuk(true); } catch (e) {}
+      } catch (e) { tjek(7, "Opgave-tjekket kunne køre", false, e.message); }
     }
     if (FASE === "laes1") {
       var id = LS("SC_ID"), it = (IDEER || []).find(function (x) { return String(x.id) === String(id); });
       tjek(1, "Ny idé står efter genindlæsning", !!it, it ? it.titel : "findes ikke");
       tjek(1, "Briefens hook står efter genindlæsning", it && it.brief && it.brief.hookTekst === "Hook fra sikkerhedschefen", it && it.brief ? it.brief.hookTekst : "");
+      try { await refreshOpgaver(); var o7b = (OPGAVER || []).find(function (o) { return o.titel === "SC to-do fra sikkerhedschefen"; });
+        tjek(7, "To-do og flueben står efter genindlæsning", !!(o7b && o7b.done), o7b ? "done " + o7b.done : "findes ikke");
+        var pj = (IDEER || []).find(function (x) { return x.id === "sc-plan-1"; });
+        tjek(7, "»Ja, postet« står efter genindlæsning", !!(pj && pj.status === "Postet"), pj ? pj.status : "findes ikke");
+      } catch (e) { tjek(7, "Opgave-læsetjekket kunne køre", false, e.message); }
       var p3 = (IDEER || []).find(function (x) { return x.id === "sc-ide-3"; });
       tjek(3, "Status Planlagt står efter genindlæsning", p3 && p3.status === "Planlagt", p3 ? p3.status : "findes ikke");
       var orden = IDEER.filter(ideErIBanken).map(function (x) { return String(x.id); }), foer = LS("SC_ORDEN") || [];
@@ -183,7 +197,7 @@
       localStorage.setItem("energida_skal_ny_kode", "1");   /* som når linket »Glemt adgangskode« i mailen er åbnet — næste fase starter appen forfra */
     }
     if (FASE === "link") {
-      /* LØFTE 22 · DELELINKET (Ida 10/10: »opslaget kommer aldrig — den bliver bare ved med at loade« + »del skal ind på briefoversigten«) */
+      /* LØFTE 11 + 15 · DELELINKET (ikke 22: købsrejsen er sin egen) (Ida 10/10: »opslaget kommer aldrig — den bliver bare ved med at loade« + »del skal ind på briefoversigten«) */
       try {
         var tid22 = 0; while (tid22 < 8000 && !(typeof BRIEF_ID !== "undefined" && String(BRIEF_ID) === "sc-ide-2")) { await V(250); tid22 += 250; }
         var synligt = function (e) { if (!e) return false; var cs = getComputedStyle(e), b = e.getBoundingClientRect(); return cs.display !== "none" && cs.visibility !== "hidden" && +cs.opacity >= 0.1 && b.height > 100 && b.width > 100; };
@@ -191,10 +205,10 @@
         var loeftet = tepper.length === 0;
         var s7 = document.getElementById("screen7"); var tekst = s7 ? s7.innerText.replace(/\s+/g, " ") : "";
         var godk = !!document.querySelector("#briefGodkendKrop") && document.querySelector("#briefGodkendKrop").getBoundingClientRect().height > 0;
-        tjek(22, "Delelinket åbner briefen", typeof BRIEF_ID !== "undefined" && String(BRIEF_ID) === "sc-ide-2" && /Opdigtet idé 3/.test(tekst), "BRIEF_ID " + (typeof BRIEF_ID !== "undefined" ? BRIEF_ID : "?") + " · " + tekst.slice(0, 60));
-        tjek(22, "Delelinket bliver færdig med at loade (tæppet løftet)", loeftet, loeftet ? "" : "indlæsningsbilledet står stadig: " + tepper.join(", "));
-        tjek(22, "Delelinket lander på briefoversigten, ikke godkendelsen", !godk, godk ? "godkendelsessiden åbnede" : "");
-      } catch (e) { tjek(22, "Delelink-tjekket kunne køre", false, e.message); }
+        tjek(11, "Delelinket åbner briefen", typeof BRIEF_ID !== "undefined" && String(BRIEF_ID) === "sc-ide-2" && /Opdigtet idé 3/.test(tekst), "BRIEF_ID " + (typeof BRIEF_ID !== "undefined" ? BRIEF_ID : "?") + " · " + tekst.slice(0, 60));
+        tjek(15, "Delelinket bliver færdig med at loade (tæppet løftet)", loeftet, loeftet ? "" : "indlæsningsbilledet står stadig: " + tepper.join(", "));
+        tjek(11, "Delelinket lander på briefoversigten, ikke godkendelsen", !godk, godk ? "godkendelsessiden åbnede" : "");
+      } catch (e) { tjek(11, "Delelink-tjekket kunne køre", false, e.message); }
     }
     if (FASE === "kode") {
       /* LØFTE 18 · NY ADGANGSKODE KAN ALDRIG SPRINGES OVER (Ida 10/10: »så kunne jeg bare lukke den pop up … så var jeg inde i mit admin«) */

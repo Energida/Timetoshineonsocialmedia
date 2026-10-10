@@ -22,7 +22,8 @@ def main():
     for b in (390, 1440): res += lag2.koer(b) + tjek_plus.koer(b) + tjek_knapper.koer(b)
     res += tjek_stille.koer()
     from sikkerhedschefen.resultat import Resultat
-    res.append(Resultat(17, "Kunde A ser ikke kunde B", IKKE_TESTET, "kræver TESTKUNDE-A og TESTKUNDE-B (Ida opretter dem); Selvtesten tester det, når de findes"))
+    res.append(Resultat(17, "Kunde A ser ikke kunde B", IKKE_TESTET, "køres som testkunden i b2b: ?selvtest=ab (A · B · A) — resultatet er Idas skærmbillede"))
+    res.append(Resultat(22, "Hele købsrejsen (betaling → mail → login → første side)", IKKE_TESTET, "kræver Idas testkøb med rabatkode; kun dele af vejen (delelinket, ny adgangskode) er testet"))
     pr = {}
     for r in res:
         pr.setdefault(r.loefte, []).append(r)
