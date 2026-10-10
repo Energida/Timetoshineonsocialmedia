@@ -59616,7 +59616,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2735";
+const APP_VERSION = "2736";
 const APP_BYGGET = "9. oktober";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_BYGGET + " · " + APP_VERSION; } catch (e) {} });
 let NY_VERSION_KLAR = false;
@@ -82771,6 +82771,52 @@ function bf3KontaktNyArk() {
       return "»" + navn + "« står under Kunder.";
     } });
 }
+/* ===== GAMLE KUNDER · SALGSTURNÉEN (Ida 10/10: »når jeg står ude ved kunderne, kan oprette dem direkte, men klikke en speciel mail af«) =====
+   Navn · butik · mail → kontakten gemmes som Lead i CRM (kilde »Gamle kunder«) med kvittering, og en færdigskrevet mail åbner i Idas mail-app;
+   hun trykker selv send. Mailen: Succesfuld Detaildrift-siden + købslinket til YOU GOT THIS + koden. Købet kører derfra som altid (Stripe → login-mail).
+   GAMLE_KUNDER_LINK = det nye betalingslink m. mærket »Gamle kunder« (oprettes af Ida i Stripe). Tomt = mailen linker kun til siden. */
+const GAMLE_KUNDER_KODE = "JEGERVIGTIGFORIDA";
+const GAMLE_KUNDER_LINK = "";
+const GAMLE_KUNDER_SIDE = "https://energida.dk/succesfuld-detaildrift/";
+function gamleKunderMailTekst(navn) {
+  return "Hej" + (navn ? " " + navn : "") + "\n\n"
+    + "Tak, fordi jeg måtte kigge forbi i dag.\n\n"
+    + "Her kan du læse om Succesfuld Detaildrift:\n" + GAMLE_KUNDER_SIDE + "\n\n"
+    + (GAMLE_KUNDER_LINK ? "Køb YOU GOT THIS her, og skriv koden, når du betaler:\n" + GAMLE_KUNDER_LINK + "\n\n" : "Køb YOU GOT THIS på siden, og skriv koden, når du betaler.\n\n")
+    + "Din kode: " + GAMLE_KUNDER_KODE + "\n\n"
+    + "Med koden koster det dig 0 kr. Bagefter får du en mail med dit login.\n\n"
+    + "Kærlig hilsen\nIda";
+}
+function gamleKunderArk() {
+  let m = document.getElementById("bsFlytMenu"); if (!m) { m = document.createElement("div"); m.id = "bsFlytMenu"; document.body.appendChild(m); }
+  const felt = function (id, et, ph, type) { return '<div class="htb-ark-eye">' + et + '</div><input type="' + (type || "text") + '" id="' + id + '" class="htb-felt" placeholder="' + ph + '" autocomplete="off"' + (type === "email" ? ' inputmode="email" autocapitalize="off" spellcheck="false"' : '') + ' style="width:100%;margin-bottom:12px;">'; };
+  m.innerHTML = '<div class="bs-flyt-ark brief-soejle-ark htb-ark">'
+    + '<div class="htb-ark-top"><div class="ark-t">Gamle kunder</div></div>'
+    + felt("gkNavn", "Navn", "Kontaktpersonens navn") + felt("gkButik", "Butik", "Butikkens navn") + felt("gkMail", "Mail", "navn@butikken.dk", "email")
+    + '<div id="gkMsg" class="ftf-forkl" style="min-height:18px;margin:0 0 8px;"></div>'
+    + '<button type="button" class="ark-knap ark-knap-roed ark-send-pille" onclick="gamleKunderSend(this)">Gem og skriv mailen</button>'
+    + '<button type="button" class="ark-luk" onclick="bsFlytLuk()">Annullér</button></div>';
+  m.style.display = "flex"; m.onclick = function (e) { if (e.target === m) bsFlytLuk(); };
+  setTimeout(function () { const f = document.getElementById("gkNavn"); if (f) f.focus(); }, 60);
+}
+async function gamleKunderSend(knap) {
+  const v = function (id) { return String((document.getElementById(id) || {}).value || "").trim(); };
+  const navn = v("gkNavn"), butik = v("gkButik"), mail = v("gkMail").toLowerCase();
+  const msg = document.getElementById("gkMsg"); const sig = function (t) { if (msg) msg.textContent = t; };
+  if (!butik) { sig("Skriv butikkens navn."); document.getElementById("gkButik").focus(); return; }
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(mail)) { sig("Skriv en rigtig mail, fx navn@butikken.dk."); document.getElementById("gkMail").focus(); return; }
+  if (!sb) { sig("Ingen forbindelse lige nu. Prøv igen om lidt."); return; }
+  if (knap) knap.disabled = true; sig("Gemmer …");
+  let ok = false;
+  try { const r = await sb.from("contacts").insert({ kunde: butik, status: "Lead", source: "Gamle kunder", kommentar: [navn, mail, "Kode sendt " + new Date().toLocaleDateString("da-DK")].filter(Boolean).join(" · ") }).select("id"); ok = !r.error && !!(r.data && r.data.length); } catch (e) { ok = false; }
+  if (!ok) { if (knap) knap.disabled = false; sig("Kontakten blev ikke gemt. Prøv igen."); return; }
+  const emne = "Din kode til YOU GOT THIS", krop = gamleKunderMailTekst(navn);
+  /* på telefonen åbner mail-appen direkte; på computeren Outlook som de andre mails */
+  if (window.matchMedia("(max-width:899px)").matches) location.href = "mailto:" + encodeURIComponent(mail) + "?subject=" + encodeURIComponent(emne) + "&body=" + encodeURIComponent(krop);
+  else aabnMail(mail, emne, krop);
+  try { await fetchCustomers(); } catch (e) {}
+  bsFlytLuk(); try { husKvit("»" + butik + "« står under Kunder. Mailen er klar til at sende."); } catch (e) {}
+}
 /* TILFOEJ-MENUEN = FLISER MED IKON (Idas klik 25/9 kl. ~09.00, bud 2 af fem QVZUa7JWr328LqNWj2ty7w: »den røde viser jo lidt et forvalg, og her kan det jo være alle«):
    hvert valg er sin egen hvide flise med husets ikon (samme som feltet i klippet) og ordet; ingen roed knap, intet forvalg; Annullér graa sidst */
 const VALG_IK = { tags: '<path d="M3 12V4h8l10 10-8 8L3 12z"/><circle cx="7.5" cy="8.5" r="1.3"/>', stemning: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>', mappe: '<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>', tjek: '<path d="M5 12.5l4.5 4.5L19 7"/>', liste: '<path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>', link: '<path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1"/>', tekst: '<path d="M4 7V5h16v2M9 19h6M12 5v14"/>', manus: '<path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/>', klip: '<rect x="3" y="6" width="13" height="12" rx="2"/><path d="M16 10l5-3v10l-5-3"/>', cta: '<path d="M5 12h14M13 6l6 6-6 6"/>', hvem: '<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>', scene: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18"/>' };
@@ -83845,7 +83891,7 @@ function bf3BaandKnapVis(side, iRummet) {
     const b2 = k.querySelector("button"); b2.title = side === "modnyt" ? "Nyt modul" : side === "prodnyt" ? "Nyt produkt" : side === "manusideer" ? "Tilføj idé" : side === "moduler" ? "Ny lektion" : side === "hjem" ? "Tilføj" : side === "kunder" ? "Ny kunde" : side === "indbakke" ? "Tilføj" : side === "salg" ? "Tilføj" : iRummet ? "Tilføj" : "Tilføj rum"; b2.setAttribute("aria-label", b2.title);
     /* INDE I ET RUM ER PLUSSET ROEDT og aabner rummets Tilfoej-ark (note · idé · rum · link · tjekliste · program) — Ida 21/9 kl. 16.50 */
     k.classList.toggle("roed", !!iRummet);
-    k.style.display = ""; b2.onclick = function () { if (side === "modnyt") { try { modulNyArk(); } catch (e) {} } else if (side === "prodnyt") { try { bf3NytProduktArk(); } catch (e) {} } else if (side === "manusideer") { try { manusIdeFang(); } catch (e) {} } else if (side === "moduler") { try { klipNyArk(); } catch (e) {} } else if (side === "hjem") { try { bf3ToemTrin1(); } catch (e) {} }   /* samme valg som swipe op (26/9) */ else if (side === "kunder") { try { nyKundeAaben(); } catch (e) {} } else if (side === "indbakke") { try { bf3ValgArk("Tilføj", [["To-do", "bf3TodoNyArk()"], ["Besked til en kunde", "bf3BeskedArk()"]]); } catch (e) {} } else if (side === "salg") { try { bf3ValgArk("Tilføj", [["Kontakt", "bf3KontaktNyArk()"], ["Rum", "bf3NytRumArk('salg')"]]); } catch (e) {} } else if (iRummet) { try { mrTilfoejArk(side.slice(4)); } catch (e) {} } else bf3NytRumArk(side); };
+    k.style.display = ""; b2.onclick = function () { if (side === "modnyt") { try { modulNyArk(); } catch (e) {} } else if (side === "prodnyt") { try { bf3NytProduktArk(); } catch (e) {} } else if (side === "manusideer") { try { manusIdeFang(); } catch (e) {} } else if (side === "moduler") { try { klipNyArk(); } catch (e) {} } else if (side === "hjem") { try { bf3ToemTrin1(); } catch (e) {} }   /* samme valg som swipe op (26/9) */ else if (side === "kunder") { try { nyKundeAaben(); } catch (e) {} } else if (side === "indbakke") { try { bf3ValgArk("Tilføj", [["To-do", "bf3TodoNyArk()"], ["Besked til en kunde", "bf3BeskedArk()"]]); } catch (e) {} } else if (side === "salg") { try { bf3ValgArk("Tilføj", [["Kontakt", "bf3KontaktNyArk()"], ["Gamle kunder", "gamleKunderArk()"], ["Rum", "bf3NytRumArk('salg')"]]); } catch (e) {} } else if (iRummet) { try { mrTilfoejArk(side.slice(4)); } catch (e) {} } else bf3NytRumArk(side); };
     if (String(side).indexOf("sl_") === 0) { const sk = side.slice(3); b2.title = sk === "kilder" ? "Tilføj kildehenvisning" : "Tilføj B-roll";   /* ordet »Tilføj« lader telefonens bundmenu-plus finde knappen (bsCoverKnapperStil) — plusset staar aldrig i coveret */ b2.setAttribute("aria-label", b2.title); b2.onclick = function () { try { bf3SlNyArk(sk); } catch (e) {} }; }   /* Kildehenvisninger + B-rolls (27/9) */
   } catch (e) {}
 }
