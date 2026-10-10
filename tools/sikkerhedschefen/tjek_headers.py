@@ -11,7 +11,9 @@ def hent_headers(url="https://b2b.energida.dk/"):
 def tjek_headers(hent=hent_headers):
     try: h = hent()
     except Exception as e: return Resultat(21, "Sikkerheds-headers", IKKE_TESTET, f"forsiden kunne ikke hentes: {e}")
-    mangler = [navn for k, navn in KRAV.items() if k not in h]
+    mangler = [navn for k, navn in KRAV.items() if k not in h and k != "content-security-policy"]
+    csp = h.get("content-security-policy", "")
+    if not ("script-src" in csp or "default-src" in csp): mangler.append("CSP for scripts (kun frame-ancestors er sat)" if csp else "CSP")
     ramme = "x-frame-options" in h or "frame-ancestors" in h.get("content-security-policy", "")
     if not ramme: mangler.append("frame-ancestors/X-Frame-Options")
     if mangler: return Resultat(21, "Sikkerheds-headers", FEJLET, "mangler: " + ", ".join(mangler))
