@@ -11982,9 +11982,11 @@ html body #appLoader:not([data-fejl="1"]) > div, html body #energidaLoader > spa
      svarer paa adressen — saa et genindlaes kunne give den gamle build igen. ?frisk=<tal> er
      en adresse, ingen har en kopi af, og workeren springer cachen over paa den. Hash'et
      foelger med, saa en Backstage-side ikke lander i kundeappen. */
+  /* DELELINKET OVERLEVER EN GENINDLAESNING (maalt 10/10: »?frisk=« smed ?brief=…&kunde=… vaek, saa en kunde med en gammel build landede paa forsiden i stedet for briefen) */
+  window.__energidaLinkRest = function () { try { const sp = new URLSearchParams(location.search); let ud = ""; ["brief", "kunde"].forEach(function (k) { const v = sp.get(k); if (v) ud += "&" + k + "=" + encodeURIComponent(v); }); return ud; } catch (e) { return ""; } };
   window.__energidaGenindlaes = function (maerke) {
     if (window.__genindlaesIGang) return; window.__genindlaesIGang = true;   /* EEN genindlaesning ad gangen (24/9: to lyttere skod hver sin, og den anden afbroed den foerste) */
-    try { location.replace(location.pathname + "?frisk=" + (maerke || Date.now()) + (location.hash || "")); }
+    try { location.replace(location.pathname + "?frisk=" + (maerke || Date.now()) + window.__energidaLinkRest() + (location.hash || "")); }
     catch (e) { try { location.reload(); } catch (e2) {} }
   };
   /* Rydder service-workerens cache og henter siden forfra. Det er praecis den vej ud,
@@ -12068,7 +12070,7 @@ html body #appLoader:not([data-fejl="1"]) > div, html body #energidaLoader > spa
         }
       } catch (e) {}
       try { localStorage.setItem("energida_boot_spor", JSON.stringify({ tid: new Date().toISOString(), sek: Math.round((Date.now() - VAGT_T0) / 1000), klar: document.readyState, net: window.__NET || 0, flade: harFlade(), anden: !!anden, v: (typeof APP_VERSION !== "undefined" ? APP_VERSION : "?"), side: location.hash || "" })); } catch (e) {}
-      try { if (!harFlade() && !sessionStorage.getItem("energida_boot_igen")) { sessionStorage.setItem("energida_boot_igen", "1"); location.replace(location.pathname + "?frisk=" + Date.now() + (location.hash || "")); return; } } catch (e) {}
+      try { if (!harFlade() && !sessionStorage.getItem("energida_boot_igen")) { sessionStorage.setItem("energida_boot_igen", "1"); location.replace(location.pathname + "?frisk=" + Date.now() + (window.__energidaLinkRest ? window.__energidaLinkRest() : "") + (location.hash || "")); return; } } catch (e) {}
       fejlflade();
     }, ms);
   }
@@ -41687,7 +41689,10 @@ function visSyncFejl(hvad) {
   const d = document.createElement("div");
   d.id = "syncFejl";
   d.style.cssText = "position:fixed;top:0;left:0;right:0;width:100%;box-sizing:border-box;z-index:500;background:var(--red);color:#fff;font-size:12px;font-family:Poppins,sans-serif;padding:10px 40px 10px 16px;text-align:center;";
-  d.innerHTML = 'Din seneste ændring er ikke gemt. Tjek internetforbindelsen, og prøv igen.'
+  const sporT = String(window.__SYNCFEJL || ""); const erLogin = /401|jwt|unauthor|PGRST301/i.test(sporT);
+  const erAdmin = (function () { try { return document.body.classList.contains("dash-mode") || /admin/.test(location.hostname); } catch (e) { return false; } })();
+  d.innerHTML = (erLogin ? 'Din seneste ændring er ikke gemt: dit login er udløbet. Log ind igen.' : 'Din seneste ændring er ikke gemt. Tjek internetforbindelsen, og prøv igen.')
+    + (erAdmin && sporT && !/^ukendt$/.test(sporT) ? '<div style="font-size:10.5px;opacity:.85;margin-top:3px;">' + String(sporT).replace(/[<>]/g, "").slice(0, 140) + '</div>' : '')   /* kun Ida ser sporet (10/10: »hvorfor siger admin, at seneste ikke er gemt?«) */
     + '<button onclick="this.parentElement.remove()" style="position:absolute;right:10px;top:6px;background:none;border:none;color:#fff;font-size:16px;cursor:pointer;">&times;</button>';
   document.body.appendChild(d);
 }
@@ -59464,7 +59469,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2703";
+const APP_VERSION = "2704";
 const APP_BYGGET = "9. oktober";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_BYGGET + " · " + APP_VERSION; } catch (e) {} });
 let NY_VERSION_KLAR = false;
@@ -62743,6 +62748,7 @@ async function loginUdloebet(spor) {
       return;
     }
   } catch (e) {}
+  try { localStorage.setItem("energida_logud_grund", "login udløbet — sessionen blev afvist (" + (spor || "") + "); sker ofte efter nyt kodeord eller login via link i en anden browser"); } catch (e) {}
   const d = document.createElement("div");
   d.id = "loginUdloebet";
   d.style.cssText = "position:fixed;inset:0;z-index:9500;background:rgba(22,32,42,.32);"
@@ -65698,19 +65704,23 @@ async function initAuth() {
   authShow("choose");
 }
 
+function dashLogudGrundVis() {
+  try { const g = localStorage.getItem("energida_logud_grund") || ""; let el = document.getElementById("loginGrund"); if (!el) { const h = document.querySelector("#dashLogin h2"); if (!h) return; el = document.createElement("div"); el.id = "loginGrund"; el.style.cssText = "font-size:11.5px;color:var(--gray3);margin:-10px 0 14px;line-height:1.5;"; h.insertAdjacentElement("afterend", el); } el.textContent = g ? "Logget ud: " + g + " · v" + (typeof APP_VERSION !== "undefined" ? APP_VERSION : "?") : ""; } catch (e) {}
+}
 async function renderDash() {
   try { document.title = "Energida Studio"; } catch(e) {}   // paraplyen (Ida 21/7)
   const logo = document.getElementById("dashLogo");
   if (logo && !logo.getAttribute("src")) logo.src = document.querySelector(".logo-img").src;
   if (sb) {
     const { data: { session } } = await sb.auth.getSession();
-    if (!session) { showLogin(); return; }
+    /* HVORFOR BLEV JEG LOGGET UD? (Ida 10/10: »tvunget til at logge ind hver gang … og 2 gange«): aarsagen gemmes og staar paa login-siden, saa den kan maales i stedet for gaettes */
+    if (!session) { try { localStorage.setItem("energida_logud_grund", "ingen session gemt på enheden"); } catch (e) {} showLogin(); dashLogudGrundVis(); return; }
     /* "Behold mig logget ind" fravalgt: session må ikke overleve, at browseren
        lukkes. sessionStorage nulstilles ved lukning — er den tom, er det en ny
        browser-session, og så logger vi ud. */
     let husk = "1", aktiv = "";
     try { husk = localStorage.getItem("energida_husk") || "1"; aktiv = sessionStorage.getItem("energida_aktiv") || ""; } catch(e) {}
-    if (husk === "0" && !aktiv) { await sb.auth.signOut({ scope: "local" }); showLogin(); return; }   /* KUN DENNE ENHED (Hinges Hus 29/9, MAALT: den delte bruger havde 0 sessioner efter moedet): signOut() uden scope er GLOBAL og smed den anden telefon ud midt i briefen — derfor »ikke gemt«. Alle log ud i appen er nu scope:"local". */
+    if (husk === "0" && !aktiv) { try { localStorage.setItem("energida_logud_grund", "»Behold mig logget ind« var slået fra ved sidste login"); } catch (e) {} await sb.auth.signOut({ scope: "local" }); showLogin(); dashLogudGrundVis(); return; }   /* KUN DENNE ENHED (Hinges Hus 29/9, MAALT: den delte bruger havde 0 sessioner efter moedet): signOut() uden scope er GLOBAL og smed den anden telefon ud midt i briefen — derfor »ikke gemt«. Alle log ud i appen er nu scope:"local". */
     try { sessionStorage.setItem("energida_aktiv", "1"); } catch(e) {}
   }
   showMain();
@@ -74508,7 +74518,7 @@ async function doLogin() {
      tilbage i hukommelsen og blive vist, til de friske kald kommer retur. */
   nulstilBrugerCache();
   const husk = document.getElementById("loginHusk");
-  try { localStorage.setItem("energida_husk", (husk && !husk.checked) ? "0" : "1"); } catch(e) {}
+  try { localStorage.setItem("energida_husk", (husk && !husk.checked) ? "0" : "1"); localStorage.removeItem("energida_logud_grund"); } catch(e) {}
   try { sessionStorage.setItem("energida_aktiv", "1"); } catch(e) {}
   document.getElementById("loginPass").value = "";
   showMain();
