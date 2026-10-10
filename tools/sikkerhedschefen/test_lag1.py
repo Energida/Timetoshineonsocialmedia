@@ -49,6 +49,19 @@ class TestDobbelte(unittest.TestCase):
     def test_dobbelte(self):
         self.assertEqual(dobbelte_funktioner("function a() {}\nasync function b() {}\nfunction a(x) {}\n"), ["a"])
 
+class TestAnon(unittest.TestCase):
+    def test_kun_kursus_aabent(self):
+        from sikkerhedschefen.tjek_anon import tjek_anon
+        d = tempfile.mkdtemp(); open(os.path.join(d, "index.html"), "w").write('SUPABASE_URL = "https://x.supabase.co"; SUPABASE_ANON_KEY = "k"; sb.from("lektioner"); sb.from("content_ideer");')
+        def hent(url, key):
+            if url.endswith("/rest/v1/"): return 401, ""
+            return 200, ('[{"id":1}]' if "lektioner" in url else "[]")
+        self.assertEqual(tjek_anon(d, hent).tilstand, BESTAAET)
+        def hent2(url, key):
+            if url.endswith("/rest/v1/"): return 401, ""
+            return 200, '[{"id":1}]'
+        r = tjek_anon(d, hent2); self.assertEqual(r.tilstand, FEJLET); self.assertIn("content_ideer", r.detalje)
+
 class TestRapport(unittest.TestCase):
     def test_overskrift(self):
         r = [Resultat(14, "Versionskæden", BESTAAET, "2713"), Resultat(2, "Kvittering", FEJLET, "125")]
