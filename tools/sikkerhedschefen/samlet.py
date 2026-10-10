@@ -17,7 +17,7 @@ NAVNE = {1: "Intet skrevet går tabt", 2: "Hver gemmevej har kvittering", 3: "St
 def main():
     repo = lag1.REPO
     res = [lag1.tjek_git(repo), lag1.tjek_version(repo), lag1.tjek_syntaks(repo)] + lag1.tjek_skriv_delt(repo) + [lag1.tjek_motorer(repo), lag1.tjek_dobbelte(repo),
-           lag1.tjek_anon(repo), lag1.tjek_funktioner(repo), lag1.tjek_funktioner_findes(repo)]
+           lag1.tjek_anon(repo), lag1.tjek_headers(), lag1.tjek_funktioner(repo), lag1.tjek_funktioner_findes(repo)]
     if "--uden-design" not in sys.argv: res.append(lag1.tjek_design(repo))
     for b in (390, 1440): res += lag2.koer(b)
     from sikkerhedschefen.resultat import Resultat

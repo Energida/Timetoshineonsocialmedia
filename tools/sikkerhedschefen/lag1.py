@@ -8,6 +8,7 @@ from sikkerhedschefen.tjek_skriv import tjek_skriv, tjek_skriv_delt
 from sikkerhedschefen.tjek_motorer import tjek_motorer, tjek_dobbelte
 from sikkerhedschefen.tjek_design import tjek_design
 from sikkerhedschefen.tjek_anon import tjek_anon
+from sikkerhedschefen.tjek_headers import tjek_headers
 from sikkerhedschefen.tjek_funktioner import tjek_funktioner, tjek_funktioner_findes
 REPO = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".."))
 
@@ -19,7 +20,7 @@ def rapport_tekst(resultater, version, tid):
     return "\n".join(linjer)
 
 def main():
-    res = [tjek_git(REPO), tjek_version(REPO), tjek_syntaks(REPO)] + tjek_skriv_delt(REPO) + [tjek_motorer(REPO), tjek_dobbelte(REPO), tjek_anon(REPO), tjek_funktioner(REPO), tjek_funktioner_findes(REPO)]
+    res = [tjek_git(REPO), tjek_version(REPO), tjek_syntaks(REPO)] + tjek_skriv_delt(REPO) + [tjek_motorer(REPO), tjek_dobbelte(REPO), tjek_anon(REPO), tjek_headers(), tjek_funktioner(REPO), tjek_funktioner_findes(REPO)]
     if "--uden-design" not in sys.argv:
         res.append(tjek_design(REPO))
     version = app_version(open(os.path.join(REPO, "index.html"), encoding="utf-8").read()) or "?"

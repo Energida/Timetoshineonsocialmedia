@@ -94,6 +94,15 @@
       localStorage.removeItem("SELE_AFVIS");
     }
     if (FASE === "laes2") {
+      /* LØFTE 11 · TILBAGE på hver side i kundeappen (undtagen Hjem) — en usynlig vej ud er en blindgyde */
+      try {
+        var uden = [], tlf11 = window.matchMedia("(max-width:899px)").matches, sider11 = [1, 2, 6, 8, 9, 10, 12, 20, 21, 22, 23, 24, 25, 26, 31].filter(function (n) { return !(tlf11 && (n === 2 || n === 8)); });   /* Idébanken og Kalenderen er bundmenuens rodsider på telefonen */
+        for (var si = 0; si < sider11.length; si++) { var n11 = sider11[si]; try { showTab(n11); } catch (e) { continue; } await V(500);
+          var sc = document.getElementById("screen" + n11); if (!sc || !sc.getBoundingClientRect().height) continue;
+          var tb = [].slice.call(document.querySelectorAll("button, a, [role=button]")).filter(function (b) { return /^\s*Tilbage\s*$/.test(b.textContent || "") && b.getBoundingClientRect().width > 0; });
+          if (!tb.length) uden.push(n11); }
+        tjek(11, "Tilbage findes på hver side", uden.length === 0, uden.length ? "uden Tilbage: skærm " + uden.join(", ") : sider11.length + " sider tjekket");
+      } catch (e) { tjek(11, "Tilbage-tjekket kunne køre", false, e.message); }
       /* LØFTE 20 · LOG UD rydder kundens indhold på enheden, men ikke køen af ikke-sendte gem */
       try {
         var k20 = String(currentKode || "");
