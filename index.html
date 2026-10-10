@@ -41743,6 +41743,30 @@ function hilsenFornavn() {
    ALTID — ikke foerst naar en fejl er sket (det var praecis fejlen 27/8: Ida fik
    "undefined", fordi baade sporet OG hjaelperen laa i hukommelsen). */
 window.syncfejl = function () { try { return JSON.parse(localStorage.getItem("energida_syncfejl") || "[]"); } catch (e) { return []; } };
+/* ===== FEJL NÅR FREM TIL IDA (sikkerhedschefens løfte 26, Ida 10/10: »kør alt du kan«) =====
+   Får en KUNDE den røde bjælke, eller går appen ned, gemmes én kort linje i basen: tid · version · kode · side · enhed · hvad der fejlede.
+   ALDRIG kundens tekst eller hemmeligheder (kun fejlbeskeden, højst 200 tegn). Samme fejl højst én gang pr. 10 min. pr. enhed.
+   Ida ser linjerne i Backstage · Teknik · »Fejl fra kunderne«. Går uden om døren, så en fejl aldrig kan give en ny bjælke. */
+function fejlTilIda(slags, hvad) {
+  try {
+    if (!sb || !sb.__fromUdenVagt || typeof currentKode === "undefined" || !currentKode) return;
+    if (document.body.classList.contains("dash-mode")) return;   /* Backstage: Ida ser selv sin skærm */
+    const tekst = String(hvad || "").replace(/\s+/g, " ").slice(0, 200), noegle = "fejl_sendt_" + slags + "_" + tekst.slice(0, 60);
+    const sidst = Number(sessionStorage.getItem(noegle) || 0); if (Date.now() - sidst < 600000) return;
+    sessionStorage.setItem(noegle, String(Date.now()));
+    const akt = document.querySelector(".screen.active");
+    sb.__fromUdenVagt("skema_svar").insert({ kode: currentKode, navn: "app_fejl", skema: "app_fejl_" + Date.now(), svar: { tid: new Date().toISOString(), v: (typeof APP_VERSION !== "undefined" ? APP_VERSION : ""), slags: slags, hvad: tekst, side: akt ? akt.id : "", enhed: window.matchMedia("(max-width:899px)").matches ? "telefon" : "computer" } }).then(function () {}, function () {});
+  } catch (e) {}
+}
+try { window.addEventListener("error", function (e) { const m = String((e && e.message) || ""); if (!m || /Script error|ResizeObserver|extension:\/\//i.test(m) || /extension/i.test(String((e && e.filename) || ""))) return; fejlTilIda("nedbrud", m + (e.lineno ? " (linje " + e.lineno + ")" : "")); }); } catch (e) {}
+async function fejlFraKunderneVis() {
+  let m = document.getElementById("bsFlytMenu"); if (!m) { m = document.createElement("div"); m.id = "bsFlytMenu"; document.body.appendChild(m); }
+  m.innerHTML = '<div class="bs-flyt-ark brief-soejle-ark selvtest-ark"><div class="ark-t">Fejl fra kunderne</div><div class="selvtest-hoved">Henter …</div></div>'; m.style.display = "flex"; m.onclick = function (e) { if (e.target === m) bsFlytLuk(); };
+  let rk = []; try { const r = await sb.from("skema_svar").select("kode,svar,created_at").eq("navn", "app_fejl").order("created_at", { ascending: false }).limit(50); rk = r.data || []; } catch (e) {}
+  m.innerHTML = '<div class="bs-flyt-ark brief-soejle-ark selvtest-ark"><div class="ark-t">Fejl fra kunderne</div><div class="selvtest-hoved">' + (rk.length ? "De seneste " + rk.length : "Ingen fejl fra kunderne") + '</div>'
+    + rk.map(function (x) { const v = x.svar || {}; const t = new Date(v.tid || x.created_at); return '<div class="selvtest-rk selvtest-' + (v.slags === "nedbrud" ? "fejl" : "ikke") + '"><span class="selvtest-t">' + esc(String(t.getDate()).padStart(2, "0") + "/" + (t.getMonth() + 1) + " " + String(t.getHours()).padStart(2, "0") + "." + String(t.getMinutes()).padStart(2, "0")) + '</span><span class="selvtest-n">' + esc((x.kode || "") + " · " + (v.slags === "nedbrud" ? "Appen fejlede" : "Rød bjælke")) + '<i>' + esc((v.hvad || "") + " · v" + (v.v || "") + " · " + (v.enhed || "") + (v.side ? " · " + v.side : "")) + '</i></span></div>'; }).join("")
+    + '</div>';
+}
 function visSyncFejl(hvad) {
   /* SPORET, IKKE TEKSTEN (26/8). Kunden skal se det samme som foer - men bjaelken
      skrev ikke NOGET sted, hvad der fejlede, og saa kan aarsagen hverken maales
@@ -41750,6 +41774,7 @@ function visSyncFejl(hvad) {
   try {
     const spor = hvad || (new Error().stack || "").split("\n").slice(2, 5).join(" | ").trim();
     window.__SYNCFEJL = spor || "ukendt";
+    try { fejlTilIda("bjaelke", window.__SYNCFEJL); } catch (e) {}
     console.error("ENERGIDA SYNC-FEJL:", window.__SYNCFEJL);
     /* SPORET SKAL OVERLEVE EN GENINDLAESNING (Idas fund 27/8).
        Foerste udgave lagde det KUN i window.__SYNCFEJL. Ida fik bjaelken, aabnede
@@ -59584,7 +59609,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2733";
+const APP_VERSION = "2734";
 const APP_BYGGET = "9. oktober";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_BYGGET + " · " + APP_VERSION; } catch (e) {} });
 let NY_VERSION_KLAR = false;
@@ -71224,7 +71249,7 @@ function teknikDoereTegn(sqlN) {
   kr.innerHTML = '<div class="bs-grid bs-bento">'
     + d("SQL-kort", sqlN ? (sqlN === 1 ? "1 kort venter" : sqlN + " kort venter") : "", "mrKpiHop('SQL')")
     + d("Byggek&oslash;en", koeN ? (koeN === 1 ? "1 ting" : koeN + " ting") : "", "mrGaaTil('byggekoe')")
-    + d("Selvtest", "", "selvtestKoer()")   /* SIKKERHEDSCHEFENS LAG 3 (Ida 10/10): ét tryk tester gem, læs, status, møder og slet i den rigtige base på Testbutikken (TEST) */
+    + d("Selvtest", "", "selvtestKoer()") + d("Fejl fra kunderne", "", "fejlFraKunderneVis()")   /* SIKKERHEDSCHEFENS LAG 3 (Ida 10/10): ét tryk tester gem, læs, status, møder og slet i den rigtige base på Testbutikken (TEST) */
     /* TEKNIK = TO DOERE (Idas klik 16/9 kl. 06.45: »To doere: SQL-kort og Byggekoeen«). »Er den her stadig aktuel?«, »Eksempler pr. forretningstype« og
        »Det gamle Maskinrum« er ARKIVERET — koden og dataene staar, doerene tegnes ikke (KUN funktioner Ida bruger, 8/9). */
     + '</div>';

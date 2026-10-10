@@ -194,6 +194,14 @@
         localStorage.setItem("SELE_AFVIS", "fejl"); localStorage.setItem(k9b, '{"sc":2}'); await V(2600); localStorage.removeItem("SELE_AFVIS");
         tjek(1, "Afvist synk: ingen falsk bjælke, intet tabt på enheden", !document.getElementById("syncFejl") && localStorage.getItem(k9b) === '{"sc":2}', document.getElementById("syncFejl") ? "BJÆLKE" : "stille · " + localStorage.getItem(k9b));
       } catch (e) { localStorage.removeItem("SELE_AFVIS"); tjek(1, "Synk-tjekket kunne køre", false, e.message); }
+      /* LØFTE 26 · FEJL NÅR FREM TIL IDA: en rød bjælke hos kunden bliver én linje i basen (kun fejlbeskeden), og samme fejl kun én gang */
+      try {
+        localStorage.removeItem("SELE_AFVIS"); Object.keys(sessionStorage).forEach(function (k) { if (k.indexOf("fejl_sendt_") === 0) sessionStorage.removeItem(k); });
+        visSyncFejl("sikkerhedschefen.test — 0 rækker skrevet"); visSyncFejl("sikkerhedschefen.test — 0 rækker skrevet"); await V(600);
+        var f26 = ((JSON.parse(localStorage.getItem("SELE_DB") || "{}").skema_svar) || []).filter(function (x) { return x.navn === "app_fejl" && x.svar && /sikkerhedschefen\.test/.test(x.svar.hvad || ""); });
+        tjek(26, "En rød bjælke hos kunden når frem til Ida (én linje, ingen dublet)", f26.length === 1 && !!f26[0].svar.v && !!f26[0].svar.tid, f26.length + " linje(r)" + (f26[0] ? " · v" + f26[0].svar.v : ""));
+        var sf26 = document.getElementById("syncFejl"); if (sf26) sf26.remove();
+      } catch (e) { tjek(26, "Fejl-tjekket kunne køre", false, e.message); }
       localStorage.setItem("energida_skal_ny_kode", "1");   /* som når linket »Glemt adgangskode« i mailen er åbnet — næste fase starter appen forfra */
     }
     if (FASE === "link") {
