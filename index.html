@@ -12051,7 +12051,7 @@ html body #appLoader:not([data-fejl="1"]) > div, html body #energidaLoader > spa
      en adresse, ingen har en kopi af, og workeren springer cachen over paa den. Hash'et
      foelger med, saa en Backstage-side ikke lander i kundeappen. */
   /* DELELINKET OVERLEVER EN GENINDLAESNING (maalt 10/10: »?frisk=« smed ?brief=…&kunde=… vaek, saa en kunde med en gammel build landede paa forsiden i stedet for briefen) */
-  window.__energidaLinkRest = function () { try { const sp = new URLSearchParams(location.search); let ud = ""; ["brief", "kunde"].forEach(function (k) { const v = sp.get(k); if (v) ud += "&" + k + "=" + encodeURIComponent(v); }); return ud; } catch (e) { return ""; } };
+  window.__energidaLinkRest = function () { try { const sp = new URLSearchParams(location.search); let ud = ""; ["brief", "kunde", "selvtest", "selekode"].forEach(function (k) { const v = sp.get(k); if (v) ud += "&" + k + "=" + encodeURIComponent(v); });   /* selvtest=ab overlever også genindlæsningen (10/10); selekode bruges kun i testversionen */ return ud; } catch (e) { return ""; } };
   window.__energidaGenindlaes = function (maerke) {
     if (window.__genindlaesIGang) return; window.__genindlaesIGang = true;   /* EEN genindlaesning ad gangen (24/9: to lyttere skod hver sin, og den anden afbroed den foerste) */
     try { location.replace(location.pathname + "?frisk=" + (maerke || Date.now()) + window.__energidaLinkRest() + (location.hash || "")); }
@@ -59550,7 +59550,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2728";
+const APP_VERSION = "2729";
 const APP_BYGGET = "9. oktober";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_BYGGET + " · " + APP_VERSION; } catch (e) {} });
 let NY_VERSION_KLAR = false;
@@ -71085,7 +71085,7 @@ async function selvtestKoer() {
         try { await sb.__fromUdenVagt("workout_data").delete().eq("bruger", uid9).eq("skema", "enhedssynk_selvtest"); } catch (e) {}
       }
     } catch (e) { tjek(1, "Synk mellem telefon og computer", false, String(e && e.message || e)); }
-    tjek(17, "Kunde A ser ikke kunde B (kræver to testkunder)", null, "TESTKUNDE-A og TESTKUNDE-B findes ikke endnu");
+    tjek(17, "Kunde A ser ikke kunde B", null, "køres som testkunden: b2b.energida.dk/?selvtest=ab (A · B · A)");
   } catch (e) { tjek(1, "Selvtesten gik i stå", false, String(e && e.message || e)); }
   finally {
     try { if (ideId) await sb.from("content_ideer").delete().eq("id", ideId).eq("kode", SELVTEST_KODE); } catch (e) {}
@@ -71093,6 +71093,66 @@ async function selvtestKoer() {
   }
   vis();
 }
+/* ===== KUNDE A SER ALDRIG KUNDE B (sikkerhedschefens løfte 17, Ida 10/10: »skal vi prøve testkunderne nu?») =====
+   Køres i kundeappen, logget ind SOM en testkunde: b2b.energida.dk/?selvtest=ab. Virker KUN for TESTKUNDEA og TESTKUNDEB — alle andre koder
+   får intet. Hver kørsel: (1) sikrer sin egen markør-række (bliver liggende, så den anden kan prøve at angribe den), (2) tjekker at markøren er urørt,
+   (3) prøver at læse, oprette, rette og slette i den ANDEN testkundes data — alt skal afvises. Rækkefølge: A · B · A. Rører aldrig rigtige kunder. */
+const AB_KODER = { TESTKUNDEA: "TESTKUNDEB", TESTKUNDEB: "TESTKUNDEA" };
+const AB_TABELLER = ["content_ideer", "skema_svar", "kunde_maal", "kunde_opgaver", "kunde_aftaler", "kunde_strategi", "ig_maalinger", "inspiration", "kunde_kommentarer"];
+async function abTestKoer() {
+  const K = String(currentKode || "").toUpperCase(), O = AB_KODER[K];
+  const res = [], tid = new Date();
+  const tjek = function (navn, ok, d) { res.push({ navn: navn, t: ok === null ? "IKKE TESTET" : (ok ? "BESTÅET" : "FEJLET"), d: d || "" }); };
+  const vis = function (status) {
+    let m = document.getElementById("bsFlytMenu"); if (!m) { m = document.createElement("div"); m.id = "bsFlytMenu"; document.body.appendChild(m); }
+    const samlet = res.some(function (r) { return r.t === "FEJLET"; }) ? "FEJLET" : res.some(function (r) { return r.t === "IKKE TESTET"; }) ? "IKKE TESTET" : "BESTÅET";
+    m.innerHTML = '<div class="bs-flyt-ark brief-soejle-ark selvtest-ark"><div class="ark-t">Kunde A mod kunde B</div>'
+      + '<div class="selvtest-hoved">' + esc(status || (samlet + " · " + K + " · v" + APP_VERSION + " · kl. " + String(tid.getHours()).padStart(2, "0") + "." + String(tid.getMinutes()).padStart(2, "0"))) + '</div>'
+      + res.map(function (r) { return '<div class="selvtest-rk selvtest-' + (r.t === "BESTÅET" ? "ok" : r.t === "FEJLET" ? "fejl" : "ikke") + '"><span class="selvtest-t">' + esc(r.t) + '</span><span class="selvtest-n">' + esc(r.navn) + (r.d ? '<i>' + esc(r.d) + '</i>' : '') + '</span></div>'; }).join("")
+      + '<button type="button" class="ark-luk" onclick="bsFlytLuk()">Luk</button></div>';
+    m.style.display = "flex";
+  };
+  if (!O || !sb) return;   /* kun testkunderne */
+  vis("Kører … (ca. 15 sek.)");
+  const afvist = function (r) { if (!r) return null; if (r.error) return /42501|permission|row-level|denied|401|403|JWT/i.test(String(r.error.code || "") + " " + String(r.error.message || "")) ? true : null; return Array.isArray(r.data) ? r.data.length === 0 : !r.data; };
+  try {
+    /* 1 · egen markør (bliver liggende) */
+    let mk = await sb.__fromUdenVagt("content_ideer").select("id,titel,status,kode").eq("kode", K).eq("titel", "AB-MARKØR " + K).maybeSingle();
+    if (!mk.data) { const ny = await sb.__fromUdenVagt("content_ideer").insert({ kode: K, titel: "AB-MARKØR " + K, status: "Arkiveret", soejle: "Produkt", type: "Reel", brief: { beskrivelse: "Testkundens markør — må ikke ændres af den anden testkunde" } }).select(); mk = { data: ny.data && ny.data[0], error: ny.error }; tjek("Egen markør oprettet (første kørsel)", !!mk.data, ny.error ? ny.error.message : ""); }
+    else tjek("Egen markør er urørt af den anden testkunde", mk.data.status === "Arkiveret" && mk.data.titel === "AB-MARKØR " + K, mk.data.status + " · " + mk.data.titel);
+    /* 2 · positiv kontrol: man kan læse sit eget */
+    const egen = await sb.__fromUdenVagt("content_ideer").select("id").eq("kode", K);
+    tjek("Kan læse sine egne idéer (kontrol)", !!(egen.data && egen.data.length), egen.error ? egen.error.message : (egen.data ? egen.data.length + " rækker" : ""));
+    /* 3 · læse den andens data i hver tabel */
+    let set = 0;
+    for (const t of AB_TABELLER) {
+      const r = await sb.__fromUdenVagt(t).select("*").eq("kode", O).limit(5);
+      if (r.error && /42703|42P01|does not exist|column/i.test(String(r.error.code || "") + r.error.message)) { tjek("Læs " + O + " i " + t, null, "tabellen har ingen kode-kolonne: " + r.error.message); continue; }
+      const a = afvist(r); if (a === false) set++;
+      tjek("Kan ikke læse " + O + " i " + t, a, r.error ? r.error.message : (r.data && r.data.length ? r.data.length + " rækker SET" : ""));
+    }
+    /* 4 · finder vi den andens markør med id alene (uden kode-filter)? */
+    const ud = await sb.__fromUdenVagt("content_ideer").select("id,kode").eq("titel", "AB-MARKØR " + O);
+    tjek("Kan ikke finde " + O + "s markør uden kode-filter", afvist(ud), ud.data && ud.data.length ? "fundet" : "");
+    /* 5 · skrive som den anden */
+    const ins = await sb.__fromUdenVagt("content_ideer").insert({ kode: O, titel: "AB-ANGREB fra " + K, status: "Idé" }).select();
+    tjek("Kan ikke oprette en idé hos " + O, afvist(ins), ins.data && ins.data.length ? "OPRETTET — fjernes" : "");
+    if (ins.data && ins.data.length) { try { await sb.__fromUdenVagt("content_ideer").delete().eq("id", ins.data[0].id); } catch (e) {} }
+    /* 6 · rette og slette den andens data */
+    const up = await sb.__fromUdenVagt("content_ideer").update({ status: "Idé" }).eq("kode", O).eq("titel", "AB-MARKØR " + O).select();
+    tjek("Kan ikke rette " + O + "s markør", afvist(up), up.data && up.data.length ? "RETTET" : "");
+    const de = await sb.__fromUdenVagt("content_ideer").delete().eq("kode", O).eq("titel", "AB-MARKØR " + O).select();
+    tjek("Kan ikke slette " + O + "s markør", afvist(de), de.data && de.data.length ? "SLETTET" : "");
+    const de2 = await sb.__fromUdenVagt("kunde_aftaler").delete().eq("kode", O).select();
+    tjek("Kan ikke slette " + O + "s aftaler", afvist(de2), de2.data && de2.data.length ? de2.data.length + " SLETTET" : "");
+    /* 7 · den andens kode-oplysninger */
+    const vk = await sb.__fromUdenVagt("virksomhedskoder").select("kode,virksomhed").eq("kode", O);
+    tjek("Kan ikke se " + O + "s virksomhedsoplysninger", afvist(vk), vk.data && vk.data.length ? "synlig: " + vk.data[0].virksomhed : "");
+    if (!mk.data) tjek("Markør til den anden testkunde", null, "første kørsel — kør nu som " + O);
+  } catch (e) { tjek("Testen gik i stå", false, String(e && e.message || e)); }
+  vis();
+}
+(function () { try { if (new URLSearchParams(location.search).get("selvtest") === "ab") setTimeout(function () { if (AB_KODER[String(currentKode || "").toUpperCase()]) abTestKoer(); }, 5000); } catch (e) {} })();
 function teknikDoereTegn(sqlN) {
   const kr = document.getElementById("mrKoeRaekke"); if (!kr) return;
   if (sqlN == null) { try { sqlN = document.querySelectorAll('#mrMangler [id^="sqlk_"]').length; } catch (e) { sqlN = 0; } }
