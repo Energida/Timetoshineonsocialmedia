@@ -26,6 +26,14 @@
       tjek(3, "Status Idé → Planlagt gemt (kvittering)", ok2 !== false, "");
       try { showTab(2); } catch (e) {} await V(1200);
       LS("SC_ORDEN", IDEER.filter(ideErIBanken).map(function (x) { return String(x.id); }));
+      /* LØFTE 13 · INGEN »UDEN TITEL« (Ida 10/10) */
+      try {
+        var u0 = await ideAdd({ titel: "", soejle: "Produkt", type: "Reel", status: "Idé", brief: {} });
+        var u1 = await ideAdd({ titel: "  ", soejle: "Produkt", type: "Reel", status: "Idé", brief: { beskrivelse: "strik til efteråret i butikken med varme farver" } });
+        tjek(13, "En idé uden navn og beskrivelse gemmes ikke", u0 === null, u0 ? "gemt som " + JSON.stringify(u0.titel) : "");
+        tjek(13, "En idé uden navn får beskrivelsens første ord", !!(u1 && /^Strik til efteråret/.test(u1.titel || "")), u1 ? u1.titel : "ikke gemt");
+        if (u1 && u1.id) { try { await sb.from("content_ideer").delete().eq("id", u1.id); IDEER = IDEER.filter(function (x) { return String(x.id) !== String(u1.id); }); } catch (e) {} }   /* testidéen væk igen, så rækkefølge-tjekket (løfte 4) er rent */
+      } catch (e) { tjek(13, "Titel-tjekket kunne køre", false, e.message); }
       /* LØFTE 7 + 10 · OPGAVER OG JA/NEJ: en ny to-do (med kvittering), afkrydset, og »Ja, postet« på et planlagt opslag */
       try {
         var k7 = await kundeArkGem("SC to-do fra sikkerhedschefen", "todo");

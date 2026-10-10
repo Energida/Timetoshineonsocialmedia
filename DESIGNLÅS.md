@@ -4,6 +4,8 @@
 - **DAGSORDENEN RETTES PÅ STEDET.** Et penneikon ved hvert punkt åbner punktet: navn, tekst, skraldespand (fjern) og Gem; »Tilføj punkt« lægger et nyt til. Standardpunkterne (performance · den kommende uge · dato for næste møde) står uændrede, til man retter dem. Gemmes i `plan_ritual.moede.dagsorden` (merges, andre nøgler urørte); et rettet punkt bliver statisk tekst, et urørt punkt bliver dynamisk (uge, tema, mål). Ingen Annuller i rettelsen.
 - **ALLE DATOSYMBOLER ER KVADRATER, 56 × 56 (HÅRD, Ida 9/10: »kvadratiske alle steder«):** Kommende opslag (`.kop-dato`), aftalernes dato (`.cf-dato`), Backstages `.bs3-tidb.d` og `.bs-datob`. Ingen dato-boks er højere end bred.
 
+## v2735 (10/10) — INGEN »UDEN TITEL« (Ida): en idé uden navn gemmes ikke (»Giv idéen et navn.«); har den en beskrivelse, bliver dens første ord navnet. En tømt titel i briefen gemmes ikke — den gamle bliver (»Giv opslaget et navn.«). Eksisterende idéer røres ikke.
+
 ## v2734 (10/10) — FEJL NÅR FREM TIL IDA (løfte 26): en kundes røde bjælke eller nedbrud bliver én linje i basen (skema_svar · app_fejl: tid · version · kode · side · enhed · fejlbeskeden ≤ 200 tegn — aldrig kundens tekst), højst én gang pr. 10 min. pr. fejl. Backstage · Teknik · dør »Fejl fra kunderne« viser de seneste 50 i Selvtestens ark.
 
 ## v2733 (10/10) — A-mod-B-testen har markører i alle ni kundetabeller (også mål, strategi, Instagram-tal og kommentarer). Idas kørsel 15.25: 5 af 9 bevist adskilt.
