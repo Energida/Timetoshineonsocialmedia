@@ -34,7 +34,8 @@
       var data = st.single ? (ud[0] || null) : ud;
       return { data: data, error: null, count: ud.length, status: 200 };
     }
-    var p = new Proxy(function () {}, { get: function (_, navn) {
+    var p = new Proxy(function () {}, { get: function (mål, navn) {
+      if (Object.prototype.hasOwnProperty.call(mål, navn)) return mål[navn];   /* appens dør (ÉN DØR UD TIL DATABASEN) sætter sin egen .then — den skal bruges, ellers testes døren aldrig (10/10) */
       if (navn === "then") return function (res, rej) { if (st.op !== "select" && afvis() === "net") return Promise.reject(new TypeError("Failed to fetch")).then(res, rej); return svar(koer()).then(res, rej); };   /* "net" = forbindelsen er væk midt i et gem */
       if (navn === "catch" || navn === "finally") return function () { return svar(koer()); };
       return function () { var a = arguments;

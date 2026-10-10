@@ -134,6 +134,21 @@
         var tilb5 = ((JSON.parse(localStorage.getItem("SELE_DB") || "{}").kunde_aftaler) || []).filter(function (a) { return a.id === "sc-moede-9"; }).length;
         tjek(5, "»Slet mødet« i redigeringen spørger og sletter", !!ja5 && tilb5 === 0, "åbent møde " + (ma5 ? ma5.id : "intet") + " · spørgsmål " + (ja5 ? "vist" : "kom ikke") + " · i basen " + tilb5);
       } catch (e) { tjek(5, "Slet-fra-redigeringen-tjekket kunne køre", false, e.message); }
+      /* LØFTE 16 · BACKSTAGES RETTELSER: en afvist rettelse (0 rækker) i en tabel, der kan læses, giver rød bjælke — en tabel, der intet kan bevise, er stille */
+      try {
+        var fjern16 = function () { var s16 = document.getElementById("syncFejl"); if (s16) s16.remove(); };
+        var db16 = JSON.parse(localStorage.getItem("SELE_DB") || "{}"); db16.contacts = [{ id: "sc-kontakt-1", navn: "Opdigtet kontakt", status: "Lead" }]; db16.energida_ideer = []; localStorage.setItem("SELE_DB", JSON.stringify(db16));
+        fjern16(); localStorage.setItem("SELE_AFVIS", "0");
+        await sb.from("contacts").update({ status: "Kunde" }).eq("id", "sc-kontakt-1"); await V(800);
+        var bjaelke16 = !!document.getElementById("syncFejl"); fjern16();
+        await sb.from("energida_ideer").update({ projekt: "x" }).eq("id", "findes-ikke"); await sb.from("virksomhedskoder").update({ aktiv: true }).eq("kode", "FINDESIKKE"); await V(800);
+        var stille16 = !document.getElementById("syncFejl"); fjern16();
+        localStorage.removeItem("SELE_AFVIS");
+        await sb.from("contacts").update({ status: "Kunde" }).eq("id", "sc-kontakt-1"); await V(800);
+        var ok16 = !document.getElementById("syncFejl"); fjern16();
+        tjek(16, "Afvist rettelse i Backstage giver rød bjælke", bjaelke16, bjaelke16 ? "" : "ingen bjælke ved 0 rækker i kontakter");
+        tjek(16, "Ingen falsk bjælke, hvor intet kan bevises eller alt lykkes", stille16 && ok16, "tom tabel/kode: " + (stille16 ? "stille" : "BJÆLKE") + " · lykket rettelse: " + (ok16 ? "stille" : "BJÆLKE"));
+      } catch (e) { localStorage.removeItem("SELE_AFVIS"); tjek(16, "Backstage-rettelse-tjekket kunne køre", false, e.message); }
       /* LØFTE 1 · KOMMENTAR I DIALOG-FLISEN på briefens forside (10/10: feltet kaldte en funktion med samme navn som godkendelsens, der ikke fandt feltet) */
       try {
         var id1 = LS("SC_ID"); openBriefSide(id1); await V(1500);

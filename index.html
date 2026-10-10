@@ -52832,7 +52832,7 @@ async function bsGenerer(kode, navn) {
     if (ny.error || !(ny.data || []).length) throw new Error("Strategien kunne ikke gemmes: " + (ny.error ? ny.error.message : "nul rækker retur"));
     const nyId = ny.data[0].id;
 
-    await sb.from("bs_generation").update({ status: "afloest", aktiv: false }).eq("virksomhed_id", vid).eq("aktiv", true);
+    await sb.from("bs_generation").update({ status: "afloest", aktiv: false }).eq("virksomhed_id", vid).eq("aktiv", true);   /* 0-RAEKKER-OK: første generation har intet aktivt at afløse */
     const pub = await sb.from("bs_generation").update({ aktiv: true }).eq("id", nyId).select("id");
     if (pub.error || !(pub.data || []).length) throw new Error("Strategien blev gemt, men kunne ikke gøres aktiv.");
 
@@ -59543,7 +59543,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2724";
+const APP_VERSION = "2725";
 const APP_BYGGET = "9. oktober";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_BYGGET + " · " + APP_VERSION; } catch (e) {} });
 let NY_VERSION_KLAR = false;
@@ -62729,6 +62729,7 @@ if (USE_SUPABASE) {
   var LAESER_TILBAGE = ["content_ideer", "skema_svar", "kunde_maal", "kunde_opgaver",
                         "kunde_aftaler", "kunde_strategi", "ig_maalinger"];
   var SKRIV = ["insert", "update", "upsert", "delete"];
+  var BS_MAALES = ["produkter", "lektioner", "video_opgaver", "manus_forslag", "kunde_rapporter", "energida_ideer", "contacts"];
   var orgFrom = sb.from.bind(sb);
   /* Doeren UDEN vagt — KUN til baggrundspulsen. Pulsen er telemetri, ikke kundens
      aendring: MAALT 28/8 fyrede den hvert 3. minut paa moede-wifi (Failed to fetch)
@@ -62785,6 +62786,13 @@ if (USE_SUPABASE) {
                   window.__VAGT_0RK.push(setTimeout(function () { try { visSyncFejl(tabel + ".update — 0 rækker skrevet, og ingen oprettelse fulgte"); } catch (e3) {} }, 4000));
                 } catch (e2) {}
               } else if (galt) { try { visSyncFejl(tabel + "." + op + (r && r.error ? ": " + (r.error.message || r.error.code || "fejl") : " — 0 rækker skrevet")); } catch (e2) {} }
+              /* BACKSTAGES RETTELSER MÅLER SIG SELV (sikkerhedschefen 10/10: 18 rettelser i Backstage blev aldrig tjekket for »0 rækker«).
+                 En afvist rettelse svarer 0 rækker UDEN fejl. Rammer en rettelse 0 rækker i en tabel, man ELLERS kan læse rækker i,
+                 er den ikke gemt → rød bjælke. Kan tabellen ikke læses, kan intet bevises → stille (aldrig en bjælke, der kan lyve).
+                 virksomhedskoder og bs_generation er bevidst ude: dér er 0 rækker ofte rigtigt (koder kun i koden · intet aktivt at afløse). */
+              if (!galt && op === "update" && BS_MAALES.indexOf(tabel) > -1 && r && Array.isArray(r.data) && r.data.length === 0) {
+                try { orgFrom(tabel).select("*", { count: "exact", head: true }).then(function (c) { if (c && !c.error && c.count > 0) { try { visSyncFejl(tabel + ".update — 0 rækker skrevet"); } catch (e3) {} } }); } catch (e2) {}
+              }
               if (!galt && op === "insert" && tabel === "skema_svar" && window.__VAGT_0RK && window.__VAGT_0RK.length) {
                 try { window.__VAGT_0RK.forEach(function (t) { clearTimeout(t); }); window.__VAGT_0RK = []; } catch (e2) {}
               }
@@ -75581,7 +75589,7 @@ async function nkFuldfoerLogin(kode, def) {
     try { await kkLoginNoter(kode, bruger, navn); } catch(e) {}
     if (DYN_KODER[kode]) { DYN_KODER[kode].login_klar = true; await vaneGemRow("kunde_koder", DYN_KODER); }
     if (VIRKSOMHEDSKODER[kode]) VIRKSOMHEDSKODER[kode].login_klar = true;
-    try { if (sb) await sb.from("virksomhedskoder").update({ login_klar: true }).eq("kode", kode); } catch(e) {}
+    try { if (sb) await sb.from("virksomhedskoder").update({ login_klar: true }).eq("kode", kode); } catch(e) {}   /* 0-RAEKKER-OK: faste koder findes kun i appen (VIRKSOMHEDSKODER/DYN_KODER, sat to linjer oppe) */
     try { renderForloebKunder(); } catch(e) {}
     vis(navn + " kan logge ind nu — loginet er på plads.", "var(--black)");
     setTimeout(nyKundeLuk, 1800);
@@ -77661,7 +77669,7 @@ async function kkOpretLogin() {
   try {   // forberedte koder findes kun i appen — sikr rækken i databasen, før login-motoren tjekker den
     const { data: kRow } = await sb.from("virksomhedskoder").select("kode,aktiv").eq("kode", KUNDEKORT.kode).maybeSingle();
     if (!kRow) await sb.from("virksomhedskoder").insert({ kode: KUNDEKORT.kode, virksomhed: def.virksomhed || KUNDEKORT.kode, forloeb: def.forloeb || "Succesfuld Detaildrift", aktiv: true });
-    else if (kRow.aktiv === false) await sb.from("virksomhedskoder").update({ aktiv: true }).eq("kode", KUNDEKORT.kode);
+    else if (kRow.aktiv === false) { const ra = await sb.from("virksomhedskoder").update({ aktiv: true }).eq("kode", KUNDEKORT.kode).select(); if (!ra.error && (!ra.data || !ra.data.length)) visSyncFejl("virksomhedskoder.update (aktiv) — 0 rækker skrevet"); }
   } catch(e) {}
   try {
     const resp = await loginMotorOpret({ kode: KUNDEKORT.kode, email: toEmail(bruger), password: pass, navn: ((KUNDEKORT.info || {}).kontakt || bruger.split("@")[0]), virksomhed: def.virksomhed || KUNDEKORT.kode, forloeb: def.forloeb || "Succesfuld Detaildrift", ental: !!def.ental });
@@ -77673,7 +77681,7 @@ async function kkOpretLogin() {
       try { await kkLoginNoter(KUNDEKORT.kode, bruger, bruger); } catch(e) {}
       if ((document.getElementById("kkLoginMail") || {}).checked) { try { kkVelkomstMail(bruger, pass); } catch(e) {} }
       vis("\u2713 Login oprettet \u2014 bruger-id: " + bruger + " \u00b7 adgangskode: " + pass + ". Giv det til kunden (adgangskoden kan skiftes i appen).", "var(--black)");
-      try { await sb.from("virksomhedskoder").update({ login_klar: true }).eq("kode", KUNDEKORT.kode); } catch(e2) {}
+      try { const rl = await sb.from("virksomhedskoder").update({ login_klar: true }).eq("kode", KUNDEKORT.kode).select(); if (!rl.error && (!rl.data || !rl.data.length)) visSyncFejl("virksomhedskoder.update (login_klar) — 0 rækker skrevet"); } catch(e2) {}   /* rækken er sikret ovenfor, så 0 rækker = ikke gemt */
       try { if (DYN_KODER[KUNDEKORT.kode]) { DYN_KODER[KUNDEKORT.kode].login_klar = true; vaneGemRow("kunde_koder", DYN_KODER); } } catch(e2) {}
     } else {
       const sv = await resp.json().catch(() => ({}));
@@ -77861,7 +77869,7 @@ async function kkSletKunde(kode) {
   if (!DYN_KODER[kode]) { husBesked("Denne kunde er fast opsat og kan ikke slettes herfra."); return; }
   const navn = (VIRKSOMHEDSKODER[kode] && VIRKSOMHEDSKODER[kode].virksomhed) || kode;
   if (!arkOk("kkSletKunde", arguments, { titel: "Slet " + esc(navn) + " (" + esc(kode) + ")?", tekst: "Koden lukkes, kortet forsvinder fra CRM, og et evt. login på koden kan ikke længere komme ind.", jaTekst: "Ja, slet" })) return;
-  try { await sb.from("virksomhedskoder").update({ aktiv: false }).eq("kode", kode); } catch(e) {}
+  try { await sb.from("virksomhedskoder").update({ aktiv: false }).eq("kode", kode); } catch(e) {}   /* 0-RAEKKER-OK: rækken slettes i næste linje; findes den ikke, er der intet at lukke */
   try { await sb.from("virksomhedskoder").delete().eq("kode", kode); } catch(e) {}
   try { await sb.from("skema_svar").delete().eq("kode", kode).eq("navn", "config"); } catch(e) {}
   delete DYN_KODER[kode];
