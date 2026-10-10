@@ -5094,6 +5094,13 @@ textarea:-webkit-autofill, select:-webkit-autofill {
 #inspGrid .insp-medie { width:100%; height:100%; object-fit:cover; display:block; }
 #inspGrid .insp-mini { position:absolute; inset:0; overflow:hidden; }
 #inspGrid .insp-mini iframe { position:absolute; left:0; top:0; width:318px; height:560px; border:0; transform-origin:0 0; pointer-events:none; }
+#inspGrid .insp-ig { background:#fff; box-shadow:inset 0 0 0 1px var(--border); }
+#inspGrid .insp-ig-bag { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; color:var(--gray2, #6F6B66); font-size:13px; text-align:center; padding:12px; }
+#inspGrid .insp-ig-profil { font-size:12px; color:var(--gray3); word-break:break-all; }
+#inspGrid .insp-ig iframe { opacity:0; transition:opacity .25s; }
+#inspGrid .insp-ig.klar iframe { opacity:1; }
+#inspGrid .insp-handl { display:flex; flex-wrap:wrap; gap:6px; padding:2px 4px 0; }
+#inspGrid .insp-hk { background:#fff; border:1px solid var(--border); color:var(--gray2, #6F6B66); border-radius:999px; font:400 12px/1 Poppins, sans-serif; height:28px; padding:0 10px; cursor:pointer; }
 #inspGrid .insp-mini-tom { background:#fff; box-shadow:inset 0 0 0 1px var(--border); border-radius:14px; display:flex; align-items:center; justify-content:center; }
 #inspGrid .insp-et { display:flex; align-items:center; justify-content:space-between; gap:6px; padding:0 4px; font-size:10px; letter-spacing:1.5px; text-transform:uppercase; color:var(--gray3); line-height:1.4; }
 #inspGrid .insp-et span { min-width:0; }
@@ -48125,6 +48132,7 @@ async function tilfoejInspLink() {
   const lf = document.getElementById("inspLink"), nf = document.getElementById("inspNote");
   const url = (lf.value || "").trim(); const note = (nf.value || "").trim();
   if (!url && !note) return;
+  if (url && inspFindesAllerede(url)) { inspMsg("Linket står allerede på Inspiration."); return; }   /* ingen dubletter (Ida 10/10) */
   if (url && !note) { inspMsg("Skriv et par ord om, hvad der fangede dig — det bliver kortets titel, så du kan kende dem fra hinanden."); nf.focus(); return; }
   const rec = { kode: currentKode || "X", type: "link", url: url || null, note: note || null };
   /* SKAERMBILLEDET (13/9): uploades som de andre billeder (lille, jpeg, bucket inspiration) og
@@ -48204,8 +48212,8 @@ async function delInsp(id) {
 }
 function inspTilIde(id) {
   const x = INSPIRATION.find(y => String(y.id) === String(id)); if (!x) return;
-  INSP_VEDHAEFT = x.url || "";
-  kundeArkAabn("ide", false, (x.note || "").trim()); return;   /* arket, forudfyldt med noten, linket/billedet foelger med (Ida 13/9) */
+  INSP_VEDHAEFT = inspUrl(x) || "";
+  kundeArkAabn("ide", false, inspNavn(x) === (x.note || "").trim() ? (x.note || "").trim() : (String(x.note || "").replace(INSP_LINK_RX, "").replace(/\s+/g, " ").trim())); return;   /* arket, forudfyldt med noten, linket/billedet foelger med (Ida 13/9) */
   NEWIDEA_MODE = "ide";
   IDEWIZ = { step: 1, tema: "", titel: (x.note || "").trim() };
   document.getElementById("ideBack").classList.add("on");
@@ -48222,8 +48230,9 @@ function inspEmbedUrl(url) {
 }
 /* Flisens navn: kundens egen note — ellers hvad det er (Instagram giver ikke opslagets tekst til en browser, 26/9) */
 function inspNavn(x) {
-  if (x && x.note) return x.note;
-  const u = String((x && x.url) || "");
+  const u = String(inspUrl(x) || "");
+  const egen = x && x.note ? String(x.note).replace(INSP_LINK_RX, "").replace(/\s+/g, " ").trim() : "";
+  if (egen) return egen;
   if (x && x.type === "billede") return "Billede";
   if (/instagram\.com\/(?:[^\/?#]+\/)?(reel|reels)\//i.test(u)) return "Reel på Instagram";
   if (/instagram\.com/i.test(u)) return "Opslag på Instagram";
@@ -48233,15 +48242,16 @@ function inspNavn(x) {
 /* TRYK PAA FLISEN = OPSLAGET STORT I DET LILLE ARK (Galleriet 26/9): opslaget, »Lav til idé« (roed) og, for links uden billede, Tilføj skærmbillede / Åbn linket */
 function inspAabnArk(id) {
   const x = INSPIRATION.find(y => String(y.id) === String(id)); if (!x) return;
-  const skaerm = (x.type !== "billede" && x.url) ? inspSkaermUrl(x) : "";
-  const emb = (x.type !== "billede" && x.url && !skaerm) ? inspEmbedUrl(x.url) : "";
+  const uu = inspUrl(x);
+  const skaerm = (x.type !== "billede" && uu) ? inspSkaermUrl(x) : "";
+  const emb = (x.type !== "billede" && uu && !skaerm) ? inspEmbedUrl(uu) : "";
   const iv = v => esc(v == null ? "" : String(v)).replace(/"/g, "&quot;");
   const idS = String(x.id).replace(/'/g, "\\'");
   let setDato = ""; try { setDato = x.created_at ? dkDatoKort(String(x.created_at).slice(0, 10)) : ""; } catch (e) {}
-  const eye = (x.type === "billede" ? "Billede" : (x.url ? inspVaert(x.url) : "Note")) + (setDato ? " · set " + setDato : "");
-  const udenBillede = x.type !== "billede" && x.url && !skaerm && !emb;
+  const eye = (x.type === "billede" ? "Billede" : (uu ? inspVaert(uu) : "Note")) + (setDato ? " · set " + setDato : "");
+  const udenBillede = x.type !== "billede" && uu && !skaerm && !emb;
   arkAabn({ eye: eye, titel: inspNavn(x), ingenTekst: true, udenMik: true, send: "Lav til idé", klasse: "insp-ark",
-    knap: udenBillede ? { tekst: "Åbn linket", klik: "window.open(" + JSON.stringify(String(x.url)) + ",'_blank','noopener')" } : null,
+    knap: udenBillede ? { tekst: "Åbn linket", klik: "window.open(" + JSON.stringify(String(uu)) + ",'_blank','noopener')" } : null,
     ekstraAf: function () { return udenBillede ? '<label class="ark-knap ark-knap-graa">Tilføj skærmbillede<input type="file" accept="image/*" style="display:none;" onchange="arkLuk();inspSkaermTilfoej(\'' + idS + '\', this)"></label>' : ''; },
     gem: function () { setTimeout(function () { inspTilIde(id); }, 0); return "Åbner idéen …"; } });
   const st = document.querySelector("#arkSlor .ark-streg");
@@ -48254,6 +48264,20 @@ function inspAabnArk(id) {
 function inspSletSpoerg(id) {
   try { arkSpoerg({ titel: "Slet inspirationen?", jaTekst: "Ja, slet", nejTekst: "Nej", ja: function () { delInsp(id); } }); } catch (e) { delInsp(id); }
 }
+/* INSTAGRAM-KORTET (Ida 10/10): et Instagram-link er ALTID et Instagram-kort — også når linket står i noten (Acorns' 27 »Note«-kort var links
+   skrevet uden https). Genkendes ved visning; den gemte række røres aldrig. */
+const INSP_LINK_RX = /(https?:\/\/\S+|(?:www\.)?(?:instagram|tiktok)\.com\/\S+)/i;
+function inspFuldUrl(u) { u = String(u || "").trim().replace(/[),.;]+$/, ""); return !u ? "" : (/^https?:\/\//i.test(u) ? u : "https://" + u); }
+function inspUrl(x) { if (!x || x.type === "billede") return (x && x.url) || ""; if (x.url) return x.url; const m = String(x.note || "").match(INSP_LINK_RX); return m ? inspFuldUrl(m[0]) : ""; }
+function inspErIg(x) { return !!x && x.type !== "billede" && /instagram\.com\//i.test(inspUrl(x)); }
+function inspIgType(u) { return /\/(reel|reels|tv)\//i.test(String(u || "")) ? "Reel" : "Opslag"; }
+function inspIgProfil(u) { const m = String(u || "").match(/instagram\.com\/([^\/?#]+)\/(?:p|reel|reels|tv)\//i); return (m && !/^(p|reel|reels|tv|share)$/i.test(m[1])) ? "@" + m[1] : ""; }
+function inspNorm(u) { u = inspFuldUrl(u); if (!u) return ""; try { const x = new URL(u); return (x.hostname.replace(/^www\./, "") + x.pathname.replace(/\/+$/, "").replace(/\/reels\//, "/reel/")).toLowerCase(); } catch (e) { return u.toLowerCase(); } }
+function inspFindesAllerede(u) { const n = inspNorm(u); return !!n && (INSPIRATION || []).some(function (x) { return inspNorm(inspUrl(x)) === n; }); }
+function inspLinksI(t) { const ud = [], set = {}; (String(t || "").match(new RegExp(INSP_LINK_RX.source, "gi")) || []).forEach(function (u) { const f = inspFuldUrl(u), n = inspNorm(f); if (n && !set[n]) { set[n] = 1; ud.push(f); } }); return ud; }
+/* BILLEDET HENTES IGEN: et Instagram-kort, hvis opslag ikke er kommet frem, prøves igen hver time — og med knappen »Hent billede igen« med det samme */
+function inspHentIgen(id) { document.querySelectorAll('#inspGrid .insp-kort[data-id="' + String(id).replace(/"/g, "") + '"] iframe').forEach(function (f) { const b = String(f.getAttribute("data-src") || f.src).split("#")[0]; f.parentNode.classList.remove("klar"); f.src = b + "#" + Date.now(); }); }
+try { setInterval(function () { try { document.querySelectorAll("#inspGrid .insp-mini:not(.klar) iframe").forEach(function (f) { const b = String(f.getAttribute("data-src") || f.src).split("#")[0]; f.src = b + "#" + Date.now(); }); } catch (e) {} }, 3600000); } catch (e) {}
 function inspVaert(url) {
   try { return new URL(url).hostname.replace(/^www\./, ""); } catch(e) { return "link"; }
 }
@@ -48264,7 +48288,8 @@ function renderInspiration() {
   if (antalIns) antalIns.textContent = INSPIRATION.length ? "· " + INSPIRATION.length + " gemte" : "";
   /* FINAL 5cc (Task 6): kort m. medie-felt (greige), kilde-label + "Lav til idé →" + note */
   grid.innerHTML = INSPIRATION.length ? INSPIRATION.map(x => {
-    const vaertNavn = x.url ? inspVaert(x.url) : "";
+    const uu = inspUrl(x), erIg = inspErIg(x);
+    const vaertNavn = uu ? inspVaert(uu) : "";
     const setDato = x.created_at ? dkDatoKort(String(x.created_at).slice(0,10)) : "";
     const kilde = (x.type === "billede" ? "Billede" : (vaertNavn || "Note")) + (setDato ? " · set " + setDato : "");
     const pIkon = /instagram/i.test(vaertNavn)
@@ -48274,24 +48299,33 @@ function renderInspiration() {
       : x.url
       ? '<path d="M10 14l4-4"/><path d="M8.5 15.5l-2 2a3.2 3.2 0 0 1-4.5-4.5l3-3a3.2 3.2 0 0 1 4.5 0"/><path d="M15.5 8.5l2-2a3.2 3.2 0 0 1 4.5 4.5l-3 3a3.2 3.2 0 0 1-4.5 0"/>'
       : '<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/>';
-    const skaerm = (x.type !== "billede" && x.url) ? inspSkaermUrl(x) : "";
+    const skaerm = (x.type !== "billede" && uu) ? inspSkaermUrl(x) : "";
     const idS = String(x.id).replace(/'/g, "\\'");
     /* GALLERIET (Idas klik 26/9 ~21.35 »Ok til bud 3 galleriet!«, efter Notions link-visninger; artifact UT8jySSWqb8D4Bv3xUsL4q v2).
        Foer (samme aften): opslaget i fuld stoerrelse paa flisen — »Det fylder for meget!«. Nu: smaa staaende opslag som en opslagstavle
        (to pr. raekke paa telefonen), kilden + skraldespanden og navnet under. Tryk = opslaget stort i det lille ark med »Lav til idé«.
        Navnet er kundens egen note (»Hvad fangede dig?«); Instagram giver ikke opslagets egen tekst til en browser. */
-    const emb = (x.type !== "billede" && x.url && !skaerm) ? inspEmbedUrl(x.url) : "";
+    const emb = (x.type !== "billede" && uu && !skaerm) ? inspEmbedUrl(uu) : "";
     const billede = x.type === "billede" ? x.url : skaerm;
+    const igType = erIg ? inspIgType(uu) : "", igProfil = erIg ? inspIgProfil(uu) : "";
+    /* Instagram-kortet: ikonet, typen og profilen staar altid bagved; opslaget lægger sig ovenpå, naar det er hentet (.klar) */
+    const igBag = '<div class="insp-ig-bag"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4.2"/><circle cx="17.2" cy="6.8" r="1.1" fill="currentColor" stroke="none"/></svg><span>' + esc(igType) + '</span>' + (igProfil ? '<span class="insp-ig-profil">' + esc(igProfil) + '</span>' : '') + '</div>';
     const medie = billede
       ? '<img src="' + iv(billede) + '" loading="lazy" alt="" class="insp-medie">'
+      : erIg
+      ? '<div class="insp-mini insp-ig">' + igBag + (emb ? '<iframe src="' + iv(emb) + '" data-src="' + iv(emb) + '" loading="lazy" title="Opslaget" scrolling="no" tabindex="-1" aria-hidden="true" onload="this.parentNode.classList.add(\'klar\')"></iframe>' : '') + '</div>'
       : (emb
         ? '<div class="insp-mini"><iframe src="' + iv(emb) + '" loading="lazy" title="Opslaget" scrolling="no" tabindex="-1" aria-hidden="true"></iframe></div>'
         : '<div class="insp-mini insp-mini-tom"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#9A9590" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">' + pIkon + '</svg></div>');
     const slet = '<button type="button" class="insp-slet" title="Slet" aria-label="Slet" onclick="event.stopPropagation();inspSletSpoerg(\'' + idS + '\')"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" data-tegn-ok="1"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg></button>';
-    return '<div class="insp-kort insp-flise" role="button" tabindex="0" onclick="inspAabnArk(\'' + idS + '\')" onkeydown="if(event.key===\'Enter\')inspAabnArk(\'' + idS + '\')">'
+    /* KLIK PAA ET INSTAGRAM-KORT = OPSLAGET PAA INSTAGRAM I EN NY FANE (Ida 10/10); »Lav til idé« og »Hent billede igen« staar under navnet */
+    const klik = erIg ? "window.open(" + JSON.stringify(String(uu)).replace(/"/g, "&quot;") + ",'_blank','noopener')" : "inspAabnArk(\'" + idS + "\')";
+    const handl = erIg ? '<div class="insp-handl"><button type="button" class="insp-hk" onclick="event.stopPropagation();inspTilIde(\'' + idS + '\')">Lav til idé</button>' + (skaerm ? '' : '<button type="button" class="insp-hk" onclick="event.stopPropagation();inspHentIgen(\'' + idS + '\')">Hent billede igen</button>') + '</div>' : '';
+    return '<div class="insp-kort insp-flise" data-id="' + iv(x.id) + '" role="button" tabindex="0" onclick="' + klik + '" onkeydown="if(event.key===\'Enter\')' + klik + '">'
       + '<div class="insp-billede">' + medie + '</div>'
-      + '<div class="insp-et"><span>' + esc(x.type === "billede" ? "Billede" : (vaertNavn || "Note")) + '</span>' + slet + '</div>'
+      + '<div class="insp-et"><span>' + esc(x.type === "billede" ? "Billede" : erIg ? ("Instagram · " + igType + (igProfil ? " · " + igProfil : "")) : (vaertNavn || "Note")) + '</span>' + slet + '</div>'
       + '<div class="insp-note">' + esc(inspNavn(x)) + '</div>'
+      + handl
       + '</div>';
   }).join("") : '<div style="grid-column:1/-1;">' + tomKortHtml("Hvad har du set, du gerne vil lave din egen version af?", "", "") + '</div>';
   inspMiniSkaler();
@@ -59550,7 +59584,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2729";
+const APP_VERSION = "2730";
 const APP_BYGGET = "9. oktober";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_BYGGET + " · " + APP_VERSION; } catch (e) {} });
 let NY_VERSION_KLAR = false;
@@ -74438,7 +74472,18 @@ async function kundeArkGem(tekst, k) {
     return false;
   }
   if (k === "fedt") {
-    const m = t.match(/https?:\/\/\S+/); const url = m ? m[0] : ""; const note = t.replace(url, "").replace(/\s+/g, " ").trim();
+    /* FLERE LINKS PAA EEN GANG (Ida 10/10): et link pr. linje → et kort hver; et link, der allerede staar paa siden, oprettes ikke igen */
+    const links = inspLinksI(t);
+    if (links.length > 1) {
+      const nye = links.filter(function (u) { return !inspFindesAllerede(u); }); const sprang = links.length - nye.length;
+      if (!nye.length) return "Alle " + links.length + " links står allerede på Inspiration.";
+      if (!sb || !currentKode) return false;
+      try { const ri = await sb.from("inspiration").insert(nye.map(function (u) { return { kode: currentKode, type: "link", url: u, note: null }; })).select("id"); if (ri.error || !ri.data || ri.data.length !== nye.length) return false; } catch (e) { return false; }
+      try { refreshInspiration(); } catch (e) {}
+      return nye.length + " links gemt på Inspiration." + (sprang ? " " + sprang + " stod der allerede." : "");
+    }
+    const url = links[0] || ""; const note = (url ? t.replace(new RegExp(INSP_LINK_RX.source, "gi"), "") : t).replace(/\s+/g, " ").trim();
+    if (url && inspFindesAllerede(url)) return "Linket står allerede på Inspiration.";
     const rec = { kode: currentKode || "X", type: "link", url: url || null, note: note || null };
     if (INSP_SKAERM) {
       if (!sb || !currentKode) return false;
