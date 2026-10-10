@@ -48060,7 +48060,7 @@ async function uploadInspBilleder(inp) {
       const up = await sb.storage.from("inspiration").upload(sti, blob, { contentType: "image/jpeg" });
       if (up.error) { inspMsg("Kunne ikke uploade: " + up.error.message); continue; }
       const pu = sb.storage.from("inspiration").getPublicUrl(sti);
-      await sb.from("inspiration").insert({ kode: currentKode, type: "billede", url: pu.data.publicUrl, sti: sti });
+      { const ri = await sb.from("inspiration").insert({ kode: currentKode, type: "billede", url: pu.data.publicUrl, sti: sti }).select("id"); if (ri.error || !ri.data || !ri.data.length) { try { visSyncFejl("inspiration.insert (billede)"); } catch (e) {} } }   /* KVITTERING (sikkerhedschefen 10/10, løfte 2): skrivningen læses tilbage; afvist eller 0 rækker = den røde bjælke, aldrig tavst */
     } catch(e) { inspMsg("Kunne ikke uploade — prøv igen."); }
   }
   inspMsg("");
@@ -56102,7 +56102,7 @@ async function ideFotoValgt(inp) {
     const pu = sb.storage.from("inspiration").getPublicUrl(sti);
     const url = pu && pu.data ? pu.data.publicUrl : "";
     if (!url) { ideVedhMsg("Kunne ikke uploade billedet. Prøv igen."); return; }
-    try { await sb.from("inspiration").insert({ kode: currentKode, type: "billede", url: url, sti: sti }); } catch (e) {}
+    try { const ri = await sb.from("inspiration").insert({ kode: currentKode, type: "billede", url: url, sti: sti }).select("id"); if (ri.error || !ri.data || !ri.data.length) visSyncFejl("inspiration.insert (billede)"); } catch (e) { try { visSyncFejl("inspiration.insert"); } catch (e2) {} }   /* KVITTERING (sikkerhedschefen 10/10, løfte 2): skrivningen læses tilbage; afvist eller 0 rækker = den røde bjælke, aldrig tavst */
     INSP_VEDHAEFT = url; IDE_VEDH_AABEN = "";
     ideVedhaeftTegn();
     try { refreshInspiration(); } catch (e) {}
@@ -56116,7 +56116,7 @@ async function ideLinkSaet() {
   const titelFelt = document.getElementById("ideWizFangFelt") || document.getElementById("ideWizInput");
   const note = ((titelFelt && titelFelt.value) || "").trim() || "Fra Ny idé";
   const rec = { kode: currentKode || "X", type: "link", url: url, note: note };
-  if (sb && currentKode) { try { await sb.from("inspiration").insert(rec); try { refreshInspiration(); } catch (e) {} } catch (e) {} }
+  if (sb && currentKode) { try { const ri = await sb.from("inspiration").insert(rec).select("id"); if (ri.error || !ri.data || !ri.data.length) { visSyncFejl("inspiration.insert"); return; } try { refreshInspiration(); } catch (e) {} } catch (e) { try { visSyncFejl("inspiration.insert"); } catch (e2) {} } }   /* KVITTERING (sikkerhedschefen 10/10, løfte 2): skrivningen læses tilbage; afvist eller 0 rækker = den røde bjælke, aldrig tavst */
   else { rec.id = "i" + Date.now(); rec.created_at = new Date().toISOString(); try { INSPIRATION.unshift(rec); inspLocalSave(); } catch (e) {} }
   INSP_VEDHAEFT = url; IDE_VEDH_AABEN = "";
   ideVedhaeftTegn();
@@ -59492,7 +59492,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2715";
+const APP_VERSION = "2716";
 const APP_BYGGET = "9. oktober";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_BYGGET + " · " + APP_VERSION; } catch (e) {} });
 let NY_VERSION_KLAR = false;
@@ -72881,7 +72881,7 @@ async function dashFangGem(medKal) {
   dashFangLuk();
   if (f.sfaere === "kunde" && f.kode) {
     /* Kundenoter hører til på kundekortet, ikke i Idas egen idébank. */
-    if (sb) { try { await sb.from("kunde_kommentarer").insert({ kode: f.kode, tekst: t }); } catch(e) {} }
+    if (sb) { try { const rk = await sb.from("kunde_kommentarer").insert({ kode: f.kode, tekst: t }).select("id"); if (rk.error || !rk.data || !rk.data.length) visSyncFejl("kunde_kommentarer.insert"); } catch(e) { try { visSyncFejl("kunde_kommentarer.insert"); } catch (e2) {} } }   /* KVITTERING (sikkerhedschefen 10/10, løfte 2): skrivningen læses tilbage; afvist eller 0 rækker = den røde bjælke, aldrig tavst */
     try { if (KUNDEKORT && KUNDEKORT.kode === f.kode) kkNytHent(); } catch(e) {}
     return;
   }
@@ -74211,7 +74211,7 @@ async function kundeArkGem(tekst, k) {
       const sti = await inspSkaermUpload(INSP_SKAERM); if (!sti) return false;
       rec.sti = sti;
     }
-    if (sb && currentKode) { try { const { error } = await sb.from("inspiration").insert(rec); if (error) return false; inspSkaermNulstil(); try { refreshInspiration(); } catch (e) {} return "Gemt på Inspiration."; } catch (e) { return false; } }
+    if (sb && currentKode) { try { const { data: iData, error } = await sb.from("inspiration").insert(rec).select("id"); if (error || !iData || !iData.length) return false; inspSkaermNulstil(); try { refreshInspiration(); } catch (e) {} return "Gemt på Inspiration."; } catch (e) { return false; } }
     rec.id = "i" + Date.now(); rec.created_at = new Date().toISOString(); INSPIRATION.unshift(rec); inspLocalSave(); try { renderInspiration(); } catch (e) {} return "Gemt på Inspiration.";
   }
   if (k === "tema") {
@@ -76454,7 +76454,7 @@ async function kkNytSend() {
   const tekst = (felt.value || "").trim(); if (!tekst) { felt.focus(); return; }
   const kode = KUNDEKORT.kode;
   felt.value = "";
-  try { await sb.from("kunde_kommentarer").insert({ kode: kode, tekst: tekst }); } catch(e) {}
+  try { const rk = await sb.from("kunde_kommentarer").insert({ kode: kode, tekst: tekst }).select("id"); if (rk.error || !rk.data || !rk.data.length) visSyncFejl("kunde_kommentarer.insert"); } catch(e) { try { visSyncFejl("kunde_kommentarer.insert"); } catch (e2) {} }   /* KVITTERING (sikkerhedschefen 10/10, løfte 2): skrivningen læses tilbage; afvist eller 0 rækker = den røde bjælke, aldrig tavst */
   kkNytHent();
 }
 async function kkNytSlet(id) {
