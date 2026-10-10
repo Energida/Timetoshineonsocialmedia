@@ -4,6 +4,8 @@
 - **DAGSORDENEN RETTES PÅ STEDET.** Et penneikon ved hvert punkt åbner punktet: navn, tekst, skraldespand (fjern) og Gem; »Tilføj punkt« lægger et nyt til. Standardpunkterne (performance · den kommende uge · dato for næste møde) står uændrede, til man retter dem. Gemmes i `plan_ritual.moede.dagsorden` (merges, andre nøgler urørte); et rettet punkt bliver statisk tekst, et urørt punkt bliver dynamisk (uge, tema, mål). Ingen Annuller i rettelsen.
 - **ALLE DATOSYMBOLER ER KVADRATER, 56 × 56 (HÅRD, Ida 9/10: »kvadratiske alle steder«):** Kommende opslag (`.kop-dato`), aftalernes dato (`.cf-dato`), Backstages `.bs3-tidb.d` og `.bs-datob`. Ingen dato-boks er højere end bred.
 
+## v2710 (10/10) — Slet mødet sletter også dubletter (Ida: »mødet d. 12. oktober, jeg har slettet 100 gange, kommer tilbage«). Flere rækker med samme dag og mødetitel hos samme kunde fjernes i ét tryk; kvitteringen siger hvor mange. Intet slettes af sig selv (7/10-reglen) — kun ved kundens eget »Ja, slet«.
+
 ## v2709 (10/10) — Idébanken på telefonen: søjlens overskrift er en rød bjælke (Idas klik: bud 3, artifact Qky3oUPQzwVU9eKhRp813J). Lav rød flise (radius 16, 12/14 px luft), hvid Poppins 15 px, ingen versal, ingen linje. Kun telefonen; computerens kolonnehoveder er urørte.
 
 ## v2708 (10/10) — Delelinket (?brief=…&kunde=…) lander på briefoversigten, ikke på godkendelsessiden, og tæppet løftes altid (Ida: »opslaget kommer aldrig — den bliver bare ved med at loade«). Godkendelsessiden nås kun via »Send til godkendelse« → Indbakken.

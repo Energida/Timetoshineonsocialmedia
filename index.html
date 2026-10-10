@@ -59478,7 +59478,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2709";
+const APP_VERSION = "2710";
 const APP_BYGGET = "9. oktober";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_BYGGET + " · " + APP_VERSION; } catch (e) {} });
 let NY_VERSION_KLAR = false;
@@ -80510,6 +80510,12 @@ async function moedeSlet() {
   const ma = planMoedeAftale(); if (!ma || !ma.id) return;
   if (!arkOk("moedeSlet", arguments, { titel: "Slet mødet?", tekst: "Mødet fjernes fra kalenderen.", jaTekst: "Ja, slet" })) return;
   await kundeAftaleSlet(ma.id);
+  /* DUBLETTER SLETTES MED (Ida 10/10: »mødet d. 12. oktober, jeg har slettet 100 gange, kommer tilbage«): ligger der flere rækker med samme dag og samme mødetitel, fjernes de alle — ellers dukker den næste op, hver gang én slettes */
+  try {
+    const sosk = (window.__kundeAftalerAlle || window.__kundeAftaler || []).filter(function (a) { return a && a.id && String(a.id) !== String(ma.id) && String(a.dato || "").slice(0, 10) === String(ma.dato || "").slice(0, 10) && String(a.kode || "") === String(ma.kode || "") && erMoedeTitel(a.titel); });
+    for (const a of sosk) { try { await sb.from("kunde_aftaler").delete().eq("id", a.id).select(); } catch (e) {} }
+    if (sosk.length) { try { await renderAftaler(); } catch (e) {} try { husKvit("Mødet og " + sosk.length + " dublet" + (sosk.length === 1 ? "" : "ter") + " er slettet."); } catch (e) {} }
+  } catch (e) {}
   try { navTilbage(); } catch (e) { try { showTab(8); } catch (e2) {} }
 }
 function moedeLinkHtml() { let ma = null; try { ma = planMoedeAftale(); } catch (e) {} if (!ma) return ""; return (moedeSted(ma).online && ma.link ? '<a class="ark-chip mo-chip mo-link" href="' + esc(String(ma.link)) + '" target="_blank" rel="noopener">Åbn mødet</a>' : ''); }
