@@ -4,6 +4,15 @@
 - **DAGSORDENEN RETTES PÅ STEDET.** Et penneikon ved hvert punkt åbner punktet: navn, tekst, skraldespand (fjern) og Gem; »Tilføj punkt« lægger et nyt til. Standardpunkterne (performance · den kommende uge · dato for næste møde) står uændrede, til man retter dem. Gemmes i `plan_ritual.moede.dagsorden` (merges, andre nøgler urørte); et rettet punkt bliver statisk tekst, et urørt punkt bliver dynamisk (uge, tema, mål). Ingen Annuller i rettelsen.
 - **ALLE DATOSYMBOLER ER KVADRATER, 56 × 56 (HÅRD, Ida 9/10: »kvadratiske alle steder«):** Kommende opslag (`.kop-dato`), aftalernes dato (`.cf-dato`), Backstages `.bs3-tidb.d` og `.bs-datob`. Ingen dato-boks er højere end bred.
 
+## v2713 (10/10) — Kalenderens opslagskort: postetidspunktet står ved siden af status (»Klar til post · kl. 19.00«) i alle kalenderflader (uge, 14 dage, måned, Hjem). Ida: »tidspunktet skal komme frem på flisen — ved siden af status«.
+
+## v2712 (10/10) — HASTERETTET: Idébanken = idéer uden dato (status Idé eller Brief i gang); kun det planlagte/med dato er ude · kalenderens periode kun som dropdown · dagsvinduet viser resten af dagen
+- **Idébanken** (Ida: »hvorfor har du smidt alle de planlagte ind uden dato … placér indholdet, hvor det hører til«): v2706 var for hård — en »Brief i gang« uden dato er en idé, der skrives, og bor i Idébanken (24/9-reglen står). Det planlagte og alt med dato bor i kalenderen; »Mangler dato« som før.
+- **Kalenderen på computeren** (Ida: »ikke BÅDE chips og dropdown — kun dropdown«): chipsene Dag · Uge · 14 dage · Måned er ude; perioden vælges i dropdownen. Arkiv-døren bliver.
+- **Dagsvinduet på Hjem** (Ida: »kunden skal kunne se hele dagen«): fra en time før nu til 24.00 er altid synligt; timerne før rulles op til.
+
+## v2711 (10/10) — Kommende opslag: én grå linje under titlen (Ida: »status og tidspunkt skal stå i flisen også, og status skal stå i én linje«): »Reel · Klar til post · kl. 19.00 · Annette + Ida«. Chipsene fra v2696 er ude af denne flise — de brækkede over to linjer på telefonen.
+
 ## v2710 (10/10) — Slet mødet sletter også dubletter (Ida: »mødet d. 12. oktober, jeg har slettet 100 gange, kommer tilbage«). Flere rækker med samme dag og mødetitel hos samme kunde fjernes i ét tryk; kvitteringen siger hvor mange. Intet slettes af sig selv (7/10-reglen) — kun ved kundens eget »Ja, slet«.
 
 ## v2709 (10/10) — Idébanken på telefonen: søjlens overskrift er en rød bjælke (Idas klik: bud 3, artifact Qky3oUPQzwVU9eKhRp813J). Lav rød flise (radius 16, 12/14 px luft), hvid Poppins 15 px, ingen versal, ingen linje. Kun telefonen; computerens kolonnehoveder er urørte.

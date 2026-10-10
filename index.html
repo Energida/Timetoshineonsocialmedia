@@ -11485,7 +11485,11 @@ html body .pf-cap:not(.pf-hook) .pf-cap-tekst { background:#F3F0EA; border-radiu
 html body .pf-info { width:20px; height:20px; border-radius:50%; border:1px solid var(--red); background:#fff; color:var(--red); font:400 11px/1 Poppins, sans-serif; letter-spacing:0; text-transform:none; display:inline-flex; align-items:center; justify-content:center; padding:0; cursor:help; position:relative; flex:none; }
 html body .pf-info::after { content:attr(data-tip); position:absolute; left:0; top:26px; width:260px; max-width:70vw; background:#fff; color:var(--black); font:400 13px/1.5 Poppins, sans-serif; letter-spacing:0; text-transform:none; text-align:left; padding:10px 12px; border-radius:14px; box-shadow:0 10px 30px rgba(40,34,28,.18); z-index:20; display:none; white-space:normal; }
 html body .pf-info:hover::after, html body .pf-info:focus-visible::after, html body .pf-info.aaben::after { display:block; }
-html body .kop-rk .kop-t { flex:1 1 auto; min-width:0; }   /* titlen bruger hele bredden (maalt 9/10: ordene braekkede et ad gangen) */
+html body .kop-rk .kop-t { flex:1 1 auto; min-width:0; }
+html body .kop-rk .kop-chips { margin-top:4px; }
+/* PERIODEN ER KUN EN DROPDOWN PÅ COMPUTEREN (Ida 10/10: »der skal ikke BÅDE være chips og dropdown for filtrering — kun dropdown«): chipsene Dag · Uge · 14 dage · Måned er ude; Arkiv-døren bliver */
+@media (min-width:900px) { html body #calVisVaelger .ark-chip[data-v] { display:none !important; } }
+html body .kop-rk .kop-linje { display:block; font-size:12.5px; color:var(--gray2); line-height:1.4; }   /* titlen bruger hele bredden (maalt 9/10: ordene braekkede et ad gangen) */
 /* TEKSTEN STAAR CENTRERET I HOEJDEN I KLIP-FELTERNE (Ida 9/10: »når jeg skriver, er teksten placeret centreret i højden i feltet«): feltet er 56 høj, linjen 20 — 18 px luft over og under; flere linjer vokser feltet */
 html body.mb #briefWrap .kk-ram textarea.sk-input, html body.mb #briefWrap #briefKlip .kk-ram textarea.sk-input, html body.mb-brief-tlf.mb #briefWrap #briefKlip .kk-ram textarea.sk-input { padding-top:18px !important; padding-bottom:18px !important; } .kop-chips .ibb-chip, .ibb-chip.ibb-hvem { display:inline-flex; align-items:center; height:24px; padding:0 10px; border-radius:999px; border:1px solid var(--border); background:#fff; font-size:10.5px; color:var(--gray2); white-space:nowrap; }   /* graa chips: hvem laver det (Ida 9/10) */
 html body .mo-vaelg-ark .sa-chips { display:flex !important; flex-wrap:wrap !important; justify-content:center !important; gap:8px; overflow:visible !important; }
@@ -35662,11 +35666,12 @@ function tomKortHtml(spm, knap, kald) {
 /* KOMMENDE OPSLAG = BUD 3 (Idas klik 9/10, artifact 5mk5cfFSiaQuEQvXavAwCj): format · status · ansvarlige med husets person-ikon — alle som husets ENE chip (hvid, graa kant, graa tekst) */
 const KOP_PERSON_IK = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-6.5 8-6.5s8 2.5 8 6.5"/></svg>';
 function kopChipsHtml(x) {
-  const chip = function (t, ik) { return '<span class="ark-chip kop-chip">' + (ik || '') + esc(t) + '</span>'; };
+  /* ÉN LINJE (Ida 10/10: »status og tidspunkt skal stå i flisen også, og status skal stå i én linje«): format · status · kl. · ansvarlige som grå tekst under titlen — chips brækkede over to linjer paa telefonen */
   const fmt = String((x.brief && x.brief.format) || x.type || "").replace("Kort-reel", "Kort reel");
-  let ud = (fmt ? chip(fmt) : '') + (x.status ? chip(x.status) : '');
-  try { const b = x.brief || {}; String(b.hvemPerson || b.hvemLaver || "").split(/\s*·\s*|\s*,\s*/).map(function (n) { return n.trim(); }).filter(Boolean).slice(0, 3).forEach(function (n) { ud += chip(storStart(n), KOP_PERSON_IK); }); } catch (e) {}
-  return ud;
+  const dele = [fmt, x.status || ""];
+  try { const t = x.brief && x.brief.tid ? String(x.brief.tid).slice(0, 5) : ""; if (t) dele.push("kl. " + t.replace(":", ".")); } catch (e) {}
+  try { const b = x.brief || {}; const folk = String(b.hvemPerson || b.hvemLaver || "").split(/\s*·\s*|\s*,\s*/).map(function (n) { return storStart(n.trim()); }).filter(Boolean).slice(0, 3); if (folk.length) dele.push(folk.join(" + ")); } catch (e) {}
+  return '<span class="kop-s kop-linje">' + esc(dele.filter(Boolean).join(" · ")) + '</span>';
 }
 function kommendeOpslagHtml(antal, hovedKlasse, fraImorgen) {
   let idag = datoDK(); if (fraImorgen) { try { const m = new Date(); m.setDate(m.getDate() + 1); idag = huIso(m); } catch (e) {} }   /* paa computeren viser dagen i dag — listen starter i morgen (26/9) */ const MDR = ["jan", "feb", "mar", "apr", "maj", "jun", "jul", "aug", "sep", "okt", "nov", "dec"];
@@ -49211,6 +49216,8 @@ function huKalRul(rod, gemt) {
   const v = rod && rod.querySelector ? rod.querySelector(".hk-ruller") : null; if (!v) return;
   if (gemt != null && gemt > 0) { v.scrollTop = gemt; return; }
   const nu = parseFloat(v.getAttribute("data-nu")); if (!isFinite(nu)) return;
+  /* RESTEN AF DAGEN SKAL KUNNE SES (Ida 10/10: »det går ikke, at kunden ikke kan se hele dagen … hvad hvis der havde ligget mere senere på dagen?«): vinduet går fra en time før nu til 24.00 — det, der ligger før, rulles op til */
+  try { v.style.maxHeight = Math.max(448, Math.round((24 - Math.max(0, nu - 1)) * HU_KAL_H)) + "px"; } catch (e) {}
   v.scrollTop = Math.max(0, Math.min((nu - 1) * HU_KAL_H, v.scrollHeight - v.clientHeight));   /* flisen stopper ved 24.00 (Ida 9/10: »når dagen ikke er længere, skal flisen stoppe«) — om aftenen rykker stregen ned i vinduet i stedet for luft under */
 }
 setInterval(function () { try { const d = new Date(), t = d.getHours() + d.getMinutes() / 60; document.querySelectorAll(".hk-ruller .hk-nu").forEach(function (l) { l.style.top = ((t - parseFloat(l.getAttribute("data-t0") || "0")) * HU_KAL_H) + "px"; }); } catch (e) {} }, 60000);
@@ -55446,11 +55453,11 @@ function ideerShared() { return !!(sb && currentKode); }
 /* IDEEN BLIVER I BANKEN, TIL DEN ER UDE AF VERDEN (Ida 22/9 kl. 09.30: »fordi jeg vil snakke om den, betyder det jo ikke, at vi beslutter den« — en idé forsvandt, saa snart den blev planlagt).
    Banken = alt, der ikke er postet, arkiveret eller maalt. Er datoen sat, staar den som chip paa flisen. Kalenderens »Mangler dato« viser stadig det planlagte UDEN dato. */
 /* IDÉBANKEN = KUN STATUS IDÉ (HÅRD, Ida 10/10: »Planlagte opslag fremgår i idébanken på b2b. Det er KUN opslag med status idé, der skal være i idébanken«) — alt andet bor i kalenderen (med dato) eller under »Mangler dato« */
-function ideErIBanken(x) { return !!x && (!x.status || String(x.status) === "Idé"); }
+function ideErIBanken(x) { return !!x && !x.dato && (!x.status || String(x.status) === "Idé" || String(x.status) === "Brief i gang"); }   /* HASTERETTET 10/10 (Ida: »hvorfor har du smidt alle de planlagte ind uden dato … placér indholdet, hvor det hører til«): v2706 flyttede »Brief i gang« uden dato til Mangler dato — det er en idé, der skrives, og bor i Idébanken (24/9). Kun det planlagte/med dato er ude. */
 /* EN IDÉ PAA MOEDET ER IKKE PLANLAGT (Ida 24/9 kl. 22.45: »når jeg klikker ideerne af til et planlægningsmøde betyder det slet ikke de skal planlægges -
    så betyder det bare at jeg vil snakke om dem på mødet. så de skal helt fjernes«). »Brief i gang« uden dato er en idé, der er ved at blive skrevet —
    ikke en glemt dato. Den bliver i Idébanken og staar aldrig under »Mangler dato«. Kun det planlagte og det faerdige uden dato staar dér. */
-function ideManglerDato(x) { return !!x && !x.dato && !!x.status && ["Idé", "Postet", "Arkiveret", "Målt"].indexOf(x.status) === -1; }   /* »Brief i gang« uden dato staar her nu (10/10) — den er ude af Idébanken og maa ikke forsvinde */
+function ideManglerDato(x) { return !!x && !x.dato && !!x.status && ["Idé", "Brief i gang", "Postet", "Arkiveret", "Målt"].indexOf(x.status) === -1; }   /* tilbage som 24/9 (hasterettet 10/10) */
 function newId() { return "i" + Date.now() + Math.floor(Math.random()*1000); }
 const IDEA_TYPES = ["Reel","Kort-reel","Karrusel","Story"];
 
@@ -59478,7 +59485,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2710";
+const APP_VERSION = "2713";
 const APP_BYGGET = "9. oktober";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_BYGGET + " · " + APP_VERSION; } catch (e) {} });
 let NY_VERSION_KLAR = false;
@@ -61893,7 +61900,7 @@ function kalOpKortIndhold(h, dateStr) {
        Kortet viste den gemte vaerdi raa — altsaa et praecist tal, ingen havde tastet.
        Kalenderen svarer paa HVILKEN DAG; tidspunktet hoerer til dagens eget kort.
        b.brief.tid er UROERT — den laeses stadig af I dag-kortet og af sorteringen. */
-    : '<div style="font-size:9.5px;color:var(--gray3);margin-top:3px;">' + esc(statusVisNavn(h.status)) + '</div>';
+    : '<div style="font-size:9.5px;color:var(--gray3);margin-top:3px;">' + esc(statusVisNavn(h.status)) + (tid ? ' · kl. ' + esc(tid) : '') + '</div>';   /* POSTETIDSPUNKTET VED SIDEN AF STATUS (Ida 10/10: »tidspunktet, hvor opslaget skal postes, skal komme frem på flisen — ved siden af status«) — vaelter 4/8 (»tiden er ude af dette kort«) */
   /* KUN INDHOLDSSOEJLEN (Ida 25/8): "den eneste chip der skal fremgaa her er
      indholdssoejlen". Foer stod der TRE — format, soejle og hvem-laver — og de raabte
      lige hoejt om det, kortet ikke handler om. Formatet og personen staar stadig i
