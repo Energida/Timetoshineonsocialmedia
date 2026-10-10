@@ -123,6 +123,27 @@
       tjek(23, "Det skrevne uden net sendes, når nettet er tilbage", !!(sendt && sendt.brief && sendt.brief.beskrivelse === "Skrevet uden net"), sendt && sendt.brief ? sendt.brief.beskrivelse : "ikke sendt");
       var p3 = (IDEER || []).find(function (x) { return x.id === "sc-ide-3"; });
       tjek(2, "Afvist ændring går ikke tabt: den sendes igen fra køen", p3 && p3.status === "Idé", p3 ? "status i basen: " + p3.status : "");
+      /* LØFTE 5 · SLET FRA REDIGERINGEN (10/10: knappen »Slet mødet« i redigeringsarket kaldte uden id og gjorde ingenting) */
+      try {
+        var db5 = JSON.parse(localStorage.getItem("SELE_DB") || "{}"); db5.kunde_aftaler = (db5.kunde_aftaler || []).concat([{ id: "sc-moede-9", kode: "HINGES2026", titel: "Ugentlig contentplanlægning", dato: d(iMorgen), tid: "10:00", tid_slut: "11:00" }]);
+        localStorage.setItem("SELE_DB", JSON.stringify(db5)); await renderAftaler(); await V(300);
+        var ma5 = null; try { ma5 = planMoedeAftale(); } catch (e) {}
+        moedeSlet(); await V(500);
+        var ja5 = [].slice.call(document.querySelectorAll("button")).filter(function (b) { return /Ja, slet/.test(b.textContent || "") && b.getBoundingClientRect().width > 0; })[0];
+        if (ja5) ja5.click(); await V(1800);
+        var tilb5 = ((JSON.parse(localStorage.getItem("SELE_DB") || "{}").kunde_aftaler) || []).filter(function (a) { return a.id === "sc-moede-9"; }).length;
+        tjek(5, "»Slet mødet« i redigeringen spørger og sletter", !!ja5 && tilb5 === 0, "åbent møde " + (ma5 ? ma5.id : "intet") + " · spørgsmål " + (ja5 ? "vist" : "kom ikke") + " · i basen " + tilb5);
+      } catch (e) { tjek(5, "Slet-fra-redigeringen-tjekket kunne køre", false, e.message); }
+      /* LØFTE 1 · KOMMENTAR I DIALOG-FLISEN på briefens forside (10/10: feltet kaldte en funktion med samme navn som godkendelsens, der ikke fandt feltet) */
+      try {
+        var id1 = LS("SC_ID"); openBriefSide(id1); await V(1500);
+        BRIEF_STATE.godk = { fra: "Kunden", til: "Ida", sendt: new Date().toISOString() };
+        var f1 = document.createElement("textarea"); f1.value = "Kommentar fra sikkerhedschefen"; document.body.appendChild(f1);
+        await (typeof briefKommentarSendFlise==="function"?briefKommentarSendFlise(f1):briefKommentarSend(f1)); await V(1500); f1.remove();
+        var r1 = ((JSON.parse(localStorage.getItem("SELE_DB") || "{}").content_ideer) || []).find(function (x) { return String(x.id) === String(id1); }) || {};
+        var k1 = (r1.brief && r1.brief.kommentarer) || [];
+        tjek(1, "Kommentar i briefens dialog-flise gemmes i basen", k1.some(function (k) { return k && k.tekst === "Kommentar fra sikkerhedschefen"; }), k1.length + " kommentarer i basen");
+      } catch (e) { tjek(1, "Kommentar-tjekket kunne køre", false, e.message); }
     }
   } catch (e) { r.fejl = e.message + " @ " + ((e.stack || "").split("\n")[1] || ""); }
   try { r.ls = {}; for (var li = 0; li < localStorage.length; li++) { var lk = localStorage.key(li); if (lk === "SELE_AFVIS") continue; r.ls[lk] = localStorage.getItem(lk); } } catch (e) {}   /* HELE lageret følger med (køen af ikke-sendte gem bor her) */

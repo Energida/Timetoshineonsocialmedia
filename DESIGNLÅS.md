@@ -4,6 +4,8 @@
 - **DAGSORDENEN RETTES PÅ STEDET.** Et penneikon ved hvert punkt åbner punktet: navn, tekst, skraldespand (fjern) og Gem; »Tilføj punkt« lægger et nyt til. Standardpunkterne (performance · den kommende uge · dato for næste møde) står uændrede, til man retter dem. Gemmes i `plan_ritual.moede.dagsorden` (merges, andre nøgler urørte); et rettet punkt bliver statisk tekst, et urørt punkt bliver dynamisk (uge, tema, mål). Ingen Annuller i rettelsen.
 - **ALLE DATOSYMBOLER ER KVADRATER, 56 × 56 (HÅRD, Ida 9/10: »kvadratiske alle steder«):** Kommende opslag (`.kop-dato`), aftalernes dato (`.cf-dato`), Backstages `.bs3-tidb.d` og `.bs-datob`. Ingen dato-boks er højere end bred.
 
+## v2724 (10/10) — Tre fejl, der gemte sig bag to funktioner med samme navn (fundet af sikkerhedschefen): »Slet mødet« i redigeringsarket gjorde ingenting (spørger nu og sletter) · kommentarfeltet i briefens dialog-flise sendte ingenting (gemmes nu) · pinnede kunder åbner deres studio i samme fane (Idas beslutning 30/9, der aldrig virkede). Lag 1 melder kun rigtigt døde dubletter (samme script-blok).
+
 ## v2723 (10/10) — COMPUTEREN STÅR STILLE (Ida: »hver gang jeg klikker … så rykker tingene sig« — desktop admin og b2b): pladsen til rullepanelet står fast på computeren (`scrollbar-gutter:stable` på html og .content, kun ≥900 px), så siden ikke hopper sidelæns ved sideskift; knapper og fliser krymper ikke længere ved tryk på computer med mus (telefonens »nik« består).
 
 ## v2722 (10/10) — Plusset i Backstage samler kun »Tilføj«-felter og -knapper fra den side, man står på, og hvert valg én gang (Ida: plusset i CRM viste ti »Tilføj rum« fra andre sider i stedet for Ny kunde).

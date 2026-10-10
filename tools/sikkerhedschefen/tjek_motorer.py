@@ -17,15 +17,17 @@ def tjek_motorer(repo):
 
 
 def dobbelte_funktioner(html):
-    """To `function navn(` med samme navn: kun den sidste lever — en rettelse i den første virker aldrig (MAALT 10/10, moedeSlet)."""
-    navne = re.findall(r'^\s*(?:async\s+)?function\s+([A-Za-z_$][\w$]*)\s*\(', html, re.M)
-    set_, dob = set(), set()
-    for n in navne:
-        (dob if n in set_ else set_).add(n)
+    """To `function navn(` med samme navn I SAMME <script>-blok: kun den sidste lever — en rettelse i den første virker aldrig (MAALT 10/10, moedeSlet).
+    Et navn, der defineres igen i en SENERE blok, er en bevidst overskrivning (Backstage forfra fanger de gamle i BF3_GAMMEL) og tælles ikke."""
+    dob = set()
+    for blok in re.findall(r'<script(?![^>]*\bsrc=)[^>]*>(.*?)</script>', html, re.S):
+        set_ = set()
+        for n in re.findall(r'^\s*(?:async\s+)?function\s+([A-Za-z_$][\w$]*)\s*\(', blok, re.M):
+            (dob if n in set_ else set_).add(n)
     return sorted(dob)
 
 def tjek_dobbelte(repo):
     d = dobbelte_funktioner(open(os.path.join(repo, "index.html"), encoding="utf-8").read())
     if not d:
         return Resultat(16, "Ingen funktion findes to gange", BESTAAET)
-    return Resultat(16, "Ingen funktion findes to gange", FEJLET, f"{len(d)} navne findes to gange (kun den sidste virker): " + ", ".join(d[:25]))
+    return Resultat(16, "Ingen funktion findes to gange", FEJLET, f"{len(d)} navne findes to gange i samme script-blok (kun den sidste virker): " + ", ".join(d[:25]))

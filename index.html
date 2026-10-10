@@ -29741,7 +29741,8 @@ async function briefKomArkSend(kilde) {
 }
 function briefKommentarer() { const B = BRIEF_STATE || {}; if (!Array.isArray(B.kommentarer)) B.kommentarer = []; return B.kommentarer; }
 function briefKommentarLaeg(tekst, slags) { const k = briefKommentarer(); k.push({ af: godkMig() || "", dato: new Date().toISOString(), tekst: String(tekst || "").trim(), slags: slags || "" }); return k; }
-async function briefKommentarSend(kilde) {
+/* EGET NAVN (sikkerhedschefen 10/10): hed før det samme som godkendelsens briefKommentarSend længere nede, som vandt — feltet i dialog-flisen sendte derfor ingenting */
+async function briefKommentarSendFlise(kilde) {
   const f = kilde && kilde.closest ? (kilde.matches("input, textarea") ? kilde : kilde.closest(".sendfelt").querySelector("input, textarea")) : document.getElementById("briefKomFelt");
   const t = ((f && f.value) || "").trim(); if (!t) { if (f) f.focus(); return; }
   if (f) f.value = "";
@@ -29775,7 +29776,7 @@ function briefDialogFliseHtml() {
   /* KUN NAAR DIALOGEN ER BEGYNDT (Idas klik 17/9 kl. 15.58): briefen er sendt til godkendelse, eller der findes kommentarer — ellers ingen tom flise */
   if (!(B.godk && (B.godk.sendt || B.godk.til))) return "";   /* kommentarerne bor bag taleboblen (bud 3, 29/9) — flisen kun i godkendelsen */
   const rk = k.map(x => '<div class="pf-kom' + (x.slags ? ' pf-kom-' + esc(x.slags) : '') + '"><span class="pf-kom-af">' + esc(x.af || "") + (x.dato ? ' · ' + esc(godkNaar(x.dato)) : '') + '</span><div>' + esc(x.tekst).replace(/\n/g, "<br>") + '</div></div>').join("");
-  const felt = sendFeltHtml({ id: "briefKomFelt", ph: "Tilføj en kommentar …", fn: "briefKommentarSend(this)", aria: "Send kommentaren", klasse: "bs-sendfelt pf-kom-send", textarea: true });
+  const felt = sendFeltHtml({ id: "briefKomFelt", ph: "Tilføj en kommentar …", fn: "briefKommentarSendFlise(this)", aria: "Send kommentaren", klasse: "bs-sendfelt pf-kom-send", textarea: true });
   return '<div class="pf-flise pf-dialog"><div class="pf-eye"><span>Kommentarer</span></div>' + (rk || '<div class="pf-tom" style="color:var(--gray3);padding:10px 0 4px;">Ingen kommentarer endnu</div>') + '<div class="pf-kom-felt">' + felt + (typeof taleMikHtml === "function" ? taleMikHtml("briefKomFelt") : "") + '</div></div>';
 }
 function energidaKonfetti() {
@@ -59542,7 +59543,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2723";
+const APP_VERSION = "2724";
 const APP_BYGGET = "9. oktober";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_BYGGET + " · " + APP_VERSION; } catch (e) {} });
 let NY_VERSION_KLAR = false;
@@ -63073,6 +63074,7 @@ let SOM_KUNDE = (function () {
 /* PINNEDE KUNDER ER GENVEJEN TIL DERES CONTENT STUDIO (Ida 30/9 kl. ~10: »via genvejen lande direkte i deres content studio«). Samme fane,
    saa telefonens hjemmeskaerms-app ikke springer ud i Safari; »Tilbage« (somKundeLuk) fører hjem til Backstage. Kundekortet naas stadig via Kunder. */
 function kundeStudioAabn(kode) {
+  try { closeModal(); } catch (e) {}
   try { location.href = location.pathname + "#somkunde=" + encodeURIComponent(String(kode || "").toUpperCase()); location.reload(); } catch (e) { aabnKundensSide(kode); }
 }
 function aabnKundensSide(kode) {
@@ -73243,10 +73245,7 @@ function kundeStudioTegn() {
       /* ARKIV 8/9 (Backstage 2027): Idas Content Studio er ude af Backstage — hun bruger kundeappen som kode ENERGIDA. */
     + '</div>';
 }
-function kundeStudioAabn(kode) {
-  try { closeModal(); } catch(e) {}
-  try { aabnKundensSideFane(kode, 8); } catch(e) { try { aabnKundensSide(kode); } catch(e2) {} }
-}
+/* kundeStudioAabn bor ét sted (ovenfor, 30/9: samme fane). Den gamle version her (v976, nyt faneblad) stod sidst og vandt, saa 30/9-beslutningen virkede aldrig — fundet af sikkerhedschefen 10/10. */
 function minContentStudio() {
   /* IDAS EGET STUDIO ER KUNDERNES APP (Idas klik-valg 2/9) — VAELTER designpakkens
      valg fra 31/7 om at montere det som en SIDE i Backstage.
@@ -80664,18 +80663,7 @@ function moedeStedVaelg(n) {
 }
 function moedeStedLaes() { if (window.__PM_STED_ANDET) return String((document.getElementById("pmSted") || {}).value || "").trim(); return window.__PM_STED || ""; }
 /* SLET MOEDET (Ida 7/10: »jeg kan ikke slette et møde?«): skraldespanden paa moedesiden spoerger foerst, sletter derefter aftalen og gaar tilbage */
-async function moedeSlet() {
-  const ma = planMoedeAftale(); if (!ma || !ma.id) return;
-  if (!arkOk("moedeSlet", arguments, { titel: "Slet mødet?", tekst: "Mødet fjernes fra kalenderen.", jaTekst: "Ja, slet" })) return;
-  await kundeAftaleSlet(ma.id);
-  /* DUBLETTER SLETTES MED (Ida 10/10: »mødet d. 12. oktober, jeg har slettet 100 gange, kommer tilbage«): ligger der flere rækker med samme dag og samme mødetitel, fjernes de alle — ellers dukker den næste op, hver gang én slettes */
-  try {
-    const sosk = (window.__kundeAftalerAlle || window.__kundeAftaler || []).filter(function (a) { return a && a.id && String(a.id) !== String(ma.id) && String(a.dato || "").slice(0, 10) === String(ma.dato || "").slice(0, 10) && String(a.kode || "") === String(ma.kode || "") && erMoedeTitel(a.titel); });
-    for (const a of sosk) { try { await sb.from("kunde_aftaler").delete().eq("id", a.id).select(); } catch (e) {} }
-    if (sosk.length) { try { await renderAftaler(); } catch (e) {} try { husKvit("Mødet og " + sosk.length + " dublet" + (sosk.length === 1 ? "" : "ter") + " er slettet."); } catch (e) {} }
-  } catch (e) {}
-  try { navTilbage(); } catch (e) { try { showTab(8); } catch (e2) {} }
-}
+/* moedeSlet bor ét sted (længere nede, med id; uden id = mødet, der står åbent) — sikkerhedschefen 10/10 */
 function moedeLinkHtml() { let ma = null; try { ma = planMoedeAftale(); } catch (e) {} if (!ma) return ""; return (moedeSted(ma).online && ma.link ? '<a class="ark-chip mo-chip mo-link" href="' + esc(String(ma.link)) + '" target="_blank" rel="noopener">Åbn mødet</a>' : ''); }
 /* ALENE = MAKKEREN SIDDER MED (Ida 21/9 kl. 23.15: »for at synliggøre mødet som vigtigt også selvom det er med en selv«): er teamet én person, står der »dig · din content makker«; ellers navnene */
 function moedeDeltagere() { let folk = []; try { folk = briefPersonerListe(); } catch (e) {} return folk.length > 1 ? folk.join(" · ") : "dig · din content makker"; }
@@ -80931,6 +80919,14 @@ async function moedeBeskedTilDeltagere(ma) {
   } catch (e) { return 0; }
 }
 async function moedeSlet(id) {
+  /* SLET FRA REDIGERINGEN (Ida 8/10: »Slet mødet« bor i redigeringsarket): knappen dér kalder uden id — så er det mødet, der står åbent, og arket spørger én gang.
+     Før 10/10 gjorde knappen ingenting (den rigtige sletning stod i en overskygget funktion med samme navn — fundet af sikkerhedschefen). */
+  if (id == null || id === "") {
+    let ma0 = null; try { ma0 = planMoedeAftale(); } catch (e) {}
+    if (!ma0 || ma0.id == null) return;
+    if (!arkOk("moedeSlet", [], { titel: "Slet mødet?", tekst: "Mødet fjernes fra kalenderen.", jaTekst: "Ja, slet" })) return;
+    id = ma0.id; window.__MO_SLET_ID = String(id);
+  }
   const kn = document.getElementById("moSletKnap");
   if (String(window.__MO_SLET_ID || "") !== String(id)) {
     window.__MO_SLET_ID = String(id); if (kn) { const sp = kn.querySelector("span"); if (sp) sp.textContent = "Tryk igen for at annullere mødet"; kn.classList.add("mo-slet-spoerg"); }

@@ -47,7 +47,8 @@ class TestMotorer(unittest.TestCase):
 
 class TestDobbelte(unittest.TestCase):
     def test_dobbelte(self):
-        self.assertEqual(dobbelte_funktioner("function a() {}\nasync function b() {}\nfunction a(x) {}\n"), ["a"])
+        self.assertEqual(dobbelte_funktioner("<script>\nfunction a() {}\nasync function b() {}\nfunction a(x) {}\n</script>"), ["a"])
+        self.assertEqual(dobbelte_funktioner("<script>\nfunction a() {}\n</script><script>\nfunction a(x) {}\n</script>"), [])   # bevidst overskrivning i senere blok
 
 class TestAnon(unittest.TestCase):
     def test_kun_kursus_aabent(self):
