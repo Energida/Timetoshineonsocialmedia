@@ -47805,6 +47805,30 @@ function openKalenderGuide() {
 /* ---------- inspirations-væggen: billeder + links, klar til at blive idéer ---------- */
 let INSPIRATION = [];
 let INSP_VEDHAEFT = "";
+/* INSPIRATIONENS EGNE NOTER (Ida 10/10, Idébanken-køen pkt. 2–5, 8, 10): søjle, tags, »Hvorfor gemte vi den?«, »Sendt af« og »Brugt«
+   gemmes som ÉN række pr. kort i skema_svar (skema "insp_meta", navn = kortets id) — selve inspirationsrækken røres aldrig,
+   så de links, der allerede ligger (Acorns' 193), aldrig ændres. INSP_VEDHAEFT_ID = kortet, »Lav til idé« kom fra. */
+let INSP_META = {}; let INSP_VEDHAEFT_ID = "";
+async function inspMetaHent() {
+  if (!sb || !currentKode) return INSP_META;
+  try { const r = await sb.from("skema_svar").select("navn,svar").eq("kode", currentKode).eq("skema", "insp_meta"); if (!r.error && r.data) { const m = {}; r.data.forEach(function (x) { if (x && x.navn) m[String(x.navn)] = x.svar || {}; }); INSP_META = m; } } catch (e) {}
+  return INSP_META;
+}
+async function inspMetaGem(id, felter) {
+  id = String(id || ""); if (!id || !sb || !currentKode || id.indexOf("i") === 0) return false;
+  const ny = Object.assign({}, INSP_META[id] || {}, felter || {});
+  try {
+    const f = await sb.from("skema_svar").select("id").eq("kode", currentKode).eq("skema", "insp_meta").eq("navn", id).limit(1);
+    if (f.error) { try { visSyncFejl("skema_svar.select (insp_meta)"); } catch (e) {} return false; }
+    const r = (f.data && f.data.length)
+      ? await sb.from("skema_svar").update({ svar: ny }).eq("id", f.data[0].id).select("id")
+      : await sb.from("skema_svar").insert({ kode: currentKode, navn: id, skema: "insp_meta", svar: ny }).select("id");
+    if (r.error || !r.data || !r.data.length) { try { visSyncFejl("skema_svar (insp_meta)"); } catch (e) {} return false; }
+  } catch (e) { try { visSyncFejl("skema_svar (insp_meta)"); } catch (e2) {} return false; }
+  INSP_META[id] = ny; return true;
+}
+function inspAf() { try { if (typeof CURRENT_NAVN === "string" && CURRENT_NAVN.trim()) return CURRENT_NAVN.trim(); if (typeof SOM_KUNDE !== "undefined" && SOM_KUNDE) return "Ida"; } catch (e) {} return ""; }
+function inspNoterAf(rows) { const af = inspAf(); if (!af) return; (rows || []).forEach(function (x) { if (x && x.id != null) inspMetaGem(x.id, { af: af }); }); }
 function inspAaben() { const f = document.getElementById("inspSendFelt"); const t = f ? String(f.value || "").trim() : ""; kundeArkAabn("fedt", false, t, true); if (f) f.value = ""; }   /* det skrevne foelger med ind i arket (20/9) */   /* "Gem inspirationen"-kortet var en dublet af Set noget fedt — arket (Ida 13/9). Kortet i DOM'en baerer kun filfelterne. */
 function inspLuk() { const b = document.getElementById("inspBack"); if (b) b.classList.remove("on"); }
 function inspMsg(t) { const m = document.getElementById("inspMsg"); if (m) { m.textContent = t; if (t) setTimeout(() => { if (m.textContent === t) m.textContent = ""; }, 5000); } try { const k = document.getElementById("arkKvit"); if (k && ARK && t) k.textContent = t; } catch (e) {} }
@@ -48124,7 +48148,7 @@ async function refreshInspiration() {
   if (sb && currentKode) {
     try {
       const { data, error } = await sb.from("inspiration").select("*").eq("kode", currentKode).order("created_at", { ascending: false });
-      if (!error && data) { INSPIRATION = data; renderInspiration(); return; }
+      if (!error && data) { INSPIRATION = data; try { await inspMetaHent(); } catch (e) {} renderInspiration(); return; }
     } catch(e) {}
   }
   INSPIRATION = inspLocal();
@@ -48146,7 +48170,7 @@ async function uploadInspBilleder(inp) {
       const up = await sb.storage.from("inspiration").upload(sti, blob, { contentType: "image/jpeg" });
       if (up.error) { inspMsg("Kunne ikke uploade: " + up.error.message); continue; }
       const pu = sb.storage.from("inspiration").getPublicUrl(sti);
-      { const ri = await sb.from("inspiration").insert({ kode: currentKode, type: "billede", url: pu.data.publicUrl, sti: sti }).select("id"); if (ri.error || !ri.data || !ri.data.length) { try { visSyncFejl("inspiration.insert (billede)"); } catch (e) {} } }   /* KVITTERING (sikkerhedschefen 10/10, løfte 2): skrivningen læses tilbage; afvist eller 0 rækker = den røde bjælke, aldrig tavst */
+      { const ri = await sb.from("inspiration").insert({ kode: currentKode, type: "billede", url: pu.data.publicUrl, sti: sti }).select("id"); if (ri.error || !ri.data || !ri.data.length) { try { visSyncFejl("inspiration.insert (billede)"); } catch (e) {} } else inspNoterAf(ri.data); }   /* KVITTERING (sikkerhedschefen 10/10, løfte 2): skrivningen læses tilbage; afvist eller 0 rækker = den røde bjælke, aldrig tavst */
     } catch(e) { inspMsg("Kunne ikke uploade — prøv igen."); }
   }
   inspMsg("");
@@ -48173,7 +48197,7 @@ async function tilfoejInspLink() {
   }
   lf.value = ""; nf.value = "";
   if (sb && currentKode) {
-    try { const r = await sb.from("inspiration").insert(rec).select("id"); if (!r.error && r.data && r.data.length) { inspSkaermNulstil(); refreshInspiration(); inspLuk(); return; } } catch(e) {}
+    try { const r = await sb.from("inspiration").insert(rec).select("id"); if (!r.error && r.data && r.data.length) { inspNoterAf(r.data); inspSkaermNulstil(); refreshInspiration(); inspLuk(); return; } } catch(e) {}
     /* GEM-GENNEMGANGEN 29/9: foer faldt et afvist gem tavst ned paa telefonen alene — teamet saa det aldrig, og det kunne forsvinde.
        Nu bliver arket staaende med det skrevne, og der siges til. */
     lf.value = url; nf.value = note;
@@ -48238,7 +48262,7 @@ async function delInsp(id) {
 }
 function inspTilIde(id) {
   const x = INSPIRATION.find(y => String(y.id) === String(id)); if (!x) return;
-  INSP_VEDHAEFT = inspUrl(x) || "";
+  INSP_VEDHAEFT = inspUrl(x) || ""; INSP_VEDHAEFT_ID = String(x.id);
   kundeArkAabn("ide", false, inspNavn(x) === (x.note || "").trim() ? (x.note || "").trim() : (String(x.note || "").replace(INSP_LINK_RX, "").replace(/\s+/g, " ").trim())); return;   /* arket, forudfyldt med noten, linket/billedet foelger med (Ida 13/9) */
   NEWIDEA_MODE = "ide";
   IDEWIZ = { step: 1, tema: "", titel: (x.note || "").trim() };
@@ -56219,7 +56243,7 @@ function ideVedhaeftHtml() {
 }
 function ideVedhaeftTegn() { const v = document.getElementById("ideVedh"); if (v) v.innerHTML = ideVedhaeftHtml(); }
 function ideVedhMsg(t) { const m = document.getElementById("ideVedhMsg"); if (m) { m.textContent = t || ""; m.style.display = t ? "block" : "none"; } }
-function ideVedhaeftFjern() { INSP_VEDHAEFT = ""; IDE_VEDH_AABEN = ""; ideVedhaeftTegn(); }
+function ideVedhaeftFjern() { INSP_VEDHAEFT = ""; INSP_VEDHAEFT_ID = ""; IDE_VEDH_AABEN = ""; ideVedhaeftTegn(); }
 async function ideFotoValgt(inp) {
   const f = inp.files && inp.files[0]; inp.value = ""; if (!f) return;
   if (!sb || !currentKode) { ideVedhMsg("Billeder kræver forbindelse til databasen. Et link virker stadig."); return; }
@@ -56232,8 +56256,8 @@ async function ideFotoValgt(inp) {
     const pu = sb.storage.from("inspiration").getPublicUrl(sti);
     const url = pu && pu.data ? pu.data.publicUrl : "";
     if (!url) { ideVedhMsg("Kunne ikke uploade billedet. Prøv igen."); return; }
-    try { const ri = await sb.from("inspiration").insert({ kode: currentKode, type: "billede", url: url, sti: sti }).select("id"); if (ri.error || !ri.data || !ri.data.length) visSyncFejl("inspiration.insert (billede)"); } catch (e) { try { visSyncFejl("inspiration.insert"); } catch (e2) {} }   /* KVITTERING (sikkerhedschefen 10/10, løfte 2): skrivningen læses tilbage; afvist eller 0 rækker = den røde bjælke, aldrig tavst */
-    INSP_VEDHAEFT = url; IDE_VEDH_AABEN = "";
+    try { const ri = await sb.from("inspiration").insert({ kode: currentKode, type: "billede", url: url, sti: sti }).select("id"); if (ri.error || !ri.data || !ri.data.length) visSyncFejl("inspiration.insert (billede)"); else inspNoterAf(ri.data); } catch (e) { try { visSyncFejl("inspiration.insert"); } catch (e2) {} }   /* KVITTERING (sikkerhedschefen 10/10, løfte 2): skrivningen læses tilbage; afvist eller 0 rækker = den røde bjælke, aldrig tavst */
+    INSP_VEDHAEFT = url; INSP_VEDHAEFT_ID = ""; IDE_VEDH_AABEN = "";
     ideVedhaeftTegn();
     try { refreshInspiration(); } catch (e) {}
   } catch (e) { ideVedhMsg("Kunne ikke uploade billedet. Prøv igen."); }
@@ -56246,9 +56270,9 @@ async function ideLinkSaet() {
   const titelFelt = document.getElementById("ideWizFangFelt") || document.getElementById("ideWizInput");
   const note = ((titelFelt && titelFelt.value) || "").trim() || "Fra Ny idé";
   const rec = { kode: currentKode || "X", type: "link", url: url, note: note };
-  if (sb && currentKode) { try { const ri = await sb.from("inspiration").insert(rec).select("id"); if (ri.error || !ri.data || !ri.data.length) { visSyncFejl("inspiration.insert"); return; } try { refreshInspiration(); } catch (e) {} } catch (e) { try { visSyncFejl("inspiration.insert"); } catch (e2) {} } }   /* KVITTERING (sikkerhedschefen 10/10, løfte 2): skrivningen læses tilbage; afvist eller 0 rækker = den røde bjælke, aldrig tavst */
+  if (sb && currentKode) { try { const ri = await sb.from("inspiration").insert(rec).select("id"); if (ri.error || !ri.data || !ri.data.length) { visSyncFejl("inspiration.insert"); return; } inspNoterAf(ri.data); try { refreshInspiration(); } catch (e) {} } catch (e) { try { visSyncFejl("inspiration.insert"); } catch (e2) {} } }   /* KVITTERING (sikkerhedschefen 10/10, løfte 2): skrivningen læses tilbage; afvist eller 0 rækker = den røde bjælke, aldrig tavst */
   else { rec.id = "i" + Date.now(); rec.created_at = new Date().toISOString(); try { INSPIRATION.unshift(rec); inspLocalSave(); } catch (e) {} }
-  INSP_VEDHAEFT = url; IDE_VEDH_AABEN = "";
+  INSP_VEDHAEFT = url; INSP_VEDHAEFT_ID = ""; IDE_VEDH_AABEN = "";
   ideVedhaeftTegn();
 }
 function renderIdeaWizard() {
@@ -59622,7 +59646,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2737";
+const APP_VERSION = "2738";
 const APP_BYGGET = "9. oktober";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_BYGGET + " · " + APP_VERSION; } catch (e) {} });
 let NY_VERSION_KLAR = false;
@@ -74284,7 +74308,7 @@ function kundeArkAabn(valgt, paaFoto, tekst, kun) {
           : '')
         + '<div id="fangSkaermVis" style="display:none;align-items:center;gap:10px;font-size:12px;color:var(--gray3);"></div>';
     },
-    gem: kundeArkGem, efterLuk: function () { KUNDE_ARK_SOEJLE = ""; INSP_VEDHAEFT = ""; inspSkaermNulstil(); try { if (typeof current === "number" && current === 2) renderIdeas(); } catch (e) {} } });
+    gem: kundeArkGem, efterLuk: function () { KUNDE_ARK_SOEJLE = ""; INSP_VEDHAEFT = ""; INSP_VEDHAEFT_ID = ""; inspSkaermNulstil(); try { if (typeof current === "number" && current === 2) renderIdeas(); } catch (e) {} } });
   /* FORMATET FOERST, naar soejlen er valgt (29/9): formatet flyttes op over titlen */
   /* (29/9 »formatet først« er afloest 5/10 aften af »Tilføj mere« — formatet bor bag pillen som resten) */
   try { arkPagerPrikker(); } catch (e) {}
@@ -74474,7 +74498,7 @@ function kundeArkDrejebog() {
   let kode = /^[12][AB]$/.test(soejle) ? soejle : ""; if (!kode) { try { const m = soejleModel(soejle); kode = m ? m.kode : ""; } catch (e) {} }   /* uden Drejebog er chippen selve koden */
   if (!kode) return;
   const tekst = (((document.getElementById("arkTekst") || {}).value) || "").trim();
-  arkLuk(true); KUNDE_ARK_SOEJLE = ""; INSP_VEDHAEFT = ""; try { inspSkaermNulstil(); } catch (e) {}
+  arkLuk(true); KUNDE_ARK_SOEJLE = ""; INSP_VEDHAEFT = ""; INSP_VEDHAEFT_ID = ""; try { inspSkaermNulstil(); } catch (e) {}
   drejebogSpoergAabn(kode, /^[12][AB]$/.test(soejle) ? prSoejleNavnFor(kode) : soejle, tekst);
 }
 /* LINK PAA IDÉEN (Ida 22/9 kl. 08.19: »vil også gerne have link-symbolet, hvis man vil indsætte link«): link-tegnet i feltets raekke aabner en linje med husets link-felt under feltet; linket gemmes som »Inspiration: …« i beskrivelsen (samme noegle, som ideInspUrl laeser) */
@@ -74533,6 +74557,7 @@ async function kundeArkGem(tekst, k) {
     const dele = []; if (t) dele.push(t);   /* HANS-TESTEN 20/9 eftermiddag (runde 3): uden egen titel blev HELE teksten titlen, og »Hvad er idéen?« stod tom paa telefonens Toem hovedet — teksten foelger altid med som beskrivelse */
     if (INSP_VEDHAEFT) dele.push("Inspiration: " + INSP_VEDHAEFT);   /* Lav til idé fra Inspiration: linket/billedet foelger med (13/9) */
     const briefNy = dele.length ? { beskrivelse: dele.join("\n\n") } : {};
+    const inspFra = INSP_VEDHAEFT_ID; if (inspFra && INSP_VEDHAEFT) briefNy.inspiration = { id: inspFra, url: INSP_VEDHAEFT };   /* referencen til briefen (Ida 10/10, pkt. 9) */
     if (KUNDE_ARK_TAGS && KUNDE_ARK_TAGS.length) briefNy.tags = KUNDE_ARK_TAGS.slice();   /* tags paa idéen (19/9) */
     if (KUNDE_ARK_VIBE) briefNy.vibe = KUNDE_ARK_VIBE; if (KUNDE_ARK_MG) briefNy.maalgruppe = KUNDE_ARK_MG;   /* afdelingerne Vibe og Maalgruppe = briefens egne felter (Idas klik 29/9) */
     KUNDE_ARK_VIBE = ""; KUNDE_ARK_MG = "";
@@ -74542,7 +74567,8 @@ async function kundeArkGem(tekst, k) {
     try { if (rec && rec.id) ibSkrollTilNyStart(rec.id); } catch (e) {}   /* Idébanken staar paa den soejle, hvor den nye ide ligger (SOS 9/10: Rene saa den ikke) */
     KUNDE_ARK_FORMAT = "";
     KUNDE_ARK_TAGS = [];   /* intet format, foer kunden vaelger det (Ida 18/9 kl. 14.38) */
-    INSP_VEDHAEFT = "";
+    INSP_VEDHAEFT = ""; INSP_VEDHAEFT_ID = "";
+    if (inspFra && rec && rec.id) { try { await inspMetaGem(inspFra, { brugt: { ide: String(rec.id), tid: new Date().toISOString() } }); } catch (e) {} }   /* kortet bliver »Brugt« (Ida 10/10, pkt. 8) */
     /* KVITTERINGEN SIGER STEDET (Ida/natten 7/10, revision fund 32 + 100): »Gemt i Idébanken.« stod, mens idéen laa under »Uden plads« bag sin chip — nu siger den soejlen, Story eller Uden plads */
     let sted = "Uden plads"; try { if (ideErStory(rec)) sted = "Story"; else if (soejleVal) sted = soejleVis(soejleVal) || soejleVal; } catch (e) {}
     if (rec && rec.id) { setTimeout(function () { try { arkLuk(); } catch (e) {} }, 600); if (sted === "Uden plads") { const nyId = rec.id; window.__KVIT_HANDLING = { tekst: "Se idéen", klik: function () { try { openBrief(nyId); } catch (e) {} } }; } return (sted === "Uden plads" ? "Gemt under Uden plads." : "Gemt i " + sted + "."); }   /* arket lukker efter Gem (Ida 18/9 kl. 14.33) */
@@ -74556,7 +74582,7 @@ async function kundeArkGem(tekst, k) {
       const nye = links.filter(function (u) { return !kendte[inspNorm(u)]; }); const sprang = links.length - nye.length;
       if (!nye.length) return "Alle " + links.length + " links står allerede på Inspiration.";
       if (!sb || !currentKode) return false;
-      try { const ri = await sb.from("inspiration").insert(nye.map(function (u) { return { kode: currentKode, type: "link", url: u, note: null }; })).select("id"); if (ri.error || !ri.data || ri.data.length !== nye.length) return false; } catch (e) { return false; }
+      try { const ri = await sb.from("inspiration").insert(nye.map(function (u) { return { kode: currentKode, type: "link", url: u, note: null }; })).select("id"); if (ri.error || !ri.data || ri.data.length !== nye.length) return false; inspNoterAf(ri.data); } catch (e) { return false; }
       try { refreshInspiration(); } catch (e) {}
       return nye.length + " links gemt på Inspiration." + (sprang ? " " + sprang + " stod der allerede." : "");
     }
@@ -74568,7 +74594,7 @@ async function kundeArkGem(tekst, k) {
       const sti = await inspSkaermUpload(INSP_SKAERM); if (!sti) return false;
       rec.sti = sti;
     }
-    if (sb && currentKode) { try { const { data: iData, error } = await sb.from("inspiration").insert(rec).select("id"); if (error || !iData || !iData.length) return false; inspSkaermNulstil(); try { refreshInspiration(); } catch (e) {} return "Gemt på Inspiration."; } catch (e) { return false; } }
+    if (sb && currentKode) { try { const { data: iData, error } = await sb.from("inspiration").insert(rec).select("id"); if (error || !iData || !iData.length) return false; inspNoterAf(iData); inspSkaermNulstil(); try { refreshInspiration(); } catch (e) {} return "Gemt på Inspiration."; } catch (e) { return false; } }
     rec.id = "i" + Date.now(); rec.created_at = new Date().toISOString(); INSPIRATION.unshift(rec); inspLocalSave(); try { renderInspiration(); } catch (e) {} return "Gemt på Inspiration.";
   }
   if (k === "tema") {
