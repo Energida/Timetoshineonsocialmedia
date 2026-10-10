@@ -4,6 +4,8 @@
 - **DAGSORDENEN RETTES PÅ STEDET.** Et penneikon ved hvert punkt åbner punktet: navn, tekst, skraldespand (fjern) og Gem; »Tilføj punkt« lægger et nyt til. Standardpunkterne (performance · den kommende uge · dato for næste møde) står uændrede, til man retter dem. Gemmes i `plan_ritual.moede.dagsorden` (merges, andre nøgler urørte); et rettet punkt bliver statisk tekst, et urørt punkt bliver dynamisk (uge, tema, mål). Ingen Annuller i rettelsen.
 - **ALLE DATOSYMBOLER ER KVADRATER, 56 × 56 (HÅRD, Ida 9/10: »kvadratiske alle steder«):** Kommende opslag (`.kop-dato`), aftalernes dato (`.cf-dato`), Backstages `.bs3-tidb.d` og `.bs-datob`. Ingen dato-boks er højere end bred.
 
+## v2719 (10/10) — Måler på log ud: login-siden siger nu, om du selv trykkede Log ud, eller om Supabase loggede ud (med klokkeslæt og hvornår loginnet sidst blev fornyet). Ida 10/10: »er det med vilje, du har logget mig ud?« — det var det ikke. Admin-login og »Glemt« siger nu på dansk, at feltet skal have en e-mail, når browseren har udfyldt fx »Admin«.
+
 ## v2718 (10/10) — Planlægning har »Tilbage« (sikkerhedschefen løfte 11: målt uden vej tilbage på 390 og 1440) · sikkerheds-headers: HSTS og frame-ancestors (kun energida.dk må vise appen i en ramme). CSP for scripts er ikke sat — den kræver en gennemgang af inline-scripts og CDN'er.
 
 ## v2717 (10/10) — Log ud rydder kundens indhold på enheden (sikkerhedschefen løfte 20): gemte kopier af idéer/briefs, svar, mål, opgaver, inspiration, dagsprogram, plandato og Drive-link for koden fjernes ved log ud. Køerne med det, der endnu ikke er sendt (*_koe), bliver — intet arbejde må gå tabt.

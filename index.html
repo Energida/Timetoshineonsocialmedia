@@ -59492,7 +59492,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2718";
+const APP_VERSION = "2719";
 const APP_BYGGET = "9. oktober";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_BYGGET + " · " + APP_VERSION; } catch (e) {} });
 let NY_VERSION_KLAR = false;
@@ -62810,6 +62810,12 @@ if (sb) {
      intet. Sammenlign ALDRIG paa noget andet end id'et, og fjern aldrig nulstillingen. */
   let SIDSTE_BRUGER_ID = null;
   sb.auth.onAuthStateChange((event, session) => {
+    /* HVORNÅR OG HVORFOR FORSVANDT LOGINNET? (Ida 10/10: »er det med vilje, du har logget mig ud?«): Supabase melder SIGNED_OUT, når en fornyelse afvises
+       (fx to faner, der fornyer samtidig) — tidspunkt, antal åbne faner og om det var et tryk på Log ud gemmes og står på login-siden */
+    try {
+      if (event === "TOKEN_REFRESHED") localStorage.setItem("energida_sidst_fornyet", new Date().toISOString());
+      if (event === "SIGNED_OUT" && !window.__LOGUD_TRYK) { const d = new Date(); localStorage.setItem("energida_logud_grund", "Supabase loggede ud kl. " + String(d.getHours()).padStart(2, "0") + "." + String(d.getMinutes()).padStart(2, "0") + " " + d.getDate() + "/" + (d.getMonth() + 1) + " uden et tryk på Log ud (sidst fornyet " + (localStorage.getItem("energida_sidst_fornyet") || "ukendt").slice(11, 16) + ")"); }
+    } catch (e) {}
     if (event === "PASSWORD_RECOVERY") visNyAdgangskode();
     /* Invitationen: samme skaerm, men den siger noget andet — hun har ikke en gammel
        kode at skifte fra. Flaget saettes foerst i dokumentet, se kommentaren dér. */
@@ -65317,6 +65323,7 @@ function rydKundedataLokalt(kode) {
   } catch (e) { return 0; }
 }
 async function custLogout() {
+  window.__LOGUD_TRYK = true; try { localStorage.setItem("energida_logud_grund", "du trykkede Log ud"); } catch (e) {}
   try { rydKundedataLokalt(currentKode); } catch (e) {}
   if (sb) { try { await sb.auth.signOut({ scope: "local" }); } catch(e) {} }
   clearSbSession();
@@ -74600,7 +74607,7 @@ function setGreeting() {
 async function dashGlemt() {
   const email = (document.getElementById("loginEmail").value || "").trim();
   const err = document.getElementById("loginError");
-  if (!email) { err.textContent = "Skriv din e-mail øverst først — så sender vi et nulstillings-link."; err.classList.add("show"); return; }
+  if (!email || email.indexOf("@") < 0) { err.textContent = "Skriv din e-mail øverst først — så sender vi et nulstillings-link."; err.classList.add("show"); return; }
   if (!sb) return;
   const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: location.origin });   /* UDEN skråstreg (Ida 9/10: »klikkede på vælg ny adgangskode på admin og så kom jeg ind på min hjemmeside«): Supabases liste har https://admin.energida.dk, og origin + pathname gav https://admin.energida.dk/ — det matchede ikke, så linket faldt tilbage til Site URL (energida.dk) */
   err.textContent = error ? "Kunne ikke sende: " + error.message : "Vi har sendt et link til " + email + " — tjek indbakken. Linket virker i en time.";
@@ -74611,6 +74618,7 @@ async function doLogin() {
   const email = document.getElementById("loginEmail").value.trim();
   const pass = document.getElementById("loginPass").value;
   const err = document.getElementById("loginError");
+  if (email.indexOf("@") < 0) { err.textContent = "Skriv din e-mail i det øverste felt — der står »" + email + "«, ikke en e-mail."; err.classList.add("show"); return; }   /* browseren udfyldte »Admin« (Ida 10/10: »nu kan jeg ikke komme ind?«) */
   const { error } = await sb.auth.signInWithPassword({ email, password: pass });
   if (error) { err.textContent = "Login mislykkedes: " + error.message; err.classList.add("show"); return; }
   err.classList.remove("show");
@@ -74656,7 +74664,7 @@ function nulstilBrugerCache() {
   try { const h = document.getElementById("mrVenterHost"); if (h) h.innerHTML = ""; } catch (e) {}
   try { const h = document.getElementById("mrNoterHost"); if (h) h.innerHTML = ""; } catch (e) {}
 }
-async function doLogout() { if (sb) await sb.auth.signOut({ scope: "local" }); nulstilBrugerCache(); showLogin(); }
+async function doLogout() { window.__LOGUD_TRYK = true; try { localStorage.setItem("energida_logud_grund", "du trykkede Log ud"); } catch (e) {} if (sb) await sb.auth.signOut({ scope: "local" }); nulstilBrugerCache(); showLogin(); }
 
 async function refresh() {
   CUSTOMERS = await fetchCustomers();
