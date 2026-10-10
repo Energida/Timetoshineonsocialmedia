@@ -8967,7 +8967,9 @@ html body .htb-side.htb-ny .htb-flise { margin:0 0 12px; }   /* bud 3 (5/10): la
 .htb-th-ok, .htb-td-ok { width:40px; }
 .htb-td-ok { padding-right:6px; }
 .htb-tab .htb-rk-navn { white-space:normal; }
-.htb-th-tal, .htb-td-tal { text-align:right !important; width:64px; padding-right:14px !important; }
+.htb-th-tal, .htb-td-tal { text-align:right !important; width:120px; padding-right:14px !important; white-space:nowrap; }
+.htb-th-tal { white-space:normal; line-height:1.3; }   /* »Opslag på Instagram« må bryde i overskriften, aldrig i tallet (Ida 10/10) */
+.htb-str { display:inline-block; margin-left:8px; font-size:11px; color:var(--gray2, #6F6B66); border:1px solid var(--border); border-radius:999px; padding:1px 8px; vertical-align:middle; white-space:nowrap; }
 .htb-td-tal { font-size:15px; }
 .htb-td-dato { color:var(--gray2); font-size:12.5px; white-space:nowrap; width:110px; }
 .htb-th-sk, .htb-td-sk { width:36px; text-align:right !important; }
@@ -59548,7 +59550,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2727";
+const APP_VERSION = "2728";
 const APP_BYGGET = "9. oktober";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_BYGGET + " · " + APP_VERSION; } catch (e) {} });
 let NY_VERSION_KLAR = false;
@@ -60049,7 +60051,7 @@ async function htbHent() {
     }
     HTB = ud; HTB_HENTER = null;
     /* ANTAL BRUG NULSTILLET EEN GANG (Ida 21/9 kl. 14.28: »fjern alle de antal brug der pt. står fordi det er forkerte tal«) — taelleren starter forfra herfra */
-    try { if (HTB && !HTB.brugNulstillet && (HTB.liste || []).some(function (x) { return Number(x.brugt) > 0; })) { HTB.liste.forEach(function (x) { x.brugt = 0; }); HTB.brugNulstillet = "2026-09-21"; htbGem(); } } catch (e) {}
+    /* (Engangs-nulstillingen fra 21/9 er fjernet 10/10: tallet er nu »Opslag på Instagram«, tastet af kunden — en bank uden mærket ville ellers få sine tal sat til 0) */
     return HTB;
   })();
   return HTB_HENTER;
@@ -60058,7 +60060,7 @@ function htbLaegTil(bank, tekst, kat, brugt, ideId) {
   const t = htbNorm(tekst); if (!t) return null;
   let it = bank.liste.find(function (x) { return htbNoegle(x.t) === htbNoegle(t); });
   if (!it) { it = { t: t, kat: htbStor(kat || ""), brugt: Number(brugt) || 0, fast: false, ideer: [] }; bank.liste.push(it); }
-  if (ideId && (it.ideer || (it.ideer = [])).indexOf(ideId) === -1) { it.ideer.push(ideId); it.brugt = (Number(it.brugt) || 0) + 1; }
+  if (ideId && (it.ideer || (it.ideer = [])).indexOf(ideId) === -1) it.ideer.push(ideId);   /* tallet roeres aldrig ved brug — det er »Opslag på Instagram« (Ida 10/10) */
   return it;
 }
 async function htbGem() {
@@ -60072,6 +60074,10 @@ async function htbGem() {
   if (!ok) { try { husBesked("Det blev ikke gemt — prøv igen."); } catch (e) {} }
   return ok;
 }
+/* OPSLAG PÅ INSTAGRAM (Ida 10/10): tallet vises med tusindtalspunktum, og et lille mærke siger, hvor stort hashtagget er — så et godt mix er let at sætte sammen */
+function htbTal(n) { return (Number(n) || 0).toLocaleString("da-DK"); }
+function htbStr(n) { n = Number(n) || 0; return n > 300000 ? "Stor" : n >= 10000 ? "Mellem" : n > 0 ? "Niche" : ""; }
+function htbStrHtml(n) { const s = htbStr(n); return s ? '<span class="htb-str">' + s + '</span>' : ''; }
 function htbFaste() { return (HTB ? HTB.liste : []).filter(function (x) { return !!x.fast; }); }
 function htbKategorier() { const set = []; (HTB ? HTB.liste : []).forEach(function (x) { const k = htbStor(x.kat || ""); if (k && set.indexOf(k) === -1) set.push(k); }); return set.sort(function (a, b) { return a.localeCompare(b, "da"); }); }
 /* BRUGT TAELLES EEN GANG PR. BRIEF: naar en brief gemmes, faar hver hashtag i captionen briefens id — er id'et nyt, taeller tallet op.
@@ -60084,7 +60090,6 @@ async function htbTaelBrief(ideId, hashtags) {
       const t = htbNorm(h); if (!t) return;
       const foer = JSON.stringify(HTB.liste.find(function (x) { return htbNoegle(x.t) === htbNoegle(t); }) || null);
       const it = htbLaegTil(HTB, t, "", 0, String(ideId));
-      if (it) it.sidst = new Date().toISOString().slice(0, 10);   /* Sidst brugt (bud 3, 5/10) */
       if (JSON.stringify(it) !== foer) aendret = true;
     });
     if (aendret) await htbGem();
@@ -60099,11 +60104,11 @@ function htbChipHtml(x, klik, medSkrald) {
   /* SAERTILFAELDE (Idas beslutning 21/9 kl. 20.18): i en chip er slet et KRYDS, ikke skraldespanden — undtagelsen fra 17/9-reglen, kun i chips */
   const skrald = medSkrald ? '<span class="htb-chip-skrald" role="button" aria-label="Slet" title="Slet" onclick="event.stopPropagation();htbSlet(\'' + esc(x.t) + '\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></span>' : '';
   return '<button type="button" class="htb-chip' + (medSkrald ? ' m-skrald' : '') + '" data-t="' + esc(x.t) + '" onclick="' + klik + '">#' + esc(x.t)
-    + '<span class="htb-tal">' + (Number(x.brugt) || 0) + (x.kat ? ' · ' + esc(htbStor(x.kat)) : '') + '</span>' + skrald + '</button>';
+    + '<span class="htb-tal">' + htbTal(x.brugt) + (x.kat ? ' · ' + esc(htbStor(x.kat)) : '') + '</span>' + skrald + '</button>';
 }
 /* FILTRER OG SORTER I BANKEN (Ida 21/9 kl. 19.35: »vi skal have sorter og filtrer mulighederne ind her på hashtags«): kategori-chips + sortering (A–Å · Mest brugt · Mindst brugt) */
 let HTB_BANK = { kat: "", sort: "az" };
-const HTB_SORT = [["az", "A–Å"], ["mest", "Mest brugt"], ["mindst", "Mindst brugt"]];
+const HTB_SORT = [["az", "A–Å"], ["mest", "Flest opslag"], ["mindst", "Færrest opslag"]];
 function htbFilterKat(k) { HTB_BANK.kat = (HTB_BANK.kat === k) ? "" : k; htbTegn(); }
 function htbSorter(v) { HTB_BANK.sort = v; htbTegn(); }
 function htbFilterHtml(kats, iMoedet) {
@@ -60121,7 +60126,7 @@ function htbFliserHtml(iMoedet) {
   const bank = (HTB ? HTB.liste : []).filter(function (x) { return (iMoedet || !HTB_BANK.kat) ? !x.fast : htbNoegle(x.kat || "") === htbNoegle(HTB_BANK.kat); })
     .sort(function (a, b) { const s = iMoedet ? "az" : HTB_BANK.sort; if (s === "mest" && (Number(b.brugt) || 0) !== (Number(a.brugt) || 0)) return (Number(b.brugt) || 0) - (Number(a.brugt) || 0); if (s === "mindst" && (Number(b.brugt) || 0) !== (Number(a.brugt) || 0)) return (Number(a.brugt) || 0) - (Number(b.brugt) || 0); return a.t.localeCompare(b.t, "da"); });
   return '<div class="htb-flise"><div class="htb-eye">Låste</div>'
-    + (faste.length ? '<div class="htb-faste" id="htbFaste">' + faste.map(function (x, i) { return '<div class="htb-rk" data-i="' + i + '"><span class="htb-greb-knap" title="Træk for at ændre rækkefølgen">' + HTB_GREB + '</span><button type="button" class="htb-rk-navn" onclick="htbArkAabn(\'' + esc(x.t) + '\')">#' + esc(x.t) + '</button><span class="htb-tal">' + (Number(x.brugt) || 0) + '</span></div>'; }).join("") + '</div>'
+    + (faste.length ? '<div class="htb-faste" id="htbFaste">' + faste.map(function (x, i) { return '<div class="htb-rk" data-i="' + i + '"><span class="htb-greb-knap" title="Træk for at ændre rækkefølgen">' + HTB_GREB + '</span><button type="button" class="htb-rk-navn" onclick="htbArkAabn(\'' + esc(x.t) + '\')">#' + esc(x.t) + '</button><span class="htb-tal">' + htbTal(x.brugt) + '</span></div>'; }).join("") + '</div>'
        : '<div class="htb-tom">Ingen faste endnu. Tryk på en hashtag, og slå “Med i hver caption” til.</div>')
     + '</div>'
     + '<div class="htb-flise"><div class="htb-eye">Banken</div>' + (kats.length ? htbFilterHtml(kats, iMoedet) : '')
@@ -60168,7 +60173,7 @@ async function htbGruppeNy(k) {
 function htbSideHtml() {
   const faste = htbFaste(); const alle = (HTB ? HTB.liste : []); const pc = !!(window.matchMedia && window.matchMedia("(min-width:900px)").matches);
   let h = '<div class="htb-flise"><div class="htb-eye htb-eye-rk"><span>Låste</span><span class="htb-eye-h">' + faste.length + ' af ' + HTB_MAKS_FASTE + ' i hver caption</span></div>';
-  h += faste.length ? '<div class="htb-faste" id="htbFaste">' + faste.map(function (x, i) { return '<div class="htb-rk" data-i="' + i + '"><span class="htb-greb-knap" title="Træk for at ændre rækkefølgen">' + HTB_GREB + '</span><button type="button" class="htb-rk-navn" onclick="htbArkAabn(\'' + esc(x.t) + '\')">#' + esc(x.t) + '</button><span class="htb-tal">' + (Number(x.brugt) || 0) + '</span>' + htbOkHtml(true, x.t) + '</div>'; }).join("") + '</div>'
+  h += faste.length ? '<div class="htb-faste" id="htbFaste">' + faste.map(function (x, i) { return '<div class="htb-rk" data-i="' + i + '"><span class="htb-greb-knap" title="Træk for at ændre rækkefølgen">' + HTB_GREB + '</span><button type="button" class="htb-rk-navn" onclick="htbArkAabn(\'' + esc(x.t) + '\')">#' + esc(x.t) + '</button><span class="htb-tal">' + htbTal(x.brugt) + '</span>' + htbOkHtml(true, x.t) + '</div>'; }).join("") + '</div>'
     : '<div class="htb-tom">Ingen låste endnu. Tryk på cirklen ud for en hashtag i banken.</div>';
   h += '</div>';
   if (!alle.length) return h + '<div class="htb-flise"><div class="htb-eye">Banken</div><div class="htb-tom">Ingen hashtags endnu.</div><button type="button" class="hu-graa" style="margin-top:12px" onclick="htbNyArk()">Tilføj hashtag</button></div>';
@@ -60178,16 +60183,15 @@ function htbSideHtml() {
   if (!HTB_BANK.foerste && grupper.length) HTB_BANK.foerste = htbNoegle(grupper[0].k || "_uden");
   const chip = function (navn, on, fn) { return '<button type="button" class="ark-chip mq-tap' + (on ? ' on' : '') + '" onclick="' + fn + '">' + esc(navn) + '</button>'; };
   h += '<div class="cf-sek hu-sek mb-versal htb-sek">Banken</div>'
-    + '<div class="ark-chips i-fladen bs3-chips htb-sortchips">' + chip("Mest brugt", HTB_BANK.sort === "mest", "htbSorter('mest')") + chip("A til Å", HTB_BANK.sort === "az", "htbSorter('az')") + chip("Sidst brugt", HTB_BANK.sort === "sidst", "htbSorter('sidst')") + chip(HTB_BANK.alle ? "Fold alle ind" : "Fold alle ud", !!HTB_BANK.alle, "htbAlleSkift()") + '</div>';
+    + '<div class="ark-chips i-fladen bs3-chips htb-sortchips">' + chip("Flest opslag", HTB_BANK.sort === "mest", "htbSorter('mest')") + chip("A til Å", HTB_BANK.sort === "az", "htbSorter('az')") + chip(HTB_BANK.alle ? "Fold alle ind" : "Fold alle ud", !!HTB_BANK.alle, "htbAlleSkift()") + '</div>';
   grupper.forEach(function (g) {
     const liste = alle.filter(function (x) { return htbNoegle(x.kat || "") === htbNoegle(g.k); }).sort(htbSortFn);
-    const brug = liste.reduce(function (a, x) { return a + (Number(x.brugt) || 0); }, 0);
     const aaben = htbGruppeAaben(g.k); const nid = htbNoegle(g.k || "_uden");
     h += '<div class="htb-flise htb-gruppe' + (aaben ? ' aaben' : '') + '">'
-      + '<button type="button" class="htb-gruppe-hoved" aria-expanded="' + (aaben ? 'true' : 'false') + '" onclick="htbGruppeSkift(\'' + esc(g.k) + '\')"><span class="htb-pil" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></span><span class="htb-gruppe-navn">' + esc(g.navn) + '</span><span class="htb-gruppe-tal">' + liste.length + (liste.length === 1 ? ' hashtag' : ' hashtags') + ' · ' + brug + ' brug</span></button>';
+      + '<button type="button" class="htb-gruppe-hoved" aria-expanded="' + (aaben ? 'true' : 'false') + '" onclick="htbGruppeSkift(\'' + esc(g.k) + '\')"><span class="htb-pil" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></span><span class="htb-gruppe-navn">' + esc(g.navn) + '</span><span class="htb-gruppe-tal">' + liste.length + (liste.length === 1 ? ' hashtag' : ' hashtags') + '</span></button>';
     if (aaben) {
-      h += '<table class="htb-tab"><thead><tr><th class="htb-th-ok">Låst</th><th>Hashtag</th><th class="htb-th-tal">Brugt</th>' + (pc ? '<th>Sidst brugt</th>' : '') + '<th class="htb-th-sk"></th></tr></thead><tbody>'
-        + liste.map(function (x) { return '<tr><td class="htb-td-ok">' + htbOkHtml(!!x.fast, x.t) + '</td><td><button type="button" class="htb-rk-navn" onclick="htbArkAabn(\'' + esc(x.t) + '\')">#' + esc(x.t) + '</button></td><td class="htb-td-tal">' + (Number(x.brugt) || 0) + '</td>' + (pc ? '<td class="htb-td-dato">' + esc(htbDatoKort(x.sidst)) + '</td>' : '') + '<td class="htb-td-sk"><button type="button" class="htb-sk mq-tap" aria-label="Slet" title="Slet" onclick="htbSlet(\'' + esc(x.t) + '\')">' + HTB_SKRALD + '</button></td></tr>'; }).join("")
+      h += '<table class="htb-tab"><thead><tr><th class="htb-th-ok">Låst</th><th>Hashtag</th><th class="htb-th-tal">Opslag på Instagram</th>' + '<th class="htb-th-sk"></th></tr></thead><tbody>'
+        + liste.map(function (x) { return '<tr><td class="htb-td-ok">' + htbOkHtml(!!x.fast, x.t) + '</td><td><button type="button" class="htb-rk-navn" onclick="htbArkAabn(\'' + esc(x.t) + '\')">#' + esc(x.t) + '</button>' + htbStrHtml(x.brugt) + '</td><td class="htb-td-tal">' + htbTal(x.brugt) + '</td>' + '<td class="htb-td-sk"><button type="button" class="htb-sk mq-tap" aria-label="Slet" title="Slet" onclick="htbSlet(\'' + esc(x.t) + '\')">' + HTB_SKRALD + '</button></td></tr>'; }).join("")
         + '</tbody></table>'
         + '<div class="htb-send htb-send-gruppe"><span class="htb-hash">#</span><input type="text" id="htbNyI_' + nid + '" placeholder="Tilføj hashtag" autocomplete="off" aria-label="Tilføj hashtag i ' + esc(g.navn) + '" onkeydown="if(event.key===\'Enter\'){event.preventDefault();htbGruppeNy(\'' + esc(g.k) + '\')}"><button type="button" class="htb-send-knap mq-tap" aria-label="Tilføj" onclick="htbGruppeNy(\'' + esc(g.k) + '\')">' + (pc ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 10l-5 5 5 5"/><path d="M20 4v7a4 4 0 0 1-4 4H4"/></svg>' : '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>') + '</button></div>';
     }
@@ -60223,7 +60227,7 @@ function htbNyArk() {
     + '<div class="htb-ark-eye">Hashtag</div><div class="htb-send htb-send-ark"><span class="htb-hash">#</span><input type="text" id="htbNyT" placeholder="Tilføj hashtag" autocomplete="off" onkeydown="if(event.key===\'Enter\'){event.preventDefault();htbNyGem().then(function(){bsFlytLuk();});}"></div>'
     + '<div class="htb-ny-rk"><div style="flex:1;min-width:0;"><div class="htb-ark-eye">Kategori</div><input type="text" id="htbNyKat" class="htb-felt" placeholder="Kategori" autocomplete="off" onkeydown="if(event.key===\'Enter\'){event.preventDefault();htbNyGem().then(function(){bsFlytLuk();});}">'
     + (kats.length ? '<div class="ark-chips i-fladen sa-chips htb-kat-forslag" style="justify-content:flex-start;margin-top:8px;">' + kats.map(function (k) { return '<button type="button" class="ark-chip" onclick="document.getElementById(\'htbNyKat\').value=this.textContent;var me=this;this.parentElement.querySelectorAll(\'.ark-chip\').forEach(function(x){x.classList.toggle(\'on\',x===me)})">' + esc(k) + '</button>'; }).join('') + '</div>' : '') + '</div>'
-    + '<div style="flex:0 0 96px;"><div class="htb-ark-eye">Antal brug</div><input type="number" id="htbNyBrugt" class="htb-felt htb-felt-tal" placeholder="0" min="0" inputmode="numeric"></div></div>'
+    + '<div style="flex:0 0 150px;"><div class="htb-ark-eye">Opslag på Instagram</div><input type="number" id="htbNyBrugt" class="htb-felt htb-felt-tal" placeholder="0" min="0" inputmode="numeric"></div></div>'
     + '<button type="button" class="ark-knap ark-knap-roed ark-send-pille" onclick="htbNyGem().then(function(){bsFlytLuk();})">Gem</button>'
     + '<button type="button" class="ark-luk" onclick="bsFlytLuk()">Annullér</button></div>';
   m.style.display = "flex"; m.onclick = function (e) { if (e.target === m) bsFlytLuk(); };
@@ -60240,7 +60244,7 @@ function htbArkAabn(t) {
     /* KATEGORIEN SOM TAG + FORSLAG (Ida 21/9 kl. 14.22): den valgte staar som roed chip; naar man skriver, foreslaas dem der findes (husets chips, ingen native liste) */
     + '<div class="htb-ny-rk"><div style="flex:1;min-width:0;"><div class="htb-ark-eye">Kategori</div><input type="text" id="htbArkKat" class="htb-felt" value="' + esc(it.kat || "") + '" placeholder="Kategori" autocomplete="off" oninput="htbArkKatForslag()" onkeydown="if(event.key===\'Enter\'){event.preventDefault();htbArkGem(\'' + esc(it.t) + '\');}">'
     + '<div class="ark-chips i-fladen sa-chips htb-kat-forslag" id="htbArkKatForslag" style="justify-content:flex-start;margin-top:8px;">' + kats.map(function (k) { return '<button type="button" class="ark-chip' + (htbStor(it.kat || "") === htbStor(k) ? ' on' : '') + '" data-kat="' + esc(k) + '" onclick="htbArkKatVaelg(this)">' + esc(k) + '</button>'; }).join('') + '</div></div>'
-    + '<div style="flex:0 0 96px;"><div class="htb-ark-eye">Antal brug</div><input type="number" id="htbArkBrugt" class="htb-felt htb-felt-tal" value="' + (Number(it.brugt) || 0) + '" min="0" inputmode="numeric"></div></div>'
+    + '<div style="flex:0 0 150px;"><div class="htb-ark-eye">Opslag på Instagram</div><input type="number" id="htbArkBrugt" class="htb-felt htb-felt-tal" value="' + (Number(it.brugt) || 0) + '" min="0" inputmode="numeric"></div></div>'
     /* LAASEN SOM KONTAKT (Ida 21/9 kl. 14.25: »faste skal hedde låste … en funktion ala når man slår en knap til«): en laast hashtag staar i hver caption */
     + '<div class="htb-laas-rk"><div><div class="htb-ark-eye" style="margin:0;">Lås</div><div class="htb-laas-s">Med i hver caption</div></div><button type="button" class="hus-kontakt' + (it.fast ? ' on' : '') + '" id="htbArkFast" role="switch" aria-checked="' + (it.fast ? 'true' : 'false') + '" aria-label="Lås" onclick="this.classList.toggle(\'on\');this.setAttribute(\'aria-checked\',this.classList.contains(\'on\'))"><i></i></button></div>'
     + '<button type="button" class="ark-knap ark-knap-roed ark-send-pille" onclick="htbArkGem(\'' + esc(it.t) + '\')">Gem</button>'
@@ -60353,7 +60357,7 @@ function briefHashtagBankTegn() {
   const flereKnap = heleListe.length > MAKS ? '<button type="button" class="ark-chip" style="margin-top:8px;" onclick="HTB_VIS_ALLE=!HTB_VIS_ALLE;briefHashtagBankTegn()">' + (HTB_VIS_ALLE ? 'Se færre' : 'Se flere (' + (heleListe.length - liste.length) + ')') + '</button>' : '';
   v.innerHTML = '<div class="sk-label under-etiket" style="margin:14px 0 8px;">' + esc(htbNavn()) + '</div>'
     + (kats.length ? '<div class="htb-chips" style="margin-bottom:8px;"><button type="button" class="htb-chip' + (!HTB_FILTER ? ' on' : '') + '" onclick="HTB_FILTER=\'\';briefHashtagBankTegn()">Alle</button>' + kats.map(function (k) { return '<button type="button" class="htb-chip' + (HTB_FILTER === k ? ' on' : '') + '" onclick="HTB_FILTER=\'' + esc(k).replace(/'/g, "\\'") + '\';briefHashtagBankTegn()">' + esc(k) + '</button>'; }).join("") + '</div>' : '')
-    + (liste.length ? '<div class="htb-chips">' + liste.map(function (x) { return '<button type="button" class="htb-chip' + (valgt.indexOf(htbNoegle(x.t)) > -1 ? ' on' : '') + '" onclick="briefHashtagFraBank(this)">#' + esc(x.t) + '<span class="htb-tal">' + (Number(x.brugt) || 0) + '</span></button>'; }).join("") + '</div>' : '')
+    + (liste.length ? '<div class="htb-chips">' + liste.map(function (x) { return '<button type="button" class="htb-chip' + (valgt.indexOf(htbNoegle(x.t)) > -1 ? ' on' : '') + '" onclick="briefHashtagFraBank(this)">#' + esc(x.t) + '<span class="htb-tal">' + htbTal(x.brugt) + '</span></button>'; }).join("") + '</div>' : '')
     + flereKnap + '<button type="button" class="ark-chip mq-tap" style="margin:8px 0 0 6px;" onclick="HTB_BANK_AABEN=false;briefHashtagBankTegn()">Skjul banken</button>'
     + '<div class="htb-send" style="margin-top:10px;"><span class="htb-hash">#</span><input type="text" id="briefHtgNy" placeholder="Tilføj hashtag" autocomplete="off" onkeydown="if(event.key===\'Enter\'){event.preventDefault();briefHashtagNy();}"><button type="button" class="htb-send-knap" aria-label="Tilføj" onclick="briefHashtagNy()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button></div>'
     + '';   /* »Aabn banken« er UDE (Ida 21/9 kl. 19.57) — filtret paa kategori (tags) staar over chipsene, naar banken har kategorier */
