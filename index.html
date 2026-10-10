@@ -11464,6 +11464,13 @@ html body #briefRail .fb-ud-drop #briefPersonRow { position:static !important; }
 html body .ark-chip:not(.on):not(.kk-ini), html body .ibb-chip, html body .pr-chip:not(.on), html body .fb-chip:not(.on), html body .kop-chip { display:inline-flex !important; align-items:center !important; justify-content:center !important; gap:8px; height:36px !important; min-height:36px !important; padding:0 16px !important; border-radius:999px !important; border:1px solid var(--border) !important; background:#fff !important; color:var(--gray2) !important; font-family:Poppins,sans-serif !important; font-size:13px !important; font-weight:400 !important; letter-spacing:0 !important; text-transform:none !important; line-height:1 !important; white-space:nowrap; box-shadow:none !important; }
 html body .ark-chip:not(.on):not(.kk-ini) svg, html body .ibb-chip svg, html body .kop-chip svg { width:14px; height:14px; flex:none; color:var(--gray2); }
 html body .kop-chip { cursor:pointer; }
+/* SELVTESTENS ARK: én flise pr. tjek, tilstanden først */
+html body .selvtest-ark .selvtest-hoved { font-size:13px; color:var(--gray2); text-align:center; margin:-4px 0 14px; }
+html body .selvtest-ark .selvtest-rk { display:flex; gap:12px; align-items:flex-start; background:#fff; border-radius:16px; box-shadow:var(--mb-skygge); padding:10px 14px; margin:0 0 8px; text-align:left; }
+html body .selvtest-ark .selvtest-t { flex:none; width:96px; font-size:12px; color:var(--gray2); }
+html body .selvtest-ark .selvtest-fejl .selvtest-t { color:var(--red); }
+html body .selvtest-ark .selvtest-n { font-size:13.5px; color:var(--black); line-height:1.4; }
+html body .selvtest-ark .selvtest-n i { display:block; font-style:normal; font-size:12px; color:var(--gray2); }
 /* IDÉBANKEN PÅ TELEFONEN = BUD 3 (Idas klik 10/10, artifact Qky3oUPQzwVU9eKhRp813J): søjlens overskrift er en lav rød bjælke med hvid tekst — ingen versal, ingen linje */
 @media (max-width:899px) {
   html body.mb .ib-soj > .cf-sek { background:var(--red); color:#fff; border-radius:16px; padding:12px 14px; font-size:15px; letter-spacing:0; text-transform:none; margin:0 0 10px; display:block; }
@@ -59485,7 +59492,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2714";
+const APP_VERSION = "2715";
 const APP_BYGGET = "9. oktober";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_BYGGET + " · " + APP_VERSION; } catch (e) {} });
 let NY_VERSION_KLAR = false;
@@ -70852,6 +70859,63 @@ async function mrMobilTegn() {
 /* Teknikrummet aabnes/lukkes med EEN attribut paa forsiden — CSS'en goer resten paa alle bredder. */
 /* TEKNIK-FORSIDEN = DOERE (UX-politiet 11/9, Ida: »ikke et eneste ord eller knap der ikke hoerer hjemme«).
    Een grid, SAMME doer som Hjem (navn · streg · een linje). Ingen etiketter, ingen saetninger, ingen soegning. */
+/* ===== SELVTEST · SIKKERHEDSCHEFENS LAG 3 (Ida 10/10: »kan den køre automatisk … ro i maven«) =====
+   Kører i Idas egen browser, som hende, mod den RIGTIGE base — men KUN på Testbutikken (kode TEST). Skriver, læser tilbage, skifter status,
+   opretter et møde med dublet og sletter dem, sletter sine egne rækker og viser BESTÅET / FEJLET / IKKE TESTET pr. tjek. Rører aldrig andre koder. */
+const SELVTEST_KODE = "TEST";
+async function selvtestKoer() {
+  const res = [], tid = new Date(), mrk = "SELVTEST " + tid.toISOString().slice(0, 16).replace("T", " ");
+  const tjek = function (loefte, navn, ok, detalje) { res.push({ loefte: loefte, navn: navn, t: ok === null ? "IKKE TESTET" : (ok ? "BESTÅET" : "FEJLET"), d: detalje || "" }); };
+  const vis = function (status) {
+    let m = document.getElementById("bsFlytMenu"); if (!m) { m = document.createElement("div"); m.id = "bsFlytMenu"; document.body.appendChild(m); }
+    const samlet = res.some(function (r) { return r.t === "FEJLET"; }) ? "FEJLET" : res.some(function (r) { return r.t === "IKKE TESTET"; }) ? "IKKE TESTET" : "BESTÅET";
+    m.innerHTML = '<div class="bs-flyt-ark brief-soejle-ark selvtest-ark"><div class="ark-t">Selvtest</div>'
+      + '<div class="selvtest-hoved">' + esc(status || (samlet + " · v" + APP_VERSION + " · " + dkDatoKort(energidaKalDato(tid)) + " kl. " + String(tid.getHours()).padStart(2, "0") + "." + String(tid.getMinutes()).padStart(2, "0"))) + '</div>'
+      + res.map(function (r) { return '<div class="selvtest-rk selvtest-' + (r.t === "BESTÅET" ? "ok" : r.t === "FEJLET" ? "fejl" : "ikke") + '"><span class="selvtest-t">' + esc(r.t) + '</span><span class="selvtest-n">' + esc(r.loefte + " · " + r.navn) + (r.d ? '<i>' + esc(r.d) + '</i>' : '') + '</span></div>'; }).join("")
+      + '</div>';
+    m.style.display = "flex"; m.onclick = function (e) { if (e.target === m) bsFlytLuk(); };
+  };
+  if (!sb) { tjek(1, "Forbindelse til basen", null, "ingen forbindelse"); vis(); return; }
+  vis("Kører … (ca. 10 sek.)");
+  const iMorgen = energidaKalDato(new Date(Date.now() + 864e5));
+  let ideId = null, moedeIds = [];
+  try {
+    const a = await sb.from("content_ideer").insert({ kode: SELVTEST_KODE, titel: mrk, status: "Idé", soejle: "Produkt", type: "Reel", brief: { beskrivelse: "skrevet af selvtesten" } }).select();
+    ideId = a.data && a.data[0] && a.data[0].id;
+    tjek(1, "Ny idé gemt med kvittering", !!ideId, a.error ? a.error.message : "");
+    if (ideId) {
+      const b = await sb.from("content_ideer").select("id,titel,brief").eq("id", ideId).maybeSingle();
+      tjek(1, "Ny idé læst tilbage fra basen", !!(b.data && b.data.titel === mrk), b.error ? b.error.message : "");
+      const c = await sb.from("content_ideer").update({ brief: { beskrivelse: "skrevet af selvtesten", hookTekst: "Selvtest-hook" } }).eq("id", ideId).select();
+      const c2 = await sb.from("content_ideer").select("brief").eq("id", ideId).maybeSingle();
+      tjek(1, "Briefen gemt og læst tilbage", !!(c.data && c.data.length && c2.data && c2.data.brief && c2.data.brief.hookTekst === "Selvtest-hook"), c.error ? c.error.message : "");
+      const s1 = await sb.from("content_ideer").update({ status: "Planlagt", dato: iMorgen }).eq("id", ideId).select();
+      const s2 = await sb.from("content_ideer").update({ status: "Idé", dato: null }).eq("id", ideId).select();
+      const s3 = await sb.from("content_ideer").select("status,dato").eq("id", ideId).maybeSingle();
+      tjek(3, "Status frem og tilbage", !!(s1.data && s1.data.length && s2.data && s2.data.length && s3.data && s3.data.status === "Idé" && !s3.data.dato), "");
+    }
+    const ingen = await sb.from("content_ideer").update({ titel: "x" }).eq("id", "00000000-0000-0000-0000-000000000000").select();
+    tjek(2, "En skrivning, der rammer 0 rækker, opdages", !!(ingen.data && ingen.data.length === 0), ingen.error ? "fejl: " + ingen.error.message : "");
+    const m = await sb.from("kunde_aftaler").insert([1, 2].map(function () { return { kode: SELVTEST_KODE, titel: "Ugentlig contentplanlægning", dato: iMorgen, tid: "10:00", tid_slut: "11:00", note: mrk }; })).select();
+    moedeIds = (m.data || []).map(function (x) { return x.id; });
+    tjek(5, "Møde og dublet oprettet", moedeIds.length === 2, m.error ? m.error.message : "");
+    for (const id of moedeIds.slice()) { const dl = await sb.from("kunde_aftaler").delete().eq("id", id).eq("kode", SELVTEST_KODE).select(); if (dl.data && dl.data.length) moedeIds = moedeIds.filter(function (x) { return x !== id; }); }
+    const mt = await sb.from("kunde_aftaler").select("id").eq("kode", SELVTEST_KODE).eq("note", mrk);
+    tjek(5, "Møde og dublet slettet og væk i basen", !!(mt.data && mt.data.length === 0) && !moedeIds.length, mt.error ? mt.error.message : (mt.data ? mt.data.length + " tilbage" : ""));
+    if (ideId) {
+      const di = await sb.from("content_ideer").delete().eq("id", ideId).eq("kode", SELVTEST_KODE).select();
+      const dt = await sb.from("content_ideer").select("id").eq("id", ideId);
+      tjek(1, "Idéen slettet og væk i basen", !!(di.data && di.data.length && dt.data && dt.data.length === 0), di.error ? di.error.message : "");
+      if (di.data && di.data.length) ideId = null;
+    }
+    tjek(17, "Kunde A ser ikke kunde B (kræver to testkunder)", null, "TESTKUNDE-A og TESTKUNDE-B findes ikke endnu");
+  } catch (e) { tjek(1, "Selvtesten gik i stå", false, String(e && e.message || e)); }
+  finally {
+    try { if (ideId) await sb.from("content_ideer").delete().eq("id", ideId).eq("kode", SELVTEST_KODE); } catch (e) {}
+    try { if (moedeIds.length) await sb.from("kunde_aftaler").delete().in("id", moedeIds).eq("kode", SELVTEST_KODE); } catch (e) {}
+  }
+  vis();
+}
 function teknikDoereTegn(sqlN) {
   const kr = document.getElementById("mrKoeRaekke"); if (!kr) return;
   if (sqlN == null) { try { sqlN = document.querySelectorAll('#mrMangler [id^="sqlk_"]').length; } catch (e) { sqlN = 0; } }
@@ -70863,6 +70927,7 @@ function teknikDoereTegn(sqlN) {
   kr.innerHTML = '<div class="bs-grid bs-bento">'
     + d("SQL-kort", sqlN ? (sqlN === 1 ? "1 kort venter" : sqlN + " kort venter") : "", "mrKpiHop('SQL')")
     + d("Byggek&oslash;en", koeN ? (koeN === 1 ? "1 ting" : koeN + " ting") : "", "mrGaaTil('byggekoe')")
+    + d("Selvtest", "", "selvtestKoer()")   /* SIKKERHEDSCHEFENS LAG 3 (Ida 10/10): ét tryk tester gem, læs, status, møder og slet i den rigtige base på Testbutikken (TEST) */
     /* TEKNIK = TO DOERE (Idas klik 16/9 kl. 06.45: »To doere: SQL-kort og Byggekoeen«). »Er den her stadig aktuel?«, »Eksempler pr. forretningstype« og
        »Det gamle Maskinrum« er ARKIVERET — koden og dataene staar, doerene tegnes ikke (KUN funktioner Ida bruger, 8/9). */
     + '</div>';

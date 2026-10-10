@@ -47,6 +47,18 @@
       var moederEfter = (window.__kundeAftalerAlle || window.__kundeAftaler || []).filter(function (a) { return a.dato === d(iMorgen) && erMoedeTitel(a.titel); }).length;
       var dbM = ((JSON.parse(localStorage.getItem("SELE_DB") || "{}").kunde_aftaler) || []).length;
       tjek(5, "Møde med dublet slettet i ét tryk", moederFoer === 2 && moederEfter === 0 && dbM === 0, "før " + moederFoer + " · efter " + moederEfter + " · i basen " + dbM + " · planMoedeAftale " + (ma0 ? ma0.id : "null"));
+      /* LØFTE 19 · XSS: en titel og en beskrivelse med kode må aldrig køre — i Idébanken, briefen, kalenderen, Kommende opslag og Hjem */
+      window.__XSS = 0; var ond = '<img src=x onerror="window.__XSS=(window.__XSS||0)+1">';
+      var xr = await ideAdd({ titel: "XSS " + ond, soejle: "Produkt", type: "Reel", status: "Planlagt", dato: d(iMorgen), brief: { beskrivelse: ond, hookTekst: ond, tid: "19:00", hvemPerson: ond } });
+      var sider = [];
+      try { showTab(2); await V(900); sider.push("Idébanken"); } catch (e) {}
+      try { openBriefSide(xr.id); await V(1500); sider.push("briefoversigten"); } catch (e) {}
+      try { briefMbVis("skriv"); await V(900); sider.push("briefen"); } catch (e) {}
+      try { showTab(8); await V(900); sider.push("kalenderen"); } catch (e) {}
+      try { showTab(3); await V(900); sider.push("Hjem"); } catch (e) {}
+      try { var t = document.createElement("div"); t.innerHTML = kommendeOpslagHtml(5, "hu-sek"); document.body.appendChild(t); await V(300); sider.push("Kommende opslag"); } catch (e) {}
+      await V(500);
+      tjek(19, "Kode i en titel kører aldrig (XSS)", !window.__XSS, (window.__XSS ? "koden kørte " + window.__XSS + " gang(e)" : "ingen kørsel") + " · sider: " + sider.join(", "));
       localStorage.setItem("SELE_AFVIS", "fejl");
       var ok3 = await ideUpdate("sc-ide-3", { status: "Idé", dato: null });
       await V(400);
