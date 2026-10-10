@@ -4,6 +4,10 @@
 - **DAGSORDENEN RETTES PÅ STEDET.** Et penneikon ved hvert punkt åbner punktet: navn, tekst, skraldespand (fjern) og Gem; »Tilføj punkt« lægger et nyt til. Standardpunkterne (performance · den kommende uge · dato for næste møde) står uændrede, til man retter dem. Gemmes i `plan_ritual.moede.dagsorden` (merges, andre nøgler urørte); et rettet punkt bliver statisk tekst, et urørt punkt bliver dynamisk (uge, tema, mål). Ingen Annuller i rettelsen.
 - **ALLE DATOSYMBOLER ER KVADRATER, 56 × 56 (HÅRD, Ida 9/10: »kvadratiske alle steder«):** Kommende opslag (`.kop-dato`), aftalernes dato (`.cf-dato`), Backstages `.bs3-tidb.d` og `.bs-datob`. Ingen dato-boks er højere end bred.
 
+## v2706 (10/10) — Idébanken = KUN status Idé (HÅRD) · Procesbaren = bud 2 (LÅST)
+- **Idébanken (Ida: »Det er KUN opslag med status idé, der skal være i idébanken«):** kun idéer med status Idé (eller uden status). Planlagt, Brief i gang, Postet, Målt og Arkiveret er ude. En »Brief i gang« uden dato står under »Mangler dato« i kalenderen, så intet forsvinder. Vælter 24/9 (»Brief i gang uden dato bliver i Idébanken«).
+- **Procesbaren (Ida: »lås procesbar bud 2«, artifact PXumJFrmuQEJAwYua7VTQs):** slank rød bjælke (radius 20, 14 px luft over, 12 under) med kun baren i hvidt. Ingen etiket, ingen streg, intet andet i flisen.
+
 ## v2705 (10/10) — To-dos på Backstages Hjem står efter dato, de overskredne øverst (Ida: »to-dos kommer ikke i rækkefølge efter dato?«). Indbakkens liste var allerede sorteret.
 
 ## v2704 (10/10) — To målere: admin-login siger »Logget ud: <årsag>«, og den røde »ikke gemt«-bjælke siger på admin, hvad der fejlede (og skelner udløbet login fra net). Ingen gætteri mere om login-fejlen på hjemmeskærms-appen.
