@@ -159,6 +159,27 @@
         var k1 = (r1.brief && r1.brief.kommentarer) || [];
         tjek(1, "Kommentar i briefens dialog-flise gemmes i basen", k1.some(function (k) { return k && k.tekst === "Kommentar fra sikkerhedschefen"; }), k1.length + " kommentarer i basen");
       } catch (e) { tjek(1, "Kommentar-tjekket kunne køre", false, e.message); }
+      /* LØFTE 1 · TELEFON OG COMPUTER ER ENS (Ida 10/10): det, der sættes på én enhed, står på den anden; den nyeste vinder */
+      try {
+        var k9 = "energibank_status_" + String(currentKode || "X"), k9b = "ib_set_" + String(currentKode || "X");
+        localStorage.setItem(k9, '{"opdigtet":"Rykker"}'); localStorage.setItem(k9b, '{"sc":1}'); await V(2600);
+        var rk9 = ((JSON.parse(localStorage.getItem("SELE_DB") || "{}").workout_data) || []).filter(function (x) { return x.skema === "enhedssynk"; });
+        var i9 = rk9[0] && rk9[0].svar || {};
+        tjek(1, "Telefon → basen: det satte gemmes i brugerens række", rk9.length === 1 && i9[k9] && i9[k9].v === '{"opdigtet":"Rykker"}' && !!i9[k9b], rk9.length + " række(r) · " + Object.keys(i9).join(", "));
+        /* den anden enhed: intet lokalt — hentes fra basen */
+        ENHED_SYNK.skriver = true; localStorage.removeItem(k9); localStorage.removeItem(k9b); localStorage.removeItem("enhedssynk_t"); ENHED_SYNK.skriver = false;
+        var n9 = await enhedSynkHent();
+        tjek(1, "Basen → computer: den anden enhed får det samme", localStorage.getItem(k9) === '{"opdigtet":"Rykker"}' && localStorage.getItem(k9b) === '{"sc":1}', n9 + " hentet · " + localStorage.getItem(k9));
+        /* nyeste vinder: en nyere værdi fra den anden enhed overskriver den ældre lokale */
+        var db9 = JSON.parse(localStorage.getItem("SELE_DB") || "{}"); var r9 = (db9.workout_data || []).filter(function (x) { return x.skema === "enhedssynk"; })[0];
+        r9.svar[k9] = { v: '{"opdigtet":"Inkasso"}', t: Date.now() + 60000 }; localStorage.setItem("SELE_DB", JSON.stringify(db9));
+        await enhedSynkHent();
+        tjek(1, "Nyeste ændring vinder mellem enhederne", localStorage.getItem(k9) === '{"opdigtet":"Inkasso"}', localStorage.getItem(k9));
+        /* afvist synk: ingen rød bjælke, og tingen står stadig på enheden */
+        var sf9 = document.getElementById("syncFejl"); if (sf9) sf9.remove();
+        localStorage.setItem("SELE_AFVIS", "fejl"); localStorage.setItem(k9b, '{"sc":2}'); await V(2600); localStorage.removeItem("SELE_AFVIS");
+        tjek(1, "Afvist synk: ingen falsk bjælke, intet tabt på enheden", !document.getElementById("syncFejl") && localStorage.getItem(k9b) === '{"sc":2}', document.getElementById("syncFejl") ? "BJÆLKE" : "stille · " + localStorage.getItem(k9b));
+      } catch (e) { localStorage.removeItem("SELE_AFVIS"); tjek(1, "Synk-tjekket kunne køre", false, e.message); }
       localStorage.setItem("energida_skal_ny_kode", "1");   /* som når linket »Glemt adgangskode« i mailen er åbnet — næste fase starter appen forfra */
     }
     if (FASE === "link") {

@@ -25,7 +25,8 @@
       if (skriv && a === "0") return { data: st.single ? null : [], error: null, status: 200 };
       if (st.op === "insert" || st.op === "upsert") {
         var nye = (Array.isArray(st.data) ? st.data : [st.data]).map(function (x, i) { return Object.assign({ id: (x && x.id) || ("sele-" + Date.now() + "-" + i + "-" + Math.round(Math.random() * 1e6)), created_at: new Date().toISOString() }, x); });
-        nye.forEach(function (n) { var j = rk.findIndex(function (r) { return String(r.id) === String(n.id); }); if (j > -1) rk[j] = Object.assign(rk[j], n); else rk.push(n); });
+        var kon = (st.op === "upsert" && st.konflikt) ? String(st.konflikt).split(",").map(function (x) { return x.trim(); }) : null;   /* onConflict: "bruger,skema" — samme række opdateres (10/10) */
+        nye.forEach(function (n) { var j = rk.findIndex(function (r) { return kon ? kon.every(function (c) { return String(r[c]) === String(n[c]); }) : String(r.id) === String(n.id); }); if (j > -1) { if (kon) delete n.id; rk[j] = Object.assign(rk[j], n); n = rk[j]; } else rk.push(n); });
         ud = nye;
       } else if (st.op === "update") { rk.forEach(function (r) { if (match(r)) { Object.assign(r, st.data); ud.push(r); } }); }
       else if (st.op === "delete") { d[tabel] = rk.filter(function (r) { if (match(r)) { ud.push(r); return false; } return true; }); }
@@ -39,7 +40,7 @@
       if (navn === "then") return function (res, rej) { if (st.op !== "select" && afvis() === "net") return Promise.reject(new TypeError("Failed to fetch")).then(res, rej); return svar(koer()).then(res, rej); };   /* "net" = forbindelsen er væk midt i et gem */
       if (navn === "catch" || navn === "finally") return function () { return svar(koer()); };
       return function () { var a = arguments;
-        if (["insert", "upsert", "update", "delete"].indexOf(navn) > -1) { st.op = navn; st.data = a[0]; }
+        if (["insert", "upsert", "update", "delete"].indexOf(navn) > -1) { st.op = navn; st.data = a[0]; st.konflikt = a[1] && a[1].onConflict; }
         else if (navn === "select") { st.vilSelect = true; }
         else if (["eq", "neq", "in", "is", "gte", "lte", "gt", "lt"].indexOf(navn) > -1) st.filtre.push([navn, a[0], a[1]]);
         else if (navn === "match") Object.keys(a[0] || {}).forEach(function (k) { st.filtre.push(["eq", k, a[0][k]]); });

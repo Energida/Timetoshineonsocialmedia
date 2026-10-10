@@ -59548,7 +59548,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2726";
+const APP_VERSION = "2727";
 const APP_BYGGET = "9. oktober";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_BYGGET + " · " + APP_VERSION; } catch (e) {} });
 let NY_VERSION_KLAR = false;
@@ -67185,6 +67185,68 @@ async function woGem(skema, svar) {
   if (woBackstage()) return await vaneGemRow(skema, svar);
   return false;
 }
+/* ===== TELEFON OG COMPUTER ER ENS (Ida 10/10: »Det må ALDRIG ske at de 2 versioner app og computer ikke er synkroniseret« — klik: »Ja, alle 11 følger brugeren«) =====
+   Sikkerhedschefens gennemgang fandt 11 ting, der KUN lå i browseren: Energibankens status, optage-tjeklisten, standard-to-dos, »set«-mærker
+   i Indbakken og Idébanken, valgt projekt, »stadig aktuel?«-svar, refleksions- og påmindelses-mærker, Drive »sidst åbnet«, startkortets første gang.
+   De spejles til brugerens egen række (workout_data · skema »enhedssynk«) og hentes på den anden enhed; den nyeste vinder pr. nøgle.
+   Synken går uden om den røde bjælke: lykkes den ikke, ligger tingen stadig på enheden — intet går tabt, og ingen eksisterende data røres. */
+const ENHED_SYNK_RX = /^(energibank_status_|energitjek_|opg_|energida_koe_aktuel$|refl_vist_|ib_set_|bs_venter_set$|ida_proj_valgt$|ai_sparring_ok_|drive_aabnet_|dk_set_)/;
+const ENHED_SYNK = { vent: {}, t: null, skriver: false, ok: null, hentet: 0, orgSet: null };
+function enhedSynkTider() { try { return JSON.parse(localStorage.getItem("enhedssynk_t") || "{}") || {}; } catch (e) { return {}; } }
+(function () {
+  try {
+    const S = Storage.prototype, orgSet = S.setItem, orgDel = S.removeItem;
+    ENHED_SYNK.orgSet = orgSet;
+    const noter = function (k, v) {
+      try {
+        const tid = Date.now(), m = enhedSynkTider(); m[k] = tid; orgSet.call(localStorage, "enhedssynk_t", JSON.stringify(m));
+        ENHED_SYNK.vent[k] = { v: v, t: tid }; clearTimeout(ENHED_SYNK.t); ENHED_SYNK.t = setTimeout(enhedSynkGem, 1500);
+      } catch (e) {}
+    };
+    S.setItem = function (k, v) { orgSet.call(this, k, v); try { if (this === window.localStorage && !ENHED_SYNK.skriver && ENHED_SYNK_RX.test(String(k))) noter(String(k), String(v)); } catch (e) {} };
+    S.removeItem = function (k) { orgDel.call(this, k); try { if (this === window.localStorage && !ENHED_SYNK.skriver && ENHED_SYNK_RX.test(String(k))) noter(String(k), null); } catch (e) {} };
+  } catch (e) {}
+})();
+async function enhedSynkRaekke(uid) {
+  const r = await sb.__fromUdenVagt("workout_data").select("svar").eq("bruger", uid).eq("skema", "enhedssynk").maybeSingle();
+  if (r.error) throw r.error;
+  return (r.data && r.data.svar && typeof r.data.svar === "object") ? r.data.svar : {};
+}
+async function enhedSynkGem() {
+  const vent = Object.assign({}, ENHED_SYNK.vent); if (!Object.keys(vent).length) return;
+  try {
+    if (!sb || !sb.__fromUdenVagt) return; const uid = await woBrugerId(); if (!uid) return;
+    const db = await enhedSynkRaekke(uid);
+    Object.keys(vent).forEach(function (k) { if (!db[k] || !(db[k].t > vent[k].t)) db[k] = vent[k]; });
+    const r = await sb.__fromUdenVagt("workout_data").upsert({ bruger: uid, skema: "enhedssynk", svar: db, opdateret: new Date().toISOString() }, { onConflict: "bruger,skema" }).select();
+    ENHED_SYNK.ok = !r.error && !!(r.data && r.data.length);
+    if (ENHED_SYNK.ok) Object.keys(vent).forEach(function (k) { if (ENHED_SYNK.vent[k] && ENHED_SYNK.vent[k].t === vent[k].t) delete ENHED_SYNK.vent[k]; });
+  } catch (e) { ENHED_SYNK.ok = false; }
+}
+async function enhedSynkHent() {
+  try {
+    if (!sb || !sb.__fromUdenVagt) return 0; const uid = await woBrugerId(); if (!uid) return 0;
+    const db = await enhedSynkRaekke(uid), lok = enhedSynkTider(); let n = 0;
+    ENHED_SYNK.skriver = true;
+    try {
+      Object.keys(db).forEach(function (k) {
+        if (!ENHED_SYNK_RX.test(k) || ENHED_SYNK.vent[k]) return; const x = db[k] || {};
+        if (!(x.t > (lok[k] || 0))) return;
+        if (x.v === null || x.v === undefined) localStorage.removeItem(k); else localStorage.setItem(k, x.v);
+        lok[k] = x.t; n++;
+      });
+      ENHED_SYNK.orgSet.call(localStorage, "enhedssynk_t", JSON.stringify(lok));
+    } finally { ENHED_SYNK.skriver = false; }
+    ENHED_SYNK.hentet = Date.now(); ENHED_SYNK.ok = true;
+    return n;
+  } catch (e) { ENHED_SYNK.ok = false; return 0; }
+}
+/* Hentes ved start og hver gang appen kommer frem igen (fra telefonen til computeren og tilbage); det ventende sendes, når appen lægges væk */
+(function () {
+  const hent = function () { enhedSynkHent().then(function (n) { if (n) { try { if (typeof renderIndbakkeKort === "function") renderIndbakkeKort(); } catch (e) {} } }); };
+  setTimeout(hent, 2500); setTimeout(hent, 9000);
+  document.addEventListener("visibilitychange", function () { if (document.visibilityState === "visible") hent(); else if (Object.keys(ENHED_SYNK.vent).length) enhedSynkGem(); });
+})();
 /* Engangs-kopi af Idas fire blobs over paa hendes egen bruger. Tilfoejer KUN — den gamle
    raekke slettes aldrig og bliver liggende som sikkerhedsnet (reglen "Gem maa ikke slette"). */
 async function woMigrer() {
@@ -71008,6 +71070,17 @@ async function selvtestKoer() {
       tjek(1, "Idéen slettet og væk i basen", !!(di.data && di.data.length && dt.data && dt.data.length === 0), di.error ? di.error.message : "");
       if (di.data && di.data.length) ideId = null;
     }
+    /* TELEFON OG COMPUTER ER ENS: brugerens egen synk-række kan skrives, læses tilbage og fjernes (rører kun en testrække på din egen bruger) */
+    try {
+      const uid9 = await woBrugerId();
+      if (!uid9) tjek(1, "Synk mellem telefon og computer", null, "ingen bruger");
+      else {
+        const w9 = await sb.__fromUdenVagt("workout_data").upsert({ bruger: uid9, skema: "enhedssynk_selvtest", svar: { mrk: mrk }, opdateret: new Date().toISOString() }, { onConflict: "bruger,skema" }).select();
+        const l9 = await sb.__fromUdenVagt("workout_data").select("svar").eq("bruger", uid9).eq("skema", "enhedssynk_selvtest").maybeSingle();
+        tjek(1, "Synk mellem telefon og computer gemmes og læses tilbage", !!(w9.data && w9.data.length && l9.data && l9.data.svar && l9.data.svar.mrk === mrk), w9.error ? w9.error.message : (l9.error ? l9.error.message : ""));
+        try { await sb.__fromUdenVagt("workout_data").delete().eq("bruger", uid9).eq("skema", "enhedssynk_selvtest"); } catch (e) {}
+      }
+    } catch (e) { tjek(1, "Synk mellem telefon og computer", false, String(e && e.message || e)); }
     tjek(17, "Kunde A ser ikke kunde B (kræver to testkunder)", null, "TESTKUNDE-A og TESTKUNDE-B findes ikke endnu");
   } catch (e) { tjek(1, "Selvtesten gik i stå", false, String(e && e.message || e)); }
   finally {
