@@ -35,7 +35,7 @@
       return { data: data, error: null, count: ud.length, status: 200 };
     }
     var p = new Proxy(function () {}, { get: function (_, navn) {
-      if (navn === "then") return function (res, rej) { return svar(koer()).then(res, rej); };
+      if (navn === "then") return function (res, rej) { if (st.op !== "select" && afvis() === "net") return Promise.reject(new TypeError("Failed to fetch")).then(res, rej); return svar(koer()).then(res, rej); };   /* "net" = forbindelsen er væk midt i et gem */
       if (navn === "catch" || navn === "finally") return function () { return svar(koer()); };
       return function () { var a = arguments;
         if (["insert", "upsert", "update", "delete"].indexOf(navn) > -1) { st.op = navn; st.data = a[0]; }

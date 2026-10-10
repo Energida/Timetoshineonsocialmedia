@@ -59,6 +59,23 @@
       try { var t = document.createElement("div"); t.innerHTML = kommendeOpslagHtml(5, "hu-sek"); document.body.appendChild(t); await V(300); sider.push("Kommende opslag"); } catch (e) {}
       await V(500);
       tjek(19, "Kode i en titel kører aldrig (XSS)", !window.__XSS, (window.__XSS ? "koden kørte " + window.__XSS + " gang(e)" : "ingen kørsel") + " · sider: " + sider.join(", "));
+      /* LØFTE 23 · TO FANER: en anden fane har skrevet briefens CTA i basen; denne fane retter hooket — begge skal stå bagefter, ingen tavs overskrivning */
+      var idT = LS("SC_ID"), dbT = JSON.parse(localStorage.getItem("SELE_DB") || "{}"), rkT = (dbT.content_ideer || []).find(function (x) { return String(x.id) === String(idT); });
+      if (rkT) { rkT.brief = Object.assign({}, rkT.brief, { ctaCaption: "Fra den anden fane" }); localStorage.setItem("SELE_DB", JSON.stringify(dbT)); }
+      var itT = (IDEER || []).find(function (x) { return String(x.id) === String(idT); });
+      var okT = await ideUpdate(idT, { brief: Object.assign({}, itT && itT.brief, { hookTekst: "Rettet i denne fane" }) });
+      var efterT = ((JSON.parse(localStorage.getItem("SELE_DB") || "{}").content_ideer) || []).find(function (x) { return String(x.id) === String(idT); }) || {};
+      tjek(23, "To faner: begge rettelser står (ingen tavs overskrivning)", okT !== false && efterT.brief && efterT.brief.ctaCaption === "Fra den anden fane" && efterT.brief.hookTekst === "Rettet i denne fane", efterT.brief ? ("CTA: " + efterT.brief.ctaCaption + " · hook: " + efterT.brief.hookTekst) : "rækken findes ikke");
+      /* LØFTE 23 · NET VÆK midt i et gem: ingen falsk »gemt«, den røde bjælke vises, og teksten står stadig lokalt */
+      try { var sf = document.getElementById("syncFejl"); if (sf) sf.remove(); } catch (e) {}
+      localStorage.setItem("SELE_AFVIS", "net");
+      var okN = await ideUpdate("sc-ide-5", { brief: { beskrivelse: "Skrevet uden net" } }); await V(400);
+      var lokal = (IDEER || []).find(function (x) { return x.id === "sc-ide-5"; });
+      tjek(23, "Net væk: ingen falsk »gemt«", okN === false, "ideUpdate svarede " + okN);
+      tjek(23, "Net væk: teksten står stadig i appen", !!(lokal && lokal.brief && lokal.brief.beskrivelse === "Skrevet uden net"), lokal && lokal.brief ? lokal.brief.beskrivelse : "");
+      tjek(23, "Net væk: kunden får besked", !!document.getElementById("syncFejl") || !!document.querySelector(".ide-kladde, #ideKladdeStatus"), document.getElementById("syncFejl") ? "rød bjælke" : "ingen bjælke");
+      localStorage.removeItem("SELE_AFVIS");
+      try { var sf2 = document.getElementById("syncFejl"); if (sf2) sf2.remove(); } catch (e) {}
       localStorage.setItem("SELE_AFVIS", "fejl");
       var ok3 = await ideUpdate("sc-ide-3", { status: "Idé", dato: null });
       await V(400);
@@ -71,10 +88,13 @@
       try { await renderAftaler(); tilbage = (window.__kundeAftalerAlle || window.__kundeAftaler || []); } catch (e) {}
       var n = tilbage.filter(function (a) { return a.dato === d(iMorgen) && erMoedeTitel(a.titel); }).length;
       tjek(5, "Slettet møde og dublet kommer ikke igen", n === 0, n + " tilbage");
+      await V(2500);
+      var sendt = ((JSON.parse(localStorage.getItem("SELE_DB") || "{}").content_ideer) || []).find(function (x) { return x.id === "sc-ide-5"; });
+      tjek(23, "Det skrevne uden net sendes, når nettet er tilbage", !!(sendt && sendt.brief && sendt.brief.beskrivelse === "Skrevet uden net"), sendt && sendt.brief ? sendt.brief.beskrivelse : "ikke sendt");
       var p3 = (IDEER || []).find(function (x) { return x.id === "sc-ide-3"; });
-      tjek(2, "Afvist ændring røg ikke i basen", p3 && p3.status === "Planlagt", p3 ? p3.status : "");
+      tjek(2, "Afvist ændring går ikke tabt: den sendes igen fra køen", p3 && p3.status === "Idé", p3 ? "status i basen: " + p3.status : "");
     }
   } catch (e) { r.fejl = e.message + " @ " + ((e.stack || "").split("\n")[1] || ""); }
-  try { r.ls = {}; ["SELE_DB", "SC_ID", "SC_ORDEN"].forEach(function (k) { var v = localStorage.getItem(k); if (v != null) r.ls[k] = v; }); } catch (e) {}
+  try { r.ls = {}; for (var li = 0; li < localStorage.length; li++) { var lk = localStorage.key(li); if (lk === "SELE_AFVIS") continue; r.ls[lk] = localStorage.getItem(lk); } } catch (e) {}   /* HELE lageret følger med (køen af ikke-sendte gem bor her) */
   console.log("@@" + JSON.stringify(r) + "@@");
 })();
