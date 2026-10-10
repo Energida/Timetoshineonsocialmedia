@@ -47,6 +47,16 @@
       var moederEfter = (window.__kundeAftalerAlle || window.__kundeAftaler || []).filter(function (a) { return a.dato === d(iMorgen) && erMoedeTitel(a.titel); }).length;
       var dbM = ((JSON.parse(localStorage.getItem("SELE_DB") || "{}").kunde_aftaler) || []).length;
       tjek(5, "Møde med dublet slettet i ét tryk", moederFoer === 2 && moederEfter === 0 && dbM === 0, "før " + moederFoer + " · efter " + moederEfter + " · i basen " + dbM + " · planMoedeAftale " + (ma0 ? ma0.id : "null"));
+      /* LØFTE 24 · NY VERSION: appen må kun genindlæse, når intet er i gang (ingen skrivning, ingen brief, intet ark, intet gem på vej) */
+      try {
+        showTab(2); await V(800); try { document.activeElement && document.activeElement.blur(); } catch (e) {}
+        var roligt = nyVersionSikkert();
+        openBriefSide(LS("SC_ID")); await V(1200); var iBrief = nyVersionSikkert();
+        showTab(2); await V(800); var t = document.createElement("textarea"); document.body.appendChild(t); t.focus(); var iSkriv = nyVersionSikkert(); t.remove();
+        window.__NET = 1; var iGem = nyVersionSikkert(); window.__NET = 0;
+        tjek(24, "Ny version venter, mens kunden skriver, har en brief åben eller gemmer", iBrief === false && iSkriv === false && iGem === false, "brief " + iBrief + " · skriver " + iSkriv + " · gemmer " + iGem);
+        tjek(24, "Ny version hentes, når intet er i gang", roligt === true, "roligt " + roligt);
+      } catch (e) { tjek(24, "Ny version-tjekket kunne køre", false, e.message); }
       /* LØFTE 19 · XSS: en titel og en beskrivelse med kode må aldrig køre — i Idébanken, briefen, kalenderen, Kommende opslag og Hjem */
       window.__XSS = 0; var ond = '<img src=x onerror="window.__XSS=(window.__XSS||0)+1">';
       var xr = await ideAdd({ titel: "XSS " + ond, soejle: "Produkt", type: "Reel", status: "Planlagt", dato: d(iMorgen), brief: { beskrivelse: ond, hookTekst: ond, tid: "19:00", hvemPerson: ond } });
