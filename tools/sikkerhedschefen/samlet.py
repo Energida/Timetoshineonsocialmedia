@@ -4,7 +4,7 @@ Kør: python3 tools/sikkerhedschefen/samlet.py [--uden-design]"""
 import os, sys, json, datetime
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from sikkerhedschefen.resultat import BESTAAET, FEJLET, IKKE_TESTET
-from sikkerhedschefen import lag1, lag2, tjek_plus
+from sikkerhedschefen import lag1, lag2, tjek_plus, tjek_knapper, tjek_stille
 from sikkerhedschefen.tjek_version import app_version
 KRITISKE = {1, 2, 3, 4, 5, 6, 14, 15, 17, 18, 19, 22, 23, 24}
 NAVNE = {1: "Intet skrevet går tabt", 2: "Hver gemmevej har kvittering", 3: "Status frem og tilbage", 4: "Idéer flytter sig ikke", 5: "Møder opret/ret/slet, ingen dubletter",
@@ -19,7 +19,8 @@ def main():
     res = [lag1.tjek_git(repo), lag1.tjek_version(repo), lag1.tjek_syntaks(repo)] + lag1.tjek_skriv_delt(repo) + [lag1.tjek_motorer(repo), lag1.tjek_dobbelte(repo),
            lag1.tjek_anon(repo), lag1.tjek_headers(), lag1.tjek_funktioner(repo), lag1.tjek_funktioner_findes(repo)]
     if "--uden-design" not in sys.argv: res.append(lag1.tjek_design(repo))
-    for b in (390, 1440): res += lag2.koer(b) + tjek_plus.koer(b)
+    for b in (390, 1440): res += lag2.koer(b) + tjek_plus.koer(b) + tjek_knapper.koer(b)
+    res += tjek_stille.koer()
     from sikkerhedschefen.resultat import Resultat
     res.append(Resultat(17, "Kunde A ser ikke kunde B", IKKE_TESTET, "kræver TESTKUNDE-A og TESTKUNDE-B (Ida opretter dem); Selvtesten tester det, når de findes"))
     pr = {}

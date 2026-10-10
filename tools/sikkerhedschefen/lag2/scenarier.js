@@ -159,6 +159,33 @@
         var k1 = (r1.brief && r1.brief.kommentarer) || [];
         tjek(1, "Kommentar i briefens dialog-flise gemmes i basen", k1.some(function (k) { return k && k.tekst === "Kommentar fra sikkerhedschefen"; }), k1.length + " kommentarer i basen");
       } catch (e) { tjek(1, "Kommentar-tjekket kunne køre", false, e.message); }
+      localStorage.setItem("energida_skal_ny_kode", "1");   /* som når linket »Glemt adgangskode« i mailen er åbnet — næste fase starter appen forfra */
+    }
+    if (FASE === "link") {
+      /* LØFTE 22 · DELELINKET (Ida 10/10: »opslaget kommer aldrig — den bliver bare ved med at loade« + »del skal ind på briefoversigten«) */
+      try {
+        var tid22 = 0; while (tid22 < 8000 && !(typeof BRIEF_ID !== "undefined" && String(BRIEF_ID) === "sc-ide-2")) { await V(250); tid22 += 250; }
+        var synligt = function (e) { if (!e) return false; var cs = getComputedStyle(e), b = e.getBoundingClientRect(); return cs.display !== "none" && cs.visibility !== "hidden" && +cs.opacity >= 0.1 && b.height > 100 && b.width > 100; };
+        var tepper = ["privCover", "appLoader", "energidaLoader", "somkundeLoader"].filter(function (id) { return synligt(document.getElementById(id)); });
+        var loeftet = tepper.length === 0;
+        var s7 = document.getElementById("screen7"); var tekst = s7 ? s7.innerText.replace(/\s+/g, " ") : "";
+        var godk = !!document.querySelector("#briefGodkendKrop") && document.querySelector("#briefGodkendKrop").getBoundingClientRect().height > 0;
+        tjek(22, "Delelinket åbner briefen", typeof BRIEF_ID !== "undefined" && String(BRIEF_ID) === "sc-ide-2" && /Opdigtet idé 3/.test(tekst), "BRIEF_ID " + (typeof BRIEF_ID !== "undefined" ? BRIEF_ID : "?") + " · " + tekst.slice(0, 60));
+        tjek(22, "Delelinket bliver færdig med at loade (tæppet løftet)", loeftet, loeftet ? "" : "indlæsningsbilledet står stadig: " + tepper.join(", "));
+        tjek(22, "Delelinket lander på briefoversigten, ikke godkendelsen", !godk, godk ? "godkendelsessiden åbnede" : "");
+      } catch (e) { tjek(22, "Delelink-tjekket kunne køre", false, e.message); }
+    }
+    if (FASE === "kode") {
+      /* LØFTE 18 · NY ADGANGSKODE KAN ALDRIG SPRINGES OVER (Ida 10/10: »så kunne jeg bare lukke den pop up … så var jeg inde i mit admin«) */
+      try {
+        await V(800); var bx = document.getElementById("nyKodeBoks");
+        var kryds = bx ? [].slice.call(bx.querySelectorAll("button, [onclick], a")).filter(function (b) { return /luk|log ud|annull|spring|senere|×/i.test((b.getAttribute("aria-label") || "") + " " + (b.textContent || "")); }).length : -1;
+        if (bx) { document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true })); bx.dispatchEvent(new MouseEvent("click", { bubbles: true })); try { arkLuk(true); } catch (e) {} try { bsFlytLuk(); } catch (e) {} await V(500); }
+        var staar = !!document.getElementById("nyKodeBoks");
+        tjek(18, "»Vælg ny adgangskode« kommer igen efter genindlæsning", !!bx, bx ? "" : "arket kom ikke");
+        tjek(18, "»Vælg ny adgangskode« kan ikke lukkes (kryds, Esc, klik udenfor)", !!bx && kryds === 0 && staar, "lukkeknapper " + kryds + " · står efter Esc/klik " + staar);
+      } catch (e) { tjek(18, "Adgangskode-tjekket kunne køre", false, e.message); }
+      localStorage.removeItem("energida_skal_ny_kode");
     }
   } catch (e) { r.fejl = e.message + " @ " + ((e.stack || "").split("\n")[1] || ""); }
   try { r.ls = {}; for (var li = 0; li < localStorage.length; li++) { var lk = localStorage.key(li); if (lk === "SELE_AFVIS") continue; r.ls[lk] = localStorage.getItem(lk); } } catch (e) {}   /* HELE lageret følger med (køen af ikke-sendte gem bor her) */

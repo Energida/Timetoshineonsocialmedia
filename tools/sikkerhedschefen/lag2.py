@@ -6,7 +6,8 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from sikkerhedschefen.resultat import Resultat, BESTAAET, FEJLET, IKKE_TESTET
 HER = os.path.dirname(os.path.abspath(__file__))
 REPO = os.path.abspath(os.path.join(HER, "..", ".."))
-FASER = ["nulstil", "skriv", "laes1", "laes2"]
+FASER = ["nulstil", "skriv", "laes1", "laes2", "link", "kode"]
+EKSTRA = {"link": "&brief=sc-ide-2&kunde=HINGES2026"}   # delelinket, Ida sender til kunden
 
 def chromium():
     c = glob.glob(os.path.expanduser("~/Library/Caches/ms-playwright/chromium-*/chrome-mac/Chromium.app/Contents/MacOS/Chromium"))
@@ -37,7 +38,7 @@ def koer(bred=1440):
     try:
         for fase in FASER:
             kode = urllib.parse.quote("window.__FASE=" + json.dumps(fase) + ";" + scen)
-            fil = urllib.parse.quote("index-sele.html?selekode=HINGES2026", safe="")
+            fil = urllib.parse.quote("index-sele.html?selekode=HINGES2026" + EKSTRA.get(fase, ""), safe="")
             if fase == "nulstil" and os.path.exists(os.path.join(sele, "sele-db.json")): os.remove(os.path.join(sele, "sele-db.json"))
             url = f"http://127.0.0.1:{port}/sele.html?vis=kunde&fil={fil}&bred={bred}&hoej=900&kode={kode}"
             try:
