@@ -59584,7 +59584,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2731";
+const APP_VERSION = "2732";
 const APP_BYGGET = "9. oktober";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_BYGGET + " · " + APP_VERSION; } catch (e) {} });
 let NY_VERSION_KLAR = false;
@@ -71156,6 +71156,21 @@ async function abTestKoer() {
     let mk = await sb.__fromUdenVagt("content_ideer").select("id,titel,status,kode").eq("kode", K).eq("titel", "AB-MARKØR " + K).maybeSingle();
     if (!mk.data) { const ny = await sb.__fromUdenVagt("content_ideer").insert({ kode: K, titel: "AB-MARKØR " + K, status: "Arkiveret", soejle: "Produkt", type: "Reel", brief: { beskrivelse: "Testkundens markør — må ikke ændres af den anden testkunde" } }).select(); mk = { data: ny.data && ny.data[0], error: ny.error }; tjek("Egen markør oprettet (første kørsel)", !!mk.data, ny.error ? ny.error.message : ""); }
     else tjek("Egen markør er urørt af den anden testkunde", mk.data.status === "Arkiveret" && mk.data.titel === "AB-MARKØR " + K, mk.data.status + " · " + mk.data.titel);
+    /* 1b · markører i fire tabeller mere (Ida 10/10: kun idéerne havde data hos begge — en tom tabel beviser intet) */
+    const AB_MRK = {
+      kunde_aftaler: { find: function (q) { return q.eq("titel", "AB-MARKØR " + K); }, ny: { kode: K, titel: "AB-MARKØR " + K, dato: "2099-01-01", tid: "10:00", tid_slut: "11:00", note: "Testkundens markør" } },
+      kunde_opgaver: { find: function (q) { return q.eq("titel", "AB-MARKØR " + K); }, ny: { kode: K, titel: "AB-MARKØR " + K, aktiv: false } },
+      skema_svar: { find: function (q) { return q.eq("navn", "ab-markoer").eq("skema", "ab_markoer"); }, ny: { kode: K, navn: "ab-markoer", skema: "ab_markoer", svar: { markoer: true } } },
+      inspiration: { find: function (q) { return q.eq("note", "AB-MARKØR " + K); }, ny: { kode: K, type: "link", url: null, note: "AB-MARKØR " + K } }
+    };
+    for (const t of Object.keys(AB_MRK)) {
+      try {
+        const f = await AB_MRK[t].find(sb.__fromUdenVagt(t).select("id").eq("kode", K));
+        if (f.error) { tjek("Egen markør i " + t, null, f.error.message); continue; }
+        if (f.data && f.data.length) tjek("Egen markør i " + t + " er urørt", true, "");
+        else { const n = await sb.__fromUdenVagt(t).insert(AB_MRK[t].ny).select("id"); tjek("Egen markør i " + t + " oprettet (første kørsel)", !!(n.data && n.data.length), n.error ? n.error.message : ""); }
+      } catch (e) { tjek("Egen markør i " + t, null, String(e && e.message || e)); }
+    }
     /* 2 · positiv kontrol: man kan læse sit eget */
     const egen = await sb.__fromUdenVagt("content_ideer").select("id").eq("kode", K);
     tjek("Kan læse sine egne idéer (kontrol)", !!(egen.data && egen.data.length), egen.error ? egen.error.message : (egen.data ? egen.data.length + " rækker" : ""));
@@ -71165,7 +71180,8 @@ async function abTestKoer() {
       const r = await sb.__fromUdenVagt(t).select("*").eq("kode", O).limit(5);
       if (r.error && /42703|42P01|does not exist|column/i.test(String(r.error.code || "") + r.error.message)) { tjek("Læs " + O + " i " + t, null, "tabellen har ingen kode-kolonne: " + r.error.message); continue; }
       const a = afvist(r); if (a === false) set++;
-      tjek("Kan ikke læse " + O + " i " + t, a, r.error ? r.error.message : (r.data && r.data.length ? r.data.length + " rækker SET" : ""));
+      const harMrk = t === "content_ideer" || !!AB_MRK[t];
+      tjek("Kan ikke læse " + O + " i " + t, (a === true && !harMrk) ? null : a, r.error ? r.error.message : (r.data && r.data.length ? r.data.length + " rækker SET" : (harMrk ? "" : "tabellen har ingen markør hos " + O + " — beviser intet")));
     }
     /* 4 · finder vi den andens markør med id alene (uden kode-filter)? */
     const ud = await sb.__fromUdenVagt("content_ideer").select("id,kode").eq("titel", "AB-MARKØR " + O);

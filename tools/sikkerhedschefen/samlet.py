@@ -22,7 +22,12 @@ def main():
     for b in (390, 1440): res += lag2.koer(b) + tjek_plus.koer(b) + tjek_knapper.koer(b)
     res += tjek_stille.koer()
     from sikkerhedschefen.resultat import Resultat
-    res.append(Resultat(17, "Kunde A ser ikke kunde B", IKKE_TESTET, "køres som testkunden i b2b: ?selvtest=ab (A · B · A) — resultatet er Idas skærmbillede"))
+    # LAG 3 = Idas kørsler på live, skrevet ind i lag3-resultater.json (Claude kan ikke selv logge ind som testkunderne)
+    try: l3 = json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "lag3-resultater.json"), encoding="utf-8"))
+    except Exception: l3 = {}
+    r17 = l3.get("17")
+    res.append(Resultat(17, "Kunde A ser ikke kunde B" + (f" (Ida {r17['tid']}, v{r17['version']})" if r17 else ""), {"BESTÅET": BESTAAET, "FEJLET": FEJLET}.get((r17 or {}).get("tilstand"), IKKE_TESTET),
+                        (r17 or {}).get("detalje", "køres som testkunden i b2b: ?selvtest=ab (A · B · A) — resultatet er Idas skærmbillede")))
     res.append(Resultat(22, "Hele købsrejsen (betaling → mail → login → første side)", IKKE_TESTET, "kræver Idas testkøb med rabatkode; kun dele af vejen (delelinket, ny adgangskode) er testet"))
     pr = {}
     for r in res:

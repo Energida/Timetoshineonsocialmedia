@@ -4,6 +4,8 @@
 - **DAGSORDENEN RETTES PÅ STEDET.** Et penneikon ved hvert punkt åbner punktet: navn, tekst, skraldespand (fjern) og Gem; »Tilføj punkt« lægger et nyt til. Standardpunkterne (performance · den kommende uge · dato for næste møde) står uændrede, til man retter dem. Gemmes i `plan_ritual.moede.dagsorden` (merges, andre nøgler urørte); et rettet punkt bliver statisk tekst, et urørt punkt bliver dynamisk (uge, tema, mål). Ingen Annuller i rettelsen.
 - **ALLE DATOSYMBOLER ER KVADRATER, 56 × 56 (HÅRD, Ida 9/10: »kvadratiske alle steder«):** Kommende opslag (`.kop-dato`), aftalernes dato (`.cf-dato`), Backstages `.bs3-tidb.d` og `.bs-datob`. Ingen dato-boks er højere end bred.
 
+## v2732 (10/10) — A-mod-B-testen lægger markører i møder, opgaver (skjult), svar og inspiration ud over idéerne; en tabel uden markør hos den anden står som IKKE TESTET, aldrig BESTÅET. Idas kørsel 15.10 (v2731): idéer bevist adskilt.
+
 ## v2731 (10/10) — A-mod-B-testen kender koderne med årstal (TESTKUNDEA2026 ↔ TESTKUNDEB2026), som CRM giver dem.
 
 ## v2730 (10/10) — INSPIRATION = INSTAGRAM-KORT (Ida): et Instagram-link er altid et Instagram-kort — også når linket står i noten uden https (Acorns' 27 »Note«-kort; genkendes ved visning, rækkerne røres ikke). Kortet: ikon + Reel/Opslag + @profil bagved, opslaget lægger sig ovenpå, når det er hentet; ikke hentet = prøves igen hver time; »Lav til idé« og »Hent billede igen« (grå knapper) under navnet; klik på kortet = opslaget på Instagram i ny fane; etiketten »Instagram · Reel · @profil«. Flere links ad gangen (ét pr. linje = ét kort hver), og et link, der allerede står på siden, oprettes ikke igen. Kendt grænse: Instagrams egen »linket kan være beskadiget«-side kan appen ikke skelne fra et opslag.
