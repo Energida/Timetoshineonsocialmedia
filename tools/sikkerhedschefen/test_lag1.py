@@ -3,7 +3,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from sikkerhedschefen.resultat import Resultat, BESTAAET, FEJLET, IKKE_TESTET, samlet
 from sikkerhedschefen.tjek_version import app_version, tjek_version
 from sikkerhedschefen.tjek_skriv import skrivninger_uden_kvittering
-from sikkerhedschefen.tjek_motorer import doede_onclick
+from sikkerhedschefen.tjek_motorer import doede_onclick, dobbelte_funktioner
 from sikkerhedschefen.lag1 import rapport_tekst
 
 def mappe(v_html="2713", v_txt="2713"):
@@ -44,6 +44,10 @@ class TestMotorer(unittest.TestCase):
     def test_doede(self):
         html = '<b onclick="findes()"></b><b onclick="mangler(1)"></b><b onclick="w()"></b><script>function findes(){} window.w = function(){};</script>'
         self.assertEqual(doede_onclick(html), ["mangler"])
+
+class TestDobbelte(unittest.TestCase):
+    def test_dobbelte(self):
+        self.assertEqual(dobbelte_funktioner("function a() {}\nasync function b() {}\nfunction a(x) {}\n"), ["a"])
 
 class TestRapport(unittest.TestCase):
     def test_overskrift(self):

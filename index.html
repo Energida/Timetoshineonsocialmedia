@@ -59485,7 +59485,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2713";
+const APP_VERSION = "2714";
 const APP_BYGGET = "9. oktober";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_BYGGET + " · " + APP_VERSION; } catch (e) {} });
 let NY_VERSION_KLAR = false;
@@ -80793,10 +80793,14 @@ async function moedeSlet(id) {
     const d = await sb.from("kunde_aftaler").delete().eq("id", id).eq("kode", currentKode).select();
     if (d.error || !d.data || !d.data.length) { try { husBesked("Kunne ikke annullere mødet. Prøv igen."); } catch (e) {} return; }
   } catch (e) { try { husBesked("Kunne ikke annullere mødet. Prøv igen."); } catch (e2) {} return; }
-  ["__kundeAftalerAlle", "__kundeAftaler"].forEach(function (n) { try { if (Array.isArray(window[n])) window[n] = window[n].filter(function (x) { return !x || String(x.id) !== String(id); }); } catch (e) {} });
+  /* DUBLETTER SLETTES MED (Ida 10/10: »mødet d. 12. oktober, jeg har slettet 100 gange, kommer tilbage«; MAALT af sikkerhedschefens lag 2: v2710-rettelsen sad i en overskygget moedeSlet og virkede aldrig): samme dag + samme kunde + mødetitel = én aftale */
+  let dubletter = 0;
+  try { if (ma && ma.dato) { const sosk = (window.__kundeAftalerAlle || window.__kundeAftaler || []).filter(function (a) { return a && a.id && String(a.id) !== String(id) && String(a.dato || "").slice(0, 10) === String(ma.dato).slice(0, 10) && erMoedeTitel(a.titel); });
+    for (const a of sosk) { const r2 = await sb.from("kunde_aftaler").delete().eq("id", a.id).eq("kode", currentKode).select(); if (!r2.error && r2.data && r2.data.length) dubletter++; } } } catch (e) {}
+  ["__kundeAftalerAlle", "__kundeAftaler"].forEach(function (n) { try { if (Array.isArray(window[n])) window[n] = window[n].filter(function (x) { return !x || (String(x.id) !== String(id) && !(ma && ma.dato && String(x.dato || "").slice(0, 10) === String(ma.dato).slice(0, 10) && erMoedeTitel(x.titel))); }); } catch (e) {} });
   window.__MOEDE_VALGT = "";
   const sendt = await moedeBeskedTilDeltagere(ma);
-  try { husKvit(sendt ? "Mødet er annulleret. De andre har fået besked." : "Mødet er annulleret"); } catch (e) {}
+  try { husKvit((sendt ? "Mødet er annulleret. De andre har fået besked." : "Mødet er annulleret") + (dubletter ? " (" + dubletter + " dublet" + (dubletter === 1 ? "" : "ter") + " fjernet)" : "")); } catch (e) {}
   try { await renderAftaler(); } catch (e) {} try { renderHome(); } catch (e) {} try { hjemUgeTegn(); } catch (e) {}
   try { showTab(3); } catch (e) {}
 }
