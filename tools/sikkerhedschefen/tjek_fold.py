@@ -5,13 +5,17 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from sikkerhedschefen.resultat import Resultat, BESTAAET, FEJLET, IKKE_TESTET
 from sikkerhedschefen.lag2 import chromium, fortolk, REPO
 HER = os.path.dirname(os.path.abspath(__file__))
-SIDER = "hjem kalender idebank planlaegning performance forloeb".split()   # briefen er ude: selen har ingen idé at åbne (målte Hjem i stedet, 11/10)
+SIDER = "hjem kalender idebank planlaegning performance forloeb brief".split()   # briefen åbner den opdigtede idé, selen startes med (11/10)
 
 def koer(repo=REPO, bred=390, hoej=844):
     c = chromium()
     if not c: return [Resultat(9, "Næste skridt over folden", IKKE_TESTET, "Chromium findes ikke")]
     sele = tempfile.mkdtemp(prefix="sc-fold-")
     subprocess.run(["python3", os.path.join(repo, "tools/designlaas/byg-sele.py"), sele], capture_output=True)
+    shutil.copy(os.path.join(HER, "lag2", "husk-stub.js"), os.path.join(sele, "sb-stub.js"))   # huske-basen, så briefen har en idé at åbne
+    import json as _j
+    db = {"content_ideer": [{"id": "fold-ide-1", "kode": "HINGES2026", "titel": "Opdigtet idé til fold-tjekket", "status": "Idé", "soejle": "Produkt", "type": "Reel", "dato": None, "brief": {"beskrivelse": "Opdigtet"}, "created_at": "2026-10-01T10:00:00Z"}]}
+    open(os.path.join(sele, "sele-db.json"), "w").write(_j.dumps({"ls": {"SELE_DB": _j.dumps(db)}}))
     drv = open(os.path.join(HER, "lag2", "fold-driver.js"), encoding="utf-8").read()
     html = open(os.path.join(sele, "index-sele.html"), encoding="utf-8").read(); i = html.rfind("</body>")
     open(os.path.join(sele, "index-fold.html"), "w", encoding="utf-8").write(html[:i] + drv + html[i:])
