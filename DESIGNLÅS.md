@@ -4,6 +4,8 @@
 - **DAGSORDENEN RETTES PÅ STEDET.** Et penneikon ved hvert punkt åbner punktet: navn, tekst, skraldespand (fjern) og Gem; »Tilføj punkt« lægger et nyt til. Standardpunkterne (performance · den kommende uge · dato for næste møde) står uændrede, til man retter dem. Gemmes i `plan_ritual.moede.dagsorden` (merges, andre nøgler urørte); et rettet punkt bliver statisk tekst, et urørt punkt bliver dynamisk (uge, tema, mål). Ingen Annuller i rettelsen.
 - **ALLE DATOSYMBOLER ER KVADRATER, 56 × 56 (HÅRD, Ida 9/10: »kvadratiske alle steder«):** Kommende opslag (`.kop-dato`), aftalernes dato (`.cf-dato`), Backstages `.bs3-tidb.d` og `.bs-datob`. Ingen dato-boks er højere end bred.
 
+## v2747 (11/10) — »Slet kunden og koden« kvitterer med antallet af slettede logins (Ida slettede Els og kunne ikke se, om login'et var med).
+
 ## v2746 (11/10) — A/B-testens markører ses kun af testen (Ida 11/10: »jeg har virkelig ikke tillid til det her? næste aftale??« — Testkunde B viste markøren som Næste aftale 1. januar): døren sorterer alt, appen læser, for AB-MARKØR; testen læser uden om døren. Status-ringene er ude af kundesiden i CRM (Ida: »det er ikke vigtig viden for mig«). kunde-admin MÅLT som admin 11/10 kl. 10.24: Ida skiftede Testkunde B's mail i CRM → Skift → loggede ind med kontakt+b2@energida.dk.
 
 ## v2745 (11/10) — kunde-admin er LAGT OP (Idas supabase-login) og MÅLT: uden login 401 · offentlig nøgle 401 · kunde A 403 (A/B-testen 26/0/0 kl. 10.16). Mailfeltet husker den første mail, så næste rettelse spørger om login-mailen uden genåbning.
