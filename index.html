@@ -43989,8 +43989,8 @@ function kbLekIdeNy(lekId) {
   arkAabn({ titel: "Idé til manus", ph: "Hvad skal der laves manus til?", send: "Gem", chips: [],
     gem: async function (t) {
       const tekst = String(t || "").trim(); if (!tekst) return false;
+      if (!(await miSikrHentet())) return "Listen kunne ikke hentes. Prøv igen.";
       MANUS_IDEER.unshift({ id: "mi" + Date.now(), t: tekst, dato: datoDK(), kursus: "", lekModul: String(o.modul || ""), lek: String(o.id), lekNavn: String(o.titel || "") });
-      MANUS_IDEER_HENTET = true;
       try { const h = document.getElementById("kbLekIdeer"); if (h) h.outerHTML = kbLekIdeerHtml(o); } catch (e) {}
       try { renderManusIdeer(); } catch (e) {}
       const ok = await manusIdeGemListe();
@@ -59650,7 +59650,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2740";
+const APP_VERSION = "2741";
 const APP_BYGGET = "9. oktober";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_BYGGET + " · " + APP_VERSION; } catch (e) {} });
 let NY_VERSION_KLAR = false;
@@ -72100,6 +72100,9 @@ async function manusIdeHent() {
   try { renderManusIdeer(); } catch(e) {}
 }
 /* Een doer ud til basen — saa "skriv aldrig en liste, du ikke har laest" kun staar eet sted */
+/* SKRIV ALDRIG EN LISTE, DU IKKE HAR LAEST (fundet 11/10): flere »tilføj«-veje satte MANUS_IDEER_HENTET = true uden at hente — blev en idé gemt, foer listen var hentet,
+   kunne hele listen blive skrevet over med den ene nye. Nu hentes listen foerst; kan den ikke hentes, gemmes intet, og der siges til. */
+async function miSikrHentet() { if (!MANUS_IDEER_HENTET) { try { await manusIdeHent(); } catch (e) {} } return !!MANUS_IDEER_HENTET; }
 async function manusIdeGemListe() {
   if (!MANUS_IDEER_HENTET) return false;
   try { return await vaneGemRow("manus_ideer", MANUS_IDEER); } catch(e) { return false; }
@@ -72111,32 +72114,47 @@ async function bf3ManusHurtig() {
   const ok = await manusIdeGem(t);
   if (!ok) { husBesked("Kunne ikke gemme. Prøv igen."); if (f) f.value = t; }
 }
-function manusIdeFang() {
-  /* PLACÉR MED DET SAMME (Ida 24/9: »når man på desktop tilføjer ide til manus kunne det også være fedt at man kunne placere den med det samme«):
-     samme modul- og lektionsvælger som Ret idéen. Undertitlen om klipperen er ude — klipperen findes ikke mere. */
+/* HVOR HOERER DEN TIL: produkt · modul · lektion (11/10) — modulerne er kun produktets egne; et produkt uden moduler (fx Time to Shine) har kun produktet */
+function miModulDropHtml(pid, valgt) { const l = miModulListe(pid); return l.length ? bf3DropHtml("miModul", "Vælg modul", l.concat([{ k: "_ingen", n: "Intet modul" }]), valgt || "") : ""; }
+function miPlaceringSaet(pid, modul, lek) {
   window.BF3_DROP_VALG = window.BF3_DROP_VALG || {};
-  BF3_DROP_VALG.miModul = ""; BF3_DROP_VALG.miLek = "";
+  BF3_DROP_VALG.miProd = pid || ""; BF3_DROP_VALG.miModul = modul || ""; BF3_DROP_VALG.miLek = lek || "";
+  try { if (typeof bf3ProdSikr === "function" && !(PROD_LISTE || []).length) bf3ProdSikr().then(function () { const h = document.getElementById("miProdHolder"); if (h) h.innerHTML = bf3DropHtml("miProd", "Vælg produkt", bf3ProdValg(), BF3_DROP_VALG.miProd || ""); }); } catch (e) {}
+  window.bf3Drop_miProd = function (k) {
+    BF3_DROP_VALG.miProd = k; BF3_DROP_VALG.miModul = ""; BF3_DROP_VALG.miLek = "";
+    const h = document.getElementById("miModulHolder"); if (h) h.innerHTML = miModulDropHtml(k, "");
+    const h2 = document.getElementById("miLekHolder"); if (h2) h2.innerHTML = "";
+  };
   window.bf3Drop_miModul = function (k) {
     if (k === "_ingen") k = "";
     BF3_DROP_VALG.miModul = k; BF3_DROP_VALG.miLek = "";
     const h = document.getElementById("miLekHolder"); if (h) h.innerHTML = k ? miLekDropHtml(k, "") : "";
   };
   window.bf3Drop_miLek = function (k) { BF3_DROP_VALG.miLek = (k === "_ingen") ? "" : k; };
+}
+function miPlaceringHtml(pid, modul, lek) {
+  return '<div class="ark-et">Hvor hører den til?</div>'
+    + '<div id="miProdHolder">' + bf3DropHtml("miProd", "Vælg produkt", bf3ProdValg(), pid || "") + '</div>'
+    + '<div id="miModulHolder" style="margin-top:8px;">' + (pid ? miModulDropHtml(pid, modul) : "") + '</div>'
+    + '<div id="miLekHolder" style="margin-top:8px;">' + (pid && modul ? miLekDropHtml(modul, lek || "") : "") + '</div>';
+}
+function manusIdeFang() {
+  /* PLACÉR MED DET SAMME (Ida 24/9: »når man på desktop tilføjer ide til manus kunne det også være fedt at man kunne placere den med det samme«):
+     samme modul- og lektionsvælger som Ret idéen. Undertitlen om klipperen er ude — klipperen findes ikke mere. */
+  const pid0 = (typeof KLIP_VISNING !== "undefined" && KLIP_VISNING === "moduler" && typeof BF3_PROD_VALGT !== "undefined" && BF3_PROD_VALGT) ? String(BF3_PROD_VALGT) : "";   /* fra et produkt: produktet er valgt (11/10) */
+  miPlaceringSaet(pid0, "", "");
   arkAabn({ titel: "Idé til manus", ph: "Hvad skal der laves manus til?", send: "Gem", chips: [],
-    ekstraAf: function () {
-      return '<div class="ark-et">Hvor hører den til?</div>'
-        + '<div id="miModulHolder">' + bf3DropHtml("miModul", "Vælg modul", miModulListe().concat([{ k: "_ingen", n: "Ingen, den bliver i Idéer til manus" }]), "") + '</div>'
-        + '<div id="miLekHolder" style="margin-top:8px;"></div>';
-    },
+    ekstraAf: function () { return miPlaceringHtml(pid0, "", ""); },
     gem: async function (t) {
       const tekst = String(t || "").trim(); if (!tekst) return false;
-      const V = window.BF3_DROP_VALG || {}; const mo = String(V.miModul || ""); const le = mo ? String(V.miLek || "") : "";
+      if (!(await miSikrHentet())) return "Listen kunne ikke hentes. Prøv igen.";
+      const V = window.BF3_DROP_VALG || {}; const pr = String(V.miProd || ""); const mo = String(V.miModul || ""); const le = mo ? String(V.miLek || "") : "";
       const o = le ? (KLIP_OPGAVER || []).find(function (x) { return String(x.id) === le; }) : null;
-      MANUS_IDEER.unshift({ id: "mi" + Date.now(), t: tekst, dato: datoDK(), kursus: "", lekModul: mo, lek: le, lekNavn: o ? String(o.titel || "") : "" });
-      MANUS_IDEER_HENTET = true;
+      MANUS_IDEER.unshift(Object.assign({ id: "mi" + Date.now(), t: tekst, dato: datoDK(), kursus: "", lekModul: mo, lek: le, lekNavn: o ? String(o.titel || "") : "" }, pr ? { produkt: pr } : {}));
       try { renderManusIdeer(); } catch (e) {} try { if (typeof renderKlipperum === "function") renderKlipperum(); } catch (e) {}
       const ok = await manusIdeGemListe();
-      return ok === false ? "Kunne ikke gemme. Prøv igen." : (mo ? "Lagt på " + (o ? String(o.titel || "lektionen") : "modulet") + "." : "Gemt i Idéer til manus.");
+      if (ok === false) return "Kunne ikke gemme. Prøv igen.";
+      return mo ? "Lagt på " + (o ? String(o.titel || "lektionen") : "modulet") + "." : pr ? "Gemt under " + bf3ProdNavn(pr) + "." : "Gemt i Indbakken. Vælg produkt dér.";
     } });
 }
 /* ONLINEKURSERNE, en idé til manus kan hoere til (Ida 21/9 kl. 19.21) — produktmodellen, aldrig gaet */
@@ -72165,8 +72183,8 @@ function manusKursusValg() { if (MANUS_KURSER === null) { try { manusKurserHent(
 async function manusIdeGem(tekst, kursus) {
   const t = String(tekst || "").trim();
   if (!t) return false;
+  if (!(await miSikrHentet())) { try { husBesked("Listen kunne ikke hentes. Prøv igen."); } catch (e) {} return false; }   /* hent foerst (11/10) */
   MANUS_IDEER.unshift({ id: "mi" + Date.now(), t: t, dato: datoDK(), kursus: kursus || ((typeof KLIP_PROD_VALGT !== "undefined" && KLIP_PROD_VALGT) || "") });   /* onlinekurset foelger med (21/9): sendefeltet i studiet tager det valgte produkt */
-  MANUS_IDEER_HENTET = true;   /* vi har lige tilfoejet noget, saa listen er vores egen */
   const ok = await manusIdeGemListe();
   renderManusIdeer();
   try { if (typeof renderKlipperum === "function") renderKlipperum(); } catch (e) {}   /* rummet tegnes med (23/9) */
@@ -72177,10 +72195,10 @@ async function manusIdeGem(tekst, kursus) {
    til manus der, når den er flyttet«) =====
    Idéen faar to felter: lek (lektionens id i Energida Studio) og lekNavn (titlen, saa listen kan
    tegnes uden opslag). Er de tomme, ligger idéen som foer i rummet Idéer til manus. */
-function miModulListe() {
-  const set = {};
+function miModulListe(pid) {
+  const set = {}; const tilladt = pid && typeof bf3ProdModuler === "function" ? bf3ProdModuler(pid) : null;   /* kun produktets egne moduler (11/10) */
   (typeof KLIP_OPGAVER !== "undefined" ? KLIP_OPGAVER : []).forEach(function (o) {
-    const m = String(o.modul || "").trim(); if (m) set[m] = 1;
+    const m = String(o.modul || "").trim(); if (m && (!tilladt || tilladt.has(klipModulGruppe(m)))) set[m] = 1;
   });
   const nr = function (m) { const x = String(m).match(/(\d+)/); return x ? parseInt(x[1], 10) : 999; };
   return Object.keys(set).sort(function (a, b) { return nr(a) - nr(b) || a.localeCompare(b, "da"); }).map(function (m) { return { k: m, n: m }; });
@@ -72223,21 +72241,11 @@ function manusIdeRet(id) {
      Hvis der ikke er valgt noget skal der ikke stå ingen men der skal stå vælg«). Den gamle modal (29/7) byggede sin egen form uden om
      popup-låsen — nu er det arkAabn: titel centreret, streg, mikrofonen i feltet, dropdowns under feltet, Gem + Annullér. */
   const r = MANUS_IDEER.find(x => x.id === id); if (!r) return;
-  window.BF3_DROP_VALG = window.BF3_DROP_VALG || {};
-  BF3_DROP_VALG.miModul = String(r.lekModul || ""); BF3_DROP_VALG.miLek = String(r.lek || "");
-  window.bf3Drop_miModul = function (k) {
-    if (k === "_ingen") k = "";
-    BF3_DROP_VALG.miModul = k; BF3_DROP_VALG.miLek = "";
-    const h = document.getElementById("miLekHolder"); if (h) h.innerHTML = k ? miLekDropHtml(k, "") : "";
-  };
-  window.bf3Drop_miLek = function (k) { BF3_DROP_VALG.miLek = (k === "_ingen") ? "" : k; };
+  const pidR = r.produkt ? String(r.produkt) : (((PROD_LISTE || []).find(function (p) { return miHoererTil(r, p.id); }) || {}).id || "");   /* produktet, den hoerer til (11/10) */
+  miPlaceringSaet(String(pidR || ""), String(r.lekModul || ""), String(r.lek || ""));
   arkAabn({ titel: "Ret idéen", ph: "Idéen …", tekst: String(r.t || ""), send: "Gem", chips: [],
     knap: { slet: true, tekst: "Slet idéen", klik: "arkLuk();manusIdeSlet('" + String(id).replace(/'/g, "") + "')" },   /* slet, uanset hvor idéen ligger (Ida 27/9) */
-    ekstraAf: function () {
-      return '<div class="ark-et">Hvor hører den til?</div>'
-        + '<div id="miModulHolder">' + bf3DropHtml("miModul", "Vælg modul", miModulListe().concat([{ k: "_ingen", n: "Ingen, den bliver i Idéer til manus" }]), String(r.lekModul || "")) + '</div>'
-        + '<div id="miLekHolder" style="margin-top:8px;">' + (r.lekModul ? miLekDropHtml(r.lekModul, String(r.lek || "")) : '') + '</div>';
-    },
+    ekstraAf: function () { return miPlaceringHtml(String(pidR || ""), String(r.lekModul || ""), String(r.lek || "")); },
     gem: async function (tekst) { return await manusIdeRetGem(id, tekst); } });
 }
 async function manusIdeRetGem(id, tekstInd) {
@@ -72253,6 +72261,7 @@ async function manusIdeRetGem(id, tekstInd) {
       const le = mo ? String(V.miLek == null ? (r.lek || "") : V.miLek) : "";
       r.lekModul = mo || "";
       r.lek = le || "";
+      if (V.miProd != null) { if (V.miProd) r.produkt = String(V.miProd); else delete r.produkt; }
       const o = le ? (KLIP_OPGAVER || []).find(function (x) { return String(x.id) === le; }) : null;
       r.lekNavn = o ? String(o.titel || "") : "";
     } catch (e) {}
@@ -74713,7 +74722,9 @@ async function nyIdeGem(tekst, k) {
   if (k === "manus") {
     const kursus = (window.BF3_DROP_VALG || {}).nyIdeKursus || ""; if (!kursus) throw new Error("!Vælg et onlinekursus.");   /* Ida 21/9 kl. 19.21 */
     if (!MANUS_IDEER_HENTET) { try { await manusIdeHent(); } catch (e) {} }
-    MANUS_IDEER.unshift({ id: "mi" + Date.now(), t: tekst, dato: datoDK(), kursus: kursus }); MANUS_IDEER_HENTET = true;
+    if (!MANUS_IDEER_HENTET) return false;   /* listen kunne ikke hentes — skriv den aldrig over (11/10) */
+    const pidK = ((PROD_LISTE || []).find(function (p) { return String(p.navn || "").trim().toLowerCase() === String(kursus).trim().toLowerCase(); }) || {}).id;
+    MANUS_IDEER.unshift(Object.assign({ id: "mi" + Date.now(), t: tekst, dato: datoDK(), kursus: kursus }, pidK ? { produkt: String(pidK) } : {}));
     const ok = await manusIdeGemListe(); try { renderManusIdeer(); } catch (e) {}
     /* MAALT 23/9: renderManusIdeer tegner den GAMLE kasse, som er skjult i rummet — staar man i
        Idéer til manus, kom den nye idé foerst frem efter en genindlaesning. Samme fund som ved
@@ -82696,6 +82707,14 @@ async function indbakkeTegn() {
   let venter = []; try { venter = await venterHent(); } catch (e) { venter = []; }
   let beskeder = []; try { beskeder = await bf3BeskederHent(); } catch (e) { beskeder = []; }
   const noter = (RODEBUTIK || []).slice();
+  /* MANGLER ET PRODUKT (Ida 11/10: »Indbakken … hvor jeg så flytter dem fra«) */
+  try { await bf3ProdSikr(); } catch (e) {}
+  try { await miSikrHentet(); } catch (e) {}
+  for (const kk of ["brolls", "kilder"]) { if (!BF3_SL_HENTET[kk]) { try { await bf3SlHent(kk); } catch (e) {} } }
+  const udenProd = bf3UdenProdListe();
+  const udenProdHtml = udenProd.length ? '<div class="bs3-afsnit">' + bf3Ver("Mangler et produkt · " + udenProd.length) + '</div>' + udenProd.map(function (u) {
+      return bf3Etfl(u.et + (u.r.dato ? " · " + dkDatoKort(String(u.r.dato).slice(0, 10)) : ""), esc(String(u.r.t || "")), "", [], ' data-klik="1" role="button" tabindex="0" onclick="bf3UdenProdArk(\'' + u.type + '\',\'' + esc(String(u.r.id)).replace(/'/g, "") + '\')"');
+    }).join('') : '';
   /* INGEN PILLER PAA FLISERNE (Ida 21/9 kl. 12.10: »det skal komme op som valgmulighed når jeg klikker på flisen! Der skal stå klokkeslet på hvornår den er kommet ind«):
      hele flisen er trykket, valgene staar i det lille ark; klokkeslaettet staar i etiketten, naar raekken har det */
   window.__BF3_IB_VENTER = venter;
@@ -82713,7 +82732,7 @@ async function indbakkeTegn() {
   const todos = (HAENG || []).filter(function (x) { return x; }).sort(function (a, b) { return String(a.dato || "9") < String(b.dato || "9") ? -1 : 1; });
   const todoHtml = bf3Ver("To-do" + (todos.length ? " · " + todos.length : "")) + bf3TodoListe(todos, "Ingen to-dos.", true);
   const venstre = bf3Ver("Opgaver fra kunder" + (venter.length ? " · " + venter.length : "")) + kunderHtml
-    + '<div class="bs3-afsnit">' + bf3Ver("Jeg skal bare have skrevet det ned" + (noter.length ? " · " + noter.length : "")) + '</div>' + noterHtml;
+    + '<div class="bs3-afsnit">' + bf3Ver("Jeg skal bare have skrevet det ned" + (noter.length ? " · " + noter.length : "")) + '</div>' + noterHtml + udenProdHtml;
   const hoejre = todoHtml + '<div class="bs3-afsnit">' + bf3Ver("Beskeder til kunder" + (beskeder.length ? " · " + beskeder.length : "")) + '</div>' + beskederHtml;
   const tlf = bf3Tlf();
   el.innerHTML = '<div class="bs-hero bs-hero-streg">Indbakken</div><div class="bs3">'
@@ -83213,6 +83232,50 @@ function bf3ProdModuler(pid) {
   try { (PROD_LEK || []).forEach(function (l) { if (PROD_KOBL.has(pid + "|" + l.id)) ud.add(klipModulGruppe(l.modul)); }); } catch (e) {}
   return ud;
 }
+/* IDÉER TIL MANUS, B-ROLLS OG KILDEHENVISNINGER BOR UNDER PRODUKTET (Ida 11/10: »B-roll og ideer til manus skal flyttes ind under de forskellige produkter.
+   for lige nu kan jeg under ide til manus ikke tilføje noget til time to shine« + »kildehenvisninger skal også ind under produkt«). Hvert punkt faar feltet
+   »produkt« (produktets id). En idé paa et modul hoerer til de produkter, modulet ligger i. Det, der hverken har produkt eller modul, staar i Indbakken
+   under »Mangler et produkt«, og flyttes derfra (Idas svar 11/10). Intet skrives om i basen af sig selv. */
+function bf3ProdNavn(pid) { const p = (PROD_LISTE || []).find(function (x) { return String(x.id) === String(pid); }); return p ? String(p.navn || "") : ""; }
+function bf3ProdValg() { return (PROD_LISTE || []).map(function (p) { return { k: String(p.id), n: String(p.navn || "") }; }); }
+function miHoererTil(r, pid) { if (!r || !pid) return false; if (r.produkt) return String(r.produkt) === String(pid); if (String(r.kursus || "").trim()) return String(r.kursus).trim().toLowerCase() === bf3ProdNavn(pid).trim().toLowerCase();   /* Tøm hovedet gemte produktets NAVN (21/9) */ if (String(r.lekModul || "").trim()) return bf3ProdModuler(pid).has(klipModulGruppe(String(r.lekModul))); return false; }
+function miUdenProdukt(r) { if (!r || r.produkt) return false; return !(PROD_LISTE || []).some(function (p) { return miHoererTil(r, p.id); }); }
+async function bf3ProdSikr() {
+  if ((PROD_LISTE || []).length && (PROD_LEK || []).length) return true;
+  if (typeof sb === "undefined" || !sb) return false;
+  try {
+    const r = await Promise.all([sb.from("produkter").select("id,navn,sortering").order("sortering"), sb.from("lektioner").select("id,modul,titel,sortering").order("sortering"), sb.from("produkt_lektioner").select("produkt_id,lektion_id")]);
+    if (r[0] && r[0].data) PROD_LISTE = r[0].data; if (r[1] && r[1].data) PROD_LEK = r[1].data;
+    if (r[2] && r[2].data) PROD_KOBL = new Set(r[2].data.map(function (x) { return x.produkt_id + "|" + x.lektion_id; }));
+  } catch (e) {}
+  return !!(PROD_LISTE || []).length;
+}
+function bf3SlFlise(k, r, tlf) {
+  const kS = "'" + k + "'", idS = "'" + esc(String(r.id)).replace(/'/g, "") + "'";
+  return '<div class="bs3-fl bs3-klik" data-slet="bf3SlSletNu(' + kS + ',' + idS + ')" role="button" tabindex="0" onclick="bf3SlRet(' + kS + ',' + idS + ')"><div class="bs3-rk"><div class="bs3-t"><div class="bs3-n">' + esc(r.t || "") + '</div>'
+    + (r.s ? '<div class="bs3-s">' + esc(r.s) + '</div>' : '')
+    + '</div>' + (tlf ? '' : '<button type="button" class="bs-skrald bs3-skrald" aria-label="Slet" title="Slet" onclick="event.stopPropagation();bf3SlSlet(' + kS + ',' + idS + ')">' + BS_SKRALD_SVG + '</button>') + '</div></div>';
+}
+/* INDBAKKEN: »Mangler et produkt« — et tryk = Flyt til et produkt */
+function bf3UdenProdListe() {
+  if (!(PROD_LISTE || []).length) return [];   /* uden produktlisten kan vi ikke vide det — vis hellere intet end alt */
+  const ud = [];
+  (MANUS_IDEER || []).forEach(function (r) { if (miUdenProdukt(r)) ud.push({ type: "ideer", et: "Idé til manus", r: r }); });
+  ["brolls", "kilder"].forEach(function (k) { (BF3_SL[k] || []).forEach(function (r) { if (r && !r.produkt) ud.push({ type: k, et: k === "brolls" ? "B-roll" : "Kildehenvisning", r: r }); }); });
+  return ud;
+}
+function bf3UdenProdArk(type, id) {
+  bf3ValgArk("Flyt til", bf3ProdValg().map(function (p) { return [esc(p.n), "bf3UdenProdFlyt('" + type + "','" + String(id).replace(/'/g, "") + "','" + String(p.k).replace(/'/g, "") + "')"]; }), { ingenRoed: true });
+}
+async function bf3UdenProdFlyt(type, id, pid) {
+  const liste = type === "ideer" ? (MANUS_IDEER || []) : (BF3_SL[type] || []);
+  const r = liste.find(function (x) { return x && String(x.id) === String(id); }); if (!r) return;
+  const gl = r.produkt; r.produkt = pid;
+  const ok = type === "ideer" ? await manusIdeGemListe() : await bf3SlGem(type);
+  if (ok === false) { r.produkt = gl; try { husBesked("Kunne ikke flytte. Prøv igen."); } catch (e) {} }
+  else { try { husKvit("Flyttet til " + bf3ProdNavn(pid) + "."); } catch (e) {} }
+  try { indbakkeTegn(); } catch (e) {}
+}
 
 /* IDÉER TIL MANUS FÅR SIT EGET RUM (Ida 23/9: »den ligger helt håbløst i bunden af alle lektioner …
    har du mulighed for at give det sit eget rum og at man derfra kan slette dem også og at man
@@ -83287,12 +83350,12 @@ async function bf3SlHent(k) {
   else if (!BF3_SL[k]) BF3_SL[k] = [];
 }
 async function bf3SlGem(k) { if (!BF3_SL_HENTET[k]) return false; try { return await vaneGemRow(BF3_STUDIE_LISTER[k].skema, BF3_SL[k]); } catch (e) { return false; } }   /* skriv aldrig en liste, du ikke har laest */
-function bf3SlTegnIgen(k) { try { if (typeof KLIP_VISNING !== "undefined" && KLIP_VISNING === k) renderKlipperum(); } catch (e) {} }
-async function bf3SlTilfoej(k, t, s2) {
+function bf3SlTegnIgen(k) { try { if (typeof KLIP_VISNING !== "undefined" && (KLIP_VISNING === k || (KLIP_VISNING === "moduler" && BF3_PROD_VALGT))) renderKlipperum(); } catch (e) {} try { const ib = document.getElementById("bsIndbakke"); if (ib && ib.offsetParent) indbakkeTegn(); } catch (e) {} }
+async function bf3SlTilfoej(k, t, s2, pid) {
   t = String(t || "").trim(); if (!t || !BF3_STUDIE_LISTER[k]) return false;
   if (!BF3_SL_HENTET[k]) await bf3SlHent(k);
   if (!BF3_SL_HENTET[k]) return false;
-  const r = { id: "sl" + Date.now() + Math.random().toString(36).slice(2, 6), t: t, dato: new Date().toISOString().slice(0, 10) }; if (s2) r.s = s2;
+  const r = { id: "sl" + Date.now() + Math.random().toString(36).slice(2, 6), t: t, dato: new Date().toISOString().slice(0, 10) }; if (s2) r.s = s2; if (pid) r.produkt = String(pid);   /* produktet, det hoerer til (11/10) */
   BF3_SL[k].unshift(r);
   const ok = await bf3SlGem(k); if (!ok) { BF3_SL[k].shift(); return false; }
   bf3SlTegnIgen(k); return true;
@@ -83302,9 +83365,13 @@ async function bf3SlHurtig(k) {
   if (f) f.value = "";
   const ok = await bf3SlTilfoej(k, t); if (!ok) { husBesked("Kunne ikke gemme. Prøv igen."); if (f) f.value = t; }
 }
-function bf3SlNyArk(k) {
+function bf3SlNyArk(k, pid) {
   const d = BF3_STUDIE_LISTER[k]; if (!d) return;
-  arkAabn({ titel: d.ny, ph: d.ph.replace(/ …$/, ""), send: "Gem", chips: [], gem: async function (t) { const ok = await bf3SlTilfoej(k, t); if (ok) setTimeout(function () { try { arkLuk(); } catch (e) {} }, 500); return ok ? "Gemt." : false; } });
+  window.BF3_DROP_VALG = window.BF3_DROP_VALG || {}; BF3_DROP_VALG.slProd = pid ? String(pid) : "";
+  window.bf3Drop_slProd = function (v) { BF3_DROP_VALG.slProd = v; };
+  arkAabn({ titel: d.ny, ph: d.ph.replace(/ …$/, ""), send: "Gem", chips: [],
+    ekstraAf: function () { return '<div class="ark-et">Hvilket produkt?</div>' + bf3DropHtml("slProd", "Vælg produkt", bf3ProdValg(), BF3_DROP_VALG.slProd || ""); },
+    gem: async function (t) { const pr = BF3_DROP_VALG.slProd || ""; const ok = await bf3SlTilfoej(k, t, "", pr); if (ok) setTimeout(function () { try { arkLuk(); } catch (e) {} }, 500); return ok ? (pr ? "Gemt under " + bf3ProdNavn(pr) + "." : "Gemt i Indbakken. Vælg produkt dér.") : false; } });
 }
 async function bf3SlSletNu(k, id) {
   const liste = BF3_SL[k] || []; const i = liste.findIndex(function (r) { return String(r.id) === String(id); }); if (i < 0) return;
@@ -83317,9 +83384,12 @@ function bf3SlSlet(k, id) {
 }
 function bf3SlRet(k, id) {
   const d = BF3_STUDIE_LISTER[k]; const r = (BF3_SL[k] || []).find(function (x) { return String(x.id) === String(id); }); if (!d || !r) return;
+  window.BF3_DROP_VALG = window.BF3_DROP_VALG || {}; BF3_DROP_VALG.slProd = r.produkt ? String(r.produkt) : "";
+  window.bf3Drop_slProd = function (v) { BF3_DROP_VALG.slProd = v; };
   arkAabn({ titel: d.ret, ph: d.ph.replace(/ …$/, ""), send: "Gem", chips: [], tekst: r.t || "",
     knap: { slet: true, tekst: d.slet.replace(/\?$/, ""), klik: "arkLuk();bf3SlSlet('" + k + "','" + String(id).replace(/'/g, "") + "')" },
-    gem: async function (t) { t = String(t || "").trim(); if (!t) return false; const gl = r.t; r.t = t; const ok = await bf3SlGem(k); if (!ok) { r.t = gl; return false; } bf3SlTegnIgen(k); setTimeout(function () { try { arkLuk(); } catch (e) {} }, 500); return "Gemt."; } });
+    ekstraAf: function () { return '<div class="ark-et">Hvilket produkt?</div>' + bf3DropHtml("slProd", "Vælg produkt", bf3ProdValg(), BF3_DROP_VALG.slProd || ""); },   /* flyt til et andet produkt (11/10) */
+    gem: async function (t) { t = String(t || "").trim(); if (!t) return false; const gl = r.t, glP = r.produkt; r.t = t; if (BF3_DROP_VALG.slProd) r.produkt = String(BF3_DROP_VALG.slProd); const ok = await bf3SlGem(k); if (!ok) { r.t = gl; if (glP) r.produkt = glP; else delete r.produkt; return false; } bf3SlTegnIgen(k); setTimeout(function () { try { arkLuk(); } catch (e) {} }, 500); return "Gemt."; } });
 }
 function bf3StudieListeTegn(el, k) {
   const d = BF3_STUDIE_LISTER[k]; if (!d) return;
@@ -83462,11 +83532,24 @@ function klipBud6Tegn(el) {
   if (px0) {
     try { const h = document.querySelector("#dside-klip .klip-hoved .ch-titel"); if (h && h.textContent !== String(px0.navn || "")) h.textContent = String(px0.navn || ""); } catch (e) {}
     const delt = bf3ProdDeltagere(px0.id);
-    const fanerne = [["indhold", "Indhold"], ["deltagere", "Deltagere"], ["brolls", "B-rolls"], ["grafik", "Grafik"], ["overlays", "Overlays"]].concat(delt.length ? [["kunde", "Se som kunden"]] : []);   /* B-rolls og Grafik paa produktets forside (Ida 27/9) */
+    const fanerne = [["indhold", "Indhold"], ["deltagere", "Deltagere"], ["ideer", "Idéer til manus"], ["brolls", "B-rolls"], ["kilder", "Kildehenvisninger"], ["grafik", "Grafik"], ["overlays", "Overlays"]].concat(delt.length ? [["kunde", "Se som kunden"]] : []);   /* B-rolls og Grafik paa produktets forside (Ida 27/9) */
     if (!fanerne.some(function (f) { return f[0] === fane; })) fane = "indhold";
     prodTop = bf3Chips(fanerne, fane, "bf3ProdFane");
     /* B-ROLLS OG GRAFIK PR. MODUL OG LEKTION (Ida 27/9: »se hele listen af grafik der skal bruges og hvilke b-rolls der skal bruges«) — laeses ud af manus
        (B-ROLL:/GRAFIK: i starten af en linje), samme regel som lektionens kasser. Tryk = lektionen. */
+    /* IDÉER TIL MANUS OG KILDEHENVISNINGER PAA PRODUKTET (Ida 11/10) — plusset tilfoejer til netop dette produkt */
+    if (fane === "ideer" || fane === "kilder") {
+      const tlfP = bf3Tlf(); let krop = "";
+      if (fane === "ideer") { const rr = (MANUS_IDEER || []).filter(function (r) { return miHoererTil(r, px0.id); }); krop = bf3Ver("Idéer til manus") + (rr.length ? rr.map(miFl).join("") : bf3Tom("Ingen idéer til manus endnu.")); }
+      else { if (!BF3_SL_HENTET.kilder && !window.__BF3_SL_HENT_kilder) { window.__BF3_SL_HENT_kilder = 1; bf3SlHent("kilder").then(function () { try { renderKlipperum(); } catch (e) {} }); } const rr = (BF3_SL.kilder || []).filter(function (r) { return r && String(r.produkt || "") === String(px0.id); }); krop = bf3Ver("Kildehenvisninger") + (rr.length ? rr.map(function (r) { return bf3SlFlise("kilder", r, tlfP); }).join("") : bf3Tom("Ingen kildehenvisninger endnu.")); }
+      el.innerHTML = '<div class="bs3">' + prodTop + krop + '<div class="bs3-ideer-knap"><button type="button" class="dbtn mq-tap" onclick="klipVisningSaet(\'produkter\')">Tilbage til Produkter</button></div></div>';
+      try { bf3BaandKnapVis("prod_" + fane); } catch (e) {}
+      bf3Swipe(el);
+      try { sideKlarNaar("klipPageList"); } catch (e) {}
+      try { bsBaandPlanlaeg(); } catch (e) {}
+      bf3StudioRyd();
+      return;
+    }
     if (fane === "brolls" || fane === "grafik" || fane === "overlays") {
       const erG = fane === "grafik", erO = fane === "overlays", navnF = erO ? "Overlays" : erG ? "Grafik" : "B-rolls", typ = erO ? "overlay" : erG ? "grafik" : "broll";
       const mods = bf3ProdModuler(px0.id);
@@ -83482,9 +83565,15 @@ function klipBud6Tegn(el) {
         krop += '<div class="bs3-mi-lek">' + esc(studieTitelVis(o)) + '</div>' + rr.map(function (t) { ialt++; const nr = PROD_RK.push([typ, String(o.id), t]) - 1, on = erProduceret(typ, o.id, t);
           return '<div class="bs3-fl bs3-klik bs3-prod" role="button" tabindex="0" onclick="klipBriefAaben(\'' + esc(String(o.id)) + '\')"><button type="button" class="mq-tap bs-tjek' + (on ? ' is-prod' : '') + '" aria-label="' + (on ? 'Produceret' : 'Markér som produceret') + '" title="' + (on ? 'Produceret' : 'Markér som produceret') + '" onclick="event.stopPropagation();prodSkiftNr(' + nr + ')"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></button><div class="bs3-n">' + esc(t) + '</div></div>'; }).join("");
       });
-      el.innerHTML = '<div class="bs3">' + prodTop + (ialt ? krop : bf3Ver(navnF) + bf3Tom(erO ? "Ingen overlays endnu. Skriv OVERLAY: i starten af en linje i manus." : erG ? "Ingen grafik endnu. Skriv GRAFIK: i starten af en linje i manus." : "Ingen B-rolls endnu. Skriv B-ROLL: i starten af en linje i manus."))
+      /* PRODUKTETS EGNE B-ROLLS OEVERST (Ida 11/10: B-rolls-rummet flytter ind under produktet), linjerne fra manus under */
+      let egne = [];
+      if (!erG && !erO) { if (!BF3_SL_HENTET.brolls && !window.__BF3_SL_HENT_brolls) { window.__BF3_SL_HENT_brolls = 1; bf3SlHent("brolls").then(function () { try { renderKlipperum(); } catch (e) {} }); } egne = (BF3_SL.brolls || []).filter(function (r) { return r && String(r.produkt || "") === String(px0.id); }); }
+      const tlfB = bf3Tlf();
+      const egneHtml = egne.length ? bf3Ver("B-rolls") + egne.map(function (r) { return bf3SlFlise("brolls", r, tlfB); }).join("") : "";
+      el.innerHTML = '<div class="bs3">' + prodTop + egneHtml + (ialt ? krop : (egne.length ? "" : bf3Ver(navnF) + bf3Tom(erO ? "Ingen overlays endnu. Skriv OVERLAY: i starten af en linje i manus." : erG ? "Ingen grafik endnu. Skriv GRAFIK: i starten af en linje i manus." : "Ingen B-rolls endnu. Tilføj med plusset, eller skriv B-ROLL: i starten af en linje i manus.")))
         + '<div class="bs3-ideer-knap"><button type="button" class="dbtn mq-tap" onclick="klipVisningSaet(\'produkter\')">Tilbage til Produkter</button></div></div>';
-      try { bf3BaandKnapVis(null); } catch (e) {}
+      try { bf3BaandKnapVis(erG || erO ? null : "prod_brolls"); } catch (e) {}
+      if (egne.length) bf3Swipe(el);
       try { sideKlarNaar("klipPageList"); } catch (e) {}
       try { bsBaandPlanlaeg(); } catch (e) {}
       bf3StudioRyd();
@@ -83976,6 +84065,7 @@ function bf3BaandKnapVis(side, iRummet) {
     /* INDE I ET RUM ER PLUSSET ROEDT og aabner rummets Tilfoej-ark (note · idé · rum · link · tjekliste · program) — Ida 21/9 kl. 16.50 */
     k.classList.toggle("roed", !!iRummet);
     k.style.display = ""; b2.onclick = function () { if (side === "modnyt") { try { modulNyArk(); } catch (e) {} } else if (side === "prodnyt") { try { bf3NytProduktArk(); } catch (e) {} } else if (side === "manusideer") { try { manusIdeFang(); } catch (e) {} } else if (side === "moduler") { try { klipNyArk(); } catch (e) {} } else if (side === "hjem") { try { bf3ToemTrin1(); } catch (e) {} }   /* samme valg som swipe op (26/9) */ else if (side === "kunder") { try { nyKundeAaben(); } catch (e) {} } else if (side === "indbakke") { try { bf3ValgArk("Tilføj", [["To-do", "bf3TodoNyArk()"], ["Besked til en kunde", "bf3BeskedArk()"]]); } catch (e) {} } else if (side === "salg") { try { bf3ValgArk("Tilføj", [["Kontakt", "bf3KontaktNyArk()"], ["Gamle kunder", "gamleKunderArk()"], ["Rum", "bf3NytRumArk('salg')"]]); } catch (e) {} } else if (iRummet) { try { mrTilfoejArk(side.slice(4)); } catch (e) {} } else bf3NytRumArk(side); };
+    if (String(side).indexOf("prod_") === 0) { const pk = side.slice(5); b2.title = pk === "ideer" ? "Tilføj idé" : pk === "kilder" ? "Tilføj kildehenvisning" : "Tilføj B-roll"; b2.setAttribute("aria-label", b2.title); b2.onclick = function () { try { if (pk === "ideer") manusIdeFang(); else bf3SlNyArk(pk, BF3_PROD_VALGT); } catch (e) {} }; }   /* produktets faner (11/10) */
     if (String(side).indexOf("sl_") === 0) { const sk = side.slice(3); b2.title = sk === "kilder" ? "Tilføj kildehenvisning" : "Tilføj B-roll";   /* ordet »Tilføj« lader telefonens bundmenu-plus finde knappen (bsCoverKnapperStil) — plusset staar aldrig i coveret */ b2.setAttribute("aria-label", b2.title); b2.onclick = function () { try { bf3SlNyArk(sk); } catch (e) {} }; }   /* Kildehenvisninger + B-rolls (27/9) */
   } catch (e) {}
 }
@@ -84296,9 +84386,7 @@ function bf3StudieTegn(el) {
   /* MODULERNE BOR UNDER PRODUKTER (Ida 24/9: »modulerne skal ind under produkter«) — doeren er vaek; Produkter › YOU GOT THIS viser modulerne */
   const rum = bf3Ver("Rum") + '<div class="bs3-grid3 bs3-rumgrid">'
     + bf3Doer("Produkter", 'klipVisningSaet("prodfliser")', { lav: true })
-    + bf3Doer("Idéer til manus", 'klipVisningSaet("ideer")', { lav: true })
-    + bf3Doer("Kildehenvisninger", 'klipVisningSaet("kilder")', { lav: true })   /* Ida 27/9 */
-    + bf3Doer("B-rolls", 'klipVisningSaet("brolls")', { lav: true })   /* Ida 27/9 */
+    /* Idéer til manus, Kildehenvisninger og B-rolls bor under hvert produkt (Ida 11/10) — det uden produkt staar i Indbakken */
     + bf3Doer("Sådan går det", 'klipVisningSaet("data")', { lav: true })
     + '</div>';
   /* DE TRE PRIKKER I COVERET (21/9-laasen) — vaerktoejerne skal kunne naas fra forsiden */
