@@ -59650,7 +59650,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2745";
+const APP_VERSION = "2746";
 const APP_BYGGET = "9. oktober";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_BYGGET + " · " + APP_VERSION; } catch (e) {} });
 let NY_VERSION_KLAR = false;
@@ -62845,8 +62845,23 @@ if (USE_SUPABASE) {
      og udloeste "Din seneste aendring blev IKKE gemt" — uden at Ida havde aendret
      noget. En bjaelke, der kan lyve, maa ikke kunne naas af en puls. */
   sb.__fromUdenVagt = orgFrom;
+  /* A/B-TESTENS MARKØRER SES KUN AF TESTEN (Ida 11/10: »jeg har virkelig ikke tillid til det her? næste aftale??« — Testkunde B's
+     »Næste aftale« var markøren AB-MARKØR … 1. januar 2099). Alt, appen LÆSER gennem døren, sorteres for markører; A/B-testen læser
+     uden om døren (__fromUdenVagt) og ser dem stadig. Skrivninger røres ikke. */
+  var erAbMrk = function (x) { if (!x || typeof x !== "object") return false; return /^AB-MARK/.test(String(x.titel || "")) || /^AB-MARK/.test(String(x.note || "")) || /^AB-MARK/.test(String(x.tekst || "")) || String(x.profil || "") === "AB-MARKØR" || x.skema === "ab_markoer"; };
   sb.from = function (tabel) {
     var b = orgFrom(tabel);
+    var orgSelect = b.select;
+    if (typeof orgSelect === "function") b.select = function () {
+      var q = orgSelect.apply(b, arguments);
+      try {
+        if (q && typeof q.then === "function") {
+          var thenL = q.then.bind(q);
+          q.then = function (ok, fejl) { return thenL(function (r) { try { if (r && Array.isArray(r.data)) { if (r.data.some(erAbMrk)) r.data = r.data.filter(function (x) { return !erAbMrk(x); }); } else if (r && r.data && erAbMrk(r.data)) r.data = null; } catch (e) {} return ok ? ok(r) : r; }, fejl); };
+        }
+      } catch (e) {}
+      return q;
+    };
     SKRIV.forEach(function (op) {
       var org = b[op];
       if (typeof org !== "function") return;
@@ -83142,7 +83157,8 @@ async function kundeSideTegn() {
   const doere = tlf
     ? []   /* KUNDEKORTET ER SIDENS INDHOLD, ogsaa paa telefonen (Ida 21/9 kl. 21.22: »indholdet på siden skal være kundekortet — i moderne mobilversion«); Kalenderen + Aftaler er UDE som chips (kl. 21.20) */
     : [["Noter", "bf3KkRul('kkNoter')"], ["Drejebogen", "bf3KkRul('kkDrejebog')"]];
-  const status = '<div class="bs3-fl"><div class="cf-sek">Status</div><div class="bs3-ringe">' + bf3Ring(postet + "/" + uge.length, "postet i ugen", uge.length ? postet / uge.length : 0, tlf ? 64 : 76) + bf3Ring(String(frem), "planlagt frem", Math.min(1, frem / 4), tlf ? 64 : 76) + bf3Ring(godk + "/" + (godk + klar), "briefs godkendt", (godk + klar) ? godk / (godk + klar) : 0, tlf ? 64 : 76) + '</div></div>';
+  const status = '';   /* STATUS-RINGENE ER UDE AF CRM'ET (Ida 11/10: »de ringe der skal heller ikke stå i mit crm. det er ikke vigtig viden for mig«) */
+  const statusUde = '<div class="bs3-fl"><div class="cf-sek">Status</div><div class="bs3-ringe">' + bf3Ring(postet + "/" + uge.length, "postet i ugen", uge.length ? postet / uge.length : 0, tlf ? 64 : 76) + bf3Ring(String(frem), "planlagt frem", Math.min(1, frem / 4), tlf ? 64 : 76) + bf3Ring(godk + "/" + (godk + klar), "briefs godkendt", (godk + klar) ? godk / (godk + klar) : 0, tlf ? 64 : 76) + '</div></div>';
   const chips = '<div class="ark-chips i-fladen bs3-chips">' + doere.map(function (x) { return '<button type="button" class="mq-tap ark-chip" onclick="' + x[1] + '">' + x[0] + '</button>'; }).join('') + '</div>';
   /* »SE KUNDENS VERSION« = BRED ROED KNAP OEVERST OVER STATUS (Ida 21/9 kl. 21.12) — ikke laengere en chip */
   const seKunden = '<button type="button" class="dbtn primary mq-tap bs3-lang bf3-se-kunden" onclick="aabnKundensSide(\'' + kEsc + '\')">Se kundens version</button>';
@@ -83154,7 +83170,7 @@ async function kundeSideTegn() {
     + /* TELEFONEN: Se kundens version → Naeste aftale → Status → doerene (Ida 21/9 kl. 21.17: »Aftaler skal stå fremme over status«) */ (tlf ? seKunden + '<div class="bs3-afsnit">' + hoejre + '</div>' + status + chips + '<div id="bf3KkHost" class="bs3-afsnit"></div>' : '<div class="bs3-to"><div>' + venstre + '</div><div>' + hoejre + '</div></div>')
     + '<button type="button" class="bsam-mobknap bsam-mobknap-sek bs-knap bs-tilbage" onclick="visDashSide(\'crm\')">Tilbage</button>'
     + '</div>';
-  void venterHtml;
+  void venterHtml; void statusUde;
   try { bf3KundeNaalVis(k, pin); } catch (e) {}
   try { await bf3KundekortInd(k); } catch (e) {}   /* kortet ligger paa siden paa BEGGE flader (Ida 21/9 kl. 21.22) — vaelter 17.20 */
   /* PLUSSET ER VEJEN PAA KUNDENS SIDE (Idas klik 5/10 aften »Bag plusset«): formularen »Aftaler med kunden« og forloebs-skabelonen staar ikke paa siden — plusset giver Aftale (+ Forloeb paa I GOT YOU) i det lille ark */
