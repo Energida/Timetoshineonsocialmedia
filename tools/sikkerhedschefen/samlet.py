@@ -6,7 +6,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from sikkerhedschefen.resultat import BESTAAET, FEJLET, IKKE_TESTET
 from sikkerhedschefen import lag1, lag2, tjek_plus, tjek_knapper, tjek_stille, tjek_tilbage, tjek_ord
 from sikkerhedschefen.tjek_lister import tjek_lister
-from sikkerhedschefen import tjek_spor, tjek_adgang, tjek_crm, tjek_sw
+from sikkerhedschefen import tjek_spor, tjek_adgang, tjek_crm, tjek_sw, tjek_fold
 from sikkerhedschefen.tjek_version import app_version
 KRITISKE = {1, 2, 3, 4, 5, 6, 14, 15, 17, 18, 19, 22, 23, 24}
 NAVNE = {1: "Intet skrevet går tabt", 2: "Hver gemmevej har kvittering", 3: "Status frem og tilbage", 4: "Idéer flytter sig ikke", 5: "Møder opret/ret/slet, ingen dubletter",
@@ -22,7 +22,7 @@ def main():
            lag1.tjek_anon(repo), lag1.tjek_headers(), lag1.tjek_funktioner(repo), lag1.tjek_funktioner_findes(repo), tjek_lister(repo)]
     if "--uden-design" not in sys.argv: res.append(lag1.tjek_design(repo))
     for b in (390, 1440): res += lag2.koer(b) + tjek_plus.koer(b) + tjek_knapper.koer(b) + tjek_ord.koer(b)
-    res += tjek_stille.koer() + tjek_tilbage.koer() + tjek_spor.koer() + tjek_adgang.koer() + tjek_crm.koer() + tjek_sw.koer()
+    res += tjek_stille.koer() + tjek_tilbage.koer() + tjek_spor.koer() + tjek_adgang.koer() + tjek_crm.koer() + tjek_sw.koer() + tjek_fold.koer()
     from sikkerhedschefen.resultat import Resultat
     # LAG 3 = Idas kørsler på live, skrevet ind i lag3-resultater.json (Claude kan ikke selv logge ind som testkunderne)
     try: l3 = json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "lag3-resultater.json"), encoding="utf-8"))
