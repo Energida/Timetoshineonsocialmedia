@@ -59650,7 +59650,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2741";
+const APP_VERSION = "2742";
 const APP_BYGGET = "9. oktober";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_BYGGET + " · " + APP_VERSION; } catch (e) {} });
 let NY_VERSION_KLAR = false;
@@ -79696,7 +79696,8 @@ async function vaneRow(skema) {
     /* MAALT 14/9 kl. 16.05: haengepartier har TRE raekker (13/7 + to fra 10/9) for ENERGIDA/Ida. maybeSingle() fejler paa flere
        raekker og svarede null, saa Idas to-dos kom fra browserens localStorage — 10 i Chrome, 1 i basen, og ingen af de ni naaede
        basen. Nu laeses den foerste raekke; vaneGemRow opdaterer alle raekker med samme noegle, saa de holder samme indhold. */
-    const { data } = await sb.from("skema_svar").select("svar").eq("kode", "ENERGIDA").eq("navn", "Ida").eq("skema", skema).limit(1);
+    const { data, error } = await sb.from("skema_svar").select("svar").eq("kode", "ENERGIDA").eq("navn", "Ida").eq("skema", skema).limit(1);
+    if (!error && Array.isArray(data)) { try { (window.VANE_LAEST = window.VANE_LAEST || {})[skema] = true; } catch (e) {} }   /* basen har svaret — listen er LAEST (11/10) */
     const v = (data && data.length) ? data[0].svar : null;
     try { vaneAftryk(skema, v); } catch (e) {}
     return v;
@@ -79708,7 +79709,23 @@ async function vaneRow(skema) {
    Bevist 3/8: et forsoeg paa at skrive en raekke gav "new row violates row-level security
    policy" — og der fandtes derfor ikke EEN kunde_def-raekke i hele basen, selv om appen
    havde "gemt" dem hver gang. Returnerer nu true KUN naar basen svarer med en raekke. */
+/* EN LISTE SKRIVES ALDRIG OVER MED EN, DER ALDRIG BLEV HENTET (fundet 11/10 — sikkerhedschefen saa det ikke, fordi basen sagde »gemt«):
+   Idéer til manus, Mindful, Øvelser, Food, Content Studio og Salg hentede med »vaneRow(...) || vaneLocal(...)«. Svigtede hentningen, stod listen
+   tom eller med browserens gamle kopi — og det naeste »tilføj« skrev den over hele listen i basen. Nu: er listen ikke laest i denne fane, hentes
+   basens udgave foerst og flettes (pr. id); svarer basen ikke, gemmes intet, og den roede bjaelke siger det. tjek_lister.py vogter reglen. */
+window.VANE_LAEST = window.VANE_LAEST || {};
+function vaneBeskyttet(skema) { return /^[a-z]/.test(String(skema || "")); }   /* ALLE lister (tjek_lister.py fandt 15 mere, bl.a. to-do og »Jeg skal bare have skrevet det ned«) — alle hentes via vaneRow, som markerer dem laest */
 async function vaneGemRow(skema, svar) {
+  if (sb && Array.isArray(svar) && vaneBeskyttet(skema) && !(window.VANE_LAEST || {})[skema]) {
+    try {
+      const fr = await sb.from("skema_svar").select("svar").eq("kode", "ENERGIDA").eq("navn", "Ida").eq("skema", skema).limit(1);
+      if (fr.error || !Array.isArray(fr.data)) { try { visSyncFejl("skema_svar (" + skema + ") — listen kunne ikke hentes før gem"); } catch (e) {} return false; }
+      const server = (fr.data.length && Array.isArray(fr.data[0].svar)) ? fr.data[0].svar : [];
+      const noegle = function (x) { return (x && typeof x === "object" && x.id != null) ? "id:" + x.id : "j:" + JSON.stringify(x); };
+      const har = new Set(svar.map(noegle));
+      server.forEach(function (x) { if (!har.has(noegle(x))) svar.push(x); });
+    } catch (e) { try { visSyncFejl("skema_svar (" + skema + ") — listen kunne ikke hentes før gem"); } catch (e2) {} return false; }
+  }
   try { localStorage.setItem("vane_" + skema, JSON.stringify(svar)); } catch(e) {}
   if (!sb) return false;
   try {
