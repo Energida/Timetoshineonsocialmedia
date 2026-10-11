@@ -4,6 +4,8 @@
 - **DAGSORDENEN RETTES PÅ STEDET.** Et penneikon ved hvert punkt åbner punktet: navn, tekst, skraldespand (fjern) og Gem; »Tilføj punkt« lægger et nyt til. Standardpunkterne (performance · den kommende uge · dato for næste møde) står uændrede, til man retter dem. Gemmes i `plan_ritual.moede.dagsorden` (merges, andre nøgler urørte); et rettet punkt bliver statisk tekst, et urørt punkt bliver dynamisk (uge, tema, mål). Ingen Annuller i rettelsen.
 - **ALLE DATOSYMBOLER ER KVADRATER, 56 × 56 (HÅRD, Ida 9/10: »kvadratiske alle steder«):** Kommende opslag (`.kop-dato`), aftalernes dato (`.cf-dato`), Backstages `.bs3-tidb.d` og `.bs-datob`. Ingen dato-boks er højere end bred.
 
+## v2755 (12/10) — »Tast ugens tal fra Instagram« åbner igen, efter arket er lukket med krydset (krydset efterlod display:none i style; startRateWizard rydder den). Målt i selen: åbn → kryds → åbn = vises.
+
 ## v2754 (11/10) — ÉN POPUP AD GANGEN: rundvisningens ark lå under »Vælg din adgangskode« og skinnede igennem som en skygge (Idas skærmbillede efter testkøbet). `body:has(#nyKodeBoks) #turOverlay` skjules, til koden er gemt — så kommer rundvisningen. Begge flader.
 
 ## v2753 (11/10) — »Gamle kunder«: betalingslinket fra Stripe (buy.stripe.com/4gMeVca4Xf838vu3yN8bS02, kupon »Gamle kunder« 100 % én gang kun på YOU GOT THIS + koden JEGERVIGTIGFORIDA, oprettet med Idas ja) er sat ind i GAMLE_KUNDER_LINK, så mailen fra Backstage · Forretning · plus · »Gamle kunder« linker direkte til købet. Ringkøbing-linket er urørt.
