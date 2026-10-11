@@ -11474,6 +11474,7 @@ html body .ark-chip:not(.on):not(.kk-ini), html body .ibb-chip, html body .pr-ch
 html body .ark-chip:not(.on):not(.kk-ini) svg, html body .ibb-chip svg, html body .kop-chip svg { width:14px; height:14px; flex:none; color:var(--gray2); }
 html body .kop-chip { cursor:pointer; }
 /* SELVTESTENS ARK: én flise pr. tjek, tilstanden først */
+html body .selvtest-ark { max-height:calc(100dvh - 48px); overflow-y:auto; -webkit-overflow-scrolling:touch; }   /* HELE SVARET KAN SES (Ida 11/10: »jeg kan ikke se alle svar«) */
 html body .selvtest-ark .selvtest-hoved { font-size:13px; color:var(--gray2); text-align:center; margin:-4px 0 14px; }
 html body .selvtest-ark .selvtest-rk { display:flex; gap:12px; align-items:flex-start; background:#fff; border-radius:16px; box-shadow:var(--mb-skygge); padding:10px 14px; margin:0 0 8px; text-align:left; }
 html body .selvtest-ark .selvtest-t { flex:none; width:96px; font-size:12px; color:var(--gray2); }
@@ -59649,7 +59650,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2739";
+const APP_VERSION = "2740";
 const APP_BYGGET = "9. oktober";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_BYGGET + " · " + APP_VERSION; } catch (e) {} });
 let NY_VERSION_KLAR = false;
@@ -71222,7 +71223,8 @@ async function abTestKoer() {
     const samlet = res.some(function (r) { return r.t === "FEJLET"; }) ? "FEJLET" : res.some(function (r) { return r.t === "IKKE TESTET"; }) ? "IKKE TESTET" : "BESTÅET";
     m.innerHTML = '<div class="bs-flyt-ark brief-soejle-ark selvtest-ark"><div class="ark-t">Kunde A mod kunde B</div>'
       + '<div class="selvtest-hoved">' + esc(status || (samlet + " · " + K + " · v" + APP_VERSION + " · kl. " + String(tid.getHours()).padStart(2, "0") + "." + String(tid.getMinutes()).padStart(2, "0"))) + '</div>'
-      + res.map(function (r) { return '<div class="selvtest-rk selvtest-' + (r.t === "BESTÅET" ? "ok" : r.t === "FEJLET" ? "fejl" : "ikke") + '"><span class="selvtest-t">' + esc(r.t) + '</span><span class="selvtest-n">' + esc(r.navn) + (r.d ? '<i>' + esc(r.d) + '</i>' : '') + '</span></div>'; }).join("")
+      + (status ? '' : '<div class="selvtest-hoved">' + ["BESTÅET", "IKKE TESTET", "FEJLET"].map(function (t) { return res.filter(function (r) { return r.t === t; }).length + " " + t.toLowerCase(); }).join(" · ") + '</div>')   /* TAL OEVERST + DET, DER IKKE BESTOD, FOERST (Ida 11/10: »jeg kan ikke se alle svar«) */
+      + res.slice().sort(function (a, b) { const o = { "FEJLET": 0, "IKKE TESTET": 1, "BESTÅET": 2 }; return o[a.t] - o[b.t]; }).map(function (r) { return '<div class="selvtest-rk selvtest-' + (r.t === "BESTÅET" ? "ok" : r.t === "FEJLET" ? "fejl" : "ikke") + '"><span class="selvtest-t">' + esc(r.t) + '</span><span class="selvtest-n">' + esc(r.navn) + (r.d ? '<i>' + esc(r.d) + '</i>' : '') + '</span></div>'; }).join("")
       + '<button type="button" class="ark-luk" onclick="bsFlytLuk()">Luk</button></div>';
     m.style.display = "flex";
   };
@@ -71248,10 +71250,10 @@ async function abTestKoer() {
     };
     for (const t of Object.keys(AB_MRK)) {
       try {
-        const f = await AB_MRK[t].find(sb.__fromUdenVagt(t).select("id").eq("kode", K));
+        const f = await AB_MRK[t].find(sb.__fromUdenVagt(t).select("kode").eq("kode", K));   /* »kode«, ikke »id« — kunde_maal og kunde_strategi har intet id (Idas kørsel 11/10) */
         if (f.error) { tjek("Egen markør i " + t, null, f.error.message); continue; }
         if (f.data && f.data.length) tjek("Egen markør i " + t + " er urørt", true, "");
-        else { const n = await sb.__fromUdenVagt(t).insert(AB_MRK[t].ny).select("id"); tjek("Egen markør i " + t + " oprettet (første kørsel)", !!(n.data && n.data.length), n.error ? n.error.message : ""); }
+        else { const n = await sb.__fromUdenVagt(t).insert(AB_MRK[t].ny).select("kode"); tjek("Egen markør i " + t + " oprettet (første kørsel)", !!(n.data && n.data.length), n.error ? n.error.message : ""); }
       } catch (e) { tjek("Egen markør i " + t, null, String(e && e.message || e)); }
     }
     /* 2 · positiv kontrol: man kan læse sit eget */
