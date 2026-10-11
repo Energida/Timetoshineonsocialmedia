@@ -1,4 +1,4 @@
-"""SIKKERHEDSCHEFEN · SAMLET RAPPORT. Kører lag 1 + lag 2 (390 og 1440) og skriver ét ark med de 26 løfter:
+"""SIKKERHEDSCHEFEN · SAMLET RAPPORT. Kører lag 1 + lag 2 (390 og 1440) og skriver ét ark med de 27 løfter:
 BESTÅET / FEJLET / IKKE TESTET. Et kritisk løfte, der ikke er BESTÅET, giver IKKE KLAR. Lag 3 (Selvtest-knappen) trykkes af Ida.
 Kør: python3 tools/sikkerhedschefen/samlet.py [--uden-design]"""
 import os, sys, json, datetime
@@ -6,6 +6,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from sikkerhedschefen.resultat import BESTAAET, FEJLET, IKKE_TESTET
 from sikkerhedschefen import lag1, lag2, tjek_plus, tjek_knapper, tjek_stille, tjek_tilbage, tjek_ord
 from sikkerhedschefen.tjek_lister import tjek_lister
+from sikkerhedschefen import tjek_spor
 from sikkerhedschefen.tjek_version import app_version
 KRITISKE = {1, 2, 3, 4, 5, 6, 14, 15, 17, 18, 19, 22, 23, 24}
 NAVNE = {1: "Intet skrevet går tabt", 2: "Hver gemmevej har kvittering", 3: "Status frem og tilbage", 4: "Idéer flytter sig ikke", 5: "Møder opret/ret/slet, ingen dubletter",
@@ -13,7 +14,7 @@ NAVNE = {1: "Intet skrevet går tabt", 2: "Hver gemmevej har kvittering", 3: "St
          11: "Tilbage findes, ingen blindgyder", 12: "Fagord forklares, ét navn pr. ting", 13: "Tomt Gem siger hvad der mangler", 14: "Intet uncommitted, versionen ens",
          15: "Konsollen tom, tæppet løftes rigtigt", 16: "Samme gem-vej admin/b2b, ingen døde referencer", 17: "Kundernes data er adskilt", 18: "Edge Functions efter funktion",
          19: "XSS kører aldrig", 20: "Log ud rydder enheden", 21: "Headers, DPA, EU, privatliv", 22: "Hele vejen ind som ny kunde", 23: "Net væk og to faner",
-         24: "Gammel version opdateres uden tab", 25: "En prøvet vej tilbage", 26: "Fejl når frem til Ida"}
+         24: "Gammel version opdateres uden tab", 25: "En prøvet vej tilbage", 26: "Fejl når frem til Ida", 27: "Lektionerne kan følges (set · stjerner · kommentar)"}
 
 def main():
     repo = lag1.REPO
@@ -21,7 +22,7 @@ def main():
            lag1.tjek_anon(repo), lag1.tjek_headers(), lag1.tjek_funktioner(repo), lag1.tjek_funktioner_findes(repo), tjek_lister(repo)]
     if "--uden-design" not in sys.argv: res.append(lag1.tjek_design(repo))
     for b in (390, 1440): res += lag2.koer(b) + tjek_plus.koer(b) + tjek_knapper.koer(b) + tjek_ord.koer(b)
-    res += tjek_stille.koer() + tjek_tilbage.koer()
+    res += tjek_stille.koer() + tjek_tilbage.koer() + tjek_spor.koer()
     from sikkerhedschefen.resultat import Resultat
     # LAG 3 = Idas kørsler på live, skrevet ind i lag3-resultater.json (Claude kan ikke selv logge ind som testkunderne)
     try: l3 = json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "lag3-resultater.json"), encoding="utf-8"))
