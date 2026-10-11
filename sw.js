@@ -71,7 +71,9 @@ function appFilNoegle(req) {
   catch (e) { return req; }
 }
 /* ?frisk= og ?nulstil= betyder "spring cachen over" — det er vejen ud af en gammel build. */
-function friskKraevet(req) { return /[?&](frisk|nulstil)(=|&|$)/.test(req.url); }
+/* GENINDLÆS = DEN NYESTE (Ida 11/10: admin stod på 2744 efter genindlæsning, mens serveren var 2748). En genindlæsning, Ida SELV trykker
+   (request.cache "no-cache"/"reload"), hentes fra nettet — uden net falder vi tilbage på kopien. Ellers som før: kopien med det samme. */
+function friskKraevet(req) { return /[?&](frisk|nulstil)(=|&|$)/.test(req.url) || (req.mode === "navigate" && (req.cache === "no-cache" || req.cache === "reload")); }
 /* De fire tegn, med et loft paa ventetiden: svarer nettet ikke hurtigt, svarer vi den gemte kopi
    i stedet for at lade kunden se paa en hvid skaerm. Timeouten afbryder ikke hentningen. */
 async function udeVersion(ms) {

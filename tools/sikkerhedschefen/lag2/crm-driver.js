@@ -24,6 +24,9 @@
       tjek(navn + ": fluebenene under Adgang findes", boks >= 5, boks + " flueben");
       var slet = [].some.call(document.querySelectorAll("button"), function (b) { return /Slet kunden og koden/.test(b.innerText || "") && b.getClientRects().length; });
       tjek(navn + ": »Slet kunden og koden« findes", slet, "ingen synlig slet-knap");
+      var pn = document.getElementById("ki_postnr"), by = document.getElementById("ki_by");
+      if (pn && by) { by.value = ""; by.dataset.auto = ""; pn.value = "6950"; pn.dispatchEvent(new Event("input", { bubbles: true })); }
+      tjek(navn + ": postnummer giver byen af sig selv", by && by.value === "Ringkøbing", by ? "by: " + by.value : "intet byfelt");
       var mail = document.getElementById("ki_mail");
       tjek(navn + ": mailfeltet spørger om login-mailen", mail && /kkLoginMailSpoerg/.test(mail.getAttribute("onchange") || ""), mail ? "onchange mangler" : "intet mailfelt");
     }
