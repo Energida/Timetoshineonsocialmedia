@@ -59650,7 +59650,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2743";
+const APP_VERSION = "2744";
 const APP_BYGGET = "9. oktober";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_BYGGET + " · " + APP_VERSION; } catch (e) {} });
 let NY_VERSION_KLAR = false;
@@ -71282,6 +71282,12 @@ async function abTestKoer() {
     tjek("Kan ikke slette " + O + "s markør", afvist(de), de.data && de.data.length ? "SLETTET" : "");
     const de2 = await sb.__fromUdenVagt("kunde_aftaler").delete().eq("kode", O).select();
     tjek("Kan ikke slette " + O + "s aftaler", afvist(de2), de2.data && de2.data.length ? de2.data.length + " SLETTET" : "");
+    /* 6b · kunde-admin (Ida 11/10): en kunde maa ALDRIG kunne skifte eller slette logins — heller ikke sine egne via admin-funktionen */
+    try {
+      const ka = await kundeAdminKald({ handling: "logins", kode: O });
+      if (ka.fejl === "ikke-klar") tjek("Kan ikke bruge admin-funktionen (logins)", null, "funktionen kunde-admin er ikke lagt op endnu");
+      else tjek("Kan ikke bruge admin-funktionen (logins)", !!ka.fejl && !ka.ok, ka.fejl ? ka.fejl : "SVAREDE MED LOGINS");
+    } catch (e) { tjek("Kan ikke bruge admin-funktionen (logins)", null, String(e && e.message || e)); }
     /* 7 · den andens kode-oplysninger */
     const vk = await sb.__fromUdenVagt("virksomhedskoder").select("kode,virksomhed").eq("kode", O);
     tjek("Kan ikke se " + O + "s virksomhedsoplysninger", afvist(vk), vk.data && vk.data.length ? "synlig: " + vk.data[0].virksomhed : "");
@@ -76152,7 +76158,7 @@ function renderKundeKort() {
     + '<div style="grid-column:1/-1;">' + iLab("Virksomhedens navn") + '<input type="text" id="ki_navn" value="' + ivv(def.virksomhed || k.kode) + '" onchange="kkNavnGem()" oninput="kkNavnAuto()" placeholder="Virksomhedens navn" ' + iFelt + '></div>'
     + '<div style="grid-column:1/-1;">' + iLab("Forretningstype") + forretningsValg("ki_forretning", def.forretningstype || "", "kkForretningGem()", "Ikke valgt endnu") + '<div style="font-size:10.5px;color:var(--gray3);margin-top:4px;">Styrer s\u00f8jlenavne og forslag i briefen og Drejebogen.</div></div>'
     + '<div style="grid-column:1/-1;">' + iLab("Kontaktperson") + '<input type="text" id="ki_kontakt" value="' + ivv(kInfo2.kontakt) + '" oninput="kkInfoAuto()" placeholder="Navn" ' + iFelt + '></div>'
-    + '<div>' + iLab("E-mail") + '<input type="email" id="ki_mail" value="' + ivv(kInfo2.mail) + '" oninput="kkInfoAuto()" placeholder="navn@firma.dk" ' + iFelt + '></div>'
+    + '<div>' + iLab("E-mail") + '<input type="email" id="ki_mail" value="' + ivv(kInfo2.mail) + '" data-foer="' + ivv(kInfo2.mail) + '" oninput="kkInfoAuto()" onchange="kkLoginMailSpoerg(this)" placeholder="navn@firma.dk" ' + iFelt + '></div>'
     + '<div style="grid-column:1/-1;">' + iLab("Virksomhedens adresse") + '<input type="text" id="ki_adresse" value="' + ivv(kInfo2.adresse) + '" oninput="kkInfoAuto()" placeholder="Vejnavn og nummer" ' + iFelt + '></div>'
     + '<div>' + iLab("Postnummer") + '<input type="text" id="ki_postnr" inputmode="numeric" value="' + ivv(postBy.postnr) + '" oninput="kkInfoAuto()" placeholder="Postnummer" ' + iFelt + '></div>'
     + '<div>' + iLab("By") + '<input type="text" id="ki_by" value="' + ivv(postBy.by) + '" oninput="kkInfoAuto()" placeholder="By" ' + iFelt + '></div>'
@@ -78172,10 +78178,43 @@ async function kkTilfoejOpgave() {
   refreshKundeOpgaver();
 }
 
+/* KUNDENS LOGINS STYRES FRA CRM'ET (Ida 11/10: »jeg vil ikke have at jeg skal ind i supabase og arbejde. det samme gælder sletningen og andre ændringer af kunder«).
+   Edge Function kunde-admin (supabase/functions/kunde-admin): kun administratorer, kun kunde-logins, aldrig en adgangskode (sikkerhedskontrakten §3–§6). */
+async function kundeAdminKald(krop) {
+  if (!sb) return { fejl: "Ingen forbindelse." };
+  let token = ""; try { const { data } = await sb.auth.getSession(); token = data && data.session ? data.session.access_token : ""; } catch (e) {}
+  if (!token) return { fejl: "Du er ikke logget ind." };
+  try {
+    const r = await fetch(window.SUPABASE_URL + "/functions/v1/kunde-admin", { method: "POST", headers: { "Content-Type": "application/json", "Authorization": "Bearer " + token, "apikey": window.SUPABASE_ANON_KEY }, body: JSON.stringify(krop) });
+    if (r.status === 404) return { fejl: "ikke-klar" };
+    const sv = await r.json().catch(function () { return {}; });
+    if (!r.ok) return Object.assign({ fejl: sv.fejl || "Det gik galt. Prøv igen." }, sv);
+    return sv;
+  } catch (e) { return { fejl: "Kunne ikke nå frem. Tjek forbindelsen." }; }
+}
+/* RETTER IDA MAILEN, SKIFTER LOGIN-MAILEN MED — efter ét spørgsmål (Idas klik 11/10); spørgsmålet kommer, når feltet forlades, aldrig mens hun skriver */
+function kkLoginMailSpoerg(felt) {
+  if (!felt || !KUNDEKORT) return;
+  const gammel = String(felt.dataset.foer || "").trim().toLowerCase(), ny = String(felt.value || "").trim().toLowerCase();
+  if (!gammel || !ny || gammel === ny || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(ny)) return;
+  const kode = KUNDEKORT.kode;
+  arkSpoerg({ titel: "Skift login-mailen også?", tekst: "Kunden logger fremover ind med " + esc(ny) + ".", jaTekst: "Skift", nejTekst: "Kun kontaktmailen",
+    ja: async function () {
+      const r = await kundeAdminKald({ handling: "skift_mail", kode: kode, gammel: gammel, ny: ny });
+      if (r.fejl === "ikke-klar") { husBesked("Login-mailen kan ikke skiftes herfra endnu — funktionen er ikke lagt op."); return; }
+      if (r.fejl) { husBesked(r.fejl); return; }
+      felt.dataset.foer = ny;
+      husKvit(r.ingen ? "Kontaktmailen er rettet. Der var intet login på den gamle mail." : "Login-mailen er skiftet til " + ny + ".");
+    } });
+}
 async function kkSletKunde(kode) {
   if (!DYN_KODER[kode]) { husBesked("Denne kunde er fast opsat og kan ikke slettes herfra."); return; }
   const navn = (VIRKSOMHEDSKODER[kode] && VIRKSOMHEDSKODER[kode].virksomhed) || kode;
-  if (!arkOk("kkSletKunde", arguments, { titel: "Slet " + esc(navn) + " (" + esc(kode) + ")?", tekst: "Koden lukkes, kortet forsvinder fra CRM, og et evt. login på koden kan ikke længere komme ind.", jaTekst: "Ja, slet" })) return;
+  if (!arkOk("kkSletKunde", arguments, { titel: "Slet " + esc(navn) + " (" + esc(kode) + ")?", tekst: "Koden lukkes, kortet forsvinder fra CRM, og kundens logins slettes.", jaTekst: "Ja, slet" })) return;
+  /* LOGINS SLETTES MED (Ida 11/10) — foerst, saa en fejl stopper, foer koden lukkes */
+  { const rl = await kundeAdminKald({ handling: "slet_logins", kode: kode });
+    if (rl.fejl && rl.fejl !== "ikke-klar") { husBesked("Kundens logins kunne ikke slettes: " + rl.fejl + " Intet er slettet."); return; }
+    if (rl.fejl === "ikke-klar") { try { husBesked("Koden lukkes. Logins kan først slettes herfra, når funktionen er lagt op."); } catch (e) {} } }
   try { await sb.from("virksomhedskoder").update({ aktiv: false }).eq("kode", kode); } catch(e) {}   /* 0-RAEKKER-OK: rækken slettes i næste linje; findes den ikke, er der intet at lukke */
   try { await sb.from("virksomhedskoder").delete().eq("kode", kode); } catch(e) {}
   try { await sb.from("skema_svar").delete().eq("kode", kode).eq("navn", "config"); } catch(e) {}
