@@ -10,7 +10,9 @@
   function db() { try { return JSON.parse(localStorage.getItem("SELE_DB") || "{}"); } catch (e) { return {}; } }
   function gem(d) { try { localStorage.setItem("SELE_DB", JSON.stringify(d)); } catch (e) {} }
   function afvis() { try { return localStorage.getItem("SELE_AFVIS") || ""; } catch (e) { return ""; } }
-  function svar(v) { return new Promise(function (r) { setTimeout(function () { r(v); }, 5); }); }
+  /* LATENS (13/10, løfte 46): localStorage "SELE_LATENS" = millisekunder, basen er om at svare — så et gem kan være undervejs, mens kunden trykker igen */
+  function latens() { try { return Math.max(5, Number(localStorage.getItem("SELE_LATENS")) || 5); } catch (e) { return 5; } }
+  function svar(v) { return new Promise(function (r) { setTimeout(function () { r(v); }, latens()); }); }
   function builder(tabel) {
     var st = { op: "select", data: null, filtre: [], single: false, orden: null, graense: null, vilSelect: false };
     function match(r) { return st.filtre.every(function (f) { var v = r[f[1]];

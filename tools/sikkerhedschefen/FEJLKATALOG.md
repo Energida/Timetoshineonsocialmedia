@@ -24,7 +24,7 @@ Ordforklaring til testkolonnen: **selen** = testversionen af appen med opdigtede
 | 8 | En afvist oprettelse kommer ikke i køen til at blive sendt igen | 29/9 (rettet v2401) | Ja · løfte 2 (»afvist ændring sendes igen fra køen«) | Allerede |
 | 9 | Genindlæsning overskriver telefonens kopi, før køens nye opslag er sendt | 29/9 Hinges Hus | Delvis · løfte 1/23 | Selen: net væk → opret → genindlæs med net → opslaget står og ligger i basen |
 | 10 | Uden net: teksten forsvinder eller »gemt« lyver | — | Ja · løfte 23 | Allerede |
-| 11 | Et felt hopper tilbage, fordi en gemning var undervejs | 9/10 »rettet fra kort reel til reel 100 gange« (v2688) | NEJ | Selen med huske-basen forsinket 2 s: skift format to gange hurtigt, genindlæs → sidste valg står |
+| 11 | Et felt hopper tilbage, fordi en gemning var undervejs | 9/10 »rettet fra kort reel til reel 100 gange« (v2688) | Ja · løfte 46 (tjek_hop: huske-basen med 1,5 s latens) | Selen med huske-basen forsinket 2 s: skift format to gange hurtigt, genindlæs → sidste valg står |
 | 12 | Falsk »ændret et andet sted« — kunden kan ikke gemme | 27/9 og 29/9 manus kunne ikke gemmes | NEJ | Selen: lad én gemning fejle, gem igen → må ikke melde konflikt |
 | 13 | En import eller et SQL-kort overskriver noget nyere | 23/9 manuskript-importen skrev 54 lektioner over en nyere udgave | NEJ | Før hver import: sammenlign tidsstempel/længde pr. række med det, der overskrives; stop ved nyere. Køres som tørløb mod live-læsning |
 | 14 | Et SQL-kort køres to gange og ødelægger noget | 4/10 note: gammelt Shinebarometer-kort må ikke køres igen; 22/9 »Modul 11 bliver Modul 10« aldrig målt | NEJ | Hvert kort skal kunne køres to gange uden ændring: kør på en kopi i lokal Postgres (eller Supabase-gren), sammenlign |
