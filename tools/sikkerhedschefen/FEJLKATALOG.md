@@ -60,7 +60,7 @@ Ordforklaring til testkolonnen: **selen** = testversionen af appen med opdigtede
 | 39 | Forkerte modtagere i »Send til« | 9/10 »Send til« viste kun Ida (v2702) | NEJ | Selen som admin og som kunde: listen = kundens team, aldrig Ida som kunde |
 | 40 | Data skrives, men læses aldrig af nogen | 2/9 stjerner og noter blev skrevet i månedsvis uden at blive vist | Delvis · løfte 27 | Kodesøgning: hvert `skema:` der skrives, skal også læses et sted; liste over »kun skrevet« = mangel |
 | 41 | Filtret tæller ingenting, fordi tabellen er tom | 22/9 produkt_lektioner var tom — produktchips filtrerede ingenting | NEJ | Live-læsning: tabeller, appen filtrerer på, må ikke være tomme; ellers advarsel |
-| 42 | Dato/tid forskubbet (sommertid, midnat, ugenummer) | — | NEJ | Selen med uret sat til 23.30, 00.30 og sidste søndag i oktober: opslag ligger på rigtig dag, uge og tid |
+| 42 | Dato/tid forskubbet (sommertid, midnat, ugenummer) | 13/10 nat: 26 steder stemplede »i dag« i UTC — kl. 00–02 fik noget gårsdagens dato (rettet v2757) | Ja · løfte 42 (tjek_datoer) | Selen med uret sat til 23.30, 00.30 og sidste søndag i oktober: opslag ligger på rigtig dag, uge og tid |
 
 ## C · Login, adgangskoder og adgang (pakker, flueben, låse)
 
