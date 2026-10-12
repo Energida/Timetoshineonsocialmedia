@@ -141,7 +141,7 @@ Ordforklaring til testkolonnen: **selen** = testversionen af appen med opdigtede
 | 95 | Didot uden for heroen, fed Poppins | 15/9 | Delvis · tryghed skaermbilleder.py | Flyt ind i porten: font-family Didot uden for .hero = FEJL; Poppins ≥600 = FEJL |
 | 96 | Emoji (også som HTML-tegn, der bliver blå på iPhone) | CLAUDE §4 | Ja · probe-sider, løfte 12 | Allerede |
 | 97 | En bred regel rammer felter med egen farve | 21/9 manus-låg; 22/9 rød I dag-flise hvid | NEJ | Se nr. 37 (kontrast-tjek) |
-| 98 | Telefonens CSS skrives ind i den maskinkopierede blok og forsvinder | 19/9 (tlf-kopi.py overskriver) | NEJ | Kodesøgning: regler mellem kopi-markørerne må kun komme fra tlf-kopi.py (diff efter kørsel = 0) |
+| 98 | Telefonens CSS skrives ind i den maskinkopierede blok og forsvinder | 19/9 (tlf-kopi.py overskriver) | Ja · løfte 48 | Kodesøgning: regler mellem kopi-markørerne må kun komme fra tlf-kopi.py (diff efter kørsel = 0) |
 | 99 | Computeren hopper sidelæns ved sideskift / knapper krymper | 10/10 »hver gang jeg klikker … så rykker tingene sig« | Ja · løfte 15 (tjek_stille) | Allerede |
 | 100 | Hjem afviger fra det godkendte bud | 20/9 »INTET er det jeg godkendte« (rullet tilbage) | Ja · probe-bud | Allerede (kun Hjem — nye låste bud skal ind på samme måde) |
 | 101 | Et billede får runde hjørner eller tekst ovenpå | 8/10 hård regel | Ja · løfte 44 (tjek_designregler: billeder og fotoflader, alle sider 390 + 1440) | Porten: img/baggrundsbilleder med border-radius > 0 = FEJL |
@@ -220,7 +220,7 @@ Ordforklaring til testkolonnen: **selen** = testversionen af appen med opdigtede
 | 149 | Manglende sikkerheds-headers (CSP for scripts) | 10/10 CSP mangler | Ja · løfte 21 (FEJLET) | Allerede |
 | 150 | En AI-funktion kan misbruges og koste penge | — (kontrakt §3.6) | NEJ | curl uden login → 401; med testkunde: 20 kald på 1 min → skal begrænses |
 | 151 | En lang AI-opgave dør efter 150 sek. uden forklaring | 14/8 Drejebogen blev afbrudt efter 145 s | NEJ | Testkørsel af Drejebog-generatoren på testkunde: hver del < 120 s; fejlbesked bærer sekundtal |
-| 152 | Hemmeligheder i git | — | NEJ | gitleaks/grep på hele historikken i pre-push-krogen |
+| 152 | Hemmeligheder i git | — | Ja · løfte 47 | gitleaks/grep på hele historikken i pre-push-krogen |
 
 ## M · Backup og gendannelse
 
