@@ -17,6 +17,7 @@ REGLER = [
     ("Ingenting endnu", r"Ingenting endnu", "ordet »Ingenting endnu« findes ikke (CLAUDE §3)"),
     ("Done/Klaret", r"\bKlaret\b", "hedder »Done« (25/9)"),
     ("Contentmakker", r"content makker", "makkerens knapper er skjult (20/9)"),
+    ("varen", r"\bvare(n|rne|ns|rnes)\b", "altid »produkt/produktet«, aldrig »varen« (Ida 11/10)"),
     ("emoji", "[\U0001F300-\U0001FAFF☀-⛿✀-➿]", "ingen emoji (CLAUDE §4)"),
 ]
 UNDTAGET = [r"Velkommen tilbage", r"✨"]   # ✨ efter hilsenen er tilladt (FINAL 29/7)

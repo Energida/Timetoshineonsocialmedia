@@ -16,8 +16,8 @@ Ordforklaring til testkolonnen: **selen** = testversionen af appen med opdigtede
 |---|---|---|---|---|
 | 1 | Appen siger »gemt«, men basen afviste det (0 rækker, ingen fejl) | 2/8 manus-autosave og 3/8 SQL-kort-listen: »gemt« på skærmen, intet i basen | Ja · løfte 2 (tjek_skriv + lag2 »afvist skrivning«) og 16 (Backstage-rettelser) | Allerede: tæl skrivninger uden `.select()`; huske-basen med SELE_AFVIS=0 → rød bjælke skal komme |
 | 2 | En gemning skriver »tomt« fra et felt, der ikke længere står på skærmen | 4/8 kbGemNu skrev null over et manus; 25/8 temaet blev tømt ved et klik ved siden af | NEJ | Selen: åbn brief/tema, luk arket midt i autosave-ventetiden, læs basen → feltet må ikke være tomt |
-| 3 | En gammel, åben udgave overskriver en nyere (to personer på samme brief) | 7/10 Freja udfyldte en brief i Hinges Hus; Idas gamle åbne udgave i admin gemte ovenpå | Delvis · løfte 23 (to faner) | Selen med to faner: A åbner, B retter og gemmer, A gemmer et andet felt → B's felt skal stå; gentag admin ↔ b2b |
-| 4 | Appen sletter eller nulstiller data af sig selv | 7/10 ideGamleDatoerRyd fjernede datoer på overskredne opslag hos Acorns og Hinges ved hver indlæsning | NEJ | Selen: læg opslag med dato i går/sidste uge, genindlæs 3 gange, sammenlign hvert felt med før — ingen ændring uden tryk. Kodesøgning efter skrivninger i opstartsfunktioner |
+| 3 | En gammel, åben udgave overskriver en nyere (to personer på samme brief) | 7/10 Freja udfyldte en brief i Hinges Hus; Idas gamle åbne udgave i admin gemte ovenpå | Ja · løfte 33 (tjek_gammel; fandt og rettede v2756) | Selen med to faner: A åbner, B retter og gemmer, A gemmer et andet felt → B's felt skal stå; gentag admin ↔ b2b |
+| 4 | Appen sletter eller nulstiller data af sig selv | 7/10 ideGamleDatoerRyd fjernede datoer på overskredne opslag hos Acorns og Hinges ved hver indlæsning | Ja · løfte 32 (tjek_selvslet) | Selen: læg opslag med dato i går/sidste uge, genindlæs 3 gange, sammenlign hvert felt med før — ingen ændring uden tryk. Kodesøgning efter skrivninger i opstartsfunktioner |
 | 5 | En liste skrives over med en liste, der aldrig blev hentet | 11/10 (v2742) Backstage-lister kunne overskrives, mens basen svarede »gemt« | Ja · løfte 16 (tjek_lister) | Allerede |
 | 6 | Log ud på én telefon logger alle andre ud — og det usendte forsvinder | 29/9 Hinges Hus: signOut var global; to kunder mistede briefs | Delvis · løfte 20 (log ud beholder køen) | Kodesøgning: hvert `signOut(` skal have `scope:"local"`; selen: log ud med usendt kø → køen står |
 | 7 | En flertrins-guide gemmer først på sidste trin | 29/9 First thing first skrev først på 6. trin | NEJ | Selen: udfyld trin 1–3, luk arket, genindlæs → svarene står |
@@ -67,7 +67,7 @@ Ordforklaring til testkolonnen: **selen** = testversionen af appen med opdigtede
 | Nr | Fejltype | Rigtigt eksempel | Dækket i dag? | Sådan testes automatisk |
 |---|---|---|---|---|
 | 43 | »Vælg din nye adgangskode« kan lukkes eller springes over | 10/10 Ida lukkede arket med krydset og stod i admin uden ny kode | Ja · løfte 18 (lag2: kan ikke lukkes, kommer igen) | Allerede |
-| 44 | En pakke mangler en side, den skal have (eller har en, den ikke må) | 12/10 testkunde YOU GOT THIS manglede Performance; 11/10 YGT-kunder havde ingen Adgang-fane i CRM | NEJ | Matrix-test i selen: for hver pakke (YGT, Content Studio, forløb, kollega, admin) log ind og skriv listen over menupunkter/sider; sammenlign med en facitliste, Ida godkender én gang |
+| 44 | En pakke mangler en side, den skal have (eller har en, den ikke må) | 12/10 testkunde YOU GOT THIS manglede Performance; 11/10 YGT-kunder havde ingen Adgang-fane i CRM | Ja · løfte 31 (tjek_pakker) — FUND: YOU GOT THIS midt i forløbet viser hverken Content Studio eller Performance, selv om fluebenet er sat | Matrix-test i selen: for hver pakke (YGT, Content Studio, forløb, kollega, admin) log ind og skriv listen over menupunkter/sider; sammenlign med en facitliste, Ida godkender én gang |
 | 45 | Idas flueben under Adgang når ikke kunden | 11/10 Energien/Lektionerne kom frem hos Hinges | Ja · løfte 28 | Allerede |
 | 46 | Menuen på telefonen og computeren viser forskellige låse | 1/10 telefonen viste låste døre (kun sidemenuen blev bygget om) | NEJ | Selen: sammenlign punkterne i sidemenu og bundmenu på 390 og 1440 for hver pakke |
 | 47 | YOU GOT THIS åbner funktioner på forkert dag | — (gradvis åbning bygget 9/10, dag 42) | NEJ | Selen med falsk startdato dag 41 og 42: plus/Opgaver skjult → synligt |
@@ -78,19 +78,19 @@ Ordforklaring til testkolonnen: **selen** = testversionen af appen med opdigtede
 | 52 | Login-mail og kontaktmail kommer ud af takt | 11/10 (v2744) | Ja · løfte 29 | Allerede |
 | 53 | Browseren udfylder forkert (fx »Admin« i mailfeltet) | 10/10 (v2719) | NEJ | Selen: udfyld feltet med »Admin« → dansk fejlbesked, ingen kald |
 | 54 | Delt login mellem flere medarbejdere | 29/9 Hinges Hus delte én bruger | NEJ | Live-læsning: logins med sessioner fra flere enheder samtidig → advarsel til Ida |
-| 55 | Efterladte testlogins på live | 11/10 ZZTEST2026 står tilbage | NEJ | Live-læsning hver morgen: auth-brugere/koder med TEST/ZZTEST/AB-mønster, der ikke står på en godkendt liste |
+| 55 | Efterladte testlogins på live | 11/10 ZZTEST2026 står tilbage | Ja · løfte 35 (tjek_live: ukendte testlogins) | Live-læsning hver morgen: auth-brugere/koder med TEST/ZZTEST/AB-mønster, der ikke står på en godkendt liste |
 | 56 | Team-koden kan ikke tastes ind nogen steder | 6/10 revisionen (stopper kunden) | NEJ | Selen: »Jeg har en kode«-vejen fra login til indtastning findes og virker |
 
 ## D · Popups, ark og knapper
 
 | Nr | Fejltype | Rigtigt eksempel | Dækket i dag? | Sådan testes automatisk |
 |---|---|---|---|---|
-| 57 | To popups ligger oven på hinanden (den ene skinner igennem) | 11/10 rundvisningens ark lå under »Vælg din adgangskode« (v2754) | NEJ | Selen: efter hver dør tæl synlige faste lag (position:fixed, > 200×100 px, synlige) — mere end ét = FEJL. Kør også ved login, efter testkøb og ved første start |
-| 58 | En popup kan ikke åbnes igen, efter den er lukket med krydset | 12/10 »Tast ugens tal fra Instagram« — display:none hang ved (v2755) | NEJ | Selen: for HVER dør i probe-popups: åbn → kryds → åbn → Esc → åbn → klik udenfor → åbn; skal være synlig hver gang |
-| 59 | Krydset lukker en anden popup end sin egen | 11/10 »Tast ugens tal« kunne ikke lukkes (v2752) | NEJ | Samme runde som nr. 58: efter kryds må arket ikke være synligt |
-| 60 | En usynlig flade ligger over knapperne, så tryk ikke virker | 9/10 siden fryses under sideskift (sk-holder, op til 12 s); 14/9 »Drejebogen er tom«-døren blev stående over næste side | Delvis · løfte 8 (knapper uden virkning) | Selen: for hver knap tjek `elementFromPoint(midten)` er knappen selv; efter hvert sideskift må sk-holder/turOverlay være væk inden 3 s |
+| 57 | To popups ligger oven på hinanden (den ene skinner igennem) | 11/10 rundvisningens ark lå under »Vælg din adgangskode« (v2754) | Ja · løfte 30 (tjek_popup) | Selen: efter hver dør tæl synlige faste lag (position:fixed, > 200×100 px, synlige) — mere end ét = FEJL. Kør også ved login, efter testkøb og ved første start |
+| 58 | En popup kan ikke åbnes igen, efter den er lukket med krydset | 12/10 »Tast ugens tal fra Instagram« — display:none hang ved (v2755) | Ja · løfte 30 (tjek_popup) | Selen: for HVER dør i probe-popups: åbn → kryds → åbn → Esc → åbn → klik udenfor → åbn; skal være synlig hver gang |
+| 59 | Krydset lukker en anden popup end sin egen | 11/10 »Tast ugens tal« kunne ikke lukkes (v2752) | Ja · løfte 30 (tjek_popup) | Samme runde som nr. 58: efter kryds må arket ikke være synligt |
+| 60 | En usynlig flade ligger over knapperne, så tryk ikke virker | 9/10 siden fryses under sideskift (sk-holder, op til 12 s); 14/9 »Drejebogen er tom«-døren blev stående over næste side | Ja · løfte 30 (tjek_popup: ingen flade over knappen, før og efter krydset) | Selen: for hver knap tjek `elementFromPoint(midten)` er knappen selv; efter hvert sideskift må sk-holder/turOverlay være væk inden 3 s |
 | 61 | Popup bygget uden om husets form (gammelt modalBody) | 24/9 »Ret idéen« i Energida Studio; 24 popups uden om arkAabn | Delvis · probe-popups (kun kundeappens døre) | Kodesøgning: antal `getElementById("modalBody")`-popups må aldrig stige; føj admin-døre til probe-popups |
-| 62 | Popups i Backstage måles aldrig | 24/9 og 29/9 (produkt-arket med links) | NEJ | Udvid probe-popups med Backstages døre på 390 og 1440 |
+| 62 | Popups i Backstage måles aldrig | 24/9 og 29/9 (produkt-arket med links) | Delvis · løfte 30 (Backstages døre trykkes i popup-runden) | Udvid probe-popups med Backstages døre på 390 og 1440 |
 | 63 | En ændring af »alle popups« ødelægger én, porten ikke kender | 29/9 produkt-arket med flere links | Delvis · probe-popups | Liste over ALLE `arkAabn(`-kald → hver skal være i DOERE (manglende = FEJL) |
 | 64 | Plusset åbner det forkerte ark | 10/10 plusset i CRM viste ti »Tilføj rum« | Ja · løfte 8 (tjek_plus) | Allerede |
 | 65 | En knap er død (funktionen findes ikke) eller giver en fejl | 10/10 »Slet mødet« gjorde ingenting | Ja · løfte 8 og 16 (tjek_knapper, tjek_motorer) | Allerede |
@@ -153,7 +153,7 @@ Ordforklaring til testkolonnen: **selen** = testversionen af appen med opdigtede
 | Nr | Fejltype | Rigtigt eksempel | Dækket i dag? | Sådan testes automatisk |
 |---|---|---|---|---|
 | 104 | Forbudte ord (kursus, I/jer, moat, doven, Uden titel, Ingenting endnu, strategibygger) | 27/7, 19/9, 5/10, 10/10 | Ja · løfte 12 (tjek_ord) | Allerede |
-| 105 | »varen« i stedet for »produkt« | memory aldrig-varen-altid-produkt | NEJ | Føj `\bvaren?\b` til tjek_ord REGLER |
+| 105 | »varen« i stedet for »produkt« | memory aldrig-varen-altid-produkt | Ja · løfte 12 (tjek_ord) — FUND 13/10: 27 steder i koden; flere er Idas manus-ord, venter på Ida | Føj `\bvaren?\b` til tjek_ord REGLER |
 | 106 | Køn (hun/han) på en flade | CLAUDE §2 (men 6/10: »hun« om en persona er OK i appen) | NEJ | Føj til tjek_ord for mails og hjemmeside; i appen kun som advarsel, til Ida har afgjort konflikten |
 | 107 | Teksten lover noget, der ikke er sandt | 7/10 slet-teksten sagde ikke sandheden (v2529); 12/10 Meta-formularens tekst sagde, at data blev slettet, når det ikke skete | NEJ | Liste over »løfte-sætninger« (slettes, gemmes, sendes, mail) i appen og i Meta/privatlivsteksterne; hver kobles til et tjek, der beviser det (fx sletning → tæl rækker) |
 | 108 | Fagord uden forklaring | 11/10 Hans: Hook, Klip, Scene, CTA, Interaktionsrate | Delvis · løfte 12 | Ordliste over fagord → hver forekomst på kundens flade skal have et (i) eller en forklaring på samme skærm |
@@ -171,7 +171,7 @@ Ordforklaring til testkolonnen: **selen** = testversionen af appen med opdigtede
 | 115 | Køberen får forkert pakke (Content Studio i stedet for forløbet) | 27/9 stripe-koeb oprettede type contentstudio → ingen lektioner | NEJ | Testkøb pr. betalingslink → virksomhedskoder.type og kunde_def skal passe med linkets metadata |
 | 116 | 0-kr-køb markeres som test og skjules | 27/9 (rettet v2378) | NEJ | Testkøb med 100 %-kode → kunden står i CRM som rigtig kunde |
 | 117 | Startskema og lås virker ikke for Stripe-købere | 27/9 skema:false | NEJ | Efter testkøb: første login viser ny kode → rundvisning → startskema |
-| 118 | Testlink (test=ja) eller testpris ligger live | 27/9 »test=ja på Stripe-linket SKAL fjernes« | NEJ | Hver morgen: hent hjemmesidens og appens betalingslinks, slå metadata op via Stripe-API (kun læsning) → ingen test=ja |
+| 118 | Testlink (test=ja) eller testpris ligger live | 27/9 »test=ja på Stripe-linket SKAL fjernes« | Ja · løfte 35 (tjek_live) | Hver morgen: hent hjemmesidens og appens betalingslinks, slå metadata op via Stripe-API (kun læsning) → ingen test=ja |
 | 119 | Rabatkoden giver forkert rabat eller gælder forkert produkt | 10/10 JEGERVIGTIGFORIDA kun YGT, 100 % én gang | NEJ | Stripe-API (læsning): kupon, produktbegrænsning, udløb og antal brug pr. kode mod en facitliste |
 | 120 | Samme køb oprettes to gange (webhook sendt igen) | — | NEJ | Send samme Stripe-event to gange til test-webhooken → én kunde, én kode |
 | 121 | Refundering lukker ikke adgangen | — | NEJ | Stripe testrefund → kundens aktiv-flag/adgang ændres (eller Ida får besked) |
@@ -183,13 +183,13 @@ Ordforklaring til testkolonnen: **selen** = testversionen af appen med opdigtede
 
 | Nr | Fejltype | Rigtigt eksempel | Dækket i dag? | Sådan testes automatisk |
 |---|---|---|---|---|
-| 125 | Login- og invitationsmails sendes ikke (for lav grænse, forkert SMTP) | 30/9 kun 2 mails i timen; 4/10 porten tastet som 568 | NEJ | Management API (læsning): SMTP sat, grænse ≥ 100/t; Brevo-API: seneste mails Delivered, ingen bounce |
-| 126 | Mailskabelonen er Supabases engelske standard | 4/10 »Your sign-in link« | NEJ | Management API: Invite- og Reset-skabelonens emne/tekst skal være Idas danske (sammenlign med Energida-app/mail/) |
-| 127 | Linket i mailen sender til forkert adresse | 9/10 »Glemt adgangskode« på admin faldt tilbage til energida.dk | NEJ | Management API: Site URL og Redirect URLs indeholder b2b og admin præcist; app-kode bruger `redirectTo` uden skråstreg |
-| 128 | Linket i mailen er udløbet, før kunden åbner det | — (udløb sat til 24 t 4/10) | NEJ | Management API: OTP-udløb = 86400 |
+| 125 | Login- og invitationsmails sendes ikke (for lav grænse, forkert SMTP) | 30/9 kun 2 mails i timen; 4/10 porten tastet som 568 | Delvis · løfte 35 (afsender og grænse; selve udsendelsen måles ikke) | Management API (læsning): SMTP sat, grænse ≥ 100/t; Brevo-API: seneste mails Delivered, ingen bounce |
+| 126 | Mailskabelonen er Supabases engelske standard | 4/10 »Your sign-in link« | Ja · løfte 35 (danske emner på de mails, der kan sendes) | Management API: Invite- og Reset-skabelonens emne/tekst skal være Idas danske (sammenlign med Energida-app/mail/) |
+| 127 | Linket i mailen sender til forkert adresse | 9/10 »Glemt adgangskode« på admin faldt tilbage til energida.dk | Ja · løfte 35 (adresser b2b/admin) | Management API: Site URL og Redirect URLs indeholder b2b og admin præcist; app-kode bruger `redirectTo` uden skråstreg |
+| 128 | Linket i mailen er udløbet, før kunden åbner det | — (udløb sat til 24 t 4/10) | Ja · løfte 35 (udløb 24 t) | Management API: OTP-udløb = 86400 |
 | 129 | YOU GOT THIS-mails og Mailchimp-tilmelding virker ikke (funktion ikke lagt op) | 10/10 ygt-mailchimp svarede 404 | Delvis · løfte 18 (404 ses) | curl: hver funktion appen kalder skal svare 401 (findes), aldrig 404 |
 | 130 | Mails lander i spam | — (DMARC p=none 30/9) | NEJ | DNS-opslag: SPF, DKIM (Brevo) og DMARC findes; send testmail til en seed-adresse og læs spam-placering |
-| 131 | Billeder i mailen er brækket | — (billederne ligger på b2b.energida.dk/mail/) | NEJ | curl hvert billede i skabelonerne → 200 |
+| 131 | Billeder i mailen er brækket | — (billederne ligger på b2b.energida.dk/mail/) | Ja · løfte 35 | curl hvert billede i skabelonerne → 200 |
 | 132 | Mail lovet på hjemmesiden sendes ikke (Drejebogen på mail) | 6/10 hjemmesiden lover det, ikke bygget | NEJ | Liste over mails, hjemmesiden lover → hver skal have en funktion, der svarer 401, og en testkørsel |
 | 133 | Mail nr. 3 sendes ikke / to gange | 10/10 (adgangskode_valgt) | Ja · løfte 1 (noteres én gang) | Allerede (selve udsendelsen ikke bygget) |
 
@@ -202,7 +202,7 @@ Ordforklaring til testkolonnen: **selen** = testversionen af appen med opdigtede
 | 136 | Instagram-nøglen udløber, og tallene stopper stille | — (nøgler holder ca. 60 dage) | NEJ | Live-læsning: for hver forbundet kunde, nyeste ig_maalinger < 8 dage; ellers advarsel til Ida |
 | 137 | Teksterne til Meta (App Review, data deletion, privatliv) passer ikke med appen | 12/10 Meta-formularens tekst sagde, at data blev slettet, når det ikke skete | NEJ | Hver påstand i Meta-teksterne skrives som tjek (fx »data slettes ved frakobling« → frakobl testkonto → tæl rækker = 0) |
 | 138 | Data deletion-adressen findes ikke eller gør intet | — (kræves af Meta) | NEJ | curl data deletion-URL'en → 200; kald med testsignatur → rækker slettes, bekræftelseskode returneres |
-| 139 | Testkontoen til Meta kan ikke se det, der skal vises | 12/10 Testkunde A (YGT) har Performance låst | NEJ | Del af pakke-matrixen (nr. 44): testkontoen har Performance og Forbind |
+| 139 | Testkontoen til Meta kan ikke se det, der skal vises | 12/10 Testkunde A (YGT) har Performance låst | Delvis · løfte 31 (pakke-matrixen) | Del af pakke-matrixen (nr. 44): testkontoen har Performance og Forbind |
 | 140 | Instagram-kort henter ikke billede, og ingen opdager det | 10/10 genhentes hver time | NEJ | Live-læsning: andel IG-kort uden billede > 24 t → advarsel |
 
 ## L · Edge Functions og sikkerhed
@@ -211,11 +211,11 @@ Ordforklaring til testkolonnen: **selen** = testversionen af appen med opdigtede
 |---|---|---|---|---|
 | 141 | En funktion kan kaldes uden login | 20/8 mailchimp-webhook svarede 200 uden hemmelighed | Ja · løfte 18 (kun funktioner nævnt i index.html) | Udvid: hent ALLE funktioner via Management API (ikke kun dem i index.html) |
 | 142 | En kunde kan kalde en admin-funktion | — (kunde-admin målt 403 11/10) | Delvis · løfte 17 (A/B-linjen) | Natlig: testkunde-token mod hver admin-funktion → 403 |
-| 143 | Databasefunktioner (RPC) kan kaldes uden login | 13/9 dashboard_hilsner/dashboard_citater kunne kaldes anonymt | NEJ | tjek_anon udvides med /rpc/-stierne fra OpenAPI → POST med anon → må ikke svare med data |
-| 144 | Brede regler (using true, to anon/public) på tabeller med ejerdata | 6/8 alle tabeller; 24/8 Maskinrummets seks borde | Delvis · løfte 17 (læser kun) | Management API SQL (kun select på pg_policies): 0 skrivende policies for anon/public, 0 tabeller uden RLS |
+| 143 | Databasefunktioner (RPC) kan kaldes uden login | 13/9 dashboard_hilsner/dashboard_citater kunne kaldes anonymt | Ja · løfte 34 (tjek_dbregler: funktioner med ejerens rettigheder, der kan kaldes uden login) | tjek_anon udvides med /rpc/-stierne fra OpenAPI → POST med anon → må ikke svare med data |
+| 144 | Brede regler (using true, to anon/public) på tabeller med ejerdata | 6/8 alle tabeller; 24/8 Maskinrummets seks borde | Ja · løfte 34 (tjek_dbregler) | Management API SQL (kun select på pg_policies): 0 skrivende policies for anon/public, 0 tabeller uden RLS |
 | 145 | Anonym SKRIVNING til en tabel | — | NEJ | tjek_anon med POST af en tom/ugyldig række i en transaktion, der altid fejler (fx manglende kolonne) — kun læs fejlkoden 401/403 vs 400 |
-| 146 | Filer (storage) er offentlige | — (kontrakt §7) | NEJ | Management API: buckets med public=true på en godkendt liste; curl en kendt fil uden login → 400/403 |
-| 147 | Service-nøglen ligger i klientkoden | — (kontrakt §4) | NEJ | Kodesøgning i index.html og alle serverede filer efter `service_role` og JWT med role service_role |
+| 146 | Filer (storage) er offentlige | — (kontrakt §7) | Ja · løfte 34 (tjek_dbregler) | Management API: buckets med public=true på en godkendt liste; curl en kendt fil uden login → 400/403 |
+| 147 | Service-nøglen ligger i klientkoden | — (kontrakt §4) | Ja · løfte 35 (forsiderne og sw.js) | Kodesøgning i index.html og alle serverede filer efter `service_role` og JWT med role service_role |
 | 148 | Kode (XSS) i en titel kører | — | Ja · løfte 19 | Allerede |
 | 149 | Manglende sikkerheds-headers (CSP for scripts) | 10/10 CSP mangler | Ja · løfte 21 (FEJLET) | Allerede |
 | 150 | En AI-funktion kan misbruges og koste penge | — (kontrakt §3.6) | NEJ | curl uden login → 401; med testkunde: 20 kald på 1 min → skal begrænses |
