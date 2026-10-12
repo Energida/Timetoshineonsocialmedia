@@ -160,7 +160,7 @@ Ordforklaring til testkolonnen: **selen** = testversionen af appen med opdigtede
 | 109 | Samme ting hedder to forskellige navne | 11/10 Hans: Kalenderen/Content kalenderen, Fasthold/Fasthold dem, Kommende opslag/aktiviteter | Ja · løfte 37 (tjek_navne: menupunkt = sidens overskrift, kundeapp + Backstage) — FUND 13/10: »Hashtagbanken« åbner »<Virksomhed> hashtagbank« | Navneliste (ét navn pr. ting) → tjek_ord fanger varianterne |
 | 110 | Lille begyndelsesbogstav, lige anførselstegn »…« i kundetekst | 6/10, 4/10 | NEJ | tjek_ord: knapper/etiketter starter med stort; »« i kundetekst = FEJL |
 | 111 | Fyldtekst og tomme rubrikker uden værdi | 17/9 hård regel; 25/9 fem former for tomme rubrikker | NEJ (kræver menneske) | Delvis: porten kan måle, at tomme sider har ét tom-kort og ingen åbne felter |
-| 112 | Fejlbeskeder på engelsk eller teknisk | 7/10 skift adgangskode (v2538); 10/10 admin-login | NEJ | Selen: udløs hver fejl (forkert kode, kort kode, ingen net) → teksten skal være dansk (ordliste over engelske ord) |
+| 112 | Fejlbeskeder på engelsk eller teknisk | 7/10 skift adgangskode (v2538); 10/10 admin-login | Delvis · løfte 41 (tjek_fejltekst: 46 kendte steder må ikke blive flere; oversættelsen venter på Idas ord) | Selen: udløs hver fejl (forkert kode, kort kode, ingen net) → teksten skal være dansk (ordliste over engelske ord) |
 | 113 | Kundenavne i offentlige filer eller tekster | 10/10 drejebog-acorns-*.html åbne i repo-roden | NEJ | curl mod b2b/admin for kendte filnavne; git-søgning efter kundenavne i rodfiler, der serveres |
 
 ## I · Køb, Stripe og rabatkoder
