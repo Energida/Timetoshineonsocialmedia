@@ -20,7 +20,7 @@ Ordforklaring til testkolonnen: **selen** = testversionen af appen med opdigtede
 | 4 | Appen sletter eller nulstiller data af sig selv | 7/10 ideGamleDatoerRyd fjernede datoer på overskredne opslag hos Acorns og Hinges ved hver indlæsning | Ja · løfte 32 (tjek_selvslet) | Selen: læg opslag med dato i går/sidste uge, genindlæs 3 gange, sammenlign hvert felt med før — ingen ændring uden tryk. Kodesøgning efter skrivninger i opstartsfunktioner |
 | 5 | En liste skrives over med en liste, der aldrig blev hentet | 11/10 (v2742) Backstage-lister kunne overskrives, mens basen svarede »gemt« | Ja · løfte 16 (tjek_lister) | Allerede |
 | 6 | Log ud på én telefon logger alle andre ud — og det usendte forsvinder | 29/9 Hinges Hus: signOut var global; to kunder mistede briefs | Delvis · løfte 20 (log ud beholder køen) | Kodesøgning: hvert `signOut(` skal have `scope:"local"`; selen: log ud med usendt kø → køen står |
-| 7 | En flertrins-guide gemmer først på sidste trin | 29/9 First thing first skrev først på 6. trin | NEJ | Selen: udfyld trin 1–3, luk arket, genindlæs → svarene står |
+| 7 | En flertrins-guide gemmer først på sidste trin | 29/9 First thing first skrev først på 6. trin | Ja · løfte 45 (tjek_guide) | Selen: udfyld trin 1–3, luk arket, genindlæs → svarene står |
 | 8 | En afvist oprettelse kommer ikke i køen til at blive sendt igen | 29/9 (rettet v2401) | Ja · løfte 2 (»afvist ændring sendes igen fra køen«) | Allerede |
 | 9 | Genindlæsning overskriver telefonens kopi, før køens nye opslag er sendt | 29/9 Hinges Hus | Delvis · løfte 1/23 | Selen: net væk → opret → genindlæs med net → opslaget står og ligger i basen |
 | 10 | Uden net: teksten forsvinder eller »gemt« lyver | — | Ja · løfte 23 | Allerede |
