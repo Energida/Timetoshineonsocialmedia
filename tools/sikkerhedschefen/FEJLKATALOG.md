@@ -144,8 +144,8 @@ Ordforklaring til testkolonnen: **selen** = testversionen af appen med opdigtede
 | 98 | Telefonens CSS skrives ind i den maskinkopierede blok og forsvinder | 19/9 (tlf-kopi.py overskriver) | NEJ | Kodesøgning: regler mellem kopi-markørerne må kun komme fra tlf-kopi.py (diff efter kørsel = 0) |
 | 99 | Computeren hopper sidelæns ved sideskift / knapper krymper | 10/10 »hver gang jeg klikker … så rykker tingene sig« | Ja · løfte 15 (tjek_stille) | Allerede |
 | 100 | Hjem afviger fra det godkendte bud | 20/9 »INTET er det jeg godkendte« (rullet tilbage) | Ja · probe-bud | Allerede (kun Hjem — nye låste bud skal ind på samme måde) |
-| 101 | Et billede får runde hjørner eller tekst ovenpå | 8/10 hård regel | NEJ | Porten: img/baggrundsbilleder med border-radius > 0 = FEJL |
-| 102 | Tekst i chips er ikke centreret / små versaler på rødt | 9/10, 5/10 | NEJ | Porten: chip-tekst lodret centreret (±2 px); text-transform uppercase på rød baggrund = FEJL |
+| 101 | Et billede får runde hjørner eller tekst ovenpå | 8/10 hård regel | Ja · løfte 44 (tjek_designregler: billeder og fotoflader, alle sider 390 + 1440) | Porten: img/baggrundsbilleder med border-radius > 0 = FEJL |
+| 102 | Tekst i chips er ikke centreret / små versaler på rødt | 9/10, 5/10 | Delvis · løfte 44 (små versaler på rødt måles; chip-centrering ikke) — FUND 13/10: »I DAG« og den valgte dag (»MAN«) står i 10 px versaler på rødt (Hjem, Kalenderen, Backstage) | Porten: chip-tekst lodret centreret (±2 px); text-transform uppercase på rød baggrund = FEJL |
 | 103 | Topbar eller bundbar på en mobilside | 8/9 hård regel | Delvis · probe-backstage (admin) | Udvid til kundeappen |
 
 ## H · Tekst og sprog
