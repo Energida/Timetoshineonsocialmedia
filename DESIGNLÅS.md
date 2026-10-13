@@ -4,6 +4,8 @@
 - **DAGSORDENEN RETTES PÅ STEDET.** Et penneikon ved hvert punkt åbner punktet: navn, tekst, skraldespand (fjern) og Gem; »Tilføj punkt« lægger et nyt til. Standardpunkterne (performance · den kommende uge · dato for næste møde) står uændrede, til man retter dem. Gemmes i `plan_ritual.moede.dagsorden` (merges, andre nøgler urørte); et rettet punkt bliver statisk tekst, et urørt punkt bliver dynamisk (uge, tema, mål). Ingen Annuller i rettelsen.
 - **ALLE DATOSYMBOLER ER KVADRATER, 56 × 56 (HÅRD, Ida 9/10: »kvadratiske alle steder«):** Kommende opslag (`.kop-dato`), aftalernes dato (`.cf-dato`), Backstages `.bs3-tidb.d` og `.bs-datob`. Ingen dato-boks er højere end bred.
 
+## v2763 (13/10) — /SD: YOU GOT THIS = »Onlineforløb · 10 moduler« (Idas klik »Kun 10 moduler«): punktet »10 uger, et nyt modul hver uge« er ude, trin 3 = »Modul 1 åbner.«. Hjemmesiden siger stadig »10 uger« (ikke rørt).
+
 ## v2762 (13/10) — Siden hedder /SD (Ida: »Det må ikke hedde salg«): b2b.energida.dk/SD/ — /salg/ er fjernet.
 
 ## v2761 (13/10) — Salgssiden på egen adresse (Idas klik »På din egen adresse«): b2b.energida.dk/salg/ = onepageren (Artifact 1f4qJCNayZwLi8FqNMQdio, V3-designet) med fotos i salg/foto, noindex, ikke linket fra hjemmesiden. Bærer APP_VERSION i en kommentar, så service-workeren gemmer en kopi (åbner uden net efter første besøg) og henter ny ved næste version.
