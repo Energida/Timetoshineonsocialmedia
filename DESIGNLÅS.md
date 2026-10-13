@@ -4,6 +4,8 @@
 - **DAGSORDENEN RETTES PÅ STEDET.** Et penneikon ved hvert punkt åbner punktet: navn, tekst, skraldespand (fjern) og Gem; »Tilføj punkt« lægger et nyt til. Standardpunkterne (performance · den kommende uge · dato for næste møde) står uændrede, til man retter dem. Gemmes i `plan_ritual.moede.dagsorden` (merges, andre nøgler urørte); et rettet punkt bliver statisk tekst, et urørt punkt bliver dynamisk (uge, tema, mål). Ingen Annuller i rettelsen.
 - **ALLE DATOSYMBOLER ER KVADRATER, 56 × 56 (HÅRD, Ida 9/10: »kvadratiske alle steder«):** Kommende opslag (`.kop-dato`), aftalernes dato (`.cf-dato`), Backstages `.bs3-tidb.d` og `.bs-datob`. Ingen dato-boks er højere end bred.
 
+## v2764 (13/10) — /SD er Idas eget visningsværktøj, ikke en side der sendes (Ida: »Det er jo mig der står med siden … Det sendes ikke til nogen! Så det skal være en onepager«): knappen »Se forløbene« i heroen er fjernet; »Skriv kunden ind« i foden bliver (Idas værktøj).
+
 ## v2763 (13/10) — /SD: YOU GOT THIS = »Onlineforløb · 10 moduler« (Idas klik »Kun 10 moduler«): punktet »10 uger, et nyt modul hver uge« er ude, trin 3 = »Modul 1 åbner.«. Hjemmesiden siger stadig »10 uger« (ikke rørt).
 
 ## v2762 (13/10) — Siden hedder /SD (Ida: »Det må ikke hedde salg«): b2b.energida.dk/SD/ — /salg/ er fjernet.
