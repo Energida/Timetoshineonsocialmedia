@@ -12062,7 +12062,7 @@ html body #appLoader:not([data-fejl="1"]) > div, html body #energidaLoader > spa
      en adresse, ingen har en kopi af, og workeren springer cachen over paa den. Hash'et
      foelger med, saa en Backstage-side ikke lander i kundeappen. */
   /* DELELINKET OVERLEVER EN GENINDLAESNING (maalt 10/10: »?frisk=« smed ?brief=…&kunde=… vaek, saa en kunde med en gammel build landede paa forsiden i stedet for briefen) */
-  window.__energidaLinkRest = function () { try { const sp = new URLSearchParams(location.search); let ud = ""; ["brief", "kunde", "selvtest", "selekode"].forEach(function (k) { const v = sp.get(k); if (v) ud += "&" + k + "=" + encodeURIComponent(v); });   /* selvtest=ab overlever også genindlæsningen (10/10); selekode bruges kun i testversionen */ return ud; } catch (e) { return ""; } };
+  window.__energidaLinkRest = function () { try { const sp = new URLSearchParams(location.search); let ud = ""; ["brief", "kunde", "selvtest", "selekode", "gamlekunder"].forEach(function (k) { const v = sp.get(k); if (v) ud += "&" + k + "=" + encodeURIComponent(v); });   /* selvtest=ab overlever også genindlæsningen (10/10); selekode bruges kun i testversionen */ return ud; } catch (e) { return ""; } };
   window.__energidaGenindlaes = function (maerke) {
     if (window.__genindlaesIGang) return; window.__genindlaesIGang = true;   /* EEN genindlaesning ad gangen (24/9: to lyttere skod hver sin, og den anden afbroed den foerste) */
     try { location.replace(location.pathname + "?frisk=" + (maerke || Date.now()) + window.__energidaLinkRest() + (location.hash || "")); }
@@ -59690,7 +59690,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2759";
+const APP_VERSION = "2760";
 const APP_BYGGET = "9. oktober";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_BYGGET + " · " + APP_VERSION; } catch (e) {} });
 let NY_VERSION_KLAR = false;
@@ -83006,6 +83006,18 @@ async function gkKoeSend() {
   if (sendt) { try { await fetchCustomers(); } catch (e) {} try { husKvit(sendt + (sendt === 1 ? " gammel kunde" : " gamle kunder") + " er sendt til CRM."); } catch (e) {} }
 }
 try { window.addEventListener("online", function () { setTimeout(function () { try { gkKoeSend(); } catch (e) {} }, 1500); }); document.addEventListener("visibilitychange", function () { if (document.visibilityState === "visible") setTimeout(function () { try { gkKoeSend(); } catch (e) {} }, 1500); }); setTimeout(function () { try { gkKoeSend(); } catch (e) {} }, 6000); } catch (e) {}
+/* GENVEJ FRA SALGSSIDEN (Idas klik 13/10 »Knap, der åbner arket«): admin.energida.dk/?gamlekunder=1 åbner CRM med Gamle kunder-arket, når Backstage er klar.
+   Venter på login (op til 3 min.); adressen ryddes bagefter, så et genindlæs ikke åbner arket igen. */
+(function () { try { if (!new URLSearchParams(location.search).get("gamlekunder")) return; const t0 = Date.now();
+  const iv = setInterval(function () {
+    if (document.body.classList.contains("app-klar") && document.body.classList.contains("dash-mode") && typeof sb !== "undefined" && sb) {
+      clearInterval(iv);
+      try { dagensKortLuk(); } catch (e) {} try { turLuk(); } catch (e) {}
+      try { visDashSide("crm"); } catch (e) {}
+      setTimeout(function () { try { gamleKunderArk(); } catch (e) {} }, 600);
+      try { const sp = new URLSearchParams(location.search); sp.delete("gamlekunder"); const q = sp.toString(); history.replaceState(null, "", location.pathname + (q ? "?" + q : "") + location.hash); } catch (e) {}
+    } else if (Date.now() - t0 > 180000) clearInterval(iv);
+  }, 400); } catch (e) {} })();
 function gamleKunderArk() {
   let m = document.getElementById("bsFlytMenu"); if (!m) { m = document.createElement("div"); m.id = "bsFlytMenu"; document.body.appendChild(m); }
   const felt = function (id, et, ph, type) { return '<div class="htb-ark-eye">' + et + '</div><input type="' + (type || "text") + '" id="' + id + '" class="htb-felt" placeholder="' + ph + '" autocomplete="off"' + (type === "email" ? ' inputmode="email" autocapitalize="off" spellcheck="false"' : '') + ' style="width:100%;margin-bottom:12px;">'; };
