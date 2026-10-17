@@ -1615,6 +1615,7 @@ html body .ark .ark-u { display:none !important; }   /* INGEN UNDERTITLER I POPU
 .ark-chips::-webkit-scrollbar { display:none; }
 .ark-chip { flex:0 0 auto; border:1px solid var(--border); background:#fff; border-radius:999px; padding:0 16px; min-height:44px; font-size:12.5px; font-family:Poppins,sans-serif; font-weight:300; color:var(--black); cursor:pointer; white-space:nowrap; }
 .ark-chip.on { background:var(--red); color:#fff; border-color:#fff; }
+html body .vk-profil .ark-chip.on { background:#E9E6E1 !important; border-color:#E9E6E1 !important; color:var(--black) !important; }   /* profilen 17/10: valgt chip = lysegraa, aldrig roed (Ida 9/10) */
 .ark-kvit { font-size:12.5px; color:var(--red); margin-top:10px; display:flex; align-items:center; gap:7px; min-height:18px; }
 .ark-ekstra { display:flex; flex-direction:column; gap:8px; }
 .ark-ekstra .ark-soejler { margin:0; }   /* soejle-chips under den foerste raekke (14/9) */
@@ -27467,6 +27468,7 @@ async function briefPersonerHent() {
         const st = new Set();
         (data || []).forEach(x => { const n = (x.navn || "").trim(); if (n && n !== "delt" && n !== "config" && n.indexOf("@") === -1) st.add(n); });   /* en e-mail er et login, ikke en person (Idas skaermbillede 21/9) */
         /* samme person to gange (»Ida« og »Ida Jessen«) = een chip: det korte navn, naar det er starten af det lange */
+        try { const tm = await sb.from("skema_svar").select("svar").eq("kode", koden).eq("navn", "config").eq("skema", "team").maybeSingle(); ((tm.data && tm.data.svar && tm.data.svar.navne) || []).forEach(function (n) { n = String(n || "").trim(); if (n) st.add(n); }); } catch (e) {}   /* fornavnene fra profilen (17/10) */
         const alle = [...st]; BRIEF_PERSONER = alle.filter(function (n) { return !alle.some(function (m) { return m !== n && n.toLowerCase().indexOf(m.toLowerCase() + " ") === 0; }); }).sort((a, b) => a.localeCompare(b, "da"));
       }
     } catch(e) {}
@@ -31140,6 +31142,16 @@ function onboardingRender(def) {
     tekst: "Vælg den idé, du har mest energi på — briefen guider dig skridt for skridt.",   /* "gennem Succesraketten" fjernet 1/9: raketten er ugens arbejdsgang, ikke briefens sider */
     cta: briefAktiv ? { txt: "Start her — lav din første brief", klik: "showTab(2)" } : null,
     laast: (!t.s2 && !briefAktiv) ? "Låses op efter planlægningsdagen" : "" };
+  /* PROEVEUDGAVEN 17/10: modul 0 foerst, saa skemaet — og skemaet aabner modul 1. Hvorfor skemaet staar i trinnet (Ida 17/10). */
+  if (profilProeve() && visSkema && !t.s0 && tLek && kursusRejse) {
+    let m0 = []; try { m0 = (kursusLektionerAktive() || []).filter(function (l) { return (parseInt(modulNrFor(l.id), 10) || 0) <= 1; }); } catch (e) {}
+    const m0Set = m0.filter(function (l) { return KURSUS_SET[l.id]; }).length;
+    tSkema.tekst = (skemaAntal ? skemaAntal + " spørgsmål" : "Et par spørgsmål") + " om, hvordan det ser ud i dag. " + HVORFOR_SKEMA;
+    if (m0.length && m0Set < m0.length) {
+      tSkema.aktiv = false; tSkema.cta = null; tSkema.laast = "Åbner efter modul 0";
+      tLek.aktiv = true; tLek.laast = ""; tLek.cta = { txt: m0Set ? "Fortsæt forløbet" : "Se første lektion", klik: "showTab(12)" };
+    } else { tLek.laast = "Modul 1 åbner efter spørgeskemaet"; }
+  }
   /* LAASENE RYKKER MED: skemaet aabner strategien, strategien aabner dagen, dagen
      aabner briefen. Uden det ville man kunne springe forbi det foerste skridt. */
   if (visSkema && !t.s0) {
@@ -31156,7 +31168,7 @@ function onboardingRender(def) {
       cta: { txt: "Start her", klik: "openSkema('efter_forloebet')" } };
     if (t1.aktiv) { t1.aktiv = false; t1.cta = null; t1.laast = "Låses op, når du har fortalt, hvor du står nu"; }
   }
-  const trin = [visSkema ? tSkema : null, tLek, tSlut, t1, tDag, tBrief].filter(Boolean);
+  const trin = (profilProeve() && kursusRejse ? [tLek, visSkema ? tSkema : null, tSlut, t1, tDag, tBrief] : [visSkema ? tSkema : null, tLek, tSlut, t1, tDag, tBrief]).filter(Boolean);   /* proeven 17/10: modul 0 er 1. skridt, skemaet 2. */
   const flueben = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>';
   /* HVIDE FLISER + TYDELIG HAENGELAAS (Ida 27/8 aften: "hvide fliser paa teksten ved
      1 2 3 og en tydelig haengelaas paa 2+3"). Cirklerne bliver PAA den roede streg;
@@ -31214,7 +31226,7 @@ function onboardingRender(def) {
     return l;
   };
   const tekstAf = function (x, navn) {
-    if (navn === "Spørgeskema") return "Hvor står du i dag? Det er dét, vi måler din fremgang på.";   /* »de 10 minutter skal fjernes« (15/9) */
+    if (navn === "Spørgeskema") return profilProeve() ? "Hvor står du i dag? " + HVORFOR_SKEMA : "Hvor står du i dag? Det er dét, vi måler din fremgang på.";   /* »de 10 minutter skal fjernes« (15/9) */
     if (navn === "Forløbet") return (x.cta || x.done) ? "Lektionerne bygger din strategi — én ad gangen. Øvelserne undervejs bliver til din Drejebog." : String(x.tekst || "");
     if (navn === "Drejebogen") return (x.done && /Ida/.test(String(x.tekst || ""))) ? String(x.tekst || "") : "Din strategi med dine egne ord. Bygget én gang, brugt hver uge.";
     if (navn === "Planlægningsdagen") return "Én fast dag om ugen til at planlægge og optage. Det er hele hemmeligheden.";
@@ -31456,6 +31468,9 @@ function velkomstSkalVises() {
   if (["medarbejder", "klipper", "reset", "kaereste"].indexOf(d.type) > -1) return false;
   return true;
 }
+/* PROFILEN EFTER KOEBET (Idas klik 17/10 »Ja, byg prøveudgaven«): koeb → adgangskode → fire spoergsmaal → dashboardet med modul 0 aabent.
+   Spoergeskemaet kommer EFTER modul 0 og laaser modul 1. Kun ?velkomst=1, til Ida har set den paa telefon og computer. */
+const VK_TEAM = [{ k: "du", n: "Kun mig" }, { k: "vi", n: "Vi er flere" }];
 async function velkomstStart() {
   if (VELKOMST_KOERER || !velkomstSkalVises()) return;
   const d = CURRENT_DEF || {};
@@ -31463,55 +31478,46 @@ async function velkomstStart() {
   if (OB_SKEMA === true && d.skema !== false) { window.__VELKOMST_SET = true; try { if (sb) sb.auth.updateUser({ data: { velkomst_set: true } }); } catch (e) {} try { turStart(); } catch (e) {} return; }   /* har sendt skemaet = ikke ny */
   try { await dashHilsnerHent(); } catch (e) {}
   VELKOMST_KOERER = true;
-  const spoergType = !d.forretningstype;
-  VK = { navn: (typeof hilsenFornavn === "function" ? hilsenFornavn() : "") || "", type: d.forretningstype || "", velkomster: (window.__MINE_VELKOMSTER || []).slice(), i: 0,
-    n: (spoergType ? 1 : 0) + 2 + ((DASH_HILSNER && DASH_HILSNER.length) ? 1 : 0) };
-  if (spoergType) velkomstTrinType(); else velkomstTrinNavn();
+  VK = { navn: (typeof hilsenFornavn === "function" ? hilsenFornavn() : "") || "", butik: String(d.studioNavn || d.virksomhed || "").replace(/\s*studio$/i, ""),
+    type: d.forretningstype || "", team: d.ental === true ? "du" : d.ental === false ? "vi" : "", teamNavne: "", i: 0, n: 4 };
+  velkomstTrinNavn();
 }
-/* ÉT SPØRGSMÅL PR. ARK (huset): typen er sit eget skridt og kommer kun, naar Ida ikke har sat den */
-function velkomstEye() { VK.i++; return "Lad os skabe dit Content Studio · " + VK.i + " af " + VK.n; }
-function velkomstTrinType() {
-  arkAabn({ eye: velkomstEye(), titel: "Hvor sælger du?", chips: VK_TYPER, valgt: VK.type || "", typeFoerst: !VK.type, ingenTekst: true, ph: "",   /* der vælges aldrig for kunden */
-    send: "Næste", lukTekst: "Spring over", udenKvit: true, efterLuk: function () { setTimeout(velkomstTrinNavn, 320); },
-    gem: async function (tekst, valgt) { if (valgt) VK.type = valgt; setTimeout(velkomstTrinNavn, 320); return true; } });
-}
+function velkomstEye() { VK.i++; return "Din profil · " + Math.min(VK.i, VK.n) + " af " + VK.n; }
 function velkomstTrinNavn() {
-  arkAabn({ eye: velkomstEye(), titel: "Hvad skal vi kalde dig?", ph: "Dit fornavn", enLinje: true, udenMik: true, tekst: VK.navn,
-    send: "Næste", lukTekst: "Spring over", udenKvit: true, efterLuk: function () { setTimeout(velkomstTrin2, 320); },
-    gem: async function (tekst) { VK.navn = tekst || VK.navn; setTimeout(velkomstTrin2, 320); return true; } });
+  arkAabn({ eye: velkomstEye(), klasse: "vk-profil", titel: "Hvad hedder du?", ph: "Dit fornavn", enLinje: true, udenMik: true, tekst: VK.navn,
+    send: "Næste", lukTekst: "Spring over", udenKvit: true, efterLuk: function () { setTimeout(velkomstTrinButik, 320); },
+    gem: async function (tekst) { VK.navn = tekst || VK.navn; setTimeout(velkomstTrinButik, 320); return true; } });
 }
-function velkomstLink() { return "https://b2b.energida.dk/?kode=" + encodeURIComponent(String(currentKode || "")); }
-function velkomstKopier(btn) {
-  const l = velkomstLink();
-  try { navigator.clipboard.writeText(l).then(function () { const t = btn && btn.querySelector(".vk-link-t"); if (t) t.textContent = "Linket er kopieret"; }, function () {}); } catch (e) {}
+function velkomstTrinButik() {
+  arkAabn({ eye: velkomstEye(), klasse: "vk-profil", titel: "Hvad hedder butikken?", ph: "Butikkens navn", enLinje: true, udenMik: true, tekst: VK.butik,
+    send: "Næste", lukTekst: "Spring over", udenKvit: true, efterLuk: function () { setTimeout(velkomstTrinType, 320); },
+    gem: async function (tekst) { VK.butik = tekst || VK.butik; setTimeout(velkomstTrinType, 320); return true; } });
 }
-function velkomstTrin2() {
-  arkAabn({ eye: velkomstEye(), titel: "Del linket med dit team", ingenTekst: true, ph: "",
-    ekstraAf: function () { return '<button type="button" class="vk-link" onclick="velkomstKopier(this)" aria-label="Kopiér linket"><span class="vk-link-t">' + esc(velkomstLink().replace(/^https:\/\//, "")) + '</span><svg class="vk-kop" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/></svg></button>'; },   /* kun to knapper i arket: kopiér bor i feltet */
-    send: "Næste", lukTekst: "Spring over", udenKvit: true,
-    efterLuk: function () { setTimeout(velkomstTrin3, 320); },
-    gem: async function () { setTimeout(velkomstTrin3, 320); return true; } });
+function velkomstTrinType() {
+  arkAabn({ eye: velkomstEye(), klasse: "vk-profil", titel: "Hvor møder kunderne dig?", chips: VK_TYPER, valgt: VK.type || "", typeFoerst: !VK.type, ingenTekst: true, ph: "",   /* der vælges aldrig for kunden */
+    send: "Næste", lukTekst: "Spring over", udenKvit: true, efterLuk: function () { setTimeout(velkomstTrinTeam, 320); },
+    gem: async function (tekst, valgt) { if (valgt) VK.type = valgt; setTimeout(velkomstTrinTeam, 320); return true; } });
 }
-function velkomstValg(btn) {
-  const t = btn.getAttribute("data-t"); const i = VK.velkomster.indexOf(t);
-  if (i > -1) VK.velkomster.splice(i, 1); else VK.velkomster.push(t);
-  btn.classList.toggle("on", i === -1);
+function velkomstTrinTeam() {
+  arkAabn({ eye: velkomstEye(), klasse: "vk-profil", titel: "Hvem står bag butikken?", chips: VK_TEAM, valgt: VK.team || "", typeFoerst: !VK.team, ingenTekst: true, ph: "",
+    send: "Næste", lukTekst: "Spring over", udenKvit: true, efterLuk: function () { velkomstSlut(); },
+    gem: async function (tekst, valgt) { if (valgt) VK.team = valgt; setTimeout(VK.team === "vi" ? velkomstTrinTeamNavne : velkomstSlut, 320); return true; } });
 }
-function velkomstTrin3() {
-  if (!(DASH_HILSNER && DASH_HILSNER.length)) { velkomstSlut(); return; }
-  arkAabn({ eye: velkomstEye(), titel: "Vælg de velkomster, der giver dig mest energi", ingenTekst: true, ph: "",
-    ekstraAf: function () { return '<div class="ark-chips vk-chips">' + (DASH_HILSNER || []).map(function (t) { return '<button type="button" class="ark-chip' + (VK.velkomster.indexOf(t) > -1 ? ' on' : '') + '" data-t="' + esc(t) + '" onclick="velkomstValg(this)">' + esc(t) + '</button>'; }).join("") + '</div>'; },
-    send: "Færdig", lukTekst: "Spring over", udenKvit: true,
-    efterLuk: function () { velkomstSlut(); },
-    gem: async function () { setTimeout(velkomstSlut, 320); return "Dit Content Studio er klar"; } });
+function velkomstTrinTeamNavne() {
+  arkAabn({ eye: velkomstEye(), klasse: "vk-profil", titel: "Hvad hedder de andre?", ph: "Fornavne, fx Sara og Mikkel", enLinje: true, udenMik: true, tekst: VK.teamNavne,
+    send: "Færdig", lukTekst: "Spring over", udenKvit: true, efterLuk: function () { velkomstSlut(); },
+    gem: async function (tekst) { VK.teamNavne = tekst || ""; setTimeout(velkomstSlut, 320); return true; } });
 }
 async function velkomstSlut() {
   if (!VK) return;
   const v = VK; VK = null; VELKOMST_KOERER = false;
-  window.__VELKOMST_SET = true; window.__MINE_VELKOMSTER = v.velkomster.slice();
+  window.__VELKOMST_SET = true;
   try { localStorage.setItem(nsKey("velkomst_set"), "1"); } catch (e) {}
-  const md = { velkomst_set: true, velkomster: v.velkomster };
-  if (v.navn) { md.hilsen = v.navn; CURRENT_HILSEN = v.navn; }
+  const md = { velkomst_set: true };
+  if (!(window.__MINE_VELKOMSTER && window.__MINE_VELKOMSTER.length) && DASH_HILSNER && DASH_HILSNER.length) { md.velkomster = DASH_HILSNER.slice(); window.__MINE_VELKOMSTER = md.velkomster.slice(); }   /* Idas standardhilsner, kunden vaelger dem ikke (17/10) */
+  if (v.navn) { md.hilsen = v.navn; CURRENT_HILSEN = v.navn;
+    try { const h = document.querySelector("#dagensKort .dk-h:not(.dk-citat)"); if (h) h.innerHTML = h.innerHTML.replace(/(,(?:<br>|\s))[^<]*$/, "$1" + esc(v.navn)); } catch (e) {} }   /* startkortet bag arket faar det nye navn med det samme */
+  if (v.team) { md.ental = v.team === "du"; ER_ENTAL = md.ental; try { anvendTone(); } catch (e) {} }
   try { if (sb) await sb.auth.updateUser({ data: md }); } catch (e) {}
   /* kundens eget svar paa typen — kun naar Ida ikke har sat den; Idas valg vinder altid (ctaType) */
   if (v.type && !(CURRENT_DEF && CURRENT_DEF.forretningstype) && sb && currentKode) {
@@ -31522,11 +31528,30 @@ async function velkomstSlut() {
       if (!(eks.data && eks.data.length)) await sb.from("skema_svar").insert({ kode: currentKode, navn: "config", skema: "kunde_valg", svar: svar }).select();
     } catch (e) {}
   }
+  /* butikkens navn = studiets navn (samme skuffe som Profil-siden) */
+  if (v.butik && sb && currentKode && !(CURRENT_DEF && CURRENT_DEF.studioNavn)) {
+    try {
+      const svar = { studioNavn: v.butik };
+      const eks = await sb.from("skema_svar").update({ svar: svar }).eq("kode", currentKode).eq("navn", "config").eq("skema", "profil").select();
+      if (!(eks.data && eks.data.length)) await sb.from("skema_svar").insert({ kode: currentKode, navn: "config", skema: "profil", svar: svar }).select();
+      if (CURRENT_DEF) CURRENT_DEF.studioNavn = v.butik;
+      try { if (typeof buildSideNav === "function") buildSideNav(CURRENT_DEF); } catch (e) {}
+    } catch (e) {}
+  }
+  /* teamets fornavne — egen skuffe (config·team), saa Profil-siden aldrig overskriver dem; briefens personer laeser dem */
+  const navne = String(v.teamNavne || "").split(/\s*(?:,|\bog\b|&|\n)\s*/i).map(function (x) { return x.trim(); }).filter(Boolean);
+  if (navne.length && sb && currentKode) {
+    try {
+      const svar = { navne: navne };
+      const eks = await sb.from("skema_svar").update({ svar: svar }).eq("kode", currentKode).eq("navn", "config").eq("skema", "team").select();
+      if (!(eks.data && eks.data.length)) await sb.from("skema_svar").insert({ kode: currentKode, navn: "config", skema: "team", svar: svar }).select();
+      BRIEF_PERSONER = null;
+    } catch (e) {}
+  }
   try { renderHome(); } catch (e) {}
   try { if (typeof hjemFacitTegn === "function" && document.body.classList.contains("hjem-facit")) hjemFacitTegn(); } catch (e) {}
-  const d = CURRENT_DEF || {};
-  if (d.skema !== false && OB_SKEMA !== true) { setTimeout(function () { try { openSkema("inden_start"); } catch (e) {} }, 500); return; }
-  setTimeout(function () { try { turStart(); } catch (e) {} }, 700);
+  try { husKvit("Din profil er klar."); } catch (e) {}
+  setTimeout(function () { try { turStart(); } catch (e) {} }, 700);   /* dashboardet foerst — spoergeskemaet kommer efter modul 0 */
 }
 let KUNDE_VALG_TYPE = "";
 async function kundeValgHent() {
@@ -38214,7 +38239,7 @@ function kursusLektionerAktive() { return kursusModulerAktive().flatMap(m => m.l
 /* NAESTE ER ALTID EN AABEN LEKTION (designgennemgangen 30/9): i YOU GOT THIS foerte »Næste« og »Fortsæt forløbet« kunden direkte
    ind i laase-arket, naar modul 1 og 2 var set. Laaste moduler springes over; er der ingen aaben lektion tilbage, siger fladen, hvornaar det naeste aabner. */
 function lekModulLaastFor(id) { try { return ygtModulLaast(modulNrFor(id)); } catch (e) { return false; } }
-function kursusLektionerAabne() { return kursusLektionerAktive().filter(l => !lekModulLaastFor(l.id)); }
+function kursusLektionerAabne() { return kursusLektionerAktive().filter(l => !lekModulLaastFor(l.id) && !(profilProeve() && lekLaastAfSkema(l.id))); }   /* proeven 17/10: modul 1 venter paa skemaet, saa »Fortsæt med« peger aldrig ind i laasen */
 function kursusFoersteLaaste() { return kursusLektionerAktive().find(l => lekModulLaastFor(l.id)) || null; }
 function kursusLaasTekst(l) { const nr = modulNrFor(l.id); return "Modul " + modulVisNr(nr) + " åbner " + ygtDatoOrd(ygtModulAabner(nr)); }
 function lekSideNavn() { try { return (CURRENT_DEF && CURRENT_DEF.type === "kursus") ? "Lektionerne" : "Forløbet"; } catch (e) { return "Forløbet"; } }
@@ -39015,6 +39040,10 @@ function kursusLaasOverlay() {
     + '</div>';
   scr.appendChild(ov);
 }
+function kursusModul0Set() {   /* alle modul 0-lektioner er set (17/10) */
+  let m0 = []; try { m0 = (kursusLektionerAktive() || []).filter(function (l) { return (parseInt(modulNrFor(l.id), 10) || 0) <= 1; }); } catch (e) {}
+  return m0.length > 0 && m0.every(function (l) { return KURSUS_SET[l.id]; });
+}
 function kursusNaesteLektion() { return kursusLektionerAabne().find(l => !KURSUS_SET[l.id]) || null; }
 function kursusNaeste() {
   const l = kursusNaesteLektion();
@@ -39028,22 +39057,25 @@ let LEK_AABEN = null, LEK_PAUSET = false;
 /* LEKTIONERNE ER LAAST TIL STARTSKEMAET (Idas klik 28/9 »Ja, lås alt til skemaet«): uden skemaet er der intet udgangspunkt at maale
    fremgangen paa. Alle veje ind i en lektion gaar gennem visLektion, saa laasen bor her og kun her. OB_SKEMA null (ikke hentet) laaser ikke;
    Ida, der kigger med som kunde, laases aldrig. Arket er det lille ark med een roed knap, der aabner skemaet (ingen blindgyde). */
-function lekLaastAfSkema() {
+const HVORFOR_SKEMA = "Svarene gemmes, så du efter forløbet kan se din udvikling og udbyttet af forløbet.";   /* Idas ord 17/10: hvorfor skemaet udfyldes */
+function profilProeve() { try { return VELKOMST_TIL || /[?&]velkomst=1/.test(location.search); } catch (e) { return false; } }   /* proeveudgaven 17/10 */
+function lekLaastAfSkema(id) {
   try {
     const d = typeof CURRENT_DEF !== "undefined" ? CURRENT_DEF : null;
     if (!d || d.type !== "kursus" || d.skema === false || SOM_KUNDE) return false;
+    if (profilProeve() && id != null && (parseInt(modulNrFor(id), 10) || 0) <= 1) return false;   /* MODUL 0 ER AABENT MED DET SAMME (Ida 17/10) — skemaet laaser modul 1 */
     return OB_SKEMA === false;
   } catch (e) { return false; }
 }
 function lekSkemaLaasArk() {
   /* ingen undertitel i arket (laasen 24/9) — beskeden bor i titlen og paa knappen */
-  arkAabn({ lille: true, titel: "Lektionerne åbner efter spørgeskemaet",
+  arkAabn({ lille: true, titel: profilProeve() ? "Modul 1 åbner efter spørgeskemaet" : "Lektionerne åbner efter spørgeskemaet",
     ingenTekst: true, udenMik: true, chips: [], send: "Start spørgeskemaet",
     gem: function () { setTimeout(function () { try { openSkema("inden_start"); } catch (e) {} }, 0); return ""; } });
 }
 function visLektion(id) {
   if (String(id).indexOf("w-") === 0) { ttsLektionAaben(id); return; }
-  if (lekLaastAfSkema()) { lekSkemaLaasArk(); return; }
+  if (lekLaastAfSkema(id)) { lekSkemaLaasArk(); return; }
   { const mnrL = modulNrFor(id); if (ygtModulLaast(mnrL)) { ygtLaasArk("Modul " + modulVisNr(mnrL) + " åbner " + ygtDatoOrd(ygtModulAabner(mnrL))); return; } }   /* ti uger (30/9) */
   const adg = kursusAdgang();
   if (adg && !adg.has(id)) return;                       // uden for kodens adgang
@@ -40423,6 +40455,15 @@ function renderKursusHjem() {
   }
   if (sk) sk.style.display = "";
   window.__KURSUS_SLUTSKEMA = false; window.__KURSUS_SKEMA = false;
+  if (profilProeve() && OB_SKEMA === false && kursusModul0Set()) {
+    /* PROEVEUDGAVEN 17/10: modul 0 er set — spoergeskemaet er naeste skridt og aabner modul 1 */
+    window.__KURSUS_SKEMA = true;
+    if (st) st.textContent = "Spørgeskema";
+    if (ss) ss.textContent = HVORFOR_SKEMA;
+    if (sk) { sk.textContent = "Start spørgeskemaet"; sk.onclick = () => { try { openSkema("inden_start"); } catch (e) {} }; }
+    forloebBentoTegn(AKTIVE, setAntal, medOvelse, ovelserDone); renderUdsat(); renderNotesbog();
+    return;
+  }
   if (kursusFaerdig() && OB_EFTER !== true) {
     /* SLUTSKEMAET ER DET AKTIVE TRIN (DESIGNLAAS 6n27): foer det er svaret, siger fladen ikke »Du er igennem« — samme ord som efter sidste lektion */
     window.__KURSUS_SLUTSKEMA = true;
@@ -40446,7 +40487,7 @@ function renderKursusHjem() {
     /* IKKE BEGYNDT ENDNU. Teksten skrives EKSPLICIT — den blev foer arvet fra HTML'ens
        standard, og saa blev "Forløbet er på vej" haengende, naar den foerste video landede.
        En tilstand, der kun gaelder fordi ingen har skrevet noget andet, er ikke en tilstand. */
-    if (OB_SKEMA === false) {
+    if (OB_SKEMA === false && !profilProeve()) {
       /* SPOERGESKEMAET FOERST (6n27, del C 1/10): foer det er svaret, lover Lektionerne ikke »Se første lektion« — samme ord som Hjems flise */
       window.__KURSUS_SKEMA = true;
       if (st) st.textContent = "Spørgeskema";
@@ -50959,7 +51000,7 @@ const SKEMAER = {
      saa gamle svar kan laeses og spejles. t:"multi" = chips, flere kan vaelges, gemmes som "Instagram · Facebook". */
   inden_start: {
     titel: "Inden du går i gang",
-    intro: "Svar ærligt. Det er dét, vi måler din fremgang på.",
+    intro: profilProeve() ? "Svar ærligt. " + HVORFOR_SKEMA : "Svar ærligt. Det er dét, vi måler din fremgang på.",
     sp: [
       { t:"multi",  q:"Hvor er du til stede på de sociale medier i dag?", o:["Instagram","Facebook","TikTok","Pinterest","Andet","Ingen endnu"], eneste:"Ingen endnu", hj:"Vælg gerne flere." },   /* Idas klik 4/10: »Ingen endnu« slaar de andre fra, og omvendt */
       { t:"choice", q:"Hvor tit lægger du noget op i dag?", o:["Sjældent","Et par gange om måneden","Hver uge","Flere gange om ugen"] },
@@ -51418,6 +51459,7 @@ async function refreshSkemaStatus() {
   const card = document.getElementById("skemaCard");
   if (!card || !CURRENT_DEF || CURRENT_DEF.type === "medarbejder" || CURRENT_DEF.skema === false) return;
   card.style.display = "flex";
+  try { if (profilProeve() && CURRENT_DEF.type === "kursus" && OB_SKEMA !== true && !kursusModul0Set() && (kursusLektionerAktive() || []).some(function (l) { return (parseInt(modulNrFor(l.id), 10) || 0) <= 1; })) { card.style.display = "none"; return; } } catch (e) {}   /* proeven 17/10: skemaet kommer efter modul 0 */
   /* TALLET TÆLLES (samme regel som arket i strategibyggeren, rettet 27/8): der stod 19
      hardkodet i markuppen. Det ER 19 i dag — men lægger nogen et spørgsmål til, står
      der stadig 19, og så lyver linjen. Minuttallet er et skøn og bliver stående som
