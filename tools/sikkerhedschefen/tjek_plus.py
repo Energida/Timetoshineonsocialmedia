@@ -7,9 +7,10 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from sikkerhedschefen.resultat import Resultat, BESTAAET, FEJLET, IKKE_TESTET
 from sikkerhedschefen.lag2 import chromium, fortolk, REPO
 
+# CRM-plusset = valget »Gamle kunder · Ny kunde« (Idas ønske 14/10, salgsturnéen) — derfor ventes »Gamle kunder«.
 # side -> ord, der skal stå i det ark, plusset åbner. Rækkefølgen går frem og tilbage, så et plus fra én side kan ikke hænge ved på den næste.
-RUNDE = [("energida", "Nyt rum"), ("overblik", "Tøm hovedet"), ("crm", "Opret ny kunde"), ("energida", "Nyt rum"), ("crm", "Opret ny kunde"),
-         ("indbakke", "To-do"), ("crm", "Opret ny kunde"), ("overblik", "Tøm hovedet")]
+RUNDE = [("energida", "Nyt rum"), ("overblik", "Tøm hovedet"), ("crm", "Gamle kunder"), ("energida", "Nyt rum"), ("crm", "Gamle kunder"),
+         ("indbakke", "To-do"), ("crm", "Gamle kunder"), ("overblik", "Tøm hovedet")]
 
 JS = r"""(async function(){ var V=function(ms){return new Promise(function(r){setTimeout(r,ms)})}; await V(2500); var r={tjek:[]};
  var RUNDE=__RUNDE__;

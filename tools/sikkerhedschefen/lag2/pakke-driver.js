@@ -20,7 +20,7 @@
       KUNDE_FUNKTIONER.forEach(function (f) {
         if (!funkTaendt(def, f.k) || !MENU[f.k]) return;
         var hit = items.filter(function (i) { return MENU[f.k] && MENU[f.k].test(i.t); });
-        if (!hit.length) mangler.push(f.navn); else if (hit.every(function (i) { return i.laast; })) laast.push(f.navn);
+        if (!hit.length) { if (fase[1] && typeof ygtHold === "function" && ygtHold(def)) laast.push(f.navn + " (skjult til modulet åbner — Idas beslutning 1/10)"); else mangler.push(f.navn); } else if (hit.every(function (i) { return i.laast; })) laast.push(f.navn);
       });
       r.pakker.push({ p: p[1] + fase[0], mangler: mangler, laast: laast });
       r.tjek.push({ navn: p[1] + fase[0] + ": hvert flueben findes i menuen", ok: !mangler.length, detalje: mangler.length ? "flueben sat, men kunden har ikke: " + mangler.join(", ") + (laast.length ? " · låst: " + laast.join(", ") : "") : "" });
