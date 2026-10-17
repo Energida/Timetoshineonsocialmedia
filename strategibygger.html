@@ -1279,7 +1279,8 @@ async function dbHent(){
     var res=await Promise.all([
       SB_DB.from('skema_svar').select('skema,navn,svar').eq('kode',SB_KODE).like('skema','lektion_svar_%'),
       SB_DB.from('skema_svar').select('navn,svar').eq('kode',SB_KODE).eq('skema','maalgrupper').limit(1),
-      SB_DB.from('skema_svar').select('svar').eq('kode',SB_KODE).eq('skema','strategibygger_tid').limit(1)
+      SB_DB.from('skema_svar').select('svar').eq('kode',SB_KODE).eq('skema','strategibygger_tid').limit(1),
+      SB_DB.from('skema_svar').select('svar').eq('kode',SB_KODE).eq('navn','config').eq('skema','profil_svar').limit(1)
     ]);
     try{
       var t=(res[2]&&res[2].data||[])[0];
@@ -1306,6 +1307,17 @@ async function dbHent(){
     var mr=(mgr.data||[])[0];
     if(mr&&mr.svar&&Array.isArray(mr.svar.liste)&&mr.svar.liste.length){ MG=mr.svar.liste; MG_NAVN=mr.navn||''; }
 
+    /* PROFILENS SVAR UDFYLDER DE TOMME DUBLETTER (17/10): kunden har allerede svaret paa forretningstype, ansatte og hvad butikken
+       saelger i profilen efter koebet. Kun TOMME felter fyldes — et svar, kunden selv har skrevet her, roeres aldrig. */
+    try{
+      var pf=((res[3]&&res[3].data)||[])[0]; pf=pf&&pf.svar||null;
+      if(pf){
+        var ftMap={butik:'Fysisk butik',butik_webshop:'Fysisk butik + webshop',webshop:'Webshop'};
+        if(pf.forretningstype&&ftMap[pf.forretningstype]&&!hent('start','lokal_forretningstype')) saet('start','lokal_forretningstype',ftMap[pf.forretningstype]);
+        if((pf.ental===true||pf.ental===false)&&!hent('drive','lokal_drive_alene')) saet('drive','lokal_drive_alene',pf.ental?'Kun mig':'Vi er flere');
+        if(pf.branche&&pf.branche!=='Andet'&&!hent('start','om5ho4m4nwjzqb')) saet('start','om5ho4m4nwjzqb',pf.branche);
+      }
+    }catch(e){}
     var flyttet = migrerGamleSvar();
     SB_KLAR=true; lokaltGem();
     try{ bsGenoptagSaet(); }catch(e){}   /* FOER render — se noten ved bsGenoptagSaet */
