@@ -1474,6 +1474,7 @@ html body .bs-slide .bs-usp { font-size:17px !important; line-height:1.45 !impor
 .hus-kvit.on { opacity:1; transform:translateX(-50%) translateY(0); }
 .hus-kvit.on.med-fortryd { pointer-events:auto; } .hus-kvit .hus-kvit-fortryd { background:none; border:0; padding:0 0 0 6px; margin:0; min-height:44px; font:400 13px Poppins,sans-serif; color:var(--red); cursor:pointer; }   /* Done · Fortryd (Ida/natten 7/10, fund 13) — begge flader */
 /* HUSK-LINJEN VED HOOKET (Idas klik 20/9 kl. ~16.30, bud 1 af fem — Hans-testen runde 3): */
+html body .fs-rk textarea.sk-input { field-sizing:content; max-height:none; }   /* voks med teksten, hvor browseren kan (18/10) */
 #briefWrap .fs-rk > button.fs-vaelg, .fs-vaelg { flex-shrink:0; height:28px !important; min-height:28px !important; margin-top:9px; padding:0 2px !important; border:0 !important; border-radius:0 !important; background:none !important; color:var(--red) !important; font-family:Poppins,sans-serif !important; font-size:12.5px !important; font-weight:400 !important; text-transform:none !important; letter-spacing:0 !important; cursor:pointer; line-height:28px; width:40px !important; text-align:left; box-shadow:none !important; }   /* uden medie: computerens knap-regler (11 px versal) og telefonens knap-pass maa ikke roere ordet */   /* ORDET ER KNAPPEN (LÅST, Ida 20/9 kl. ~17.05 »så låser vi den« — efter hendes kommentar »vælg med rødt over cirklerne« og mit kritiske blik: et rødt ord alene ligner en knap): saa laenge intet hook har flueben, staar der et roedt »Vælg« dér, hvor den tomme ring sidder, ud for hvert skrevet forslag. Et tryk goer det til husets flueben; de andre faar den graa ring tilbage. Naeste spaerrer ikke (v2139). Kun hooket. */
 body.mb .fs-vaelg { font-size:14px; width:44px; }
 @media (max-width:899px) { #briefAutoStatus { bottom:calc(104px + env(safe-area-inset-bottom, 0px)) !important; } }   /* »Gemt« over bundmenuen, ikke bag plusset (Hans-testen 11/10) */
@@ -24477,6 +24478,20 @@ function briefFaktaUdPlacer() {
     else { hold.appendChild(u); u.style.display = "none"; }
   });
   try { if (FB_AABEN) rail.querySelectorAll('.fb-ud[data-for="' + FB_AABEN + '"] textarea').forEach(autoGro); } catch (e) {}
+  /* LISTEN ER LAENGERE END KASSEN (Ida 18/10, skaermbillede af »Hvem laver indholdet?«): listen laegger sig over raekkerne (21/9), men stak ud under kassen —
+     »+ Tilføj« laa oven paa den, og de nederste navne blev klippet af. Kassen faar plads under sig, mens listen er aaben, og ligger oeverst; raekkerne flytter sig ikke. */
+  try {
+    const boks = rail.querySelector(".fb-boks"); if (boks) {
+      boks.style.marginBottom = ""; boks.style.position = ""; boks.style.zIndex = "";
+      const aaben = FB_AABEN ? rail.querySelector('.fb-ud.fb-ud-drop[data-for="' + FB_AABEN + '"]') : null;
+      if (aaben && aaben.style.display !== "none") requestAnimationFrame(function () { try {
+        const q = aaben.querySelector(".sk-q") || aaben.firstElementChild; if (!q) return;
+        const over = q.getBoundingClientRect().bottom - boks.getBoundingClientRect().bottom;
+        boks.style.position = "relative"; boks.style.zIndex = "960";
+        if (over > 0) boks.style.marginBottom = Math.ceil(over + 12) + "px";
+      } catch (e) {} });
+    }
+  } catch (e) {}
 }
 async function briefFaktaGem() { try { await saveBrief(true); } catch (e) {} FB_AABEN = null; try { const rl = document.getElementById("briefRail"); if (rl) briefFaktaBoksTegn(rl); else briefFaktaUdPlacer(); } catch (e) {} try { briefHovedOpdater(); } catch (e) {} }
 function fbFoldSkift() { window.__FB_FOLD_AABEN = !window.__FB_FOLD_AABEN; document.body.classList.toggle("fb-fold-aaben", !!window.__FB_FOLD_AABEN); const b = document.querySelector(".fb-fold-linje"); if (b) b.setAttribute("aria-expanded", window.__FB_FOLD_AABEN ? "true" : "false"); }
@@ -25288,6 +25303,20 @@ function udenSpring(el, fn) {
   }
 }
 function autoGro(el) { udenSpring(el, function () { el.style.height = "auto"; el.style.height = (el.scrollHeight + 2) + "px"; }); }
+/* FORSLAGSFELTER MED TO LINJER KLIPPES ALDRIG (Ida 18/10: »det duer heller ikke man ikke kan se hele linjen hvis der er 2 linjer« — Tekst på coverbilledet):
+   felterne har rows=1 og voksede kun, naar man skrev. Et felt med gemt tekst paa to linjer stod i een linjes hoejde. Nu faar hvert forslagsfelt sin hoejde,
+   saa snart det tegnes — alle forslagslister (hook, cover, ser/siger …), begge flader. */
+(function () {
+  try {
+    const gro = function (rod) { try { (rod.querySelectorAll ? rod.querySelectorAll(".fs-rk textarea") : []).forEach(function (t) { if (t.value && t.value.length > 20 || /\n/.test(t.value || "")) autoGro(t); }); } catch (e) {} };
+    let ventende = false;
+    new MutationObserver(function (ml) {
+      if (ventende) return;
+      if (!ml.some(function (m) { return [].some.call(m.addedNodes || [], function (n) { return n.nodeType === 1 && (n.matches && n.matches(".fs-rk, .fs-rk *") || (n.querySelector && n.querySelector(".fs-rk textarea"))); }); })) return;
+      ventende = true; requestAnimationFrame(function () { ventende = false; gro(document); });
+    }).observe(document.documentElement, { childList: true, subtree: true });
+  } catch (e) {}
+})();
 /* Klik hvor som helst i et dato-/tidsfelt åbner vælgeren — ikke kun det lille ikon (Ida 21/7) */
 document.addEventListener("click", e => {
   const t = e.target;
@@ -59779,7 +59808,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2791";
+const APP_VERSION = "2793";
 const APP_BYGGET = "9. oktober";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_BYGGET + " · " + APP_VERSION; } catch (e) {} });
 let NY_VERSION_KLAR = false;
