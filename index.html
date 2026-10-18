@@ -24440,8 +24440,14 @@ function briefStatusBaandAabn(knap) {
   setTimeout(function () { document.addEventListener("click", udenfor); }, 0);
 }
 /* status valgt i fakta-boksen: gem, luk raekken, tegn boksen og forsiden om — man bliver, hvor man er (forside eller skriveside) */
+/* EFTER ET STATUSSKIFT LANDER MAN PAA KALENDERENS FORSIDE (Ida 18/10: »når jeg skifter status - vil jeg gerne man kommer ud på kalenderforsiden
+   når det er gjort« — vaelter 4/10's »intet bevaeger sig ved valg i fakta« for status). Briefen gemmes som ved Tilbage; afviste basen statussen, bliver man staaende. */
+function briefUdTilKalender(id) {
+  try { if (String(BRIEF_ID) !== String(id)) return; BRIEF_FRA = 8; briefTilbage(); } catch (e) {}
+}
 async function briefStatusVaelgFakta(id, st) {
-  try { await ideaStatusSet(id, st); } catch (e) {}
+  let ok = false; try { ok = await ideaStatusSet(id, st); } catch (e) {}
+  if (ok) { try { const it = (IDEER || []).find(x => String(x.id) === String(id)); if (it) it.status = st; } catch (e) {} briefUdTilKalender(id); return; }
   try { const it = (IDEER || []).find(x => String(x.id) === String(id)); if (it) it.status = st; } catch (e) {}
   FB_AABEN = null;
   try { if (document.body.classList.contains("mb")) markbaandTegn(7); } catch (e) {}   /* baandets status foelger med (21/9) */
@@ -57736,9 +57742,9 @@ function ibMobilTegn() {
        deres soejle i Drejebogens egen raekkefoelge, og det, der ikke hoerer til en soejle,
        staar under "Andet" til sidst. Samme fliser, samme klik — kun grupperingen er ny. */
     const flise = function (it) {
-      const linje = htbStor([it.dato ? dkDatoKort(it.dato) : "", it.status && it.status !== "Idé" ? it.status : ""].filter(Boolean).join(" · "));   /* formatet er ude (22/9) — det er et filter */   /* stort begyndelsesbogstav (Ida/revision 6/10): »Tirs. 6. oktober · Planlagt« */
+      const linje = htbStor([it.dato ? dkDatoKort(it.dato) : ""].filter(Boolean).join(" · "));   /* som computeren: ingen status på flisen (Ida 9/10) */   /* formatet er ude (22/9) — det er et filter */   /* stort begyndelsesbogstav (Ida/revision 6/10): »Tirs. 6. oktober · Planlagt« */
       /* GREB 8 (22/9): tagget er en CHIP her som paa computeren — det var en graa linje paa telefonen og en chip paa 1440, altsaa den samme ting i to udgaver. */
-      const tagHtml = ideTags(it).map(function (t) { return '<span class="ibb-chip">' + esc(t) + '</span>'; }).join("") + (typeof ibMoedeChip === "function" ? ibMoedeChip(it) : "");   /* MOEDE-CHIPPEN OGSAA PAA TELEFONEN (Ida/revision 6/10): computerens idéflise viser »Møde …«/»På mødet« — telefonens tvilling manglede den */
+      const tagHtml = (typeof ibMoedeChipRaa === "function" ? ibMoedeChipRaa(it) : "");   /* som computeren (Idas klik 18/10): ingen tags (7/10) og ingen »hvem laver« — kun mødet */   /* MOEDE-CHIPPEN OGSAA PAA TELEFONEN (Ida/revision 6/10): computerens idéflise viser »Møde …«/»På mødet« — telefonens tvilling manglede den */
       return '<button type="button" class="bs-kf" data-ibid="' + esc(String(it.id)) + '" onclick="openBrief(\'' + esc(String(it.id)) + '\')"><span class="bs-kf-tekst"><span class="bs-kf-n">' + esc(storStart(titelVis(it.titel || "Uden titel"))) + '</span>' + (linje ? '<span class="bs-kf-s">' + esc(linje) + '</span>' : '') + (tagHtml ? '<span class="bs-kf-tags">' + tagHtml + '</span>' : '') + '</span>' + (ibErNy(it) ? '<span class="ibb-ny-hj">Ny</span>' : '') + '</button>';   /* forbogstavet er ude (22/9: Oprettet af staar inde paa idéen) · »Ny« ogsaa paa telefonen (21/9) */
     };
     /* DE FIRE SOEJLER STAAR ALTID (Ida 15/9: »idébanken er ikke opdateret med indholdssøjlerne men står stadig
@@ -59760,7 +59766,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2783";
+const APP_VERSION = "2785";
 const APP_BYGGET = "9. oktober";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_BYGGET + " · " + APP_VERSION; } catch (e) {} });
 let NY_VERSION_KLAR = false;
@@ -60856,7 +60862,8 @@ function briefStatusDropHtml(it, suffiks, somChip) {
     + '</div></div>';
 }
 async function briefStatusVaelg(id, st) {
-  try { await ideaStatusSet(id, st); } catch (e) {}
+  let ok = false; try { ok = await ideaStatusSet(id, st); } catch (e) {}
+  if (ok) { briefUdTilKalender(id); return; }   /* kalenderens forside (Ida 18/10) */
   /* Gentegn den flade, man staar paa: overblikket ELLER wizarden (Ida 31/8) */
   setTimeout(function () { try {
     if (BRIEF_ID !== id) return;
@@ -60883,6 +60890,9 @@ async function ideaStatusSet(id, st) {
   /* GEMMER DET IKKE, SKAL SKAERMEN IKKE LYVE (Ida 9/10: »når jeg flytter en idé fra planlagt til idé sker det ikke«): statussen rulles tilbage og det siges højt — i stedet for at vise Idé, mens basen stadig siger Planlagt */
   if (gemtOk === false && gammel) { try { const x = (IDEER || []).find(function (y) { return String(y.id) === String(id); }); if (x) { x.status = gammel.status; x.dato = gammel.dato; } renderIdeas(); renderCalendar(); } catch (e) {} try { husBesked("Statusen blev ikke gemt. Prøv igen."); } catch (e) {} return false; }
   /* KVITTERING (Ida 7/10: »flyttet en brief tilbage til status: Idé — så må den gerne komme med en lille kvittering«): Idé tager datoen af, saa opslaget forlader kalenderen og er kun i Idébanken */
+  /* BRIEFENS DATOFELT TOEMMES MED (Ida 18/10, MAALT i selen): staar briefen aaben, holdt #bf_dato den gamle dato, og briefens eget gem ved Tilbage
+     skrev datoen og »Planlagt« tilbage — idéen sprang ud af Idébanken igen, mens kvitteringen sagde »Flyttet tilbage«. */
+  if (st === "Idé") { try { if (String(BRIEF_ID) === String(id)) { const df = document.getElementById("bf_dato"); if (df) df.value = ""; } } catch (e) {} }
   if (st === "Idé") { try { husKvit("Flyttet tilbage i Idébanken."); } catch (e) {} }
   /* Planlagt kraever ansvarlig (A4, Ida 19/8) — vagten spoerger, hvis ingen er valgt */
   if (st === "Planlagt") { try { ansvarligVagt(id); } catch(e) {} }
@@ -61865,7 +61875,7 @@ function ibBudHtml(grupper, bud) {
   /* SLET FRA OVERSIGTEN (Ida 22/9 kl. 09.40): samme lille cirkel i hjoernet som popuppens kryds — men med husets skraldespand, for krydset lukker (17/9-reglen) */
   const sletHj = it => '<button type="button" class="ibb-slet mq-tap" aria-label="Slet idéen" title="Slet idéen" onclick="event.stopPropagation();ibSletFlise(\'' + esc(String(it.id)) + '\')">' + (typeof BS_SKRALD_SVG !== "undefined" ? BS_SKRALD_SVG : "Slet") + '</button>';   /* datoen som chip, naar idéen er planlagt (22/9) */   /* »Ny« i flisens hoejre hjoerne, saa det ikke ligner et tag (Ida 22/9) */
   const fmtChip = it => '';   /* FORMATET STAAR IKKE PAA FLISEN — kun tags (Ida 22/9 kl. 09.10: »det der skal komme op på flisen her er tags og ikke format«); formatet er et filter */   /* »Ny« (Ida 21/9 kl. 18.35): tilfoejet af et andet teammedlem, siden jeg sidst saa banken */
-  const statusChip = it => ibMoedeChip(it);   /* STATUS STAAR IKKE PAA FLISEN (Ida 9/10: »slet status på flisen i idébanken«) — kun mødechippen; status ses inde i idéen og i kalenderen */
+  const statusChip = it => ibMoedeChipRaa(it);   /* KUN TITEL + BESKRIVELSE (+ mødet) (Idas klik 18/10): »hvem laver« står aldrig på Idébankens fliser — det hører til planlægningen; navnet bliver i briefen */   /* STATUS STAAR IKKE PAA FLISEN (Ida 9/10: »slet status på flisen i idébanken«) — kun mødechippen; status ses inde i idéen og i kalenderen */
   const thumb = (it, k) => '';   /* ingen billeder (Ida 16/9 kl. 13.54) */
   const aabn = it => 'onclick="openBriefSide(\'' + esc(String(it.id)) + '\')"';
   if (bud === 1) {   /* fliser i soejler — ti bud paa overskriften via window.IB_HOVED (Ida 16/9 kl. 14.03) */
