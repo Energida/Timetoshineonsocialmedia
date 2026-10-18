@@ -24428,6 +24428,8 @@ function briefBaandMereArk() {
   const forside = document.body.hasAttribute("data-bforside");
   const rk = [];
   rk.push(forside ? ["Ret briefen", "briefMbVis('skriv')"] : ["Briefoversigten", "briefMbVis('forside')"]);
+  /* SEND TIL GODKENDELSE ØVERST (Idas klik 18/10: »Hvorfor kan jeg nu ikke sende til godkendelse?« — den stod kun under Del); står også stadig under Del */
+  try { if (typeof godkModtagere === "function" && godkModtagere().length) rk.push(["Send til godkendelse", "briefTilGodkendelse()"]); } catch (e) {}
   if (forside) rk.push(["Læs højt", "try{var b=document.querySelector('.bt-laes-plads .pf-laes');if(b)b.click();}catch(e){}"]);
   rk.push(["Del", "try{briefDelMenu(document.querySelector('.bt-ik-baand button[title=Del]'))}catch(e){}"]);
   rk.push(["Giv en opgave", "briefOpgaveArk('')"]);   /* OPGAVER FRA BRIEFEN (Idas klik 21/9 kl. 20.50: begge steder) */
@@ -37198,6 +37200,7 @@ function indbakkeRegn() {
       t: esc(storStart(titelVis(x.titel || "Uden titel"))) + ' venter på din godkendelse',
       s: esc(navn) + (g.fra ? ' · sendt af ' + esc(String(g.fra)) : '') + (g.sendt && typeof godkNaar === "function" ? ' · ' + esc(godkNaar(g.sendt)) : '') + (g.note ? ' · ' + esc(String(g.note)) : ''),
       /* KUNDEN aabner sin egen brief direkte; godkKoeAabn er Idas vej (ny fane som kunden) (13/9). */
+      roed: true,   /* SENDT TIL GODKENDELSE = RØD FLISE (Ida 18/10: »dem der er sendt til godkendelse skal i modtagerens indbakke tydelig være i rød flise«) */
       knap: 'Åbn briefen', klik: (typeof CUSTOMER_NAV !== "undefined" && CUSTOMER_NAV && !document.body.classList.contains("dash-mode")) ? "openBriefSide('" + String(x.id).replace(/'/g, "\\'") + "')" : "godkKoeAabn('" + esc(String(x.kode)) + "','" + esc(String(x.id)) + "')",
       aabn: (typeof CUSTOMER_NAV !== "undefined" && CUSTOMER_NAV && !document.body.classList.contains("dash-mode")) ? "openBriefSide('" + String(x.id).replace(/'/g, "\\'") + "')" : "godkKoeAabn('" + esc(String(x.kode)) + "','" + esc(String(x.id)) + "')"
     });
@@ -37590,10 +37593,11 @@ function indbakkenAaben() {
   /* ORDET »ÅBN« ER UDE (Ida 16/9 kl. 08.42: »havde vi ikke fjernet alle disse knapper?«): flisen ER doeren — hele raekken aabner. Kun et ord,
      der goer noget ANDET end at aabne (Godkend · Vælg dato · Slet · Set), staar stadig til hoejre. */
   const raekke = r => { const aabn = r.aabn || (r.knap === "Åbn" ? r.klik : ""); const ord = (r.knap && r.knap !== "Åbn") ? r.knap : "";
-    return '<div' + (aabn ? ' onclick="' + aabn + '" style="cursor:pointer;' : ' style="') + 'display:flex;align-items:center;gap:14px;padding:13px 16px;background:#fff;border:0;box-shadow:var(--mb-skygge);border-radius:20px;margin:0 0 10px;flex-wrap:wrap;box-sizing:border-box;">'
+    const rd = !!r.roed;
+    return '<div' + (rd ? ' class="ib-roed"' : '') + (aabn ? ' onclick="' + aabn + '" style="cursor:pointer;' : ' style="') + 'display:flex;align-items:center;gap:14px;padding:13px 16px;background:' + (rd ? 'var(--red);color:#fff' : '#fff') + ';border:0;box-shadow:' + (rd ? 'none' : 'var(--mb-skygge)') + ';border-radius:20px;margin:0 0 10px;flex-wrap:wrap;box-sizing:border-box;">'
     + '<span style="font-size:13.5px;flex:1;min-width:0;">' + r.t
-    + '<span style="display:block;font-size:12px;color:var(--gray3);margin-top:2px;">' + String(r.s || "").replace(/^([a-zæøå])/, function (b) { return b.toUpperCase(); }) + '</span></span>'   /* datoen starter med stort, naar den staar for sig selv (fund 92, HAARD 6/10) */
-    + (ord ? '<span class="ib-ord" onclick="event.stopPropagation();' + r.klik + '" style="font-size:12.5px;color:var(--red);white-space:nowrap;cursor:pointer;flex-shrink:0;">' + ord + '</span>' : '')
+    + '<span style="display:block;font-size:12px;color:' + (rd ? 'rgba(255,255,255,.88)' : 'var(--gray3)') + ';margin-top:2px;">' + String(r.s || "").replace(/^([a-zæøå])/, function (b) { return b.toUpperCase(); }) + '</span></span>'   /* datoen starter med stort, naar den staar for sig selv (fund 92, HAARD 6/10) */
+    + (ord ? '<span class="ib-ord" onclick="event.stopPropagation();' + r.klik + '" style="font-size:12.5px;color:' + (rd ? '#fff' : 'var(--red)') + ';white-space:nowrap;cursor:pointer;flex-shrink:0;">' + ord + '</span>' : '')
     + (r.ekstra || '')
     + '</div>'; };
   /* GREB 8 (22/9): sektionslinjen er husets — ord + streg ud til hoejre (.cf-sek), som paa Hjem.
@@ -59861,7 +59865,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2811";
+const APP_VERSION = "2813";
 const APP_BYGGET = "9. oktober";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_BYGGET + " · " + APP_VERSION; } catch (e) {} });
 let NY_VERSION_KLAR = false;
@@ -83035,6 +83039,8 @@ async function indbakkeTegn() {
      hele flisen er trykket, valgene staar i det lille ark; klokkeslaettet staar i etiketten, naar raekken har det */
   window.__BF3_IB_VENTER = venter;
   const kunderHtml = venter.length ? venter.map(function (v, i) {
+      /* SENDT TIL GODKENDELSE = RØD FLISE (Ida 18/10) — samme røde flise som I dag på Hjem */
+      if (v.slags === "godkend") return bf3Etfl((v.kunde || "Kunde") + (v.dato ? " · " + dkDatoKort(String(v.dato)) : ""), esc(v.titel || ""), esc(v.sub || ""), [], ' data-klik="1" role="button" tabindex="0" onclick="bf3IbArk(' + i + ')"').replace('<div class="bs3-fl"', '<div class="bs3-fl bs3-roed bs3-klik"').replace(/<\/div>$/, '<svg class="bs3-roed-pil" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></div>');
       return bf3Etfl((v.kunde || "Kunde") + (v.dato ? " · " + dkDatoKort(String(v.dato)) : "") + (v.tid ? " · kl. " + String(v.tid).slice(0, 5) : ""), esc(v.titel || ""), esc(v.sub || ""), [], ' data-klik="1" role="button" tabindex="0" onclick="bf3IbArk(' + i + ')"');
     }).join('') : bf3Tom("Ingen opgaver fra kunderne.");
   const noterHtml = noter.length ? noter.map(function (r) {
