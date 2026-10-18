@@ -27478,6 +27478,9 @@ let BRIEF_PERSONER_KODE = null;
 /* Hentningen alene — bruges baade af wizardens chips og ansvarlig-vagten (A4, 19/8).
    Foer laa den inde i briefPersonerFyld, som returnerer FOER hentningen, naar wizardens
    DOM ikke er fremme — saa kunne vagten aldrig faa listen. */
+/* ER DET EN PERSON? (Ida 18/10: »app fejl?« — fejlrapporterne gemmes under navnet »app_fejl« og stod som et teammedlem »Ap« i briefen).
+   En person er et navn — aldrig en e-mail (et login, 21/9), aldrig »delt«/»config« og aldrig et teknisk navn med understreg (app_fejl, app_puls …). */
+function erPersonNavn(n) { n = String(n || "").trim(); return !!n && n !== "delt" && n !== "config" && n.indexOf("@") === -1 && !/^[a-z0-9]+(_[a-z0-9]+)+$/.test(n); }
 async function briefPersonerHent() {
   const koden = (typeof currentKode !== "undefined" && currentKode) ? String(currentKode).toUpperCase() : "";
   if (BRIEF_PERSONER === null || BRIEF_PERSONER_KODE !== koden) {
@@ -27487,7 +27490,7 @@ async function briefPersonerHent() {
       if (sb && koden) {
         const { data } = await sb.from("skema_svar").select("navn").eq("kode", koden);
         const st = new Set();
-        (data || []).forEach(x => { const n = (x.navn || "").trim(); if (n && n !== "delt" && n !== "config" && n.indexOf("@") === -1) st.add(n); });   /* en e-mail er et login, ikke en person (Idas skaermbillede 21/9) */
+        (data || []).forEach(x => { const n = (x.navn || "").trim(); if (erPersonNavn(n)) st.add(n); });   /* en e-mail er et login, ikke en person (Idas skaermbillede 21/9) */
         /* samme person to gange (»Ida« og »Ida Jessen«) = een chip: det korte navn, naar det er starten af det lange */
         try { const tm = await sb.from("skema_svar").select("svar").eq("kode", koden).eq("navn", "config").eq("skema", "team").maybeSingle(); ((tm.data && tm.data.svar && tm.data.svar.navne) || []).forEach(function (n) { n = String(n || "").trim(); if (n) st.add(n); }); } catch (e) {}   /* fornavnene fra profilen (17/10) */
         const alle = [...st]; BRIEF_PERSONER = alle.filter(function (n) { return !alle.some(function (m) { return m !== n && n.toLowerCase().indexOf(m.toLowerCase() + " ") === 0; }); }).sort((a, b) => a.localeCompare(b, "da"));
@@ -59772,7 +59775,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2787";
+const APP_VERSION = "2789";
 const APP_BYGGET = "9. oktober";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_BYGGET + " · " + APP_VERSION; } catch (e) {} });
 let NY_VERSION_KLAR = false;
@@ -77426,14 +77429,14 @@ async function kkPersonerHent(kode) {
     try {
       KK_PERSONER = Object.keys((alleRes.data || []).reduce(function (m, r) {
         const n = (r.navn || "").trim();
-        if (n && n !== "delt" && n !== "config" && n.indexOf("@") === -1) m[n] = 1;
+        if (erPersonNavn(n)) m[n] = 1;
         return m;
       }, {})).sort(function (a, b) { return a.localeCompare(b, "da"); });
       const af = document.getElementById("kkAftaleBoks");
       if (af && typeof kkAftaleSektion === "function") af.innerHTML = kkAftaleSektion(kode);
     } catch (e) {}
     const pers = {};
-    (alleRes.data || []).forEach(r => { const n = (r.navn || "").trim(); if (n && n !== "delt" && n !== "config") pers[n] = pers[n] || { dage30: 0, sidste: "" }; });
+    (alleRes.data || []).forEach(r => { const n = (r.navn || "").trim(); if (erPersonNavn(n)) pers[n] = pers[n] || { dage30: 0, sidste: "" }; });
     const graense = new Date(); graense.setDate(graense.getDate() - 30);
     const gStr = datoDK(graense);
     (brugRes.data || []).forEach(r => {
