@@ -24,6 +24,17 @@
       tjek(1, "Ny idé og brief gemt (kvittering)", !!id && ok1 !== false, "id " + id);
       var ok2 = await ideUpdate("sc-ide-3", { status: "Planlagt", dato: d(iMorgen) });
       tjek(3, "Status Idé → Planlagt gemt (kvittering)", ok2 !== false, "");
+      /* LØFTE 3 · KUNDENS VEJ GENNEM BRIEFEN (Ida 18/10: »hvorfor har sikkerhedschefen ikke fanget det?«): en planlagt brief sættes til Idé i briefen
+         og forlades — briefens eget gem skrev før datoen og »Planlagt« tilbage. Testen går den rigtige vej: åbn briefen → status Idé → ud. */
+      try {
+        await ideUpdate("sc-ide-6", { status: "Planlagt", dato: d(iMorgen) });
+        openBriefSide("sc-ide-6"); await V(2500);
+        await briefStatusVaelgFakta("sc-ide-6", "Idé"); await V(3000);
+        var b6 = (IDEER || []).find(function (x) { return x.id === "sc-ide-6"; });
+        var skaerm = (document.querySelector(".screen.active") || {}).id || "";
+        tjek(3, "Brief sat til Idé og forladt: står i Idébanken, ikke i kalenderen", !!(b6 && b6.status === "Idé" && !b6.dato && ideErIBanken(b6)), b6 ? b6.status + " · dato " + (b6.dato || "ingen") : "findes ikke");
+        tjek(3, "Efter statusskift lander man på kalenderens forside", skaerm === "screen8", "skærm " + skaerm);
+      } catch (e) { tjek(3, "Statusskift gennem briefen kunne køre", false, e.message); }
       try { showTab(2); } catch (e) {} await V(1200);
       LS("SC_ORDEN", IDEER.filter(ideErIBanken).map(function (x) { return String(x.id); }));
       /* LØFTE 13 · INGEN »UDEN TITEL« (Ida 10/10) */
@@ -55,6 +66,8 @@
       } catch (e) { tjek(7, "Opgave-læsetjekket kunne køre", false, e.message); }
       var p3 = (IDEER || []).find(function (x) { return x.id === "sc-ide-3"; });
       tjek(3, "Status Planlagt står efter genindlæsning", p3 && p3.status === "Planlagt", p3 ? p3.status : "findes ikke");
+      var p6 = (IDEER || []).find(function (x) { return x.id === "sc-ide-6"; });
+      tjek(3, "Brief sat til Idé står stadig som Idé uden dato efter genindlæsning", !!(p6 && p6.status === "Idé" && !p6.dato), p6 ? p6.status + " · dato " + (p6.dato || "ingen") : "findes ikke");
       var orden = IDEER.filter(ideErIBanken).map(function (x) { return String(x.id); }), foer = LS("SC_ORDEN") || [];
       tjek(4, "Idébankens rækkefølge er uændret efter genindlæsning", JSON.stringify(orden) === JSON.stringify(foer), orden.length + " idéer");
       var medDato = (IDEER || []).filter(function (x) { return x.dato && ideErIBanken(x); });
