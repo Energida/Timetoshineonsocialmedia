@@ -35825,7 +35825,7 @@ function kommendeOpslagHtml(antal, hovedKlasse, fraImorgen) {
   return '<div class="cf-sek ' + (hovedKlasse || "hjem-kort-hoved") + '">Kommende opslag</div>'
     + (liste.length ? liste.map(function (x) { const d = new Date(x.dato + "T12:00:00");
         return '<div class="kop-rk" onclick="openBriefSide(\'' + esc(String(x.id)) + '\')"><span class="kop-dato"><em>' + ["søn", "man", "tir", "ons", "tor", "fre", "lør"][d.getDay()] + '</em><b>' + d.getDate() + '</b><i>' + MDR[d.getMonth()] + '</i></span><span class="kop-t"><span class="kop-n">' + esc(storStart(titelVis(x.titel || "Uden titel"))) + '</span><span class="kop-chips">' + kopChipsHtml(x) + '</span></span></div>'; }).join("")
-      : tomKortHtml("Hvad skal ud i næste uge?", "Tilføj indhold", "addIdea('idebank')"));
+      : tomKortHtml("Hvad skal ud i næste uge?", "Tilføj indhold", "kalOpret(null)"));   /* KOMMENDE OPSLAG OPRETTER ET OPSLAG, ALDRIG BARE EN IDÉ (Ida 7/10 + 18/10: »her skal jeg bare komme igang med at oprette direkte«) — samme vej som kalenderens plus */
 }
 /* UGENTLIG CONTENTPLANLAEGNING = EN AFTALE I KALENDEREN (21/9) */
 /* DAG + KLOKKESLAET SOM HUSETS DROPDOWNS PAA COMPUTEREN (Ida 21/9 kl. 22.08: »jeg kan heller ikke klikke på hverken dato eller tidspunkt«) — de native felter aabner ikke paa computeren (pilen er skjult, 5387).
@@ -55887,9 +55887,12 @@ async function refreshIdeer() {
   } catch (e) {}
 }
 
-async function ideAdd(rec) {
-  /* INGEN »UDEN TITEL« (Ida 10/10): en idé uden navn gemmes ikke. Har den en beskrivelse, bliver dens første ord navnet; ellers siges det. */
-  if (!String(rec.titel || "").trim()) {
+async function ideAdd(rec, opt) {
+  /* INGEN »UDEN TITEL« (Ida 10/10): en idé uden navn gemmes ikke. Har den en beskrivelse, bliver dens første ord navnet; ellers siges det.
+     UNDTAGELSEN = FIRST THING FIRST (Ida 18/10: »når jeg klikker på et plus direkte i kalenderen kommer jeg både i inspiration og idebanken... her skal jeg bare
+     komme igang med at oprette direkte«): vagten afviste kalenderens plus, foer arket naaede at spoerge om navnet (det foerste trin, 29/9). Opslaget oprettes
+     tomt, arket spoerger om navnet, og Annullér paa foerste trin fjerner det igen (bsFlytLuk, 6/10). */
+  if (!String(rec.titel || "").trim() && !(opt && opt.ftf)) {
     const bsk = String((rec.brief && (rec.brief.beskrivelse || rec.brief.ide)) || "").replace(/\s+/g, " ").trim();
     if (bsk) rec.titel = storStart(bsk.split(" ").slice(0, 8).join(" ").slice(0, 90));
     else { try { husBesked("Giv idéen et navn."); } catch (e) {} return null; }
@@ -56244,7 +56247,7 @@ async function opretOpslag(dato, soejle, type) {
   const fra = (typeof current !== "undefined" && current !== 7) ? current : null;
   showTab(2);
   /* datoen reserverer dagen — status forbliver Idé (2C: status fortæller modenheden) */
-  const rec = await ideAdd({ titel: "", type: type || "", soejle: soejle || "", status: "Idé", dato: dato || null });   /* INTET FORVALG (HAARD 31/8; Ida 22/9 kl. 08.25: »den har altid forvalgt reel — det duer ikke«) — formatet vaelges i First thing first */
+  const rec = await ideAdd({ titel: "", type: type || "", soejle: soejle || "", status: "Idé", dato: dato || null }, { ftf: true });   /* INTET FORVALG (HAARD 31/8; Ida 22/9 kl. 08.25: »den har altid forvalgt reel — det duer ikke«) — formatet vaelges i First thing first */
   if (rec && rec.id) { window.__FTF_NY = rec.id;   /* det nye, tomme opslag — Annullér paa foerste trin fjerner det igen (bsFlytLuk, revision 6/10) */
     openBrief(rec.id); if (fra != null) BRIEF_FRA = fra;
     /* FIRST THING FIRST PAA ET NYT OPSLAG (Ida 21/9 kl. 22.40: »når jeg i kalenderen klikker på + nyt opslag kommer first thing first ikke op?«): et NYT opslag uden soejle/format
@@ -58575,10 +58578,11 @@ async function bsDoerSlet(noegle, side) {
 function bsFlytLuk() { const m = document.getElementById("bsFlytMenu"); try { if (m && m.querySelector(".dato-ark") && typeof datoArkFraFtf === "function" && datoArkFraFtf()) { datoArkTilbageTilFtf(null); return; } } catch (e) {}   /* swipe ned paa dato-arket fra First thing first = tilbage til First thing first (30/9) */
   /* ANNULLÉR = INTET ER SKET (Ida/revision 6/10, hold B fund 2 + hold C fund 5): et nyt opslag fra plusset blev oprettet, FOER First thing first aabnede, saa Annullér paa foerste trin
      efterlod en tom »Uden titel« i Idébanken. Er det det nye opslag, staar man stadig paa foerste trin, og er der intet navn, fjernes det igen, og man lander dér, hvor plusset blev trykket.
-     Er der svaret noget, gemmes det som foer (Hinges Hus 29/9). */
+     Er der svaret noget, gemmes det som foer (Hinges Hus 29/9).
+     PAA ALLE TRIN, NAAR NAVNET MANGLER (18/10): formatet er nu foerste trin og navnet andet (7/10), saa »kun trin 1« efterlod et »Uden titel«, naar man lukkede ved navnet. Uden navn findes opslaget ikke (10/10). */
   try {
     const itN = window.__SOEJLE_ARK_IT, FN = window.__FTF;
-    if (m && m.style.display !== "none" && m.querySelector(".ftf-ark") && itN && window.__FTF_NY && String(window.__FTF_NY) === String(itN.id) && FN && FN.i === 0 && !String(FTF_TITEL || "").trim() && !String(itN.titel || "").trim()) {
+    if (m && m.style.display !== "none" && m.querySelector(".ftf-ark") && itN && window.__FTF_NY && String(window.__FTF_NY) === String(itN.id) && FN && !String(FTF_TITEL || "").trim() && !String(itN.titel || "").trim()) {
       m.style.display = "none"; window.__FTF_NY = null;
       (async function () { try { await briefTilbage(); } catch (e) {} try { await ideDelete(itN.id); } catch (e) {} })();
       return;
@@ -59775,7 +59779,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2789";
+const APP_VERSION = "2791";
 const APP_BYGGET = "9. oktober";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_BYGGET + " · " + APP_VERSION; } catch (e) {} });
 let NY_VERSION_KLAR = false;
@@ -62151,7 +62155,7 @@ function tilPlanlaegning() { try { if (!ygtContentLaasVis("Planlægningen")) sho
 function kalOpret(dato) {
   KAL_OPRET_DATO = null;   // ingen omvej over popup'en laengere (Ida 30/7)
   /* FOERST VALGET: OPSLAG · STORY · PROEVEREEL (Ida 7/10); formatet er dermed valgt, og First thing first springer det over */
-  if (dato && typeof valgFliseArk === "function") { const dj = JSON.stringify(String(dato)); valgFliseArk("Tilføj", [["Opslag", "opretOpslag(" + dj + ")", "klip"], ["Story", "opretOpslag(" + dj + ",'','Story')", "scene"], ["Prøvereel", "opretOpslag(" + dj + ",'','Prøvereel')", "klip"]]); return; }
+  if (typeof valgFliseArk === "function") { const dj = dato ? JSON.stringify(String(dato)) : "null";   /* ogsaa uden dato: »Tilføj indhold« i Kommende opslag (18/10) */ valgFliseArk("Tilføj", [["Opslag", "opretOpslag(" + dj + ")", "klip"], ["Story", "opretOpslag(" + dj + ",'','Story')", "scene"], ["Prøvereel", "opretOpslag(" + dj + ",'','Prøvereel')", "klip"]]); return; }
   /* KALENDEREN TILFOEJER ALDRIG BARE EN IDE (HAARD, Ida 7/10: »jeg maa ALDRIG kunne tilfoeje bare en ide direkte i kalenderen«) — v2566's titel-ark er rullet tilbage: et plus paa en dag opretter et rigtigt opslag via First thing first (navn · soejle · format, nu kun de tre) og lander i briefen. */
   opretOpslag(dato);
 }

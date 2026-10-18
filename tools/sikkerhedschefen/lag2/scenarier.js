@@ -35,6 +35,17 @@
         tjek(3, "Brief sat til Idé og forladt: står i Idébanken, ikke i kalenderen", !!(b6 && b6.status === "Idé" && !b6.dato && ideErIBanken(b6)), b6 ? b6.status + " · dato " + (b6.dato || "ingen") : "findes ikke");
         tjek(3, "Efter statusskift lander man på kalenderens forside", skaerm === "screen8", "skærm " + skaerm);
       } catch (e) { tjek(3, "Statusskift gennem briefen kunne køre", false, e.message); }
+      /* LØFTE 8 · KALENDERENS PLUS OPRETTER DIREKTE (Ida 18/10: »her skal jeg bare komme igang med at oprette direkte«): vagten mod »Uden titel« (10/10)
+         afviste plusset, saa man landede i Idébanken uden et ark. Kundens vej: plus paa en dag → Opslag → First thing first staar aabent paa et nyt opslag. */
+      try {
+        try { bsFlytLuk(); } catch (e) {} showTab(8); await V(1200);
+        var foerN = (IDEER || []).length; kalOpret(d(iMorgen)); await V(700);
+        var opsKnap = [].slice.call(document.querySelectorAll("button, [role=button]")).filter(function (b) { return b.getClientRects().length && /^\s*Opslag\s*$/.test(b.innerText || ""); })[0];
+        if (opsKnap) opsKnap.click(); await V(2500);
+        var ftfAaben = !!document.querySelector("#bsFlytMenu .ftf-ark") && (document.getElementById("bsFlytMenu") || {}).style.display !== "none";
+        tjek(8, "Kalenderens plus → Opslag åbner First thing first på et nyt opslag", !!opsKnap && ftfAaben && (IDEER || []).length === foerN + 1, (opsKnap ? "" : "ingen Opslag-knap · ") + "ark " + ftfAaben + " · opslag " + foerN + "→" + (IDEER || []).length);
+        try { bsFlytLuk(); } catch (e) {} await V(1500);
+      } catch (e) { tjek(8, "Kalenderens plus kunne testes", false, e.message); }
       try { showTab(2); } catch (e) {} await V(1200);
       LS("SC_ORDEN", IDEER.filter(ideErIBanken).map(function (x) { return String(x.id); }));
       /* LØFTE 13 · INGEN »UDEN TITEL« (Ida 10/10) */
