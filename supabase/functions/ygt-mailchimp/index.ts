@@ -23,6 +23,7 @@
 //   4. Service-role: NEJ. Funktionen bruger kun anon-nøglen + kalderens eget token.
 //   5. Når: læser én række i skema_svar (kalderens egen kode, skema ygt_start). Skriver intet i databasen.
 //      Uden for Supabase: Idas Mailchimp-liste — kun kalderens egen e-mail og fornavn.
+//   Kun kunder med start 18/10-2026 eller senere meldes på (Idas klik 17/10).
 //   6. Direkte omkostning: indirekte — hver ny kontakt tæller i Mailchimp-planens kontaktgrænse. Ét kald pr. kunde
 //      (appen husker det pr. enhed, og funktionen springer over, hvis mærket findes).
 //
@@ -64,6 +65,11 @@ Deno.serve(async (req) => {
   const { data: start, error: se } = await sb.from("skema_svar").select("svar").eq("kode", kode).eq("navn", "config").eq("skema", "ygt_start").limit(1);
   if (se) return svar({ ok: false, fejl: "Kunne ikke læse starten." }, 500);
   if (!start || !start.length) return svar({ ok: false, fejl: "Ingen YOU GOT THIS-start." }, 403);
+
+  // KUN NYE KUNDER (Idas klik 17/10 aften: »Kun nye kunder fra i dag«): de tre, der startede 9/10, 11/10 og 17/10, skal ikke
+  // have »uge 1« midt i forløbet. Start før 18/10 = meldes aldrig på; svaret er ok, så appen ikke prøver igen.
+  const startDato = String(((start[0].svar || {}) as Record<string, unknown>).dato || "");
+  if (startDato && startDato < "2026-10-18") return svar({ ok: true, maerke: "startet-foer-18-10" }, 200);
 
   // Mailchimp — først når 1–3 er bestået.
   const nogle = Deno.env.get("MAILCHIMP_API_KEY") || "", liste = Deno.env.get("MAILCHIMP_LIST_ID") || "";
