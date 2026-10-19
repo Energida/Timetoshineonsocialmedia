@@ -1768,6 +1768,11 @@ html body .bs3 .bs3-fl.bs3-roed .bs3-et { color:rgba(255,255,255,.85) !important
 html body .bs3 .bs3-fl.bs3-roed .bs3-et::after { border-top-color:rgba(255,255,255,.35) !important; background:rgba(255,255,255,.35); }
 html body .bs3 .bs3-fl.bs3-roed .bs3-n, html body .bs3 .bs3-fl.bs3-roed .bs3-s { color:#fff !important; padding-right:32px; }
 html body .bs3 .bs3-fl.bs3-roed .bs3-roed-pil { position:absolute; right:20px; top:50%; width:20px; height:20px; margin-top:-10px; color:#fff; }
+/* KUNDESIDEN = BUD 1 (Idas klik 19/10): Sæt contentmødet i fuld bredde under »Intet møde sat«, noterne i husets felt, kundekortet skjult under forsiden — ens på begge flader */
+html body #bsKundeside .ks-moede-knap { width:100%; margin-top:14px; }
+html body #bsKundeside .ks-noter-felt { display:block; width:100%; height:auto; box-sizing:border-box; min-height:76px; resize:vertical; border:1px solid #DEDAD4; border-radius:14px; padding:12px 14px; font-family:inherit; font-size:14px; font-weight:400; color:var(--black); background:#fff; outline:none; }
+html body #bsKundeside .ks-noter-kvit { min-height:18px; margin-top:6px; font-size:12.5px; color:var(--gray2, #6F6B66); }
+html body #bsKundeside #bf3KkHost[hidden] { display:none !important; }
 /* POPUPS HAR EEN SPALTE (Ida 24/9: »Vi skal helt væk af disse pop-ups med 2 kolonner. fordi jeg sagde en pop up skal være bredere end høj mente jeg ikke 2 kolonner«) —
    vaelter 22/9's to-spalte-regel; arket er 560 bredt paa computeren, alt staar under hinanden */
 @media (min-width:900px) {
@@ -36413,9 +36418,10 @@ function planMoedeSlutJuster() {
   else { try { til.min = fra; } catch (e) {} }
   if (!til.value || til.value <= fra) { const ny = planMoedeTidPlus(fra, 60); if (w) { const k = w.querySelector(".bdrop-rk[onclick*=\"'" + ny + "'\"]"); husDtVaelg("pmTidSlut", ny, k); } else til.value = ny; }
 }
-function planMoedeTidArk(aftaleId) {
-  let ma = planMoedeAftale();
-  if (aftaleId) { try { const x = (window.__kundeAftaler || []).find(function (a) { return a && String(a.id) === String(aftaleId); }); if (x) ma = x; } catch (e) {} }   /* en bestemt uges moede (25/9) */
+function planMoedeTidArk(aftaleId, ude) {
+  /* ude = { kode, aftale, efter } — Backstage sætter kundens contentmøde fra kundesiden (19/10); kundeappens egne kald er uændrede */
+  let ma = ude ? (ude.aftale || null) : planMoedeAftale();
+  if (aftaleId && !ude) { try { const x = (window.__kundeAftaler || []).find(function (a) { return a && String(a.id) === String(aftaleId); }); if (x) ma = x; } catch (e) {} }   /* en bestemt uges moede (25/9) */
   const dato0 = (ma && ma.dato) || (planDato() && planDato() >= datoDK() ? planDato() : datoDK());
   const tid0 = (ma && ma.tid) ? String(ma.tid).slice(0, 5) : "09:00";
   /* FYSISK / ONLINE · SLUTTID · LINK TIL MOEDET (Ida 21/9 kl. 22.12): chips vaelger formen; Online viser linkfeltet; sluttiden gemmes i tid_slut, linket i link */
@@ -36436,18 +36442,20 @@ function planMoedeTidArk(aftaleId) {
         + '<div id="pmLinkRk" style="' + (window.__PM_FORM === "online" ? '' : 'display:none;') + '"><input type="text" id="pmLink" class="bs3-felt" inputmode="url" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Link til mødet" value="' + esc(link0) + '" style="width:100%;box-sizing:border-box;min-height:44px;margin:0 0 10px;"></div>'
         + moedeStedHtml(window.__PM_FORM === "online")
         /* SLET MØDET BOR I REDIGERINGEN, ikke svævende paa siden (Ida 8/10) — skraldespand + ordet, grå knap i fuld bredde */
-        + ((ma && ma.id) ? '<button type="button" class="ark-knap-graa pm-slet" onclick="try{arkLuk(true)}catch(e){};moedeSlet()"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" data-tegn-ok="1" style="vertical-align:-3px;margin-right:6px;"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>Slet mødet</button>' : '');
+        + ((ma && ma.id && !ude) ? '<button type="button" class="ark-knap-graa pm-slet" onclick="try{arkLuk(true)}catch(e){};moedeSlet()"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" data-tegn-ok="1" style="vertical-align:-3px;margin-right:6px;"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>Slet mødet</button>' : '');
     },
     gem: async function () {
       const dato = (document.getElementById("pmDato") || {}).value || ""; const tid = (document.getElementById("pmTid") || {}).value || "";
       let slut = (document.getElementById("pmTidSlut") || {}).value || ""; if (tid && slut && slut <= tid) slut = planMoedeTidPlus(tid, 60);   /* aldrig slut foer start */ const link = window.__PM_FORM === "online" ? String((document.getElementById("pmLink") || {}).value || "").trim() : moedeStedLaes();
       if (!dato) throw new Error("!Vælg en dag.");
-      if (!sb || !currentKode) return false;
+      const mKode = ude ? ude.kode : currentKode;
+      if (!sb || !mKode) return false;
       const rec = { dato: dato, tid: tid || null, tid_slut: slut || null, link: link || null, sted: window.__PM_FORM === "online" ? "online" : "fysisk" };
       try {
         if (ma && ma.id) { const u = await sb.from("kunde_aftaler").update(rec).eq("id", ma.id).select(); if (u.error || !u.data || !u.data.length) return false; }
-        else { const i = await sb.from("kunde_aftaler").insert(Object.assign({ kode: currentKode, titel: "Ugentlig contentplanlægning" }, rec)).select(); if (i.error || !i.data || !i.data.length) return false; }
+        else { const i = await sb.from("kunde_aftaler").insert(Object.assign({ kode: mKode, titel: "Ugentlig contentplanlægning" }, rec)).select(); if (i.error || !i.data || !i.data.length) return false; }
       } catch (e) { return false; }
+      if (ude) { try { if (ude.efter) await ude.efter(); } catch (e) {} return "Mødet står i kalenderen " + dkDatoKort(dato) + (tid ? " kl. " + tid.replace(":", ".") : "") + "."; }
       try { await renderAftaler(); } catch (e) {}
       try { await setPlanDato(dato); } catch (e) {}
       try { renderHome(); } catch (e) {}
@@ -59731,11 +59739,13 @@ async function kunderneTegn() {
   if (harFokus) { const f = document.getElementById("bsKundeSoeg"); if (f) { f.focus(); try { f.setSelectionRange(f.value.length, f.value.length); } catch (e) {} } }
 }
 function kundeAftalerAabn(kode) {
-  try { const r = openKundeKort(kode); const rul = function () { try { const b = document.getElementById("kkAftaleBoks"); if (b) b.scrollIntoView({ behavior: "smooth", block: "start" }); } catch (e) {} };
-    if (r && r.then) r.then(function () { setTimeout(rul, 150); }); else setTimeout(rul, 400); } catch (e) {}
+  /* AFTALERNE PÅ KUNDESIDEN (K2/K3, 19/10): bliver på kundesiden på begge flader og viser aftaleboksen, også når man stod på en anden fane */
+  BS_KUNDE = kode; window.__KS_KODE = kode; window.KS_VIS = "kort"; window.KS_FANE = "aftaler"; window.__KS_BEHOLD = true;
+  try { kundeSideVis(kode); } catch (e) {}
 }
 function kundeSideVis(kode) {
   BS_KUNDE = kode;
+  if (!window.__KS_BEHOLD) { window.__KS_KODE = kode; window.KS_VIS = "forside"; } window.__KS_BEHOLD = false;   /* en kunde fra listen åbner på forsiden (bud 1, 19/10) */
   try { visDashSide("kundeside"); } catch (e) {}
   const navn = (VIRKSOMHEDSKODER[kode] && VIRKSOMHEDSKODER[kode].virksomhed) || kode;
   try { navstiSaet([{ navn: "CRM", klik: "visDashSide('crm')" }, { navn: navn }], function () { visDashSide("crm"); }); } catch (e) {}
@@ -59943,7 +59953,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2829";
+const APP_VERSION = "2832";
 const APP_BYGGET = "9. oktober";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_BYGGET + " · " + APP_VERSION; } catch (e) {} });
 let NY_VERSION_KLAR = false;
@@ -83194,14 +83204,14 @@ function bf3BeskedKoder(til) {
   if (til === "alle") return koder;
   return koder.filter(function (k) { const p = String((VIRKSOMHEDSKODER[k] || {}).pakke || ""); if (til === "ygt") return p === "detaildrift" || p === "ttsosm"; return p === til; });
 }
-function bf3BeskedArk() {
-  BF3_DROP_VALG.bf3BeskedKunde = ""; window.__BF3_BESKED_TIL = "en";
+function bf3BeskedArk(kode) {
+  BF3_DROP_VALG.bf3BeskedKunde = (typeof kode === "string" && kode) ? kode : ""; window.__BF3_BESKED_TIL = "en";   /* fra kundesiden er kunden valgt (19/10) */
   arkAabn({ titel: "Besked til kunder", ph: "Hvad vil du sige?", send: "Send", tekst: "", chips: [],
     /* undertitlen er ude — popups har ingen undertitler (laasen 24/9, fyldtekst) */
     ekstraAf: function () {
       const til = window.__BF3_BESKED_TIL || "en";
       return '<div class="ark-chips" style="margin:0 0 10px;">' + BF3_BESKED_TIL.map(function (c) { return '<button type="button" class="ark-chip' + (til === c[0] ? ' on' : '') + '" onclick="window.__BF3_BESKED_TIL=\'' + c[0] + '\';bf3BeskedTilTegn(this)">' + c[1] + '</button>'   /* ingen tal i chips (laasen 21/9) */; }).join("") + '</div>'
-        + '<div id="bf3BeskedKundeRk" style="' + (til === "en" ? "" : "display:none;") + '">' + bf3DropHtml("bf3BeskedKunde", "Vælg kunde", bf3BeskedKunder(), "") + '</div>';
+        + '<div id="bf3BeskedKundeRk" style="' + (til === "en" ? "" : "display:none;") + '">' + bf3DropHtml("bf3BeskedKunde", "Vælg kunde", bf3BeskedKunder(), BF3_DROP_VALG.bf3BeskedKunde || "") + '</div>';
     },
     gem: async function (t) {
       const til = window.__BF3_BESKED_TIL || "en";
@@ -83518,47 +83528,74 @@ async function kundeSideTegn() {
   const el = document.getElementById("bsKundeside"); if (!el) return;
   const k = BS_KUNDE; if (!k) { el.innerHTML = ""; return; }
   const d = VIRKSOMHEDSKODER[k] || {}; const navn = d.virksomhed || k;
+  /* KUNDESIDEN = BUD 1 »DET, DER VENTER, OG DET NÆSTE« (Idas klik 19/10, artifact PtFPUbGMm6P5Dr84msz9Wr; Ida: »jeg fatter ikke en skid af alt det lort der står på mine kundesider i mit crm … og tænk på mig i alle sider - hvad har ida brug for af info og funktioner her?«).
+     Forsiden: Venter på dig (rød) · Næste møde + Sæt contentmødet · Noter til næste møde · Næste opslag · fire døre (Kalenderen · Aftaler · Kundeoplysninger · Indstillinger).
+     Kundekortet med alle fanerne er urørt og ligger bag dørene (KS_VIS = "kort") — intet er slettet. Plusset: Contentmøde · Aftale · Besked (+ Forløb på I GOT YOU). */
+  if (window.__KS_KODE !== k) { window.__KS_KODE = k; window.KS_VIS = "forside"; }
+  const kort = window.KS_VIS === "kort";
   try { await venterHent(); } catch (e) {}
   try { await kundePinsHent(); } catch (e) {}
-  const ops = (window.__ALLE_OPSLAG || []).filter(function (o) { return o.kode === k && o.status !== "Arkiveret"; });
   const idag = bf3Idag(); const tlf = bf3Tlf();
-  const nu = new Date(); const man = energidaUgeMandag(nu); const soen = new Date(man); soen.setDate(man.getDate() + 6);
-  const iso = function (x) { return x.getFullYear() + "-" + String(x.getMonth() + 1).padStart(2, "0") + "-" + String(x.getDate()).padStart(2, "0"); };
-  const uge = ops.filter(function (o) { return o.dato && o.dato >= iso(man) && o.dato <= iso(soen); });
-  const postet = uge.filter(function (o) { return o.status === "Postet"; }).length;
-  const frem = ops.filter(function (o) { return o.dato && o.dato > iso(soen) && o.status !== "Postet"; }).length;
-  const godk = ops.filter(function (o) { return o.status === "Godkendt" || o.status === "Postet"; }).length, klar = ops.filter(function (o) { return o.status === "Klar til godkendelse"; }).length;
-  const venter = bsKundeVenter(k);
   const kEsc = esc(k).replace(/'/g, "\\'");
   const pin = (KUNDE_PINS || []).indexOf(k) > -1;
-  const venterHtml = venter.length ? venter.map(function (v) { const i = (window.__VENTER || []).indexOf(v); const h = []; if (v.ja) h.push([v.ja, "venterJa(" + i + ")"]); if (v.nej) h.push([v.nej, "venterNej(" + i + ")"]); if (v.id && v.slags !== "oenske" && v.slags !== "todo") h.push(["Åbn", "godkKoeAabn('" + kEsc + "','" + esc(String(v.id)) + "')"]); return bf3Etfl(v.sub || "Venter", esc(v.titel || ""), v.dato ? esc(dkDatoKort(String(v.dato))) : "", h); }).join('') : bf3Tom("Ingenting venter på dig hos " + navn + ".");
-  const aft = (CRM_AFTALER || []).filter(function (a) { return a.kode === k && a.dato && a.dato >= idag; }).sort(function (x, y) { return (x.dato + (x.tid || "")) < (y.dato + (y.tid || "")) ? -1 : 1; })[0];
   const UGE = ["Søndag", "Mandag", "Tirsdag", "Onsdag", "Torsdag", "Fredag", "Lørdag"];
-  const aftHtml = aft ? bf3Rk(bf3Datob(aft.dato), esc(aft.titel || "Aftale"), esc(UGE[new Date(aft.dato + "T12:00:00").getDay()] + (aft.tid ? " kl. " + String(aft.tid).slice(0, 5) : "")), "kundeAftalerAabn('" + kEsc + "')") : bf3Tom("Ingen aftale sat.");
-  /* KUNDESIDEN (Idas fem punkter 21/9 kl. 12.50 + klik kl. 13.40): STATUS-etiket paa ringene · Naeste aftale oeverst th. · naalen i coveret ·
-     »Se kundens version« · siden aabner paa Kundekortet (kortet flyttes ind paa siden — selve noden, aldrig en tvilling) · Briefs kun som kunden. */
-  const doere = tlf
-    ? []   /* KUNDEKORTET ER SIDENS INDHOLD, ogsaa paa telefonen (Ida 21/9 kl. 21.22: »indholdet på siden skal være kundekortet — i moderne mobilversion«); Kalenderen + Aftaler er UDE som chips (kl. 21.20) */
-    : [["Noter", "bf3KkRul('kkNoter')"], ["Drejebogen", "bf3KkRul('kkDrejebog')"]];
-  const status = '';   /* STATUS-RINGENE ER UDE AF CRM'ET (Ida 11/10: »de ringe der skal heller ikke stå i mit crm. det er ikke vigtig viden for mig«) */
-  const statusUde = '<div class="bs3-fl"><div class="cf-sek">Status</div><div class="bs3-ringe">' + bf3Ring(postet + "/" + uge.length, "postet i ugen", uge.length ? postet / uge.length : 0, tlf ? 64 : 76) + bf3Ring(String(frem), "planlagt frem", Math.min(1, frem / 4), tlf ? 64 : 76) + bf3Ring(godk + "/" + (godk + klar), "briefs godkendt", (godk + klar) ? godk / (godk + klar) : 0, tlf ? 64 : 76) + '</div></div>';
-  const chips = '<div class="ark-chips i-fladen bs3-chips">' + doere.map(function (x) { return '<button type="button" class="mq-tap ark-chip" onclick="' + x[1] + '">' + x[0] + '</button>'; }).join('') + '</div>';
-  /* »SE KUNDENS VERSION« = BRED ROED KNAP OEVERST OVER STATUS (Ida 21/9 kl. 21.12) — ikke laengere en chip */
-  const seKunden = '<button type="button" class="dbtn primary mq-tap bs3-lang bf3-se-kunden" onclick="aabnKundensSide(\'' + kEsc + '\')">Se kundens version</button>';
-  const venstre = seKunden + status + chips + '<div id="bf3KkHost" class="bs3-afsnit"></div>';
-  const hoejre = bf3Ver("Næste aftale") + aftHtml;   /* »Tilføj aftale« bor i plusset (Idas klik 5/10 aften) */
+  const dagTxt = function (iso, tid) { return UGE[new Date(String(iso).slice(0, 10) + "T12:00:00").getDay()] + " " + dkDatoKort(String(iso).slice(0, 10)) + (tid ? " kl. " + String(tid).slice(0, 5).replace(":", ".") : ""); };
   /* kundekortets node reddes hjem, FOER siden tegnes om — ellers slettes den med innerHTML (samme laere som briefRail 21/9) */
   try { const ks = document.getElementById("kundeSide"), hj = document.getElementById("dside-kunde"); if (ks && hj && ks.parentElement !== hj) hj.appendChild(ks); } catch (e) {}
-  el.innerHTML = '<div class="bs-hero bs-hero-streg">' + esc(navn) + '</div><div class="bs3">'
-    + /* TELEFONEN: Se kundens version → Naeste aftale → Status → doerene (Ida 21/9 kl. 21.17: »Aftaler skal stå fremme over status«) */ (tlf ? seKunden + '<div class="bs3-afsnit">' + hoejre + '</div>' + status + chips + '<div id="bf3KkHost" class="bs3-afsnit"></div>' : '<div class="bs3-to"><div>' + venstre + '</div><div>' + hoejre + '</div></div>')
-    + '<button type="button" class="bsam-mobknap bsam-mobknap-sek bs-knap bs-tilbage" data-tilbage-kilde="1" onclick="visDashSide(\'crm\')">Tilbage</button>'   /* KNAPRÆKKENS TILBAGE FINDER DEN OGSÅ PÅ COMPUTEREN (Ida 11/10: »ingen tilbageknap«) — knappen er skjult dér, så den skal være markeret */
-    + '</div>';
-  void venterHtml; void statusUde;
+  const tilbage = '<button type="button" class="bsam-mobknap bsam-mobknap-sek bs-knap bs-tilbage" data-tilbage-kilde="1" onclick="' + (kort ? "ksForside()" : "visDashSide('crm')") + '">Tilbage</button>';   /* KNAPRÆKKENS TILBAGE FINDER DEN OGSÅ PÅ COMPUTEREN (Ida 11/10) — bag en dør fører Tilbage til kundens forside */
+  if (kort) {
+    el.innerHTML = '<div class="bs-hero bs-hero-streg">' + esc(navn) + '</div><div class="bs3"><div id="bf3KkHost" class="bs3-afsnit"></div>' + tilbage + '</div>';
+  } else {
+    const venter = bsKundeVenter(k);
+    const venterHtml = venter.length ? venter.map(function (v) { const i = (window.__VENTER || []).indexOf(v); const h = []; if (v.ja) h.push([v.ja, "venterJa(" + i + ")"]); if (v.nej) h.push([v.nej, "venterNej(" + i + ")"]); if (v.id && v.slags !== "oenske" && v.slags !== "todo") h.push(["Åbn", "godkKoeAabn('" + kEsc + "','" + esc(String(v.id)) + "')"]); return bf3Etfl(v.sub || "Venter", esc(v.titel || ""), v.dato ? esc(dkDatoKort(String(v.dato))) : "", h).replace('<div class="bs3-fl"', '<div class="bs3-fl bs3-roed"'); }).join('') : bf3Tom("Intet venter på dig.");
+    const moede = (CRM_AFTALER || []).filter(function (a) { return a.kode === k && a.dato && String(a.dato).slice(0, 10) >= idag && erMoedeTitel(a.titel); }).sort(function (x, y) { return (x.dato + (x.tid || "")) < (y.dato + (y.tid || "")) ? -1 : 1; })[0];
+    const moedeHtml = moede
+      ? '<div class="bs3-fl bs3-klik ks-moede" role="button" tabindex="0" onclick="ksMoedeArk(\'' + kEsc + '\',\'' + esc(String(moede.id)) + '\')"><div class="bs3-et">Ugentligt contentmøde</div><div class="bs3-n">' + esc(dagTxt(moede.dato, moede.tid)) + '</div><div class="bs3-s">' + (moedeSted(moede).online ? "Online" : esc(moedeSted(moede).sted || "Fysisk")) + '</div></div>'
+      : '<div class="bs3-fl ks-moede"><div class="bs3-et">Ugentligt contentmøde</div><div class="bs3-n">Intet møde sat</div><button type="button" class="dbtn primary mq-tap bs3-lang ks-moede-knap" onclick="ksMoedeArk(\'' + kEsc + '\')">Sæt contentmødet</button></div>';
+    const noter = (typeof MOEDE_NOTER !== "undefined" && MOEDE_NOTER[k]) ? String(MOEDE_NOTER[k]) : "";
+    const noterHtml = '<div class="bs3-fl ks-noter"><div class="bs3-et">Noter til næste møde</div><textarea id="ksNoter" class="bs3-felt ks-noter-felt" rows="3" placeholder="Skriv det, du vil tage op …" oninput="ksNoterVent(\'' + kEsc + '\')" onblur="ksNoterGem(\'' + kEsc + '\')">' + esc(noter) + '</textarea><div class="ks-noter-kvit" id="ksNoterKvit" aria-live="polite"></div></div>';
+    const ops = (window.__ALLE_OPSLAG || []).filter(function (o) { return o.kode === k && o.dato && String(o.dato).slice(0, 10) >= idag && o.status !== "Postet" && o.status !== "Arkiveret"; }).sort(function (x, y) { return x.dato < y.dato ? -1 : 1; }).slice(0, 3);
+    const opsHtml = ops.length ? ops.map(function (o) { return bf3Rk(bf3Datob(o.dato), esc(storStart(o.titel || "Uden titel")), esc(UGE[new Date(String(o.dato).slice(0, 10) + "T12:00:00").getDay()] + (o.status ? " · " + statusVisNavn(o.status) : "")), "godkKoeAabn('" + kEsc + "','" + esc(String(o.id)) + "')"); }).join('') : bf3Tom("Ingen opslag planlagt.");
+    const doere = '<div class="bs3-grid2 bs3-doere-cs ks-doere">' + [["Kalenderen", "kundeStudioAabn('" + kEsc + "')"], ["Aftaler", "ksKortVis('aftaler')"], ["Kundeoplysninger", "ksKortVis('overblik')"], ["Indstillinger", "ksKortVis('adgang')"]].map(function (x) { return bf3Doer(x[0], x[1]); }).join('') + '</div>';
+    const moedeBlok = bf3Ver("Næste møde") + moedeHtml + noterHtml;
+    const venstre = bf3Ver("Venter på dig") + venterHtml + (tlf ? '<div class="bs3-afsnit">' + moedeBlok + '</div>' : '') + '<div class="bs3-afsnit">' + bf3Ver("Næste opslag") + opsHtml + '</div><div class="bs3-afsnit">' + bf3Ver("Mere om " + esc(navn)) + doere + '</div>';
+    el.innerHTML = '<div class="bs-hero bs-hero-streg">' + esc(navn) + '</div><div class="bs3 ks-forside">'
+      + (tlf ? venstre : '<div class="bs3-to"><div>' + venstre + '</div><div>' + moedeBlok + '</div></div>')
+      + '<div id="bf3KkHost" class="bs3-afsnit" hidden></div>'   /* kundekortet ligger skjult under forsiden, så plussets formularer (Ny aftale, Forløb) kender kunden */
+      + tilbage + '</div>';
+  }
   try { bf3KundeNaalVis(k, pin); } catch (e) {}
-  try { await bf3KundekortInd(k); } catch (e) {}   /* kortet ligger paa siden paa BEGGE flader (Ida 21/9 kl. 21.22) — vaelter 17.20 */
-  /* PLUSSET ER VEJEN PAA KUNDENS SIDE (Idas klik 5/10 aften »Bag plusset«): formularen »Aftaler med kunden« og forloebs-skabelonen staar ikke paa siden — plusset giver Aftale (+ Forloeb paa I GOT YOU) i det lille ark */
-  try { bf3BaandKnapVis("kunder"); const kb = document.querySelector("#bf3RumKnap button"); if (kb) { delete document.getElementById("bf3RumKnap").dataset.auto; kb.title = "Tilføj"; kb.setAttribute("aria-label", "Tilføj"); kb.onclick = function () { const v = [["Aftale", "kkNyArk('aft')", "tekst"]]; if ((VIRKSOMHEDSKODER[k] || {}).type === "forloeb") v.push(["Forløb", "kkNyArk('fs')", "liste"]); if (v.length === 1) { kkNyArk("aft"); return; } valgFliseArk("Tilføj", v); }; } } catch (e) {}
+  try { await bf3KundekortInd(k); } catch (e) {}
+  if (kort) { try { ksFaneAnvend(); } catch (e) {} }
+  /* PLUSSET PAA KUNDENS SIDE: Contentmøde · Aftale · Besked (+ Forløb på I GOT YOU) — samme lille ark som før (Idas klik 5/10 aften »Bag plusset«) */
+  try { bf3BaandKnapVis("kunder"); const kb = document.querySelector("#bf3RumKnap button"); if (kb) { delete document.getElementById("bf3RumKnap").dataset.auto; kb.title = "Tilføj"; kb.setAttribute("aria-label", "Tilføj"); kb.onclick = function () { const v = [["Contentmøde", "ksMoedeArk('" + kEsc + "')", "tekst"], ["Aftale", "kkNyArk('aft')", "tekst"], ["Besked", "bf3BeskedArk('" + kEsc + "')", "tekst"]]; if ((VIRKSOMHEDSKODER[k] || {}).type === "forloeb") v.push(["Forløb", "kkNyArk('fs')", "liste"]); valgFliseArk("Tilføj", v); }; kb.dataset.ks = "contentmoede"; } } catch (e) {}
   try { bsBaandPlanlaeg(); } catch (e) {}
+}
+/* DØRENE PÅ KUNDESIDEN åbner kundekortet på den rigtige fane — Aftaler = Overblik rullet til aftaleboksen (K3: boksen ses også, når man stod på en anden fane) */
+function ksKortVis(fane) { window.KS_VIS = "kort"; window.KS_FANE = fane || "overblik"; try { window.scrollTo(0, 0); } catch (e) {} kundeSideTegn(); }
+function ksForside() { window.KS_VIS = "forside"; try { window.scrollTo(0, 0); } catch (e) {} kundeSideTegn(); }
+function ksFaneAnvend() {
+  const f = window.KS_FANE || "overblik";
+  try { kkTabVis(f === "aftaler" ? "overblik" : f); } catch (e) {}
+  if (f === "aftaler") setTimeout(function () { try { const b = document.getElementById("kkAftaleBoks"); if (b) b.scrollIntoView({ block: "start" }); } catch (e) {} }, 120);
+}
+/* CONTENTMØDET FRA CRM'ET (K5): samme ark som kundens eget (planMoedeTidArk), skrevet på kundens kode — rækken er kunde_aftaler {kode, titel »Ugentlig contentplanlægning«} som i kundeappen */
+function ksMoedeArk(k, id) {
+  const a = id ? (CRM_AFTALER || []).find(function (x) { return String(x.id) === String(id); }) : null;
+  planMoedeTidArk(null, { kode: k, aftale: a || null, efter: async function () { try { await refreshKundeAftaler(); } catch (e) {} if (BS_KUNDE === k) { try { await kundeSideTegn(); } catch (e) {} } } });
+}
+let KS_NOTER_T = null;
+function ksNoterVent(k) { clearTimeout(KS_NOTER_T); KS_NOTER_T = setTimeout(function () { ksNoterGem(k); }, 900); }
+async function ksNoterGem(k) {
+  clearTimeout(KS_NOTER_T);
+  const f = document.getElementById("ksNoter"); if (!f) return;
+  const tekst = String(f.value || "").trim(); const kvit = document.getElementById("ksNoterKvit");
+  if (tekst === String((MOEDE_NOTER || {})[k] || "")) return;
+  let ok = false; try { ok = await vaneGemRow("moedenoter_" + k, { tekst: tekst }); } catch (e) { ok = false; }
+  if (!ok) { if (kvit) kvit.textContent = "Noterne blev ikke gemt. Prøv igen."; return; }
+  if (tekst) MOEDE_NOTER[k] = tekst; else delete MOEDE_NOTER[k];
+  try { const kf = document.getElementById("moedeNoterFelt"); if (kf && KUNDEKORT && KUNDEKORT.kode === k) kf.value = tekst; } catch (e) {}   /* kundekortets tvilling-felt viser det samme */
+  if (kvit) { kvit.textContent = "Gemt."; setTimeout(function () { if (kvit.textContent === "Gemt.") kvit.textContent = ""; }, 1800); }
 }
 /* Formularen flyttes ind i det lille ark og hjem igen, naar arket lukkes — samme felter og samme gem som foer (kkTilfoejAftale / kkIndsaetForloeb) */
 function kkNyArk(hvad) {
@@ -83597,10 +83634,10 @@ async function bf3KundekortInd(k) {
 }
 window.openKundeKort = async function (kode, nr) {
   BS_KUNDE = kode;   /* kundens naal i coveret kender kunden ogsaa paa telefonen (25/9) */
-  if (bf3Tlf()) { try { const ks = document.getElementById("kundeSide"), hj = document.getElementById("dside-kunde"); if (ks && hj && ks.parentElement !== hj) hj.appendChild(ks); } catch (e) {} return bf3_openKundeKortGammel(kode, nr); }
+  /* TELEFONEN BLIVER PÅ KUNDESIDEN (K2, 19/10: på telefonen førte »Næste aftale« ud på den gamle kundekort-side) — kundekortet åbnes bag dørene, ens på begge flader */
   const side = document.getElementById("dside-kundeside");
-  if (side && side.style.display !== "none" && BS_KUNDE === kode) { bf3KkRul(""); return; }
-  BS_KUNDE = kode; kundeSideVis(kode);
+  if (side && side.style.display !== "none" && BS_KUNDE === kode && window.KS_VIS === "kort") { bf3KkRul(""); return; }
+  BS_KUNDE = kode; window.__KS_KODE = kode; window.KS_VIS = "kort"; window.KS_FANE = "overblik"; window.__KS_BEHOLD = true; kundeSideVis(kode);
 };
 function bf3KkRul(id) { try { const e = (id && document.getElementById(id)) || document.getElementById("bf3KkHost"); if (e) e.scrollIntoView({ behavior: "smooth", block: "start" }); } catch (e) {} }
 /* ---------- SALG = FORRETNINGENS DOERE (pipelinen er UDE 5/10) ----------

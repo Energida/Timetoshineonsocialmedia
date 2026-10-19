@@ -7,7 +7,7 @@ from sikkerhedschefen.lag2 import chromium, fortolk, REPO
 HER = os.path.dirname(os.path.abspath(__file__))
 DEF = {"virksomhed": "Hinges Hus", "type": "forloeb", "funktioner": ["indbakke", "content", "strategi", "resultat"]}
 
-def koer(repo=REPO):
+def koer(repo=REPO, bred=1440):
     c = chromium()
     if not c: return [Resultat(29, "CRM-tjekket", IKKE_TESTET, "Chromium findes ikke")]
     sele = tempfile.mkdtemp(prefix="sc-crm-")
@@ -20,9 +20,9 @@ def koer(repo=REPO):
     time.sleep(1.2)
     kode = urllib.parse.quote(open(os.path.join(HER, "lag2", "crm-driver.js"), encoding="utf-8").read())
     fil = ""
-    url = f"http://127.0.0.1:{port}/sele.html?side=crm&fil=index-sele.html&bred=1440&hoej=900&kode={kode}"
+    url = f"http://127.0.0.1:{port}/sele.html?side=crm&fil=index-sele.html&bred={bred}&hoej=900&kode={kode}"
     try:
-        p = subprocess.run([c, "--headless=new", "--disable-gpu", "--no-sandbox", "--window-size=1440,900", "--virtual-time-budget=90000", "--hide-scrollbars",
+        p = subprocess.run([c, "--headless=new", "--disable-gpu", "--no-sandbox", f"--window-size={bred},900", "--virtual-time-budget=90000", "--hide-scrollbars",
                             "--enable-logging=stderr", "--v=0", "--screenshot=" + os.path.join(sele, "x.png"), url], capture_output=True, text=True, timeout=180)
         d = fortolk(p.stderr)
     except subprocess.TimeoutExpired:
@@ -36,4 +36,4 @@ def koer(repo=REPO):
 
 if __name__ == "__main__":
     repo = sys.argv[1] if len(sys.argv) > 1 else REPO
-    for r in koer(repo): print(f"{r.tilstand:<11} · {r.loefte:>2} · {r.navn}" + (f" · {r.detalje}" if r.detalje else ""))
+    for r in [x for b in (1440, 800, 390) for x in koer(repo, b)]: print(f"{r.tilstand:<11} · {r.loefte:>2} · {r.navn}" + (f" · {r.detalje}" if r.detalje else ""))

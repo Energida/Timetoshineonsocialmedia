@@ -4,6 +4,8 @@
 (async function () {
   var r = { tjek: [] }; var V = function (ms) { return new Promise(function (x) { setTimeout(x, ms); }); };
   function tjek(n, ok, d) { r.tjek.push({ loefte: 29, navn: n, ok: !!ok, detalje: String(d || "").slice(0, 220) }); }
+  function doer(n) { return [].find.call(document.querySelectorAll("#bsKundeside .bs3-doer, #bsKundeside [role=button]"), function (b) { return (b.innerText || "").trim() === n && b.getClientRects().length; }); }
+  async function tilDoer(n) { var b = doer(n); if (b) { b.click(); await V(1500); } return !!b; }
   var L = function () { console.log("@@" + JSON.stringify(r) + "@@"); }; var slut = setTimeout(L, 60000);
   try {
     await V(3000);
@@ -17,6 +19,7 @@
       tjek(navn + ": Tilbage findes", tb, "ingen synlig Tilbage i knaprækken");
       var side = document.getElementById("dashMain") || document.body; var txt = side.innerText || "";
       tjek(navn + ": ingen testmarkører eller status-ringe", !/AB-MARKØR|postet i ugen/.test(txt), (txt.match(/AB-MARKØR[^\n]*|postet i ugen/) || [""])[0]);
+      tjek(navn + ": døren Indstillinger findes på kundesiden", await tilDoer("Indstillinger"), "ingen synlig dør »Indstillinger«");   /* bud 1 (19/10): kundekortet ligger bag dørene */
       var fane = [].find.call(document.querySelectorAll("button"), function (b) { return /^\s*Adgang\s*$/.test(b.innerText || "") && b.getClientRects().length; });
       tjek(navn + ": fanen Adgang findes", !!fane, "ingen synlig Adgang-fane");
       if (fane) { fane.click(); await V(700); }
@@ -31,13 +34,54 @@
       tjek(navn + ": mailfeltet spørger om login-mailen", mail && /kkLoginMailSpoerg/.test(mail.getAttribute("onchange") || ""), mail ? "onchange mangler" : "intet mailfelt");
     }
     /* et flueben klikket af → gemt på kundens egen række (den, kunden læser — v2748) */
-    await kundeSideVis("CRMIGY2026"); await V(1200);
+    await kundeSideVis("CRMIGY2026"); await V(1200); await tilDoer("Indstillinger");
     var f2 = [].find.call(document.querySelectorAll("button"), function (b) { return /^\s*Adgang\s*$/.test(b.innerText || "") && b.getClientRects().length; }); if (f2) { f2.click(); await V(600); }
     var cb = document.querySelector('#kkFunkValg input[value="energi"]');
     if (cb) { cb.checked = false; await kkFunkGem(); await V(800); }
     var db = JSON.parse(localStorage.getItem("SELE_DB") || "{}");
     var row = (db.skema_svar || []).find(function (x) { return x.kode === "CRMIGY2026" && x.skema === "kunde_def"; });
     tjek("Et flueben klikket af gemmes på kundens egen række", row && Array.isArray(row.svar.funktioner) && row.svar.funktioner.indexOf("energi") < 0, row ? JSON.stringify(row.svar.funktioner) : "ingen kunde_def-række");
+    /* KUNDESIDEN (Ida 19/10: »jeg fatter ikke en skid af alt det lort der står på mine kundesider i mit crm« + »alt det du finder skal tilføjes til sikkerhedskontrollen«).
+       Fundet 19/10 ved kortlægningen: chips, der peger på id'er, der ikke findes · Næste aftale forlader kundesiden på telefonen · aftaleboksen ses ikke fra en anden fane ·
+       Tilbage mangler mellem 761 og 899 px · contentmødet kan ikke sættes fra kundesiden. */
+    var bred = window.innerWidth;
+    var kc = "CRMCS2026", dag = new Date(Date.now() + 3 * 864e5), dIso = dag.getFullYear() + "-" + String(dag.getMonth() + 1).padStart(2, "0") + "-" + String(dag.getDate()).padStart(2, "0");
+    try { CRM_AFTALER = (CRM_AFTALER || []).filter(function (a) { return a.kode !== kc; }).concat([{ id: "crm-test-aft", kode: kc, titel: "Opdigtet aftale", dato: dIso, tid: "10:00" }]); } catch (e) {}
+    await kundeSideVis(kc); await V(1500);
+    var doeChips = [].filter.call(document.querySelectorAll("#bsKundeside .ark-chip"), function (b) { var m = (b.getAttribute("onclick") || "").match(/bf3KkRul\('([^']+)'\)/); return m && !document.getElementById(m[1]); });
+    tjek(bred + " px · kundesidens chips fører et sted hen", !doeChips.length, doeChips.map(function (b) { return (b.innerText || "").trim() + " → " + (b.getAttribute("onclick") || ""); }).join(" | "));
+    var tbAlle = [].some.call(document.querySelectorAll(".cover-tilbage, .bs-tilbage"), function (b) { return b.getClientRects().length && /Tilbage/.test(b.innerText || b.getAttribute("aria-label") || ""); });
+    tjek(bred + " px · kundesiden har en synlig Tilbage", tbAlle, "ingen synlig Tilbage på kundesiden");
+    /* CONTENTMØDET HELE VEJEN (K5, Ida 19/10: »når det bygges skal der være en kæmpe kontrol for at det virker«): tryk »Sæt contentmødet« → arket → vælg dag → Gem → rækken ligger i kunde_aftaler på KUNDENS kode → mødet står på siden */
+    var mk = [].find.call(document.querySelectorAll("#bsKundeside .ks-moede-knap"), function (b) { return b.getClientRects().length; });
+    tjek(bred + " px · »Sæt contentmødet« står på kundesiden", !!mk, "ingen synlig knap");
+    if (mk) {
+      mk.click(); await V(900);
+      var arkT = (document.querySelector(".ark .ark-t") || {}).innerText || "";
+      tjek(bred + " px · contentmødets ark åbner", /contentmøde/i.test(arkT), "arkets titel: " + arkT);
+      var dag2 = new Date(Date.now() + 5 * 864e5), d2 = dag2.getFullYear() + "-" + String(dag2.getMonth() + 1).padStart(2, "0") + "-" + String(dag2.getDate()).padStart(2, "0");
+      var pd = document.getElementById("pmDato"); if (pd) pd.value = d2;
+      var gem = [].find.call(document.querySelectorAll(".ark .ark-send-pille"), function (b) { return b.getClientRects().length; });
+      if (gem) { gem.click(); await V(2500); }
+      var dbm = JSON.parse(localStorage.getItem("SELE_DB") || "{}");
+      var mr = (dbm.kunde_aftaler || []).find(function (x) { return x.kode === kc && /contentplanl/i.test(x.titel || "") && String(x.dato).slice(0, 10) === d2; });
+      tjek(bred + " px · contentmødet gemmes på kundens kode", !!mr, "ingen række i kunde_aftaler for " + kc + " d. " + d2 + (gem ? "" : " (ingen Gem-knap)"));
+      try { arkLuk(true); } catch (e) {}
+      await V(600);
+      var mf = document.querySelector("#bsKundeside .ks-moede");
+      tjek(bred + " px · mødet står på kundesiden bagefter", !!(mf && !/Intet møde sat/.test(mf.innerText || "")), mf ? (mf.innerText || "").replace(/\s+/g, " ").slice(0, 80) : "ingen mødeflise");
+    }
+    if (bred >= 900 && await tilDoer("Indstillinger")) {   /* står man på en anden fane, skal Aftaler stadig vise aftalen — tilbage til forsiden via Tilbage, som Ida gør */
+      var tbk = [].find.call(document.querySelectorAll("#bsKundeside .bs-tilbage"), function (b) { return true; }); if (tbk) { tbk.click(); await V(1200); }
+    }
+    var aftRk = doer("Aftaler") || [].find.call(document.querySelectorAll("#bsKundeside [onclick*='kundeAftalerAabn']"), function (b) { return b.getClientRects().length; });
+    if (aftRk) {
+      try { CRM_AFTALER = (CRM_AFTALER || []).filter(function (a) { return a.id !== "crm-test-aft"; }).concat([{ id: "crm-test-aft", kode: kc, titel: "Opdigtet aftale", dato: dIso, tid: "10:00" }]); } catch (e) {}   /* contentmødet ovenfor hentede aftalerne forfra fra selen */
+      aftRk.click(); await V(1500);
+      var ks = document.getElementById("bsKundeside"), aboks = document.getElementById("kkAftaleBoks");
+      tjek(bred + " px · Aftaler bliver på kundesiden", !!(ks && ks.getClientRects().length), "kundesiden forsvandt — man landede et andet sted");
+      tjek(bred + " px · Aftaler viser aftalen", !!(aboks && aboks.getClientRects().length && /Opdigtet aftale|contentplanl/i.test(aboks.innerText || "")), aboks ? (aboks.getClientRects().length ? "aftaleboksen står uden aftalen: " + (aboks.innerText || "").replace(/\s+/g, " ").slice(0, 90) : "aftaleboksen er skjult") : "ingen aftaleboks");
+    } else tjek(bred + " px · Aftaler findes på kundesiden", false, "ingen synlig dør eller række til aftalerne (aftale lagt " + dIso + ")");
     /* slet: kunde-admin (slet logins) kaldes, og kunden er væk */
     window.arkOk = function () { return true; };
     await kkSletKunde("CRMCS2026"); await V(600);

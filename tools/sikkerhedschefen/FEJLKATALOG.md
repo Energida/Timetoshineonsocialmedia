@@ -299,3 +299,15 @@ Ordforklaring til testkolonnen: **selen** = testversionen af appen med opdigtede
 8. **Løfte-tekster bevises (nr. 107, 137, 138, 169, 171)** — hver sætning, der lover sletning/gem/mail (appen, Meta, hjemmesiden), kobles til et tjek; data deletion og »slet min konto« bygges og testes.
 9. **Gammel version + ny funktion (nr. 83, 86, 87)** — version N−1 med ny fane; port-status og live-version tjekkes hver morgen.
 10. **Usynlig tekst og to kilder til samme kunde (nr. 37, 28, 29)** — kontrast-/dække-tjek på felter med tekst, og facit-sammenligning af kodens og basens kunder/kursus.
+
+---
+
+## Kundesiden i CRM'et (fundet 19/10 ved kortlægningen — Ida: »alt det du finder skal tilføjes til sikkerhedskontrollen«)
+
+| Nr | Fejltype | Rigtigt eksempel | Dækket i dag? | Sådan testes automatisk |
+|---|---|---|---|---|
+| K1 | En chip på kundesiden peger på noget, der ikke findes | Chipsene »Noter« og »Drejebogen« kalder bf3KkRul('kkNoter'/'kkDrejebog'); id'erne findes ikke | Ja · løfte 29 (crm-driver, 1440/800/390) | Hver chips mål-id skal findes i siden |
+| K2 | Næste aftale forlader kundesiden | Under 900 px lander man på den gamle kundekort-side | Ja · løfte 29 | Læg en opdigtet aftale, tryk Næste aftale → kundesiden står stadig |
+| K3 | Næste aftale viser ingenting, når man står på en anden fane | Computer: ruller til aftaleboksen, men skifter ikke fane | Ja · løfte 29 | Stå på Adgang, tryk Næste aftale → aftaleboksen er synlig med aftalen |
+| K4 | Tilbage mangler på kundesiden mellem 761 og 899 px | Set i koden (CSS 5409) — testen på 800 px fandt dog en synlig Tilbage | Ja · løfte 29 | Synlig Tilbage på 1440, 800 og 390 |
+| K5 | Ida kan ikke sætte kundens ugentlige contentmøde fra CRM'et | Acorns 19/10: vejen findes kun via »Se kundens version« → kundens plus | Ja · løfte 29 | Kundesiden eller dens plus skal kunne åbne contentmødet |
