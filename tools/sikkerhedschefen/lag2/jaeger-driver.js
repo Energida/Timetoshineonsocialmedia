@@ -37,6 +37,14 @@
     await film("Menu: Hjem", function () { showTab(3); });
     await film("Menu: Performance", function () { showTab(9); });
     await film("Menu: Kalenderen", function () { showTab(8); });
+    /* VENTETIDEN (Ida 19/10: »gør ventetiden kortere, når man skifter side«): en fil fra brief-mappen må ikke holde siden — et kald til basen skal */
+    var n0 = window.__NET || 0;
+    try { window.fetch(location.origin + "/storage/v1/object/brief-filer/test.jpg?supabase.co").catch(function () {}); } catch (e) {}
+    var nFil = (window.__NET || 0) - n0;
+    try { window.fetch(location.origin + "/rest/v1/test?supabase.co").catch(function () {}); } catch (e) {}
+    var nDb = (window.__NET || 0) - n0 - nFil;
+    tjek("En fil fra brief-mappen holder ikke siden", nFil === 0, "filen blev talt som et kald til basen (" + nFil + ")");
+    tjek("Et kald til basen holder stadig siden", nDb === 1, "kaldet blev ikke talt (" + nDb + ")");
   } catch (e) { r.fejl = String(e && e.message || e); }
   clearTimeout(slut); L();
 })();
