@@ -1,7 +1,7 @@
 // GA4-TAL · Edge Function "ga4-tal"
 //
 // Ida 19/10: »jeg drømmer jo virkelig om at kunne følge med i … hvor mange besøger hjemmesiden«. Live-overblikket i Backstage
-// spørger her: besøg i dag · i går · 7 dage · 30 dage, lige nu, og de mest besøgte sider (så salgssiderne kan skilles ud).
+// spørger her: besøg i dag · i går · 7 dage · 30 dage, lige nu, de mest besøgte sider og besøg pr. mail (utm_medium=email).
 // Ida gav selv adgang 19/10: servicekontoen energida-overblik@ninth-bonito-460108-f1 er Viewer på GA4-ejendommen 544320089;
 // nøglen ligger kun i hemmeligheden GA4_SA_JSON (Claude har aldrig set den).
 //
@@ -61,14 +61,16 @@ Deno.serve(async (req) => {
   try {
     const tok = await googleToken(JSON.parse(raa));
     const M = [{ name: "sessions" }, { name: "activeUsers" }];
-    const [samlet, nu, sider] = await Promise.all([
+    const [samlet, nu, sider, mails] = await Promise.all([
       rapport(tok, "runReport", { dateRanges: [{ startDate: "today", endDate: "today", name: "idag" }, { startDate: "yesterday", endDate: "yesterday", name: "igaar" }, { startDate: "6daysAgo", endDate: "today", name: "uge" }, { startDate: "29daysAgo", endDate: "today", name: "maaned" }], metrics: M }),
       rapport(tok, "runRealtimeReport", { metrics: [{ name: "activeUsers" }] }),
       rapport(tok, "runReport", { dateRanges: [{ startDate: "29daysAgo", endDate: "today" }], dimensions: [{ name: "pagePath" }], metrics: [{ name: "sessions" }], orderBys: [{ metric: { metricName: "sessions" }, desc: true }], limit: 15 }),
+      /* KLIK FRA MAILS (Idas klik 19/10 »Ja, begge veje«): Mailchimps »Google Analytics link tracking« mærker linkene (utm_medium=email, utm_campaign=mailens navn) — også i journeys */
+      rapport(tok, "runReport", { dateRanges: [{ startDate: "29daysAgo", endDate: "today" }], dimensions: [{ name: "sessionCampaignName" }], metrics: [{ name: "sessions" }], dimensionFilter: { filter: { fieldName: "sessionMedium", stringFilter: { value: "email", matchType: "EXACT", caseSensitive: false } } }, orderBys: [{ metric: { metricName: "sessions" }, desc: true }], limit: 20 }),
     ]);
     const periode: Record<string, { besoeg: number; personer: number }> = {};
     (samlet.rows || []).forEach((r: any) => { const n = r.dimensionValues?.[0]?.value || ""; periode[n] = { besoeg: Number(r.metricValues[0].value), personer: Number(r.metricValues[1].value) }; });
-    return svar({ ok: true, periode, lige_nu: tal(nu), sider: (sider.rows || []).map((r: any) => ({ sti: r.dimensionValues[0].value, besoeg: Number(r.metricValues[0].value) })) }, 200);
+    return svar({ ok: true, periode, lige_nu: tal(nu), sider: (sider.rows || []).map((r: any) => ({ sti: r.dimensionValues[0].value, besoeg: Number(r.metricValues[0].value) })), mails: (mails.rows || []).map((r: any) => ({ kampagne: r.dimensionValues[0].value, besoeg: Number(r.metricValues[0].value) })).filter((x: any) => x.kampagne && x.kampagne !== "(not set)") }, 200);
   } catch (e) {
     return svar({ fejl: String((e as Error).message || e).slice(0, 300) }, 502);
   }

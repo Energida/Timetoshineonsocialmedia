@@ -59943,7 +59943,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2827";
+const APP_VERSION = "2829";
 const APP_BYGGET = "9. oktober";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_BYGGET + " · " + APP_VERSION; } catch (e) {} });
 let NY_VERSION_KLAR = false;
@@ -63478,6 +63478,16 @@ function sourceBadge(src) {
 if (location.protocol === "http:" && location.hostname.indexOf("energida.dk") !== -1) {
   location.replace("https://" + location.host + location.pathname + location.search + location.hash);
 }
+/* KLIK FRA MAILS (Idas klik 19/10 »Ja, begge veje«): Mailchimps link-mærke (utm_medium=email, utm_campaign=mailens navn) fanges ved indlæsning og
+   gemmes i telefonen, til kunden er logget ind — så skrives det på kundens egen række (skema_svar · mail_klik) af mailKlikSend. Ingen ny tabel. */
+(function () {
+  try {
+    const q = new URLSearchParams(location.search); const k = String(q.get("utm_campaign") || "").trim();
+    if (!k || String(q.get("utm_medium") || "").toLowerCase() !== "email") return;
+    const l = JSON.parse(localStorage.getItem("energida_mail_klik") || "[]"); l.push({ k: k.slice(0, 120), t: new Date().toISOString() });
+    localStorage.setItem("energida_mail_klik", JSON.stringify(l.slice(-20)));
+  } catch (e) {}
+})();
 const DEPLOY = (function () {
   const h = (location.hostname || "").toLowerCase();
   if (h.split(".")[0] === "workout") return "workout";   // workout.energida.dk — B2C-doeren: KUN Workout Studio, ingen Backstage-ramme
@@ -72773,6 +72783,19 @@ function pulsStart() {
   };
   skriv();
   if (!PULS_TIMER) PULS_TIMER = setInterval(skriv, 180000);
+  try { mailKlikSend(); } catch (e) {}
+}
+async function mailKlikSend() {
+  let l = []; try { l = JSON.parse(localStorage.getItem("energida_mail_klik") || "[]"); } catch (e) {} if (!l.length || !sb || !currentKode || SOM_KUNDE) return;
+  try {
+    const fromUdenVagt = sb.__fromUdenVagt || sb.from.bind(sb); const navn = CURRENT_NAVN || "bruger";
+    const r = await fromUdenVagt("skema_svar").select("svar").eq("kode", currentKode).eq("navn", navn).eq("skema", "mail_klik").maybeSingle();
+    if (r.error) return;
+    const alle = ((r.data && r.data.svar && r.data.svar.klik) || []).concat(l).slice(-200);
+    const ok = r.data ? await fromUdenVagt("skema_svar").update({ svar: { klik: alle } }).eq("kode", currentKode).eq("navn", navn).eq("skema", "mail_klik").select()
+      : await fromUdenVagt("skema_svar").insert({ kode: currentKode, navn: navn, skema: "mail_klik", svar: { klik: alle } }).select();
+    if (ok && ok.data && ok.data.length) localStorage.removeItem("energida_mail_klik");   /* kun ryddet, når basen har kvitteret */
+  } catch (e) {}
 }
 /* IDAS GODKENDELSESKØ (auditfund 27/7): briefs sendt til godkendelse — på tværs af ALLE kunder */
 async function godkHent() {
@@ -84285,12 +84308,14 @@ function liveKoebFra(c) {
 async function liveOverblikHent() {
   if (!sb || LIVE_HENTER) return LIVE_DATA; LIVE_HENTER = true;
   try {
-    const [kr, ar, sr] = await Promise.all([
+    const [kr, ar, sr, mk] = await Promise.all([
       sb.from("contacts").select("id,kunde,source,kommentar,created_at").like("source", "YOU GOT THIS%").order("created_at", { ascending: false }).limit(500),
       sb.from("skema_svar").select("kode,navn,svar,created_at").eq("skema", "adgangskode_valgt"),
-      sb.from("skema_svar").select("kode,skema,created_at").like("skema", "lektion_set_%")
+      sb.from("skema_svar").select("kode,skema,created_at").like("skema", "lektion_set_%"),
+      sb.from("skema_svar").select("kode,svar").eq("skema", "mail_klik")
     ]);
     if (kr.error) return LIVE_DATA;
+    const appKlik = {}; try { const graense = Date.now() - 30 * 864e5; ((mk && mk.data) || []).forEach(function (r) { if (erEgenKode(String(r.kode || "").toUpperCase())) return; ((r.svar && r.svar.klik) || []).forEach(function (x) { if (x && x.k && new Date(x.t).getTime() > graense) appKlik[x.k] = (appKlik[x.k] || 0) + 1; }); }); } catch (e) {}
     const koeb = (kr.data || []).map(liveKoebFra).filter(function (k) {
       if (!k.kilde || /test/i.test(k.kilde) || /@energida\.dk$/i.test(k.mail)) return false;
       try { if (k.kode && erEgenKode(k.kode)) return false; } catch (e) {}
@@ -84301,7 +84326,7 @@ async function liveOverblikHent() {
     const lek = {}; (sr.data || []).forEach(function (r) { const k = String(r.kode || "").toUpperCase(); const id = String(r.skema || "").slice(12); const t = new Date(r.created_at).getTime(); const o = lek[k] = lek[k] || { foerste: 0, ids: {} }; o.ids[id] = 1; if (!o.foerste || t < o.foerste) o.foerste = t; });
     let ga = null, mc = null;
     try { const [g, m] = await Promise.all([sb.functions.invoke("ga4-tal", { body: {} }), sb.functions.invoke("mailchimp-tal", { body: {} })]); if (g && g.data && g.data.ok) ga = g.data; if (m && m.data && m.data.ok) mc = m.data; } catch (e) {}
-    LIVE_DATA = { koeb: koeb, akt: akt, lek: lek, m0: m0, ga: ga, mc: mc, hentet: Date.now() };
+    LIVE_DATA = { koeb: koeb, akt: akt, lek: lek, m0: m0, ga: ga, mc: mc, appKlik: appKlik, hentet: Date.now() };
   } catch (e) {} finally { LIVE_HENTER = false; }
   return LIVE_DATA;
 }
@@ -84352,10 +84377,17 @@ function liveOverblikHtml(D) {
     + trin.map(function (t) { return '<div><b>' + t[0] + '</b><span>' + t[1] + '</span></div>'; }).join("") + '</div></div>';
   /* KLIK I DINE MAILS (Idas klik 19/10 »Klik pr. mail«): klik, ikke åbninger; kampagner + klassiske automatiseringer. Journeys kan Mailchimp ikke dele via API'et. */
   let mailFl = "";
-  if (D.mc) {
-    const ml = (D.mc.mails || []).concat(D.mc.automatiseringer || []).filter(function (x) { return x.sendt > 0; }).slice(0, 6);
-    mailFl = '<div class="bs3-fl lv-tragt"><div class="bs3-et"><span>Klik i dine mails</span><span class="lv-tid">Klik, ikke åbninger</span></div>'
-      + (ml.length ? '<div class="lv-trin lv-mails">' + ml.map(function (x) { return '<div><b>' + Math.round((x.klikrate || 0) * 100) + ' %</b><span class="lv-mail-n">' + esc(x.navn) + '</span><span>' + x.klik + ' klik af ' + x.sendt + '</span></div>'; }).join("") + '</div>' : '<div class="bs3-s">Ingen mails med klikrapport endnu.</div>') + '</div>';
+  if (D.mc || D.ga) {
+    const ml = ((D.mc && D.mc.mails) || []).concat((D.mc && D.mc.automatiseringer) || []).filter(function (x) { return x.sendt > 0; }).slice(0, 6)
+      .map(function (x) { return '<div><b>' + Math.round((x.klikrate || 0) * 100) + ' %</b><span class="lv-mail-n">' + esc(x.navn) + '</span><span>' + x.klik + ' klik af ' + x.sendt + '</span></div>'; });
+    /* JOURNEYENS MAILS (19/10): besøg på hjemmesiden fra mailen (Google Analytics) + klik ind i appen (mail_klik), samlet pr. mailnavn */
+    const pr = {}; ((D.ga && D.ga.mails) || []).forEach(function (x) { (pr[x.kampagne] = pr[x.kampagne] || { web: 0, app: 0 }).web += x.besoeg; });
+    Object.keys(D.appKlik || {}).forEach(function (k) { (pr[k] = pr[k] || { web: 0, app: 0 }).app += D.appKlik[k]; });
+    const jl = Object.keys(pr).sort(function (a, b) { return (pr[b].web + pr[b].app) - (pr[a].web + pr[a].app); }).slice(0, 6)
+      .map(function (k) { const x = pr[k]; return '<div><b>' + (x.web + x.app) + ' klik</b><span class="lv-mail-n">' + esc(k) + '</span><span>' + [x.web ? x.web + " på hjemmesiden" : "", x.app ? x.app + " i appen" : ""].filter(Boolean).join(" · ") + '</span></div>'; });
+    const alle = ml.concat(jl);
+    mailFl = '<div class="bs3-fl lv-tragt"><div class="bs3-et"><span>Klik i dine mails</span><span class="lv-tid">Sidste 30 dage</span></div>'
+      + (alle.length ? '<div class="lv-trin lv-mails">' + alle.join("") + '</div>' : '<div class="bs3-s">Ingen klik fra mails endnu.</div>') + '</div>';
   }
   return '<div class="lv"><div class="lv-top">' + stor + '<div class="lv-kol">' + bf3Ver("Kontakt i dag") + kontaktHtml + '</div></div>'
     + '<div class="lv-tre-fl">' + koder + akt24 + lek7 + '</div>' + tragt + mailFl + '</div>';
