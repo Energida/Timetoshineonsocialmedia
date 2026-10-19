@@ -9458,6 +9458,7 @@ body.bs-forfra.dash-mode #dashMain { background:#fff !important; }
 .bs3 .lv .bs3-fl { margin:0; }
 .lv-tid { letter-spacing:0; text-transform:none; font-size:11px; color:var(--gray2); }
 .lv-tal { font-size:72px; font-weight:300; line-height:1; letter-spacing:-1px; color:var(--black); }
+.lv-kr { font-size:22px; margin-left:6px; letter-spacing:0; } .lv-antal { font-size:13px; color:var(--gray2); margin-top:6px; }
 .lv-under { display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin-top:14px; font-size:13px; color:var(--gray2); }
 .lv-pille { display:inline-flex; align-items:center; height:30px; padding:0 12px; border:1px solid var(--border); border-radius:999px; font-size:12.5px; color:var(--black); background:#fff; }
 .lv-tre { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; margin-top:20px; }
@@ -16148,7 +16149,7 @@ Deno.serve(async (req) =&gt; {
       kunde: virksomhed,
       status: "Kunde",
       source: erTest ? "Testlink" : (erYGT ? ("YOU GOT THIS" + (forening ? " · " + forening : "")) : "Stripe"),
-      kommentar: [navn, email, telefon, "Kode: " + kode].filter(Boolean).join(" · "),
+      kommentar: [navn, email, telefon, "Kode: " + kode, (s.amount_total != null ? "Beløb: " + Math.round(Number(s.amount_total) / 100) + " kr." : "")].filter(Boolean).join(" · "),   // BELØBET TIL LIVE-OVERBLIKKET (Idas klik 19/10 »Kroner pr. køb«): Stripes amount_total i øre → hele kroner
     }).select("id");
     if (error || !data || !data.length) kontaktOk = false;
   } catch { kontaktOk = false; }
@@ -16835,7 +16836,7 @@ Deno.serve(async (req) =&gt; {
       kunde: virksomhed,
       status: "Kunde",
       source: erTest ? "Testlink" : (erYGT ? ("YOU GOT THIS" + (forening ? " · " + forening : "")) : "Stripe"),
-      kommentar: [navn, email, telefon, "Kode: " + kode].filter(Boolean).join(" · "),
+      kommentar: [navn, email, telefon, "Kode: " + kode, (s.amount_total != null ? "Beløb: " + Math.round(Number(s.amount_total) / 100) + " kr." : "")].filter(Boolean).join(" · "),   // BELØBET TIL LIVE-OVERBLIKKET (Idas klik 19/10 »Kroner pr. køb«): Stripes amount_total i øre → hele kroner
     }).select("id");
     if (error || !data || !data.length) kontaktOk = false;
   } catch { kontaktOk = false; }
@@ -59939,7 +59940,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2823";
+const APP_VERSION = "2825";
 const APP_BYGGET = "9. oktober";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_BYGGET + " · " + APP_VERSION; } catch (e) {} });
 let NY_VERSION_KLAR = false;
@@ -84275,7 +84276,8 @@ function liveKoebFra(c) {
   const dele = String(c.kommentar || "").split("·").map(function (x) { return x.trim(); });
   const mail = dele.filter(function (x) { return /@/.test(x); })[0] || "";
   const tlf = dele.filter(function (x) { return /^\+?[\d\s]{8,}$/.test(x); })[0] || "";
-  return { id: String(c.id || c.created_at), navn: dele[0] || c.kunde || "", butik: c.kunde || "", mail: mail, tlf: tlf, kode: overblikKode(c.kommentar), kilde: overblikKilde(c.source), tid: new Date(c.created_at).getTime() };
+  const bm = String(c.kommentar || "").match(/Beløb:\s*(\d+)/);   /* stripe-koeb skriver »Beløb: X kr.« fra 19/10 (Idas klik »Kroner pr. køb«) */
+  return { id: String(c.id || c.created_at), navn: dele[0] || c.kunde || "", butik: c.kunde || "", mail: mail, tlf: tlf, kode: overblikKode(c.kommentar), kilde: overblikKilde(c.source), tid: new Date(c.created_at).getTime(), kr: bm ? Number(bm[1]) : null };
 }
 async function liveOverblikHent() {
   if (!sb || LIVE_HENTER) return LIVE_DATA; LIVE_HENTER = true;
@@ -84311,7 +84313,7 @@ function liveOverblikHtml(D) {
   const pil = iDag.length - sidsteUgeSamme;
   const sml = sidsteUgeSamme ? (pil >= 0 ? "+" : "") + Math.round(pil / sidsteUgeSamme * 100) + " % mod samme dag sidste uge" : (iDag.length ? "Ingen køb samme dag sidste uge" : "");
   const stor = '<div class="bs3-fl lv-stor"><div class="bs3-et"><span>Køb i dag</span><span class="lv-tid">Opdateret kl. ' + new Date(D.hentet).toTimeString().slice(0, 5).replace(":", ".") + '</span></div>'
-    + '<div class="lv-tal">' + iDag.length + '</div>'
+    + (function () { const kr = iDag.filter(function (k) { return k.kr != null; }); if (!kr.length) return '<div class="lv-tal">' + iDag.length + '</div>'; const sum = kr.reduce(function (a, k) { return a + k.kr; }, 0); return '<div class="lv-tal">' + sum.toLocaleString("da-DK") + '<small class="lv-kr">kr.</small></div><div class="lv-antal">' + iDag.length + (iDag.length === 1 ? ' køb' : ' køb') + '</div>'; })()   /* kroner, når købene bærer beløbet; ellers antal */
     + '<div class="lv-under">' + (sml ? '<span class="lv-pille">' + esc(sml) + '</span>' : '') + (venter.length ? '<span>' + venter.length + (venter.length === 1 ? ' venter' : ' venter') + ' på at vælge adgangskode</span>' : '') + '</div>'
     + '<div class="lv-tre"><div><b>' + iGaar + '</b><span>I går</span></div><div><b>' + uge + '</b><span>Sidste 7 dage</span></div><div><b>' + maaned.length + '</b><span>Sidste 30 dage</span></div></div></div>';
   /* KONTAKT I DAG — én rød flise pr. person (Ida 19/10: aldrig flere rækker i én flise) */
