@@ -14,8 +14,9 @@
       for (var i = 0; i < 12; i++) ideer.push({ id: "sc-ide-" + i, kode: "HINGES2026", titel: "Opdigtet idé " + (i + 1), status: "Idé", soejle: soejler[i % 4], type: "Reel", dato: null, brief: { beskrivelse: "Testbutikken " + i }, created_at: new Date(nu - (100 - i) * 6e4).toISOString() });
       ideer.push({ id: "sc-plan-1", kode: "HINGES2026", titel: "Opdigtet planlagt", status: "Planlagt", soejle: "Produkt", type: "Reel", dato: d(iMorgen), brief: { tid: "19:00" }, created_at: new Date(nu).toISOString() });
       var aft = [1, 2].map(function (n) { return { id: "sc-moede-" + n, kode: "HINGES2026", titel: "Ugentlig contentplanlægning", dato: d(iMorgen), tid: "10:00", tid_slut: "11:00" }; });
+      aft.push({ id: "sc-moede-3", kode: "HINGES2026", titel: "Ugentlig contentplanlægning", dato: d(new Date(iDag.getTime() + 9 * 864e5)), tid: "10:00", tid_slut: "11:00" });   /* L49 */
       localStorage.setItem("SELE_DB", JSON.stringify({ content_ideer: ideer, kunde_aftaler: aft }));
-      tjek(0, "Testdata lagt ind", true, ideer.length + " idéer, 2 møder (dublet)");
+      tjek(0, "Testdata lagt ind", true, ideer.length + " idéer, 2 møder (dublet) + 1 møde");
     }
     if (FASE === "skriv") {
       var rec = await ideAdd({ titel: "SC ny idé", soejle: "Produkt", type: "Reel", status: "Idé", brief: { beskrivelse: "skrevet af sikkerhedschefen" } });
@@ -46,6 +47,18 @@
         tjek(8, "Kalenderens plus → Opslag åbner First thing first på et nyt opslag", !!opsKnap && ftfAaben && (IDEER || []).length === foerN + 1, (opsKnap ? "" : "ingen Opslag-knap · ") + "ark " + ftfAaben + " · opslag " + foerN + "→" + (IDEER || []).length);
         try { bsFlytLuk(); } catch (e) {} await V(1500);
       } catch (e) { tjek(8, "Kalenderens plus kunne testes", false, e.message); }
+      /* L49 mødesiden viser ny dag (19/10) */
+      try {
+        moedeSideAaben("sc-moede-3"); await V(1500);
+        var dagChip = document.querySelector(".mo-top-chips .ark-vchip"); if (dagChip) dagChip.click(); await V(900);
+        var ny = new Date(iDag.getTime() + 12 * 864e5), nyIso = d(ny);
+        var pd = document.getElementById("pmDato"); if (pd) pd.value = nyIso;
+        var gemK = document.querySelector("#arkSlor .ark-send-pille"); if (gemK) gemK.click(); await V(2500);
+        var vist = ((document.querySelector(".mo-top-chips .ark-vchip") || {}).innerText || "");
+        var forvent = ny.getDate() + ". " + ["januar", "februar", "marts", "april", "maj", "juni", "juli", "august", "september", "oktober", "november", "december"][ny.getMonth()];
+        tjek(49, "Ret mødets dag → mødesiden viser den nye dag med det samme", !!(dagChip && pd && gemK) && vist.indexOf(forvent) > -1, (dagChip ? "" : "ingen dag-chip · ") + (pd ? "" : "intet dagfelt · ") + (gemK ? "" : "ingen Gem · ") + "siden: " + vist + " · forventet " + forvent);
+        try { arkLuk(true); } catch (e) {} window.__MOEDE_VALGT = ""; await V(800);
+      } catch (e) { tjek(49, "Mødets dag kunne testes", false, e.message); }
       try { showTab(2); } catch (e) {} await V(1200);
       LS("SC_ORDEN", IDEER.filter(ideErIBanken).map(function (x) { return String(x.id); }));
       /* LØFTE 13 · INGEN »UDEN TITEL« (Ida 10/10) */
@@ -91,7 +104,7 @@
       var mid = ma0 && ma0.id; await moedeSlet(mid); await moedeSlet(mid); await V(1500);   /* to tryk: »Tryk igen for at annullere« */
       try { await renderAftaler(); } catch (e) {}
       var moederEfter = (window.__kundeAftalerAlle || window.__kundeAftaler || []).filter(function (a) { return a.dato === d(iMorgen) && erMoedeTitel(a.titel); }).length;
-      var dbM = ((JSON.parse(localStorage.getItem("SELE_DB") || "{}").kunde_aftaler) || []).length;
+      var dbM = ((JSON.parse(localStorage.getItem("SELE_DB") || "{}").kunde_aftaler) || []).filter(function (a) { return a.id !== "sc-moede-3"; }).length;
       tjek(5, "Møde med dublet slettet i ét tryk", moederFoer === 2 && moederEfter === 0 && dbM === 0, "før " + moederFoer + " · efter " + moederEfter + " · i basen " + dbM + " · planMoedeAftale " + (ma0 ? ma0.id : "null"));
       /* LØFTE 24 · NY VERSION: appen må kun genindlæse, når intet er i gang (ingen skrivning, ingen brief, intet ark, intet gem på vej) */
       try {
@@ -265,7 +278,8 @@
         var gkMail = decodeURIComponent(String(window.__GK_MAIL || "").split("body=")[1] || "");
         tjek(1, "Gamle kunder: tom butik gemmes ikke og siges", /butikkens navn/i.test(gkTom), gkTom);
         tjek(1, "Gamle kunder: lead gemt i CRM", gkRk.length === 1 && gkRk[0].status === "Lead", gkRk.length + " række(r)");
-        tjek(1, "Gamle kunder: mailen bærer koden og siden", gkMail.indexOf("JEGERVIGTIGFORIDA") > -1 && gkMail.indexOf("succesfuld-detaildrift") > -1 && /Hej Hanne/.test(gkMail), gkMail.slice(0, 60));
+        /* gem nu, send senere (13/10) */
+        tjek(1, "Gamle kunder: arket sender ingen mail, kontakten venter på udsendelsen", !gkMail && gkRk.length === 1 && gkRk[0].kommentar === "Kode ikke sendt endnu", (gkMail ? "mail åbnet · " : "") + (gkRk[0] ? gkRk[0].kommentar : "ingen række"));
       } catch (e) { tjek(1, "Gamle kunder-tjekket kunne køre", false, e.message); }
       /* INSPIRATION: flere links ad gangen, ingen dubletter, linket i noten bliver et Instagram-kort */
       try {
