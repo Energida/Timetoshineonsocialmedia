@@ -27830,6 +27830,7 @@ async function briefTilbage() {
   try { ansvarligVagt(vagtId); } catch(e) {}
 }
 function openBriefSide(id) {
+  if (!erIdeId(id)) { try { fejlTilIda("uden_id", "openBriefSide uden id (" + String(id) + ") på " + ((document.querySelector(".screen.active") || {}).id || "")); } catch (e) {} return; }   /* aldrig en brief uden id (19/10) */
   window.__FS_AABEN = {};   /* skrivefelterne lukker igen, naar en brief aabnes (18/10) */
   if (ygtBriefLaast()) { ygtLaasArk("Briefen åbner med modul 7 " + ygtDatoOrd(ygtModulAabner("8"))); return; }   /* ti uger (Idas klik 30/9) */
   if (window.__MO_VAELG && typeof current !== "undefined" && current === 2) { moedeIdeSkift(id).then(function () { try { moedeVaelgLinje(); } catch (e) {} }); return; }   /* valg til moedet fra Idébanken (29/9) */
@@ -55935,15 +55936,26 @@ function mapIdeRow(r) { return { id:r.id, titel:r.titel, type:r.type, soejle:r.s
    3) Koeen sendes, naar nettet er tilbage (online-haendelsen) og ved naeste start.
    LOKALT VINDER ved gensending: Ida er den eneste, der skriver i sine briefs.
    Gem-reglen (4/8): koeen sletter aldrig noget — den baerer kun det, hun selv skrev. */
+/* ET OPSLAG UDEN ID GEMMES ALDRIG (MÅLT 19/10 i Backstage · Fejl fra kunderne: Acorns' telefon fik 14 gange den røde bjælke »content_ideer.update: invalid input syntax for type uuid: "null"« fra 12/10 til 19/10).
+   En brief åbnet med id'et "null" lagde hvert tastetryk i køen under "null", og køen sendte det igen ved hver opstart — basen afviste, og bjælken kom igen. */
+function erIdeId(id) { return id != null && ["", "null", "undefined", "NaN"].indexOf(String(id).trim()) < 0; }
 function ideKoeLaes() { try { return JSON.parse(localStorage.getItem(nsKey("ide_koe")) || "{}") || {}; } catch (e) { return {}; } }
 function ideKoeSkriv(k) { try { localStorage.setItem(nsKey("ide_koe"), JSON.stringify(k)); } catch (e) {} }
 function ideKoeLaeg(id, patch) {
+  if (!erIdeId(id)) { try { fejlTilIda("uden_id", "ideKoeLaeg uden id (" + String(id) + ")"); } catch (e) {} return; }
   const k = ideKoeLaes(); k[id] = Object.assign({}, k[id] || {}, patch, { __t: Date.now() }); ideKoeSkriv(k);
 }
 function ideKoeAntal() { return Object.keys(ideKoeLaes()).length; }
 async function ideKoeSend() {
   if (!ideerShared() || !navigator.onLine) return;
-  const k = ideKoeLaes(); const ids = Object.keys(k); if (!ids.length) return;
+  const k = ideKoeLaes(); let ids = Object.keys(k); if (!ids.length) return;
+  /* en ændring uden id kan aldrig nå basen: den sendes ikke igen, men lægges til side på telefonen (intet af kundens tekst slettes) */
+  const udenId = ids.filter(function (x) { return !erIdeId(x); });
+  if (udenId.length) {
+    try { const gl = JSON.parse(localStorage.getItem(nsKey("ide_koe_uden_id")) || "[]") || []; udenId.forEach(function (x) { gl.push({ noegle: x, patch: k[x], flyttet: new Date().toISOString() }); delete k[x]; }); localStorage.setItem(nsKey("ide_koe_uden_id"), JSON.stringify(gl.slice(-20))); ideKoeSkriv(k); } catch (e) {}
+    try { fejlTilIda("uden_id", "ide_koe havde " + udenId.length + " ændring(er) uden id — lagt til side, ikke sendt"); } catch (e) {}
+    ids = ids.filter(function (x) { return erIdeId(x); }); if (!ids.length) return;
+  }
   for (const id of ids) {
     const patch = Object.assign({}, k[id]); delete patch.__t;
     if (patch.__ny) {
@@ -56154,6 +56166,7 @@ function ideBriefFlet(id, lokal, remote) {
   return { brief: ud, fra: fra };
 }
 async function ideUpdate(id, patch) {
+  if (!erIdeId(id)) { try { fejlTilIda("uden_id", "ideUpdate uden id (" + String(id) + ")"); } catch (e) {} return false; }   /* ingen kald til basen med id "null" (19/10) */
   const it = IDEER.find(x => x.id === id); if (it) Object.assign(it, patch);
   try { if (patch && patch.status === "Klar til post" && it) ibSetMark(ksKlarNoegle(it)); } catch (e) {}   /* den, der selv sætter Klar til post, får ikke sin egen besked i Indbakken (19/10) */
   /* SVARET SIGES VIDERE (Ida 4/8): funktionen returnerer nu, OM det lykkedes, saa en
@@ -59984,7 +59997,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2841";
+const APP_VERSION = "2842";
 const APP_BYGGET = "9. oktober";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_BYGGET + " · " + APP_VERSION; } catch (e) {} });
 let NY_VERSION_KLAR = false;
