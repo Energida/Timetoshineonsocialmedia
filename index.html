@@ -59955,7 +59955,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2833";
+const APP_VERSION = "2835";
 const APP_BYGGET = "9. oktober";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_BYGGET + " · " + APP_VERSION; } catch (e) {} });
 let NY_VERSION_KLAR = false;
@@ -85895,8 +85895,9 @@ async function b2ImpFortryd(prefix) {
    udkastet til mail nr. 3 fra 10/10); de to steder, der ikke er hendes ord, står som »forslag« og er markeret, til hun selv
    trykker »Det er mine ord«. 48 timer og 7 dage har ingen tekst — der findes aldrig på. */
 const MAILS_STD = [
-  { id: "login", udl: "Efter købet", navn: "Dit login", hvornaar: "Lige efter købet", emne: "Dit login til Content Studio", kilde: "supabase",
+  { id: "login", udl: "Lige efter købet", navn: "Dit login", hvornaar: "Lige efter købet", emne: "Dit login til Content Studio", kilde: "supabase",
     fliser: [{ et: "Dit login", midt: true, tekst: "Du vælger en adgangskode, og så er du inde.\nKlik her for at komme i gang 👇🏻", knap: "Let’s go", lille: "Linket virker i 24 timer og kun én gang. Har du ikke tilmeldt dig, kan du se bort fra mailen." }] },
+  { id: "48t", udl: "48 timer uden adgangskode", navn: "48 timer uden adgangskode", hvornaar: "48 timer efter købet, hvis adgangskoden ikke er valgt", emne: "", fliser: [] },
   { id: "adgangskode", udl: "Når adgangskoden er valgt", navn: "Nice- og need-to-know til dit forløb", hvornaar: "Når kunden har valgt sin adgangskode", emne: "Nice- og need-to-know til dit forløb",
     fliser: [
       { et: "", tekst: "Hej {navn}\n\nInden vi går rigtigt i gang, får du lige alt det, der er nice og need-to-know, så du kan få mest muligt ud af forløbet." },
@@ -85908,7 +85909,6 @@ const MAILS_STD = [
       { et: "WE GOT THIS", tekst: "", forslag: "Som tak, fordi du er med, får du 5.000 kr. i rabat på WE GOT THIS. Bestil senest 31. december.", kode: "", harKode: true },
       { et: "", tekst: "Kærlig hilsen\nIda" }
     ] },
-  { id: "48t", udl: "48 timer uden adgangskode", navn: "48 timer uden adgangskode", hvornaar: "48 timer efter købet, hvis adgangskoden ikke er valgt", emne: "", fliser: [] },
   { id: "7d", udl: "7 dage uden første lektion", navn: "7 dage uden første lektion", hvornaar: "7 dage efter adgangskoden, hvis ingen lektion er set", emne: "", fliser: [] }
 ];
 let MAILS_GEMT = null, MAILS_HENTET = false, MAILS_AABEN = "", MAILS_RET = null;
@@ -85924,15 +85924,26 @@ function mailsListe() {
     return m;
   });
 }
-function mailsFind(id) { return mailsListe().find(function (m) { return m.id === id; }); }
+/* MAILS, DU SENDER SELV (Idas klik 19/10 »Byg bud 2«, artifact KFX8hQDsK1xMn7J9LGf9ym): kladder i mail_tekster.egne. Udsendelse til
+   kunder er IKKE bygget — den kræver samtykke og afmelding (GDPR) først; kladden kan skrives og prøves på egen mail. */
+const MAILS_TIL = [{ k: "alle", n: "Alle kunder" }, { k: "gamle", n: "Gamle kunder" }, { k: "leads", n: "Leads i CRM" }, { k: "mig", n: "Kun mig" }];
+function mailsTilNavn(k) { const x = MAILS_TIL.find(function (t) { return t.k === k; }); return x ? x.n : ""; }
+function mailsEgne() {
+  return ((MAILS_GEMT || {}).egne || []).map(function (e) {
+    const til = mailsTilNavn(e.til);
+    return { id: e.id, egen: true, til: e.til || "", udl: til ? "Til " + til.toLowerCase() : "Modtagere mangler", navn: String(e.emne || "").trim() || "Uden emne", emne: e.emne || "", fliser: mailsKopi(e.fliser || []) };
+  });
+}
+function mailsFind(id) { return mailsListe().concat(mailsEgne()).find(function (m) { return m.id === id; }); }
 function mailsHarTekst(m) { return (m.fliser || []).some(function (f) { return String(f.tekst || "").trim() || String(f.forslag || "").trim(); }); }
 function mailsStatus(m) {
-  if (m.kilde === "supabase") return { s: "Sendes allerede" };
-  if (!mailsHarTekst(m) || !String(m.emne || "").trim()) return { mangler: true };
+  if (m.kilde === "supabase") return { s: "Aktiv · sendes efter hvert køb" };
+  if (m.egen) return { s: "Kladde · ikke sendt", r: mailsHarTekst(m) ? "" : "Teksten mangler" };
+  if (!mailsHarTekst(m) || !String(m.emne || "").trim()) return { mangler: true, s: "Slået fra" };
   const n = (m.fliser || []).filter(function (f) { return String(f.forslag || "").trim(); }).length;
   const kode = (m.fliser || []).some(function (f) { return f.harKode && !String(f.kode || "").trim(); });
-  if (n || kode) return { s: "Udkast", r: [n ? "Mangler dine ord " + (n === 1 ? "ét sted" : n + " steder") : "", kode ? "Koden mangler" : ""].filter(Boolean).join(" · ") };
-  return { s: "Klar · sendes ikke automatisk endnu" };
+  if (n || kode) return { s: "Slået fra", r: [n ? "Mangler dine ord " + (n === 1 ? "ét sted" : n + " steder") : "", kode ? "Koden mangler" : ""].filter(Boolean).join(" · ") };
+  return { s: "Slået fra" };
 }
 
 /* MAILEN SOM HTML — samme form som mail/invitation.html (tabeller, inline-stil, så Outlook og Gmail tegner den ens) */
@@ -85978,20 +85989,65 @@ function mailsHtml(m, o) {
 /* SIDEN */
 function mailsHost() { return document.getElementById("mailsHost"); }
 function mailsSti(led, tilbage) { try { navstiSaet(led, tilbage); } catch (e) {} }
+const MAILS_VINK = '<svg class="mails-vink" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>';
+function mailsFliseHtml(m) {
+  const st = mailsStatus(m);
+  return '<div class="bs3-fl mails-fl" data-klik role="button" tabindex="0" onclick="mailsAabn(\'' + m.id + '\')" onkeydown="if(event.key===\'Enter\')mailsAabn(\'' + m.id + '\')">'
+    + '<div class="mails-fl-ind"><div class="bs3-et">' + esc(m.udl) + '</div>'
+    + '<div class="bs3-n' + (st.mangler ? ' mails-r' : '') + '">' + esc(st.mangler ? "Dine ord mangler" : m.navn) + '</div>'
+    + '<div class="bs3-s">' + esc(st.s) + (st.r ? ' · <span class="mails-r">' + esc(st.r) + '</span>' : '') + '</div></div>'
+    + MAILS_VINK + '</div>';
+}
+/* PLUSSET = »Ny mail« (bud 2): husets plus i raekken under coveret (computer, med ordet) og bundmenuens plus (telefon) */
+function mailsPlus(vis) {
+  document.body.classList.toggle("mails-forside", !!vis);
+  try {
+    if (vis) {
+      bf3BaandKnapVis("mails");
+      const k = document.getElementById("bf3RumKnap"); const b = k && k.querySelector("button"); if (!b) return;
+      delete k.dataset.auto; b.title = "Ny mail"; b.setAttribute("aria-label", "Ny mail"); b.onclick = function () { mailsNyArk(); };
+      b.innerHTML = '<span class="mails-ny-p">+</span><span class="mails-ny-t">Ny mail</span>';
+    } else {
+      const k = document.getElementById("bf3RumKnap"); const b = k && k.querySelector("button");
+      if (b && b.querySelector(".mails-ny-t")) b.textContent = "+";
+      if (k && !k.dataset.auto) k.style.display = "none";
+    }
+  } catch (e) {}
+}
 async function mailsTegn() {
   MAILS_AABEN = ""; MAILS_RET = null;
   const el = mailsHost(); if (!el) return;
   await mailsHent();
-  const fl = mailsListe().map(function (m) {
-    const st = mailsStatus(m);
-    return '<div class="bs3-fl mails-fl" data-klik role="button" tabindex="0" onclick="mailsAabn(\'' + m.id + '\')" onkeydown="if(event.key===\'Enter\')mailsAabn(\'' + m.id + '\')">'
-      + '<div class="bs3-et">' + esc(m.udl) + '</div>'
-      + (st.mangler ? '<div class="bs3-n mails-r">Dine ord mangler</div>' : '<div class="bs3-n">' + esc(m.navn) + '</div><div class="bs3-s">' + esc(st.s) + (st.r ? ' · <span class="mails-r">' + esc(st.r) + '</span>' : '') + '</div>')
-      + '</div>';
-  }).join("");
-  el.innerHTML = '<div class="bs3 mails">' + bf3Ver("Velkomstforløbet") + '<div class="mails-grid">' + fl + '</div></div>';
+  const egne = mailsEgne();
+  el.innerHTML = '<div class="bs3 mails">'
+    + bf3Ver("Automatiske mails") + '<div class="mails-liste">' + mailsListe().map(mailsFliseHtml).join("") + '</div>'
+    + bf3Ver("Mails, du sender selv") + '<div class="mails-liste">' + (egne.length ? egne.map(mailsFliseHtml).join("") : bf3Tom("Ingen mails endnu.")) + '</div>'
+    + '</div>';
   mailsSti([{ navn: "Hjem", klik: "visDashSide('overblik')" }, { navn: "Mails" }], function () { visDashSide("overblik"); });
+  mailsPlus(true);
   try { sideKlarNaar("mailsHost"); } catch (e) {}
+}
+function mailsNyArk() {
+  arkAabn({ titel: "Ny mail", ph: "Skriv emnet", enLinje: true, udenVedh: true, udenMik: true, tekst: "", chips: MAILS_TIL, typeFoerst: true, send: "Opret kladde",
+    under: "Hvem skal have den?",
+    gem: async function (t, k) {
+      const emne = String(t || "").trim(); if (!emne) throw new Error("!Skriv emnet.");
+      if (!k) throw new Error("!Vælg, hvem der skal have den.");
+      await mailsHent();
+      const ny = Object.assign({}, MAILS_GEMT || {}); const id = "e" + Date.now().toString(36);
+      ny.egne = ((ny.egne || []).slice()).concat([{ id: id, emne: emne.charAt(0).toUpperCase() + emne.slice(1), til: k, fliser: [], oprettet: new Date().toISOString() }]);
+      const ok = await vaneGemRow("mail_tekster", ny); if (!ok) throw new Error("!Kladden kunne ikke gemmes. Prøv igen.");
+      MAILS_GEMT = ny; setTimeout(function () { mailsAabn(id); }, 50);
+      return "Kladden er oprettet.";
+    } });
+}
+async function mailsSlet(id) {
+  arkSpoerg({ titel: "Slet mailen?", tekst: "Kladden forsvinder fra Mails.", jaTekst: "Slet", nejTekst: "Annuller", ja: async function () {
+    await mailsHent();
+    const ny = Object.assign({}, MAILS_GEMT || {}); ny.egne = (ny.egne || []).filter(function (e) { return e.id !== id; });
+    const ok = await vaneGemRow("mail_tekster", ny); if (!ok) { husBesked("Mailen kunne ikke slettes. Prøv igen."); return; }
+    MAILS_GEMT = ny; await mailsTegn(); try { husKvit("Slettet."); } catch (e) {}
+  } });
 }
 function mailsRammePas(f) {
   try { const d = f.contentDocument; if (!d) return; f.style.height = "10px"; f.style.height = Math.max(200, d.documentElement.scrollHeight) + "px"; } catch (e) {}
@@ -85999,16 +86055,17 @@ function mailsRammePas(f) {
 async function mailsAabn(id) {
   await mailsHent();
   const m = mailsFind(id); const el = mailsHost(); if (!m || !el) return;
-  MAILS_AABEN = id; MAILS_RET = null;
+  MAILS_AABEN = id; MAILS_RET = null; mailsPlus(false);
   const kanProeve = m.kilde === "supabase" || (mailsHarTekst(m) && String(m.emne || "").trim());
   const fakta = function (et, n, roed) { return '<div class="bs3-fl"><div class="bs3-et">' + et + '</div><div class="bs3-n' + (roed ? ' mails-r' : '') + '">' + esc(n) + '</div></div>'; };
   el.innerHTML = '<div class="bs3 mails mails-side">'
     + '<div class="mails-forh"><iframe class="mails-ramme" id="mailsRamme" title="Mailen" scrolling="no"></iframe></div>'
     + '<div class="mails-fakta">'
-    + fakta("Hvornår", m.hvornaar) + fakta("Emne", String(m.emne || "").trim() || "Dine ord mangler", !String(m.emne || "").trim()) + fakta("Fra", "Kontakt@energida.dk")
+    + (m.egen ? fakta("Til", mailsTilNavn(m.til) || "Modtagere mangler", !m.til) : fakta("Hvornår", m.hvornaar)) + fakta("Emne", String(m.emne || "").trim() || "Dine ord mangler", !String(m.emne || "").trim()) + fakta("Fra", "Kontakt@energida.dk")
     + (kanProeve ? '<button type="button" class="dbtn primary mq-tap bs3-lang" id="mailsProeveKnap" onclick="mailsProeve(\'' + m.id + '\')">Send en prøve til mig</button>' : '')
     + (m.kilde !== "supabase" ? '<button type="button" class="dbtn mq-tap bs3-lang" onclick="mailsRetVis(\'' + m.id + '\')">Ret teksten</button>' : '')
-    + '<div class="mails-kvit" id="mailsKvit" aria-live="polite"></div>'
+    + (m.egen ? '<button type="button" class="dbtn mq-tap bs3-lang mails-slet-knap" onclick="mailsSlet(\'' + m.id + '\')">' + ((typeof BS_SKRALD_SVG !== "undefined") ? BS_SKRALD_SVG : "") + 'Slet</button>' : '')
+    + '<div class="mails-kvit" id="mailsKvit" aria-live="polite">' + (m.egen ? "Udsendelse til kunder kommer, når samtykke og afmelding er på plads." : "") + '</div>'
     + '</div></div>';
   const f = document.getElementById("mailsRamme");
   if (f) { f.addEventListener("load", function () { mailsRammePas(f); setTimeout(function () { mailsRammePas(f); }, 400); setTimeout(function () { mailsRammePas(f); }, 1500); }); f.srcdoc = mailsHtml(m, { marker: true, navn: "Mette" }); }
@@ -86035,7 +86092,8 @@ async function mailsProeve(id) {
 /* RET TEKSTEN — emne + én flise pr. afsnit (overskrift · tekst). Markerede forslag står for sig, til Ida trykker »Det er mine ord«. */
 function mailsRetVis(id) {
   const m = mailsFind(id); const el = mailsHost(); if (!m || !el || m.kilde === "supabase") return;
-  if (!MAILS_RET || MAILS_RET.id !== id) MAILS_RET = { id: id, emne: m.emne || "", fliser: mailsKopi(m.fliser || []) };
+  if (!MAILS_RET || MAILS_RET.id !== id) MAILS_RET = { id: id, egen: !!m.egen, til: m.til || "", emne: m.emne || "", fliser: mailsKopi(m.fliser || []) };
+  mailsPlus(false);
   const R = MAILS_RET;
   const skrald = (typeof BS_SKRALD_SVG !== "undefined") ? BS_SKRALD_SVG : "";
   const fl = R.fliser.map(function (f, i) {
@@ -86047,6 +86105,7 @@ function mailsRetVis(id) {
       + '</div></div>';
   }).join("");
   el.innerHTML = '<div class="bs3 mails mails-ret">'
+    + (R.egen ? '<div class="bs3-fl"><div class="bs3-et">Hvem skal have den?</div><div class="ark-chips i-fladen mails-til">' + MAILS_TIL.map(function (t) { return '<button type="button" class="ark-chip' + (R.til === t.k ? ' on' : '') + '" onclick="MAILS_RET.til=\'' + t.k + '\';mailsRetVis(MAILS_RET.id)">' + esc(t.n) + '</button>'; }).join("") + '</div></div>' : '')
     + '<div class="bs3-fl"><div class="bs3-et">Emne</div><input type="text" class="bs3-felt mails-input" id="mailsEmne" value="' + esc(R.emne) + '" placeholder="Skriv emnet" oninput="MAILS_RET.emne=this.value" aria-label="Emne"></div>'
     + fl
     + '<button type="button" class="dbtn mq-tap bs3-lang" onclick="mailsRetNy()">Tilføj afsnit</button>'
@@ -86074,7 +86133,9 @@ async function mailsRetGem() {
   const fliser = R.fliser.map(function (f) { const x = Object.assign({}, f); x.et = String(x.et || "").trim(); x.tekst = String(x.tekst || "").replace(/\s+$/, ""); return x; })
     .filter(function (f) { return f.et || String(f.tekst || "").trim() || String(f.forslag || "").trim() || f.harKode; });
   await mailsHent();
-  const ny = Object.assign({}, MAILS_GEMT || {}); ny[R.id] = { emne: String(R.emne || "").trim(), fliser: fliser, rettet: new Date().toISOString() };
+  const ny = Object.assign({}, MAILS_GEMT || {});
+  if (R.egen) ny.egne = (ny.egne || []).map(function (e) { return e.id === R.id ? Object.assign({}, e, { emne: String(R.emne || "").trim(), til: R.til || e.til, fliser: fliser, rettet: new Date().toISOString() }) : e; });
+  else ny[R.id] = { emne: String(R.emne || "").trim(), fliser: fliser, rettet: new Date().toISOString() };
   const ok = await vaneGemRow("mail_tekster", ny);
   if (!ok) { husBesked("Teksten kunne ikke gemmes. Prøv igen."); return; }
   MAILS_GEMT = ny; MAILS_RET = null;
@@ -86092,8 +86153,9 @@ try {
 } catch (e) {}
 (function () {
   const under = bsMenuUnder; bsMenuUnder = function (id) { if (id === "mails") return []; return under.apply(this, arguments); };
-  const aabn = mrAabn; mrAabn = function (id) { const r = aabn.apply(this, arguments); if (id === "mails") { try { mailsTegn(); } catch (e) {} try { if (!BS_MENU_LAAS) dsbDoereTegn("mails"); } catch (e) {} } return r; };
+  const aabn = mrAabn; mrAabn = function (id) { if (id !== "mails" && document.body.classList.contains("mails-forside")) mailsPlus(false); const r = aabn.apply(this, arguments); if (id === "mails") { try { mailsTegn(); } catch (e) {} try { if (!BS_MENU_LAAS) dsbDoereTegn("mails"); } catch (e) {} } return r; };
 })();
+(function () { const vd = visDashSide; visDashSide = function () { if (document.body.classList.contains("mails-forside")) mailsPlus(false); return vd.apply(this, arguments); }; })();
 try { dsbDoereTegn(); } catch (e) {}
 </script>
 <!-- Versions-mærke: synligt på ALLE sider, så Ida altid kan se hvilken version hun kigger på (27/7) -->
@@ -86122,7 +86184,25 @@ try { dsbDoereTegn(); } catch (e) {}
 </div>
 <style>
 /* ===== MAILS I BACKSTAGE (19/10) — fliserne er husets bs3-fl; kun pladsen er ny. Mobil under 899, computer fra 900. ===== */
-.mails-grid { display:grid; grid-template-columns:1fr; gap:10px; }
+.mails-grid, .mails-liste { display:grid; grid-template-columns:1fr; gap:10px; }
+.mails-liste { margin-bottom:var(--luft-4, 32px); }
+.mails-liste > .bs3-fl { margin:0; }
+.mails-fl { display:flex; align-items:center; gap:12px; }
+.mails-fl-ind { flex:1; min-width:0; }
+.mails-vink { flex:0 0 auto; width:19px; height:19px; fill:none; stroke:var(--red); stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+.mails-slet-knap { display:flex; align-items:center; justify-content:center; gap:8px; }
+.mails-slet-knap svg { width:16px; height:16px; }
+.mails-til { margin-top:2px; }
+/* »Ny mail« = husets plus med ordet paa computeren (bud 2) */
+@media (min-width:1000px) {
+  body.mails-forside #dashMain > #bf3RumKnap.i-siden { width:auto; }
+  body.mails-forside #dashMain > #bf3RumKnap .kv-menuknap { width:auto !important; padding:0 20px 0 16px !important; border-radius:999px !important; background:#fff !important; border:1px solid var(--border) !important; color:var(--knap-graa-tekst, #6F6B66) !important; display:inline-flex !important; align-items:center; justify-content:center; gap:8px; }
+  body.mails-forside #dashMain > #bf3RumKnap .kv-menuknap .mails-ny-p { font-size:20px; line-height:1; }
+  body.mails-forside #dashMain > #bf3RumKnap .kv-menuknap .mails-ny-t { font-size:14px; line-height:1; font-family:Poppins,sans-serif; }
+}
+@media (max-width:999px) {
+  #bf3RumKnap .mails-ny-t { display:none; }
+}
 .mails-grid > .bs3-fl { margin:0; }
 .mails .mails-r { color:var(--red); }
 .mails-fl .bs3-n { font-size:15px; }
