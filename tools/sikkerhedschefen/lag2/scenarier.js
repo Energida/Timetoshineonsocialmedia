@@ -59,6 +59,15 @@
         tjek(49, "Ret mødets dag → mødesiden viser den nye dag med det samme", !!(dagChip && pd && gemK) && vist.indexOf(forvent) > -1, (dagChip ? "" : "ingen dag-chip · ") + (pd ? "" : "intet dagfelt · ") + (gemK ? "" : "ingen Gem · ") + "siden: " + vist + " · forventet " + forvent);
         try { arkLuk(true); } catch (e) {} window.__MOEDE_VALGT = ""; await V(800);
       } catch (e) { tjek(49, "Mødets dag kunne testes", false, e.message); }
+      /* L51 møder oprettes kun manuelt (Ida 19/10) */
+      try {
+        var nAft = function () { return ((JSON.parse(localStorage.getItem("SELE_DB") || "{}").kunde_aftaler) || []).length; };
+        var foer51 = nAft(); var rFoer = MAALS.rytme;
+        MAALS.rytme = Object.assign({}, MAALS.rytme || {}, { uge: { d: 3, t: "10:00" } }); window.__RYT_DAG = ""; window.__RYT_LAVET = {};
+        var lavet51 = 0; try { lavet51 = await rytmeUdrul(); } catch (e) {} try { await renderAftaler(); } catch (e) {} await V(1500);
+        tjek(51, "»Gentages hver uge« opretter ingen møder af sig selv", lavet51 === 0 && nAft() === foer51, "oprettet " + lavet51 + " · møder " + foer51 + "→" + nAft());
+        MAALS.rytme = rFoer;
+      } catch (e) { tjek(51, "Automatiske møder kunne testes", false, e.message); }
       try { showTab(2); } catch (e) {} await V(1200);
       LS("SC_ORDEN", IDEER.filter(ideErIBanken).map(function (x) { return String(x.id); }));
       /* LØFTE 13 · INGEN »UDEN TITEL« (Ida 10/10) */
