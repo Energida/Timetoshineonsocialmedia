@@ -9471,6 +9471,7 @@ body.bs-forfra.dash-mode #dashMain { background:#fff !important; }
 .lv-bar { display:flex; flex-direction:column; gap:10px; } .lv-r { display:grid; grid-template-columns:minmax(0,1.2fr) minmax(0,1fr) 28px; align-items:center; gap:10px; font-size:13px; }
 .lv-spor { height:8px; border-radius:99px; background:var(--gray); overflow:hidden; } .lv-spor i { display:block; height:100%; background:var(--red); border-radius:99px; } .lv-r b { font-weight:400; text-align:right; }
 .lv-trin { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:10px; } .lv-trin b { font-size:26px; font-weight:300; }
+.lv-mails { grid-template-columns:repeat(3,minmax(0,1fr)); } .lv-mail-n { color:var(--black) !important; font-size:13px !important; margin-top:4px; }
 .lv-toast { position:fixed; right:24px; bottom:24px; z-index:9000; background:#fff; border-radius:20px; box-shadow:var(--mb-skygge); padding:14px 18px; display:flex; gap:14px; align-items:center; max-width:360px; font-family:Poppins,sans-serif; font-size:14px; transform:translateY(160%); transition:transform .6s cubic-bezier(.23,1,.32,1); }
 .lv-toast.vis { transform:none; } .lv-toast-s { font-size:12px; color:var(--gray2); }
 .lv-puls { width:40px; height:40px; flex:0 0 40px; border-radius:50%; background:var(--red); position:relative; } .lv-puls::after { content:""; position:absolute; inset:-8px; border-radius:50%; border:2px solid var(--red); opacity:0; animation:lvRing 1.6s ease-out infinite; }
@@ -9480,6 +9481,8 @@ body.bs-forfra.dash-mode #dashMain { background:#fff !important; }
   .lv-tal { font-size:56px; }
   .lv-trin { grid-template-columns:repeat(2,minmax(0,1fr)); }
   .lv-trin > div:last-child:nth-child(odd) { grid-column:1 / -1; }   /* aldrig én flise alene i en række */
+  .lv-mails { grid-template-columns:minmax(0,1fr); }   /* mailnavne er lange — én pr. række på telefonen */
+  .lv-mails > div:last-child:nth-child(odd) { grid-column:auto; }
   .lv-toast { left:16px; right:16px; bottom:96px; max-width:none; }
 }
 .bs3-afsnit { margin-top:var(--luft-4); }
@@ -59940,7 +59943,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2825";
+const APP_VERSION = "2827";
 const APP_BYGGET = "9. oktober";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_BYGGET + " · " + APP_VERSION; } catch (e) {} });
 let NY_VERSION_KLAR = false;
@@ -84296,8 +84299,9 @@ async function liveOverblikHent() {
     const akt = {}; (ar.data || []).forEach(function (r) { const k = String(r.kode || "").toUpperCase(); const t = new Date((r.svar && r.svar.tid) || r.created_at).getTime(); if (!akt[k] || t < akt[k]) akt[k] = t; });
     const m0 = ((KURSUS_MODULER && KURSUS_MODULER[0] && KURSUS_MODULER[0].lektioner) || []).map(function (l) { return String(l.id); });
     const lek = {}; (sr.data || []).forEach(function (r) { const k = String(r.kode || "").toUpperCase(); const id = String(r.skema || "").slice(12); const t = new Date(r.created_at).getTime(); const o = lek[k] = lek[k] || { foerste: 0, ids: {} }; o.ids[id] = 1; if (!o.foerste || t < o.foerste) o.foerste = t; });
-    let ga = null; try { const g = await sb.functions.invoke("ga4-tal", { body: {} }); if (g && g.data && g.data.ok) ga = g.data; } catch (e) {}
-    LIVE_DATA = { koeb: koeb, akt: akt, lek: lek, m0: m0, ga: ga, hentet: Date.now() };
+    let ga = null, mc = null;
+    try { const [g, m] = await Promise.all([sb.functions.invoke("ga4-tal", { body: {} }), sb.functions.invoke("mailchimp-tal", { body: {} })]); if (g && g.data && g.data.ok) ga = g.data; if (m && m.data && m.data.ok) mc = m.data; } catch (e) {}
+    LIVE_DATA = { koeb: koeb, akt: akt, lek: lek, m0: m0, ga: ga, mc: mc, hentet: Date.now() };
   } catch (e) {} finally { LIVE_HENTER = false; }
   return LIVE_DATA;
 }
@@ -84346,8 +84350,15 @@ function liveOverblikHtml(D) {
   const trin = [[besoeg == null ? "–" : besoeg, "Besøg på hjemmesiden"], [maaned.length, "Køb"], [nA, "Valgt adgangskode"], [nL, "Set første lektion"], [nM, "Gennemført Modul 0"]];
   const tragt = '<div class="bs3-fl lv-tragt"><div class="bs3-et"><span>Vejen fra besøg til gennemført</span><span class="lv-tid">Sidste 30 dage</span></div><div class="lv-trin">'
     + trin.map(function (t) { return '<div><b>' + t[0] + '</b><span>' + t[1] + '</span></div>'; }).join("") + '</div></div>';
+  /* KLIK I DINE MAILS (Idas klik 19/10 »Klik pr. mail«): klik, ikke åbninger; kampagner + klassiske automatiseringer. Journeys kan Mailchimp ikke dele via API'et. */
+  let mailFl = "";
+  if (D.mc) {
+    const ml = (D.mc.mails || []).concat(D.mc.automatiseringer || []).filter(function (x) { return x.sendt > 0; }).slice(0, 6);
+    mailFl = '<div class="bs3-fl lv-tragt"><div class="bs3-et"><span>Klik i dine mails</span><span class="lv-tid">Klik, ikke åbninger</span></div>'
+      + (ml.length ? '<div class="lv-trin lv-mails">' + ml.map(function (x) { return '<div><b>' + Math.round((x.klikrate || 0) * 100) + ' %</b><span class="lv-mail-n">' + esc(x.navn) + '</span><span>' + x.klik + ' klik af ' + x.sendt + '</span></div>'; }).join("") + '</div>' : '<div class="bs3-s">Ingen mails med klikrapport endnu.</div>') + '</div>';
+  }
   return '<div class="lv"><div class="lv-top">' + stor + '<div class="lv-kol">' + bf3Ver("Kontakt i dag") + kontaktHtml + '</div></div>'
-    + '<div class="lv-tre-fl">' + koder + akt24 + lek7 + '</div>' + tragt + '</div>';
+    + '<div class="lv-tre-fl">' + koder + akt24 + lek7 + '</div>' + tragt + mailFl + '</div>';
 }
 function liveToast(k) {
   let t = document.getElementById("lvToast"); if (!t) { t = document.createElement("div"); t.id = "lvToast"; t.className = "lv-toast"; document.body.appendChild(t); }
