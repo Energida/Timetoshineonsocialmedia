@@ -21218,6 +21218,8 @@ select titel,
     <div class="mr-omr" id="mro_contentstudio" style="display:none;"><div id="csHost"></div></div>
     <!-- SALG-RUMMET (Idas klik 9/9 kl. 08.45): Pipeline · Forretningsoverblikket · Priser · Tilbud og salgstekster. Tegnes af salgTegn(). -->
     <div class="mr-omr" id="mro_salg" style="display:none;"><div id="salgHost"></div></div>
+    <!-- MAILS (Idas klik 19/10 »Byg den som buddet«): velkomstforløbets mails. Tegnes af mailsTegn(). -->
+    <div class="mr-omr" id="mro_mails" style="display:none;"><div id="mailsHost"></div></div>
     <!-- MINDFUL STUDIO (Ida 11/9): eget omraade som Food Studio — paa telefonen doere (bsRumDashboard). -->
     <div class="mr-omr" id="mro_mindful" style="display:none;">
     <div class="ws-card" data-arkiv="16/9 een ideliste (Idas klik)" style="margin-bottom:26px;display:none;">
@@ -59953,7 +59955,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2832";
+const APP_VERSION = "2833";
 const APP_BYGGET = "9. oktober";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_BYGGET + " · " + APP_VERSION; } catch (e) {} });
 let NY_VERSION_KLAR = false;
@@ -85883,6 +85885,216 @@ async function b2ImpFortryd(prefix) {
   };
 })();
 /* ===== BIB2-SLUT ===== */
+
+/* ===== MAILS I BACKSTAGE (Idas klik 19/10 »Byg den som buddet«, artifact GXP8g2nQ6D3hTqeugCoYvX) =====
+   Et rum ved siden af Forretning: velkomstforløbets fire mails som fliser (etiket = udløseren), et tryk = mailens side med
+   forhåndsvisningen i mail/invitation.html-designet (fotoet med skarpe hjørner, 8/10), Hvornår · Emne · Fra og to knapper.
+   »Send en prøve til mig« går gennem Edge Function mail-send (kun admin, kun til den indloggedes egen mail, Brevo).
+   »Ret teksten« gemmer i skema_svar ENERGIDA/Ida/mail_tekster — ingen ny tabel, ingen kundedata. INTET sendes automatisk til
+   kunder: udløserne kobles først på, når mailens ord er Idas egne (hendes ja). Teksterne er Idas egne (invitationen 4/10 og
+   udkastet til mail nr. 3 fra 10/10); de to steder, der ikke er hendes ord, står som »forslag« og er markeret, til hun selv
+   trykker »Det er mine ord«. 48 timer og 7 dage har ingen tekst — der findes aldrig på. */
+const MAILS_STD = [
+  { id: "login", udl: "Efter købet", navn: "Dit login", hvornaar: "Lige efter købet", emne: "Dit login til Content Studio", kilde: "supabase",
+    fliser: [{ et: "Dit login", midt: true, tekst: "Du vælger en adgangskode, og så er du inde.\nKlik her for at komme i gang 👇🏻", knap: "Let’s go", lille: "Linket virker i 24 timer og kun én gang. Har du ikke tilmeldt dig, kan du se bort fra mailen." }] },
+  { id: "adgangskode", udl: "Når adgangskoden er valgt", navn: "Nice- og need-to-know til dit forløb", hvornaar: "Når kunden har valgt sin adgangskode", emne: "Nice- og need-to-know til dit forløb",
+    fliser: [
+      { et: "", tekst: "Hej {navn}\n\nInden vi går rigtigt i gang, får du lige alt det, der er nice og need-to-know, så du kan få mest muligt ud af forløbet." },
+      { et: "Gem forløbet på din hjemmeskærm", tekst: "Først vil jeg anbefale dig at gemme forløbet på hjemmeskærmen på din telefon.\nSå ligger det som et ikon sammen med dine andre apps, og du kan åbne det direkte med ét tryk.", forslag: "iPhone: Åbn b2b.energida.dk i Safari, tryk på Del og vælg “Føj til hjemmeskærm”.\nAndroid: Åbn b2b.energida.dk i Chrome, tryk på menuen og vælg “Føj til startskærm”." },
+      { et: "Din lektionsside", tekst: "Hele forløbet er bygget, så du kan samle undervisning, noter og opgaver ét sted.\nUnder hver lektion kan du skrive dine egne noter direkte på siden.\nDine noter bliver gemt ved den lektion, de hører til, så du nemt kan finde dem igen." },
+      { et: "Opgaver", tekst: "Efter nogle af lektionerne venter der en lille øvelse eller opgave.\nSpørgsmålene kommer ét ad gangen, og dine svar bliver automatisk gemt undervejs.\nDerfor er det vigtigt, at du svarer ud fra, hvordan du og din forretning faktisk ser ud lige nu, ikke hvordan du synes, det burde se ud." },
+      { et: "Skærmdublering", tekst: "Noget, jeg selv godt gad have vidst tidligere, er, hvor smart det er at skærmdublere onlineundervisning.\nUanset om du ser med på din telefon eller computer, kan du få undervisningen op på dit TV.\nDet giver et helt andet overblik og kan gøre det mere behageligt at følge med." },
+      { et: "Adgang", tekst: "Ligesom du gerne vil passe på din forretning, vil jeg også gerne passe på min.\nDerfor vil jeg bede dig om ikke at dele din adgang eller undervisningen i forløbet med nogen uden for din virksomhed.\nDu må til gengæld meget gerne anbefale forløbet til en ven.\nDet vil jeg blive virkelig glad for." },
+      { et: "WE GOT THIS", tekst: "", forslag: "Som tak, fordi du er med, får du 5.000 kr. i rabat på WE GOT THIS. Bestil senest 31. december.", kode: "", harKode: true },
+      { et: "", tekst: "Kærlig hilsen\nIda" }
+    ] },
+  { id: "48t", udl: "48 timer uden adgangskode", navn: "48 timer uden adgangskode", hvornaar: "48 timer efter købet, hvis adgangskoden ikke er valgt", emne: "", fliser: [] },
+  { id: "7d", udl: "7 dage uden første lektion", navn: "7 dage uden første lektion", hvornaar: "7 dage efter adgangskoden, hvis ingen lektion er set", emne: "", fliser: [] }
+];
+let MAILS_GEMT = null, MAILS_HENTET = false, MAILS_AABEN = "", MAILS_RET = null;
+async function mailsHent() {
+  if (MAILS_HENTET) return;
+  try { const v = await vaneRow("mail_tekster"); MAILS_GEMT = (v && typeof v === "object" && !Array.isArray(v)) ? v : {}; MAILS_HENTET = true; } catch (e) { MAILS_GEMT = MAILS_GEMT || {}; }
+}
+function mailsKopi(x) { return JSON.parse(JSON.stringify(x)); }
+function mailsListe() {
+  return MAILS_STD.map(function (s) {
+    const m = mailsKopi(s); const g = (MAILS_GEMT || {})[s.id];
+    if (g && s.kilde !== "supabase") { if (typeof g.emne === "string") m.emne = g.emne; if (Array.isArray(g.fliser)) m.fliser = g.fliser; }
+    return m;
+  });
+}
+function mailsFind(id) { return mailsListe().find(function (m) { return m.id === id; }); }
+function mailsHarTekst(m) { return (m.fliser || []).some(function (f) { return String(f.tekst || "").trim() || String(f.forslag || "").trim(); }); }
+function mailsStatus(m) {
+  if (m.kilde === "supabase") return { s: "Sendes allerede" };
+  if (!mailsHarTekst(m) || !String(m.emne || "").trim()) return { mangler: true };
+  const n = (m.fliser || []).filter(function (f) { return String(f.forslag || "").trim(); }).length;
+  const kode = (m.fliser || []).some(function (f) { return f.harKode && !String(f.kode || "").trim(); });
+  if (n || kode) return { s: "Udkast", r: [n ? "Mangler dine ord " + (n === 1 ? "ét sted" : n + " steder") : "", kode ? "Koden mangler" : ""].filter(Boolean).join(" · ") };
+  return { s: "Klar · sendes ikke automatisk endnu" };
+}
+
+/* MAILEN SOM HTML — samme form som mail/invitation.html (tabeller, inline-stil, så Outlook og Gmail tegner den ens) */
+function mailsTekstHtml(t, midt) {
+  const al = midt ? "center" : "left";
+  return String(t || "").split(/\n\s*\n/).map(function (p) { return p.trim(); }).filter(Boolean).map(function (p) {
+    return '<p style="margin:0 0 12px;font-size:15px;line-height:1.6;color:#1A1A1A;text-align:' + al + ';">' + esc(p).replace(/\n/g, "<br>") + '</p>';
+  }).join("");
+}
+function mailsHtml(m, o) {
+  o = o || {};
+  const navn = o.navn || "{navn}";
+  const sub = function (t) { return String(t || "").replace(/\{navn\}/g, navn); };
+  const fl = (m.fliser || []).map(function (f) {
+    let ind = "";
+    if (f.et) ind += '<div style="font-size:10px;letter-spacing:2px;text-transform:uppercase;color:#9A9590;text-align:left;">' + esc(f.et) + '</div><div style="height:1px;background:#DEDAD4;line-height:1px;font-size:1px;margin:10px 0 14px;">&nbsp;</div>';
+    ind += mailsTekstHtml(sub(f.tekst), f.midt);
+    if (String(f.forslag || "").trim()) {
+      ind += o.marker
+        ? '<div style="margin:2px 0 12px;padding-left:12px;border-left:2px solid #DEDAD4;"><div style="font-size:10px;letter-spacing:1.4px;text-transform:uppercase;color:#9A9590;margin-bottom:4px;">Ikke dine ord</div><div style="color:#6F6B66;">' + mailsTekstHtml(sub(f.forslag)).replace(/color:#1A1A1A/g, "color:#6F6B66") + '</div></div>'
+        : mailsTekstHtml(sub(f.forslag), f.midt);
+    }
+    if (f.harKode) ind += '<div style="border:1px solid #DEDAD4;border-radius:14px;padding:12px 14px;margin:4px 0 0;"><div style="font-size:10px;letter-spacing:1.4px;text-transform:uppercase;color:#9A9590;">Din kode</div><div style="font-size:16px;letter-spacing:1px;color:#FC2404;margin-top:4px;">' + (String(f.kode || "").trim() ? esc(f.kode) : (o.marker ? "Koden mangler" : "")) + '</div></div>';
+    if (f.knap) ind += '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td align="center" bgcolor="#FC2404" style="border-radius:999px;"><a href="' + esc(o.knapUrl || "https://b2b.energida.dk/") + '" style="display:block;padding:15px 20px;font-family:Poppins,Arial,sans-serif;font-size:17px;color:#ffffff;text-decoration:none;border-radius:999px;">' + esc(f.knap) + '</a></td></tr></table>';
+    if (f.lille) ind += '<p style="margin:14px 0 0;font-size:12px;line-height:1.6;color:#6F6B66;text-align:center;">' + esc(f.lille) + '</p>';
+    { const k = ind.lastIndexOf("margin:0 0 12px;"); if (k >= 0 && ind.slice(k).indexOf("<div") < 0 && ind.slice(k).indexOf("<table") < 0) ind = ind.slice(0, k) + "margin:0;" + ind.slice(k + 16); }
+    return '<tr><td class="ind" style="padding:16px 16px 0;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#ffffff;border:1px solid #EDEAE5;border-radius:16px;"><tr><td style="padding:20px 22px;font-family:Poppins,Arial,sans-serif;">' + ind + '</td></tr></table></td></tr>';
+  }).join("");
+  const tom = !mailsHarTekst(m) ? '<tr><td class="ind" style="padding:16px 16px 0;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#ffffff;border:1px solid #EDEAE5;border-radius:16px;"><tr><td style="padding:20px 22px;font-family:Poppins,Arial,sans-serif;font-size:15px;color:#FC2404;">Dine ord mangler</td></tr></table></td></tr>' : "";
+  return '<!doctype html><html lang="da"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><meta name="supported-color-schemes" content="light">'
+    + '<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400&display=swap" rel="stylesheet">'
+    + '<style>body{margin:0;padding:0;background:#F2F0ED} @media (max-width:520px){.ind{padding-left:12px!important;padding-right:12px!important} .firma{white-space:normal!important} .fsep{display:block;height:0;overflow:hidden;font-size:0} .hero{height:240px!important}}</style></head>'
+    + '<body style="margin:0;padding:0;background:#F2F0ED;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#F2F0ED;"><tr><td align="center" style="padding:16px 0 32px;">'
+    + '<table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:600px;">'
+    + '<tr><td class="ind" style="padding:0 16px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td class="hero" background="https://b2b.energida.dk/mail/hero.jpg" bgcolor="#3A3936" height="380" style="background:#3A3936 url(\'https://b2b.energida.dk/mail/hero.jpg\') center/cover no-repeat;height:380px;"></td></tr></table></td></tr>'
+    + fl + tom
+    + '<tr><td align="center" style="padding:28px 16px 0;font-family:Poppins,Arial,sans-serif;"><p style="margin:0 0 24px;font-size:14px;color:#1A1A1A;">Er der noget, der driller? Så svar på denne mail.</p>'
+    + '<img src="https://b2b.energida.dk/mail/logo.png" width="60" alt="Energida" style="display:block;margin:0 auto 14px;width:60px;height:auto;border:0;">'
+    + '<p class="firma" style="margin:0;font-size:10.5px;line-height:1.7;color:#6F6B66;white-space:nowrap;"><span style="white-space:nowrap;">Kontakt@energida.dk · +45 28 60 30 36</span><span class="fsep"> · </span><span style="white-space:nowrap;">Holstebrovej 80, 6950 Ringkøbing · CVR: 45114651</span></p></td></tr>'
+    + '</table></td></tr></table></body></html>';
+}
+
+/* SIDEN */
+function mailsHost() { return document.getElementById("mailsHost"); }
+function mailsSti(led, tilbage) { try { navstiSaet(led, tilbage); } catch (e) {} }
+async function mailsTegn() {
+  MAILS_AABEN = ""; MAILS_RET = null;
+  const el = mailsHost(); if (!el) return;
+  await mailsHent();
+  const fl = mailsListe().map(function (m) {
+    const st = mailsStatus(m);
+    return '<div class="bs3-fl mails-fl" data-klik role="button" tabindex="0" onclick="mailsAabn(\'' + m.id + '\')" onkeydown="if(event.key===\'Enter\')mailsAabn(\'' + m.id + '\')">'
+      + '<div class="bs3-et">' + esc(m.udl) + '</div>'
+      + (st.mangler ? '<div class="bs3-n mails-r">Dine ord mangler</div>' : '<div class="bs3-n">' + esc(m.navn) + '</div><div class="bs3-s">' + esc(st.s) + (st.r ? ' · <span class="mails-r">' + esc(st.r) + '</span>' : '') + '</div>')
+      + '</div>';
+  }).join("");
+  el.innerHTML = '<div class="bs3 mails">' + bf3Ver("Velkomstforløbet") + '<div class="mails-grid">' + fl + '</div></div>';
+  mailsSti([{ navn: "Hjem", klik: "visDashSide('overblik')" }, { navn: "Mails" }], function () { visDashSide("overblik"); });
+  try { sideKlarNaar("mailsHost"); } catch (e) {}
+}
+function mailsRammePas(f) {
+  try { const d = f.contentDocument; if (!d) return; f.style.height = "10px"; f.style.height = Math.max(200, d.documentElement.scrollHeight) + "px"; } catch (e) {}
+}
+async function mailsAabn(id) {
+  await mailsHent();
+  const m = mailsFind(id); const el = mailsHost(); if (!m || !el) return;
+  MAILS_AABEN = id; MAILS_RET = null;
+  const kanProeve = m.kilde === "supabase" || (mailsHarTekst(m) && String(m.emne || "").trim());
+  const fakta = function (et, n, roed) { return '<div class="bs3-fl"><div class="bs3-et">' + et + '</div><div class="bs3-n' + (roed ? ' mails-r' : '') + '">' + esc(n) + '</div></div>'; };
+  el.innerHTML = '<div class="bs3 mails mails-side">'
+    + '<div class="mails-forh"><iframe class="mails-ramme" id="mailsRamme" title="Mailen" scrolling="no"></iframe></div>'
+    + '<div class="mails-fakta">'
+    + fakta("Hvornår", m.hvornaar) + fakta("Emne", String(m.emne || "").trim() || "Dine ord mangler", !String(m.emne || "").trim()) + fakta("Fra", "Kontakt@energida.dk")
+    + (kanProeve ? '<button type="button" class="dbtn primary mq-tap bs3-lang" id="mailsProeveKnap" onclick="mailsProeve(\'' + m.id + '\')">Send en prøve til mig</button>' : '')
+    + (m.kilde !== "supabase" ? '<button type="button" class="dbtn mq-tap bs3-lang" onclick="mailsRetVis(\'' + m.id + '\')">Ret teksten</button>' : '')
+    + '<div class="mails-kvit" id="mailsKvit" aria-live="polite"></div>'
+    + '</div></div>';
+  const f = document.getElementById("mailsRamme");
+  if (f) { f.addEventListener("load", function () { mailsRammePas(f); setTimeout(function () { mailsRammePas(f); }, 400); setTimeout(function () { mailsRammePas(f); }, 1500); }); f.srcdoc = mailsHtml(m, { marker: true, navn: "Mette" }); }
+  mailsSti([{ navn: "Hjem", klik: "visDashSide('overblik')" }, { navn: "Mails", klik: "mailsTegn()" }, { navn: m.navn }], function () { mailsTegn(); });
+  try { window.scrollTo(0, 0); const dm = document.getElementById("dashMain"); if (dm) dm.scrollTop = 0; } catch (e) {}
+}
+window.addEventListener("resize", function () { const f = document.getElementById("mailsRamme"); if (f) mailsRammePas(f); });
+async function mailsProeve(id) {
+  const m = mailsFind(id); const kv = document.getElementById("mailsKvit"); const kn = document.getElementById("mailsProeveKnap"); if (!m) return;
+  if (kn) { kn.disabled = true; kn.textContent = "Sender …"; }
+  let tekst = "";
+  try {
+    const r = await sb.functions.invoke("mail-send", { body: { emne: m.emne, html: mailsHtml(m, { marker: false, navn: "Ida" }), navn: m.id } });
+    if (r && r.data && r.data.ok) tekst = "Prøven er sendt til " + r.data.til + ".";
+    else {
+      let f = ""; try { f = (r && r.error && r.error.context && typeof r.error.context.json === "function") ? ((await r.error.context.json()).fejl || "") : ""; } catch (e) {}
+      tekst = f === "ikke-klar" ? "Brevo-nøglen mangler i Supabase." : (f || "Prøven kunne ikke sendes. Prøv igen.");
+    }
+  } catch (e) { tekst = "Prøven kunne ikke sendes. Prøv igen."; }
+  if (kv) kv.textContent = tekst;
+  if (kn) { kn.disabled = false; kn.textContent = "Send en prøve til mig"; }
+}
+
+/* RET TEKSTEN — emne + én flise pr. afsnit (overskrift · tekst). Markerede forslag står for sig, til Ida trykker »Det er mine ord«. */
+function mailsRetVis(id) {
+  const m = mailsFind(id); const el = mailsHost(); if (!m || !el || m.kilde === "supabase") return;
+  if (!MAILS_RET || MAILS_RET.id !== id) MAILS_RET = { id: id, emne: m.emne || "", fliser: mailsKopi(m.fliser || []) };
+  const R = MAILS_RET;
+  const skrald = (typeof BS_SKRALD_SVG !== "undefined") ? BS_SKRALD_SVG : "";
+  const fl = R.fliser.map(function (f, i) {
+    return '<div class="bs3-fl mails-retfl"><div class="bs3-et"><span>Afsnit</span><button type="button" class="mails-slet" aria-label="Slet afsnittet" title="Slet afsnittet" onclick="mailsRetSlet(' + i + ')">' + skrald + '</button></div><div class="mails-felter">'
+      + '<label class="mails-lbl" for="mailsEt' + i + '">Overskrift</label><input type="text" class="bs3-felt mails-input" id="mailsEt' + i + '" value="' + esc(f.et || "") + '" placeholder="Uden overskrift" oninput="MAILS_RET.fliser[' + i + '].et=this.value">'
+      + '<label class="mails-lbl" for="mailsTx' + i + '">Tekst</label><textarea class="mails-tekst" id="mailsTx' + i + '" placeholder="Skriv teksten" oninput="MAILS_RET.fliser[' + i + '].tekst=this.value">' + esc(f.tekst || "") + '</textarea>'
+      + (String(f.forslag || "").trim() ? '<div class="mails-forslag"><label class="mails-lbl" for="mailsFs' + i + '">Ikke dine ord</label><textarea class="mails-tekst" id="mailsFs' + i + '" oninput="MAILS_RET.fliser[' + i + '].forslag=this.value">' + esc(f.forslag) + '</textarea><button type="button" class="dbtn mq-tap bs3-lang" onclick="mailsRetMine(' + i + ')">Det er mine ord</button></div>' : '')
+      + (f.harKode ? '<label class="mails-lbl" for="mailsKd' + i + '">Rabatkode</label><input type="text" class="bs3-felt mails-input" id="mailsKd' + i + '" value="' + esc(f.kode || "") + '" placeholder="Koden mangler" oninput="MAILS_RET.fliser[' + i + '].kode=this.value">' : '')
+      + '</div></div>';
+  }).join("");
+  el.innerHTML = '<div class="bs3 mails mails-ret">'
+    + '<div class="bs3-fl"><div class="bs3-et">Emne</div><input type="text" class="bs3-felt mails-input" id="mailsEmne" value="' + esc(R.emne) + '" placeholder="Skriv emnet" oninput="MAILS_RET.emne=this.value" aria-label="Emne"></div>'
+    + fl
+    + '<button type="button" class="dbtn mq-tap bs3-lang" onclick="mailsRetNy()">Tilføj afsnit</button>'
+    + '<div class="mails-bund"><button type="button" class="dbtn primary mq-tap bs3-lang" onclick="mailsRetGem()">Gem</button><button type="button" class="dbtn mq-tap bs3-lang" onclick="mailsAabn(\'' + id + '\')">Annuller</button></div>'
+    + '</div>';
+  mailsSti([{ navn: "Hjem", klik: "visDashSide('overblik')" }, { navn: "Mails", klik: "mailsTegn()" }, { navn: m.navn, klik: "mailsAabn('" + id + "')" }, { navn: "Ret teksten" }], function () { mailsAabn(id); });
+  /* INTET KLIPPES (22/7): felterne vokser med teksten */
+  el.querySelectorAll(".mails-tekst").forEach(function (t) { mailsVoks(t); t.addEventListener("input", function () { mailsVoks(t); }); });
+}
+function mailsVoks(t) { try { t.style.height = "auto"; t.style.height = Math.max(120, t.scrollHeight + 2) + "px"; } catch (e) {} }
+function mailsRetNy() { if (!MAILS_RET) return; MAILS_RET.fliser.push({ et: "", tekst: "" }); mailsRetVis(MAILS_RET.id); setTimeout(function () { const t = document.getElementById("mailsTx" + (MAILS_RET.fliser.length - 1)); if (t) t.focus(); }, 30); }
+function mailsRetSlet(i) {
+  if (!MAILS_RET) return;
+  arkSpoerg({ titel: "Slet afsnittet?", tekst: "Afsnittet forsvinder fra mailen, når du trykker Gem.", jaTekst: "Slet", nejTekst: "Annuller", ja: function () { MAILS_RET.fliser.splice(i, 1); mailsRetVis(MAILS_RET.id); } });
+}
+function mailsRetMine(i) {
+  if (!MAILS_RET) return; const f = MAILS_RET.fliser[i]; if (!f) return;
+  const fs = String(f.forslag || "").trim(); const tx = String(f.tekst || "").trim();
+  f.tekst = tx ? tx + "\n\n" + fs : fs; f.forslag = "";
+  mailsRetVis(MAILS_RET.id);
+}
+async function mailsRetGem() {
+  if (!MAILS_RET) return;
+  const R = MAILS_RET;
+  const fliser = R.fliser.map(function (f) { const x = Object.assign({}, f); x.et = String(x.et || "").trim(); x.tekst = String(x.tekst || "").replace(/\s+$/, ""); return x; })
+    .filter(function (f) { return f.et || String(f.tekst || "").trim() || String(f.forslag || "").trim() || f.harKode; });
+  await mailsHent();
+  const ny = Object.assign({}, MAILS_GEMT || {}); ny[R.id] = { emne: String(R.emne || "").trim(), fliser: fliser, rettet: new Date().toISOString() };
+  const ok = await vaneGemRow("mail_tekster", ny);
+  if (!ok) { husBesked("Teksten kunne ikke gemmes. Prøv igen."); return; }
+  MAILS_GEMT = ny; MAILS_RET = null;
+  await mailsAabn(R.id);
+  try { husKvit("Gemt."); } catch (e) {}
+}
+
+/* PLADSEN I BACKSTAGE: menupunktet efter Forretning, rummet i Maskinrummets omraader (samme vej som Forretning — hero, sti og Tilbage er husets egne) */
+try { MR_NAVNE.mails = "Mails"; } catch (e) {}
+try {
+  if (!BS_MENU_DOERE.some(function (d) { return d.id === "mails"; })) {
+    const i = BS_MENU_DOERE.findIndex(function (d) { return d.id === "salg"; });
+    BS_MENU_DOERE.splice(i + 1, 0, { id: "mails", n: "Mails", k: "mrGaaTil('mails')", side: "mails", ik: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3.5 6.5 8.5 6.5 8.5-6.5"/>' });
+  }
+} catch (e) {}
+(function () {
+  const under = bsMenuUnder; bsMenuUnder = function (id) { if (id === "mails") return []; return under.apply(this, arguments); };
+  const aabn = mrAabn; mrAabn = function (id) { const r = aabn.apply(this, arguments); if (id === "mails") { try { mailsTegn(); } catch (e) {} try { if (!BS_MENU_LAAS) dsbDoereTegn("mails"); } catch (e) {} } return r; };
+})();
+try { dsbDoereTegn(); } catch (e) {}
 </script>
 <!-- Versions-mærke: synligt på ALLE sider, så Ida altid kan se hvilken version hun kigger på (27/7) -->
 <!-- Loaderen ligger paa BODY-niveau, saa den virker paa BEGGE flader — admin og b2b.
@@ -85908,6 +86120,43 @@ async function b2ImpFortryd(prefix) {
     <img class="wg-hjerte" src="logo-hjerte-roed.png" alt="">
   </div>
 </div>
+<style>
+/* ===== MAILS I BACKSTAGE (19/10) — fliserne er husets bs3-fl; kun pladsen er ny. Mobil under 899, computer fra 900. ===== */
+.mails-grid { display:grid; grid-template-columns:1fr; gap:10px; }
+.mails-grid > .bs3-fl { margin:0; }
+.mails .mails-r { color:var(--red); }
+.mails-fl .bs3-n { font-size:15px; }
+.mails-forh { border-radius:20px; overflow:hidden; background:#F2F0ED; }
+.mails-ramme { display:block; width:100%; min-height:420px; border:0; background:#F2F0ED; }
+.mails-fakta { display:flex; flex-direction:column; gap:10px; margin-top:var(--luft-2, 16px); }
+.mails-fakta .bs3-fl { margin:0; }
+.mails-kvit { min-height:18px; font-size:12.5px; line-height:1.5; color:var(--gray2); text-align:center; }
+.mails-ret .bs3-fl { margin:0 0 10px; }
+.mails-ret .bs3-et { align-items:center; }
+.mails-lbl { display:block; font-size:10px; letter-spacing:1.4px; text-transform:uppercase; color:var(--gray3); margin:12px 0 6px; }
+.mails-ret .mails-felter > .mails-lbl:first-child { margin-top:2px; }
+.mails-input { display:block; width:100%; flex:none; }
+.mails-tekst { display:block; width:100%; min-height:120px; overflow:hidden; box-sizing:border-box; border:1px solid var(--border); border-radius:14px; padding:12px 14px; font-family:Poppins,sans-serif; font-size:14px; line-height:1.55; color:var(--black); background:#fff; resize:vertical; }
+.mails-tekst:focus, .mails-input:focus { outline:none; border-color:var(--gray3); }
+.mails-forslag { margin-top:12px; padding-left:12px; border-left:2px solid var(--border); }
+.mails-forslag .mails-tekst { color:var(--gray2); }
+.mails-forslag .bs3-lang { margin-top:10px; }
+.mails-slet { border:0; background:none; padding:0; min-width:36px; min-height:36px; display:inline-flex; align-items:center; justify-content:flex-end; color:var(--gray3); cursor:pointer; }
+.mails-slet:hover { color:var(--red); }
+.mails-slet svg { width:16px; height:16px; }
+.mails-ret > .bs3-lang { margin:6px 0 0; }
+.mails-bund { display:flex; flex-direction:column; gap:10px; margin-top:var(--luft-3, 24px); }
+@media (max-width:899px) {
+  .mails-tekst, .mails-input { font-size:16px; }
+  .mails-slet { min-width:44px; min-height:44px; }
+}
+@media (min-width:900px) {
+  .mails-grid { grid-template-columns:1fr 1fr; gap:16px; }
+  .mails-side { display:grid; grid-template-columns:minmax(0,1fr) 340px; gap:24px; align-items:start; }
+  .mails-fakta { margin-top:0; position:sticky; top:16px; }
+  .mails-ret { max-width:760px; }
+}
+</style>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-hvid.png" alt=""><span>Henter…</span></div>
 <div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 8. oktober · 2600</div>
 <script>

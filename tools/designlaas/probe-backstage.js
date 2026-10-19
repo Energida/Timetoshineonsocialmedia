@@ -11,6 +11,9 @@ const SIDER = [
   ["kunder", function () { visDashSide("crm"); }],
   ["salg", function () { mrGaaTil("salg"); }],
   ["pipeline", function () { bsSalgAabnListe("pipeline"); }],
+  ["mails", function () { mrGaaTil("mails"); }],   /* Mails (19/10) */
+  ["mailsmail", function () { mrGaaTil("mails"); setTimeout(function () { mailsAabn("adgangskode"); }, 300); }],
+  ["mailsret", function () { mrGaaTil("mails"); setTimeout(function () { mailsAabn("adgangskode").then(function () { mailsRetVis("adgangskode"); }); }, 300); }],
   ["contentstudio", function () { mrGaaTil("contentstudio"); }],
   ["energidastudio", function () { visDashSide("klip"); }],
   ["timetoshine", function () { bf3TtsAabn(); }],   /* Time to Shine = B2C-studiernes side (21/9) */
