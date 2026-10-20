@@ -46,11 +46,13 @@ Deno.serve(async (req) => {
   if (adminFejl) return svar({ fejl: "Kunne ikke slå din adgang op." }, 401);
   if (erAdmin !== true) return svar({ fejl: "Kun administratorer kan sende prøver." }, 403);
 
-  let krop: { emne?: string; html?: string; navn?: string } = {};
+  let krop: { emne?: string; html?: string; navn?: string; fra?: string } = {};
   try { krop = await req.json(); } catch (_e) { return svar({ fejl: "Mailen manglede." }, 400); }
   const emne = String(krop.emne || "").trim().slice(0, 200);
   const html = String(krop.html || "");
   const navn = String(krop.navn || "velkomstmail").trim().slice(0, 80);
+  /* Afsenderens NAVN kan Ida rette (19/10 »jeg skal kunne redigere i ALT«); adressen er altid Kontakt@energida.dk (Brevo-godkendt) */
+  const fraNavn = String(krop.fra || "Energida").replace(/[\r\n<>"]/g, "").trim().slice(0, 60) || "Energida";
   if (!emne || !html || html.length > 200000) return svar({ fejl: "Mailen manglede emne eller tekst." }, 400);
 
   const nu = Date.now(); while (sendt.length && nu - sendt[0] > 3600e3) sendt.shift();
@@ -61,7 +63,7 @@ Deno.serve(async (req) => {
     method: "POST",
     headers: { "api-key": noegle, "Content-Type": "application/json", Accept: "application/json" },
     body: JSON.stringify({
-      sender: { name: "Energida", email: "Kontakt@energida.dk" },
+      sender: { name: fraNavn, email: "Kontakt@energida.dk" },
       replyTo: { email: "Kontakt@energida.dk", name: "Energida" },
       to: [{ email: mail }],
       subject: "Prøve · " + emne,
