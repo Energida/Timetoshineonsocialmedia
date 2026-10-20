@@ -4,6 +4,11 @@
 - **DAGSORDENEN RETTES PÅ STEDET.** Et penneikon ved hvert punkt åbner punktet: navn, tekst, skraldespand (fjern) og Gem; »Tilføj punkt« lægger et nyt til. Standardpunkterne (performance · den kommende uge · dato for næste møde) står uændrede, til man retter dem. Gemmes i `plan_ritual.moede.dagsorden` (merges, andre nøgler urørte); et rettet punkt bliver statisk tekst, et urørt punkt bliver dynamisk (uge, tema, mål). Ingen Annuller i rettelsen.
 - **ALLE DATOSYMBOLER ER KVADRATER, 56 × 56 (HÅRD, Ida 9/10: »kvadratiske alle steder«):** Kommende opslag (`.kop-dato`), aftalernes dato (`.cf-dato`), Backstages `.bs3-tidb.d` og `.bs-datob`. Ingen dato-boks er højere end bred.
 
+## v2852 · Indholdssøjle virker fra »+ Tilføj« over en søjle (Ida 20/10: »her kommer der ingen indholdssøjle op«)
+- Ny idé åbnet fra »+ Tilføj« over en søjle: knappen Indholdssøjle viser nu søjlerne (før: knappen blev grå, intet kom frem — listen var udeladt, fordi søjlen var valgt på forhånd).
+- Søjlen, man kom fra, står valgt; man kan skifte den.
+- Sikkerhedschefen løfte 1: »+ Tilføj« over en søjle viser søjlerne (fejler på v2850).
+
 ## v2850 · Den nye idé ses på computeren + ingen røde rammer i kundekortet (Mette-testen 20/10 · Ida 20/10)
 - Idébanken 1440: en ny idé uden søjle (eller en Story) skifter banken til chippen »Uden plads«/»Story«, så idéen står på skærmen. Før stod »Gemt under Uden plads«, mens skærmen viste de fire søjler.
 - »Tilføj din første idé« står kun, når HELE banken er tom — også Story og Uden plads tælles.

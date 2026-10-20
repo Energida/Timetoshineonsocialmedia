@@ -92,6 +92,14 @@
           if (nyU && nyU.id) { try { await sb.from("content_ideer").delete().eq("id", nyU.id); IDEER = IDEER.filter(function (x) { return String(x.id) !== String(nyU.id); }); } catch (e) {} }
         }
       } catch (e) { tjek(1, "Den nye idé på computeren kunne testes", false, e.message); }
+      /* LØFTE 1 · »+ TILFØJ« OVER EN SØJLE VISER SØJLERNE (Ida 20/10: »her kommer der ingen indholdssøjle op«) */
+      try {
+        showTab(2); ibVis("ideer"); await V(500);
+        var kolN = (strategyPillars && strategyPillars[1]) || "1B"; ibNyIdeI(kolN); await V(800);
+        var ekS = document.getElementById("arkEkstra"); var sjS = ekS && ekS.querySelector(".ark-soejler");
+        tjek(1, "»+ Tilføj« over en søjle: Indholdssøjle viser søjlerne", !!sjS && sjS.querySelectorAll(".ark-chip").length >= 4, sjS ? sjS.querySelectorAll(".ark-chip").length + " chips" : "ingen søjler i arket");
+        try { arkLuk(true); } catch (e) {} KUNDE_ARK_SOEJLE = "";
+      } catch (e) { tjek(1, "»+ Tilføj« over en søjle kunne testes", false, e.message); }
       /* LØFTE 7 + 10 · OPGAVER OG JA/NEJ: en ny to-do (med kvittering), afkrydset, og »Ja, postet« på et planlagt opslag */
       try {
         var k7 = await kundeArkGem("SC to-do fra sikkerhedschefen", "todo");
