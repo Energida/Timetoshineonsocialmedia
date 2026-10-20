@@ -111,7 +111,7 @@ setTimeout(async function () {
         var bg = getComputedStyle(document.body).backgroundColor; if (!/rgb\(255, 255, 255\)/.test(bg)) { console.log("SELE BACKSTAGE FEJL " + navn + " siden er ikke ren hvid (" + bg + ")"); fejl++; }
       }
       /* ingen billeder i Backstage (Ida 11/9) — vandmaerket og ikoner er ikke billeder */
-      var billeder = [].filter.call(r.querySelectorAll("img"), function (im) { var q = im.getBoundingClientRect(); return q.width > 40 && q.height > 40 && !/logo-hjerte/.test(im.src) && !im.closest(".hjerte-pynt"); });
+      var billeder = [].filter.call(r.querySelectorAll("img"), function (im) { var q = im.getBoundingClientRect(); return q.width > 40 && q.height > 40 && !/logo-hjerte/.test(im.src) && !im.closest(".hjerte-pynt") && !im.closest(".mails-ret"); });   /* UNDTAGELSE (Idas klik 19/10 »Byg det« på mailbyggeren, artifact BurSou7padxUQVyG1gthzd): billederne i mailredigeringen ER mailens indhold */
       if (billeder.length) { console.log("SELE BACKSTAGE FEJL " + navn + " billede i Backstage: " + billeder.slice(0, 3).map(function (im) { return im.src.split("/").pop().slice(0, 30); }).join(", ")); fejl++; }
       if (telefon) {
         /* ingen topbar/fod paa telefonen (8/9): faste elementer, der ikke er bundmenu, menu, ark eller flyt-menu */
