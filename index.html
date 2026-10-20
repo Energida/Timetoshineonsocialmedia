@@ -27846,7 +27846,7 @@ async function briefTilbage() {
     /* SPØGELSESJÆGEREN (Ida 19/10: »jeg ser det rigtig mange steder!«, MÅLT live i Acorns): i kundeappen holder sideskiftet (SK_HOLD, 9/10)
        briefen fremme, til siden bag den er bygget — så tæppet her blinkede i 80 ms og løftede sig over den SAMME brief: brief → tæppe → brief → kalender.
        Tæppet bruges kun dér, hvor intet holder den gamle side: i Backstage (dash-mode). */
-    if (!document.body.classList.contains("dash-mode")) { document.body.classList.remove("brief-igang"); showTab((BRIEF_FRA != null && BRIEF_FRA !== 7) ? BRIEF_FRA : 2); return; }
+    if (!document.body.classList.contains("dash-mode")) { document.body.classList.remove("brief-igang"); showTab((BRIEF_FRA != null && BRIEF_FRA !== 7) ? BRIEF_FRA : 2); if (window.__PR_RETUR) { window.__PR_RETUR = false; setTimeout(function () { try { planRitStart(); } catch (e) {} }, 120); } return; }
     try { privCoverVis(true); } catch (e) {}
     document.body.classList.remove("brief-igang");
     showTab((BRIEF_FRA != null && BRIEF_FRA !== 7) ? BRIEF_FRA : 2);
@@ -60212,7 +60212,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2854";
+const APP_VERSION = "2856";
 const APP_BYGGET = "9. oktober";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_BYGGET + " · " + APP_VERSION; } catch (e) {} });
 let NY_VERSION_KLAR = false;
@@ -81705,11 +81705,16 @@ function moedeOpslagHtml(x) {
   const felt = function (k, navn, suf) { return '<div class="mo-tal"><span class="mo-et">' + navn + '</span><span class="mo-ind"><input type="text" inputmode="decimal" placeholder="Tal" data-id="' + esc(String(x.id)) + '" data-felt="' + k + '" value="' + esc(b[k] == null ? "" : String(b[k])) + '" onchange="moedeTalGem(this)">' + (suf ? '<i>' + suf + '</i>' : '') + '</span></div>'; };
   const spm = function (k, navn) { return '<div class="mo-spm"><span class="mo-et">' + navn + '</span><textarea rows="1" placeholder="Tilføj …" data-id="' + esc(String(x.id)) + '" data-felt="' + k + '" onchange="moedeTalGem(this)" oninput="this.style.height=\'auto\';this.style.height=this.scrollHeight+\'px\'">' + esc(b[k] || "") + '</textarea></div>'; };
   const reel = moedeErReel(x);
-  return '<div class="mo-opslag" id="moOpslag_' + esc(String(x.id)) + '"><div class="mo-ot" role="button" tabindex="0" onclick="openBrief(\'' + esc(String(x.id)) + '\')"><i>' + esc(storStart(titelVis(x.titel || "Uden titel"))) + '</i><small>' + esc((x.type ? x.type + " · " : "") + "postet " + dkDatoKort(x.dato)) + '</small></div>'
+  return '<div class="mo-opslag" id="moOpslag_' + esc(String(x.id)) + '"><div class="mo-ot" role="button" tabindex="0" onclick="moOpslagAabn(\'' + esc(String(x.id)) + '\')"><i>' + esc(storStart(titelVis(x.titel || "Uden titel"))) + '</i><small>' + esc((x.type ? x.type + " · " : "") + "postet " + dkDatoKort(x.dato)) + '</small></div>'
     + '<div class="mo-talrk' + (reel ? ' fire' : '') + '">' + felt("indblikNaaet", "Konti nået", "") + (reel ? felt("indblikSpring", "Overspringsfrekvens", "%") : "") + felt("indblikInt", "Interaktioner", "") + felt("indblikGemtDelt", "Gemt + delt", "") + '</div>'
     + '<div class="mo-regn" id="moRegn_' + esc(String(x.id)) + '">' + (moedeRegnHtml(x) || (reel ? '' : 'Karrusel og billede: ingen overspringsfrekvens')) + '</div>'
     + spm("laerGodt", "Hvad gik godt") + spm("laerSvaert", "Hvad var svært") + spm("laerte", "Hvad fik vi ud af det")
     + '<div class="pm-kvit mo-kvit" id="pmKvit_' + esc(String(x.id)) + '"></div></div>';
+}
+/* ÅBN OPSLAGET FRA MØDET OG KOM TILBAGE TIL SAMME OPSLAG (20/10, fund 7) */
+function moOpslagAabn(id) {
+  try { const pr = document.getElementById("planRit"); if (PR && pr && pr.classList.contains("on")) { try { if (document.activeElement) document.activeElement.blur(); } catch (e) {} PR.__opslag = String(id); window.__PR_RETUR = true; planRitLuk(); } } catch (e) {}
+  openBrief(id);
 }
 async function moedeTalGem(el) {
   try { await perfMoedeGem(el); } catch (e) {}
@@ -82142,6 +82147,15 @@ function planRitSkalHtml() {
     + '<div class="pr-grid"><aside class="pr-rail" id="prRail"></aside><div id="prKrop"></div></div>';
 }
 function planRitStart(tving) {
+  /* MØDET HUSKER, HVOR MAN SLAP (Idas indsatte gennemgang 20/10, fund 7: »Jeg åbnede opslag 2 … Tilbage førte til planlægningsforsiden. Da jeg startede mødet igen, var jeg tilbage ved opslag 1« · regel 26/8 »kunden lander dér, hvor hun slap«):
+     lukkes mødet (eller åbnes et opslag fra det), gemmes stedet; samme uge og samme slags møde fortsætter dér. »Færdig« rydder det. */
+  try { const pz = window.__PR_PAUSE; if (pz && pz.pr && pz.pr.ugeKey === planRitUgeKey(planRitUge()) && Date.now() - pz.t < 12 * 3600e3 && (!tving || (tving === "maaned") === !!pz.pr.maaned)) {
+    window.__PR_PAUSE = null; PR = pz.pr;
+    let el0 = document.getElementById("planRit"); if (!el0) { el0 = document.createElement("div"); el0.id = "planRit"; el0.innerHTML = planRitSkalHtml(); document.body.appendChild(el0); }
+    el0.classList.add("on"); document.body.classList.add("plan-open"); planRitTegn();
+    if (pz.pr.__opslag) { const o = document.getElementById("moOpslag_" + pz.pr.__opslag); if (o) setTimeout(function () { try { o.scrollIntoView({ block: "start" }); } catch (e) {} }, 60); }
+    return;
+  } } catch (e) {}
   const man = planRitUge();
   const mkey = planRitMaanedKey(man);
   /* HVER FJERDE PLANLAEGNING ER MAANEDENS (Idas ord 20/9: »Hver 4. ugentlige skal være månedens«) — foer var det den foerste i en ny kalendermaaned. Taelleren ugerSidenMaaned bor i plan_ritual sammen med resten. */
@@ -82161,7 +82175,7 @@ function planRitStart(tving) {
   try { prTemaHent(); } catch (e) {}
   planRitTegn(); el.scrollTop = 0;
 }
-function planRitLuk() { const el = document.getElementById("planRit"); if (el) { el.classList.remove("on"); el.classList.remove("pr-solo"); } document.body.classList.remove("plan-open"); PR = null; try { renderHome(); } catch (e) {} try { planRitKortTegn(); } catch (e) {} try { perfBud1Tegn(); } catch (e) {} }
+function planRitLuk() { try { if (PR && !PR.solo && !PR.__faerdig) window.__PR_PAUSE = { pr: PR, t: Date.now() }; else window.__PR_PAUSE = null; } catch (e) {} const el = document.getElementById("planRit"); if (el) { el.classList.remove("on"); el.classList.remove("pr-solo"); } document.body.classList.remove("plan-open"); PR = null; try { renderHome(); } catch (e) {} try { planRitKortTegn(); } catch (e) {} try { perfBud1Tegn(); } catch (e) {} }
 document.addEventListener("keydown", function (e) { if (e.key === "Escape" && PR) { const ib = document.getElementById("ideBack"); if (ib && ib.classList.contains("on")) return; planRitLuk(); } });
 function prBjaelke(n) { return ""; }   /* bjaelkerne er ude (procesbaren er ringe, 3/9; Idas klik 20/9): rygraden og »Trin n af 6« baerer stedet */
 function prRail() {
@@ -82174,7 +82188,7 @@ function prRail() {
     + '<button type="button" class="dbtn mq-tap bs3-lang pr-tid-knap" style="margin:0 0 12px;" onclick="planMoedeTidArk()">' + esc(tid) + '</button>'
     + '<div class="pr-kort">'
     + ''   /* RINGEN ER UDE (Ida 21/9 kl. 22.28: »skal det ikke være en ring der viser status«) — de seks trin med flueben ER status; vaelter 15/9 */
-    + navne.map(function (n, i) { const t = i + 1; const cls = PR.trin === t ? " on" : (PR.trin > t ? " done" : ""); return '<div class="pr-rail-rk' + cls + '"><span class="pr-rail-c">' + (PR.trin > t ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"/></svg>' : t) + '</span><span>' + n + '</span></div>'; }).join("")
+    + navne.map(function (n, i) { const t = i + 1; const cls = PR.trin === t ? " on" : (PR.trin > t ? " done" : ""); return '<div class="pr-rail-rk' + cls + '" role="button" tabindex="0" style="cursor:pointer;" onclick="prGaa(' + t + ')" onkeydown="if(event.key===\'Enter\')prGaa(' + t + ')"><span class="pr-rail-c">' + (PR.trin > t ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"/></svg>' : t) + '</span><span>' + n + '</span></div>'; }).join("")
     + '</div>';
 }
 function planRitTegn() {
@@ -82200,7 +82214,7 @@ function planRitTegnKrop(k) {
   if (PR.trin === 6) { k.innerHTML = prBookHtml(); return; }
   k.innerHTML = prFaerdigHtml();
 }
-function prGaa(t) { if (!PR) return; PR.trin = t; planRitTegn(); const el = document.getElementById("planRit"); if (el) el.scrollTop = 0; }
+function prGaa(t) { if (!PR) return; try { if (document.activeElement && document.getElementById("planRit").contains(document.activeElement)) document.activeElement.blur(); } catch (e) {} PR.trin = t; planRitTegn(); const el = document.getElementById("planRit"); if (el) el.scrollTop = 0; }
 /* ---- maaneden (foerste planlaegning i en ny maaned) ---- */
 function prMaanedHtml() {
   const mNavn = maanedNavnDK(PR.mkey + "-15");
@@ -82819,7 +82833,7 @@ function prFaerdigHtml() {
   return '<div class="lek-moment" style="margin-top:30px;"><div class="lek-moment-ring"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div>'
     + '<div class="lek-moment-lbl">Uge ' + energidaUgeNr(PR.uge) + ' er planlagt</div><div class="lek-moment-titel">Godt gået</div>'
     + '<div class="lek-moment-txt">' + (PR.nye.length ? PR.nye.length + (PR.nye.length === 1 ? ' nyt opslag' : ' nye opslag') + ' i kalenderen. ' : '') + 'Næste planlægning: ' + esc(dkDatoKort(iso)) + ' kl. ' + esc(String(PR.book.tid || "").slice(0, 5).replace(":", ".").replace(/^0/, "")) + '.' + (PR.gemtOk === false ? ' Det blev ikke gemt. Prøv igen.' : '') + '</div>'
-    + '<button type="button" class="dbtn primary lek-moment-knap" onclick="planRitLuk(); try { showTab(3); } catch (e) {}">Tilbage til Hjem</button></div>';
+    + '<button type="button" class="dbtn primary lek-moment-knap" onclick="if (PR) PR.__faerdig = true; planRitLuk(); try { showTab(3); } catch (e) {}">Tilbage til Hjem</button></div>';
 }
 
 // kursus-kunder: de låste sider viser lås-overlayet, indtil forløbet er gennemført

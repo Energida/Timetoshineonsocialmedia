@@ -322,6 +322,17 @@
           INSP_MAPPER = INSP_MAPPER.filter(function (m) { return m.id !== "msc"; }); await inspMapperGem(); await inspFlytTil(kM.id, "");
         }
       } catch (e) { tjek(1, "Mapper-tjekket kunne køre", false, e.message); }
+      /* LØFTE 1 · PLANLÆGNINGSMØDET HUSKER STEDET (20/10, fund 7): luk mødet på trin 4 → start igen → stadig trin 4; »Færdig« starter forfra */
+      try {
+        window.__PR_PAUSE = null; planRitStart("uge"); await V(300);
+        prGaa(4); planRitLuk(); planRitStart(); await V(200);
+        var prOk = PR && PR.trin === 4;
+        PR.__faerdig = true; planRitLuk(); planRitStart("uge"); await V(200);
+        var prNy = PR && PR.trin === 1 && !PR.__faerdig;
+        planRitLuk(); window.__PR_PAUSE = null;
+        tjek(1, "Planlægningsmødet fortsætter, hvor man slap", prOk, "stod ikke på trin 4");
+        tjek(1, "Planlægningsmødet starter forfra efter Færdig", prNy, "huskede et afsluttet møde");
+      } catch (e) { tjek(1, "Møde-tjekket kunne køre", false, e.message); }
       /* GAMLE KUNDER (salgsturnéen): lead gemmes m. kvittering, mailen bærer koden og siden, tom butik siges */
       try {
         var mm = window.matchMedia, wo = window.open; window.matchMedia = function () { return { matches: false }; }; window.open = function (u) { window.__GK_MAIL = u; return {}; };

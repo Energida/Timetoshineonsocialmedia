@@ -4,6 +4,12 @@
 - **DAGSORDENEN RETTES PÅ STEDET.** Et penneikon ved hvert punkt åbner punktet: navn, tekst, skraldespand (fjern) og Gem; »Tilføj punkt« lægger et nyt til. Standardpunkterne (performance · den kommende uge · dato for næste møde) står uændrede, til man retter dem. Gemmes i `plan_ritual.moede.dagsorden` (merges, andre nøgler urørte); et rettet punkt bliver statisk tekst, et urørt punkt bliver dynamisk (uge, tema, mål). Ingen Annuller i rettelsen.
 - **ALLE DATOSYMBOLER ER KVADRATER, 56 × 56 (HÅRD, Ida 9/10: »kvadratiske alle steder«):** Kommende opslag (`.kop-dato`), aftalernes dato (`.cf-dato`), Backstages `.bs3-tidb.d` og `.bs-datob`. Ingen dato-boks er højere end bred.
 
+## v2856 · Planlægningsmødet husker stedet + trinlisten kan bruges (Idas indsatte gennemgang 20/10, fund 7 + »trinlisten kunne ikke bruges til at hoppe frem«)
+- Åbner man et opslag fra »Siden sidst«, fører briefens Tilbage direkte tilbage til SAMME opslag i mødet (før: planlægningsforsiden, og »Start mødet« begyndte på opslag 1).
+- Lukkes mødet, fortsætter »Start mødet« samme sted (samme uge, samme slags møde, op til 12 timer). »Tilbage til Hjem« efter Færdig starter næste møde forfra. Regel 26/8: kunden lander dér, hvor hun slap.
+- Trinlisten til venstre (computeren) er navigation: tryk på et trin = gå dertil; det skrevne gemmes først (feltet mister fokus).
+- Sikkerhedschefen løfte 1: »fortsætter, hvor man slap« (fejler på v2854) + »starter forfra efter Færdig«.
+
 ## v2854 · Inspiration i mapper (Idas klik 20/10 »yes - implementer bud 1!«, artifact 4ZphUWNHtKc3qH1vzr2KQX)
 Ida: »jeg skal kunne trække ideer rundt og oprette mapper... og på telefonen ligesom pinterest« · »Profilen som titel« · »kan vi evt få noget "tilføjet af"«.
 - Mapperne står øverst som fliser (Mapper · ord + streg): fire billeder i mosaik (skarpe hjørner), navnet under, intet tal. »+ Ny mappe« er en stiplet flise. Tryk = mappen åbner (heroens Tilbage fører til mapperne; ⋯ = Omdøb · Slet). Under mapperne: »Seneste« = alle kort.
