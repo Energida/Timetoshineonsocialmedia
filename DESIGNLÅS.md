@@ -4,6 +4,13 @@
 - **DAGSORDENEN RETTES PÅ STEDET.** Et penneikon ved hvert punkt åbner punktet: navn, tekst, skraldespand (fjern) og Gem; »Tilføj punkt« lægger et nyt til. Standardpunkterne (performance · den kommende uge · dato for næste møde) står uændrede, til man retter dem. Gemmes i `plan_ritual.moede.dagsorden` (merges, andre nøgler urørte); et rettet punkt bliver statisk tekst, et urørt punkt bliver dynamisk (uge, tema, mål). Ingen Annuller i rettelsen.
 - **ALLE DATOSYMBOLER ER KVADRATER, 56 × 56 (HÅRD, Ida 9/10: »kvadratiske alle steder«):** Kommende opslag (`.kop-dato`), aftalernes dato (`.cf-dato`), Backstages `.bs3-tidb.d` og `.bs-datob`. Ingen dato-boks er højere end bred.
 
+## v2848 · Inspiration: kun plusset, intet felt (Ida 20/10, klik »Kun plusset, intet felt«)
+Ida: »inspiration har ikke det aftalte plus i hjørnet« + »når jeg indsætter link og klikker enter kommer denne pop up som heller ikke giver mening«.
+- Feltet øverst på Inspiration er væk. Computer: rødt plus (44 px) i højre hjørne under heroen → arket »Jeg har set noget fedt«.
+- Telefon: intet plus på siden; bundmenuens plus åbner det samme ark, når man står på Inspiration.
+- Tom side viser stadig flisen »Hvad har du set, du gerne vil lave din egen version af?«.
+- Set på 1440 og 390 i selen.
+
 ## v2846 (20/10) — **»Se kundens version« er tilbage øverst på kundesiden** (Idas klik »“Se kundens version” tilbage«; Ida: »lige nu aner jeg ikke hvordan jeg ser kundens version så jeg kan arbejde i den fra min konto«). Bud 1 (v2832) lod døren Kalenderen åbne kundens studio, og det kunne man ikke se. Nu: den brede røde knap fra 21/9 står øverst på kundens forside (begge flader) og åbner kundens studio fra Idas konto i en ny fane. Sikkerhedschefen løfte 29 tjekker knappen på 1440/800/390.
 
 ## v2844 (20/10) — **En dropdown går aldrig ud over arkets kant** (Ida: »jeg kan ikke vælge sluttidspunkt før 12:45? jeg kan ikke få lov at scrolle længere op?« — contentmødets ark på computeren). MÅLT i selen: første gang listen åbnede, blev pladsen målt, mens arket stadig gled ind; listen blev 884 px høj og åbnede opad, så toppen (10:15 …) lå over arkets kant, hvor man ikke kan rulle hen. Nu måles listen igen, når den står (straks, næste billede og efter 250 ms), og kortes til pladsen inden for det kort, der klipper — man kan altid rulle helt op og ned. Gælder alle husets dropdowns (briefDropAaben). Telefonen bruger sin egen vælger og er urørt.
