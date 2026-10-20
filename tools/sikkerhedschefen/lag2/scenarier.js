@@ -333,6 +333,16 @@
         var fremmed = !!document.querySelector('#inspGrid [data-id="x-anden-kunde"]') || /Anden kundes mappe/.test(tekstI);
         tjek(2, "Inspiration viser aldrig en anden kundes kort eller mapper", !fremmed, "en anden kundes data stod på siden");
       } catch (e) { tjek(2, "Tvær-kunde-tjekket kunne køre", false, e.message); }
+      /* LØFTE 3 · INDHOLDSSØJLEN ÆNDRER ALDRIG STATUS (Ida 20/10): en idé med beskrivelse får en søjle — via knappen på flisen og via briefens gem — og er stadig »Idé« */
+      try {
+        var rS = await ideAdd({ titel: "SC idé uden søjle", type: "", soejle: "", status: "Idé", dato: null, brief: { beskrivelse: "skrevet i Ny idé" } });
+        var pl = ibIdeSoejler(); await ibIdeFlytTil(rS.id, pl[0]); await V(300);
+        var efterKnap = (ibIdeAf(rS.id) || {}).status;
+        BRIEF_ID = rS.id; BRIEF_STATE = { beskrivelse: "skrevet i Ny idé", soejle: pl[1] }; briefAutosavePlan(); await V(1600);
+        var efterBrief = (ibIdeAf(rS.id) || {}).status;
+        tjek(3, "Indholdssøjlen ændrer aldrig status (knap + brief)", efterKnap === "Idé" && efterBrief === "Idé", "knap: " + efterKnap + " · brief: " + efterBrief);
+        BRIEF_ID = null; try { await sb.from("content_ideer").delete().eq("id", rS.id); IDEER = IDEER.filter(function (x) { return String(x.id) !== String(rS.id); }); } catch (e) {}
+      } catch (e) { tjek(3, "Søjle-status-tjekket kunne køre", false, e.message); }
       /* LØFTE 1 · PLANLÆGNINGSMØDET HUSKER STEDET (20/10, fund 7): luk mødet på trin 4 → start igen → stadig trin 4; »Færdig« starter forfra */
       try {
         window.__PR_PAUSE = null; planRitStart("uge"); await V(300);
