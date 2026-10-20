@@ -322,6 +322,17 @@
           INSP_MAPPER = INSP_MAPPER.filter(function (m) { return m.id !== "msc"; }); await inspMapperGem(); await inspFlytTil(kM.id, "");
         }
       } catch (e) { tjek(1, "Mapper-tjekket kunne køre", false, e.message); }
+      /* LØFTE 2 · INGEN DATA PÅ TVÆRS AF KUNDER I INSPIRATION (Ida 20/10: »Data må ALDRIG kunne deles på tværs af profiler«): ligger en anden kundes kort og mapper i hukommelsen, tegnes de ALDRIG */
+      try {
+        showTab(2); ibVis("insp"); await V(400);
+        window.INSP_VIST_KODE = "ANDENKUNDE2026"; try { INSP_VIST_KODE = "ANDENKUNDE2026"; } catch (e) {}
+        INSPIRATION = [{ id: "x-anden-kunde", kode: "ANDENKUNDE2026", type: "link", url: "https://www.instagram.com/reel/ANDENkunde/", created_at: new Date().toISOString() }];
+        INSP_MAPPER = [{ id: "ma", navn: "Anden kundes mappe" }];
+        renderInspiration(); await V(600);
+        var tekstI = ((document.getElementById("inspSektion") || {}).innerText || "");
+        var fremmed = !!document.querySelector('#inspGrid [data-id="x-anden-kunde"]') || /Anden kundes mappe/.test(tekstI);
+        tjek(2, "Inspiration viser aldrig en anden kundes kort eller mapper", !fremmed, "en anden kundes data stod på siden");
+      } catch (e) { tjek(2, "Tvær-kunde-tjekket kunne køre", false, e.message); }
       /* LØFTE 1 · PLANLÆGNINGSMØDET HUSKER STEDET (20/10, fund 7): luk mødet på trin 4 → start igen → stadig trin 4; »Færdig« starter forfra */
       try {
         window.__PR_PAUSE = null; planRitStart("uge"); await V(300);

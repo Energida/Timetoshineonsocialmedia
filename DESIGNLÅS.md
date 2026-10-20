@@ -4,6 +4,13 @@
 - **DAGSORDENEN RETTES PÅ STEDET.** Et penneikon ved hvert punkt åbner punktet: navn, tekst, skraldespand (fjern) og Gem; »Tilføj punkt« lægger et nyt til. Standardpunkterne (performance · den kommende uge · dato for næste møde) står uændrede, til man retter dem. Gemmes i `plan_ritual.moede.dagsorden` (merges, andre nøgler urørte); et rettet punkt bliver statisk tekst, et urørt punkt bliver dynamisk (uge, tema, mål). Ingen Annuller i rettelsen.
 - **ALLE DATOSYMBOLER ER KVADRATER, 56 × 56 (HÅRD, Ida 9/10: »kvadratiske alle steder«):** Kommende opslag (`.kop-dato`), aftalernes dato (`.cf-dato`), Backstages `.bs3-tidb.d` og `.bs-datob`. Ingen dato-boks er højere end bred.
 
+## v2858 · SIKKERHED: aldrig en anden kundes data i Inspiration + mapper/bjælker/møde-rettelser (Ida 20/10)
+Ida: »Data må ALDRIG kunne deles på tværs af profiler« · »dette med data på tværs SKAL være en del af sikkerhedstjekket!!!«
+- SIKKERHED: Inspirationens lister i hukommelsen (kort, kortnoter, mapper) huskes med den kundekode, de er hentet for, og tegnes/gemmes ALDRIG for en anden kode; hentning nulstiller FØR fetch; et svar for en kunde, der ikke længere er åben, kasseres; Gem af mapper nægter en liste fra en anden kode; den fælles lokale reserve »insp_X« (uden kundekode) er afskaffet og ryddes i alle browsere. Databasen var ren (målt 20/10: Hinges Hus 2 egne kort, 0 fælles med Acorns, ingen mapper).
+- Sikkerhedschefen løfte 2: »Inspiration viser aldrig en anden kundes kort eller mapper« (fejler på v2856).
+- Inspiration: et kort i en mappe står ikke længere under Seneste (Seneste = kort uden mappe). »Gem i mappe ⌄« (eller mappens navn) under hvert kort — som Pinterests »Gem i tavle« — åbner Flyt til mappe; »Hent billede igen« bor i menuen. Reels zoomes 1,42 ind, så Instagrams sorte sider er væk (målt i Chrome på Acorns' reels).
+- Mødet: »Hvilket møde skal den med til?« — valgene markeres, kvitteringen kommer først ved Gem. Mødesidens chips viser hele teksten (ingen »…«, ingen afklippede g'er) — chippen vokser.
+
 ## v2856 · Planlægningsmødet husker stedet + trinlisten kan bruges (Idas indsatte gennemgang 20/10, fund 7 + »trinlisten kunne ikke bruges til at hoppe frem«)
 - Åbner man et opslag fra »Siden sidst«, fører briefens Tilbage direkte tilbage til SAMME opslag i mødet (før: planlægningsforsiden, og »Start mødet« begyndte på opslag 1).
 - Lukkes mødet, fortsætter »Start mødet« samme sted (samme uge, samme slags møde, op til 12 timer). »Tilbage til Hjem« efter Færdig starter næste møde forfra. Regel 26/8: kunden lander dér, hvor hun slap.

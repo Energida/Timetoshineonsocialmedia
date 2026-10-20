@@ -206,7 +206,8 @@ html body.mb #moedeSideRum .mo-venstre .mo-igennem { margin-bottom:0; }
 html body #moedeSideRum .mo-top-chips { padding:12px 14px; margin:0 0 12px; }
 html body #moedeSideRum .mo-top-chips-rk { display:flex; flex-wrap:wrap; gap:8px; }
 html body #moedeSideRum .mo-top-chips .ark-vchip { max-width:100%; }
-html body #moedeSideRum .mo-top-chips .ark-vchip span { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+html body #moedeSideRum .mo-top-chips .ark-vchip { height:auto; min-height:40px; padding-top:6px; padding-bottom:6px; }
+html body #moedeSideRum .mo-top-chips .ark-vchip span { overflow:visible; white-space:normal; line-height:1.4; text-align:left; }   /* HELE TEKSTEN SES (Ida 20/10: »i højre hjørne bliver teksten i chippen cuttet«) — aldrig »…«, aldrig afklippede bogstaver; chippen vokser */
 html body #moedeSideRum .mo-ds-pen { flex:none; width:36px; height:36px; border:0; background:transparent; color:var(--gray3); display:inline-flex; align-items:center; justify-content:center; cursor:pointer; padding:0; margin:-6px -6px -6px 0; }
 html body #moedeSideRum .mo-ds-pen svg { width:18px; height:18px; }
 html body #moedeSideRum .mo-ds-ret .mo-ds-hoved { display:flex; align-items:center; gap:8px; margin:0 0 8px; }
@@ -5157,8 +5158,9 @@ textarea:-webkit-autofill, select:-webkit-autofill {
   #inspGrid .insp-billede .insp-medie { height:auto; }
   #inspGrid .insp-billede:has(.insp-mini) { aspect-ratio:4/5; }
   #inspGrid .insp-et, #inspGrid .insp-af, #inspGrid .insp-note, #inspGrid .insp-handl { padding-left:0; padding-right:0; }
-  #inspGrid .insp-handl { display:none; }
+  #inspGrid .insp-ide-knap { display:none; }
 }
+#inspGrid .insp-mappe-knap { display:inline-flex; align-items:center; gap:6px; max-width:100%; white-space:normal; height:auto; min-height:36px; padding:6px 12px; text-align:left; line-height:1.3; }   /* hele navnet ses, aldrig »…« */
 .insp-ark .insp-ark-embed { width:100%; border-radius:14px; overflow:hidden; margin:0 0 12px; }
 .insp-ark .insp-ark-embed iframe { display:block; width:100%; height:520px; border:0; }
 .insp-ark .insp-ark-embed.tiktok iframe { height:640px; }
@@ -48141,6 +48143,7 @@ let INSP_VEDHAEFT = "";
    så de links, der allerede ligger (Acorns' 193), aldrig ændres. INSP_VEDHAEFT_ID = kortet, »Lav til idé« kom fra. */
 let INSP_META = {}; let INSP_VEDHAEFT_ID = "";
 async function inspMetaHent() {
+  INSP_META = {};   /* aldrig en anden kundes noter i hukommelsen (20/10) */
   if (!sb || !currentKode) return INSP_META;
   try { const r = await sb.from("skema_svar").select("navn,svar").eq("kode", currentKode).eq("skema", "insp_meta"); if (!r.error && r.data) { const m = {}; r.data.forEach(function (x) { if (x && x.navn) m[String(x.navn)] = x.svar || {}; }); INSP_META = m; } } catch (e) {}
   return INSP_META;
@@ -48168,14 +48171,19 @@ function inspNoterAf(rows) {
 /* ===== MAPPER I INSPIRATION (Idas klik 20/10 »yes - implementer bud 1!« + »jeg skal kunne trække ideer rundt og oprette mapper« + »på telefonen ligesom pinterest«) =====
    Listen = EN skema_svar-raekke pr. kunde (skema insp_mapper, navn liste, svar {mapper:[{id,navn}]}). Kortets mappe = insp_meta.mappe (samme raekke som af/brugt).
    Selve inspirationsraekkerne roeres aldrig (Acorns' links). En slettet mappe fjernes kun fra listen — kortene ligger videre under Seneste. */
-let INSP_MAPPER = []; let INSP_MAPPE_AABEN = ""; let INSP_ARK_MAPPE = ""; let INSP_TRAEK_ID = null;
+let INSP_VIST_KODE = null; let INSP_MAPPER = []; let INSP_MAPPE_AABEN = ""; let INSP_ARK_MAPPE = ""; let INSP_TRAEK_ID = null;
+/* DATA DELES ALDRIG PÅ TVÆRS AF KUNDER (Ida 20/10: »Data må ALDRIG kunne deles på tværs af profiler«): listen nulstilles FØR hver hentning og huskes med kundens kode —
+   før blev en anden kundes mappeliste stående i hukommelsen, når kunden ikke havde sin egen række (skift mellem kunder i samme vindue). Gem nægter at skrive en liste, der hører til en anden kode. */
+let INSP_MAPPER_KODE = "";
 async function inspMapperHent() {
-  if (!sb || !currentKode) return INSP_MAPPER;
-  try { const r = await sb.from("skema_svar").select("svar").eq("kode", currentKode).eq("skema", "insp_mapper").eq("navn", "liste").limit(1); if (!r.error && r.data && r.data.length) { const m = (r.data[0].svar || {}).mapper; INSP_MAPPER = Array.isArray(m) ? m.filter(function (x) { return x && x.id && x.navn; }) : []; } } catch (e) {}
+  const kode = currentKode || "";
+  INSP_MAPPER = []; INSP_MAPPER_KODE = kode; INSP_MAPPE_AABEN = ""; INSP_ARK_MAPPE = "";
+  if (!sb || !kode) return INSP_MAPPER;
+  try { const r = await sb.from("skema_svar").select("svar").eq("kode", kode).eq("skema", "insp_mapper").eq("navn", "liste").limit(1); if (kode === currentKode && !r.error && r.data && r.data.length) { const m = (r.data[0].svar || {}).mapper; INSP_MAPPER = Array.isArray(m) ? m.filter(function (x) { return x && x.id && x.navn; }) : []; } } catch (e) {}
   return INSP_MAPPER;
 }
 async function inspMapperGem() {
-  if (!sb || !currentKode) return false;
+  if (!sb || !currentKode || INSP_MAPPER_KODE !== currentKode) return false;
   const svar = { mapper: INSP_MAPPER.map(function (x) { return { id: String(x.id), navn: String(x.navn) }; }) };
   try {
     const f = await sb.from("skema_svar").select("id").eq("kode", currentKode).eq("skema", "insp_mapper").eq("navn", "liste").limit(1);
@@ -48211,13 +48219,13 @@ function inspMapperTegn() {
   const fl = INSP_MAPPER.map(function (m) {
     const kort = INSPIRATION.filter(function (x) { return inspMappeAf(x) === String(m.id); });
     /* mosaikken: kortets billede/skærmbillede — ellers selve Instagram-opslaget (Instagram udleverer ikke et forsidebillede til en browser, MÅLT 20/10 på Acorns' reels) */
-    const celler = kort.map(function (x) { const b = inspBilledeAf(x); if (b) return '<div style="background-image:url(\'' + esc(b).replace(/'/g, "%27") + '\')"></div>'; const u = inspUrl(x); const emb = (u && x.type !== "billede") ? inspEmbedUrl(u) : ""; return emb ? '<div class="insp-mos-ig"><iframe src="' + esc(emb).replace(/"/g, "&quot;") + '" loading="lazy" title="" scrolling="no" tabindex="-1" aria-hidden="true"></iframe></div>' : ""; }).filter(Boolean).slice(0, 4);
+    const celler = kort.map(function (x) { const b = inspBilledeAf(x); if (b) return '<div style="background-image:url(\'' + esc(b).replace(/'/g, "%27") + '\')"></div>'; const u = inspUrl(x); const emb = (u && x.type !== "billede") ? inspEmbedUrl(u) : ""; return emb ? '<div class="insp-mos-ig' + (inspIgType(u) === "Reel" ? ' insp-reel' : '') + '"><iframe src="' + esc(emb).replace(/"/g, "&quot;") + '" loading="lazy" title="" scrolling="no" tabindex="-1" aria-hidden="true"></iframe></div>' : ""; }).filter(Boolean).slice(0, 4);
     let mos = ""; for (let i = 0; i < 4; i++) mos += celler[i] || '<div></div>';
     return '<div class="insp-mappe" data-mappe="' + esc(String(m.id)) + '" role="button" tabindex="0" onclick="inspMappeAabn(\'' + kn(m.id) + '\')" onkeydown="if(event.key===\'Enter\')inspMappeAabn(\'' + kn(m.id) + '\')" ondragover="inspMappeOver(event)" ondragleave="this.classList.remove(\'slip\')" ondrop="inspMappeSlip(event)">'
       + '<div class="insp-mos">' + mos + '</div><div class="insp-mappe-n">' + esc(m.navn) + '</div></div>';
   }).join("");
   el.innerHTML = '<div class="cf-sek insp-sek">Mapper</div><div class="insp-mapper">' + fl + '<div class="insp-mappe insp-mappe-ny" role="button" tabindex="0" onclick="inspMappeNy()" onkeydown="if(event.key===\'Enter\')inspMappeNy()">+ Ny mappe</div></div>'
-    + (INSPIRATION.length ? '<div class="cf-sek insp-sek">Seneste</div>' : '');
+    + (INSPIRATION.some(function (x) { return !inspMappeAf(x); }) ? '<div class="cf-sek insp-sek">Seneste</div>' : '');
 }
 function inspMappeAabn(mid) { INSP_MAPPE_AABEN = String(mid || ""); renderInspiration(); try { const s = document.getElementById("inspSektion"); if (s && mid) s.scrollIntoView({ block: "start" }); } catch (e) {} }
 function inspNavnArk(titel, ph, vaerdi, fn) {
@@ -48268,7 +48276,8 @@ async function inspFlytTil(id, mid) {
 }
 function inspKortMenu(id) {
   const x = INSPIRATION.find(function (y) { return String(y.id) === String(id); }); if (!x) return; const k = esc(String(id)).replace(/'/g, "\\'");
-  bf3ValgArk(inspTitel(x), [["Lav til idé", "inspTilIde('" + k + "')"], ["Flyt til mappe", "inspFlytArk('" + k + "')"], ["Omdøb", "inspNavnArk('Omdøb','Titel'," + JSON.stringify(inspTitel(x)).replace(/"/g, "&quot;") + ",'inspKortOmdoebGem(\\'" + k + "\\')')"], [BS_SKRALD_SVG, "inspSletSpoerg('" + k + "')", "bs3-skrald-rk", "Slet"]]);
+  const igUden = inspErIg(x) && !inspSkaermUrl(x);
+  bf3ValgArk(inspTitel(x), [["Lav til idé", "inspTilIde('" + k + "')"], ["Flyt til mappe", "inspFlytArk('" + k + "')"]].concat(igUden ? [["Hent billede igen", "inspHentIgen('" + k + "')"]] : []).concat([["Omdøb", "inspNavnArk('Omdøb','Titel'," + JSON.stringify(inspTitel(x)).replace(/"/g, "&quot;") + ",'inspKortOmdoebGem(\\'" + k + "\\')')"], [BS_SKRALD_SVG, "inspSletSpoerg('" + k + "')", "bs3-skrald-rk", "Slet"]]));
 }
 function inspFlytArk(id) {
   const x = INSPIRATION.find(function (y) { return String(y.id) === String(id); }); if (!x) return; const k = esc(String(id)).replace(/'/g, "\\'");
@@ -48630,13 +48639,18 @@ async function genbrugIde(id) {
   try { renderIdeas(); } catch(e) {}
   try { husKvit("Idéen ligger i Idébanken igen."); } catch (e) {}   /* kvittering (21/9) */
 }
-function inspLocal() { try { return JSON.parse(localStorage.getItem("insp_" + (currentKode || "X"))) || []; } catch(e) { return []; } }
-function inspLocalSave() { try { localStorage.setItem("insp_" + (currentKode || "X"), JSON.stringify(INSPIRATION.filter(x => x.type !== "billede"))); } catch(e) {} }
+/* ALDRIG EN FÆLLES RESERVE (Ida 20/10: data på tværs af kunder): uden kundekode læses og gemmes INTET lokalt — før delte alle uden kode nøglen »insp_X« */
+function inspLocal() { if (!currentKode) return []; try { return (JSON.parse(localStorage.getItem("insp_" + currentKode)) || []).filter(function (x) { return !x.kode || x.kode === currentKode; }); } catch(e) { return []; } }
+try { localStorage.removeItem("insp_X"); } catch (e) {}   /* den gamle fælles reserve ryddes i alle browsere (20/10) */
+function inspLocalSave() { if (!currentKode || INSP_VIST_KODE !== currentKode) return; try { localStorage.setItem("insp_" + currentKode, JSON.stringify(INSPIRATION.filter(x => x.type !== "billede"))); } catch(e) {} }
 async function refreshInspiration() {
+  const kodeNu = currentKode;
+  if (INSP_VIST_KODE !== kodeNu) { INSPIRATION = []; INSP_META = {}; INSP_MAPPER = []; INSP_MAPPE_AABEN = ""; INSP_VIST_KODE = kodeNu; try { renderInspiration(); } catch (e) {} }   /* skift af kunde: intet fra den forrige står fremme, mens den nye hentes (20/10) */
   if (sb && currentKode) {
     try {
       const { data, error } = await sb.from("inspiration").select("*").eq("kode", currentKode).order("created_at", { ascending: false });
-      if (!error && data) { INSPIRATION = data; try { await Promise.all([inspMetaHent(), inspMapperHent()]); } catch (e) {} renderInspiration(); return; }
+      if (kodeNu !== currentKode) return;   /* svaret hører til en kunde, der ikke længere er åben */
+      if (!error && data) { INSPIRATION = data; try { await Promise.all([inspMetaHent(), inspMapperHent()]); } catch (e) {} if (kodeNu !== currentKode) return; renderInspiration(); return; }
     } catch(e) {}
   }
   INSPIRATION = inspLocal();
@@ -48827,12 +48841,15 @@ function inspVaert(url) {
 }
 function renderInspiration() {
   const grid = document.getElementById("inspGrid"); if (!grid) return;
+  /* ALDRIG EN ANDEN KUNDES KORT (Ida 20/10: »Data må ALDRIG kunne deles på tværs af profiler«): er listen i hukommelsen hentet for en anden kunde end den åbne, tømmes den og hentes forfra — der tegnes intet fra den forrige */
+  if (INSP_VIST_KODE !== currentKode) { INSPIRATION = []; INSP_META = {}; INSP_MAPPER = []; INSP_MAPPE_AABEN = ""; INSP_VIST_KODE = currentKode; grid.innerHTML = ""; const mp = document.getElementById("inspMapper"); if (mp) mp.innerHTML = ""; try { refreshInspiration(); } catch (e) {} return; }
   const iv = v => esc(v == null ? "" : String(v)).replace(/"/g, "&quot;");
   const antalIns = document.getElementById("inspAntal");
   if (antalIns) antalIns.textContent = INSPIRATION.length ? "· " + INSPIRATION.length + " gemte" : "";
   /* FINAL 5cc (Task 6): kort m. medie-felt (greige), kilde-label + "Lav til idé →" + note */
   try { inspMapperTegn(); } catch (e) {}
-  const vis = INSP_MAPPE_AABEN ? INSPIRATION.filter(function (x) { return inspMappeAf(x) === INSP_MAPPE_AABEN; }) : INSPIRATION;
+  /* ET KORT I EN MAPPE FORSVINDER FRA SENESTE (Ida 20/10: »når jeg flytter en idé op i mappen, så skal den fjernes nede fra der hvor man ser alle«) — Seneste = kortene uden mappe */
+  const vis = INSP_MAPPE_AABEN ? INSPIRATION.filter(function (x) { return inspMappeAf(x) === INSP_MAPPE_AABEN; }) : INSPIRATION.filter(function (x) { return !inspMappeAf(x); });
   grid.classList.toggle("insp-i-mappe", !!INSP_MAPPE_AABEN);
   grid.innerHTML = vis.length ? vis.map(x => {
     const uu = inspUrl(x), erIg = inspErIg(x);
@@ -48860,14 +48877,18 @@ function renderInspiration() {
     const medie = billede
       ? '<img src="' + iv(billede) + '" loading="lazy" alt="" class="insp-medie">'
       : erIg
-      ? '<div class="insp-mini insp-ig">' + igBag + (emb ? '<iframe src="' + iv(emb) + '" data-src="' + iv(emb) + '" loading="lazy" title="Opslaget" scrolling="no" tabindex="-1" aria-hidden="true" onload="this.parentNode.classList.add(\'klar\')"></iframe>' : '') + '</div>'
+      ? '<div class="insp-mini insp-ig' + (igType === "Reel" ? ' insp-reel' : '') + '">' + igBag + (emb ? '<iframe src="' + iv(emb) + '" data-src="' + iv(emb) + '" loading="lazy" title="Opslaget" scrolling="no" tabindex="-1" aria-hidden="true" onload="this.parentNode.classList.add(\'klar\')"></iframe>' : '') + '</div>'
       : (emb
         ? '<div class="insp-mini"><iframe src="' + iv(emb) + '" loading="lazy" title="Opslaget" scrolling="no" tabindex="-1" aria-hidden="true"></iframe></div>'
         : '<div class="insp-mini insp-mini-tom"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#9A9590" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">' + pIkon + '</svg></div>');
     const slet = '<button type="button" class="insp-slet" title="Slet" aria-label="Slet" onclick="event.stopPropagation();inspSletSpoerg(\'' + idS + '\')"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" data-tegn-ok="1"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg></button>';
     /* KLIK PAA ET INSTAGRAM-KORT = OPSLAGET PAA INSTAGRAM I EN NY FANE (Ida 10/10); »Lav til idé« og »Hent billede igen« staar under navnet */
     const klik = erIg ? "window.open(" + JSON.stringify(String(uu)).replace(/"/g, "&quot;") + ",'_blank','noopener')" : "inspAabnArk(\'" + idS + "\')";
-    const handl = erIg ? '<div class="insp-handl"><button type="button" class="insp-hk" onclick="event.stopPropagation();inspTilIde(\'' + idS + '\')">Lav til idé</button>' + (skaerm ? '' : '<button type="button" class="insp-hk" onclick="event.stopPropagation();inspHentIgen(\'' + idS + '\')">Hent billede igen</button>') + '</div>' : '';
+    /* GEM I MAPPE DIREKTE PÅ KORTET (Ida 20/10 med Pinterests »Gem i tavle«: »kan ikke trække den op i en mappe … der skal laves noget ligesom på pinterest hvor man direkte på ideen kan placere den i en mappe«):
+       mappe-knappen under billedet (aldrig tekst oven på billeder, 8/10) åbner Flyt til mappe. »Hent billede igen« bor i menuen (langt tryk). */
+    const mNu = inspMappeAf(x);
+    const mappeKnap = '<button type="button" class="insp-hk insp-mappe-knap" onclick="event.stopPropagation();inspFlytArk(\'' + idS + '\')">' + esc(mNu ? inspMappeNavn(mNu) : "Gem i mappe") + '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" data-tegn-ok="1"><path d="M6 9l6 6 6-6"/></svg></button>';
+    const handl = '<div class="insp-handl">' + mappeKnap + (erIg ? '<button type="button" class="insp-hk insp-ide-knap" onclick="event.stopPropagation();inspTilIde(\'' + idS + '\')">Lav til idé</button>' : '') + '</div>';
     /* KORTET SOM PÅ INSTAGRAM (Ida 20/10, skærmbillede af Gemte + »Profilen som titel« + »kan vi evt få noget "tilføjet af"«): billedet med skarpe hjørner,
        under det titlen (profilen / egen titel) og »Tilføjet af X · dato« i gråt. Kundens egen note fra »Hvad fangede dig?« står under, hvis den findes. Langt tryk = menuen. */
     const af = (INSP_META[String(x.id)] || {}).af || "";
@@ -48880,13 +48901,14 @@ function renderInspiration() {
       + (egenNote ? '<div class="insp-note">' + esc(egenNote) + '</div>' : '')
       + handl
       + '</div>';
-  }).join("") : '<div style="grid-column:1/-1;">' + tomKortHtml(INSP_MAPPE_AABEN ? "Mappen er tom. Hold fingeren på et kort, og vælg Flyt til mappe." : "Hvad har du set, du gerne vil lave din egen version af?", "", "") + '</div>';
+  }).join("") : (!INSP_MAPPE_AABEN && INSPIRATION.length) ? '' : '<div style="grid-column:1/-1;">' + tomKortHtml(INSP_MAPPE_AABEN ? "Mappen er tom. Hold fingeren på et kort, og vælg Flyt til mappe." : "Hvad har du set, du gerne vil lave din egen version af?", "", "") + '</div>';
   inspMiniSkaler();
 }
 /* de smaa opslag skaleres til flisens bredde (318 px er Instagrams egen bredde; profil-linjen oeverst skaeres vaek) */
 function inspMiniSkaler() {
-  document.querySelectorAll("#inspMapper .insp-mos-ig iframe").forEach(function (f) { const w = f.parentNode.clientWidth || 0; if (!w) return; const k = w / 318; f.style.transform = "translateY(" + (-56 * k) + "px) scale(" + k + ")"; });
-  document.querySelectorAll("#inspGrid .insp-mini iframe").forEach(function (f) { const w = f.parentNode.clientWidth || 0; if (!w) return; const k = w / 318; f.style.transform = "translateY(" + (-56 * k) + "px) scale(" + k + ")"; });
+  /* INGEN SORTE BJÆLKER (Ida 20/10): Instagram viser en reel med sorte sider i sit indlejrede opslag — reelen zoomes 1,42 ind og centreres, så videoen fylder bredden (MÅLT i Chrome på Acorns' reels) */
+  document.querySelectorAll("#inspGrid .insp-reel iframe, #inspMapper .insp-mos-ig iframe").forEach(function (f) { const w = f.parentNode.clientWidth || 0; if (!w) return; const Z = f.parentNode.classList.contains("insp-reel") ? 1.42 : 1; const k = w / 318 * Z; f.style.transform = "translate(" + (-(318 * k - w) / 2) + "px," + (-56 * k) + "px) scale(" + k + ")"; });
+  document.querySelectorAll("#inspGrid .insp-mini:not(.insp-reel) iframe").forEach(function (f) { const w = f.parentNode.clientWidth || 0; if (!w) return; const k = w / 318; f.style.transform = "translateY(" + (-56 * k) + "px) scale(" + k + ")"; });
 }
 try { window.addEventListener("resize", function () { try { inspMiniSkaler(); } catch (e) {} }); } catch (e) {}
 
@@ -60212,7 +60234,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2856";
+const APP_VERSION = "2858";
 const APP_BYGGET = "9. oktober";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_BYGGET + " · " + APP_VERSION; } catch (e) {} });
 let NY_VERSION_KLAR = false;
@@ -81604,14 +81626,14 @@ function moedeLoeseIdeer(m) { return []; }   /* IDÉER GAAR ALDRIG IGEN AF SIG S
 function moedeAgendaHent() { const m = (PR_STATUS && PR_STATUS.moede) || {}; let ideer = moedeLoeseIdeer(m).slice(); try { const k = moedeNaesteNoegle(); const pr = (m.ideerPr && m.ideerPr[k]) || []; pr.forEach(function (id) { if (ideer.indexOf(String(id)) < 0) ideer.push(String(id)); }); } catch (e) {} return { ideer: ideer, forb: Array.isArray(m.forb) ? m.forb.slice() : [], noter: String(m.noter || ""), noterMig: (m.noterMig && typeof m.noterMig === "object") ? Object.assign({}, m.noterMig) : {}, dagsorden: Array.isArray(m.dagsorden) ? m.dagsorden.map(function (x) { return Object.assign({}, x); }) : null }; }
 function moedeKommende() { const idag = datoDK(); return (window.__kundeAftaler || []).filter(function (a) { return a && a.dato && String(a.dato).slice(0, 10) >= idag && erMoedeTitel(a.titel); }).sort(function (x, y) { return (x.dato + (x.tid || "")) < (y.dato + (y.tid || "")) ? -1 : 1; }).slice(0, 6); }
 function moedeIdePaa(id, k) { id = String(id); const m = (PR_STATUS && PR_STATUS.moede) || {}; if (k === moedeNaesteNoegle()) return moedeAgendaHent().ideer.indexOf(id) > -1; return ((m.ideerPr && m.ideerPr[k]) || []).map(String).indexOf(id) > -1; }
-async function moedeIdeSkiftFor(id, k) {
+async function moedeIdeSkiftFor(id, k, stille) {
   id = String(id); const m = Object.assign({}, (PR_STATUS && PR_STATUS.moede) || {}); const pr = Object.assign({}, m.ideerPr || {});
   const paa = moedeIdePaa(id, k);
   let l = (pr[k] || []).map(String).filter(function (x) { return x !== id; }); if (!paa) l.push(id); pr[k] = l;
   if (k === moedeNaesteNoegle() && paa) m.ideer = (Array.isArray(m.ideer) ? m.ideer : []).map(String).filter(function (x) { return x !== id; });
   m.ideerPr = pr;
   const ok = await planRitStatusGem({ moede: m });
-  try { husKvit(ok === false ? "Kunne ikke gemme. Prøv igen." : (paa ? "Taget ud af mødet." : "Står under Idéer til mødet.")); } catch (e) {}
+  if (!stille) { try { husKvit(ok === false ? "Kunne ikke gemme. Prøv igen." : (paa ? "Taget ud af mødet." : "Står under Idéer til mødet.")); } catch (e) {} }
   return ok;
 }
 /* SKRALDESPANDEN TAGER IDÉEN AF MOEDET (Ida 6/10: »Så lægger der gamle ideer på mødet og jeg kan ikke slette dem? … skraldespanden helt ude i højre side«):
@@ -81633,10 +81655,21 @@ function moedeVaelgArk(id) {
   const navn = function (a) { let d = ""; try { d = new Date(String(a.dato).slice(0, 10) + "T12:00:00").toLocaleDateString("da-DK", { weekday: "short", day: "numeric", month: "long" }); } catch (e) { d = dkDatoKort(a.dato); } return d + kl(a.tid); };
   m.innerHTML = '<div class="bs-flyt-ark mo-vaelg-ark"><div class="ark-t" style="text-align:center;margin:0 0 14px;">Hvilket møde skal den med til?</div><div class="ark-chips i-fladen sa-chips">'
     + l.map(function (a) { const k = String(a.dato).slice(0, 10); return '<button type="button" class="ark-chip' + (moedeIdePaa(id, k) ? ' on' : '') + '" onclick="moedeVaelgArkSkift(\'' + k + '\', this)">' + esc(navn(a)) + '</button>'; }).join("")
-    + '</div><div class="ftf-forkl">Vælg et eller flere</div><button type="button" class="dbtn primary mq-tap mo-vaelg-gem" onclick="bsFlytLuk()">Gem</button></div>';   /* en rigtig Gem-knap (Ida 9/10: »her er der slet ingen gem knapper«) — hvert valg gemmes med det samme, knappen lukker */
+    + '</div><div class="ftf-forkl">Vælg et eller flere</div><button type="button" class="dbtn primary mq-tap mo-vaelg-gem" onclick="moedeVaelgArkGem(this)">Gem</button></div>';   /* KVITTERINGEN KOMMER FØRST VED GEM (Ida 20/10: »kvitteringen kommer op inden jeg har klikket gem«) — valgene markeres, Gem gemmer dem */   /* en rigtig Gem-knap (Ida 9/10: »her er der slet ingen gem knapper«) — hvert valg gemmes med det samme, knappen lukker */
   m.style.display = "flex"; m.onclick = function (e) { if (e.target === m) bsFlytLuk(); };
 }
-async function moedeVaelgArkSkift(k, chip) { const id = window.__MO_ARK_ID; if (!id) return; if (chip) chip.classList.toggle("on"); const ok = await moedeIdeSkiftFor(id, k); if (chip && ok === false) chip.classList.toggle("on");   /* kun chippen skifter — arket tegnes ikke forfra (29/9) */ try { briefMoedeIkonOpdater(); } catch (e) {} try { moedeSideTegn(); } catch (e) {} }
+function moedeVaelgArkSkift(k, chip) { if (chip) chip.classList.toggle("on"); }   /* kun markeringen — der gemmes ved Gem (20/10) */
+async function moedeVaelgArkGem(knap) {
+  const id = window.__MO_ARK_ID; if (!id) { bsFlytLuk(); return; }
+  const chips = [].slice.call(document.querySelectorAll("#bsFlytMenu .mo-vaelg-ark .ark-chip"));
+  const skift = chips.filter(function (c) { const k = (String(c.getAttribute("onclick") || "").match(/'([0-9-]{10})'/) || [])[1]; return k && c.classList.contains("on") !== moedeIdePaa(id, k); });
+  if (knap) knap.disabled = true;
+  let ok = true, nyPaa = 0, nyAf = 0;
+  for (const c of skift) { const k = (String(c.getAttribute("onclick")).match(/'([0-9-]{10})'/) || [])[1]; const paa = c.classList.contains("on"); const r = await moedeIdeSkiftFor(id, k, true); if (r === false) ok = false; else if (paa) nyPaa++; else nyAf++; }
+  bsFlytLuk();
+  try { briefMoedeIkonOpdater(); } catch (e) {} try { if (typeof moedeSideTegn === "function" && moedeErAaben()) moedeSideTegn(); } catch (e) {}
+  try { husKvit(!ok ? "Kunne ikke gemme. Prøv igen." : nyPaa ? "Står under Idéer til mødet." : nyAf ? "Taget ud af mødet." : "Gemt."); } catch (e) {}
+}
 function briefMoedeIkonOpdater() { try { const med = moedeIdeErMed(BRIEF_ID); document.querySelectorAll("#screen7 .bt-moede").forEach(function (b) { b.classList.toggle("on", med); }); } catch (e) {} }
 function moedeBruger() { try { if (typeof CURRENT_NAVN === "string" && CURRENT_NAVN.trim()) return CURRENT_NAVN.trim(); } catch (e) {} try { if (typeof SOM_KUNDE !== "undefined" && SOM_KUNDE) return "Ida"; } catch (e) {} return "kunden"; }
 let MOEDE_SORT = "dato", MOEDE_NOTER_VIS = "mig";   /* Mødesiden: sortering af opslagene · hvilke noter der vises (Kun til mig / Alle kan se) */
