@@ -4,6 +4,18 @@
 - **DAGSORDENEN RETTES PÅ STEDET.** Et penneikon ved hvert punkt åbner punktet: navn, tekst, skraldespand (fjern) og Gem; »Tilføj punkt« lægger et nyt til. Standardpunkterne (performance · den kommende uge · dato for næste møde) står uændrede, til man retter dem. Gemmes i `plan_ritual.moede.dagsorden` (merges, andre nøgler urørte); et rettet punkt bliver statisk tekst, et urørt punkt bliver dynamisk (uge, tema, mål). Ingen Annuller i rettelsen.
 - **ALLE DATOSYMBOLER ER KVADRATER, 56 × 56 (HÅRD, Ida 9/10: »kvadratiske alle steder«):** Kommende opslag (`.kop-dato`), aftalernes dato (`.cf-dato`), Backstages `.bs3-tidb.d` og `.bs-datob`. Ingen dato-boks er højere end bred.
 
+## v2854 · Inspiration i mapper (Idas klik 20/10 »yes - implementer bud 1!«, artifact 4ZphUWNHtKc3qH1vzr2KQX)
+Ida: »jeg skal kunne trække ideer rundt og oprette mapper... og på telefonen ligesom pinterest« · »Profilen som titel« · »kan vi evt få noget "tilføjet af"«.
+- Mapperne står øverst som fliser (Mapper · ord + streg): fire billeder i mosaik (skarpe hjørner), navnet under, intet tal. »+ Ny mappe« er en stiplet flise. Tryk = mappen åbner (heroens Tilbage fører til mapperne; ⋯ = Omdøb · Slet). Under mapperne: »Seneste« = alle kort.
+- Instagram-reels uden eget billede vises i mosaikken som selve opslaget (Instagram udleverer ikke et forsidebillede til en browser — målt 20/10).
+- Kortet: billedet med skarpe hjørner (8/10) · titel = egen titel (Omdøb) › »@profil · Reel« › »Reel« · linjen under »Tilføjet af X · dato« (kun kort gemt efter 10/10 kender personen) ellers »Gemt dato« · kundens egen note under, hvis den findes. Versal-linjen »Instagram · Reel« er ude.
+- Computer: træk et kort over på en mappe. Begge: langt tryk/højreklik = Lav til idé · Flyt til mappe (+ Ny mappe) · Omdøb · Slet. Duplikér findes ikke på inspiration (dubletter afvises).
+- Telefon som Pinterest: to spalter, kortet uden kasse, billedets egen højde; »Lav til idé« ligger i menuen.
+- Arket »Jeg har set noget fedt«: chips »Mappe« (kun når der findes mapper); står man i en mappe, er den valgt. Kvittering »Gemt i X.«
+- Data: listen = skema_svar insp_mapper/liste; kortets mappe + titel = insp_meta. Selve inspirationsrækkerne røres ikke. Slet mappe fjerner kun mappen.
+- Set på Acorns' rigtige kort (24 seneste: 0 med profil i linket, 3 med »tilføjet af«) i selen på 390 + 1440. Sikkerhedschefen løfte 1: fem mappe-tjek (begge bredder). lag2 fjerner nu også indrykning (URL-loftet 64 KB).
+- Beskrivelse af reelen: kræver Metas godkendte adgang (oEmbed) — kommer, når Meta er på plads.
+
 ## v2852 · Indholdssøjle virker fra »+ Tilføj« over en søjle (Ida 20/10: »her kommer der ingen indholdssøjle op«)
 - Ny idé åbnet fra »+ Tilføj« over en søjle: knappen Indholdssøjle viser nu søjlerne (før: knappen blev grå, intet kom frem — listen var udeladt, fordi søjlen var valgt på forhånd).
 - Søjlen, man kom fra, står valgt; man kan skifte den.

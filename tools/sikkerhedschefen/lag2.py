@@ -34,7 +34,8 @@ def koer(bred=1440):
     srv = subprocess.Popen(["python3", "-m", "http.server", str(port), "--bind", "127.0.0.1"], cwd=sele, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     time.sleep(1.2)
     scen = open(os.path.join(HER, "lag2", "scenarier.js"), encoding="utf-8").read()
-    scen = re.sub(r"/\*[\s\S]*?\*/", "", scen)   # kommentarerne sendes ikke med: URL'en har et loft paa 64 KB (19/10 ramte scenarierne det, og fase nulstil maalte intet)
+    scen = re.sub(r"/\*[\s\S]*?\*/", "", scen)
+    scen = re.sub(r"(?m)^[ \t]+", "", scen)   # indrykningen sendes heller ikke med (20/10: mapper-tjekket skubbede URL'en over 64 KB igen)   # kommentarerne sendes ikke med: URL'en har et loft paa 64 KB (19/10 ramte scenarierne det, og fase nulstil maalte intet)
     ud = []
     try:
         for fase in FASER:

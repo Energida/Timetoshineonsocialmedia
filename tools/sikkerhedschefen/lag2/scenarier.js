@@ -297,6 +297,31 @@
         tjek(1, "Overblikket: køb pr. kode og sendte koder", ot.prKilde["Gamle kunder"] === 1 && ot.prKilde["Ringkøbing Handelsforening"] === 2 && ot.koderSendt === 2, JSON.stringify(ot.prKilde) + " · sendt " + ot.koderSendt);
         tjek(1, "Overblikket: nye kunders fremgang (lektioner set)", !!(opd && opd.set === 3 && opd.ialt > 0), opd ? opd.set + " af " + opd.ialt : "ingen");
       } catch (e) { tjek(1, "Overbliks-tjekket kunne køre", false, e.message); }
+      /* LØFTE 1 · MAPPER I INSPIRATION (Idas klik 20/10, bud 1): en mappe gemmes på kundens kode, et kort lagt i mappen gemmes på kortets egen række (insp_meta), mappen viser kortet — og kortet selv røres ikke */
+      try {
+        var dbI = JSON.parse(localStorage.getItem("SELE_DB") || "{}"); dbI.inspiration = (dbI.inspiration || []).filter(function (x) { return x.id !== "sc-insp-1"; }).concat([{ id: "sc-insp-1", kode: currentKode, type: "link", url: "https://www.instagram.com/reel/SCmappe1/", note: null, created_at: new Date().toISOString() }]); localStorage.setItem("SELE_DB", JSON.stringify(dbI));
+        showTab(2); ibVis("insp"); await V(600); await refreshInspiration(); await V(300);
+        var kM = (INSPIRATION || []).filter(function (x) { return String(x.id).indexOf("i") !== 0; })[0];
+        if (!kM) tjek(1, "Mapper: der findes et kort at teste på", false, "ingen inspiration i selen");
+        else {
+          var foerKort = JSON.stringify(kM);
+          INSP_MAPPER = INSP_MAPPER.filter(function (m) { return m.id !== "msc"; }).concat([{ id: "msc", navn: "SC mappe" }]);
+          var okL = await inspMapperGem(); await inspFlytTil(kM.id, "msc"); await V(300);
+          var dbM = JSON.parse(localStorage.getItem("SELE_DB") || "{}").skema_svar || [];
+          var lR = dbM.filter(function (x) { return x.skema === "insp_mapper" && x.navn === "liste"; })[0];
+          var mR = dbM.filter(function (x) { return x.skema === "insp_meta" && String(x.navn) === String(kM.id); })[0];
+          tjek(1, "Mapper: ny mappe gemmes på kundens kode", okL && lR && JSON.stringify(lR.svar).indexOf("SC mappe") > -1, lR ? JSON.stringify(lR.svar).slice(0, 120) : "ingen insp_mapper-række");
+          tjek(1, "Mapper: kortet lagt i mappen gemmes på kortets egen række", !!(mR && mR.svar && mR.svar.mappe === "msc"), mR ? JSON.stringify(mR.svar) : "ingen insp_meta-række");
+          inspMappeAabn("msc"); await V(300);
+          var iM = [].map.call(document.querySelectorAll("#inspGrid .insp-kort[data-id]"), function (e) { return e.getAttribute("data-id"); });
+          tjek(1, "Mapper: mappen viser kortet", iM.length === 1 && iM[0] === String(kM.id), iM.join(","));
+          tjek(1, "Mapper: selve inspirationskortet er urørt", JSON.stringify((INSPIRATION || []).filter(function (x) { return x.id === kM.id; })[0]) === foerKort, "kortet ændrede sig");
+          inspMappeAabn(""); await V(200);
+          var nyKnap = [].some.call(document.querySelectorAll("#inspMapper button"), function (b) { return /Ny mappe/.test(b.textContent || ""); });
+          tjek(1, "Mapper: »+ Ny mappe« er en flise, ikke en lille knap", !nyKnap && !!document.querySelector("#inspMapper .insp-mappe-ny"), nyKnap ? "står som knap" : "mangler");
+          INSP_MAPPER = INSP_MAPPER.filter(function (m) { return m.id !== "msc"; }); await inspMapperGem(); await inspFlytTil(kM.id, "");
+        }
+      } catch (e) { tjek(1, "Mapper-tjekket kunne køre", false, e.message); }
       /* GAMLE KUNDER (salgsturnéen): lead gemmes m. kvittering, mailen bærer koden og siden, tom butik siges */
       try {
         var mm = window.matchMedia, wo = window.open; window.matchMedia = function () { return { matches: false }; }; window.open = function (u) { window.__GK_MAIL = u; return {}; };
