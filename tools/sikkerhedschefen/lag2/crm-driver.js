@@ -50,6 +50,8 @@
     await kundeSideVis(kc); await V(1500);
     var doeChips = [].filter.call(document.querySelectorAll("#bsKundeside .ark-chip"), function (b) { var m = (b.getAttribute("onclick") || "").match(/bf3KkRul\('([^']+)'\)/); return m && !document.getElementById(m[1]); });
     tjek(bred + " px · kundesidens chips fører et sted hen", !doeChips.length, doeChips.map(function (b) { return (b.innerText || "").trim() + " → " + (b.getAttribute("onclick") || ""); }).join(" | "));
+    var seK = [].find.call(document.querySelectorAll("#bsKundeside button"), function (b) { return /Se kundens version/.test(b.innerText || "") && b.getClientRects().length && /aabnKundensSide/.test(b.getAttribute("onclick") || ""); });
+    tjek(bred + " px · »Se kundens version« står på kundesiden", !!seK, "ingen synlig knap til kundens studio (Ida 20/10)");
     var tbAlle = [].some.call(document.querySelectorAll(".cover-tilbage, .bs-tilbage"), function (b) { return b.getClientRects().length && /Tilbage/.test(b.innerText || b.getAttribute("aria-label") || ""); });
     tjek(bred + " px · kundesiden har en synlig Tilbage", tbAlle, "ingen synlig Tilbage på kundesiden");
     /* CONTENTMØDET HELE VEJEN (K5, Ida 19/10: »når det bygges skal der være en kæmpe kontrol for at det virker«): tryk »Sæt contentmødet« → arket → vælg dag → Gem → rækken ligger i kunde_aftaler på KUNDENS kode → mødet står på siden */
