@@ -83,6 +83,15 @@
       var ks = document.getElementById("bsKundeside"), aboks = document.getElementById("kkAftaleBoks");
       tjek(bred + " px · Aftaler bliver på kundesiden", !!(ks && ks.getClientRects().length), "kundesiden forsvandt — man landede et andet sted");
       tjek(bred + " px · Aftaler viser aftalen", !!(aboks && aboks.getClientRects().length && /Opdigtet aftale|contentplanl/i.test(aboks.innerText || "")), aboks ? (aboks.getClientRects().length ? "aftaleboksen står uden aftalen: " + (aboks.innerText || "").replace(/\s+/g, " ").slice(0, 90) : "aftaleboksen er skjult") : "ingen aftaleboks");
+      /* INGEN RØDE RAMMER I KUNDEKORTET (Ida 20/10, billede af den røde ramme om rettelsen af en aftale · DESIGNLÅS: ingen røde rammer) — rettes aftalen, og står en aftale i dag, er kanten grå */
+      try {
+        var iDagI = new Date(); var iDagS = iDagI.getFullYear() + "-" + String(iDagI.getMonth() + 1).padStart(2, "0") + "-" + String(iDagI.getDate()).padStart(2, "0");
+        CRM_AFTALER = (CRM_AFTALER || []).filter(function (a) { return a.kode !== kc; }).concat([{ id: "crm-test-idag", kode: kc, titel: "Opdigtet aftale i dag", dato: iDagS, tid: "23:58" }, { id: "crm-test-aft", kode: kc, titel: "Opdigtet aftale", dato: dIso, tid: "10:00" }]);
+        CRM_AFT_RET = "crm-test-aft"; var bxR = document.getElementById("kkAftaleBoks"); if (bxR) bxR.innerHTML = kkAftaleSektion(kc);
+        var roede = bxR ? [].filter.call(bxR.querySelectorAll("div"), function (e) { var st = getComputedStyle(e); return parseFloat(st.borderTopWidth) > 0 && /^rgb\((2[2-5]\d), ?(\d{1,2}), ?(\d{1,2})\)/.test(st.borderTopColor) && parseFloat(st.borderRadius) < 50; }).length : -1;
+        tjek(bred + " px · ingen røde rammer om aftalerne (ret + i dag)", roede === 0, roede < 0 ? "ingen aftaleboks" : roede + " røde rammer");
+        CRM_AFT_RET = null;
+      } catch (e) { tjek(bred + " px · røde rammer kunne måles", false, e.message); }
     } else tjek(bred + " px · Aftaler findes på kundesiden", false, "ingen synlig dør eller række til aftalerne (aftale lagt " + dIso + ")");
     /* slet: kunde-admin (slet logins) kaldes, og kunden er væk */
     window.arkOk = function () { return true; };

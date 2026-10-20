@@ -4,6 +4,13 @@
 - **DAGSORDENEN RETTES PÅ STEDET.** Et penneikon ved hvert punkt åbner punktet: navn, tekst, skraldespand (fjern) og Gem; »Tilføj punkt« lægger et nyt til. Standardpunkterne (performance · den kommende uge · dato for næste møde) står uændrede, til man retter dem. Gemmes i `plan_ritual.moede.dagsorden` (merges, andre nøgler urørte); et rettet punkt bliver statisk tekst, et urørt punkt bliver dynamisk (uge, tema, mål). Ingen Annuller i rettelsen.
 - **ALLE DATOSYMBOLER ER KVADRATER, 56 × 56 (HÅRD, Ida 9/10: »kvadratiske alle steder«):** Kommende opslag (`.kop-dato`), aftalernes dato (`.cf-dato`), Backstages `.bs3-tidb.d` og `.bs-datob`. Ingen dato-boks er højere end bred.
 
+## v2850 · Den nye idé ses på computeren + ingen røde rammer i kundekortet (Mette-testen 20/10 · Ida 20/10)
+- Idébanken 1440: en ny idé uden søjle (eller en Story) skifter banken til chippen »Uden plads«/»Story«, så idéen står på skærmen. Før stod »Gemt under Uden plads«, mens skærmen viste de fire søjler.
+- »Tilføj din første idé« står kun, når HELE banken er tom — også Story og Uden plads tælles.
+- Telefonen (uændret): idéen lander i den søjle, man står på; kvitteringen siger hvor.
+- Kundekortet i CRM: rettelsen af en aftale, rettelsen af en to-do, dagens aftale og »Kun dig · dine noter« har grå flisekant (1px var(--border)), aldrig rød ramme.
+- Sikkerhedschefen: løfte 1 (ny idé ses på 1440 · første idé) og løfte 29 (ingen røde rammer om aftalerne, 3 bredder). Begge fejler på v2848.
+
 ## v2848 · Inspiration: kun plusset, intet felt (Ida 20/10, klik »Kun plusset, intet felt«)
 Ida: »inspiration har ikke det aftalte plus i hjørnet« + »når jeg indsætter link og klikker enter kommer denne pop up som heller ikke giver mening«.
 - Feltet øverst på Inspiration er væk. Computer: rødt plus (44 px) i højre hjørne under heroen → arket »Jeg har set noget fedt«.

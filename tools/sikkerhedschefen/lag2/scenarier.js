@@ -78,6 +78,20 @@
         tjek(13, "En idé uden navn får beskrivelsens første ord", !!(u1 && /^Strik til efteråret/.test(u1.titel || "")), u1 ? u1.titel : "ikke gemt");
         if (u1 && u1.id) { try { await sb.from("content_ideer").delete().eq("id", u1.id); IDEER = IDEER.filter(function (x) { return String(x.id) !== String(u1.id); }); } catch (e) {} }   /* testidéen væk igen, så rækkefølge-tjekket (løfte 4) er rent */
       } catch (e) { tjek(13, "Titel-tjekket kunne køre", false, e.message); }
+      /* LØFTE 1 · DEN NYE IDÉ SES PÅ COMPUTEREN (Mette-testen 20/10: »Gemt under Uden plads — men hvor er den?« + »Tilføj din første idé« stod, selv om banken ikke var tom) */
+      try {
+        if (document.body.classList.contains("mb") && window.innerWidth >= 900) {
+          showTab(2); ibVis("ideer"); IB_STED = ""; KUNDE_ARK_SOEJLE = ""; KUNDE_ARK_FORMAT = ""; await V(600);
+          var kU = await kundeArkGem("SC idé uden søjle", "ide"); await V(1200);
+          var nyU = (IDEER || []).filter(function (x) { return x.titel === "SC idé uden søjle"; }).pop();
+          var synligU = !!(nyU && [].some.call(document.querySelectorAll('#ideaBank [data-id="' + nyU.id + '"], [data-id="' + nyU.id + '"]'), function (e) { return e.getClientRects().length; }));
+          tjek(1, "1440 · ny idé uden søjle står på skærmen bagefter", synligU, "kvittering: " + kU + " · sted: " + (IB_STED || "Opslag"));
+          IB_STED = ""; renderIdeas(); await V(400);
+          var foersteU = [].some.call(document.querySelectorAll(".ibb-tom-alt"), function (e) { return e.getClientRects().length && /første idé/.test(e.innerText || ""); });
+          tjek(1, "1440 · »Tilføj din første idé« står ikke, når banken har idéer", !foersteU, "teksten står under Opslag");
+          if (nyU && nyU.id) { try { await sb.from("content_ideer").delete().eq("id", nyU.id); IDEER = IDEER.filter(function (x) { return String(x.id) !== String(nyU.id); }); } catch (e) {} }
+        }
+      } catch (e) { tjek(1, "Den nye idé på computeren kunne testes", false, e.message); }
       /* LØFTE 7 + 10 · OPGAVER OG JA/NEJ: en ny to-do (med kvittering), afkrydset, og »Ja, postet« på et planlagt opslag */
       try {
         var k7 = await kundeArkGem("SC to-do fra sikkerhedschefen", "todo");
