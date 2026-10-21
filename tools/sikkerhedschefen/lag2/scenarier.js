@@ -354,6 +354,15 @@
         tjek(1, "Planlægningsmødet fortsætter, hvor man slap", prOk, "stod ikke på trin 4");
         tjek(1, "Planlægningsmødet starter forfra efter Færdig", prNy, "huskede et afsluttet møde");
       } catch (e) { tjek(1, "Møde-tjekket kunne køre", false, e.message); }
+      /* LØFTE 1 · NYT LEAD UDEN AT VÆLGE (Ida 21/10): »Nyt lead« gemmer et lead uden kilde; taget »Gamle kunder« giver kilden — og intet andet */
+      try {
+        var mmL = window.matchMedia; window.matchMedia = function () { return { matches: false }; };
+        nytLeadArk(false); await V(200);
+        document.getElementById("gkNavn").value = "Lise"; document.getElementById("gkButik").value = "SC Lead uden tag"; document.getElementById("gkMail").value = "lise@sc.dk";
+        await gamleKunderSend(null); await V(300); window.matchMedia = mmL; try { bsFlytLuk(); } catch (e) {}
+        var lR = ((JSON.parse(localStorage.getItem("SELE_DB") || "{}").contacts) || []).filter(function (x) { return x.kunde === "SC Lead uden tag"; })[0];
+        tjek(1, "Nyt lead gemmes som Lead uden tag", !!(lR && lR.status === "Lead" && !lR.source), lR ? JSON.stringify({ status: lR.status, source: lR.source }) : "ikke gemt");
+      } catch (e) { tjek(1, "Nyt lead kunne testes", false, e.message); }
       /* GAMLE KUNDER (salgsturnéen): lead gemmes m. kvittering, mailen bærer koden og siden, tom butik siges */
       try {
         var mm = window.matchMedia, wo = window.open; window.matchMedia = function () { return { matches: false }; }; window.open = function (u) { window.__GK_MAIL = u; return {}; };

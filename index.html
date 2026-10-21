@@ -8983,6 +8983,7 @@ body.mb .htb-chip.mb-chip { padding:0 12px !important; }   /* saa to chips kan s
 .htb-felt:focus { border-color:var(--red); }
 .htb-felt-tal { flex:0 0 96px; }
 .htb-kat-forslag { margin-top:8px; }
+#bsFlytMenu .ark-chips.i-fladen, .htb-ark-top .ark-chips.i-fladen { flex-wrap:wrap; overflow:visible; row-gap:8px; }   /* 21/10: chips i det lille ark (Nyt lead, hashtag-kategori) klippede skyggen — ombrydes som i .ark */
 .htb-kat-forslag .htb-chip { min-height:32px; font-size:12px; }
 /* det lille ark */
 #bsFlytMenu .htb-ark .htb-ark-top { position:relative; margin:0 0 6px; }
@@ -60248,7 +60249,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2868";
+const APP_VERSION = "2870";
 const APP_BYGGET = "9. oktober";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_BYGGET + " · " + APP_VERSION; } catch (e) {} });
 let NY_VERSION_KLAR = false;
@@ -83634,7 +83635,7 @@ async function gkKoeSend() {
   if (GK_SENDER || !sb || !navigator.onLine) return; const a = gkKoeLaes(); if (!a.length) return;
   GK_SENDER = true; let sendt = 0;
   try { for (const rk of a.slice()) { if (!(await gkIndsaet(rk))) break; const nu = gkKoeLaes(); nu.shift(); gkKoeSkriv(nu); sendt++; } } finally { GK_SENDER = false; }
-  if (sendt) { try { CUSTOMERS = await fetchCustomers(); kunderneTegn(true); } catch (e) {} try { husKvit(sendt + (sendt === 1 ? " gammel kunde" : " gamle kunder") + " er sendt til CRM."); } catch (e) {} }
+  if (sendt) { try { CUSTOMERS = await fetchCustomers(); kunderneTegn(true); } catch (e) {} try { husKvit(sendt + (sendt === 1 ? " lead" : " leads") + " er sendt til CRM."); } catch (e) {} }
 }
 try { window.addEventListener("online", function () { setTimeout(function () { try { gkKoeSend(); } catch (e) {} }, 1500); }); document.addEventListener("visibilitychange", function () { if (document.visibilityState === "visible") setTimeout(function () { try { gkKoeSend(); } catch (e) {} }, 1500); }); setTimeout(function () { try { gkKoeSend(); } catch (e) {} }, 6000); } catch (e) {}
 /* GENVEJ FRA SALGSSIDEN (Idas klik 13/10 »Knap, der åbner arket«): admin.energida.dk/?gamlekunder=1 åbner CRM med Gamle kunder-arket, når Backstage er klar.
@@ -83649,12 +83650,18 @@ try { window.addEventListener("online", function () { setTimeout(function () { t
       try { const sp = new URLSearchParams(location.search); sp.delete("gamlekunder"); const q = sp.toString(); history.replaceState(null, "", location.pathname + (q ? "?" + q : "") + location.hash); } catch (e) {}
     } else if (Date.now() - t0 > 180000) clearInterval(iv);
   }, 400); } catch (e) {} })();
-function gamleKunderArk() {
+/* NYT LEAD (Ida 21/10): samme ark som salgsturnéen — »Gamle kunder« er et tag (chip), ikke en vej ind. Taget = kilden »Gamle kunder« (samme felt, som Leads-listen, filteret og mailen læser) */
+let GK_TAG = false;
+function gamleKunderArk() { nytLeadArk(true); }   /* salgssidens genvej (?gamlekunder=1) åbner med taget sat */
+function gkTagSkift(b) { GK_TAG = !GK_TAG; if (b) b.classList.toggle("on", GK_TAG); }
+function nytLeadArk(gamle) {
+  GK_TAG = !!gamle;
   let m = document.getElementById("bsFlytMenu"); if (!m) { m = document.createElement("div"); m.id = "bsFlytMenu"; document.body.appendChild(m); }
   const felt = function (id, et, ph, type) { return '<div class="htb-ark-eye">' + et + '</div><input type="' + (type || "text") + '" id="' + id + '" class="htb-felt" placeholder="' + ph + '" autocomplete="off"' + (type === "email" ? ' inputmode="email" autocapitalize="off" spellcheck="false"' : '') + ' style="width:100%;margin-bottom:12px;">'; };
   m.innerHTML = '<div class="bs-flyt-ark brief-soejle-ark htb-ark">'
-    + '<div class="htb-ark-top"><div class="ark-t">Gamle kunder</div></div>'
+    + '<div class="htb-ark-top"><div class="ark-t">Nyt lead</div></div>'
     + felt("gkNavn", "Navn", "Kontaktpersonens navn") + felt("gkButik", "Butik", "Butikkens navn") + felt("gkMail", "Mail", "navn@butikken.dk", "email") + felt("gkTlf", "Telefon", "Telefonnummer", "tel")
+    + '<div class="htb-ark-eye">Tag</div><div class="ark-chips i-fladen" style="margin:0 0 10px;"><button type="button" class="ark-chip' + (GK_TAG ? ' on' : '') + '" onclick="gkTagSkift(this)">Gamle kunder</button></div>'
     + '<div id="gkMsg" class="ftf-forkl" style="min-height:18px;margin:0 0 8px;"></div>'
     + '<button type="button" class="ark-knap ark-knap-roed ark-send-pille" onclick="gamleKunderSend(this)">Gem</button>'
     + '<button type="button" class="ark-luk" onclick="bsFlytLuk()">Annullér</button></div>';
@@ -83669,7 +83676,7 @@ async function gamleKunderSend(knap) {
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(mail)) { sig("Skriv en rigtig mail, fx navn@butikken.dk."); document.getElementById("gkMail").focus(); return; }
   if (knap) knap.disabled = true; sig("Gemmer …");
   /* RIGTIGE FELTER (Ida 13/10: »hvor indtaster jeg kundens oplysninger – mail mm?«): kontaktperson · email · telefon er kontaktkortets egne felter */
-  const rk = { kunde: butik, kontaktperson: navn || null, email: mail, telefon: tlf || null, status: "Lead", source: "Gamle kunder", kommentar: "Kode ikke sendt endnu" };
+  const rk = { kunde: butik, kontaktperson: navn || null, email: mail, telefon: tlf || null, status: "Lead", source: GK_TAG ? "Gamle kunder" : null, kommentar: GK_TAG ? "Kode ikke sendt endnu" : null };
   let ok = await gkIndsaet(rk);
   if (!ok) {
     /* UDEN NET (Ida 13/10: »gøre den liste og funktion offline«): kontakten lægges i telefonens kø og sendes af sig selv, når der er net */
@@ -85013,7 +85020,7 @@ function bf3BaandKnapVis(side, iRummet) {
     const b2 = k.querySelector("button"); b2.title = side === "modnyt" ? "Nyt modul" : side === "prodnyt" ? "Nyt produkt" : side === "manusideer" ? "Tilføj idé" : side === "moduler" ? "Ny lektion" : side === "hjem" ? "Tilføj" : side === "kunder" ? "Tilføj" : side === "indbakke" ? "Tilføj" : side === "salg" ? "Tilføj" : iRummet ? "Tilføj" : "Tilføj rum"; b2.setAttribute("aria-label", b2.title);
     /* INDE I ET RUM ER PLUSSET ROEDT og aabner rummets Tilfoej-ark (note · idé · rum · link · tjekliste · program) — Ida 21/9 kl. 16.50 */
     k.classList.toggle("roed", !!iRummet);
-    k.style.display = ""; b2.onclick = function () { if (side === "modnyt") { try { modulNyArk(); } catch (e) {} } else if (side === "prodnyt") { try { bf3NytProduktArk(); } catch (e) {} } else if (side === "manusideer") { try { manusIdeFang(); } catch (e) {} } else if (side === "moduler") { try { klipNyArk(); } catch (e) {} } else if (side === "hjem") { try { bf3ToemTrin1(); } catch (e) {} }   /* samme valg som swipe op (26/9) */ else if (side === "kunder") { try { bf3ValgArk("Tilføj", [["Gamle kunder", "gamleKunderArk()"], ["Ny kunde", "nyKundeAaben()"]], { ingenRoed: true }); } catch (e) {} }   /* CRM'ets plus (Ida 13/10: »kan du ikke få det ind i crm?«) */ else if (side === "indbakke") { try { bf3ValgArk("Tilføj", [["To-do", "bf3TodoNyArk()"], ["Besked til en kunde", "bf3BeskedArk()"]]); } catch (e) {} } else if (side === "salg") { try { bf3ValgArk("Tilføj", [["Kontakt", "bf3KontaktNyArk()"], ["Gamle kunder", "gamleKunderArk()"], ["Rum", "bf3NytRumArk('salg')"]]); } catch (e) {} } else if (iRummet) { try { mrTilfoejArk(side.slice(4)); } catch (e) {} } else bf3NytRumArk(side); };
+    k.style.display = ""; b2.onclick = function () { if (side === "modnyt") { try { modulNyArk(); } catch (e) {} } else if (side === "prodnyt") { try { bf3NytProduktArk(); } catch (e) {} } else if (side === "manusideer") { try { manusIdeFang(); } catch (e) {} } else if (side === "moduler") { try { klipNyArk(); } catch (e) {} } else if (side === "hjem") { try { bf3ToemTrin1(); } catch (e) {} }   /* samme valg som swipe op (26/9) */ else if (side === "kunder") { try { bf3ValgArk("Tilføj", [["Nyt lead", "nytLeadArk(false)"], ["Ny kunde", "nyKundeAaben()"]], { ingenRoed: true });   /* NYT LEAD UDEN AT VÆLGE (Ida 21/10: »hvorfor kan jeg ikke bare oprette et lead … gamle kunder burde være et tag«) */ } catch (e) {} }   /* CRM'ets plus (Ida 13/10: »kan du ikke få det ind i crm?«) */ else if (side === "indbakke") { try { bf3ValgArk("Tilføj", [["To-do", "bf3TodoNyArk()"], ["Besked til en kunde", "bf3BeskedArk()"]]); } catch (e) {} } else if (side === "salg") { try { bf3ValgArk("Tilføj", [["Kontakt", "bf3KontaktNyArk()"], ["Gamle kunder", "gamleKunderArk()"], ["Rum", "bf3NytRumArk('salg')"]]); } catch (e) {} } else if (iRummet) { try { mrTilfoejArk(side.slice(4)); } catch (e) {} } else bf3NytRumArk(side); };
     if (String(side).indexOf("prod_") === 0) { const pk = side.slice(5); b2.title = pk === "ideer" ? "Tilføj idé" : pk === "kilder" ? "Tilføj kildehenvisning" : "Tilføj B-roll"; b2.setAttribute("aria-label", b2.title); b2.onclick = function () { try { if (pk === "ideer") manusIdeFang(); else bf3SlNyArk(pk, BF3_PROD_VALGT); } catch (e) {} }; }   /* produktets faner (11/10) */
     if (String(side).indexOf("sl_") === 0) { const sk = side.slice(3); b2.title = sk === "kilder" ? "Tilføj kildehenvisning" : "Tilføj B-roll";   /* ordet »Tilføj« lader telefonens bundmenu-plus finde knappen (bsCoverKnapperStil) — plusset staar aldrig i coveret */ b2.setAttribute("aria-label", b2.title); b2.onclick = function () { try { bf3SlNyArk(sk); } catch (e) {} }; }   /* Kildehenvisninger + B-rolls (27/9) */
   } catch (e) {}
