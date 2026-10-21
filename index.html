@@ -8974,7 +8974,7 @@ body.mb .htb-chip.mb-chip { padding:0 12px !important; }   /* saa to chips kan s
 .htb-chip-graa { color:var(--gray2); }
 .htb-ny { margin-top:12px; }
 .htb-send { display:flex; align-items:center; gap:8px; background:#fff; border:1px solid var(--border); border-radius:14px; height:44px; padding:0 6px 0 14px; }
-.htb-send:focus-within { border-color:var(--red); }
+.htb-send:focus-within { border-color:var(--gray3); }   /* ingen rød ramme ved fokus (låst 21/9; fundet 21/10 i »Tilføj tag«) */
 .htb-hash { color:var(--gray3); font-size:14px; }
 .htb-send input { flex:1; min-width:0; border:0; background:transparent; font-family:Poppins,sans-serif; font-size:14px; color:var(--black); outline:none; height:100%; }
 .htb-send-knap { width:32px; height:32px; border-radius:50%; border:1px solid var(--knap-graa-kant, var(--border)); background:#fff; color:var(--knap-graa-tekst, var(--gray2)); display:inline-flex; align-items:center; justify-content:center; cursor:pointer; flex-shrink:0; padding:0; }   /* sendefeltets graa cirkel (18/9) */
@@ -60249,7 +60249,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2870";
+const APP_VERSION = "2872";
 const APP_BYGGET = "9. oktober";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_BYGGET + " · " + APP_VERSION; } catch (e) {} });
 let NY_VERSION_KLAR = false;
@@ -81167,6 +81167,14 @@ function kontaktChip(id, felt, val, knap, kanFravaelge) {
   saveKontaktFelt(id, felt, ny);
   try { const c = CUSTOMERS.find(function (x) { return String(x.id) === String(id); }); const ms = document.querySelector("#modalBody .msub"); if (c && ms) ms.textContent = [String(c.status || "").trim(), String(c.produkt || "").trim()].filter(Boolean).join(" · "); } catch (e) {}
 }
+/* TAGS PÅ KONTAKTKORTET (Ida 21/10): alle egne tags som chips, tryk = på/af, gemmes straks; »Tilføj tag« laver et nyt og sætter det på */
+function kontaktTagChipsHtml(id) {
+  const paa = crmTagsPaa(id); const idE = esc(String(id)).replace(/'/g, "\\'");
+  return crmTagNavne().map(function (t) { return '<button type="button" class="ark-chip mq-tap' + (paa.indexOf(t) > -1 ? ' on' : '') + '" onclick="kontaktTagSkift(\'' + idE + '\',\'' + esc(t).replace(/'/g, "\\'") + '\')">' + esc(t) + '</button>'; }).join('');
+}
+function kontaktTagTegn(id) { const r = document.getElementById("kkTagChips"); if (r) r.innerHTML = kontaktTagChipsHtml(id); try { const kc = document.getElementById("dside-crm"); if (kc && kc.style.display !== "none") kunderneTegn(true); } catch (e) {} }
+async function kontaktTagSkift(id, t) { await crmTagsHent(); const paa = crmTagsPaa(id); const i = paa.indexOf(t); if (i > -1) paa.splice(i, 1); else paa.push(t); crmTagsLokal(id, paa); kontaktTagTegn(id); await crmTagsGem(); }
+async function kontaktTagNy(id) { const f = document.getElementById("kkTagNy"); const t = crmTagRens(f && f.value); if (!t) return; if (f) f.value = ""; await crmTagsHent(); const paa = crmTagsPaa(id); if (paa.indexOf(t) < 0) paa.push(t); crmTagsLokal(id, paa); kontaktTagTegn(id); await crmTagsGem(); if (f) f.focus(); }
 function openModal(id) {
   const c = CUSTOMERS.find(x => String(x.id) === String(id));
   if (!c) return;
@@ -81201,6 +81209,7 @@ function openModal(id) {
        samme gemmevej (saveKontaktFelt → contacts.update). Status laeser STATUSES (eet ordforraad, 16/9). Valgt = fyldt roed; tryk paa den valgte type = ingen type. */
     '<div class="mfield"><div class="k">Type</div>' + kontaktChipsHtml(c.id, "produkt", KONTAKT_TYPER.concat((c.produkt || '') && KONTAKT_TYPER.indexOf(c.produkt) < 0 ? [String(c.produkt)] : []), c.produkt || "", true) + '</div>' +
     '<div class="mfield"><div class="k">Status</div>' + kontaktChipsHtml(c.id, "status", plStatusListe(), String(c.status || "").trim(), false) + '</div>' +
+    '<div class="mfield"><div class="k">Tags</div><div class="kk-chips" id="kkTagChips">' + kontaktTagChipsHtml(c.id) + '</div><div class="htb-send" style="margin-top:8px;"><input type="text" id="kkTagNy" placeholder="Tilføj tag" autocomplete="off" onkeydown="if(event.key===\'Enter\'){event.preventDefault();kontaktTagNy(\'' + esc(String(c.id)).replace(/'/g, "\\'") + '\');}">' + crmTagSendKnap("kontaktTagNy(\'" + esc(String(c.id)).replace(/'/g, "\\'") + "\')") + '</div></div>' +
     '<div class="mfield"><div class="k">Opfølgning <span style="color:var(--gray3);text-transform:none;letter-spacing:0;font-weight:400;">— står under Opfølgning i dag</span></div><input type="date" value="' + esc(c.naeste_aktivitet ? String(c.naeste_aktivitet).slice(0,10) : "") + '" onchange="saveKontaktFelt(\'' + c.id + '\',\'naeste_aktivitet\',this.value || null);renderFollowUp()" style="width:100%;border:1px solid var(--border);border-radius:12px;padding:10px 12px;font-size:13px;font-family:Poppins,sans-serif;background:#fff;color:var(--black);"></div>' +
     field("Kategori", c.vaelg) +
     kundeside +
@@ -83629,7 +83638,7 @@ function gamleKunderMailTekst(navn) {
 /* KOEEN FOR GAMLE KUNDER UDEN NET (13/10): ligger i telefonen, til basen har svaret med en kvittering (.select) — slettes aldrig foer */
 function gkKoeLaes() { try { return JSON.parse(localStorage.getItem("gk_koe") || "[]") || []; } catch (e) { return []; } }
 function gkKoeSkriv(a) { try { localStorage.setItem("gk_koe", JSON.stringify(a)); return true; } catch (e) { return false; } }
-async function gkIndsaet(rk) { if (!sb || !navigator.onLine) return false; try { const r = await sb.from("contacts").insert(rk).select("id"); return !r.error && !!(r.data && r.data.length); } catch (e) { return false; } }
+async function gkIndsaet(rk) { if (!sb || !navigator.onLine) return false; try { const tags = Array.isArray(rk._tags) ? rk._tags : []; const rad = Object.assign({}, rk); delete rad._tags; const r = await sb.from("contacts").insert(rad).select("id"); if (r.error || !(r.data && r.data.length)) return false; const id = r.data[0].id; if (tags.length) { try { await crmTagsSaet(id, tags); } catch (e) {} } return id || true; } catch (e) { return false; } }
 let GK_SENDER = false;
 async function gkKoeSend() {
   if (GK_SENDER || !sb || !navigator.onLine) return; const a = gkKoeLaes(); if (!a.length) return;
@@ -83650,18 +83659,50 @@ try { window.addEventListener("online", function () { setTimeout(function () { t
       try { const sp = new URLSearchParams(location.search); sp.delete("gamlekunder"); const q = sp.toString(); history.replaceState(null, "", location.pathname + (q ? "?" + q : "") + location.hash); } catch (e) {}
     } else if (Date.now() - t0 > 180000) clearInterval(iv);
   }, 400); } catch (e) {} })();
+/* EGNE TAGS PÅ KONTAKTER (Ida 21/10: »så skal jeg kunne tilføje nyt tag jeg skal kunne filtrere efter«).
+   Gemmes i Idas egen række (skema_svar · crm_tags) gennem vaneGemRow — contacts-tabellen røres ikke (ingen ny kolonne).
+   Listen = [{id: kontaktens id, tags: [...]}]; id "__navne" holder alle tags, også et nyt tag, der endnu ikke sidder på nogen.
+   »Gamle kunder« er stadig kilden (source), som mailen og live-overblikket læser — derfor står den som chip ved siden af tags, ikke i listen. */
+let CRM_TAGS = [], CRM_TAGS_LOFTE = null;
+function crmTagsHent() { if (CRM_TAGS_LOFTE) return CRM_TAGS_LOFTE; CRM_TAGS_LOFTE = (async function () { try { const v = await vaneRow("crm_tags"); if (Array.isArray(v)) CRM_TAGS = v.filter(function (r) { return r && r.id != null && Array.isArray(r.tags); }); } catch (e) {} try { const kc = document.getElementById("dside-crm"); if (kc && kc.style.display !== "none" && crmTagNavne().length) kunderneTegn(true); } catch (e) {} return CRM_TAGS; })(); return CRM_TAGS_LOFTE; }
+function crmTagNavne() { const s = []; CRM_TAGS.forEach(function (r) { (r.tags || []).forEach(function (t) { if (t && s.indexOf(t) < 0) s.push(t); }); }); return s.sort(function (a, b) { return a.localeCompare(b, "da"); }); }
+function crmTagsPaa(id) { const r = CRM_TAGS.find(function (x) { return String(x.id) === String(id); }); return r ? (r.tags || []).slice() : []; }
+async function crmTagsSaet(id, tags) { await crmTagsHent(); crmTagsLokal(id, tags); return crmTagsGem(); }
+function crmTagsLokal(id, tags) {
+  id = String(id);
+  let r = CRM_TAGS.find(function (x) { return String(x.id) === id; }); if (!r) { r = { id: id, tags: [] }; CRM_TAGS.push(r); }
+  r.tags = tags.filter(function (t, i) { return t && tags.indexOf(t) === i; });
+  const navne = crmTagNavne(); let n = CRM_TAGS.find(function (x) { return x.id === "__navne"; }); if (!n) { n = { id: "__navne", tags: [] }; CRM_TAGS.push(n); } n.tags = navne;
+}
+async function crmTagsGem() {
+  const ok = await vaneGemRow("crm_tags", CRM_TAGS); if (ok === false) { try { visSyncFejl("crm_tags — tagget blev ikke gemt"); } catch (e) {} } return ok;
+}
+function crmTagRens(t) { t = String(t || "").replace(/\s+/g, " ").trim().slice(0, 40); return t ? t.charAt(0).toUpperCase() + t.slice(1) : ""; }   /* tags starter altid med stort (20/9) */
+function crmTagSendKnap(onclick) { const pc = window.innerWidth >= 900; return '<button type="button" class="htb-send-knap mq-tap" aria-label="Tilføj" onclick="' + onclick + '">' + (pc ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 10l-5 5 5 5"/><path d="M20 4v7a4 4 0 0 1-4 4H4"/></svg>' : '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>') + '</button>'; }
 /* NYT LEAD (Ida 21/10): samme ark som salgsturnéen — »Gamle kunder« er et tag (chip), ikke en vej ind. Taget = kilden »Gamle kunder« (samme felt, som Leads-listen, filteret og mailen læser) */
-let GK_TAG = false;
+let GK_TAG = false, GK_TAGS = [];
 function gamleKunderArk() { nytLeadArk(true); }   /* salgssidens genvej (?gamlekunder=1) åbner med taget sat */
 function gkTagSkift(b) { GK_TAG = !GK_TAG; if (b) b.classList.toggle("on", GK_TAG); }
+function gkEgetTagSkift(b, t) { const i = GK_TAGS.indexOf(t); if (i > -1) GK_TAGS.splice(i, 1); else GK_TAGS.push(t); if (b) b.classList.toggle("on", i < 0); }
+function gkTagChipsHtml() {
+  return '<button type="button" class="ark-chip' + (GK_TAG ? ' on' : '') + '" onclick="gkTagSkift(this)">Gamle kunder</button>'
+    + crmTagNavne().map(function (t) { return '<button type="button" class="ark-chip' + (GK_TAGS.indexOf(t) > -1 ? ' on' : '') + '" onclick="gkEgetTagSkift(this,\'' + esc(t).replace(/'/g, "\\'") + '\')">' + esc(t) + '</button>'; }).join('');
+}
+function gkNytTag() {
+  const f = document.getElementById("gkTagNy"); const t = crmTagRens(f && f.value); if (!t) return;
+  if (t.toLowerCase() === "gamle kunder") GK_TAG = true; else if (GK_TAGS.indexOf(t) < 0) GK_TAGS.push(t);
+  if (crmTagNavne().indexOf(t) < 0 && t.toLowerCase() !== "gamle kunder") { let n = CRM_TAGS.find(function (x) { return x.id === "__navne"; }); if (!n) { n = { id: "__navne", tags: [] }; CRM_TAGS.push(n); } n.tags.push(t); }
+  const r = document.getElementById("gkTagChips"); if (r) r.innerHTML = gkTagChipsHtml(); if (f) { f.value = ""; f.focus(); }
+}
 function nytLeadArk(gamle) {
-  GK_TAG = !!gamle;
+  GK_TAG = !!gamle; GK_TAGS = []; try { crmTagsHent().then(function () { const r = document.getElementById("gkTagChips"); if (r) r.innerHTML = gkTagChipsHtml(); }); } catch (e) {}
   let m = document.getElementById("bsFlytMenu"); if (!m) { m = document.createElement("div"); m.id = "bsFlytMenu"; document.body.appendChild(m); }
   const felt = function (id, et, ph, type) { return '<div class="htb-ark-eye">' + et + '</div><input type="' + (type || "text") + '" id="' + id + '" class="htb-felt" placeholder="' + ph + '" autocomplete="off"' + (type === "email" ? ' inputmode="email" autocapitalize="off" spellcheck="false"' : '') + ' style="width:100%;margin-bottom:12px;">'; };
   m.innerHTML = '<div class="bs-flyt-ark brief-soejle-ark htb-ark">'
     + '<div class="htb-ark-top"><div class="ark-t">Nyt lead</div></div>'
     + felt("gkNavn", "Navn", "Kontaktpersonens navn") + felt("gkButik", "Butik", "Butikkens navn") + felt("gkMail", "Mail", "navn@butikken.dk", "email") + felt("gkTlf", "Telefon", "Telefonnummer", "tel")
-    + '<div class="htb-ark-eye">Tag</div><div class="ark-chips i-fladen" style="margin:0 0 10px;"><button type="button" class="ark-chip' + (GK_TAG ? ' on' : '') + '" onclick="gkTagSkift(this)">Gamle kunder</button></div>'
+    + '<div class="htb-ark-eye">Tags</div><div class="ark-chips i-fladen" id="gkTagChips" style="margin:0 0 10px;">' + gkTagChipsHtml() + '</div>'
+    + '<div class="htb-send" style="margin:0 0 12px;"><input type="text" id="gkTagNy" placeholder="Tilføj tag" autocomplete="off" onkeydown="if(event.key===\'Enter\'){event.preventDefault();gkNytTag();}">' + crmTagSendKnap("gkNytTag()") + '</div>'
     + '<div id="gkMsg" class="ftf-forkl" style="min-height:18px;margin:0 0 8px;"></div>'
     + '<button type="button" class="ark-knap ark-knap-roed ark-send-pille" onclick="gamleKunderSend(this)">Gem</button>'
     + '<button type="button" class="ark-luk" onclick="bsFlytLuk()">Annullér</button></div>';
@@ -83672,11 +83713,13 @@ async function gamleKunderSend(knap) {
   const v = function (id) { return String((document.getElementById(id) || {}).value || "").trim(); };
   const navn = v("gkNavn"), butik = v("gkButik"), mail = v("gkMail").toLowerCase(), tlf = v("gkTlf");
   const msg = document.getElementById("gkMsg"); const sig = function (t) { if (msg) msg.textContent = t; };
+  try { if (v("gkTagNy")) gkNytTag(); } catch (e) {}   /* et skrevet tag, der ikke er tilføjet, kommer med ved Gem */
   if (!butik) { sig("Skriv butikkens navn."); document.getElementById("gkButik").focus(); return; }
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(mail)) { sig("Skriv en rigtig mail, fx navn@butikken.dk."); document.getElementById("gkMail").focus(); return; }
   if (knap) knap.disabled = true; sig("Gemmer …");
   /* RIGTIGE FELTER (Ida 13/10: »hvor indtaster jeg kundens oplysninger – mail mm?«): kontaktperson · email · telefon er kontaktkortets egne felter */
   const rk = { kunde: butik, kontaktperson: navn || null, email: mail, telefon: tlf || null, status: "Lead", source: GK_TAG ? "Gamle kunder" : null, kommentar: GK_TAG ? "Kode ikke sendt endnu" : null };
+  if (GK_TAGS.length) rk._tags = GK_TAGS.slice();   /* egne tags følger med, også i offline-køen (gkIndsaet tager dem af, før rækken sendes) */
   let ok = await gkIndsaet(rk);
   if (!ok) {
     /* UDEN NET (Ida 13/10: »gøre den liste og funktion offline«): kontakten lægges i telefonens kø og sendes af sig selv, når der er net */
@@ -83784,7 +83827,8 @@ async function kunderneTegn(hurtig) {
   if (kat === "venter") { liste = liste.filter(function (k) { return bsKundeVenter(k).length; }); kontakter = []; }
   else if (kat === "kunder") { kontakter = kontakter.filter(function (c) { return !erLead(c); }); }
   else if (kat === "leads") { liste = []; kontakter = kontakter.filter(erLead); }
-  else if (kat === "gamle") { liste = []; kontakter = kontakter.filter(function (c) { return String(c.source || "") === "Gamle kunder"; }); }   /* Ida 14/10: »hvorfor kommer gamle kunder ikke op her som chips?« */
+  else if (kat === "gamle") { liste = []; kontakter = kontakter.filter(function (c) { return String(c.source || "") === "Gamle kunder"; }); }
+  else if (kat.indexOf("tag:") === 0) { const tn = kat.slice(4); liste = []; kontakter = kontakter.filter(function (c) { return crmTagsPaa(c.id).indexOf(tn) > -1; }); }   /* egne tags (Ida 21/10) */   /* Ida 14/10: »hvorfor kommer gamle kunder ikke op her som chips?« */
   else if (kat !== "alle") { const kd = BS_KUNDE_KATEGORIER.find(function (x) { return x.id === kat; }); if (kd) liste = liste.filter(kd.passer); kontakter = []; }
   const sorter = function (a, b) {
     if (BF3_SORT === "navn") return navnAf(a).localeCompare(navnAf(b), "da");
@@ -83802,14 +83846,15 @@ async function kunderneTegn(hurtig) {
   const kFlise = function (c) { const sk = plDato(c.sidste_kontakt), na = plDato(c.naeste_aktivitet); const l = [String(c.produkt || "").trim(), c.kontaktperson ? String(c.kontaktperson).trim() : "", na ? "opfølgning " + dkDatoKort(na) : (sk ? "sidst " + dkDatoKort(sk) : "")].filter(Boolean).join(" · "); const st = String(c.status || "").trim();
     return '<div class="bs3-fl bs3-klik bs3-kunde bs3-kontakt" role="button" tabindex="0" onclick="openModal(\'' + esc(String(c.id)) + '\')"><div class="bs3-n">' + esc(c.kunde || "Uden navn") + '</div>' + (l ? '<div class="bs3-s">' + esc(l) + '</div>' : '') + (st ? '<span class="ark-chip bs3-stchip">' + esc(st) + '</span>' : '') + '</div>'; };
   const tlf = bf3Tlf();
-  const kats = [["alle", "Alle"], ["kunder", "Kunder"], ["leads", "Leads"], ["gamle", "Gamle kunder"], ["venter", "Venter på dig"]].concat(BS_KUNDE_KATEGORIER.map(function (x) { return [x.id, x.navn]; }));
+  try { crmTagsHent(); } catch (e) {}
+  const kats = [["alle", "Alle"], ["kunder", "Kunder"], ["leads", "Leads"], ["gamle", "Gamle kunder"]].concat(crmTagNavne().map(function (t) { return ["tag:" + t, t]; })).concat([["venter", "Venter på dig"]]).concat(BS_KUNDE_KATEGORIER.map(function (x) { return [x.id, x.navn]; }));
   const alleFliser = resten.map(flise).concat(kontakter.map(kFlise));
   el.innerHTML = '<div class="bs-hero bs-hero-streg">CRM</div><div class="bs3">'
     + '<div class="bs3-raekke2"><div class="sendfelt bs-sendfelt bs3-soeg"><input type="text" class="sendfelt-felt" id="bsKundeSoeg" placeholder="Find en kunde …" autocomplete="off" value="' + esc(BS_KUNDE_SOEG || "").replace(/"/g, "&quot;") + '" oninput="BS_KUNDE_SOEG=this.value;kunderneTegn(true)"></div>'
     + '<button type="button" class="bs3-drop bs3-sort" onclick="bf3SortAabn()"><span>Sortér: ' + ({ aktiv: "seneste aktivitet", venter: "venter først", navn: "navn" })[BF3_SORT] + '</span>' + BF3_SVG.ned + '</button></div>'
     + bf3Chips(kats, kat, "bf3KundeKat")
     + (pinnede.length ? bf3Ver("Pinnede") + '<div class="bs3-grid' + (tlf ? '1' : '2') + '">' + pinnede.map(flise).join('') + '</div>' : '')
-    + '<div class="bs3-afsnit">' + bf3Ver(kat === "leads" ? "Leads" : kat === "gamle" ? "Gamle kunder" : (pinnede.length ? "Alle kunder" : "Kunder")) + '</div>'
+    + '<div class="bs3-afsnit">' + bf3Ver(kat === "leads" ? "Leads" : kat === "gamle" ? "Gamle kunder" : kat.indexOf("tag:") === 0 ? kat.slice(4) : (pinnede.length ? "Alle kunder" : "Kunder")) + '</div>'
     + (alleFliser.length ? '<div class="bs3-grid' + (tlf ? '1' : '2') + '">' + alleFliser.join('') + '</div>' : bf3Tom(q ? "Ingen kunder matcher." : (kat === "leads" ? "Ingen leads endnu." : kat === "gamle" ? "Ingen gamle kunder endnu." : "Ingen kunder her.")))
     + ''   /* »Ny kunde« = plusset i baandet (Ida 21/9 kl. 13.25: »tilføj-knappen skal ikke være nede i bunden men i højre øvre hjørne oppe i coveret«) */
     + '</div>';

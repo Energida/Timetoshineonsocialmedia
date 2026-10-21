@@ -363,6 +363,22 @@
         var lR = ((JSON.parse(localStorage.getItem("SELE_DB") || "{}").contacts) || []).filter(function (x) { return x.kunde === "SC Lead uden tag"; })[0];
         tjek(1, "Nyt lead gemmes som Lead uden tag", !!(lR && lR.status === "Lead" && !lR.source), lR ? JSON.stringify({ status: lR.status, source: lR.source }) : "ikke gemt");
       } catch (e) { tjek(1, "Nyt lead kunne testes", false, e.message); }
+      /* EGNE TAGS (Ida 21/10: »så skal jeg kunne tilføje nyt tag jeg skal kunne filtrere efter«): nyt tag i arket → sidder på leadet, gemt i basen, og filterchippen viser kun det lead */
+      try {
+        var mmT = window.matchMedia; window.matchMedia = function () { return { matches: false }; };
+        nytLeadArk(false); await V(200);
+        document.getElementById("gkNavn").value = "Tove"; document.getElementById("gkButik").value = "SC Tagbutik"; document.getElementById("gkMail").value = "tove@sc.dk";
+        document.getElementById("gkTagNy").value = "sc messe"; gkNytTag();
+        await gamleKunderSend(null); await V(400); window.matchMedia = mmT; try { bsFlytLuk(); } catch (e) {}
+        var tR = ((JSON.parse(localStorage.getItem("SELE_DB") || "{}").contacts) || []).filter(function (x) { return x.kunde === "SC Tagbutik"; })[0];
+        var tPaa = tR ? crmTagsPaa(tR.id) : [];
+        var tBase = ((JSON.parse(localStorage.getItem("SELE_DB") || "{}").skema_svar) || []).filter(function (x) { return x.skema === "crm_tags"; })[0];
+        tjek(1, "Eget tag sidder på det nye lead og er gemt i basen", tPaa.indexOf("Sc messe") > -1 && !!tBase && JSON.stringify(tBase.svar).indexOf("Sc messe") > -1, JSON.stringify(tPaa) + (tBase ? " · gemt" : " · ikke i basen"));
+        BS_KUNDE_CHIP = "tag:Sc messe"; kunderneTegn(true); await V(200);
+        var tFl = Array.prototype.map.call(document.querySelectorAll("#dside-crm .bs3-kunde .bs3-n"), function (x) { return x.textContent; });
+        BS_KUNDE_CHIP = "alle"; try { kunderneTegn(true); } catch (e) {}
+        tjek(1, "Filterchippen med et eget tag viser kun leads med tagget", tFl.length === 1 && tFl[0] === "SC Tagbutik", JSON.stringify(tFl));
+      } catch (e) { tjek(1, "Egne tags kunne testes", false, e.message); }
       /* GAMLE KUNDER (salgsturnéen): lead gemmes m. kvittering, mailen bærer koden og siden, tom butik siges */
       try {
         var mm = window.matchMedia, wo = window.open; window.matchMedia = function () { return { matches: false }; }; window.open = function (u) { window.__GK_MAIL = u; return {}; };

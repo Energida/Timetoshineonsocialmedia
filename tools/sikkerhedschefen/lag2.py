@@ -39,7 +39,10 @@ def koer(bred=1440):
     ud = []
     try:
         for fase in FASER:
-            kode = urllib.parse.quote("window.__FASE=" + json.dumps(fase) + ";" + scen)
+            # SCENARIERNE SOM FIL (21/10: tag-tjekket skubbede URL'en over 64 KB for tredje gang — fase nulstil maalte intet):
+            # URL'en baerer kun en lille indlaeser; scenarierne hentes synkront og koeres med samme globale eval som foer
+            open(os.path.join(sele, "sc-scen.js"), "w", encoding="utf-8").write(scen)
+            kode = urllib.parse.quote("window.__FASE=" + json.dumps(fase) + ';var __x=new XMLHttpRequest();__x.open("GET","/sc-scen.js?"+Date.now(),false);__x.send();(0,eval)(__x.responseText);')
             fil = urllib.parse.quote("index-sele.html?selekode=HINGES2026" + EKSTRA.get(fase, ""), safe="")
             if fase == "nulstil" and os.path.exists(os.path.join(sele, "sele-db.json")): os.remove(os.path.join(sele, "sele-db.json"))
             url = f"http://127.0.0.1:{port}/sele.html?vis=kunde&fil={fil}&bred={bred}&hoej=900&kode={kode}"
