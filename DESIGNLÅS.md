@@ -4,6 +4,9 @@
 - **DAGSORDENEN RETTES PÅ STEDET.** Et penneikon ved hvert punkt åbner punktet: navn, tekst, skraldespand (fjern) og Gem; »Tilføj punkt« lægger et nyt til. Standardpunkterne (performance · den kommende uge · dato for næste møde) står uændrede, til man retter dem. Gemmes i `plan_ritual.moede.dagsorden` (merges, andre nøgler urørte); et rettet punkt bliver statisk tekst, et urørt punkt bliver dynamisk (uge, tema, mål). Ingen Annuller i rettelsen.
 - **ALLE DATOSYMBOLER ER KVADRATER, 56 × 56 (HÅRD, Ida 9/10: »kvadratiske alle steder«):** Kommende opslag (`.kop-dato`), aftalernes dato (`.cf-dato`), Backstages `.bs3-tidb.d` og `.bs-datob`. Ingen dato-boks er højere end bred.
 
+## v2904 (22/10) — **Lead → kunde** (Ida: »kan man gøre sådan at jeg får en notifikation eller at der står noget med lead er blevet til kunde«; klik »Begge dele«)
+- Købet lægger en ny kontakt med mailen i kommentaren. Har et lead samme mail, står leadets linje i CRM som »Blev kunde« (rød prik), købs-dubletten skjules, og leadet tæller under Kunder, ikke Leads. Popuppen »Nyt køb« siger »Nyt køb · YOU GOT THIS · Var lead«. Kun visning — intet i basen ændres (`leadKoebKort`).
+
 ## v2902 (22/10) — **CRM som Idas Notion: én linje pr. kunde** (Ida: »kan du se om du kan bygge det mere som mit notion crm? med 1 linje pr kunde?«; klik »Ja, byg det« på bud MSTnVbiPtywb9r9yfJD9m7)
 - Computeren: én flise med en tabel — Status (prik: rød = kunde/aktiv, hvid med grå ring = lead, grå = passiv) · Kunde · Kontaktperson · Produkt · Næste aktivitet · Kommentar. Telefonen: én linje pr. kunde — prik · navn · produkt. Tryk = kundesiden/kontaktkortet som før. Pinnede står som fliser øverst. Bevidst undtagelse fra »altid fliser« (5/9). `.crmt*`.
 
