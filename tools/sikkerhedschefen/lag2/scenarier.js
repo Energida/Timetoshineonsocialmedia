@@ -394,6 +394,16 @@
         var lR = ((JSON.parse(localStorage.getItem("SELE_DB") || "{}").contacts) || []).filter(function (x) { return x.kunde === "SC Lead uden tag"; })[0];
         tjek(1, "Nyt lead gemmes som Lead uden tag", !!(lR && lR.status === "Lead" && !lR.source), lR ? JSON.stringify({ status: lR.status, source: lR.source }) : "ikke gemt");
       } catch (e) { tjek(1, "Nyt lead kunne testes", false, e.message); }
+      /* PERSON-LEAD (Ida 22/10: familie og venner, der tester, »er altså ikke en butik«): Person → intet butiksfelt, navnet kræves, leadet står under navnet */
+      try {
+        var mmP = window.matchMedia; window.matchMedia = function () { return { matches: false }; };
+        nytLeadArk(false); await V(200); gkTypeSaet(true);
+        document.getElementById("gkMail").value = "person@sc.dk"; await gamleKunderSend(null); var pTom = (document.getElementById("gkMsg") || {}).textContent || "";
+        document.getElementById("gkNavn").value = "SC Opdigtet Person"; await gamleKunderSend(null); await V(300); window.matchMedia = mmP; try { bsFlytLuk(); } catch (e) {}
+        var pR = ((JSON.parse(localStorage.getItem("SELE_DB") || "{}").contacts) || []).filter(function (x) { return x.kunde === "SC Opdigtet Person"; })[0];
+        tjek(1, "Person-lead uden navn gemmes ikke og siges", /personens navn/i.test(pTom), pTom);
+        tjek(1, "Person-lead gemmes uden butik under personens navn", !!(pR && pR.status === "Lead" && pR.kontaktperson === "SC Opdigtet Person"), pR ? JSON.stringify({ kunde: pR.kunde, status: pR.status }) : "ikke gemt");
+      } catch (e) { tjek(1, "Person-lead kunne testes", false, e.message); }
       /* EGNE TAGS (Ida 21/10: »så skal jeg kunne tilføje nyt tag jeg skal kunne filtrere efter«): nyt tag i arket → sidder på leadet, gemt i basen, og filterchippen viser kun det lead */
       try {
         var mmT = window.matchMedia; window.matchMedia = function () { return { matches: false }; };
