@@ -4,6 +4,8 @@
 (function () {
   var KODE = (new URLSearchParams(location.search).get("selekode") || "HINGES2026").toUpperCase();
   var user = { id: "sele-test", email: "sele@test.dk", app_metadata: { kode: KODE }, user_metadata: { navn: "Test", hilsen: "Test", kode: KODE } };
+  /* KONTOENS METADATA HUSKES (22/10): updateUser({data}) gemmes i SELE_USER_META og følger med efter genindlæsning — som kontoen på serveren (fx tur_set: rundvisningen er set på en anden enhed) */
+  try { var um = JSON.parse(localStorage.getItem("SELE_USER_META") || "null"); if (um) Object.assign(user.user_metadata, um); } catch (e) {}
   var session = { user: user, access_token: "sele", refresh_token: "sele", expires_at: 9999999999 };
   /* BASEN FOELGER MED MELLEM FASERNE: runneren skriver sele-db.json; den laeses synkront, foer appen spoerger om noget */
   try { if (!sessionStorage.getItem("SELE_DB_SAAET")) { var x = new XMLHttpRequest(); x.open("GET", "sele-db.json?t=" + Date.now(), false); x.send(); if (x.status === 200) { var j = JSON.parse(x.responseText || "{}"); Object.keys(j.ls || {}).forEach(function (k) { localStorage.setItem(k, j.ls[k]); }); } sessionStorage.setItem("SELE_DB_SAAET", "1"); } } catch (e) {}
@@ -57,7 +59,7 @@
     auth: { getUser: function () { return svar({ data: { user: user }, error: null }); }, getSession: function () { return svar({ data: { session: session }, error: null }); },
       onAuthStateChange: function (cb) { setTimeout(function () { try { cb("SIGNED_IN", session); } catch (e) {} }, 0); return { data: { subscription: { unsubscribe: function () {} } } }; },
       signInWithPassword: function () { return svar({ data: { user: user, session: session }, error: null }); }, signOut: function () { return svar({ error: null }); },
-      updateUser: function () { return svar({ data: { user: user }, error: null }); }, setSession: function () { return svar({ data: { session: session, user: user }, error: null }); },
+      updateUser: function (o) { try { if (o && o.data) { Object.assign(user.user_metadata, o.data); var gl = JSON.parse(localStorage.getItem("SELE_USER_META") || "{}"); localStorage.setItem("SELE_USER_META", JSON.stringify(Object.assign(gl, o.data))); } } catch (e) {} return svar({ data: { user: user }, error: null }); }, setSession: function () { return svar({ data: { session: session, user: user }, error: null }); },
       refreshSession: function () { return svar({ data: { session: session, user: user }, error: null }); }, resetPasswordForEmail: function () { return svar({ data: {}, error: null }); },
       signUp: function () { return svar({ data: { user: user, session: session }, error: null }); } },
     channel: function () { var c = { on: function () { return c; }, subscribe: function () { return c; }, unsubscribe: function () {} }; return c; }, removeChannel: function () {},
