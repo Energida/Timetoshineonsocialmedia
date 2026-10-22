@@ -4,6 +4,11 @@
 - **DAGSORDENEN RETTES PÅ STEDET.** Et penneikon ved hvert punkt åbner punktet: navn, tekst, skraldespand (fjern) og Gem; »Tilføj punkt« lægger et nyt til. Standardpunkterne (performance · den kommende uge · dato for næste møde) står uændrede, til man retter dem. Gemmes i `plan_ritual.moede.dagsorden` (merges, andre nøgler urørte); et rettet punkt bliver statisk tekst, et urørt punkt bliver dynamisk (uge, tema, mål). Ingen Annuller i rettelsen.
 - **ALLE DATOSYMBOLER ER KVADRATER, 56 × 56 (HÅRD, Ida 9/10: »kvadratiske alle steder«):** Kommende opslag (`.kop-dato`), aftalernes dato (`.cf-dato`), Backstages `.bs3-tidb.d` og `.bs-datob`. Ingen dato-boks er højere end bred.
 
+## v2912 (22/10) — **Rundvisning på lektionssiden** (Ida: »en rundvisning på selve lektionssiden … noter … hvor de kan finde deres noter samlet og … deres svar på opgaverne … og at det kun er dem der kan tilgå dem«; klik »Ja, byg den« på ordlyden)
+- Første gang en lektion åbnes (efter hovedturen): 1 »Skriv det, du vil huske, mens du ser. Noterne gemmes af sig selv.« (Dine noter) · 2 »Her finder du alle dine noter samlet, lektion for lektion.« (Alle noter) · 3 »Her svarer du på lektionens øvelse. Svarene gemmes, og du kan altid åbne og rette dem igen her.« (Tag øvelsen / Ret dine øvelsessvar — kun når lektionen har en øvelse) · 4 »Dine noter og svar er dine. Dine kolleger kan ikke se dem — kun du og Ida.«
+- Huskes på kontoen (`lek_tur_set`); rører ikke hovedturens markering. Samme motor (turVis, TUR_MODUS "lek").
+- »Kun du og Ida«: noter og svar gemmes pr. person; admin ser dem. Kollega-adgang uden om appen er IKKE MÅLT (kræver et andet login på samme teamkode).
+
 ## v2910 (22/10) — **Rundvisningens spotlys: ren kant** (Ida ved testkøbet: »der er noget med grafikken her?« → »størrelsen er fin nok - kanten er bare ikke ren«)
 - Sløret var fire firkantede flader og ringen rund: hvide hjørner og tynde samlinger. Nu én SVG-flade med et rundt hul (`tur-hul`), samme runding som ringen. Størrelsen er uændret. Målt 390 + 1440.
 
