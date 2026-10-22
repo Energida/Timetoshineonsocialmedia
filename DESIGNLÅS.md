@@ -4,6 +4,12 @@
 - **DAGSORDENEN RETTES PÅ STEDET.** Et penneikon ved hvert punkt åbner punktet: navn, tekst, skraldespand (fjern) og Gem; »Tilføj punkt« lægger et nyt til. Standardpunkterne (performance · den kommende uge · dato for næste møde) står uændrede, til man retter dem. Gemmes i `plan_ritual.moede.dagsorden` (merges, andre nøgler urørte); et rettet punkt bliver statisk tekst, et urørt punkt bliver dynamisk (uge, tema, mål). Ingen Annuller i rettelsen.
 - **ALLE DATOSYMBOLER ER KVADRATER, 56 × 56 (HÅRD, Ida 9/10: »kvadratiske alle steder«):** Kommende opslag (`.kop-dato`), aftalernes dato (`.cf-dato`), Backstages `.bs3-tidb.d` og `.bs-datob`. Ingen dato-boks er højere end bred.
 
+## v2896 (22/10) — **Modulerne åbner for alle YOU GOT THIS-koder** (Ida: »ultra vigtigt — alle kunder skal kun få modul 0 og modul 1 åbent når de kommer ind. derfra åbner næste modul med 7 dages mellemrum«; klik »Alle YOU GOT THIS-koder«)
+- Låsene gjaldt kun koden »YOU GOT THIS« — nu også »YOU GOT THIS — DETAIL« (`ygtModulHold`). Modul 0 + 1 åbne fra start, så ét modul hver 7. dag (`YGT_DAG`, uændret).
+- Kun modul-låsene og startdatoen følger med; Idébanken-til-modul-8, teamkoden og Mailchimp gælder stadig kun »YOU GOT THIS«.
+- **Ingen mister noget:** starten er den dag, kunden blev oprettet (ikke i dag), og et modul, hvor kunden har set en lektion, låses aldrig. Målt i selen: ny kunde = 0+1 åbne, 2 åbner 29/10; oprettet 1/10 = 0–4 åbne.
+- I GOT YOU uændret. »Se som kunden« viser alt åbent (som før).
+
 ## v2894 (22/10) — **Hjem siger »Forløbet er på vej«, når ingen lektion er klar** (Idas skærmbillede: testkunden så »0 af 0 Lektioner set« og intet andet)
 - Ringen uden noget at tælle vises ikke (regel v2146) — i stedet står Lektionernes egne ord: »Forløbet er på vej«. Begge flader.
 - Årsagen på live (målt i admin 22/10): publiceringen indeholder kun »0-1« (findes ikke længere), og kun 1-1 og 2-1 har video. En lektion er aktiv, når den er udgivet OG har video.

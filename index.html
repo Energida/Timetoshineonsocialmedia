@@ -38561,10 +38561,21 @@ function ygtHold(def) {
     return true;
   } catch (e) { return false; }
 }
+/* MODULERNE ÅBNER FOR ALLE YOU GOT THIS-KODER (Ida 22/10: »alle kunder skal kun få modul 0 og modul 1 åbent når de kommer ind. derfra åbner næste modul
+   med 7 dages mellemrum« · klik »Alle YOU GOT THIS-koder«): før kun koden »YOU GOT THIS« — nu også »YOU GOT THIS — DETAIL«. KUN modul-låsene og startdatoen;
+   resten af ygtHold (Idébanken til modul 8, team, Mailchimp) er uændret. Ingen mister noget: et modul, hvor kunden har set en lektion, låses aldrig. */
+function ygtModulHold(def) {
+  try {
+    def = def || (typeof CURRENT_DEF !== "undefined" ? CURRENT_DEF : null);
+    if (!def || def.type !== "kursus" || !/^YOU GOT THIS/i.test(String(def.forloeb || ""))) return false;
+    if (typeof SOM_KUNDE !== "undefined" && SOM_KUNDE) return false;
+    return true;
+  } catch (e) { return false; }
+}
 function ygtPlusDage(iso, n) { const p = String(iso).split("-").map(Number); const d = new Date(p[0], p[1] - 1, p[2] + n); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); }
 function ygtModulAabner(nr) { const n = YGT_DAG[String(nr)]; if (n == null) return null; if (!YGT_START) return n === 0 ? "0000-01-01" : "9999-12-31"; return ygtPlusDage(YGT_START, n); }
 function ygtDatoOrd(iso) { try { if (!iso || iso > "9000") return "senere i forløbet"; const d = new Date(iso + "T12:00:00"); return d.toLocaleDateString("da-DK", { weekday: "long", day: "numeric", month: "long" }); } catch (e) { return iso; } }
-function ygtModulLaast(nr) { if (!ygtHold()) return false; const d = ygtModulAabner(nr); return !!d && datoDK() < d; }
+function ygtModulLaast(nr) { if (!ygtModulHold()) return false; const d = ygtModulAabner(nr); if (!(!!d && datoDK() < d)) return false; try { if (typeof KURSUS_SET !== "undefined" && Object.keys(KURSUS_SET || {}).some(function (id) { return KURSUS_SET[id] && modulNrFor(id) === String(nr); })) return false; } catch (e) {} return true; }
 function ygtIdebankAaben() { return ygtHold() && !ygtModulLaast("8"); }
 function ygtBriefLaast() { return ygtHold() && ygtModulLaast("8"); }
 /* PLUSSET OG OPGAVERNE PÅ HJEM ÅBNER GRADVIST (Ida 9/10: »funktionerne åbner gradvist … når de kommer til lektionen omkring planlægning«): i YOU GOT THIS er de skjult til Modul 8 åbner (dag 42), samme dør som Idébanken, Tøm hovedet og briefen. Ida som kunde (SOM_KUNDE) og alle andre pakker ser dem som før. */
@@ -38572,7 +38583,7 @@ function hjemFunktionerLaast() { try { return ygtBriefLaast(); } catch (e) { ret
 /* Ti uger (del A 1/10): Idébanken, en ny idé og planlægningen aabner med modul 8 — ogsaa naar vejen ind er Hjems knapper */
 function ygtContentLaasVis(hvad) { if (!ygtBriefLaast()) return false; ygtLaasArk((hvad || "Idébanken") + " åbner med modul 7 " + ygtDatoOrd(ygtModulAabner("8"))); return true; }
 async function ygtStartHent() {
-  if (!ygtHold() || typeof sb === "undefined" || !sb || !currentKode) return YGT_START;
+  if (!ygtModulHold() || typeof sb === "undefined" || !sb || !currentKode) return YGT_START;
   try {
     /* TO KOLLEGER SAMME DAG (designgennemgangen 30/9): logger to ind samtidig, kan der ligge to raekker — maybeSingle ville saa fejle for altid,
        og kunden sad fast paa modul 1 og 2. Vi laeser alle og tager den TIDLIGSTE dato. */
@@ -38580,7 +38591,9 @@ async function ygtStartHent() {
     if (error) return YGT_START;   /* fejlet hentning = intet skrives (29/9-reglen) */
     const datoer = (rk || []).map(x => String((x && x.svar && x.svar.dato) || "")).filter(d => /^\d{4}-\d{2}-\d{2}$/.test(d)).sort();
     if (datoer.length) { YGT_START = datoer[0]; return YGT_START; }
-    const i = await sb.from("skema_svar").insert({ kode: currentKode, navn: "config", skema: "ygt_start", svar: { dato: datoDK() } }).select("svar");
+    /* STARTEN = DAGEN, KUNDEN BLEV OPRETTET (22/10): en kunde, der har været i gang i ugevis, starter ikke forfra i dag — kun en ny kunde får dags dato */
+    let start = datoDK(); try { const o = String((CURRENT_DEF && CURRENT_DEF.oprettet) || "").slice(0, 10); if (/^\d{4}-\d{2}-\d{2}$/.test(o) && o < start) start = o; } catch (e) {}
+    const i = await sb.from("skema_svar").insert({ kode: currentKode, navn: "config", skema: "ygt_start", svar: { dato: start } }).select("svar");
     if (!i.error && i.data && i.data.length) YGT_START = i.data[0].svar.dato;
   } catch (e) {}
   return YGT_START;
@@ -38950,7 +38963,7 @@ async function kursusHent() {
   KURSUS_SET = {}; KURSUS_SVAR = {}; KURSUS_NOTER = {}; KURSUS_PREF = {}; KURSUS_UDSAT = {}; MODUL_SET = {};   /* frisk start pr. kunde — ingen arv fra cachen (Ida 27/7 nat) */
   if (currentKode) try { const v = JSON.parse(localStorage.getItem(kursusLocalKey())); if (v) { KURSUS_SET = v.set || {}; KURSUS_SVAR = v.svar || {}; KURSUS_NOTER = v.noter || {}; KURSUS_PREF = v.pref || {}; KURSUS_UDSAT = v.udsat || {}; } } catch(e) {}
   if (currentKode) try { const mv = JSON.parse(localStorage.getItem(modulSetKey())); if (mv) MODUL_SET = mv; } catch(e) {}
-  try { if (ygtHold()) { await ygtStartHent(); try { buildSideNav(CURRENT_DEF); buildBottomNav(CURRENT_DEF); } catch (e) {} try { ygtMailchimpMeld(); } catch (e) {} } } catch (e) {}   /* ti uger: kundens egen start + modul-mailene (30/9) */
+  try { if (ygtModulHold()) { await ygtStartHent(); try { buildSideNav(CURRENT_DEF); buildBottomNav(CURRENT_DEF); } catch (e) {} if (ygtHold()) { try { ygtMailchimpMeld(); } catch (e) {} } } } catch (e) {}   /* ti uger: kundens egen start + modul-mailene (30/9) */
   await modulerHent();   /* Idas modultekster — fejler den, staar appen praecis som foer */
   await oevelserHent();  /* Idas rettede oevelser — fejler den, staar kodens liste */
   if (sb && currentKode) {
@@ -60419,7 +60432,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2894";
+const APP_VERSION = "2896";
 const APP_BYGGET = "22. oktober";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_BYGGET + " · " + APP_VERSION; } catch (e) {} });
 let NY_VERSION_KLAR = false;
