@@ -4,6 +4,13 @@
 - **DAGSORDENEN RETTES PÅ STEDET.** Et penneikon ved hvert punkt åbner punktet: navn, tekst, skraldespand (fjern) og Gem; »Tilføj punkt« lægger et nyt til. Standardpunkterne (performance · den kommende uge · dato for næste møde) står uændrede, til man retter dem. Gemmes i `plan_ritual.moede.dagsorden` (merges, andre nøgler urørte); et rettet punkt bliver statisk tekst, et urørt punkt bliver dynamisk (uge, tema, mål). Ingen Annuller i rettelsen.
 - **ALLE DATOSYMBOLER ER KVADRATER, 56 × 56 (HÅRD, Ida 9/10: »kvadratiske alle steder«):** Kommende opslag (`.kop-dato`), aftalernes dato (`.cf-dato`), Backstages `.bs3-tidb.d` og `.bs-datob`. Ingen dato-boks er højere end bred.
 
+## v2900 (22/10) — **Tidslinjen på Lektionerne + Slet på kontaktkortet**
+- **Tidslinjen** (Idas klik: bud 2 af fem, artifact V3NkiDTjS3E3SjcSz4Zgrk — »måske jeg bedst kan lide bud 2? det helt simple?«; bygget-billeder 985sakKKwvBtRqu4EkV4Hp): ALLE moduler i ÉN flise »Dit forløb« under Næste skridt. Rød markør med modulnummer = åbent (tryk = næste lektion), husets flueben = set, grå hængelås + »Åbner torsdag 29. oktober« = låst (tryk = låse-arket), »På vej« = ingen klar lektion. Telefon: datoen under navnet; computer: til højre. Bevidst undtagelse fra »altid fliser« (5/9) — Idas valg. `.ftl-*`, `forloebTidslinjeHtml`.
+- **Slet på kontaktkortet i CRM** (Ida: »hvordan sletter jeg en kunde?«): grå knap med skraldespand + »Slet« under Gem; spørger først; kvittering først når basen har slettet rækken. Målt 390 + 1440.
+
+## v2898 (22/10) — **Nyt lead: »Produkt« står én gang** (Idas skærmbillede »ved kundeoprettelsen - produkt 2 gange«)
+- Når produktlisten var hentet, blev feltet tegnet igen sammen med etiketten. Nu tegnes kun feltet igen (`gkProduktDropHtml`). Målt i selen: 1 etiket.
+
 ## v2896 (22/10) — **Modulerne åbner for alle YOU GOT THIS-koder** (Ida: »ultra vigtigt — alle kunder skal kun få modul 0 og modul 1 åbent når de kommer ind. derfra åbner næste modul med 7 dages mellemrum«; klik »Alle YOU GOT THIS-koder«)
 - Låsene gjaldt kun koden »YOU GOT THIS« — nu også »YOU GOT THIS — DETAIL« (`ygtModulHold`). Modul 0 + 1 åbne fra start, så ét modul hver 7. dag (`YGT_DAG`, uændret).
 - Kun modul-låsene og startdatoen følger med; Idébanken-til-modul-8, teamkoden og Mailchimp gælder stadig kun »YOU GOT THIS«.
