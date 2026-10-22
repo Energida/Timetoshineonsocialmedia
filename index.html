@@ -842,6 +842,8 @@ html body #authGate.nyt #auth_login .auth-field input:-webkit-autofill, html bod
 #authGate.nyt .auth-fod { justify-content:space-between !important; gap:12px; flex-wrap:nowrap; }
 #authGate.nyt .auth-fod .auth-glemt, #authGate.nyt .auth-fod .auth-foerstegang { display:inline-block; color:#fff !important; opacity:1 !important; font-size:13px !important; text-decoration:underline; text-underline-offset:3px; }
 #authGate.nyt .auth-hjaelp { text-align:center; }
+.prof-teamkode { margin:12px 0 4px; } .prof-teamkode-et { font-size:10px; letter-spacing:1.6px; text-transform:uppercase; color:var(--gray3); margin-bottom:6px; }
+.prof-teamkode-rk { display:flex; gap:8px; flex-wrap:wrap; } .prof-teamkode-hj { font-size:12px; color:var(--gray2); margin-top:6px; line-height:1.5; }   /* teamkoden (22/10) */
 #authGate.nyt #authMsgLogin.err { color:#fff; }
 #authGate.nyt .auth-card .auth-mid { display:flex; flex-direction:column; min-height:100%; }
 #authGate.nyt #auth_login { margin-top:auto; }
@@ -21966,8 +21968,16 @@ function profilTeamTegn(s) {
     return '<span class="ark-chip" style="cursor:default;">' + esc(n + (m.venter && !m.dig ? " · inviteret" : "")) + '</span>';
   }).join("");
   const box = el.previousElementSibling; if (box && box.classList.contains("ark-chips") && chips) box.innerHTML = chips;
+  const kodeTxt = String(currentKode || "");
   el.innerHTML = '<div style="font-size:12px;color:var(--gray2);margin:4px 0 0;">' + brugt + ' af ' + maks + ' adgange brugt</div>'
+    /* TEAMKODEN I TEAM-FLISEN (Idas klik 22/10): koden står, så længe der er en ledig adgang — kollegerne taster den under »Jeg har en kode« på login-siden */
+    + (brugt < maks && kodeTxt ? '<div class="prof-teamkode"><div class="prof-teamkode-et">Teamkode</div><div class="prof-teamkode-rk"><span class="ark-chip" style="cursor:default;">' + esc(kodeTxt) + '</span><button type="button" class="ark-chip mq-tap" onclick="teamKodeKopier(this)">Kopiér</button></div><div class="prof-teamkode-hj">Dine kolleger opretter sig med koden under “Jeg har en kode”.</div></div>' : '')
     + (brugt < maks ? '<button type="button" class="ark-knap ark-knap-graa" onclick="kollegaArk()">Inviter en kollega</button>' : '');
+}
+function teamKodeKopier(knap) {
+  const k = String(currentKode || ""); if (!k) return;
+  const ok = function () { try { husKvit("Teamkoden er kopieret."); } catch (e) {} };
+  try { navigator.clipboard.writeText(k).then(ok, function () { try { husBesked("Koden er " + k + "."); } catch (e) {} }); } catch (e) { try { husBesked("Koden er " + k + "."); } catch (e2) {} }
 }
 async function profilTeamHent() { profilTeamTegn(await kollegaKald({ handling: "liste" })); }
 function kollegaArk() {
@@ -60343,7 +60353,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2886";
+const APP_VERSION = "2888";
 const APP_BYGGET = "9. oktober";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_BYGGET + " · " + APP_VERSION; } catch (e) {} });
 let NY_VERSION_KLAR = false;
@@ -66044,9 +66054,13 @@ async function verifyCode(raw) {
 async function custCheckCode() {
   // Koden bruges til at OPRETTE sig: hver virksomhed/medarbejder får sit eget login.
   // (Direkte kunder som Hinges Hus bruger "Log ind" med det login, Ida har lavet til dem.)
-  const res = await verifyCode(document.getElementById("cvCode").value);
+  let res = await verifyCode(document.getElementById("cvCode").value);
   if (!res) { authErr("Koden er ikke gyldig. Tjek den, eller kontakt Energida."); return; }
-  if (res.login_klar) {   // Ida har allerede oprettet loginet — kunden skal bare logge ind, ikke oprette sig igen
+  /* TEAMKODEN (Idas klik 22/10: »Teamkode + invitation« — »det ville jo give bedst mening hvis de får en kode når de opretter sig som de kan dele med 2 kollegaer«):
+     en YOU GOT THIS-kode er købekodens — køberen har allerede sit login (login_klar), men kollegerne opretter sig med den samme kode. Loftet på 3 holdes af
+     signup-med-kode på serveren (2b), aldrig her. Alle andre koder med færdigt login sendes til Log ind som før. */
+  if (res.login_klar && String(res.forloeb || "") === "YOU GOT THIS") res = Object.assign({}, res, { team: true });
+  else if (res.login_klar) {   // Ida har allerede oprettet loginet — kunden skal bare logge ind, ikke oprette sig igen
     authShow("login");
     authErr("Loginet er allerede oprettet — brugernavn og adgangskode har du fået af Ida. Log ind herunder.");
     return;
@@ -66135,6 +66149,7 @@ async function custSignup() {
           m.className = "auth-msg err"; m.style.display = "block";
           return;
         }
+        if (r.status === 409 && /adgange er i brug/i.test(String((svar && svar.fejl) || ""))) { authErr("Alle 3 adgange er i brug. Bed den, der har købt, om at skrive til Ida."); return; }   /* loftet (22/10) — serverens tekst er uden æøå */
         authErr("Kunne ikke oprette bruger: " + ((svar && svar.fejl) || "prøv igen")); return;
       }
       const liRes = await sb.auth.signInWithPassword({ email, password: pass });
@@ -66147,6 +66162,8 @@ async function custSignup() {
       return;
     }
   } catch(e) {}   // netværksfejl → prøv den gamle vej
+  /* TEAMKODEN GÅR ALDRIG UDENOM LOFTET (22/10): den gamle vej (signUp direkte) tæller ikke de 3 adgange — en kollega med teamkoden må kun oprettes af serveren */
+  if (pendingCompany && pendingCompany.team) { authErr("Oprettelsen kunne ikke nås lige nu. Prøv igen om lidt."); return; }
 
   const { data, error } = await sb.auth.signUp({ email, password: pass, options: { data: { navn, virksomhed: brugerVirk || pendingCompany.virksomhed, forloeb: pendingCompany.forloeb, kode: pendingCompany.kode, ental: ental } } });
   if (error) {
