@@ -35,7 +35,7 @@
         var ov = document.getElementById("turOverlay"), h = ov ? ov.innerHTML : "", st = TUR_STOPS[t] || {};
         if (!ov || !String(ov.innerText || "").trim()) tomme.push("trin " + (t + 1));
         var peger = !!(st.s || st.k || st.m);
-        if (peger && h.indexOf("position:fixed;left:0;top:0;right:0;height:") < 0) udenMaal.push((t + 1) + (st.s ? " " + st.s + " [" + Array.prototype.map.call(document.querySelectorAll(st.s), function (e) { var b = e.getBoundingClientRect(); return (e.offsetParent ? "synlig " : "skjult ") + Math.round(b.top) + "/" + Math.round(b.height) + " i " + ((e.closest("[id]") || {}).id || "?") + (e.parentElement && e.parentElement.closest("[id]") ? "<" + e.parentElement.closest("[id]").parentElement.closest("[id]").id : ""); }).join(", ") + "]" : st.k ? " menu:" + st.k : ""));
+        if (peger && h.indexOf("tur-hul") < 0) udenMaal.push((t + 1) + (st.s ? " " + st.s + " [" + Array.prototype.map.call(document.querySelectorAll(st.s), function (e) { var b = e.getBoundingClientRect(); return (e.offsetParent ? "synlig " : "skjult ") + Math.round(b.top) + "/" + Math.round(b.height) + " i " + ((e.closest("[id]") || {}).id || "?") + (e.parentElement && e.parentElement.closest("[id]") ? "<" + e.parentElement.closest("[id]").parentElement.closest("[id]").id : ""); }).join(", ") + "]" : st.k ? " menu:" + st.k : ""));
       }
       tjek(55, "Rundvisningen har " + stops + " trin, hver med tekst", stops > 0 && !tomme.length, tomme.join(", ") || (stops ? "" : "ingen trin"));
       tjek(55, "Hvert trin peger på noget, der findes på skærmen", !udenMaal.length, udenMaal.length ? "uden mål: " + udenMaal.slice(0, 6).join(" · ") : "");
