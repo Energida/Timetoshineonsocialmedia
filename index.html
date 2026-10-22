@@ -38220,6 +38220,7 @@ let KURSUS_SET = {}, KURSUS_SVAR = {}, KURSUS_NOTER = {}, KURSUS_PREF = {}, KURS
    kunden. Listen ligger i skema_svar (samme mønster som kunde_def) — ingen SQL nødvendig. */
 let PUBLICERET = null;      // Set med lektions-id'er (porten for kunderne — uændret)
 let PUB_PRODUKTER = new Set();   // publicerede PRODUKTER — Ida publicerer pr. produkt (21/7)
+let PUB_VIDEO_KLAR = false;  /* kunden kan ikke læse udgivelseslisten → video = klar (22/10) */
 let PUB_HENTET = false;     // først når listen er hentet, tør vi vise noget
 
 /* ---------- LEKTIONSREGISTRET (fase 2, Ida 6/8) ----------
@@ -38303,8 +38304,13 @@ async function pubHent() {
   try { const v = JSON.parse(localStorage.getItem("energida_publicering")); if (Array.isArray(v)) PUBLICERET = new Set(v); } catch(e) {}
   if (sb) {
     try {
-      const { data } = await sb.from("skema_svar").select("svar")
+      const { data, error } = await sb.from("skema_svar").select("svar")
         .eq("kode", "ENERGIDA").eq("navn", "config").eq("skema", "publicering").maybeSingle();
+      /* VIDEO = KLAR (Idas klik 22/10, testkøbet info.energida: kunden så »Forløbet er på vej«, selv om YOU GOT THIS var udgivet):
+         basen viser kun kunden sine egne rækker, så udgivelseslisten (kode ENERGIDA) kan en kunde ALDRIG læse. Kan den ikke læses
+         (intet svar, ingen fejl) og det ikke er Ida, er en lektion klar, når den har video — video-porten og modul-låsene gælder stadig.
+         En gammel liste fra enhedens cache bruges ikke (den kan være Idas egen fra admin på samme computer). */
+      if (!error && !data && !KLIP_ER_IDA) { PUB_VIDEO_KLAR = true; PUBLICERET = new Set(); }
       if (data && data.svar && Array.isArray(data.svar.lektioner)) {
         PUBLICERET = new Set(data.svar.lektioner);
         try { localStorage.setItem("energida_publicering", JSON.stringify(data.svar.lektioner)); } catch(e) {}
@@ -38340,6 +38346,7 @@ async function pubHent() {
 let PUB_FORHAAND = false;
 function pubErPubliceret(id) {
   if (KLIP_ER_IDA) return true;                 // Ida ser altid alt i sin egen admin
+  if (PUB_VIDEO_KLAR) return true;              // kunden kan ikke læse listen: video = klar (22/10) — lekHarVideo er stadig porten
   if (PUB_FORHAAND) return true;                // Ida som kunde (forhaandsvisning) — video-porten gaelder stadig
   if (!PUB_HENTET) return false;                // ikke hentet endnu → vis intet (sikker side)
   return !!(PUBLICERET && PUBLICERET.has(id));
@@ -60504,7 +60511,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2904";
+const APP_VERSION = "2906";
 const APP_BYGGET = "22. oktober";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_BYGGET + " · " + APP_VERSION; } catch (e) {} });
 let NY_VERSION_KLAR = false;
