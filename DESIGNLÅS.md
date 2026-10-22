@@ -4,6 +4,10 @@
 - **DAGSORDENEN RETTES PÅ STEDET.** Et penneikon ved hvert punkt åbner punktet: navn, tekst, skraldespand (fjern) og Gem; »Tilføj punkt« lægger et nyt til. Standardpunkterne (performance · den kommende uge · dato for næste møde) står uændrede, til man retter dem. Gemmes i `plan_ritual.moede.dagsorden` (merges, andre nøgler urørte); et rettet punkt bliver statisk tekst, et urørt punkt bliver dynamisk (uge, tema, mål). Ingen Annuller i rettelsen.
 - **ALLE DATOSYMBOLER ER KVADRATER, 56 × 56 (HÅRD, Ida 9/10: »kvadratiske alle steder«):** Kommende opslag (`.kop-dato`), aftalernes dato (`.cf-dato`), Backstages `.bs3-tidb.d` og `.bs-datob`. Ingen dato-boks er højere end bred.
 
+## v2908 (22/10) — **SQL-kort: kunderne må læse udgivelseslisten** (Ida: »men kan vi ikke ændre det? så lektioner kan håndteres fra maskinrummet«)
+- Kortet `sqlk_udgivelse_22okt` i Maskinrummet: én SELECT-regel for authenticated, KUN rækken ENERGIDA/config/publicering. Intet for anon, ingen skrivning (Security Contract §1). Når den er kørt, læser kunden listen, og Maskinrummet › Publicering styrer igen; »video = klar« (v2906) er kun reserven.
+- Rolletest (§5) køres efter Idas kørsel: anonym · kunde A · kunde B · admin.
+
 ## v2906 (22/10) — **Kunderne ser lektionerne: video = klar** (testkøbet info.energida 22/10 kl. 21.37: kunden så »Forløbet er på vej«, selv om YOU GOT THIS var udgivet; Idas klik »Video = klar«)
 - MÅLT i Idas Chrome: en kunde kan ikke læse udgivelseslisten (skema_svar kode ENERGIDA) — basen viser kun egne rækker. »Se som kunden« så rigtigt ud, fordi Ida er admin. Lektionerne og videoerne KAN kunden læse.
 - Rettelse kun i appen: kan listen ikke læses (intet svar, ingen fejl) og det ikke er Ida, er en lektion klar, når den har video (`PUB_VIDEO_KLAR`). Modul-låsene gælder stadig. Enhedens gamle cache bruges ikke for kunden. Intet i basen ændret.
