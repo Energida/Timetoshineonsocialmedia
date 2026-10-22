@@ -4,6 +4,10 @@
 - **DAGSORDENEN RETTES PÅ STEDET.** Et penneikon ved hvert punkt åbner punktet: navn, tekst, skraldespand (fjern) og Gem; »Tilføj punkt« lægger et nyt til. Standardpunkterne (performance · den kommende uge · dato for næste møde) står uændrede, til man retter dem. Gemmes i `plan_ritual.moede.dagsorden` (merges, andre nøgler urørte); et rettet punkt bliver statisk tekst, et urørt punkt bliver dynamisk (uge, tema, mål). Ingen Annuller i rettelsen.
 - **ALLE DATOSYMBOLER ER KVADRATER, 56 × 56 (HÅRD, Ida 9/10: »kvadratiske alle steder«):** Kommende opslag (`.kop-dato`), aftalernes dato (`.cf-dato`), Backstages `.bs3-tidb.d` og `.bs-datob`. Ingen dato-boks er højere end bred.
 
+## v2894 (22/10) — **Hjem siger »Forløbet er på vej«, når ingen lektion er klar** (Idas skærmbillede: testkunden så »0 af 0 Lektioner set« og intet andet)
+- Ringen uden noget at tælle vises ikke (regel v2146) — i stedet står Lektionernes egne ord: »Forløbet er på vej«. Begge flader.
+- Årsagen på live (målt i admin 22/10): publiceringen indeholder kun »0-1« (findes ikke længere), og kun 1-1 og 2-1 har video. En lektion er aktiv, når den er udgivet OG har video.
+
 ## v2892 (22/10) — **Krydstjekket før lancering: de rene fejl** (Ida: »ultra krydstjek fra når de får vælg din adgangskode … ALT. Jeg lukker op i morgen og intet må gå galt«; Hans, Mette, UX-politiet og Emil på 390 + 1440)
 - **Skift adgangskode virkede ikke:** to `#pwNew` i siden — savePw læste den skjulte. Den gamle boks' id'er er omdøbt.
 - **Invitationen huskes:** lukker kunden fanen, før koden er valgt, kommer »Vælg din adgangskode« igen (`energida_skal_ny_kode = "invitation"`).
