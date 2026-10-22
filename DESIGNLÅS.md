@@ -4,6 +4,21 @@
 - **DAGSORDENEN RETTES PÅ STEDET.** Et penneikon ved hvert punkt åbner punktet: navn, tekst, skraldespand (fjern) og Gem; »Tilføj punkt« lægger et nyt til. Standardpunkterne (performance · den kommende uge · dato for næste møde) står uændrede, til man retter dem. Gemmes i `plan_ritual.moede.dagsorden` (merges, andre nøgler urørte); et rettet punkt bliver statisk tekst, et urørt punkt bliver dynamisk (uge, tema, mål). Ingen Annuller i rettelsen.
 - **ALLE DATOSYMBOLER ER KVADRATER, 56 × 56 (HÅRD, Ida 9/10: »kvadratiske alle steder«):** Kommende opslag (`.kop-dato`), aftalernes dato (`.cf-dato`), Backstages `.bs3-tidb.d` og `.bs-datob`. Ingen dato-boks er højere end bred.
 
+## v2892 (22/10) — **Krydstjekket før lancering: de rene fejl** (Ida: »ultra krydstjek fra når de får vælg din adgangskode … ALT. Jeg lukker op i morgen og intet må gå galt«; Hans, Mette, UX-politiet og Emil på 390 + 1440)
+- **Skift adgangskode virkede ikke:** to `#pwNew` i siden — savePw læste den skjulte. Den gamle boks' id'er er omdøbt.
+- **Invitationen huskes:** lukker kunden fanen, før koden er valgt, kommer »Vælg din adgangskode« igen (`energida_skal_ny_kode = "invitation"`).
+- **Ét tryk = én række:** »Send skemaet«, »Let's go« og »Gem ændringer« (`etTryk`). Før gav to tryk to rækker (og risiko for to mails).
+- **Vælg din adgangskode:** Enter gemmer; »Mindst 6 tegn.« forsvinder ved 6 tegn.
+- **Login:** fejlbeskeden rulles altid frem · tomme felter sendes ikke · knappen hedder »Login →« igen efter en fejl · »Tjek din e-mail og adgangskode« (ikke »brugernavn«) · Glemt adgangskode: ét tryk, dansk fejl (aldrig serverens engelske), »E-mail«, mailen følger med fra login-feltet.
+- **Opret din bruger:** kode-kvitteringen var hvid på hvid i rød ramme → samme form som login-felterne.
+- **Inviter en kollega:** e-mailen med lille, loft-fejlen med æøå (som login-tvillingen), Team-flisen opdateres med det samme.
+- **Spørgeskemaet:** fejlbeskeden står i rødt (grå-reglen overtrumfede) · skalaens trykfelt 44 højt på telefonen.
+- **Lektionerne:** Hjem følger med efter en lektion · noter fra »Dine noter« står i notesbogen (før tomme).
+- **»Velkommen tilbage«** vises ikke ved allerførste login.
+- **Versionslinjen** viser 22. oktober (stod fast på 9. oktober).
+- **Den lyseblå gradient er væk** (HÅRD 8/10): `--app-bg-mobil` = #F4F2EE (lå under fotoet, i loaderen, bag dagens kort).
+- **Selen kalder aldrig de live serverfunktioner** (`byg-sele.py` VAGT): to hold ramte `ygt-mailchimp`/`inviter-kollega` med selens opdigtede token (afvist 401).
+
 ## v2890 (22/10) — **Spørgeskemaet og rundvisningen i sikkerhedstjekket** (Ida: »har vi 100% styr på rundvisnignen også? og at svarene fra spørgeskemaet lander korrekt??«)
 - **Løfte 54 (kritisk):** alle 5 spørgeskemaer (107 spørgsmål) lander i basen med hvert svar · et Send, basen afviser, ligger på enheden og sendes af sig selv, når der er forbindelse igen (`skemaGensend`, ved opstart og ved `online`) · skemaet står som udfyldt på en anden enhed. `saveSkema` regner først et skema som gemt, når basen sender rækken tilbage (`.select("id")`).
 - **Løfte 55 (kritisk):** rundvisningen starter selv ved første login · hvert trin har tekst og peger på noget, kunden KAN se (390 + 1440, kursus + forløb) · sat som set på telefon og konto · kommer ikke igen på en anden enhed · »Se rundvisningen igen« virker.
