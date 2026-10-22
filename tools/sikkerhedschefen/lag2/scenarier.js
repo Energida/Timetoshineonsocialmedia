@@ -109,9 +109,40 @@
         tjek(7, "To-do oprettet og afkrydset (kvittering)", !!(o7 && o7.done), o7 ? "done " + o7.done : "findes ikke");
         await opslagPostetJa("sc-plan-1"); await V(400); try { bsFlytLuk(); } catch (e) {} try { arkLuk(true); } catch (e) {}
       } catch (e) { tjek(7, "Opgave-tjekket kunne køre", false, e.message); }
+      /* LØFTE 52 · LEKTIONERNES OPGAVER GEMMES — FORLØBSKUNDEN (kursuskunden: tjek_forloeb.py) (Ida 22/10: »et grundigt sikkerhedstjek hver dag for at det kunderne skriver ind at det bliver gemt … når de laver opgaver«):
+         ALLE lektioner med en opgave udfyldes som kunden gør det (feltet → Næste → Færdig); hvert svar skal stå i basen nu og efter genindlæsning (laes1). Nye opgaver kommer selv med. */
+      try {
+        var ovL = (KURSUS_LEKTIONER || []).filter(function (l) { return l.ovelse && l.ovelse.length; }), forv = {}, mangler = [], nSvar = 0;
+        for (var oi = 0; oi < ovL.length; oi++) {
+          var lk = ovL[oi]; try { closeIdeaWizard(); } catch (e) {}
+          startOvelse(lk.id); await V(150); forv[lk.id] = {};
+          for (var qi = 0; qi < lk.ovelse.length; qi++) {
+            var q = lk.ovelse[qi], nk = ovNoegle(lk, qi);
+            if (q && typeof q === "object" && q.type === "dage") { var db0 = document.querySelector("#ovelseDage [onclick*='ovelseDagToggle']"); if (db0) db0.click(); await V(50); forv[lk.id][nk] = OVELSE.svar[nk]; }
+            else { var ta0 = document.getElementById("ovelseSvar"); if (!ta0) { mangler.push(lk.id + " spm " + (qi + 1) + ": intet felt"); break; } ta0.value = "SC svar " + lk.id + " nr " + (qi + 1); ovelseKladdeInput(ta0); forv[lk.id][nk] = ta0.value; }
+            nSvar++; await ovelseNaeste(); await V(120);
+          }
+          await V(300);
+          var rk0 = ((JSON.parse(localStorage.getItem("SELE_DB") || "{}").skema_svar) || []).filter(function (x) { return x.skema === "lektion_svar_" + lk.id; }).pop();
+          Object.keys(forv[lk.id]).forEach(function (k) { if (!rk0 || JSON.stringify((rk0.svar || {})[k]) !== JSON.stringify(forv[lk.id][k])) mangler.push(lk.id + " · " + k); });
+        }
+        try { closeIdeaWizard(); } catch (e) {}
+        LS("SC_OV", forv);
+        tjek(52, "Alle " + ovL.length + " opgaver (" + nSvar + " svar) er gemt i basen", ovL.length > 0 && !mangler.length, mangler.length ? "mangler: " + mangler.slice(0, 6).join(", ") : (ovL.length ? "" : "ingen lektioner med opgaver fundet"));
+      } catch (e) { tjek(52, "Opgave-tjekket kunne køre", false, e.message); }
     }
     if (FASE === "laes1") {
       var id = LS("SC_ID"), it = (IDEER || []).find(function (x) { return String(x.id) === String(id); });
+      /* LØFTE 52 efter genindlæsning (forløbskunden — kursuskunden + forsidens tal: tjek_forloeb.py): opgavesvarene kommer fra basen; før 22/10 hentede en forløbskunde aldrig sit forløb ved opstart */
+      try {
+        var forv1 = LS("SC_OV") || {}, mangl1 = [], vist = [];
+        Object.keys(forv1).forEach(function (lid) { Object.keys(forv1[lid]).forEach(function (k) { if (JSON.stringify((KURSUS_SVAR[lid] || {})[k]) !== JSON.stringify(forv1[lid][k])) mangl1.push(lid + " · " + k); }); });
+        var l1 = Object.keys(forv1)[0], lk1 = l1 && (KURSUS_LEKTIONER || []).find(function (x) { return x.id === l1; });
+        if (lk1) { startOvelse(l1); await V(200); var ta1 = document.getElementById("ovelseSvar"); vist.push(ta1 ? ta1.value : "(intet felt)"); try { closeIdeaWizard(); } catch (e) {} }
+        var k1 = lk1 && ovNoegle(lk1, 0);
+        tjek(52, "Opgavesvarene står efter genindlæsning", Object.keys(forv1).length > 0 && !mangl1.length, mangl1.length ? "mangler: " + mangl1.slice(0, 6).join(", ") : "");
+        tjek(52, "Kunden ser sit svar, når opgaven åbnes igen", !!(lk1 && vist[0] === forv1[l1][k1]), "viser »" + (vist[0] || "") + "«");
+      } catch (e) { tjek(52, "Opgave-læsetjekket kunne køre", false, e.message); }
       tjek(1, "Ny idé står efter genindlæsning", !!it, it ? it.titel : "findes ikke");
       tjek(1, "Briefens hook står efter genindlæsning", it && it.brief && it.brief.hookTekst === "Hook fra sikkerhedschefen", it && it.brief ? it.brief.hookTekst : "");
       try { await refreshOpgaver(); var o7b = (OPGAVER || []).find(function (o) { return o.titel === "SC to-do fra sikkerhedschefen"; });

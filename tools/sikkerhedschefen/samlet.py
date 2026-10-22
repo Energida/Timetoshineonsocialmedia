@@ -6,9 +6,9 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from sikkerhedschefen.resultat import BESTAAET, FEJLET, IKKE_TESTET
 from sikkerhedschefen import lag1, lag2, tjek_plus, tjek_knapper, tjek_stille, tjek_tilbage, tjek_ord
 from sikkerhedschefen.tjek_lister import tjek_lister
-from sikkerhedschefen import tjek_spor, tjek_adgang, tjek_crm, tjek_sw, tjek_fold, tjek_backup, tjek_popup, tjek_pakker, tjek_selvslet, tjek_gammel, tjek_dbregler, tjek_live, tjek_usynlig, tjek_navne, tjek_hjemtal, tjek_format, tjek_menuer, tjek_fejltekst, tjek_datoer, tjek_designregler, tjek_guide, tjek_hop, tjek_hemmeligheder, tjek_tlfkopi, tjek_personer, tjek_teamet, tjek_spoegelse, tjek_kalender, tjek_udenid
+from sikkerhedschefen import tjek_spor, tjek_adgang, tjek_crm, tjek_sw, tjek_fold, tjek_backup, tjek_popup, tjek_pakker, tjek_selvslet, tjek_gammel, tjek_dbregler, tjek_live, tjek_usynlig, tjek_navne, tjek_hjemtal, tjek_format, tjek_menuer, tjek_fejltekst, tjek_datoer, tjek_designregler, tjek_guide, tjek_hop, tjek_hemmeligheder, tjek_tlfkopi, tjek_personer, tjek_teamet, tjek_spoegelse, tjek_kalender, tjek_udenid, tjek_forloeb
 from sikkerhedschefen.tjek_version import app_version
-KRITISKE = {1, 2, 3, 4, 5, 6, 14, 15, 17, 18, 19, 22, 23, 24, 32, 33, 34, 46}
+KRITISKE = {1, 2, 3, 4, 5, 6, 14, 15, 17, 18, 19, 22, 23, 24, 32, 33, 34, 46, 52, 53}   # 52+53 (Ida 22/10): opgavernes svar gemmes · forsidens tal følger lektionerne
 NAVNE = {1: "Intet skrevet går tabt", 2: "Hver gemmevej har kvittering", 3: "Status frem og tilbage", 4: "Idéer flytter sig ikke", 5: "Møder opret/ret/slet, ingen dubletter",
          6: "Kalenderen: ét opslag, ét sted", 7: "Opgaver og Ja/Nej læses tilbage", 8: "Hver knap virker", 9: "Næste skridt over folden", 10: "Kvittering efter hvert Gem",
          11: "Tilbage findes, ingen blindgyder", 12: "Fagord forklares, ét navn pr. ting", 13: "Tomt Gem siger hvad der mangler", 14: "Intet uncommitted, versionen ens",
@@ -31,7 +31,8 @@ NAVNE = {1: "Intet skrevet går tabt", 2: "Hver gemmevej har kvittering", 3: "St
          44: "Billeder uden runde hjørner, ingen små versaler på rødt (fejlkataloget G101–102)",
          45: "En guide i flere trin gemmer hvert svar med det samme (fejlkataloget A7)",
          46: "Et valg hopper aldrig tilbage, når basen er langsom (fejlkataloget A11)",
-         47: "Ingen hemmeligheder i git (fejlkataloget nr. 152)", 48: "Telefonens brief-kopi glider ikke fra computerens (fejlkataloget nr. 98)"}
+         47: "Ingen hemmeligheder i git (fejlkataloget nr. 152)", 48: "Telefonens brief-kopi glider ikke fra computerens (fejlkataloget nr. 98)",
+         52: "Lektionernes opgaver: hvert svar gemmes og står efter genindlæsning", 53: "Forsidens tal følger, når lektioner ses (også efter genindlæsning)"}
 
 def main():
     repo = lag1.REPO
@@ -39,7 +40,7 @@ def main():
            lag1.tjek_anon(repo), lag1.tjek_headers(), lag1.tjek_funktioner(repo), lag1.tjek_funktioner_findes(repo), tjek_lister(repo)]
     if "--uden-design" not in sys.argv: res.append(lag1.tjek_design(repo))
     for b in (390, 1440): res += lag2.koer(b) + tjek_plus.koer(b) + tjek_knapper.koer(b) + tjek_ord.koer(b)
-    res += tjek_stille.koer() + tjek_tilbage.koer() + tjek_spor.koer() + tjek_adgang.koer() + tjek_crm.koer(bred=1440) + tjek_crm.koer(bred=800) + tjek_crm.koer(bred=390) + tjek_sw.koer() + tjek_fold.koer() + tjek_backup.koer() + tjek_popup.koer(390) + tjek_popup.koer(1440) + tjek_pakker.koer() + tjek_selvslet.koer() + tjek_gammel.koer() + tjek_dbregler.koer() + tjek_live.koer() + tjek_usynlig.koer(390) + tjek_usynlig.koer(1440) + tjek_navne.koer() + tjek_hjemtal.koer() + tjek_format.koer() + tjek_menuer.koer() + tjek_fejltekst.koer() + tjek_datoer.koer() + tjek_designregler.koer(390) + tjek_designregler.koer(1440) + tjek_guide.koer() + tjek_hop.koer() + tjek_hemmeligheder.koer() + tjek_tlfkopi.koer() + tjek_personer.koer() + tjek_teamet.koer(bred=390) + tjek_teamet.koer(bred=1440) + tjek_spoegelse.koer(bred=1440) + tjek_spoegelse.koer(bred=390) + tjek_spoegelse.jaeger(bred=1440) + tjek_spoegelse.jaeger(bred=390) + tjek_kalender.koer(bred=390) + tjek_kalender.koer(bred=1440) + tjek_udenid.koer(bred=390)
+    res += tjek_stille.koer() + tjek_tilbage.koer() + tjek_spor.koer() + tjek_adgang.koer() + tjek_crm.koer(bred=1440) + tjek_crm.koer(bred=800) + tjek_crm.koer(bred=390) + tjek_sw.koer() + tjek_fold.koer() + tjek_backup.koer() + tjek_popup.koer(390) + tjek_popup.koer(1440) + tjek_pakker.koer() + tjek_selvslet.koer() + tjek_gammel.koer() + tjek_dbregler.koer() + tjek_live.koer() + tjek_usynlig.koer(390) + tjek_usynlig.koer(1440) + tjek_navne.koer() + tjek_hjemtal.koer() + tjek_format.koer() + tjek_menuer.koer() + tjek_fejltekst.koer() + tjek_datoer.koer() + tjek_designregler.koer(390) + tjek_designregler.koer(1440) + tjek_guide.koer() + tjek_hop.koer() + tjek_hemmeligheder.koer() + tjek_tlfkopi.koer() + tjek_personer.koer() + tjek_teamet.koer(bred=390) + tjek_teamet.koer(bred=1440) + tjek_spoegelse.koer(bred=1440) + tjek_spoegelse.koer(bred=390) + tjek_spoegelse.jaeger(bred=1440) + tjek_spoegelse.jaeger(bred=390) + tjek_kalender.koer(bred=390) + tjek_kalender.koer(bred=1440) + tjek_udenid.koer(bred=390) + tjek_forloeb.koer(bred=390) + tjek_forloeb.koer(bred=1440)   # 52+53 (Ida 22/10): opgaverne gemmes, forsidens tal følger lektionerne
     from sikkerhedschefen.resultat import Resultat
     # LAG 3 = Idas kørsler på live, skrevet ind i lag3-resultater.json (Claude kan ikke selv logge ind som testkunderne)
     try: l3 = json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "lag3-resultater.json"), encoding="utf-8"))
