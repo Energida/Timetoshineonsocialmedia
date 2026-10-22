@@ -110,7 +110,7 @@ for HK in "390 kunde" "1440 kunde" "390 admin" "1440 admin"; do
 done
 # SPOEGELSESJAEGEREN I PORTEN (Ida 22/10: »Der er stadig masser af spøgelsessider« · »Kan du sørge for at dette aldrig sker igen«):
 # hvert sideskift filmes paa 390 og 1440 — ingen tredje side, ingen tom skaerm, intet taeppe-blink, og den gamle side maa ikke skifte form, foer den nye er klar.
-UDJ=$(python3 -c "
+UDJ=$(CHROME="$C" python3 -c "
 import sys; sys.path.insert(0, sys.argv[1] + '/tools/sikkerhedschefen')
 import tjek_spoegelse as t
 fejl = 0

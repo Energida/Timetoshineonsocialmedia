@@ -10,8 +10,16 @@ FASER = ["nulstil", "skriv", "laes1", "laes2", "link", "kode"]
 EKSTRA = {"link": "&brief=sc-ide-2&kunde=HINGES2026"}   # delelinket, Ida sender til kunden
 
 def chromium():
-    c = glob.glob(os.path.expanduser("~/Library/Caches/ms-playwright/chromium-*/chrome-mac/Chromium.app/Contents/MacOS/Chromium"))
-    return c[0] if c else None
+    # SAMME BROWSER SOM PORTEN (22/10: jaegeren kom i porten — paa GitHub fandt den ingen Chromium, sagde IKKE TESTET, og v2874 blev stoppet):
+    # CHROME fra koer.sh foerst, saa Mac, saa Linux (playwright), aldrig headless_shell (kender ikke --headless=new, 15/9)
+    if os.environ.get("CHROME") and os.access(os.environ["CHROME"], os.X_OK) and "headless_shell" not in os.environ["CHROME"]: return os.environ["CHROME"]
+    for m in ("~/Library/Caches/ms-playwright/chromium-*/chrome-mac/Chromium.app/Contents/MacOS/Chromium", "~/.cache/ms-playwright/chromium-*/chrome-linux/chrome", "/opt/pw-browsers/chromium-*/chrome-linux/chrome"):
+        c = sorted(glob.glob(os.path.expanduser(m)))
+        if c: return c[-1]
+    for n in ("chromium", "chromium-browser", "google-chrome"):
+        c = shutil.which(n)
+        if c: return c
+    return None
 
 def fortolk(stderr):
     for linje in stderr.splitlines():
