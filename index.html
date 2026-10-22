@@ -9606,6 +9606,24 @@ body.bs-forfra.dash-mode #dashMain { background:#fff !important; }
 .bs3-doer.lav { min-height:72px; }
 .bs3-doer:active { transform:scale(.985); }
 .bs3-grid1 { display:grid; grid-template-columns:1fr; gap:10px; }
+/* CRM SOM NOTION (Idas klik 22/10, bud MSTnVbiPtywb9r9yfJD9m7: »kan du se om du kan bygge det mere som mit notion crm? med 1 linje pr kunde?«):
+   computeren = én flise med en tabel (Status · Kunde · Kontaktperson · Produkt · Næste aktivitet · Kommentar), telefonen = én linje pr. kunde
+   (statusprik · navn · produkt). Bevidst undtagelse fra »altid fliser« (5/9) — Idas valg. Pinnede kunder står stadig som fliser øverst. */
+.crmt { background:#fff; border-radius:20px; box-shadow:var(--mb-skygge, 0 0 4px rgba(46,44,41,.10), 0 0 36px rgba(46,44,41,.20)); overflow:hidden; }
+.crmt table { width:100%; border-collapse:collapse; table-layout:fixed; }
+.crmt th { font-size:10px; letter-spacing:1.6px; text-transform:uppercase; color:var(--gray3); font-weight:400; text-align:left; padding:14px 16px; }
+.crmt td { height:52px; padding:0 16px; font-size:14px; border-top:1px solid #EFEDE8; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:var(--gray2); }
+.crmt td.crmt-k { color:#000; }
+.crmt tbody tr { cursor:pointer; }
+.crmt tbody tr:hover td { background:#FBFAF9; }
+.crmt-st { display:inline-flex; align-items:center; gap:8px; color:#000; }
+.crmt-p { flex-shrink:0; width:8px; height:8px; border-radius:50%; box-sizing:border-box; background:#fff; border:1px solid var(--gray3); }
+.crmt-p.aktiv { background:var(--red); border-color:var(--red); }
+.crmt-p.passiv { background:#C9C4BD; border-color:#C9C4BD; }
+.crmt-rk { display:flex; align-items:center; gap:12px; width:100%; min-height:56px; padding:0 16px; box-sizing:border-box; background:none; border:0; border-top:1px solid #EFEDE8; text-align:left; font-family:"Poppins",sans-serif; font-weight:400; cursor:pointer; }
+.crmt-rk:first-child { border-top:0; }
+.crmt-rk-n { flex:1; min-width:0; font-size:15px; color:#000; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.crmt-rk-p { flex-shrink:0; max-width:42%; font-size:12.5px; color:var(--gray2); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .bs3-grid2 { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
 .bs3-grid3 { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
 /* DASHBOARDET (bud 1, 23/9): tallet er flisens indhold, ikke en overskrift — derfor let og stort. */
@@ -60476,7 +60494,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2900";
+const APP_VERSION = "2902";
 const APP_BYGGET = "22. oktober";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_BYGGET + " · " + APP_VERSION; } catch (e) {} });
 let NY_VERSION_KLAR = false;
@@ -84124,13 +84142,22 @@ async function kunderneTegn(hurtig) {
   try { crmTagsHent(); } catch (e) {}
   const kats = [["alle", "Alle"], ["kunder", "Kunder"], ["leads", "Leads"], ["gamle", "Gamle kunder"]].concat(crmTagNavne().map(function (t) { return ["tag:" + t, t]; })).concat([["venter", "Venter på dig"]]).concat(BS_KUNDE_KATEGORIER.map(function (x) { return [x.id, x.navn]; }));
   const alleFliser = resten.map(flise).concat(kontakter.map(kFlise));
+  /* CRM SOM NOTION (Idas klik 22/10) — én linje pr. kunde; se CSS'en .crmt */
+  const pKl = function (st) { st = String(st || "").toLowerCase(); return /^(aktiv|kunde)$/.test(st) ? " aktiv" : /^(passiv|afsluttet|ikke igang|ikke sendt)$/.test(st) ? " passiv" : ""; };
+  const rkAlle = resten.map(function (k) { return { st: "Kunde", kunde: navnAf(k), kontakt: "", produkt: bsKundeProdukt(k), naeste: linje(k), kom: "", klik: "kundeSideVis('" + esc(k) + "')" }; })
+    .concat(kontakter.map(function (c) { const na = plDato(c.naeste_aktivitet); return { st: String(c.status || "").trim(), kunde: c.kunde || "Uden navn", kontakt: String(c.kontaktperson || "").trim(), produkt: (Array.isArray(c.produkt) ? c.produkt.join(", ") : String(c.produkt || "")).trim(), naeste: na ? dkDatoKort(na) : "", kom: String(c.kommentar || "").replace(/\s+/g, " ").trim(), klik: "openModal('" + esc(String(c.id)) + "')" }; }));
+  const tabel = !rkAlle.length ? "" : (tlf
+    ? '<div class="crmt">' + rkAlle.map(function (x) { return '<button type="button" class="crmt-rk mq-tap" onclick="' + x.klik + '"><span class="crmt-p' + pKl(x.st) + '" aria-hidden="true"></span><span class="crmt-rk-n">' + esc(x.kunde) + '</span>' + (x.produkt ? '<span class="crmt-rk-p">' + esc(x.produkt) + '</span>' : '') + '</button>'; }).join("") + '</div>'
+    : '<div class="crmt"><table><colgroup><col style="width:13%"><col style="width:20%"><col style="width:16%"><col style="width:17%"><col style="width:14%"><col></colgroup><thead><tr><th>Status</th><th>Kunde</th><th>Kontaktperson</th><th>Produkt</th><th>Næste aktivitet</th><th>Kommentar</th></tr></thead><tbody>'
+      + rkAlle.map(function (x) { return '<tr tabindex="0" onclick="' + x.klik + '" onkeydown="if(event.key===\'Enter\'){' + x.klik + '}"><td><span class="crmt-st"><span class="crmt-p' + pKl(x.st) + '" aria-hidden="true"></span>' + esc(x.st) + '</span></td><td class="crmt-k" title="' + esc(x.kunde) + '">' + esc(x.kunde) + '</td><td>' + esc(x.kontakt) + '</td><td title="' + esc(x.produkt) + '">' + esc(x.produkt) + '</td><td>' + esc(x.naeste) + '</td><td title="' + esc(x.kom) + '">' + esc(x.kom) + '</td></tr>'; }).join("")
+      + '</tbody></table></div>');
   el.innerHTML = '<div class="bs-hero bs-hero-streg">CRM</div><div class="bs3">'
     + '<div class="bs3-raekke2"><div class="sendfelt bs-sendfelt bs3-soeg"><input type="text" class="sendfelt-felt" id="bsKundeSoeg" placeholder="Find en kunde …" autocomplete="off" value="' + esc(BS_KUNDE_SOEG || "").replace(/"/g, "&quot;") + '" oninput="BS_KUNDE_SOEG=this.value;kunderneTegn(true)"></div>'
     + '<button type="button" class="bs3-drop bs3-sort" onclick="bf3SortAabn()"><span>Sortér: ' + ({ aktiv: "seneste aktivitet", venter: "venter først", navn: "navn" })[BF3_SORT] + '</span>' + BF3_SVG.ned + '</button></div>'
     + bf3Chips(kats, kat, "bf3KundeKat")
     + (pinnede.length ? bf3Ver("Pinnede") + '<div class="bs3-grid' + (tlf ? '1' : '2') + '">' + pinnede.map(flise).join('') + '</div>' : '')
     + '<div class="bs3-afsnit">' + bf3Ver(kat === "leads" ? "Leads" : kat === "gamle" ? "Gamle kunder" : kat.indexOf("tag:") === 0 ? kat.slice(4) : (pinnede.length ? "Alle kunder" : "Kunder")) + '</div>'
-    + (alleFliser.length ? '<div class="bs3-grid' + (tlf ? '1' : '2') + '">' + alleFliser.join('') + '</div>' : bf3Tom(q ? "Ingen kunder matcher." : (kat === "leads" ? "Ingen leads endnu." : kat === "gamle" ? "Ingen gamle kunder endnu." : "Ingen kunder her.")))
+    + (alleFliser.length ? tabel : bf3Tom(q ? "Ingen kunder matcher." : (kat === "leads" ? "Ingen leads endnu." : kat === "gamle" ? "Ingen gamle kunder endnu." : "Ingen kunder her.")))
     + ''   /* »Ny kunde« = plusset i baandet (Ida 21/9 kl. 13.25: »tilføj-knappen skal ikke være nede i bunden men i højre øvre hjørne oppe i coveret«) */
     + '</div>';
   try { navstiBackstage("crm"); } catch (e) {}

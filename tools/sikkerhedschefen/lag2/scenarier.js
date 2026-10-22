@@ -428,7 +428,7 @@
         var tBase = ((JSON.parse(localStorage.getItem("SELE_DB") || "{}").skema_svar) || []).filter(function (x) { return x.skema === "crm_tags"; })[0];
         tjek(1, "Eget tag sidder på det nye lead og er gemt i basen", tPaa.indexOf("Sc messe") > -1 && !!tBase && JSON.stringify(tBase.svar).indexOf("Sc messe") > -1, JSON.stringify(tPaa) + (tBase ? " · gemt" : " · ikke i basen"));
         BS_KUNDE_CHIP = "tag:Sc messe"; kunderneTegn(true); await V(200);
-        var tFl = Array.prototype.map.call(document.querySelectorAll("#dside-crm .bs3-kunde .bs3-n"), function (x) { return x.textContent; });
+        var tFl = Array.prototype.map.call(document.querySelectorAll("#dside-crm .bs3-kunde .bs3-n, #dside-crm .crmt td.crmt-k, #dside-crm .crmt-rk-n"), function (x) { return x.textContent; });
         BS_KUNDE_CHIP = "alle"; try { kunderneTegn(true); } catch (e) {}
         tjek(1, "Filterchippen med et eget tag viser kun leads med tagget", tFl.length === 1 && tFl[0] === "SC Tagbutik", JSON.stringify(tFl));
       } catch (e) { tjek(1, "Egne tags kunne testes", false, e.message); }
