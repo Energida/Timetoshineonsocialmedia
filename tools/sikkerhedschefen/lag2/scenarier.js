@@ -404,6 +404,18 @@
         tjek(1, "Person-lead uden navn gemmes ikke og siges", /personens navn/i.test(pTom), pTom);
         tjek(1, "Person-lead gemmes uden butik under personens navn", !!(pR && pR.status === "Lead" && pR.kontaktperson === "SC Opdigtet Person"), pR ? JSON.stringify({ kunde: pR.kunde, status: pR.status }) : "ikke gemt");
       } catch (e) { tjek(1, "Person-lead kunne testes", false, e.message); }
+      /* ÉT ARK TIL NYE LEADS (Ida 22/10: »jeg føler mig ikke tryg i at den lander i crm«): plusset/Tøm hovedet med Lead åbner Nyt lead med navnet; produktet gemmes på leadet */
+      try {
+        var dbP = JSON.parse(localStorage.getItem("SELE_DB") || "{}"); dbP.produkter = [{ navn: "SC Produkt", sortering: 1 }]; localStorage.setItem("SELE_DB", JSON.stringify(dbP)); LEAD_PRODUKTER = null;
+        var mmL2 = window.matchMedia; window.matchMedia = function () { return { matches: false }; };
+        bf3ToemArk("SC Lead fra Hjem", "lead"); await V(500);
+        var navnL = (document.getElementById("gkNavn") || {}).value || "";
+        BF3_DROP_VALG.gkProdukt = "SC Produkt"; document.getElementById("gkButik").value = "SC Hjem-butik"; document.getElementById("gkMail").value = "hjem@sc.dk";
+        await gamleKunderSend(null); await V(300); window.matchMedia = mmL2; try { bsFlytLuk(); } catch (e) {}
+        var hR = ((JSON.parse(localStorage.getItem("SELE_DB") || "{}").contacts) || []).filter(function (x) { return x.kunde === "SC Hjem-butik"; })[0];
+        tjek(1, "Lead fra Hjem åbner Nyt lead med navnet", navnL === "SC Lead fra Hjem", "navn »" + navnL + "«");
+        tjek(1, "Lead fra Hjem står i CRM som Lead med produktet", !!(hR && hR.status === "Lead" && hR.produkt === "SC Produkt"), hR ? JSON.stringify({ status: hR.status, produkt: hR.produkt }) : "ikke gemt");
+      } catch (e) { tjek(1, "Lead fra Hjem kunne testes", false, e.message); }
       /* EGNE TAGS (Ida 21/10: »så skal jeg kunne tilføje nyt tag jeg skal kunne filtrere efter«): nyt tag i arket → sidder på leadet, gemt i basen, og filterchippen viser kun det lead */
       try {
         var mmT = window.matchMedia; window.matchMedia = function () { return { matches: false }; };

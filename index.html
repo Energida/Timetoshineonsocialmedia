@@ -60343,7 +60343,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2884";
+const APP_VERSION = "2886";
 const APP_BYGGET = "9. oktober";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_BYGGET + " · " + APP_VERSION; } catch (e) {} });
 let NY_VERSION_KLAR = false;
@@ -83097,7 +83097,10 @@ function bf3KundeIdeKunder() {
   return koder.map(function (k) { return { k: k, n: venterKundeNavn(k) }; }).sort(function (a, b) { return a.n.localeCompare(b.n, "da"); });
 }
 function bf3KundeRkHtml(valgt) { return '<div id="bf3KundeRk" class="bs3-ark-drop" style="margin-top:8px;' + (valgt === "kundeide" ? '' : 'display:none;') + '">' + bf3DropHtml("nyIdeKunde", "Hvilken kunde?", bf3KundeIdeKunder(), (window.BF3_DROP_VALG || {}).nyIdeKunde || "") + '</div>'; }
-window.bf3Drop_bf3ArkDrop = function (k) { try { const at = document.querySelector("#arkSlor .ark-t"); if (at) at.textContent = (k === "manus") ? "Hvad skal tilføjes til manus?" : "Tøm hovedet"; } catch (e) {}   /* overskriften foelger valget (Ida 2/10) */ const ku = document.getElementById("bf3KundeRk"); if (ku) ku.style.display = (k === "kundeide") ? "" : "none"; const td = document.getElementById("bf3TodoRk"); if (td) td.style.display = (k === "todo") ? "" : "none"; const r = document.getElementById("bf3KursusRk"); if (r) r.style.display = (k === "manus") ? "" : "none"; const l = document.getElementById("bf3LeadRk"); if (l) l.style.display = (k === "lead") ? "" : "none"; };
+window.bf3Drop_bf3ArkDrop = function (k) {
+  /* ÉT ARK TIL NYE LEADS (Idas klik 22/10: »Ja, ét ark med produkt« — »jeg føler mig ikke tryg i at den lander i crm«): vælges Lead i Tøm hovedet, åbner det samme Nyt lead som i CRM, med det skrevne som navn */
+  if (k === "lead") { let t = ""; try { t = String((document.getElementById("arkTekst") || {}).value || "").trim(); } catch (e) {} try { arkLuk(true); } catch (e) {} setTimeout(function () { try { nytLeadArk(false, t); } catch (e) {} }, 80); return; }
+  try { const at = document.querySelector("#arkSlor .ark-t"); if (at) at.textContent = (k === "manus") ? "Hvad skal tilføjes til manus?" : "Tøm hovedet"; } catch (e) {}   /* overskriften foelger valget (Ida 2/10) */ const ku = document.getElementById("bf3KundeRk"); if (ku) ku.style.display = (k === "kundeide") ? "" : "none"; const td = document.getElementById("bf3TodoRk"); if (td) td.style.display = (k === "todo") ? "" : "none"; const r = document.getElementById("bf3KursusRk"); if (r) r.style.display = (k === "manus") ? "" : "none"; const l = document.getElementById("bf3LeadRk"); if (l) l.style.display = (k === "lead") ? "" : "none"; };
 /* NY LEAD (Ida 26/9 ~08.15): navnet i feltet · hvilket produkt (husets produkter fra tabellen produkter) → contacts med status Lead, lander i CRM under Leads */
 let LEAD_PRODUKTER = null;
 async function leadProdukterHent() { if (LEAD_PRODUKTER) return LEAD_PRODUKTER; try { const r = await sb.from("produkter").select("navn,sortering").order("sortering"); LEAD_PRODUKTER = (r.data || []).map(function (p) { return String(p.navn || "").trim(); }).filter(Boolean); } catch (e) { LEAD_PRODUKTER = []; } return LEAD_PRODUKTER; }
@@ -83243,6 +83246,7 @@ function bf3ToemSend() {
 /* DROPDOWNEN STAAR UNDER TEKSTEN I ARKET (Idas kommentar 20/9) — arkets ekstra-raekke flyttes op under feltet */
 function bf3ArkDropOp() { try { const e = document.getElementById("arkEkstra"); const f0 = document.querySelector("#arkSlor .ark-felt"); const f = f0 && (f0.closest(".ark-vrk") || f0); if (e && f) { f.insertAdjacentElement("afterend", e); e.classList.add("bs3-ark-drop"); } } catch (e) {} }
 function bf3ToemArk(tekst, valgt) {
+  if (valgt === "lead") { try { nytLeadArk(false, tekst || ""); } catch (e) {} return; }   /* ét ark til nye leads (22/10) */
   BF3_DROP_VALG.bf3ArkDrop = valgt || "";
   /* SAMME FORM SOM B2B (Ida 24/9: »admin fortsat ikke har samme design på de første sider altså tøm hovedet«): arket ligger ikke
      gennemsigtigt paa fotoet laengere — roed top paa telefonen, hvid bund, ingen ekstra Backstage-knap (startkortet har den). Valgene er Idas egne. */
@@ -83803,21 +83807,24 @@ function gkTypeSaet(p) {
   const ml = document.getElementById("gkMail"); if (ml) ml.placeholder = GK_PERSON ? "navn@mail.dk" : "navn@butikken.dk";
   const msg = document.getElementById("gkMsg"); if (msg) msg.textContent = "";
 }
-function nytLeadArk(gamle) {
-  GK_TAG = !!gamle; GK_TAGS = []; GK_PERSON = false; try { crmTagsHent().then(function () { const r = document.getElementById("gkTagChips"); if (r) r.innerHTML = gkTagChipsHtml(); }); } catch (e) {}
+function gkProduktHtml() { return '<div class="htb-ark-eye">Produkt</div><div class="bs3-ark-drop" id="gkProduktW" style="margin:0 0 12px;">' + bf3DropHtml("gkProdukt", "Hvilket produkt?", (LEAD_PRODUKTER || []).map(function (p) { return { k: p, n: p }; }), (window.BF3_DROP_VALG || {}).gkProdukt || "") + '</div>'; }
+function nytLeadArk(gamle, forNavn) {
+  GK_TAG = !!gamle; GK_TAGS = []; GK_PERSON = false; try { BF3_DROP_VALG.gkProdukt = ""; } catch (e) {}
+  try { if (!LEAD_PRODUKTER) leadProdukterHent().then(function () { const w = document.getElementById("gkProduktW"); if (w) w.outerHTML = gkProduktHtml(); }); } catch (e) {} try { crmTagsHent().then(function () { const r = document.getElementById("gkTagChips"); if (r) r.innerHTML = gkTagChipsHtml(); }); } catch (e) {}
   let m = document.getElementById("bsFlytMenu"); if (!m) { m = document.createElement("div"); m.id = "bsFlytMenu"; document.body.appendChild(m); }
   const felt = function (id, et, ph, type) { return '<div class="htb-ark-eye">' + et + '</div><input type="' + (type || "text") + '" id="' + id + '" class="htb-felt" placeholder="' + ph + '" autocomplete="off"' + (type === "email" ? ' inputmode="email" autocapitalize="off" spellcheck="false"' : '') + ' style="width:100%;margin-bottom:12px;">'; };
   m.innerHTML = '<div class="bs-flyt-ark brief-soejle-ark htb-ark">'
     + '<div class="htb-ark-top"><div class="ark-t">Nyt lead</div></div>'
     + '<div class="ark-chips i-fladen" id="gkTypeChips" style="margin:0 0 14px;"><button type="button" class="ark-chip on" data-t="butik" onclick="gkTypeSaet(false)">Butik</button><button type="button" class="ark-chip" data-t="person" onclick="gkTypeSaet(true)">Person</button></div>'
     + felt("gkNavn", "Navn", "Kontaktpersonens navn") + '<div id="gkButikBlok">' + felt("gkButik", "Butik", "Butikkens navn") + '</div>' + felt("gkMail", "Mail", "navn@butikken.dk", "email") + felt("gkTlf", "Telefon", "Telefonnummer", "tel")
+    + gkProduktHtml()
     + '<div class="htb-ark-eye">Tags</div><div class="ark-chips i-fladen" id="gkTagChips" style="margin:0 0 10px;">' + gkTagChipsHtml() + '</div>'
     + '<div class="htb-send" style="margin:0 0 12px;"><input type="text" id="gkTagNy" placeholder="Tilføj tag" autocomplete="off" onkeydown="if(event.key===\'Enter\'){event.preventDefault();gkNytTag();}">' + crmTagSendKnap("gkNytTag()") + '</div>'
     + '<div id="gkMsg" class="ftf-forkl" style="min-height:18px;margin:0 0 8px;"></div>'
     + '<button type="button" class="ark-knap ark-knap-roed ark-send-pille" onclick="gamleKunderSend(this)">Gem</button>'
     + '<button type="button" class="ark-luk" onclick="bsFlytLuk()">Annullér</button></div>';
   m.style.display = "flex"; m.onclick = function (e) { if (e.target === m) bsFlytLuk(); };
-  setTimeout(function () { const f = document.getElementById("gkNavn"); if (f) f.focus(); }, 60);
+  setTimeout(function () { const f = document.getElementById("gkNavn"); if (f) { if (forNavn) f.value = forNavn; f.focus(); } }, 60);
 }
 async function gamleKunderSend(knap) {
   const v = function (id) { return String((document.getElementById(id) || {}).value || "").trim(); };
@@ -83830,6 +83837,7 @@ async function gamleKunderSend(knap) {
   if (knap) knap.disabled = true; sig("Gemmer …");
   /* RIGTIGE FELTER (Ida 13/10: »hvor indtaster jeg kundens oplysninger – mail mm?«): kontaktperson · email · telefon er kontaktkortets egne felter */
   const rk = { kunde: GK_PERSON ? navn : butik, kontaktperson: navn || null, email: mail, telefon: tlf || null, status: "Lead", source: GK_TAG ? "Gamle kunder" : null, kommentar: GK_TAG ? "Kode ikke sendt endnu" : null };
+  const prod = (window.BF3_DROP_VALG || {}).gkProdukt || ""; if (prod) rk.produkt = prod;   /* produktet følger med (22/10) — samme felt som Hjems gamle lead-ark */
   if (GK_TAGS.length) rk._tags = GK_TAGS.slice();   /* egne tags følger med, også i offline-køen (gkIndsaet tager dem af, før rækken sendes) */
   let ok = await gkIndsaet(rk);
   if (!ok) {
@@ -83844,7 +83852,7 @@ async function gamleKunderSend(knap) {
      Kontakten er en lead i CRM (contacts), aldrig et login: stripe-koeb opretter login ved koebet og slaar kun op i logins, ikke i contacts. */
   /* LISTEN FØLGER MED (14/10): fetchCustomers returnerer kun listen — den skal lægges i CUSTOMERS og CRM tegnes igen */
   try { CUSTOMERS = await fetchCustomers(); kunderneTegn(true); } catch (e) {}
-  bsFlytLuk(); try { husKvit("Gemt: " + rk.kunde + " står i CRM."); } catch (e) {}
+  bsFlytLuk(); try { husKvit("Gemt: " + rk.kunde + " står i CRM under Leads" + (rk.produkt ? " · " + rk.produkt : "") + "."); } catch (e) {}
 }
 /* TILFOEJ-MENUEN = FLISER MED IKON (Idas klik 25/9 kl. ~09.00, bud 2 af fem QVZUa7JWr328LqNWj2ty7w: »den røde viser jo lidt et forvalg, og her kan det jo være alle«):
    hvert valg er sin egen hvide flise med husets ikon (samme som feltet i klippet) og ordet; ingen roed knap, intet forvalg; Annullér graa sidst */
