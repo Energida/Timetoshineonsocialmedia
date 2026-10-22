@@ -108,5 +108,18 @@ for HK in "390 kunde" "1440 kunde" "390 admin" "1440 admin"; do
   echo "[$1 $2] ${UDH:-SELE HERO FEJL: ingen maaling}"
   echo "$UDH" | grep -q "SELE HERO OK" || HERO_OK=0
 done
+# SPOEGELSESJAEGEREN I PORTEN (Ida 22/10: »Der er stadig masser af spøgelsessider« · »Kan du sørge for at dette aldrig sker igen«):
+# hvert sideskift filmes paa 390 og 1440 — ingen tredje side, ingen tom skaerm, intet taeppe-blink, og den gamle side maa ikke skifte form, foer den nye er klar.
+UDJ=$(python3 -c "
+import sys; sys.path.insert(0, sys.argv[1] + '/tools/sikkerhedschefen')
+import tjek_spoegelse as t
+fejl = 0
+for b in (390, 1440):
+    for r in t.jaeger(sys.argv[1], b):
+        if r.tilstand != 'BESTÅET': fejl += 1; print('SELE SPOEGELSE FEJL: ' + r.navn + ' · ' + r.tilstand + ((' · ' + r.detalje) if r.detalje else ''))
+print('SELE SPOEGELSE OK: alle sideskift er rene paa 390 og 1440' if not fejl else 'SELE SPOEGELSE FEJL: %d fund' % fejl)
+" "$ROD" 2>&1)
+echo "$UDJ"
+echo "$UDJ" | grep -q "SELE SPOEGELSE OK" || HERO_OK=0
 [ "$HERO_OK" = "1" ] && echo "$UDG" | grep -q "SELE GENSTART OK" && echo "$UD0" | grep -q "SELE POPUP-KILDE OK" && echo "$UD" | grep -q "SELE LAAS OK" && echo "$UD2" | grep -q "SELE SIDER OK" && echo "$UD4" | grep -q "SELE SIDER OK" && echo "$UD5" | grep -q "SELE BUD OK" && echo "$UD6" | grep -q "SELE BUD OK" && [ "$UX_OK" = "1" ] && [ "$BS_OK" = "1" ] && echo "$UD3" | grep -q "SELE BRIEF OK" && exit 0
 echo "SELE LAAS FEJL: maalingen sagde ikke OK"; exit 1

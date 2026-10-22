@@ -55,8 +55,10 @@ def jaeger(repo=REPO, bred=390):
     import datetime
     man = datetime.date.today() - datetime.timedelta(days=datetime.date.today().weekday())
     d0 = (man + datetime.timedelta(days=2)).isoformat()
+    idag = datetime.date.today().isoformat()   # telefonens kalender viser dagen — uden et opslag i dag blev kalender → brief aldrig filmet paa 390 (22/10)
     db = {"skema_svar": [{"id": "kd1", "kode": KODE, "navn": "config", "skema": "kunde_def", "svar": DEF}],
-          "content_ideer": [{"id": "jaeg-1", "kode": KODE, "titel": "Opdigtet opslag", "status": "Brief i gang", "dato": d0, "format": "Reel", "soejle": "1A", "brief": {}}]}
+          "content_ideer": [{"id": "jaeg-1", "kode": KODE, "titel": "Opdigtet opslag", "status": "Brief i gang", "dato": d0, "format": "Reel", "soejle": "1A", "brief": {}},
+                            {"id": "jaeg-2", "kode": KODE, "titel": "Opdigtet opslag i dag", "status": "Brief i gang", "dato": idag, "format": "Reel", "soejle": "2A", "brief": {}}]}
     # som live: hvert kald til basen tager tid
     open(os.path.join(sele, "sele-db.json"), "w").write(json.dumps({"ls": {"SELE_DB": json.dumps(db), "SELE_LATENS": "400"}}))
     sk = socket.socket(); sk.bind(("127.0.0.1", 0)); port = sk.getsockname()[1]; sk.close()
