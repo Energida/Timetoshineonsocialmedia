@@ -7,6 +7,7 @@ def doede_onclick(html):
     defineret = set(re.findall(r'(?:async\s+)?function\s+([A-Za-z_$][\w$]*)\s*\(', html))
     defineret |= set(re.findall(r'(?:window\.)?([A-Za-z_$][\w$]*)\s*=\s*(?:async\s+)?function\b', html))
     defineret |= set(re.findall(r'(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*=\s*(?:async\s*)?\(', html))
+    defineret |= set(re.findall(r'(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*=\s*etTryk\(', html))   # én-tryks-vagten (22/10) pakker en funktion ind
     return sorted(n for n in kaldt if n not in defineret and n not in INDBYGGET)
 
 def tjek_motorer(repo):

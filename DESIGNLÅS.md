@@ -4,6 +4,11 @@
 - **DAGSORDENEN RETTES PÅ STEDET.** Et penneikon ved hvert punkt åbner punktet: navn, tekst, skraldespand (fjern) og Gem; »Tilføj punkt« lægger et nyt til. Standardpunkterne (performance · den kommende uge · dato for næste møde) står uændrede, til man retter dem. Gemmes i `plan_ritual.moede.dagsorden` (merges, andre nøgler urørte); et rettet punkt bliver statisk tekst, et urørt punkt bliver dynamisk (uge, tema, mål). Ingen Annuller i rettelsen.
 - **ALLE DATOSYMBOLER ER KVADRATER, 56 × 56 (HÅRD, Ida 9/10: »kvadratiske alle steder«):** Kommende opslag (`.kop-dato`), aftalernes dato (`.cf-dato`), Backstages `.bs3-tidb.d` og `.bs-datob`. Ingen dato-boks er højere end bred.
 
+## v2916 (22/10 nat) — **Sikkerhedschefens nattefund**
+- Profilarket (»Hvad hedder du?«) vises ALDRIG i admin (løfte 36: det lå oven på Backstage efter VELKOMST_TIL). Målt: admin 0 ark, kunden stadig 4 ark.
+- Hjems hero er mørk (#2E2C29) under fotoet: før fotoet er hentet, kunne den hvide hilsen ikke læses på sand (1,12:1).
+- Løfte 16 kender én-tryks-vagten (`const x = etTryk(...)`) — ikke længere falske døde knapper.
+
 ## v2914 (22/10 nat) — **Prøven fra 17/10 er slået til + to rene rundvisningsfejl** (Idas klik »Ja, efter Hans og Mette«; Hans/Mette-testen af rundvisningerne)
 - `VELKOMST_TIL = true`: nye kunder får fire profilspørgsmål efter købet, Modul 0 er åbent med det samme, »Find dit udgangspunkt« kommer efter modul 0 og låser modul 1. Kun kunder, der ikke har set rundvisningen; kunder i gang mister intet (låsen bliver mildere). Navnet fra »Hvad hedder du?« målt med rigtige tastetryk: hilsen, startkort og Hjem på 390 + 1440.
 - **Rundvisningens første trin vises nu** for YOU GOT THIS: peger på Hjems røde flise med de godkendte ord (»Alt starter her: fortæl, hvor du står i dag …« uden prøven · »Alt starter her: lektionerne bygger din strategi — én ad gangen.« med prøven). Før så kunden aldrig sit første skridt i rundvisningen.
