@@ -60335,7 +60335,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2874";
+const APP_VERSION = "2876";
 const APP_BYGGET = "9. oktober";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_BYGGET + " · " + APP_VERSION; } catch (e) {} });
 let NY_VERSION_KLAR = false;
@@ -85446,8 +85446,20 @@ function bf3ProdDeltagere(pid) {
   const f = BF3_PROD_KUNDE[pid]; if (!f) return [];
   try { return Object.keys(VIRKSOMHEDSKODER || {}).filter(function (k) { const d = VIRKSOMHEDSKODER[k] || {}; return erRigtigKunde(k) && d.aktiv !== false && f(d); }).sort(function (a, b) { return venterKundeNavn(a).localeCompare(venterKundeNavn(b), "da"); }); } catch (e) { return []; }
 }
+function bf3ProdTestkunder(pid) {
+  const f = BF3_PROD_KUNDE[pid]; if (!f) return [];
+  const rang = function (k) { k = String(k).toUpperCase(); return /^TESTKUNDEA/.test(k) ? 0 : /^TESTKUNDEB/.test(k) ? 1 : /^METATEST/.test(k) ? 2 : 3; };
+  try { return Object.keys(VIRKSOMHEDSKODER || {}).filter(function (k) { const d = VIRKSOMHEDSKODER[k] || {}; return d.aktiv !== false && f(d) && (/^(TESTKUNDE|METATEST)/i.test(k) || d.test === true); }).sort(function (a, b) { return rang(a) - rang(b) || a.localeCompare(b, "da"); }); } catch (e) { return []; }
+}
 function bf3ProdFane(k) {
-  if (k === "kunde") { const d = bf3ProdDeltagere(BF3_PROD_VALGT); if (d.length) { try { aabnKundensSideFane(d[0], 12); } catch (e) {} } return; }   /* produktet med kundens oejne = kundens Lektionerne, ikke Hjem (Ida 24/9) */
+  if (k === "kunde") {   /* produktet med kundens oejne = kundens Lektionerne, ikke Hjem (Ida 24/9) */
+    /* ALDRIG EN RIGTIG KUNDE (Ida 22/10): knappen tog den foerste RIGTIGE kunde alfabetisk (EMMABYEMMA2026) — og alt, man skrev, blev gemt hos hende.
+       Nu aabnes en testkunde paa produktet (TESTKUNDEA → TESTKUNDEB → METATEST → oevrige test-koder). Findes ingen, aabnes intet. */
+    const tk = bf3ProdTestkunder(BF3_PROD_VALGT);
+    if (tk.length) { try { aabnKundensSideFane(tk[0], 12); } catch (e) {} }
+    else { try { husBesked("Der er ingen testkunde på produktet. Opret en i CRM, før du ser det som kunden."); } catch (e) {} }
+    return;
+  }
   window.BF3_PROD_FANE = k; BF3_MODUL_AABEN = false; renderKlipperum();
 }
 function bf3ProdAabn(id) { window.BF3_PROD_FANE = "indhold"; BF3_PROD_VALGT = id; KLIP_MODUL_CHIP = null; BF3_MODUL_AABEN = false; try { BF3_KLIP_FILTER = ""; } catch (e) {} klipVisningSaet("moduler"); }
