@@ -314,7 +314,7 @@
         var nu0 = Date.now(), dag0 = 864e5;
         var db0 = JSON.parse(localStorage.getItem("SELE_DB") || "{}");
         db0.contacts = (db0.contacts || []).concat([
-          { id: "o1", kunde: "Opdigtet Isenkram", status: "Kunde", source: "YOU GOT THIS · Gamle kunder", kommentar: "Hanne · h@x.dk · Kode: OPDIGTET2026", created_at: new Date(nu0 - 3600e3).toISOString() },
+          { id: "o1", kunde: "Opdigtet Isenkram", status: "Kunde", source: "YOU GOT THIS · Gamle kunder", kommentar: "Hanne · h@x.dk · Kode: OPDIGTET2026", created_at: new Date(nu0 - Math.min(3600e3, Math.max(1000, (nu0 - new Date(nu0).setHours(0, 0, 0, 0)) / 2))).toISOString() },   /* »i dag« også lige efter midnat (nat 23/10: en time før 00.20 er i går) */
           { id: "o2", kunde: "Butik Nordlys", status: "Kunde", source: "YOU GOT THIS · Ringkøbing Handelsforening", kommentar: "Kode: NORDLYS2026", created_at: new Date(nu0 - 3 * dag0).toISOString() },
           { id: "o3", kunde: "Gammel butik", status: "Kunde", source: "YOU GOT THIS · Ringkøbing Handelsforening", kommentar: "Kode: GAMMEL2026", created_at: new Date(nu0 - 40 * dag0).toISOString() },
           { id: "o4", kunde: "Test", status: "Kunde", source: "Testlink", kommentar: "Kode: TEST", created_at: new Date(nu0).toISOString() },

@@ -14,7 +14,8 @@ KENDTE_REGLER = {
     ("lektion_register", "SELECT"): "kursuskatalog", ("lektioner", "SELECT"): "kursuskatalog", ("lektion_oevelser", "SELECT"): "kursuskatalog",
 }
 KENDTE_FUNKTIONER = {"tjek_kode": "koden tjekkes før login; svarer kun virksomhedsnavn, forløb og om login er klar for en aktiv kode"}
-KENDTE_MAPPER = {"inspiration": "inspirationsbilleder vises via link; ingen må liste mappen, upload kun i egen mappe"}
+KENDTE_MAPPER = {"inspiration": "inspirationsbilleder vises via link; ingen må liste mappen, upload kun i egen mappe",
+                 "mail-billeder": "Idas mailbilleder; offentlig LÆSNING via præcis adresse (mailprogrammer), ingen listning, upload/ret/slet kun admin — dokumenteret undtagelse §7, hændelsesloggen 19/10 (Idas klik »Byg det«)"}
 
 def sql(q):
     t = open(os.path.expanduser("~/.supabase/access-token")).read().strip()
