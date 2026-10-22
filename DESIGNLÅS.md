@@ -4,6 +4,12 @@
 - **DAGSORDENEN RETTES PÅ STEDET.** Et penneikon ved hvert punkt åbner punktet: navn, tekst, skraldespand (fjern) og Gem; »Tilføj punkt« lægger et nyt til. Standardpunkterne (performance · den kommende uge · dato for næste møde) står uændrede, til man retter dem. Gemmes i `plan_ritual.moede.dagsorden` (merges, andre nøgler urørte); et rettet punkt bliver statisk tekst, et urørt punkt bliver dynamisk (uge, tema, mål). Ingen Annuller i rettelsen.
 - **ALLE DATOSYMBOLER ER KVADRATER, 56 × 56 (HÅRD, Ida 9/10: »kvadratiske alle steder«):** Kommende opslag (`.kop-dato`), aftalernes dato (`.cf-dato`), Backstages `.bs3-tidb.d` og `.bs-datob`. Ingen dato-boks er højere end bred.
 
+## v2914 (22/10 nat) — **Prøven fra 17/10 er slået til + to rene rundvisningsfejl** (Idas klik »Ja, efter Hans og Mette«; Hans/Mette-testen af rundvisningerne)
+- `VELKOMST_TIL = true`: nye kunder får fire profilspørgsmål efter købet, Modul 0 er åbent med det samme, »Find dit udgangspunkt« kommer efter modul 0 og låser modul 1. Kun kunder, der ikke har set rundvisningen; kunder i gang mister intet (låsen bliver mildere). Navnet fra »Hvad hedder du?« målt med rigtige tastetryk: hilsen, startkort og Hjem på 390 + 1440.
+- **Rundvisningens første trin vises nu** for YOU GOT THIS: peger på Hjems røde flise med de godkendte ord (»Alt starter her: fortæl, hvor du står i dag …« uden prøven · »Alt starter her: lektionerne bygger din strategi — én ad gangen.« med prøven). Før så kunden aldrig sit første skridt i rundvisningen.
+- **Computeren:** rundvisningens kort flytter sig, hvis det dækker målet (Idas regel 15/9 gjaldt kun telefonen) — lektionsturens kort stod oven på »Dine noter«.
+- Hans/Mettes ord- og designforslag venter på Idas klik (morgenrapporten).
+
 ## v2912 (22/10) — **Rundvisning på lektionssiden** (Ida: »en rundvisning på selve lektionssiden … noter … hvor de kan finde deres noter samlet og … deres svar på opgaverne … og at det kun er dem der kan tilgå dem«; klik »Ja, byg den« på ordlyden)
 - Første gang en lektion åbnes (efter hovedturen): 1 »Skriv det, du vil huske, mens du ser. Noterne gemmes af sig selv.« (Dine noter) · 2 »Her finder du alle dine noter samlet, lektion for lektion.« (Alle noter) · 3 »Her svarer du på lektionens øvelse. Svarene gemmes, og du kan altid åbne og rette dem igen her.« (Tag øvelsen / Ret dine øvelsessvar — kun når lektionen har en øvelse) · 4 »Dine noter og svar er dine. Dine kolleger kan ikke se dem — kun du og Ida.«
 - Huskes på kontoen (`lek_tur_set`); rører ikke hovedturens markering. Samme motor (turVis, TUR_MODUS "lek").
