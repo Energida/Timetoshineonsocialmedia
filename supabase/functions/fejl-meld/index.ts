@@ -75,7 +75,9 @@ Deno.serve(async (req) => {
     + '</div>';
 
   const noegle = Deno.env.get("BREVO_API_KEY"); if (!noegle) return svar({ fejl: "ikke-klar" }, 503);
-  const emne = "Fejl fra " + virk + (hvad ? ": " + hvad.replace(/\s+/g, " ").slice(0, 60) : "");
+  /* Emnet stopper ved et helt ord (Idas mail 23/10: »Ingen kunde h«) — aldrig »…« */
+  const kort = (t: string, n: number) => { const r = t.replace(/\s+/g, " ").trim(); if (r.length <= n) return r; const c = r.slice(0, n); const i = c.lastIndexOf(" "); return (i > 20 ? c.slice(0, i) : c).replace(/[\s,.;:—–-]+$/, ""); };
+  const emne = "Fejl fra " + virk + (hvad ? ": " + kort(hvad, 60) : "");
   try {
     const res = await fetch("https://api.brevo.com/v3/smtp/email", {
       method: "POST",
