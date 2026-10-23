@@ -1,3 +1,7 @@
+
+## v2940 · 23. oktober · Stjernerne kommer én gang — lige når videoen er slut
+
+- **STJERNERNE SPØRGES ÉN GANG (Ida 23/10: »det skal jo komme når lektionen lige er slut — så skal de vælge mellem 1-5 stjerner og have mulighed for at tilføje kommentar«; Mette-testen: »Det har jeg jo lige svaret på«).** »Hvordan var videoen?« (fem stjerner + »Tilføj en kommentar til videoen«) står på kortet lige efter videoen — også når kortet hedder »Nu refleksionsøvelsen«/»Nu opgaven«. Kortet »Godt gået« efter opgaven (med »Det, du skrev«) spørger ALDRIG igen (`lekMoment`: `visStjerner` kræver `!svarId`). Lektioner uden opgave er uændrede. Feedbacken lander i Energida Studio på lektionen som før.
 ## v2685 · 9. oktober · Mødesiden = bud 1 (dagsordenen først, rettes på stedet), datosymbolerne er kvadrater
 
 - **MØDESIDEN, BUD 1 (HÅRD, Ida 9/10: »kør bud 1« på artifact C7Xwjbw5pPdDh3gHS9rZ4r — vælter 8/10-låsen »fire fliser Hvornår/Hvor/Hvem/Gentages«).** Start mødet · **Hvad skal vi igennem?** står først (til venstre på computer) · oplysningerne er fire hvide chips med ikon i ét hvidt felt øverst til højre (`moedeTopChipsHtml`, samme tryk som før) · idéer, forberedelse og noter under · **Annuller møde** står nederst, i fuld bredde som grå pille (ikke i et hjørne). Noternes valgte chip er lysegrå, aldrig rød.
