@@ -37911,22 +37911,28 @@ async function noteKoeSend() {
   noteKoeSkriv(rest);
 }
 try { window.addEventListener("online", function () { setTimeout(function () { try { noteKoeSend(); } catch (e) {} }, 1200); }); } catch (e) {}
+/* ALTID DEN NYESTE LISTE LIGE FØR ET GEM (tryghedstjekket 23/10, Ida: »det jeg allermest er bange for er at det kunden skriver ind ikke bliver gemt … især Hinges Hus«):
+   noterne er ÉN liste pr. person, og Hinges Hus deler ét login på flere telefoner. Før genbrugte gemmet listen fra sidste hentning — skrev to telefoner hver sin
+   note, overskrev den sidste den første. Nu hentes listen frisk lige før hver skrivning (ny note og sletning), og noten skal stå i basens svar, før der siges »Gemt«. */
+async function kundeNoterFrisk() { window.__NOTER_UHENTET = true; return await kundeNoterHent(); }
 async function kundeNoteGem(tekst) {
   const t = String(tekst || "").trim(); if (!t) return false;
   if (!sb || !currentKode) return false;
-  await kundeNoterHent();
+  await kundeNoterFrisk();
   if (window.__NOTER_UHENTET) return false;   /* de gamle noter kendes ikke — skriv ikke i blinde */
-  const ny = [{ id: "n" + Date.now(), t: t, dato: datoDK() }].concat(KUNDE_NOTER || []);
+  const nyId = "n" + Date.now() + Math.floor(Math.random() * 1000);
+  const ny = [{ id: nyId, t: t, dato: datoDK() }].concat(KUNDE_NOTER || []);
   const krop = { noter: ny };
   const n = kundeNoterNavn();
   let ok = false;
   try {
+    const harNoten = function (rk) { return !!(rk && rk.length && rk[0].svar && Array.isArray(rk[0].svar.noter) && rk[0].svar.noter.some(function (x) { return x && x.id === nyId; })); };
     const u = await sb.from("skema_svar").update({ svar: krop })
       .eq("kode", currentKode).eq("navn", n).eq("skema", "toem_hovedet").select();
-    ok = !!(u.data && u.data.length);
-    if (!ok) {
+    ok = harNoten(u.data);
+    if (!ok && !(u.data && u.data.length)) {
       const i = await sb.from("skema_svar").insert({ kode: currentKode, navn: n, skema: "toem_hovedet", svar: krop }).select();
-      ok = !!(i.data && i.data.length);
+      ok = harNoten(i.data);
     }
   } catch (e) { ok = false; }
   if (ok) KUNDE_NOTER = ny;
@@ -38054,7 +38060,7 @@ async function kundePlacerNu(id, k) {
   }
 }
 async function kundeNoteSlet(id) {
-  await kundeNoterHent();
+  await kundeNoterFrisk(); if (window.__NOTER_UHENTET) return;   /* frisk liste (23/10) — ellers kan en note, en anden lige har skrevet, forsvinde */
   const ud = (KUNDE_NOTER || []).filter(function (x) { return String(x.id) !== String(id); });
   const n = kundeNoterNavn();
   try {
@@ -57169,8 +57175,8 @@ async function huskeGemEgne() {
   try {
     const svar = { punkter: HUSKE };
     const { data } = await sb.from("skema_svar").update({ svar: svar }).eq("kode", currentKode).eq("navn", CURRENT_NAVN || "").eq("skema", "moede_huskeliste").select();
-    if (!data || !data.length) await sb.from("skema_svar").insert({ kode: currentKode, navn: CURRENT_NAVN || "", skema: "moede_huskeliste", svar: svar });
-  } catch(e) {}
+    if (!data || !data.length) { const i = await sb.from("skema_svar").insert({ kode: currentKode, navn: CURRENT_NAVN || "", skema: "moede_huskeliste", svar: svar }).select("id"); if (i.error || !i.data || !i.data.length) throw new Error("ikke gemt"); }
+  } catch(e) { try { husBesked("Huskelisten blev ikke gemt. Prøv igen."); } catch (e2) {} }   /* KVITTERING (tryghedstjekket 23/10): før fejlede den i stilhed */
 }
 function huskeRenderListe() {
   const el = document.getElementById("huskeListe"); if (!el) return;
@@ -60677,7 +60683,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2924";
+const APP_VERSION = "2926";
 const APP_BYGGET = "22. oktober";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_BYGGET + " · " + APP_VERSION; } catch (e) {} });
 let NY_VERSION_KLAR = false;
