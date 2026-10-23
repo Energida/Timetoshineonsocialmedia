@@ -1,4 +1,8 @@
 
+## v2944 · 23. oktober · Rundvisningens første trin peger på »Fortsæt hvor du slap«
+
+- **LØFTE 55 (sikkerhedschefen 23/10 kl. 18.57: »uden mål: #obStartCta«).** Siden v2934 viser YOU GOT THIS-Hjem flisen »Fortsæt hvor du slap« (`.hfs`) i stedet for den røde flise, så rundvisningens første trin (»Alt starter her: lektionerne bygger din strategi — én ad gangen.«) pegede på ingenting. Trinnet peger nu på `.hfs`. Ordlyden er uændret. Målt: tjek_skematur 36 BESTÅET, 0 FEJLET.
+
 ## v2942 · 23. oktober · Fejl-knappen: insektet ved klokken (bud 2)
 
 - **FEJL-KNAPPEN (Idas klik 23/10 »Bud 2 · Ved klokken«, Artifact XZhWFF485LpBSp3yrmg1h1; Ida: »hvis der er det mindste fejl så skal de klikke på den her og så fikser jeg det hurtigst muligt … og så vil jeg have en mail på hver rapport«).** Et tegnet insekt (streg, hvidt, uden cirkel, 44 px trykfelt) står i coverets øverste højre hjørne på ALLE kundens sider — telefonens Hjem lige til venstre for klokken (`.hf-ik-rk`), ellers i markbåndet (`.mb-fejl`, computer 22/38 px, telefon som klokken) og på lektionen. Aldrig i Backstage og aldrig i »Se som kunden«.
