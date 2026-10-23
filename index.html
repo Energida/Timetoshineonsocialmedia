@@ -31983,6 +31983,8 @@ async function kundeValgHent() {
 }
 function turStart(igen) {
   if (!igen && turSet()) return;
+  /* ALDRIG AF SIG SELV I ADMIN (23/10: kundernes »Din Drejebog bor her« lå oven på Get shit done i testkopien) — samme vagt som profilarket */
+  try { if (!igen && ((typeof DEPLOY !== "undefined" && DEPLOY === "crm") || document.body.classList.contains("dash-mode") || (typeof KLIP_ER_IDA !== "undefined" && KLIP_ER_IDA))) return; } catch (e) {}
   if (!igen && typeof velkomstSkalVises === "function" && velkomstSkalVises()) return;   /* velkomsten foerst (4/10) — den starter selv rundvisningen bagefter */
   if (!igen && turVenterPaaSkema()) { TUR_VENTER = true; return; }
   TUR_VENTER = false;
@@ -38688,7 +38690,8 @@ function ygtModulHold(def) {
 }
 function ygtPlusDage(iso, n) { const p = String(iso).split("-").map(Number); const d = new Date(p[0], p[1] - 1, p[2] + n); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); }
 function ygtModulAabner(nr) { const n = YGT_DAG[String(nr)]; if (n == null) return null; if (!YGT_START) return n === 0 ? "0000-01-01" : "9999-12-31"; return ygtPlusDage(YGT_START, n); }
-function ygtDatoOrd(iso) { try { if (!iso || iso > "9000") return "senere i forløbet"; const d = new Date(iso + "T12:00:00"); return d.toLocaleDateString("da-DK", { weekday: "long", day: "numeric", month: "long" }); } catch (e) { return iso; } }
+/* NEDTAELLING I STEDET FOR DATO (Ida 23/10: »i stedet for specifikke datoer vil jeg gerne have at der er nedtælling af dage. så åbner om 7 dage. åbner om 14 dage osv«) — een doer, saa alle laase siger det samme */
+function ygtDatoOrd(iso) { try { if (!iso || iso > "9000") return "senere i forløbet"; const n = Math.round((new Date(iso + "T12:00:00") - new Date(datoDK() + "T12:00:00")) / 86400000); if (n <= 0) return "i dag"; if (n === 1) return "i morgen"; return "om " + n + " dage"; } catch (e) { return iso; } }
 function ygtModulLaast(nr) { if (!ygtModulHold()) return false; const d = ygtModulAabner(nr); if (!(!!d && datoDK() < d)) return false; try { if (typeof KURSUS_SET !== "undefined" && Object.keys(KURSUS_SET || {}).some(function (id) { return KURSUS_SET[id] && modulNrFor(id) === String(nr); })) return false; } catch (e) {} return true; }
 function ygtIdebankAaben() { return ygtHold() && !ygtModulLaast("8"); }
 function ygtBriefLaast() { return ygtHold() && ygtModulLaast("8"); }
@@ -60588,7 +60591,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2920";
+const APP_VERSION = "2922";
 const APP_BYGGET = "22. oktober";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_BYGGET + " · " + APP_VERSION; } catch (e) {} });
 let NY_VERSION_KLAR = false;
@@ -85438,7 +85441,9 @@ function bf3PlusAuto() {
     const valg0 = felter.map(function (f) { const i = f.querySelector("input,textarea"); const ph = String(i.placeholder || "Tilføj").replace(/\s*…$/, ""); return [ph.replace(/^(Vælg et studio, og )?/i, "").replace(/^./, function (c) { return c.toUpperCase(); }), function () { bf3PlusSendfelt(i.id, ph.replace(/^(Vælg et studio, og )/i, "").replace(/^./, function (c) { return c.toUpperCase(); })); }]; })
       .concat(knapper.map(function (b) { return [String(b.textContent || "").trim().replace(/^\+ /, ""), function () { b.click(); }]; }));
     const sete = {}; const valg = valg0.filter(function (v) { const n = String(v[0]).toLowerCase(); if (sete[n]) return false; sete[n] = 1; return true; });   /* samme valg kun én gang */
-    if (!valg.length) { if (k0 && k0.dataset.auto) { k0.style.display = "none"; delete k0.dataset.auto; } return; }
+    /* PLUSSET KOMMER TILBAGE (Ida 23/10: »jeg kan ikke oprette noget i get shit done lige nu??«): Idéer → Tilbage skjulte plusset, fordi
+       det laante plus blev gemt vaek i stedet for at give siden sit eget tilbage. Siden husker sit eget plus (dataset.egen). */
+    if (!valg.length) { if (k0 && k0.dataset.auto) { const eg = k0.dataset.egen; delete k0.dataset.auto; if (eg) bf3BaandKnapVis(eg, k0.dataset.egenRum === "1"); else k0.style.display = "none"; } return; }
     felter.forEach(function (f) { f.classList.add("plus-ejer"); f.style.setProperty("display", "none", "important"); }); knapper.forEach(function (b) { b.classList.add("plus-ejer"); b.style.setProperty("display", "none", "important"); });
     bf3BaandKnapVis("auto"); const k = document.getElementById("bf3RumKnap"); if (!k) return; k.dataset.auto = "1";
     const b2 = k.querySelector("button"); b2.title = "Tilføj"; b2.setAttribute("aria-label", "Tilføj");
@@ -85458,12 +85463,13 @@ function bf3BaandKnapVis(side, iRummet) {
   try {
     const b = document.querySelector("#dashMain > .bs-baand"); if (!b) return;
     let k = document.getElementById("bf3RumKnap");
-    if (!side) { if (k) k.style.display = "none"; return; }
+    if (!side) { if (k) { k.style.display = "none"; k.dataset.egen = ""; } return; }
     if (!k) { k = document.createElement("div"); k.id = "bf3RumKnap"; k.className = "i-siden"; k.innerHTML = '<button type="button" class="kv-menuknap mq-tap" aria-label="Tilføj rum" title="Tilføj rum">+</button>'; b.parentElement.appendChild(k); }
     try { k.style.top = (b.getBoundingClientRect().height - 28 + 16 + (parseFloat(getComputedStyle(b).marginTop) || 0)) + "px"; } catch (e) {}
     const b2 = k.querySelector("button"); b2.title = side === "modnyt" ? "Nyt modul" : side === "prodnyt" ? "Nyt produkt" : side === "manusideer" ? "Tilføj idé" : side === "moduler" ? "Ny lektion" : side === "hjem" ? "Tilføj" : side === "kunder" ? "Tilføj" : side === "indbakke" ? "Tilføj" : side === "salg" ? "Tilføj" : iRummet ? "Tilføj" : "Tilføj rum"; b2.setAttribute("aria-label", b2.title);
     /* INDE I ET RUM ER PLUSSET ROEDT og aabner rummets Tilfoej-ark (note · idé · rum · link · tjekliste · program) — Ida 21/9 kl. 16.50 */
     k.classList.toggle("roed", !!iRummet);
+    if (side !== "auto") { k.dataset.egen = String(side); k.dataset.egenRum = iRummet ? "1" : ""; }
     k.style.display = ""; b2.onclick = function () { if (side === "modnyt") { try { modulNyArk(); } catch (e) {} } else if (side === "prodnyt") { try { bf3NytProduktArk(); } catch (e) {} } else if (side === "manusideer") { try { manusIdeFang(); } catch (e) {} } else if (side === "moduler") { try { klipNyArk(); } catch (e) {} } else if (side === "hjem") { try { bf3ToemTrin1(); } catch (e) {} }   /* samme valg som swipe op (26/9) */ else if (side === "kunder") { try { bf3ValgArk("Tilføj", [["Nyt lead", "nytLeadArk(false)"], ["Ny kunde", "nyKundeAaben()"]], { ingenRoed: true });   /* NYT LEAD UDEN AT VÆLGE (Ida 21/10: »hvorfor kan jeg ikke bare oprette et lead … gamle kunder burde være et tag«) */ } catch (e) {} }   /* CRM'ets plus (Ida 13/10: »kan du ikke få det ind i crm?«) */ else if (side === "indbakke") { try { bf3ValgArk("Tilføj", [["To-do", "bf3TodoNyArk()"], ["Besked til en kunde", "bf3BeskedArk()"]]); } catch (e) {} } else if (side === "salg") { try { bf3ValgArk("Tilføj", [["Kontakt", "bf3KontaktNyArk()"], ["Gamle kunder", "gamleKunderArk()"], ["Rum", "bf3NytRumArk('salg')"]]); } catch (e) {} } else if (iRummet) { try { mrTilfoejArk(side.slice(4)); } catch (e) {} } else bf3NytRumArk(side); };
     if (String(side).indexOf("prod_") === 0) { const pk = side.slice(5); b2.title = pk === "ideer" ? "Tilføj idé" : pk === "kilder" ? "Tilføj kildehenvisning" : "Tilføj B-roll"; b2.setAttribute("aria-label", b2.title); b2.onclick = function () { try { if (pk === "ideer") manusIdeFang(); else bf3SlNyArk(pk, BF3_PROD_VALGT); } catch (e) {} }; }   /* produktets faner (11/10) */
     if (String(side).indexOf("sl_") === 0) { const sk = side.slice(3); b2.title = sk === "kilder" ? "Tilføj kildehenvisning" : "Tilføj B-roll";   /* ordet »Tilføj« lader telefonens bundmenu-plus finde knappen (bsCoverKnapperStil) — plusset staar aldrig i coveret */ b2.setAttribute("aria-label", b2.title); b2.onclick = function () { try { bf3SlNyArk(sk); } catch (e) {} }; }   /* Kildehenvisninger + B-rolls (27/9) */

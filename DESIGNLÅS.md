@@ -4,6 +4,11 @@
 - **DAGSORDENEN RETTES PÅ STEDET.** Et penneikon ved hvert punkt åbner punktet: navn, tekst, skraldespand (fjern) og Gem; »Tilføj punkt« lægger et nyt til. Standardpunkterne (performance · den kommende uge · dato for næste møde) står uændrede, til man retter dem. Gemmes i `plan_ritual.moede.dagsorden` (merges, andre nøgler urørte); et rettet punkt bliver statisk tekst, et urørt punkt bliver dynamisk (uge, tema, mål). Ingen Annuller i rettelsen.
 - **ALLE DATOSYMBOLER ER KVADRATER, 56 × 56 (HÅRD, Ida 9/10: »kvadratiske alle steder«):** Kommende opslag (`.kop-dato`), aftalernes dato (`.cf-dato`), Backstages `.bs3-tidb.d` og `.bs-datob`. Ingen dato-boks er højere end bred.
 
+## v2922 (23/10) — **Nedtælling i stedet for dato · plusset kommer tilbage på Get shit done · rundvisningen aldrig af sig selv i admin**
+- **Låste moduler siger »Åbner om 7 dage« / »om 14 dage« / »i morgen« / »i dag«** — aldrig en dato (Ida 23/10: »i stedet for specifikke datoer vil jeg gerne have at der er nedtælling af dage«). Én dør (`ygtDatoOrd`), så tidslinjen, låse-arket, briefens og Idébankens lås siger det samme.
+- **Plusset forsvandt på Get shit done** efter Idéer → Tilbage (Ida 23/10: »jeg kan ikke oprette noget i get shit done lige nu??«): det lånte plus blev gemt væk i stedet for at give siden sit eget tilbage. Siden husker nu sit eget plus (`dataset.egen`).
+- **Kundernes rundvisning starter aldrig af sig selv i admin** (samme vagt som profilarket, v2916).
+
 ## v2920 (23/10) — **Modulerne i nummerorden · ingen låste Drejebog/Guides-fliser for YOU GOT THIS**
 - Ida: »hvorfor står modul 10 over 1?« / »rækkefølgen sejler på modulrækken« — modulerne blev lagt i rækkefølge efter første lektions sorteringstal. Nu altid efter modulnummer (`kursusModulerSorter`), både i tidslinjen og alle andre lister.
 - Ida: »synes egentlig ikke den flise med drejebogen og guides og skabeloner har noget at gøre her på kundens dashboard?« — fjernet fra Lektionerne for kursuskunder (stod låst). Øvrige kunder beholder dørene.
