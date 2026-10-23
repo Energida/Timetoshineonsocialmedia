@@ -4,6 +4,13 @@
 - **DAGSORDENEN RETTES PÅ STEDET.** Et penneikon ved hvert punkt åbner punktet: navn, tekst, skraldespand (fjern) og Gem; »Tilføj punkt« lægger et nyt til. Standardpunkterne (performance · den kommende uge · dato for næste møde) står uændrede, til man retter dem. Gemmes i `plan_ritual.moede.dagsorden` (merges, andre nøgler urørte); et rettet punkt bliver statisk tekst, et urørt punkt bliver dynamisk (uge, tema, mål). Ingen Annuller i rettelsen.
 - **ALLE DATOSYMBOLER ER KVADRATER, 56 × 56 (HÅRD, Ida 9/10: »kvadratiske alle steder«):** Kommende opslag (`.kop-dato`), aftalernes dato (`.cf-dato`), Backstages `.bs3-tidb.d` og `.bs-datob`. Ingen dato-boks er højere end bred.
 
+## v2924 (23/10) — **Værktøjskassen fra dag 1 i YOU GOT THIS: Dine noter + Dine svar** (Idas klik »Ja, Dine noter + Dine svar« og »Ja, send den live« på Artifact ExpD1mSgfXN8q2RkL36KnZ)
+- Kursuskunden har Værktøjskassen i menuen fra dag 1 (under Lektionerne). To åbne døre: **Dine noter** (skærm 27) og **Dine svar** (skærm 28). Resten af kassen står som låste døre med husets hængelås, til forløbet er gennemført (`kursusLaasAktiv`).
+- **Dine svar** = én flise pr. kilde: etiket (»Find dit udgangspunkt« / »Lektion 1.4 · Shinebarometeret«) · én streg · spørgsmål i grå 12,5 · svar i sort 14. Skala vises »4 af 10«. Grå knap »Ret dine svar« (fuld bredde på telefonen, egen bredde th. på computeren) åbner øvelsen med svarene udfyldt. Kun kundens egne rækker (kode + navn).
+- **Dine noter** = én flise pr. lektion med noter; tryk åbner lektionen.
+- »Se dine svar« på rejsen åbner Dine svar (før: skemaet åbnede tomt og kunne sendes igen).
+- Tom side: »Ingen svar endnu. Dine svar fra øvelserne samler sig her.« (godkendt 23/10).
+
 ## v2922 (23/10) — **Nedtælling i stedet for dato · plusset kommer tilbage på Get shit done · rundvisningen aldrig af sig selv i admin**
 - **Låste moduler siger »Åbner om 7 dage« / »om 14 dage« / »i morgen« / »i dag«** — aldrig en dato (Ida 23/10: »i stedet for specifikke datoer vil jeg gerne have at der er nedtælling af dage«). Én dør (`ygtDatoOrd`), så tidslinjen, låse-arket, briefens og Idébankens lås siger det samme.
 - **Plusset forsvandt på Get shit done** efter Idéer → Tilbage (Ida 23/10: »jeg kan ikke oprette noget i get shit done lige nu??«): det lånte plus blev gemt væk i stedet for at give siden sit eget tilbage. Siden husker nu sit eget plus (`dataset.egen`).
