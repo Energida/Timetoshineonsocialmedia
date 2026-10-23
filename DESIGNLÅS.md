@@ -1,4 +1,11 @@
 
+## v2942 · 23. oktober · Fejl-knappen: insektet ved klokken (bud 2)
+
+- **FEJL-KNAPPEN (Idas klik 23/10 »Bud 2 · Ved klokken«, Artifact XZhWFF485LpBSp3yrmg1h1; Ida: »hvis der er det mindste fejl så skal de klikke på den her og så fikser jeg det hurtigst muligt … og så vil jeg have en mail på hver rapport«).** Et tegnet insekt (streg, hvidt, uden cirkel, 44 px trykfelt) står i coverets øverste højre hjørne på ALLE kundens sider — telefonens Hjem lige til venstre for klokken (`.hf-ik-rk`), ellers i markbåndet (`.mb-fejl`, computer 22/38 px, telefon som klokken) og på lektionen. Aldrig i Backstage og aldrig i »Se som kunden«.
+- **ARKET (ordene godkendt af Ida 23/10):** husets ark · »Hvad driller?« · feltet »Skriv det med dine egne ord« med mikrofonen · chippen »Tilføj skærmbillede« (intet link) · grå linje under feltet »Vi sender selv siden og din enhed med.« (`.ark-note` — undertitler i popups er stadig forbudt) · rød »Send til Ida« · kvittering »Sendt til Ida«.
+- **RUNDVISNINGEN:** trinnet før det sidste peger på insektet med Idas egne ord: »Hvis der er det mindste, der driller i systemet, så klik her, så fikser jeg det hurtigst muligt.« (`turMedFejl`).
+- **DATA + MAIL:** rapporten = skema_svar (navn »app_fejl«, skema »kunde_fejl_<tid>«, svar: tekst · skærmbilleder · side · enhed · version · navn); kvittering kun når rækken findes. Edge Function »fejl-meld« sender Ida én mail pr. rapport (svar på mailen = svar til kunden). Rapporterne står i Backstage · Teknik · Fejl fra kunderne som »Meldt af …« med links til skærmbillederne.
+
 ## v2940 · 23. oktober · Stjernerne kommer én gang — lige når videoen er slut
 
 - **STJERNERNE SPØRGES ÉN GANG (Ida 23/10: »det skal jo komme når lektionen lige er slut — så skal de vælge mellem 1-5 stjerner og have mulighed for at tilføje kommentar«; Mette-testen: »Det har jeg jo lige svaret på«).** »Hvordan var videoen?« (fem stjerner + »Tilføj en kommentar til videoen«) står på kortet lige efter videoen — også når kortet hedder »Nu refleksionsøvelsen«/»Nu opgaven«. Kortet »Godt gået« efter opgaven (med »Det, du skrev«) spørger ALDRIG igen (`lekMoment`: `visStjerner` kræver `!svarId`). Lektioner uden opgave er uændrede. Feedbacken lander i Energida Studio på lektionen som før.
