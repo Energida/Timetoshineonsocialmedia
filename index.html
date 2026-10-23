@@ -8997,6 +8997,18 @@ body.dash-mode #dashMain .ws-card:has(> .follow-item) .bs-sendfelt, body.dash-mo
 
 /* ===== HASHTAGBANKEN (Idas endelige bud 20/9) — ENS paa telefon og computer: fliser m. husets skygge, chips 36, felter 44/14, kun to knapper ===== */
 .htb-side { max-width:640px; }
+/* PLADSENS ÉN-IDÉ-ARK (23/10, bud 3): husets lille ark — etiket · én streg · idéen stort · rød Læg på · grå Næste idé · prikker */
+.plads-ark { position:relative; }
+.plads-luk { position:absolute; top:12px; right:12px; width:34px; height:34px; border-radius:50%; border:0; background:#fff; box-shadow:0 0 6px rgba(0,0,0,.12); display:flex; align-items:center; justify-content:center; color:var(--black); cursor:pointer; }
+.plads-eti { font-size:10px; letter-spacing:1.6px; text-transform:uppercase; color:var(--gray3); margin:4px 44px 0 2px; }
+.plads-streg { border-top:1px solid var(--gray); margin:10px 0 14px; }
+.plads-titel { font-size:20px; line-height:1.35; margin:0 2px 16px; word-break:break-word; }
+.plads-tom { font-size:14px; color:var(--gray2); line-height:1.6; margin:0 2px 14px; }
+.plads-ja { display:block; width:100%; background:var(--red) !important; color:#fff !important; border:0 !important; }
+.plads-nej { display:block; width:100%; margin:6px 0 0 !important; }
+.plads-prikker { display:flex; justify-content:center; gap:6px; margin-top:12px; }
+.plads-prikker span { width:7px; height:7px; border-radius:50%; background:var(--gray); }
+.plads-prikker span.on { background:var(--red); }
 /* DINE NOTER + DINE SVAR (23/10): flisen = etiket · én streg · indhold; fuld bredde paa computeren */
 .vks-side { display:flex; flex-direction:column; gap:12px; }
 .vks-fl { background:#fff; border-radius:20px; box-shadow:var(--mb-skygge); padding:18px 20px; }
@@ -50297,7 +50309,11 @@ function hjemUgeHtml(tlf, kunKal) {
      Samme stiplede sprog som kalenderdagens forslag paa computeren (.hk-stip). Kun telefonen; computerens kalenderdag er uroert. */
   const forslag = (ting.length ? huGuideHtml(dage[valgt].d) : '') + ((erIdag && !(ugeTom && !ting.length)) ? huTomDagHtml(dage[valgt].d) : '');
   /* FORSLAGET HOERER TIL DAGEN (Ida 19/10: »det med de stiplede linjer kommer lige under opslaget idag«): ingen egen overskrift — den stiplede flise staar lige under dagens fliser */
-  const forslagBlok = forslag ? '<div class="hu-dagen hu-forslag">' + forslag + '</div>' : '';
+  /* PLADSEN PAA TELEFONENS KALENDER (Idas klik 23/10, bud 3): den anbefalede søjle stod kun i computerens ugegitter — telefonen viste den aldrig.
+     Har den valgte dag en plads og intet opslag, staar den stiplet under dagen; et tryk = én idé ad gangen (pladsIdeArk). */
+  let pladsFl = "";
+  try { if (kunKal) { const iso = dage[valgt].iso, pk = (naestePladser() || {})[iso]; if (pk && !(IDEER || []).some(function (x) { return x && x.dato === iso && x.status !== "Arkiveret"; })) pladsFl = huKort({ ty: "opslag", et: "Anbefalet", t: pk + " · " + naesteSoejleRent(pk), klik: "pladsIdeArk('" + iso + "','" + pk + "')" }).replace('<div class="hu-kort"', '<div class="hu-kort hk-stip"'); } } catch (e) {}
+  const forslagBlok = (forslag || pladsFl) ? '<div class="hu-dagen hu-forslag">' + pladsFl + forslag + '</div>' : '';
   const naesteFlise = hjemRoedFliseHtml();   /* det ugjorte trin (spørgeskemaet foerst) stod ingen steder paa Hjem (del A 1/10) */
   /* LEKTIONSDASHBOARDET (Ida 7/10: »dashboardet skal ikke have andet end forloebet, lektionerne og opgaver i fokus — ikke noget kommende opslag, ikke noget kommende aktiviteter«) */
   if (tlf && kunKal) return '<div class="hu hu-tlf hu-kalside">' + linje + strib + dag + forslagBlok + '</div>';
@@ -60683,7 +60699,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2926";
+const APP_VERSION = "2928";
 const APP_BYGGET = "22. oktober";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_BYGGET + " · " + APP_VERSION; } catch (e) {} });
 let NY_VERSION_KLAR = false;
@@ -62280,6 +62296,48 @@ function naestePladser() {
   } catch (e) {}
   return ud;
 }
+/* PLADSEN GIVER ÉN IDÉ AD GANGEN (Idas klik 23/10 »Bud 3 · Én idé ad gangen«, Artifact 7xZDtGx3VrcFbjKkfT42Ub — Hinges Hus har svært ved at komme i gang):
+   et tryk paa pladsen viser én idé fra kundens EGEN Idébank, der passer til søjlen: »Læg på <dag>« giver idéen datoen (ideUpdate, med kvittering),
+   »Næste idé« viser den næste. Kun idéer uden dato; der vælges aldrig en søjle for kunden. Ingen idéer til søjlen = vejen til et nyt opslag paa dagen. */
+let PLADS_ARK = null;
+function pladsIdeer(kode) {
+  return (IDEER || []).filter(function (x) {
+    if (!x || x.dato || !String(x.titel || "").trim() || ["Idé", "Brief i gang"].indexOf(String(x.status || "")) < 0) return false;
+    let k = ""; try { const m = soejleModel(x.soejle || ""); k = m ? m.kode : ""; } catch (e) {}
+    return k === kode;
+  });   /* samme raekkefoelge som Idébanken (kundens egen orden) */
+}
+function pladsIdeArk(dato, kode) { PLADS_ARK = { dato: dato, kode: kode, i: 0, liste: pladsIdeer(kode) }; pladsIdeTegn(); }
+function pladsDagOrd(dato) { try { const d = new Date(dato + "T12:00:00"); return ["søndag", "mandag", "tirsdag", "onsdag", "torsdag", "fredag", "lørdag"][d.getDay()]; } catch (e) { return "dagen"; } }
+function pladsIdeTegn() {
+  const P = PLADS_ARK; if (!P) return;
+  let m = document.getElementById("bsFlytMenu"); if (!m) { m = document.createElement("div"); m.id = "bsFlytMenu"; document.body.appendChild(m); }
+  const sNavn = P.kode + " · " + naesteSoejleRent(P.kode), dag = pladsDagOrd(P.dato);
+  const it = P.liste[P.i];
+  const prikker = P.liste.length > 1 ? '<div class="plads-prikker">' + P.liste.slice(0, 8).map(function (x, j) { return '<span class="' + (j === P.i % 8 ? 'on' : '') + '"></span>'; }).join("") + '</div>' : '';
+  m.innerHTML = '<div class="bs-flyt-ark plads-ark"><button type="button" class="plads-luk" aria-label="Luk" onclick="bsFlytLuk()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>'
+    + '<div class="plads-eti">' + esc(sNavn) + '</div><div class="plads-streg"></div>'
+    + (it
+      ? '<div class="plads-titel">' + esc(storStart(titelVis(it.titel))) + '</div>'
+        + '<button type="button" class="bsam-mobknap bs-knap plads-ja" onclick="pladsIdeLaeg()">Læg på ' + esc(dag) + '</button>'
+        + (P.liste.length > 1 ? '<button type="button" class="bsam-mobknap bsam-mobknap-sek bs-knap plads-nej" onclick="PLADS_ARK.i=(PLADS_ARK.i+1)%PLADS_ARK.liste.length;pladsIdeTegn()">Næste idé</button>' : '')
+        + prikker
+      : '<div class="plads-tom">Der ligger ingen idéer til søjlen endnu.</div>'
+        + '<button type="button" class="bsam-mobknap bs-knap plads-ja" onclick="bsFlytLuk();kalOpret(\'' + esc(P.dato) + '\')">Opret opslag på ' + esc(dag) + '</button>')
+    + '</div>';
+  m.style.display = "flex";
+  m.onclick = function (e) { if (e.target === m) bsFlytLuk(); };
+}
+async function pladsIdeLaeg() {
+  const P = PLADS_ARK; if (!P) return; const it = P.liste[P.i]; if (!it) return;
+  const k = document.querySelector(".plads-ja"); if (k) { k.disabled = true; k.textContent = "Gemmer …"; }
+  const ok = await ideUpdate(it.id, { dato: P.dato });
+  if (ok === false) { if (k) { k.disabled = false; k.textContent = "Læg på " + pladsDagOrd(P.dato); } try { husBesked("Det blev ikke gemt. Prøv igen."); } catch (e) {} return; }
+  bsFlytLuk(); PLADS_ARK = null;
+  try { renderCalendar(); } catch (e) {} try { renderIdeas(); } catch (e) {}
+  try { husKvit("Lagt på " + pladsDagOrd(P.dato) + "."); } catch (e) {}
+}
+
 /* SAMMENLIGNING AF SØJLER — appens ene regel for "er de her to den samme søjle?".
    Navne kan staves forskelligt ("Målgruppens behov eller udfordring" vs. "…udfordring
    eller behov"), og enhver ren tekstsammenligning knækker paa næste stavemaade. Kender
@@ -63220,7 +63278,7 @@ function energidaUgeGrid(mandag, o) {
        foerst, naar kunden trykker (intet forvalg, 31/8). */
     const pladsKode = (!evs && !planDag) ? (PLADSER[dateStr] || "") : "";
     const pladsHtml = pladsKode
-      ? '<button type="button" class="uge-plads" title="G\u00e5 til Id\u00e9banken" onclick="event.stopPropagation();showTab(2)">'
+      ? '<button type="button" class="uge-plads" title="V\u00e6lg en id\u00e9" onclick="event.stopPropagation();pladsIdeArk(\'' + dateStr + '\',\'' + pladsKode + '\')">'
         + '<span class="pl-lab">Anbefalet</span>'
         + '<span class="pl-soejle">' + esc(pladsKode + " \u00b7 " + naesteSoejleRent(pladsKode)) + '</span>'
       + '</button>'
@@ -78371,6 +78429,21 @@ async function kkLoginNoter(kode, email, navn) {
   } catch(e) {}
   if (navn && navn !== email) { try { await kkPersonInfoGem(navn, "email", email); } catch(e) {} }
 }
+const KK_PERSON_RAEKKER = ["person_info", "app_brug", "app_puls"];   /* profil + brugstal — alt andet er kundens indhold og slettes aldrig herfra */
+async function kkPersonSlet(kode, navn) {
+  const K = String(kode || "").toUpperCase(); if (!sb || !K || !navn) return;
+  const { data, error } = await sb.from("skema_svar").select("id,skema").eq("kode", K).eq("navn", navn);
+  if (error) { husBesked("Kunne ikke læse personen. Prøv igen."); return; }
+  const rk = data || [];
+  if (rk.some(function (r) { return KK_PERSON_RAEKKER.indexOf(r.skema) < 0; })) { husBesked(navn + " har indhold i appen og kan ikke slettes her."); return; }
+  arkSpoerg({ titel: "Slet " + esc(navn) + "?", tekst: "Profilen og tallene for, hvornår " + esc(navn) + " brugte appen, slettes. Idéer og briefs røres ikke.", jaTekst: "Slet", nejTekst: "Annuller", ja: async function () {
+    const ids = rk.map(function (r) { return r.id; });
+    const d = await sb.from("skema_svar").delete().eq("kode", K).eq("navn", navn).in("id", ids).select("id");
+    if (d.error || !d.data || d.data.length !== ids.length) { husBesked("Det blev ikke slettet helt. Prøv igen."); try { kkPersonerHent(K); } catch (e) {} return; }
+    try { husKvit(navn + " er slettet."); } catch (e) {}
+    try { await kkPersonerHent(K); } catch (e) {}
+  } });
+}
 async function kkPersonerHent(kode) {
   const el = document.getElementById("kkPersonerListe"); if (!el || !sb || !kode) return;
   try {
@@ -78450,6 +78523,9 @@ async function kkPersonerHent(kode) {
         + '<button type="button" class="row-btn" style="font-weight:400;" onclick="kkVelkomstMailPerson(\'' + esc(n).replace(/'/g, "\\'") + '\', ' + ni + ')" title="Åbner en færdigskrevet velkomstmail i dit mailprogram — du trykker selv send">Send velkomstmail</button>'
         + '<button type="button" class="row-btn" style="font-weight:400;" onclick="kkSendNulstil(\'' + esc(n).replace(/'/g, "\\'") + '\', ' + ni + ')" title="Sender et nulstillings-link til personens egen indbakke — du ser aldrig adgangskoden">Send nulstillingslink</button>'
         + '<button type="button" class="row-btn" style="font-weight:400;" onclick="kkPersonGemRk(\'' + esc(n).replace(/'/g, "\\'") + '\', ' + ni + ')">Gem</button>'
+        /* SLET EN GAMMEL PERSON (Ida 23/10: »hvorfor er der 2 brugere der hedder Rene på hinges hus? vil du slette den profil som ikke har hans mailadresse«): kun personer UDEN login;
+           skraldespand + »Slet«, spørger først; sletter kun profil- og brugsrækker (kkPersonSlet) — idéer, briefs og svar røres aldrig */
+        + ((!pi.email && !KK_LOGIN_EMAIL[n] && !/@/.test(n)) ? '<button type="button" class="row-btn" style="font-weight:400;display:inline-flex;align-items:center;gap:6px;" onclick="kkPersonSlet(\'' + esc(kode).replace(/'/g, "") + '\',\'' + esc(n).replace(/'/g, "\\'") + '\')">' + ((typeof BS_SKRALD_SVG !== "undefined") ? BS_SKRALD_SVG : "") + 'Slet</button>' : '')
         + '</div>'
         + '</div>';
     }).join("");
