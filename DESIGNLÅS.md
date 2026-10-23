@@ -4,6 +4,14 @@
 - **DAGSORDENEN RETTES PÅ STEDET.** Et penneikon ved hvert punkt åbner punktet: navn, tekst, skraldespand (fjern) og Gem; »Tilføj punkt« lægger et nyt til. Standardpunkterne (performance · den kommende uge · dato for næste møde) står uændrede, til man retter dem. Gemmes i `plan_ritual.moede.dagsorden` (merges, andre nøgler urørte); et rettet punkt bliver statisk tekst, et urørt punkt bliver dynamisk (uge, tema, mål). Ingen Annuller i rettelsen.
 - **ALLE DATOSYMBOLER ER KVADRATER, 56 × 56 (HÅRD, Ida 9/10: »kvadratiske alle steder«):** Kommende opslag (`.kop-dato`), aftalernes dato (`.cf-dato`), Backstages `.bs3-tidb.d` og `.bs-datob`. Ingen dato-boks er højere end bred.
 
+## v2938 (23/10) — **Mails: send til kunder og leads (klar, ikke tændt) · Udvalgte kunder · log på kontaktkortet**
+- **Send mailen** (Idas klik »Sendes + står på kortet«, Artifact DkYKUUHJbze4fBodNK3FD7): rød knap på en egen mail; det lille ark viser først, hvor mange der får den, og hvem der springes over (afmeldt · lead uden ja · har fået den · mangler mail). Gamle kunder (kilden »Gamle kunder«) får den; leads kun med Ja ved »Må få mails«. Prøven til Ida er grå, når mailen har modtagere.
+- **Udvalgte** (Ida: »kunne det lade sig gøre med den funktion hvor jeg kunne klikke på udvalgte kunder?«): nyt valg under »Hvem skal have den?« → »Vælg kunder« åbner husets ark: søgefelt · chips (Kunder · Leads · Gamle kunder · tags · produkter) · »Vælg alle viste« · én flise pr. kontakt med husets cirkel · rød »Brug N kunder«. Gemmes på kladden (`egne[].udv`).
+- **Fornavnet**: {navn} i mailen = kontaktpersonens fornavn, ellers butikkens navn.
+- **Afmelding**: hver mail har »Vil du ikke have flere mails fra Energida? Afmeld her« nederst → b2b.energida.dk/afmeld.html (knappen afmelder, ikke selve åbningen).
+- **Kontaktkortet**: »Må få mails« Ja/Nej + »Sendte mails« + »Har afmeldt mails«.
+- **IKKE TÆNDT**: kræver SQL-kortet `sqlk_mails_23okt` (tabellerne mail_log + mail_afmeldt, kun admin) og Edge Functions `mail-udsend` + `mail-afmeld` (ikke udrullet). Indtil da sendes intet.
+
 ## v2936 (23/10) — **Fortsæt-flisen: lektion over navnet, modul under** (Ida: »kunne bedre lide at lektionen alligevel var delt op omkring overskriften. det her bliver for kluntet«) — vælter v2934's samlede linje. »Lektion 1.3« · navnet stort · »Modul 1 · Mennesket«.
 
 ## v2934 (23/10) — **Kundens Hjem = Fortsæt hvor du slap · huskelisten ude · kunden klikker selv af**
