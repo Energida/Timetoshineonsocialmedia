@@ -4,6 +4,10 @@
 - **DAGSORDENEN RETTES PÅ STEDET.** Et penneikon ved hvert punkt åbner punktet: navn, tekst, skraldespand (fjern) og Gem; »Tilføj punkt« lægger et nyt til. Standardpunkterne (performance · den kommende uge · dato for næste møde) står uændrede, til man retter dem. Gemmes i `plan_ritual.moede.dagsorden` (merges, andre nøgler urørte); et rettet punkt bliver statisk tekst, et urørt punkt bliver dynamisk (uge, tema, mål). Ingen Annuller i rettelsen.
 - **ALLE DATOSYMBOLER ER KVADRATER, 56 × 56 (HÅRD, Ida 9/10: »kvadratiske alle steder«):** Kommende opslag (`.kop-dato`), aftalernes dato (`.cf-dato`), Backstages `.bs3-tidb.d` og `.bs-datob`. Ingen dato-boks er højere end bred.
 
+## v2920 (23/10) — **Modulerne i nummerorden · ingen låste Drejebog/Guides-fliser for YOU GOT THIS**
+- Ida: »hvorfor står modul 10 over 1?« / »rækkefølgen sejler på modulrækken« — modulerne blev lagt i rækkefølge efter første lektions sorteringstal. Nu altid efter modulnummer (`kursusModulerSorter`), både i tidslinjen og alle andre lister.
+- Ida: »synes egentlig ikke den flise med drejebogen og guides og skabeloner har noget at gøre her på kundens dashboard?« — fjernet fra Lektionerne for kursuskunder (stod låst). Øvrige kunder beholder dørene.
+
 ## v2918 (23/10 nat) — **Rundvisningen ruller kun, når målet er uden for skærmen** (sikkerhedschefen løfte 15: Hjem stod rullet ned efter rundvisningen på computeren). Løfte 34 kender `mail-billeder` som dokumenteret undtagelse (hændelsesloggen 19/10).
 
 ## v2916 (22/10 nat) — **Sikkerhedschefens nattefund**
