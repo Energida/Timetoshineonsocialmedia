@@ -75625,6 +75625,7 @@ function arkAabn(o) {
   try { const at = document.getElementById("arkTekst"); if (at) at.addEventListener("keydown", function (e) { if (e.key !== "Enter" || e.shiftKey || e.isComposing) return; const ak = at.closest(".ark"); if (!ak || !ak.classList.contains("ark-en-linje")) return; e.preventDefault(); if (String(at.value || "").trim()) arkSend(); }); } catch (e) {}
   if (o.tekst) { try { const t = document.getElementById("arkTekst"); if (t) { t.value = String(o.tekst); if (vedh) arkVedhLinkFang(t, true); arkVoks(t); } } catch (e) {} }   /* forudfyldt (13/9); gemte billeder og links staar oeverst igen (4/10) */
   if (!o.typeFoerst) setTimeout(function () { const t = document.getElementById("arkTekst"); if (t) t.focus(); }, 140);
+  if (o.kladde) { try { arkKladdeGendan(); } catch (e) {} try { clearInterval(ARK_KLADDE_T); ARK_KLADDE_T = setInterval(arkKladdeGem, 2500); } catch (e) {} }   /* kladden overlever, at appen skifter i baggrunden (Ida 25/10) */
 }
 /* MULIGHEDERNE BOR BAG PLUSSET (Ida 14/9 kl. 09.28, med skaermbillede fra Beskeder og de tre hvide
    knapper i arket: »Hvis jeg klikker paa set noget fedt, kommer jeg ind paa en skaerm, der ikke er
@@ -75699,6 +75700,35 @@ function arkGrebTraek(slor) {
   kort.addEventListener("touchend", slut, { passive: true });
   kort.addEventListener("touchcancel", slut, { passive: true });
 }
+/* KLADDEN OVERLEVER ET SKIFT TIL EN ANDEN APP (Ida 25/10: sheetet var tomt, da hun kom tilbage fra Instagram; iOS kan dræbe en app i baggrunden, og så starter siden forfra uden hukommelse).
+   Det skrevne, de vedhæftede links og billeder, tags og mappen gemmes på telefonen hvert 2,5. sekund, når arket skjules, og når siden lukkes; gendannes i op til 2 timer; slettes, når der er gemt, eller når man selv lukker arket. */
+const ARK_KLADDE_TTL = 2 * 60 * 60 * 1000; let ARK_KLADDE_T = null;
+function arkKladdeGem() {
+  const o = ARK; if (!o || !o.kladde) return;
+  try {
+    const t = document.getElementById("arkTekst"), tf = document.getElementById("arkTitel");
+    const d = { t: (t && t.value) || "", ti: (tf && tf.value) || "", l: (ARK_VEDH.l || []).slice(), b: (ARK_VEDH.b || []).filter(function (x) { return x && x.url && x.sti && !x.op; }).map(function (x) { return { url: x.url, sti: x.sti }; }), tags: (KUNDE_ARK_TAGS || []).slice(), m: INSP_ARK_MAPPE || "", ts: Date.now() };
+    if (!d.t.trim() && !d.ti.trim() && !d.l.length && !d.b.length && !d.tags.length) { localStorage.removeItem(o.kladde); return; }
+    localStorage.setItem(o.kladde, JSON.stringify(d));
+  } catch (e) {}
+}
+function arkKladdeRyd(n) { try { if (n) localStorage.removeItem(n); } catch (e) {} }
+function arkKladdeGendan() {
+  const o = ARK; if (!o || !o.kladde || o.tekst) return;
+  try {
+    const d = JSON.parse(localStorage.getItem(o.kladde) || "null");
+    if (!d || !d.ts || Date.now() - d.ts > ARK_KLADDE_TTL) { arkKladdeRyd(o.kladde); return; }
+    const t = document.getElementById("arkTekst"), tf = document.getElementById("arkTitel");
+    if (t && d.t) { t.value = String(d.t); try { arkVoks(t); } catch (e) {} }
+    if (tf && d.ti) tf.value = String(d.ti);
+    ARK_VEDH.l = Array.isArray(d.l) ? d.l.map(String) : [];
+    ARK_VEDH.b = (Array.isArray(d.b) ? d.b : []).filter(function (x) { return x && x.url && x.sti; }).map(function (x) { return { url: String(x.url), sti: String(x.sti), vis: String(x.url), op: false, ny: false }; });
+    if (Array.isArray(d.tags) && d.tags.length) { KUNDE_ARK_TAGS = d.tags.map(String); try { inspArkTagsLabel(); } catch (e) {} }
+    if (d.m) { INSP_ARK_MAPPE = String(d.m); const el = document.getElementById("arkGemI"); if (el) el.outerHTML = inspArkMapperHtml(); }
+    try { arkVedhTegn(); } catch (e) {}
+  } catch (e) {}
+}
+try { document.addEventListener("visibilitychange", function () { if (document.hidden) arkKladdeGem(); }); window.addEventListener("pagehide", arkKladdeGem); } catch (e) {}
 function arkEsc(e) { if (e.key === "Escape") { if (document.getElementById("arkVaelger")) { inspArkVaelgerLuk(); return; } arkLuk(); } }
 /* DET LILLE ARK (.modal-lille) KAN OGSAA TRAEKKES NED (Ida 21/9 kl. 10.43): et traek paa mere end 110 px lukker det — samme vej som Annuller/Luk-knappen eller sloeret. */
 (function () {
@@ -75748,6 +75778,8 @@ function arkVaelg(b) {
 }
 function arkLuk(stille) {
   ARK_PLUS_AABEN = false;
+  try { clearInterval(ARK_KLADDE_T); } catch (e) {}
+  try { if (!stille && ARK && ARK.kladde) arkKladdeRyd(ARK.kladde); } catch (e) {}   /* Annullér, kryds og træk ned = bevidst luk: kladden slettes. Et skift til en anden app lukker ikke arket */
   try { if (TALE_REC) TALE_REC.stop(); } catch (e) {}
   document.removeEventListener("keydown", arkEsc);
   /* kalenderen/uret lukker med popuppen (Ida 24/9: »så står den og sejler på mit dashboard«) */
@@ -75776,6 +75808,7 @@ async function arkSend() {
   if (svar === false) { if (k) k.textContent = minBesked || "Kunne ikke gemme. Prøv igen."; return; }
   /* ARKET LUKKER VED GEM + LILLE KVITTERING (Idas klik 20/9, Hans-testen fund 15: »gik det? hvor er den nu?«) — een opfoersel for alle ark */
   const kvitTekst = typeof svar === "string" ? svar : (o.kvit || "Gemt.");
+  try { if (o.kladde) arkKladdeRyd(o.kladde); } catch (e) {}
   try { arkLuk(true); } catch (e) {}
   if (!o.udenKvit) { try { husKvit(kvitTekst); } catch (e) {} }   /* et trin i en raekke af ark kvitterer ikke hvert skridt (velkomsten 4/10) */
 }
@@ -76039,7 +76072,7 @@ function kundeArkAabn(valgt, paaFoto, tekst, kun) {
      som kortets egen: luk kortet, og appen staar der. */
   const kortKnap = (paaFoto && document.getElementById("dagensKort"))
     ? { tekst: "Content Studio", klik: "arkLuk(true);dagensKortLuk()" } : null;
-  arkAabn({ titel: titel, ph: fraBanken ? "Hvad er idéen?" : idePaa ? "Beskriv idéen" : valgt === "fedt" ? ARK_FEDT_PH : (valgt === "begivenhed" ? "Hvad sker der?" : valgt === "akt" ? "Hvad handler aftalen om?" : valgt === "todo" ? "Hvad skal gøres?" : "Hvad har du på hjertet?"), titelFelt: (idePaa && !fraBanken) ? "Giv din idé et navn" : "",   /* Ny idé fra Idébanken: ét felt, titlen laves af de første ord (Ida 9/10, version 1) */ titelKun: fraBanken ? "" : "ide", phAf: function (k) { return k === "ide" ? "Beskriv idéen" : k === "fedt" ? ARK_FEDT_PH : k === "todo" ? "Hvad skal gøres?" : k === "begivenhed" ? "Hvad sker der?" : k === "akt" ? "Hvad handler aftalen om?" : "Hvad har du på hjertet?"; }, ide: fraBanken, send: "Gem", chips: chips, valgt: valgt || "ide", paaFoto: !!paaFoto, tekst: tekst || "", knap: kortKnap, klasse: valgt === "fedt" ? "ark-fedt" : "", vrkTags: valgt === "fedt",
+  arkAabn({ titel: titel, ph: fraBanken ? "Hvad er idéen?" : idePaa ? "Beskriv idéen" : valgt === "fedt" ? ARK_FEDT_PH : (valgt === "begivenhed" ? "Hvad sker der?" : valgt === "akt" ? "Hvad handler aftalen om?" : valgt === "todo" ? "Hvad skal gøres?" : "Hvad har du på hjertet?"), titelFelt: (idePaa && !fraBanken) ? "Giv din idé et navn" : "",   /* Ny idé fra Idébanken: ét felt, titlen laves af de første ord (Ida 9/10, version 1) */ titelKun: fraBanken ? "" : "ide", phAf: function (k) { return k === "ide" ? "Beskriv idéen" : k === "fedt" ? ARK_FEDT_PH : k === "todo" ? "Hvad skal gøres?" : k === "begivenhed" ? "Hvad sker der?" : k === "akt" ? "Hvad handler aftalen om?" : "Hvad har du på hjertet?"; }, ide: fraBanken, send: "Gem", chips: chips, valgt: valgt || "ide", paaFoto: !!paaFoto, tekst: tekst || "", knap: kortKnap, klasse: valgt === "fedt" ? "ark-fedt" : "", vrkTags: valgt === "fedt", kladde: (valgt === "fedt" || idePaa) ? "ark_kladde_" + String(currentKode || "") + "_" + (valgt === "fedt" ? "fedt" : "ide") : "",
     underAf: function (k) { if (fraBanken) return ""; const c = chips.find(function (x) { return x.k === k; }); return c ? c.u : ""; },
     /* Plusset staar KUN paa den chip, der kan vedhaefte noget (Set noget fedt). */
     plusAf: function (k) { return ""; },   /* plus-cirklen er ude (Ida 25/10, bud 1): Link · Billede · Tags står som chips under feltet */   /* linket er ude af tekstfeltet (Ida 29/9) — »Tilføj link« staar under feltet */   /* link-tegnet paa idéen (Ida 22/9 kl. 08.19) */
