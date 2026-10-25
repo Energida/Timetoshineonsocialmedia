@@ -135,7 +135,7 @@ setTimeout(async function () {
         }
         /* elementFromPoint ser kun det, der er inde i vinduet: rul knappen ind i midten foerst */
         if (q.top < 30 || q.bottom > innerHeight - 30) { try { b.scrollIntoView({ block: "center", behavior: "instant" }); } catch (e) {} q = b.getBoundingClientRect(); }   /* instant (5/10): en blød rulning naaede ikke frem, foer der blev maalt */
-        /* SWIPE-RAEKKER (25/10): en chip i en rakke, der swiper sidelaens, kan staa uden for skaermen — rul den ind, foer trykfladen maales (kravet paa 44 px er uaendret) */
+        /* SWIPE-RAEKKER (25/10): en chip i en rakke, der swiper sidelaens, kan staa uden for skaermen, rul den ind, foer trykfladen maales (kravet paa 44 px er uaendret) */
         if (q.left < 0 || q.right > innerWidth) { try { b.scrollIntoView({ block: "nearest", inline: "center", behavior: "instant" }); } catch (e) {} q = b.getBoundingClientRect(); }
         var cx = q.left + q.width / 2, cy = q.top + q.height / 2;
         var op = document.elementFromPoint(cx, cy - 21), ned = document.elementFromPoint(cx, cy + 21);
