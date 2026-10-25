@@ -57485,10 +57485,24 @@ const TOEM_IK = { note: '<path d="M5 4h10l4 4v12H5z"/><path d="M8 12h8M8 16h5"/>
   todo: '<path d="M5 12.5l4.5 4.5L19 7"/>', fedt: '<path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/>', tema: '<circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/>',
   tilpas: '<circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/>', besked: '<path d="M4 5h16v11H8l-4 4z"/>' };
 let TOEM_VALG = "";
+/* SKRIV FØRST, SÅ GÆTTER APPEN (Ida 25/10: »ja kør«): indsætter man et link (med højst et par ord ved siden af), står valget på »Jeg har set noget fedt« af sig selv; ellers er det, som det var. Rører man selv ved valget, gætter appen aldrig mere. Gem åbner så det rigtige ark med teksten. */
+let TOEM_RORT = false, TOEM_AUTO = false;
+function toemGaet() {
+  if (TOEM_RORT) return;
+  const t = String(((document.getElementById("toemTekst") || {}).value) || "");
+  const harLink = /https?:\/\/\S+|www\.\S+/i.test(t); const rest = t.replace(/https?:\/\/\S+|www\.\S+/gi, "").trim();
+  const erLink = harLink && rest.length <= 80;   /* en lang note med en adresse i er stadig en note */
+  if (erLink && (TOEM_VALG === "" || TOEM_VALG === "note")) { TOEM_VALG = "fedt"; TOEM_AUTO = true; toemKnapTegn(); }
+  else if (!erLink && TOEM_AUTO) { TOEM_VALG = ""; TOEM_AUTO = false; toemKnapTegn(); }
+}
+/* SENEST BRUGTE VALG STÅR FØRST I DE LANGE LISTER (Ida 25/10): plusmenuen, computerens liste og Backstages »Gem i«. De tre fliser på swipe op står fast (rækkefølgen er låst). Huskes pr. kode på telefonen. */
+function toemSidste() { try { const r = JSON.parse(localStorage.getItem("toem_sidste_" + String(currentKode || "")) || "[]"); return Array.isArray(r) ? r.map(String) : []; } catch (e) { return []; } }
+function toemSidsteHusk(k) { if (!k || k === "tilpas") return; try { const r = [String(k)].concat(toemSidste().filter(function (x) { return x !== String(k); })).slice(0, 3); localStorage.setItem("toem_sidste_" + String(currentKode || ""), JSON.stringify(r)); } catch (e) {} }
+function toemSidsteForst(liste) { const s0 = toemSidste(); if (!s0.length || !Array.isArray(liste)) return liste; const forst = s0.map(function (k) { return liste.filter(function (c) { return String(c.k) === k; })[0]; }).filter(Boolean); return forst.concat(liste.filter(function (c) { return forst.indexOf(c) < 0; })); }
 function toemValgFlise(c, on) { return '<button type="button" class="valg-flise' + (on ? ' on' : '') + '" onclick="event.stopPropagation();toemValg(\'' + c.k + '\')"><span class="valg-ik"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' + (TOEM_IK[c.k] || TOEM_IK.note) + '</svg></span><span class="valg-ord">' + esc(c.n) + '</span></button>'; }
 function toemKnapTegn() { const b = document.getElementById("toemValgKnap"); if (!b) return; const c = kundeArkChips().find(function (x) { return x.k === TOEM_VALG; }); b.classList.toggle("tom", !c); b.innerHTML = '<span>' + esc(c ? c.n : "Vælg")   /* Ida 4/10: »her skal der bare stå vælg« */ + '</span>' + FV_PIL; }
 function toemValgAabn() {
-  const chips = kundeArkChips();
+  const chips = toemSidsteForst(kundeArkChips());
   if (window.matchMedia && window.matchMedia("(max-width: 760px)").matches) {
     try { if (document.activeElement && document.activeElement.blur) document.activeElement.blur(); } catch (e) {}
     let l = document.getElementById("toemFuld"); if (l) l.remove();
@@ -57502,6 +57516,7 @@ function toemValgAabn() {
   w.innerHTML = chips.map(function (c) { return toemValgFlise(c, c.k === TOEM_VALG); }).join(""); w.style.display = "";
 }
 function toemValg(k) {
+  TOEM_RORT = true; TOEM_AUTO = false; toemSidsteHusk(k);
   try { const l = document.getElementById("toemFuld"); if (l) l.remove(); } catch (e) {}
   try { const w = document.getElementById("toemValgListe"); if (w) w.style.display = "none"; } catch (e) {}
   const tekst = String(((document.getElementById("toemTekst") || {}).value) || "").trim();
@@ -57528,9 +57543,9 @@ function toemFotoAabn(variant) {
      Plusset i bundmenuen viser alle valgene (Tilføj aftale, begivenhed, opgave m.fl.). */
   const swipe = variant === "swipe"; const bs = variant === "bs";   /* bs = Backstage (Ida 9/10: »tilpasse admin det nye design for tøm hovedet som i b2b«): Idas egne valg som fliser */
   const tit = (swipe || bs) ? "Tøm hovedet" : "Hvad skal der ske, makker?";
-  let chips = bs ? BF3_HJEM_VALG.filter(function (c) { return c.k !== "aftale"; }) : kundeArkChips();
+  let chips = bs ? toemSidsteForst(BF3_HJEM_VALG.filter(function (c) { return c.k !== "aftale"; })) : kundeArkChips();
   if (swipe) { const orden = ["ide", "fedt", "note"]; chips = orden.map(function (k) { return chips.filter(function (c) { return c.k === k; })[0]; }).filter(Boolean); }
-  else if (!bs) { const ix = chips.map(function (c) { return c.k; }).indexOf("akt"); const pm = [{ k: "pmuge", n: "Ugentligt planlægningsmøde" }, { k: "pmmd", n: "Månedligt planlægningsmøde" }]; chips = ix > -1 ? chips.slice(0, ix + 1).concat(pm, chips.slice(ix + 1)) : chips.concat(pm); }   /* plusset i bundmenuen kan tilføje ugentligt og månedligt planlægningsmøde (Ida 9/10) */
+  else if (!bs) { chips = toemSidsteForst(chips); const ix = chips.map(function (c) { return c.k; }).indexOf("akt"); const pm = [{ k: "pmuge", n: "Ugentligt planlægningsmøde" }, { k: "pmmd", n: "Månedligt planlægningsmøde" }]; chips = ix > -1 ? chips.slice(0, ix + 1).concat(pm, chips.slice(ix + 1)) : chips.concat(pm); }   /* plusset i bundmenuen kan tilføje ugentligt og månedligt planlægningsmøde (Ida 9/10) */
   try { if (document.activeElement && document.activeElement.blur) document.activeElement.blur(); } catch (e) {}
   let l = document.getElementById("toemFoto"); if (l) l.remove();
   l = document.createElement("div"); l.id = "toemFoto"; l.className = "toem-foto toem-fuld"; l.setAttribute("role", "dialog"); l.setAttribute("aria-label", tit);
@@ -57564,7 +57579,7 @@ function bf3ToemFotoValg(k) {
 }
 function toemFotoLuk() { try { const l = document.getElementById("toemFoto"); if (l) l.remove(); } catch (e) {} }
 function toemFotoValg(k) {
-  toemFotoLuk();
+  toemFotoLuk(); toemSidsteHusk(k);
   if (k === "note") { toemHovedetTrin1(); TOEM_VALG = "note"; try { toemKnapTegn(); } catch (e) {} setTimeout(function () { const t = document.getElementById("toemTekst"); if (t) t.focus(); }, 160); return; }
   try { bsFlytLuk(); } catch (e) {}
   if (k === "pmuge") { planMoedeTidArk(); return; }
@@ -57574,9 +57589,9 @@ function toemFotoValg(k) {
 }
 function toemHovedetTrin1() {
   let m = document.getElementById("bsFlytMenu"); if (!m) { m = document.createElement("div"); m.id = "bsFlytMenu"; document.body.appendChild(m); }
-  TOEM_VALG = "";
+  TOEM_VALG = ""; TOEM_RORT = false; TOEM_AUTO = false;
   m.innerHTML = '<div class="bs-flyt-ark toem-trin1 toem-ny"><div class="ark-t" style="text-align:center;margin:0 0 14px;">Tøm hovedet</div>'
-    + '<textarea id="toemTekst" class="toem-felt" rows="3" placeholder="Hvad har du på hjertet?"></textarea>'
+    + '<textarea id="toemTekst" class="toem-felt" rows="3" placeholder="Hvad har du på hjertet?" oninput="toemGaet()"></textarea>'
     + '<button type="button" id="toemValgKnap" class="fv-knap tom" onclick="event.stopPropagation();toemValgAabn()"></button>'
     + '<div id="toemValgListe" class="toem-liste valg-fliser" style="display:none;"></div>'
     + '<button type="button" id="toemGemKnap" class="ark-knap ark-knap-roed" onclick="toemGem()">Gem</button>'
@@ -84321,7 +84336,7 @@ function bf3DropSkift(id) {
 function bf3DropVaelg(id, k) {
   const w = document.getElementById(id); if (!w) return; const l = w.querySelector(".bs3-liste"); const b = w.querySelector(".bs3-drop");
   const knap = Array.prototype.find.call(l.querySelectorAll("button"), function (x) { return x.getAttribute("onclick").indexOf("'" + k.replace(/'/g, "\\'") + "'") > -1; });
-  BF3_DROP_VALG[id] = k; b.classList.remove("tom"); b.querySelector("span").textContent = knap ? (knap.dataset.vis || knap.textContent) : k; l.style.display = "none"; l.classList.remove("bs3-fuld");
+  BF3_DROP_VALG[id] = k; if (id === "bf3ArkDrop" && !/^rum:/.test(String(k))) { try { toemSidsteHusk(k); } catch (e) {} } b.classList.remove("tom"); b.querySelector("span").textContent = knap ? (knap.dataset.vis || knap.textContent) : k; l.style.display = "none"; l.classList.remove("bs3-fuld");
   l.querySelectorAll("button").forEach(function (x) { x.classList.toggle("on", x === knap); });
   try { if (window.ARK && id === "bf3ArkDrop") { ARK.valgt = k; } } catch (e) {}
   try { if (typeof window["bf3Drop_" + id] === "function") window["bf3Drop_" + id](k); } catch (e) {}
@@ -84346,7 +84361,7 @@ function bf3ToemArk(tekst, valgt) {
   try { BF3_DROP_VALG.nyIdeKunde = ""; } catch (e) {}
   arkAabn({ titel: valgt === "manus" ? "Hvad skal tilføjes til manus?" : "Tøm hovedet", ph: valgt === "lead" ? "Navn på den kommende kunde" : "Hvad har du på hjertet?", send: "Gem", tekst: tekst || "", chips: [], valgt: valgt || "", paaFoto: paaFoto,
     knap: null,
-    ekstraAf: function () { return bf3DropHtml("bf3ArkDrop", "Hvor hører det hjemme?", BF3_HJEM_VALG.filter(function (c) { return c.k !== "aftale"; }).concat(bf3RumValg()), valgt || "") + bf3KursusRkHtml(valgt) + bf3KundeRkHtml(valgt) + bf3LeadRkHtml(valgt) + '<div id="bf3TodoRk" style="margin-top:8px;' + (valgt === "todo" ? '' : 'display:none;') + '">' + husDatoTidHtml("bf3TodoDato", "", bf3Idag(), "", true) + '</div>'; },   /* to-do faar samme dag som fra plusset (26/9) */
+    ekstraAf: function () { return bf3DropHtml("bf3ArkDrop", "Hvor hører det hjemme?", toemSidsteForst(BF3_HJEM_VALG.filter(function (c) { return c.k !== "aftale"; })).concat(bf3RumValg()), valgt || "") + bf3KursusRkHtml(valgt) + bf3KundeRkHtml(valgt) + bf3LeadRkHtml(valgt) + '<div id="bf3TodoRk" style="margin-top:8px;' + (valgt === "todo" ? '' : 'display:none;') + '">' + husDatoTidHtml("bf3TodoDato", "", bf3Idag(), "", true) + '</div>'; },   /* to-do faar samme dag som fra plusset (26/9) */
     gem: async function (t) { const k = BF3_DROP_VALG.bf3ArkDrop || "note";
       if (k === "todo") { const tt = String(t || "").trim(); if (!tt) return false; const dato = (document.getElementById("bf3TodoDato") || {}).value || null;
         HAENG.unshift({ id: "h" + Date.now(), t: tt, dato: dato, tid: null, varighed: null, sfaere: "energida" });

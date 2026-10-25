@@ -1,4 +1,9 @@
 
+## NÆSTE VERSION (bygget 25. oktober på grenen claude/gem-ark-bud1, IKKE udrullet: kræver Idas klik, versionsløft og koer.sh) · Tøm hovedet: skriv først, så gætter appen · senest brugte valg først
+
+- **SKRIV FØRST, SÅ GÆTTER APPEN (Ida 25/10: »ja kør«):** i Tøm hovedet med tekstfeltet og »Vælg« (computeren og »Jeg skal bare have skrevet det ned« på telefonen) står valget på **Jeg har set noget fedt** af sig selv, når der står et link i feltet med højst 80 tegn tekst ved siden af (`toemGaet`). Er teksten en lang note med en adresse i, forbliver det en note. Fjernes linket igen, vender valget tilbage til »Vælg«. **Rører man selv ved valget, gætter appen aldrig mere** (`TOEM_RORT`). Gem åbner det rigtige ark med teksten, og linket lægges ved. De tre fliser på swipe op er uændrede (rækkefølgen er låst).
+- **SENEST BRUGTE VALG STÅR FØRST I DE LANGE LISTER (Ida 25/10):** plusmenuen »Hvad skal der ske, makker?«, computerens liste under »Vælg« og Backstages »Gem i« (de tre seneste, `toem_sidste_<kode>` på telefonen). De tre fliser på swipe op står fast.
+
 ## v2945 · 25. oktober · Bud 1 i »Jeg har set noget fedt« + chips på én linje (Ida 25/10: »Send det live som jeg har set og godkendt på bud 1«)
 
 - **BUD 1 (HÅRD, Ida 25/10 efter klikbar prototype, artifact 3SwBDaQcytnkk47RUiyL2r):** arket »Jeg har set noget fedt« er ét felt, chips **Link · Billede · Tags** under feltet, rækken **Gem i** og den røde Gem. Plus-cirklen og de tre lange knapper (Tag et billede · Fra kamerarullen · Vedhæft et skærmbillede) er væk. **Billede og skærmbillede er ét valg:** Billede åbner telefonens egen vælger. Et link med et billede gør billedet til linkets forside; billeder uden link bliver egne kort, og en skrevet note følger det første. Vælter v2870/v2868-undtagelsen om eget plus på »Jeg har set noget fedt« (29/9).
