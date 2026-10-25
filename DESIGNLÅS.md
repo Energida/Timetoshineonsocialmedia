@@ -1,3 +1,7 @@
+## NÆSTE VERSION (kun på grenen) · Procesbaren i briefen = bud 3 (Ida 25/10: »PISSE FEDT! Kan du implementere bud 3?«)
+
+Start er en prik for sig med en stiplet bro hen til tre streger (Fang dem, Fasthold, Handle), og en lille raket sidder midt over det aktive trin (grå på Start). VÆLTER låsen »procesbar bud 2« (rød bjælke, 10/10). Artifact: ESBjrbreoynHCjdLiG54Wk. Målt på 390 og 1440, koer.sh exit 0. Ikke deployet, venter på Idas »send live«.
+
 ## v2947 · 25. oktober · Tøm hovedet uden dropdown (Ida 25/10: »byg det og send det live«)
 
 Dropdownen »Hvor skal det hen?« med fuld hvid side er væk. I stedet én swipe-række chips under feltet: Link, Content-idé, Aftale, Begivenhed, Opgave, Noget fedt, Idé til tema, Tilpas (senest brugte først). Gem-knappen gemmer i Indbakken, medmindre et link gætter »Noget fedt« (knappen siger så Videre). Idas ord overtrumfer låsen om klik før deploy.
