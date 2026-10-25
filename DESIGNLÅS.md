@@ -1,3 +1,7 @@
+## v2947 · 25. oktober · Tøm hovedet uden dropdown (Ida 25/10: »byg det og send det live«)
+
+Dropdownen »Hvor skal det hen?« med fuld hvid side er væk. I stedet én swipe-række chips under feltet: Link, Content-idé, Aftale, Begivenhed, Opgave, Noget fedt, Idé til tema, Tilpas (senest brugte først). Gem-knappen gemmer i Indbakken, medmindre et link gætter »Noget fedt« (knappen siger så Videre). Idas ord overtrumfer låsen om klik før deploy.
+
 ## v2946 · ens popups
 
 Ida 25/10 (»enig!«): Tøm hovedet mister den røde top (lås 24/9 ophævet) og er nu hvid med rød titel som Jeg har set noget fedt. Alle popups har ét udseende.
