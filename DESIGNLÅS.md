@@ -1,8 +1,8 @@
-## ENS POPUPS (25. oktober, kun på grenen)
+## v2946 · ens popups
 
 Ida 25/10 (»enig!«): Tøm hovedet mister den røde top (lås 24/9 ophævet) og er nu hvid med rød titel som Jeg har set noget fedt. Alle popups har ét udseende.
 
-## PAKKE 1-4 (25. oktober, kun på grenen, ikke live)
+## v2946 · 25. oktober · Pakke 1-4 og ens popups (live efter Idas »ja send live«)
 
 Gem-knappen i Tøm hovedet siger hvor det går hen (Gem i Indbakken / Videre). Link-chip der indsætter fra udklipsholderen i Tøm hovedet og i Jeg har set noget fedt. Kvittering: "Tanke i banken. Gemt i <mappe>." med Fortryd og Flyt. Intet er deployet; venter på Idas klik.
 
