@@ -49709,6 +49709,12 @@ async function inspSkaermTilfoej(id, inp) {
   } catch (e) { try { visSyncFejl("Kunne ikke gemme skærmbilledet på kortet."); } catch (e2) {} return; }
   x.sti = sti; x.skaerm = ""; renderInspiration();
 }
+/* FLYT FRA KVITTERINGEN (Ida 25/10): åbner »Flyt til mappe« for det lige gemte kort */
+async function inspFlytKvit(id) {
+  try { if (!INSPIRATION.some(function (y) { return String(y.id) === String(id); })) await refreshInspiration(); } catch (e) {}
+  try { await inspMapperSikr(); } catch (e) {}
+  inspFlytArk(id);
+}
 async function inspFortrydGem(ids, stier) {
   try { if (stier && stier.length) await sb.storage.from("inspiration").remove(stier); await sb.from("inspiration").delete().in("id", ids); } catch (e) { try { husKvit("Kunne ikke fortryde. Slet kortet på Inspiration."); } catch (e2) {} return; }
   try { INSPIRATION = INSPIRATION.filter(function (y) { return ids.map(String).indexOf(String(y.id)) < 0; }); renderInspiration(); } catch (e) {}
@@ -57500,7 +57506,14 @@ function toemSidste() { try { const r = JSON.parse(localStorage.getItem("toem_si
 function toemSidsteHusk(k) { if (!k || k === "tilpas") return; try { const r = [String(k)].concat(toemSidste().filter(function (x) { return x !== String(k); })).slice(0, 3); localStorage.setItem("toem_sidste_" + String(currentKode || ""), JSON.stringify(r)); } catch (e) {} }
 function toemSidsteForst(liste) { const s0 = toemSidste(); if (!s0.length || !Array.isArray(liste)) return liste; const forst = s0.map(function (k) { return liste.filter(function (c) { return String(c.k) === k; })[0]; }).filter(Boolean); return forst.concat(liste.filter(function (c) { return forst.indexOf(c) < 0; })); }
 function toemValgFlise(c, on) { return '<button type="button" class="valg-flise' + (on ? ' on' : '') + '" onclick="event.stopPropagation();toemValg(\'' + c.k + '\')"><span class="valg-ik"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' + (TOEM_IK[c.k] || TOEM_IK.note) + '</svg></span><span class="valg-ord">' + esc(c.n) + '</span></button>'; }
-function toemKnapTegn() { const b = document.getElementById("toemValgKnap"); if (!b) return; const c = kundeArkChips().find(function (x) { return x.k === TOEM_VALG; }); b.classList.toggle("tom", !c); b.innerHTML = '<span>' + esc(c ? c.n : "Vælg")   /* Ida 4/10: »her skal der bare stå vælg« */ + '</span>' + FV_PIL; }
+function toemIndsaet() {
+  const f = document.getElementById("toemTekst"); if (!f) return;
+  const saet = function (u) { f.value = (f.value.trim() ? f.value.trim() + " " : "") + u; f.dispatchEvent(new Event("input", { bubbles: true })); try { f.focus(); } catch (e) {} };
+  try { if (navigator.clipboard && navigator.clipboard.readText) { navigator.clipboard.readText().then(function (t) { const m = String(t || "").match(/https?:\/\/[^\s]+|www\.[^\s]+/i); if (m) saet(m[0]); else { try { f.focus(); } catch (e) {} } }).catch(function () { try { f.focus(); } catch (e) {} }); return; } } catch (e) {}
+  try { f.focus(); } catch (e) {}
+}
+function toemKnapTegn() { try { const g = document.getElementById("toemGemKnap"); if (g && !g.disabled) g.textContent = (TOEM_VALG === "" || TOEM_VALG === "note") ? "Gem i Indbakken" : "Videre"; } catch (e) {}   /* knappen siger, hvad den gør (Ida 25/10) */
+  const b = document.getElementById("toemValgKnap"); if (!b) return; const c = kundeArkChips().find(function (x) { return x.k === TOEM_VALG; }); b.classList.toggle("tom", !c); b.innerHTML = '<span>' + esc(c ? c.n : "Vælg")   /* Ida 4/10: »her skal der bare stå vælg« */ + '</span>' + FV_PIL; }
 function toemValgAabn() {
   const chips = toemSidsteForst(kundeArkChips());
   if (window.matchMedia && window.matchMedia("(max-width: 760px)").matches) {
@@ -57533,7 +57546,7 @@ async function toemGem() {
   const b = document.getElementById("toemGemKnap"); if (b) { b.disabled = true; b.textContent = "Gemmer …"; }
   const svar = await kundeArkGem(tekst, "note");
   if (svar) { try { bsFlytLuk(); } catch (e) {} try { husKvit(svar); } catch (e) {} }
-  else { if (b) { b.disabled = false; b.textContent = "Gem"; } try { husBesked("Kunne ikke gemme. Prøv igen."); } catch (e) {} }
+  else { if (b) { b.disabled = false; try { toemKnapTegn(); } catch (e) {} } try { husBesked("Kunne ikke gemme. Prøv igen."); } catch (e) {} }
 }
 /* TØM HOVEDET PÅ TELEFONEN = FLISERNE PÅ MARKEN, ET TRYK VÆLGER (Ida 9/10: »hvorfor er tøm hovedet på b2b stadig denne og ikke de fliser på mark baggrunden hvor man klikker direkte«).
    Før: felt + dropdown »Vælg« (4/10). Nu åbner plusset på telefonen markbilledet med valgene som hvide fliser; ét tryk vælger. »Jeg skal bare have skrevet det ned« åbner feltet
@@ -57592,6 +57605,7 @@ function toemHovedetTrin1() {
   TOEM_VALG = ""; TOEM_RORT = false; TOEM_AUTO = false;
   m.innerHTML = '<div class="bs-flyt-ark toem-trin1 toem-ny"><div class="ark-t" style="text-align:center;margin:0 0 14px;">Tøm hovedet</div>'
     + '<textarea id="toemTekst" class="toem-felt" rows="3" placeholder="Hvad har du på hjertet?" oninput="toemGaet()"></textarea>'
+    + '<div class="ark-vrk toem-vrk">' + arkVrkChip("link", "Link", "toemIndsaet()") + '</div>'
     + '<button type="button" id="toemValgKnap" class="fv-knap tom" onclick="event.stopPropagation();toemValgAabn()"></button>'
     + '<div id="toemValgListe" class="toem-liste valg-fliser" style="display:none;"></div>'
     + '<button type="button" id="toemGemKnap" class="ark-knap ark-knap-roed" onclick="toemGem()">Gem</button>'
@@ -75450,7 +75464,18 @@ function arkVrkHtml() {
   return '<div class="ark-vrk" id="arkVrk">' + lChip + bChip + '</div>';   /* Link · Billede i alle ark (Ida 25/10) */
 }
 function arkVrkBillede() { const f = document.getElementById("arkVedhFil"); if (f) f.click(); }
-function arkVrkLink() {
+/* LINK = ÉT TRYK (Ida 25/10, brainstormholdet): i »Jeg har set noget fedt« prøver Link-chippen først udklipsholderen (et tryk; iPhone viser selv en lille Indsæt-boks). Findes der et link, lægges det ved. Ellers åbner feltet som før. */
+function arkVrkLink() { if (ARK && ARK.vrkTags && !document.getElementById("arkVedhValg")) { arkVrkIndsaet(); return; } arkVrkLinkFelt(); }
+async function arkVrkIndsaet() {
+  let u = "";
+  try { if (navigator.clipboard && navigator.clipboard.readText) { const t = String((await navigator.clipboard.readText()) || ""); const m = t.match(/https?:\/\/[^\s]+|www\.[^\s]+/i); if (m) u = m[0]; } } catch (e) {}
+  if (!u) { arkVrkLinkFelt(); return; }
+  if (!/^https?:\/\//i.test(u)) u = "https://" + u.replace(/^\/+/, "");
+  if (vedhErBillede(u)) { if (!ARK_VEDH.b.some(function (x) { return x.url === u; })) ARK_VEDH.b.push({ url: u }); }
+  else if (ARK_VEDH.l.indexOf(u) < 0) ARK_VEDH.l.push(u);
+  arkVedhTegn();
+}
+function arkVrkLinkFelt() {
   const v0 = document.getElementById("arkVedhValg"); if (v0) { v0.remove(); return; }
   const rk = document.getElementById("arkVrk"); if (!rk) return;
   const v = document.createElement("div"); v.id = "arkVedhValg"; v.className = "ark-vedh-valg"; rk.insertAdjacentElement("afterend", v);
@@ -75896,8 +75921,8 @@ function husKvit(tekst, fortryd) {
   k.innerHTML = energidaFlueben(14) + '<span>' + esc(tekst) + '</span>';
   /* FORTRYD I KVITTERINGEN (Ida/natten 7/10, revision fund 13: »Jeg satte flueben, og så var den væk. Gik det?«): samme pille, ét ord mere i roedt, staar 4 sek. */
   k.classList.toggle("med-fortryd", !!fortryd);
-  if (fortryd) { const b = document.createElement("button"); b.type = "button"; b.className = "hus-kvit-fortryd"; b.textContent = (typeof handlingTekst === "string" && handlingTekst) ? handlingTekst : "Fortryd"; b.onclick = function () { k.classList.remove("on", "med-fortryd"); try { fortryd(); } catch (e) {} }; k.appendChild(b); }
-  k.classList.add("on"); clearTimeout(k.__t); k.__t = setTimeout(function () { k.classList.remove("on", "med-fortryd"); }, fortryd ? 4000 : 2200);
+  if (fortryd) { const b = document.createElement("button"); b.type = "button"; b.className = "hus-kvit-fortryd"; b.textContent = (typeof handlingTekst === "string" && handlingTekst) ? handlingTekst : "Fortryd"; b.onclick = function () { k.classList.remove("on", "med-fortryd"); try { fortryd(); } catch (e) {} }; k.appendChild(b); const ekstra = handling && handling.ekstra; if (ekstra && ekstra.klik) { const b2 = document.createElement("button"); b2.type = "button"; b2.className = "hus-kvit-fortryd"; b2.textContent = ekstra.tekst || "Flyt"; b2.onclick = function () { k.classList.remove("on", "med-fortryd"); try { ekstra.klik(); } catch (e) {} }; k.appendChild(b2); } }   /* en anden knap i kvitteringen: Flyt (Ida 25/10) */
+  k.classList.add("on"); clearTimeout(k.__t); k.__t = setTimeout(function () { k.classList.remove("on", "med-fortryd"); }, fortryd ? 5000 : 2200);
 }
 /* IDAS EGNE CITATER (citatbanken 31/8, »Kernen · 17 sætninger« — ordret). SOME_QUOTES er andres ord og staar ALDRIG under hilsenen. */
 const IDA_CITATER = ["Strategier skaber ikke resultater. Mennesker gør.","Du kan ikke følge strategien, hvis du ikke har energien.","Det handler ikke om, at du skal gøre mere. Det handler om, at du skal gøre det rigtige.","Sociale medier er ikke målet. Det er redskabet.","Du kan hvad du vil. Hvis du har energien til det.","Mennesket er motoren. Strategien er retningen. Systemet holder kursen.","En strategi virker kun, hvis den passer til det menneske, der skal følge den.","En strategi, der aldrig virker, er en strategi, der ikke er din egen.","Jeg hjælper dig ikke bare med at lave en strategi. Jeg hjælper dig med at have energien til at følge den.","Du udfylder ikke et kursus. Du bygger din forretning.","Forretningen er hovedpersonen. Sociale medier er håndtaget.","Det er ikke et social media-kursus. Det er et system til bedre drift.","Den bedste strategi er den, du faktisk får eksekveret.","Barrieren er ikke viden. Det er eksekvering.","Bevidsthed kommer før forandring.","Din strategi er bygget ind. Ikke bare skrevet ned."];
@@ -76326,7 +76351,7 @@ async function kundeArkGem(tekst, k) {
   const egenTitelNu = (function () { try { const tf = document.getElementById("arkTitel"); return ((tf && tf.value) || "").trim(); } catch (e) { return ""; } })();
   if (!t && !(k === "ide" && egenTitelNu)) return false;
   /* ingen soejle kraeves (19/9): idéen lander under »Uden plads« og placeres, naar soejlen kalder */
-  if (k === "note") { let ok = false; try { ok = await kundeNoteGem(t); } catch (e) { ok = false; } if (ok) { try { renderIndbakkeKort(); } catch (e) {} } return ok ? "Skrevet ned." : false; }
+  if (k === "note") { let ok = false; try { ok = await kundeNoteGem(t); } catch (e) { ok = false; } if (ok) { try { renderIndbakkeKort(); } catch (e) {} } return ok ? "Tanke i banken. Står i Indbakken." : false; }
   if (k === "todo") {   /* TO-DO FRA PLUSSET (Ida 21/9 kl. 21.38) — samme raekke som Tilfoej to-do gav */
     const dato = (document.getElementById("hjTfDato") || {}).value || "";
     if (!sb || !currentKode) return false;
@@ -76390,7 +76415,7 @@ async function kundeArkGem(tekst, k) {
     const faerdig = function (tekst0) {
       /* FORTRYD (ekspertholdet 25/10): kvitteringen står 4 sek. med Fortryd, sletter det lige gemte */
       try { inspMappeHusk(INSP_ARK_MAPPE); } catch (e) {}
-      if (nyeIds.length && sb) { const ids = nyeIds.slice(), stier = nyeStier.slice(); window.__KVIT_HANDLING = { tekst: "Fortryd", klik: function () { inspFortrydGem(ids, stier); } }; }
+      if (nyeIds.length && sb) { const ids = nyeIds.slice(), stier = nyeStier.slice(); window.__KVIT_HANDLING = { tekst: "Fortryd", klik: function () { inspFortrydGem(ids, stier); }, ekstra: { tekst: "Flyt", klik: function () { inspFlytKvit(ids[0]); } } }; }
       return tekst0;
     };
     /* FLERE LINKS PAA EEN GANG (Ida 10/10): et link pr. linje → et kort hver; et link, der allerede staar paa siden, oprettes ikke igen */
@@ -76430,7 +76455,7 @@ async function kundeArkGem(tekst, k) {
         inspNoterAf(ri.data); ri.data.forEach(function (x) { nyeIds.push(x.id); });
         rader.forEach(function (r) { if (r.sti) nyeStier.push(r.sti); });
         inspSkaermNulstil(); try { refreshInspiration(); } catch (e) {}
-        return faerdig(mNavn ? "Gemt i " + mNavn + "." : "Gemt på Inspiration.");
+        return faerdig("Tanke i banken. " + (mNavn ? "Gemt i " + mNavn + "." : "Gemt på Inspiration."));   /* Energibankens sprog (Ida 25/10); stedet siges stadig */
       } catch (e) { return false; }
     }
     rec.id = "i" + Date.now(); rec.created_at = new Date().toISOString(); INSPIRATION.unshift(rec); inspLocalSave(); try { renderInspiration(); } catch (e) {} return "Gemt på Inspiration.";

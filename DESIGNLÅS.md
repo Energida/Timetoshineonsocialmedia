@@ -1,3 +1,7 @@
+## PAKKE 1-4 (25. oktober, kun på grenen, ikke live)
+
+Gem-knappen i Tøm hovedet siger hvor det går hen (Gem i Indbakken / Videre). Link-chip der indsætter fra udklipsholderen i Tøm hovedet og i Jeg har set noget fedt. Kvittering: "Tanke i banken. Gemt i <mappe>." med Fortryd og Flyt. Intet er deployet; venter på Idas klik.
+
 
 ## NÆSTE VERSION (bygget 25. oktober på grenen claude/gem-ark-bud1, IKKE udrullet: kræver Idas klik, versionsløft og koer.sh) · Tøm hovedet: skriv først, så gætter appen · senest brugte valg først
 
