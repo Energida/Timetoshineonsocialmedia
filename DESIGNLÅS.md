@@ -1,4 +1,8 @@
 
+## v2958 · 26. oktober · Tilføj aftale: ingen grå bakke, jævn luft
+
+- **TILFØJ AFTALE (Ida 26/10: »layoutet her ved plus på forsiden er også off«).** Mødeform-chipsene (»Fysisk møde« · »Onlinemøde«) lå i en rullebakke, der klippede skyggen til en grå firkant og gav et hul over dem. Nu ombrydes de frit uden bakke, og der er jævn luft mellem tid, mødeform og Gem. Begge flader.
+
 ## v2956 · 26. oktober · Navnet i bunden af menuen igen · luft under klippets chips
 
 - **NAVNEKNAPPEN STÅR I BUNDEN (Ida 26/10: »hvorfor er profilnavnet nu flyttet op i menuen? det skal bevares i bunden«).** Rækken med navn + insekt (`.sn-virk-rk`, v2950) mistede `margin-top:auto`; nu står den i bunden af sidemenuen igen. Målt i testkopien på 1440.
