@@ -1,4 +1,9 @@
 
+## v2968 · 26. oktober · Leads uden mail · ingen grå kasse bag chipsene i Nyt lead
+
+- **NYT LEAD KAN GEMMES UDEN MAIL (Ida 26/10: »Kan du gøre sådan at jeg også kan gemme leads uden mail«).** Navnet (person) eller butikken kræves stadig. Står der en mail, skal den være rigtig. Tom mail gemmes som tom (contacts.email = null); udsendelser springer kontakter uden mail over, som før.
+- **Ingen grå kasse bag chipsene i Nyt lead** (Butik/Person og Tags; Idas skærmbillede): en regel satte overflow:auto, og chippens skygge blev skåret til en grå flade. Nu overflow:visible og ombrydning.
+
 ## v2966 · 26. oktober · Rene fejl fra Hans/Mette-testen af ny-kunde-rejsen
 
 - **Profilens chips ombrydes på begge flader** (»Tøj og mode« og »Andet« var klippet af; telefonen rullede vandret i en grå bakke). Et ark ombryder altid sine chips (v2147).
