@@ -1,6 +1,8 @@
-## v2950 · 26. oktober · Procesbaren rettet (Ida 26/10: »processbaren skal implementeres ordentligt«)
+## v2950 · 26. oktober · Procesbaren rettet + ingen knapper på linjen (Ida 26/10: »processbaren skal implementeres ordentligt«, »send live 1 og 2«)
 
 Start-prikken og navnet »Start« stod 16 px for lavt i forhold til de tre streger og deres navne (en gammel margen på knappen). Nu står prik, bro, streger og alle fire navne på samme linjer på 390 og 1440. Parentesen fik lidt luft over sig, så den ikke klistrer til titlen på computeren.
+
+**Ingen knapper på linjen (Ida 26/10: »øjet her på linjen er også forældet design - ingen knapper må ligge på linjen«):** på telefonen står alle coverknapper (øjet i briefen, klokken, ⋯) i coverets øverste højre hjørne, gennemsigtige med hvid ring, i højde med Tilbage. `KNAP_BUD = 7` (var 1 »på buen«, låst 24/9; væltet). Computeren er uændret.
 
 ## v2949 · 26. oktober · Procesbaren: parentes over de tre trin, hvid raket i stregen (Ida 26/10: »vi går med denne«, »send live«)
 
