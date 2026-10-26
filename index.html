@@ -31042,6 +31042,8 @@ let CURRENT_DEF = null, CURRENT_NAVN = "", MAAL_UGE = null;
 /* RING-STANDARDEN (Ida 21/7 — manualen er opdateret): alle proces-ringe er ens.
    116 px · spor i skifer 55 % · fremdrift ALTID rød m. rund ende · streg 7 ·
    tal i Poppins 300 · lille grå undertekst. Byg ALDRIG en ny ring — brug denne. */
+/* FREMGANG I PROCENT (Ida 26/10: »kan man sætte procent i stedet for antal lektioner? er bange for at de bliver helt demotiveret«) — er noget set, står der mindst 1 % */
+function fremPct(a, b) { if (!b) return "0 %"; const p = Math.round(a / b * 100); return (a > 0 && p < 1 ? 1 : p) + " %"; }
 function energidaRing(tal, undertekst, pct, stoerrelse) {
   const str = stoerrelse || 116, m = str / 2, r = m - 9 * (str / 116), c = 2 * Math.PI * r, sk = str / 116;
   const del = Math.max(0, Math.min(1, pct));
@@ -40900,7 +40902,7 @@ function lekSideHtml(aktivId, aktive, setAntal) {
   const ring = '<svg class="lks-ring" viewBox="0 0 64 64" width="64" height="64" aria-hidden="true"><circle cx="32" cy="32" r="' + r + '" fill="none" stroke="#E3E2DE" stroke-width="6"/>'
     + (pct > 0 ? '<circle cx="32" cy="32" r="' + r + '" fill="none" stroke="#FC2404" stroke-width="6" stroke-linecap="round" stroke-dasharray="' + (omk * pct).toFixed(1) + ' ' + omk.toFixed(1) + '" transform="rotate(-90 32 32)"/>' : '') + '</svg>';
   return '<div class="lks">'
-    + '<div class="lks-fl lks-top"><div class="lks-eti">Dit forløb</div><div class="lks-streg"></div><div class="lks-ringrk">' + ring + '<div><div class="lks-tal">' + setAntal + ' <span>af ' + aktive.length + '</span></div><div class="lks-u">Lektioner gennemført</div></div></div></div>'
+    + '<div class="lks-fl lks-top"><div class="lks-eti">Dit forløb</div><div class="lks-streg"></div><div class="lks-ringrk">' + ring + '<div><div class="lks-tal">' + fremPct(setAntal, aktive.length) + '</div><div class="lks-u">Lektioner set</div></div></div></div>'
     + kursusModulerAktive().map(function (m) { return lksModul(m, aktivId); }).join("")
     + '</div>';
 }
@@ -41674,7 +41676,7 @@ function renderKursusHjem() {
     if (sk) { sk.style.display = "none"; sk.onclick = null; }
   } else if (setAntal > 0) {
     if (st) st.textContent = 'Fortsæt med: ' + (naeste ? 'Lektion ' + lekVisNr(naeste.id) + ' · ' + lekVisTitel(naeste) : '')   /* lektionens nummer først (Ida 23/10) */;
-    if (ss) ss.textContent = "Du er " + setAntal + " af " + AKTIVE.length + " lektioner inde — bliv ved, det bygger din strategi.";
+    if (ss) ss.textContent = "Du er " + fremPct(setAntal, AKTIVE.length) + " inde i forløbet — bliv ved, det bygger din strategi.";
     if (sk) sk.textContent = "Fortsæt forløbet";
   } else {
     /* IKKE BEGYNDT ENDNU. Teksten skrives EKSPLICIT — den blev foer arvet fra HTML'ens
@@ -41723,8 +41725,8 @@ function forloebBentoTegn(AKTIVE, setAntal, medOvelse, ovelserDone) {
   ];
   /* EN RING UDEN NOGET AT TAELLE VISES IKKE (Hans-testen 20/9: »0 af 0« paa Forloebet, foer lektionerne er klippet). */
   const ringe = [
-    { navn: "Lektioner", tal: String(setAntal), sub: "af " + AKTIVE.length, pct: AKTIVE.length ? setAntal / AKTIVE.length : 0, ialt: AKTIVE.length },
-    { navn: "Opgaver", tal: String(ovelserDone), sub: "af " + medOvelse.length, pct: medOvelse.length ? ovelserDone / medOvelse.length : 0, ialt: medOvelse.length }
+    { navn: "Lektioner set", tal: fremPct(setAntal, AKTIVE.length), sub: "", pct: AKTIVE.length ? setAntal / AKTIVE.length : 0, ialt: AKTIVE.length },
+    { navn: "Opgaver", tal: fremPct(ovelserDone, medOvelse.length), sub: "", pct: medOvelse.length ? ovelserDone / medOvelse.length : 0, ialt: medOvelse.length }
   ].filter(function (r) { return r.ialt > 0; });
   host.innerHTML = dashBentoHtml({ naeste: naeste, fliser: fliser, ringe: ringe, underNaeste: udsatFliserHtml() });
   try { const tl = document.getElementById("forloebTidslinje"); if (tl) tl.innerHTML = forloebTidslinjeHtml(); } catch (e) {}
@@ -50948,12 +50950,12 @@ function huRinge(tlf) {
   };
   if (huYgtFoer8()) {
     /* YOU GOT THIS FOER MODUL 8 (forslag 1/10, venter paa Idas klik): fremgang i det, kunden FAKTISK kan nu — lektionerne og oevelserne i de aabne moduler */
-    let aab = []; try { aab = kursusLektionerAabne(); } catch (e) {}
+    let aab = []; try { aab = kursusLektionerAktive(); } catch (e) {}   /* HELE FORLØBET (Idas klik 26/10 »Hele forløbet«; Hans-testen: Hjem viste »1 af 1« med fuld ring) — samme tal som lektionssiden og Lektionerne */
     const set = aab.filter(function (l) { return KURSUS_SET[l.id]; }).length;
     const ov = aab.filter(function (l) { return l.ovelse && l.ovelse.length; }), ovS = ov.filter(function (l) { return oevKlaret(l.id); }).length;
     /* INGEN RING UDEN NOGET AT TÆLLE (regel v2146; Idas skærmbillede 22/10: »0 af 0 Lektioner set« og intet andet): er ingen lektion klar, siger Hjem det samme som Lektionerne */
     if (!aab.length) return ring("", "", 0, "", "Forløbet er på vej");
-    return ring(String(set), "af " + aab.length, aab.length ? set / aab.length : 0, "Lektioner set")   /* stort begyndelsesbogstav (Ida/natten 7/10, fund 92) */
+    return ring(String(set), "af " + aab.length, aab.length ? set / aab.length : 0, "Lektioner set")   /* HJEM VISER ANTAL (Idas klik 26/10 »Kun Hjem«) — Lektionerne og lektionssiden viser procent */   /* stort begyndelsesbogstav (Ida/natten 7/10, fund 92) */
       + (ov.length ? ring(String(ovS), "af " + ov.length, ovS / ov.length, "Opgaver") : "");
   }
   let maal = 3; try { maal = Number(maalUge() || 3); } catch (e) {}
@@ -61475,7 +61477,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2970";
+const APP_VERSION = "2972";
 const APP_BYGGET = "25. oktober";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_BYGGET + " · " + APP_VERSION; } catch (e) {} });
 let NY_VERSION_KLAR = false;

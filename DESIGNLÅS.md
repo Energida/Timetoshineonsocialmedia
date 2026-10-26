@@ -1,4 +1,11 @@
 
+## v2972 · 26. oktober · Fremgangen tæller hele forløbet · procent på Lektionerne og lektionssiden
+
+- **HELE FORLØBET (Idas klik 26/10 »Hele forløbet«; Hans-testen: tre forskellige tal).** Hjem, Lektionerne og lektionssiden tæller af alle lektioner i forløbet. Hjem talte før kun de åbne (»1 af 1« med fuld ring).
+- **PROCENT PÅ LEKTIONERNE OG LEKTIONSSIDEN, ANTAL PÅ HJEM (Ida 26/10: »kan man sætte procent i stedet for antal lektioner? er bange for at de bliver helt demotiveret« → »i den der cirkel skal det være antal« → klik »Kun Hjem«).** Lektionerne og »Dit forløb« på lektionssiden: »4 %«. Hjem: »2 af 48«. Er noget set, står der mindst 1 %. `fremPct`.
+- **Ét ord: »Lektioner set«** alle tre steder (før også »Lektioner gennemført« og »Lektioner«).
+- Lektionernes sætning: »Du er 4 % inde i forløbet — bliv ved, det bygger din strategi.«
+
 ## v2970 · 26. oktober · Rundvisningen på telefonen: rød Næste + grå Spring over
 
 - **RØD »NÆSTE« I RUNDVISNINGEN PÅ TELEFONEN (Idas klik 26/10 »Bud A« på det byggede, Artifact Rr4b1a3kg69oskE1XKanE1; Hans-testen: »Der står kun Spring over. Så trykker jeg på den.«).** Vælter 15/9 »kun swipe + Spring over«. Kortet har en rød Næste i fuld bredde og under den »Spring over« som grå tekst (44 px trykfelt). Swipe virker stadig; sidste trin har »Færdig«. Computeren er uændret.
