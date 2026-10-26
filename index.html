@@ -9127,6 +9127,7 @@ body.dash-mode #dashMain .ws-card:has(> .follow-item) .bs-sendfelt, body.dash-mo
 .udv-valgt { font-size:13px; color:var(--gray2); margin:10px 0 8px; }
 /* KLIK SELV AF (23/10): tom cirkel → fuld rød med hvidt flueben; aldrig halv */
 .lgjort { display:flex; align-items:center; gap:12px; width:100%; background:none; border:0; padding:4px 0; font:inherit; text-align:left; cursor:pointer; min-height:44px; }
+.lgjort:disabled { cursor:default; color:inherit; opacity:1; }   /* besvaret = gjort af sig selv (26/10) */
 .lgjort-c { width:26px; height:26px; border-radius:50%; border:1.5px solid var(--border); flex-shrink:0; display:flex; align-items:center; justify-content:center; box-sizing:border-box; }
 .lgjort-c.ok { background:var(--red); border-color:var(--red); }
 .lgjort-t { font-size:15px; color:var(--black); }
@@ -39440,17 +39441,19 @@ const OEV_OPGAVE = { "2-2": 1, "2-5": 1, "5-2": 1, "5-3": 1, "6-1": 1, "6-2": 1,
 function oevKlaret(id) { try { return !!(KURSUS_SVAR[id] || KURSUS_GJORT[id]); } catch (e) { return false; } }
 function lekGjortHtml(id) {
   if (!KURSUS_SET[id]) return '';   /* OPGAVEN KOMMER FØRST FREM, NÅR VIDEOEN ER SET (Ida 26/10: »reflektionsøvelsen skal først komme frem når man har set hele videoen«) */
-  const g = !!KURSUS_GJORT[id], idS = esc(String(id)).replace(/'/g, "");
+  const svaret = !!KURSUS_SVAR[id], g = !!KURSUS_GJORT[id] || svaret, idS = esc(String(id)).replace(/'/g, "");   /* BESVARET = GJORT (Idas klik 26/10 »Viser flueben af sig selv«; Mette: »Det har jeg jo lige svaret på.«) — så kan den ikke trykkes af igen */
   const fb = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>';
   return '<div class="lk-flise lgjort-fl"><div class="lk-note-top"><span class="lk-note-etiket">' + esc(storStart(oevOrd(id, true))) + ' til lektion ' + esc(lekVisNr(id)) + '</span></div>'
-    + '<button type="button" class="lgjort mq-tap" aria-pressed="' + (g ? 'true' : 'false') + '" onclick="lekGjortSkift(\'' + idS + '\')"><span class="lgjort-c' + (g ? ' ok' : '') + '">' + (g ? fb : '') + '</span><span class="lgjort-t">' + (g ? esc(storStart(oevOrd(id, true))) + ' er gjort' : 'Tryk, når ' + esc(oevOrd(id, true)) + ' er gjort') + '</span></button></div>';
+    + '<button type="button" class="lgjort mq-tap" aria-pressed="' + (g ? 'true' : 'false') + '" ' + (svaret ? 'disabled' : 'onclick="lekGjortSkift(\'' + idS + '\')"') + '><span class="lgjort-c' + (g ? ' ok' : '') + '">' + (g ? fb : '') + '</span><span class="lgjort-t">' + (g ? esc(storStart(oevOrd(id, true))) + ' er gjort' : 'Tryk, når ' + esc(oevOrd(id, true)) + ' er gjort') + '</span></button></div>';
 }
+/* SIDEN BLIVER, HVOR DEN ER (Hans/Mette 26/10: trykket fik siden til at hoppe til toppen) */
+function lekTegnUdenHop(id) { try { if (LEK_AABEN !== id) return; const lv = document.getElementById("lekVis"); const y = lv ? lv.scrollTop : 0, wy = window.scrollY; renderLektionVis(); if (lv) lv.scrollTop = y; window.scrollTo(0, wy); } catch (e) {} }
 async function lekGjortSkift(id) {
   const foer = !!KURSUS_GJORT[id], ny = !foer;
-  KURSUS_GJORT[id] = ny; try { if (LEK_AABEN === id) renderLektionVis(); } catch (e) {}
+  KURSUS_GJORT[id] = ny; lekTegnUdenHop(id);
   let ok = false;
   try { if (sb && currentKode) { const r = await sb.from("skema_svar").insert({ kode: currentKode, navn: CURRENT_NAVN || "", skema: "lektion_gjort_" + id, svar: { gjort: ny } }).select("id"); ok = !r.error && !!(r.data && r.data.length); } } catch (e) { ok = false; }
-  if (!ok) { KURSUS_GJORT[id] = foer; try { if (LEK_AABEN === id) renderLektionVis(); } catch (e) {} try { husBesked("Det blev ikke gemt. Prøv igen."); } catch (e) {} return; }
+  if (!ok) { KURSUS_GJORT[id] = foer; lekTegnUdenHop(id); try { husBesked("Det blev ikke gemt. Prøv igen."); } catch (e) {} return; }
   try { renderKursusHjem(); } catch (e) {}
   if (ny) { try { husKvit(storStart(oevOrd(id, true)) + " er gjort."); } catch (e) {} }
 }
@@ -61477,7 +61480,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2972";
+const APP_VERSION = "2974";
 const APP_BYGGET = "25. oktober";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_BYGGET + " · " + APP_VERSION; } catch (e) {} });
 let NY_VERSION_KLAR = false;

@@ -1,4 +1,9 @@
 
+## v2974 · 26. oktober · Besvaret øvelse = gjort af sig selv
+
+- **FLISEN PÅ LEKTIONEN VISER FLUEBEN, NÅR KUNDEN HAR SVARET (Idas klik 26/10 »Viser flueben af sig selv«; Mette: »Det har jeg jo lige svaret på.«).** »Tryk, når refleksionsøvelsen er gjort« bliver til rødt flueben + »Refleksionsøvelsen er gjort« og kan ikke trykkes af igen. En opgave uden svar trykkes stadig af som før.
+- **Siden hopper ikke til toppen** efter tryk på flisen (`lekTegnUdenHop`).
+
 ## v2972 · 26. oktober · Fremgangen tæller hele forløbet · procent på Lektionerne og lektionssiden
 
 - **HELE FORLØBET (Idas klik 26/10 »Hele forløbet«; Hans-testen: tre forskellige tal).** Hjem, Lektionerne og lektionssiden tæller af alle lektioner i forløbet. Hjem talte før kun de åbne (»1 af 1« med fuld ring).
