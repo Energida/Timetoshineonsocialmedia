@@ -1,9 +1,20 @@
-## v2950 · 26. oktober · Procesbaren rettet + ingen knapper på linjen (Ida 26/10: »processbaren skal implementeres ordentligt«, »send live 1 og 2«)
+## v2951 · 26. oktober · Procesbaren rettet + ingen knapper på linjen (Ida 26/10: »processbaren skal implementeres ordentligt«, »send live 1 og 2«)
 
 Start-prikken og navnet »Start« stod 16 px for lavt i forhold til de tre streger og deres navne (en gammel margen på knappen). Nu står prik, bro, streger og alle fire navne på samme linjer på 390 og 1440. Parentesen fik lidt luft over sig, så den ikke klistrer til titlen på computeren.
 
 **Ingen knapper på linjen (Ida 26/10: »øjet her på linjen er også forældet design - ingen knapper må ligge på linjen«):** på telefonen står alle coverknapper (øjet i briefen, klokken, ⋯) i coverets øverste højre hjørne, gennemsigtige med hvid ring, i højde med Tilbage. `KNAP_BUD = 7` (var 1 »på buen«, låst 24/9; væltet). Computeren er uændret.
 
+
+
+## v2950 · 26. oktober · Idas test som ny kunde: menuen lukker lektionen · insektet i menuen · én rundvisning
+
+- **MENUEN VIRKER FRA EN LEKTION (Ida 26/10: »når jeg klikker på hjem sker der ingenting. hele menuen virker ikke«).** `showTab` lukker lektionen (`lukLektion`), før siden skiftes — samme greb som planlægningsdagen. Målt i testkopien på 1440: Hjem → lektionen lukker, Hjem står fremme. Telefonen har ingen menu under en lektion (Tilbage-knappen står).
+- **INSEKTET I MENUEN PÅ COMPUTEREN (Ida 26/10: »bug i venstre hjørne flyttes ind i menuen«).** Ved navneknappen nederst i sidemenuen (`.sn-virk-rk` · `.sn-fejl`, grå streg, 44 px), som i Claude. Coverets insekt er skjult på computeren; telefonen beholder det ved klokken.
+- **ÉN RUNDVISNING (Ida 26/10: »Rundvisningen af lektionssiden skal komme sammen med første rundvisning«).** Den første rundvisning for en YOU GOT THIS-kunde åbner selv den første lektion og viser lektionssidens trin (noter · alle noter · kun du og Ida) før det sidste. Begge markeres som set; ingen ny popup, når kunden selv åbner en lektion (»Pop up kommer når jeg lige har klikket gå igang – det virker underligt«). Eksisterende kunder, der har set den første, får lektionsturen som før.
+- **KRYDSET STÅR OVER STREGEN (Ida 26/10: »Pop-up kryds sidder på linjen«).** Rundvisningskortets etiket har 14/20 px luft, så stregen ligger under krydset.
+- **»VIDERE TIL NÆSTE« (Idas ord 26/10).** Lektionens røde knap før videoen er set hedder »Videre til næste« (var »Jeg har set videoen«); samme handling.
+- **OPGAVEN KOMMER FØRST, NÅR VIDEOEN ER SET (Ida 26/10).** Flisen »Refleksionsøvelsen til lektion …« (`lekGjortHtml`) vises først, når lektionen er set.
+- **SKYGGERNE I VENSTRE SIDE KLIPPES IKKE (Ida 26/10).** Lektionslistens rulleboks på computeren har 20 px luft rundt om fliserne (padding + negativ margin), så skyggen står helt.
 ## v2949 · 26. oktober · Procesbaren: parentes over de tre trin, hvid raket i stregen (Ida 26/10: »vi går med denne«, »send live«)
 
 Ordet SUCCESRAKETTEN står i en parentes over Fang dem, Fasthold og Handle (Start står udenfor, for den er ikke en del af raketten). Stregerne er 12 px, og raketten er HVID med rødt øje og tynd rød kant i den røde streg (grå på Start). Start er en udfyldt rød prik med blød ring, mens man står på Start. Udkast: Artifact AEoamUSfpdoFBW2c624ks4 (bud »Parentes over, raket i stregen«). Målt på 390 og 1440.
