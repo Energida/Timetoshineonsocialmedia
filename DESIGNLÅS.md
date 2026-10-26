@@ -1,4 +1,10 @@
 
+## v2964 · 26. oktober · Spørgeskemaet står i lektionssiden · startdatoen på kundekortet
+
+- **STARTDATOEN PÅ KUNDEKORTET (Ida 26/10: »hvor justerer jeg tiden på det?« → klik »Ja, felt på kundekortet«; klik på det byggede »Ja, læg den ud«).** YOU GOT THIS-kunder har under »Forløbet« en flise: etiket »Startdato« · dato (»Man. 12. oktober«) · »Modul N åbner om X dage« eller »Alle moduler er åbne« · grå »Flyt startdatoen« i fuld bredde, der åbner husets datoark. Gemmer i skema_svar (config/ygt_start; alle rækker opdateres, ellers én ny), kvittering »Startdatoen er flyttet.« kun når basen har svaret. Rytmen (YGT_DAG) er urørt. `ksForloebStart/Tegn/Saet`.
+
+- **SPØRGESKEMAET ER EN FLISE DÉR, HVOR VIDEOEN STÅR (Ida 26/10: »designet på find dit udgangspunkt skal ikke være som pop up men som education on air - en flise hvor videoen idag er«; klik på det byggede »Ja, læg det ud«).** Tryk på »Spørgeskema · Find dit udgangspunkt« i modulets fliser: heroen hedder »Find dit udgangspunkt«, skemaet står i en hvid flise i lektionens plads, flisen i listen er den røde. Ingen popup og intet kryds — stien og (telefon) »Tilbage« under flisen er vejen ud. Efter Send går kunden videre til den første lektion, der ikke er set. En låst lektion lader skemaet stå. Fra Hjem og andre steder åbner skemaet stadig som popup. Samme wizard og kladde: `lekSkemaVis`/`lekSkemaTegn`/`lekSkemaUd`/`lekSkemaVidere`, `openSkema(key, iFlise)`.
+
 ## v2962 · 26. oktober · Spørgeskemaet er en flise i Modul 0
 
 - **SPØRGESKEMAET SOM LEKTION I MODUL 0 (Idas klik 26/10 »Som lektion i Modul 0«; Ida: »kan simpelthen ikke finde ud af hvordan jeg kommer til spørgeskemaet«).** Lige under »Velkommen« i modulets fliser står »Spørgeskema · Find dit udgangspunkt« med tom cirkel, til skemaet er sendt, så rødt flueben. Tryk åbner skemaet (`openSkema("inden_start")`). Modul 0 tæller først som færdigt, når skemaet er sendt. Computer: i venstre kolonne; telefon: modulets liste under videoen (vises nu også i Modul 0). `lksSkemaHer`/`lksSkemaHtml`.
