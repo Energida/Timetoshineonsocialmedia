@@ -1,4 +1,9 @@
 
+## v2956 · 26. oktober · Navnet i bunden af menuen igen · luft under klippets chips
+
+- **NAVNEKNAPPEN STÅR I BUNDEN (Ida 26/10: »hvorfor er profilnavnet nu flyttet op i menuen? det skal bevares i bunden«).** Rækken med navn + insekt (`.sn-virk-rk`, v2950) mistede `margin-top:auto`; nu står den i bunden af sidemenuen igen. Målt i testkopien på 1440.
+- **CHIPSENE UNDER KLIPPET HAR LUFT (Ida 26/10: »chips er for tætte i layoutet«).** »Tilføj noget man ser« / »Tilføj noget jeg siger« står 14 px under feltet med 12 px mellem sig. Procesbaren i rød flise er IKKE med (venter på Idas valg blandt fem bud).
+
 ## v2954 · 26. oktober · Færdig lægger aldrig et møde ind · dagens ramme er hel · tallene pr. opslag
 
 - **FÆRDIG AFSLUTTER KUN MØDET (Ida 26/10: »det er vild frustrerende at den selv bare lægger møder ind jeg aldrig selv har lagt ind!« → klik »Ja, sådan«).** Planlægningsmødets trin 6 (»Hvornår planlægger du uge …?«) lagde det næste møde i kalenderen, når man trykkede »Færdig« (sådan kom Acorns' møder 19/10, 20/10 og 22/10 kl. 08.53). Nu: »Færdig« afslutter kun mødet; knappen »Læg i kalenderen« (`prBookLaeg`) er den eneste vej til et nyt møde og kvitterer »Står i kalenderen.«. Færdig-kortet nævner kun næste planlægning, når den er lagt ind. Møder kun manuelt (19/10) gælder nu hele vejen.
