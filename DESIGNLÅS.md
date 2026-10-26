@@ -1,3 +1,7 @@
+## v2949 · 26. oktober · Procesbaren: parentes over de tre trin, hvid raket i stregen (Ida 26/10: »vi går med denne«, »send live«)
+
+Ordet SUCCESRAKETTEN står i en parentes over Fang dem, Fasthold og Handle (Start står udenfor, for den er ikke en del af raketten). Stregerne er 12 px, og raketten er HVID med rødt øje og tynd rød kant i den røde streg (grå på Start). Start er en udfyldt rød prik med blød ring, mens man står på Start. Udkast: Artifact AEoamUSfpdoFBW2c624ks4 (bud »Parentes over, raket i stregen«). Målt på 390 og 1440.
+
 ## v2948 · 25. oktober · Procesbaren i briefen = bud 3 (Ida 25/10: »PISSE FEDT! Kan du implementere bud 3?«)
 
 Start er en prik for sig med en stiplet bro hen til tre streger (Fang dem, Fasthold, Handle), og en lille raket sidder midt over det aktive trin (grå på Start). VÆLTER låsen »procesbar bud 2« (rød bjælke, 10/10). Artifact: ESBjrbreoynHCjdLiG54Wk. Målt på 390 og 1440, koer.sh exit 0. Deployet efter Idas »ja send live«.
