@@ -1,4 +1,9 @@
 
+## v2960 · 26. oktober · Titler går aldrig under krydset · krydset på kortet efter videoen
+
+- **TITLEN I ET ARK GÅR ALDRIG IND UNDER KRYDSET (Ida 26/10: »alt er off i denne pop-up« — »Modul 1 åbner, når du har fundet dit udgangspunkt« løb ind under krydset og blev skåret).** Alle arks titel har 52 px luft i begge sider (telefon 44 px og 21 px skrift), linjerne balanceres.
+- **KRYDSET PÅ KORTET EFTER VIDEOEN (Ida 26/10: »der mangler også kryds i hjørnet her« — vælter 14/9 »intet kryds« på lektionskortet).** Husets runde kryds øverst til højre på »Lektion 1.1 er set / Nu refleksionsøvelsen« og »Godt gået«, begge flader; feedbacken gemmes som før, når kortet lukkes.
+
 ## v2958 · 26. oktober · Tilføj aftale: ingen grå bakke, jævn luft
 
 - **TILFØJ AFTALE (Ida 26/10: »layoutet her ved plus på forsiden er også off«).** Mødeform-chipsene (»Fysisk møde« · »Onlinemøde«) lå i en rullebakke, der klippede skyggen til en grå firkant og gav et hul over dem. Nu ombrydes de frit uden bakke, og der er jævn luft mellem tid, mødeform og Gem. Begge flader.
