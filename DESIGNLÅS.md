@@ -1,3 +1,7 @@
+
+## v2952 · 26. oktober · Lektionssidens venstre side = bud 1 + den røde lektionsflise
+
+- **BUD 1 + B (Idas klik 26/10: »Lad os kun arbejde videre med bud 1. Men jeg mangler opdeling her af lektionerne« → »B · Den røde flise«; ja til det byggede, Artifact KLBmF2P9LFDSZF2LZRz6kK).** Computer: »Dit forløb« med ringen (fuld ring, rød bue på grå) og »2 af 6 · Lektioner gennemført« · hvert modul sin egen flise · kun modulet, du er i, står åbent på sandfarvet bund; et tryk på et andet modul folder det ud (`lekSideFold`) · hver lektion sin egen flise med »Lektion 1.2« over navnet · lektionen, du står i, er den RØDE flise med hvid tekst (Poppins 400) og hvid ring · færdige lektioner grå tekst + fuldt rødt flueben · færdige moduler én linje med flueben · låste moduler én linje med lås og »Åbner om 6 dage«. Telefon: modulets lektioner som de samme fliser under videoen (bunden husets grå på den sandfarvede side). Tiden (00:00) er ude, til videoerne er endelige. Klasser `lks-*`, funktioner `lksModul`/`lksLek`/`lekSideHtml`.
 ## v2951 · 26. oktober · Procesbaren rettet + ingen knapper på linjen (Ida 26/10: »processbaren skal implementeres ordentligt«, »send live 1 og 2«)
 
 Start-prikken og navnet »Start« stod 16 px for lavt i forhold til de tre streger og deres navne (en gammel margen på knappen). Nu står prik, bro, streger og alle fire navne på samme linjer på 390 og 1440. Parentesen fik lidt luft over sig, så den ikke klistrer til titlen på computeren.
