@@ -1,4 +1,12 @@
 
+## v2966 · 26. oktober · Rene fejl fra Hans/Mette-testen af ny-kunde-rejsen
+
+- **Profilens chips ombrydes på begge flader** (»Tøj og mode« og »Andet« var klippet af; telefonen rullede vandret i en grå bakke). Et ark ombryder altid sine chips (v2147).
+- **»Vi er flere« giver fem trin:** »Din profil · 5 af 5« på navnene. Før stod »4 af 4« to gange.
+- **Rundvisningen venter på startkortet** (telefon: den blev tegnet bag kortet og sås først efter swipe). `turNaarKortetErVaek`.
+- **Fejlrapportens side i en lektion er kun lektionens navn**, ikke datoen klistret på.
+- **Krydset på kortet efter videoen har aria-label »Luk«.**
+
 ## v2964 · 26. oktober · Spørgeskemaet står i lektionssiden · startdatoen på kundekortet
 
 - **STARTDATOEN PÅ KUNDEKORTET (Ida 26/10: »hvor justerer jeg tiden på det?« → klik »Ja, felt på kundekortet«; klik på det byggede »Ja, læg den ud«).** YOU GOT THIS-kunder har under »Forløbet« en flise: etiket »Startdato« · dato (»Man. 12. oktober«) · »Modul N åbner om X dage« eller »Alle moduler er åbne« · grå »Flyt startdatoen« i fuld bredde, der åbner husets datoark. Gemmer i skema_svar (config/ygt_start; alle rækker opdateres, ellers én ny), kvittering »Startdatoen er flyttet.« kun når basen har svaret. Rytmen (YGT_DAG) er urørt. `ksForloebStart/Tegn/Saet`.
