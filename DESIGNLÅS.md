@@ -1,4 +1,8 @@
 
+## v2970 · 26. oktober · Rundvisningen på telefonen: rød Næste + grå Spring over
+
+- **RØD »NÆSTE« I RUNDVISNINGEN PÅ TELEFONEN (Idas klik 26/10 »Bud A« på det byggede, Artifact Rr4b1a3kg69oskE1XKanE1; Hans-testen: »Der står kun Spring over. Så trykker jeg på den.«).** Vælter 15/9 »kun swipe + Spring over«. Kortet har en rød Næste i fuld bredde og under den »Spring over« som grå tekst (44 px trykfelt). Swipe virker stadig; sidste trin har »Færdig«. Computeren er uændret.
+
 ## v2968 · 26. oktober · Leads uden mail · ingen grå kasse bag chipsene i Nyt lead
 
 - **NYT LEAD KAN GEMMES UDEN MAIL (Ida 26/10: »Kan du gøre sådan at jeg også kan gemme leads uden mail«).** Navnet (person) eller butikken kræves stadig. Står der en mail, skal den være rigtig. Tom mail gemmes som tom (contacts.email = null); udsendelser springer kontakter uden mail over, som før.
