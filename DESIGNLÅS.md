@@ -1,3 +1,13 @@
+
+## v2950 · 26. oktober · Idas test som ny kunde: menuen lukker lektionen · insektet i menuen · én rundvisning
+
+- **MENUEN VIRKER FRA EN LEKTION (Ida 26/10: »når jeg klikker på hjem sker der ingenting. hele menuen virker ikke«).** `showTab` lukker lektionen (`lukLektion`), før siden skiftes — samme greb som planlægningsdagen. Målt i testkopien på 1440: Hjem → lektionen lukker, Hjem står fremme. Telefonen har ingen menu under en lektion (Tilbage-knappen står).
+- **INSEKTET I MENUEN PÅ COMPUTEREN (Ida 26/10: »bug i venstre hjørne flyttes ind i menuen«).** Ved navneknappen nederst i sidemenuen (`.sn-virk-rk` · `.sn-fejl`, grå streg, 44 px), som i Claude. Coverets insekt er skjult på computeren; telefonen beholder det ved klokken.
+- **ÉN RUNDVISNING (Ida 26/10: »Rundvisningen af lektionssiden skal komme sammen med første rundvisning«).** Den første rundvisning for en YOU GOT THIS-kunde åbner selv den første lektion og viser lektionssidens trin (noter · alle noter · kun du og Ida) før det sidste. Begge markeres som set; ingen ny popup, når kunden selv åbner en lektion (»Pop up kommer når jeg lige har klikket gå igang – det virker underligt«). Eksisterende kunder, der har set den første, får lektionsturen som før.
+- **KRYDSET STÅR OVER STREGEN (Ida 26/10: »Pop-up kryds sidder på linjen«).** Rundvisningskortets etiket har 14/20 px luft, så stregen ligger under krydset.
+- **»VIDERE TIL NÆSTE« (Idas ord 26/10).** Lektionens røde knap før videoen er set hedder »Videre til næste« (var »Jeg har set videoen«); samme handling.
+- **OPGAVEN KOMMER FØRST, NÅR VIDEOEN ER SET (Ida 26/10).** Flisen »Refleksionsøvelsen til lektion …« (`lekGjortHtml`) vises først, når lektionen er set.
+- **SKYGGERNE I VENSTRE SIDE KLIPPES IKKE (Ida 26/10).** Lektionslistens rulleboks på computeren har 20 px luft rundt om fliserne (padding + negativ margin), så skyggen står helt.
 ## v2948 · 25. oktober · Procesbaren i briefen = bud 3 (Ida 25/10: »PISSE FEDT! Kan du implementere bud 3?«)
 
 Start er en prik for sig med en stiplet bro hen til tre streger (Fang dem, Fasthold, Handle), og en lille raket sidder midt over det aktive trin (grå på Start). VÆLTER låsen »procesbar bud 2« (rød bjælke, 10/10). Artifact: ESBjrbreoynHCjdLiG54Wk. Målt på 390 og 1440, koer.sh exit 0. Deployet efter Idas »ja send live«.
