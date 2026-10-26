@@ -1,3 +1,7 @@
+## v2950 · 26. oktober · Procesbaren rettet (Ida 26/10: »processbaren skal implementeres ordentligt«)
+
+Start-prikken og navnet »Start« stod 16 px for lavt i forhold til de tre streger og deres navne (en gammel margen på knappen). Nu står prik, bro, streger og alle fire navne på samme linjer på 390 og 1440. Parentesen fik lidt luft over sig, så den ikke klistrer til titlen på computeren.
+
 ## v2949 · 26. oktober · Procesbaren: parentes over de tre trin, hvid raket i stregen (Ida 26/10: »vi går med denne«, »send live«)
 
 Ordet SUCCESRAKETTEN står i en parentes over Fang dem, Fasthold og Handle (Start står udenfor, for den er ikke en del af raketten). Stregerne er 12 px, og raketten er HVID med rødt øje og tynd rød kant i den røde streg (grå på Start). Start er en udfyldt rød prik med blød ring, mens man står på Start. Udkast: Artifact AEoamUSfpdoFBW2c624ks4 (bud »Parentes over, raket i stregen«). Målt på 390 og 1440.
