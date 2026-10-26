@@ -1,4 +1,8 @@
 
+## v2962 · 26. oktober · Spørgeskemaet er en flise i Modul 0
+
+- **SPØRGESKEMAET SOM LEKTION I MODUL 0 (Idas klik 26/10 »Som lektion i Modul 0«; Ida: »kan simpelthen ikke finde ud af hvordan jeg kommer til spørgeskemaet«).** Lige under »Velkommen« i modulets fliser står »Spørgeskema · Find dit udgangspunkt« med tom cirkel, til skemaet er sendt, så rødt flueben. Tryk åbner skemaet (`openSkema("inden_start")`). Modul 0 tæller først som færdigt, når skemaet er sendt. Computer: i venstre kolonne; telefon: modulets liste under videoen (vises nu også i Modul 0). `lksSkemaHer`/`lksSkemaHtml`.
+
 ## v2960 · 26. oktober · Titler går aldrig under krydset · krydset på kortet efter videoen
 
 - **TITLEN I ET ARK GÅR ALDRIG IND UNDER KRYDSET (Ida 26/10: »alt er off i denne pop-up« — »Modul 1 åbner, når du har fundet dit udgangspunkt« løb ind under krydset og blev skåret).** Alle arks titel har 52 px luft i begge sider (telefon 44 px og 21 px skrift), linjerne balanceres.
