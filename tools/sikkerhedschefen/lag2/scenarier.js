@@ -144,6 +144,13 @@
         CURRENT_DEF.forretningstype = "butik"; var pB = platformVises(); CURRENT_DEF.forretningstype = "kreator"; var pK = platformVises(); CURRENT_DEF.forretningstype = ftF;
         tjek(1, "Platform står kun hos kreatører, ikke hos butikker", pB === false && pK === true, "butik " + pB + " · kreatør " + pK);
       } catch (e) { tjek(1, "Platform-reglen kunne testes", false, e.message); }
+      /* KALENDERKORTETS MENU (Ida 27/10: højreklik → Duplikér): kopien af et opslag i kalenderen beholder datoen og gemmes i basen */
+      try {
+        var dIso = "2026-12-24"; var kildeD = await ideAdd({ titel: "SC kalenderopslag", type: "Reel", soejle: "", status: "Brief i gang", dato: dIso, brief: { format: "Reel" } });
+        if (kildeD && kildeD.id) { await kalOpslagDupl(kildeD.id); await V(400); }
+        var kopierD = ((JSON.parse(localStorage.getItem("SELE_DB") || "{}").content_ideer) || []).filter(function (x) { return x.titel === "SC kalenderopslag" && x.dato === dIso; });
+        tjek(1, "Kalenderens Duplikér: kopien står på samme dato og er gemt", kopierD.length === 2, kopierD.length + " rækker");
+      } catch (e) { tjek(1, "Kalenderens Duplikér kunne testes", false, e.message); }
       /* LØFTE 52 · LEKTIONERNES OPGAVER GEMMES — FORLØBSKUNDEN (kursuskunden: tjek_forloeb.py) (Ida 22/10: »et grundigt sikkerhedstjek hver dag for at det kunderne skriver ind at det bliver gemt … når de laver opgaver«):
          ALLE lektioner med en opgave udfyldes som kunden gør det (feltet → Næste → Færdig); hvert svar skal stå i basen nu og efter genindlæsning (laes1). Nye opgaver kommer selv med. */
       try {
