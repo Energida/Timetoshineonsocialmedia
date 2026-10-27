@@ -1,6 +1,7 @@
 
 ## v2996 · 27. oktober · SOS FORTRYD: »Bliv klar til at poste i morgen« er slået fra
 Ida 27/10 (skærmbillede af kalenderdagen på telefonen): »DETTE HAR JEG IKKE GODKENDT OG DETTE DESIGN SKAL TILBAGE … INDTIL VI HAR ANDET DESIGN!!!!! SOS FORTRYD«. Tjeklisten »Bliv klar til at poste i morgen« (Briefen · Energien · Tiden; v2354/v2407/quizzen 7/10) vises ikke længere — hverken som kort, i det lille ark eller som quiz; »I morgen skal du poste: …« åbner briefen direkte, uden »Tag testen«. Koden bliver; window.BLIV_KLAR_VIS = true tænder den igen, når der er et nyt design.
+Samme dag: symbolet ud for »I morgen skal du poste« er en tegnet pære (Ida: »symbolet er misvisende … måske en 💡« — tegnet SVG, aldrig emoji), og på telefonen står symbolerne lodret midt ud for tekst + chip i I dag, Forslag og Kommende opslag (Ida: »nu er symbolerne ikke lige ud foran teksten???«).
 
 ## v2994 · 27. oktober · Flere musiklinks i briefen
 Ida 27/10: »kan du tilføje så jeg kan lægge mere end 1 musik ind«. Link til musik gemmes nu som linjer (ét link pr. linje; et gammelt enkelt link er én linje) — samme greb som Produkter: arket viser de lagte links med en skraldespand hver, feltet er til det næste, »Tilføj flere« (grå) holder arket åbent, »Gem« (rød) lukker. Faktarækken tæller »3 links«; på briefoversigten åbner flere links popuppen »Link til musik« med et link pr. række. Linkmenuen bruger samme ark. Målt i selen 390 + 1440: tre links i basen, »3 links«, tre rækker i arket.
