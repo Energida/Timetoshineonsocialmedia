@@ -1,4 +1,11 @@
 
+## v2976 · 26. oktober · Hjem i YOU GOT THIS: nedtælling + mini-afspilleren (bud 2)
+
+- **DEN RØDE »N. SKRIDT«-FLISE ER UDE AF HJEM FOR YOU GOT THIS (Ida 26/10: »jeg kan ikke lide denne flise« + »nedtælling til næste modul åbner«; klik »Bud 2 · Mini-afspilleren«, Artifact P46tRYu1D6CZKiaY6w6K8G; »Ja, læg det ud« på det byggede, XWGAAjvTKVMMKgngZsyE1D).**
+- Øverst: hvid flise »Næste modul« · én streg · lås + »Modul 2 åbner om 6 dage«. Kun når et modul er låst. Ingen dato (Idas regel 23/10: nedtælling i dage). Computer: flisen og de to ringfliser i én række.
+- Næste skridt (spørgeskemaet, ellers næste lektion) er mini-afspilleren: telefon = hvid flise over bundmenuen (billede · »Lektion 1.2« · titel · rød rund afspil-knap); computer = nederst i sidemenuen over navneknappen (billede · tekst · rød »Se lektionen« / »Start her«). Kun på Hjem; væk i lektionen og på andre sider. `hjemNaesteModulHtml`, `hjemMiniData`, `hjemMiniTegn`, `#snMini`, `#hjemMiniTlf`.
+- Andre pakker er uændrede.
+
 ## v2974 · 26. oktober · Besvaret øvelse = gjort af sig selv
 
 - **FLISEN PÅ LEKTIONEN VISER FLUEBEN, NÅR KUNDEN HAR SVARET (Idas klik 26/10 »Viser flueben af sig selv«; Mette: »Det har jeg jo lige svaret på.«).** »Tryk, når refleksionsøvelsen er gjort« bliver til rødt flueben + »Refleksionsøvelsen er gjort« og kan ikke trykkes af igen. En opgave uden svar trykkes stadig af som før.
