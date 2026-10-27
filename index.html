@@ -23115,7 +23115,7 @@ function briefFaktaBoksHtml() {
         void vis;
         /* BUD 1 LAAST (Ida 29/9: »lås og deploy bud 1 i produkter i fakta«): navnet i sort, antallet i graat som de andre raekker (»5 links«) — roed betyder »mangler« */
         /* TALLET TAELLER KUN PRODUKTERNE (natten 7/10, fund 5): gammel fritekst uden titel er ikke et produkt og taeller ikke med */
-        const antal = r[0] === "medIIndhold" ? briefProdukterListe(B).filter(function (x) { return briefErLink(x) || String((B.produktTitler || {})[x] || "").trim(); }).length : 1;
+        const antal = r[0] === "medIIndhold" ? briefProdukterListe(B).filter(function (x) { return briefErLink(x) || String((B.produktTitler || {})[x] || "").trim(); }).length : (r[0] === "musikLink" ? Math.max(1, briefMusikListe(B).length) : 1);
         const under = '<div class="fb-v">' + antal + (antal === 1 ? ' link' : ' links') + '</div>';
         return '<div class="fb-rk fb-rk-sat" data-key="' + r[0] + '" onclick="briefFaktaLinkKlik(\'' + r[0] + '\')"><span class="fb-ik"><svg viewBox="0 0 24 24">' + FB_IK[r[1]] + '</svg></span><div style="min-width:0;"><div class="fb-n">' + r[2] + '</div>' + under + '</div></div>';
       }).join("")
@@ -24538,7 +24538,7 @@ function briefATegn(G, grupper, wrap, navM) {
     const rail = document.getElementById("briefRail");
     setTimeout(function () {
       const pil = rail && rail.querySelector(".fb-piller"); if (!pil || pil.querySelector(".a2-links")) return;
-      const links = [["Link til indholdet", "briefLinkArk('linkIndhold','Link til indholdet')"], ["Link til musik", "briefLinkArk('musikLink','Link til musik')"], ["Link til inspiration", "briefFaktaGaa('inspiration')"]];
+      const links = [["Link til indholdet", "briefLinkArk('linkIndhold','Link til indholdet')"], ["Link til musik", "briefTilfoejLinkArk('musikLink')"], ["Link til inspiration", "briefFaktaGaa('inspiration')"]];
       const row = document.createElement("div"); row.className = "a2-links"; row.innerHTML = links.map(function (l) { return '<button type="button" onclick="' + l[1] + '">' + l[0] + '</button>'; }).join('<span>·</span>');
       pil.insertBefore(row, pil.firstChild);
       const tb = document.getElementById("briefTitelBlok"); if (tb && !tb.querySelector(".a2-ik")) { const d = document.createElement("div"); d.className = "a2-ik"; d.innerHTML = '<button type="button" title="Del" aria-label="Del" onclick="briefDelKopier(this)"><svg viewBox="0 0 24 24">' + FB_IK.del + '</svg></button><button type="button" title="Slet" aria-label="Slet" onclick="briefSlet()"><svg viewBox="0 0 24 24">' + FB_IK.slet + '</svg></button>'; tb.appendChild(d); }
@@ -34008,7 +34008,8 @@ function briefTilfoejLinkArk(ret) {
     if (v && v.k === "opgave") { briefOpgaveArk(""); return; }   /* Tilføj › Opgave = »Giv en opgave« (Ida 29/9) — lander hos personen i Indbakken */   /* Tilføj › Kommentar = kommentar-arket (29/9) */
     if (v && v.k === "tags" && !window.__TILF.tagsLaest) { window.__TILF.tagsLaest = true; KUNDE_ARK_TAGS = (Array.isArray(B.tags) ? B.tags : []).map(t => String(t || "").trim().toLowerCase()).filter(Boolean); }
     const nu = (function () { const f = document.getElementById("tilfTekst"); return f ? f.value : null; })();   /* det, der allerede er skrevet, bliver */
-    const vaerdi = nu !== null ? nu : (v && v.k !== "medIIndhold" ? String(B[v.k] || "") : "");   /* produkter: listen staar for sig, feltet er til det naeste */
+    const vaerdi = nu !== null ? nu : (v && v.k !== "medIIndhold" && v.k !== "musikLink" ? String(B[v.k] || "") : "");   /* musik: listen staar for sig, feltet er til det naeste (27/10) */
+    const musikListe = (v && v.k === "musikLink") ? briefMusikListe(B) : [];   /* produkter: listen staar for sig, feltet er til det naeste */
     const nuTitel = (function () { const f = document.getElementById("tilfTitel"); return f ? f.value : null; })();
     const titelVaerdi = nuTitel !== null ? nuTitel : (v && v.k !== "medIIndhold" ? String(((B.linkTitler || {})[v.k]) || "") : "");
     const produktListe = (v && v.k === "medIIndhold" && window.__TILF.ret) ? briefProdukterListe(B) : [];   /* TILFOEJ VISER IKKE DET TILFOEJEDE (Ida 29/9) — listen staar kun, naar man retter fra Produkter-raekken */
@@ -34028,9 +34029,10 @@ function briefTilfoejLinkArk(ret) {
       + '<input type="text" id="tilfTekst" class="tilf-felt" placeholder="' + esc(v && v.k === "medIIndhold" ? "Indsæt link til produktet" : "Indsæt link") + '" value="' + esc(vaerdi) + '" oninput="briefTilfoejVis()" onkeydown="if(event.key===\'Enter\'){event.preventDefault();briefTilfoejGem();}"></div>'
       + ((v && v.k === "medIIndhold") ? '<input type="text" id="tilfTitel" class="tilf-felt" placeholder="Omdøb" value="' + esc(titelVaerdi) + '" onkeydown="if(event.key===\'Enter\'){event.preventDefault();briefTilfoejGem();}">' : '<input type="hidden" id="tilfTitel" value="">')
       /* PRODUKTER: DEN HVIDE »TILFOEJ FLERE« FOERST, DEN RODE »GEM« UNDER (Ida 7/10) */
-      + ((v && v.k === "medIIndhold") ? '<button type="button" class="ark-knap ark-knap-graa" onclick="briefTilfoejGem(true)">Tilføj flere</button>' : '')
-      + '<button type="button" class="ark-knap ark-knap-roed" onclick="briefTilfoejGem()">' + ((window.__TILF.ret || (v && v.k === "medIIndhold")) ? "Gem" : "Tilføj") + '</button></div>'   /* TILFOEJ FLERE (Ida 29/9): gemmer produktet og holder arket aabent til det naeste */
+      + ((v && (v.k === "medIIndhold" || v.k === "musikLink")) ? '<button type="button" class="ark-knap ark-knap-graa" onclick="briefTilfoejGem(true)">Tilføj flere</button>' : '')
+      + '<button type="button" class="ark-knap ark-knap-roed" onclick="briefTilfoejGem()">' + ((window.__TILF.ret || (v && (v.k === "medIIndhold" || v.k === "musikLink"))) ? "Gem" : "Tilføj") + '</button></div>'   /* TILFOEJ FLERE (Ida 29/9): gemmer produktet og holder arket aabent til det naeste */
       /* PRODUKTERNE, DER ALLEREDE ER SAT (inde i briefen): titel + skraldespand pr. produkt */
+      + (musikListe.length ? '<div class="tilf-liste">' + musikListe.map(function (x, i) { return '<div class="tilf-rk"><span>' + esc(briefErLink(x) ? briefLinkDomaene(x) : x) + '</span><button type="button" class="tilf-slet" title="Fjern" aria-label="Fjern" onclick="briefMusikFjern(' + i + ')"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" data-tegn-ok="1"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg></button></div>'; }).join("") + '</div>' : '')
       + (produktListe.length ? '<div class="tilf-liste">' + produktListe.map((x, i) => '<div class="tilf-rk"><span>' + esc(pt[x] || (briefErLink(x) ? briefLinkDomaene(x) : x)) + '</span><button type="button" class="tilf-slet" title="Fjern" aria-label="Fjern" onclick="briefProduktFjern(' + i + ')"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" data-tegn-ok="1"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg></button></div>').join("") + '</div>' : '')
       + '<button type="button" class="ark-luk" onclick="bsFlytLuk()">Annullér</button>'   /* det lille ark: Annuller sidst, intet kryds (laasen 19/9) */
       + '</div>';
@@ -34046,6 +34048,15 @@ function briefTilfoejLinkArk(ret) {
 function briefErLink(v) { return /^https?:\/\//i.test(v) || /^[a-z0-9.-]+\.[a-z]{2,}(\/|$)/i.test(v); }
 function briefLinkUrl(v) { return /^https?:\/\//i.test(v) ? v : "https://" + v; }
 function briefLinkDomaene(v) { return String(v || "").replace(/^https?:\/\/(www\.)?/i, "").split("/")[0] || v; }
+/* FLERE MUSIKLINKS (Ida 27/10: »kan du tilføje så jeg kan lægge mere end 1 musik ind«): musikLink gemmes som linjer (ét link pr. linje) — samme greb som Produkter:
+   Tilføj flere · Gem · en skraldespand pr. link; faktarækken tæller »2 links«, og på briefoversigten åbner flere links popuppen med et link pr. række. Et gammelt enkelt link er bare én linje. */
+function briefMusikListe(B) { return String((B || BRIEF_STATE || {}).musikLink || "").split(/\n+/).map(function (x) { return x.trim(); }).filter(Boolean); }
+async function briefMusikFjern(i) {
+  const liste = briefMusikListe(); liste.splice(i, 1); BRIEF_STATE.musikLink = liste.join("\n");
+  try { await saveBrief(true); } catch (e) {}
+  try { const rail = document.getElementById("briefRail"); if (rail && typeof briefFaktaBoksTegn === "function") briefFaktaBoksTegn(rail); } catch (e) {}
+  try { window.__TILF.tegn(); } catch (e) {}
+}
 function briefProdukterListe(B) { return String((B || BRIEF_STATE || {}).medIIndhold || "").split(" · ").map(x => x.trim()).filter(Boolean); }
 function briefLinkVis(key, v) {
   const B = BRIEF_STATE || {};
@@ -34062,15 +34073,16 @@ function briefFaktaLinkKlik(key) {
   if (BRIEF_MB_VIS !== "skriv") {
     /* PAA BRIEFOVERSIGTEN: direkte ind paa linket — flere produkter aabner popuppen med et link pr. produkt (Ida 18/9 kl. 14.22) */
     if (key === "medIIndhold") { const liste = briefProdukterListe(); if (liste.length > 1) { briefLinkListeArk(liste); return; } if (liste.length === 1 && briefErLink(liste[0])) { try { window.open(briefLinkUrl(liste[0]), "_blank", "noopener"); } catch (e) {} return; } }
+    else if (key === "musikLink") { const ml = briefMusikListe(); if (ml.length > 1) { briefLinkListeArk(ml, "Link til musik"); return; } if (ml.length === 1 && briefErLink(ml[0])) { try { window.open(briefLinkUrl(ml[0]), "_blank", "noopener"); } catch (e) {} return; } }
     else if (briefErLink(v)) { try { window.open(briefLinkUrl(v), "_blank", "noopener"); } catch (e) {} return; }
   }
   briefTilfoejLinkArk(key);
 }
 /* POPUPPEN MED FLERE LINKS (Ida 18/9 kl. 14.22: »en laekker pop up hvor man kan klikke paa de forskellige«): husets ark, eet link pr. raekke med titlen; et navn uden link staar som tekst */
-function briefLinkListeArk(liste) {
+function briefLinkListeArk(liste, titel) {
   const pt = (BRIEF_STATE || {}).produktTitler || {};
   let m = document.getElementById("bsFlytMenu"); if (!m) { m = document.createElement("div"); m.id = "bsFlytMenu"; document.body.appendChild(m); }
-  m.innerHTML = '<div class="bs-flyt-ark brief-soejle-ark brief-tilf-ark"><div class="ark-t">Produkter</div>'
+  m.innerHTML = '<div class="bs-flyt-ark brief-soejle-ark brief-tilf-ark"><div class="ark-t">' + esc(titel || "Produkter") + '</div>'
     + liste.map(x => briefErLink(x)
       ? '<a class="ark-knap fb-linkrk" href="' + esc(briefLinkUrl(x)) + '" target="_blank" rel="noopener">' + esc(pt[x] || briefLinkDomaene(x)) + '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" data-tegn-ok="1"><path d="M7 17L17 7M9 7h8v8"/></svg></a>'
       : '<div class="fb-linkrk fb-linkrk-tekst">' + esc(pt[x] || x) + '</div>').join("")
@@ -34113,6 +34125,9 @@ async function briefTilfoejGem(flere) {
       if (!t && titel && liste.indexOf(titel) < 0) { liste.push(titel); BRIEF_STATE.medIIndhold = liste.join(" · "); }
       if (tNavn) { BRIEF_STATE.produktTitler = BRIEF_STATE.produktTitler || {}; if (titel) BRIEF_STATE.produktTitler[tNavn] = titel; else if (!briefErLink(tNavn)) BRIEF_STATE.produktTitler[tNavn] = tNavn; else delete BRIEF_STATE.produktTitler[tNavn]; }
       const felt = document.getElementById("bf_medIIndhold"); if (felt) felt.value = BRIEF_STATE.medIIndhold;
+    } else if (key === "musikLink") {
+      const ml = briefMusikListe(); if (t && ml.indexOf(t) < 0) ml.push(t); BRIEF_STATE.musikLink = ml.join("\n");   /* flere musiklinks (27/10) */
+      const felt = document.getElementById("bf_musikLink"); if (felt) felt.value = BRIEF_STATE.musikLink;
     } else {
       BRIEF_STATE[key] = t; const felt = document.getElementById("bf_" + key); if (felt) felt.value = t;
       BRIEF_STATE.linkTitler = BRIEF_STATE.linkTitler || {}; if (titel && t) BRIEF_STATE.linkTitler[key] = titel; else delete BRIEF_STATE.linkTitler[key];
@@ -61637,7 +61652,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2992";
+const APP_VERSION = "2994";
 const APP_BYGGET = "25. oktober";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_BYGGET + " · " + APP_VERSION; } catch (e) {} });
 let NY_VERSION_KLAR = false;

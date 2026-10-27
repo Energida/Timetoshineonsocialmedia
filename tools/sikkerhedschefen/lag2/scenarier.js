@@ -168,6 +168,16 @@
         tjek(1, "Åben brief henter en anden enheds ændringer, når appen kommer frem", paaSkaerm, fIt.status + " · " + BRIEF_STATE.hookTekst + " · " + BRIEF_STATE.beskrivelse);
         tjek(1, "Egen rettelse og den andens ændringer står begge i basen efter gem", efF.status === "Klar til post" && efF.brief.hookTekst === "SC andens hook" && efF.brief.beskrivelse === "SC min rettelse", JSON.stringify({ s: efF.status, h: efF.brief.hookTekst, b: efF.brief.beskrivelse }));
       } catch (e) { tjek(1, "Frisk brief kunne testes", false, e.message); }
+      /* FLERE MUSIKLINKS (Ida 27/10): to links via »Tilføj flere« + Gem står begge i basen */
+      try {
+        var mR = await ideAdd({ titel: "SC musik", type: "Reel", soejle: "", status: "Brief i gang", dato: "2026-12-21", brief: { format: "Reel", musikLink: "https://sc.dk/a" } });
+        openBriefSide(mR.id); await V(900);
+        briefTilfoejLinkArk("musikLink"); await V(300); document.getElementById("tilfTekst").value = "https://sc.dk/b"; await briefTilfoejGem(true); await V(300);
+        document.getElementById("tilfTekst").value = "https://sc.dk/c"; await briefTilfoejGem(); await V(400);
+        var mDb = JSON.parse(localStorage.getItem("SELE_DB")).content_ideer.find(function (x) { return String(x.id) === String(mR.id); });
+        try { briefTilbage(); } catch (e) {}
+        tjek(1, "Flere musiklinks gemmes alle i basen", String(mDb.brief.musikLink || "").split("\n").length === 3, JSON.stringify(mDb.brief.musikLink));
+      } catch (e) { tjek(1, "Flere musiklinks kunne testes", false, e.message); }
       /* LØFTE 52 · LEKTIONERNES OPGAVER GEMMES — FORLØBSKUNDEN (kursuskunden: tjek_forloeb.py) (Ida 22/10: »et grundigt sikkerhedstjek hver dag for at det kunderne skriver ind at det bliver gemt … når de laver opgaver«):
          ALLE lektioner med en opgave udfyldes som kunden gør det (feltet → Næste → Færdig); hvert svar skal stå i basen nu og efter genindlæsning (laes1). Nye opgaver kommer selv med. */
       try {
