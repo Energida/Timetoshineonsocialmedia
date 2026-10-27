@@ -1,4 +1,7 @@
 
+## v2978 · 27. oktober · Nyt lead: alle produkter, YOU GOT THIS én gang
+Ida 27/10: »2 you got this … der skal kun være en« · »Foredrag ligger der jo heller ikke?«. Produktvælgeren i Nyt lead (og Tøm hovedets lead) = tabellen produkter + Forretning › Produkter (prislisten + rummenes produkt-felt), hentet frisk hver gang arket åbner. »YOU GOT THIS · DETAIL« vises ikke som eget valg (heller ikke i kundekortets Type); et lead, der allerede bærer navnet, beholder det. Idas klik: punkterne under et eget produkt kan vælges hver for sig — kun de inderste rum, skrevet »Foredrag · Stop med at sug maven ind«; aldrig under kursusprodukterne. Leadet lander i CRM som Lead med produktet (målt i selen, 390 + 1440).
+
 ## v2976 · 26. oktober · Hjem i YOU GOT THIS: nedtælling + mini-afspilleren (bud 2)
 
 - **DEN RØDE »N. SKRIDT«-FLISE ER UDE AF HJEM FOR YOU GOT THIS (Ida 26/10: »jeg kan ikke lide denne flise« + »nedtælling til næste modul åbner«; klik »Bud 2 · Mini-afspilleren«, Artifact P46tRYu1D6CZKiaY6w6K8G; »Ja, læg det ud« på det byggede, XWGAAjvTKVMMKgngZsyE1D).**

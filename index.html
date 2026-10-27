@@ -61561,7 +61561,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2976";
+const APP_VERSION = "2978";
 const APP_BYGGET = "25. oktober";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_BYGGET + " · " + APP_VERSION; } catch (e) {} });
 let NY_VERSION_KLAR = false;
@@ -82633,7 +82633,7 @@ async function delCustomer(id) {
   await refresh();
 }
 
-const KONTAKT_TYPER = ['YOU GOT THIS','YOU GOT THIS · DETAIL','I GOT YOU','Content-planner','Medarbejderforløb','Content Studio','Reset din energi','UGC/Influencer','Andet'];
+const KONTAKT_TYPER = ['YOU GOT THIS','I GOT YOU','Content-planner','Medarbejderforløb','Content Studio','Reset din energi','UGC/Influencer','Andet'];
 function kontaktChipsHtml(id, felt, liste, valgt, kanFravaelge) {
   const idE = esc(String(id)).replace(/'/g, "\\'");
   return '<div class="kk-chips" data-felt="' + esc(felt) + '">' + liste.map(function (v) { const on = String(v) === String(valgt || ""); return '<button type="button" class="ark-chip mq-tap' + (on ? ' on' : '') + '" onclick="kontaktChip(\'' + idE + '\',\'' + esc(felt) + '\',\'' + esc(String(v)).replace(/'/g, "\\'") + '\',this,' + (kanFravaelge ? 'true' : 'false') + ')">' + esc(String(v)) + '</button>'; }).join('') + '</div>';
@@ -84536,7 +84536,33 @@ window.bf3Drop_bf3ArkDrop = function (k) {
   try { const at = document.querySelector("#arkSlor .ark-t"); if (at) at.textContent = (k === "manus") ? "Hvad skal tilføjes til manus?" : "Tøm hovedet"; } catch (e) {}   /* overskriften foelger valget (Ida 2/10) */ const ku = document.getElementById("bf3KundeRk"); if (ku) ku.style.display = (k === "kundeide") ? "" : "none"; const td = document.getElementById("bf3TodoRk"); if (td) td.style.display = (k === "todo") ? "" : "none"; const r = document.getElementById("bf3KursusRk"); if (r) r.style.display = (k === "manus") ? "" : "none"; const l = document.getElementById("bf3LeadRk"); if (l) l.style.display = (k === "lead") ? "" : "none"; };
 /* NY LEAD (Ida 26/9 ~08.15): navnet i feltet · hvilket produkt (husets produkter fra tabellen produkter) → contacts med status Lead, lander i CRM under Leads */
 let LEAD_PRODUKTER = null;
-async function leadProdukterHent() { if (LEAD_PRODUKTER) return LEAD_PRODUKTER; try { const r = await sb.from("produkter").select("navn,sortering").order("sortering"); LEAD_PRODUKTER = (r.data || []).map(function (p) { return String(p.navn || "").trim(); }).filter(Boolean); } catch (e) { LEAD_PRODUKTER = []; } return LEAD_PRODUKTER; }
+let LEAD_PRODUKTER_BASE = null;
+/* PRODUKTLISTEN = ALLE PRODUKTER (Ida 27/10: »Foredrag ligger der jo heller ikke« · »2 you got this … der skal kun være en«): kursusprodukterne fra
+   tabellen produkter + Forretning › Produkter (prislisten og rummenes produkt-felt). YOU GOT THIS · DETAIL er samme produkt som YOU GOT THIS og vises ikke
+   som eget valg; et lead, der allerede bærer navnet, beholder det. Listen bygges hver gang, så et produkt oprettet på Forretning kan vælges med det samme. */
+const LEAD_PRODUKT_SKJULT = ["you got this · detail"];
+async function leadProdukterHent() {
+  if (!LEAD_PRODUKTER_BASE) { try { const r = await sb.from("produkter").select("navn,sortering").order("sortering"); LEAD_PRODUKTER_BASE = (r.data || []).map(function (p) { return String(p.navn || "").trim(); }).filter(Boolean); } catch (e) { LEAD_PRODUKTER_BASE = []; } }
+  const navne = LEAD_PRODUKTER_BASE.slice();
+  try { await salgHent(); } catch (e) {}
+  try { await mrRumHent(); } catch (e) {}
+  (SALG.priser || []).forEach(function (x) { navne.push(String(x.n || "").trim()); });
+  (MR_RUM || []).forEach(function (r) { navne.push(String(r.produkt || "").trim()); });
+  const set = {}; LEAD_PRODUKTER = [];
+  /* UNDER ET EGET PRODUKT KAN HVERT PUNKT VÆLGES (Idas klik 27/10): rummene under fx Foredrag — kun de inderste (»Stop med at sug maven ind«, ikke mappen
+     »Oplæg«) — står lige under produktet som »Foredrag · Stop med at sug maven ind«. Kun produkter fra Forretning, aldrig kursusprodukterne. */
+  const kurser = {}; LEAD_PRODUKTER_BASE.forEach(function (n) { kurser[n.toLowerCase()] = 1; });
+  const rum = MR_RUM || [], boern = function (id) { return rum.filter(function (r) { return r.foraelder_id != null && String(r.foraelder_id) === String(id); }); };
+  const under = function (pn) {
+    const ud = [], set2 = {}, gaa = function (r) { if (set2[r.id]) return; set2[r.id] = 1; const b = boern(r.id); if (!b.length) ud.push(String(r.navn || "").trim()); b.forEach(gaa); };
+    rum.filter(function (r) { return String(r.produkt || "").trim().toLowerCase() === pn.toLowerCase(); }).forEach(gaa);
+    return ud.filter(Boolean);
+  };
+  navne.forEach(function (n) { const k = n.toLowerCase(); if (!n || set[k] || LEAD_PRODUKT_SKJULT.indexOf(k) >= 0) return; set[k] = 1; LEAD_PRODUKTER.push(n);
+    if (kurser[k]) return;
+    under(n).forEach(function (u) { const nu = n + " · " + u, ku = nu.toLowerCase(); if (set[ku]) return; set[ku] = 1; LEAD_PRODUKTER.push(nu); }); });
+  return LEAD_PRODUKTER;
+}
 function bf3LeadRkHtml(valgt) { return '<div id="bf3LeadRk" class="bs3-ark-drop" style="margin-top:8px;' + (valgt === "lead" ? '' : 'display:none;') + '">' + bf3DropHtml("nyLeadProdukt", "Hvilket produkt?", (LEAD_PRODUKTER || []).map(function (p) { return { k: p, n: p }; }), (window.BF3_DROP_VALG || {}).nyLeadProdukt || "") + '</div>'; }
 /* RUMMENE SOM MAPPER (Ida 5/10: »jeg er nødt til at skulle søge her og ligesom på pinterest får man jo ikke alle undersiderne op først de kommer når man har valgt en folder«):
    i »Hvor hører det hjemme?« staar kun de oeverste rum; et rum med rum indeni har en pil, der aabner mappen (Tilbage + mappen selv + dens rum);
@@ -85247,7 +85273,7 @@ function gkProduktHtml() { return '<div class="htb-ark-eye">Produkt</div>' + gkP
 function gkProduktDropHtml() { return '<div class="bs3-ark-drop" id="gkProduktW" style="margin:0 0 12px;">' + bf3DropHtml("gkProdukt", "Hvilket produkt?", (LEAD_PRODUKTER || []).map(function (p) { return { k: p, n: p }; }), (window.BF3_DROP_VALG || {}).gkProdukt || "") + '</div>'; }
 function nytLeadArk(gamle, forNavn) {
   GK_TAG = !!gamle; GK_TAGS = []; GK_PERSON = false; try { BF3_DROP_VALG.gkProdukt = ""; } catch (e) {}
-  try { if (!LEAD_PRODUKTER) leadProdukterHent().then(function () { const w = document.getElementById("gkProduktW"); if (w) w.outerHTML = gkProduktDropHtml(); }); } catch (e) {} try { crmTagsHent().then(function () { const r = document.getElementById("gkTagChips"); if (r) r.innerHTML = gkTagChipsHtml(); }); } catch (e) {}
+  try { leadProdukterHent().then(function () { const w = document.getElementById("gkProduktW"); if (w) w.outerHTML = gkProduktDropHtml(); }); } catch (e) {}   /* altid frisk: et produkt oprettet på Forretning kan vælges med det samme (27/10) */ try { crmTagsHent().then(function () { const r = document.getElementById("gkTagChips"); if (r) r.innerHTML = gkTagChipsHtml(); }); } catch (e) {}
   let m = document.getElementById("bsFlytMenu"); if (!m) { m = document.createElement("div"); m.id = "bsFlytMenu"; document.body.appendChild(m); }
   const felt = function (id, et, ph, type) { return '<div class="htb-ark-eye">' + et + '</div><input type="' + (type || "text") + '" id="' + id + '" class="htb-felt" placeholder="' + ph + '" autocomplete="off"' + (type === "email" ? ' inputmode="email" autocapitalize="off" spellcheck="false"' : '') + ' style="width:100%;margin-bottom:12px;">'; };
   m.innerHTML = '<div class="bs-flyt-ark brief-soejle-ark htb-ark">'
