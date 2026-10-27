@@ -19,7 +19,10 @@
    NU tjekkes de fire tegn i version.txt FOER der svares. Er serveren ikke nyere, svares den gemte kopi med
    det samme som foer. Er den nyere, hentes den nye side og DEN svares — saa kunden faar den rigtige app
    FOERSTE gang, uden genindlaesning og uden at skulle goere noget. */
-const CACHE = "energida-v6";
+/* BUMPET 27/10 (v7): Ida købte med en ny rabatkode i Safari og landede på build 2775 fra 9/10, mens serveren var 2998.
+   Safari lod igen baggrundshentningen dø, saa den gamle kopi blev svaret i to uger. Nu hentes den nye FØR der svares,
+   naar serveren er nyere (loft 8 sek.) — og bumpet tvinger alle enheder friske denne ene gang. */
+const CACHE = "energida-v7";
 
 self.addEventListener("install", (e) => {
   self.skipWaiting();
@@ -142,7 +145,12 @@ self.addEventListener("fetch", (e) => {
          NU: den gemte kopi svares MED DET SAMME, saa der altid staar noget paa skaermen. Den nye
          hentes ved siden af, og naar den ligger i cachen, faar siden besked og henter sig selv
          forfra paa en adresse uden kopi. Det er 4/9-reglen: kunden venter aldrig paa den store fil. */
-      e.waitUntil(hentNy().then((res) => { if (res && res.ok) return sigTilSiderne({ type: "ny-version" }); }).catch(() => null));
+      /* SERVEREN ER NYERE = DEN NYE SVARES (27/10): baggrundshentningen døde på Safari, og kunden stod på en uge gammel app.
+         Nu hentes den nye i forgrunden og svares; kun hvis nettet er for langsomt (8 sek.), svares kopien, mens hentningen kører videre. */
+      const ny = hentNy().catch(() => null);
+      const vundet = await Promise.race([ny, new Promise((res) => setTimeout(() => res(null), 8000))]);
+      if (vundet && vundet.ok) return vundet;
+      e.waitUntil(ny.then((res) => { if (res && res.ok) return sigTilSiderne({ type: "ny-version" }); }).catch(() => null));
       return gemtApp;
     }
 
