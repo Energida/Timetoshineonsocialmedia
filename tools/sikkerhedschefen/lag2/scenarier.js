@@ -109,6 +109,20 @@
         tjek(7, "To-do oprettet og afkrydset (kvittering)", !!(o7 && o7.done), o7 ? "done " + o7.done : "findes ikke");
         await opslagPostetJa("sc-plan-1"); await V(400); try { bsFlytLuk(); } catch (e) {} try { arkLuk(true); } catch (e) {}
       } catch (e) { tjek(7, "Opgave-tjekket kunne køre", false, e.message); }
+      /* »ER DET POSTET?« NÅR HELE TEAMET (Idas klik 27/10 »Hele teamet + tal«): målt hos en kunde — intet sat til Postet siden 2/9, fordi spørgsmålet kun
+         stod hos personen under Hvem laver indholdet. Et overskredet opslag til »René« skal ses af en anden i teamet og tælle med ved Indbakken; Idas eget aldrig. */
+      try {
+        var gaar = new Date(); gaar.setDate(gaar.getDate() - 1); var gIso = gaar.getFullYear() + "-" + String(gaar.getMonth() + 1).padStart(2, "0") + "-" + String(gaar.getDate()).padStart(2, "0");
+        var navnF = CURRENT_NAVN; CURRENT_NAVN = "SC Freja";
+        IDEER.push({ id: "sc-team-1", titel: "SC Teamopslag", status: "Brief i gang", dato: gIso, brief: { hvemPerson: "SC René" } });
+        IDEER.push({ id: "sc-team-2", titel: "SC Idas opslag", status: "Brief i gang", dato: gIso, brief: { hvemPerson: "Ida" } });
+        var ibT = indbakkeRegn(); ibBadgeTegn(ibT);
+        var tTxt = (ibT.postet || []).map(function (x) { return x.t; }).join(" | ");
+        var bdg = ["snIndbakBadge", "burgerIndbakBadge"].map(function (i) { var e = document.getElementById(i); return e ? Number(e.textContent || 0) : -1; }).filter(function (n) { return n >= 0; });
+        IDEER = IDEER.filter(function (x) { return x.id !== "sc-team-1" && x.id !== "sc-team-2"; }); CURRENT_NAVN = navnF; try { ibBadgeTegn(); } catch (e) {}
+        tjek(7, "»Er det postet?« står hos hele teamet, ikke kun den, der laver indholdet", /SC Teamopslag/.test(tTxt) && !/SC Idas opslag/.test(tTxt), tTxt || "ingen spørgsmål");
+        tjek(7, "»Er det postet?« tæller med i tallet ved Indbakken", bdg.length > 0 && bdg.every(function (n) { return n >= 1; }), JSON.stringify(bdg));
+      } catch (e) { tjek(7, "»Er det postet?« til teamet kunne testes", false, e.message); }
       /* LØFTE 52 · LEKTIONERNES OPGAVER GEMMES — FORLØBSKUNDEN (kursuskunden: tjek_forloeb.py) (Ida 22/10: »et grundigt sikkerhedstjek hver dag for at det kunderne skriver ind at det bliver gemt … når de laver opgaver«):
          ALLE lektioner med en opgave udfyldes som kunden gør det (feltet → Næste → Færdig); hvert svar skal stå i basen nu og efter genindlæsning (laes1). Nye opgaver kommer selv med. */
       try {
