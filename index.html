@@ -50833,7 +50833,7 @@ function huKalDagHtml(iso, erIdag) {
   const klar = [];
   try {
     const m = new Date(iso + "T12:00:00"); m.setDate(m.getDate() + 1); const imIso = huIso(m);
-    huImorgenPost(new Date(iso + "T12:00:00")).forEach(function (x) { klar.push({ n: "I morgen skal du poste:", u: (x.titel || "Uden titel") + " · Er opslaget klar? Tag testen", klik: "huTjekArk('" + esc(String(x.id)).replace(/'/g, "\\'") + "')" }); });
+    huImorgenPost(new Date(iso + "T12:00:00")).forEach(function (x) { klar.push({ n: "I morgen skal du poste:", u: (x.titel || "Uden titel") + (window.BLIV_KLAR_VIS ? " · Er opslaget klar? Tag testen" : ""), klik: "huTjekArk('" + esc(String(x.id)).replace(/'/g, "\\'") + "')" }); });
     const aft = (window.__kundeAftaler || []).filter(function (a) { return a && String(a.dato || "").slice(0, 10) === imIso; });
     if (aft.some(function (a) { return /optag/i.test(String(a.titel || "")); })) klar.push({ n: "Bliv klar til at optage i morgen", u: (aft.find(function (a) { return /optag/i.test(String(a.titel || "")); }) || {}).titel || "", klik: "showTab(8)" });
     /* OGSAA DEN MAANEDLIGE PLANLAEGNING (Ida 7/10: »dagen før skal stå øverst i kalenderen på forsiden: Bliv klar til dit contentmøde i morgen« — gaelder baade det ugentlige og det maanedlige moede): maanedens moede (»Månedsplanlægning«) fik ingen stribe, fordi mønstret kun kendte de ugentlige titler */
@@ -50901,7 +50901,7 @@ function huImorgenPost(d) {
     return (IDEER || []).filter(function (x) { return x && x.dato === iso && x.status !== "Arkiveret" && x.status !== "Idé" && x.status !== "Postet"; });
   } catch (e) { return []; }
 }
-function huTjekAabn(id) { HU_TJEK.id = (String(HU_TJEK.id) === String(id)) ? null : id; HU_TJEK.fane = "brief"; hjemUgeTegn(); }
+function huTjekAabn(id) { if (!window.BLIV_KLAR_VIS) { openBriefSide(id); return; }   /* SOS FORTRYD 27/10: tjeklisten er slået fra — trykket åbner briefen */ HU_TJEK.id = (String(HU_TJEK.id) === String(id)) ? null : id; HU_TJEK.fane = "brief"; hjemUgeTegn(); }
 function huTjekFane(f) { HU_TJEK.fane = f; hjemUgeTegn(); huTjekArkTegn(); }
 /* I MORGEN SOM STIPLET BLOK I DAGENS KALENDER (Idas svar 26/9: alt fra dagen staar i kalenderen; »I morgen« er den ene ting uden plads): tryk = tjeklisten i det lille ark */
 function huTjekArkTegn() {
@@ -50933,8 +50933,8 @@ function huTjekSpm(x) {
   return q;
 }
 let HU_QZ = null;
-function huTjekArk(id) { huTjekQuiz(id); }
-function huTjekQuiz(id) {
+function huTjekArk(id) { if (!window.BLIV_KLAR_VIS) { openBriefSide(id); return; } huTjekQuiz(id); }
+function huTjekQuiz(id) { if (!window.BLIV_KLAR_VIS) { openBriefSide(id); return; }
   const x = (IDEER || []).find(function (i) { return String(i.id) === String(id); }); if (!x) return;
   HU_QZ = { id: String(id), i: 0 }; huTjekQuizTegn(true);
 }
@@ -50970,7 +50970,7 @@ async function huTjekQuizSvar(k, v) {
   if (t[k] !== v) await huTjekSvar(id, k, v);   /* huTjekSvar skifter: samme svar to gange nulstiller, saa kun et NYT svar sendes */
   HU_QZ.i++; huTjekQuizTegn();
 }
-function huTjekListeArk(id) {
+function huTjekListeArk(id) { if (!window.BLIV_KLAR_VIS) { openBriefSide(id); return; }
   const x = (IDEER || []).find(function (i) { return String(i.id) === String(id); }); if (!x) return;
   HU_TJEK.fane = "brief"; window.__HU_TJEK_ARK = id;
   const fmt = String((x.brief && x.brief.format) || x.type || "").trim();
@@ -51014,6 +51014,9 @@ function huTjekHtml(x) {
     + indhold
     + '<button type="button" class="hu-graa" onclick="event.stopPropagation();' + (window.__HU_TJEK_ARK ? 'arkLuk();' : '') + 'openBriefSide(\'' + id + '\')">Åbn briefen</button>';
   if (window.__HU_TJEK_ARK) return '<div class="hu-tj-ark">' + indre + '</div>';   /* tjeklisten i det lille ark (kalenderdagen paa computeren, 26/9) */
+  /* SOS FORTRYD (Ida 27/10: »DETTE HAR JEG IKKE GODKENDT … SKAL TILBAGE … INDTIL VI HAR ANDET DESIGN«): kortet »Bliv klar til at poste i morgen« (Briefen · Energien · Tiden)
+     vises ikke, til der er et nyt design. Koden bliver; BLIV_KLAR_VIS = true tænder det igen. */
+  if (!window.BLIV_KLAR_VIS) return "";
   return '<div class="hu-tjek" onclick="huTjekAabn(\'' + id + '\')">'
     + '<div class="hu-et hu-tj-et">Bliv klar til at poste i morgen' + (fmt ? ' · ' + esc(fmt) : '') + '</div>'
     + '<div class="hu-tj-titel">' + esc(x.titel || "Uden titel") + '</div>'
@@ -51025,7 +51028,7 @@ function huTomDagHtml(d) {
   huImorgenPost(d).forEach(function (x) {
     if (String(HU_TJEK.id) === String(x.id)) { ud += huTjekHtml(x); return; }
     const fmt = String((x.brief && x.brief.format) || x.type || "").trim();
-    ud += huKort({ ty: "opslag", et: "I morgen skal du poste:", t: x.titel || "Uden titel", chip: "Tag testen", klik: "huTjekAabn('" + esc(String(x.id)).replace(/'/g, "\\'") + "')" });
+    ud += huKort({ ty: "opslag", et: "I morgen skal du poste:", t: x.titel || "Uden titel", chip: window.BLIV_KLAR_VIS ? "Tag testen" : "", klik: "huTjekAabn('" + esc(String(x.id)).replace(/'/g, "\\'") + "')" });
   });
   return ud;
 }
@@ -61652,7 +61655,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2994";
+const APP_VERSION = "2996";
 const APP_BYGGET = "25. oktober";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_BYGGET + " · " + APP_VERSION; } catch (e) {} });
 let NY_VERSION_KLAR = false;
