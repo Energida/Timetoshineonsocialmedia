@@ -1,6 +1,7 @@
 
 ## v2996 · 27. oktober · SOS FORTRYD: »Bliv klar til at poste i morgen« er slået fra
 Ida 27/10 (skærmbillede af kalenderdagen på telefonen): »DETTE HAR JEG IKKE GODKENDT OG DETTE DESIGN SKAL TILBAGE … INDTIL VI HAR ANDET DESIGN!!!!! SOS FORTRYD«. Tjeklisten »Bliv klar til at poste i morgen« (Briefen · Energien · Tiden; v2354/v2407/quizzen 7/10) vises ikke længere — hverken som kort, i det lille ark eller som quiz; »I morgen skal du poste: …« åbner briefen direkte, uden »Tag testen«. Koden bliver; window.BLIV_KLAR_VIS = true tænder den igen, når der er et nyt design.
+RETTET SAMME DAG (Ida: »kan se du har fjernet "TAG TESTEN" som er hele pointen« · »HVID BAGGRUND: ALT TEKST GRÅ IKKE BAGGRUNDEN« · »TAG TESTEN SOM CHIPS SIGER IKKE SUPER MEGET«): flisen »I morgen skal du poste« bliver — hvid med skygge, etiket + titel + linjen »Er opslaget klar? Tag testen« i grå, ingen chip; hele flisen åbner testen som quiz i det lille ark (7/10). Kun den åbne boks (Briefen · Energien · Tiden) er slået fra. Den sammenklappede sidemenu viser ikke længere profil-rækken med fejl-knappen (Ida: »Bug skal ikke være synlig hvis menuen ikke er åben«).
 Samme dag: symbolet ud for »I morgen skal du poste« er en tegnet pære (Ida: »symbolet er misvisende … måske en 💡« — tegnet SVG, aldrig emoji), og på telefonen står symbolerne lodret midt ud for tekst + chip i I dag, Forslag og Kommende opslag (Ida: »nu er symbolerne ikke lige ud foran teksten???«).
 
 ## v2994 · 27. oktober · Flere musiklinks i briefen
