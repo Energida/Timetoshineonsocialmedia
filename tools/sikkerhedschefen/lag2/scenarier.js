@@ -151,6 +151,23 @@
         var kopierD = ((JSON.parse(localStorage.getItem("SELE_DB") || "{}").content_ideer) || []).filter(function (x) { return x.titel === "SC kalenderopslag" && x.dato === dIso; });
         tjek(1, "Kalenderens Duplikér: kopien står på samme dato og er gemt", kopierD.length === 2, kopierD.length + " rækker");
       } catch (e) { tjek(1, "Kalenderens Duplikér kunne testes", false, e.message); }
+      /* DEN ÅBNE BRIEF HENTES FORFRA (Ida 27/10: telefonen viste Annettes brief, som den så ud før): en anden enhed gemmer status + hook, mens briefen står åben her
+         med en egen rettelse; når appen kommer frem, står den andens status og hook, egen rettelse bevares — og begge står i basen efter gem. Fejlede før v2992. */
+      try {
+        var fR = await ideAdd({ titel: "SC frisk brief", type: "Reel", soejle: "", status: "Brief i gang", dato: "2026-12-20", brief: { format: "Reel", beskrivelse: "SC gammel" } });
+        openBriefSide(fR.id); await V(900);
+        BRIEF_STATE.beskrivelse = "SC min rettelse";
+        var dbF = JSON.parse(localStorage.getItem("SELE_DB")); var rwF = dbF.content_ideer.find(function (x) { return String(x.id) === String(fR.id); });
+        rwF.status = "Klar til post"; rwF.brief = Object.assign({}, rwF.brief, { hookTekst: "SC andens hook", sidstRettetAf: "SC Annette" }); localStorage.setItem("SELE_DB", JSON.stringify(dbF));
+        BRIEF_FRISK_SIDST = 0; document.dispatchEvent(new Event("visibilitychange")); await V(1500);
+        var fIt = IDEER.find(function (x) { return String(x.id) === String(fR.id); });
+        var paaSkaerm = fIt.status === "Klar til post" && BRIEF_STATE.hookTekst === "SC andens hook" && BRIEF_STATE.beskrivelse === "SC min rettelse";
+        try { await saveBrief(true); } catch (e) {} await V(600);
+        var efF = JSON.parse(localStorage.getItem("SELE_DB")).content_ideer.find(function (x) { return String(x.id) === String(fR.id); });
+        try { briefTilbage(); } catch (e) {}
+        tjek(1, "Åben brief henter en anden enheds ændringer, når appen kommer frem", paaSkaerm, fIt.status + " · " + BRIEF_STATE.hookTekst + " · " + BRIEF_STATE.beskrivelse);
+        tjek(1, "Egen rettelse og den andens ændringer står begge i basen efter gem", efF.status === "Klar til post" && efF.brief.hookTekst === "SC andens hook" && efF.brief.beskrivelse === "SC min rettelse", JSON.stringify({ s: efF.status, h: efF.brief.hookTekst, b: efF.brief.beskrivelse }));
+      } catch (e) { tjek(1, "Frisk brief kunne testes", false, e.message); }
       /* LØFTE 52 · LEKTIONERNES OPGAVER GEMMES — FORLØBSKUNDEN (kursuskunden: tjek_forloeb.py) (Ida 22/10: »et grundigt sikkerhedstjek hver dag for at det kunderne skriver ind at det bliver gemt … når de laver opgaver«):
          ALLE lektioner med en opgave udfyldes som kunden gør det (feltet → Næste → Færdig); hvert svar skal stå i basen nu og efter genindlæsning (laes1). Nye opgaver kommer selv med. */
       try {
