@@ -432,6 +432,25 @@
         BS_KUNDE_CHIP = "alle"; try { kunderneTegn(true); } catch (e) {}
         tjek(1, "Filterchippen med et eget tag viser kun leads med tagget", tFl.length === 1 && tFl[0] === "SC Tagbutik", JSON.stringify(tFl));
       } catch (e) { tjek(1, "Egne tags kunne testes", false, e.message); }
+      /* ET NYT TAG OVERLEVER, AT ARKET LUKKES (Ida 27/10: »Jeg har tidligere oprettet et tag der hedder netværk … hvorfor fremgår netværk ikke nu?«):
+         tagget skrives i basen, så snart det tilføjes — også når leadet aldrig gemmes. Fejlede med koden før v2980 (tagget levede kun i hukommelsen). */
+      try {
+        var mmT2 = window.matchMedia; window.matchMedia = function () { return { matches: false }; };
+        nytLeadArk(false); await V(200);
+        document.getElementById("gkTagNy").value = "sc netværk"; gkNytTag(); await V(600);
+        window.matchMedia = mmT2; try { bsFlytLuk(); } catch (e) {}
+        var tB2 = ((JSON.parse(localStorage.getItem("SELE_DB") || "{}").skema_svar) || []).filter(function (x) { return x.skema === "crm_tags"; })[0];
+        tjek(1, "Nyt tag i Nyt lead er gemt i basen, selv om leadet ikke gemmes", !!tB2 && JSON.stringify(tB2.svar).indexOf("Sc netværk") > -1, tB2 ? "i basen: " + JSON.stringify(tB2.svar).slice(0, 120) : "ikke i basen");
+      } catch (e) { tjek(1, "Nyt tag uden lead kunne testes", false, e.message); }
+      /* PRODUKTLISTEN I NYT LEAD (Ida 27/10, v2978): Forretnings produkter + de inderste rum under dem; YOU GOT THIS · DETAIL er ikke et eget valg */
+      try {
+        LEAD_PRODUKTER_BASE = ["YOU GOT THIS", "YOU GOT THIS · DETAIL"]; await salgHent(); var prisF = SALG.priser; SALG.priser = [{ id: "scp", n: "SC Foredrag", p: "", l: "" }];
+        var rumF = MR_RUM, hentF = MR_RUM_HENTET; MR_RUM = [{ id: "scr1", navn: "SC Oplæg", produkt: "SC Foredrag", felter: {} }, { id: "scr2", navn: "SC Talen", foraelder_id: "scr1", felter: {} }]; MR_RUM_HENTET = true;
+        var pl = await leadProdukterHent();
+        SALG.priser = prisF; MR_RUM = rumF; MR_RUM_HENTET = hentF; LEAD_PRODUKTER_BASE = null;
+        tjek(1, "Nyt lead: produkt fra Forretning og punktet under det kan vælges", pl.indexOf("SC Foredrag") > -1 && pl.indexOf("SC Foredrag · SC Talen") > -1 && pl.indexOf("SC Foredrag · SC Oplæg") < 0, JSON.stringify(pl));
+        tjek(1, "Nyt lead: YOU GOT THIS står én gang", pl.filter(function (x) { return /^you got this/i.test(x); }).length === 1, JSON.stringify(pl));
+      } catch (e) { tjek(1, "Produktlisten i Nyt lead kunne testes", false, e.message); }
       /* GAMLE KUNDER (salgsturnéen): lead gemmes m. kvittering, mailen bærer koden og siden, tom butik siges */
       try {
         var mm = window.matchMedia, wo = window.open; window.matchMedia = function () { return { matches: false }; }; window.open = function (u) { window.__GK_MAIL = u; return {}; };

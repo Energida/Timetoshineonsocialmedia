@@ -1,4 +1,7 @@
 
+## v2980 · 27. oktober · Et nyt tag i Nyt lead gemmes med det samme
+Ida 27/10: »Jeg har tidligere oprettet et tag der hedder netværk … hvorfor fremgår netværk ikke nu?« · »Det skal jo fremgå på kunden også«. Årsag (målt): gkNytTag lagde kun tagget i hukommelsen; det blev først gemt, når et lead blev gemt — blev arket lukket, eller kunne leadet ikke gemmes (mail var påkrævet før v2968), var tagget væk. Nu skrives tagget i crm_tags, så snart det tilføjes. Målt i selen på 390 + 1440: tilføj → luk uden at gemme → genindlæs → tagget står i Nyt lead, som filterchip i CRM og på kundekortet; samme test med den gamle kode fejler. Lag 2 har fået tre nye tjek (tag uden lead · produkt + punkt fra Forretning · YOU GOT THIS én gang), så rejsen testes ved hver deploy.
+
 ## v2978 · 27. oktober · Nyt lead: alle produkter, YOU GOT THIS én gang
 Ida 27/10: »2 you got this … der skal kun være en« · »Foredrag ligger der jo heller ikke?«. Produktvælgeren i Nyt lead (og Tøm hovedets lead) = tabellen produkter + Forretning › Produkter (prislisten + rummenes produkt-felt), hentet frisk hver gang arket åbner. »YOU GOT THIS · DETAIL« vises ikke som eget valg (heller ikke i kundekortets Type); et lead, der allerede bærer navnet, beholder det. Idas klik: punkterne under et eget produkt kan vælges hver for sig — kun de inderste rum, skrevet »Foredrag · Stop med at sug maven ind«; aldrig under kursusprodukterne. Leadet lander i CRM som Lead med produktet (målt i selen, 390 + 1440).
 
