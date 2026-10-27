@@ -235,6 +235,8 @@ html body #briefWrap .kk-hook-typer { justify-content:flex-end !important; }
 html body #briefWrap .kk-hook-felt .kk-hook-andre, html body #briefWrap .kk-thumb-andre { display:none !important; }
 /* SAMME FLISE-STIL PÅ HELE SIDEN (Ida 9/10: »hvor stor design forskel der er på teksten i de 2 fliser«): Tekst på coverbilledet får klipkortets titel — rød 17, én streg under */
 html body #briefWrap .sk-q.brief-forslag > .sk-label, html body.mb #briefWrap .sk-q[data-par="cover"] > .sk-label.mb-versal, html body #briefWrap .sk-q[data-par="cover"] > .sk-label { font-family:Poppins,sans-serif !important; font-size:17px !important; letter-spacing:0 !important; text-transform:none !important; line-height:1.3 !important; color:#FC2404 !important; border-bottom:1px solid var(--border) !important; padding:0 0 10px !important; margin:0 0 12px !important; }
+/* ALDRIG SKILLESTREG OVER ET ENLIGT FELT (Ida 27/10: »aldrig skillestreg hvis der kun er en kasse under og ikke tekst«): Tekst på coverbilledet har kun forslagsfeltet under titlen — stregen er væk, luften bliver. Begge flader. */
+html body #briefWrap .sk-q[data-par="cover"] > .sk-label, html body.mb #briefWrap .sk-q[data-par="cover"] > .sk-label.mb-versal { border-bottom:0 !important; padding-bottom:0 !important; }
 /* ALLE CHIPS I BRIEFEN ER ENS (LÅST, Ida 9/10: »ALLE chips i briefen skal bære grå og tekst størrelser og placering skal være ENS«): grå tekst 13 px, 36 høj, samme luft — valgt = rød som altid; initial-ringene (A · I) er ringe, ikke chips */
 html body #briefWrap .ark-chip:not(.on):not(.kk-ini) { color:var(--gray2) !important; font-size:13px !important; height:36px !important; min-height:36px !important; padding:0 16px !important; }
 html body #briefWrap .ark-chip:not(.kk-ini) .chip-plus { width:14px; height:14px; margin-right:8px; opacity:1; color:var(--gray2); }
@@ -23086,7 +23088,7 @@ function briefFaktaBoksHtml() {
     /* STATUS KAN SKIFTES BAADE PAA BRIEFOVERSIGTEN OG INDE I BRIEFEN (Ida 18/9 kl. 14.00: »jeg mangler ogsaa at kunne aendre status baade paa briefoversigten og inde i briefen«) — en raekke i fakta-boksen, listen aabner direkte under */
     /* STATUS BOR I COVERBILLEDET SOM DROPDOWN (Ida 21/9 kl. 15.35) — ikke i fakta-boksen */
     + rk("format", "Format", fmt, "format")
-    + rk("platform", "Platform", li(B.platform), "platform")
+    + (platformVises() ? rk("platform", "Platform", li(B.platform), "platform") : "")
     + rk("ansvarlig", "Hvem laver indholdet?", (function () { const v = String(B.hvemPerson || B.hvemLaver || ""); try { const alle = (BRIEF_PERSONER || []).slice(0, 12); const valgte = v.split("·").map(x => x.trim()).filter(Boolean); if (alle.length >= 2 && alle.every(n => valgte.indexOf(n) > -1)) return alle.length === 2 ? "Begge" : "Alle"; } catch (e) {} return v; })(), "ansvarlig")   /* begge valgt = chippen »Begge« (Ida 16/9 kl. 17.08) */   /* hed Ansvarlig til 16/9 kl. 16.14 (Ida) */
     /* LYD KUN, HVOR DER ER LYD (Ida/revision 6/10): en karrusel og et billede har ingen lyd — raekken stod som roed MANGLER, ogsaa paa et opslag »Klar til post« */
     + ((B.format === "Karrusel" || B.format === "Billede") ? "" : rk("lyd", "Lyd", li(B.lyd), "lyd"))
@@ -25163,7 +25165,7 @@ async function briefSendTilGem() {
   briefSendTilLaes(); const S = window.__SEND_TIL; if (!S) return;
   if (!S.til) { try { husBesked("Vælg, hvem det skal til."); } catch (e) {} return; }
   if (!sb || !currentKode) return;
-  const ny = { id: "t" + Date.now(), t: S.slags + (S.titel ? " · " + S.titel : "") + (String(S.tekst || "").trim() ? " — " + String(S.tekst).trim() : ""), af: (typeof CURRENT_NAVN !== "undefined" && CURRENT_NAVN) || "Teamet", fra: "team", til: S.til, brief_id: String(BRIEF_ID || ""), dato: datoDK() };
+  const ny = { id: "t" + Date.now(), t: S.slags + (S.titel ? " · " + S.titel : "") + (String(S.tekst || "").trim() ? " — " + String(S.tekst).trim() : ""), af: (typeof godkMig === "function" && godkMig()) || "Teamet", fra: "team", til: S.til, brief_id: String(BRIEF_ID || ""), dato: datoDK() };
   try {
     const r = await sb.from("skema_svar").select("svar").eq("kode", currentKode).eq("navn", "config").eq("skema", "beskeder").maybeSingle();
     if (r.error) return;
@@ -27800,6 +27802,9 @@ const FORRETNINGSTYPER_LUKKET = [
   /* KREATOER — se noten nedenfor. Staar LUKKET, indtil eksemplerne er skrevet. */
   { k: "kreator",   navn: "Kreat\u00f8r",                     note: "" }
 ];
+/* PLATFORM KUN FOR KREATØRER (Ida 27/10: »det her med platform skal fjernes … gav mening for dem der er kreatører og ikke butikker … fx dem der også er aktive på linkedin«):
+   butikker ser aldrig Platform i briefen; funktionen og det gemte bliver, og står igen, når kunden er kreatør. */
+function platformVises() { try { const t = String((typeof CURRENT_DEF !== "undefined" && CURRENT_DEF && CURRENT_DEF.forretningstype) || (typeof KUNDE_VALG_TYPE !== "undefined" && KUNDE_VALG_TYPE) || "").toLowerCase(); return forretningsNoegle(t) === "kreator"; } catch (e) { return false; } }
 function forretningsLukket(k) { return FORRETNINGSTYPER_LUKKET.find(x => x.k === k) || null; }
 /* FIRE TYPER. Otte blev foerst til tre, men det var for haardt: Ida 24/8 —
    "fysisk butik og webshop kan ikke vaere samme da cta og eksempler mm skal vaere
@@ -28203,7 +28208,10 @@ let BRIEF_PERSONER_KODE = null;
    DOM ikke er fremme — saa kunne vagten aldrig faa listen. */
 /* ER DET EN PERSON? (Ida 18/10: »app fejl?« — fejlrapporterne gemmes under navnet »app_fejl« og stod som et teammedlem »Ap« i briefen).
    En person er et navn — aldrig en e-mail (et login, 21/9), aldrig »delt«/»config« og aldrig et teknisk navn med understreg (app_fejl, app_puls …). */
-function erPersonNavn(n) { n = String(n || "").trim(); return !!n && n !== "delt" && n !== "config" && n.indexOf("@") === -1 && !/^[a-z0-9]+(_[a-z0-9]+)+$/.test(n) && !/^[0-9a-f]{8}-[0-9a-f]{4}-/i.test(n); }   /* aldrig et bruger-id (Ida 19/10: mødets Hvem viste »622a4038-… · Annette · e9ac62e5-… · Ida« — Inspirationens rækker gemmes under login-id'et) */
+/* SYSTEMRÆKKER ER IKKE PERSONER (Ida 27/10, Acorns: »hvor kommer liste fra???«): Inspirationens mapper gemmes under navnet »liste«, og flere fælles rækker har
+   faste navne — de stod som en person i »Hvem laver indholdet?«. Datanøglerne røres ikke; de vises bare aldrig som mennesker. */
+const SYSTEM_NAVNE = ["delt", "config", "liste", "faelles", "vaerktoej", "systemtjek", "ab-markoer", "bruger"];
+function erPersonNavn(n) { n = String(n || "").trim(); return !!n && SYSTEM_NAVNE.indexOf(n.toLowerCase()) < 0 && n.indexOf("@") === -1 && !/^[a-z0-9]+(_[a-z0-9]+)+$/.test(n) && !/^[0-9a-f]{8}-[0-9a-f]{4}-/i.test(n); }   /* aldrig et bruger-id (Ida 19/10: mødets Hvem viste »622a4038-… · Annette · e9ac62e5-… · Ida« — Inspirationens rækker gemmes under login-id'et) */
 async function briefPersonerHent() {
   const koden = (typeof currentKode !== "undefined" && currentKode) ? String(currentKode).toUpperCase() : "";
   if (BRIEF_PERSONER === null || BRIEF_PERSONER_KODE !== koden) {
@@ -28950,8 +28958,8 @@ function openBriefSide(id) {
        og har staaet som chip i heroen hele tiden. Det, der manglede, var VALGET — ikke
        kilden. Den anbefalede staar graat under, saa man kan se den uden at faa den
        trukket ned over hovedet. */
-    + qH('Platform <span class="sk-forkl">Vælg en eller flere</span>',
-        drop('platform', ["Instagram","Facebook","TikTok","LinkedIn"], true))
+    + (platformVises() ? qH('Platform <span class="sk-forkl">Vælg en eller flere</span>',
+        drop('platform', ["Instagram","Facebook","TikTok","LinkedIn"], true)) : "")
     + qH('Vibe <span class="sk-forkl">Tonen i opslaget</span>',
         drop('vibe', ["Underholdende","Inspirerende","Informativ","Uddannende","Reflekterende"], false)
         + (function () {
@@ -33908,7 +33916,7 @@ function briefNaesteSkridtHtml() {
   const fl = (tekst, knap, klik) => '<div class="pf-flise pf-naeste"><div class="pf-eye"><span>Næste skridt</span></div><div class="pf-naeste-rk"><span>' + tekst + '</span>' + (knap ? '<button type="button" class="pf-naeste-knap" onclick="' + klik + '">' + knap + '</button>' : '') + '</div></div>';
   if (!it.dato) return fl("Sæt en dato, så står opslaget i kalenderen.", "Vælg dato", "briefDatoArkFraForside()");
   const platform = String((Array.isArray(B.platform) ? B.platform.join(" · ") : B.platform) || "").trim();
-  if (!platform) return fl("Hvor skal det ud?", "Vælg platform", "briefFaktaGaa('platform')");
+  if (!platform && platformVises()) return fl("Hvor skal det ud?", "Vælg platform", "briefFaktaGaa('platform')");
   let dag = ""; try { const d = new Date(String(it.dato).slice(0, 10) + "T12:00:00"); const UGE = ["søndag", "mandag", "tirsdag", "onsdag", "torsdag", "fredag", "lørdag"]; dag = UGE[d.getDay()] + " " + dkDatoKort(String(it.dato).slice(0, 10)).replace(/^\S+\s/, ""); } catch (e) { dag = dkDatoKort(String(it.dato).slice(0, 10)); }
   return fl("Opslaget står i kalenderen " + esc(dag) + ". Optag det, og sæt Postet, når det er ude.", "Sæt Postet", "briefFaktaGaa('status')");
 }
@@ -38591,7 +38599,7 @@ function kundeBeskedArk() {
     gem: async function (t) {
       const tekst = String(t || "").trim(); if (!tekst) return false;
       if (!sb || !currentKode) return false;
-      const ny = { id: "k" + Date.now(), t: tekst, af: (typeof CURRENT_NAVN !== "undefined" && CURRENT_NAVN) || "Kunden", fra: "kunde", dato: datoDK() };
+      const ny = { id: "k" + Date.now(), t: tekst, af: (typeof godkMig === "function" && godkMig()) || "Kunden", fra: "kunde", dato: datoDK() };   /* som kunden = Ida (27/10) */
       try {
         const r = await sb.from("skema_svar").select("svar").eq("kode", currentKode).eq("navn", "config").eq("skema", "beskeder").maybeSingle();
         if (r.error) return false;
@@ -39520,7 +39528,11 @@ function lekGjortHtml(id) {
 }
 /* SIDEN BLIVER, HVOR DEN ER (Hans/Mette 26/10: trykket fik siden til at hoppe til toppen) */
 function lekTegnUdenHop(id) { try { if (LEK_AABEN !== id) return; const lv = document.getElementById("lekVis"); const y = lv ? lv.scrollTop : 0, wy = window.scrollY; renderLektionVis(); if (lv) lv.scrollTop = y; window.scrollTo(0, wy); } catch (e) {} }
+/* IDA KIGGER, KUNDEN LÆRER (Ida 27/10: »jeg skal ikke redigere som kunden«): i »Se som kunden« gemmes lektionernes fremgang (set · gjort · senere) aldrig —
+   det er kundens tal. Før markerede Idas kig lektionerne som set hos kunden. */
+function somKundeKigger() { try { return typeof SOM_KUNDE !== "undefined" && !!SOM_KUNDE; } catch (e) { return false; } }
 async function lekGjortSkift(id) {
+  if (somKundeKigger()) { try { husBesked("Du ser som kunden — fremgangen er kundens egen og gemmes ikke herfra."); } catch (e) {} return; }
   const foer = !!KURSUS_GJORT[id], ny = !foer;
   KURSUS_GJORT[id] = ny; lekTegnUdenHop(id);
   let ok = false;
@@ -39759,7 +39771,7 @@ async function kursusHent() {
         if (noteMangler) { try { kursusBlobGem("lektion_noter", KURSUS_NOTER); } catch (e) {} }
         try { await ovelseGensend(); } catch (e) {}   /* usendte svar foerst — SÅ lektionens »set« */
         const usendtBasis = Object.keys(ovelseLsHent("usendt")).map(mgBasisId);
-        Object.keys(lokalSet).forEach(function (id) { if (lokalSet[id] && !iBasen[id] && usendtBasis.indexOf(id) < 0) { try { sb.from("skema_svar").insert({ kode: currentKode, navn: CURRENT_NAVN || "", skema: "lektion_set_" + id, svar: { set: true } }).then(function () {}, function () {}); } catch (e) {} } });
+        Object.keys(lokalSet).forEach(function (id) { if (!somKundeKigger() && lokalSet[id] && !iBasen[id] && usendtBasis.indexOf(id) < 0) { try { sb.from("skema_svar").insert({ kode: currentKode, navn: CURRENT_NAVN || "", skema: "lektion_set_" + id, svar: { set: true } }).then(function () {}, function () {}); } catch (e) {} } });
         kursusGemLocal();
       }
     } catch(e) {}
@@ -40175,7 +40187,7 @@ async function lektionSet(id) {
   if (KURSUS_SET[id]) return;
   KURSUS_SET[id] = true;
   kursusGemLocal();
-  if (sb && currentKode) { try { await sb.from("skema_svar").insert({ kode: currentKode, navn: CURRENT_NAVN || "", skema: "lektion_set_" + id, svar: { set: true } }); LEK_SET_SENDT[id] = true; } catch(e) {} }
+  if (sb && currentKode && !somKundeKigger()) { try { await sb.from("skema_svar").insert({ kode: currentKode, navn: CURRENT_NAVN || "", skema: "lektion_set_" + id, svar: { set: true } }); LEK_SET_SENDT[id] = true; } catch(e) {} }
   renderKursusHjem();
   /* Var det den SIDSTE lektion, er afslutningsskemaet netop blevet relevant (Ida 2/9). */
   try { refreshEfterSkemaStatus(); } catch (e) {}
@@ -41205,7 +41217,7 @@ function lekMomentBliv(id, art) {
   if (art === "oevelse") {
     KURSUS_UDSAT[id] = true;
     kursusGemLocal();
-    if (sb && currentKode) { try { sb.from("skema_svar").insert({ kode: currentKode, navn: CURRENT_NAVN || "", skema: "lektion_udsat_" + id, svar: { udsat: true } }); } catch (e) {} }
+    if (sb && currentKode && !somKundeKigger()) { try { sb.from("skema_svar").insert({ kode: currentKode, navn: CURRENT_NAVN || "", skema: "lektion_udsat_" + id, svar: { udsat: true } }); } catch (e) {} }
     renderKursusHjem();
   }
   if (LEK_AABEN) renderLektionVis();
@@ -41236,7 +41248,7 @@ function loverDuDetNej(id) {
 async function udsaetOvelse(id) {
   KURSUS_UDSAT[id] = true;
   kursusGemLocal();
-  if (sb && currentKode) { try { await sb.from("skema_svar").insert({ kode: currentKode, navn: CURRENT_NAVN || "", skema: "lektion_udsat_" + id, svar: { udsat: true } }); } catch(e) {} }
+  if (sb && currentKode && !somKundeKigger()) { try { await sb.from("skema_svar").insert({ kode: currentKode, navn: CURRENT_NAVN || "", skema: "lektion_udsat_" + id, svar: { udsat: true } }); } catch(e) {} }
   lukLekPop();
   lektionSet(id);
   lekNaeste();
@@ -41607,7 +41619,7 @@ async function ovelseNaeste() {
     let gemt = false;
     try { gemt = await skemaSvarSkriv("lektion_svar_" + oId, oSvar, ovelseLsHent("beroert")[oId] || {}); } finally { OVELSE_FAERDIG_SENDER = false; }
     /* »SET« SENDES KUN, NAAR SVARET ER BEKRAEFTET (8/10): basen siger aldrig »lektionen er gjort«, mens svaret mangler */
-    if (gemt && !LEK_SET_SENDT[oBasis]) { try { await sb.from("skema_svar").insert({ kode: currentKode, navn: CURRENT_NAVN || "", skema: "lektion_set_" + oBasis, svar: { set: true } }); LEK_SET_SENDT[oBasis] = true; } catch(e) {} }
+    if (gemt && !LEK_SET_SENDT[oBasis] && !somKundeKigger()) { try { await sb.from("skema_svar").insert({ kode: currentKode, navn: CURRENT_NAVN || "", skema: "lektion_set_" + oBasis, svar: { set: true } }); LEK_SET_SENDT[oBasis] = true; } catch(e) {} }
     /* Naaede svarene ikke serveren, bliver vinduet staaende. De ER gemt her paa enheden
        (kursusGemLocal ovenfor), saa beskeden siger praecis det — hverken mere eller mindre. */
     if (!gemt) { if (OVELSE && OVELSE.id === oId) ovelseGemFejl(); else { try { husBesked("Svaret til den forrige lektion nåede ikke frem. Det ligger på din enhed og sendes igen."); } catch (e) {} } return; }
@@ -58675,7 +58687,8 @@ function briefGodkendSvar(svar) {
 function briefKommentarSend() {
   const f = document.getElementById("briefKommentarFelt"); const t = (f && f.value || "").trim(); if (!t) return;
   let hvem = "Ida";
-  try { if (typeof CUSTOMER_NAV !== "undefined" && CUSTOMER_NAV && !document.body.classList.contains("dash-mode")) hvem = (typeof CURRENT_HILSEN !== "undefined" && (CURRENT_HILSEN || "").trim()) || "Kunden"; } catch (e) {}
+  /* IDA ER IDA, OGSÅ SOM KUNDEN (Ida 27/10: »jeg skal ikke redigere som kunden«): i »Se som kunden« står kommentaren som Ida, ikke »Kunden« */
+  try { if (!(typeof SOM_KUNDE !== "undefined" && SOM_KUNDE) && typeof CUSTOMER_NAV !== "undefined" && CUSTOMER_NAV && !document.body.classList.contains("dash-mode")) hvem = (typeof CURRENT_HILSEN !== "undefined" && (CURRENT_HILSEN || "").trim()) || "Kunden"; } catch (e) {}
   if (!Array.isArray(BRIEF_STATE.kommentarer)) BRIEF_STATE.kommentarer = [];
   BRIEF_STATE.kommentarer.push({ t: t, hvem: hvem, tid: new Date().toISOString() });
   window.__GODK_SKRIV = false;
@@ -61569,7 +61582,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "2982";
+const APP_VERSION = "2986";
 const APP_BYGGET = "25. oktober";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_BYGGET + " · " + APP_VERSION; } catch (e) {} });
 let NY_VERSION_KLAR = false;
@@ -67776,7 +67789,8 @@ async function enterApp() {
            et opslag PAA navnet aldrig finde personen. Derfor: find paa login-e-mailen, ellers paa
            navnet, ellers den eneste person paa koden. Retter ogsaa det fulde navn, saa hilsener
            og "Bolden hos ..." holder op med at sige "klipperen". (Ida 30/7) */
-        if (sb && currentKode) {
+        /* »SE SOM KUNDEN« ER IDA (27/10): kundens person-rækker må aldrig give Ida et kundenavn (én person på koden = »mig« før) */
+        if (sb && currentKode && !SOM_KUNDE) {
           const minMail = String((user && user.email) || "").trim().toLowerCase();
           sb.from("skema_svar").select("navn,svar").eq("kode", currentKode).eq("skema", "person_info").then(r => {
             const raekker = (r && r.data) || [];
@@ -83517,7 +83531,7 @@ async function moedeBeskedTilDeltagere(ma) {
     if (!folk.length) return 0;
     const naar = (function () { try { return new Date(String(ma.dato).slice(0, 10) + "T12:00:00").toLocaleDateString("da-DK", { weekday: "long", day: "numeric", month: "long" }); } catch (e) { return dkDatoKort(ma.dato); } })() + (ma.tid ? " kl. " + String(ma.tid).slice(0, 5).replace(":", ".") : "");
     const tekst = "Mødet " + naar + " er annulleret.";
-    const af = (typeof CURRENT_NAVN !== "undefined" && CURRENT_NAVN) || "Teamet"; const dato = datoDK();
+    const af = (typeof godkMig === "function" && godkMig()) || "Teamet"; const dato = datoDK();   /* som kunden = Ida (27/10) */
     const nye = folk.map(function (n, i) { const erIda = /^ida\b/i.test(String(n)); return erIda ? { id: "a" + Date.now() + i, t: tekst, af: af, fra: "kunde", dato: dato } : { id: "a" + Date.now() + i, t: tekst, af: af, fra: "team", til: n, dato: dato }; });
     const r = await sb.from("skema_svar").select("svar").eq("kode", currentKode).eq("navn", "config").eq("skema", "beskeder").maybeSingle();
     if (r.error) return 0;

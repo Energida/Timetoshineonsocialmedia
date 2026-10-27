@@ -123,6 +123,27 @@
         tjek(7, "»Er det postet?« står hos hele teamet, ikke kun den, der laver indholdet", /SC Teamopslag/.test(tTxt) && !/SC Idas opslag/.test(tTxt), tTxt || "ingen spørgsmål");
         tjek(7, "»Er det postet?« tæller med i tallet ved Indbakken", bdg.length > 0 && bdg.every(function (n) { return n >= 1; }), JSON.stringify(bdg));
       } catch (e) { tjek(7, "»Er det postet?« til teamet kunne testes", false, e.message); }
+      /* »SE SOM KUNDEN« ER IDA (Ida 27/10: »jeg skal ikke redigere som kunden«): kommentaren står som Ida, og Idas kig gemmer aldrig kundens lektionsfremgang.
+         Fejlede med koden før v2986 (»Kunden« + lektion_gjort-række). */
+      try {
+        var skF = SOM_KUNDE, nvF = CURRENT_NAVN, hlF = CURRENT_HILSEN, komF = BRIEF_STATE.kommentarer;
+        SOM_KUNDE = "SCKODE"; CURRENT_NAVN = ""; CURRENT_HILSEN = "";
+        var kfx = document.getElementById("briefKommentarFelt"), lavet = false; if (!kfx) { kfx = document.createElement("textarea"); kfx.id = "briefKommentarFelt"; document.body.appendChild(kfx); lavet = true; }
+        BRIEF_STATE.kommentarer = []; kfx.value = "SC kommentar"; briefKommentarSend(); await V(200);
+        var skHvem = ((BRIEF_STATE.kommentarer || []).slice(-1)[0] || {}).hvem;
+        var lekFoer = ((JSON.parse(localStorage.getItem("SELE_DB") || "{}").skema_svar) || []).filter(function (x) { return /^lektion_(gjort|set)_sc-som/.test(x.skema); }).length;
+        await lekGjortSkift("sc-som-lek"); await V(200);
+        var lekEfter = ((JSON.parse(localStorage.getItem("SELE_DB") || "{}").skema_svar) || []).filter(function (x) { return /^lektion_(gjort|set)_sc-som/.test(x.skema); }).length;
+        SOM_KUNDE = skF; CURRENT_NAVN = nvF; CURRENT_HILSEN = hlF; BRIEF_STATE.kommentarer = komF; if (lavet) kfx.remove();
+        tjek(16, "Se som kunden: Idas kommentar står som Ida, ikke som kunden", skHvem === "Ida", "hvem: " + skHvem);
+        tjek(16, "Se som kunden: Idas kig gemmer ikke kundens lektionsfremgang", lekEfter === lekFoer, lekFoer + " → " + lekEfter);
+      } catch (e) { tjek(16, "Se som kunden kunne testes", false, e.message); }
+      /* PLATFORM KUN FOR KREATØRER (Ida 27/10): en butik ser ikke Platform; en kreatør gør */
+      try {
+        var ftF = CURRENT_DEF && CURRENT_DEF.forretningstype; if (!CURRENT_DEF) CURRENT_DEF = {};
+        CURRENT_DEF.forretningstype = "butik"; var pB = platformVises(); CURRENT_DEF.forretningstype = "kreator"; var pK = platformVises(); CURRENT_DEF.forretningstype = ftF;
+        tjek(1, "Platform står kun hos kreatører, ikke hos butikker", pB === false && pK === true, "butik " + pB + " · kreatør " + pK);
+      } catch (e) { tjek(1, "Platform-reglen kunne testes", false, e.message); }
       /* LØFTE 52 · LEKTIONERNES OPGAVER GEMMES — FORLØBSKUNDEN (kursuskunden: tjek_forloeb.py) (Ida 22/10: »et grundigt sikkerhedstjek hver dag for at det kunderne skriver ind at det bliver gemt … når de laver opgaver«):
          ALLE lektioner med en opgave udfyldes som kunden gør det (feltet → Næste → Færdig); hvert svar skal stå i basen nu og efter genindlæsning (laes1). Nye opgaver kommer selv med. */
       try {
