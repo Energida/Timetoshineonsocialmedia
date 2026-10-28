@@ -1,3 +1,7 @@
+## v3008 · 28. oktober · Rød playknap på Fortsæt-flisen
+
+- Playknappen midt på billedet i “Fortsæt hvor du slap” / “Din første lektion” på computerens dashboard er RØD med hvid trekant, som telefonens mini-afspiller (Ida: »den playknap på afspilleren skal være rød«). Før var den hvid og halvt gennemsigtig.
+
 ## v3006 · 28. oktober · Idas CRM som hendes gamle Notion (bud 1, Artifact 5hUvJAvL1qQTUTH4HuEZJU)
 
 - **Notion-tabellen** (Ida: »jeg kunne mega godt tænke mig at mit crm blev ligesom mit gamle notion - hvor man kan arbejde i det inkl kolonner osv«).
