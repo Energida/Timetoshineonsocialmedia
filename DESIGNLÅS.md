@@ -1,3 +1,15 @@
+## v3002 · 28. oktober · YOU GOT THIS: forsiden, lektionssiden og oversigten (Idas klik én ad gangen)
+
+- **Forsiden = Hjem igen** (Ida: »jeg troede jo jeg havde godkendt en forside med miniafspiller og fortsæt hvor du slap«). Kunden lander ikke længere på Lektionerne (`YGT_HJEM_ER_LEKTIONER = false`).
+- **Computeren: afspilleren bor på dashboardet, aldrig i menuen** (Ida: »den skal selvfølgelig ligge på dashboardet«). Den store flise »Din første lektion« / »Fortsæt hvor du slap« / »Dit første skridt« (skemaet) øverst (`hjemFortsaetPcHtml`). Under den står næste modul og ringene i lige store fliser. Telefonen er uændret (lille afspiller over bundmenuen).
+- **Lektionssiden:** heroen siger modulet (»Modul 0 · Introduktion«), og der er ingen dato. Over videoen står »Lektion 0.1 · Velkommen«. Listen viser kun modulet, man står i: modulet som overskrift med streg, nummer ud for hver lektion og fluebenet til venstre. Det, man er i, har nummer og navn i rødt på en hvid flise (kombi af bud 1 og 5, version A). Hverken rød eller grå flise.
+- **Processlinjen i stedet for cirklen alle steder undtagen forsiden** (`fremLinje`): tekst til venstre, procent til højre, grå linje med rød fremgang. Inde i et modul tæller den kun modulet (»Dit modul · Modul 0 · 1 af 2«, spørgeskemaet tæller med). På oversigten tæller den hele forløbet (»Lektioner set« · »Opgaver«).
+- **Oversigten:** coveret hedder YOU GOT THIS. Spørgeskemaet er et skridt i modul 0, ikke en flise øverst. Hvert modul er sin egen flise, der kan foldes ud. Et åbent modul er ÉN flise med lektionerne indeni og en hårfin streg imellem (Ida: »Man skal kunne se at lektionerne hører til modulerne«).
+- **Introen før skemaet = Idas eget design:** hvid flise, etiket »Spørgeskema · Før forløbet« med én streg, Didot-titlen »Hvor står du lige nu?« (bevidst undtagelse — Idas design), Idas tekst, to grå linjer og den røde »Start spørgeskemaet«. Næste-knappen står fast nederst på telefonen. Tilbage forsvinder ikke længere efter Start.
+- **Briefen:** faktaboksen bud 3 (ingen ikoner, hårfine streger, tynd Poppins 300 i værdierne, rødt »Vælg«). Hook-flisen er den gamle med kun de måder, hooket bruges på, og en hårfin streg mellem delene.
+- **Fejl-knappen på telefonen bor kun i menuen** (»Meld en fejl«). Insektet er væk fra coverets hjørne.
+- **CRM:** »Gratis kursusadgang« (fx Ringkøbing Handelsforenings egen kode) får YOU GOT THIS-kundesiden uden møder og aftaler.
+
 ## v3000 · 27. oktober · Ingen browser hænger fast i en gammel version (service-worker v7)
 Ida 27/10: købte med koden JEGERIDASVEN i Safari og »kom ind på den forældede lektionsside« — foden sagde 2775 (9/10), serveren 2998. Årsag: service-workeren svarede den gemte kopi og hentede den nye i baggrunden; Safari lod baggrundshentningen dø, så kopien blev svaret i to uger. Nu hentes den nye i forgrunden, når version.txt er nyere (loft 8 sek.), og cachen er bumpet til energida-v7, så alle enheder smider den gamle kopi én gang. Bevist i en testkopi: gammel worker gav 100 efter deploy af 200, ny worker gav 200.
 
