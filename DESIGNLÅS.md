@@ -1,3 +1,14 @@
+## v3006 · 28. oktober · Idas CRM som hendes gamle Notion (bud 1, Artifact 5hUvJAvL1qQTUTH4HuEZJU)
+
+- **Notion-tabellen** (Ida: »jeg kunne mega godt tænke mig at mit crm blev ligesom mit gamle notion - hvor man kan arbejde i det inkl kolonner osv«).
+- **Faner:** de eksisterende chips. Den valgte er RØD med hvid tekst, men kun i CRM (Ida: »brug rød i stedet for den grimme brune« — vælter 9/10-reglen for CRM-fanerne).
+- **Kolonner:** knappen “Kolonner” slår Status · Kontaktperson · Produkt · Næste aktivitet · Sidste kontakt · Kommentar · Oprettet til og fra. Kunde står altid.
+- **Sortering:** tryk på en overskrift sorterer stigende, så faldende, så slået fra.
+- **Ret i cellen:** status (det lille ark med STATUSES), næste aktivitet (husets dato-ark) og kommentar kan rettes direkte hos kontakterne. Der skrives kun til de felter, der findes i contacts, og »Gemt« vises først, når rækken er talt. En kunde med kode åbner kundesiden.
+- **Visningen gemmes** (kolonner og sortering) i Idas egen række, skema_svar · crm_visning. Der er ingen ny tabel og ingen ny kolonne.
+- **Telefon:** Kunde står først og fast. Tabellen ruller i sin egen ramme med “Rul i tabellen”. Kolonner-knappen er et ikon på 44 px, fordi porten kun tillader lange knapper med tekst.
+- Ingen initialer foran navnene (Ida). Titlerne i arkene er sorte.
+
 ## v3004 · 28. oktober · Kundens profil i tre trin (Idas klik på bud 2, rettet efter makkerens feedback)
 
 - **Profilen efter adgangskoden = tre trin på sin egen flade** (Ida: »det skal komme hvor man ikke kan se content studio i baggrunden endnu«). Trinnene er Om dig · Fortæl om din butik · Adgang, med “Trin 1 af 3” og en processlinje øverst. Først bagefter kommer appen frem, og kunden lander i første lektion (“Start første lektion”).
