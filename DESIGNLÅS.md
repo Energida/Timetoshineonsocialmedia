@@ -1,3 +1,14 @@
+## v3004 · 28. oktober · Kundens profil i tre trin (Idas klik på bud 2, rettet efter makkerens feedback)
+
+- **Profilen efter adgangskoden = tre trin på sin egen flade** (Ida: »det skal komme hvor man ikke kan se content studio i baggrunden endnu«). Trinnene er Om dig · Fortæl om din butik · Adgang, med “Trin 1 af 3” og en processlinje øverst. Først bagefter kommer appen frem, og kunden lander i første lektion (“Start første lektion”).
+- **Om dig:** navn. Fødselsdag med dag, måned og år skal udfyldes (Ida: »årstallet er jo hele pointen«). “Ejer du butikken?” svares med Ja/Nej, og ved Nej skal “Hvad er din rolle i butikken?” udfyldes.
+- **Fortæl om din butik:** navnet står udfyldt fra købet, og der er felter til adresse, postnr., by og CVR (frivilligt). “Hvad sælger butikken?” har fem valg, og ved Andet skal der skrives. Teksten gemmes, mens der skrives, og “Gemt” vises kun, når basen har svaret. “Hvor kan kunderne købe dine produkter?” = KUNDETYPEN, som styrer CTA'er, søjler, briefen og Drejebogen (Ida: »det er jo sindssygt DU spørger mig om det«).
+- **Adgang:** “Vil du invitere dine kolleger nu?” med “Forløbet giver 3 adgange: dig og to kolleger.” og valgene Invitér kolleger / Jeg gør det senere. Invitationerne blokerer aldrig.
+- **Intet går tabt:** en kladde i browseren ved hvert tastetryk, så kunden starter, hvor de slap. Personen gemmes på kontoen og i profil_person. Butikken gemmes i config·profil_svar og deles af kollegerne. En kollega får kun trin 1.
+- **CRM:** YOU GOT THIS-kundesiden har grupperne Butikken og Personerne.
+- **Drejebogen:** tiltalen og forretningstypen bruger kundens svar, når Ida ikke selv har valgt. Idas valg vinder altid.
+- **Spørg aldrig Ida om det, systemet selv kan svare på.**
+
 ## v3002 · 28. oktober · YOU GOT THIS: forsiden, lektionssiden og oversigten (Idas klik én ad gangen)
 
 - **Forsiden = Hjem igen** (Ida: »jeg troede jo jeg havde godkendt en forside med miniafspiller og fortsæt hvor du slap«). Kunden lander ikke længere på Lektionerne (`YGT_HJEM_ER_LEKTIONER = false`).
