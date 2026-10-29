@@ -30,7 +30,10 @@ setTimeout(async function () {
       }
       /* 2) LINJEN »I dag« m. to pile + syv datofliser, i dag fyldt roed */
       var linje = r.querySelector(".hu-linje");
-      if (!synlig(linje) || !/^I dag/i.test((linje.innerText || "").trim())) F(tilstand + ": linjen »I dag« mangler");
+      /* TELEFONEN: »I DAG« STÅR UNDER DATOFLISERNE (Ida 29/10: »… står under kalenderen på samme måde med versaler: I DAG«) — rækken over har kun pilene og Dag/Uge. Står der intet under dagen, står etiketten ikke (den må ikke svæve). */
+      var dagSek = r.querySelector(".hu-dagsek");
+      if (!synlig(linje)) F(tilstand + ": linjen »I dag« mangler");
+      else if (tlf ? (dagSek && !/^I dag/i.test((dagSek.innerText || "").trim())) : !/^I dag/i.test((linje.innerText || "").trim())) F(tilstand + ": linjen »I dag« mangler");
       var pile = [].filter.call(r.querySelectorAll(".hu-linje .hu-pil"), synlig); if (pile.length !== 2) F(tilstand + ": pilene ved »I dag« er " + pile.length + ", ikke 2");
       var dage = [].filter.call(r.querySelectorAll(".hu-strib .hu-dag"), synlig); if (dage.length !== 7) F(tilstand + ": ugestrimlen har " + dage.length + " datofliser, ikke 7");
       var idag = r.querySelector(".hu-dag.idag"); if (!idag || getComputedStyle(idag).backgroundColor !== "rgb(252, 36, 4)") F(tilstand + ": i dag er ikke fyldt roed");

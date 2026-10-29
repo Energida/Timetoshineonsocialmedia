@@ -1,3 +1,19 @@
+## v3018 · 29. oktober · Forslag fra Ida, coverværktøjet og kalenderen på telefonen (Idas »Deploy«)
+
+- **Forslag fra Ida:** en brief med status Klar til godkendelse står stiplet (#CFCAC3) i kalenderen, i Kommende opslag og i computerens uge, med ordet »Forslag fra Ida«. Appens egne råd er grå #F1F0EC.
+- **Hjem:** flisen »Venter på dig · N forslag fra Ida« med titlerne og den røde »Se forslagene« står øverst på telefon og computer. Et tryk åbner den almindelige brief.
+- **Lydmemo:** i arket »Send til godkendelse« kan Ida indtale en forklaring (Indtal · Stop · afspil · Optag igen · skraldespand). Filen gemmes i den lukkede bucket brief-filer under virksomhedens mappe. Modtageren afspiller den i godkendelsesboksen og i briefoversigten. Fejler upload, sendes intet.
+- **Kunden godkender kun idéen.** Tanker til idéen skrives i Kommentarer.
+- **Coverværktøjet:** hvide hjælpestreger, træk og knib med to fingre for størrelsen.
+- **Kalenderen på telefonen:** versal-linjen »I DAG« under datofliserne; ugedagene står som etiketter i Kommende opslag.
+
+## LÅST 29. oktober · Baggrunden er #FAF9F5 (Ida: »LÅS DEN FARVE«)
+
+- Sidens baggrund er den lyse, varme hvide **#FAF9F5**, samme farve som Claude-appen. Den bruges også i telefonens ark under heroen.
+- Fliser, felter og chips forbliver rent hvide **#FFFFFF** oven på baggrunden.
+- Den vælter “siden er hvid” og telefonens sand #F4F2EE (8/10, 15/9) som sidens baggrund. Sand bruges ikke længere som baggrund.
+- Første brug er buddet på mobilbriefen (Artifact 2NYCLeLbSFwwnaWTLk6yvu). Appen får farven, når den næste side bygges om. Det er ikke rullet ud på alle sider endnu.
+
 ## v3016 · 29. oktober · Rundvisningen: trin om Næste modul
 
 - Efter “Her er dit forløb” kommer et trin med spotlys på flisen **Næste modul** på Hjem: “Her kan du se, hvornår dit næste modul åbner. Der åbner et nyt hver 7. dag.” Ordene er Idas klik fra 29/10.
