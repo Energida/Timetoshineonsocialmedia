@@ -1,3 +1,12 @@
+## v3010 · 29. oktober · Rene fejl fra Hans/Mette-testen før lanceringen (rapport EGFeNFJPzjAPS1JZoDuE3d)
+
+- **Mini-afspilleren** skjules, når Mere-menuen er åben på telefonen. Den lå oven på “Meld en fejl”.
+- **Rundvisningens spotlys** rammer aldrig noget bag en åben lektion. Når lektionen ruller af sig selv, tegnes spotlyset igen, højst tre gange.
+- **Notetrinnet** åbner lektionen. Det tegnes med det samme og igen, når siden står (løfte 55).
+- **Navneknappen** i sidemenuen viser det nye navn lige efter profilen.
+- **Profil:** “Dine knapper” (plussets tre knapper) vises ikke, så længe plusset er låst for YOU GOT THIS.
+- **CRM:** “Spørgeskema · Sendt”, “Kunde siden” og “Købt” viser den danske dag og ikke UTC.
+
 ## v3008 · 28. oktober · Rød playknap på Fortsæt-flisen
 
 - Playknappen midt på billedet i “Fortsæt hvor du slap” / “Din første lektion” på computerens dashboard er RØD med hvid trekant, som telefonens mini-afspiller (Ida: »den playknap på afspilleren skal være rød«). Før var den hvid og halvt gennemsigtig.

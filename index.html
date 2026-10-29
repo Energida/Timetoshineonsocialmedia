@@ -1150,6 +1150,7 @@ html body .uge-dag.idag::after{content:"";position:absolute;inset:0;border:2px s
 .hmini-spil{width:48px;height:48px;flex-shrink:0;border:0;border-radius:50%;background:var(--red);display:grid;place-items:center;cursor:pointer;padding:0 0 0 2px}
 body.har-mini .hu-ygt{padding-bottom:96px}
 @media (min-width:900px){ #hjemMiniTlf{display:none} }
+@media (max-width:899px){ body:has(#burgerMenu.open) #hjemMiniTlf{display:none} }   /* HANS/METTE 29/10: mini-afspilleren (z 120) lå oven på Mere-menuen (z 80) og dækkede »Meld en fejl« */
 .hnm{background:#fff;border-radius:20px;box-shadow:var(--mb-skygge,0 0 4px rgba(46,44,41,.10),0 0 36px rgba(46,44,41,.14));padding:18px 20px;font-family:Poppins,sans-serif;box-sizing:border-box;min-width:0}
 .hnm-eti{font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--gray3)}
 .hnm-streg{height:1px;background:var(--border,#E3E2DE);margin:12px 0 14px}
@@ -22513,7 +22514,7 @@ async function minProfilAaben() {
     + fl("Dine skrifter", ''
     + '<div class="ark-chips" id="profilSkrifter" style="display:flex;flex-wrap:wrap;gap:8px;overflow:visible;">' + profilSkrifterHtml() + '</div>'
     )
-    + fl("Dine knapper", ''
+    + ((typeof hjemFunktionerLaast === "function" && hjemFunktionerLaast()) ? '' : fl("Dine knapper", ''
     + '<div style="font-size:11.5px;color:var(--gray3);line-height:1.55;margin-bottom:12px;">De tre knapper i plusset, hvor du lægger noget fra dig. Lad feltet stå tomt, hvis standarden er fin.</div>'
     + FANG_KNAPPER.map(function (b) {
         const lander = b.k === "ide" ? "Lander i Idébanken" : b.k === "fedt" ? "Lander under Inspiration" : "Lander i Indbakken";   /* hvor knappen lander — saa kunden ved det (Ida 19/9 kl. 10.06) */
@@ -22523,7 +22524,7 @@ async function minProfilAaben() {
           + '" style="width:100%;background:#fff;border:1px solid var(--border);border-radius:12px;padding:10px 13px;font-family:Poppins,sans-serif;font-size:13px;outline:none;margin-bottom:4px;">'
           + '<div style="font-size:11px;color:var(--gray3);margin:0 0 10px 2px;">' + lander + '</div>';
       }).join("")
-    , true)
+    , true))   /* HANS/METTE 29/10: plusset findes ikke for YOU GOT THIS før modul 7 (hjemFunktionerLaast, Ida 9/10) — så skal Profil heller ikke vise plussets tre knapper */
     + '</div><span id="profilMsg" class="prof-msg"></span>'
     + '<button type="button" class="dbtn primary mq-tap prof-gem" onclick="minProfilGem()">Gem ændringer</button>';
   showTab(24);
@@ -32498,7 +32499,7 @@ function turMedFejl(liste) {
     try {
       const d0 = (typeof CURRENT_DEF !== "undefined") ? CURRENT_DEF : null;
       if (TUR_MODUS !== "lek" && d0 && d0.type === "kursus" && typeof harLektionsadgang === "function" && harLektionsadgang(d0) && !lekTurSet() && kursusLektionerAktive().length) {
-        const aabn = function () { const ak = kursusLektionerAktive(); const l = ak.find(function (x) { return !KURSUS_SET[x.id]; }) || ak[0]; if (l && !(document.getElementById("lekVis") || {}).classList?.contains("on")) visLektion(l.id); };
+        const aabn = function () { const ak = kursusLektionerAktive(); const l = ak.find(function (x) { return !KURSUS_SET[x.id]; }) || ak[0]; const lekAaben = !!(document.getElementById("lekVis") || {}).classList?.contains("on"); if (l && (!lekAaben || !document.getElementById("lekNotePanel"))) { visLektion(l.id); return true; } return false; };   /* HANS/METTE 29/10: rundvisningen startede over skemaets kvittering — lektionssiden stod åben uden noter, og »Skriv det, du vil huske« pegede på ingenting */
         const lekTrin = LEK_TUR_STOPS.filter(function (st) { return !st.ovelse; }).map(function (st, k) { return Object.assign({}, st, { lek: true }, k === 0 ? { foer: aabn } : {}); });
         ny.splice(i, 0, ...lekTrin);
       }
@@ -32733,6 +32734,7 @@ async function pfSlut() {
   if (inv.some(function (x) { return x.ok; })) { md.ental = false; ER_ENTAL = false; try { anvendTone(); } catch (e) {} }
   try { if (sb) await sb.auth.updateUser({ data: md }); } catch (e) {}
   VK = null; VELKOMST_KOERER = false; PF = null;
+  try { if (typeof buildSideNav === "function" && CUSTOMER_NAV && CURRENT_DEF) buildSideNav(CURRENT_DEF); } catch (e) {}   /* HANS/METTE 29/10: navneknappen i sidemenuen stod med det gamle navn (»Test«), til siden blev genindlæst */
   const el = document.getElementById("pfFlow"); if (el) el.remove();
   document.body.classList.remove("pf-aaben");
   try { dagensKortLuk(); } catch (e) {}
@@ -32881,7 +32883,7 @@ function turVis(i) {
   if (i >= TUR_STOPS.length) { turLuk(); return; }
   const stop = TUR_STOPS[i];
   /* ET TRIN KAN ÅBNE SIN SIDE FØRST (Ida 26/10: lektionssidens rundvisning hører med i den første) — siden åbnes, og trinnet tegnes, når den står */
-  if (typeof stop.foer === "function" && !stop.__aabnet) { stop.__aabnet = true; try { stop.foer(); } catch (e) {} }   /* visLektion tegner siden med det samme, så trinnet kan tegnes i samme kald */
+  if (typeof stop.foer === "function" && !stop.__aabnet) { stop.__aabnet = true; let aabnede = false; try { aabnede = stop.foer() === true; } catch (e) {} if (aabnede) { setTimeout(function () { if (TUR_STOPS[i] === stop && document.getElementById("turOverlay")) turVis(i); }, 450); } }   /* trinnet tegnes med det samme (løfte 55) og igen, når siden står */   /* HANS/METTE 29/10 (390): visLektion tegner siden, men lektionen ruller og tegnes om bagefter — spotlyset blev målt før og lyste på videoen i stedet for noterne. Åbner trinnet siden, tegnes det, når siden står. */
   const el = document.createElement("div");
   el.id = "turOverlay";
   el.style.cssText = "position:fixed;inset:0;z-index:230;";
@@ -32889,7 +32891,8 @@ function turVis(i) {
   /* TRINNET PEGER PÅ DET SYNLIGE (sikkerhedschefen 22/10, løfte 55 — Ida: »har vi 100% styr på rundvisningen?«): »Start her« (#obStartCta) findes to gange —
      i den skjulte forside og i Næste skridt-flisen — og querySelector tog den skjulte; »Din Drejebog bor her« pegede på De 4 byggesten inde i den lukkede
      Værktøjskasse-gruppe. Nu: det første SYNLIGE mål, og et menupunkt i en lukket gruppe foldes ud, før spotlyset tegnes. */
-  const synligt = function (sel) { const l = document.querySelectorAll(sel); for (let qi = 0; qi < l.length; qi++) { if (l[qi].offsetParent !== null) return l[qi]; } return l[0] || null; };
+  const lekDaekker = function (e) { try { const lv = document.getElementById("lekVis"); return !!(e && lv && lv.classList.contains("on") && !lv.contains(e) && !e.closest("#sideNav, #bottomNav")); } catch (er) { return false; } };   /* HANS/METTE 29/10: står lektionssiden åben, er Hjem bag den ikke et mål — kun lektionen, sidemenuen og bundmenuen ses */
+  const synligt = function (sel) { const l = document.querySelectorAll(sel); for (let qi = 0; qi < l.length; qi++) { if (l[qi].offsetParent !== null && !lekDaekker(l[qi])) return l[qi]; } return lekDaekker(l[0]) ? null : (l[0] || null); };
   let maal = stop.s ? synligt(stop.s)
     : (stop.k ? document.querySelector('#sideNav [data-k="' + stop.k + '"]') : null);
   if (maal && maal.offsetParent === null && stop.k) { try { const gr = maal.closest('[id$="Under"]'); if (gr && typeof snFold === "function") snFold(gr.id, true); } catch (e) {} }
@@ -32913,7 +32916,7 @@ function turVis(i) {
           /* Kortet rulles frem i sporet, saa spotlightet kan se det. */
           if (e) { try { const dk = e.closest(".db-deck"); if (dk) dk.scrollTo({ left: e.offsetLeft - 16, behavior: "auto" }); } catch (er) {} }
         } else e = document.querySelector(stop.m[mi]);
-        if (e && (e.offsetParent !== null || getComputedStyle(e).position === "fixed") && e.getBoundingClientRect().height > 0) maal = e;   /* fast element (mini-afspilleren, 26/10) har ingen offsetParent */
+        if (e && (e.offsetParent !== null || getComputedStyle(e).position === "fixed") && e.getBoundingClientRect().height > 0 && !lekDaekker(e)) maal = e;   /* fast element (mini-afspilleren, 26/10) har ingen offsetParent */
       } catch (e) {}
     }
     if (maal && !maal.closest("#bottomNav")) { try { const mb = maal.getBoundingClientRect(); if (mb.top < 0 || mb.bottom > innerHeight) maal.scrollIntoView({ block: "center", behavior: "auto" }); } catch (e) {} }   /* kun når målet er uden for skærmen (løfte 15, nat 22/10: Hjem stod rullet ned efter rundvisningen) */
@@ -33006,6 +33009,22 @@ function turVis(i) {
     /* OGSÅ PÅ COMPUTEREN (Hans-testen 22/10: lektionsturens kort stod oven på »Dine noter«): Idas regel 15/9 — kortet flytter sig, hvis det dækker målet */
     try { turKortPas(el.lastElementChild, (typeof maalRamme !== 'undefined') ? maalRamme : null); } catch (e) {}
   }
+  /* SPOTLYSET FØLGER LEKTIONSSIDEN (Hans/Mette 29/10, 390): lektionssiden rullede af sig selv ~1,5 sek. efter, at den blev åbnet (videoen indlæses),
+     og spotlyset blev stående på det gamle sted — over videoen, mens teksten talte om noterne. Flytter målet sig, tegnes trinnet igen (højst tre gange). */
+  try {
+    const lvF = document.getElementById("lekVis");
+    if (maal && lvF && lvF.contains(maal) && typeof maalRamme !== 'undefined' && maalRamme) {
+      const top0 = maal.getBoundingClientRect().top; let gange = 0, tm = null;
+      const lyt = function () {
+        if (!document.body.contains(el) || TUR_STOPS[i] !== stop) { lvF.removeEventListener("scroll", lyt); return; }
+        clearTimeout(tm); tm = setTimeout(function () {
+          if (!document.body.contains(el) || TUR_STOPS[i] !== stop) return;
+          if (Math.abs(maal.getBoundingClientRect().top - top0) > 4 && (stop.__igen = (stop.__igen || 0) + 1) <= 3) { lvF.removeEventListener("scroll", lyt); turVis(i); }
+        }, 160);
+      };
+      lvF.addEventListener("scroll", lyt, { passive: true });
+    }
+  } catch (e) {}
 }
 /* Kortet viger for spotlightet: daekker det midterstillede kort maalet, flyttes det under maalet —
    eller over, hvis maalet sidder i bunden (bundmenuen). 16 px luft. Ellers bliver det midt paa. */
@@ -62109,7 +62128,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "3008";
+const APP_VERSION = "3010";
 const APP_BYGGET = "25. oktober";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_BYGGET + " · " + APP_VERSION; } catch (e) {} });
 let NY_VERSION_KLAR = false;
@@ -86333,9 +86352,11 @@ async function ksYgtHent(k) {
     start: (st && !st.fejl && st.dato) || "", feedback: feedback, opgaver: opgaver, titler: titler, sete: sete, foersteLogin: foersteLogin
   };
 }
-function ksyDageSiden(iso) { if (!iso) return null; return Math.round((new Date(datoDK() + "T12:00:00") - new Date(String(iso).slice(0, 10) + "T12:00:00")) / 864e5); }
+/* DANSK DAG AF ET TIDSSTEMPEL (Hans/Mette 29/10: et skema sendt kl. 00.40 dansk tid stod som »Sendt 28. oktober« — created_at er UTC) */
+function ksyDag(iso) { const t = String(iso || ""); return /T\d/.test(t) ? datoDK(t) : t.slice(0, 10); }
+function ksyDageSiden(iso) { if (!iso) return null; return Math.round((new Date(datoDK() + "T12:00:00") - new Date(ksyDag(iso) + "T12:00:00")) / 864e5); }
 function ksySidenOrd(iso) { const n = ksyDageSiden(iso); if (n == null) return ""; return n <= 0 ? "i dag" : n === 1 ? "i går" : "for " + n + " dage siden"; }
-function ksyDato(iso) { const x = String(dkDatoKort(String(iso).slice(0, 10))); return x.charAt(0).toUpperCase() + x.slice(1); }
+function ksyDato(iso) { const x = String(dkDatoKort(ksyDag(iso))); return x.charAt(0).toUpperCase() + x.slice(1); }
 let KSY_DATA = null;
 /* ET SIMPELT KUNDESYSTEM (Ida 27/10: »jeg skal slet ikke have et FLOT crm på kunden. det skal fungere og give mig overblik … meget mere som et simpelt kundesystem … ikke en masse fliser uden hierarki … ikke en bunke forskelligt indhold i en flise uden opdeling«):
    én overskrift pr. emne, én flise pr. emne, og inde i flisen en fast feltliste — feltnavnet til venstre, værdien til højre. Rækkefølgen er Idas: Status · Kunde · Kontakt · Team · Svar og feedback · Genveje. */
@@ -86376,7 +86397,7 @@ async function ksYgtTegn(k, o) {
   const mail = (D.koeb && D.koeb.mail) || ""; const tlfNr = (D.koeb && D.koeb.tlf) || "";
   const knap = function (t, href, klik, rod) { return href ? '<a class="ksy-knap" href="' + esc(href) + '">' + t + '</a>' : '<button type="button" class="ksy-knap' + (rod ? ' rod' : '') + '" onclick="' + klik + '">' + t + '</button>'; };
   const handl = '<div class="ksy-handl">' + (tlfNr ? knap("Ring op", "tel:" + tlfNr.replace(/\s/g, "")) : '') + (mail ? knap("Skriv en mail", "mailto:" + mail) : '') + knap(tlf ? "Besked" : "Send besked", "", "bf3BeskedArk('" + kEsc + "')") + (tlf ? '' : knap("Se kundens version", "", "aabnKundensSide('" + kEsc + "')", true)) + '</div>';
-  const top = '<div class="ksy-top"><div class="ksy-under">' + esc(d.forloeb || "YOU GOT THIS") + (koebt ? " · Kunde siden " + esc(kortDato(koebt)) : "") + '</div>' + (tlf ? '' : handl) + '</div>';
+  const top = '<div class="ksy-top"><div class="ksy-under">' + esc(d.forloeb || "YOU GOT THIS") + (koebt ? " · Kunde siden " + esc(kortDato(ksyDag(koebt))) : "") + '</div>' + (tlf ? '' : handl) + '</div>';
   /* FELTERNE */
   const pil = '<svg class="ksy-pil" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>';
   const flyt = '<input type="hidden" id="ksForloebDato" value="' + esc(start || datoDK()) + '" onchange="ksForloebSaet(\'' + kEsc + '\', this.value).then(function(){ try { kundeSideTegn(); } catch (e) {} })"><button type="button" class="ksy-mini" onclick="event.stopPropagation();datoArkVis(document.getElementById(\'ksForloebDato\'))">Flyt</button>';
@@ -86407,7 +86428,7 @@ async function ksYgtTegn(k, o) {
   const team = ksyGruppe("Team", D.team.length ? D.team.map(function (p) { return ksyFelt(esc(p.n), p.sidst ? esc(storStart(ksySidenOrd(p.sidst))) : "Ikke i appen endnu"); }).join("") : ksyFelt("Ingen har logget ind endnu", ""));
   const nKom = D.feedback.filter(function (x) { return x.kommentar; }).length;
   const svar = ksyGruppe("Svar og feedback",
-    ksyFelt("Spørgeskema", D.skema.length ? "Sendt " + esc(kortDato(D.skema[0].created_at)) : "Ikke sendt", D.skema.length ? { klik: "ksYgtVis('ygt-skema')", knap: pil } : {})
+    ksyFelt("Spørgeskema", D.skema.length ? "Sendt " + esc(kortDato(ksyDag(D.skema[0].created_at))) : "Ikke sendt", D.skema.length ? { klik: "ksYgtVis('ygt-skema')", knap: pil } : {})
     + ksyFelt("Feedback", D.feedback.length ? D.feedback.length + (D.feedback.length === 1 ? " lektion" : " lektioner") + (nKom ? " · " + nKom + (nKom === 1 ? " kommentar" : " kommentarer") : "") : "Ingen endnu", D.feedback.length ? { klik: "ksYgtVis('ygt-feedback')", knap: pil } : {})
     + ksyFelt("Opgaver", D.opgaver.length ? D.opgaver.length + " besvaret" : "Ingen endnu", D.opgaver.length ? { klik: "ksYgtVis('ygt-opgaver')", knap: pil } : {}));
   /* AKTIVITET: det kunden har gjort, nyeste først — bygget af de rækker, der allerede findes */
