@@ -1,3 +1,9 @@
+## v3012 · 29. oktober · Rundvisningen kommer på Hjem lige efter profilen og starter med en velkomst
+
+- Efter profilens tre trin lander YOU GOT THIS-kunden på **Hjem**, ikke i første lektion, og rundvisningen starter med det samme.
+- **Første trin** er en velkomst uden spotlys: “Velkommen til dit Content Studio” (Poppins 400, 20 px) og under den “Her er alt, hvad du skal bruge gennem dit forløb, samlet ét sted. Lad mig vise dig rundt.” Det er Idas ord, klik 29/10.
+- Derefter kommer de eksisterende trin, der ender i lektionen. Telefonen har 7 trin og computeren 8.
+
 ## v3010 · 29. oktober · Rene fejl fra Hans/Mette-testen før lanceringen (rapport EGFeNFJPzjAPS1JZoDuE3d)
 
 - **Mini-afspilleren** skjules, når Mere-menuen er åben på telefonen. Den lå oven på “Meld en fejl”.
