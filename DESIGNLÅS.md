@@ -1,3 +1,10 @@
+## v3014 · 29. oktober · Rundvisningen viser de fem steder: ét trin pr. sted (bud B)
+
+- Efter “Her er dit forløb” kommer fem trin med spotlys: **Indbakken** (“Her lander beskeder fra mig.”), **Værktøjskassen** (“Her finder du dine noter og dine materialer fra forløbet.”), **Dine svar** (“Alt, hvad du svarer i lektionerne, samles her.”), **Team** (“Her inviterer du dine kolleger.”) og **Meld en fejl** (Idas ord fra 23/10). Ida har godkendt ordene 29/10.
+- **Telefonen:** trinnene åbner selv Mere, og alle andre trin lukker menuen igen. Dine svar åbner Værktøjskassen, og Team åbner Profil.
+- Rundvisningen har **12 trin på begge flader**. Før havde computeren ét trin mere, fordi Meld en fejl ikke kom med på telefonen.
+- Et trin på en side, der selv åbnes, prøver igen, til målet står (højst 8 gange).
+
 ## v3012 · 29. oktober · Rundvisningen kommer på Hjem lige efter profilen og starter med en velkomst
 
 - Efter profilens tre trin lander YOU GOT THIS-kunden på **Hjem**, ikke i første lektion, og rundvisningen starter med det samme.

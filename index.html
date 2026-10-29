@@ -32403,6 +32403,11 @@ async function selvkoebAabn(btn) {
    Begge stop-saet laeser herfra, saa de to ture aldrig kan sige hver sit. */
 const TUR_PERFORMANCE_TEKST = "Under Performance følger du din egen udvikling: hvordan dine opslag klarer sig uge for uge, og hvor tæt du er på dine mål. Én gang om ugen taster du tallene fra Instagram.";   /* lover ikke mere, end den holder (Idas klik 20/9, Hans-testen fund 5) */
 const TUR_SIDSTE_TEKST = "Rigtig god fornøjelse.";
+/* DE FEM STEDER (bud B, Idas klik 29/10) — ordene godkendt af Ida 29/10. Meld en fejl er hendes egne ord (FEJL_TUR_TEKST). */
+const TUR_INDBAKKEN_TEKST = "<b style=\"font-weight:400;display:block;margin-bottom:4px;\">Indbakken</b>Her lander beskeder fra mig.";
+const TUR_VAERKTOEJ_TEKST = "<b style=\"font-weight:400;display:block;margin-bottom:4px;\">Værktøjskassen</b>Her finder du dine noter og dine materialer fra forløbet.";
+const TUR_SVAR_TEKST = "<b style=\"font-weight:400;display:block;margin-bottom:4px;\">Dine svar</b>Alt, hvad du svarer i lektionerne, samles her.";
+const TUR_TEAM_TEKST = "<b style=\"font-weight:400;display:block;margin-bottom:4px;\">Team</b>Her inviterer du dine kolleger.";
 const TUR_VELKOMST_TEKST = "<b style=\"font-weight:400;font-size:20px;color:var(--black);display:block;margin-bottom:6px;\">Velkommen til dit Content Studio</b>Her er alt, hvad du skal bruge gennem dit forløb, samlet ét sted. Lad mig vise dig rundt.";   /* Idas ord 29/10 */
 const TUR_STOPS_AABENT = [
   /* PAA TELEFONEN PEGER HVERT STOP PAA NOGET, MAN KAN SE (Ida 15/9: »her følger den ikke rigtig med
@@ -32495,7 +32500,7 @@ function turMedFejl(liste) {
   try {
     if (!fejlKnapVises()) return liste;
     const ny = liste.slice(); const sidst = ny[ny.length - 1];
-    const i = (sidst && !sidst.s && !sidst.k && !sidst.m) ? ny.length - 1 : ny.length;
+    let i = (sidst && !sidst.s && !sidst.k && !sidst.m) ? ny.length - 1 : ny.length;
     /* LEKTIONSSIDENS RUNDVISNING ER MED I DEN FØRSTE (Ida 26/10: »Rundvisningen af lektionssiden skal komme sammen med første rundvisning når de lige er landet«) */
     try {
       const d0 = (typeof CURRENT_DEF !== "undefined") ? CURRENT_DEF : null;
@@ -32505,7 +32510,20 @@ function turMedFejl(liste) {
         ny.splice(i, 0, ...lekTrin);
       }
     } catch (e) {}
-    ny.splice(i, 0, { m: ["#sideNav .sn-fejl", ".screen.active .hf-ikoner .fejl-knap", ".screen.active > .mb-baand > .fejl-knap"], t: FEJL_TUR_TEKST });
+    /* DE FEM STEDER (Idas klik 29/10 »b«: ét trin pr. sted — Indbakken, Værktøjskassen, Dine svar, Team, Meld en fejl — lige mange trin på telefon og computer).
+       På telefonen bor stederne i Mere: trinnet åbner menuen (burger:true); Dine svar og Team åbner deres side først (foer). */
+    let ygt0 = false; try { ygt0 = typeof ygtHold === "function" && ygtHold((typeof CURRENT_DEF !== "undefined") ? CURRENT_DEF : null); } catch (e) {}
+    if (ygt0) {
+      const steder = [
+        { altid: true, burger: true, m: ['#sideNav [data-k="d23"]', '#burgerItems .burger-item[onclick*="indbakkenAaben"]'], t: TUR_INDBAKKEN_TEKST },
+        { altid: true, burger: true, m: ['#sideNav [data-k="d6"]', '#burgerItems .burger-item[onclick*="vaerktoejAaben"]', '#burgerItems .burger-item[onclick*="showTab(6)"]'], t: TUR_VAERKTOEJ_TEKST },
+        { altid: true, side: true, m: ['.screen.active .idag-flise[onclick="vkSvarAabn()"]', '.idag-flise[onclick="vkSvarAabn()"]'], t: TUR_SVAR_TEKST, foer: function () { try { vaerktoejAaben(); return true; } catch (e) { return false; } } }
+      ];
+      if (typeof erYgtTeam === "function" && erYgtTeam()) steder.push({ altid: true, side: true, m: [".screen.active div:has(> #profilTeamYgt)", "#profilTeamYgt"], t: TUR_TEAM_TEKST, foer: function () { try { minProfilAaben(); return true; } catch (e) { return false; } } });
+      ny.splice(i, 0, ...steder);
+      i += steder.length;
+    }
+    ny.splice(i, 0, { altid: ygt0, burger: true, m: ["#sideNav .sn-fejl", "#burgerFejl", ".screen.active .hf-ikoner .fejl-knap", ".screen.active > .mb-baand > .fejl-knap"], t: FEJL_TUR_TEKST });
     return ny;
   } catch (e) { return liste; }
 }
@@ -32514,6 +32532,7 @@ function turKunDetFindes(liste) {
     return liste.filter(function (st) {
       if (!st.s && !st.k && !st.m) return true;
       if (st.lek) return true;   /* lektionstrinnene åbner selv lektionen (26/10) */
+      if (st.altid) return true;   /* de fem steder (29/10): bor i Mere eller på en side, trinnet selv åbner */
       if (st.s && document.querySelector(st.s)) return true;
       if (st.k && document.querySelector('#sideNav [data-k="' + st.k + '"]')) return true;
       if (st.k) { const bn = document.getElementById("bn-" + st.k); if (bn && bn.offsetParent !== null) return true; }
@@ -32844,6 +32863,7 @@ function turStart(igen) {
 }
 function turLuk() {
   const el = document.getElementById("turOverlay"); if (el) el.remove();
+  try { const bm = document.getElementById("burgerMenu"); if (bm && bm.classList.contains("open")) toggleBurger(); } catch (e) {}   /* Mere lukkes med rundvisningen (29/10) */
   if (TUR_MODUS === "lek") { TUR_MODUS = ""; lekTurMarker(); return; }
   try { if (Array.isArray(TUR_STOPS) && TUR_STOPS.some(function (st) { return st && st.lek; })) lekTurMarker(); } catch (e) {}   /* lektionstrinnene var med i den første rundvisning (26/10) */   /* lektionssidens rundvisning rører aldrig hovedturens markering */
   turMarker();
@@ -32884,6 +32904,8 @@ function turVis(i) {
   const gl = document.getElementById("turOverlay"); if (gl) gl.remove();
   if (i >= TUR_STOPS.length) { turLuk(); return; }
   const stop = TUR_STOPS[i];
+  /* MERE-MENUEN I RUNDVISNINGEN (bud B 29/10): på telefonen bor Indbakken, Værktøjskassen og Meld en fejl i Mere — trinnet åbner menuen, og alle andre trin lukker den igen. */
+  try { const tlfM = window.matchMedia("(max-width: 899px)").matches; const bm = document.getElementById("burgerMenu"); const aab = !!(bm && bm.classList.contains("open")); if (tlfM && stop.burger && !aab) toggleBurger(); else if (aab && !(tlfM && stop.burger)) toggleBurger(); } catch (e) {}
   /* ET TRIN KAN ÅBNE SIN SIDE FØRST (Ida 26/10: lektionssidens rundvisning hører med i den første) — siden åbnes, og trinnet tegnes, når den står */
   if (typeof stop.foer === "function" && !stop.__aabnet) { stop.__aabnet = true; let aabnede = false; try { aabnede = stop.foer() === true; } catch (e) {} if (aabnede) { setTimeout(function () { if (TUR_STOPS[i] === stop && document.getElementById("turOverlay")) turVis(i); }, 450); } }   /* trinnet tegnes med det samme (løfte 55) og igen, når siden står */   /* HANS/METTE 29/10 (390): visLektion tegner siden, men lektionen ruller og tegnes om bagefter — spotlyset blev målt før og lyste på videoen i stedet for noterne. Åbner trinnet siden, tegnes det, når siden står. */
   const el = document.createElement("div");
@@ -32925,6 +32947,8 @@ function turVis(i) {
   }
   /* TELEFONEN: spotlight paa bundmenuens knap i stedet for sidemenuens (8/9) — saa turen peger paa noget, kunden kan se. */
   if (!maal && stop.k) { const bn = document.getElementById("bn-" + stop.k); if (bn && bn.offsetParent !== null) maal = bn; }
+  /* EN SIDE, TRINNET SELV ÅBNER (Dine svar, Team — 29/10), kan være længere om at stå: trinnet prøver igen, højst 8 gange, til målet findes. */
+  if (!maal && (stop.side || stop.burger) && (stop.__forsoeg || 0) < 8) { stop.__forsoeg = (stop.__forsoeg || 0) + 1; setTimeout(function () { if (TUR_STOPS[i] === stop && document.getElementById("turOverlay")) turVis(i); }, 350); }
   if (maal) {
     const r = maal.getBoundingClientRect();
     /* RUNDVISNINGEN ER IKKE EN POPUP (Ida 27/8: "guiden igaar var MEGET bedre ...
@@ -62130,7 +62154,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "3012";
+const APP_VERSION = "3014";
 const APP_BYGGET = "25. oktober";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_BYGGET + " · " + APP_VERSION; } catch (e) {} });
 let NY_VERSION_KLAR = false;
