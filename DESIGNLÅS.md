@@ -1,3 +1,8 @@
+## v3016 · 29. oktober · Rundvisningen: trin om Næste modul
+
+- Efter “Her er dit forløb” kommer et trin med spotlys på flisen **Næste modul** på Hjem: “Her kan du se, hvornår dit næste modul åbner. Der åbner et nyt hver 7. dag.” Ordene er Idas klik fra 29/10.
+- Trinnet vises kun, når flisen står, altså når et modul er låst. Rundvisningen har nu 13 trin på begge flader. At menuen kan foldes på computeren, kommer ikke med (Idas valg).
+
 ## v3014 · 29. oktober · Rundvisningen viser de fem steder: ét trin pr. sted (bud B)
 
 - Efter “Her er dit forløb” kommer fem trin med spotlys: **Indbakken** (“Her lander beskeder fra mig.”), **Værktøjskassen** (“Her finder du dine noter og dine materialer fra forløbet.”), **Dine svar** (“Alt, hvad du svarer i lektionerne, samles her.”), **Team** (“Her inviterer du dine kolleger.”) og **Meld en fejl** (Idas ord fra 23/10). Ida har godkendt ordene 29/10.
