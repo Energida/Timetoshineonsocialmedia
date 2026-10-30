@@ -3787,6 +3787,8 @@ input[type="date"][data-tom="1"]::-webkit-datetime-edit { opacity:0; }
    vandmaerket i stedet for at blive skrevet henover. Det retter det dér, hvor fejlen
    er — paa raekken, ikke paa vandmaerket, som andre flader stadig skal kunne se. */
 #briefWrap .basis-bund, #briefSideNav, #basisTrinBar { position:relative; z-index:801; }
+/* 30/10: Kommentarernes felt + røde Indtal-knap lå under vandmærket på 1440 — rækken løftes som de andre bundrækker */
+.pf-kom-rk { position:relative; z-index:801; }
 /* ENKEL BRIEF (Ida 30/7): er det bare en idé, skal man KUN forholde sig til idéen.
    Resten af briefen er der stadig — den er bare foldet vaek, til man trykker "Planlæg den nu". */
 /* GRÆNSEN STÅR I SELVE REGLEN (Ida 5/8). Klassen saettes af JS, og JS kan naa at
@@ -10317,6 +10319,13 @@ html body.mb .ibb-foto-t { font-size:14px !important; }
 /* FORRIGE/NÆSTE MELLEM FORSLAGENE (Ida 30/10) — husets chips, begge flader */
 .godk-nav { display:flex; align-items:center; justify-content:space-between; gap:10px; margin:0 0 14px; font-size:13px; color:var(--gray2); }
 .godk-nav-k { display:flex; gap:8px; }
+/* GODKEND ÉT STED (Idas klik 30/10): overskriften »Forslag 1 af 3« er flisens etiket — én hårfin streg under, så »Fra …« og noten */
+html body .godk-flise .godk-nav-et { font-size:15px; color:var(--black); border-bottom:1px solid var(--border, #DEDAD4); padding-bottom:12px; margin:0 0 12px; min-height:36px; }
+html body .godk-flise .godk-fra { font-size:13px; color:var(--gray2); }
+html body .godk-flise .godk-note { font-size:15px; line-height:1.5; color:var(--black); margin-top:2px; }
+html body .godk-flise .godk-knapper { margin-top:16px; }
+body:not([data-bforside]) #briefKomTopHost { display:none; }
+#briefKomTopHost > .pf-flise { margin-bottom:16px; }
 .godk-nav .ark-chip[disabled] { opacity:.4; pointer-events:none; }
 
 /* KOMMENTARER BUD 1 (Ida 30/10): feltet og den røde Indtal-knap på én linje; lydkommentaren har husets afspiller */
@@ -13873,6 +13882,8 @@ window.somkundeLoaderSluk = function () {
       </div>
       <!-- GODKENDELSE (Ida 5/8): baaret af briefen selv, saa den staar oeverst uanset hvilken side man er paa -->
       <div id="briefGodkBar" style="display:none;"></div>
+      <!-- GODKEND ÉT STED (Idas klik 30/10, E9QBTEdzJjGKrDhudi4yFf): Kommentarer står lige under forslaget, når briefen venter på MIG -->
+      <div id="briefKomTopHost"></div>
       <!-- SE DEN, SOM MODTAGEREN SER DEN (Ida 26/8). Knappen staar paa briefen, saa
            Ida kan aabne godkendelses-visningen og dele linket derfra — uden at gaette
            paa, hvad Annette faktisk faar at se. Se noten ved godkVisAaben(). -->
@@ -24166,6 +24177,8 @@ function briefForsideTegn(G, grupper, wrap, navM) {
   window.__PF_KNAP = (cvFaerdig && capFaerdig) ? null : { tekst: iGang ? "Fortsæt brief" : "Start brief", iKort: false };   /* KNAPPEN BOR ALTID I DEN ROEDE FLISE, NEDERST, I FULD BREDDE (Ida 29/9) */
   let kort = ""; try { kort = briefKortHtml();   /* intet »Mangler« her; stregen + beskrivelsen kun naar den findes (Ida 21/9 kl. 16.55) */ } catch (e) {}
   let godkF = "", dialogF = ""; try { godkF = briefGodkFliseHtml() + briefMemoFliseHtml(); dialogF = briefDialogFliseHtml(); } catch (e) {}
+  /* GODKEND ÉT STED (Idas klik 30/10): venter briefen på mit svar, står Kommentarer lige under forslaget øverst — ikke nede i oversigten */
+  try { const kh = document.getElementById("briefKomTopHost"); if (kh) { if (godkVenterPaaMig()) { kh.innerHTML = dialogF; dialogF = ""; } else kh.innerHTML = ""; } } catch (e) {}
   /* EEN SAMLENDE FLISE OM INDHOLDET (Ida 18/9 kl. 13.30: »bag om fliserne der fortaeller omkring indholdet skal de vaere samlet af én flise som viser at denne del
      hoerer sammen — samme design som i idébanken til kolonnerne«): hvid flise m. husets skygge om filter · scener · hook/klip/CTA; captionen staar for sig. */
   /* NAESTE SKRIDT, NAAR DATOEN MANGLER (Idas klik 20/9, Hans-testen fund 7: »Gemt. Og saa? Hvornaar skal det ud?«): een linje + graa knap, der aabner husets dato-ark. Vaek, naar datoen er sat. */
@@ -30713,6 +30726,10 @@ async function briefGodkSvar(valg, btn) {
   briefGodkBarVis();
   try { renderIndbakke(); } catch(e) {}
 }
+function godkVenterPaaMig() {
+  try { const it = (IDEER || []).find(x => String(x.id) === String(BRIEF_ID)) || {}; const g = (BRIEF_STATE || {}).godk;
+    return !!(g && g.til && it.status === "Klar til godkendelse" && !(BRIEF_STATE.svar && BRIEF_STATE.svar.valg) && String(g.fra || "") !== godkMig()); } catch (e) { return false; }
+}
 function briefGodkBarVis() {
   const bar = document.getElementById("briefGodkBar"); if (!bar) return;
   const it = IDEER.find(x => x.id === BRIEF_ID) || {};
@@ -30724,7 +30741,7 @@ function briefGodkBarVis() {
     const godkendt = sv.valg === "godkendt";
     bar.innerHTML = kort(godkendt ? "var(--border)" : "var(--red-line)",
       label(godkendt ? ("Godkendt af " + esc(sv.af || "")) : ("Sendt retur af " + esc(sv.af || "")))
-      + (sv.note ? '<div style="font-size:12.5px;line-height:1.6;">' + esc(sv.note) + '</div>' : '<div style="font-size:12px;color:var(--gray3);">Ingen kommentar.</div>')
+      + (sv.note ? '<div style="font-size:12.5px;line-height:1.6;">' + esc(sv.note) + '</div>' : '')   /* »Ingen kommentar.« er ude (30/10): kommentarer bor i Kommentarer-flisen */
       + (godkendt && !it.dato ? '<div style="display:flex;justify-content:flex-end;margin-top:12px;"><button type="button" class="dbtn primary" style="padding:10px 18px;" onclick="showPlanDate(\'" + it.id + "\')">Vælg dato</button></div>' : '')
       /* VIDERE TIL DE NÆSTE FORSLAG (Ida 30/10: »det her skal være så NEMT som muligt for René … se der venter 4 forslag - klikke ind skrive kommentar eller godkende«): venter der flere, fører én rød knap tilbage til listen på Hjem */
       + (function () { try { const rest = (typeof huForslagTilMig === "function" ? huForslagTilMig() : []).filter(function (x) { return String(x.id) !== String(it.id); }); return rest.length ? '<button type="button" class="ark-knap ark-knap-roed" style="margin-top:14px;width:100%;" onclick="briefTilbage()">Se de næste forslag</button>' : ''; } catch (e) { return ''; } })());
@@ -30739,11 +30756,11 @@ function briefGodkBarVis() {
           + '<button type="button" class="ark-chip"' + (i > 0 ? ' onclick="openBriefSide(\'' + id(l[i - 1]) + '\')"' : ' disabled') + '>Forrige</button>'
           + '<button type="button" class="ark-chip"' + (i < l.length - 1 ? ' onclick="openBriefSide(\'' + id(l[i + 1]) + '\')"' : ' disabled') + '>Næste</button></span></div>'; } catch (e) { return ""; } })();
       bar.innerHTML = kort("var(--red)",
-        fNav + label(esc(g.fra || "") + " har sendt den til din godkendelse")
+        /* GODKEND ÉT STED (Idas klik 30/10): »Forslag 1 af 3« + Forrige/Næste · én streg · »Fra Ida · i dag« · noten · Send retur / Godkend. Kommentaren skrives i Kommentarer lige under. */
+        (fNav ? fNav.replace('class="godk-nav"', 'class="godk-nav godk-nav-et"') : '<div class="godk-nav godk-nav-et"><span>Forslag</span></div>')
+        + '<div class="godk-fra">Fra ' + esc(g.fra || "") + (g.sendt ? ' · ' + esc(godkNaar(g.sendt)) : '') + '</div>'
         + memoSpillerHtml(g)
-        + (g.note ? '<div style="font-size:12.5px;line-height:1.6;margin-bottom:12px;">' + esc(g.note) + '</div>' : '')
-        + '<div class="godk-tekst">Ret det, du vil have anderledes, direkte i briefen. Skriv gerne, hvad du har ændret.</div>'
-        + '<textarea id="briefSvarNote" class="sk-input godk-felt" placeholder="Din kommentar, fx hvad du har rettet"></textarea>'
+        + (g.note ? '<div class="godk-note">' + esc(g.note) + '</div>' : '')
         + '<div class="godk-knapper">'
         + '<button type="button" class="godk-retur" onclick="briefGodkSvar(\'retur\', this)">Send retur</button>'
         + '<button type="button" class="godk-ja" onclick="briefGodkSvar(\'godkendt\', this)">Godkend</button>'
@@ -30975,7 +30992,8 @@ function briefGodkFliseHtml() {
   const naar = iso => { try { return godkNaar(iso); } catch (e) { return ""; } };
   if (it.status === "Klar til godkendelse" && g) {
     const tilMig = !mig || String(g.til || "").toLowerCase() === mig || godkAlle(g);
-    if (tilMig && String(g.fra || "").toLowerCase() !== mig)
+    if (tilMig && String(g.fra || "").toLowerCase() !== mig) return "";   /* GODKEND ÉT STED (Idas klik 30/10): baren øverst har Godkend og Send retur — den røde flise var en dublet */
+    if (false)
       return '<div class="pf-flise pf-godk"><div class="pf-eye"><span>Til godkendelse</span></div><p>Sendt af ' + esc(g.fra || "") + (g.sendt ? ' · ' + esc(naar(g.sendt)) : '') + (g.note ? '<br>“' + esc(g.note) + '”' : '') + '</p>'
         + '<div class="pf-godk-knapper"><button type="button" class="pf-godk-ja" onclick="briefGodkFraForside(\'godkendt\', this)">Godkend</button><button type="button" class="pf-godk-nej" onclick="briefGodkFraForside(\'retur\', this)">Send retur</button></div></div>';
     return '<div class="pf-flise pf-godk-venter"><div class="pf-eye"><span>Sendt til godkendelse</span></div><p>' + (godkAlle(g) ? 'Hele teamet har den' : esc(g.til || "") + ' har den i Indbakken') + (g.sendt ? ' · ' + esc(naar(g.sendt)) : '') + '</p></div>';
@@ -62456,8 +62474,8 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "3024";
-const APP_BYGGET = "25. oktober";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
+const APP_VERSION = "3026";
+const APP_BYGGET = "30. oktober";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_BYGGET + " · " + APP_VERSION; } catch (e) {} });
 let NY_VERSION_KLAR = false;
 let NY_VERSION_AFVIST = false;

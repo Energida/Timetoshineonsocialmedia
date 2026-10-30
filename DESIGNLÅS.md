@@ -1,3 +1,11 @@
+## v3026 · 30. oktober · Godkend ét sted (Idas klik »Ja, byg det«, Artifact E9QBTEdzJjGKrDhudi4yFf)
+
+- **Venter briefen på mit svar, står forslaget og Kommentarer øverst — ét sted:** flisen »Forslag 1 af 3« med Forrige/Næste · én streg · »Fra Ida · i dag« · noten · Send retur / Godkend. Lige under står Kommentarer (skriv eller rød Indtal).
+- **Den røde flise »Til godkendelse« er væk** for modtageren — den var en dublet af Godkend/Send retur.
+- **Feltet »Din kommentar, fx hvad du har rettet« og linjen »Ret det, du vil have anderledes …« er væk** — kommentarer skrives i Kommentarer. »Ingen kommentar.« efter svaret er også væk.
+- Når briefen ikke venter på mig (afsender, besvaret), står Kommentarer som før øverst i oversigten.
+- Rene fejl fra René-testen: versionslinjen viser den rigtige dato (»30. oktober«), og Kommentarernes felt + røde mikrofon ligger over vandmærket på computeren.
+
 ## v3024 · 30. oktober · Kommentarer øverst med Indtal (Idas klik »Bud 1 · Rød Indtal-knap«)
 
 - **Kommentarer står altid øverst i briefoversigten** (under godkendelsen), også før noget er sendt til godkendelse.
