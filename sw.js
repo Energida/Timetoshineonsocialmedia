@@ -62,7 +62,7 @@ function erAppFilen(req) {
 /* Versionsfilen maa ALDRIG svares fra cachen — den ER maalestokken (samme regel som _headers).
    Foer blev hvert tjek (version.txt?vagt=<tid>) ogsaa GEMT, saa cachen voksede med en raekke
    hvert femte minut, uden at nogen laeste dem igen. */
-function erVersionsFilen(req) { return req.url.split("?")[0].endsWith("/version.txt"); }
+function erVersionsFilen(req) { const u = req.url.split("?")[0]; return u.endsWith("/version.txt") || u.endsWith("/haster.txt"); }   /* haster.txt (30/10) følger samme regel */
 
 function versionIHtml(txt) { const m = txt.match(/const APP_VERSION = "(\d{1,6})"/); return m ? Number(m[1]) : null; }
 

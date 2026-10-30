@@ -1,3 +1,18 @@
+## v3022 · 30. oktober · Dagens udgave og procesbaren uden parentes (Ida: »så vi kan få det nye ud og leve«)
+
+- **Dagens udgave (Idas klik på brainstormholdets bud 1):** kundeappen viser aldrig »Hent den«. En ny udgave hentes ved dagens første åbning (dansk tid) bag dækket, før kunden trykker — aldrig midt på dagen. Kan noget gå tabt (tekst i felt, popup, brief), tages den ved næste tryk på Hjem. Haster: versionsnummeret i haster.txt sender den ud ved næste tilbagekomst. Backstage er uændret.
+- **Procesbaren:** parentesen og ordet »Succesraketten« over de tre trin er fjernet (vælter 26/10). Resten af procesbaren er uændret. Den nye raket-procesbar er parkeret i køen.
+- **Forslag i kalenderen:** teksten i et stiplet forslag står i husets mørkegrå, ikke sort (Ida: »kan du lave teksten grå også?«).
+- **Hvem laver indholdet?:** samme navn med og uden accent (»Rene«/»René«) er én person; stavemåden med accent vises. Et loginnavn, der er virksomhedens eget navn (»Hingeshus«), står ikke på listen. Basen er urørt.
+- **Hook-kortet:** »Det, man ser« står altid fremme og har ingen vælge-cirkel; chippen »Tilføj noget man ser« er derfor væk (Ida 30/10).
+- **Én vej til godkendelse:** vælges »Klar til godkendelse« i statuslisten i en åben brief, åbner arket »Send til godkendelse« (modtager + lydmemo); statussen sættes ved Send (Ida 30/10).
+- **Forslag går til hele teamet:** »Send til godkendelse« har intet valg af modtager (godk.til = »Alle«); alle på koden undtagen afsenderen ser forslaget på Hjem og kan godkende, og Ida ser dem i kundens studio. Arket hedder »Send til godkendelse« og har lydmemo og kommentar (Ida 30/10).
+- **Forrige/Næste mellem forslagene:** øverst i godkendelsesflisen står »Forslag 2 af 4« med chips Forrige og Næste (Ida 30/10).
+- **Se de næste forslag:** når et forslag er godkendt eller sendt retur, og flere venter, fører en rød knap tilbage til listen på Hjem (Ida 30/10).
+- **Briefoversigten viser, hvem opslaget taler til:** rækken »Hvem taler opslaget til?« under indholdssøjlen i fakta — kun på oversigten; vælges stadig på Idéen (Ida 30/10).
+- **Plusset på Hjem kan altid trykkes:** ringenes tomme plads tog trykket på smallere computerskærme (Ida 30/10).
+- **Ingen beskeder om andres rettelser:** »Du ser den nyeste udgave« og »Briefen er også rettet et andet sted« er væk (Ida: »bliver SINDSSYG af dem!«). Briefen opdaterer sig stadig stille.
+
 ## v3020 · 30. oktober · Dobbelttrykket rammer ikke briefen (Idas »Deploy«)
 
 - Når kunden trykker på et opslag (forsiden, kalenderen, Idébanken), sluges alle tryk, til briefoversigten har stået fremme i 450 ms — og mindst 650 ms efter første tryk. Så kan et utålmodigt 2. tryk ikke åbne skrivesiden via den røde Idé-flise eller ramme siden bagved, mens briefen loader. Begge flader.
