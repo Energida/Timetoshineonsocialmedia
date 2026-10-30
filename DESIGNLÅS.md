@@ -1,3 +1,7 @@
+## v3020 · 30. oktober · Dobbelttrykket rammer ikke briefen (Idas »Deploy«)
+
+- Når kunden trykker på et opslag (forsiden, kalenderen, Idébanken), sluges alle tryk, til briefoversigten har stået fremme i 450 ms — og mindst 650 ms efter første tryk. Så kan et utålmodigt 2. tryk ikke åbne skrivesiden via den røde Idé-flise eller ramme siden bagved, mens briefen loader. Begge flader.
+
 ## v3018 · 29. oktober · Forslag fra Ida, coverværktøjet og kalenderen på telefonen (Idas »Deploy«)
 
 - **Forslag fra Ida:** en brief med status Klar til godkendelse står stiplet (#CFCAC3) i kalenderen, i Kommende opslag og i computerens uge, med ordet »Forslag fra Ida«. Appens egne råd er grå #F1F0EC.
