@@ -1,3 +1,10 @@
+## v3024 · 30. oktober · Kommentarer øverst med Indtal (Idas klik »Bud 1 · Rød Indtal-knap«)
+
+- **Kommentarer står altid øverst i briefoversigten** (under godkendelsen), også før noget er sendt til godkendelse.
+- **Skriv eller indtal:** feltet (Enter/pilen sender) og en rød rund mikrofon på samme linje. Første tryk optager, andet tryk gemmer. Et lydmemo bliver en kommentar med afspiller, navn og dato.
+- **Den grå tale-til-tekst-mikrofon er ude af kommentarfeltet** (»få styr på den mic symbol«) — kun én mikrofon.
+- Lyden ligger i det lukkede lager brief-filer under virksomhedens mappe, samme regler som briefens lydmemo.
+
 ## v3022 · 30. oktober · Dagens udgave og procesbaren uden parentes (Ida: »så vi kan få det nye ud og leve«)
 
 - **Dagens udgave (Idas klik på brainstormholdets bud 1):** kundeappen viser aldrig »Hent den«. En ny udgave hentes ved dagens første åbning (dansk tid) bag dækket, før kunden trykker — aldrig midt på dagen. Kan noget gå tabt (tekst i felt, popup, brief), tages den ved næste tryk på Hjem. Haster: versionsnummeret i haster.txt sender den ud ved næste tilbagekomst. Backstage er uændret.
