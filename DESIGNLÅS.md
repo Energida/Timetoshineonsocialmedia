@@ -1,3 +1,6 @@
+## v3038 · 31. oktober · Appens egne råd = hvid flise, grå stiplet kant, grå alt
+Ida 31/10 (skærmbillede af de sandfarvede »10 minutter på dit community« og »I morgen skal du poste«): »alle disse forfærdelig grimme designs skal være hvide fliser med stiplet grå kant og grå skrift og grå alt.« Vælter v3018's sandfarvede råd (#F1F0EC) og 26/9's lyseblå »I morgen«-bjælke på computeren. Gælder telefonens dagsliste (.hu-forslag), computerens dagskort (.hk-stip) og bjælken øverst (.hk-hel-chip): hvid baggrund, 1,5 px stiplet #CFCAC3, ingen skygge, tekst og symbol grå (symbolet i stiplet kasse). Forslag fra Ida er stadig stiplede, men med sort titel og søjle-chip.
+
 ## v3036 · 31. oktober · »Forslag fra Ida« på alle forslag
 Ida 31/10: »hvordan kan der stå forslag fra ida på nogen og ikke alle?« — »det korrekte er forslag fra ida«. En brief, der fik »Klar til godkendelse« via statusvælgeren, havde ingen afsender gemt og viste kun »Forslag«. Nu står der altid »Forslag fra …«; mangler afsenderen, er det Ida (`huForslagFra`). Gælder kalender, Kommende opslag, dagens liste, Hjems »Venter på dig« og godkendelsesflisen. Ingen data ændret — kun visningen.
 
