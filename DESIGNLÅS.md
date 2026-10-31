@@ -1,3 +1,6 @@
+## v3036 · 31. oktober · »Forslag fra Ida« på alle forslag
+Ida 31/10: »hvordan kan der stå forslag fra ida på nogen og ikke alle?« — »det korrekte er forslag fra ida«. En brief, der fik »Klar til godkendelse« via statusvælgeren, havde ingen afsender gemt og viste kun »Forslag«. Nu står der altid »Forslag fra …«; mangler afsenderen, er det Ida (`huForslagFra`). Gælder kalender, Kommende opslag, dagens liste, Hjems »Venter på dig« og godkendelsesflisen. Ingen data ændret — kun visningen.
+
 ## v3034 · 31. oktober · Klar til godkendelse = sendt, uden popup (Idas klik »Status gemmes straks« + »Kan vi ikke lave det med indtale på selve briefen?«)
 - Ida: »det er et problem at når jeg ændrer status til klar til godkendelse - at denne pop up så stadig kommer frem og jeg ikke kan få lov at ændre uden«.
 - Status »Klar til godkendelse« (og knappen Send til godkendelse i det nye design) sender nu straks til hele teamet (`briefGodkDirekte`, godk.til = Alle) — intet ark. Kvittering: »Sendt til godkendelse. Teamet har fået besked.«
