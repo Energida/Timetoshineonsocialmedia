@@ -19,6 +19,9 @@ setTimeout(async function () {
       var r = tlf ? document.getElementById("hjemUgeTlf") : document.getElementById("hjemUge");
       if (!r || !synlig(r)) { F(tilstand + ": Hjem (ugestrimlen) ikke fundet"); return; }
       var tekst = (r.innerText || "").replace(/\s+/g, " ");
+      /* TELEFONENS HJEM PAA COMPUTEREN (Idas klik 31/10, v3040 · HJEM_PC_SOM_TLF): computeren holder telefonens loefter + maaneden i datofliserne */
+      var somTlf = tlf || !!r.querySelector(".hu-pctlf");
+      if (!tlf && somTlf) { var mnd = [].filter.call(r.querySelectorAll(".hu-strib .hu-dag .hu-mn"), synlig); if (mnd.length !== 7) F(tilstand + ": computerens datofliser viser maaneden " + mnd.length + " gange, ikke 7"); }
       /* 1) HEROEN: hilsnen; telefonen MED dato under hilsenen (Ida 9/10, vaelter 25/9), computeren m. datoen i baandet */
       if (tlf) {
         var hh = document.querySelector(".hf-hero-hilsen"), hd = document.querySelector(".hf-hero-dato");
@@ -33,7 +36,7 @@ setTimeout(async function () {
       /* TELEFONEN: »I DAG« STÅR UNDER DATOFLISERNE (Ida 29/10: »… står under kalenderen på samme måde med versaler: I DAG«) — rækken over har kun pilene og Dag/Uge. Står der intet under dagen, står etiketten ikke (den må ikke svæve). */
       var dagSek = r.querySelector(".hu-dagsek");
       if (!synlig(linje)) F(tilstand + ": linjen »I dag« mangler");
-      else if (tlf ? (dagSek && !/^I dag/i.test((dagSek.innerText || "").trim())) : !/^I dag/i.test((linje.innerText || "").trim())) F(tilstand + ": linjen »I dag« mangler");
+      else if (somTlf ? (dagSek && !/^I dag/i.test((dagSek.innerText || "").trim())) : !/^I dag/i.test((linje.innerText || "").trim())) F(tilstand + ": linjen »I dag« mangler");
       var pile = [].filter.call(r.querySelectorAll(".hu-linje .hu-pil"), synlig); if (pile.length !== 2) F(tilstand + ": pilene ved »I dag« er " + pile.length + ", ikke 2");
       var dage = [].filter.call(r.querySelectorAll(".hu-strib .hu-dag"), synlig); if (dage.length !== 7) F(tilstand + ": ugestrimlen har " + dage.length + " datofliser, ikke 7");
       var idag = r.querySelector(".hu-dag.idag"); if (!idag || getComputedStyle(idag).backgroundColor !== "rgb(252, 36, 4)") F(tilstand + ": i dag er ikke fyldt roed");
@@ -59,8 +62,8 @@ setTimeout(async function () {
       else if (!/Er der noget, du skal huske\?/.test(tekst)) F("tom: to-do mangler spoergsmaalet");
       /* 6) RAEKKEFOELGE/SPALTER */
       var top = function (sel) { var e = r.querySelector(sel); return synlig(e) ? e.getBoundingClientRect() : null; };
-      var L = top(".hu-linje"), S = top(".hu-strib"), D = top(".hu-dagen"), R = top(".hu-ringe"), T = top(".hu-td, .hu-hoejre .hu-tom, .hu-tlf > .hu-tom");
-      if (tlf) { if (L && S && D && R && T && !(L.top < S.top && S.top < D.top && D.top < R.top && R.top < T.top)) F(tilstand + ": telefonens raekkefoelge er ikke linjen · strimlen · dagen · ringene · to-do"); }
+      var L = top(".hu-linje"), S = top(".hu-strib"), D = top(".hu-dagen"), R = top(".hu-ringe"), T = top(".hu-td, .hu-hoejre .hu-tom, .hu-tlf > .hu-tom, .hpt-v > .hu-tom");
+      if (somTlf) { if (L && S && D && R && T && !(L.top < S.top && S.top < D.top && D.top < R.top && R.top < T.top)) F(tilstand + ": telefonens raekkefoelge er ikke linjen · strimlen · dagen · ringene · to-do"); }
       else if (L && T) {
         if (innerWidth >= 1360) { if (!(T.left > L.right)) F(tilstand + ": to-do staar ikke i hoejre spalte"); var TL = top(".hu-hoejre .hu-sek"); if (TL && Math.abs(TL.top - L.top) > 6) F(tilstand + ": to-do-linjen flugter ikke med »I dag« (" + Math.round(TL.top - L.top) + " px)"); }
         else if (!(T.top > D.bottom)) F(tilstand + ": under 1360 px staar to-do ikke under dagen");
@@ -72,7 +75,7 @@ setTimeout(async function () {
       [].forEach.call(r.querySelectorAll(".hu-ring, .hu-dag, .hu-fokus, .hu-td"), function (e) { var c = getComputedStyle(e); if (synlig(e) && parseFloat(c.borderTopWidth) > 0 && c.borderTopStyle !== "none") F(tilstand + ": en flise har kant i stedet for skygge"); });
       /* 8) 32 PX FRA BUEN til det foerste under heroen (buen = 28 px af baandet) */
       var heroEl = tlf ? document.querySelector(".hf-hero") : document.querySelector("#screen3 .mb-baand");
-      var foerste = tlf ? L : R;
+      var foerste = somTlf ? L : R;
       if (heroEl && foerste) { var luft = Math.round(foerste.top - (heroEl.getBoundingClientRect().bottom - 28)); if (Math.abs(luft - 32) > 4) F(tilstand + ": luften fra buen til Hjems foerste flise er " + luft + " px, ikke 32"); }
       /* 9) INTET KLIPPET I VENSTRE KANT */
       [].forEach.call(r.querySelectorAll(".hu-kort, .hu-dag, .hu-ring, .hu-td"), function (e) { if (synlig(e) && e.getBoundingClientRect().left < 0) F(tilstand + ": klippet i venstre kant"); });
