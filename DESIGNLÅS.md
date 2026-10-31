@@ -1,3 +1,7 @@
+## v3028 · 31. oktober · Lektion 0.2 viser basens titel (Idas besked)
+- `lekVisTitel` og `studieTitelVis` hårdkoder ikke længere “Energi · Strategi · Resultat” for lektion 1-2 (kundens 0.2). Titlen kommer fra databasen i lektionssiden, lektionslisten og Energida Studio.
+- Datanøglen 1-2 og basens titel er urørte.
+
 ## v3026 · 30. oktober · Godkend ét sted (Idas klik »Ja, byg det«, Artifact E9QBTEdzJjGKrDhudi4yFf)
 
 - **Venter briefen på mit svar, står forslaget og Kommentarer øverst — ét sted:** flisen »Forslag 1 af 3« med Forrige/Næste · én streg · »Fra Ida · i dag« · noten · Send retur / Godkend. Lige under står Kommentarer (skriv eller rød Indtal).
