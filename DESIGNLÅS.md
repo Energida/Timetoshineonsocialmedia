@@ -1,3 +1,12 @@
+## v3046 · 31. oktober · Plusset på Hjem = det samme plus som resten
+Idas klik 31/10 »Samme som telefonen« (Hans-testen B2, Mette: »På telefonen kan jeg lægge en idé – hvorfor ikke på computeren?«): computerens Hjem-plus åbnede kun begivenhed/opgave/aftale (29/9). Nu åbner det samme »Tøm hovedet« som bundmenuens plus, med de samme valg som telefonen (kundeArkChips: Content-idé, Aftale, Begivenhed, Opgave, Noget fedt, Idé til tema, Tilpas, Gem i Indbakken) — i det lille ark. Vælter 29/9's tre valg.
+
+## v3046 · 31. oktober · Ét navn: »Det ugentlige contentmøde«
+Idas klik 31/10 (Hans-testen B1: planlægningen havde seks navne): Planlægningsdagen, Ugentlig planlægning, Dit ugentlige contentmøde, Ugentligt planlægningsmøde og Ugentlig contentplanlægning hedder nu »Det ugentlige contentmøde« overalt i visningen (rejsens trin/røde flise, mødets hero og sti, menu-knap, plus-chips, Backstage-dropdown, Hjems aftale). Menupunktet hedder stadig Planlægning; det månedlige er urørt. Aftalens gemte titel »Ugentlig contentplanlægning« i kunde_aftaler røres ALDRIG (datanøgle) — kun visningen.
+
+## v3046 · 31. oktober · Briefens knap hedder »Send til godkendelse«
+Idas klik 31/10 (Hans-testen, Mette: »Får hele teamet besked nu?«): briefens knap sagde »Send til Ida«, men sender siden v3034 til hele teamet. Den hedder nu »Send til godkendelse« — samme ord som statussen (tre steder: bsd-send, navM, bsam-roed). »Send til Ida« i Meld en fejl og klipperen er urørt.
+
 ## v3044 · 31. oktober · Rene fejl fra Hans-testen af hele b2b
 Idas »makker … hans test på hele b2b … SPECIELT briefen, briefoversigten og funktionerne«. Rettet uden at ændre design: plusset på computerens Hjem kan trykkes igen (Venter-spaltens luft lå ovenpå) · forslagenes titler bliver i flisen · den røde I dag-flise står kun på i dag · rundvisningen vælger det SYNLIGE mål (Hjem findes to gange) · ingen løs prik i Indbakken · planlægningsdag-arket viser alle syv dage · klokkeslættet står én gang i Uge · en story hedder Story · briefen: første tryk tabes ikke, når markøren står i et felt (raketOpdater venter på trykket) · »Giv en opgave« bliver stående efter datovalg · formatvalg på skrivesiden beholder procesbaren (briefGenaabn) · Godkend/Send retur opdaterer status-pillen og kvitterer · »Sendt retur af …« uden note har ingen streg · »Scene 1« står én gang i Fasthold dem · »Gemt« lægger sig ikke oven i Næste på telefonen.
 
