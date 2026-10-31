@@ -1,3 +1,9 @@
+## v3048 · 31. oktober · ⋯ på kalenderkortene ved musen
+Idas klik 31/10 (Hans-testen B5: kortets menu kom kun ved højreklik på computeren): står musen over et kort i Content kalenderen eller Kommende opslag, kommer tre grå prikker i hjørnet (hvid cirkel, grå ring); et tryk åbner den samme menu (Flyt til · Omdøb · Duplikér · Slet). Højreklik og langt tryk virker stadig. Kun computer (hover + fin markør).
+
+## v3048 · 31. oktober · Idéer uden søjle vises først: »Mangler en søjle«
+Idas klik 31/10 »Vis dem først« (Hans-testen B3: »Hvor er mine idéer? Der er fire tomme kasser.«): har kunden idéer uden søjle, åbner Idébanken på dem (computer: chippen vælges af sig selv, til kunden selv vælger et sted · telefon: kolonnen står først). Visningen hedder »Mangler en søjle« alle steder (chip, kolonne, Flyt til, kvitteringer, Arkivets chip) via soejleVis — den interne værdi »Uden plads« er urørt. Ingen idéer uden søjle = chippen/kolonnen står ikke.
+
 ## v3046 · 31. oktober · Plusset på Hjem = det samme plus som resten
 Idas klik 31/10 »Samme som telefonen« (Hans-testen B2, Mette: »På telefonen kan jeg lægge en idé – hvorfor ikke på computeren?«): computerens Hjem-plus åbnede kun begivenhed/opgave/aftale (29/9). Nu åbner det samme »Tøm hovedet« som bundmenuens plus, med de samme valg som telefonen (kundeArkChips: Content-idé, Aftale, Begivenhed, Opgave, Noget fedt, Idé til tema, Tilpas, Gem i Indbakken) — i det lille ark. Vælter 29/9's tre valg.
 
