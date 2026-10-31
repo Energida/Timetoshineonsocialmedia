@@ -1,3 +1,8 @@
+## v3034 · 31. oktober · Klar til godkendelse = sendt, uden popup (Idas klik »Status gemmes straks« + »Kan vi ikke lave det med indtale på selve briefen?«)
+- Ida: »det er et problem at når jeg ændrer status til klar til godkendelse - at denne pop up så stadig kommer frem og jeg ikke kan få lov at ændre uden«.
+- Status »Klar til godkendelse« (og knappen Send til godkendelse i det nye design) sender nu straks til hele teamet (`briefGodkDirekte`, godk.til = Alle) — intet ark. Kvittering: »Sendt til godkendelse. Teamet har fået besked.«
+- Forklaringen indtales på selve briefen: den røde Indtal under Kommentarer (v3024). Arket »Send til godkendelse« med »Ida forklarer idéen« er ikke længere i brug, men står urørt i koden (`briefGodkArkVis`).
+
 ## v3032 · 31. oktober · Rene fejl fra live-tjekket af forløbskundens CRM-side (Ida: »tjek ALT igennem om det virker og er optimalt«)
 - Næste opslag i nøgletallene stod »31. Oktober« med stort O; nu »I dag« · »I morgen« · »2. november«.
 - Telefonnummeret fra kundeoplysningerne (kunde_info.tlf) vises under Kontakt og giver »Ring op« (Acorns havde nummeret, men det stod ikke på siden).
