@@ -37510,9 +37510,11 @@ function kopListeHtml(liste) {
     return hoved + kopFliseHtml(x);
   }).join("");
 }
-function kommendeOpslagHtml(antal, hovedKlasse, fraImorgen) {
+function kommendeOpslagHtml(antal, hovedKlasse, fraImorgen, udenVenter) {
   let idag = datoDK(); if (fraImorgen) { try { const m = new Date(); m.setDate(m.getDate() + 1); idag = huIso(m); } catch (e) {} }   /* paa computeren viser dagen i dag — listen starter i morgen (26/9) */ const MDR = ["jan", "feb", "mar", "apr", "maj", "jun", "jul", "aug", "sep", "okt", "nov", "dec"];
-  const liste = (IDEER || []).filter(function (x) { return x && x.dato && x.dato >= idag && ["Postet", "Arkiveret", "Målt"].indexOf(String(x.status || "")) === -1 && String(x.type || "") !== "Story"; })   /* dagens opslag staar OGSAA her (Ida 21/9 kl. 17.48) */
+  /* FORSLAG STAAR ÉT STED PAA HJEM (Hans-testen 31/10, Idas »Ja, ret dem«): det, der staar i »Venter på dig«, staar ikke igen under Kommende opslag */
+  const venterIds = udenVenter ? (function () { try { return huForslagTilMig().map(function (x) { return String(x.id); }); } catch (e) { return []; } })() : [];
+  const liste = (IDEER || []).filter(function (x) { return x && x.dato && x.dato >= idag && ["Postet", "Arkiveret", "Målt"].indexOf(String(x.status || "")) === -1 && String(x.type || "") !== "Story" && !(udenVenter && venterIds.indexOf(String(x.id)) > -1); })   /* dagens opslag staar OGSAA her (Ida 21/9 kl. 17.48) */
     .sort(function (a, b) { return a.dato < b.dato ? -1 : 1; }).slice(0, antal || 5);
   return '<div class="cf-sek kop-sek ' + (hovedKlasse || "hjem-kort-hoved") + '">Kommende opslag</div>'
     + (liste.length ? '<div class="kop-liste">' + kopListeHtml(liste) + '</div>'
@@ -51754,7 +51756,7 @@ async function huKalLaegInd(iso, titel, fra, til) {
 function huImorgenPost(d) {
   try {
     const m = new Date(d); m.setDate(m.getDate() + 1); const iso = huIso(m);
-    return (IDEER || []).filter(function (x) { return x && x.dato === iso && x.status !== "Arkiveret" && x.status !== "Idé" && x.status !== "Postet"; });
+    return (IDEER || []).filter(function (x) { return x && x.dato === iso && x.status !== "Arkiveret" && x.status !== "Idé" && x.status !== "Postet" && !huVenterGodk(x); });   /* et forslag, ingen har sagt ja til, skal ikke postes i morgen (Hans-testen 31/10, Idas »Ja, ret dem«) */
   } catch (e) { return []; }
 }
 function huTjekAabn(id) { if (!window.BLIV_KLAR_VIS) { openBriefSide(id); return; }   /* SOS FORTRYD 27/10: tjeklisten er slået fra — trykket åbner briefen */ HU_TJEK.id = (String(HU_TJEK.id) === String(id)) ? null : id; HU_TJEK.fane = "brief"; hjemUgeTegn(); }
@@ -51912,7 +51914,7 @@ function huYgtFoer8() { try { if (CURRENT_DEF && CURRENT_DEF.type === "kursus") 
 function huRingAabn(kind) {
   const man = energidaUgeMandag(new Date()), son = new Date(man); son.setDate(son.getDate() + 6);
   const fra = huIso(man), til = huIso(son);
-  const liste = (IDEER || []).filter(function (x) { if (!x || !x.dato || x.dato < fra || x.dato > til) return false; const st = String(x.status || ""); if (st === "Arkiveret" || st === "Idé") return false; if (String(x.type || "") === "Story") return false; return kind === "postet" ? (st === "Postet" || st === "Målt") : true; })
+  const liste = (IDEER || []).filter(function (x) { if (!x || !x.dato || x.dato < fra || x.dato > til) return false; const st = String(x.status || ""); if (st === "Arkiveret" || st === "Idé" || st === "Klar til godkendelse") return false; if (String(x.type || "") === "Story") return false; return kind === "postet" ? (st === "Postet" || st === "Målt") : true; })
     .sort(function (a, b) { return String(a.dato).localeCompare(String(b.dato)); });
   let m = document.getElementById("bsFlytMenu"); if (!m) { m = document.createElement("div"); m.id = "bsFlytMenu"; document.body.appendChild(m); }
   const titel = kind === "postet" ? "Postet i denne uge" : "Planlagt i denne uge";
@@ -51943,7 +51945,7 @@ function huRinge(tlf) {
   let maal = 3; try { maal = Number(maalUge() || 3); } catch (e) {}
   const man = energidaUgeMandag(new Date()), son = new Date(man); son.setDate(son.getDate() + 6);
   const fra = huIso(man), til = huIso(son);
-  const tael = function (f, t, kunUde) { return (IDEER || []).filter(function (x) { if (!x || !x.dato || x.dato < f || x.dato > t) return false; const st = String(x.status || ""); if (st === "Arkiveret" || st === "Idé") return false; if (String(x.type || "") === "Story") return false; return kunUde ? (st === "Postet" || st === "Målt") : true; }).length; };
+  const tael = function (f, t, kunUde) { return (IDEER || []).filter(function (x) { if (!x || !x.dato || x.dato < f || x.dato > t) return false; const st = String(x.status || ""); if (st === "Arkiveret" || st === "Idé" || st === "Klar til godkendelse") return false; if (String(x.type || "") === "Story") return false; return kunUde ? (st === "Postet" || st === "Målt") : true; }).length; };
   const n = tael(fra, til, false);
   let raekke = 0;
   for (let i = 1; i <= 26; i++) { const s = new Date(man); s.setDate(s.getDate() - 7 * i); const e = new Date(s); e.setDate(e.getDate() + 6); if (maal && tael(huIso(s), huIso(e), true) >= maal) raekke++; else break; }
@@ -52068,10 +52070,10 @@ function hjemUgeHtml(tlf, kunKal) {
   }
   /* computeren: telefonens kolonne til venstre, »Venter på dig« i pladsen til hoejre (paa smal computer staar den oeverst) */
   if (somTlf) return '<div class="hu hu-tlf hu-pctlf"><div class="hpt-h">' + huForslagFliseHtml() + '</div><div class="hpt-v">' + linje + strib + dagSek + (naesteFlise ? '<div class="hu-dagen hu-naeste">' + naesteFlise + '</div>' : '') + dag + forslagBlok
-      + '<div class="hu-kop">' + kommendeOpslagHtml(3, "hu-sek", true) + '</div>'
+      + '<div class="hu-kop">' + kommendeOpslagHtml(3, "hu-sek", true, true) + '</div>'
       + '<div class="cf-sek hu-sek">Denne uge</div><div class="hu-ringe">' + huRinge(true) + '</div>' + huTodoHtml() + '</div></div>';
   if (tlf) return '<div class="hu hu-tlf">' + huForslagFliseHtml() + linje + strib + dagSek + (naesteFlise ? '<div class="hu-dagen hu-naeste">' + naesteFlise + '</div>' : '') + dag + forslagBlok
-      + (huYgtFoer8() ? '' : '<div class="hu-kop">' + kommendeOpslagHtml(3, "hu-sek", true) + '</div>')   /* starter i morgen: dagens opslag staar lige ovenover (dublet-reglen, 19/10) */   /* UNDER I DAG STAAR KOMMENDE OPSLAG, IKKE KOMMENDE AKTIVITETER — aftalerne ligger i Dag/Uge (Ida 9/10) */
+      + (huYgtFoer8() ? '' : '<div class="hu-kop">' + kommendeOpslagHtml(3, "hu-sek", true, true) + '</div>')   /* starter i morgen: dagens opslag staar lige ovenover (dublet-reglen, 19/10) */   /* UNDER I DAG STAAR KOMMENDE OPSLAG, IKKE KOMMENDE AKTIVITETER — aftalerne ligger i Dag/Uge (Ida 9/10) */
       + '<div class="cf-sek hu-sek">' + (huYgtFoer8() ? 'Lektionerne' : 'Denne uge') + '</div><div class="hu-ringe">' + huRinge(true) + '</div>' + huTodoHtml() + '</div>';
   const fokus = huFokusHtml();
   const dagFuld = huKalDagHtml(dage[valgt].iso, erIdag);
@@ -52082,7 +52084,7 @@ function hjemUgeHtml(tlf, kunKal) {
   const kalDag = '<div class="hu-dagen hu-kal">' + kalGrid + '</div>';   /* kalenderdagen (26/9) — fliserne staar over datofelterne */
   return '<div class="hu hu-pc' + (fokus ? '' : ' uden-fokus') + '">'
     + '<div class="hu-ringe"><div class="cf-sek hu-sek hu-ringe-lbl">Denne uge</div>' + huRinge(false) + '</div>' + fokus
-    + '<div class="hu-venstre">' + huForslagFliseHtml() + linje + strib + (naesteFlise ? '<div class="hu-dagen hu-naeste">' + naesteFlise + '</div>' : '')   /* under datofliserne som paa telefonen, saa »I dag« flugter med to-do (porten) */ + (kalTop ? '<div class="hu-kal-top">' + kalTop + '</div>' : '') + kalDag + (huYgtFoer8() ? '' : '<div class="hu-kop">' + kommendeOpslagHtml(3, "hu-sek", true) + '</div>') + '</div>'   /* datofelterne styrer dagen og staar foerst; fliserne under dem, over timerne (ekspertrunden 26/9) */
+    + '<div class="hu-venstre">' + huForslagFliseHtml() + linje + strib + (naesteFlise ? '<div class="hu-dagen hu-naeste">' + naesteFlise + '</div>' : '')   /* under datofliserne som paa telefonen, saa »I dag« flugter med to-do (porten) */ + (kalTop ? '<div class="hu-kal-top">' + kalTop + '</div>' : '') + kalDag + (huYgtFoer8() ? '' : '<div class="hu-kop">' + kommendeOpslagHtml(3, "hu-sek", true, true) + '</div>') + '</div>'   /* datofelterne styrer dagen og staar foerst; fliserne under dem, over timerne (ekspertrunden 26/9) */
     + '<div class="hu-hoejre"><div class="hu-kaft">' + huKommendeAftalerHtml(3) + '</div>' + huTodoHtml() + '</div></div>';
 }
 /* VINDUET ÅBNER EN TIME FØR NU (har man selv rullet, bevares det); den røde streg flyttes hvert minut uden gentegning */
@@ -62540,7 +62542,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "3040";
+const APP_VERSION = "3042";
 const APP_BYGGET = "31. oktober";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_BYGGET + " · " + APP_VERSION; } catch (e) {} });
 let NY_VERSION_KLAR = false;

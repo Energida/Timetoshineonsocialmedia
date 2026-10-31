@@ -1,3 +1,6 @@
+## v3042 · 31. oktober · Tre logikfejl på Hjem (Hans-testen)
+Idas »Ja, ret dem«: (1) »I morgen skal du poste« kommer kun for opslag, der er sagt ja til — aldrig for et forslag, der venter (`huImorgenPost` + `huVenterGodk`). (2) Ringene tæller ikke forslag (»Klar til godkendelse«) som planlagt — tvillingerne `huRinge` og `huRingAabn`. (3) Det, der står i »Venter på dig«, står ikke igen under Kommende opslag på Hjem (`kommendeOpslagHtml(…, udenVenter)`). Intet design ændret.
+
 ## v3040 · 31. oktober · Telefonens Hjem på computeren
 Idas klik 31/10 »Telefonens Hjem 1:1« + »tilpasset computer og gennemtænkt« (Artifact NNKwDSUMB842nfEFpuRmJB), efter en dag med afviste dashboard-bud: computerens dagskort med timeakse gav ikke overblik. Computeren (≥761 px) tegner nu telefonens Hjem (`HJEM_PC_SOM_TLF`, `hjemUgeHtml` → `.hu-pctlf`): én kolonne 680 px med Dag/Uge, datofliser, I dag, Kommende opslag, Denne uge og Opgaver — samme fliser og rækkefølge som telefonen — og »Venter på dig« i pladsen til højre (392 px), så dagen står øverst. Under 1200 px: én kolonne, Dag/Uge-rækken øverst, så Venter på dig. Måneden står i datofliserne på computeren. Plusset står ud for Dag/Uge (32 px fra buen). YOU GOT THIS' lektionsdashboard og kalendersiden er urørte. `HJEM_PC_SOM_TLF = false` giver det gamle Hjem tilbage.
 
