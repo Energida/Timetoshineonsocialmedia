@@ -1,3 +1,10 @@
+## v3030 · 31. oktober · Forløbskunden får YOU GOT THIS-siden i CRM (Idas klik »Ja, samme side«)
+- Ida 31/10: »jeg føler jeg har godkendt hvordan en kunde ser ud i crm allerede«. Forløbs- og Content Studio-kunder bruger nu samme side som YOU GOT THIS (v2998): handlingsrækken (Skriv en mail · Send besked · Se kundens version), nøgletal, Venter på dig, felterne og genvejene.
+- Lagt til for forløbskunden: tre nøgletal (Forløb = trinnet »now« i forloeb_plan · Sidst aktiv · Næste opslag), afsnittet »Næste møde« med mødeflisen og »Noter til næste møde«, flisen Forløbet (Produkt · Lige nu · Kunde siden), døren Aftaler og plusset Contentmøde · Aftale · Besked (+ Forløb).
+- Kontakten hentes fra kundeoplysningerne (config · kunde_info, kun læsning), når der ikke er et køb. Butikken og Svar og feedback vises kun, når kunden har svaret noget.
+- Rene fejl: mødeflisen skrev ugedagen to gange (»Tirsdag tirs.«), og Noter til næste møde havde en streg over ét enligt felt.
+- Den gamle forside fra 19/10 står urørt bag `KS_FORLOEB_NY = false`.
+
 ## v3028 · 31. oktober · Lektion 0.2 viser basens titel (Idas besked)
 - `lekVisTitel` og `studieTitelVis` hårdkoder ikke længere “Energi · Strategi · Resultat” for lektion 1-2 (kundens 0.2). Titlen kommer fra databasen i lektionssiden, lektionslisten og Energida Studio.
 - Datanøglen 1-2 og basens titel er urørte.

@@ -9930,6 +9930,10 @@ body.bs-forfra.dash-mode #dashMain { background:#fff !important; }
 .ksy-prik { width:8px; height:8px; border-radius:50%; background:var(--red); align-self:center; }
 .ksy-d { font:400 12px/1.4 Poppins,sans-serif; color:var(--gray3); white-space:nowrap; }
 .ksy-ekstra { margin-bottom:16px; }
+@media (min-width:900px) { .ksy-noegler.ksy-n3 { grid-template-columns:repeat(3,minmax(0,1fr)); } }   /* forløbskunden: tre nøgletal (31/10) */
+@media (max-width:899px) { .ksy-noegler.ksy-n3 > :first-child { grid-column:1 / -1; } }
+html body .ksy-ekstra .ks-noter > .bs3-et { border-bottom:0; padding-bottom:0; }   /* kun ét felt under etiketten = ingen streg (Ida 27/10) */
+.ksy-ekstra .ks-noter { margin-top:12px; }
 .ksy-stak { flex-direction:column; align-items:flex-start; gap:4px; }
 .ksy-stak .ksy-v { text-align:left; }
 .ksy-s { font:400 13px/1.55 Poppins,sans-serif; color:var(--gray2); overflow-wrap:anywhere; }
@@ -62474,7 +62478,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "3028";
+const APP_VERSION = "3030";
 const APP_BYGGET = "31. oktober";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_BYGGET + " · " + APP_VERSION; } catch (e) {} });
 let NY_VERSION_KLAR = false;
@@ -86625,6 +86629,7 @@ async function ksForloebSaet(k, iso) {
   try { ksForloebTegn(k); } catch (e) {}
 }
 /* ---------- EN KUNDE = ET ARBEJDSRUM ---------- */
+const KS_FORLOEB_NY = true;   /* 31/10: forløbskunden bruger YOU GOT THIS-siden (false = den gamle forside fra 19/10) */
 async function kundeSideTegn() {
   const el = document.getElementById("bsKundeside"); if (!el) return;
   const k = BS_KUNDE; if (!k) { el.innerHTML = ""; return; }
@@ -86640,7 +86645,7 @@ async function kundeSideTegn() {
   const kEsc = esc(k).replace(/'/g, "\\'");
   const pin = (KUNDE_PINS || []).indexOf(k) > -1;
   const UGE = ["Søndag", "Mandag", "Tirsdag", "Onsdag", "Torsdag", "Fredag", "Lørdag"];
-  const dagTxt = function (iso, tid) { return UGE[new Date(String(iso).slice(0, 10) + "T12:00:00").getDay()] + " " + dkDatoKort(String(iso).slice(0, 10)) + (tid ? " kl. " + String(tid).slice(0, 5).replace(":", ".") : ""); };
+  const dagTxt = function (iso, tid) { return UGE[new Date(String(iso).slice(0, 10) + "T12:00:00").getDay()] + " " + String(dkDatoKort(String(iso).slice(0, 10))).replace(/^[a-zæøå]+\.\s*/i, "") + (tid ? " kl. " + String(tid).slice(0, 5).replace(":", ".") : ""); };
   /* kundekortets node reddes hjem, FOER siden tegnes om — ellers slettes den med innerHTML (samme laere som briefRail 21/9) */
   try { const ks = document.getElementById("kundeSide"), hj = document.getElementById("dside-kunde"); if (ks && hj && ks.parentElement !== hj) hj.appendChild(ks); } catch (e) {}
   const tilbage = '<button type="button" class="bsam-mobknap bsam-mobknap-sek bs-knap bs-tilbage" data-tilbage-kilde="1" onclick="' + (kort ? "ksForside()" : "visDashSide('crm')") + '">Tilbage</button>';   /* KNAPRÆKKENS TILBAGE FINDER DEN OGSÅ PÅ COMPUTEREN (Ida 11/10) — bag en dør fører Tilbage til kundens forside */
@@ -86678,6 +86683,21 @@ async function kundeSideTegn() {
       try { bsBaandPlanlaeg(); } catch (e) {}
       return;
     }
+    /* FORLØBSKUNDEN FÅR YOU GOT THIS-SIDEN (Idas klik 31/10 »Ja, samme side«: »jeg føler jeg har godkendt hvordan en kunde ser ud i crm allerede«):
+       samme opbygning som v2998 — nøgletal · handlinger · Venter på dig · Næste møde + noter · Næste opslag · felterne — kun mødet og noterne er lagt til.
+       Den gamle forside nedenfor står urørt bag KS_FORLOEB_NY = false. */
+    if (KS_FORLOEB_NY) {
+      const seK = '<button type="button" class="dbtn primary mq-tap bs3-lang bf3-se-kunden" onclick="aabnKundensSide(\'' + kEsc + '\')">Se kundens version</button>';
+      el.innerHTML = '<div class="bs-hero bs-hero-streg">' + esc(navn) + '</div><div class="bs3 ks-forside">' + (bf3Tlf() ? seK : '')
+        + '<div id="ksYgt" class="ksy" data-kode="' + esc(k) + '">' + bf3Tom("Henter kunden …") + '</div>'
+        + '<div id="bf3KkHost" class="bs3-afsnit" hidden></div><div class="ksy-ud">' + tilbage + '</div></div>';
+      try { bf3KundeNaalVis(k, pin); } catch (e) {}
+      try { await ksYgtTegn(k, { venterHtml: venter.length ? venterHtml : "", ops: ops, forloeb: true, moede: moede, moedeHtml: moedeHtml, noterHtml: noterHtml }); } catch (e) { const y = document.getElementById("ksYgt"); if (y) y.innerHTML = bf3Tom("Kunne ikke hentes. Prøv igen."); }
+      try { await bf3KundekortInd(k); } catch (e) {}
+      try { bf3BaandKnapVis("kunder"); const kb = document.querySelector("#bf3RumKnap button"); if (kb) { delete document.getElementById("bf3RumKnap").dataset.auto; kb.title = "Tilføj"; kb.setAttribute("aria-label", "Tilføj"); kb.onclick = function () { const v = [["Contentmøde", "ksMoedeArk('" + kEsc + "')", "tekst"], ["Aftale", "kkNyArk('aft')", "tekst"], ["Besked", "bf3BeskedArk('" + kEsc + "')", "tekst"]]; if ((VIRKSOMHEDSKODER[k] || {}).type === "forloeb") v.push(["Forløb", "kkNyArk('fs')", "liste"]); valgFliseArk("Tilføj", v); }; kb.dataset.ks = "contentmoede"; } } catch (e) {}
+      try { bsBaandPlanlaeg(); } catch (e) {}
+      return;
+    }
     const venstre = bf3Ver("Venter på dig") + venterHtml + (tlf ? '<div class="bs3-afsnit">' + moedeBlok + '</div>' : '') + '<div class="bs3-afsnit">' + bf3Ver("Næste opslag") + opsHtml + '</div><div class="bs3-afsnit">' + bf3Ver("Mere om " + esc(navn)) + doere + '</div>';
     /* »SE KUNDENS VERSION« ER TILBAGE ØVERST (Idas klik 20/10: »lige nu aner jeg ikke hvordan jeg ser kundens version så jeg kan arbejde i den fra min konto uden at skulle logge ind på hendes profil«):
        bud 1 lod døren Kalenderen gøre arbejdet, og det kunne man ikke se. Samme brede røde knap som 21/9 — åbner kundens studio fra Idas konto i en ny fane. */
@@ -86700,7 +86720,7 @@ async function kundeSideTegn() {
    Alt hentes i ét hug (ksYgtHent) og tegnes på én gang; Svar og feedback åbner hver sin side bag Tilbage (KS_VIS = "ygt-skema" | "ygt-feedback" | "ygt-opgaver"). */
 async function ksYgtHent(k) {
   const K = String(k).toUpperCase();
-  const [kr, sr, lr, pr, st, fr, or, tr] = await Promise.all([
+  const [kr, sr, lr, pr, st, fr, or, tr, ir] = await Promise.all([
     sb.from("contacts").select("kommentar,source,created_at").like("kommentar", "%Kode: " + K + "%").order("created_at", { ascending: false }).limit(1),
     sb.from("skema_svar").select("navn,skema,svar,created_at").eq("kode", K).in("skema", ["adgangskode_valgt", "login", "app_brug", "inden_start", "inden_workshoppen", "profil_svar", "profil_person"]),
     sb.from("skema_svar").select("skema,created_at").eq("kode", K).like("skema", "lektion_set_%"),
@@ -86708,7 +86728,8 @@ async function ksYgtHent(k) {
     ksForloebStart(K).catch(function () { return { fejl: true }; }),
     sb.from("skema_svar").select("navn,skema,svar,created_at").eq("kode", K).like("skema", "lektion_feedback_%"),
     sb.from("skema_svar").select("navn,skema,svar,created_at").eq("kode", K).like("skema", "lektion_svar_%"),
-    sb.from("lektioner").select("id,titel")
+    sb.from("lektioner").select("id,titel"),
+    sb.from("skema_svar").select("svar").eq("kode", K).eq("navn", "config").eq("skema", "kunde_info").limit(1)   /* kundeoplysningerne (31/10: forløbskunden har ingen køb at hente kontakten fra) */
   ]);
   if (sr.error || lr.error) throw new Error("hent");
   const rk = sr.data || [];
@@ -86732,6 +86753,7 @@ async function ksYgtHent(k) {
   const skemaRk = rk.filter(function (r) { return (r.skema === "inden_start" || r.skema === "inden_workshoppen") && r.svar && typeof r.svar === "object"; }).sort(function (a, b) { return String(b.created_at).localeCompare(String(a.created_at)); });
   const profilRk = rk.find(function (r) { return r.skema === "profil_svar"; });
   return {
+    info: (ir && ir.data && ir.data[0] && ir.data[0].svar) || {},
     profil: profilRk ? (profilRk.svar || {}) : null,   /* butikkens svar efter login (Idas klik 28/10) */
     personer: rk.filter(function (r) { return r.skema === "profil_person"; }).map(function (r) { return r.svar || {}; }),   /* hver persons trin 1: navn, fødselsdag, ejer/rolle */
     koeb: koeb, kilde: koeb ? (overblikKilde(kr.data[0].source) || "Uden kode") : "",
@@ -86775,7 +86797,14 @@ async function ksYgtTegn(k, o) {
   let naeste = "", naesteKort = "";
   try { const idag = datoDK(); const nr = Object.keys(YGT_DAG).map(Number).sort(function (a, b) { return a - b; }).find(function (n) { return ygtPlusDage(start, YGT_DAG[String(n)]) > idag; }); naeste = nr ? "Modul " + modulVisNr(nr) + " åbner " + ygtDatoOrd(ygtPlusDage(start, YGT_DAG[String(nr)])) : "Alle moduler er åbne"; naesteKort = nr ? storStart(ygtDatoOrd(ygtPlusDage(start, YGT_DAG[String(nr)]))) : "Alle er åbne"; } catch (e) {}
   const sidstOrd = D.sidst ? storStart(ksySidenOrd(D.sidst)) : "Aldrig";
-  const noegle = '<div class="ksy-noegler">'
+  const FL = !!o.forloeb;   /* forløbskunden (31/10): møde og noter i stedet for moduler og startdato */
+  const nu = FL ? ((d.forloeb_plan || []).find(function (x) { return x.s === "now"; }) || {}).t || "" : "";
+  const opsKort = (FL && o.ops && o.ops.length) ? storStart(kortDato(o.ops[0].dato)) : "Intet planlagt";
+  const noegle = FL ? '<div class="ksy-noegler ksy-n3">'   /* næste møde står i sin egen flise lige under — ikke to gange */
+    + ksyNoegle("Forløb", esc(nu || d.forloeb || "Forløb"))
+    + ksyNoegle("Sidst aktiv", esc(sidstOrd))
+    + ksyNoegle("Næste opslag", esc(opsKort))
+    + '</div>' : '<div class="ksy-noegler">'
     + ksyNoegle("Status", statusOrd, staa || !D.login)
     + ksyNoegle("Sidst aktiv", esc(sidstOrd), staa && D.login)
     + ksyNoegle("Lektioner set", D.set + " af " + (D.ialt || D.set))
@@ -86783,18 +86812,26 @@ async function ksYgtTegn(k, o) {
     + (tlf ? '' : ksyNoegle("Rabatkode", esc(D.kilde || d.forening || "Uden kode")) + ksyNoegle("Beløb", (D.koeb && D.koeb.kr != null) ? esc(D.koeb.kr.toLocaleString("da-DK")) + " kr." : "Ukendt"))
     + '</div>';
   /* HANDLINGER */
-  const mail = (D.koeb && D.koeb.mail) || ""; const tlfNr = (D.koeb && D.koeb.tlf) || "";
+  const I = D.info || {};
+  const mail = (D.koeb && D.koeb.mail) || String(I.mail || "").trim(); const tlfNr = (D.koeb && D.koeb.tlf) || "";
   const knap = function (t, href, klik, rod) { return href ? '<a class="ksy-knap" href="' + esc(href) + '">' + t + '</a>' : '<button type="button" class="ksy-knap' + (rod ? ' rod' : '') + '" onclick="' + klik + '">' + t + '</button>'; };
   const handl = '<div class="ksy-handl">' + (tlfNr ? knap("Ring op", "tel:" + tlfNr.replace(/\s/g, "")) : '') + (mail ? knap("Skriv en mail", "mailto:" + mail) : '') + knap(tlf ? "Besked" : "Send besked", "", "bf3BeskedArk('" + kEsc + "')") + (tlf ? '' : knap("Se kundens version", "", "aabnKundensSide('" + kEsc + "')", true)) + '</div>';
-  const top = '<div class="ksy-top"><div class="ksy-under">' + esc(d.forloeb || "YOU GOT THIS") + (koebt ? " · Kunde siden " + esc(kortDato(ksyDag(koebt))) : "") + '</div>' + (tlf ? '' : handl) + '</div>';
+  const top = '<div class="ksy-top"><div class="ksy-under">' + esc(d.forloeb || (FL ? "Forløb" : "YOU GOT THIS")) + (koebt ? " · Kunde siden " + esc(kortDato(ksyDag(koebt))) : "") + '</div>' + (tlf ? '' : handl) + '</div>';
   /* FELTERNE */
   const pil = '<svg class="ksy-pil" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>';
   const flyt = '<input type="hidden" id="ksForloebDato" value="' + esc(start || datoDK()) + '" onchange="ksForloebSaet(\'' + kEsc + '\', this.value).then(function(){ try { kundeSideTegn(); } catch (e) {} })"><button type="button" class="ksy-mini" onclick="event.stopPropagation();datoArkVis(document.getElementById(\'ksForloebDato\'))">Flyt</button>';
+  const kNavn = (D.koeb && D.koeb.navn) || String(I.kontakt || "").trim();
+  const iPb = (function () { try { return postnrOgBy(I) || {}; } catch (e) { return {}; } })(); const iAdr = [String(I.adresse || "").trim(), [iPb.postnr, iPb.by].filter(Boolean).join(" ")].filter(Boolean).join(", ");
   const kontakt = ksyGruppe("Kontakt",
-    ksyFelt("Navn", esc((D.koeb && D.koeb.navn) || "Ukendt"))
+    ksyFelt("Navn", kNavn ? esc(kNavn) : "Ukendt")
     + ksyFelt("Mail", mail ? esc(mail) : "Ukendt")
-    + ksyFelt("Telefon", tlfNr ? esc(tlfNr) : "Ukendt"));
-  const koeb = ksyGruppe("Køb",
+    + ((tlfNr || !FL) ? ksyFelt("Telefon", tlfNr ? esc(tlfNr) : "Ukendt") : '')
+    + ((FL && iAdr) ? ksyFelt("Adresse", esc(iAdr)) : ''));
+  const koeb = FL ? ksyGruppe("Forløbet",
+    ksyFelt("Produkt", esc(d.forloeb || "Forløb"))
+    + (nu ? ksyFelt("Lige nu", esc(nu)) : '')
+    + ((D.koeb && D.kilde) ? ksyFelt("Rabatkode", esc(D.kilde)) : '')
+    + (koebt ? ksyFelt("Kunde siden", esc(ksyDato(koebt))) : '')) : ksyGruppe("Køb",
     ksyFelt("Produkt", esc(d.forloeb || "YOU GOT THIS"))
     + ksyFelt("Rabatkode", esc(D.kilde || d.forening || "Uden kode"))
     + ksyFelt("Købt", koebt ? esc(ksyDato(koebt)) : "Ukendt")
@@ -86803,7 +86840,7 @@ async function ksYgtTegn(k, o) {
   /* BUTIKKEN = KUNDENS EGNE SVAR EFTER LOGIN (Idas klik 28/10 »Behold dem efter login + Drejebogen bruger svarene«) */
   const P = D.profil || {}, koebOrd = { butik: "I butikken", butik_webshop: "I butikken og på webshop", webshop: "Kun på webshop" };
   const adr = [P.adresse, [P.postnr, P.by].filter(Boolean).join(" ")].filter(Boolean).join(", ");
-  const butik = ksyGruppe("Butikken",
+  const butik = (FL && !D.profil) ? '' : ksyGruppe("Butikken",
     ksyFelt("Navn", P.butik_navn ? esc(P.butik_navn) : "Ikke svaret")
     + ksyFelt("Adresse", adr ? esc(adr) : "Ikke svaret")
     + (P.cvr ? ksyFelt("CVR", esc(P.cvr)) : '')
@@ -86816,13 +86853,13 @@ async function ksYgtTegn(k, o) {
   }).join("")) : '';
   const team = ksyGruppe("Team", D.team.length ? D.team.map(function (p) { return ksyFelt(esc(p.n), p.sidst ? esc(storStart(ksySidenOrd(p.sidst))) : "Ikke i appen endnu"); }).join("") : ksyFelt("Ingen har logget ind endnu", ""));
   const nKom = D.feedback.filter(function (x) { return x.kommentar; }).length;
-  const svar = ksyGruppe("Svar og feedback",
+  let svar = ksyGruppe("Svar og feedback",
     ksyFelt("Spørgeskema", D.skema.length ? "Sendt " + esc(kortDato(ksyDag(D.skema[0].created_at))) : "Ikke sendt", D.skema.length ? { klik: "ksYgtVis('ygt-skema')", knap: pil } : {})
     + ksyFelt("Feedback", D.feedback.length ? D.feedback.length + (D.feedback.length === 1 ? " lektion" : " lektioner") + (nKom ? " · " + nKom + (nKom === 1 ? " kommentar" : " kommentarer") : "") : "Ingen endnu", D.feedback.length ? { klik: "ksYgtVis('ygt-feedback')", knap: pil } : {})
     + ksyFelt("Opgaver", D.opgaver.length ? D.opgaver.length + " besvaret" : "Ingen endnu", D.opgaver.length ? { klik: "ksYgtVis('ygt-opgaver')", knap: pil } : {}));
   /* AKTIVITET: det kunden har gjort, nyeste først — bygget af de rækker, der allerede findes */
   const akt = [];
-  if (koebt) akt.push({ t: (D.koeb && D.koeb.tid) ? new Date(D.koeb.tid).toISOString() : koebt, s: "Købte " + (d.forloeb || "YOU GOT THIS") });
+  if (koebt) akt.push({ t: (D.koeb && D.koeb.tid) ? new Date(D.koeb.tid).toISOString() : koebt, s: (FL && !D.koeb) ? "Blev kunde" : "Købte " + (d.forloeb || "YOU GOT THIS") });
   if (D.foersteLogin) akt.push({ t: D.foersteLogin, s: "Loggede ind første gang" });
   if (D.skema.length) akt.push({ t: String(D.skema[D.skema.length - 1].created_at), s: "Sendte " + ((typeof NAVN_SKEMA !== "undefined" && NAVN_SKEMA) || "Find dit udgangspunkt") });
   Object.keys(D.sete || {}).forEach(function (id) { const tid = D.sete[id]; if (tid && tid !== "0") akt.push({ t: tid, s: "Så lektion " + lekVisNr(id) + (D.titler[id] ? " · " + D.titler[id] : "") }); });
@@ -86830,10 +86867,12 @@ async function ksYgtTegn(k, o) {
   D.opgaver.forEach(function (x) { if (x.dato) akt.push({ t: x.dato, s: "Svarede på opgaven i lektion " + lekVisNr(x.id) }); });
   akt.sort(function (a, b) { return String(b.t).localeCompare(String(a.t)); });
   const aktivitet = ksyGruppe("Aktivitet", akt.length ? '<ul class="ksy-tl">' + akt.slice(0, 12).map(function (a) { return '<li><span class="ksy-prik"></span><span class="ksy-v">' + esc(a.s) + '</span><span class="ksy-d">' + esc(kortDato(a.t)) + '</span></li>'; }).join("") + '</ul>' : ksyFelt("Intet endnu", ""));
-  const genveje = ksyGruppe("Genveje", [["Kalenderen", "kundeStudioAabn('" + kEsc + "')"], ["Kundeoplysninger", "ksKortVis('overblik')"], ["Indstillinger", "ksKortVis('adgang')"]].map(function (x) { return ksyFelt(x[0], "", { klik: x[1], knap: pil }); }).join(''));
+  const genveje = ksyGruppe("Genveje", [["Kalenderen", "kundeStudioAabn('" + kEsc + "')"]].concat(FL ? [["Aftaler", "ksKortVis('aftaler')"]] : [], [["Kundeoplysninger", "ksKortVis('overblik')"], ["Indstillinger", "ksKortVis('adgang')"]]).map(function (x) { return ksyFelt(x[0], "", { klik: x[1], knap: pil }); }).join(''));
   const UGE = ["Søndag", "Mandag", "Tirsdag", "Onsdag", "Torsdag", "Fredag", "Lørdag"];
   const opsHtml = (o.ops || []).map(function (x) { return bf3Rk(bf3Datob(x.dato), esc(storStart(x.titel || "Uden titel")), esc(UGE[new Date(String(x.dato).slice(0, 10) + "T12:00:00").getDay()] + (x.status ? " · " + statusVisNavn(x.status) : "")), "godkKoeAabn('" + kEsc + "','" + esc(String(x.id)) + "')"); }).join('');
-  const ekstra = (o.venterHtml ? '<div class="ksy-ekstra">' + bf3Ver("Venter på dig") + o.venterHtml + '</div>' : '') + (opsHtml ? '<div class="ksy-ekstra">' + bf3Ver("Næste opslag") + opsHtml + '</div>' : '');
+  const ekstra = (o.venterHtml ? '<div class="ksy-ekstra">' + bf3Ver("Venter på dig") + o.venterHtml + '</div>' : '') + (FL ? '<div class="ksy-ekstra">' + bf3Ver("Næste møde") + (o.moedeHtml || '') + (o.noterHtml || '') + '</div>' : '') + (opsHtml ? '<div class="ksy-ekstra">' + bf3Ver("Næste opslag") + opsHtml + '</div>' : '');
+  const harSvar = D.skema.length || D.feedback.length || D.opgaver.length;
+  if (FL && !harSvar) svar = "";   /* forløbskunden uden skema/feedback/opgaver: ingen tom flise */
   el.innerHTML = tlf
     ? top + noegle + handl + ekstra + svar + koeb + kontakt + butik + personer + team + aktivitet + genveje
     : top + noegle + ekstra + '<div class="ksy-to"><div class="ksy-sp">' + kontakt + butik + personer + koeb + team + genveje + '</div><div class="ksy-sp">' + svar + aktivitet + '</div></div>';
