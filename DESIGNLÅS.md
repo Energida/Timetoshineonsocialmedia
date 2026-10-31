@@ -1,3 +1,9 @@
+## v3032 · 31. oktober · Rene fejl fra live-tjekket af forløbskundens CRM-side (Ida: »tjek ALT igennem om det virker og er optimalt«)
+- Næste opslag i nøgletallene stod »31. Oktober« med stort O; nu »I dag« · »I morgen« · »2. november«.
+- Telefonnummeret fra kundeoplysningerne (kunde_info.tlf) vises under Kontakt og giver »Ring op« (Acorns havde nummeret, men det stod ikke på siden).
+- »Lige nu« i flisen Forløbet er ude — det står allerede som nøgletallet Forløb.
+- Målt live på v3030 (kun læsning): Hinges Hus, Acorns, Coast, EEEE, Tip Top Studio · døre Aftaler/Kundeoplysninger/Indstillinger + coverets Tilbage · Opgaver + Tilbage · Sæt contentmødet åbner arket · plusset Contentmøde/Aftale/Besked/Forløb · 0 vandret rul på 390 og 1440.
+
 ## v3030 · 31. oktober · Forløbskunden får YOU GOT THIS-siden i CRM (Idas klik »Ja, samme side«)
 - Ida 31/10: »jeg føler jeg har godkendt hvordan en kunde ser ud i crm allerede«. Forløbs- og Content Studio-kunder bruger nu samme side som YOU GOT THIS (v2998): handlingsrækken (Skriv en mail · Send besked · Se kundens version), nøgletal, Venter på dig, felterne og genvejene.
 - Lagt til for forløbskunden: tre nøgletal (Forløb = trinnet »now« i forloeb_plan · Sidst aktiv · Næste opslag), afsnittet »Næste møde« med mødeflisen og »Noter til næste møde«, flisen Forløbet (Produkt · Lige nu · Kunde siden), døren Aftaler og plusset Contentmøde · Aftale · Besked (+ Forløb).
