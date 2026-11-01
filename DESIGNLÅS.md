@@ -1,3 +1,7 @@
+## v3068 · 1. november · Statusskift giver kvittering, Postet uden dato får dags dato
+
+Idas klik 1/11 (»Kvittering + dags dato«, Hans-testen B8: »Hvor blev min brief af? Jeg har jo postet den.«): skiftes status i briefen, og man lander i kalenderen (18/10), står husets hvide kvittering med statussens navn (»Postet.«, »Godkendt.«). Sættes et opslag uden dato til Postet, får det dags dato og ses i kalenderen — gælder alle steder, status sættes. En dato, der allerede står, røres aldrig. Begge flader.
+
 ## v3066 · 1. november · Handlingen fra Start står skrevet ind
 
 Idas klik 1/11 (»Skrevet ind«, Hans-testen B7): har kunden valgt en handling på Start (fx »Besøg butikken«), og er »Hvad skal de gøre nu?« under captionen tomt, står handlingen skrevet i feltet og kan rettes. Den gemmes, når briefen gemmes. Kundens egen tekst overskrives aldrig, og en handling, der er sat af sig selv (`ctaAuto`), skrives ikke ind. Begge flader.

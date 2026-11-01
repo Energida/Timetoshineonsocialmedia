@@ -25389,8 +25389,10 @@ function briefStatusBaandAabn(knap) {
 /* status valgt i fakta-boksen: gem, luk raekken, tegn boksen og forsiden om — man bliver, hvor man er (forside eller skriveside) */
 /* EFTER ET STATUSSKIFT LANDER MAN PAA KALENDERENS FORSIDE (Ida 18/10: »når jeg skifter status - vil jeg gerne man kommer ud på kalenderforsiden
    når det er gjort« — vaelter 4/10's »intet bevaeger sig ved valg i fakta« for status). Briefen gemmes som ved Tilbage; afviste basen statussen, bliver man staaende. */
-function briefUdTilKalender(id) {
+function briefUdTilKalender(id, st) {
   try { if (String(BRIEF_ID) !== String(id)) return; BRIEF_FRA = 8; briefTilbage(); } catch (e) {}
+  /* KVITTERING I KALENDEREN (Idas klik 1/11, Hans-testen B8): man lander aldrig uden at faa at vide, at det gik */
+  if (st) setTimeout(function () { try { husKvit(statusVisNavn(st) + "."); } catch (e) {} }, 450);
 }
 /* »KLAR TIL GODKENDELSE« I STATUSLISTEN ÅBNER SEND TIL GODKENDELSE (Ida 30/10: »hvorfor skal jeg klikke på send til godkendelse? det bliver den jo automatisk når jeg vælger status?«):
    én vej — arket med modtager og lydmemo; statussen sættes, når der trykkes Send. Kun når briefen er åben og der er nogen at sende til. */
@@ -25404,7 +25406,7 @@ function statusGodkViaArk(id, st) {
 async function briefStatusVaelgFakta(id, st) {
   if (statusGodkViaArk(id, st)) return;
   let ok = false; try { ok = await ideaStatusSet(id, st); } catch (e) {}
-  if (ok) { try { const it = (IDEER || []).find(x => String(x.id) === String(id)); if (it) it.status = st; } catch (e) {} briefUdTilKalender(id); return; }
+  if (ok) { try { const it = (IDEER || []).find(x => String(x.id) === String(id)); if (it) it.status = st; } catch (e) {} briefUdTilKalender(id, st); return; }
   try { const it = (IDEER || []).find(x => String(x.id) === String(id)); if (it) it.status = st; } catch (e) {}
   FB_AABEN = null;
   try { if (document.body.classList.contains("mb")) markbaandTegn(7); } catch (e) {}   /* baandets status foelger med (21/9) */
@@ -62610,7 +62612,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "3066";
+const APP_VERSION = "3068";
 const APP_BYGGET = "31. oktober";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_BYGGET + " · " + APP_VERSION; } catch (e) {} });
 let NY_VERSION_KLAR = false;
@@ -63749,7 +63751,7 @@ function briefStatusDropHtml(it, suffiks, somChip) {
 async function briefStatusVaelg(id, st) {
   if (statusGodkViaArk(id, st)) return;
   let ok = false; try { ok = await ideaStatusSet(id, st); } catch (e) {}
-  if (ok) { briefUdTilKalender(id); return; }   /* kalenderens forside (Ida 18/10) */
+  if (ok) { briefUdTilKalender(id, st); return; }   /* kalenderens forside (Ida 18/10) */
   /* Gentegn den flade, man staar paa: overblikket ELLER wizarden (Ida 31/8) */
   setTimeout(function () { try {
     if (BRIEF_ID !== id) return;
@@ -63771,6 +63773,10 @@ async function ideaStatusSet(id, st) {
   /* KUN dato — content_ideer har INGEN tid-kolonne. Den blev sendt med i v920, og hele
      opdateringen blev afvist, saa statusskiftet slet ikke kunne gemmes (Idas roede bjaelke). */
   if (st === "Idé") { patch.dato = null; }
+  /* POSTET UDEN DATO FAAR DAGS DATO (Idas klik 1/11 »Kvittering + dags dato«, Hans-testen B8: »Hvor blev min brief af? Jeg har jo postet den.«):
+     ellers ses opslaget kun i Arkiv. En dato, der allerede staar, roeres aldrig. */
+  const postetUdenDato = st === "Postet" && (function () { const x = (IDEER || []).find(function (y) { return String(y.id) === String(id); }); return !!x && !x.dato; })();
+  if (postetUdenDato) patch.dato = datoDK();
   const gammel = (function () { const x = (IDEER || []).find(function (y) { return String(y.id) === String(id); }); return x ? { status: x.status, dato: x.dato } : null; })();
   const gemtOk = await ideUpdate(id, patch);
   /* GEMMER DET IKKE, SKAL SKAERMEN IKKE LYVE (Ida 9/10: »når jeg flytter en idé fra planlagt til idé sker det ikke«): statussen rulles tilbage og det siges højt — i stedet for at vise Idé, mens basen stadig siger Planlagt */
@@ -63780,6 +63786,10 @@ async function ideaStatusSet(id, st) {
      skrev datoen og »Planlagt« tilbage — idéen sprang ud af Idébanken igen, mens kvitteringen sagde »Flyttet tilbage«. */
   if (st === "Idé") { try { if (String(BRIEF_ID) === String(id)) { const df = document.getElementById("bf_dato"); if (df) df.value = ""; } } catch (e) {} }
   if (st === "Idé") { try { husKvit("Flyttet tilbage i Idébanken."); } catch (e) {} }
+  if (postetUdenDato) {
+    try { const x = (IDEER || []).find(function (y) { return String(y.id) === String(id); }); if (x) x.dato = patch.dato; } catch (e) {}
+    try { if (String(BRIEF_ID) === String(id)) { const df = document.getElementById("bf_dato"); if (df) df.value = patch.dato; } } catch (e) {}   /* briefens eget gem ved Tilbage maa ikke skrive den tomme dato tilbage */
+  }
   /* Planlagt kraever ansvarlig (A4, Ida 19/8) — vagten spoerger, hvis ingen er valgt */
   if (st === "Planlagt") { try { ansvarligVagt(id); } catch(e) {} }
   return true;
