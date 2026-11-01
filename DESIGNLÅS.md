@@ -1,3 +1,7 @@
+## v3078 · 2. november (nat) · Luft under heroen = 32 px på alle sider
+
+Regel 12/9, målt i designgennemgangen: Indbakken, Indholdssøjlerne (og en søjle), De 4 byggesten, Tema, Målsætninger, Profil, Mødesiden, Årshjulet, Performance, Forløbsoversigten, Briefoversigten og briefen (computer), kalenderen og Hashtagbanken (telefon) stod 36–54 px under arkets kant. Nu 32 px på begge flader — én blok `LUFT UNDER HEROEN = 32 PX PAA ALLE SIDER`, målrettet pr. side; afstanden under det første element er uændret. Ikke rørt: Hashtagbanken på computeren (plusset alene i egen række = designvalg) og Briefoversigten på telefonen (30 px, titelfeltets 2 px).
+
 ## v3076 · 2. november (nat) · Rene fejl fra designgennemgangen
 
 Idas nat-ja 1/11 (rene fejl live). Målt på 390 og 1440: Dag og Uge på Hjem har samme højde på telefonen (den valgte var 30, den uvalgte 36 — én chip = 36, låst 9/10) · kalenderens værktøjsrække på computeren har én højde, 36 px (Uge og »+ Nyt opslag« var 40) · den faste versionslinje vises ikke på computeren, hvor sidemenuen allerede viser versionen (den lå oven i »Fortsæt brief«), og datoen i versionen er rettet · flisen »Om indholdssøjlen« tegnes ikke uden tekst (streg over ingenting, regel 27/10).
