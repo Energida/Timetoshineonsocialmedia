@@ -1,3 +1,7 @@
+## v3072 · 1. november · Spørgsmålet først på telefonen
+
+Idas klik 1/11 (»Spørgsmålet først«, Hans-testen B2: »Hvad skal jeg nu? Der står Vælg i rødt fem steder.«): på telefonen står procesbaren og trinnets spørgsmål lige under briefens titel; status og faktaboksen (Indholdssøjle · Postes · Format · Hvem laver · Lyd · Tilføj) står efter Næste/Gem/Tilbage, i fuld bredde. Kun skrivesiden (»Briefen«) — Briefoversigten og computeren er urørte.
+
 ## v3070 · 1. november · Briefens titel i Poppins — Didot kun i heroen
 
 Idas klik 1/11 (»Poppins«, Hans-testen B13 — vælter 21/9 kl. 18.35/18.42, 7/10 og 22/10s Didot-titel): titlen på Briefen, Briefoversigten (computerens titel over den røde flise) og briefoversigtens røde flise står i Poppins 400, aldrig kursiv — 22 px på telefonen, 24 px på computeren. Målt: i briefen står Didot nu kun i heroen (og i logoet). Begge flader.
