@@ -1,3 +1,7 @@
+## v3076 · 2. november (nat) · Rene fejl fra designgennemgangen
+
+Idas nat-ja 1/11 (rene fejl live). Målt på 390 og 1440: Dag og Uge på Hjem har samme højde på telefonen (den valgte var 30, den uvalgte 36 — én chip = 36, låst 9/10) · kalenderens værktøjsrække på computeren har én højde, 36 px (Uge og »+ Nyt opslag« var 40) · den faste versionslinje vises ikke på computeren, hvor sidemenuen allerede viser versionen (den lå oven i »Fortsæt brief«), og datoen i versionen er rettet · flisen »Om indholdssøjlen« tegnes ikke uden tekst (streg over ingenting, regel 27/10).
+
 ## v3074 · 2. november (nat) · »Det, man ser« følger med til Fasthold dem og oversigten
 
 Ren fejl, Hans-testen A6 (Idas nat-ja 1/11 kl. 23.00): »Det, man ser« i hooket har ingen vælg-cirkel (Ida 30/10), så det skrevne blev aldrig ført til klip 1 — Fasthold dems låste Klip 1 og Briefoversigten viste det ikke. Nu er det første udfyldte forslag svaret (`briefForslagSynk`). Tvillingen: det låste Klip 1 · Hook har samme hårfine skillelinje mellem delene som hook-kortet (v3058, regel 27/10). Begge flader.
