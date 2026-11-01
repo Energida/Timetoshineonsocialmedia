@@ -1,3 +1,7 @@
+## v3070 · 1. november · Briefens titel i Poppins — Didot kun i heroen
+
+Idas klik 1/11 (»Poppins«, Hans-testen B13 — vælter 21/9 kl. 18.35/18.42, 7/10 og 22/10s Didot-titel): titlen på Briefen, Briefoversigten (computerens titel over den røde flise) og briefoversigtens røde flise står i Poppins 400, aldrig kursiv — 22 px på telefonen, 24 px på computeren. Målt: i briefen står Didot nu kun i heroen (og i logoet). Begge flader.
+
 ## v3068 · 1. november · Statusskift giver kvittering, Postet uden dato får dags dato
 
 Idas klik 1/11 (»Kvittering + dags dato«, Hans-testen B8: »Hvor blev min brief af? Jeg har jo postet den.«): skiftes status i briefen, og man lander i kalenderen (18/10), står husets hvide kvittering med statussens navn (»Postet.«, »Godkendt.«). Sættes et opslag uden dato til Postet, får det dags dato og ses i kalenderen — gælder alle steder, status sættes. En dato, der allerede står, røres aldrig. Begge flader.
