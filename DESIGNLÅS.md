@@ -1,3 +1,7 @@
+## v3064 · 1. november · Hverdagsord i stedet for fagord i handlingerne
+
+Idas klik 1/11 (»Hverdagsord«, Hans-testen B7): i handlingslisten i briefen står »Skriv et ord i kommentaren, få linket« i stedet for »ManyChat« og »Stil følgerne et spørgsmål« i stedet for »Community-spørgsmål« — også i den valgte pille, i captionens hjælpelinje og på briefens forside. Kun ordet på skærmen: den gemte værdi er uændret (`CTA_HVERDAG` · `ctaOrd`). Begge flader.
+
 ## v3062 · 1. november · Kun én handling er »Anbefalet«
 
 Idas klik 1/11 (»Kun én anbefalet«, Hans-testen B7 — Mette: »så anbefales ingen«): i handlingslisten i briefen står det røde »Anbefalet« kun ved den første handling fra Idas skema (31/8) for søjlen. De andre fra skemaet står stadig øverst, uden ord. Kun visning — listen, rækkefølgen og gemte valg er urørte (`briefCtaFoersteAnb`). Vibe og format er urørte.
