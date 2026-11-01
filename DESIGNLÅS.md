@@ -1,3 +1,7 @@
+## v3058 · 1. november · Hook-kortet: skillelinje mellem delene
+
+Idas klik 1/11 (»Skillelinje«, regel 27/10): i Klip 1 · Hook står »Tekst på skærmen«, »Det, man ser« og »Det, jeg siger« adskilt af én hårfin streg (#E3E2DE, 16 px luft under), kun mellem de dele, der er fremme. Kortet forbliver ét kort (bud 3, låst 9/10). Begge flader.
+
 ## v3056 · 1. november · Fasthold dem siger, hvad man gør
 
 Idas klik 1/11 (»Dine ord fra metoden«): på »Fasthold dem« (reel) står én grå linje lige under procesbaren, før Scene 1, på begge flader: »Fasthold med udfordring og løsning — tilføj ét klip ad gangen.« Poppins 400, 13 px, `--gray2`. Første halvdel er Idas ord fra Den virale 3-trins raket. Kort-reel, karrusel og billede er urørte. Linjen står uden for `.sk-label`, fordi etiket-tegneren fjerner forklaringer fra korte etiketter.
