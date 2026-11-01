@@ -1,3 +1,9 @@
+## v3050 · 1. november · Spørgeskemaet er 0.6
+Ida 1/11: »spørgeskemaet skal være 0.6«. »Find dit udgangspunkt« står nu SIDST i modul 0 med nummeret efter den sidste lektion (0.5 → 0.6) — i lektionssidens liste, oversigten og telefonens modulfliser (lksSkemaNr). »Dit forløb« peger på skemaet, når modulets lektioner er set (som Næste skridt allerede gjorde). Vælter 26/10's »lige under Velkommen«.
+
+## v3050 · 1. november · Husk-boksen er et råd: grå stiplet
+Idas klik (Hans-testen B7): Husk-boksen i »Hvornår planlægger du næste uges content?« havde rød ramme om en hvid flade. Nu: hvid, 1,5 px grå stiplet kant #CFCAC3, grå tekst — samme sprog som appens andre råd. Teksten er uændret.
+
 ## v3048 · 31. oktober · ⋯ på kalenderkortene ved musen
 Idas klik 31/10 (Hans-testen B5: kortets menu kom kun ved højreklik på computeren): står musen over et kort i Content kalenderen eller Kommende opslag, kommer tre grå prikker i hjørnet (hvid cirkel, grå ring); et tryk åbner den samme menu (Flyt til · Omdøb · Duplikér · Slet). Højreklik og langt tryk virker stadig. Kun computer (hover + fin markør).
 
