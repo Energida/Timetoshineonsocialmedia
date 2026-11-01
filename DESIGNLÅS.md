@@ -1,3 +1,7 @@
+## v3066 · 1. november · Handlingen fra Start står skrevet ind
+
+Idas klik 1/11 (»Skrevet ind«, Hans-testen B7): har kunden valgt en handling på Start (fx »Besøg butikken«), og er »Hvad skal de gøre nu?« under captionen tomt, står handlingen skrevet i feltet og kan rettes. Den gemmes, når briefen gemmes. Kundens egen tekst overskrives aldrig, og en handling, der er sat af sig selv (`ctaAuto`), skrives ikke ind. Begge flader.
+
 ## v3064 · 1. november · Hverdagsord i stedet for fagord i handlingerne
 
 Idas klik 1/11 (»Hverdagsord«, Hans-testen B7): i handlingslisten i briefen står »Skriv et ord i kommentaren, få linket« i stedet for »ManyChat« og »Stil følgerne et spørgsmål« i stedet for »Community-spørgsmål« — også i den valgte pille, i captionens hjælpelinje og på briefens forside. Kun ordet på skærmen: den gemte værdi er uændret (`CTA_HVERDAG` · `ctaOrd`). Begge flader.
