@@ -1,3 +1,7 @@
+## v3056 · 1. november · Fasthold dem siger, hvad man gør
+
+Idas klik 1/11 (»Dine ord fra metoden«): på »Fasthold dem« (reel) står én grå linje lige under procesbaren, før Scene 1, på begge flader: »Fasthold med udfordring og løsning — tilføj ét klip ad gangen.« Poppins 400, 13 px, `--gray2`. Første halvdel er Idas ord fra Den virale 3-trins raket. Kort-reel, karrusel og billede er urørte. Linjen står uden for `.sk-label`, fordi etiket-tegneren fjerner forklaringer fra korte etiketter.
+
 ## v3054 · 1. november · Tag testen: kun det, der findes
 Idas klik 1/11 »Mangler samles til sidst«. Testen spørger kun om det, briefen har (hook, tidspunkt og CTA springes over, når de er tomme). Hvert spørgsmål: Ja/Nej (centreret) + grå Tilbage fra spørgsmål 2 — ikke Åbn briefen/Spring over. Sidste kort: »n af n svaret Ja« · hårfin streg · »Mangler: hook, tidspunkt og CTA« · rød Åbn briefen · grå Færdig (intet mangler = rød Færdig, grå Åbn briefen). Ingen streg over Ja/Nej uden tekst imellem.
 
