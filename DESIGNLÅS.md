@@ -1,3 +1,7 @@
+## v3060 · 1. november · Hashtags er sin egen flise med ét felt
+
+Idas klik 1/11 (»Egen flise, ét felt«, Hans-testen B6): på »Få dem til at handle« står Hashtags i sin egen hvide flise efter »Hvad skal de gøre nu?« (stod før i samme flise uden streg). Man skriver kun i #-felterne. Bankens eget »Tilføj hashtag« er ude af briefen — nye hashtags lander i banken, når briefen gemmes (`htbTaelBrief`). Når banken er åben: én hårfin streg mellem felterne og banken, og bankens navn står ens på begge flader (Poppins 13 px, `--gray2`, ingen versal). Siden Din hashtagbank i Værktøjskassen er urørt.
+
 ## v3058 · 1. november · Hook-kortet: skillelinje mellem delene
 
 Idas klik 1/11 (»Skillelinje«, regel 27/10): i Klip 1 · Hook står »Tekst på skærmen«, »Det, man ser« og »Det, jeg siger« adskilt af én hårfin streg (#E3E2DE, 16 px luft under), kun mellem de dele, der er fremme. Kortet forbliver ét kort (bud 3, låst 9/10). Begge flader.
