@@ -1,3 +1,7 @@
+## v3080 · 2. november (nat) · Rene fejl fra gennemgangens anden runde
+
+Målt på 390 og 1440: titlen i det lange tryks ark (Idébanken, kalenderen) går ikke længere ind under krydset (52/44 px luft, regel 26/10) · Dag-visningen i kalenderen viser kun dagen på computeren (viste hele ugen) · slet-spørgsmålets knapper er 52 px på telefonen som alle andre (Ida 24/9; computeren beholder 40) · »Ingen mappe« i »Jeg har set noget fedt« står i vægt 400 (var 500) · karrusellens pile og skraldespand er lige store (36 px) · en inspirationsnote uden link hedder »Note«, ikke »link«.
+
 ## v3078 · 2. november (nat) · Luft under heroen = 32 px på alle sider
 
 Regel 12/9, målt i designgennemgangen: Indbakken, Indholdssøjlerne (og en søjle), De 4 byggesten, Tema, Målsætninger, Profil, Mødesiden, Årshjulet, Performance, Forløbsoversigten, Briefoversigten og briefen (computer), kalenderen og Hashtagbanken (telefon) stod 36–54 px under arkets kant. Nu 32 px på begge flader — én blok `LUFT UNDER HEROEN = 32 PX PAA ALLE SIDER`, målrettet pr. side; afstanden under det første element er uændret. Ikke rørt: Hashtagbanken på computeren (plusset alene i egen række = designvalg) og Briefoversigten på telefonen (30 px, titelfeltets 2 px).
