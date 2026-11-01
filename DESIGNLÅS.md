@@ -1,3 +1,6 @@
+## v3052 · 1. november · Ingen rundvisning, når en lektion åbnes
+Idas klik 1/11 »Fjern den helt« (+ »bare vi sikrer at kunden får rundvisningen inden på et andet tidspunkt«). Lektionssidens tre trin starter aldrig af sig selv ved »Se lektion«. Kunden får dem i den første rundvisning, når de lander (26/10-reglen, uændret).
+
 ## v3050 · 1. november · Spørgeskemaet er 0.6
 Ida 1/11: »spørgeskemaet skal være 0.6«. »Find dit udgangspunkt« står nu SIDST i modul 0 med nummeret efter den sidste lektion (0.5 → 0.6) — i lektionssidens liste, oversigten og telefonens modulfliser (lksSkemaNr). »Dit forløb« peger på skemaet, når modulets lektioner er set (som Næste skridt allerede gjorde). Vælter 26/10's »lige under Velkommen«.
 
