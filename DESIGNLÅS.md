@@ -1,3 +1,6 @@
+## v3054 · 1. november · Tag testen: kun det, der findes
+Idas klik 1/11 »Mangler samles til sidst«. Testen spørger kun om det, briefen har (hook, tidspunkt og CTA springes over, når de er tomme). Hvert spørgsmål: Ja/Nej (centreret) + grå Tilbage fra spørgsmål 2 — ikke Åbn briefen/Spring over. Sidste kort: »n af n svaret Ja« · hårfin streg · »Mangler: hook, tidspunkt og CTA« · rød Åbn briefen · grå Færdig (intet mangler = rød Færdig, grå Åbn briefen). Ingen streg over Ja/Nej uden tekst imellem.
+
 ## v3052 · 1. november · Ingen rundvisning, når en lektion åbnes
 Idas klik 1/11 »Fjern den helt« (+ »bare vi sikrer at kunden får rundvisningen inden på et andet tidspunkt«). Lektionssidens tre trin starter aldrig af sig selv ved »Se lektion«. Kunden får dem i den første rundvisning, når de lander (26/10-reglen, uændret).
 

@@ -5903,6 +5903,11 @@ html body #briefWrap .sk-label.med-et { border-bottom:0 !important; padding-top:
 html body .huqz-ark { display:flex; flex-direction:column; gap:12px; text-align:center; }
 html body .huqz-ark .ark-t { text-align:center; }
 html body .hu-qz-sv { font-size:14px; color:var(--gray2); line-height:1.5; }
+/* TAG TESTEN (1/11): ingen streg over Ja/Nej, når der ikke står tekst imellem (27/10-reglen) · Ja/Nej centreret som resten af arket (9/10) */
+html body .huqz-ark .ark-streg:has(+ .hu-qz-valg) { display:none !important; }
+html body .huqz-ark .hu-qz-valg { justify-content:center !important; overflow:visible !important; -webkit-mask-image:none !important; mask-image:none !important; background:none !important; }
+html body .huqz-ark .hu-qz-valg::before, html body .huqz-ark .hu-qz-valg::after { display:none !important; }
+html body .hu-qz-mangler { font-size:14px; color:var(--sort, #1A1A1A); line-height:1.5; padding-top:12px; border-top:1px solid #E3E2DE; }
 html body .hu-qz-valg { justify-content:center; margin:4px 0; }
 html body .hu-qz-chip { min-width:96px; justify-content:center; }
 html body .hu-qz-nav { display:flex; gap:8px; justify-content:center; flex-wrap:wrap; }
@@ -51809,13 +51814,14 @@ function huTjekSpm(x) {
   const g = (function () { try { return briefGuideOrd(x, b); } catch (e) { return {}; } })();
   const talt = Array.isArray(b.lyd) && (b.lyd.indexOf("Tale til kameraet") > -1 || b.lyd.indexOf("Voiceover") > -1);
   const q = [];
-  q.push({ k: "hook", spm: "Ville du selv stoppe op ved dette hook?", sv: hook ? "\u201c" + hook + "\u201d" : "Intet hook valgt endnu" });
+  /* DET, DER MANGLER, ER IKKE ET SPØRGSMÅL (Idas klik 1/11 »Mangler samles til sidst«): et tomt hook/tidspunkt/CTA får mangler-mærket; quizzen springer det over og nævner det på sidste kort */
+  q.push({ k: "hook", spm: "Ville du selv stoppe op ved dette hook?", sv: hook ? "\u201c" + hook + "\u201d" : "", mangler: hook ? "" : "hook" });
   if (talt) q.push({ k: "undertekster", spm: "Har videoen undertekster?", sv: "Mange ser uden lyd" });
   if (g.foelelse) q.push({ k: "foelelse", spm: "Sidder kunden med følelsen?", sv: "\u201c" + String(g.foelelse).replace(/\s[—–]\s/g, ", ") + "\u201d" });
   if (g.handling) q.push({ k: "handling", spm: "Gør vi det let for kunden?", sv: String(g.handling).charAt(0).toUpperCase() + String(g.handling).slice(1) });
   q.push({ k: "sjovere", spm: "Er der noget, du kan gøre for at gøre det endnu sjovere for dig selv at lave dette?", sv: "" });
-  q.push({ k: "tid", spm: "Passer tidspunktet til det, de skal gøre?", sv: [tid || "Intet tidspunkt endnu", maal].filter(Boolean).join(" · ") });
-  q.push({ k: "cta", spm: "Står CTA'en klart?", sv: cta || "Ingen CTA endnu" });
+  q.push({ k: "tid", spm: "Passer tidspunktet til det, de skal gøre?", sv: [tid, maal].filter(Boolean).join(" · "), mangler: tid ? "" : "tidspunkt" });
+  q.push({ k: "cta", spm: "Står CTA'en klart?", sv: cta, mangler: cta ? "" : "CTA" });
   q.push({ k: "sat", spm: "Har du sat tid af til at poste?", sv: "" });
   q.push({ k: "story", spm: "Ved du, hvordan du bygger op i din story?", sv: "" });
   q.push({ k: "svar", spm: "Har du sat 10 minutter af til at svare bagefter?", sv: "" });
@@ -51831,7 +51837,8 @@ function huTjekQuiz(id) {
 function huTjekQuizTegn(ny) {
   const Q = HU_QZ; if (!Q) return;
   const x = (IDEER || []).find(function (i) { return String(i.id) === Q.id; }); if (!x) return;
-  const spm = huTjekSpm(x); const t = (x.brief && x.brief.tjek && typeof x.brief.tjek === "object") ? x.brief.tjek : {};
+  const alleSpm = huTjekSpm(x); const spm = alleSpm.filter(function (s) { return !s.mangler; }); const mangler = alleSpm.filter(function (s) { return s.mangler; }).map(function (s) { return s.mangler; });
+  const t = (x.brief && x.brief.tjek && typeof x.brief.tjek === "object") ? x.brief.tjek : {};
   let m = document.getElementById("bsFlytMenu"); if (!m) { m = document.createElement("div"); m.id = "bsFlytMenu"; document.body.appendChild(m); }
   const id = esc(Q.id).replace(/'/g, "\\'");
   const fmt = String((x.brief && x.brief.format) || x.type || "").trim();
@@ -51839,16 +51846,19 @@ function huTjekQuizTegn(ny) {
   let krop;
   if (slut) {
     const ja = spm.filter(function (s) { return t[s.k] === "Ja" || (s.valg && t[s.k]); }).length;
+    const mangTekst = mangler.length ? "Mangler: " + (mangler.length > 1 ? mangler.slice(0, -1).join(", ") + " og " + mangler[mangler.length - 1] : mangler[0]) : "";
+    const aabn = '<button type="button" class="ark-knap' + (mangler.length ? ' ark-knap-roed' : '') + '" onclick="bsFlytLuk();HU_QZ=null;openBriefSide(\'' + id + '\')">Åbn briefen</button>';
+    const faerdig = '<button type="button" class="ark-knap' + (mangler.length ? '' : ' ark-knap-roed') + '" onclick="bsFlytLuk();HU_QZ=null">Færdig</button>';
     krop = '<div class="ark-t">Testen er taget</div><div class="hu-qz-sv">' + ja + ' af ' + spm.length + ' svaret Ja</div>'
-      + '<button type="button" class="ark-knap ark-knap-roed" onclick="bsFlytLuk();HU_QZ=null">Færdig</button>'
-      + '<button type="button" class="ark-knap" onclick="bsFlytLuk();HU_QZ=null;openBriefSide(\'' + id + '\')">Åbn briefen</button>';
+      + (mangTekst ? '<div class="hu-qz-mangler">' + esc(mangTekst) + '</div>' : '')
+      + (mangler.length ? aabn + faerdig : faerdig + aabn);
   } else {
     const s = spm[Q.i];
     const valg = (s.valg || ["Ja", "Nej"]).map(function (v) { return '<button type="button" class="ark-chip hu-qz-chip' + (t[s.k] === v ? ' on' : '') + '" onclick="huTjekQuizSvar(\'' + s.k + '\',\'' + v + '\')">' + v + '</button>'; }).join("");
     krop = '<div class="ark-eye">Tag testen · ' + (Q.i + 1) + ' af ' + spm.length + (fmt ? ' · ' + esc(fmt) : '') + '</div>'
       + '<div class="ark-t">' + esc(s.spm) + '</div>' + (s.sv ? '<div class="hu-qz-sv">' + esc(s.sv) + '</div>' : '')
       + '<div class="ark-chips hu-qz-valg">' + valg + '</div>'
-      + '<div class="hu-qz-nav">' + (Q.i > 0 ? '<button type="button" class="ark-knap" onclick="huTjekQuizGaa(-1)">Tilbage</button>' : '') + '<button type="button" class="ark-knap" onclick="bsFlytLuk();HU_QZ=null;openBriefSide(\'' + id + '\')">Åbn briefen</button><button type="button" class="ark-knap" onclick="huTjekQuizGaa(1)">Spring over</button></div>';
+      + (Q.i > 0 ? '<div class="hu-qz-nav"><button type="button" class="ark-knap" onclick="huTjekQuizGaa(-1)">Tilbage</button></div>' : '');   /* kun Ja/Nej + grå Tilbage (1/11) — Åbn briefen står på sidste kort */
   }
   m.innerHTML = '<div class="bs-flyt-ark huqz-ark">' + krop + '</div>';
   m.style.display = "flex"; m.onclick = function (e) { if (e.target === m) { bsFlytLuk(); HU_QZ = null; } };
@@ -62574,7 +62584,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "3052";
+const APP_VERSION = "3054";
 const APP_BYGGET = "31. oktober";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_BYGGET + " · " + APP_VERSION; } catch (e) {} });
 let NY_VERSION_KLAR = false;
