@@ -1,3 +1,11 @@
+## v3074 · 2. november (nat) · »Det, man ser« følger med til Fasthold dem og oversigten
+
+Ren fejl, Hans-testen A6 (Idas nat-ja 1/11 kl. 23.00): »Det, man ser« i hooket har ingen vælg-cirkel (Ida 30/10), så det skrevne blev aldrig ført til klip 1 — Fasthold dems låste Klip 1 og Briefoversigten viste det ikke. Nu er det første udfyldte forslag svaret (`briefForslagSynk`). Tvillingen: det låste Klip 1 · Hook har samme hårfine skillelinje mellem delene som hook-kortet (v3058, regel 27/10). Begge flader.
+
+Også ren fejl A8: »Hvem laver indholdet?« åbnede tom, fordi rækken talte andre navne end klippenes chips (den, der er logget ind, + Ida manglede). Nu bruger begge `briefPersonerListe()`. Begge flader.
+
+Også A9: efter Enter i et forslagsfelt flyttes markøren kun til den nye række, hvis kunden ikke allerede står i et andet felt (`briefForslagNy`).
+
 ## v3072 · 1. november · Spørgsmålet først på telefonen
 
 Idas klik 1/11 (»Spørgsmålet først«, Hans-testen B2: »Hvad skal jeg nu? Der står Vælg i rødt fem steder.«): på telefonen står procesbaren og trinnets spørgsmål lige under briefens titel; status og faktaboksen (Indholdssøjle · Postes · Format · Hvem laver · Lyd · Tilføj) står efter Næste/Gem/Tilbage, i fuld bredde. Kun skrivesiden (»Briefen«) — Briefoversigten og computeren er urørte.
