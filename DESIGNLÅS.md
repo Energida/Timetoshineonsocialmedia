@@ -1,3 +1,7 @@
+## v3062 · 1. november · Kun én handling er »Anbefalet«
+
+Idas klik 1/11 (»Kun én anbefalet«, Hans-testen B7 — Mette: »så anbefales ingen«): i handlingslisten i briefen står det røde »Anbefalet« kun ved den første handling fra Idas skema (31/8) for søjlen. De andre fra skemaet står stadig øverst, uden ord. Kun visning — listen, rækkefølgen og gemte valg er urørte (`briefCtaFoersteAnb`). Vibe og format er urørte.
+
 ## v3060 · 1. november · Hashtags er sin egen flise med ét felt
 
 Idas klik 1/11 (»Egen flise, ét felt«, Hans-testen B6): på »Få dem til at handle« står Hashtags i sin egen hvide flise efter »Hvad skal de gøre nu?« (stod før i samme flise uden streg). Man skriver kun i #-felterne. Bankens eget »Tilføj hashtag« er ude af briefen — nye hashtags lander i banken, når briefen gemmes (`htbTaelBrief`). Når banken er åben: én hårfin streg mellem felterne og banken, og bankens navn står ens på begge flader (Poppins 13 px, `--gray2`, ingen versal). Siden Din hashtagbank i Værktøjskassen er urørt.
