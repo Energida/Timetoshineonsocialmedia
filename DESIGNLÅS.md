@@ -1,3 +1,7 @@
+## v3082 · 2. november (nat) · Rene fejl i Backstage
+
+Målt i Backstage på 390 og 1440: Idéer (Get shit done) sletter med husets skraldespand, ikke et kryds (regel 17/9), og mærket »Get shit done« ligger ikke længere under knappen · Bibliotekets lange titler brydes i stedet for at løbe under pilen og ud af flisen · Forretnings to kolonner er lige brede, og lange ord brydes med bindestreg · Indbakkens etiket »Beskeder til kunder« står ikke alene uden noget under.
+
 ## v3080 · 2. november (nat) · Rene fejl fra gennemgangens anden runde
 
 Målt på 390 og 1440: titlen i det lange tryks ark (Idébanken, kalenderen) går ikke længere ind under krydset (52/44 px luft, regel 26/10) · Dag-visningen i kalenderen viser kun dagen på computeren (viste hele ugen) · slet-spørgsmålets knapper er 52 px på telefonen som alle andre (Ida 24/9; computeren beholder 40) · »Ingen mappe« i »Jeg har set noget fedt« står i vægt 400 (var 500) · karrusellens pile og skraldespand er lige store (36 px) · en inspirationsnote uden link hedder »Note«, ikke »link«.
