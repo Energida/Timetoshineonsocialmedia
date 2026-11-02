@@ -1,3 +1,4 @@
+## v3090 · 2. november · Mails: etikettens streg i fuld bredde over vinklen
 ## v3088 · 2. november · Mere-menuens »Hjem« er en dør som de andre (16 px sort)
 ## v3086 · 2. november · Luft under heroen på telefonen: Energida Studio og kundesiden 32 px
 ## v3084 · 2. november · Knaphøjder i Backstage: 52 px telefon / 40 px computer (Crm Ny/Kolonner/+ Ny kontakt, Kundesidens knapper, Biblioteket, Tilbage)
