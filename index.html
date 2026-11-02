@@ -24408,6 +24408,7 @@ function briefForsideTegn(G, grupper, wrap, navM) {
     + '<div class="pf-flise pf-cap"><div class="pf-eye"><span class="pf-eye-l"><span>Caption</span><button type="button" class="pf-info" aria-label="Hvad er en caption?" data-tip="Teksten under opslaget, som kunden læser, når de er stoppet op." onclick="event.stopPropagation();this.classList.toggle(\'aaben\')">i</button></span>'   /* DEN RØDE I OGSÅ VED CAPTION (Ida 18/10: »caption skal også have den røde I efter sig så den forklarer at det er teksten under opslaget«) — samme knap som Hook */ + (cap ? '' : '<b class="pf-mangler pf-mangler-cap pf-klik" role="button" tabindex="0" onclick="briefMbVisFelt(\'#bf_captionFoerste, #bf_caption\')">Mangler</b>') + (true ? '<button type="button" class="pf-ik" data-ikon="1" title="Kopiér captionen" aria-label="Kopiér captionen" onclick="ktpKopier(' + JSON.stringify(capFuld).replace(/"/g, "&quot;") + ', this)"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/></svg></button>' : '') + '</div>'
     + '<div class="pf-cap-tekst pf-klik" role="button" tabindex="0" onclick="briefMbVisFelt(\'#bf_captionFoerste, #bf_caption\')">' + (cap ? [capF, capR, capH, capA].filter(Boolean).map(x => '<p>' + esc(x).replace(/\n/g, "<br>") + '</p>').join("") : '') + (tags ? '<div class="pf-cap-tags">' + esc(tags) + '</div>' : '') + '</div></div>'   /* tom = doerens ord i graat, samme form som udfyldt (Ida 18/9 kl. 15.02) */
           : '')
+          + (function () { try { return opVideoFlise(); } catch (e) { return ''; } })()   /* DEN FAERDIGE VIDEO (Idas klik 2/11): kun paa Reel og Kort reel, kun paa forsiden */
           + ((pk && !pk.iKort && !tlfFors) ? briefStartKnapHtml(pk.tekst, false) : '');   /* kun computeren — paa telefonen staar den hvid i den roede flise (Ida 8/10) */   /* FORTSAET BRIEF NEDERST, UNDER DET SIDSTE INDHOLD (Ida 9/10: »forsæt brief-knappen skal komme nederst på briefoversigten«) — vaelter 29/9 (i den roede flise) */
       })()
     /* (Kommentarer stod her — flyttet øverst 30/10) */
@@ -27917,6 +27918,54 @@ async function ssVideoDownload(i) {
   const a = document.createElement("a"); a.href = u; a.download = e.v.navn || "story.mp4"; document.body.appendChild(a); a.click(); a.remove();
 }
 function ssVideoFjern(i) { if (!arkOk("ssVideoFjern", arguments, { titel: "Fjern videoen fra elementet?", jaTekst: "Ja, fjern" })) return; ssLaes(); const e = ssListe()[i]; if (e) delete e.v; ssRerend(); }
+/* DEN FAERDIGE VIDEO PAA OPSLAGET (Idas klik 2/11, tegning QmVwmDX61VgFEFj23ZRvX7): flisen bor KUN paa briefens forside (produktionssedlen), kun paa Reel og Kort reel.
+   Samme lukkede lager og regler som storyens video og coverfotoet: <virksomhed>/<brief>/faerdig-video-<tid>.<endelse>. I briefen gemmes kun stien: BRIEF_STATE.faerdigVideo = {sti, navn, type, bytes}.
+   »Fjern« loesner kun videoen fra opslaget; filen i lageret slettes aldrig. Genbruger storyens afspiller (ssHentVideoer) og stoerrelsesgraense (SS_VIDEO_MAKS). */
+function opVideoEr() {
+  const it = (IDEER || []).find(function (x) { return String(x.id) === String(BRIEF_ID); });
+  const f = String((BRIEF_STATE && BRIEF_STATE.format) || (it && it.type) || "");
+  return /^(kort[- ]?)?reel$/i.test(f);
+}
+function opVideoInd() {
+  const skr = (typeof BS_SKRALD_SVG !== "undefined") ? BS_SKRALD_SVG : "Slet";
+  const v = BRIEF_STATE && BRIEF_STATE.faerdigVideo;
+  const eye = '<div class="pf-eye"><span class="pf-eye-l"><span>Den færdige video</span></span></div>';
+  if (!v || !v.sti) return eye + '<div class="ss-el"><label class="ss-chip ss-lille ss-fil">Vælg video<input type="file" accept="video/*" style="display:none" onchange="opVideoVaelg(this)"></label><div class="ss-status" id="opVideoSt"></div></div>';
+  return eye + '<div class="ss-el"><div class="ss-9x16 ss-video"><video data-sti="' + esc(v.sti) + '" controls playsinline preload="metadata"></video></div>'
+    + '<div class="ss-knaprk"><button type="button" class="ss-chip ss-lille" onclick="opVideoDownload()">Download</button>'
+    + '<button type="button" class="ss-sk" aria-label="Fjern videoen" onclick="opVideoFjern()">' + skr + '</button></div></div>';
+}
+function opVideoFlise() {
+  if (!opVideoEr()) return "";
+  setTimeout(function () { try { ssHentVideoer(); } catch (e) {} }, 150);
+  return '<div class="pf-flise pf-cap" id="opVideoFl">' + opVideoInd() + '</div>';
+}
+function opVideoRerend() { const h = document.getElementById("opVideoFl"); if (!h) return; h.innerHTML = opVideoInd(); try { ssHentVideoer(); } catch (e) {} }
+async function opVideoVaelg(inp) {
+  const f = inp && inp.files && inp.files[0]; if (!f) return;
+  const st = document.getElementById("opVideoSt");
+  const fejl = function (t) { if (st) st.textContent = t; try { husBesked(t); } catch (x) {} if (inp) inp.value = ""; };
+  if (!/^video\//i.test(f.type || "")) { fejl("Vælg en videofil."); return; }
+  if (f.size > SS_VIDEO_MAKS) { fejl("Videoen er for stor. Maks 100 MB."); return; }
+  if (!sb || !BRIEF_ID) { fejl("Videoen kan ikke gemmes lige nu."); return; }
+  const briefId = BRIEF_ID; const vid = await bsVirksomhedId(currentKode); if (!vid) { fejl("Videoen kan ikke gemmes lige nu."); return; }
+  if (st) st.textContent = "Uploader …";
+  const ext = (String(f.name).match(/\.[A-Za-z0-9]{2,5}$/) || [".mp4"])[0].toLowerCase();
+  const sti = vid + "/" + briefId + "/faerdig-video-" + Date.now() + ext;
+  let up = null; try { up = await sb.storage.from(CV_LAGER).upload(sti, f, { contentType: f.type, upsert: false }); } catch (x) { up = { error: x }; }
+  if (up && up.error) { console.log("LAGER " + (up.error.message || up.error)); fejl("Videoen kunne ikke uploades. Prøv en mindre video."); return; }
+  if (String(BRIEF_ID) !== String(briefId)) return;
+  BRIEF_STATE.faerdigVideo = { sti: sti, navn: f.name, type: f.type, bytes: f.size };
+  try { await saveBrief(true); } catch (x) {}
+  opVideoRerend();
+}
+async function opVideoDownload() {
+  const v = BRIEF_STATE && BRIEF_STATE.faerdigVideo; if (!v || !sb) return;
+  let u = null; try { const r = await sb.storage.from(CV_LAGER).createSignedUrl(v.sti, 120, { download: v.navn || true }); u = r && r.data && r.data.signedUrl; } catch (x) {}
+  if (!u) { try { husBesked("Videoen kan ikke hentes lige nu."); } catch (x) {} return; }
+  const a = document.createElement("a"); a.href = u; a.download = v.navn || "video.mp4"; document.body.appendChild(a); a.click(); a.remove();
+}
+function opVideoFjern() { if (!arkOk("opVideoFjern", arguments, { titel: "Fjern videoen fra opslaget?", jaTekst: "Ja, fjern" })) return; delete BRIEF_STATE.faerdigVideo; try { saveBrief(true); } catch (x) {} opVideoRerend(); }
 function ssDownload(i) {   /* teksten som 1080x1920-billede (story-format) */
   ssLaes(); const e = ssListe()[i]; const tekst = String((e && e.q) || "").trim();
   if (!tekst) { try { husKvit("Skriv teksten først."); } catch (x) {} return; }
@@ -62862,7 +62911,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "3102";
+const APP_VERSION = "3104";
 const APP_BYGGET = "2. november";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_BYGGET + " · " + APP_VERSION; } catch (e) {} });
 let NY_VERSION_KLAR = false;
