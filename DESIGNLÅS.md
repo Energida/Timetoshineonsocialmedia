@@ -1,3 +1,4 @@
+## v3094 · 2. november · Storyserien: Story-arket i to trin (Storytype, så opslag), serien som elementer (tekst eller afstemning, musiklink, Download), typen som etiket over titlen i kalenderen
 ## v3092 · 2. november · Langt tryk på en dør: chiprækken ombrydes, Slet rummet bærer skraldespanden
 ## v3090 · 2. november · Mails: etikettens streg i fuld bredde over vinklen
 ## v3088 · 2. november · Mere-menuens »Hjem« er en dør som de andre (16 px sort)
