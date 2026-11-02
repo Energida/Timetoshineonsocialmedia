@@ -24576,11 +24576,15 @@ function cvTegn(cx, W, H, design, noegle, foto, valgt) {
        med textAlign center regnede browseren emojien med hudfarve anderledes end measureText, saa kassen og teksten fik hver sin midte.
        Nu maales hver linje EEN gang (bredden og det synlige blæk, det stoerste), og linjen tegnes fra venstre kant af det samme maal. */
     cx.textAlign = "left";
+    /* KNIB = HELE TEKSTEN SOM ET BILLEDE (Ida 2/11: »knibe effekten må intet ændre ved tekstens layout, kun størrelsen som helhed«): layoutet (ombrydning, linjer) regnes ud fra skyderen (z) som foer;
+       knibet gemmer kun en faktor (l.k), og den ferdige tekstblok skaleres om sit midtpunkt. Skyderen aendrer stadig layoutet. */
+    const kk = Math.max(0.2, Math.min(6, l.k || 1));
     const maal = linjer.map(function (ln) {
       const m = cx.measureText(ln), vl = Math.max(0, m.actualBoundingBoxLeft || 0), vr = m.actualBoundingBoxRight || 0;
       return { w: (vl + vr) > 0 ? vl + vr : m.width, vl: vl };   /* det synlige blæk vinder: telefonens browser kan regne emojiens hudfarve som et ekstra tegn i bredden */
     });
     let bredest = 0;
+    cx.save(); if (kk !== 1) { cx.translate(mx, my); cx.scale(kk, kk); cx.translate(-mx, -my); }
     linjer.forEach(function (ln, k) {
       const w = maal[k].w; bredest = Math.max(bredest, w);
       if (l.e === "boks") { cx.fillStyle = l.f; cvRund(cx, mx - w / 2 - pad, y0 + lh * k - px * 0.04, w + pad * 2, lh + px * 0.08, px * 0.22); cx.fill(); }
@@ -24588,13 +24592,15 @@ function cvTegn(cx, W, H, design, noegle, foto, valgt) {
     linjer.forEach(function (ln, k) {
       const yy = y0 + lh * k + lh / 2, xx = mx - maal[k].w / 2 + maal[k].vl;
       cx.save();
-      if (l.e === "skygge") { cx.shadowColor = "rgba(0,0,0,.55)"; cx.shadowBlur = px * 0.35; cx.shadowOffsetY = px * 0.06; }
+      if (l.e === "skygge") { cx.shadowColor = "rgba(0,0,0,.55)"; cx.shadowBlur = px * 0.35 * kk; cx.shadowOffsetY = px * 0.06 * kk; }
       if (l.e === "kant") { cx.lineWidth = Math.max(2, px * 0.09); cx.strokeStyle = "#1A1816"; cx.lineJoin = "round"; cx.strokeText(ln, xx, yy); }
       cx.fillStyle = l.e === "boks" ? cvKontrast(l.f) : l.f;
       cx.fillText(ln, xx, yy);
       cx.restore();
     });
-    const b = { x: mx - bredest / 2 - pad, y: y0, w: bredest + pad * 2, h: hoejde };
+    cx.restore();
+    const b0 = { x: mx - bredest / 2 - pad, y: y0, w: bredest + pad * 2, h: hoejde };
+    const b = { x: mx + (b0.x - mx) * kk, y: my + (b0.y - my) * kk, w: b0.w * kk, h: b0.h * kk };   /* trykfladen og den stiplede ramme foelger den skalerede tekst */
     bokse.push(b);
     if (valgt === idx) { cx.save(); cx.setLineDash([W * 0.012, W * 0.01]); cx.lineWidth = Math.max(1.5, W * 0.003); cx.strokeStyle = "rgba(255,255,255,.9)"; cx.strokeRect(b.x - W * 0.015, b.y - W * 0.015, b.w + W * 0.03, b.h + W * 0.03); cx.restore(); }
   });
@@ -24750,7 +24756,7 @@ function cvNed(e) {
   CV.ptr = CV.ptr || {}; CV.ptr[e.pointerId] = { x: e.clientX, y: e.clientY };
   try { e.target.setPointerCapture(e.pointerId); } catch (x) {} e.preventDefault();
   const ids = Object.keys(CV.ptr);
-  if (ids.length === 2) { const l0 = cvLag(); if (!l0) return; const a = CV.ptr[ids[0]], b = CV.ptr[ids[1]]; CV.knib = { d0: Math.max(10, Math.hypot(a.x - b.x, a.y - b.y)), z0: l0.z }; CV.traek = null; cvHjaelp(false, false); return; }
+  if (ids.length === 2) { const l0 = cvLag(); if (!l0) return; const a = CV.ptr[ids[0]], b = CV.ptr[ids[1]]; CV.knib = { d0: Math.max(10, Math.hypot(a.x - b.x, a.y - b.y)), k0: l0.k || 1 }; CV.traek = null; cvHjaelp(false, false); return; }
   if (ids.length > 2) return;
   let hit = -1; (CV.bokse || []).forEach(function (b, i) { if (b && p.x >= b.x - m && p.x <= b.x + b.w + m && p.y >= b.y - m && p.y <= b.y + b.h + m) hit = i; });
   if (hit < 0 && !cvLag()) return;
@@ -24760,7 +24766,7 @@ function cvNed(e) {
 }
 function cvFlyt(e) {
   if (CV && CV.ptr && CV.ptr[e.pointerId]) CV.ptr[e.pointerId] = { x: e.clientX, y: e.clientY };
-  if (CV && CV.knib) { const ids = Object.keys(CV.ptr || {}); if (ids.length < 2) return; const a = CV.ptr[ids[0]], b = CV.ptr[ids[1]]; cvStrZ(CV.knib.z0 * Math.hypot(a.x - b.x, a.y - b.y) / CV.knib.d0); e.preventDefault(); return; }
+  if (CV && CV.knib) { const ids = Object.keys(CV.ptr || {}); if (ids.length < 2) return; const a = CV.ptr[ids[0]], b = CV.ptr[ids[1]]; const lk = cvLag(); if (lk) { lk.k = Math.max(0.2, Math.min(6, CV.knib.k0 * Math.hypot(a.x - b.x, a.y - b.y) / CV.knib.d0)); cvTegnNu(); } e.preventDefault(); return; }   /* knib aendrer kun størrelsen som helhed (l.k), aldrig layoutet (Ida 2/11) */
   if (!CV || !CV.traek) return; const p = cvPunkt(e), l = cvLag(); if (!l) return;
   l.x = Math.min(95, Math.max(5, (p.x - CV.traek.dx) / p.W * 100)); l.y = Math.min(95, Math.max(5, (p.y - CV.traek.dy) / p.H * 100));
   /* HJAELPESTREGER OG MIDTEN KLIKKER (Ida 18/10: »de streger der hjælper med placeringen ift hvad der er centreret på både coverbilleder karrusseller«):
@@ -62918,7 +62924,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "3106";
+const APP_VERSION = "3108";
 const APP_BYGGET = "2. november";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_BYGGET + " · " + APP_VERSION; } catch (e) {} });
 let NY_VERSION_KLAR = false;
