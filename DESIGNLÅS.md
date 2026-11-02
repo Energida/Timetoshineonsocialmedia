@@ -1,3 +1,4 @@
+## v3084 · 2. november · Knaphøjder i Backstage: 52 px telefon / 40 px computer (Crm Ny/Kolonner/+ Ny kontakt, Kundesidens knapper, Biblioteket, Tilbage)
 ## v3082 · 2. november (nat) · Rene fejl i Backstage
 
 Målt i Backstage på 390 og 1440: Idéer (Get shit done) sletter med husets skraldespand, ikke et kryds (regel 17/9), og mærket »Get shit done« ligger ikke længere under knappen · Bibliotekets lange titler brydes i stedet for at løbe under pilen og ud af flisen · Forretnings to kolonner er lige brede, og lange ord brydes med bindestreg · Indbakkens etiket »Beskeder til kunder« står ikke alene uden noget under.
