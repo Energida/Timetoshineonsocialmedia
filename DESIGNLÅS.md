@@ -1,3 +1,4 @@
+## v3100 · 2. november · Storyserien: Video som tredje elementtype (upload i det lukkede lager brief-filer, afspilning, Download, Fjern)
 ## v3098 · 2. november · Story-arkets navnefelt har samme eksempel som opslagets (Fx Tre looks med vinterstøvler)
 ## v3096 · 2. november · Versionsnummeret står i det røde bånd, når admin arbejder som kunden
 ## v3094 · 2. november · Storyserien: Story-arket i to trin (Storytype, så opslag), serien som elementer (tekst eller afstemning, musiklink, Download), typen som etiket over titlen i kalenderen
