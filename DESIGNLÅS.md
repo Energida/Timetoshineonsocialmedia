@@ -1,3 +1,4 @@
+## v3106 · 2. november · Telefonen: Nyt opslag og Ny story øverst i plusset i bundmenuen, og et plus i kalenderens cover opretter på den valgte dag
 ## v3104 · 2. november · Den færdige video på opslagets forside (Reel og Kort reel): upload i det lukkede lager, afspilning, Download, Fjern
 ## v3102 · 2. november · Telefonens dagsrække: Dag/Uge og pilene er væk, man swiper mellem ugerne på datorækken (computeren urørt)
 ## v3100 · 2. november · Storyserien: Video som tredje elementtype (upload i det lukkede lager brief-filer, afspilning, Download, Fjern)
