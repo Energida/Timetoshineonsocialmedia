@@ -1,3 +1,4 @@
+## v3102 · 2. november · Telefonens dagsrække: Dag/Uge og pilene er væk, man swiper mellem ugerne på datorækken (computeren urørt)
 ## v3100 · 2. november · Storyserien: Video som tredje elementtype (upload i det lukkede lager brief-filer, afspilning, Download, Fjern)
 ## v3098 · 2. november · Story-arkets navnefelt har samme eksempel som opslagets (Fx Tre looks med vinterstøvler)
 ## v3096 · 2. november · Versionsnummeret står i det røde bånd, når admin arbejder som kunden

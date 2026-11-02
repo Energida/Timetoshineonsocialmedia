@@ -11623,6 +11623,12 @@ html body.mb .ss-el button.ss-chip.ss-lille { width:auto !important; max-width:m
 .ss-knaprk { display:flex; align-items:center; justify-content:center; gap:8px; margin-top:12px; }
 html body .ss-el .ss-knaprk .ss-lille { margin-top:0; }
 .ss-status { font-size:12.5px; color:var(--gray2); margin-top:8px; }
+/* SWIPE PAA DATORAEKKEN (Idas ord 2/11): ny uge glider ind fra den side, man swiper fra */
+@keyframes huIndL { from { transform:translateX(26px); opacity:.35; } to { transform:none; opacity:1; } }
+@keyframes huIndR { from { transform:translateX(-26px); opacity:.35; } to { transform:none; opacity:1; } }
+.hu-strib.hu-ind-l { animation:huIndL .18s ease-out; }
+.hu-strib.hu-ind-r { animation:huIndR .18s ease-out; }
+@media (prefers-reduced-motion:reduce) { .hu-strib.hu-ind-l, .hu-strib.hu-ind-r { animation:none; } }
 /* TYPEN SOM ETIKET OVER TITLEN I KALENDERKORTET (Idas klik 2/11) */
 .uge-et { font-size:9.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--gray2); line-height:1.3; margin:0 0 3px; overflow-wrap:anywhere; }
 /* SPOERGSMAALET FOERST PAA TELEFONEN (Idas klik 1/11 »Spørgsmålet først«, Hans-testen B2: »Hvad skal jeg nu? Der står Vælg i rødt fem steder.«):
@@ -52299,10 +52305,21 @@ function huTodoHtml() {
        : '<div class="hu-tom"><div class="hu-tom-q">Er der noget, du skal huske?</div><button type="button" class="hu-graa" onclick="hjemTilfoejArk(\'todo\')">Tilføj opgave</button></div>');
 }
 function hjemUgeDone(id, knap) { try { haengSideKlaret(id, knap); } catch (e) {} setTimeout(hjemUgeTegn, 450); }
+/* SWIPE PAA DATORAEKKEN (Idas ord 2/11): venstre = naeste uge, hoejre = forrige; kun telefonens beholdere. Dag/Uge og pilene er vaek paa telefonen. */
+function huSwipeBind(rod) {
+  if (!rod) return; const s = rod.querySelector(".hu-strib"); if (!s || s.__swipe) return; s.__swipe = true;
+  let x0 = null, y0 = null;
+  s.addEventListener("touchstart", function (e) { x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; }, { passive: true });
+  s.addEventListener("touchend", function (e) { if (x0 === null) return; const dx = e.changedTouches[0].clientX - x0, dy = e.changedTouches[0].clientY - y0; x0 = null; if (Math.abs(dx) < 40 || Math.abs(dy) > Math.abs(dx)) return; window.__huRetning = dx < 0 ? "l" : "r"; huUge(dx < 0 ? 1 : -1); }, { passive: true });
+}
 function huDagVaelg(i) { HU_VALGT = i; HU_HELE = false; hjemUgeTegn(); }
 function huUge(d) { HU_OFF += d; HU_VALGT = HU_OFF === 0 ? null : 0; HU_HELE = false; hjemUgeTegn(); }
 function huIdag() { HU_OFF = 0; HU_VALGT = null; HU_HELE = false; hjemUgeTegn(); }
 function hjemUgeHtml(tlf, kunKal) {
+  /* TELEFONEN: INGEN DAG/UGE OG INGEN PILE — SWIPE PAA DATORAEKKEN (Idas ord 2/11): mobil = kaldt med tlf (telefonens egen beholder); computerens Hjem (somTlf) er uroert */
+  const mobil = !!tlf;
+  const ugeVis = mobil ? false : HU_UGEVIS;
+  const huRet = mobil ? (window.__huRetning || "") : "";
   /* computeren tegner telefonens Hjem (HJEM_PC_SOM_TLF) — ikke kalendersiden og ikke YOU GOT THIS' lektionsdashboard, som er urørte */
   const somTlf = !tlf && !kunKal && HJEM_PC_SOM_TLF && !(function () { try { return huYgtFoer8(); } catch (e) { return false; } })();
   if (somTlf) tlf = true;
@@ -52312,19 +52329,20 @@ function hjemUgeHtml(tlf, kunKal) {
   const dage = []; for (let i = 0; i < 7; i++) { const d = new Date(man); d.setDate(d.getDate() + i); const iso = huIso(d); dage.push({ i: i, iso: iso, d: d, ting: huTing(iso) }); }
   let idagIx = -1; dage.forEach(function (x) { if (x.iso === idagIso) idagIx = x.i; });
   const valgt = HU_VALGT != null ? HU_VALGT : (idagIx > -1 ? idagIx : 0);
-  const strib = '<div class="hu-strib">' + dage.map(function (x) {
+  const strib = '<div class="hu-strib' + (huRet ? ' hu-ind-' + huRet : '') + '">' + dage.map(function (x) {
     const k = x.i === idagIx ? " idag" : (x.i === valgt ? " valgt" : "");
     return '<button type="button" class="hu-dag' + k + '" onclick="huDagVaelg(' + x.i + ')"><span class="hu-dn">' + DN[x.i].slice(0, 3) + '</span><span class="hu-dd">' + x.d.getDate() + '</span>' + (somTlf ? '<span class="hu-mn">' + ["Jan", "Feb", "Mar", "Apr", "Maj", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dec"][x.d.getMonth()] + '</span>' : '') + '<span class="hu-prik">' + x.ting.slice(0, 4).map(function () { return '<i></i>'; }).join("") + '</span></button>';
   }).join("") + '</div>';
   const erIdag = valgt === idagIx;
-  const pil = '<span class="hu-pile"><button type="button" class="hu-pil" aria-label="Forrige uge" onclick="huUge(-1)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></button><button type="button" class="hu-pil" aria-label="Næste uge" onclick="huUge(1)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button></span>';
+  const pil = mobil ? '' : '<span class="hu-pile"><button type="button" class="hu-pil" aria-label="Forrige uge" onclick="huUge(-1)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></button><button type="button" class="hu-pil" aria-label="Næste uge" onclick="huUge(1)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button></span>';
   let linje = '<div class="cf-sek hu-sek hu-linje"><span>' + (erIdag ? "I dag" : DN[valgt]) + '</span>' + pil + (erIdag ? '' : '<button type="button" class="hu-idag" onclick="huIdag()">I dag</button>') + '</div>';
   /* DAG/UGE PAA TELEFONEN (Idas valg 8/10): to smaa chips i raekken »I dag«; uge = en linje pr. dag med den samme datofirkant som Kommende aktiviteter */
-  if (tlf) linje = linje.replace(/<\/div>$/, '<span class="hu-visning"><button type="button" class="ark-chip' + (HU_UGEVIS ? '' : ' on') + '" onclick="huUgeVis(false)">Dag</button><button type="button" class="ark-chip' + (HU_UGEVIS ? ' on' : '') + '" onclick="huUgeVis(true)">Uge</button></span></div>');
+  if (tlf && !mobil) linje = linje.replace(/<\/div>$/, '<span class="hu-visning"><button type="button" class="ark-chip' + (HU_UGEVIS ? '' : ' on') + '" onclick="huUgeVis(false)">Dag</button><button type="button" class="ark-chip' + (HU_UGEVIS ? ' on' : '') + '" onclick="huUgeVis(true)">Uge</button></span></div>');
   /* »I DAG« UNDER KALENDEREN (Ida 29/10 på telefonen: »Jeg mangler at der ligesom kommende opslag står under kalenderen på samme måde med versaler: I DAG«):
      på telefonen står dagens navn som sektionslinje under datofliserne; rækken over har kun pilene og Dag/Uge. Computeren er urørt. */
-  let dagSek = (tlf && !HU_UGEVIS) ? '<div class="cf-sek hu-sek hu-dagsek">' + (erIdag ? "I dag" : DN[valgt]) + '</div>' : '';   /* står kun, når der er noget under den (porten: en etiket må ikke svæve) — se nedenfor */
+  let dagSek = (tlf && !ugeVis) ? '<div class="cf-sek hu-sek hu-dagsek">' + (erIdag ? "I dag" : (mobil ? DN[valgt] + " " + dage[valgt].d.getDate() + ". " + ["januar","februar","marts","april","maj","juni","juli","august","september","oktober","november","december"][dage[valgt].d.getMonth()] : DN[valgt])) + '</div>' : '';   /* står kun, når der er noget under den (porten: en etiket må ikke svæve) — se nedenfor */
   if (tlf) linje = linje.replace('<span>' + (erIdag ? "I dag" : DN[valgt]) + '</span>', '');
+  if (mobil && erIdag) linje = '';   /* uden pile og Dag/Uge er rækken tom, når man står på i dag */
   const ting = dage[valgt].ting;
   const ugeTom = dage.every(function (x) { return !x.ting.length; });
   let dagHtml;
@@ -52335,7 +52353,7 @@ function hjemUgeHtml(tlf, kunKal) {
   const MDR3 = ["JAN", "FEB", "MAR", "APR", "MAJ", "JUN", "JUL", "AUG", "SEP", "OKT", "NOV", "DEC"];
   const skjulTomme = !!(MAALS && MAALS.tommeDageSkjult);   /* indstillingen under Profil: kun dage med noget planlagt */
   const ugeDage = (skjulTomme && dage.some(function (x) { return x.ting.length; })) ? dage.filter(function (x) { return x.ting.length; }) : dage;
-  const ugeLinjer = (tlf && HU_UGEVIS) ? '<div class="hu-ugelinjer">' + ugeDage.map(function (x) {
+  const ugeLinjer = (tlf && ugeVis) ? '<div class="hu-ugelinjer">' + ugeDage.map(function (x) {
     const t0 = x.ting[0]; const tidT = t0 && t0.tid ? String(t0.tid).replace(":", ".").slice(0, 5) + " · " : "";
     /* SAMME DATOFIRKANT SOM KOMMENDE AKTIVITETER (Ida 8/10): kop-rk + kop-dato — hver dag sin egen flise */
     return '<div class="kop-rk" role="button" tabindex="0" onclick="huUgeDag(' + x.i + ')"><span class="kop-dato"><em>' + DN[x.i].slice(0, 3).toLowerCase() + '</em><b>' + x.d.getDate() + '</b><i>' + MDR3[x.d.getMonth()].toLowerCase() + '</i></span><span class="kop-t">'
@@ -52411,6 +52429,8 @@ function hjemUgeTegn() {
       const t = document.getElementById("hjemUgeTlf");
       if (t) t.innerHTML = hjemUgeHtml(true);
       const k8 = document.getElementById("kalUgeTlf"); if (k8) k8.innerHTML = hjemUgeHtml(true, true);
+      try { huSwipeBind(t); huSwipeBind(k8); } catch (e) {}
+      window.__huRetning = "";
     } catch (e) { try { console.log("hjemUge", e); } catch (e2) {} }
   }, 30);
 }
@@ -62842,7 +62862,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "3100";
+const APP_VERSION = "3102";
 const APP_BYGGET = "2. november";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_BYGGET + " · " + APP_VERSION; } catch (e) {} });
 let NY_VERSION_KLAR = false;

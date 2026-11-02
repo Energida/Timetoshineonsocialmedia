@@ -35,9 +35,15 @@ setTimeout(async function () {
       var linje = r.querySelector(".hu-linje");
       /* TELEFONEN: »I DAG« STÅR UNDER DATOFLISERNE (Ida 29/10: »… står under kalenderen på samme måde med versaler: I DAG«) — rækken over har kun pilene og Dag/Uge. Står der intet under dagen, står etiketten ikke (den må ikke svæve). */
       var dagSek = r.querySelector(".hu-dagsek");
-      if (!synlig(linje)) F(tilstand + ": linjen »I dag« mangler");
-      else if (somTlf ? (dagSek && !/^I dag/i.test((dagSek.innerText || "").trim())) : !/^I dag/i.test((linje.innerText || "").trim())) F(tilstand + ": linjen »I dag« mangler");
-      var pile = [].filter.call(r.querySelectorAll(".hu-linje .hu-pil"), synlig); if (pile.length !== 2) F(tilstand + ": pilene ved »I dag« er " + pile.length + ", ikke 2");
+      if (tlf) {
+        /* TELEFONEN HAR INGEN PILE OG INGEN DAG/UGE (Ida 2/11: »fjerner dag, uge og pilene … swipe mellem datoerne øverst«): ugen skiftes ved swipe paa datorækken. Computerens regler er uaendrede. */
+        var tlfStyr = [].filter.call(r.querySelectorAll(".hu-linje .hu-pil, .hu-visning"), synlig); if (tlfStyr.length) F(tilstand + ": telefonen viser pile eller Dag/Uge (" + tlfStyr.length + ")");
+        if (dagSek && !/^I dag/i.test((dagSek.innerText || "").trim())) F(tilstand + ": linjen »I dag« mangler");
+      } else {
+        if (!synlig(linje)) F(tilstand + ": linjen »I dag« mangler");
+        else if (somTlf ? (dagSek && !/^I dag/i.test((dagSek.innerText || "").trim())) : !/^I dag/i.test((linje.innerText || "").trim())) F(tilstand + ": linjen »I dag« mangler");
+        var pile = [].filter.call(r.querySelectorAll(".hu-linje .hu-pil"), synlig); if (pile.length !== 2) F(tilstand + ": pilene ved »I dag« er " + pile.length + ", ikke 2");
+      }
       var dage = [].filter.call(r.querySelectorAll(".hu-strib .hu-dag"), synlig); if (dage.length !== 7) F(tilstand + ": ugestrimlen har " + dage.length + " datofliser, ikke 7");
       var idag = r.querySelector(".hu-dag.idag"); if (!idag || getComputedStyle(idag).backgroundColor !== "rgb(252, 36, 4)") F(tilstand + ": i dag er ikke fyldt roed");
       dage.forEach(function (d) { var q = d.getBoundingClientRect(); if (q.width < 44 || q.height < 44) F(tilstand + ": en datoflise er under 44 px (" + Math.round(q.width) + "x" + Math.round(q.height) + ")"); });
