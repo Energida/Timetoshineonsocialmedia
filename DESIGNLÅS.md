@@ -13,6 +13,8 @@ En række chips ombrydes ALDRIG til to linjer. Er der flere, end der er plads ti
 **Chips har ALDRIG baggrundsfarve (Ida 2/11: »chips må aldrig have baggrundsfarve«):** hvid flade, grå ramme, grå tekst — også den valgte (mørkere grå ramme, aldrig fyldt) og chips, der står for en samling, søjle eller farve. På et foto (cover) er chippen gennemsigtig med hvid streg.
 **Undtagelse (Ida 2/11: »kunne chipsen ikke bare blive rød?« → »Hele chippen fyldt rød«):** den VALGTE chip i Idébankens søjlerække (og Alt/Idéer/Billeder/Video over væggen) er fyldt rød med hvid tekst; alle andre chips er uændret hvide med grå ramme. Gælder kun valgt-tilstanden i filterrækker i Idébanken — øvrige chips har stadig aldrig baggrundsfarve.
 
+## v3120 · 3. november · Story-symbolet er Instagrams: stiplet cirkel med plus (ikke en prik) · Indbakken på telefonen: noterne under »Det du har skrevet ned« swipes væk med skraldespanden som i Backstage (to tryk, langt swipe sletter); computeren er uændret
+
 ## v3118 · 3. november · Datosymbolet på Hjem er dato og måned, aldrig ugedag (mandag stod dobbelt) · refleksionen efter et opslag kan springes over (Gem uden tekst lukker; swipe-teksten er væk) · Indbakken: hele flisen er knappen — ordene Åbn briefen, Set og Svar står ikke længere til højre
 
 ## v3116 · 3. november · Admin/CRM på telefonen: hver kunde er en flise i stedet for en tabel, der ruller sidelæns · kundesiden: forløbets navn kun ét sted, tomme Kontakt-rækker (»Ukendt«) væk, de hvide felter og fliser er samme flise (hvid, skygge, ingen kant)
