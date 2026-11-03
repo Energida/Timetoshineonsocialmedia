@@ -13,6 +13,8 @@ En række chips ombrydes ALDRIG til to linjer. Er der flere, end der er plads ti
 **Chips har ALDRIG baggrundsfarve (Ida 2/11: »chips må aldrig have baggrundsfarve«):** hvid flade, grå ramme, grå tekst — også den valgte (mørkere grå ramme, aldrig fyldt) og chips, der står for en samling, søjle eller farve. På et foto (cover) er chippen gennemsigtig med hvid streg.
 **Undtagelse (Ida 2/11: »kunne chipsen ikke bare blive rød?« → »Hele chippen fyldt rød«):** den VALGTE chip i Idébankens søjlerække (og Alt/Idéer/Billeder/Video over væggen) er fyldt rød med hvid tekst; alle andre chips er uændret hvide med grå ramme. Gælder kun valgt-tilstanden i filterrækker i Idébanken — øvrige chips har stadig aldrig baggrundsfarve.
 
+## v3136 · 3. november · Et sat link til indholdet eller inspiration kan slettes i fakta-arket med husets skraldespand og »Slet« (før skulle man tømme feltet og trykke Gem)
+
 ## v3134 · 3. november · Profilforløbet for YOU GOT THIS er tre trin: Om dig · Om virksomheden · Så er du klar — kollegerne (to valgfrie rækker, en halv række låser) står nederst i »Så er du klar«-boksen, ikke som eget trin (Ida 3/11)
 
 ## v3132 · 3. november · Profilforløbet (Idas tegning JtzXmECoWxj1wXJ8TfUeV9): »Opret din profil« står i toppen på linje med Trin, trinnene hedder Om dig · Om virksomheden · Kolleger · Så er du klar (YOU GOT THIS har fire trin); fornavn OG efternavn; rollen er »Hvad er din rolle i [forretningen]?« med Indehaver/Andet; alle felter har ét lille grå ord over sig, ingen skillelinjer, ingen hjælpelinjer, valgt chip = mørkere grå ramme; kolleger er valgfrie rækker (en halv række låser); sidste skærm »Så er du klar« med »Start« · CRM: kunder har status »Aktiv« uden prik, og de røde »Venter på dig«-bjælker er væk fra kundesiden
