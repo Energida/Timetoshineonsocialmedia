@@ -1104,6 +1104,10 @@ html body .db-ringflise.db-linjeflise{display:flex !important;flex-direction:col
 .lks-modul.laast{color:var(--gray2);cursor:default}.lks-aab{font-size:13px;margin-top:3px}
 .lks-pil{color:var(--gray2);flex-shrink:0;transform:rotate(-90deg);transition:transform .2s}.lks-pil.op{transform:none}
 .lks-laas{flex-shrink:0;color:var(--gray2)}
+/* MODULFLISERNE ER ALTID LIGE STORE, OG DE ÅBNE HAR RØD TEKST (Ida 3/11: »bjælkerne skal selvfølgelig have samme størrelse — og dem der er åbne skal have rød tekst«): en låst flise har to linjer (navn + Åbner om N dage), så alle står i den højde; åbne moduler viser navnet i rødt */
+.ftl-moduler > .lks-fl.lks-modul { min-height:74px; }
+.ftl-moduler > .lks-fl.lks-samlet { min-height:74px; display:flex; flex-direction:column; justify-content:center; }
+.ftl-moduler .lks-modul:not(.laast) > span:first-child { color:var(--red); }
 /* NÆSTE I SPØRGESKEMAET ER ALTID RØD (Ida 27/10: »sørg for at knapperne er røde ved næste her så mit design ikke falder helt til jorden«) — også før der er svaret; linjen »Svar for at komme videre« siger stadig hvorfor */
 html body #swNaeste, html body #swNaeste:disabled{background:var(--red,#FC2404) !important;color:#fff !important;border-color:var(--red,#FC2404) !important;opacity:1 !important}
 /* INGEN GRÅ KASSE OM DET ÅBNE MODUL (Ida 27/10: »HVAD sker der med skyggerne her???? … helt håbløst forvirrende«): modulet og hver lektion er sin egen hvide flise med samme skygge — aldrig fliser i en kasse */
@@ -33450,6 +33454,15 @@ async function pfRaekkeGem(navn, skema, svar) {
   if (ny.error || !ny.data || !ny.data.length) throw (ny.error || new Error("ikke gemt"));
   return true;
 }
+/* FORNAVNET ER ALDRIG FIRMANAVNET (Ida 3/11, testkøb: »fornavn« stod som Testly = virksomhedsnavnet fra Stripe): kommer det foreslåede navn fra købets virksomhed, står feltet tomt, og kunden skriver sit eget fornavn. */
+function pfFornavnForslag(d) {
+  try {
+    const n = String((typeof hilsenFornavn === "function" ? hilsenFornavn() : "") || "").trim(); if (!n) return "";
+    const firma = String((d && (d.virksomhed || d.studioNavn)) || "").replace(/\s*studio$/i, "").trim().toLowerCase();
+    if (firma && (firma === n.toLowerCase() || firma.split(/\s+/)[0] === n.toLowerCase())) return "";
+    return n;
+  } catch (e) { return ""; }
+}
 async function profilFlowStart() {
   const d = CURRENT_DEF || {};
   let butik = null;
@@ -33458,7 +33471,7 @@ async function profilFlowStart() {
   const kollega = !!(butik && butik.udfyldt_af && butik.udfyldt_af !== mail);   /* butikken er beskrevet af en anden = en kollega, der kommer ind bagefter */
   const k = pfKladdeHent();
   PF = { trin: 1, kollega: kollega, ygt: (typeof erYgtTeam === "function" && erYgtTeam()), mail: mail,
-    f: Object.assign({ navn: (typeof hilsenFornavn === "function" ? hilsenFornavn() : "") || "", dag: "", mdr: "", aar: "", ejer: "", rolle: "",
+    f: Object.assign({ navn: pfFornavnForslag(d), dag: "", mdr: "", aar: "", ejer: "", rolle: "",
       butik_navn: String((butik && butik.butik_navn) || d.studioNavn || d.virksomhed || "").replace(/\s*studio$/i, ""), adresse: "", postnr: "", by: "", cvr: "",
       branche: (butik && butik.branche) || "", branche_andet: (butik && butik.branche_andet) || "", forretningstype: (butik && butik.forretningstype) || d.forretningstype || "",
       inviter: "", kolleger: [{ navn: "", mail: "" }] }, (k && k.f) || {}) };
@@ -33601,6 +33614,7 @@ async function pfSlut() {
   if (inv.some(function (x) { return x.ok; })) { md.ental = false; ER_ENTAL = false; try { anvendTone(); } catch (e) {} }
   try { if (sb) await sb.auth.updateUser({ data: md }); } catch (e) {}
   VK = null; VELKOMST_KOERER = false; PF = null;
+  try { window.__YGT_START_NU = true; YGT_START = null; await ygtStartHent(); window.__YGT_START_NU = false; } catch (e) { window.__YGT_START_NU = false; }   /* startdatoen = i dag, nu profilen er oprettet (Ida 3/11) */
   try { if (typeof buildSideNav === "function" && CUSTOMER_NAV && CURRENT_DEF) buildSideNav(CURRENT_DEF); } catch (e) {}   /* HANS/METTE 29/10: navneknappen i sidemenuen stod med det gamle navn (»Test«), til siden blev genindlæst */
   const el = document.getElementById("pfFlow"); if (el) el.remove();
   document.body.classList.remove("pf-aaben");
@@ -33866,10 +33880,13 @@ function turVis(i) {
     + (telefon
         ? (sidste
             ? '<button type="button" class="bsam-mobknap mq-tap" style="display:flex;align-items:center;justify-content:center;margin:0;" onclick="turLuk()">Færdig</button>'
+              + (i > 0 ? '<button type="button" class="tur-spring-tekst tur-tilbage mq-tap" style="display:block;width:100%;margin:10px 0 0;min-height:44px;background:none;border:0;font-family:Poppins,sans-serif;font-size:14px;color:var(--gray2,#6F6B66);cursor:pointer;" onclick="turVis(' + (i - 1) + ')">Tilbage</button>' : '')
             /* RØD NÆSTE + GRÅ SPRING OVER (Idas klik 26/10 »Bud A« på det byggede; Hans: »Der står kun Spring over. Så trykker jeg på den.«) — swipe virker stadig */
             : '<button type="button" class="bsam-mobknap mq-tap" style="display:flex;align-items:center;justify-content:center;margin:0;" onclick="' + naesteKlik + '">Næste</button>'
-              + '<button type="button" class="tur-spring-tekst mq-tap" style="display:block;width:100%;margin:10px 0 0;min-height:44px;background:none;border:0;font-family:Poppins,sans-serif;font-size:14px;color:var(--gray2,#6F6B66);cursor:pointer;" onclick="turLuk()">Spring over</button>')
+              + '<div style="display:flex;gap:8px;margin:10px 0 0;">' + (i > 0 ? '<button type="button" class="tur-spring-tekst tur-tilbage mq-tap" style="flex:1;min-height:44px;background:none;border:0;font-family:Poppins,sans-serif;font-size:14px;color:var(--gray2,#6F6B66);cursor:pointer;" onclick="turVis(' + (i - 1) + ')">Tilbage</button>' : '')
+                + '<button type="button" class="tur-spring-tekst mq-tap" style="flex:1;min-height:44px;background:none;border:0;font-family:Poppins,sans-serif;font-size:14px;color:var(--gray2,#6F6B66);cursor:pointer;" onclick="turLuk()">Spring over</button></div>')   /* TILBAGE I RUNDVISNINGEN (Ida 3/11: »man har ikke mulighed for at gå tilbage i rundvisningen?«) — fra trin 2; swipe virker stadig */
         : '<div style="display:flex;justify-content:center;gap:8px;">'
+          + (i > 0 ? '<button type="button" class="dbtn tur-knap tur-tilbage" style="height:44px;padding:0 24px;border-radius:999px;font-size:13px;background:#fff;border:1px solid var(--knap-graa-kant, #DEDAD4);color:var(--knap-graa-tekst, #6F6B66);" onclick="turVis(' + (i - 1) + ')">Tilbage</button>' : '')
           + (sidste ? '' : '<button type="button" class="dbtn tur-knap" style="height:44px;padding:0 24px;border-radius:999px;font-size:13px;background:#fff;border:1px solid var(--knap-graa-kant, #DEDAD4);color:var(--knap-graa-tekst, #6F6B66);" onclick="turLuk()">Spring over</button>')
           + '<button type="button" class="dbtn primary tur-knap" style="height:44px;padding:0 24px;border-radius:999px;font-size:13px;" onclick="' + naesteKlik + '">' + (sidste ? 'Færdig' : 'Næste') + '</button></div>')
     + '</div>';
@@ -40583,8 +40600,10 @@ async function ygtStartHent() {
     if (error) return YGT_START;   /* fejlet hentning = intet skrives (29/9-reglen) */
     const datoer = (rk || []).map(x => String((x && x.svar && x.svar.dato) || "")).filter(d => /^\d{4}-\d{2}-\d{2}$/.test(d)).sort();
     if (datoer.length) { YGT_START = datoer[0]; return YGT_START; }
+    /* STARTEN = DAGEN, KUNDEN HAR AKTIVERET LINKET OG OPRETTET PROFILEN (Ida 3/11): en ny kunde, der endnu ikke har oprettet profilen, har ingen start — kun modul 0 og 1 er åbne; startdatoen skrives, når profilen er oprettet (pfSlut) */
+    try { if (!window.__YGT_START_NU && typeof velkomstSkalVises === "function" && velkomstSkalVises()) return YGT_START; } catch (e) {}
     /* STARTEN = DAGEN, KUNDEN BLEV OPRETTET (22/10): en kunde, der har været i gang i ugevis, starter ikke forfra i dag — kun en ny kunde får dags dato */
-    let start = datoDK(); try { const o = String((CURRENT_DEF && CURRENT_DEF.oprettet) || "").slice(0, 10); if (/^\d{4}-\d{2}-\d{2}$/.test(o) && o < start) start = o; } catch (e) {}
+    let start = datoDK(); try { const o = String((CURRENT_DEF && CURRENT_DEF.oprettet) || "").slice(0, 10); if (!window.__YGT_START_NU && /^\d{4}-\d{2}-\d{2}$/.test(o) && o < start) start = o; } catch (e) {}
     const i = await sb.from("skema_svar").insert({ kode: currentKode, navn: "config", skema: "ygt_start", svar: { dato: start } }).select("svar");
     if (!i.error && i.data && i.data.length) YGT_START = i.data[0].svar.dato;
   } catch (e) {}
@@ -43197,7 +43216,9 @@ function forloebTidslinjeHtml() {
       const a = aktive[nr];
       if (a && a.lektioner && a.lektioner.length) { rk.push(lksModul(a, null, true)); return; }
       const info = modulInfoFor(nr), titel = "Modul " + modulVisNr(nr) + " · " + modulVisNavn(nr, (info && info.titel) || m.titel);
-      rk.push('<div class="lks-fl lks-modul laast"><div><div>' + esc(titel) + '</div><div class="lks-aab">På vej</div></div></div>');
+      /* HÆNGELÅS OG NEDTÆLLING I STEDET FOR »PÅ VEJ« (Ida 3/11): et modul, der ikke er åbent, viser hængelåsen og hvornår det åbner — regnet fra dagen, kunden aktiverede linket OG oprettede profilen (ygt_start) */
+      let aab = ""; try { if (ygtModulHold() && ygtModulAabner(nr) != null) aab = storStart("Åbner " + ygtDatoOrd(ygtModulAabner(nr))); } catch (e) {}
+      rk.push('<div class="lks-fl lks-modul laast"><div><div>' + esc(titel) + '</div><div class="lks-aab">' + esc(aab || "På vej") + '</div></div>' + (aab ? LKS_LAAS : '') + '</div>');
     });
     if (rk.length) return '<div class="lks ftl-moduler"><div class="lks-sek"><span>Dit forløb</span><i></i></div>' + rk.join("") + '</div>';
   } catch (e) {}
@@ -63103,7 +63124,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "3126";
+const APP_VERSION = "3128";
 const APP_BYGGET = "2. november";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_BYGGET + " · " + APP_VERSION; } catch (e) {} });
 let NY_VERSION_KLAR = false;
