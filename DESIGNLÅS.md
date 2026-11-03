@@ -13,6 +13,8 @@ En række chips ombrydes ALDRIG til to linjer. Er der flere, end der er plads ti
 **Chips har ALDRIG baggrundsfarve (Ida 2/11: »chips må aldrig have baggrundsfarve«):** hvid flade, grå ramme, grå tekst — også den valgte (mørkere grå ramme, aldrig fyldt) og chips, der står for en samling, søjle eller farve. På et foto (cover) er chippen gennemsigtig med hvid streg.
 **Undtagelse (Ida 2/11: »kunne chipsen ikke bare blive rød?« → »Hele chippen fyldt rød«):** den VALGTE chip i Idébankens søjlerække (og Alt/Idéer/Billeder/Video over væggen) er fyldt rød med hvid tekst; alle andre chips er uændret hvide med grå ramme. Gælder kun valgt-tilstanden i filterrækker i Idébanken — øvrige chips har stadig aldrig baggrundsfarve.
 
+## v3138 · 3. november · Backstage Hjem, »Køb i dag«: hvert køb i dag står som egen linje — virksomhedens navn, rabatkoden (foreningen/kuponen), klokkeslæt og beløb
+
 ## v3136 · 3. november · Et sat link til indholdet eller inspiration kan slettes i fakta-arket med husets skraldespand og »Slet« (før skulle man tømme feltet og trykke Gem)
 
 ## v3134 · 3. november · Profilforløbet for YOU GOT THIS er tre trin: Om dig · Om virksomheden · Så er du klar — kollegerne (to valgfrie rækker, en halv række låser) står nederst i »Så er du klar«-boksen, ikke som eget trin (Ida 3/11)
