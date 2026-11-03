@@ -1822,6 +1822,7 @@ body.pf-aaben { overflow:hidden !important; }
 .pf-fejl { font-size:13px; color:var(--red); min-height:0; } .pf-fejl:empty { display:none; }
 .pf-knap { height:52px; border:0; border-radius:999px; background:var(--red); color:#fff; font:400 15px Poppins,sans-serif; cursor:pointer; margin-top:4px; }
 .pf-knap:disabled { opacity:.7; }
+.pf-knap.laast { background:var(--border); color:var(--gray2); }   /* låst, til alle felter er udfyldt (Ida 3/11) */
 @media (min-width:900px) { #pfFlow { padding:40px 24px; } .pf-ark { margin:auto; padding:28px 32px 26px; } }   /* margin:auto centrerer uden at skære toppen af, når arket er højere end skærmen */
 html body .ark.vk-profil .ark-streg { display:none !important; }
 .ark-kvit { font-size:12.5px; color:var(--red); margin-top:10px; display:flex; align-items:center; gap:7px; min-height:18px; }
@@ -33416,6 +33417,8 @@ const VK_KOEB = [{ k: "butik", n: "I butikken" }, { k: "butik_webshop", n: "I bu
 const VK_TEAM = [{ k: "du", n: "Kun mig" }, { k: "vi", n: "Vi er flere" }];
 async function velkomstStart() {
   if (VELKOMST_KOERER || !velkomstSkalVises()) return;
+  /* ADGANGSKODEN FØRST, PROFILEN BAGEFTER (Ida 3/11, testkøb YGT: »jeg når ikke at skrive adgangskoden, så bliver jeg afbrudt af denne skærm«): profilfladen (z-index 2147483000) lagde sig over »Vælg din adgangskode«-arket, mens kunden skrev. Profilen venter, til arket er væk. */
+  if (document.getElementById("nyKodeBoks")) { setTimeout(function () { try { velkomstStart(); } catch (e) {} }, 600); return; }
   const d = CURRENT_DEF || {};
   try { if (OB_SKEMA === null && d.skema !== false) await onboardingSkemaTjek(); } catch (e) {}
   if (OB_SKEMA === true && d.skema !== false) { window.__VELKOMST_SET = true; try { if (sb) sb.auth.updateUser({ data: { velkomst_set: true } }); } catch (e) {} try { turStart(); } catch (e) {} return; }   /* har sendt skemaet = ikke ny */
@@ -33470,11 +33473,32 @@ function pfFelt(id, lab, v, o) {
 function pfChips(id, liste, valgt) {
   return '<div class="pf-chips">' + liste.map(function (c) { return '<button type="button" class="pf-chip mq-tap' + (valgt === c.k ? ' on' : '') + '" onclick="pfValg(\'' + id + '\', \'' + esc(c.k) + '\')">' + esc(c.n) + '</button>'; }).join("") + '</div>';
 }
+/* ALLE FELTER, DER SKAL UDFYLDES, LÅSER NÆSTE (Ida 3/11, testkøb YGT: »jeg kunne klikke næste uden at have udfyldt noget — alle felter SKAL låses som skal udfyldes«). Kun CVR er frivilligt. */
+function pfTom(v) { return !String(v == null ? "" : v).trim(); }
+function pfKlar() {
+  if (!PF) return false;
+  const f = PF.f, t = PF.trin;
+  if (t === 1) {
+    if (pfTom(f.navn) || !pfDato() || (f.ejer !== "ja" && f.ejer !== "nej")) return false;
+    if (f.ejer === "nej" && pfTom(f.rolle)) return false;
+    return true;
+  }
+  if (t === 2) {
+    if (pfTom(f.butik_navn) || pfTom(f.adresse) || !/^\d{4}$/.test(String(f.postnr || "").trim()) || pfTom(f.by) || pfTom(f.branche) || pfTom(f.forretningstype)) return false;
+    if (f.branche === "Andet" && pfTom(f.branche_andet)) return false;
+    return true;
+  }
+  if (f.inviter !== "ja" && f.inviter !== "senere") return false;
+  if (f.inviter === "ja") { const ok = f.kolleger.every(function (c) { return !pfTom(c.navn) && /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(String(c.mail || "").trim()); }); if (!ok) return false; }
+  return true;
+}
+function pfKnapOpdat() { try { const k = document.getElementById("pfNaeste"); if (!k) return; const ok = pfKlar(); k.classList.toggle("laast", !ok); k.setAttribute("aria-disabled", ok ? "false" : "true"); } catch (e) {} }
 function pfInput(id, v) {
   if (!PF) return;
   const m = /^kol(\d)_(navn|mail)$/.exec(id);
   if (m) { PF.f.kolleger[+m[1]][m[2]] = v; } else PF.f[id] = v;
   pfKladdeGem();
+  pfKnapOpdat();
   const fe = document.getElementById("pfFejl"); if (fe) fe.textContent = "";
   if (id === "branche_andet") { clearTimeout(PF.tAndet); PF.tAndet = setTimeout(pfAndetGem, 700); }   /* Andet gemmes, mens der skrives — og »Gemt« står først, når basen har svaret */
 }
@@ -33514,6 +33538,7 @@ function pfTegn() {
   }
   el.innerHTML = '<div class="pf-ark" role="dialog" aria-label="Din profil">' + top + krop + '<div class="pf-fejl" id="pfFejl"></div><button type="button" class="pf-knap mq-tap" id="pfNaeste" onclick="pfNaeste()">' + knap + '</button></div>';
   try { el.scrollTop = 0; } catch (e) {}
+  pfKnapOpdat();
   if (t === 2 && f.branche === "Andet" && String(f.branche_andet || "").trim()) pfAndetGem();
 }
 function pfKollegaTil() { if (!PF || PF.f.kolleger.length >= 2) return; PF.f.kolleger.push({ navn: "", mail: "" }); pfKladdeGem(); pfTegn(); }
@@ -33545,6 +33570,7 @@ async function pfButikGem() {
 async function pfNaeste() {
   if (!PF) return;
   const f = PF.f, t = PF.trin, knap = document.getElementById("pfNaeste");
+  if (!pfKlar()) { pfFejl("Udfyld alle felter for at gå videre."); return; }
   if (t === 1) {
     if (!pfDato()) { pfFejl("Skriv din fødselsdag med dag, måned og år."); return; }
     if (f.ejer === "nej" && !String(f.rolle || "").trim()) { pfFejl("Skriv din rolle i butikken."); return; }
@@ -63077,7 +63103,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "3124";
+const APP_VERSION = "3126";
 const APP_BYGGET = "2. november";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_BYGGET + " · " + APP_VERSION; } catch (e) {} });
 let NY_VERSION_KLAR = false;
@@ -66607,7 +66633,7 @@ function visNyAdgangskode(foersteGang) {
   if (document.getElementById("nyKodeBoks")) return;
   const d = document.createElement("div");
   d.id = "nyKodeBoks";
-  d.style.cssText = "position:fixed;inset:0;z-index:10060;background:rgba(22,32,42,0.45);display:flex;align-items:center;justify-content:center;padding:24px;";
+  d.style.cssText = "position:fixed;inset:0;z-index:2147483600;background:rgba(22,32,42,0.45);display:flex;align-items:center;justify-content:center;padding:24px;";
   /* HUSETS ARK (4/10): etiket centreret, rød titel, ingen undertitel, feltet hvidt med skygge, rød pille — samme form som alle popups */
   d.innerHTML = '<div class="nyk-ark" style="position:relative;background:#fff;border-radius:28px;padding:28px 24px 24px;max-width:400px;width:100%;box-shadow:0 30px 70px rgba(22,32,42,0.25);text-align:center;">'
     /* INTET KRYDS (Ida 10/10: »så kunne jeg bare lukke den pop up uden at angive ny kode — så var jeg inde i mit admin«): linket i mailen logger ind,
