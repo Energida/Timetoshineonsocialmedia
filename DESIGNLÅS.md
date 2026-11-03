@@ -13,6 +13,8 @@ En række chips ombrydes ALDRIG til to linjer. Er der flere, end der er plads ti
 **Chips har ALDRIG baggrundsfarve (Ida 2/11: »chips må aldrig have baggrundsfarve«):** hvid flade, grå ramme, grå tekst — også den valgte (mørkere grå ramme, aldrig fyldt) og chips, der står for en samling, søjle eller farve. På et foto (cover) er chippen gennemsigtig med hvid streg.
 **Undtagelse (Ida 2/11: »kunne chipsen ikke bare blive rød?« → »Hele chippen fyldt rød«):** den VALGTE chip i Idébankens søjlerække (og Alt/Idéer/Billeder/Video over væggen) er fyldt rød med hvid tekst; alle andre chips er uændret hvide med grå ramme. Gælder kun valgt-tilstanden i filterrækker i Idébanken — øvrige chips har stadig aldrig baggrundsfarve.
 
+## v3140 · 3. november · Chips i coveret er Poppins (kun heroens titel er Didot) · link-knapperne nederst på briefoversigten er røde (ramme 1 px som de andre piller) · Story: en ny story vælger stadig type (Opbygning til deling · Check-in), kortet viser »Story · type« uden briefstatus og uden en ekstra Story-chip, og »10 minutter på dit community« kommer kun på dage med et opslag, aldrig for en story · »Venter på dig · forslag fra Ida« er væk fra Hjem — forslag står kun som stiplede kort i kalenderen
+
 ## v3138 · 3. november · Backstage Hjem, »Køb i dag«: hvert køb i dag står som egen linje — virksomhedens navn, rabatkoden (foreningen/kuponen), klokkeslæt og beløb
 
 ## v3136 · 3. november · Et sat link til indholdet eller inspiration kan slettes i fakta-arket med husets skraldespand og »Slet« (før skulle man tømme feltet og trykke Gem)
