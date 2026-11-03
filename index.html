@@ -3816,6 +3816,8 @@ html body.brief-story #briefWrap #briefSideNav { display:none !important; }
   body.brief-story #storySerie > .bf-plads { grid-column:1 / -1; }
 }
 body.brief-story .hc-chip { font-family:Poppins,system-ui,sans-serif; font-weight:400; }
+.pf-linkknapper { display:flex; flex-direction:column; gap:10px; margin:18px 0 0; }
+.pf-linkknapper .pf-linkknap { margin:0; }
 .st-chip-pc { font:400 13px Poppins,system-ui,sans-serif; color:var(--gray2); background:#fff; border:1.5px solid var(--gray); border-radius:999px; height:36px; padding:0 16px; cursor:pointer; margin-left:12px; }
 .st-chips { display:flex; gap:8px; margin-top:12px; }
 .st-chip { font:400 12px Poppins,sans-serif; color:#fff; background:transparent; border:1.5px solid rgba(255,255,255,.85); border-radius:999px; height:32px; padding:0 14px; cursor:pointer; }
@@ -23435,7 +23437,7 @@ function heroChipsTegn() {
       c.onclick = function (e) { e.stopPropagation(); try { r.click(); } catch (x) {} };
       return c;
     };
-    rows.forEach(function (r) { const v = r.querySelector(".fb-v"); const tom = !v || v.classList.contains("tom") || /^(vælg|mangler)$/i.test(v.textContent.trim()); if (tom) mangler.push(r); else { hc.appendChild(lav(r, false)); antal++; } });
+    rows.forEach(function (r) { if (/^(linkIndhold|musikLink|inspiration)$/.test(r.getAttribute("data-key") || "")) return;   /* links er knapper nederst, aldrig chips (Ida 3/11) */ const v = r.querySelector(".fb-v"); const tom = !v || v.classList.contains("tom") || /^(vælg|mangler)$/i.test(v.textContent.trim()); if (tom) mangler.push(r); else { hc.appendChild(lav(r, false)); antal++; } });
     if (mangler.length) {
       if (window.__hcMere) mangler.forEach(function (r) { hc.appendChild(lav(r, true)); });
       const pl = document.createElement("button"); pl.type = "button"; pl.className = "hc-chip plus"; pl.setAttribute("aria-label", window.__hcMere ? "Skjul" : "Tilføj flere oplysninger");
@@ -24551,6 +24553,7 @@ function briefForsideTegn(G, grupper, wrap, navM) {
     /* (Kommentarer stod her — flyttet øverst 30/10) */
     /* TILBAGE NEDERST PAA BRIEFOVERSIGTEN PAA TELEFONEN (natten 7/10, revision fund 49: »Hvordan kommer jeg tilbage til kalenderen?« — MAALT 0 synlige Tilbage):
        husets lange graa knap (som #mobTilbage paa de andre sider), samme vej som stien paa computeren (briefTilbage → dertil, man kom fra) */
+    + (function () { try { return briefLinkKnapperHtml(); } catch (e) { return ''; } })()   /* LINKS SOM KNAPPER NEDERST, ALDRIG SOM CHIPS (Ida 3/11) */
     + (tlfFors ? '<button type="button" class="bsam-mobknap bsam-mobknap-sek mq-tap pf-tilbage-tlf" style="margin:18px 0 0;" onclick="briefTilbage()">Tilbage</button>' : '')
     + '';   /* den roede knap nederst er UDE (Ida 21/9 kl. 18.40) — »Rediger« staar over fakta-boksen */   /* knappen ER naeste skridt: hedder det foerste hul og aabner dér; intet hul = »Ret briefen« → Retning (Idas klik 20/9, v2143) */
   let fs = document.getElementById("briefForside");
@@ -35342,6 +35345,13 @@ function briefLinkVis(key, v) {
   const t = ((B.linkTitler || {})[key] || "").trim();
   return t || (briefErLink(v) ? briefLinkDomaene(v) : v);
 }
+/* LINKS SOM KNAPPER NEDERST PÅ BRIEFOVERSIGTEN (Ida 3/11, tegning BcTFV8AKUHUnaWkkdXvJbr: »links som knapper nederst«; SOS: »hvis jeg har sat link ind — link til inspiration eller link til indhold — skulle det komme op som knapper nederst og ikke som chips«): én lang hvid knap pr. sat link; et tryk åbner linket. Rettes på briefens første side (Fakta). */
+function briefLinkKnapperHtml() {
+  const B = BRIEF_STATE || {}; const r = [["linkIndhold", "Link til indholdet"], ["musikLink", "Link til musik"], ["inspiration", "Link til inspiration"]];
+  const k = r.filter(function (x) { return String(B[x[0]] || "").trim(); });
+  if (!k.length) return "";
+  return '<div class="pf-linkknapper">' + k.map(function (x) { return '<button type="button" class="bsam-mobknap bsam-mobknap-sek mq-tap pf-linkknap" onclick="briefFaktaLinkKlik(\'' + x[0] + '\')">' + esc(x[1]) + '</button>'; }).join("") + '</div>';
+}
 function briefFaktaLinkKlik(key) {
   const v = String((BRIEF_STATE || {})[key] || "").trim();
   if (BRIEF_MB_VIS !== "skriv") {
@@ -40685,7 +40695,12 @@ function modulNrFor(lekId) { const m = String(lekId || "").match(/^(\d+)-/); ret
 function modulVisNr(nr) { const n = parseInt(nr, 10); return isNaN(n) ? String(nr || "") : String(Math.max(0, n - 1)); }   /* ALDRIG UNDER 0 (natten 7/10, revision fund 89): gamle 0-lektioner stod som »Modul -1« */
 function lekVisNr(id) { const m = String(id || "").match(/^(\d+)-(\d+)/); return m ? modulVisNr(m[1]) + "." + m[2] : String(id || ""); }
 function lekVisTitel(l) { return (l && l.titel) || ""; }   /* 31/10: 0.2 viser basens titel, ikke en hårdkodet */
-function modulVisNavn(nr, raa) { if (String(nr) === "1") return "Introduktion"; return String(raa || "").replace(/^Modul\s*\d+\s*·\s*/i, ""); }
+/* MODUL 0 KAN OMDØBES (Ida 3/11: »jeg ville ændre til introduktion til forløbet« — navnet var hårdkodet til »Introduktion«, så en rettelse i admin aldrig kunne ses): har Ida skrevet en egen titel, vises den; den gamle standard i basen (»Energi · Strategi · Resultat«) og en tom titel giver stadig »Introduktion« */
+function modulVisNavn(nr, raa) {
+  const r = String(raa || "").replace(/^Modul\s*\d+\s*·\s*/i, "").trim();
+  if (String(nr) === "1") return (!r || /^Energi\s*·\s*Strategi\s*·\s*Resultat$/i.test(r)) ? "Introduktion" : r;
+  return r;
+}
 const LEK_SKJULT_KUNDE = {};   /* 1/11: 0.3 Strategi og 0.4 Resultat er egne videoer igen og vises for kunderne (Ida) */
 function modulInfoFor(nr) { return (nr || nr === 0) ? (MODUL_INFO[String(nr)] || null) : null; }
 /* Tom beskrivelse = INGEN forside. Skriver Ida kun til fire af otte moduler, maerker kunden
@@ -41762,10 +41777,10 @@ function mrModulFaseTegn() {
 function mrModulRet(nr) {
   const info = modulInfoFor(nr) || { titel: "", fase: "", beskrivelse: "", udbytte: [] };
   MF_FASE = info.fase || "";
-  const titel = info.titel || mrModulTavleTitel(nr);
+  const titel = modulVisNavn(nr, info.titel || mrModulTavleTitel(nr));   /* feltet viser det navn, kunden ser (ikke basens gamle rå titel) — Ida 3/11 */
   const u = info.udbytte.slice(0, 4); while (u.length < 4) u.push("");
   /* HUSETS ARK (24/9): popup-laasen — titel · streg · felterne som husets felter · faserne som husets chips · Gem · Annullér */
-  arkAabn({ titel: "Modul " + nr + " — forsiden", ph: "", ingenTekst: true, send: "Gem modul-forsiden", chips: [], klasse: "ark-bred",
+  arkAabn({ titel: "Modul " + modulVisNr(nr) + " — forsiden", ph: "", ingenTekst: true, send: "Gem modul-forsiden", chips: [], klasse: "ark-bred",
     ekstraAf: function () {
       return '<div class="ark-et">Titel</div><input id="mfTitel" class="ark-inp" placeholder="Titel" value="' + esc(titel) + '">'
         + '<div class="ark-et" style="margin-top:16px;">Hvor i metoden</div><div id="mfFaseHost" class="ark-chips" style="margin:8px 0 0;justify-content:flex-start;order:0;"></div>'
@@ -63124,7 +63139,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "3128";
+const APP_VERSION = "3130";
 const APP_BYGGET = "2. november";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_BYGGET + " · " + APP_VERSION; } catch (e) {} });
 let NY_VERSION_KLAR = false;
