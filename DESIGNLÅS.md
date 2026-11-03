@@ -13,6 +13,8 @@ En række chips ombrydes ALDRIG til to linjer. Er der flere, end der er plads ti
 **Chips har ALDRIG baggrundsfarve (Ida 2/11: »chips må aldrig have baggrundsfarve«):** hvid flade, grå ramme, grå tekst — også den valgte (mørkere grå ramme, aldrig fyldt) og chips, der står for en samling, søjle eller farve. På et foto (cover) er chippen gennemsigtig med hvid streg.
 **Undtagelse (Ida 2/11: »kunne chipsen ikke bare blive rød?« → »Hele chippen fyldt rød«):** den VALGTE chip i Idébankens søjlerække (og Alt/Idéer/Billeder/Video over væggen) er fyldt rød med hvid tekst; alle andre chips er uændret hvide med grå ramme. Gælder kun valgt-tilstanden i filterrækker i Idébanken — øvrige chips har stadig aldrig baggrundsfarve.
 
+## v3149 · 3. november · Story-flisen (Idas klik på bud 1 »Rulle«): »Story 1« · upload først (billede eller video, 9:16) · chips Tekst / Afstemning / Musik (hvide, grå) · stories i en swipe-række, den næste titter frem, prikker ved flere, plus til en ny · ingen streg under etiketten, når intet tekst står under
+
 ## v3148 · 3. november · Foreningskoden forudfylder aldrig forretningens navn (hver butik skriver sit eget) · hilsenen bruger aldrig firmanavnet, før profilen har et fornavn · fremgangsfliserne »Lektioner set« og »Opgaver« står først, når den første lektion er set
 
 ## v3147 · 3. november · Luft mellem spørgsmålsoverskrift og felt i briefen (14 px, ingen regel kan nulstille den) · et dobbelt ord i et modulnavn vises kun én gang (»Introduktion til til forløbet«) · versionslinjen siger den rigtige dato
