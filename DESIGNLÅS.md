@@ -13,6 +13,8 @@ En række chips ombrydes ALDRIG til to linjer. Er der flere, end der er plads ti
 **Chips har ALDRIG baggrundsfarve (Ida 2/11: »chips må aldrig have baggrundsfarve«):** hvid flade, grå ramme, grå tekst — også den valgte (mørkere grå ramme, aldrig fyldt) og chips, der står for en samling, søjle eller farve. På et foto (cover) er chippen gennemsigtig med hvid streg.
 **Undtagelse (Ida 2/11: »kunne chipsen ikke bare blive rød?« → »Hele chippen fyldt rød«):** den VALGTE chip i Idébankens søjlerække (og Alt/Idéer/Billeder/Video over væggen) er fyldt rød med hvid tekst; alle andre chips er uændret hvide med grå ramme. Gælder kun valgt-tilstanden i filterrækker i Idébanken — øvrige chips har stadig aldrig baggrundsfarve.
 
+## v3148 · 3. november · Foreningskoden forudfylder aldrig forretningens navn (hver butik skriver sit eget) · hilsenen bruger aldrig firmanavnet, før profilen har et fornavn · fremgangsfliserne »Lektioner set« og »Opgaver« står først, når den første lektion er set
+
 ## v3147 · 3. november · Luft mellem spørgsmålsoverskrift og felt i briefen (14 px, ingen regel kan nulstille den) · et dobbelt ord i et modulnavn vises kun én gang (»Introduktion til til forløbet«) · versionslinjen siger den rigtige dato
 ## v3146 · 3. november · Briefoversigten på computeren: titlen står i coveret (Didot, op til to linjer, et tryk retter den) og gentages ikke i siden; kommentarsporet står i højre side på brede skærme (fra 1700 px) · Modul 0 kan omdøbes også i lektionslisten i admin (navnet var hårdkodet)
 

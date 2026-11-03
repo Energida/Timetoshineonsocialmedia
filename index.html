@@ -33508,6 +33508,8 @@ function pfFornavnForslag(d) {
     return n;
   } catch (e) { return ""; }
 }
+/* EN FORENINGSKODE DELES AF MANGE BUTIKKER (3/11): foreningens navn er ikke forretningens navn — hver butik skriver sit eget */
+function pfForening(d) { try { return !!((d && d.forening) || (VIRKSOMHEDSKODER[currentKode] && VIRKSOMHEDSKODER[currentKode].forening)); } catch (e) { return false; } }
 async function profilFlowStart() {
   const d = CURRENT_DEF || {};
   let butik = null;
@@ -33517,7 +33519,7 @@ async function profilFlowStart() {
   const k = pfKladdeHent();
   PF = { trin: 1, kollega: kollega, ygt: (typeof erYgtTeam === "function" && erYgtTeam()), mail: mail,
     f: Object.assign({ navn: pfFornavnForslag(d), efternavn: "", dag: "", mdr: "", aar: "", ejer: "", rolle: "",
-      butik_navn: String((butik && butik.butik_navn) || d.studioNavn || d.virksomhed || "").replace(/\s*studio$/i, ""), adresse: "", postnr: "", by: "", cvr: "",
+      butik_navn: String((butik && butik.butik_navn) || (pfForening(d) ? "" : (d.studioNavn || d.virksomhed)) || "").replace(/\s*studio$/i, ""), adresse: "", postnr: "", by: "", cvr: "",
       branche: (butik && butik.branche) || "", branche_andet: (butik && butik.branche_andet) || "", forretningstype: (butik && butik.forretningstype) || d.forretningstype || "",
       inviter: "", kolleger: [{ navn: "", mail: "" }, { navn: "", mail: "" }] }, (k && k.f) || {}) };
   while (PF.f.kolleger.length < 2) PF.f.kolleger.push({ navn: "", mail: "" });
@@ -33619,7 +33621,7 @@ async function pfPersonGem() {
   const f = PF.f, dato = pfDato();
   const svar = { navn: String(f.navn || "").trim(), efternavn: String(f.efternavn || "").trim(), foedselsdag: dato, ejer: f.ejer === "ja" ? true : f.ejer === "nej" ? false : null, rolle: f.ejer === "nej" ? String(f.rolle || "").trim() : "", tid: new Date().toISOString() };
   const md = { foedselsdag: dato, ejer: svar.ejer, rolle: svar.rolle, efternavn: svar.efternavn };
-  if (svar.navn) { md.hilsen = svar.navn; CURRENT_HILSEN = svar.navn; }
+  if (svar.navn) { md.hilsen = svar.navn; CURRENT_HILSEN = svar.navn; window.__PROFIL_NAVN = true; }
   const u = await sb.auth.updateUser({ data: md }); if (u && u.error) throw u.error;
   await pfRaekkeGem(PF.mail || svar.navn || "kunden", "profil_person", Object.assign({ email: PF.mail }, svar));
 }
@@ -43283,7 +43285,7 @@ function forloebBentoTegn(AKTIVE, setAntal, medOvelse, ovelserDone) {
   const ringe = [
     { navn: "Lektioner set", tal: fremPct(setAntal, AKTIVE.length), sub: "", pct: AKTIVE.length ? setAntal / AKTIVE.length : 0, ialt: AKTIVE.length },
     { navn: "Opgaver", tal: fremPct(ovelserDone, medOvelse.length), sub: "", pct: medOvelse.length ? ovelserDone / medOvelse.length : 0, ialt: medOvelse.length }
-  ].filter(function (r) { return r.ialt > 0; });
+  ].filter(function (r) { return r.ialt > 0 && (setAntal > 0 || ovelserDone > 0); });   /* FREMGANG VISES, FØR DER ER NOGEN (3/11): to høje fliser med kun »0 %« siger intet — de kommer, når første lektion er set */
   /* SPØRGESKEMAET ER EN LEKTION, IKKE EN FLISE ØVERST (Ida 28/10: »find dit udgangspunkt skal jo komme som en lektion og ikke øverst«) — det står i Dit forløb under modul 0 */
   const naesteVis = (kursusKunde && window.__KURSUS_SKEMA) ? null : naeste;
   host.innerHTML = dashBentoHtml({ naeste: naesteVis, fliser: fliser, ringe: ringe, underNaeste: udsatFliserHtml() });
@@ -44615,6 +44617,13 @@ function hilsenFornavn() {
   if (!n) { try { n = ((typeof CURRENT_NAVN !== "undefined" && CURRENT_NAVN) || "").trim(); } catch (e) {} }
   /* SER IDA APPEN SOM KUNDEN (som-kunde-baandet), hilses der med kundens eget teammedlem — aldrig firmanavnet (Ida 21/9 kl. 23.55: »Nu mangler Annette sit navn i velkomsten?«) */
   if (!n) { try { if (typeof SOM_KUNDE !== "undefined" && SOM_KUNDE && Array.isArray(BRIEF_PERSONER)) { const f = BRIEF_PERSONER.filter(function (x) { return !/^ida\b/i.test(String(x)); })[0]; if (f) n = String(f); } } catch (e) {} }
+  /* FØR PROFILEN HAR ET FORNAVN, ER NAVNET FRA KØBET FIRMANAVNET (3/11: »Go' aften, Testly«): så hilses der uden navn */
+  try {
+    if (n && !window.__PROFIL_NAVN && typeof CURRENT_DEF !== "undefined" && CURRENT_DEF) {
+      const firma = String(CURRENT_DEF.virksomhed || CURRENT_DEF.studioNavn || "").replace(/\s*studio$/i, "").trim().toLowerCase(), l = String(n).trim().toLowerCase();
+      if (firma && (firma === l || firma.split(/\s+/)[0] === l)) return "";
+    }
+  } catch (e) {}
   return n ? String(n).split(/\s+/)[0] : "";
 }
 /* ---------- sync-advarsel: en gemning nåede ikke databasen ---------- */
@@ -63216,7 +63225,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "3147";
+const APP_VERSION = "3148";
 const APP_BYGGET = "3. november";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_BYGGET + " · " + APP_VERSION; } catch (e) {} });
 let NY_VERSION_KLAR = false;
@@ -67445,7 +67454,7 @@ const VIRKSOMHEDSKODER = {
       ]
     }
   },
-  "RINGKOBING2026": { virksomhed: "Ringkøbing Handelsforening", forloeb: "Gratis kursusadgang", type: "kursus" },
+  "RINGKOBING2026": { virksomhed: "Ringkøbing Handelsforening", forloeb: "Gratis kursusadgang", type: "kursus", forening: true },   /* foreningens navn er aldrig en butiks navn: profilen starter med tomt »Forretningens navn« (3/11) */
   "TEST": {
     virksomhed: "Testbutikken",
     forloeb: "Idas testadgang — alt herinde kan slettes",
@@ -69518,6 +69527,7 @@ async function enterApp() {
       currentKode = md.kode ? String(md.kode).toUpperCase() : "";
       CURRENT_NAVN = md.navn || "";                    // medarbejderens eget navn → bruges på skemasvar
       CURRENT_HILSEN = (md.hilsen || md.navn || "").replace(/[^\p{L}\p{N}\s]/gu, "").trim();   // deres valgte hilsen — falder tilbage til navnet fra oprettelsen (Freja-fundet 28/7)
+      window.__PROFIL_NAVN = !!md.efternavn;   /* profilen har givet et rigtigt fornavn (3/11) */
       window.__INTRO_SKJULT = !!md.intro_skjult;   // "Spring introen over"-valget følger login'et (Task 4b)
       window.__LEK_TUR_SET = !!md.lek_tur_set;   /* lektionssidens rundvisning er set (22/10) */
       window.__TUR_SET = !!md.tur_set;             // rundvisningen er set — se noten ved turSet() (Ida 26/8)
