@@ -13,6 +13,8 @@ En række chips ombrydes ALDRIG til to linjer. Er der flere, end der er plads ti
 **Chips har ALDRIG baggrundsfarve (Ida 2/11: »chips må aldrig have baggrundsfarve«):** hvid flade, grå ramme, grå tekst — også den valgte (mørkere grå ramme, aldrig fyldt) og chips, der står for en samling, søjle eller farve. På et foto (cover) er chippen gennemsigtig med hvid streg.
 **Undtagelse (Ida 2/11: »kunne chipsen ikke bare blive rød?« → »Hele chippen fyldt rød«):** den VALGTE chip i Idébankens søjlerække (og Alt/Idéer/Billeder/Video over væggen) er fyldt rød med hvid tekst; alle andre chips er uændret hvide med grå ramme. Gælder kun valgt-tilstanden i filterrækker i Idébanken — øvrige chips har stadig aldrig baggrundsfarve.
 
+## v3124 · 3. november · Story er helt simpel (Idas klik, artifact MatkJo1GYBRNkZwD4FeLvT): en ny story hedder »Story N« og tæller selv op, har ingen indholdssøjle og ingen First thing first; siden viser kun titlen, datoen som chip i heroen og elementerne (computer: to fliser ved siden af hinanden) — ingen faktaboks, procesbar, målgruppe, udbytte, handling eller Næste/Tilbage-trin · kalenderkortets tre prikker er væk: menuen (Flyt til · Omdøb · Duplikér · Slet) åbnes ved højreklik og langt tryk (vælter klik 31/10)
+
 ## v3122 · 3. november · Computerens plus (Tøm hovedet) har valget »Det ugentlige contentmøde« lige efter Aftale — samme ark som telefonens plus; før kunne mødet kun oprettes på telefonen
 
 ## v3120 · 3. november · Story-symbolet er Instagrams: stiplet cirkel med plus (ikke en prik) · Indbakken på telefonen: noterne under »Det du har skrevet ned« swipes væk med skraldespanden som i Backstage (to tryk, langt swipe sletter); computeren er uændret
