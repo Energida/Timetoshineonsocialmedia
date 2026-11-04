@@ -40,9 +40,11 @@ setTimeout(async function () {
         var tlfStyr = [].filter.call(r.querySelectorAll(".hu-linje .hu-pil, .hu-visning"), synlig); if (tlfStyr.length) F(tilstand + ": telefonen viser pile eller Dag/Uge (" + tlfStyr.length + ")");
         if (dagSek && !/^I dag/i.test((dagSek.innerText || "").trim())) F(tilstand + ": linjen »I dag« mangler");
       } else {
-        if (!synlig(linje)) F(tilstand + ": linjen »I dag« mangler");
-        else if (somTlf ? (dagSek && !/^I dag/i.test((dagSek.innerText || "").trim())) : !/^I dag/i.test((linje.innerText || "").trim())) F(tilstand + ": linjen »I dag« mangler");
-        var pile = [].filter.call(r.querySelectorAll(".hu-linje .hu-pil"), synlig); if (pile.length !== 2) F(tilstand + ": pilene ved »I dag« er " + pile.length + ", ikke 2");
+        /* HJEM PAA COMPUTEREN = BUD 4B (Ida 4/11): ingen »I dag«-linje med pile og Dag/Uge — pilene er to runde knapper ved datofliserne (.hu-strib-rk), og »I dag« står kun, naar der er noget under */
+        if (somTlf) { if (dagSek && !/^I dag/i.test((dagSek.innerText || "").trim())) F(tilstand + ": linjen »I dag« mangler");
+          var pileN = [].filter.call(r.querySelectorAll(".hu-strib-rk > .hu-pil"), synlig); if (pileN.length !== 2) F(tilstand + ": pilene ved datofliserne er " + pileN.length + ", ikke 2"); }
+        else { if (!synlig(linje)) F(tilstand + ": linjen »I dag« mangler"); else if (!/^I dag/i.test((linje.innerText || "").trim())) F(tilstand + ": linjen »I dag« mangler");
+          var pile = [].filter.call(r.querySelectorAll(".hu-linje .hu-pil"), synlig); if (pile.length !== 2) F(tilstand + ": pilene ved »I dag« er " + pile.length + ", ikke 2"); }
       }
       var dage = [].filter.call(r.querySelectorAll(".hu-strib .hu-dag"), synlig); if (dage.length !== 7) F(tilstand + ": ugestrimlen har " + dage.length + " datofliser, ikke 7");
       var idag = r.querySelector(".hu-dag.idag"); if (!idag || getComputedStyle(idag).backgroundColor !== "rgb(252, 36, 4)") F(tilstand + ": i dag er ikke fyldt roed");
@@ -78,7 +80,7 @@ setTimeout(async function () {
       /* 7) UX-POLITIET: ingen lange streger, aldrig fed, fliserne uden kant (skyggeflisen) */
       if (/—/.test(tekst)) F(tilstand + ": en lang streg (—) staar i Hjems tekst");
       [].forEach.call(r.querySelectorAll("*"), function (e) { if (e.children.length || !synlig(e)) return; var fw = parseInt(getComputedStyle(e).fontWeight, 10); if (fw >= 600) F(tilstand + ": fed Poppins i " + (e.textContent || "").trim().slice(0, 30)); });
-      [].forEach.call(r.querySelectorAll(".hu-ring, .hu-dag, .hu-fokus, .hu-td"), function (e) { var c = getComputedStyle(e); if (synlig(e) && parseFloat(c.borderTopWidth) > 0 && c.borderTopStyle !== "none") F(tilstand + ": en flise har kant i stedet for skygge"); });
+      [].forEach.call(r.querySelectorAll(".hu-ring, .hu-dag, .hu-fokus, .hu-td"), function (e) { if (e.closest(".hh-panel")) return; /* fliser i bud 4B-panelerne har ramme 1 px #E3E2DE og ingen skygge (4/11) */ var c = getComputedStyle(e); if (synlig(e) && parseFloat(c.borderTopWidth) > 0 && c.borderTopStyle !== "none") F(tilstand + ": en flise har kant i stedet for skygge"); });
       /* 8) 32 PX FRA BUEN til det foerste under heroen (buen = 28 px af baandet) */
       var heroEl = tlf ? document.querySelector(".hf-hero") : document.querySelector("#screen3 .mb-baand");
       var foerste = somTlf ? L : R;

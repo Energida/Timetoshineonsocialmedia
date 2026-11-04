@@ -19,7 +19,8 @@
     var t = Array.prototype.find.call(document.querySelectorAll(".mb-navn,.hf-hero-tekst"), function (e) { var r = e.getBoundingClientRect(); return r.width > 0 && r.height > 0 && getComputedStyle(e).visibility !== "hidden" && (e.textContent || "").trim(); });
     if (!t) continue;
     var bd = t.closest(".mb-baand,.hf-hero") || t.parentElement; var br = bd.getBoundingClientRect(), tr = t.getBoundingClientRect();
-    var bund = Math.round(br.bottom - tr.bottom), venstre = Math.round(tr.left - br.left); n++;
+    var bundRef = br.bottom; try { var bj = bd.querySelector(".mb-bjaelke"); if (bj && bj.getBoundingClientRect().height > 0 && getComputedStyle(bj).display !== "none") { var fo = bd.querySelector(".mb-foto"); if (fo) bundRef = fo.getBoundingClientRect().bottom; } } catch (e) {}   /* HJEM PAA COMPUTER (bud 4B, 4/11): den røde datobjælke (44) ligger over coverets nederste kant — coverets bund er fotoets bund (288), ikke bjælkens */
+    var bund = Math.round(bundRef - tr.bottom), venstre = Math.round(tr.left - br.left); n++;
     if (Math.abs(bund - 40) > 1 || Math.abs(venstre - vForv) > 1) fejl.push(s[0] + " bund=" + bund + " venstre=" + venstre + " (skal 40/" + vForv + ")");
   }
   console.log(fejl.length ? "SELE HERO FEJL " + fejl.join(" · ") : (n ? "SELE HERO OK: " + n + " sider, titlen 40 px over coverets bund og " + vForv + " px fra venstre" : "SELE HERO FEJL: ingen hero fundet"));

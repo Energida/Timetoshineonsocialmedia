@@ -27,6 +27,15 @@ Kilden i koden er **MÅLKORT-BLOKKEN** sidst i det første `<style>` i `index.ht
 | **Hjem** | overskrift→flise 16 · flise→flise 10 · sektion→sektion 24 · radius 20 · overskrifter 16 høje |
 | **Skrift/farver** | Poppins 300/400, aldrig fed · Didot kun i heroens titel · rød #FC2404 · #1A1A1A · #6F6B66 · #9A9590 · #DEDAD4 · #E3E2DE · side #FAF9F5 |
 
+## Tilføjet 4/11 (anden runde)
+| Element | Facit |
+|---|---|
+| **Hjem computer, bud 4B** | panel **#F6F4F1** radius 28 luft 12, 24 mellem paneler · flise i panel hvid, **80 høj**, radius 20, ramme 1 px **#E3E2DE**, ingen skygge, 10 mellem · overskrift→panel 16 · rød datobjælke 44 (#FC2404, hvid 13/400) · datoboks 56 · pile runde 32 · første overskrift flugter med datofliserne (≤ 1 px) |
+| **Telefonens oplysnings-chips (briefoversigt)** | under statuslinjen, én linje, swipe sidelæns, chip 36 (13/400 #6F6B66), kun udfyldte, ingen +, ingen ikon, kun visning; coveret 228 |
+| **Story-række** | [status ⌄] [dato] samme højde **36**, 8 imellem, status til venstre, ⋯ yderst til højre; storytype-chips 36 på én linje under Titel (valgt = grå flueben) |
+| **Upload-flise** (cover, Story, Den færdige video) | `.cv-upload`: hvid, stiplet 1,5 px #DEDAD4, radius 14, 9:16, grønt symbol + »Upload«; under upload står procesringen (husets ring, ubestemt) i flisen; ved fejl står årsagen + »Prøv igen« i flisen; færdig = video 9:16 + »Skift video« · »Download« · skraldespand (36) |
+| **Valgt chip i cover-editoren** | grå flueben, aldrig rød fyldt |
+
 ## Valg, hvor to udseender var »rigtige« (begrundelse)
 - **Flisetitel 18 (telefon 16), sort Poppins** — mest brugt på Retning-siden og samme som »Hvad er idéen?«, som Ida peger på som det rigtige. Den lille versal-etiket (»HVEM TALER OPSLAGET TIL?«) er væk.
 - **Klip-etiket som lille versal** (ikke rød 17 / sort 15): følger reglen »flisen = etiket · én streg · indhold« og forsidens etiketter. Klip 1 var rød, Klip 2/3 sorte, Klip 1 på Fasthold grå — nu ens.
