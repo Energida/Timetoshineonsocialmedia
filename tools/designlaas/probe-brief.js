@@ -80,7 +80,7 @@ setTimeout(async function(){ try {
     SIDSTE="brief-former maalt";
     /* VEJEN TILBAGE FRA EN SKRIVESIDE ER OEJET VED TITLEN (v2089; Ida 18/9 kl. 14.50 fjernede en uoensket pille): oejet skal vaere synligt paa skrivesiderne, og ingen »Tilbage til forsiden«-pille */
     try { BRIEF_SIDE_AKTIV=1; BRIEF_TRIN_AKTIV=0; briefMbVis("skriv"); await vent(200);
-      var oeje=document.querySelector(".bt-oeje"); if(!oeje||!synlig(oeje)) FUND.push("OEJET (Briefoversigten) mangler paa skrivesiden (i baandet 18/9, i titelraekken over den roede flise fra 22/9)");
+      var oeje=document.querySelector(".bt-mere-tlf"); /* IKONRAEKKEN ER SAMLET UNDER ⋯ (Ida 4/11): Briefoversigten staar i menuen */ if(!oeje||!synlig(oeje)) FUND.push("OEJET (Briefoversigten) mangler paa skrivesiden (i baandet 18/9, i titelraekken over den roede flise fra 22/9)");
       var pille=[].find.call(document.querySelectorAll("#briefWrap button"),function(b){return /tilbage til forsiden/i.test(b.innerText||"")&&synlig(b)}); if(pille) FUND.push("PILLE »Tilbage til forsiden« staar paa skrivesiden — den er fjernet (Ida 18/9 kl. 14.50)"); } catch(e){ FUND.push("OEJE-proben fejlede: "+(e&&e.message)); }
     SIDSTE="oeje maalt";
   } catch(e){ FUND.push("SYNK-proben fejlede: "+(e&&e.message)); }

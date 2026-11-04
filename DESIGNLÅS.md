@@ -1,3 +1,20 @@
+## HÅRD REGEL · 4. november · KONTROL AF ALT, FØR DET BYGGES — OG HVERT ELEMENT HAR FASTE MÅL (Ida 4/11: »få styr på designlåsen, så afstande fx over disse chips er ens … skriv i låsen at der skal laves en kontrol af ALT inden det bygges, og skriv højder, farver, fonte og størrelser ind på alt, også knapper«)
+1. **Kontrollen kommer FØR bygning og FØR et bud sendes.** Hvert element på hele siden måles (højde, bredde, skrift, størrelse, vægt, farve, kant, radius, indre luft, afstand over og under) mod MÅLKORTET nedenfor. En afvigelse er en fejl, ikke smag. Hele siden ses i alle tilstande (tom, udfyldt, redigér) på 390 OG 1440 — ikke kun det, der er rørt.
+2. **Intet element findes uden et mål i målkortet.** Er der et nyt element, skrives målet først, derefter bygges det.
+3. **Samme ting = samme mål overalt** (b2b og admin; computer og telefon hver for sig). Ét tal pr. slags afstand — aldrig »10 her og 12 dér«.
+4. **Porten måler målene.** Indtil proben `probe-maal.js` findes, følger en målerapport (før/efter, antal elementer, antal afvigelser) hver ændring, og den skrives i én linje til Ida: »Mål tjekket: N elementer, 0 afvigelser.« Uden den linje er noget ikke færdigt.
+5. **Fund af en afvigelse = ret ALLE tvillinger i samme omgang** (tvillingetjek), ikke kun den, Ida fandt.
+
+**MÅLKORT (målt i appen 4/11; afvigelser rettes til disse, ikke omvendt). Fuld tabel for alle elementer skrives ind af målingen 4/11 og står i `MÅLKORT.md`.**
+- **Flise (.sk-q):** hvid · radius 20 · indre luft 18 øverst/nederst, 20 siderne · afstand mellem fliser **10** (briefen står i dag på 12 → rettes) · skygge `--mb-skygge`.
+- **Etiket (sektion/flise):** Poppins 10 · versal · bogstavafstand 1,5 · #9A9590.
+- **Afstand overskrift → første indhold:** **16** på ALLE flader (Hjem, briefen, Story). Et spørgsmåls titel og dets chips/felt står altid med samme afstand — aldrig 14 i den ene flise og 22 i den næste.
+- **Chip:** højde **36** · Poppins 13/400 · tekst #6F6B66 · ramme 1 px #DEDAD4 · radius 999 · vandret luft 16 · hvid flade · afstand mellem chips 8 · én linje.
+- **Felt (.sk-input):** Poppins 13/400 · radius 14 · ramme 1 px #DEDAD4 · luft 10/12 · hvid. Mikrofonen inde i feltet, grå.
+- **Knapper:** pille (radius 999). Rød = gør noget færdigt, hvid tekst. Grå = hvid flade, 1 px #DEDAD4, tekst #6F6B66. Højde: ikon-/chip-/lille knap **36**, status/dropdown **40**, knap i ark/popup **44**, rød primær på tilføj-felt **44**. Skrift 12–13/400. Ingen sort hover.
+- **Hjem:** overskrift→flise 16 · flise→flise 10 · sektion→sektion 24 · flise radius 20 · overskrifter 16 høje (også »Se alle«).
+- **Skrift:** Poppins 300/400, aldrig fed; Didot kun i heroens titel. Farver: rød #FC2404, hvid, #1A1A1A, #6F6B66, #9A9590, #DEDAD4, side #FAF9F5.
+
 ## HÅRD REGEL · 2. november · ALTID »INDHOLDSSØJLER«, ALDRIG BARE »SØJLER« (Ida 2/11: »der må aldrig bare stå søjler, det er også en fejl du tit laver. det skal altid være indholdssøjler«)
 På ALLE flader (app, b2b, admin, bud, mockups, mails, chat til Ida) hedder det **indholdssøjler** / **indholdssøjle** — aldrig »søjler«, »søjle« eller »søjlekort« alene. Gælder overskrifter, etiketter, knapper, hjælpetekst og mine egne beskeder. Står der »søjle« som del af et sammensat ord, skrives det ud (»indholdssøjle-chips«). Tilføjet også til reglen om navnene nedenfor.
 
@@ -12,6 +29,8 @@ En række chips ombrydes ALDRIG til to linjer. Er der flere, end der er plads ti
 **Undtagelse (Ida 2/11: »dette gælder ikke coveret«):** chips i coveret (hero) på briefoversigten må ombrydes, men nederste række er aldrig den korteste (rækkerne fyldes nedefra).
 **Chips har ALDRIG baggrundsfarve (Ida 2/11: »chips må aldrig have baggrundsfarve«):** hvid flade, grå ramme, grå tekst — også den valgte (mørkere grå ramme, aldrig fyldt) og chips, der står for en samling, søjle eller farve. På et foto (cover) er chippen gennemsigtig med hvid streg.
 **Undtagelse (Ida 2/11: »kunne chipsen ikke bare blive rød?« → »Hele chippen fyldt rød«):** den VALGTE chip i Idébankens søjlerække (og Alt/Idéer/Billeder/Video over væggen) er fyldt rød med hvid tekst; alle andre chips er uændret hvide med grå ramme. Gælder kun valgt-tilstanden i filterrækker i Idébanken — øvrige chips har stadig aldrig baggrundsfarve.
+
+## v3153 · 4. november · Designpas: MÅLKORT + probe-maal i porten · briefens sider ens (spørgsmålsfliser, felter, chips, plus-chips 6 px, knapcentrering) · Rediger er eneste vej ind i briefen (oversigten altid låst; fakta kun udfyldt) · ikonrækken samlet i ⋯ · titlen kan rettes inde i briefen · kommentarfelt i højre side, mikrofon inde i feltet · hook-flisen »Hvad skal få kunden til at stoppe op?« · Story: lys upload-placeholder, stiplet ramme/skyder kun ved valgt tekst · dæk over gammel side ved sideskift · pil som mus over heroen
 
 ## v3152 · 4. november · En story åbner altid på storysiden (aldrig på en tom forside, også med gammelt indhold) · titlen i coveret løftet 14 px, så halerne på g og y ikke går ned over arkets kant (computer og telefon)
 
