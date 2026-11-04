@@ -152,6 +152,60 @@ async function maalHjem(vent){
   var sb0=rod.querySelector(".hpt-h > .hu-sek"), st=rod.querySelector(".hu-strib-rk .hu-strib"); if(sb0&&st){ N++; var dd=Math.abs(sb0.getBoundingClientRect().top-st.getBoundingClientRect().top); if(dd>1) fejl("HJEM: højre kolonnes første overskrift flugter ikke med datofliserne ("+Math.round(dd)+" px forskel)"); }
   var pl=[].slice.call(rod.querySelectorAll(".hu-strib-rk > .hu-pil")); N++; if(pl.length!==2||pl.some(function(b){var r=b.getBoundingClientRect();return Math.round(r.width)!==32||Math.round(r.height)!==32})) fejl("HJEM: pilene skal være to runde 32 px knapper ved datofliserne");
 }
+async function maalForloeb(vent){
+  /* FORLØBSSIDEN = BUD 1 (Ida 4/11 »implementer bud 1«): én stor flise for det åbne modul (sort titel 18/telefon 16, antal 12, rød knap 44), SENERE-rækker 64 (dæmpede, 1 px #E3E2DE, ingen skygge), FÆRDIGE-rækker, sektionsetiket 10 versal, 32 under heroen, 24 mellem sektioner, 10 mellem fliser; ingen rød titel/kant/stribe; NÆSTE SKRIDT/Lektioner set/Opgaver er væk */
+  var idag=datoDK(); var L=function(m,n,v){var a=[];for(var i=1;i<=n;i++)a.push({id:m+"-"+i,titel:"Lektion "+m+"."+i,video:v===false?"":"x.mp4"});return a;};
+  CURRENT_DEF=Object.assign({},CURRENT_DEF||{},{type:"kursus",forloeb:"YOU GOT THIS"});
+  var scen=[["åben",[["Modul 0 · Introduktion til forløbet",L(1,5)],["Modul 1 · Mennesket",L(2,6,false)],["Modul 2 · Energibanken",L(3,4,false)],["Modul 3 · Hvorfor er du, som du er",L(4,4)]],{"1":0,"2":0,"3":6,"4":14},[]],
+            ["flere",[["Modul 0 · Introduktion til forløbet",L(1,5)],["Modul 1 · Mennesket",L(2,6)],["Modul 2 · Energibanken",L(3,4)],["Modul 3 · Hvorfor er du, som du er",L(4,4)]],{"1":0,"2":0,"3":0,"4":5},["1-1","1-2","1-3","1-4","1-5"]]];
+  for(var si=0;si<scen.length;si++){
+    TRIN="forløb "+scen[si][0];
+    KURSUS_MODULER.splice.apply(KURSUS_MODULER,[0,KURSUS_MODULER.length].concat(scen[si][1].map(function(m){return {titel:m[0],lektioner:m[1]};})));
+    window.pubErPubliceret=function(){return true;}; YGT_START=idag; Object.assign(YGT_DAG,scen[si][2]); KURSUS_SET={}; scen[si][3].forEach(function(i){KURSUS_SET[i]=true;}); OB_SKEMA=true;
+    showTab(12); try{renderKursusHjem();}catch(e){} await vent(900);
+    var rod=document.getElementById("forloebTidslinje"); if(!rod||!rod.querySelector(".ftl2")){ fejl("FORLØB: bud 1-listen (.ftl2) findes ikke"); return; }
+    var skr=document.getElementById("screen12").innerText;
+    N++; if(/Næste skridt|Lektioner set|Opgaver\s*\d|NÆSTE SKRIDT/i.test(skr)) fejl("FORLØB: Næste skridt / Lektioner set / Opgaver står stadig på siden");
+    /* sektionsetiketter */
+    var seks=[].slice.call(rod.querySelectorAll(".ftl2-sek")).filter(synlig);
+    seks.forEach(function(e,i){ var cs=getComputedStyle(e), t=e.querySelector("span"), ts=getComputedStyle(t), r=e.getBoundingClientRect();
+      er("FORLØB sektionsetiket", t, Math.round(r.height)===16&&px(ts.fontSize)===10&&ts.textTransform==="uppercase"&&rgb(ts.color)===G3&&ts.fontWeight==="400"&&px(ts.letterSpacing)===1.5, "h"+Math.round(r.height)+" "+ts.fontSize+" "+ts.color+" ls"+ts.letterSpacing+" (skal 16 · 10 versal · #9A9590 · 1,5)");
+      var nx=e.nextElementSibling; if(nx){ var d=Math.round(nx.getBoundingClientRect().top-r.bottom); er("FORLØB etiket→flise", e, Math.abs(d-16)<=1, "afstand "+d+" (skal 16)"); }
+      if(i>0){ var pv=e.previousElementSibling, d2=Math.round(r.top-pv.getBoundingClientRect().bottom); er("FORLØB sektion→sektion", e, Math.abs(d2-24)<=1, "afstand "+d2+" (skal 24)"); } });
+    /* 32 under heroen */
+    var hero=document.querySelector("#screen12 .mb-baand"), foerst=[].slice.call(document.getElementById("screen12").querySelectorAll("#forloebBento > *, #forloebTidslinje > .ftl2 > *")).filter(synlig)[0];
+    if(hero&&foerst){ var dh=Math.round(foerst.getBoundingClientRect().top-hero.getBoundingClientRect().bottom)+28; /* arket ligger 28 px over båndet */ er("FORLØB luft under heroen", foerst, Math.abs(dh-32)<=1, "afstand "+dh+" (skal 32)"); }
+    /* den store flise */
+    var st=rod.querySelector(".ftl2-stor"); N++; if(!st) fejl("FORLØB: den åbne modul er ikke en stor flise");
+    if(st){ var cs=getComputedStyle(st), r=st.getBoundingClientRect(), hv=st.querySelector(".ftl2-hoved"), hs=getComputedStyle(hv);
+      er("FORLØB stor flise", st, px(cs.borderTopLeftRadius)===20&&rgb(cs.backgroundColor)==="rgb(255,255,255)"&&px(cs.borderTopWidth)===0&&cs.boxShadow!=="none"&&px(hs.paddingTop)===18&&px(hs.paddingLeft)===20&&px(hs.paddingRight)===20, "r"+cs.borderTopLeftRadius+" luft "+hs.padding+" kant "+cs.borderTopWidth+" skygge "+(cs.boxShadow==="none"?"ingen":"ja")+" (skal 20 · 18/20 · hvid · skygge · ingen kant)");
+      var tg=st.querySelector(".ftl2-tag"), tgs=getComputedStyle(tg); er("FORLØB ÅBEN-etiket", tg, px(tgs.fontSize)===10&&tgs.textTransform==="uppercase"&&rgb(tgs.color)===G3&&px(tgs.letterSpacing)===1.5&&/ÅBEN/i.test(tg.textContent), tgs.fontSize+" "+tgs.color+" ls"+tgs.letterSpacing+" (skal 10 versal #9A9590 1,5)");
+      var ti=st.querySelector(".ftl2-n"), tis=getComputedStyle(ti); er("FORLØB modultitel", ti, px(tis.fontSize)===(TLF?16:18)&&tis.fontWeight==="400"&&rgb(tis.color)===SORT&&/Poppins/.test(tis.fontFamily), tis.fontSize+"/"+tis.fontWeight+" "+tis.color+" (skal "+(TLF?16:18)+"/400 #1A1A1A — aldrig rød)");
+      var an=st.querySelector(".ftl2-a"), ans=getComputedStyle(an); er("FORLØB antal lektioner", an, px(ans.fontSize)===12&&rgb(ans.color)===G3&&/lektion/.test(an.textContent), ans.fontSize+" "+ans.color+" (skal 12 · #9A9590)");
+      var kn=st.querySelector(".ftl2-knap"), ks=getComputedStyle(kn), kr=kn.getBoundingClientRect();
+      er("FORLØB knap", kn, Math.round(kr.height)===44&&rgb(ks.backgroundColor)===RED&&rgb(ks.color)==="rgb(255,255,255)"&&px(ks.borderTopLeftRadius)>=22&&px(ks.fontSize)===13&&ks.fontWeight==="400", "h"+Math.round(kr.height)+" "+ks.backgroundColor+" "+ks.fontSize+" (skal 44 · rød · hvid · 13/400 pille)");
+      if(TLF){ N++; if(Math.abs(kr.width-(r.width-40))>2) fejl("FORLØB knap tlf: knappen er "+Math.round(kr.width)+" bred, skal fylde flisen ("+Math.round(r.width-40)+")"); var tb=ti.getBoundingClientRect(); N++; if(kr.top<tb.bottom) fejl("FORLØB knap tlf: knappen står ikke under titlen"); }
+      else { N++; var rg=document.createRange(), tn=[].find.call(kn.childNodes,function(n){return n.nodeType===3;}); rg.selectNodeContents(tn); var tr=rg.getBoundingClientRect(); var dx=(tr.left+tr.right)/2-(kr.left+kr.width/2), dy=(tr.top+tr.bottom)/2-(kr.top+kr.height/2); if(Math.abs(dx)>1.5||Math.abs(dy)>1) fejl("FORLØB knap: teksten står "+Math.round(dx*10)/10+"/"+Math.round(dy*10)/10+" fra midten"); var kt=Math.round(kr.top+kr.height/2-(r.top+r.height/2)); if(Math.abs(kt)>1) fejl("FORLØB knap: knappen er ikke lodret midt i flisen ("+kt+" px)"); var kh=Math.round(r.right-kr.right); if(Math.abs(kh-20)>1) fejl("FORLØB knap: knappen står "+kh+" fra højre kant (skal 20)"); } }
+    /* rækker: SENERE (låst) og FÆRDIGE */
+    [].slice.call(rod.querySelectorAll(".ftl2-rk")).filter(synlig).forEach(function(e){ var cs=getComputedStyle(e), r=e.getBoundingClientRect();
+      er("FORLØB række", e, Math.round(r.height)>=64&&Math.round(r.height)<=100&&px(cs.borderTopLeftRadius)===20&&rgb(cs.backgroundColor)==="rgb(250,249,245)"&&px(cs.borderTopWidth)===1&&rgb(cs.borderTopColor)==="rgb(227,226,222)"&&cs.boxShadow==="none", "h"+Math.round(r.height)+" r"+cs.borderTopLeftRadius+" "+cs.backgroundColor+" kant "+cs.borderTopWidth+" "+cs.borderTopColor+" skygge "+cs.boxShadow.slice(0,20)+" (skal ≥64 · 20 · #FAF9F5 · 1 px #E3E2DE · ingen skygge)");
+      if(e.classList.contains("laast")&&!e.querySelector(".ftl2-a")){ N++; if(Math.round(r.height)!==64) fejl("FORLØB låst række uden antal er "+Math.round(r.height)+" høj (skal 64)"); }
+      var n=e.querySelector(".ftl2-n"), ns=getComputedStyle(n); er("FORLØB række-titel", n, px(ns.fontSize)===15&&ns.fontWeight==="400"&&rgb(ns.color)===G2, ns.fontSize+" "+ns.color+" (skal 15 · #6F6B66)");
+      var a=e.querySelector(".ftl2-a"); if(a){ var as=getComputedStyle(a); er("FORLØB række-antal", a, px(as.fontSize)===12&&rgb(as.color)===G3, as.fontSize+" "+as.color+" (skal 12 · #9A9590)"); }
+      var h=e.querySelector(".ftl2-h > span"), hs2=getComputedStyle(h); er("FORLØB række-højre", h, px(hs2.fontSize)===12&&rgb(hs2.color)===G2, hs2.fontSize+" "+hs2.color+" (skal 12 · #6F6B66)");
+      var rr=h.parentElement.getBoundingClientRect(); N++; if(Math.abs((r.right-rr.right)-21)>2) fejl("FORLØB række: højre indhold står "+Math.round(r.right-rr.right)+" fra kanten (skal ~21)");
+      var yy=Math.abs((r.top+r.height/2)-(h.getBoundingClientRect().top+h.getBoundingClientRect().height/2)); N++; if(yy>1.5) fejl("FORLØB række: højre tekst er ikke lodret midt ("+Math.round(yy*10)/10+")");
+    });
+    var rk=[].slice.call(rod.querySelectorAll(".ftl2 > .ftl2-rk")).filter(synlig); rk.forEach(function(e,i){ var nx=e.nextElementSibling; if(nx&&nx.classList.contains("ftl2-rk")){ var d=Math.round(nx.getBoundingClientRect().top-e.getBoundingClientRect().bottom); er("FORLØB række→række", nx, Math.abs(d-10)<=1, "afstand "+d+" (skal 10)"); } });
+    /* ALDRIG RØD TITEL, KANT ELLER STRIBE på siden (undtagen knappen og markørerne) */
+    [].slice.call(rod.querySelectorAll("*")).filter(synlig).forEach(function(e){ if(e.closest(".ftl2-knap, .lks-fb, .lks-num, svg")||e.tagName==="svg") return; var cs=getComputedStyle(e); var tekst=[].some.call(e.childNodes,function(n){return n.nodeType===3&&n.textContent.trim();});
+      N++; if(tekst&&rgb(cs.color)===RED) fejl("FORLØB: rød tekst »"+txt(e)+"« ["+kl(e)+"] — rød er aldrig titel");
+      ["Top","Right","Bottom","Left"].forEach(function(k){ if(px(cs["border"+k+"Width"])>0&&cs["border"+k+"Style"]!=="none"&&rgb(cs["border"+k+"Color"])===RED&&!e.classList.contains("lks-tom")) fejl("FORLØB: rød kant ("+k+") på ["+kl(e)+"]"); }); });
+    N++; if(rod.querySelector(".ftl2-stor")&&/rgb\(252, ?36, ?4\)/.test(getComputedStyle(rod.querySelector(".ftl2-stor")).boxShadow)) fejl("FORLØB: den store flise har rød skygge/kant");
+  }
+  /* FOLD: trykket på den store flise åbner lektionslisten, og knappen går ind i den første ikke-sete lektion */
+  TRIN="forløb fold"; var h0=document.querySelector("#forloebTidslinje .ftl2-hoved"); if(h0){ h0.click(); await vent(300); N++; if(!document.querySelector("#forloebTidslinje .ftl2-stor .lks-lek")) fejl("FORLØB: tryk på den store flise åbner ikke lektionslisten"); h0=document.querySelector("#forloebTidslinje .ftl2-hoved"); h0.click(); await vent(200); N++; if(document.querySelector("#forloebTidslinje .ftl2-stor .lks-lek")) fejl("FORLØB: andet tryk lukker ikke lektionslisten"); }
+}
 function maalHero(){
   if(TLF) return; var mn=document.querySelector("#screen7 .mb-baand .mb-navn"); if(!mn) return;
   [mn, mn.querySelector(".mb-titel-ord")].forEach(function(e){ if(!e) return; N++; var c=getComputedStyle(e).cursor; if(c!=="default"&&c!=="auto") fejl("HERO-MUS: musen over heroens titel er »"+c+"« (skal pilen)"); });
@@ -179,6 +233,7 @@ setTimeout(async function(){ try {
   for(var side=0; side<4; side++){ BRIEF_SIDE_AKTIV=side; BRIEF_TRIN_AKTIV=0; briefMbVis("skriv"); await vent(250); TRIN="side"+side; document.querySelectorAll("#briefWrap textarea").forEach(function(x){x.classList.add("mb-felt")}); maalSide(); maalHero(); }
   TRIN="hjem"; try{ await maalHjem(vent); }catch(e){ fejl("hjem-trin: "+(e&&e.message)); }
   TRIN="story"; try{ IDEER.push({id:"mk2",titel:"Story uden type",soejle:"Story",type:"Story",status:"Planlagt",dato:"2026-11-12",brief:{format:"Story",storyserie:[{t:"",q:"",s:["",""],m:""}]}}); openBriefSide("mk2"); await vent(1500); maalStory(); showTab(8); await vent(900); maalStory.kalender&&0; N++; if(document.querySelector(".ss-stknap")) fejl("kalender: story-flisen har stadig statuspil"); }catch(e){ fejl("story-trin: "+(e&&e.message)); }
+  TRIN="forløb"; try{ await maalForloeb(vent); }catch(e){ fejl("forløb-trin: "+(e&&e.message)); }
   clearTimeout(VAGT);
   if(FUND.length){ FUND.forEach(function(f){ console.log("SELE MAAL FEJL: "+f); }); console.log("SELE MAAL IKKE OK: "+FUND.length+" afvigelser af "+N+" målinger paa "+innerWidth); }
   else console.log("SELE MAAL OK: "+N+" målinger paa "+innerWidth+", 0 afvigelser");

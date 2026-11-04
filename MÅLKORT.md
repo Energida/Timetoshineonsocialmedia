@@ -42,3 +42,10 @@ Kilden i koden er **MÅLKORT-BLOKKEN** sidst i det første `<style>` i `index.ht
 - **Skillelinje mellem delene i en klipflise** (ikke kun én pr. flise): CLAUDE.md siger både »forskelligt indhold = skillelinje« og at to streger i samme flise ikke må ske. Tolket som: streg mellem forskelligt indhold, aldrig to i træk. **Ida skal bekræfte**, eller de tre dele (Tekst på skærmen / Det, man ser / Det, jeg siger) bliver hver sin flise.
 - **Bundknapper 40** (ikke 44): mest udbredt i briefens bundrække; 44 forbeholdt ark/popups.
 - **»Tilføj« med plus i Fakta-boksen** (`fb-pil-tilfoej`): ordet står i midten, plusset foran (Idas 17/9) — undtaget fra »gruppen i midten«.
+
+## Tilføjet 4/11 (forløbssiden = bud 1)
+| Element | Facit |
+|---|---|
+| **Sektionsetiket** (DIT FORLØB · SENERE · FÆRDIGE) | Poppins 10 / 400 · versal · bogstavafstand 1,5 · #9A9590 · 16 høj + hårlinje #DDDAD3 til højre · 16 til første flise · 24 fra sektion til sektion · første etiket 32 under heroen |
+| **Stor modulflise** (.ftl2-stor, kun det åbne modul) | hvid · radius 20 · luft 18/20 · skygge `--mb-skygge` · ingen kant · etiket ÅBEN 10 versal #9A9590 · titel Poppins **18** (telefon **16**) / 400 / **#1A1A1A (aldrig rød)** · antal lektioner 12 #9A9590 (4 under titlen) · rød pilleknap **44** (13/400, tekst i midten) yderst til højre, 20 fra kanten; telefon: knappen i fuld bredde under titlen |
+| **Tynd modulrække** (SENERE · FÆRDIGE) | #FAF9F5 · 1 px #E3E2DE · radius 20 · ingen skygge · mindst **64** høj · luft 20 · titel 15 #6F6B66 · antal 12 #9A9590 · højre: 12 #6F6B66 (»Åbner om N dage« + hængelås 16 / »Færdig« / »Åben«) · 10 mellem rækker |
