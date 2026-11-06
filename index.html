@@ -33748,6 +33748,15 @@ function pfFornavnForslag(d) {
     return n;
   } catch (e) { return ""; }
 }
+/* NAVNET FRA KØBET STÅR ALLEREDE I PROFILEN (Ida 6/11: »kunden skal ikke udfylde mere end nødvendigt«). Stripe-funktionen gemmer navnet (d.stripe_navn)
+   og, kun hvis Stripe faktisk gav et virksomhedsnavn, d.stripe_virksomhed_fundet. Ældre kunder har ingen af dem → intet forudfyldes (som før). */
+function pfStripeNavn(d) {
+  try {
+    const dele = String((d && d.stripe_navn) || "").trim().split(/\s+/).filter(Boolean);
+    if (dele.length < 2) return { fornavn: dele[0] || "", efternavn: "" };
+    return { fornavn: dele[0], efternavn: dele.slice(1).join(" ") };
+  } catch (e) { return { fornavn: "", efternavn: "" }; }
+}
 /* EN FORENINGSKODE DELES AF MANGE BUTIKKER (3/11): foreningens navn er ikke forretningens navn — hver butik skriver sit eget */
 function pfForening(d) { try { return !!((d && d.forening) || (VIRKSOMHEDSKODER[currentKode] && VIRKSOMHEDSKODER[currentKode].forening)); } catch (e) { return false; } }
 async function profilFlowStart() {
@@ -33758,8 +33767,8 @@ async function profilFlowStart() {
   const kollega = !!(butik && butik.udfyldt_af && butik.udfyldt_af !== mail);   /* butikken er beskrevet af en anden = en kollega, der kommer ind bagefter */
   const k = pfKladdeHent();
   PF = { trin: 1, kollega: kollega, ygt: (typeof erYgtTeam === "function" && erYgtTeam()), mail: mail,
-    f: Object.assign({ navn: pfFornavnForslag(d), efternavn: "", dag: "", mdr: "", aar: "", ejer: "", rolle: "",
-      butik_navn: String((butik && butik.butik_navn) || (pfForening(d) ? "" : (d.studioNavn || d.virksomhed)) || "").replace(/\s*studio$/i, ""), adresse: "", postnr: "", by: "", cvr: "",
+    f: Object.assign({ navn: pfFornavnForslag(d) || pfStripeNavn(d).fornavn, efternavn: pfStripeNavn(d).efternavn, dag: "", mdr: "", aar: "", ejer: "", rolle: "",
+      butik_navn: String((butik && butik.butik_navn) || ((pfForening(d) && !d.stripe_virksomhed_fundet) ? "" : (d.studioNavn || d.virksomhed)) || "").replace(/\s*studio$/i, ""), adresse: "", postnr: "", by: "", cvr: "",
       branche: (butik && butik.branche) || "", branche_andet: (butik && butik.branche_andet) || "", forretningstype: (butik && butik.forretningstype) || d.forretningstype || "",
       inviter: "", kolleger: [{ navn: "", mail: "" }, { navn: "", mail: "" }] }, (k && k.f) || {}) };
   while (PF.f.kolleger.length < 2) PF.f.kolleger.push({ navn: "", mail: "" });
@@ -63520,7 +63529,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "3155";
+const APP_VERSION = "3156";
 const APP_BYGGET = "3. november";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_BYGGET + " · " + APP_VERSION; } catch (e) {} });
 let NY_VERSION_KLAR = false;

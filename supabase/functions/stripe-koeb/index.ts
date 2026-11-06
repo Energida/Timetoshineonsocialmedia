@@ -21,8 +21,12 @@
 // 4. SERVICE-ROLE: JA, men foerst EFTER verificeret underskrift.
 // 5. RAEKKEVIDDE: virksomhedskoder · skema_svar (kunde_def + kunde_koder) ·
 //    contacts · auth (kun invitation, ALDRIG et kodeord).
+//    6/11 TILFOEJET: Stripes API (kun LAESNING af den ene session, med en noegle
+//    der kun maa laese: STRIPE_LAES_NOEGLE, valgfri) og Brevo (BREVO_API_KEY).
 // 6. OMKOSTNING: ingen direkte. Ingen AI-kald. Der sendes én invitationsmail
-//    pr. koeb via Supabase.
+//    pr. koeb via Supabase, og 6/11 én koebsmail til Ida via Brevo (Free, delt
+//    300 mails/dag). Modtageren er FAST (Kontakt@energida.dk) — kalderen kan ikke
+//    vaelge den. Mailen er best-effort: fejler den, roeres koebet ikke.
 //
 // ---------------------------------------------------------------------------
 // §6 · SIGNUP OG INVITATION — DEN VIGTIGSTE REGEL I FILEN
@@ -115,6 +119,95 @@ function kodeAf(navn: string) {
   return stamme + hale;
 }
 
+// --- KOEBSMAILEN TIL IDA (6/11) ------------------------------------------
+// Ida: »en e-mail hver gang der er en, der gennemfoerer et koeb« — ogsaa ved 0 kr.
+// med rabatkode (dem sender Stripe ingen kvittering for). Mailen er BEST-EFFORT:
+// alt her staar i try/catch, og et svar paa Stripes leverance afhaenger aldrig af den.
+// Modtageren er fast. Tegningen: Artifact Fcfyg1eTLf1gDpCKAhp6KV.
+function esk(x: unknown) {
+  return String(x ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
+function dkTid(unix: number) {
+  const d = new Date((Number.isFinite(unix) && unix > 0 ? unix : Date.now() / 1000) * 1000);
+  const dato = new Intl.DateTimeFormat("da-DK", { timeZone: "Europe/Copenhagen", weekday: "short", day: "numeric", month: "long", year: "numeric" }).format(d);
+  const tid = new Intl.DateTimeFormat("da-DK", { timeZone: "Europe/Copenhagen", hour: "2-digit", minute: "2-digit", hour12: false }).format(d).replace(":", ".");
+  return (dato.charAt(0).toUpperCase() + dato.slice(1)).replace(" den ", " ") + " · kl. " + tid;
+}
+
+// Rabatkoden staar IKKE i checkout.session.completed — den skal hentes. Kraever en noegle,
+// der KUN maa laese (STRIPE_LAES_NOEGLE). Mangler den, eller svarer Stripe ikke som
+// forventet, udelades linjen. IKKE MAALT paa et rigtigt koeb.
+async function hentRabatkode(sessionId: string) {
+  const nk = Deno.env.get("STRIPE_LAES_NOEGLE");
+  if (!nk || !sessionId) return { hentet: false, kode: "" };
+  try {
+    const r = await fetch(
+      "https://api.stripe.com/v1/checkout/sessions/" + encodeURIComponent(sessionId) + "?expand[]=discounts.promotion_code",
+      { headers: { Authorization: "Bearer " + nk } },
+    );
+    if (!r.ok) return { hentet: false, kode: "" };
+    const j = await r.json();
+    const liste = Array.isArray(j?.discounts) ? j.discounts : [];
+    for (const x of liste) {
+      const k = x?.promotion_code?.code;
+      if (k) return { hentet: true, kode: String(k) };
+    }
+    return { hentet: true, kode: "" };
+  } catch { return { hentet: false, kode: "" }; }
+}
+
+// Beloebet i hele kroner (Stripes amount_total er i oere), dansk formatering: »7.995 kr.«
+function koebBelob(s: Record<string, any>) {
+  const kr = Math.round(Number(s?.amount_total ?? 0) / 100);
+  return (Number.isFinite(kr) ? kr : 0).toLocaleString("da-DK") + " kr.";
+}
+
+async function sendKoebsmail(o: {
+  produkt: string; belob: string; tidspunkt: string; rabat: { hentet: boolean; kode: string };
+  navn: string; virksomhed: string; email: string; telefon: string; kode: string; test: boolean; eksisterende: boolean;
+}) {
+  try {
+    const noegle = Deno.env.get("BREVO_API_KEY");
+    if (!noegle) return false;
+    const flise = (etiket: string, indhold: string) =>
+      '<div style="background:#FFFFFF;border-radius:20px;padding:20px;margin:0 0 10px 0;box-shadow:0 0 4px rgba(46,44,41,.10),0 0 24px rgba(46,44,41,.12);">'
+      + '<div style="font-size:10px;letter-spacing:1.5px;color:#9A9590;text-transform:uppercase;">' + esk(etiket) + '</div>'
+      + '<div style="border-top:1px solid #E3E2DE;margin:10px 0 12px 0;"></div>' + indhold + '</div>';
+    const raekke = (k: string, v: string) =>
+      '<table role="presentation" width="100%" style="font-size:13px;margin:0 0 8px 0;"><tr><td style="color:#6F6B66;">' + esk(k)
+      + '</td><td style="text-align:right;color:#1A1A1A;">' + esk(v || "—") + '</td></tr></table>';
+    const html =
+      '<div style="background:#FAF9F5;padding:24px 16px;font-family:Poppins,Arial,sans-serif;color:#1A1A1A;">'
+      + '<div style="max-width:520px;margin:0 auto;">'
+      + flise(o.test ? "Nyt køb · testkøb" : "Nyt køb",
+          '<div style="font-size:18px;margin:0 0 6px 0;">' + esk(o.produkt) + '</div>'
+          + '<div style="font-size:13px;color:#6F6B66;margin:0 0 4px 0;">' + esk(o.belob) + '</div>'
+          + '<div style="font-size:13px;color:#6F6B66;margin:0 0 4px 0;">' + esk(o.tidspunkt) + '</div>'
+          + (o.rabat.hentet ? '<div style="font-size:13px;color:#6F6B66;">Rabatkode: ' + esk(o.rabat.kode || "Ingen") + '</div>' : ''))
+      + flise("Kunden",
+          raekke("Navn", o.navn) + raekke("Virksomhed", o.virksomhed) + raekke("E-mail", o.email) + raekke("Telefon", o.telefon))
+      + flise("Adgang",
+          (o.eksisterende
+            ? '<div style="font-size:13px;color:#6F6B66;margin:0 0 4px 0;">E-mailen findes allerede som kunde. Der er ikke oprettet noget nyt og ikke sendt en ny invitation.</div>'
+            : raekke("Kundens kode", o.kode) + '<div style="font-size:13px;color:#6F6B66;margin:8px 0 0 0;">Invitationen er sendt til kunden.</div>')
+          + '<div style="margin:16px 0 0 0;"><a href="https://admin.energida.dk" style="display:inline-block;background:#FC2404;color:#FFFFFF;text-decoration:none;font-size:13px;line-height:44px;height:44px;padding:0 24px;border-radius:999px;">Åbn Energida</a></div>')
+      + '</div></div>';
+    const r = await fetch("https://api.brevo.com/v3/smtp/email", {
+      method: "POST",
+      headers: { "api-key": noegle, "Content-Type": "application/json", Accept: "application/json" },
+      body: JSON.stringify({
+        sender: { name: "Energida", email: "Kontakt@energida.dk" },
+        to: [{ email: "Kontakt@energida.dk" }],
+        subject: (o.test ? "Testkøb · " : "Nyt køb · ") + o.produkt + " · " + o.belob,
+        htmlContent: html,
+        tags: ["koebsmail"],
+      }),
+    });
+    return r.ok;
+  } catch { return false; }
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
   if (req.method !== "POST") return svar({ fejl: "Brug POST." }, 405);
@@ -198,7 +291,12 @@ Deno.serve(async (req) => {
     if (error) return svar({ fejl: "Kunne ikke slå e-mailen op." }, 500);
     const brugere = data?.users ?? [];
     if (brugere.some((u) => String(u.email ?? "").toLowerCase() === email)) {
-      return svar({ ok: true, allerede: email, oprettet: false }, 200);
+      // KOEBSMAIL (6/11): et gennemfoert koeb fra en kendt e-mail faar Ida stadig besked om.
+      const mailSendt = await sendKoebsmail({
+        produkt: erYGT ? "You Got This" : "Content Studio", belob: koebBelob(s), tidspunkt: dkTid(Number(s.created)),
+        rabat: await hentRabatkode(String(s.id ?? "")), navn, virksomhed, email, telefon, kode: "", test: erTest, eksisterende: true,
+      });
+      return svar({ ok: true, allerede: email, oprettet: false, koebsmail: mailSendt }, 200);
     }
     if (brugere.length < 200) break;
   }
@@ -224,6 +322,11 @@ Deno.serve(async (req) => {
     pakke: erYGT ? pakke : undefined,           // YOU GOT THIS · DETAIL = lektioner + Drejebog + Værktøjskassen
     forening: forening || undefined,            // fx Ringkøbing Handelsforening
     ental: true,
+    // 6/11 (Ida: kunden skal ikke udfylde mere end noedvendigt): profilen i appen forudfylder efternavn og
+    // forretningens navn fra koebet. stripe_virksomhed_fundet er KUN sat, naar Stripe gav et rigtigt
+    // virksomhedsnavn — ikke naar navnet er personens eget (noedspor) eller »Ny kunde«.
+    stripe_navn: navn || undefined,
+    stripe_virksomhed_fundet: (virkFundet && virkKilde.indexOf("noedspor") < 0) ? true : undefined,
     // skema: IKKE sat (28/9). »skema: false« betyder i appen »spoergeskemaet er SLAAET FRA
     // for kunden« (kundekortets flueben) — saa sprang rejsen startskemaet over, og
     // lektionslaasen virkede ikke for nogen, der koebte via Stripe.
@@ -361,8 +464,16 @@ Deno.serve(async (req) => {
     }
   }
 
+  // --- 7) KOEBSMAILEN TIL IDA (6/11) ---------------------------------------
+  // Efter ALT det vigtige er gjort og laast: et oprettet koeb faar Ida besked om, ogsaa 0 kr.
+  // Best-effort — svaret til Stripe aendres ikke af, om mailen kom frem (se koebsmail i svaret).
+  const mailSendt = await sendKoebsmail({
+    produkt: erYGT ? "You Got This" : "Content Studio", belob: koebBelob(s), tidspunkt: dkTid(Number(s.created)),
+    rabat: await hentRabatkode(String(s.id ?? "")), navn, virksomhed, email, telefon, kode, test: erTest, eksisterende: false,
+  });
+
   // virk_kilde er ikke pynt: den er beviset for, HVOR virksomhedsnavnet kom fra.
   // Staar der "customer_details.name (noedspor)", fandt vi aldrig firmanavnet, og
   // kunden hedder nu det samme som personen. Det skal ses, ikke opdages senere.
-  return svar({ ok: true, oprettet: true, kartotek: kartotekOk, kode, produkt: erYGT ? "yougotthis" : "contentstudio", virksomhed_id: virksomhedId, laast: !!nyId, test: !!erTest, kontakt: kontaktOk, virk_kilde: virkKilde }, 200);
+  return svar({ ok: true, oprettet: true, kartotek: kartotekOk, kode, produkt: erYGT ? "yougotthis" : "contentstudio", virksomhed_id: virksomhedId, laast: !!nyId, test: !!erTest, kontakt: kontaktOk, virk_kilde: virkKilde, koebsmail: mailSendt }, 200);
 });
