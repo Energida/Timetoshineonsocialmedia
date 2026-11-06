@@ -33900,6 +33900,15 @@ async function pfNaeste() {
   await pfSlut();
 }
 async function pfSlut() {
+  /* ADGANGSKODEN ER PROFILENS SIDSTE SKRIDT, når kunden kom fra mailens link (Ida 6/11) — profilen står bag arket, til koden er gemt */
+  try {
+    if (localStorage.getItem("energida_skal_ny_kode") === "invitation") {
+      const knap = document.getElementById("pfNaeste"); if (knap) { knap.disabled = true; knap.textContent = "Gemmer …"; }
+      visNyAdgangskode(true);
+      await new Promise(function (klar) { window.addEventListener("energida-kode-gemt", klar, { once: true }); });
+      await new Promise(function (r) { setTimeout(r, 1300); });   /* arket står et øjeblik med »Gemt« og lukker selv */
+    }
+  } catch (e) {}
   const f = PF.f, inv = [];
   if (PF.ygt && !PF.kollega) {
     for (const c of f.kolleger) {
@@ -63529,7 +63538,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "3156";
+const APP_VERSION = "3157";
 const APP_BYGGET = "3. november";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_BYGGET + " · " + APP_VERSION; } catch (e) {} });
 let NY_VERSION_KLAR = false;
@@ -67044,10 +67053,10 @@ if (sb) {
       if (event === "SIGNED_OUT" && !window.__LOGUD_TRYK) { const d = new Date(); localStorage.setItem("energida_logud_grund", "Supabase loggede ud kl. " + String(d.getHours()).padStart(2, "0") + "." + String(d.getMinutes()).padStart(2, "0") + " " + d.getDate() + "/" + (d.getMonth() + 1) + " uden et tryk på Log ud (sidst fornyet " + (localStorage.getItem("energida_sidst_fornyet") || "ukendt").slice(11, 16) + ")"); }
     } catch (e) {}
     if (event === "PASSWORD_RECOVERY") { try { localStorage.setItem("energida_skal_ny_kode", "1"); } catch (e) {} visNyAdgangskode(); }   /* huskes, til koden er gemt (Ida 10/10: lukket eller genindlæst = stadig ikke inde) */
-    if ((event === "SIGNED_IN" || event === "INITIAL_SESSION") && session) { try { const skalK = localStorage.getItem("energida_skal_ny_kode"); if (skalK === "1" || skalK === "invitation") setTimeout(function () { try { visNyAdgangskode(skalK === "invitation"); } catch (e) {} }, 300); } catch (e) {} }
+    if ((event === "SIGNED_IN" || event === "INITIAL_SESSION") && session) { try { const skalK = localStorage.getItem("energida_skal_ny_kode"); if (skalK === "1") setTimeout(function () { try { visNyAdgangskode(false); } catch (e) {} }, 300); else if (skalK === "invitation") setTimeout(function () { try { kodeEfterProfil(session); } catch (e) {} }, 300); } catch (e) {} }
     /* Invitationen: samme skaerm, men den siger noget andet — hun har ikke en gammel
        kode at skifte fra. Flaget saettes foerst i dokumentet, se kommentaren dér. */
-    if (event === "SIGNED_IN" && window.__ENERGIDA_INVITATION) { window.__ENERGIDA_INVITATION = false; try { localStorage.setItem("energida_skal_ny_kode", "invitation"); } catch (e) {} visNyAdgangskode(true); }   /* INVITATIONEN HUSKES (krydstjekket 22/10, Hans): lukkede kunden fanen før koden var valgt, kom arket aldrig igen — og kunden stod uden kode */
+    if (event === "SIGNED_IN" && window.__ENERGIDA_INVITATION) { window.__ENERGIDA_INVITATION = false; try { localStorage.setItem("energida_skal_ny_kode", "invitation"); } catch (e) {} kodeEfterProfil(session); }   /* INVITATIONEN HUSKES (krydstjekket 22/10, Hans): lukkede kunden fanen før koden var valgt, kom arket aldrig igen — og kunden stod uden kode */
     if (event === "SIGNED_IN" || event === "SIGNED_OUT" || event === "USER_UPDATED") {
       const nyId = (session && session.user) ? session.user.id : null;
       if (nyId !== SIDSTE_BRUGER_ID) {
@@ -67056,6 +67065,35 @@ if (sb) {
       SIDSTE_BRUGER_ID = nyId;
     }
   });
+}
+/* PROFILEN FØR ADGANGSKODEN (Ida 6/11: »når jeg klikker på linket i mailen … kommer adgangskode stadig op som det første«). En NY kunde, der kommer fra mailens
+   link, udfylder profilen (navn og virksomhed står udfyldt) og vælger adgangskoden som SIDSTE skridt — pfSlut åbner arket og venter på, at koden er gemt.
+   REGLEN FRA 10/10 STÅR (ingen adgang uden valgt kode): profilen ligger på sin egen flade uden appen bag, og flaget »energida_skal_ny_kode = invitation« bliver,
+   til koden er gemt — genindlæses eller lukkes fanen midt i, kommer kunden tilbage til profilen (kladden), og kode-arket kommer, hvis profilen allerede er færdig.
+   SIKKERHEDSVAGT: åbner profilen ikke inden for 10 sekunder (admin, kunde der allerede har været igennem, fejl), åbner kode-arket som før — aldrig en kunde i appen uden kode. */
+function kodeProfilVentet(session) {
+  try {
+    if (window.__VELKOMST_SET) return false;
+    if (typeof DEPLOY !== "undefined" && DEPLOY === "crm") return false;
+    const u = (session && session.user) || null;
+    const md = (u && u.user_metadata) || {};
+    return !md.velkomst_set;
+  } catch (e) { return false; }
+}
+function kodeEfterProfil(session) {
+  if (document.getElementById("nyKodeBoks")) return;
+  if (!kodeProfilVentet(session)) { visNyAdgangskode(true); return; }
+  if (window.__KODE_VAGT) return;
+  const start = Date.now();
+  window.__KODE_VAGT = setInterval(function () {
+    try {
+      const flag = localStorage.getItem("energida_skal_ny_kode");
+      if (flag !== "invitation") { clearInterval(window.__KODE_VAGT); window.__KODE_VAGT = null; return; }   /* koden er valgt */
+      if (document.getElementById("nyKodeBoks")) return;
+      const profilAaben = !!document.getElementById("pfFlow");
+      if (!profilAaben && (velkomstSet() || Date.now() - start > 10000)) { clearInterval(window.__KODE_VAGT); window.__KODE_VAGT = null; visNyAdgangskode(true); }
+    } catch (e) {}
+  }, 1000);
 }
 function visNyAdgangskode(foersteGang) {
   if (document.getElementById("nyKodeBoks")) return;
@@ -67124,6 +67162,7 @@ async function gemNyAdgangskodeInd() {
   try { localStorage.removeItem("energida_skal_ny_kode"); } catch (e) {}
   try { adgangskodeValgtNoter(); } catch (e) {}
   m2.style.color = "#000000"; m2.textContent = "Gemt — du er logget ind.";
+  try { window.dispatchEvent(new Event("energida-kode-gemt")); } catch (e) {}   /* profilens sidste skridt venter på dette (pfSlut) */
   setTimeout(() => { const b = document.getElementById("nyKodeBoks"); if (b) b.remove(); }, 1200);
 }
 
@@ -70063,7 +70102,7 @@ async function renderDash() {
     try { husk = localStorage.getItem("energida_husk") || "1"; aktiv = sessionStorage.getItem("energida_aktiv") || ""; } catch(e) {}
     if (husk === "0" && !aktiv) { try { localStorage.setItem("energida_logud_grund", "»Behold mig logget ind« var slået fra ved sidste login"); } catch (e) {} await sb.auth.signOut({ scope: "local" }); showLogin(); dashLogudGrundVis(); return; }   /* KUN DENNE ENHED (Hinges Hus 29/9, MAALT: den delte bruger havde 0 sessioner efter moedet): signOut() uden scope er GLOBAL og smed den anden telefon ud midt i briefen — derfor »ikke gemt«. Alle log ud i appen er nu scope:"local". */
     try { sessionStorage.setItem("energida_aktiv", "1"); } catch(e) {}
-    try { const skalK = localStorage.getItem("energida_skal_ny_kode"); if (skalK === "1" || skalK === "invitation") setTimeout(function () { try { visNyAdgangskode(skalK === "invitation"); } catch (e) {} }, 400); } catch (e) {}   /* ny kode endnu ikke valgt (v2721) */
+    try { const skalK = localStorage.getItem("energida_skal_ny_kode"); if (skalK === "1") setTimeout(function () { try { visNyAdgangskode(false); } catch (e) {} }, 400); else if (skalK === "invitation") setTimeout(function () { try { kodeEfterProfil(null); } catch (e) {} }, 400); } catch (e) {}   /* ny kode endnu ikke valgt (v2721) */
   }
   showMain();
   await refresh();
