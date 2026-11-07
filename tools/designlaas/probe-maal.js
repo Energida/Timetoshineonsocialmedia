@@ -56,11 +56,11 @@ function maalSide(){
     var ls=[].slice.call(f.querySelectorAll(".fs-ta-vaert")).filter(synlig).map(function(e){ var r=e.getBoundingClientRect(); return [Math.round(r.left),Math.round(r.right)]; });
     if(ls.length>1){ N++; var l0=ls[0][0], r0=ls[0][1]; if(ls.some(function(x){ return Math.abs(x[0]-l0)>1||Math.abs(x[1]-r0)>1; })) fejl("FELTFLUGT i "+kl(f)+": felterne står ikke ens ("+ls.map(function(x){return x.join("-")}).join(" · ")+")"); }
   });
-  /* CHIPS: 36 · 13/400 · #6F6B66 · radius 999 · luft 16 · plus 14 grå, 6 til teksten */
+  /* CHIPS: 36 · 13/400 · #9A9590 (Ida 7/11) · radius 999 · luft 16 · plus 14 grå, 6 til teksten */
   rod.querySelectorAll(".ark-chip:not(.kk-ini):not(.on)").forEach(function(e){
     if(!synlig(e)) return; var cs=getComputedStyle(e), r=e.getBoundingClientRect();
     if(e.closest("#briefSideNav")) return;
-    er("CHIP", e, Math.round(r.height)===36&&px(cs.fontSize)===13&&cs.fontWeight==="400"&&rgb(cs.color)===G2&&px(cs.borderTopLeftRadius)>=18&&px(cs.paddingLeft)===16&&px(cs.paddingRight)===16&&/Poppins/.test(cs.fontFamily), "h"+Math.round(r.height)+" "+cs.fontSize+"/"+cs.fontWeight+" "+cs.color+" luft "+cs.paddingLeft+"/"+cs.paddingRight+" (skal 36 · 13/400 · #6F6B66 · luft 16)");
+    er("CHIP", e, Math.round(r.height)===40&&px(cs.fontSize)===15&&cs.fontWeight==="400"&&rgb(cs.color)===G3&&px(cs.borderTopLeftRadius)>=18&&px(cs.paddingLeft)===18&&px(cs.paddingRight)===18&&/Poppins/.test(cs.fontFamily), "h"+Math.round(r.height)+" "+cs.fontSize+"/"+cs.fontWeight+" "+cs.color+" luft "+cs.paddingLeft+"/"+cs.paddingRight+" (skal 40 · 15/400 · #9A9590 · luft 18)");
     var pl=e.querySelector("svg.chip-plus"); if(pl&&(e.innerText||"").trim()){
       var sr=pl.getBoundingClientRect(); var rg=document.createRange(), tn=[].find.call(e.childNodes,function(n){return n.nodeType===3&&n.textContent.trim();}); if(tn){ rg.selectNodeContents(tn); var tr=rg.getBoundingClientRect(); var gap=Math.round(tr.left-sr.right);
         er("PLUS-CHIP mellemrum", e, Math.abs(gap-6)<=1&&Math.round(sr.width)===14, "plus→tekst "+gap+" px, plus "+Math.round(sr.width)+" (skal 6 og 14)");
@@ -101,18 +101,18 @@ function maalForsideTlf(){
   N++; if(document.querySelector(".hc-chip")) fejl("FORSIDE tlf: oplysnings-chips står stadig i coveret");
   var h=document.querySelector("#screen7 .mb-baand"); if(h){ N++; var hh=Math.round(h.getBoundingClientRect().height); if(hh!==228) fejl("FORSIDE tlf: coveret er "+hh+" høj (skal 228)"); }
   var cs=[].slice.call(document.querySelectorAll(".fb-hc-rk .fb-hc")).filter(synlig);
-  cs.forEach(function(c){ var r=c.getBoundingClientRect(), s=getComputedStyle(c); er("OPLYSNINGS-CHIP", c, Math.round(r.height)===36&&px(s.fontSize)===13&&s.fontWeight==="400"&&rgb(s.color)===G2&&Math.round(r.top)===Math.round(cs[0].getBoundingClientRect().top), "h"+Math.round(r.height)+" "+s.fontSize+" "+s.color+" (skal 36 · 13/400 · #6F6B66, alle på én linje)"); if(c.querySelector(".plus,svg")) fejl("OPLYSNINGS-CHIP: har plus/ikon"); });
+  cs.forEach(function(c){ var r=c.getBoundingClientRect(), s=getComputedStyle(c); er("OPLYSNINGS-CHIP", c, Math.round(r.height)===40&&px(s.fontSize)===15&&s.fontWeight==="400"&&rgb(s.color)===G3&&Math.round(r.top)===Math.round(cs[0].getBoundingClientRect().top), "h"+Math.round(r.height)+" "+s.fontSize+" "+s.color+" (skal 40 · 15/400, alle på én linje)"); if(c.querySelector(".plus,svg")) fejl("OPLYSNINGS-CHIP: har plus/ikon"); });
   var ti=document.querySelector("#screen7 .mb-baand .mb-navn"), tb=[].slice.call(document.querySelectorAll("#screen7 .mb-baand button, #screen7 .mb-baand a")).filter(function(e){return /tilbage/i.test(e.innerText||e.getAttribute("aria-label")||"")&&synlig(e)})[0];
   if(ti&&tb){ N++; var a=ti.getBoundingClientRect(), b=tb.getBoundingClientRect(); if(!(a.bottom<=b.top||a.top>=b.bottom||a.right<=b.left||a.left>=b.right)) fejl("FORSIDE tlf: titlen overlapper Tilbage"); }
 }
 function maalStory(){
   /* STORY-SIDEN (Ida 4/11): [status] [dato] i samme højde 36 og på samme linje, storytype-chips 36 på én linje, ingen pil på nogen flise, upload-placeholderen er lys (aldrig mørk) */
   var st=document.querySelector("#storySerie .ss-top > .ss-stat"), da=document.querySelector("#storySerie .ss-top > .ss-dato");
-  if(st&&da){ var a=st.getBoundingClientRect(), b=da.getBoundingClientRect(); er("STORY-RÆKKE", st, Math.round(a.height)===36&&Math.round(b.height)===36&&Math.abs(a.top-b.top)<1&&Math.abs((b.left-a.right)-8)<=1&&a.left<b.left, "status h"+Math.round(a.height)+" dato h"+Math.round(b.height)+" afstand "+Math.round(b.left-a.right)+" (skal 36/36, 8 imellem, status til venstre for dato)"); }
+  if(st&&da){ var a=st.getBoundingClientRect(), b=da.getBoundingClientRect(); er("STORY-RÆKKE", st, Math.round(a.height)===40&&Math.round(b.height)===40&&Math.abs(a.top-b.top)<1&&Math.abs((b.left-a.right)-8)<=1&&a.left<b.left, "status h"+Math.round(a.height)+" dato h"+Math.round(b.height)+" afstand "+Math.round(b.left-a.right)+" (skal 40/40, 8 imellem, status til venstre for dato)"); }
   else fejl("STORY-RÆKKE: status og dato mangler i rækken");
   var cs=[].slice.call(document.querySelectorAll("#storySerie .ss-typrk .ss-chip")).filter(synlig);
   N++; if(cs.length!==2) fejl("STORYTYPE: forventer to valgchips, fandt "+cs.length);
-  cs.forEach(function(c){ var r=c.getBoundingClientRect(); er("STORYTYPE-CHIP", c, Math.round(r.height)===36&&Math.abs(r.top-cs[0].getBoundingClientRect().top)<1, "h"+Math.round(r.height)+" (skal 36, én linje)"); });
+  cs.forEach(function(c){ var r=c.getBoundingClientRect(); er("STORYTYPE-CHIP", c, Math.round(r.height)===40&&Math.abs(r.top-cs[0].getBoundingClientRect().top)<1, "h"+Math.round(r.height)+" (skal 40, én linje)"); });
   var pv=document.querySelector("#storySerie .ss-pv.tom, #storySerie .ss-up"); if(pv){ var s=getComputedStyle(pv); er("STORY-PLACEHOLDER", pv, rgb(s.backgroundColor)==="rgb(255,255,255)"&&s.borderTopStyle==="dashed"&&px(s.borderTopLeftRadius)===14, "flade "+s.backgroundColor+" kant "+s.borderTopStyle+" r"+s.borderTopLeftRadius+" (skal hvid, stiplet, radius 14)"); }
   var pil=document.querySelector(".ss-stknap"); N++; if(pil) fejl("STORY-FLISE: statuspilen (.ss-stknap) står stadig på en flise");
 }
