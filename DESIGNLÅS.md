@@ -48,6 +48,9 @@ Hvid pille, hårfin grå kant (#E3E2DE), skrift Poppins 400 15 px i den lyse gr�
 ## HÅRD REGEL · 7. november · PLUS FORAN = ORDET »TILFØJ« UDELADES (Ida 7/11: »når vi har et plus foran kan du slette tilføj i alle knapper«)
 En chip eller knap med et plus foran skriver kun det, der tilføjes: »+ Tekst«, »+ Manus«, »+ Klip«, »+ Scene«, »+ Video«, »+ Coverbillede«, »+ Noget man ser« — aldrig »+ Tilføj tekst«. Plusset ER ordet »tilføj«. Gælder alle flader, app og bud.
 
+## v3171 · 7. november · FANG DEM = BUD 1 (Ida 7/11)
+Spørgsmålet »Hvad skal få <målgruppen> til at stoppe op?« står over (samme skrift som Fastholds linje), så etiketten »Scene 1 · Hooket«, så flisen »Klip 1«. Tom flise = ét felt med placeholderen »Hvad ser man i det første klip?« (ingen etiket, når det er det eneste); chips + Tekst og + Manus tilføjer Tekst på skærmen og Manus (hedder ikke længere »Det, jeg siger«). Forslag er egne fliser med swipe-slet som før.
+
 ## v3170 · 7. november · FASTHOLD DEM = BUD 1 + KOMMENTARER KUN VIA ⋯ (Ida 7/11)
 Scene 1 står som »Scene 1 · Hooket« med lås, og hele den låste flise er sand (ikke kun feltet); klippet hedder »Klip 1« (aldrig »Klip 1 · Hook«). Klippene tælles forfra i hver scene. Chips Tekst · Manus · Klip står i scenens sidste klip; Scene (og CTA) for sig under; ingen plus-cirkel og ingen »Klip i scene n«-knap. Kommentarer tilføjes kun via ⋯ (også på computeren) og står i højre side i sand, kun hvor der er en; det faste sendefelt øverst er væk.
 
