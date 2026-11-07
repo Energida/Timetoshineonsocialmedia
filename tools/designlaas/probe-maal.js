@@ -24,7 +24,7 @@ function maalSide(){
     er("FLISE radius", e, px(cs.borderTopLeftRadius)===20, "radius "+px(cs.borderTopLeftRadius)+" (skal 20)");
     er("FLISE luft", e, px(cs.paddingTop)===18&&px(cs.paddingBottom)===18&&px(cs.paddingLeft)===20&&px(cs.paddingRight)===20, "luft "+cs.padding+" (skal 18 20)");
     er("FLISE afstand", e, px(cs.marginBottom)===10, "afstand under "+px(cs.marginBottom)+" (skal 10)");
-    er("FLISE flade", e, rgb(cs.backgroundColor)==="rgb(255,255,255)"||/story|cap-q/.test(kl(e)), "flade "+cs.backgroundColor);
+    er("FLISE flade", e, rgb(cs.backgroundColor)==="rgb(255,255,255)"||/story|cap-q/.test(kl(e))||(e.parentElement&&e.parentElement.classList.contains("kk-laast")&&rgb(cs.backgroundColor)==="rgb(241,238,232)"), "flade "+cs.backgroundColor);
   });
   /* FLISETITEL: Poppins 18 (telefon 16) / 400 / #1A1A1A; 16 til første indhold */
   rod.querySelectorAll(".sk-q > .sk-label, .kk-hook-spm").forEach(function(e){

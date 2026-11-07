@@ -48,6 +48,9 @@ Hvid pille, hårfin grå kant (#E3E2DE), skrift Poppins 400 15 px i den lyse gr�
 ## HÅRD REGEL · 7. november · PLUS FORAN = ORDET »TILFØJ« UDELADES (Ida 7/11: »når vi har et plus foran kan du slette tilføj i alle knapper«)
 En chip eller knap med et plus foran skriver kun det, der tilføjes: »+ Tekst«, »+ Manus«, »+ Klip«, »+ Scene«, »+ Video«, »+ Coverbillede«, »+ Noget man ser« — aldrig »+ Tilføj tekst«. Plusset ER ordet »tilføj«. Gælder alle flader, app og bud.
 
+## v3170 · 7. november · FASTHOLD DEM = BUD 1 + KOMMENTARER KUN VIA ⋯ (Ida 7/11)
+Scene 1 står som »Scene 1 · Hooket« med lås, og hele den låste flise er sand (ikke kun feltet); klippet hedder »Klip 1« (aldrig »Klip 1 · Hook«). Klippene tælles forfra i hver scene. Chips Tekst · Manus · Klip står i scenens sidste klip; Scene (og CTA) for sig under; ingen plus-cirkel og ingen »Klip i scene n«-knap. Kommentarer tilføjes kun via ⋯ (også på computeren) og står i højre side i sand, kun hvor der er en; det faste sendefelt øverst er væk.
+
 ## v3169 · 7. november · »Tilføj« fjernet foran alle chips og knapper med plus (briefen: Tekst · Manus · Klip · Scene · CTA · Punkt · Forslag · Noget man ser · Noget jeg siger; story: Tekst; video/cover; trin; beskrivelse). Samt v3168 (én loader overalt).
 ## HÅRD REGEL · 7. november · ÉN LOADER OVERALT (Ida 7/11: »jeg vil simpelthen have sat en stopper for alle de forskellige versioner af det samme«)
 Alle loadere og dæk-flader (#appLoader, #privCover, #energidaLoader, #somkundeLoader, sideskiftets #skDaek og små .hjerte-loader) er ÉN: markbilledet (dagens/kort.jpg, saturate .75, brightness .86) + det hvide hjernehjerte 150 x 118 midt på + samme puls (`hjerteSlagGpu`, 1,6 s). Hjertet bevæger sig ALTID — også når telefonen har »Reducer bevægelse« slået til. Ingen anden størrelse, ingen lys baggrund, ingen rødt hjerte på en dæk-flade. En ny loader skal bruge disse regler, ikke sine egne.
