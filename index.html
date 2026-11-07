@@ -4161,7 +4161,8 @@ html body .pf-kom-felt.pf-kom-rk .sendfelt-felt { padding-right:100px !important
   .hu-linje .hu-pile { display:flex; gap:8px; order:0; }
   .hu-linje::after { order:1; }
   .hu-pil { width:32px; height:32px; border-radius:50%; border:1px solid var(--border); background:#fff; color:var(--gray2, #6F6B66); display:inline-flex; align-items:center; justify-content:center; cursor:pointer; padding:0; }
-  .hu-dagsek .hu-idag { height:28px; margin:-8px 0; flex:none; }   /* knappen i sektionslinjen må ikke gøre linjen højere (7/11) */
+  html body .hu-dagsek::after { display:none !important; }   /* INGEN SKILLELINJE VED »I DAG« UNDER DATOERNE (Ida 7/11: »så der bare står i dag«) */
+  .hu-dagsek .hu-idag { height:28px; margin:-8px 0 -8px auto; flex:none; }   /* knappen i sektionslinjen må ikke gøre linjen højere (7/11) */
   .hu-idag { order:2; height:32px; border-radius:999px; border:1px solid var(--border); background:#fff; color:#6F6B66; font:12px Poppins,sans-serif; padding:0 14px; cursor:pointer; letter-spacing:0; text-transform:none; }
   .hu-strib { display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:8px; margin:0 0 16px; }
   .hu-dag { background:#fff; border:0; border-radius:16px; box-shadow:var(--mb-skygge, 0 0 4px rgba(46,44,41,.10), 0 0 36px rgba(46,44,41,.20)); padding:12px 4px 10px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; cursor:pointer; font-family:Poppins,sans-serif; color:var(--black); min-width:0; min-height:86px; }   /* som tegningen bud 5: naesten kvadratisk, ikke en flad bjaelke */
@@ -28138,6 +28139,7 @@ function ssLaes() {   /* kun felter, der findes paa skaermen — et gem fra en a
   a.forEach(function (e, i) {
     const q = document.getElementById("bf_ss_" + i + "_q"); if (q) e.q = q.value;
     const m = document.getElementById("bf_ss_" + i + "_m"); if (m) e.m = m.value;
+    const lk = document.getElementById("bf_ss_" + i + "_l"); if (lk) e.l = lk.value;   /* link til indholdet (Ida 7/11) */
     if (e.t === "Afstemning") { const sv = []; for (let k = 0; k < 4; k++) { const f = document.getElementById("bf_ss_" + i + "_s" + k); if (f) sv.push(f.value); } if (sv.length) e.s = sv; }
   });
 }
@@ -28145,10 +28147,11 @@ function ssElHtml(e, i, n, dimmet) {
   const skr = (typeof BS_SKRALD_SVG !== "undefined") ? BS_SKRALD_SVG : "Slet";
   const t = (e.t === "Tekst" || e.t === "Afstemning") ? e.t : "";   /* gamle »Video«-elementer: filen ligger i e.v, intet ekstra er valgt */
   const musOn = !!(e.mOn || (e.m && String(e.m).trim()));
+  const linkOn = !!(e.lOn || (e.l && String(e.l).trim()));   /* »Indsæt link til indhold« som chip (Ida 7/11) */
   const chip = function (navn, paa, klik) { return '<button type="button" class="ss-chip' + (paa ? ' on' : '') + '" onclick="' + klik + '">' + SS_IK.plus + navn + '</button>'; };
   const sek = function (x) { return '<div class="ss-sek">' + x + '</div>'; };
   const bred = t === "Tekst";
-  const chips = '<div class="ss-chips ss-tilfoej">' + chip("Tekst", t === "Tekst", "ssType(" + i + ",'Tekst')") + chip("Afstemning", t === "Afstemning", "ssType(" + i + ",'Afstemning')") + chip("Musik", musOn, "ssMus(" + i + ")") + '</div>';
+  const chips = '<div class="ss-chips ss-tilfoej">' + chip("Tekst", t === "Tekst", "ssType(" + i + ",'Tekst')") + chip("Afstemning", t === "Afstemning", "ssType(" + i + ",'Afstemning')") + chip("Musik", musOn, "ssMus(" + i + ")") + chip("Indsæt link til indhold", linkOn, "ssLink(" + i + ")") + '</div>';
   if (bred && SS_TX.ingen[i] == null) SS_TX.ingen[i] = true;   /* en tekst er ikke valgt, foer der klikkes paa den (Ida 4/11) */
   let h = '<div class="sk-q ss-el' + (bred ? ' bred' : '') + (SS_TX.ingen[i] ? ' ss-ingen' : '') + (dimmet ? ' dimmet' : '') + '" data-i="' + i + '"' + (dimmet ? ' onclick="ssAkt(' + i + ')" role="button" tabindex="0" aria-label="Story ' + (i + 1) + '"' : '') + '>'
     + '<div class="ss-et"><span>Story ' + (i + 1) + '</span>' + (n > 1 ? '<button type="button" class="ss-sk" aria-label="Slet storyen" onclick="ssSlet(' + i + ')">' + skr + '</button>' : '') + '</div>'
@@ -28185,6 +28188,7 @@ function ssElHtml(e, i, n, dimmet) {
     }
   }
   if (musOn) h += '<div class="ss-del ss-mus">' + sek("Link til musik") + '<input type="text" class="sk-input" style="min-height:44px;" data-frit id="bf_ss_' + i + '_m" value="' + esc(e.m || "") + '"></div>';
+  if (linkOn) h += '<div class="ss-del ss-mus ss-link">' + sek("Link til indholdet") + '<input type="text" class="sk-input" style="min-height:44px;" data-frit id="bf_ss_' + i + '_l" value="' + esc(e.l || "") + '"></div>';
   return h + '</div>';
 }
 function ssSpoegHtml(i) {
@@ -28223,6 +28227,7 @@ function ssRerend(vis) {
 window.addEventListener("resize", function () { try { const h = document.getElementById("storySerie"); if (h && (ssBred() ? "1" : "0") !== h.getAttribute("data-bred")) { ssLaes(); ssRerend(); } else ssTegnAlle(); } catch (e) {} });
 function ssPv(i, v) { const p = document.getElementById("bf_ss_" + i + "_pv"); if (p) p.textContent = v; }
 function ssType(i, t) { ssLaes(); const e = ssListe()[i]; if (!e) return; e.t = (e.t === t) ? "" : t; if (e.t === "Afstemning" && !(Array.isArray(e.s) && e.s.length >= 2)) e.s = ["", ""]; ssRerend(); }   /* et tryk til, et tryk fra — det skrevne bevares */
+function ssLink(i) { ssLaes(); const e = ssListe()[i]; if (!e) return; e.lOn = !(e.lOn || (e.l && String(e.l).trim())); ssRerend(); }   /* samme greb som Musik */
 function ssMus(i) { ssLaes(); const e = ssListe()[i]; if (!e) return; e.mOn = !(e.mOn || (e.m && String(e.m).trim())); ssRerend(); }
 function ssNy() { ssLaes(); ssListe().push({ t: "", q: "", s: ["", ""], m: "" }); SS_AKT = ssListe().length - 1; ssRerend(SS_AKT); }
 function ssSlet(i) { if (!arkOk("ssSlet", arguments, { titel: "Fjern storyen?", jaTekst: "Ja, fjern" })) return; ssLaes(); const a = ssListe(); if (a.length > 1) a.splice(i, 1); SS_AKT = Math.max(0, i - 1); SS_TX.valgt = {}; ssRerend(SS_AKT); }
@@ -63654,7 +63659,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "3165";
+const APP_VERSION = "3167";
 const APP_BYGGET = "3. november";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_BYGGET + " · " + APP_VERSION; } catch (e) {} });
 let NY_VERSION_KLAR = false;
