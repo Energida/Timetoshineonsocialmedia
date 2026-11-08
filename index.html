@@ -1195,7 +1195,7 @@ html body .uge-dag.idag::after{content:"";position:absolute;inset:0;border:2px s
 .hmini-tlf .hmini-bill{width:56px;height:56px;flex-shrink:0}
 .hmini-tlf .hmini-tekst{flex:1;min-width:0}
 .hmini-tlf .hmini-titel{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.hmini-spil{width:48px;height:48px;flex-shrink:0;border:0;border-radius:50%;background:var(--red);display:grid;place-items:center;cursor:pointer;padding:0 0 0 2px}
+.hmini-spil{width:48px;height:48px;flex-shrink:0;border:0;border-radius:50%;background:#fff;box-shadow:0 0 0 1px #E3E2DE;display:grid;place-items:center;cursor:pointer;padding:0 0 0 2px}
 body.har-mini .hu-ygt{padding-bottom:96px}
 @media (min-width:900px){ #hjemMiniTlf{display:none} }
 @media (max-width:899px){ body:has(#burgerMenu.open) #hjemMiniTlf{display:none} }   /* HANS/METTE 29/10: mini-afspilleren (z 120) lå oven på Mere-menuen (z 80) og dækkede »Meld en fejl« */
@@ -8935,7 +8935,7 @@ body.dash-mode #dashMain .ws-card:has(> .follow-item) .bs-sendfelt, body.dash-mo
 .hfs-eti { font-size:10px; letter-spacing:1.6px; text-transform:uppercase; color:var(--gray3); }
 .hfs-streg { border-top:1px solid var(--gray); margin:10px 0 16px; }
 .hfs-bill { position:relative; width:100%; aspect-ratio:16/9; background:#3A3936 center/cover no-repeat; border-radius:0; }
-.hfs-spil { position:absolute; left:50%; top:50%; width:56px; height:56px; margin:-28px 0 0 -28px; border-radius:50%; background:var(--red);   /* RØD PLAYKNAP (Ida 28/10: »den playknap på afspilleren skal være rød«) — som telefonens mini-afspiller */ display:flex; align-items:center; justify-content:center; }
+.hfs-spil { position:absolute; left:50%; top:50%; width:56px; height:56px; margin:-28px 0 0 -28px; border-radius:50%; background:#fff;   /* PLAYKNAP = HVID CIRKEL MED RØD TREKANT (Ida 8/11, vælter 28/10) — (Ida 28/10: »den playknap på afspilleren skal være rød«) — som telefonens mini-afspiller */ display:flex; align-items:center; justify-content:center; }
 .hfs-spil svg { margin-left:3px; }
 .hfs-tekst { padding-top:16px; }
 .hfs-nr { font-size:13px; color:var(--gray2); }
@@ -33885,7 +33885,7 @@ async function velkomstStart() {
 let PF = null;
 const PF_MDR = ["januar","februar","marts","april","maj","juni","juli","august","september","oktober","november","december"];
 function pfKladdeNoegle() { try { return nsKey("profil_kladde"); } catch (e) { return "profil_kladde_X"; } }
-function pfKladdeGem() { try { if (PF) localStorage.setItem(pfKladdeNoegle(), JSON.stringify({ trin: PF.trin, f: PF.f })); } catch (e) {} }
+function pfKladdeGem() { try { if (PF) { const fu = Object.assign({}, PF.f); delete fu.pw; localStorage.setItem(pfKladdeNoegle(), JSON.stringify({ trin: PF.trin, f: fu })); } } catch (e) {} }   /* adgangskoden gemmes ALDRIG i kladden */
 function pfKladdeHent() { try { return JSON.parse(localStorage.getItem(pfKladdeNoegle()) || "null"); } catch (e) { return null; } }
 async function pfMail() { try { const r = await sb.auth.getUser(); return String((r && r.data && r.data.user && r.data.user.email) || "").toLowerCase(); } catch (e) { return ""; } }
 async function pfRaekkeGem(navn, skema, svar) {
@@ -33924,13 +33924,14 @@ async function profilFlowStart() {
   const mail = await pfMail();
   const kollega = !!(butik && butik.udfyldt_af && butik.udfyldt_af !== mail);   /* butikken er beskrevet af en anden = en kollega, der kommer ind bagefter */
   const k = pfKladdeHent();
-  PF = { trin: 1, kollega: kollega, ygt: (typeof erYgtTeam === "function" && erYgtTeam()), mail: mail,
+  let pw = false; try { pw = localStorage.getItem("energida_skal_ny_kode") === "invitation"; } catch (e) {}   /* kom kunden fra mailens link, er ADGANGSKODEN profilens foerste side (Ida 8/11) */
+  PF = { trin: pw ? 0 : 1, pw: pw, pwVis: false, kollega: kollega, ygt: (typeof erYgtTeam === "function" && erYgtTeam()), mail: mail,
     f: Object.assign({ navn: pfFornavnForslag(d) || pfStripeNavn(d).fornavn, efternavn: pfStripeNavn(d).efternavn, dag: "", mdr: "", aar: "", ejer: "", rolle: "",
       butik_navn: String((butik && butik.butik_navn) || ((pfForening(d) && !d.stripe_virksomhed_fundet) ? "" : (d.studioNavn || d.virksomhed)) || "").replace(/\s*studio$/i, ""), adresse: "", postnr: "", by: "", cvr: "",
       branche: (butik && butik.branche) || "", branche_andet: (butik && butik.branche_andet) || "", forretningstype: (butik && butik.forretningstype) || d.forretningstype || "",
       inviter: "", kolleger: [{ navn: "", mail: "" }, { navn: "", mail: "" }] }, (k && k.f) || {}) };
   while (PF.f.kolleger.length < 2) PF.f.kolleger.push({ navn: "", mail: "" });
-  if (k && k.trin) PF.trin = Math.min(k.trin, pfAntal());
+  if (k && k.trin && !pw) PF.trin = Math.min(k.trin, pfAntal());
   pfTegn();
 }
 function pfAntal() { return PF.kollega ? 1 : (PF.ygt ? 3 : 2); }   /* YGT: Om dig · Om virksomheden · Kolleger · Så er du klar (Ida 3/11, tegning JtzXmECoWxj1wXJ8TfUeV9) */
@@ -33946,6 +33947,7 @@ function pfTom(v) { return !String(v == null ? "" : v).trim(); }
 function pfKlar() {
   if (!PF) return false;
   const f = PF.f, t = PF.trin;
+  if (t === 0) return String(f.pw || "").length >= 6;
   if (t === 1) {
     if (pfTom(f.navn) || pfTom(f.efternavn) || !pfDato() || (f.ejer !== "ja" && f.ejer !== "nej")) return false;
     if (f.ejer === "nej" && pfTom(f.rolle)) return false;
@@ -33956,8 +33958,8 @@ function pfKlar() {
     if (f.branche === "Andet" && pfTom(f.branche_andet)) return false;
     return true;
   }
-  /* KOLLEGER ER VALGFRIE: en tom række er i orden, en halv række (navn uden gyldig mail eller omvendt) låser */
-  return f.kolleger.every(function (c) { const n = !pfTom(c.navn), m = /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(String(c.mail || "").trim()); return (!n && pfTom(c.mail)) || (n && m); });
+  /* SIDSTE SIDE VISER KODEN TIL KOLLEGERNE (Ida 8/11) — intet at udfylde */
+  return true;
 }
 function pfKnapOpdat() { try { const k = document.getElementById("pfNaeste"); if (!k) return; const ok = pfKlar(); k.classList.toggle("laast", !ok); k.setAttribute("aria-disabled", ok ? "false" : "true"); } catch (e) {} }
 function pfInput(id, v) {
@@ -33981,15 +33983,24 @@ function pfTegn() {
   if (!el) { el = document.createElement("div"); el.id = "pfFlow"; document.body.appendChild(el); }
   document.body.classList.add("pf-aaben");
   const n = pfAntal(), t = PF.trin, f = PF.f;
-  const top = '<div class="pf-top"><span>' + (t > 1 ? '<button type="button" class="pf-tb mq-tap" onclick="pfTilbage()">Tilbage</button>' : '<span class="pf-tt">Opret din profil</span>') + '</span><span class="pf-tr">Trin ' + t + ' af ' + n + '</span></div><div class="pf-spor"><i style="width:' + Math.round(t / n * 100) + '%"></i></div>';
+  const off = PF.pw ? 1 : 0, tv = t + off, nv = n + off;   /* adgangskode-siden er trin 1, naar kunden kom fra mailens link (Ida 8/11) */
+  const top = '<div class="pf-top"><span>' + (t > 1 ? '<button type="button" class="pf-tb mq-tap" onclick="pfTilbage()">Tilbage</button>' : '<span class="pf-tt">Opret din profil</span>') + '</span><span class="pf-tr">Trin ' + tv + ' af ' + nv + '</span></div><div class="pf-spor"><i style="width:' + Math.round(tv / nv * 100) + '%"></i></div>';
   /* ALLE FELTER ER ENS (Ida 3/11: »ALLE ting skal for helvede være ens … du skal da ikke stille 2 spørgsmål i samme pop-up med forskellig farve og størrelse«): ét lille grå ord over hvert felt, ingen skillelinjer, ingen hjælpelinjer; trinnets navn er den eneste store tekst */
   const lab = function (x) { return '<span class="pf-lab">' + esc(x) + '</span>'; };
   const ygtTrin = PF.ygt && !PF.kollega;
   let krop = "", knap = (t === n) ? (ygtTrin ? "Start" : "Start første lektion") : "Næste";
-  if (ygtTrin && t === n) {
-    /* KOLLEGER KOMMER TIL SIDST, I »SÅ ER DU KLAR«-BOKSEN (Ida 3/11) — valgfrie rækker, en halv række låser */
+  if (t === 0) {
+    /* ADGANGSKODEN ER FOERSTE SIDE I »OPRET DIN PROFIL« (Ida 8/11: »vælg adgangskode skal være en del af 1. side … næste side skal så være om dig«) — samme felt og oeje som loginet; skjult mailfelt, saa noeglering gemmer koden paa den rigtige konto */
+    krop = '<div class="pf-t">Vælg din adgangskode</div>'
+      + '<input type="email" id="pf_mailskjult" autocomplete="username" value="' + esc(PF.mail || "") + '" aria-hidden="true" tabindex="-1" style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;">'
+      + '<label class="pf-fl"><span class="pf-lab">Adgangskode</span><span style="position:relative;display:block;"><input class="pf-in" id="pf_pw" type="' + (PF.pwVis ? 'text' : 'password') + '" autocomplete="new-password" placeholder="Mindst 6 tegn" value="' + esc(f.pw || "") + '" oninput="pfInput(\'pw\', this.value)" onkeydown="if(event.key===\'Enter\'){event.preventDefault();pfNaeste();}" style="padding-right:48px;">'
+      + '<button type="button" class="mq-tap" onclick="pfPwVis()" title="Vis adgangskoden" aria-label="Vis adgangskoden" style="position:absolute;right:4px;top:0;bottom:0;width:44px;background:none;border:0;padding:0;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--gray2);">' + (typeof authOejeSvg === "function" ? authOejeSvg(!!PF.pwVis) : "") + '</button></span></label>';
+  } else if (ygtTrin && t === n) {
+    /* SIDSTE SIDE: KODEN TIL TO KOLLEGER (Ida 8/11: »her er din kode: xxxx som man kan give til 2 kollegaer og de skal bruge den på b2b.energida.dk«) — den gamle maade med kode, ikke invitationer */
+    const kode = String(currentKode || "");
     krop = '<div class="pf-klar"><div class="pf-ok">' + energidaFlueben(26) + '</div><div class="pf-t">Så er du klar</div></div>'
-      + f.kolleger.map(function (c, i) { return pfFelt("kol" + i + "_navn", "Kollega " + (i + 1) + " · Navn", c.navn) + pfFelt("kol" + i + "_mail", "E-mail", c.mail, { mail: true }); }).join("");
+      + '<div class="pf-fl"><span class="pf-lab">Her er din kode</span><div class="pf-kode" style="font-size:22px;letter-spacing:2px;text-align:center;padding:14px 10px;border:1px solid var(--border);border-radius:16px;background:#fff;color:var(--black);">' + esc(kode) + '</div></div>'
+      + '<div class="pf-fl"><span class="pf-lab">Giv koden til op til to kolleger. De bruger den på b2b.energida.dk under “Jeg har en kode”.</span></div>';
   } else if (t === 1) {
     const butikNavn = String(f.butik_navn || "").trim();
     krop = '<div class="pf-t">Om dig</div>'
@@ -34014,8 +34025,9 @@ function pfTegn() {
   pfKnapOpdat();
   if (t === 2 && f.branche === "Andet" && String(f.branche_andet || "").trim()) pfAndetGem();
 }
+function pfPwVis() { if (!PF) return; const i = document.getElementById("pf_pw"); PF.pwVis = !PF.pwVis; if (i) { const v = i.value; PF.f.pw = v; } pfTegn(); try { const j = document.getElementById("pf_pw"); if (j) j.focus(); } catch (e) {} }
 function pfKollegaTil() { if (!PF || PF.f.kolleger.length >= 2) return; PF.f.kolleger.push({ navn: "", mail: "" }); pfKladdeGem(); pfTegn(); }
-function pfTilbage() { if (!PF || PF.trin <= 1) return; PF.trin--; pfKladdeGem(); pfTegn(); }
+function pfTilbage() { if (!PF || PF.trin <= 1) return; PF.trin--; pfKladdeGem(); pfTegn(); }   /* trin 1 (Om dig) har intet Tilbage — adgangskoden er gemt */
 function pfFejl(t) { const fe = document.getElementById("pfFejl"); if (fe) fe.textContent = t; const k = document.getElementById("pfNaeste"); if (k) { k.disabled = false; k.textContent = (PF && PF.trin === pfAntal()) ? "Start første lektion" : "Næste"; } }
 function pfDato() {
   const f = PF.f, dag = parseInt(f.dag, 10), md = parseInt(f.mdr, 10), aar = parseInt(f.aar, 10), nu = new Date().getFullYear();
@@ -34043,7 +34055,17 @@ async function pfButikGem() {
 async function pfNaeste() {
   if (!PF) return;
   const f = PF.f, t = PF.trin, knap = document.getElementById("pfNaeste");
-  if (!pfKlar()) { pfFejl("Udfyld alle felter for at gå videre."); return; }
+  if (!pfKlar()) { pfFejl(t === 0 ? "Mindst 6 tegn." : "Udfyld alle felter for at gå videre."); return; }
+  if (t === 0) {
+    /* ADGANGSKODEN GEMMES, FOER MAN KOMMER VIDERE — samme kald og samme fejlsprog som arket (gemNyAdgangskodeInd) */
+    if (knap) { knap.disabled = true; knap.textContent = "Gemmer …"; }
+    const r = await sb.auth.updateUser({ password: String(f.pw || "") });
+    if (r && r.error) { pfFejl(nyKodeFejl(r.error)); return; }
+    try { localStorage.removeItem("energida_skal_ny_kode"); } catch (e) {}
+    try { adgangskodeValgtNoter(); } catch (e) {}
+    try { window.dispatchEvent(new Event("energida-kode-gemt")); } catch (e) {}
+    PF.pw = true; PF.f.pw = ""; PF.trin = 1; pfKladdeGem(); pfTegn(); return;
+  }
   if (t === 1) {
     if (!pfDato()) { pfFejl("Skriv din fødselsdag med dag, måned og år."); return; }
     if (f.ejer === "nej" && !String(f.rolle || "").trim()) { pfFejl("Skriv din rolle i butikken."); return; }
@@ -39112,7 +39134,7 @@ function hjemFortsaetHtml(l) {
   const idS = esc(String(l.id)).replace(/'/g, "");
   return '<div class="hfs" role="button" tabindex="0" onclick="visLektion(\'' + idS + '\')">'
     + '<div class="hfs-eti">' + (nogenSet ? 'Fortsæt hvor du slap' : 'Din første lektion') + '</div><div class="hfs-streg"></div>'
-    + '<div class="hfs-krop"><div class="hfs-bill" data-lek="' + idS + '" style="background-image:url(&quot;' + esc(bill) + '&quot;)"><span class="hfs-spil" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="#fff"><path d="M8 5.5v13l11-6.5z"/></svg></span></div>'
+    + '<div class="hfs-krop"><div class="hfs-bill" data-lek="' + idS + '" style="background-image:url(&quot;' + esc(bill) + '&quot;)"><span class="hfs-spil" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="#FC2404"><path d="M8 5.5v13l11-6.5z"/></svg></span></div>'
     + '<div class="hfs-tekst"><div class="hfs-nr">Lektion ' + esc(lekVisNr(l.id)) + '</div><div class="hfs-titel">' + esc(lekVisTitel(l)) + '</div>' + (modul ? '<div class="hfs-modul">' + esc(modul) + '</div>' : '')   /* lektion over navnet, modul under — Ida 23/10: »kunne bedre lide at lektionen alligevel var delt op omkring overskriften. det her bliver for kluntet« */
     + '<button type="button" class="hfs-knap mq-tap" onclick="event.stopPropagation();visLektion(\'' + idS + '\')">Se lektionen<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button></div></div></div>';
 }
@@ -39154,7 +39176,7 @@ function hjemMiniTegn() {
   const paaHjem = !!(h && h.classList.contains("active")) && !document.body.classList.contains("lek-open");
   const d = paaHjem ? hjemMiniData() : null;
   let tlf = false; try { tlf = window.matchMedia("(max-width:899px)").matches; } catch (e) {}
-  const spil = '<svg width="18" height="18" viewBox="0 0 24 24" fill="#fff" aria-hidden="true"><path d="M8 5.5v13l11-6.5z"/></svg>';
+  const spil = '<svg width="18" height="18" viewBox="0 0 24 24" fill="#FC2404" aria-hidden="true"><path d="M8 5.5v13l11-6.5z"/></svg>';
   const sn = document.getElementById("snMini");
   let t = document.getElementById("hjemMiniTlf");
   if (!d) { if (sn) sn.innerHTML = ""; if (t) t.remove(); (document.body.classList.contains("har-mini") && document.body.classList.remove("har-mini")); return; }
@@ -42370,7 +42392,7 @@ function lekVideoSrc(u) {
   return s;
 }
 /* PLAY-SYMBOLET PAA ALLE LEKTIONSVIDEOER (Ida 7/11): hvid ring + hvid trekant midt i billedet, som paa Idas reels; forsvinder ved afspilning, kommer igen ved pause/slut */
-const LEK_PLAY_KNAP = '<button type="button" class="lek-play" id="lekPlayKnap" aria-label="Afspil videoen" onclick="lekPlayTryk()"><svg viewBox="0 0 96 96" aria-hidden="true"><circle cx="48" cy="48" r="44" fill="rgba(255,255,255,.14)" stroke="#fff" stroke-width="5"/><path d="M39 31.5v33a3 3 0 0 0 4.6 2.5l26-16.5a3 3 0 0 0 0-5L43.6 29a3 3 0 0 0-4.6 2.5z" fill="#fff"/></svg></button>';
+const LEK_PLAY_KNAP = '<button type="button" class="lek-play" id="lekPlayKnap" aria-label="Afspil videoen" onclick="lekPlayTryk()"><svg viewBox="0 0 96 96" aria-hidden="true"><circle cx="48" cy="48" r="44" fill="#fff"/><path d="M39 31.5v33a3 3 0 0 0 4.6 2.5l26-16.5a3 3 0 0 0 0-5L43.6 29a3 3 0 0 0-4.6 2.5z" fill="#FC2404"/></svg></button>';
 function lekPlayVis(vis) { const k = document.getElementById("lekPlayKnap"); if (k) k.classList.toggle("skjult", !vis); }
 function lekPlayTryk() { lekPlayVis(false); lekVideoAfspil(); }
 function lekVideoHtml(l) {
@@ -63724,7 +63746,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "3176";
+const APP_VERSION = "3179";
 const APP_BYGGET = "3. november";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_VERSION;   /* ingen dato (Ida 7/11: »hvorfor står der version 3. november?«) — datoen blev ikke rettet med, nummeret er sandheden */ } catch (e) {} });
 let NY_VERSION_KLAR = false;
@@ -88997,7 +89019,7 @@ function liveKoebFra(c) {
   const mail = dele.filter(function (x) { return /@/.test(x); })[0] || "";
   const tlf = dele.filter(function (x) { return /^\+?[\d\s]{8,}$/.test(x); })[0] || "";
   const bm = String(c.kommentar || "").match(/Beløb:\s*(\d+)/);   /* stripe-koeb skriver »Beløb: X kr.« fra 19/10 (Idas klik »Kroner pr. køb«) */
-  return { id: String(c.id || c.created_at), navn: dele[0] || c.kunde || "", butik: c.kunde || "", mail: mail, tlf: tlf, kode: overblikKode(c.kommentar), kilde: overblikKilde(c.source), tid: new Date(c.created_at).getTime(), kr: bm ? Number(bm[1]) : null };
+  return { id: String(c.id || c.created_at), navn: dele[0] || c.kunde || "", butik: c.kunde || "", mail: mail, tlf: tlf, kode: overblikKode(c.kommentar), rabat: ((String(c.kommentar || "").match(/Rabatkode:\s*([A-Z0-9ÆØÅ_-]+)/i) || [])[1] || "").toUpperCase(), kilde: overblikKilde(c.source), tid: new Date(c.created_at).getTime(), kr: bm ? Number(bm[1]) : null };
 }
 async function liveOverblikHent() {
   if (!sb || LIVE_HENTER) return LIVE_DATA; LIVE_HENTER = true;
@@ -89034,27 +89056,18 @@ function liveOverblikHtml(D) {
   const uge = K.filter(function (k) { return nu - k.tid < 7 * dag; }).length, maaned = K.filter(function (k) { return nu - k.tid < 30 * dag; });
   const venter = K.filter(function (k) { return !D.akt[KK(k)]; });
   const pil = iDag.length - sidsteUgeSamme;
-  const sml = sidsteUgeSamme ? (pil >= 0 ? "+" : "") + Math.round(pil / sidsteUgeSamme * 100) + " % mod samme dag sidste uge" : (iDag.length ? "Ingen køb samme dag sidste uge" : "");
+  const sml = sidsteUgeSamme ? (pil >= 0 ? "+" : "") + Math.round(pil / sidsteUgeSamme * 100) + " % mod samme dag sidste uge" : "";
   const stor = '<div class="bs3-fl lv-stor"><div class="bs3-et"><span>Køb i dag</span><span class="lv-tid">Opdateret kl. ' + new Date(D.hentet).toTimeString().slice(0, 5).replace(":", ".") + '</span></div>'
-    + (function () { const kr = iDag.filter(function (k) { return k.kr != null; }); if (!kr.length) return '<div class="lv-tal">' + iDag.length + '</div>'; const sum = kr.reduce(function (a, k) { return a + k.kr; }, 0); return '<div class="lv-tal">' + sum.toLocaleString("da-DK") + '<small class="lv-kr">kr.</small></div><div class="lv-antal">' + iDag.length + (iDag.length === 1 ? ' køb' : ' køb') + '</div>'; })()   /* kroner, når købene bærer beløbet; ellers antal */
+    + '<div class="lv-tal">' + iDag.length + '<small class="lv-kr">køb</small></div>'   /* ANTAL KØB (Ida 8/11: »0 kr. skal byttes ud med antal køb«) — beløbet har sin egen flise til højre */
     /* DAGENS KØB MED NAVN (Ida 3/11: »jeg synes ikke, jeg tydeligt nok forstår, at der er gennemført et køb i dag — og jeg vil se kundens virksomhedsnavn og evt. anvendt rabatkode«): hvert køb i dag står som egen linje — virksomheden, personen, rabatkoden (foreningen/kuponen) og klokkeslæt, beløbet til højre */
     + (iDag.length ? '<div class="lv-dagens">' + iDag.slice().sort(function (a, b) { return b.tid - a.tid; }).map(function (k) { const kl = new Date(k.tid).toTimeString().slice(0, 5).replace(":", "."); const sub = [k.navn && k.navn !== k.butik ? k.navn : "", k.kilde || "", "kl. " + kl].filter(Boolean).join(" · "); return '<div class="lv-koeb"><div><div class="lv-koeb-n">' + esc(k.butik || k.navn || "Ny kunde") + '</div><div class="lv-koeb-s">' + esc(sub) + '</div></div><span class="lv-koeb-kr">' + (k.kr != null ? esc(k.kr.toLocaleString("da-DK")) + ' kr.' : '') + '</span></div>'; }).join("") + '</div>' : '')
     + '<div class="lv-under">' + (sml ? '<span class="lv-pille">' + esc(sml) + '</span>' : '') + (venter.length ? '<span>' + venter.length + (venter.length === 1 ? ' venter' : ' venter') + ' på at vælge adgangskode</span>' : '') + '</div>'
     + '<div class="lv-tre"><div><b>' + iGaar + '</b><span>I går</span></div><div><b>' + uge + '</b><span>Sidste 7 dage</span></div><div><b>' + maaned.length + '</b><span>Sidste 30 dage</span></div></div></div>';
-  /* KONTAKT I DAG — én rød flise pr. person (Ida 19/10: aldrig flere rækker i én flise) */
-  const kontakt = [];
-  K.forEach(function (k) {
-    const a = D.akt[KK(k)], l = D.lek[KK(k)];
-    if (!a && nu - k.tid > 2 * dag) kontakt.push({ k: k, linje: "Købt for " + Math.floor((nu - k.tid) / dag) + " dage siden · har ikke valgt adgangskode" });
-    else if (a && !l && nu - a > 7 * dag) kontakt.push({ k: k, linje: "Aktiveret for " + Math.floor((nu - a) / dag) + " dage siden · ingen lektion endnu" });
-  });
-  const kontaktHtml = kontakt.length ? kontakt.slice(0, 5).map(function (x) {
-    const href = x.k.tlf ? "tel:" + x.k.tlf.replace(/\s/g, "") : (x.k.mail ? "mailto:" + x.k.mail : "");
-    return '<div class="bs3-fl bs3-roed lv-kontakt"><div class="lv-kt"><div class="bs3-n">' + esc([x.k.navn, x.k.butik !== x.k.navn ? x.k.butik : ""].filter(Boolean).join(" · ")) + '</div><div class="bs3-s">' + esc(x.linje) + '</div></div>'
-      + (href ? '<a class="lv-knap" href="' + esc(href) + '">Kontakt</a>' : '') + '</div>';
-  }).join("") : bf3Tom("Ingen at kontakte i dag.");
+  /* BELØB I DAG (Ida 8/11: »kontakt i dag skal fjernes, og i stedet skal der en flise med beløbet«) */
+  const sumIdag = iDag.reduce(function (a, k) { return a + (k.kr || 0); }, 0);
+  const belobHtml = '<div class="bs3-fl"><div class="bs3-et"><span>Beløb i dag</span></div><div class="lv-tal">' + sumIdag.toLocaleString("da-DK") + '<small class="lv-kr">kr.</small></div></div>';
   /* KØB PR. RABATKODE (30 dage) */
-  const pr = {}; maaned.forEach(function (k) { pr[k.kilde] = (pr[k.kilde] || 0) + 1; });
+  const pr = {}; maaned.forEach(function (k) { const n = k.rabat || k.kilde; pr[n] = (pr[n] || 0) + 1; });   /* RABATKODEN, ikke foreningens navn (Ida 8/11); ældre køb uden gemt kode viser foreningen */
   const prL = Object.keys(pr).sort(function (a, b) { return pr[b] - pr[a]; }); const maks = Math.max.apply(null, prL.map(function (x) { return pr[x]; }).concat([1]));
   const koder = '<div class="bs3-fl"><div class="bs3-et"><span>Køb pr. rabatkode</span><span class="lv-tid">Sidste 30 dage</span></div>'
     + (prL.length ? '<div class="lv-bar">' + prL.map(function (x) { return '<div class="lv-r"><span>' + esc(x) + '</span><span class="lv-spor"><i style="width:' + Math.round(pr[x] / maks * 100) + '%"></i></span><b>' + pr[x] + '</b></div>'; }).join("") + '</div>' : '<div class="bs3-s">Ingen køb endnu.</div>') + '</div>';
@@ -89085,7 +89098,7 @@ function liveOverblikHtml(D) {
     mailFl = '<div class="bs3-fl lv-tragt"><div class="bs3-et"><span>Klik i dine mails</span><span class="lv-tid">Sidste 30 dage</span></div>'
       + (alle.length ? '<div class="lv-trin lv-mails">' + alle.join("") + '</div>' : '<div class="bs3-s">Ingen klik fra mails endnu.</div>') + '</div>';
   }
-  return '<div class="lv"><div class="lv-top">' + stor + '<div class="lv-kol">' + bf3Ver("Kontakt i dag") + kontaktHtml + '</div></div>'
+  return '<div class="lv"><div class="lv-top">' + stor + '<div class="lv-kol">' + belobHtml + '</div></div>'
     + '<div class="lv-tre-fl">' + koder + akt24 + lek7 + '</div>' + tragt + mailFl + '</div>';
 }
 function liveToast(k) {

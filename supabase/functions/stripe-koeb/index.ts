@@ -245,7 +245,9 @@ Deno.serve(async (req) => {
   });
 
   const email = String(s.customer_details?.email ?? "").trim().toLowerCase();
-  const navn = String(s.customer_details?.name ?? "").trim();
+  // TESTKOEB 8/11: naar kunden koeber som virksomhed, er customer_details.name FIRMAETS navn — personens navn staar i individual_name.
+  // Uden dette blev kontaktpersonen til firmanavnet (»Go' morgen, Hans' Testbutik«; koebsmailen: Navn = firma).
+  const navn = String((s.customer_details as any)?.individual_name ?? s.customer_details?.name ?? "").trim();
   const telefon = String(s.customer_details?.phone ?? felter["telefon"] ?? "").trim();
 
   // --- VIRKSOMHEDSNAVNET KAN KOMME FLERE STEDER FRA ------------------------
@@ -415,12 +417,13 @@ Deno.serve(async (req) => {
   // "FUNDET UNDERVEJS": databasen svarer 400 column contacts.navn does not exist).
   // Kontaktpersonens navn ligger derfor i kommentaren sammen med mail og telefon.
   let kontaktOk = true;
+  const rabatInfo = await hentRabatkode(String(s.id ?? ""));   // hentes én gang: gemmes på kontakten (Live-overblikket: Køb pr. rabatkode) og står i købsmailen
   try {
     const { data, error } = await admin.from("contacts").insert({
       kunde: virksomhed,
       status: "Kunde",
       source: erTest ? "Testlink" : (erYGT ? ("YOU GOT THIS" + (forening ? " · " + forening : "")) : "Stripe"),
-      kommentar: [navn, email, telefon, "Kode: " + kode, (s.amount_total != null ? "Beløb: " + Math.round(Number(s.amount_total) / 100) + " kr." : "")].filter(Boolean).join(" · "),   // BELØBET TIL LIVE-OVERBLIKKET (Idas klik 19/10 »Kroner pr. køb«): Stripes amount_total i øre → hele kroner
+      kommentar: [navn, email, telefon, "Kode: " + kode, (s.amount_total != null ? "Beløb: " + Math.round(Number(s.amount_total) / 100) + " kr." : ""), (rabatInfo.kode ? "Rabatkode: " + rabatInfo.kode : "")].filter(Boolean).join(" · "),   // BELØBET TIL LIVE-OVERBLIKKET (Idas klik 19/10 »Kroner pr. køb«): Stripes amount_total i øre → hele kroner
     }).select("id");
     if (error || !data || !data.length) kontaktOk = false;
   } catch { kontaktOk = false; }
@@ -469,7 +472,7 @@ Deno.serve(async (req) => {
   // Best-effort — svaret til Stripe aendres ikke af, om mailen kom frem (se koebsmail i svaret).
   const mailSendt = await sendKoebsmail({
     produkt: erYGT ? "You Got This" : "Content Studio", belob: koebBelob(s), tidspunkt: dkTid(Number(s.created)),
-    rabat: await hentRabatkode(String(s.id ?? "")), navn, virksomhed, email, telefon, kode, test: erTest, eksisterende: false,
+    rabat: rabatInfo, navn, virksomhed, email, telefon, kode, test: erTest, eksisterende: false,
   });
 
   // virk_kilde er ikke pynt: den er beviset for, HVOR virksomhedsnavnet kom fra.
