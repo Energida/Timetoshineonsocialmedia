@@ -25349,7 +25349,7 @@ function briefTrinAnvend(wrap, sider, akt) {
   if (alle.length) trin.push(alle.slice());
   /* FAKTA ER FOERSTE TRIN PAA START, PAA TELEFONEN (Ida 8/11: »fakta skulle vaere den foerste side i briefen, separat, inden fang dem« — klik »Fakta foer Idéen«):
      trin 0 = fakta-boksen alene (de andre felter skjules), trin 1 = Idéen. Fakta-boksen vises kun dér; paa Fang dem, Fasthold og Handle er den ude. Computeren er uroert (fakta har sin egen spalte). */
-  const faktaTrin = (akt === 0 && alle.length > 0 && document.body.classList.contains("mb-brief-tlf"));
+  const faktaTrin = (akt === 0 && alle.length > 0 && document.body.classList.contains("mb-brief-tlf") && !wrap.querySelector(".ss-stat"));   /* en Story har sin egen foerste skaerm (status + dato + type) — den faar ikke Fakta-trinnet */
   if (faktaTrin) trin.unshift([]);
   if (!trin.length) trin.push([]);
   const t = Math.max(0, Math.min(trin.length - 1, BRIEF_TRIN_AKTIV)); BRIEF_TRIN_AKTIV = t;
@@ -42060,7 +42060,12 @@ async function lektionSet(id) {
   /* "Hurtig refleksion"-popup'en efter lektionen er UDE (Idas klik 13/9): stjernerne bor nu i
      faerdig-kortet (lekMoment), skrivefeltet udgaar. REFLEKSION_PROMPTS staar i koden. */
 }
-function kursusFaerdig() { const a = kursusLektionerAktive(); return a.length > 0 && a.every(l => KURSUS_SET[l.id]); }   /* tom liste = IKKE færdig (rod-årsagen til "Forløbet er gennemført"-buggen) */
+/* HELE FORLOEBET SKAL VAERE MED, FOER DET ER FAERDIGT (vurderingen 8/11, testkoebet: efter lektion 0.5 stod »Forloebet er i maal« og eftermaalingen aabnede, mens modul 1–10 var laast):
+   YOU GOT THIS har modul 1–11 (YGT_DAG). Har et modul endnu ingen publicerede lektioner med video, er forloebet ikke faerdigt — og den sidste AABNE lektion er ikke den sidste i forloebet. */
+function kursusAlleModulerMed() {
+  try { if (!ygtModulHold()) return true; const har = {}; kursusLektionerAktive().forEach(function (l) { har[modulNrFor(l.id)] = 1; }); return Object.keys(YGT_DAG).every(function (n) { return !!har[n]; }); } catch (e) { return true; }
+}
+function kursusFaerdig() { const a = kursusLektionerAktive(); return a.length > 0 && a.every(l => KURSUS_SET[l.id]) && kursusAlleModulerMed(); }   /* tom liste = IKKE færdig (rod-årsagen til "Forløbet er gennemført"-buggen) */
 /* EEN DOER TIL "ER KURSUS-LAASEN PAA?" (lektionsgennemgangen 13/9, Idas klik: alt-eller-intet
    BLIVER, men med sikkerhedsventil). Foer var laasen bare !kursusFaerdig(): fandtes der INGEN
    publicerede lektioner, var forloebet aldrig faerdigt, og de syv sider stod laast for altid
@@ -42434,7 +42439,8 @@ function renderLektionVis() {
   const setAntal = aktive.filter(x => KURSUS_SET[x.id]).length;
   const tl = document.getElementById("lekTopLabel"); if (tl) tl.textContent = modul ? modul.titel : "";
   const tf = document.getElementById("lekTopFrem"); if (tf) tf.textContent = setAntal + " af " + aktive.length;
-  const sidste = ix === aktive.length - 1;
+  const sidsteAabne = ix === aktive.length - 1;   /* sidste lektion, der kan aabnes nu — styrer knappen */
+  const sidste = sidsteAabne && kursusAlleModulerMed();   /* sidste i HELE forloebet — styrer teksten »forloebet er i maal« (vurderingen 8/11) */
 
   /* INTET OM OEVELSEN, FOER VIDEOEN ER SET (Idas klik 13/9 paa mockup-laerredet). Foer
      videoen er markeret set: EEN roed knap, "Faerdig — videre". Naar den trykkes (eller
@@ -42445,7 +42451,7 @@ function renderLektionVis() {
   const harOv = !!(l.ovelse && !mgErGentagelig(id));
   const ovTaget = !!KURSUS_SVAR[id];
   const faerdigTxt = sidste ? 'Færdig — forløbet er i mål' : 'Færdig — videre';
-  const videreKnap = sidste
+  const videreKnap = sidsteAabne
     ? '<button class="dbtn primary" onclick="lukLektion()">Tilbage til forløbet</button>'
     : '<button class="dbtn primary" onclick="lekNaeste()">N&aelig;ste lektion</button>';
   document.getElementById("lekMain").innerHTML =
@@ -42570,7 +42576,8 @@ function lekMbRender() {
   const modul = lekModulFor(id);
   const set = !!KURSUS_SET[id];
   const setAntal = aktive.filter(x => KURSUS_SET[x.id]).length;
-  const sidste = ix === aktive.length - 1;
+  const sidsteAabne = ix === aktive.length - 1;   /* sidste lektion, der kan aabnes nu — styrer knappen */
+  const sidste = sidsteAabne && kursusAlleModulerMed();   /* sidste i HELE forloebet — styrer teksten »forloebet er i maal« (vurderingen 8/11) */
   const harOv = !!(l.ovelse && !mgErGentagelig(id));
   const ovTaget = !!KURSUS_SVAR[id];
   const forrige = ix > 0 ? aktive[ix - 1] : null;
@@ -42581,7 +42588,7 @@ function lekMbRender() {
   /* KNAPPEN SIGER, HVAD DER SKER (Hans-testen 24/9: »Færdig · Næste lektion« foerte til oevelsen). Oevelsen naevnes ikke, foer videoen er set (Ida 24/9). */
   if (!set) roed = lekMbPil('Videre til næste', "lekVidere('" + id + "')", true, "pilH", true);   /* Idas ord 26/10: »rød knap skal hedde videre til næste« */
   else if (harOv && !ovTaget) roed = lekMbPil('Tag ' + oevOrd(id, true), "startOvelse('" + id + "')", true, "pilH", true);
-  else roed = sidste ? lekMbPil('Tilbage til forløbet', "lukLektion()", true) : lekMbPil('Næste lektion', "lekNaeste()", true, "pilH", true);
+  else roed = sidsteAabne ? lekMbPil('Tilbage til forløbet', "lukLektion()", true) : lekMbPil('Næste lektion', "lekNaeste()", true, "pilH", true);
   const hvid = (harOv && ovTaget ? lekMbPil('Ret dine svar', "startOvelse('" + id + "')") : '')
     + (forrige ? lekMbPil('Forrige lektion', "visLektion('" + forrige.id + "')", false, "pilV") : '')
     + (tlf ? lekMbPil('Tilbage', "lukLektion()") : '');
@@ -63717,7 +63724,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "3174";
+const APP_VERSION = "3176";
 const APP_BYGGET = "3. november";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_VERSION;   /* ingen dato (Ida 7/11: »hvorfor står der version 3. november?«) — datoen blev ikke rettet med, nummeret er sandheden */ } catch (e) {} });
 let NY_VERSION_KLAR = false;
