@@ -16,6 +16,7 @@ def koer(repo=REPO, bred=390):
     subprocess.run(["python3", os.path.join(repo, "tools/designlaas/byg-sele.py"), sele], capture_output=True)
     shutil.copy(os.path.join(HER, "lag2", "husk-stub.js"), os.path.join(sele, "sb-stub.js"))
     i0 = datetime.date.today()
+    if bred >= 900: i0 = i0 - datetime.timedelta(days=i0.weekday())   # mandag i den viste uge: på en søndag lå »de næste seks dage« i næste uge og blev aldrig vist af ugevisningen (8/11)
     ops = [{"id": f"kal-{i}", "kode": KODE, "titel": f"Opdigtet opslag {i + 1}", "status": STATUS[i], "dato": (i0 + datetime.timedelta(days=i)).isoformat(), "format": "Reel", "soejle": "1A", "brief": {}} for i in range(6)]
     db = {"skema_svar": [{"id": "kd1", "kode": KODE, "navn": "config", "skema": "kunde_def", "svar": DEF}], "content_ideer": ops}
     open(os.path.join(sele, "sele-db.json"), "w").write(json.dumps({"ls": {"SELE_DB": json.dumps(db)}}))
