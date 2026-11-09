@@ -60225,11 +60225,21 @@ async function opretOpslag(dato, soejle, type) {
      openBrief troede, man kom fra Idébanken — også når plusset sad i kalenderen.
      Nu huskes den fane, man faktisk stod på, og Tilbage lander dér. */
   const fra = (typeof current !== "undefined" && current !== 7) ? current : null;
-  showTab(2);
+  /* showTab(2) rykker først, når der IKKE er en First thing first foran (Ida 9/11) — se nedenfor */
   /* datoen reserverer dagen — status forbliver Idé (2C: status fortæller modenheden) */
   /* STORY ER HELT SIMPEL (Ida 3/11, artifact MatkJo1GYBRNkZwD4FeLvT): en ny story hedder »Story N« (tæller selv op), har ingen indholdssøjle og ingen First thing first — man designer den bare */
   let storyNavn = ""; if (type === "Story") { soejle = "Story"; try { const n = (IDEER || []).filter(function (x) { return x && String(x.type || "") === "Story" && /^Story \d+$/.test(String(x.titel || "")); }).map(function (x) { return parseInt(String(x.titel).slice(6), 10) || 0; }); storyNavn = "Story " + ((n.length ? Math.max.apply(null, n) : 0) + 1); } catch (e) { storyNavn = "Story 1"; } }
+  /* MAN BLIVER UDE PAA KALENDEREN, TIL DE TRE TRIN I POPUPPEN ER UDFYLDT (Ida 9/11: »jeg vil gerne at man bliver ude på kalenderen indtil man har udfyldt disse 3 trin i pop-uppen«) — kun et nyt opslag uden søjle (og en story) møder arket; briefen åbnes først, når sidste trin er gemt (briefSoejleArkStart → openBriefSide), Annullér fjerner det tomme opslag og man står stadig, hvor plusset blev trykket */
+  const skalArk = (!soejle || String(type || "") === "Story");
+  if (!skalArk) showTab(2);
   const rec = await ideAdd({ titel: storyNavn, type: type || "", soejle: soejle || "", status: "Idé", dato: dato || null }, { ftf: true });   /* INTET FORVALG (HAARD 31/8; Ida 22/9 kl. 08.25: »den har altid forvalgt reel — det duer ikke«) — formatet vaelges i First thing first */
+  if (rec && rec.id && skalArk && typeof briefSoejleArkVis === "function") {
+    window.__FTF_NY = rec.id; window.__FTF_FRA_KAL = true; if (fra != null) BRIEF_FRA = fra;
+    const itK = (IDEER || []).find(function (x) { return String(x.id) === String(rec.id); }) || rec;
+    try { if (typeof renderCalendar === "function") renderCalendar(); } catch (e) {}
+    briefSoejleArkVis(itK);
+    return;
+  }
   if (rec && rec.id) { window.__FTF_NY = rec.id;   /* det nye, tomme opslag — Annullér paa foerste trin fjerner det igen (bsFlytLuk, revision 6/10) */
     openBrief(rec.id); if (fra != null) BRIEF_FRA = fra;
     /* FIRST THING FIRST PAA ET NYT OPSLAG (Ida 21/9 kl. 22.40: »når jeg i kalenderen klikker på + nyt opslag kommer first thing first ikke op?«): et NYT opslag uden soejle/format
@@ -62589,11 +62599,11 @@ function bsFlytLuk() {
     const itN = window.__SOEJLE_ARK_IT, FN = window.__FTF;
     if (m && m.style.display !== "none" && m.querySelector(".ftf-ark") && itN && window.__FTF_NY && String(window.__FTF_NY) === String(itN.id) && FN && ((!String(FTF_TITEL || "").trim() && !String(itN.titel || "").trim()) || (FN.trin && FN.trin.length === 1 && FN.trin[0] === "storytype" && !String((itN.brief && itN.brief.storytype) || "").trim()))) {   /* en ny story, der lukkes uden »Opret«, findes ikke (Ida 4/11) */
       m.style.display = "none"; window.__FTF_NY = null;
-      (async function () { try { await briefTilbage(); } catch (e) {} try { await ideDelete(itN.id); } catch (e) {} })();
+      (async function () { if (!window.__FTF_FRA_KAL) { try { await briefTilbage(); } catch (e) {} } try { await ideDelete(itN.id); } catch (e) {} try { if (window.__FTF_FRA_KAL && typeof renderCalendar === "function") renderCalendar(); } catch (e) {} window.__FTF_FRA_KAL = false; })();
       return;
     }
   } catch (e) {}
-  if (m) { if (m.style.display !== "none" && m.querySelector(".ftf-ark")) { try { briefFtfGemDelvis(); } catch (e) {} } m.style.display = "none"; } }   /* lukkes First thing first, er svarene gemt (Hinges Hus 29/9) */
+  if (m) { if (m.style.display !== "none" && m.querySelector(".ftf-ark")) { try { briefFtfGemDelvis(); } catch (e) {} } m.style.display = "none"; } if (window.__FTF_FRA_KAL) { window.__FTF_FRA_KAL = false; try { if (typeof renderCalendar === "function") renderCalendar(); } catch (er) {} } }   /* lukkes First thing first, er svarene gemt (Hinges Hus 29/9) */
 /* DET LILLE VALGARK KAN SWIPES NED (Ida 24/9 kl. 09.45: »På disse skal jeg også kunne lukke boksen ved at swipe ned« — reglen fra 21/9:
    alle popups kan swipes ned). Samme greb som husets ark (arkGrebTraek), lagt EEN gang paa dokumentet, saa det gaelder hvert
    valgark i #bsFlytMenu, uanset hvem der tegner det. Emil: kun transform, et hurtigt svirp (> 0,11 px/ms) lukker ogsaa, drawer-kurven. */
@@ -63797,7 +63807,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "3187";
+const APP_VERSION = "3188";
 const APP_BYGGET = "3. november";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_VERSION;   /* ingen dato (Ida 7/11: »hvorfor står der version 3. november?«) — datoen blev ikke rettet med, nummeret er sandheden */ } catch (e) {} });
 let NY_VERSION_KLAR = false;
