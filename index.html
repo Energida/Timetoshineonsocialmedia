@@ -247,6 +247,11 @@ html body #briefWrap .sk-q.brief-forslag > .sk-label, html body.mb #briefWrap .s
 /* ALDRIG SKILLESTREG OVER ET ENLIGT FELT (Ida 27/10: »aldrig skillestreg hvis der kun er en kasse under og ikke tekst«): Tekst på coverbilledet har kun forslagsfeltet under titlen — stregen er væk, luften bliver. Begge flader. */
 html body #briefWrap .sk-q[data-par="cover"] > .sk-label, html body.mb #briefWrap .sk-q[data-par="cover"] > .sk-label.mb-versal { border-bottom:0 !important; padding-bottom:0 !important; }
 /* INGEN SKILLESTREG OVER ET ENLIGT FELT — GENNEMGANG AF HELE APPEN (Ida 9/11): »Vores egne noter« (Værktøjskassen) og »Vores ugemål« (Performance) har kun et felt under etiketten */
+/* COVERBILLEDE-VÆLGER (9/11): de uploadede Coverbilleder står som små billeder under coveret; valgt = mørk kant */
+html body .cv-ed .cv-medrk { display:flex; gap:8px; margin:8px 0 12px; overflow-x:auto; }
+html body .cv-ed .cv-med { flex:0 0 56px; width:56px; aspect-ratio:9/16; border-radius:10px; border:1.5px solid #E3E2DE; background:#F1EEE8; padding:0; overflow:hidden; cursor:pointer; position:relative; }
+html body .cv-ed .cv-med.on { border-color:#1A1A1A; }
+html body .cv-ed .cv-med img { width:100%; height:100%; object-fit:cover; display:block; }
 html body .post-card:has(> #vkNoterFelt) > .post-hoved, html body .post-card:has(#vkNoterFelt) .post-hoved { border-bottom:0 !important; padding-bottom:0 !important; }
 html body .ws-card:has(> #mfUge) > .mb-versal, html body .ws-card:has(#mfUge) > .mb-versal, html body .ws-card:has(#mfUge) .mb-versal { border-bottom:0 !important; padding-bottom:0 !important; }
 /* ALLE CHIPS I BRIEFEN ER ENS (LÅST, Ida 9/10: »ALLE chips i briefen skal bære grå og tekst størrelser og placering skal være ENS«): grå tekst 13 px, 36 høj, samme luft — valgt = rød som altid; initial-ringene (A · I) er ringe, ikke chips */
@@ -24711,7 +24716,30 @@ function cvDesign(noegle, skab) {
   if (m && m[noegle] && Array.isArray(m[noegle].lag)) return m[noegle];
   const d = cvStart(noegle); if (skab) { if (!m) B.slideDesign = {}; B.slideDesign[noegle] = d; } return d;
 }
-function cvFotoUrl(noegle) { const f = CV_FOTO[BRIEF_ID]; return f ? f[noegle] || "" : ""; }
+function cvFotoUrl(noegle) {
+  const f = CV_FOTO[BRIEF_ID]; if (!f) return "";
+  /* COVERET BRUGER DE UPLOADEDE COVERBILLEDER (Ida 9/11: »den synkroniserede ikke«; mockuppen »Coverbillede vælger« godkendt): har kunden selv valgt et foto til coveret, vinder det; ellers det valgte (som standard det første) af Coverbilleder under briefen */
+  return f[noegle] || f["m" + cvMedieValgt()] || "";
+}
+function cvMedieListe() { const m = (BRIEF_STATE && BRIEF_STATE.medier && Array.isArray(BRIEF_STATE.medier.cover)) ? BRIEF_STATE.medier.cover : []; return m.filter(function (x) { return x && x.sti; }); }
+function cvMedieValgt() { const n = cvMedieListe().length; const v = parseInt(BRIEF_STATE && BRIEF_STATE.cvMedieValgt, 10); return (isNaN(v) || v < 0 || v >= n) ? 0 : v; }
+async function cvMedieHent() {
+  if (!sb || !BRIEF_ID) return;
+  const briefId = BRIEF_ID, liste = cvMedieListe(); if (!liste.length) return;
+  const m = CV_FOTO[BRIEF_ID] || (CV_FOTO[BRIEF_ID] = {});
+  const forsoegt = cvMedieHent.__f || (cvMedieHent.__f = {});
+  for (let i = 0; i < liste.length; i++) {
+    if (m["m" + i] || forsoegt[liste[i].sti]) continue; forsoegt[liste[i].sti] = 1;
+    try { const d = await sb.storage.from(CV_LAGER).download(liste[i].sti); if (d && d.data && String(BRIEF_ID) === String(briefId)) m["m" + i] = URL.createObjectURL(d.data); } catch (e) {}
+  }
+}
+function cvMedieVaelg(i) {
+  if (!BRIEF_STATE || !CV) return;
+  BRIEF_STATE.cvMedieValgt = i;
+  try { if (BRIEF_STATE.cvFotos && BRIEF_STATE.cvFotos[CV.noegle]) BRIEF_STATE.cvFotos = Object.assign({}, BRIEF_STATE.cvFotos, { [CV.noegle]: "" }); } catch (e) {}
+  try { const f = CV_FOTO[BRIEF_ID]; if (f) f[CV.noegle] = ""; } catch (e) {}
+  cvGemSnart(); try { cvUI(); } catch (e) {} try { cvGentegn(); } catch (e) {}
+}
 function cvBillede(url) {
   if (!url) return null;
   if (CV_BILLED[url]) return CV_BILLED[url].complete ? CV_BILLED[url] : null;
@@ -24837,6 +24865,7 @@ function cvAabn(noegle) {
     + '<button type="button" class="cv-luk" aria-label="Luk" onclick="cvLuk()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>'
     + '<div class="cv-titel">' + (kar ? "Slides" : "Coverbillede") + '</div>'
     + '<div class="cv-gitter"><div class="cv-venstre"><div class="cv-faner" id="cvFaner"></div><div class="cv-laerred"><canvas id="cvC" aria-label="Billedet"></canvas><div class="cv-str" id="cvStr" role="slider" tabindex="0" aria-label="Tekstens størrelse" aria-orientation="vertical"><span class="cv-str-spor"></span><span class="cv-str-knap" id="cvStrKnap"></span></div></div>'
+    + '<div class="cv-medier" id="cvMedier"></div>'
     + '<button type="button" class="dbtn mq-tap cv-foto" onclick="cvFotoVaelg()"><span id="cvFotoOrd">Vælg foto</span></button>'
     + '<input type="file" id="cvFil" accept="image/*,.heic,.heif"' + (kar ? ' multiple' : '') + ' hidden onchange="cvFotoValgt(this)"></div>'
     + '<div class="cv-hoejre" id="cvPanel"></div></div></div>';
@@ -24881,7 +24910,12 @@ function cvUI() {
   const l = cvLag();
   const fan = document.getElementById("cvFaner");
   if (fan) fan.innerHTML = CV.kar ? CV.nogler.map(function (k, n) { return '<button type="button" class="ark-chip' + (k === CV.noegle ? ' on' : '') + '" onclick="cvSlide(\'' + k + '\')">Slide ' + (n + 1) + '</button>'; }).join("") : "";
-  const fo = document.getElementById("cvFotoOrd"); if (fo) fo.textContent = cvFotoUrl(CV.noegle) ? "Skift foto" : (CV.kar ? "Vælg fotos" : "Vælg foto");
+  const cvm = cvMedieListe(), cvmEl = document.getElementById("cvMedier");
+  if (cvmEl) {
+    const egen = !!(CV_FOTO[BRIEF_ID] && CV_FOTO[BRIEF_ID][CV.noegle]);
+    cvmEl.innerHTML = (!CV.kar && cvm.length) ? '<div class="cv-sek">Billede</div><div class="cv-medrk">' + cvm.map(function (x, i) { const u = (CV_FOTO[BRIEF_ID] || {})["m" + i] || ""; return '<button type="button" class="cv-med' + (!egen && i === cvMedieValgt() ? ' on' : '') + '" aria-label="Billede ' + (i + 1) + '" onclick="cvMedieVaelg(' + i + ')">' + (u ? '<img src="' + u + '" alt="">' : '') + '</button>'; }).join("") + '</div>' : "";
+  }
+  const fo = document.getElementById("cvFotoOrd"); if (fo) fo.textContent = (!CV.kar && cvm.length) ? "Fra kamerarullen" : (cvFotoUrl(CV.noegle) ? "Skift foto" : (CV.kar ? "Vælg fotos" : "Vælg foto"));
   const fav = CV_FAV || [];
   /* KUN FAVORITTERNE + »ALLE SKRIFTER« (Idas klik 24/9 kl. 23.36): favoritterne vaelges under Min profil; uden favoritter vises alle */
   const visAlle = !fav.length || CV.alleSkrifter;
@@ -25040,6 +25074,7 @@ async function cvFotoOpload(k, url) {
 }
 async function cvFotoHent() {
   const B = BRIEF_STATE || {}, stier = B.cvFotos || {}; if (!sb || !BRIEF_ID) return;
+  try { const f0 = !!cvFotoUrl("cover"); await cvMedieHent(); if (!f0 && cvFotoUrl("cover")) { try { const fs0 = document.getElementById("briefForside"); const gl0 = fs0 && fs0.querySelector(".pf-cv"); if (gl0) { gl0.outerHTML = cvForsideHtml(); cvForsideTegn(); } } catch (e) {} try { if (CV) { cvUI(); cvGentegn(); } } catch (e) {} } } catch (e) {}
   const m = CV_FOTO[BRIEF_ID] || (CV_FOTO[BRIEF_ID] = {}); const briefId = BRIEF_ID;
   const forsoegt = cvFotoHent.__forsoegt || (cvFotoHent.__forsoegt = {});   /* hvert foto hentes hoejst een gang pr. fane — en fejlet hentning maa aldrig gentegne i ring */
   const mangler = Object.keys(stier).filter(function (k) { return stier[k] && !m[k] && !forsoegt[stier[k]]; }); if (!mangler.length) return;
@@ -63815,7 +63850,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "3190";
+const APP_VERSION = "3191";
 const APP_BYGGET = "3. november";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_VERSION;   /* ingen dato (Ida 7/11: »hvorfor står der version 3. november?«) — datoen blev ikke rettet med, nummeret er sandheden */ } catch (e) {} });
 let NY_VERSION_KLAR = false;
