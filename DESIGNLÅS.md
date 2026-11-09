@@ -1,3 +1,6 @@
+## HÅRD REGEL · 9. november · ALLE CHIPS ER 12,5 PX / 32 PX / 14 PX LUFT I HELE B2B (Ida 9/11: »alle chips skal ændres til bud 2 i hele b2b!«)
+Afløser 15/40 (7/11) og 13/36 (21/9). Uvalgt tekst #6F6B66, valgt = rød med hvid tekst. Trykfladen er 44 px (::before). Én blok sidst i CSS'en (seks id-negationer). Undtaget: flise-valg i arkene (sa-lang), initial-cirklerne i klip (kk-ini), dropdown-pillerne (bs3-drop, bdrop-knap). Statuspillen foran ⋯ er 13 px / 36 px.
+
 ## 9. november · STATUS: PILLE, AUTOMATIK OG FLISER (Ida 9/11)
 Statuspillen på briefoversigten står foran ⋯, 176 px bred, 44 px høj, sort 13 px tekst og pil centreret som én gruppe. · »Venter på godkendelse« og »Sendt til godkendelse« er ude som fliser: afsenderen ser »Forslag« i statuspillen. · Noget oprettet i kalenderen med en dato er automatisk »Planlagt«; »Brief i gang« kommer først, når man skriver i »Hvad er idéen?«. · Man bliver på kalenderen, til de tre trin i popuppen er udfyldt.
 

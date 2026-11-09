@@ -13,7 +13,7 @@ Kilden i koden er **MÅLKORT-BLOKKEN** sidst i det første `<style>` i `index.ht
 | **Hjælpetekst** | Poppins 12,5 / 400 / #6F6B66 · 4 under titlen |
 | **Felt** (.sk-input) | Poppins 13 / 400 / #1A1A1A · radius 14 · 1 px #DEDAD4 · luft 10/12 (40 til mikrofon til højre) · **mindst 44 høj** · aldrig kursiv · mikrofonen inde i feltet, grå |
 | **Feltflugt** | alle felter i samme flise starter og slutter på samme x (hook-valgets cirkel ligger INDE i feltet til venstre, 28 rund, 8 fra kanten) |
-| **Chip** | højde **36** · Poppins 13 / 400 · #6F6B66 · 1 px #DEDAD4 · radius 999 · luft **16** hver side · hvid · gap mellem chips 8 · én linje · valgt = mørkere grå ramme (aldrig fyldt) |
+| **Chip** | højde **32** · Poppins 12,5 / 400 · #6F6B66 · 1 px #DEDAD4 · radius 999 · luft **14** hver side (Ida 9/11, bud 2) · hvid · gap mellem chips 8 · én linje · valgt = mørkere grå ramme (aldrig fyldt) |
 | **Plus-chip** (»Tilføj forslag/klip/scene/CTA«) | som chip + plus 14 × 14 grå, **6** mellem plus og tekst (ikke 8 + 8), venstrestillet i rækken (aldrig højre), 12 over |
 | **Knap, grå** | pille radius 999 · hvid · 1 px #DEDAD4 · tekst #6F6B66 · Poppins 12–13 / 400 |
 | **Knap, rød** | pille · #FC2404 · hvid tekst · gør noget færdigt |
@@ -31,7 +31,7 @@ Kilden i koden er **MÅLKORT-BLOKKEN** sidst i det første `<style>` i `index.ht
 | Element | Facit |
 |---|---|
 | **Hjem computer, bud 4B** | panel **#F6F4F1** radius 28 luft 12, 24 mellem paneler · flise i panel hvid, **80 høj**, radius 20, ramme 1 px **#E3E2DE**, ingen skygge, 10 mellem · overskrift→panel 16 · rød datobjælke 44 (#FC2404, hvid 13/400) · datoboks 56 · pile runde 32 · første overskrift flugter med datofliserne (≤ 1 px) |
-| **Telefonens oplysnings-chips (briefoversigt)** | under statuslinjen, én linje, swipe sidelæns, chip 36 (13/400 #6F6B66), kun udfyldte, ingen +, ingen ikon, kun visning; coveret 228 |
+| **Telefonens oplysnings-chips (briefoversigt)** | under statuslinjen, én linje, swipe sidelæns, chip 32 (12,5/400 #6F6B66), kun udfyldte, ingen +, ingen ikon, kun visning; coveret 228 |
 | **Story-række** | [status ⌄] [dato] samme højde **36**, 8 imellem, status til venstre, ⋯ yderst til højre; storytype-chips 36 på én linje under Titel (valgt = grå flueben) |
 | **Upload-flise** (cover, Story, Den færdige video) | `.cv-upload`: hvid, stiplet 1,5 px #DEDAD4, radius 14, 9:16, grønt symbol + »Upload«; under upload står procesringen (husets ring, ubestemt) i flisen; ved fejl står årsagen + »Prøv igen« i flisen; færdig = video 9:16 + »Skift video« · »Download« · skraldespand (36) |
 | **Valgt chip i cover-editoren** | grå flueben, aldrig rød fyldt |
