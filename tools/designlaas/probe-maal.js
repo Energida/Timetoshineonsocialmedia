@@ -91,7 +91,7 @@ function maalSide(){
     ys.sort(function(a,b){return a-b}); for(var i=1;i<ys.length;i++){ N++; if(ys[i]-ys[i-1]<24) fejl("SKILLELINJE: to streger med "+(ys[i]-ys[i-1])+" px imellem i "+kl(f)); }
   });
   /* IKONRÆKKEN PÅ COMPUTER: kun ⋯ */
-  if(!TLF){ var lose=[].slice.call(document.querySelectorAll("#screen7 .bt-ik-baand > *, #briefWrap .brief-titel-over > .bt-blyant, #screen7 .ss-top > .ss-cirk:not(.ss-mere)")).filter(synlig).filter(function(e){ return !e.classList.contains("bt-mere-tlf"); });
+  if(!TLF){ var lose=[].slice.call(document.querySelectorAll("#screen7 .bt-ik-baand > *, #briefWrap .brief-titel-over > .bt-blyant, #screen7 .ss-top > .ss-cirk:not(.ss-mere)")).filter(synlig).filter(function(e){ return !e.classList.contains("bt-mere-tlf") && !e.classList.contains("bt-status-baand"); });   /* status står foran ⋯ (Ida 9/11) */
     N++; if(lose.length) fejl("IKONRÆKKE: løse ikoner uden for ⋯: "+lose.map(function(e){return e.title||kl(e)}).join(", ")); }
 }
 function maalForsideTlf(){

@@ -1,3 +1,12 @@
+## HÅRD REGEL · 9. november · NAVIGATIONSKNAPPER ER 44 PX I HELE B2B (Ida 9/11: »navigationsknapperne skal være 44 px i hele b2b … lås det i designlåsen«)
+Tilbage, Rediger, statuspillen, Næste, Gem ændringer og alle andre piller, der navigerer eller ændrer tilstand, er 44 px høje (Poppins 13, radius 999, kant 1 px). Porten måler det (»UENS pille«). Rediger er rød og primær; statuspillen står foran ⋯ i rækken til højre på computerens briefoversigt og skriveside og kan ændres uden først at trykke Rediger (Ida 9/11).
+
+## 9. november · »KLAR TIL GODKENDELSE« HEDDER »FORSLAG« FOR KUNDEN (Ida 9/11)
+Visningsnavnet (statusVisNavn) er »Forslag«; datanøglen i basen er uændret. · Chips i Story-arket (Opbygning til deling · Daglig check-in) har INGEN flueben; valgt = mørkere kant.
+
+## 9. november · »JEG VED DET IKKE ENDNU« ER EN FLISE SOM DE ANDRE (Ida 9/11: »layout og design … ikke acceptabelt«)
+I Vælg format og Vælg indholdssøjle: samme klasse som de øvrige fliser (sa-lang), samme venstrestillede tekst, 52 px, ikke klippet, luft til prikkerne.
+
 ## HÅRD REGEL · 9. november · RØD CHIP = HVID TEKST, ALTID (Ida 9/11: »når chips er markeret og røde skal teksten være hvid. lås dette i designlåsen og gennemgå alle steder«)
 En chip med rød baggrund (valgt, aktiv, »Hvem taler opslaget til?«, briefens sidefaner) har HVID tekst. Aldrig grå på rød. Årsag til fejlen: briefens grå chipfarve (#9A9590, 7/11) ramte også den valgte røde chip. Rettelsen i index.html ligger lige efter den grå regel og bruger `.on` i briefens tre flader og `.mb-roed` (sættes af motoren på hver chip med rød baggrund). Hvide valgte chips (story, profil, flyt-menuen, mails) har egne regler og røres ikke. Gennemgået 9/11: 33 skærme på 390 og 1440, 0 røde flader med grå tekst. Gælder app, bud og mockups, admin og b2b.
 
