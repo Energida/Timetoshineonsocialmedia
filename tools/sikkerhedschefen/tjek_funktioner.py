@@ -8,7 +8,11 @@ AABNE = {"app-kalender-feed": "uden gyldigt feed-token: ingen kalender", "stripe
 
 def funktioner(repo):
     s = open(os.path.join(repo, "index.html"), encoding="utf-8").read()
-    return sorted(set(re.findall(r'functions/v1/([a-z0-9-]+)', s)) | {"stripe-koeb"})
+    fund = set(re.findall(r'functions/v1/([a-z0-9-]+)', s)) | {"stripe-koeb"}
+    # 9/11: kalender-feedet er endnu ikke bygget som funktion, og knappen er skjult for kunder, så længe APP_KALENDER_TOKEN er tom (index.html: »if (window.APP_KALENDER_TOKEN || DEPLOY === dev)«).
+    # Er nøglen tom, kan ingen kunde nå funktionen — så er 404 korrekt. Sættes nøglen, kræves funktionen igen.
+    if re.search(r'window\.APP_KALENDER_TOKEN *= *""', s): fund.discard("app-kalender-feed")
+    return sorted(fund)
 
 def hent(url):
     req = urllib.request.Request(url, headers={"User-Agent": "Energida sikkerhedschefen"})
