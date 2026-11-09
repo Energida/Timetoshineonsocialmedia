@@ -1,3 +1,12 @@
+## HÅRD REGEL · 9. november · RØD CHIP = HVID TEKST, ALTID (Ida 9/11: »når chips er markeret og røde skal teksten være hvid. lås dette i designlåsen og gennemgå alle steder«)
+En chip med rød baggrund (valgt, aktiv, »Hvem taler opslaget til?«, briefens sidefaner) har HVID tekst. Aldrig grå på rød. Årsag til fejlen: briefens grå chipfarve (#9A9590, 7/11) ramte også den valgte røde chip. Rettelsen i index.html ligger lige efter den grå regel og bruger `.on` i briefens tre flader og `.mb-roed` (sættes af motoren på hver chip med rød baggrund). Hvide valgte chips (story, profil, flyt-menuen, mails) har egne regler og røres ikke. Gennemgået 9/11: 33 skærme på 390 og 1440, 0 røde flader med grå tekst. Gælder app, bud og mockups, admin og b2b.
+
+## 9. november · KARRUSEL: TEKST-HOOK OG BILLEDET PÅ FORSIDEN (Ida 9/11, valgt: »vælge et tekst-hook og beskrive billedet«)
+Øverste flise i Fang dem hedder »Tekst-hook« på en karrusel. Slide 1 (Det visuelle hook) har kun »Billedet på sliden«; teksten på slide 1 er det valgte tekst-hook og fyldes ind (b.slides[0]) ved flueben og når hooket rettes. Ingen »flyt ned« på forsiden. Data uændret.
+
+## 9. november · TITLEN ER ET FELT IGEN (Ida 9/11)
+Egen flise »Titel« (placeholder »Giv opslaget et navn«) over »Hvad er idéen?«; heroen skifter, mens man skriver; tomt gemmes aldrig.
+
 ## 4. november · HJEM PÅ COMPUTER = BUD 4B (Ida valgte bud 4B: »implementer 4b«)
 Højre kolonne på Hjem (≥ 900): to paneler **Kommende aktiviteter** og **Opgaver**, overskrifterne (versal 10, hårlinje, »Se alle«) UDEN FOR panelerne i samme stil som »Kommende opslag«. **Panel: #F6F4F1 · radius 28 · indre luft 12 · 24 mellem paneler.** **Fliser i panelet: hvide · 80 høje · radius 20 · ramme 1 px #E3E2DE · INGEN skygge · 10 mellem fliser · datoboks 56 med ramme.** Overskrift→flise 16. Drive som stille linje under panelerne. Rød datobjælke under coveret: 44 høj, #FC2404, hvid Poppins 400 13, kun dato · uge, lige kanter, ingen streg (kun computer). Ingen Dag/Uge-chips; pilene er runde 32 px ved datofliserne. **Den røde »Næste skridt / I dag«-flise er væk fra Hjem på computer og telefon.** Målt af `probe-maal.js`; mål i `MÅLKORT.md`.
 
