@@ -10,8 +10,9 @@ JS = r"""(async function(){ var V=function(ms){return new Promise(function(r){se
  try{ try{dagensKortLuk()}catch(e){} try{turLuk()}catch(e){} var t=document.getElementById("turOverlay"); if(t) t.remove();
   var BS=__BS__;
   var pos=function(e){ if(!e) return null; var b=e.getBoundingClientRect(); return [Math.round(b.left),Math.round(b.top),Math.round(b.width)]; };
+  var posB=function(e){ if(!e) return null; var b=e.getBoundingClientRect(); return [Math.round(b.left),Math.round(b.bottom),Math.round(b.width)]; };  /* heroens titel er forankret på BUNDEN (40 px over coverets bund); toppen følger med, om der er en datolinje */
   var titel=function(){ return [].slice.call(document.querySelectorAll(".mb-navn, .mb-navn-rk")).filter(function(e){ var b=e.getBoundingClientRect(); return b.width>0 && b.top<450 && !e.closest(".mb-navn-rk .mb-navn"); })[0]||null; };
-  var maal=function(navn){ var m={side:navn, menu:pos(document.querySelector(".dash-sidebar, #sideNav")), ark:pos(BS?document.getElementById("dashMain"):document.querySelector(".content")), titel:pos(titel())}; r.maal.push(m); return m; };
+  var maal=function(navn){ var m={side:navn, menu:pos(document.querySelector(".dash-sidebar, #sideNav")), ark:pos(BS?document.getElementById("dashMain"):document.querySelector(".content")), titel:posB(titel())}; r.maal.push(m); return m; };
   var sider = BS ? [["overblik"],["crm"],["indbakke"],["energida"],["overblik"],["crm"]] : [[3],[8],[2],[31],[3],[8]];
   for (var i=0;i<sider.length;i++){ try{ if(BS) visDashSide(sider[i][0]); else showTab(sider[i][0]); }catch(e){} await V(1200); maal(String(sider[i][0])); }
   var f=r.maal[0]; r.maal.forEach(function(m){ ["menu","ark"].forEach(function(k){ if(f[k] && m[k] && (f[k][0]!==m[k][0] || f[k][2]!==m[k][2])) r.fejl.push(m.side+": "+k+" "+JSON.stringify(f[k])+"→"+JSON.stringify(m[k])); });

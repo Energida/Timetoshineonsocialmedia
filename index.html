@@ -12890,8 +12890,21 @@ html body #appLoader:not([data-fejl="1"]) > div, html body #energidaLoader > spa
    Vagten er inline og uden afhaengigheder — den skal virke, ogsaa hvis resten fejler. */
 (function () {
   var slukket = false;
+  /* TÆPPET BLIVER, TIL PROFILEN STÅR (Ida 9/11, testkøb: »man ser kort content studio, og så kommer den ud på marken«). En ny kunde fra mailens link
+     (flaget »invitation«) får profilen oven på markfotoet, men den åbner først efter 900 ms + hentning — i mellemtiden lå Hjem fremme under et løftet tæppe.
+     Nu venter tæppet, til profilen (#pfFlow) eller kodearket (#nyKodeBoks) findes. Højst 12 sek., så en kunde aldrig sidder fast. */
+  var T_START = Date.now();
+  window.__profilVenter = function () {
+    try {
+      if (localStorage.getItem("energida_skal_ny_kode") !== "invitation") return false;
+      if (document.getElementById("pfFlow") || document.getElementById("nyKodeBoks")) return false;
+      return Date.now() - T_START < 12000;
+    } catch (e) { return false; }
+  };
   function sluk() {
-    if (slukket) return; slukket = true;
+    if (slukket) return;
+    if (window.__profilVenter()) { setTimeout(sluk, 150); return; }   /* tæppet bliver, til profilen står (Ida 9/11) */
+    slukket = true;
     window.__BOOT_FAERDIG = true;   /* ny version ved Hjem (29/9) maa foerst virke, naar opstarten er ovre */
     try { document.body.classList.add("app-klar"); } catch (e) {}
     try { sessionStorage.removeItem("energida_boot_igen"); } catch (e) {}
@@ -63915,7 +63928,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "3195";
+const APP_VERSION = "3196";
 const APP_BYGGET = "3. november";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_VERSION;   /* ingen dato (Ida 7/11: »hvorfor står der version 3. november?«) — datoen blev ikke rettet med, nummeret er sandheden */ } catch (e) {} });
 let NY_VERSION_KLAR = false;
@@ -69945,7 +69958,10 @@ function loginTaeppe(paa) {
   try {
     var el = document.getElementById("appLoader");
     if (paa) { window.__LOGIN_TAEPPE = true; document.body.classList.remove("app-klar"); if (el && el.getAttribute("data-fejl") !== "1") el.style.display = ""; }
-    else { window.__LOGIN_TAEPPE = false; document.body.classList.add("app-klar"); }
+    else {
+      if (window.__profilVenter && window.__profilVenter()) { setTimeout(function () { loginTaeppe(false); }, 150); return; }   /* tæppet bliver, til profilen står (Ida 9/11) */
+      window.__LOGIN_TAEPPE = false; document.body.classList.add("app-klar");
+    }
   } catch (e) {}
 }
 function loginTaeppeVent() {
