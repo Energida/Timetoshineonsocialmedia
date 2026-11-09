@@ -1,3 +1,6 @@
+## 9. november · STATUS: PILLE, AUTOMATIK OG FLISER (Ida 9/11)
+Statuspillen på briefoversigten står foran ⋯, 176 px bred, 44 px høj, sort 13 px tekst og pil centreret som én gruppe. · »Venter på godkendelse« og »Sendt til godkendelse« er ude som fliser: afsenderen ser »Forslag« i statuspillen. · Noget oprettet i kalenderen med en dato er automatisk »Planlagt«; »Brief i gang« kommer først, når man skriver i »Hvad er idéen?«. · Man bliver på kalenderen, til de tre trin i popuppen er udfyldt.
+
 ## HÅRD REGEL · 9. november · NAVIGATIONSKNAPPER ER 44 PX I HELE B2B (Ida 9/11: »navigationsknapperne skal være 44 px i hele b2b … lås det i designlåsen«)
 Tilbage, Rediger, statuspillen, Næste, Gem ændringer og alle andre piller, der navigerer eller ændrer tilstand, er 44 px høje (Poppins 13, radius 999, kant 1 px). Porten måler det (»UENS pille«). Rediger er rød og primær; statuspillen står foran ⋯ i rækken til højre på computerens briefoversigt og skriveside og kan ændres uden først at trykke Rediger (Ida 9/11).
 
