@@ -7,10 +7,10 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from sikkerhedschefen.resultat import Resultat, BESTAAET, FEJLET, IKKE_TESTET
 from sikkerhedschefen.lag2 import chromium, fortolk, REPO
 
-# CRM-plusset = valget »Gamle kunder · Ny kunde« (Idas ønske 14/10, salgsturnéen) — derfor ventes »Gamle kunder«.
+# CRM-plusset = valget »Nyt lead · Ny kunde« (Gamle kunder er et tag siden v2870). Rum-plusset åbner sendefeltet »Tilføj rum« (felt, ikke ark).
 # side -> ord, der skal stå i det ark, plusset åbner. Rækkefølgen går frem og tilbage, så et plus fra én side kan ikke hænge ved på den næste.
-RUNDE = [("energida", "Nyt rum"), ("overblik", "Tøm hovedet"), ("crm", "Gamle kunder"), ("energida", "Nyt rum"), ("crm", "Gamle kunder"),
-         ("indbakke", "To-do"), ("crm", "Gamle kunder"), ("overblik", "Tøm hovedet")]
+RUNDE = [("energida", "Nyt rum"), ("overblik", "Tøm hovedet"), ("crm", "Nyt lead"), ("energida", "Nyt rum"), ("crm", "Nyt lead"),
+         ("indbakke", "To-do"), ("crm", "Nyt lead"), ("overblik", "Tøm hovedet")]
 
 JS = r"""(async function(){ var V=function(ms){return new Promise(function(r){setTimeout(r,ms)})}; await V(2500); var r={tjek:[]};
  var RUNDE=__RUNDE__;
@@ -19,7 +19,7 @@ JS = r"""(async function(){ var V=function(ms){return new Promise(function(r){se
  try{ for (var i=0;i<RUNDE.length;i++){ var side=RUNDE[i][0], ord=RUNDE[i][1]; luk(); await V(300);
    visDashSide(side); await V(1500); var k=document.getElementById("bf3RumKnap"); var b=k&&k.querySelector("button");
    if(!b){ r.tjek.push({ok:false,side:side,d:"intet plus på siden"}); continue; }
-   var foer=overlag(); b.click(); await V(800); var efter=overlag(); var nyt=efter.replace(foer,"");
+   var foer=overlag(); b.click(); await V(800); var efter=overlag(); var nyt=efter.replace(foer,"")+" "+[].slice.call(document.querySelectorAll("input,textarea")).filter(function(e){return e.getClientRects().length}).map(function(e){return e.placeholder||""}).join(" ");
    var ok=nyt.indexOf(ord)>=0; r.tjek.push({ok:ok,side:side,d:ok?"":("plus »"+b.title+"« åbnede: "+(nyt.trim().slice(0,120)||"ingenting")+" (ventede »"+ord+"«)")}); }
  }catch(e){r.fejl=e.message} luk(); console.log("@@"+JSON.stringify(r)+"@@"); })();"""
 
