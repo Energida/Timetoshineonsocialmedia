@@ -19,7 +19,7 @@ JS = r"""(async function(){ var V=function(ms){return new Promise(function(r){se
  try{ for (var i=0;i<RUNDE.length;i++){ var side=RUNDE[i][0], ord=RUNDE[i][1]; luk(); await V(300);
    visDashSide(side); await V(1500); var k=document.getElementById("bf3RumKnap"); var b=k&&k.querySelector("button");
    if(!b){ r.tjek.push({ok:false,side:side,d:"intet plus på siden"}); continue; }
-   var foer=overlag(); b.click(); await V(800); var efter=overlag(); var nyt=efter.replace(foer,"")+" "+[].slice.call(document.querySelectorAll("input,textarea")).filter(function(e){return e.getClientRects().length}).map(function(e){return e.placeholder||""}).join(" ");
+   var foer=overlag(); b.click(); await V(1800); var efter=overlag(); var nyt=efter.replace(foer,"")+" "+[].slice.call(document.querySelectorAll("input,textarea")).filter(function(e){return e.getClientRects().length}).map(function(e){return e.placeholder||""}).join(" ");
    var ok=nyt.indexOf(ord)>=0; r.tjek.push({ok:ok,side:side,d:ok?"":("plus »"+b.title+"« åbnede: "+(nyt.trim().slice(0,120)||"ingenting")+" (ventede »"+ord+"«)")}); }
  }catch(e){r.fejl=e.message} luk(); console.log("@@"+JSON.stringify(r)+"@@"); })();"""
 
