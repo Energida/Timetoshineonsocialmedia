@@ -34090,7 +34090,7 @@ async function profilFlowStart() {
   const kollega = !!(butik && butik.udfyldt_af && butik.udfyldt_af !== mail);   /* butikken er beskrevet af en anden = en kollega, der kommer ind bagefter */
   const k = pfKladdeHent();
   let pw = false; try { pw = localStorage.getItem("energida_skal_ny_kode") === "invitation"; } catch (e) {}   /* kom kunden fra mailens link, er ADGANGSKODEN profilens foerste side (Ida 8/11) */
-  PF = { trin: pw ? 0 : 1, pw: pw, pwVis: false, kollega: kollega, ygt: (typeof erYgtTeam === "function" && erYgtTeam()), mail: mail,
+  PF = { trin: 1, pw: pw, pwVis: false, kollega: kollega, ygt: (typeof erYgtTeam === "function" && erYgtTeam()), mail: mail,
     f: Object.assign({ navn: pfFornavnForslag(d) || pfStripeNavn(d).fornavn, efternavn: pfStripeNavn(d).efternavn, dag: "", mdr: "", aar: "", ejer: "", rolle: "",
       butik_navn: String((butik && butik.butik_navn) || ((pfForening(d) && !d.stripe_virksomhed_fundet) ? "" : (d.studioNavn || d.virksomhed)) || "").replace(/\s*studio$/i, ""), adresse: "", postnr: "", by: "", cvr: "",
       branche: (butik && butik.branche) || "", branche_andet: (butik && butik.branche_andet) || "", forretningstype: (butik && butik.forretningstype) || d.forretningstype || "",
@@ -34114,6 +34114,7 @@ function pfKlar() {
   const f = PF.f, t = PF.trin;
   if (t === 0) return String(f.pw || "").length >= 6;
   if (t === 1) {
+    if (PF.pw && String(f.pw || "").length < 6) return false;   /* adgangskoden er et felt på første side, når kunden kom fra mailens link (Ida 10/11) */
     if (pfTom(f.navn) || pfTom(f.efternavn) || !pfDato() || (f.ejer !== "ja" && f.ejer !== "nej")) return false;
     if (f.ejer === "nej" && pfTom(f.rolle)) return false;
     return true;
@@ -34131,7 +34132,7 @@ function pfInput(id, v) {
   if (!PF) return;
   /* FØRSTE BOGSTAV ER ALTID STORT — OGSÅ I DET, DER GEMMES (Ida 10/11): feltets egen oninput løber FØR sidens fælles regel, så kladden fik det lille bogstav og tegnede det igen ved næste trin */
   const feltEl = document.getElementById("pf_" + id);
-  if (feltEl && feltEl.type === "text" && feltEl.dataset.frit === undefined && v && /[a-zæøå]/.test(v.charAt(0))) {
+  if (feltEl && id !== "pw" && feltEl.type === "text" && feltEl.dataset.frit === undefined && v && /[a-zæøå]/.test(v.charAt(0))) {
     v = v.charAt(0).toUpperCase() + v.slice(1);
     if (feltEl.value !== v) { const pos = feltEl.selectionStart; feltEl.value = v; try { feltEl.setSelectionRange(pos, pos); } catch (e2) {} }
   }
@@ -34148,13 +34149,18 @@ async function pfAndetGem() {
   try { await pfButikGem(); const s2 = document.getElementById("pfAndetSt"); if (s2) s2.innerHTML = '<span class="pf-fb">' + energidaFlueben(10) + '</span>Gemt'; }
   catch (e) { const s2 = document.getElementById("pfAndetSt"); if (s2) s2.innerHTML = '<span class="pf-ikke">Ikke gemt endnu. Det står stadig i feltet.</span>'; }
 }
+function pfPwHtml(f) {
+  return '<input type="email" id="pf_mailskjult" autocomplete="username" value="' + esc(PF.mail || "") + '" aria-hidden="true" tabindex="-1" style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;">'
+    + '<label class="pf-fl"><span class="pf-lab">Vælg din adgangskode</span><span style="position:relative;display:block;"><input class="pf-in" id="pf_pw" type="' + (PF.pwVis ? 'text' : 'password') + '" autocomplete="new-password" placeholder="Mindst 6 tegn" value="' + esc(f.pw || "") + '" oninput="pfInput(\'pw\', this.value)" style="padding-right:48px;">'
+    + '<button type="button" class="mq-tap" onclick="pfPwVis()" title="Vis adgangskoden" aria-label="Vis adgangskoden" style="position:absolute;right:4px;top:0;bottom:0;width:44px;background:none;border:0;padding:0;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--gray2);">' + (typeof authOejeSvg === "function" ? authOejeSvg(!!PF.pwVis) : "") + '</button></span></label>';
+}
 function pfTegn() {
   if (!PF) return;
   let el = document.getElementById("pfFlow");
   if (!el) { el = document.createElement("div"); el.id = "pfFlow"; document.body.appendChild(el); }
   document.body.classList.add("pf-aaben");
   const n = pfAntal(), t = PF.trin, f = PF.f;
-  const off = PF.pw ? 1 : 0, tv = t + off, nv = n + off;   /* adgangskode-siden er trin 1, naar kunden kom fra mailens link (Ida 8/11) */
+  const off = 0, tv = t + off, nv = n + off;   /* ADGANGSKODEN ER ET FELT PÅ SAMME SIDE SOM NAVNET (Ida 10/11: »adgangskoden skal ikke have sin egen side«) — ikke et eget trin */
   const top = '<div class="pf-top"><span>' + (t > 1 ? '<button type="button" class="pf-tb mq-tap" onclick="pfTilbage()">Tilbage</button>' : '<span class="pf-tt">Opret din profil</span>') + '</span><span class="pf-tr">Trin ' + tv + ' af ' + nv + '</span></div><div class="pf-spor"><i style="width:' + Math.round(tv / nv * 100) + '%"></i></div>';
   /* ALLE FELTER ER ENS (Ida 3/11: »ALLE ting skal for helvede være ens … du skal da ikke stille 2 spørgsmål i samme pop-up med forskellig farve og størrelse«): ét lille grå ord over hvert felt, ingen skillelinjer, ingen hjælpelinjer; trinnets navn er den eneste store tekst */
   const lab = function (x) { return '<span class="pf-lab">' + esc(x) + '</span>'; };
@@ -34178,7 +34184,8 @@ function pfTegn() {
       + pfFelt("navn", "Fornavn", f.navn) + pfFelt("efternavn", "Efternavn", f.efternavn)
       + '<div class="pf-fl">' + lab("Fødselsdag") + '<div class="pf-tre">' + pfFelt("dag", "", f.dag, { ph: "DD", num: true, max: 2 }) + pfFelt("mdr", "", f.mdr, { ph: "MM", num: true, max: 2 }) + pfFelt("aar", "", f.aar, { ph: "ÅÅÅÅ", num: true, max: 4 }) + '</div></div>'
       + '<div class="pf-fl">' + lab("Hvad er din rolle i " + (butikNavn || "forretningen") + "?") + pfChips("ejer", [{ k: "ja", n: "Indehaver" }, { k: "nej", n: "Andet" }], f.ejer) + '</div>'
-      + (f.ejer === "nej" ? pfFelt("rolle", "Din rolle", f.rolle) : '');
+      + (f.ejer === "nej" ? pfFelt("rolle", "Din rolle", f.rolle) : '')
+      + (PF.pw ? pfPwHtml(f) : '');
   } else if (t === 2) {
     krop = '<div class="pf-t">Om virksomheden</div>'
       + pfFelt("butik_navn", "Forretningens navn", f.butik_navn)
@@ -34243,6 +34250,15 @@ async function pfNaeste() {
   }
   if (t === 2 && f.branche === "Andet" && !String(f.branche_andet || "").trim()) { pfFejl("Skriv, hvad butikken sælger."); return; }
   if (knap) { knap.disabled = true; knap.textContent = "Gemmer …"; }
+  if (t === 1 && PF.pw) {
+    /* ADGANGSKODEN GEMMES SAMMEN MED FØRSTE SIDE — samme kald og samme fejlsprog som arket (gemNyAdgangskodeInd) */
+    const r = await sb.auth.updateUser({ password: String(f.pw || "") });
+    if (r && r.error) { pfFejl(nyKodeFejl(r.error)); if (knap) { knap.disabled = false; knap.textContent = "Næste"; } return; }
+    try { localStorage.removeItem("energida_skal_ny_kode"); } catch (e) {}
+    try { adgangskodeValgtNoter(); } catch (e) {}
+    try { window.dispatchEvent(new Event("energida-kode-gemt")); } catch (e) {}
+    PF.pw = false; PF.f.pw = "";
+  }
   try {
     if (t === 1) await pfPersonGem();
     if (t === 2) await pfButikGem();
@@ -63940,7 +63956,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "3201";
+const APP_VERSION = "3203";
 const APP_BYGGET = "3. november";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_VERSION;   /* ingen dato (Ida 7/11: »hvorfor står der version 3. november?«) — datoen blev ikke rettet med, nummeret er sandheden */ } catch (e) {} });
 let NY_VERSION_KLAR = false;
@@ -67493,7 +67509,9 @@ function kodeEfterProfil(session) {
       if (flag !== "invitation") { clearInterval(window.__KODE_VAGT); window.__KODE_VAGT = null; return; }   /* koden er valgt */
       if (document.getElementById("nyKodeBoks")) return;
       const profilAaben = !!document.getElementById("pfFlow");
-      if (!profilAaben && (velkomstSet() || Date.now() - start > 10000)) { clearInterval(window.__KODE_VAGT); window.__KODE_VAGT = null; visNyAdgangskode(true); }
+      /* ADGANGSKODEN ER EN SIDE I »OPRET DIN PROFIL«, ALDRIG EN POP-UP FØR DEN (Ida 10/11: »den skal stå der under opret profil«): kommer profilen i dag (velkomstSkalVises), venter pop-up'en op til et minut i stedet for 10 sekunder — en langsom indlæsning lod pop-up'en komme først */
+      const elapsed = Date.now() - start; let profilKommer = false; try { profilKommer = velkomstSkalVises(); } catch (e3) {}
+      if (!profilAaben && (velkomstSet() || (elapsed > 10000 && !profilKommer) || elapsed > 60000)) { clearInterval(window.__KODE_VAGT); window.__KODE_VAGT = null; visNyAdgangskode(true); }
     } catch (e) {}
   }, 1000);
 }
