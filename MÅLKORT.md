@@ -30,7 +30,7 @@ Kilden i koden er **MÅLKORT-BLOKKEN** sidst i det første `<style>` i `index.ht
 ## Tilføjet 4/11 (anden runde)
 | Element | Facit |
 |---|---|
-| **Hjem computer, bud 4B** | panel **#F6F4F1** radius 28 luft 12, 24 mellem paneler · flise i panel hvid, **80 høj**, radius 20, ramme 1 px **#E3E2DE**, ingen skygge, 10 mellem · overskrift→panel 16 · rød datobjælke 44 (#FC2404, hvid 13/400) · datoboks 56 · pile runde 32 · første overskrift flugter med datofliserne (≤ 1 px) |
+| **Hjem computer, bud 4B** | panel **#F6F4F1** radius 28 luft 12, 24 mellem paneler · flise i panel hvid, **80 høj**, radius 20, ramme 1 px **#E3E2DE**, ingen skygge, 10 mellem · overskrift→panel 16 · datoen under hilsnen i heroen (den røde datobjælke er fjernet 11/11) (#FC2404, hvid 13/400) · datoboks 56 · pile runde 32 · første overskrift flugter med datofliserne (≤ 1 px) |
 | **Telefonens oplysnings-chips (briefoversigt)** | under statuslinjen, én linje, swipe sidelæns, chip 32 (12,5/400 #6F6B66), kun udfyldte, ingen +, ingen ikon, kun visning; coveret 228 |
 | **Story-række** | [status ⌄] [dato] samme højde **36**, 8 imellem, status til venstre, ⋯ yderst til højre; storytype-chips 36 på én linje under Titel (valgt = grå flueben) |
 | **Upload-flise** (cover, Story, Den færdige video) | `.cv-upload`: hvid, stiplet 1,5 px #DEDAD4, radius 14, 9:16, grønt symbol + »Upload«; under upload står procesringen (husets ring, ubestemt) i flisen; ved fejl står årsagen + »Prøv igen« i flisen; færdig = video 9:16 + »Skift video« · »Download« · skraldespand (36) |
