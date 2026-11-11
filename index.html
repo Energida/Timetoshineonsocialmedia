@@ -1270,6 +1270,7 @@ html body.has-nav #sideNav .sn-virk-rk > .sn-virk-knap{flex:1;min-width:0;margin
 .sn-virk-rk > .sn-fejl{width:44px;height:44px;flex-shrink:0;border:0;background:none;border-radius:50%;color:var(--gray2);display:grid;place-items:center;cursor:pointer;padding:0}
 .sn-virk-rk > .sn-fejl:hover{background:var(--sand,#F4F2EE)}
 /* DEN SAMMENKLAPPEDE MENU VISER HVERKEN FEJL-KNAP ELLER PROFIL (Ida 27/10: »Bug skal ikke være synlig hvis menuen ikke er åben« — et afskåret »A« og fejl-knappen stod alene nederst) */
+::view-transition-group(root) { animation-duration: .24s; animation-timing-function: cubic-bezier(.23, 1, .32, 1); }   /* sidemenuen lukkes/åbnes blødt (Ida 11/11) */
 body.nav-smal #sideNav:not(.aaben) .sn-virk-rk, body.nav-smal #sideNav:not(.aaben) .sn-mini{display:none !important}
 @media (min-width:900px){ .mb-baand > .mb-fejl{display:none !important} }   /* computeren: insektet bor i menuen (26/10) */
 .ark .ark-note{order:2;font-size:12.5px;line-height:1.5;color:var(--gray2);margin:10px 0 0}
@@ -56393,7 +56394,8 @@ function buildSideNav(def) {
    frigjort falder den sammen til en smal skinne, der folder ud, naar musen er over den.
    Valget huskes pr. bruger. Standard = fastgjort, saa ingen oplever en aendring uden selv at trykke. */
 function navPinLaes() {
-  try { return localStorage.getItem(nsKey("nav_pin")) !== "0"; } catch(e) { return true; }
+  /* MENUEN STARTER ALTID UDFOLDET (Ida 11/11: »den stod ude til at starte med«): ved hvert besøg er menuen åben; lukker kunden den, gælder det resten af besøget (også når menuen tegnes igen), men det huskes ikke til næste gang. */
+  return window.__NAV_PIN_SESSION !== false;
 }
 function navPinSaet(fast) {
   document.body.classList.toggle("nav-smal", !fast);
@@ -56403,14 +56405,19 @@ function navPinSaet(fast) {
      fjernes her, saa skinnen falder sammen straks — musen staar stadig over menuen, og
      mouseenter fyrer foerst igen, naar man har vaeret ude og ind. */
   if (!fast) { try { document.getElementById("sideNav").classList.remove("aaben"); } catch(e) {} }
-  try { localStorage.setItem(nsKey("nav_pin"), fast ? "1" : "0"); } catch(e) {}
+  window.__NAV_PIN_SESSION = !!fast;
   const b = document.getElementById("snPin");
   if (!b) return;
   b.classList.toggle("fast", fast);
   const t = fast ? "Skjul menuen" : "Fastgør menuen";
   b.setAttribute("data-tip", t); b.setAttribute("aria-label", t); b.setAttribute("aria-pressed", fast ? "true" : "false");
 }
-function navPinSkift() { navPinSaet(document.body.classList.contains("nav-smal")); }
+function navPinSkift() {
+  const naeste = document.body.classList.contains("nav-smal");
+  /* INDHOLDET HOPPER IKKE (Ida 11/11): når menuen lukkes eller åbnes, skifter siden blødt over i stedet for at springe (View Transitions; uden støtte skiftes der som før). */
+  try { if (document.startViewTransition && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) { document.startViewTransition(function () { navPinSaet(naeste); }); return; } } catch (e) {}
+  navPinSaet(naeste);
+}
 /* MENUEN LUKKER SIG SELV VED KLIK (Ida 30/7). Frigjort ligger menuen OVENPAA indholdet, og den
    blev staaende udfoldet efter et klik — saa daekkede den praecis den side, man lige havde valgt.
    Derfor styres ud-foldningen nu af klassen .aaben i stedet for :hover: musen folder ud, klikket
@@ -63979,7 +63986,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "3204";
+const APP_VERSION = "3205";
 const APP_BYGGET = "3. november";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_VERSION;   /* ingen dato (Ida 7/11: »hvorfor står der version 3. november?«) — datoen blev ikke rettet med, nummeret er sandheden */ } catch (e) {} });
 let NY_VERSION_KLAR = false;
@@ -87494,8 +87501,8 @@ async function dashForsideTegn() {
     const manus = op.filter(function (o) { return klipStatusNorm(o.status) === "Manus ikke godkendt"; }).length;
     const optag = op.filter(function (o) { return klipStatusNorm(o.status) === "Manus godkendt"; }).length;
     const klip = op.filter(function (o) { return klipStatusNorm(o.status) === "Råfiler klar" || klipStatusNorm(o.status) === "Rettelser"; }).length;
-    const sl = manus ? (manus === 1 ? "1 lektion venter på manus" : manus + " lektioner venter på manus") : (optag ? optag + " klar til optagelse" : (klip ? klip + " klar til klip" : "Alt er i mål i studiet"));
-    forr += bf3Fl(esc(sl), "", "visDashSide('klip')");
+    /* »84 LEKTIONER VENTER PÅ MANUS« ER VÆK FRA IDAS HJEM (Ida 11/11: »vil du slette dette med manus fra mit dashboard i CRM?«) — kun flisen; lektionernes data og Klip-siden er urørte. */
+    void manus; void optag; void klip;
     const opf = (typeof plIdag === "function") ? plIdag() : [];
     forr += bf3Fl(esc(opf.length ? (opf.length === 1 ? "1 opfølgning i dag" : opf.length + " opfølgninger i dag") : "Ingen opfølgninger i dag"), "", "bsSalgAabn()");
   } catch (e) {}
@@ -88033,10 +88040,13 @@ async function kunderneTegn(hurtig) {
     + (alleFliser.length ? tabel : bf3Tom(q ? "Ingen kunder matcher." : (kat === "leads" ? "Ingen leads endnu." : kat === "gamle" ? "Ingen gamle kunder endnu." : "Ingen kunder her.")))
     + ''   /* »Ny kunde« = plusset i baandet (Ida 21/9 kl. 13.25: »tilføj-knappen skal ikke være nede i bunden men i højre øvre hjørne oppe i coveret«) */
     + '</div>';
-  try { navstiBackstage("crm"); } catch (e) {}
-  try { bsBaandPlanlaeg(); } catch (e) {}
+  /* PLUSSET HOPPER IKKE, NÅR MAN SKRIVER I SØGEFELTET (Ida 11/11): hver tast tegnede listen forfra og lod båndet (og dermed plussets placering) regne om efter 80 ms. Under skrivning er båndet uændret — kun listen tegnes. */
+  if (!hurtig) {
+    try { navstiBackstage("crm"); } catch (e) {}
+    try { bsBaandPlanlaeg(); } catch (e) {}
+  }
   try { const f = document.getElementById("bsKundeSoeg"); if (hurtig && f && q) { f.focus(); f.setSelectionRange(f.value.length, f.value.length); } } catch (e) {}
-  try { bf3BaandKnapVis("kunder"); } catch (e) {}
+  if (!hurtig) { try { bf3BaandKnapVis("kunder"); } catch (e) {} }
 }
 /* ===================== CRM SOM NOTION · BUD 1 (Idas klik 28/10 »Bud 1 · Notion-tabellen«, Artifact 5hUvJAvL1qQTUTH4HuEZJU) =====================
    Ida: »jeg kunne mega godt tænke mig at mit crm blev ligesom mit gamle notion - hvor man kan arbejde i det inkl kolonner osv« · »ikke de initialer foran og brug rød i stedet for den grimme brune«.
