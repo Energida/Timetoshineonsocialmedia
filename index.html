@@ -21742,7 +21742,45 @@ alter table public.lektioner
 
 -- Kontrol: skal vise antal lektioner (alle med skjult = false)
 select count(*) as lektioner, count(*) filter (where skjult) as skjulte
-from public.lektioner;</pre></div><div id="sqlk_vaerktoej" data-kode="sql" data-dato="21. juli 2026 06.17" style="border:1px solid var(--border);border-radius:12px;background:#fff;padding:12px 14px;margin-bottom:2px;margin-top:8px;"><div style="font-size:12.5px;font-weight:400;margin-bottom:3px;">Værktøjskassen på tavlen — 10 videoer med manus</div><div style="font-size:11px;color:var(--gray3);line-height:1.6;">Lægger Værktøjskassens 10 guides på produktionstavlen med udkastets manus. Kan køres igen uden at give dubletter — den springer over dem, der allerede ligger der.</div><div style="display:flex;gap:6px;margin-top:9px;"><button class="row-btn" onclick="sqlKortKoert('sqlk_vaerktoej', this)" title="Er den kørt i Supabase, så fjern kortet — det huskes på tværs af enheder">Kørt <span style="width:14px;height:14px;border-radius:50%;background:var(--red);display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;vertical-align:-2px;"><svg width="7" height="7" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span> — fjern kortet</button><button class="dbtn primary" style="padding:7px 15px;" onclick="sqlKopier('sqlVaerktoejKode', this)">Kopiér koden</button></div><pre id="sqlVaerktoejKode" style="display:none;margin:9px 0 0;background:#F7F9FB;border:1px solid var(--border);border-radius:12px;padding:12px 14px;font-size:10.5px;line-height:1.5;overflow-x:auto;white-space:pre-wrap;word-break:break-word;font-family:ui-monospace,Menlo,monospace;color:var(--black);">-- ================================================================
+from public.lektioner;</pre></div><div id="sqlk_studiokilde_1111" data-kode="sql" data-dato="11. november 2026 15.30" style="border:1px solid var(--border);border-radius:12px;background:#fff;padding:12px 14px;margin-bottom:2px;margin-top:8px;"><div style="font-size:12.5px;font-weight:400;margin-bottom:3px;">Studio som eneste kilde til lektionerne — backup og nye felter (trin 1)</div><div style="font-size:11px;color:var(--gray3);line-height:1.6;">Tager først en sikkerhedskopi af lektioner, produkt_lektioner, lektion_oevelser, moduler og video_opgaver. Lægger bagefter felterne »oevelse_art« (opgave eller refleksion) og »beskrivelse« på video_opgaver og lektioner og sætter de nuværende opgave-lektioner. Intet slettes, og kortet kan køres igen uden skade.</div><div style="display:flex;gap:6px;margin-top:9px;"><button class="row-btn" onclick="sqlKortKoert('sqlk_studiokilde_1111', this)" title="Er den kørt i Supabase, så fjern kortet — det huskes på tværs af enheder">Kørt <span style="width:14px;height:14px;border-radius:50%;background:var(--red);display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;vertical-align:-2px;"><svg width="7" height="7" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span> — fjern kortet</button><button class="dbtn primary" style="padding:7px 15px;" onclick="sqlKopier('sqlStudioKilde1111', this)">Kopiér koden</button></div><pre id="sqlStudioKilde1111" style="display:none;margin:9px 0 0;background:#F7F9FB;border:1px solid var(--border);border-radius:12px;padding:12px 14px;font-size:10.5px;line-height:1.5;overflow-x:auto;white-space:pre-wrap;word-break:break-word;font-family:ui-monospace,Menlo,monospace;color:var(--black);">-- ================================================================
+-- STUDIO BLIVER ENESTE KILDE TIL KUNDENS LEKTIONER — trin 1
+-- Backup + nye felter. INTET slettes. Kan køres igen uden skade.
+-- ================================================================
+
+-- 1) BACKUP: kopier med dagens dato (kun du kan se dem, som administrator)
+create table if not exists public.backup_lektioner_20261111 as select * from public.lektioner;
+create table if not exists public.backup_produkt_lektioner_20261111 as select * from public.produkt_lektioner;
+create table if not exists public.backup_lektion_oevelser_20261111 as select * from public.lektion_oevelser;
+create table if not exists public.backup_moduler_20261111 as select * from public.moduler;
+create table if not exists public.backup_video_opgaver_20261111 as select * from public.video_opgaver;
+alter table public.backup_lektioner_20261111 enable row level security;
+alter table public.backup_produkt_lektioner_20261111 enable row level security;
+alter table public.backup_lektion_oevelser_20261111 enable row level security;
+alter table public.backup_moduler_20261111 enable row level security;
+alter table public.backup_video_opgaver_20261111 enable row level security;
+
+-- 2) NYE FELTER: opgave eller refleksion, og en beskrivelse (Studio og kundesiden)
+alter table public.video_opgaver add column if not exists oevelse_art text not null default &#x27;refleksion&#x27;;
+alter table public.video_opgaver add column if not exists beskrivelse text;
+alter table public.lektioner add column if not exists oevelse_art text not null default &#x27;refleksion&#x27;;
+alter table public.lektioner add column if not exists beskrivelse text;
+do $$ begin
+  if not exists (select 1 from pg_constraint where conname = &#x27;video_opgaver_oevelse_art_chk&#x27;) then
+    alter table public.video_opgaver add constraint video_opgaver_oevelse_art_chk check (oevelse_art in (&#x27;opgave&#x27;,&#x27;refleksion&#x27;));
+  end if;
+  if not exists (select 1 from pg_constraint where conname = &#x27;lektioner_oevelse_art_chk&#x27;) then
+    alter table public.lektioner add constraint lektioner_oevelse_art_chk check (oevelse_art in (&#x27;opgave&#x27;,&#x27;refleksion&#x27;));
+  end if;
+end $$;
+
+-- 3) DE NUVÆRENDE OPGAVE-LEKTIONER (konstanten OEV_OPGAVE i appen) SÆTTES TIL &#x27;opgave&#x27; PÅ KUNDESIDEN
+update public.lektioner set oevelse_art = &#x27;opgave&#x27;
+where id in (&#x27;2-2&#x27;,&#x27;2-5&#x27;,&#x27;5-2&#x27;,&#x27;5-3&#x27;,&#x27;6-1&#x27;,&#x27;6-2&#x27;,&#x27;6-3&#x27;,&#x27;6-4&#x27;,&#x27;6-5&#x27;,&#x27;6-6&#x27;);
+-- (Studio-rækkerne sættes i trin 2, når synkroniseringen er bygget.)
+
+-- KONTROL: antal lektioner og opgaver, og de fem sikkerhedskopier
+select count(*) as lektioner, count(*) filter (where oevelse_art = &#x27;opgave&#x27;) as opgaver from public.lektioner;
+select table_name from information_schema.tables where table_name like &#x27;backup_%_20261111&#x27; order by 1;</pre></div><div id="sqlk_vaerktoej" data-kode="sql" data-dato="21. juli 2026 06.17" style="border:1px solid var(--border);border-radius:12px;background:#fff;padding:12px 14px;margin-bottom:2px;margin-top:8px;"><div style="font-size:12.5px;font-weight:400;margin-bottom:3px;">Værktøjskassen på tavlen — 10 videoer med manus</div><div style="font-size:11px;color:var(--gray3);line-height:1.6;">Lægger Værktøjskassens 10 guides på produktionstavlen med udkastets manus. Kan køres igen uden at give dubletter — den springer over dem, der allerede ligger der.</div><div style="display:flex;gap:6px;margin-top:9px;"><button class="row-btn" onclick="sqlKortKoert('sqlk_vaerktoej', this)" title="Er den kørt i Supabase, så fjern kortet — det huskes på tværs af enheder">Kørt <span style="width:14px;height:14px;border-radius:50%;background:var(--red);display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;vertical-align:-2px;"><svg width="7" height="7" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span> — fjern kortet</button><button class="dbtn primary" style="padding:7px 15px;" onclick="sqlKopier('sqlVaerktoejKode', this)">Kopiér koden</button></div><pre id="sqlVaerktoejKode" style="display:none;margin:9px 0 0;background:#F7F9FB;border:1px solid var(--border);border-radius:12px;padding:12px 14px;font-size:10.5px;line-height:1.5;overflow-x:auto;white-space:pre-wrap;word-break:break-word;font-family:ui-monospace,Menlo,monospace;color:var(--black);">-- ================================================================
 -- VÆRKTØJSKASSEN PÅ PRODUKTIONSTAVLEN — 10 videoer med manus
 --
 -- Manuskripterne er UDKASTET fra 14. juli. Statussen sættes derfor til
@@ -64356,7 +64394,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "3228";
+const APP_VERSION = "3229";
 const APP_BYGGET = "3. november";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_VERSION;   /* ingen dato (Ida 7/11: »hvorfor står der version 3. november?«) — datoen blev ikke rettet med, nummeret er sandheden */ } catch (e) {} });
 let NY_VERSION_KLAR = false;
