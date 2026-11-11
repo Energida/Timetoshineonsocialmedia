@@ -6237,6 +6237,8 @@ html body .ark-kryds.paa-roedt svg { width:16px; height:16px; }
 .kbs-titel .kbs-nr { color:rgba(255,255,255,.8); }
 .kbs-titel #kbTitel { border-radius:6px; }
 .kbs-titel button { color:#fff !important; }
+.kbs-hero, .kbs-sti, .kbs-modul { text-align:left; }
+#modalBack.kbs-side .modal, #modalBack.kbs-side #modalBody:not(.kbs-optag) .kbs-krop { text-align:left; }   /* alt staar til venstre uden for Optag (Ida 11/11: »alt er centreret«) */
 .kbs-modul { margin-top:8px; font-size:10px; letter-spacing:1.6px; text-transform:uppercase; color:rgba(255,255,255,.9); }
 .kbs-rk { display:flex; align-items:center; gap:12px; padding:4px 48px 0; }
 .kbs-fyld { flex:1; }
@@ -47584,7 +47586,7 @@ function klipBriefRender() {
   body.innerHTML = '<div class="kbs-cover">'
     + '<button type="button" class="kbs-tilbage-tlf" onclick="klipBriefLuk()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>Tilbage</button>'
     + '<span class="kbs-mere-tlf">' + kbsMenuKnap + '</span>'
-    + '<div class="kbs-sti">Energida Studio / ' + esc(String(o.modul || "").split(" · ")[0]) + '</div>'
+    + '<div class="kbs-sti">Energida Studio / ' + esc(modulEtiket(klipModulGruppe(o.modul))) + '</div>'
     + '<div class="kbs-hero">'
     + (function () {
         /* Lektionsnummeret ("0.3 · ") holdes UDEN FOR redigering: det bruges til at
@@ -47594,7 +47596,7 @@ function klipBriefRender() {
         const nr = nm ? nm[1] : "";
         const txt = nm ? nm[2] : (o.titel || "");
         return '<h2 class="kbs-titel">'
-          + (nr ? '<span class="kbs-nr">' + esc(nr) + ' · </span>' : '')
+          + (nr ? '<span class="kbs-nr">' + esc(studieNrVis(o, nr)) + ' · </span>' : '')
           + '<span id="kbTitel" data-nr="' + esc(nr) + '" contenteditable="plaintext-only" spellcheck="false"'
           + ' onfocus="this.style.background=\'var(--gray)\'" onblur="kbTitelGem()"'
           + ' onkeydown="if(event.key===&#39;Enter&#39;){event.preventDefault();this.blur();}"'
@@ -47608,7 +47610,7 @@ function klipBriefRender() {
           + '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>'
           + '</button></h2>';
       })()
-    + '<div class="kbs-modul">' + esc(o.modul || "") + (lek && lek.l.tid && lek.l.tid !== "00:00" ? ' · længde-mål ' + esc(lek.l.tid) : '') + '</div>'
+    + '<div class="kbs-modul">' + esc(klipModulVisning(o)) + (lek && lek.l.tid && lek.l.tid !== "00:00" ? ' · længde-mål ' + esc(lek.l.tid) : '') + '</div>'
     + '</div></div>'
     + '<div class="kbs-rk"><button type="button" class="kbs-tilbage" onclick="klipBriefLuk()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>Tilbage</button>'
     + '<span class="kbs-skift" role="tablist"><button type="button" role="tab" class="' + (KBS_TILSTAND !== "optag" ? "on" : "") + '" onclick="kbsTilstand(&#39;skriv&#39;)">Skriv</button><button type="button" role="tab" class="' + (KBS_TILSTAND === "optag" ? "on" : "") + '" onclick="kbsTilstand(&#39;optag&#39;)">Optag</button></span>'
@@ -64203,6 +64205,19 @@ function hjerteLoader(tekst) {
 function titelVis(t) { return String(t == null ? "" : t).replace(/ - /g, " \u00b7 "); }
 /* STUDIOETS LEKTIONSTITLER FOELGER KUNDENS NUMRE (Ida 2/10): »1.2 · Energi« vises som »0.2 · Energi · Strategi · Resultat«.
    Kun visningen — titlen i basen (og manus) er uroert. Kun kursusmoduler (»Modul N«). */
+/* LEKTIONSSIDEN VISER KUNDENS NUMRE OG MODULNAVN (Ida 11/11: »der står 1.1 velkommen, og ovenikøbet energi strategi resultat«): kun visningen, data-nr og den gemte titel roeres ikke */
+function studieNrVis(o, nr) {
+  try { const m = String(nr).match(/^(\d+)\.(\d+)$/); if (m && /^Modul\s*\d+/i.test(String((o && o.modul) || "")) && typeof modulVisNr === "function") return modulVisNr(m[1]) + "." + m[2]; } catch (e) {}
+  return String(nr);
+}
+function klipModulVisning(o) {
+  try {
+    const g = klipModulGruppe(o && o.modul); let n = "";
+    if (/^[A-ZÆØÅ0-9_-]+ · Modul\s*\d/.test(String(g))) n = (MODUL_TITLER && MODUL_TITLER[g]) || modulVisKort(g);
+    else { const nr = (String(g).match(/(\d+)/) || [])[1]; const inf = nr != null ? modulInfoFor(nr) : null; n = nr === "1" ? modulVisNavn("1", inf && inf.titel) : ((inf && inf.titel) || modulNavnVis(g) || ""); }
+    return modulEtiket(g) + (n && n !== g ? " · " + n : "");
+  } catch (e) { return String((o && o.modul) || ""); }
+}
 function studieTitelVis(o) {
   let t = titelVis((o && o.titel) || "Uden titel");
   const m = t.match(/^(\d+)\.(\d+)(\s*\u00b7\s*)(.*)$/);
@@ -64258,7 +64273,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "3215";
+const APP_VERSION = "3216";
 const APP_BYGGET = "3. november";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_VERSION;   /* ingen dato (Ida 7/11: »hvorfor står der version 3. november?«) — datoen blev ikke rettet med, nummeret er sandheden */ } catch (e) {} });
 let NY_VERSION_KLAR = false;
@@ -89622,17 +89637,28 @@ function klipBud6Tegn(el) {
   if (px0) {
     try { const h = document.querySelector("#dside-klip .klip-hoved .ch-titel"); if (h && h.textContent !== String(px0.navn || "")) h.textContent = String(px0.navn || ""); } catch (e) {}
     const delt = bf3ProdDeltagere(px0.id);
-    const fanerne = [["indhold", "Indhold"], ["deltagere", "Deltagere"], ["ideer", "Idéer til manus"], ["brolls", "B-rolls"], ["kilder", "Kildehenvisninger"], ["grafik", "Grafik"], ["overlays", "Overlays"]].concat(delt.length ? [["kunde", "Se som kunden"]] : []);   /* B-rolls og Grafik paa produktets forside (Ida 27/9) */
-    if (!fanerne.some(function (f) { return f[0] === fane; })) fane = "indhold";
-    prodTop = bf3Chips(fanerne, fane, "bf3ProdFane");
+    const fanerne = [["indhold", "Indhold"], ["data", "Sådan går det"], ["deltagere", "Deltagere"], ["ideer", "Idéer til manus"], ["kilder", "Kildehenvisninger"]].concat(delt.length ? [["kunde", "Se som kunden"]] : []);   /* B-rolls, Grafik og Overlays er ikke faner mere (Ida 11/11) — de ligger som filter i Indhold */   /* B-rolls og Grafik paa produktets forside (Ida 27/9) */
+    if (!fanerne.some(function (f) { return f[0] === fane; }) && ["brolls", "grafik", "overlays"].indexOf(fane) < 0) fane = "indhold";
+    prodTop = bf3Chips(fanerne, (["brolls", "grafik", "overlays"].indexOf(fane) > -1 ? "indhold" : fane), "bf3ProdFane");
     /* B-ROLLS OG GRAFIK PR. MODUL OG LEKTION (Ida 27/9: »se hele listen af grafik der skal bruges og hvilke b-rolls der skal bruges«) — laeses ud af manus
        (B-ROLL:/GRAFIK: i starten af en linje), samme regel som lektionens kasser. Tryk = lektionen. */
     /* IDÉER TIL MANUS OG KILDEHENVISNINGER PAA PRODUKTET (Ida 11/10) — plusset tilfoejer til netop dette produkt */
+    /* SAADAN GAAR DET BOR PAA PRODUKTET (Ida 11/11): tallene for netop dette produkt — samme side som foer, scopet til produktet */
+    if (fane === "data") {
+      try { PROD_VALGT = px0.id; window.__BF3_DATA_PR_PRODUKT = true; bf3DataTegn(el); } catch (e) {} finally { window.__BF3_DATA_PR_PRODUKT = false; }
+      try { const bs = el.querySelector(".bs3"); if (bs) bs.insertAdjacentHTML("afterbegin", prodTop); } catch (e) {}
+      try { bf3BaandKnapVis("prod_data"); } catch (e) {}
+      bf3Swipe(el);
+      try { sideKlarNaar("klipPageList"); } catch (e) {}
+      try { bsBaandPlanlaeg(); } catch (e) {}
+      bf3StudioRyd();
+      return;
+    }
     if (fane === "ideer" || fane === "kilder") {
       const tlfP = bf3Tlf(); let krop = "";
       if (fane === "ideer") { const rr = (MANUS_IDEER || []).filter(function (r) { return miHoererTil(r, px0.id); }); krop = bf3Ver("Idéer til manus") + (rr.length ? rr.map(miFl).join("") : bf3Tom("Ingen idéer til manus endnu.")); }
       else { if (!BF3_SL_HENTET.kilder && !window.__BF3_SL_HENT_kilder) { window.__BF3_SL_HENT_kilder = 1; bf3SlHent("kilder").then(function () { try { renderKlipperum(); } catch (e) {} }); } const rr = (BF3_SL.kilder || []).filter(function (r) { return r && String(r.produkt || "") === String(px0.id); }); krop = bf3Ver("Kildehenvisninger") + (rr.length ? rr.map(function (r) { return bf3SlFlise("kilder", r, tlfP); }).join("") : bf3Tom("Ingen kildehenvisninger endnu.")); }
-      el.innerHTML = '<div class="bs3">' + prodTop + krop + '<div class="bs3-ideer-knap"><button type="button" class="dbtn mq-tap" onclick="klipVisningSaet(\'produkter\')">Tilbage til Produkter</button></div></div>';
+      el.innerHTML = '<div class="bs3">' + prodTop + krop + '<div class="bs3-ideer-knap"><button type="button" class="dbtn mq-tap" onclick="klipVisningSaet(\'studie\')">Tilbage til Overblik</button></div></div>';
       try { bf3BaandKnapVis("prod_" + fane); } catch (e) {}
       bf3Swipe(el);
       try { sideKlarNaar("klipPageList"); } catch (e) {}
@@ -89660,8 +89686,8 @@ function klipBud6Tegn(el) {
       if (!erG && !erO) { if (!BF3_SL_HENTET.brolls && !window.__BF3_SL_HENT_brolls) { window.__BF3_SL_HENT_brolls = 1; bf3SlHent("brolls").then(function () { try { renderKlipperum(); } catch (e) {} }); } egne = (BF3_SL.brolls || []).filter(function (r) { return r && String(r.produkt || "") === String(px0.id); }); }
       const tlfB = bf3Tlf();
       const egneHtml = egne.length ? bf3Ver("B-rolls") + egne.map(function (r) { return bf3SlFlise("brolls", r, tlfB); }).join("") : "";
-      el.innerHTML = '<div class="bs3">' + prodTop + egneHtml + (ialt ? krop : (egne.length ? "" : bf3Ver(navnF) + bf3Tom(erO ? "Ingen overlays endnu. Skriv OVERLAY: i starten af en linje i manus." : erG ? "Ingen grafik endnu. Skriv GRAFIK: i starten af en linje i manus." : "Ingen B-rolls endnu. Tilføj med plusset, eller skriv B-ROLL: i starten af en linje i manus.")))
-        + '<div class="bs3-ideer-knap"><button type="button" class="dbtn mq-tap" onclick="klipVisningSaet(\'produkter\')">Tilbage til Produkter</button></div></div>';
+      el.innerHTML = '<div class="bs3">' + prodTop + bf3ProdFilter(fane) + egneHtml + (ialt ? krop : (egne.length ? "" : bf3Ver(navnF) + bf3Tom(erO ? "Ingen overlays endnu. Skriv OVERLAY: i starten af en linje i manus." : erG ? "Ingen grafik endnu. Skriv GRAFIK: i starten af en linje i manus." : "Ingen B-rolls endnu. Tilføj med plusset, eller skriv B-ROLL: i starten af en linje i manus.")))
+        + '<div class="bs3-ideer-knap"><button type="button" class="dbtn mq-tap" onclick="klipVisningSaet(\'studie\')">Tilbage til Overblik</button></div></div>';
       try { bf3BaandKnapVis(erG || erO ? null : "prod_brolls"); } catch (e) {}
       if (egne.length) bf3Swipe(el);
       try { sideKlarNaar("klipPageList"); } catch (e) {}
@@ -89672,7 +89698,7 @@ function klipBud6Tegn(el) {
     if (fane === "deltagere") {
       el.innerHTML = '<div class="bs3">' + prodTop + bf3Ver("Deltagere")
         + (delt.length ? delt.map(function (k) { return bf3Fl(esc(venterKundeNavn(k)), "", "kundeSideVis('" + esc(k) + "')"); }).join("") : bf3Tom("Ingen deltagere endnu."))
-        + '<div class="bs3-ideer-knap"><button type="button" class="dbtn mq-tap" onclick="klipVisningSaet(\'produkter\')">Tilbage til Produkter</button></div></div>';
+        + '<div class="bs3-ideer-knap"><button type="button" class="dbtn mq-tap" onclick="klipVisningSaet(\'studie\')">Tilbage til Overblik</button></div></div>';
       try { bf3BaandKnapVis(null); } catch (e) {}
       try { sideKlarNaar("klipPageList"); } catch (e) {}
       try { bsBaandPlanlaeg(); } catch (e) {}
@@ -89700,7 +89726,7 @@ function klipBud6Tegn(el) {
           const tlfP = (function () { try { return window.matchMedia("(max-width:899px)").matches; } catch (e) { return false; } })();
           /* en ring uden noget at taelle vises aldrig (»0 af 0«, 20/9) */
           const ring = function (k, fane, navn) { const t = tael[k]; if (!t[1]) return ""; return '<div class="bs3-klik" role="button" tabindex="0" style="flex:1;" onclick="bf3ProdFane(\'' + fane + '\')">' + bf3Ring(t[0] + "/" + t[1], navn, t[0] / t[1], tlfP ? 64 : 76) + '</div>'; };
-          prodStatus = '<div class="bs3-fl" style="margin-bottom:var(--luft-4);"><div class="cf-sek">Produktion</div><div class="bs3-ringe">' + ring("broll", "brolls", "B-rolls produceret") + ring("grafik", "grafik", "grafik produceret") + ring("overlay", "overlays", "overlays produceret") + '</div></div>';
+          prodStatus = bf3ProdFilter("indhold");   /* Produktion-kortet med ringene er vaek (Ida 11/11) */
         }
       } catch (e) { prodStatus = ""; }
     }
@@ -89720,7 +89746,7 @@ function klipBud6Tegn(el) {
   el.innerHTML = '<div class="bs3">' + (px0 ? prodTop : tilbage)
     + (tlf ? rail + hoved + fliser + send + modIdeHtml + (px0 ? '' : '<div class="bs3-afsnit">' + prodHtml + '</div>')
            : (px0 ? '' : prodHtml) + '<div class="bs3-studio"><div>' + rail + '</div><div>' + hoved + fliser + send + modIdeHtml + '</div></div>')
-    + (px0 ? '<div class="bs3-ideer-knap"><button type="button" class="dbtn mq-tap" onclick="klipVisningSaet(\'produkter\')">Tilbage til Produkter</button></div>' : '')
+    + (px0 ? '<div class="bs3-ideer-knap"><button type="button" class="dbtn mq-tap" onclick="klipVisningSaet(\'studie\')">Tilbage til Overblik</button></div>' : '')
     + '</div>';
   try { klipLangTrykLyt(el); } catch (e) {}
   bf3Swipe(el);
@@ -89769,7 +89795,7 @@ function klipStiOpdater() {
     else if (v === "data") { led = [hjem, es, { navn: "Sådan går det" }]; op = function () { klipVisningSaet("studie"); }; }
     else if (v === "kilder" || v === "brolls") { led = [hjem, es, { navn: v === "kilder" ? "Kildehenvisninger" : "B-rolls" }]; op = function () { klipVisningSaet("studie"); }; }   /* heroen hedder rummet (27/9) */
     else if (v === "moduler" && px && BF3_MODUL_AABEN && KLIP_MODUL_CHIP) { const nr = (String(KLIP_MODUL_CHIP).match(/(\d+)/) || [])[1]; led = [hjem, es, prodL, { navn: String(px.navn || ""), klik: "bf3ModulLuk()" }, { navn: nr ? modulEtiket(KLIP_MODUL_CHIP) : String(KLIP_MODUL_CHIP) }]; op = function () { bf3ModulLuk(); }; }
-    else if (v === "moduler" && px) { led = [hjem, es, prodL, { navn: String(px.navn || "") }]; op = function () { klipVisningSaet("prodfliser"); }; }
+    else if (v === "moduler" && px) { led = [hjem, es, { navn: String(px.navn || "") }]; op = function () { klipVisningSaet("studie"); }; }
     else if (v === "moduler") { led = [hjem, es, { navn: "Modulerne" }]; op = function () { klipVisningSaet("studie"); }; }
     navstiSaet(led, op);
     const h = dm.querySelector(".klip-hoved .ch-titel"); const navn = led[led.length - 1].navn;
@@ -90110,7 +90136,7 @@ function bf3DataTegn(el) {
   /* KUN ONLINEKURSERNE (Ida 21/9 kl. 13.10: »her skal jeg jo kun kunne vælge de online-kurser der er oprettet«): produkter med lektioner koblet paa */
   const kursusProd = (typeof PROD_LISTE !== "undefined" && PROD_LISTE ? PROD_LISTE : []).filter(function (p) { try { return Array.from(PROD_KOBL).some(function (k) { return String(k).indexOf(String(p.id) + "|") === 0; }); } catch (e) { return false; } });
   if (kursusProd.length && PROD_VALGT && !kursusProd.some(function (p) { return String(p.id) === String(PROD_VALGT); })) PROD_VALGT = kursusProd[0].id;
-  const produkter = kursusProd.length ? '<div class="bs3-blok">' + bf3DropHtml("bf3DataProd", "Vælg onlinekursus", kursusProd.map(function (p) { return { k: String(p.id), n: p.navn }; }), PROD_VALGT ? String(PROD_VALGT) : "") + '</div>' : '';
+  const produkter = (kursusProd.length && !window.__BF3_DATA_PR_PRODUKT) ? '<div class="bs3-blok">' + bf3DropHtml("bf3DataProd", "Vælg onlinekursus", kursusProd.map(function (p) { return { k: String(p.id), n: p.navn }; }), PROD_VALGT ? String(PROD_VALGT) : "") + '</div>' : '';
   window.bf3Drop_bf3DataProd = function (k) { PROD_VALGT = k; renderKlipperum(); };
   /* lektionerne: koblet til produktet, naar koblingen findes; ellers hele forloebet */
   let lek = (typeof kursusLektionerAktive === "function" ? kursusLektionerAktive() : []).slice();
@@ -90525,6 +90551,17 @@ function bf3StudieKunder() {
 }
 /* PRODUKTER = PRODUKTFLISER (Idas klik 23/9 kl. 16.55, anbefalet): doeren foerte til den gamle Produkter-visning (ring, % godkendt,
    Visning-rullelisten, Vaerktoejer skaaret i coveret). Nu: kun produkter med indhold som doere; et tryk aabner produktets moduler. Ingen tal. */
+/* PRODUKTERNE SOM DOERE (Ida 11/11, lynoptimering af Energida Studio): samme liste som den gamle Produkter-side — produkter med lektioner foerst, saa de oprettede i studiet */
+function bf3ProdFilter(f) { return bf3Chips([["indhold", "Alle"], ["brolls", "B-rolls"], ["grafik", "Grafik"], ["overlays", "Overlays"]], f, "bf3ProdFane"); }
+function bf3ProdDoere(gentegn) {
+  try { if (typeof bf3ProdHent === "function") bf3ProdHent(); } catch (e) {}
+  if (ONLINEKURSER_EGNE === null && !window.__PROD_EGNE_PAA_VEJ) { window.__PROD_EGNE_PAA_VEJ = true; try { manusKurserHent().then(function () { try { if (gentegn) gentegn(); } catch (e) {} }); } catch (e) {} }
+  const alleP = (typeof PROD_LISTE !== "undefined" ? PROD_LISTE : []).slice();
+  const harMod = function (px) { try { return bf3ProdModuler(px.id).size > 0; } catch (e) { return false; } };
+  const egne = Array.isArray(ONLINEKURSER_EGNE) ? ONLINEKURSER_EGNE : ["tts"];
+  const med = alleP.filter(harMod).concat(alleP.filter(function (px) { return !harMod(px) && egne.indexOf(px.id) > -1; }));
+  return med.map(function (px) { return bf3Doer(String(px.navn || ""), "bf3ProdAabn('" + esc(String(px.id)) + "')", { lav: true }); }).join('');
+}
 function bf3ProdFliserTegn(el) {
   document.body.classList.add("klip-bud6");
   try { if (typeof bf3ProdHent === "function") bf3ProdHent(); } catch (e) {}
@@ -90601,11 +90638,9 @@ function bf3StudieTegn(el) {
     + bf3Etfl("Færdige", tal(K ? K.faerdige : "—"), K ? "har udfyldt slutskemaet" : "hentes …", null, "")
     + '</div>';
   /* MODULERNE BOR UNDER PRODUKTER (Ida 24/9: »modulerne skal ind under produkter«) — doeren er vaek; Produkter › YOU GOT THIS viser modulerne */
-  const rum = bf3Ver("Rum") + '<div class="bs3-grid3 bs3-rumgrid">'
-    + bf3Doer("Produkter", 'klipVisningSaet("prodfliser")', { lav: true })
-    /* Idéer til manus, Kildehenvisninger og B-rolls bor under hvert produkt (Ida 11/10) — det uden produkt staar i Indbakken */
-    + bf3Doer("Sådan går det", 'klipVisningSaet("data")', { lav: true })
-    + '</div>';
+  /* OVERBLIK I STEDET FOR RUM, PRODUKTERNE DIREKTE (Ida 11/11): ingen Produkter-doer; »Sådan går det« bor nu som fane paa hvert produkt */
+  const produktDoere = bf3ProdDoere(function () { try { bf3StudieTegn(el); } catch (e) {} });
+  const rum = bf3Ver("Overblik") + (produktDoere ? '<div class="bs3-grid3 bs3-rumgrid">' + produktDoere + '</div>' : tomKortHtml("Hvilket produkt skal have lektioner?", "", ""));
   /* DE TRE PRIKKER I COVERET (21/9-laasen) — vaerktoejerne skal kunne naas fra forsiden */
   const ht = document.getElementById("klipHeadTgl");
   if (ht) ht.innerHTML = '<button type="button" class="kv-menuknap mq-tap" aria-label="Menu" title="Værktøjer og visninger" onclick="klipMenuSkift()">···</button>';
