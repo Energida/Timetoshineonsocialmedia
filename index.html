@@ -34162,6 +34162,32 @@ function turKunDetFindes(liste) {
     });
   } catch (e) { return liste; }
 }
+/* RUNDVISNINGEN FOR YOU GOT THIS = FIRE KORT (Idas klik 11/11 »Ja, byg de 4 trin«, bud HKvrKX4goBcxFArX4Rqx2w): Velkommen, Forsiden, Forløbet, afslutning.
+   Krydstjekket af adfærdsekspert, designlås, tekniker, Mette og tekstholdet. Ordene er Idas og godkendt af hende 11/11. Titlerne er ens (20), kassen står fast, hullet glider, swipe virker. */
+const TUR_T_STIL = "font-weight:400;font-size:20px;color:var(--black);display:block;margin-bottom:6px;white-space:nowrap;";
+function turT(titel, tekst) { return '<b style="' + TUR_T_STIL + '">' + titel + '</b>' + tekst; }
+function turStopsYgt() {
+  const pc = (function () { try { return window.matchMedia("(min-width: 900px)").matches; } catch (e) { return false; } })();
+  const fejlSted = pc ? "nederst til venstre" : "øverst";
+  return [
+    { altid: true, velkomst: true, knap: "Start rundvisning", t: turT("Velkommen til Content Studio", "Her har du alt, hvad du skal bruge i forløbet, samlet ét sted.<br>Undervejs i forløbet åbner nye funktioner løbende, så du kan arbejde med det, du lærer i lektionerne.") },
+    { altid: true, igenFoer: true, t: turT("Forsiden", "Her ser du altid dit næste skridt. Ét tryk, så er du i gang."),
+      m: [".screen.active .hfs", "#hjemMiniTlf", ".hu-naeste .idag-roed", "#snMini .hmini", '#sideNav [data-k="d3"]', "#bn-d3"],
+      foer: function () { try { const tl = document.getElementById("forloebTidslinje"); if (tl && tl.offsetParent !== null) { showTab(3); return true; } } catch (e) {} return false; } },
+    { altid: true, side: true, igenFoer: true, t: turT("Forløbet", "Her ligger lektionerne, én ad gangen. Dem med mærket Opgave har noget, du skal gøre. Stjernen gemmer dem, du vil finde igen."),
+      m: ["#forloebTidslinje .ftl2-stor .lks-lek:has(.lks-opg)", "#forloebTidslinje .ftl2-stor .lks-lek", "#forloebTidslinje .lks-lek", '#sideNav [data-k="d12"]', "#bn-d12"],
+      foer: function () {
+        try {
+          const tl = document.getElementById("forloebTidslinje");
+          if (tl && tl.offsetParent !== null) { if (!tl.querySelector(".ftl2-stor .lks-lek")) { const h = tl.querySelector(".ftl2-stor .ftl2-hoved"); if (h) h.click(); return true; } return false; }
+          showTab(12);
+          setTimeout(function () { try { const t2 = document.getElementById("forloebTidslinje"); if (t2 && !t2.querySelector(".ftl2-stor .lks-lek")) { const h = t2.querySelector(".ftl2-stor .ftl2-hoved"); if (h) h.click(); } } catch (e) {} }, 300);
+          return true;
+        } catch (e) { return false; }
+      } },
+    { altid: true, slut: true, t: turT("Rigtig god fornøjelse.", "Din første lektion venter.<br>Du kan altid melde en fejl ind. Tryk på insektet " + fejlSted + ", så får jeg besked.") }
+  ];
+}
 let TUR_STOPS = TUR_STOPS_AABENT;   /* saettes ved start, saa prikkerne taeller det rigtige */
 function turSet() {
   /* KONTOEN FOERST, browseren bagefter. localStorage foelger ikke med til et privat
@@ -34580,12 +34606,14 @@ function turStart(igen) {
   if (!igen && typeof velkomstSkalVises === "function" && velkomstSkalVises()) return;   /* velkomsten foerst (4/10) — den starter selv rundvisningen bagefter */
   if (!igen && turVenterPaaSkema()) { TUR_VENTER = true; return; }
   TUR_VENTER = false;
-  TUR_STOPS = turStops(typeof CURRENT_DEF !== "undefined" ? CURRENT_DEF : null);
+  let ygtTurNy = false; try { ygtTurNy = typeof ygtHold === "function" && ygtHold(typeof CURRENT_DEF !== "undefined" ? CURRENT_DEF : null); } catch (e) {}
+  TUR_STOPS = ygtTurNy ? turStopsYgt() : turStops(typeof CURRENT_DEF !== "undefined" ? CURRENT_DEF : null);
   /* VELKOMSTEN ER FØRSTE TRIN (Ida 29/10: »den skal starte med "Velkommen til dit content studio" Her er alt hvad du skal bruge gennem dit forløb samlet... så en varm præsentation«) — YOU GOT THIS */
-  try { if (typeof ygtHold === "function" && ygtHold(CURRENT_DEF) && !(TUR_STOPS[0] && TUR_STOPS[0].velkomst)) TUR_STOPS.unshift({ velkomst: true, t: TUR_VELKOMST_TEKST }); } catch (e) {}
+  try { if (!ygtTurNy && typeof ygtHold === "function" && ygtHold(CURRENT_DEF) && !(TUR_STOPS[0] && TUR_STOPS[0].velkomst)) TUR_STOPS.unshift({ velkomst: true, t: TUR_VELKOMST_TEKST }); } catch (e) {}
   turVis(0);
 }
 function turLuk() {
+  window.__TUR_HUL_FRA = null;
   const el = document.getElementById("turOverlay"); if (el) el.remove();
   try { const bm = document.getElementById("burgerMenu"); if (bm && bm.classList.contains("open")) toggleBurger(); } catch (e) {}   /* Mere lukkes med rundvisningen (29/10) */
   if (TUR_MODUS === "lek") { TUR_MODUS = ""; lekTurMarker(); return; }
@@ -34625,13 +34653,14 @@ function lekTurStart(igen) {
    TVILLING: samme funktion i strategibygger.html — ret altid begge. */
 function turAfsnit(t) { return String(t).replace(/<br><br>/g, ' '); }
 function turVis(i) {
+  window.__TUR_NU = i;   /* gentegninger og nye forsøg hører kun til det trin, kunden står på (hurtigt Næste kunne ellers hoppe tilbage) */
   const gl = document.getElementById("turOverlay"); if (gl) gl.remove();
   if (i >= TUR_STOPS.length) { turLuk(); return; }
   const stop = TUR_STOPS[i];
   /* MERE-MENUEN I RUNDVISNINGEN (bud B 29/10): på telefonen bor Indbakken, Værktøjskassen og Meld en fejl i Mere — trinnet åbner menuen, og alle andre trin lukker den igen. */
   try { const tlfM = window.matchMedia("(max-width: 899px)").matches; const bm = document.getElementById("burgerMenu"); const aab = !!(bm && bm.classList.contains("open")); if (tlfM && stop.burger && !aab) toggleBurger(); else if (aab && !(tlfM && stop.burger)) toggleBurger(); } catch (e) {}
   /* ET TRIN KAN ÅBNE SIN SIDE FØRST (Ida 26/10: lektionssidens rundvisning hører med i den første) — siden åbnes, og trinnet tegnes, når den står */
-  if (typeof stop.foer === "function" && !stop.__aabnet) { stop.__aabnet = true; let aabnede = false; try { aabnede = stop.foer() === true; } catch (e) {} if (aabnede) { setTimeout(function () { if (TUR_STOPS[i] === stop && document.getElementById("turOverlay")) turVis(i); }, 450); } }   /* trinnet tegnes med det samme (løfte 55) og igen, når siden står */   /* HANS/METTE 29/10 (390): visLektion tegner siden, men lektionen ruller og tegnes om bagefter — spotlyset blev målt før og lyste på videoen i stedet for noterne. Åbner trinnet siden, tegnes det, når siden står. */
+  if (typeof stop.foer === "function" && (!stop.__aabnet || stop.igenFoer)) { stop.__aabnet = true; let aabnede = false; try { aabnede = stop.foer() === true; } catch (e) {} if (aabnede) { setTimeout(function () { if (TUR_STOPS[i] === stop && window.__TUR_NU === i && document.getElementById("turOverlay")) turVis(i); }, 450); } }   /* trinnet tegnes med det samme (løfte 55) og igen, når siden står */   /* HANS/METTE 29/10 (390): visLektion tegner siden, men lektionen ruller og tegnes om bagefter — spotlyset blev målt før og lyste på videoen i stedet for noterne. Åbner trinnet siden, tegnes det, når siden står. */
   const el = document.createElement("div");
   el.id = "turOverlay";
   el.style.cssText = "position:fixed;inset:0;z-index:230;";
@@ -34672,7 +34701,7 @@ function turVis(i) {
   /* TELEFONEN: spotlight paa bundmenuens knap i stedet for sidemenuens (8/9) — saa turen peger paa noget, kunden kan se. */
   if (!maal && stop.k) { const bn = document.getElementById("bn-" + stop.k); if (bn && bn.offsetParent !== null) maal = bn; }
   /* EN SIDE, TRINNET SELV ÅBNER (Dine svar, Team — 29/10), kan være længere om at stå: trinnet prøver igen, højst 8 gange, til målet findes. */
-  if (!maal && (stop.side || stop.burger) && (stop.__forsoeg || 0) < 8) { stop.__forsoeg = (stop.__forsoeg || 0) + 1; setTimeout(function () { if (TUR_STOPS[i] === stop && document.getElementById("turOverlay")) turVis(i); }, 350); }
+  if (!maal && (stop.side || stop.burger) && (stop.__forsoeg || 0) < 8) { stop.__forsoeg = (stop.__forsoeg || 0) + 1; setTimeout(function () { if (TUR_STOPS[i] === stop && window.__TUR_NU === i && document.getElementById("turOverlay")) turVis(i); }, 350); }
   if (maal) {
     const r = maal.getBoundingClientRect();
     /* RUNDVISNINGEN ER IKKE EN POPUP (Ida 27/8: "guiden igaar var MEGET bedre ...
@@ -34701,6 +34730,7 @@ function turVis(i) {
       + '';   /* INGEN DOBBELTRAMME (Ida 10/11): hullet ER kanten — ingen hvid ring uden om */
     var maalRamme = { L: L, T: T, W: W, H: H };
   } else {
+    window.__TUR_HUL_FRA = null;
     spot = '<div style="position:absolute;inset:0;background:rgba(26,26,26,0.62);"></div>';   /* se noten ovenfor — en rundvisning maa gerne moerklaegge */
   }
   const prikker = TUR_STOPS.map(function(_, n) {
@@ -34731,26 +34761,42 @@ function turVis(i) {
   el.innerHTML = spot
     + '<div style="position:fixed;' + kortPos + (telefon ? '' : 'width:min(470px,88vw);') + 'background:#fff;border-radius:28px;padding:24px 22px 20px;box-shadow:var(--mb-skygge, 0 0 4px rgba(46,44,41,.10), 0 0 36px rgba(46,44,41,.20));box-sizing:border-box;">'
     + '<button type="button" class="ark-kryds tur-kryds" aria-label="Luk" title="Luk" onclick="turLuk()" style="position:absolute;top:14px;right:14px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" data-tegn-ok="1"><path d="M5 5l14 14M19 5L5 19"/></svg></button>'
-    + '<div style="font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--gray3);padding:14px 56px 20px;text-align:center;border-bottom:1px solid var(--border);margin-bottom:14px;">Rundvisning · ' + (i + 1) + ' af ' + TUR_STOPS.length + '</div>'
-    + '<div style="font-size:14px;line-height:1.65;margin-bottom:16px;color:var(--black);text-align:center;">' + turAfsnit(stop.t) + '</div>'
+    + (stop.velkomst ? '' : '<div style="font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--gray3);padding:14px 56px 20px;text-align:center;border-bottom:1px solid var(--border);margin-bottom:14px;">Rundvisning · ' + (i + 1) + ' af ' + TUR_STOPS.length + '</div>')
+    + '<div style="font-size:14px;line-height:1.65;margin-bottom:16px;color:var(--black);text-align:center;' + (stop.velkomst ? 'padding-top:30px;' : '') + '">' + turAfsnit(stop.t) + '</div>'
     + '<div style="display:flex;align-items:center;justify-content:center;gap:6px;margin-bottom:12px;">' + prikker + '</div>'
     /* PAA TELEFONEN ER SWIPE NAVIGATIONEN (Ida 15/9: »i stedet for næste-knap skal man kunne swipe og
        derved også kunne gå tilbage«) — samme sprog som briefen. Naeste-knappen er ude; prikkerne viser,
        hvor man er. Sidste stop har »Faerdig«, de andre »Spring over«. Computeren har Naeste som foer. */
     + (true   /* RUNDVISNINGEN ER ENS PÅ COMPUTER OG TELEFON (Ida 9/11): rød knap øverst, grå tekstknapper under, alt centreret */
-        ? (sidste
+        ? (sidste && stop.slut
+            ? '<button type="button" class="bsam-mobknap mq-tap" style="display:flex;align-items:center;justify-content:center;margin:0;" onclick="turLuk();setTimeout(function(){try{kursusNaeste();}catch(e){}},80)">Start første lektion</button>'   /* åbner næste skridt i forløbet (kursusNaeste håndterer spørgeskema- og modullåse), Idas klik 11/11 */
+              + '<div style="display:flex;gap:8px;margin:10px 0 0;">' + (i > 0 ? '<button type="button" class="tur-spring-tekst tur-tilbage mq-tap" style="flex:1;min-height:44px;background:none;border:0;font-family:Poppins,sans-serif;font-size:14px;color:var(--gray2,#6F6B66);cursor:pointer;" onclick="turVis(' + (i - 1) + ')">Tilbage</button>' : '') + '<button type="button" class="tur-spring-tekst mq-tap" style="flex:1;min-height:44px;background:none;border:0;font-family:Poppins,sans-serif;font-size:14px;color:var(--gray2,#6F6B66);cursor:pointer;" onclick="turLuk()">Ikke lige nu</button></div>'
+            : sidste
             ? '<button type="button" class="bsam-mobknap mq-tap" style="display:flex;align-items:center;justify-content:center;margin:0;" onclick="turLuk()">Færdig</button>'
               + (i > 0 ? '<button type="button" class="tur-spring-tekst tur-tilbage mq-tap" style="display:block;width:100%;margin:10px 0 0;min-height:44px;background:none;border:0;font-family:Poppins,sans-serif;font-size:14px;color:var(--gray2,#6F6B66);cursor:pointer;" onclick="turVis(' + (i - 1) + ')">Tilbage</button>' : '')
             /* RØD NÆSTE + GRÅ SPRING OVER (Idas klik 26/10 »Bud A« på det byggede; Hans: »Der står kun Spring over. Så trykker jeg på den.«) — swipe virker stadig */
-            : '<button type="button" class="bsam-mobknap mq-tap" style="display:flex;align-items:center;justify-content:center;margin:0;" onclick="' + naesteKlik + '">Næste</button>'
-              + '<div style="display:flex;gap:8px;margin:10px 0 0;">' + (i > 0 ? '<button type="button" class="tur-spring-tekst tur-tilbage mq-tap" style="flex:1;min-height:44px;background:none;border:0;font-family:Poppins,sans-serif;font-size:14px;color:var(--gray2,#6F6B66);cursor:pointer;" onclick="turVis(' + (i - 1) + ')">Tilbage</button>' : '')
-                + '<button type="button" class="tur-spring-tekst mq-tap" style="flex:1;min-height:44px;background:none;border:0;font-family:Poppins,sans-serif;font-size:14px;color:var(--gray2,#6F6B66);cursor:pointer;" onclick="turLuk()">Spring over</button></div>')   /* TILBAGE I RUNDVISNINGEN (Ida 3/11: »man har ikke mulighed for at gå tilbage i rundvisningen?«) — fra trin 2; swipe virker stadig */
+            : '<button type="button" class="bsam-mobknap mq-tap" style="display:flex;align-items:center;justify-content:center;margin:0;" onclick="' + naesteKlik + '">' + (stop.knap || 'Næste') + '</button>'
+              + (i > 0 ? '<div style="display:flex;gap:8px;margin:10px 0 0;"><button type="button" class="tur-spring-tekst tur-tilbage mq-tap" style="flex:1;min-height:44px;background:none;border:0;font-family:Poppins,sans-serif;font-size:14px;color:var(--gray2,#6F6B66);cursor:pointer;" onclick="turVis(' + (i - 1) + ')">Tilbage</button></div>' : ''))   /* SPRING OVER ER UDE (Ida 11/11: »man har krydset«); TILBAGE fra trin 2 (Ida 3/11); swipe virker stadig */
         : '<div style="display:flex;justify-content:center;gap:8px;">'
           + (i > 0 ? '<button type="button" class="dbtn tur-knap tur-tilbage" style="height:44px;padding:0 24px;border-radius:999px;font-size:13px;background:#fff;border:1px solid var(--knap-graa-kant, #DEDAD4);color:var(--knap-graa-tekst, #6F6B66);" onclick="turVis(' + (i - 1) + ')">Tilbage</button>' : '')
           + (sidste ? '' : '<button type="button" class="dbtn tur-knap" style="height:44px;padding:0 24px;border-radius:999px;font-size:13px;background:#fff;border:1px solid var(--knap-graa-kant, #DEDAD4);color:var(--knap-graa-tekst, #6F6B66);" onclick="turLuk()">Spring over</button>')
           + '<button type="button" class="dbtn primary tur-knap" style="height:44px;padding:0 24px;border-radius:999px;font-size:13px;" onclick="' + naesteKlik + '">' + (sidste ? 'Færdig' : 'Næste') + '</button></div>')
     + '</div>';
   document.body.appendChild(el);
+  /* HULLET GLIDER FRA STED TIL STED (Idas bud 11/11): det forrige trins hul er udgangspunktet, og rAF flytter det til det nye på ca. 0,5 sek. (ikke CSS-transition på SVG-rect, den er ujævn i Safari). Ingen bevægelse ved »reducer bevægelse«. */
+  try {
+    const nyH = (typeof maalRamme !== 'undefined' && maalRamme) ? { L: maalRamme.L, T: maalRamme.T, W: maalRamme.W, H: maalRamme.H } : null;
+    const gammel = window.__TUR_HUL_FRA; window.__TUR_HUL_FRA = nyH;
+    const rect = el.querySelector('.tur-hul rect[fill="#000"]');
+    const stille = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (nyH && gammel && rect && !stille && (Math.abs(gammel.L - nyH.L) + Math.abs(gammel.T - nyH.T) + Math.abs(gammel.W - nyH.W) + Math.abs(gammel.H - nyH.H)) > 2) {
+      const t0 = performance.now(), D = 520, ease = function (x) { return 1 - Math.pow(1 - x, 3); };
+      const sæt = function (r) { rect.setAttribute("x", r.L); rect.setAttribute("y", r.T); rect.setAttribute("width", r.W); rect.setAttribute("height", r.H); rect.setAttribute("rx", Math.min(14, r.H / 2)); };
+      sæt(gammel);
+      const trin = function (nu) { if (!rect.isConnected) return; const k = Math.min(1, (nu - t0) / D), e = ease(k); sæt({ L: gammel.L + (nyH.L - gammel.L) * e, T: gammel.T + (nyH.T - gammel.T) * e, W: gammel.W + (nyH.W - gammel.W) * e, H: gammel.H + (nyH.H - gammel.H) * e }); if (k < 1) requestAnimationFrame(trin); };
+      requestAnimationFrame(trin);
+    }
+  } catch (e) {}
   if (telefon) {
     const kort = el.lastElementChild;
     turKortPas(kort, (typeof maalRamme !== 'undefined') ? maalRamme : null);
@@ -34788,6 +34834,10 @@ function turPil(el, kort, m, telefon) {
   if (!telefon && m.L + m.W + 24 < b.left) {
     T = [m.L + m.W + 14, cy]; S = [b.left - 6, Math.max(b.top + 30, Math.min(b.bottom - 30, cy))];
   } else if (telefon && m.T > b.bottom + 36) {
+    T = [cx, m.T - 14]; S = [Math.max(b.left + 30, Math.min(b.right - 30, cx)), b.bottom + 6];
+  } else if (m.T + m.H + 36 < b.top) {   /* målet ligger OVER kassen (kassen viger under målet, Idas bud 11/11) */
+    T = [cx, m.T + m.H + 14]; S = [Math.max(b.left + 30, Math.min(b.right - 30, cx)), b.top - 6];
+  } else if (!telefon && m.T > b.bottom + 36) {
     T = [cx, m.T - 14]; S = [Math.max(b.left + 30, Math.min(b.right - 30, cx)), b.bottom + 6];
   }
   if (!S) return;
@@ -64394,7 +64444,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "3229";
+const APP_VERSION = "3230";
 const APP_BYGGET = "3. november";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_VERSION;   /* ingen dato (Ida 7/11: »hvorfor står der version 3. november?«) — datoen blev ikke rettet med, nummeret er sandheden */ } catch (e) {} });
 let NY_VERSION_KLAR = false;
@@ -92576,7 +92626,7 @@ html body .mails .mails-input:disabled { color:var(--gray2) !important; -webkit-
 }
 </style>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-hvid.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 8. oktober · 2600</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 8. oktober · 3230</div>
 <script>
 /* DROPDOWNEN RULLER SELV (Ida 4/10) — maal den aabne liste og klip den ved skaermens bund */
 (function () {
