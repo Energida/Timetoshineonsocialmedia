@@ -9025,6 +9025,8 @@ body.dash-mode #dashMain .ws-card:has(> .follow-item) .bs-sendfelt, body.dash-mo
 /* NUMMER OG VARIGHED I TITELLINJEN, ALT I SORT (Ida 11/11, bud A: »helt normal i sort og ikke grå«): nummeret er første ord i navnet, varigheden står bag */
 html body .lks-lek .lks-ln, html body .lks-lek.set .lks-ln, html body .lks-lek.nu .lks-ln { color:var(--black) !important; font-size:14px; line-height:1.4; }
 .lks-n2 { margin-right:2px; }
+html body .lks-lek.sekv .lks-ln, html body .lks-lek.sekv .lks-ln .lks-d { color:#9A9590 !important; }
+.lks-lek.sekv .lks-mod { color:#9A9590; }
 .lks-d { margin-left:6px; white-space:nowrap; }
 .vkd-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:16px; margin-bottom:16px; }
 .vkd-flise { appearance:none; border:0; font:inherit; cursor:pointer; background:#fff; border-radius:20px; box-shadow:0 0 4px rgba(46,44,41,.10),0 0 28px rgba(46,44,41,.10); aspect-ratio:1/1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px; padding:16px; min-width:0; color:#1A1A1A; }
@@ -41662,7 +41664,33 @@ function kursusLektionerAktive() { return kursusModulerAktive().flatMap(m => m.l
 /* NAESTE ER ALTID EN AABEN LEKTION (designgennemgangen 30/9): i YOU GOT THIS foerte »Næste« og »Fortsæt forløbet« kunden direkte
    ind i laase-arket, naar modul 1 og 2 var set. Laaste moduler springes over; er der ingen aaben lektion tilbage, siger fladen, hvornaar det naeste aabner. */
 function lekModulLaastFor(id) { try { return ygtModulLaast(modulNrFor(id)); } catch (e) { return false; } }
-function kursusLektionerAabne() { return kursusLektionerAktive().filter(l => !lekModulLaastFor(l.id) && !(profilProeve() && lekLaastAfSkema(l.id))); }   /* proeven 17/10: modul 1 venter paa skemaet, saa »Fortsæt med« peger aldrig ind i laasen */
+function kursusLektionerAabne() { return kursusLektionerAktive().filter(l => !lekModulLaastFor(l.id) && !(profilProeve() && lekLaastAfSkema(l.id)) && !lekLaastAfForrige(l.id)); }   /* proeven 17/10: modul 1 venter paa skemaet, saa »Fortsæt med« peger aldrig ind i laasen */
+/* LEKTIONERNE ÅBNER ÉN AD GANGEN (Ida 11/11: »alle lektioner PÅNÆR modul 0 åbnes først, når den foregående er set — inkl. opgave eller refleksionsøvelse markeret som udført«):
+   Modul 0 er åbent. 1.1 åbner, når hele Modul 0 er set. Derefter åbner hver lektion, når den forrige er set og dens opgave/refleksion er markeret udført.
+   En lektion, kunden allerede har set, forbliver åben (ingen mister adgang). Skjulte lektioner springes over, fordi listen kun har dem, kunden kan se.
+   Ida i Backstage ser alt åbent; »Se lektionen som kunden« viser reglen, som kunden ser den. Modulernes datoer gælder stadig ovenpå (ygtModulLaast). */
+function lekLaastAfForrige(id) {
+  try {
+    const d = typeof CURRENT_DEF !== "undefined" ? CURRENT_DEF : null;
+    if (!d || d.type !== "kursus") return null;
+    if (typeof KLIP_ER_IDA !== "undefined" && KLIP_ER_IDA && !SOM_KUNDE) return null;
+    if ((parseInt(modulNrFor(id), 10) || 0) <= 1) return null;   /* Modul 0 er åbent */
+    if (KURSUS_SET[id]) return null;                              /* allerede set: forbliver åben */
+    const liste = kursusLektionerAktive();
+    const i = liste.findIndex(function (l) { return l.id === id; });
+    if (i <= 0) return null;
+    const prev = liste[i - 1];
+    if ((parseInt(modulNrFor(prev.id), 10) || 0) <= 1) {          /* første lektion efter Modul 0: hele Modul 0 skal være set */
+      const m0 = liste.filter(function (l) { return (parseInt(modulNrFor(l.id), 10) || 0) <= 1; });
+      const mangler = m0.find(function (l) { return !KURSUS_SET[l.id]; });
+      return mangler ? { fra: lekVisNr(mangler.id), tekst: "Lektion " + lekVisNr(id) + " åbner, når du har taget alle lektionerne i Modul 0." } : null;
+    }
+    if (!KURSUS_SET[prev.id]) return { fra: lekVisNr(prev.id), tekst: "Lektion " + lekVisNr(id) + " åbner, når du har taget lektion " + lekVisNr(prev.id) + "." };
+    const harOpg = !!(prev.ovelse && prev.ovelse.length);
+    if (harOpg && !oevKlaret(prev.id)) return { fra: lekVisNr(prev.id), tekst: "Lektion " + lekVisNr(id) + " åbner, når du har lavet opgaven til lektion " + lekVisNr(prev.id) + " og markeret den som udført." };
+    return null;
+  } catch (e) { return null; }
+}
 function kursusFoersteLaaste() { return kursusLektionerAktive().find(l => lekModulLaastFor(l.id)) || null; }
 function kursusLaasTekst(l) { const nr = modulNrFor(l.id); return "Modul " + modulVisNr(nr) + " åbner " + ygtDatoOrd(ygtModulAabner(nr)); }
 /* ÉT NAVN PÅ FORLØBSSIDEN (Idas klik 6/11: »Dit forløb«): menu = hero = knap = sti for YOU GOT THIS; andre kursuspakker beholder »Lektionerne« */
@@ -42605,7 +42633,7 @@ function kursusNaesteLektion() { return kursusLektionerAabne().find(l => !KURSUS
 function kursusNaeste() {
   const l = kursusNaesteLektion();
   if (l) visLektion(l.id);
-  else { const lf = kursusFoersteLaaste(); if (lf) { ygtLaasArk(kursusLaasTekst(lf)); return; } const a = kursusLektionerAktive(); if (a.length) visLektion(a[0].id); }   // alt gennemført: åbn forløbet, så man kan gense via listen
+  else { const lfV = kursusLektionerAktive().find(function (x) { return !KURSUS_SET[x.id] && !lekModulLaastFor(x.id) && lekLaastAfForrige(x.id); }); if (lfV) { ygtLaasArk(lekLaastAfForrige(lfV.id).tekst); return; } const lf = kursusFoersteLaaste(); if (lf) { ygtLaasArk(kursusLaasTekst(lf)); return; } const a = kursusLektionerAktive(); if (a.length) visLektion(a[0].id); }   // alt gennemført: åbn forløbet, så man kan gense via listen
 }
 
 /* ---------- LEKTIONSSIDEN: fuldskærm med video(-placeholder), noter og øvelse ---------- */
@@ -42634,6 +42662,7 @@ function lekSkemaLaasArk() {
 function visLektion(id) {
   if (String(id).indexOf("w-") === 0) { ttsLektionAaben(id); return; }
   if (lekLaastAfSkema(id)) { lekSkemaLaasArk(); return; }
+  { const lfF = lekLaastAfForrige(id); if (lfF) { ygtLaasArk(lfF.tekst); return; } }   /* én ad gangen (Ida 11/11) */
   { const mnrL = modulNrFor(id); if (ygtModulLaast(mnrL)) { ygtLaasArk("Modul " + modulVisNr(mnrL) + " åbner " + ygtDatoOrd(ygtModulAabner(mnrL))); return; } }   /* ti uger (30/9) */
   const adg = kursusAdgang();
   if (adg && !adg.has(id)) return;                       // uden for kodens adgang
@@ -43372,9 +43401,10 @@ function lksLek(x, aktivId, mod) {
   const st = s ? LKS_FB : '<span class="lks-tom"></span>';   /* hvid flise, ogsaa naar man staar i den (Idas klik 28/10, kombi A) */
   const idS = esc(String(x.id)).replace(/'/g, "");
   /* OPGAVEN SYNES UNDER MODULET (Ida 11/11: »hvorfor kan jeg slet ikke se opgaverne under modulerne?«): chip paa de lektioner, der har en opgave — hvid pille med graa kant */
+  const lfL = lekLaastAfForrige(x.id);
   const harOpg = !!(x.ovelse && x.ovelse.length);
   const opgChip = harOpg ? '<span class="lks-opg">' + (oevKlaret(x.id) ? 'Opgave taget' : 'Opgave') + '</span>' : '';
-  return '<div class="lks-fl lks-lek' + (nu ? ' nu' : '') + (s ? ' set' : '') + '" role="button" tabindex="0" onclick="visLektion(\'' + idS + '\')">' + st + '<div class="lks-lt"><div class="lks-ln"><span class="lks-n2">' + esc(lekVisNr(x.id)) + '</span> ' + esc(typeof lekVisTitel === "function" ? lekVisTitel(x) : x.titel) + (lekTidTekst(x.id) ? ' <span class="lks-d">' + esc(lekTidTekst(x.id)) + '</span>' : '') + '</div>' + ven + (mod ? '<div class="lks-mod">' + esc(mod) + '</div>' : '') + '</div>' + opgChip + lekFavKnap(x.id) + '</div>';   /* FLUEBENET TIL VENSTRE (Ida 28/10) · STJERNEN TIL HOEJRE (Ida 11/11) */
+  return '<div class="lks-fl lks-lek' + (nu ? ' nu' : '') + (s ? ' set' : '') + (lfL ? ' sekv' : '') + '" role="button" tabindex="0" onclick="visLektion(\'' + idS + '\')">' + st + '<div class="lks-lt"><div class="lks-ln"><span class="lks-n2">' + esc(lekVisNr(x.id)) + '</span> ' + esc(typeof lekVisTitel === "function" ? lekVisTitel(x) : x.titel) + (lekTidTekst(x.id) ? ' <span class="lks-d">' + esc(lekTidTekst(x.id)) + '</span>' : '') + '</div>' + ven + (lfL ? '<div class="lks-mod">Åbner, når lektion ' + esc(lfL.fra) + ' er taget</div>' : '') + (mod ? '<div class="lks-mod">' + esc(mod) + '</div>' : '') + '</div>' + (lfL ? FTL_LAAS : opgChip + lekFavKnap(x.id)) + '</div>';   /* FLUEBENET TIL VENSTRE (Ida 28/10) · STJERNEN TIL HOEJRE (Ida 11/11) */
 }
 function lksModul(m, aktivId, oversigt) {
   const ids = m.lektioner || []; if (!ids.length) return '';
@@ -44428,6 +44458,14 @@ function forloebTidslinjeHtml() {
             + '<button type="button" class="ftl2-pil" aria-label="' + (op ? 'Fold modulet ind' : 'Fold modulet ud') + '" aria-expanded="' + (op ? 'true' : 'false') + '" onclick="event.stopPropagation();forloebModulFold(\'' + nr_ + '\')">' + lksPil(op) + '</button></div>'
             + (op ? ftlLektioner(a, nr) : '') + '</div>';
           ud.push({ h: stor, s: false });
+          return;
+        }
+        /* ÅBNE MODULER ER HVIDE (Ida 11/11, bud: artifact F2BBogiSKb6uZ4XrcWf6Lu): et modul, der er åbent efter dato, står som en hvid flise i sin rækkefølge — foldet, til man trykker. Kun låste moduler er beige under »Låste moduler«. */
+        if (!alleSet) {
+          ud.push({ h: '<div class="ftl2-stor' + (op ? ' op' : '') + '"><div class="ftl2-hoved" role="button" tabindex="0" aria-expanded="' + (op ? 'true' : 'false') + '" onclick="forloebModulFold(\'' + nr_ + '\')">'
+            + '<div class="ftl2-t"><div class="ftl2-n">' + esc(a.titel) + '</div><div class="ftl2-a">' + ftlAntal(ids.length) + '</div></div>'
+            + '<button type="button" class="ftl2-pil" aria-label="' + (op ? 'Fold modulet ind' : 'Fold modulet ud') + '" aria-expanded="' + (op ? 'true' : 'false') + '" onclick="event.stopPropagation();forloebModulFold(\'' + nr_ + '\')">' + lksPil(op) + '</button></div>'
+            + (op ? ftlLektioner(a, nr) : '') + '</div>', s: false });
           return;
         }
         /* færdigt modul (»Færdig«) eller åbent modul, der venter bag det aktuelle: tynd række, der kan foldes ud */
@@ -64479,7 +64517,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "3234";
+const APP_VERSION = "3235";
 const APP_BYGGET = "3. november";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_VERSION;   /* ingen dato (Ida 7/11: »hvorfor står der version 3. november?«) — datoen blev ikke rettet med, nummeret er sandheden */ } catch (e) {} });
 let NY_VERSION_KLAR = false;
