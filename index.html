@@ -63986,7 +63986,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "3205";
+const APP_VERSION = "3206";
 const APP_BYGGET = "3. november";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_VERSION;   /* ingen dato (Ida 7/11: »hvorfor står der version 3. november?«) — datoen blev ikke rettet med, nummeret er sandheden */ } catch (e) {} });
 let NY_VERSION_KLAR = false;
@@ -82246,6 +82246,7 @@ async function kkInfoGemNu() {
       const { data } = await sb.from("skema_svar").update({ svar: info }).eq("kode", KUNDEKORT.kode).eq("navn", "config").eq("skema", "kunde_info").select();
       if (!data || !data.length) await sb.from("skema_svar").insert({ kode: KUNDEKORT.kode, navn: "config", skema: "kunde_info", svar: info });
       gemStatusVis(document.getElementById("kiMsg"), "gemt");
+      try { KUNDE_INFO[KUNDEKORT.kode] = info; crmSynk(KUNDEKORT.kode, "info", true); } catch (e) {}   /* kundekort → CRM-tabellen: kontaktperson, postnummer og by står ens (11/11) */
       const ab = document.getElementById("kiAlder"); if (ab) ab.textContent = kiAlderTekst(info.foedt);
     } catch(e) { gemStatusVis(document.getElementById("kiMsg"), "fejl"); }
   })();
@@ -85199,14 +85200,15 @@ function renderTable() {
 
 async function setStatus(id, val) {
   if (sb) {
-    const { error } = await sb.from("contacts").update({ status: val }).eq("id", id);
-    if (error) { console.error(error.message); return; }
+    const r0 = await sb.from("contacts").update({ status: val }).eq("id", id).select("id");
+    if (r0.error || !r0.data || !r0.data.length) { console.error((r0.error && r0.error.message) || "0 rækker"); try { husBesked("Det blev ikke gemt. Prøv igen."); } catch (e) {} return; }
   } else {
     const list = loadLocal();
     const c = list.find(x => x.id === id);
     if (c) { c.status = val; saveLocal(list); }
   }
   await refresh();
+  try { crmSynk(id, "status"); } catch (e) {}   /* CRM-tabellen og kortet står ens (11/11) */
 }
 
 async function delCustomer(id) {
@@ -85298,6 +85300,7 @@ function openModal(id) {
     '<h2>' + esc(c.kunde) + '</h2>' +
     '<div class="msub">' + esc(String(c.status || "").trim() || "") + (c.produkt ? (c.status ? ' · ' : '') + esc(String(c.produkt)) : '') + '</div>' +
     ret("Kontaktperson", "kontaktperson", c.kontaktperson) +
+    crmAdrFeltHtml(c.id, "postnr", "Postnummer") + crmAdrFeltHtml(c.id, "by", "By") +   /* samme kilde som CRM-tabellen (vane-rækken crm_adresse) */
     ret("Email", "email", c.email) +
     ret("Telefon", "telefon", c.telefon) +
     /* TYPE OG STATUS SOM CHIPS (Ida 5/10: »på hver kunde redigere hvilken type de er eller leads«): samme felter som foer (produkt · status),
@@ -85320,6 +85323,7 @@ function openModal(id) {
     '<button type="button" class="dbtn mq-tap" style="width:100%;margin-top:8px;display:flex;align-items:center;justify-content:center;gap:8px;" onclick="delCustomer(\'' + esc(String(c.id)).replace(/'/g, "") + '\')">' + (typeof BS_SKRALD_SVG !== "undefined" ? BS_SKRALD_SVG : "") + '<span>Slet</span></button>';
   document.getElementById("modalBack").classList.add("on");
   kkMailLogTegn(c);
+  try { crmAdrHent().then(function () { const a = CRM_ADR[String(c.id)] || {}; [["kkPostnr", "postnr"], ["kkBy", "by"]].forEach(function (x) { const f = document.getElementById(x[0]); if (f && !f.value && a[x[1]] && document.activeElement !== f) f.value = a[x[1]]; }); }); } catch (e) {}
 }
 function briefErAaben() { return !!document.getElementById("kbManusTekst"); }
 function modalBaggrundKlik() {
@@ -85351,8 +85355,11 @@ let kontaktFeltTimer = null;
 let KONTAKT_PENDING = null;
 function saveKontaktFelt(id, felt, val) {
   const c = CUSTOMERS.find(x => String(x.id) === String(id));
+  const gammelVaerdi = c ? c[felt] : undefined;
   if (c) c[felt] = val;
-  if (!KONTAKT_PENDING || String(KONTAKT_PENDING.id) !== String(id)) KONTAKT_PENDING = { id: id, felter: {} };
+  if (!KONTAKT_PENDING || String(KONTAKT_PENDING.id) !== String(id)) KONTAKT_PENDING = { id: id, felter: {}, gamle: {} };
+  if (!KONTAKT_PENDING.gamle) KONTAKT_PENDING.gamle = {};
+  if (!(felt in KONTAKT_PENDING.gamle)) KONTAKT_PENDING.gamle[felt] = c ? gammelVaerdi : undefined;
   KONTAKT_PENDING.felter[felt] = val;
   clearTimeout(kontaktFeltTimer);
   kontaktFeltTimer = setTimeout(kontaktFlush, 700);
@@ -85360,13 +85367,18 @@ function saveKontaktFelt(id, felt, val) {
 async function kontaktFlush() {
   if (!KONTAKT_PENDING) return;
   const pend = KONTAKT_PENDING; KONTAKT_PENDING = null;
-  if (sb) { try { await sb.from("contacts").update(pend.felter).eq("id", pend.id); } catch(e) {} }
+  let ok = true;
+  if (sb) {
+    /* §5: .select() og rækketælling — en afvist skrivning svarer error = null og 0 rækker. Fejler den, rulles kortet og tabellen tilbage (Ida 11/11: krydstjek) */
+    try { const r = await sb.from("contacts").update(pend.felter).eq("id", pend.id).select("id"); if (r.error || !r.data || !r.data.length) throw r.error || new Error("0 rækker"); }
+    catch (e) { ok = false; try { const c = CUSTOMERS.find(x => String(x.id) === String(pend.id)); if (c && pend.gamle) Object.keys(pend.gamle).forEach(k => { c[k] = pend.gamle[k]; }); } catch (e2) {} try { husBesked("Det blev ikke gemt. Prøv igen."); } catch (e3) {} }
+  }
   else {
     const list = loadLocal(); const lc = list.find(x => String(x.id) === String(pend.id));
     if (lc) { Object.assign(lc, pend.felter); saveLocal(list); }
   }
   renderTable(); renderKpis(); renderFollowUp();
-  try { const kc = document.getElementById("dside-crm"); if (kc && kc.style.display !== "none" && typeof kunderneTegn === "function") kunderneTegn(true); } catch (e) {}   /* CRM-listens chips foelger med (5/10; foer: pipelinen) */
+  try { crmSynk(pend.id, Object.keys(pend.felter)[0] || "", ok); } catch (e) {}   /* tabellen, Salg og Hjem tegnes om fra samme kilde (kort → tabel); ved fejl tegnes kortet også om med de gamle værdier */
 }
 async function kontaktGem(btn) {
   if (btn) { btn.disabled = true; btn.textContent = "Gemmer…"; }
@@ -87980,157 +87992,381 @@ function bf3SortAabn() {
   m.innerHTML = '<div class="bs-flyt-ark"><div class="bs-sek" style="margin:0 2px 10px;">Sortér</div>' + r("aktiv", "Seneste aktivitet") + r("venter", "Venter først") + r("navn", "Navn") + '<button type="button" class="bsam-mobknap bsam-mobknap-sek bs-knap ark-luk" style="display:block;width:100%;margin:6px 0 0;" onclick="bsFlytLuk()">Annullér</button></div>';
   m.style.display = "flex"; m.onclick = function (e) { if (e.target === m) bsFlytLuk(); };
 }
-function bf3KundeKat(k) { BS_KUNDE_KAT = k === "alle" ? "" : k; BS_KUNDE_CHIP = k; kunderneTegn(true); }
-async function kunderneTegn(hurtig) {
-  const el = document.getElementById("bsKunder"); if (!el) return;
-  if (!hurtig) { try { await venterHent(); } catch (e) {} try { await kundePinsHent(); } catch (e) {} }
-  try { if (!hurtig && !plKontakter().length && typeof fetchCustomers === "function") CUSTOMERS = await fetchCustomers(); } catch (e) {}   /* kontakterne fra Notions CRM (26/9) */
-  if (BS_KONTAKT_PROD && KONTAKT_DOERE_TIL) { kontakterTegn(el); return; }
-  /* ALLE I CRM (Ida 5/10: »læg dem alle ind i mit crm og så må jeg på hver kunde redigere hvilken type de er eller leads«):
-     kunderne med kode (VIRKSOMHEDSKODER) OG kontakterne fra contacts (det, pipelinen viste) staar i EEN liste som ens fliser.
-     En kontakt baerer sin status som chip (samme ord som kontaktkortet, STATUSES). Chips oeverst: Alle · Kunder · Leads · Venter paa dig · kategorierne.
-     »Leads« = kontakter med status Lead; »Kunder« = alt andet. Datafelterne (status, produkt) roeres ikke — kun visningen. */
-  let koder = [];
-  const q = (BS_KUNDE_SOEG || "").trim().toLowerCase();
-  try { koder = Object.keys(VIRKSOMHEDSKODER).filter(function (k) { return (erRigtigKunde(k) || (q && erTestkunde(k))) && VIRKSOMHEDSKODER[k].aktiv !== false; }); } catch (e) {}   /* en søgning finder også testere (Ida 27/10: kunne ikke finde sit eget testkøb på mail) */
-  const navnAf = function (k) { return (VIRKSOMHEDSKODER[k] || {}).virksomhed || k; };
-  const kat = BS_KUNDE_CHIP || "alle";
-  const LK = leadKoebKort();
-  const erLead = function (c) { return /^lead$/i.test(String(c.status || "").trim()) && !LK.lead[c.id]; };   /* et lead, der har købt, er kunde (22/10) */
-  /* SØG OGSÅ PÅ MAIL (Ida 27/10: »jeg kan fandme ikke engang søge mig selv op som kunde op mail«): kundeoplysningernes mail + købets mail (CRM-kontakten »… · Kode: KODE«) */
-  const koebTekst = {}; if (q) { try { plKontakter().forEach(function (c) { const kk = overblikKode(c.kommentar); if (kk) koebTekst[kk] = (koebTekst[kk] || "") + " " + String(c.kommentar || "").toLowerCase(); }); } catch (e) {} }
-  let liste = koder.filter(function (k) { return !q || navnAf(k).toLowerCase().indexOf(q) > -1 || k.toLowerCase().indexOf(q) > -1 || String((typeof KUNDE_MAILS !== "undefined" && KUNDE_MAILS[k]) || "").indexOf(q) > -1 || String(koebTekst[String(k).toUpperCase()] || "").indexOf(q) > -1; });
-  let kontakter = plKontakter().filter(function (c) { return !LK.koeb[c.id]; }).filter(function (c) { return !q || String(c.kunde || "").toLowerCase().indexOf(q) > -1 || String(c.kontaktperson || "").toLowerCase().indexOf(q) > -1 || String(c.email || "").toLowerCase().indexOf(q) > -1 || String(c.kommentar || "").toLowerCase().indexOf(q) > -1; });
-  if (kat === "venter") { liste = liste.filter(function (k) { return bsKundeVenter(k).length; }); kontakter = []; }
-  else if (kat === "kunder") { kontakter = kontakter.filter(function (c) { return !erLead(c); }); }
-  else if (kat === "leads") { liste = []; kontakter = kontakter.filter(erLead); }
-  else if (kat === "gamle") { liste = []; kontakter = kontakter.filter(function (c) { return String(c.source || "") === "Gamle kunder"; }); }
-  else if (kat.indexOf("tag:") === 0) { const tn = kat.slice(4); liste = []; kontakter = kontakter.filter(function (c) { return crmTagsPaa(c.id).indexOf(tn) > -1; }); }   /* egne tags (Ida 21/10) */   /* Ida 14/10: »hvorfor kommer gamle kunder ikke op her som chips?« */
-  else if (kat !== "alle") { const kd = BS_KUNDE_KATEGORIER.find(function (x) { return x.id === kat; }); if (kd) liste = liste.filter(kd.passer); kontakter = []; }
-  const sorter = function (a, b) {
-    if (BF3_SORT === "navn") return navnAf(a).localeCompare(navnAf(b), "da");
-    if (BF3_SORT === "venter") { const d = bsKundeVenter(b).length - bsKundeVenter(a).length; if (d) return d; }
-    const da = bsKundeAktivitet(a).sidstDato || "", db = bsKundeAktivitet(b).sidstDato || ""; if (da !== db) return da < db ? 1 : -1; return navnAf(a).localeCompare(navnAf(b), "da");
-  };
-  liste.sort(sorter);
-  /* kontakterne sorteres med samme greb: navn · ellers seneste kontakt (sidste_kontakt / naeste_aktivitet) nyest foerst, derefter navn */
-  const kDato = function (c) { return [plDato(c.sidste_kontakt), plDato(c.naeste_aktivitet), plDato(c.created_at)].filter(Boolean).sort().pop() || ""; };
-  kontakter.sort(function (a, b) { if (BF3_SORT !== "navn") { const da = kDato(a), db = kDato(b); if (da !== db) return da < db ? 1 : -1; } return String(a.kunde || "").localeCompare(String(b.kunde || ""), "da"); });
-  const pins = (KUNDE_PINS || []); const pinnede = liste.filter(function (k) { return pins.indexOf(k) > -1; }); const resten = liste.filter(function (k) { return pins.indexOf(k) === -1; });
-  const linje = function (k) { const v = bsKundeVenter(k).length; const a = bsKundeAktivitet(k); return [v ? (v === 1 ? "1 venter" : v + " venter") : "", a.tekst || ""].filter(Boolean).join(" · "); };
-  const flise = function (k) { const pin = pins.indexOf(k) > -1; return '<div class="bs3-fl bs3-klik bs3-kunde" role="button" tabindex="0" onclick="kundeSideVis(\'' + esc(k) + '\')"><div class="bs3-n">' + esc(navnAf(k)) + '</div>' + (linje(k) ? '<div class="bs3-s">' + esc(linje(k)) + '</div>' : '') + '<button type="button" class="bs3-naal' + (pin ? ' on' : '') + '" aria-label="' + (pin ? 'Fjern nålen' : 'Sæt nålen') + '" onclick="event.stopPropagation();kundePinSkift(\'' + esc(k) + '\')">' + BF3_SVG.naal + '</button></div>'; };
-  /* kontaktens flise: navn · linje (produkt · sidst) · status som chip th. (ordet fra STATUSES, 36 px, graa — valgt/roed findes kun i filterraekken) */
-  const kFlise = function (c) { const sk = plDato(c.sidste_kontakt), na = plDato(c.naeste_aktivitet); const l = [String(c.produkt || "").trim(), c.kontaktperson ? String(c.kontaktperson).trim() : "", na ? "opfølgning " + dkDatoKort(na) : (sk ? "sidst " + dkDatoKort(sk) : "")].filter(Boolean).join(" · "); const st = String(c.status || "").trim();
-    return '<div class="bs3-fl bs3-klik bs3-kunde bs3-kontakt" role="button" tabindex="0" onclick="openModal(\'' + esc(String(c.id)) + '\')"><div class="bs3-n">' + esc(c.kunde || "Uden navn") + '</div>' + (l ? '<div class="bs3-s">' + esc(l) + '</div>' : '') + (st ? '<span class="ark-chip bs3-stchip">' + esc(st) + '</span>' : '') + '</div>'; };
-  const tlf = bf3Tlf();
-  try { crmTagsHent(); } catch (e) {}
-  const kats = [["alle", "Alle"], ["kunder", "Kunder"], ["leads", "Leads"], ["gamle", "Gamle kunder"]].concat(crmTagNavne().map(function (t) { return ["tag:" + t, t]; })).concat([["venter", "Venter på dig"]]).concat(BS_KUNDE_KATEGORIER.map(function (x) { return [x.id, x.navn]; }));
-  const alleFliser = resten.map(flise).concat(kontakter.map(kFlise));
-  /* CRM SOM NOTION (Idas klik 22/10) — én linje pr. kunde; se CSS'en .crmt */
-  const pKl = function (st) { st = String(st || "").toLowerCase(); return /^(aktiv|kunde|blev kunde)$/.test(st) ? " aktiv" : /^(passiv|afsluttet|ikke igang|ikke sendt)$/.test(st) ? " passiv" : ""; };
-  const rkAlle = resten.map(function (k) { const a = bsKundeAktivitet(k); return { st: "Aktiv", kunde: navnAf(k), kontakt: "", produkt: bsKundeProdukt(k), naeste: linje(k), naesteIso: "", sidst: a.sidstDato ? dkDatoKort(String(a.sidstDato).slice(0, 10)) : "", sidstIso: String(a.sidstDato || "").slice(0, 10), oprettet: "", kom: "", klik: "kundeSideVis('" + esc(k) + "')" }; })
-    .concat(kontakter.map(function (c) { const na = plDato(c.naeste_aktivitet), sk = plDato(c.sidste_kontakt), op = plDato(c.created_at); return { id: String(c.id), st: LK.lead[c.id] ? "Blev kunde" : String(c.status || "").trim(), kunde: c.kunde || "Uden navn", kontakt: String(c.kontaktperson || "").trim(), produkt: (Array.isArray(c.produkt) ? c.produkt.join(", ") : String(c.produkt || "")).trim(), naeste: na ? dkDatoKort(na) : "", naesteIso: na || "", sidst: sk ? dkDatoKort(sk) : "", sidstIso: sk || "", oprettet: op ? dkDatoKort(op) : "", oprettetIso: op || "", kom: String(c.kommentar || "").replace(/\s+/g, " ").trim(), klik: "openModal('" + esc(String(c.id)) + "')" }; }));
-  const tabel = !rkAlle.length ? "" : crmTabelHtml(rkAlle, tlf);   /* NOTION-TABELLEN (Idas klik 28/10, bud 1) — begge flader */
-  el.innerHTML = '<div class="bs-hero bs-hero-streg">CRM</div><div class="bs3">'
-    + '<div class="bs3-raekke2"><div class="sendfelt bs-sendfelt bs3-soeg"><input type="text" class="sendfelt-felt" id="bsKundeSoeg" placeholder="Find en kunde …" autocomplete="off" value="' + esc(BS_KUNDE_SOEG || "").replace(/"/g, "&quot;") + '" oninput="BS_KUNDE_SOEG=this.value;kunderneTegn(true)"></div>'
-    + '<button type="button" class="bs3-drop bs3-sort" onclick="bf3SortAabn()"><span>Sortér: ' + ({ aktiv: "seneste aktivitet", venter: "venter først", navn: "navn" })[BF3_SORT] + '</span>' + BF3_SVG.ned + '</button></div>'
-    + bf3Chips(kats, kat, "bf3KundeKat")
-    + (pinnede.length ? bf3Ver("Pinnede") + '<div class="bs3-grid' + (tlf ? '1' : '2') + '">' + pinnede.map(flise).join('') + '</div>' : '')
-    + '<div class="bs3-afsnit">' + bf3Ver(kat === "leads" ? "Leads" : kat === "gamle" ? "Gamle kunder" : kat.indexOf("tag:") === 0 ? kat.slice(4) : (pinnede.length ? "Alle kunder" : "Kunder")) + '</div>'
-    + (alleFliser.length ? tabel : bf3Tom(q ? "Ingen kunder matcher." : (kat === "leads" ? "Ingen leads endnu." : kat === "gamle" ? "Ingen gamle kunder endnu." : "Ingen kunder her.")))
-    + ''   /* »Ny kunde« = plusset i baandet (Ida 21/9 kl. 13.25: »tilføj-knappen skal ikke være nede i bunden men i højre øvre hjørne oppe i coveret«) */
-    + '</div>';
-  /* PLUSSET HOPPER IKKE, NÅR MAN SKRIVER I SØGEFELTET (Ida 11/11): hver tast tegnede listen forfra og lod båndet (og dermed plussets placering) regne om efter 80 ms. Under skrivning er båndet uændret — kun listen tegnes. */
-  if (!hurtig) {
-    try { navstiBackstage("crm"); } catch (e) {}
-    try { bsBaandPlanlaeg(); } catch (e) {}
-  }
-  try { const f = document.getElementById("bsKundeSoeg"); if (hurtig && f && q) { f.focus(); f.setSelectionRange(f.value.length, f.value.length); } } catch (e) {}
-  if (!hurtig) { try { bf3BaandKnapVis("kunder"); } catch (e) {} }
-}
-/* ===================== CRM SOM NOTION · BUD 1 (Idas klik 28/10 »Bud 1 · Notion-tabellen«, Artifact 5hUvJAvL1qQTUTH4HuEZJU) =====================
-   Ida: »jeg kunne mega godt tænke mig at mit crm blev ligesom mit gamle notion - hvor man kan arbejde i det inkl kolonner osv« · »ikke de initialer foran og brug rød i stedet for den grimme brune«.
-   Kolonner til og fra · sortér ved tryk på overskriften · ret status, næste aktivitet og kommentar direkte i cellen (kun kontakter — en kunde med kode åbner kundesiden).
-   Visningen (kolonner + sortering) gemmes i Idas egen række (skema_svar · crm_visning), som crm_tags. contacts-tabellen får ingen ny kolonne; rettelserne skriver de felter,
-   der findes (status · naeste_aktivitet · kommentar), og »Gemt« står kun, når basen har talt rækken. Telefonen: samme tabel, der ruller inde i sin egen ramme, kunden står fast. */
+/* ===================== CRM · BUD 1 (Idas valg 11/11: Artifact »CRM · tre bud« bud 1 + »CRM bud 1 redigering« skærm 1-4) =====================
+   Erstatter Notion-tabellen fra 28/10. Alt står i husets tokens; chip-farverne (Grå · Brun · Orange · Gul · Grøn · Blå · Lilla · Rød) er en bevidst undtagelse KUN her (Ida 11/11).
+   FAKTA (kortlagt 11/11, se docs/crm-bud1-kortlaegning.md):
+   - Kontakter (leads, gamle kunder, klienter …) = contacts: status · produkt · naeste_aktivitet · kommentar · kontaktperson. Postnummer og By har INGEN kolonne i contacts (ingen DB-ændring i trin 1):
+     de gemmes i Idas egen vane-række »crm_adresse« [{id, postnr, by}] — ingen ny tabel — og vises også på kontaktkortet (samme kilde).
+   - Kunder med kode (VIRKSOMHEDSKODER) har INGEN gemt status, kommentar eller næste aktivitet. Status vises som »Aktiv«, produktet udledes af kundens def (CRM_OMRAADER), næste = næste planlagte opslag.
+     Kontaktperson · postnummer · by bor i skema_svar › kunde_info (samme som kundekortet). Disse celler er derfor SKRIVEBESKYTTET undtagen kontaktperson/postnummer/by (rettes via kunde_info, som kundekortet).
+   - ÉN kilde i hukommelsen: CUSTOMERS (contacts), KUNDE_INFO (kunde_info), CRM_ADR (crm_adresse), KUNDE_PINS (kunde_pins). Tabel, kontaktkort, kundeside, Hjem og Salg læser dem; efter hver skrivning kalder vi crmSynk().
+   - Hver skrivning: .select() og rækketælling (§5). Ved fejl rulles cellen tilbage og en besked vises. */
+const CRM_FARVER = { gra: ["#E3E2DE", "#5F5B56", "Grå"], brun: ["#EADFD7", "#7A5642", "Brun"], orange: ["#F6E0D0", "#9A5420", "Orange"], gul: ["#F5E8C6", "#8A6414", "Gul"], gron: ["#DDEBDF", "#2F6B45", "Grøn"], bla: ["#DAE7F4", "#2A5C93", "Blå"], lilla: ["#E7DFF1", "#634390", "Lilla"], rod: ["#FC2404", "#FFFFFF", "Rød"] };
+const CRM_ST_GRP = [["Før start", ["Ikke sendt", "Ikke igang", "Kontaktet", "Lead"]], ["I gang", ["Passiv", "DIY sendt", "DIY igang", "Aktiv"]], ["Færdig", ["Afsluttet"]]];
+const CRM_ST_FARVE = { "Ikke sendt": "gra", "Ikke igang": "gra", "Kontaktet": "brun", "Lead": "lilla", "Passiv": "gul", "DIY sendt": "gul", "DIY igang": "orange", "Aktiv": "gron", "Afsluttet": "bla", "Kunde": "gron", "Blev kunde": "gron" };
+const CRM_PR_FARVE = { "succesfuld detaildrift": "lilla", "you got this": "lilla", "i got you": "lilla", "we got this": "lilla", "content studio": "lilla", "content-planner": "lilla", "medarbejderforløb": "lilla", "reset din energi": "orange", "reset testperson": "orange", "time to shine": "gul", "klient": "brun", "klienter": "brun" };
+const CRM_PR_LISTE = ["Succesfuld Detaildrift", "Reset din energi", "Time to Shine", "Klient"];   /* valgene i produkt-dropdownen (trin 1: faste; trin 2 gør dem redigerbare) */
+/* Hvilke produktord hører til hvilken fane. Kunder med kode går efter BS_KUNDE_KATEGORIER (kategoriens egen passer); kontakter går efter deres produkt-tekst. */
+const CRM_FANE_PRODUKT = {
+  sd: ["succesfuld detaildrift", "you got this", "i got you", "we got this", "content-planner", "content planner", "content studio", "medarbejderforløb"],
+  reset: ["reset din energi", "reset testperson", "reset"], klienter: ["klient", "klienter", "1:1 klienter"], tts: ["time to shine"]
+};
+const CRM_FANER = [["alle", "Alle"], ["kunder", "Kunder"], ["leads", "Leads"], ["gamle", "Gamle kunder"], ["venter", "Venter på dig"], ["sd", "Succesfuld Detaildrift"], ["reset", "Reset din energi"], ["klienter", "Klienter"], ["tts", "Time to Shine"], ["uden", "Uden produkt"]];
+const CRM_FANER_SYNLIGE = 6;   /* computeren viser de seks første; resten ligger under »Flere …« (som i buddet) */
 const CRM_KOL = [
-  { k: "st", n: "Status" }, { k: "kunde", n: "Kunde", fast: true }, { k: "kontakt", n: "Kontaktperson" }, { k: "produkt", n: "Produkt" },
-  { k: "naeste", n: "Næste aktivitet", iso: "naesteIso" }, { k: "sidst", n: "Sidste kontakt", iso: "sidstIso" }, { k: "kom", n: "Kommentar" }, { k: "oprettet", n: "Oprettet", iso: "oprettetIso" }
+  { k: "st", n: "Status", ik: "st" }, { k: "kunde", n: "Kunde", ik: "aa", fast: true }, { k: "kontakt", n: "Kontaktperson", ik: "usr" }, { k: "postnr", n: "Postnummer", ik: "hash" }, { k: "by", n: "By", ik: "loc" },
+  { k: "produkt", n: "Produkt", ik: "lst" }, { k: "naeste", n: "Næste aktivitet", ik: "cal", iso: "naeste" }, { k: "kom", n: "Kommentar", ik: "msg" },
+  { k: "sidst", n: "Sidste kontakt", ik: "cal", iso: "sidst" }, { k: "oprettet", n: "Oprettet", ik: "cal", iso: "oprettet" }
 ];
-const CRM_KOL_STD = ["st", "kunde", "kontakt", "produkt", "naeste", "kom"];
-let CRM_VISNING = null, CRM_VIS_LOFTE = null;
-function crmVisningHent() { if (CRM_VIS_LOFTE) return CRM_VIS_LOFTE; CRM_VIS_LOFTE = (async function () { try { const v = await vaneRow("crm_visning"); const r = Array.isArray(v) ? v.find(function (x) { return x && x.id === "tabel"; }) : null; if (r) { CRM_VISNING = r; try { if (document.getElementById("bsKunder")) kunderneTegn(true); } catch (e) {} } } catch (e) {} })(); return CRM_VIS_LOFTE; }
-function crmVis() { if (!CRM_VISNING) CRM_VISNING = { id: "tabel", kolonner: CRM_KOL_STD.slice(), sort: { k: "", ned: false } }; return CRM_VISNING; }
-async function crmVisningGem() { const ok = await vaneGemRow("crm_visning", [crmVis()]); if (ok === false) { try { visSyncFejl("crm_visning — visningen blev ikke gemt"); } catch (e) {} } }
-function crmTabelHtml(rk, tlf) {
-  try { crmVisningHent(); } catch (e) {}
-  const v = crmVis();
-  let kol = CRM_KOL.filter(function (c) { return c.fast || v.kolonner.indexOf(c.k) > -1; });
-  if (tlf) kol = kol.filter(function (c) { return c.fast; }).concat(kol.filter(function (c) { return !c.fast; }));   /* telefonen: kunden står først og fast, resten ruller */
-  let rows = rk.slice();
+const CRM_KOL_STD = ["st", "kunde", "kontakt", "postnr", "by", "produkt", "naeste", "kom"];
+const CRM_KOL_BREDDE = { st: "112px", kunde: "minmax(140px,1.2fr)", kontakt: "minmax(140px,1fr)", postnr: "120px", by: "minmax(110px,.8fr)", produkt: "minmax(170px,1.2fr)", naeste: "140px", kom: "minmax(120px,1fr)", sidst: "130px", oprettet: "120px" };
+const CRM_IK = {
+  st: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="12" cy="12" r="7.5" stroke-dasharray="2 3.2"/></svg>',
+  aa: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 18l5-12 5 12M6 14h6M16 12.5c1-.8 4-1 4 1.5v4M20 15.5c-2 0-4 .3-4 1.7s2 1.6 4 .3"/></svg>',
+  usr: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="12" cy="9" r="3.5"/><path d="M5 19c1-3.5 4-5 7-5s6 1.5 7 5"/></svg>',
+  hash: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 5L8 19M16 5l-1.5 14M5 9.5h14.5M4.5 14.5H19"/></svg>',
+  loc: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s6-5.2 6-10a6 6 0 10-12 0c0 4.8 6 10 6 10z"/><circle cx="12" cy="10" r="2.2"/></svg>',
+  lst: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M9 7h11M9 12h11M9 17h11M4.5 7h.01M4.5 12h.01M4.5 17h.01"/></svg>',
+  cal: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="6" width="16" height="14" rx="3"/><path d="M4 11h16M9 4v4M15 4v4"/></svg>',
+  msg: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 6h14v10H10l-4 3v-3H5z"/></svg>',
+  filter: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M7 12h10M10 17h4"/></svg>',
+  sort: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 5v14M4.5 15.5L8 19l3.5-3.5M16 19V5M12.5 8.5L16 5l3.5 3.5"/></svg>',
+  sog: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4 4"/></svg>',
+  sett: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h9M17 8h3M4 16h3M11 16h9"/><circle cx="15" cy="8" r="2"/><circle cx="9" cy="16" r="2"/></svg>',
+  ned: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>',
+  ven: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>',
+  hoj: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>',
+  pinR: '<svg width="15" height="15" viewBox="0 0 24 24" fill="#FC2404" stroke="#FC2404" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4h6l-1 6 3 3H7l3-3-1-6zM12 13v7"/></svg>',
+  pinG: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#B9B5AF" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4h6l-1 6 3 3H7l3-3-1-6zM12 13v7"/></svg>'
+};
+let CRM_VISNING = null, CRM_VIS_LOFTE = null, CRM_FILTER = { st: [], pr: [] }, CRM_SOEG_AABEN = false, CRM_RK = {};
+let KUNDE_INFO = {}, CRM_ADR = {}, CRM_ADR_LOFTE = null, CRM_INFO_LOFTE = null;
+function crmFarve(k) { return CRM_FARVER[k] || CRM_FARVER.gra; }
+function crmChip(tekst, farve) { const t = String(tekst || "").trim(); if (!t) return ""; const f = crmFarve(farve); return '<span class="crm2-p" style="background:' + f[0] + ';color:' + f[1] + '">' + esc(t) + '</span>'; }
+function crmStChip(st) { return crmChip(st, CRM_ST_FARVE[String(st || "").trim()] || "gra"); }
+function crmPrFarve(p) { return CRM_PR_FARVE[String(p || "").trim().toLowerCase()] || "gra"; }
+function crmPrChips(liste) { return (liste || []).map(function (p) { return crmChip(p, crmPrFarve(p)); }).join(""); }
+function crmProdukter(v) { if (Array.isArray(v)) return v.map(function (x) { return String(x || "").trim(); }).filter(Boolean); return String(v || "").split(/\s*,\s*/).map(function (x) { return x.trim(); }).filter(Boolean); }
+function crmDatoTxt(iso) { if (!iso) return ""; try { const d = new Date(String(iso).slice(0, 10) + "T12:00:00"); if (isNaN(d)) return ""; const U = ["Søn.", "Man.", "Tirs.", "Ons.", "Tors.", "Fre.", "Lør."]; return U[d.getDay()] + " " + d.getDate() + ". " + ["jan.", "feb.", "mar.", "apr.", "maj", "jun.", "jul.", "aug.", "sep.", "okt.", "nov.", "dec."][d.getMonth()]; } catch (e) { return ""; } }
+/* ---------- hentning (alt via de eksisterende veje; ingen nye tabeller) ---------- */
+function crmVisningHent() { if (CRM_VIS_LOFTE) return CRM_VIS_LOFTE; CRM_VIS_LOFTE = (async function () { try { const v = await vaneRow("crm_visning"); const r = Array.isArray(v) ? v.find(function (x) { return x && x.id === "tabel"; }) : null; if (r) { if (r.v !== 2) { r.kolonner = CRM_KOL_STD.slice(); r.v = 2; } CRM_VISNING = r; try { if (document.getElementById("bsKunder") && document.getElementById("dside-crm") && document.getElementById("dside-crm").style.display !== "none") kunderneTegn(true); } catch (e) {} } } catch (e) {} })(); return CRM_VIS_LOFTE; }
+function crmVis() { if (!CRM_VISNING) CRM_VISNING = { id: "tabel", v: 2, kolonner: CRM_KOL_STD.slice(), sort: { k: "", ned: false } }; return CRM_VISNING; }
+async function crmVisningGem() { const ok = await vaneGemRow("crm_visning", [crmVis()]); if (ok === false) { try { visSyncFejl("crm_visning — visningen blev ikke gemt"); } catch (e) {} } return ok; }
+function crmAdrHent() { if (CRM_ADR_LOFTE) return CRM_ADR_LOFTE; CRM_ADR_LOFTE = (async function () { try { const v = await vaneRow("crm_adresse"); CRM_ADR = {}; (Array.isArray(v) ? v : []).forEach(function (x) { if (x && x.id != null) CRM_ADR[String(x.id)] = { postnr: String(x.postnr || ""), by: String(x.by || "") }; }); } catch (e) {} })(); return CRM_ADR_LOFTE; }
+function crmInfoHent(frisk) { if (CRM_INFO_LOFTE && !frisk) return CRM_INFO_LOFTE; CRM_INFO_LOFTE = (async function () { if (!sb) return; try { const r = await sb.from("skema_svar").select("kode,svar").eq("navn", "config").eq("skema", "kunde_info"); (r.data || []).forEach(function (rk) { KUNDE_INFO[rk.kode] = rk.svar || {}; }); } catch (e) {} })(); return CRM_INFO_LOFTE; }
+function crmKontakt(id) { try { return plKontakter().find(function (c) { return String(c.id) === String(id); }) || null; } catch (e) { return null; } }
+/* ---------- rækkerne: kunder med kode + kontakter i ÉN liste ---------- */
+function crmKodeNaeste(k) { try { const idag = datoDK(); const o = (window.__ALLE_OPSLAG || []).filter(function (x) { return x.kode === k && x.dato && String(x.dato).slice(0, 10) >= idag && x.status !== "Postet"; }).sort(function (a, b) { return a.dato < b.dato ? -1 : 1; })[0]; return o ? String(o.dato).slice(0, 10) : ""; } catch (e) { return ""; } }
+function crmRaekker(q) {
+  const LK = leadKoebKort(); const ud = []; q = String(q || "").trim().toLowerCase();
+  const erLead = function (c) { return /^lead$/i.test(String(c.status || "").trim()) && !LK.lead[c.id]; };
+  let koder = []; try { koder = Object.keys(VIRKSOMHEDSKODER).filter(function (k) { return (erRigtigKunde(k) || (q && erTestkunde(k))) && VIRKSOMHEDSKODER[k].aktiv !== false; }); } catch (e) {}
+  koder.forEach(function (k) {
+    const d = VIRKSOMHEDSKODER[k] || {}; const info = KUNDE_INFO[k] || {}; let pb = { postnr: "", by: "" }; try { pb = postnrOgBy(info) || pb; } catch (e) {}
+    const a = bsKundeAktivitet(k); const pr = bsKundeProdukt(k);
+    ud.push({ key: "k:" + k, erKode: true, kode: k, st: "Aktiv", kunde: d.virksomhed || k, kontakt: String(info.kontakt || "").trim(), postnr: String(pb.postnr || ""), by: String(pb.by || ""), produkt: pr ? [pr] : [], naeste: crmKodeNaeste(k), kom: "", sidst: String(a.sidstDato || "").slice(0, 10), oprettet: "",
+      venter: bsKundeVenter(k).length, aktivSort: String(a.sidstDato || ""), pinKey: k, mail: String((typeof KUNDE_MAILS !== "undefined" && KUNDE_MAILS[k]) || ""), tags: [], lead: false, gammel: false });
+  });
+  plKontakter().filter(function (c) { return !LK.koeb[c.id]; }).forEach(function (c) {
+    const na = plDato(c.naeste_aktivitet), sk = plDato(c.sidste_kontakt), op = plDato(c.created_at); const ad = CRM_ADR[String(c.id)] || {};
+    ud.push({ key: "c:" + c.id, erKode: false, id: String(c.id), st: LK.lead[c.id] ? "Blev kunde" : String(c.status || "").trim(), kunde: c.kunde || "Uden navn", kontakt: String(c.kontaktperson || "").trim(), postnr: ad.postnr || "", by: ad.by || "", produkt: crmProdukter(c.produkt), naeste: na, kom: String(c.kommentar || "").replace(/\s+/g, " ").trim(), sidst: sk, oprettet: op,
+      venter: 0, aktivSort: [sk, na, op].filter(Boolean).sort().pop() || "", pinKey: "c:" + c.id, mail: String(c.email || "").toLowerCase(), tags: (function () { try { return crmTagsPaa(c.id); } catch (e) { return []; } })(), lead: erLead(c), gammel: String(c.source || "") === "Gamle kunder", kodeTekst: String(c.kommentar || "").toLowerCase() });
+  });
+  return ud;
+}
+function crmFaneTil(r, fane) {
+  if (fane === "alle" || !fane) return true;
+  if (fane === "kunder") return r.erKode || !r.lead;
+  if (fane === "leads") return !r.erKode && r.lead;
+  if (fane === "gamle") return !r.erKode && r.gammel;
+  if (fane === "venter") return r.erKode && r.venter > 0;
+  if (fane.indexOf("tag:") === 0) return !r.erKode && r.tags.indexOf(fane.slice(4)) > -1;
+  if (fane === "uden") return r.erKode ? !r.produkt.length : !r.produkt.length;
+  const ord = CRM_FANE_PRODUKT[fane];
+  if (!ord) return true;
+  if (r.erKode) { const kd = (BS_KUNDE_KATEGORIER || []).find(function (x) { return x.id === fane; }); try { return !!(kd && kd.passer(r.kode)); } catch (e) { return false; } }
+  return r.produkt.some(function (p) { return ord.indexOf(String(p).toLowerCase()) > -1; });
+}
+function crmFilterTil(r) {
+  if (CRM_FILTER.st.length && CRM_FILTER.st.indexOf(r.st) < 0) return false;
+  if (CRM_FILTER.pr.length && !r.produkt.some(function (p) { return CRM_FILTER.pr.indexOf(p) > -1; })) return false;
+  return true;
+}
+function crmSoegTil(r, q) {
+  if (!q) return true;
+  return [r.kunde, r.kode || "", r.kontakt, r.mail, r.kom, r.by, r.postnr, r.produkt.join(" "), r.st, r.kodeTekst || ""].join(" ").toLowerCase().indexOf(q) > -1;
+}
+function crmSorteret(rk, pins) {
+  const v = crmVis(); const ud = rk.slice();
   if (v.sort && v.sort.k) {
     const c = CRM_KOL.find(function (x) { return x.k === v.sort.k; }) || {};
-    const val = function (x) { return String((c.iso ? x[c.iso] : x[v.sort.k]) || ""); };
-    rows.sort(function (a, b) { const va = val(a), vb = val(b); if (!va && vb) return 1; if (va && !vb) return -1; const d = va.localeCompare(vb, "da"); return v.sort.ned ? -d : d; });
+    const val = function (x) { const a = x[v.sort.k]; return Array.isArray(a) ? a.join(", ") : String(a || ""); };
+    ud.sort(function (a, b) { const va = val(a), vb = val(b); if (!va && vb) return 1; if (va && !vb) return -1; const d = va.localeCompare(vb, "da", { numeric: true }); return v.sort.ned ? -d : d; });
+    return ud;
   }
-  const pil = function (k) { return v.sort && v.sort.k === k ? (v.sort.ned ? ' ↓' : ' ↑') : ''; };
-  const pKl = function (st) { st = String(st || "").toLowerCase(); return /^(aktiv|kunde|blev kunde)$/.test(st) ? " aktiv" : /^(passiv|afsluttet|ikke igang|ikke sendt)$/.test(st) ? " passiv" : ""; };
-  const celle = function (x, c) {
-    const red = !!x.id && (c.k === "st" || c.k === "naeste" || c.k === "kom");   /* kun kontakter kan rettes i cellen */
-    const ind = c.k === "st" ? '<span class="crmt-st">' + esc(x.st || "Vælg") + '</span>' : esc(x[c.k] || "");
-    return '<td class="' + (c.fast ? 'crmt-k' : '') + (red ? ' crmt-red' : '') + '"' + (red ? ' data-id="' + esc(x.id) + '" data-k="' + c.k + '" onclick="event.stopPropagation();crmCelleAabn(this)"' : '') + ' title="' + esc(c.k === "st" ? x.st : x[c.k] || "") + '">' + ind + '</td>';
+  /* uden valgt sortering: pinnede først, så kunderne med seneste aktivitet øverst (som før), kontakterne efter nyeste dato */
+  ud.sort(function (a, b) { const pa = pins.indexOf(a.pinKey) > -1 ? 0 : 1, pb = pins.indexOf(b.pinKey) > -1 ? 0 : 1; if (pa !== pb) return pa - pb; if (a.erKode !== b.erKode) return a.erKode ? -1 : 1; if (a.aktivSort !== b.aktivSort) return a.aktivSort < b.aktivSort ? 1 : -1; return String(a.kunde).localeCompare(String(b.kunde), "da"); });
+  return ud;
+}
+/* ---------- siden ---------- */
+function crmFaneListe() { const a = CRM_FANER.slice(); try { crmTagNavne().forEach(function (t) { a.push(["tag:" + t, t]); }); } catch (e) {} return a; }
+function crmFaneVaelg(k) { BS_KUNDE_CHIP = k; BS_KUNDE_KAT = (k === "alle" ? "" : k); crmPopLuk(); kunderneTegn(true); }
+function bf3KundeKat(k) { crmFaneVaelg(k); }
+function crmPinsHtml(alle) {
+  const pins = (KUNDE_PINS || []); const set = {}; alle.forEach(function (r) { set[r.pinKey] = r; });
+  const ch = pins.map(function (p) { return set[p]; }).filter(Boolean);
+  if (!ch.length) return '<div class="crm2-pins" id="crmPins" hidden></div>';
+  return '<div class="crm2-pins" id="crmPins">' + ch.map(function (r) { return '<span class="crm2-pin" role="button" tabindex="0" data-rk="' + esc(r.key) + '" onclick="crmAabnRaekke(\'' + esc(r.key) + '\')"><b>' + esc(r.kunde) + '</b><button type="button" class="crm2-pin-i" aria-label="Fjern nålen" onclick="event.stopPropagation();crmPinSkift(\'' + esc(r.key) + '\')">' + CRM_IK.pinR + '</button></span>'; }).join("") + '</div>';
+}
+function crmFaneDeling(aktiv, tlf) {
+  const alle = crmFaneListe(); let vis = alle.slice(), rest = [];
+  if (!tlf) { vis = alle.slice(0, CRM_FANER_SYNLIGE); rest = alle.slice(CRM_FANER_SYNLIGE); const i = rest.findIndex(function (x) { return x[0] === aktiv; }); if (i > -1) { const a = rest.splice(i, 1)[0]; const sidst = vis.pop(); vis.push(a); rest.unshift(sidst); } }
+  return { vis: vis, rest: rest };
+}
+function crmFanerHtml(aktiv, tlf) {
+  const d = crmFaneDeling(aktiv, tlf);
+  return '<div class="crm2-faner" role="tablist">' + d.vis.map(function (f) { return '<button type="button" role="tab" class="crm2-fane' + (f[0] === aktiv ? ' on' : '') + '" aria-selected="' + (f[0] === aktiv) + '" onclick="crmFaneVaelg(\'' + esc(f[0]).replace(/'/g, "\\'") + '\')">' + esc(f[1]) + '</button>'; }).join("")
+    + (d.rest.length ? '<button type="button" class="crm2-fane crm2-flere" onclick="crmFlereAabn(this)">Flere … ' + CRM_IK.ned + '</button>' : '') + '</div>';
+}
+function crmVaerkHtml() {
+  const v = crmVis(); const fa = CRM_FILTER.st.length + CRM_FILTER.pr.length; const q = BS_KUNDE_SOEG || "";
+  const ik = function (cls, fn, lbl, svg, ekstra) { return '<button type="button" class="crm2-ik mq-tap' + (cls ? ' ' + cls : '') + '" aria-label="' + lbl + '" title="' + lbl + '" onclick="' + fn + '">' + svg + (ekstra || "") + '</button>'; };
+  const soeg = (CRM_SOEG_AABEN || q)
+    ? '<div class="crm2-soeg"><span class="crm2-soeg-i">' + CRM_IK.sog + '</span><input type="text" id="bsKundeSoeg" placeholder="Find en kunde …" autocomplete="off" value="' + esc(q).replace(/"/g, "&quot;") + '" oninput="crmSoeg(this.value)" onblur="crmSoegLuk()"></div>'
+    : ik("", "crmSoegAabn()", "Søg", CRM_IK.sog);
+  return '<div class="crm2-vaerk">' + ik(fa ? "on" : "", "crmFilterAabn(this)", "Filtrér", CRM_IK.filter, fa ? '<i class="crm2-ib">' + fa + '</i>' : '') + ik(v.sort && v.sort.k ? "on" : "", "crmSortAabn(this)", "Sortér", CRM_IK.sort) + soeg + ik("", "crmVisningAabn(this)", "Visning", CRM_IK.sett)
+    + '<button type="button" class="crm2-ny mq-tap" onclick="nytLeadArk()">Ny</button></div>';
+}
+function crmTabelHtml(rk, alleRk) {
+  const v = crmVis(); const kol = CRM_KOL.filter(function (c) { return c.fast || v.kolonner.indexOf(c.k) > -1; });
+  const pins = KUNDE_PINS || []; CRM_RK = {}; alleRk.forEach(function (r) { CRM_RK[r.key] = r; });
+  const grid = '28px ' + kol.map(function (c) { return CRM_KOL_BREDDE[c.k] || "minmax(120px,1fr)"; }).join(" ");
+  const pil = function (k) { return v.sort && v.sort.k === k ? (v.sort.ned ? "↓" : "↑") : ""; };
+  const hoved = '<div class="crm2-r crm2-h" style="grid-template-columns:' + grid + '" role="row"><div class="crm2-pc"></div>' + kol.map(function (c) { return '<div class="crm2-c" role="columnheader" tabindex="0" onclick="crmSorter(\'' + c.k + '\')"><span class="crm2-hi">' + CRM_IK[c.ik] + esc(c.n) + (pil(c.k) ? '<em>' + pil(c.k) + '</em>' : '') + '</span></div>'; }).join("") + '</div>';
+  const celle = function (r, c) {
+    const kodeLaas = r.erKode && (c.k === "st" || c.k === "produkt" || c.k === "naeste" || c.k === "kom" || c.k === "sidst" || c.k === "oprettet");
+    let ind = "", cls = "crm2-c c-" + c.k;
+    if (c.k === "st") ind = crmStChip(r.st);
+    else if (c.k === "produkt") ind = crmPrChips(r.produkt);
+    else if (c.k === "naeste" || c.k === "sidst" || c.k === "oprettet") { ind = esc(crmDatoTxt(r[c.k])); if (c.k === "naeste" && r.naeste && r.naeste < datoDK() && !r.erKode) cls += " crm2-forfalden"; }
+    else if (c.k === "kunde") ind = esc(r.kunde);
+    else ind = '<span class="crm2-kom">' + esc(r[c.k] || "") + '</span>';
+    if (!ind) cls += " tom";
+    const red = !r.erKode ? (c.k === "st" || c.k === "produkt" || c.k === "naeste" || c.k === "kom" || c.k === "kontakt" || c.k === "postnr" || c.k === "by") : (c.k === "kontakt" || c.k === "postnr" || c.k === "by");
+    if (red) cls += " red"; else if (kodeLaas) cls += " laas";
+    return '<div class="' + cls + '" role="cell" data-k="' + c.k + '">' + ind + '</div>';
   };
-  const hoved = '<thead><tr>' + kol.map(function (c) { return '<th class="' + (c.fast ? 'crmt-k' : '') + '" onclick="crmSorter(\'' + c.k + '\')">' + esc(c.n) + '<span class="crmt-pil">' + pil(c.k) + '</span></th>'; }).join("") + '</tr></thead>';
-  const krop = '<tbody>' + rows.map(function (x) { return '<tr tabindex="0" onclick="' + x.klik + '" onkeydown="if(event.key===\'Enter\'){' + x.klik + '}">' + kol.map(function (c) { return celle(x, c); }).join("") + '</tr>'; }).join("") + '</tbody>';
-  const vaerk = '<div class="crmt-vaerk"><button type="button" class="crmt-ikon mq-tap" onclick="crmKolonnerArk()" aria-label="Kolonner"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="15" rx="2"/><path d="M9.5 4.5v15M14.5 4.5v15"/></svg>' + (tlf ? '' : '<span>Kolonner</span>') + '</button>'
-    + '<button type="button" class="crmt-ny mq-tap" onclick="nytLeadArk()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Ny</button></div>';
-  return vaerk + '<div class="crmt crmt-notion' + (tlf ? ' crmt-tlf' : '') + '"><div class="crmt-rul"><table' + (tlf ? '' : ' class="crmt-fuld"') + '>' + hoved + krop + '</table></div>'
-    + '<button type="button" class="crmt-nyrk mq-tap" onclick="nytLeadArk()">+ Ny kontakt</button></div>' + (tlf ? '<div class="crmt-rulnote">Rul i tabellen</div>' : '');
+  const krop = rk.map(function (r) {
+    const pinned = pins.indexOf(r.pinKey) > -1;
+    return '<div class="crm2-r crm2-ra' + (pinned ? ' pinnet' : '') + '" role="row" tabindex="0" data-rk="' + esc(r.key) + '" style="grid-template-columns:' + grid + '"><div class="crm2-pc"><button type="button" class="crm2-pinbtn" aria-label="' + (pinned ? 'Fjern nålen' : 'Sæt nålen') + '" data-pin="1">' + (pinned ? CRM_IK.pinR : CRM_IK.pinG) + '</button></div>' + kol.map(function (c) { return celle(r, c); }).join("") + '</div>';
+  }).join("");
+  return '<div class="crm2-tw" onclick="crmKlik(event)" onkeydown="crmTast(event)"><div class="crm2-rul"><div class="crm2-tabel" role="table" style="min-width:' + (kol.length * 120 + 28) + 'px">' + hoved + krop + '</div></div></div>';
 }
-function crmSorter(k) { const v = crmVis(); if (v.sort && v.sort.k === k) { if (v.sort.ned) v.sort = { k: "", ned: false }; else v.sort.ned = true; } else v.sort = { k: k, ned: false }; try { kunderneTegn(true); } catch (e) {} crmVisningGem(); }
-function crmKolonnerArk() {
-  const v = crmVis();
-  let m = document.getElementById("bsFlytMenu"); if (!m) { m = document.createElement("div"); m.id = "bsFlytMenu"; document.body.appendChild(m); }
-  m.innerHTML = '<div class="bs-flyt-ark brief-soejle-ark crmt-kolark"><div class="ark-t">Kolonner</div>'
-    + CRM_KOL.filter(function (c) { return !c.fast; }).map(function (c) { const on = v.kolonner.indexOf(c.k) > -1; return '<button type="button" class="crmt-kolrk mq-tap" onclick="crmKolSkift(\'' + c.k + '\')"><span>' + esc(c.n) + '</span><span class="crmt-vip' + (on ? ' on' : '') + '" aria-hidden="true"></span></button>'; }).join("")
+async function kunderneTegn(hurtig) {
+  const el = document.getElementById("bsKunder"); if (!el) return;
+  if (!hurtig) {
+    try { await venterHent(); } catch (e) {} try { await kundePinsHent(); } catch (e) {}
+    try { await crmAdrHent(); } catch (e) {} try { await crmInfoHent(true); } catch (e) {}
+    try { if (typeof fetchCustomers === "function") { const fr = await fetchCustomers(); if (Array.isArray(fr) && (fr.length || !plKontakter().length)) CUSTOMERS = fr; } } catch (e) {}   /* frisk hentning ved hver åbning: en rettelse i basen står på tabel OG kort */
+    try { crmTagsHent(); } catch (e) {} try { crmVisningHent(); } catch (e) {}
+  }
+  if (BS_KONTAKT_PROD && KONTAKT_DOERE_TIL) { kontakterTegn(el); return; }
+  const tlf = !window.matchMedia("(min-width:900px)").matches;
+  const q = (BS_KUNDE_SOEG || "").trim().toLowerCase();
+  const alle = crmRaekker(q); const fane = BS_KUNDE_CHIP || "alle";
+  const vist = crmSorteret(alle.filter(function (r) { return crmFaneTil(r, fane) && crmFilterTil(r) && crmSoegTil(r, q); }), KUNDE_PINS || []);
+  const harFokus = document.activeElement && document.activeElement.id === "bsKundeSoeg"; const forNavn = harFokus ? document.activeElement.value : null;
+  const tom = !vist.length ? bf3Tom(q ? "Ingen kunder matcher." : (fane === "leads" ? "Ingen leads endnu." : fane === "gamle" ? "Ingen gamle kunder endnu." : "Ingen kunder her.")) : "";
+  el.innerHTML = '<div class="bs-hero bs-hero-streg">CRM</div><div class="bs3 crm2">'
+    + crmPinsHtml(alle)
+    + '<div class="crm2-bar">' + crmFanerHtml(fane, tlf) + crmVaerkHtml() + '</div>'
+    + (tom || crmTabelHtml(vist, alle))
     + '</div>';
-  m.style.display = "flex"; m.onclick = function (e) { if (e.target === m) bsFlytLuk(); };
+  if (!hurtig) { try { navstiBackstage("crm"); } catch (e) {} try { bsBaandPlanlaeg(); } catch (e) {} try { bf3BaandKnapVis(""); } catch (e) {} }   /* plusset findes ikke på CRM — »Ny« står i værktøjslinjen (Ida 11/11) */
+  try { const f = document.getElementById("bsKundeSoeg"); if (f && (harFokus || (CRM_SOEG_AABEN && !hurtig))) { f.focus(); if (forNavn != null) f.setSelectionRange(f.value.length, f.value.length); } } catch (e) {}
+  crmPinsPlacer(); setTimeout(crmPinsPlacer, 150); setTimeout(crmPinsPlacer, 600); setTimeout(crmPinsPlacer, 1600);
 }
-function crmKolSkift(k) { const v = crmVis(), i = v.kolonner.indexOf(k); if (i > -1) v.kolonner.splice(i, 1); else v.kolonner.push(k); crmKolonnerArk(); try { kunderneTegn(true); } catch (e) {} crmVisningGem(); }
-function crmKontakt(id) { try { return plKontakter().find(function (c) { return String(c.id) === String(id); }) || null; } catch (e) { return null; } }
-function crmCelleAabn(td) {
-  const id = td.getAttribute("data-id"), k = td.getAttribute("data-k"), c = crmKontakt(id); if (!c) return;
-  if (k === "st") {
-    let m = document.getElementById("bsFlytMenu"); if (!m) { m = document.createElement("div"); m.id = "bsFlytMenu"; document.body.appendChild(m); }
-    const nu = String(c.status || "");
-    m.innerHTML = '<div class="bs-flyt-ark brief-soejle-ark crmt-kolark"><div class="ark-t">Skift status</div>' + STATUSES.map(function (st) { return '<button type="button" class="crmt-kolrk mq-tap' + (st === nu ? ' on' : '') + '" onclick="crmGem(\'' + esc(id) + '\',\'status\',\'' + esc(st) + '\')"><span>' + esc(st) + '</span>' + (st === nu ? '<span class="crmt-valgt">' + energidaFlueben(11) + '</span>' : '') + '</button>'; }).join("") + '</div>';
-    m.style.display = "flex"; m.onclick = function (e) { if (e.target === m) bsFlytLuk(); };
-    return;
-  }
-  if (k === "naeste") {
-    let inp = document.getElementById("crmDatoInp"); if (!inp) { inp = document.createElement("input"); inp.type = "hidden"; inp.id = "crmDatoInp"; document.body.appendChild(inp); }
-    inp.value = plDato(c.naeste_aktivitet) || ""; inp.onchange = function () { crmGem(id, "naeste_aktivitet", inp.value || null); };
-    try { datoArkVis(inp); } catch (e) {}
-    return;
-  }
-  if (k === "kom") {
-    try { arkAabn({ lille: true, titel: "Kommentar", ph: "Skriv en kommentar", tekst: String(c.kommentar || ""), udenMik: true, send: "Gem", gem: async function (t) { const ok = await crmGem(id, "kommentar", String(t || "").trim()); if (!ok) throw new Error("!Det blev ikke gemt. Prøv igen."); return "Gemt"; } }); } catch (e) {}
-  }
+/* pinnede chips står i SAMME linje som »Tilbage« (computer). Tilbage bor i coverets bånd; vi måler den og lægger rækken ved siden af. På telefon er Tilbage i coveret, og rækken står øverst på arket. */
+function crmPinsPlacer() {
+  try { const kc = document.getElementById("dside-crm"); if (kc && kc.style.display !== "none" && !BS_KONTAKT_PROD) bf3BaandKnapVis(""); } catch (e) {}   /* plusset findes ikke på CRM — en forsinket tegning af en anden side må ikke give det tilbage */
+  try {
+    const r = document.getElementById("crmPins"); if (!r || r.hidden) return; const rod = r.parentElement;
+    const tb = document.querySelector("#dashMain > .bs-baand > .cover-tilbage"); const desk = window.matchMedia("(min-width:900px)").matches;
+    if (!desk || !tb || !tb.getClientRects().length) { r.style.position = ""; r.style.top = ""; r.style.left = ""; r.style.right = ""; return; }
+    const a = tb.getBoundingClientRect(), b = rod.getBoundingClientRect();
+    r.style.position = "absolute"; r.style.top = Math.round(a.top - b.top + 2) + "px"; r.style.left = Math.round(a.right - b.left + 12) + "px"; r.style.right = "0"; r.style.margin = "0";   /* ved siden af Tilbage, uden at fylde i flowet */
+  } catch (e) {}
 }
-async function crmGem(id, felt, vaerdi) {
-  try { bsFlytLuk(); } catch (e) {}
-  const c = crmKontakt(id); if (!c || !sb) return false;
-  const gl = c[felt];
+try { window.addEventListener("resize", function () { crmPinsPlacer(); }); } catch (e) {}
+function crmSoegAabn() { CRM_SOEG_AABEN = true; kunderneTegn(true); setTimeout(function () { const f = document.getElementById("bsKundeSoeg"); if (f) f.focus(); }, 20); }
+function crmSoegLuk() { setTimeout(function () { const f = document.getElementById("bsKundeSoeg"); if (f && document.activeElement === f) return; if (!String(BS_KUNDE_SOEG || "").trim()) { CRM_SOEG_AABEN = false; try { kunderneTegn(true); } catch (e) {} } }, 120); }
+let CRM_SOEG_T = null;
+function crmSoeg(v) { BS_KUNDE_SOEG = v; clearTimeout(CRM_SOEG_T); CRM_SOEG_T = setTimeout(function () { kunderneTegn(true); }, 60); }
+/* ---------- sortering og visning ---------- */
+function crmSorter(k) { const v = crmVis(); if (v.sort && v.sort.k === k) { if (v.sort.ned) v.sort = { k: "", ned: false }; else v.sort.ned = true; } else v.sort = { k: k, ned: false }; crmPopLuk(); try { kunderneTegn(true); } catch (e) {} crmVisningGem(); }
+function crmKolSkift(k) { const v = crmVis(), i = v.kolonner.indexOf(k); if (i > -1) v.kolonner.splice(i, 1); else v.kolonner.push(k); const p = document.getElementById("crmPop"); const rul = p && p.querySelector(".crm2-pop-rul"); const top = rul ? rul.scrollTop : 0; try { kunderneTegn(true); } catch (e) {} const an = document.querySelector(".crm2-ik[aria-label=Visning]"); if (p && an) { crmVisningAabn(an, top); } crmVisningGem(); }
+/* ---------- popover ---------- */
+function crmPopLuk() { const p = document.getElementById("crmPop"); if (p) p.remove(); document.removeEventListener("pointerdown", crmPopUd, true); document.removeEventListener("keydown", crmPopTast, true); window.removeEventListener("resize", crmPopLuk); const r = document.getElementById("bsKunder"); if (r) r.querySelectorAll(".crm2-aktiv").forEach(function (e) { e.classList.remove("crm2-aktiv"); }); }
+function crmPopUd(e) { const p = document.getElementById("crmPop"); if (p && p.contains(e.target)) return; if (e.target.closest && e.target.closest("[data-crm-anker]")) { return; } crmPopLuk(); }
+function crmPopTast(e) { if (e.key === "Escape") { e.stopPropagation(); crmPopLuk(); } }
+function crmPopAabn(anker, html, klasse) {
+  crmPopLuk(); const p = document.createElement("div"); p.id = "crmPop"; p.className = "crm2-pop" + (klasse ? " " + klasse : ""); p.innerHTML = html; document.body.appendChild(p);
+  const r = anker.getBoundingClientRect(); const vw = window.innerWidth, vh = window.innerHeight; const pw = p.offsetWidth, ph = p.offsetHeight;
+  let l = klasse && /hoejre/.test(klasse) ? r.right - pw : r.left; l = Math.max(8, Math.min(l, vw - pw - 8)); let t = r.bottom + 6; if (t + ph > vh - 8) { t = Math.max(8, r.top - ph - 6); if (t + ph > vh - 8) { t = 8; p.style.maxHeight = (vh - 16) + "px"; } }
+  p.style.left = Math.round(l) + "px"; p.style.top = Math.round(t) + "px";
+  anker.classList.add("crm2-aktiv"); setTimeout(function () { document.addEventListener("pointerdown", crmPopUd, true); document.addEventListener("keydown", crmPopTast, true); window.addEventListener("resize", crmPopLuk); }, 0);
+  return p;
+}
+function crmFlereAabn(an) { const aktiv = BS_KUNDE_CHIP || "alle"; const d = crmFaneDeling(aktiv, false);
+  crmPopAabn(an, '<div class="crm2-pop-rul">' + d.rest.map(function (f) { return '<button type="button" class="crm2-it" onclick="crmFaneVaelg(\'' + esc(f[0]).replace(/'/g, "\\'") + '\')"><span class="crm2-fane">' + esc(f[1]) + '</span></button>'; }).join("") + '</div>', "crm2-pop-smal"); }
+function crmSortAabn(an) { const v = crmVis(); crmPopAabn(an, '<div class="crm2-pop-rul">' + CRM_KOL.filter(function (c) { return CRM_KOL_STD.indexOf(c.k) > -1 || v.kolonner.indexOf(c.k) > -1; }).map(function (c) { const pil = v.sort && v.sort.k === c.k ? (v.sort.ned ? "↓" : "↑") : ""; return '<button type="button" class="crm2-it crm2-it-tekst" onclick="crmSorter(\'' + c.k + '\')"><span class="crm2-ikon">' + CRM_IK[c.ik] + '</span><span>' + esc(c.n) + '</span><em>' + pil + '</em></button>'; }).join("") + '</div>', "crm2-pop-smal hoejre"); }
+function crmFilterAabn(an) {
+  const stL = []; CRM_ST_GRP.forEach(function (g) { g[1].forEach(function (s) { stL.push(s); }); });
+  const chips = function (liste, felt, farve) { return liste.map(function (t) { const on = CRM_FILTER[felt].indexOf(t) > -1; return '<button type="button" class="crm2-it crm2-fchip' + (on ? ' h' : '') + '" onclick="crmFilterSkift(\'' + felt + '\',this.getAttribute(\'data-v\'))" data-v="' + esc(t) + '">' + crmChip(t, farve(t)) + '</button>'; }).join(""); };
+  crmPopAabn(an, '<div class="crm2-pop-rul"><div class="crm2-gh">Status</div>' + chips(stL, "st", function (t) { return CRM_ST_FARVE[t] || "gra"; }) + '<div class="crm2-gh">Produkt</div>' + chips(CRM_PR_LISTE, "pr", crmPrFarve) + '</div>', "crm2-pop-smal hoejre");
+}
+function crmFilterSkift(felt, v) { const a = CRM_FILTER[felt], i = a.indexOf(v); if (i > -1) a.splice(i, 1); else a.push(v); const p = document.getElementById("crmPop"); const rul = p && p.querySelector(".crm2-pop-rul"); const top = rul ? rul.scrollTop : 0; kunderneTegn(true); const an = document.querySelector(".crm2-ik[aria-label=Filtrér]"); if (an) { crmFilterAabn(an); const r2 = document.querySelector("#crmPop .crm2-pop-rul"); if (r2) r2.scrollTop = top; } }
+function crmVisningAabn(an, rulTop) {
+  const v = crmVis();
+  const p = crmPopAabn(an, '<div class="crm2-pop-hd">Visning</div><div class="crm2-pop-rul">' + CRM_KOL.filter(function (c) { return !c.fast; }).map(function (c) { const on = v.kolonner.indexOf(c.k) > -1; return '<button type="button" class="crm2-it crm2-it-tekst" onclick="crmKolSkift(\'' + c.k + '\')"><span class="crm2-ikon">' + CRM_IK[c.ik] + '</span><span>' + esc(c.n) + '</span><span class="crm2-vip' + (on ? ' on' : '') + '" aria-hidden="true"></span></button>'; }).join("") + '</div>', "crm2-pop-smal hoejre");
+  if (rulTop) { const r = p.querySelector(".crm2-pop-rul"); if (r) r.scrollTop = rulTop; }
+}
+/* ---------- klik i tabellen ---------- */
+function crmAabnRaekke(key) { const r = CRM_RK[key]; if (!r) return; crmPopLuk(); if (r.erKode) kundeSideVis(r.kode); else openModal(r.id); }
+function crmKlik(e) {
+  const pb = e.target.closest && e.target.closest("[data-pin]"); const rad = e.target.closest && e.target.closest(".crm2-ra"); if (!rad) return;
+  const key = rad.getAttribute("data-rk"); const r = CRM_RK[key]; if (!r) return;
+  if (pb) { e.stopPropagation(); crmPinSkift(key); return; }
+  const c = e.target.closest(".crm2-c"); const k = c ? c.getAttribute("data-k") : "";
+  if (c && c.querySelector("input.crm2-ind")) return;   /* en celle under redigering */
+  if (c && c.classList.contains("red")) { crmCelleAabn(c, r, k); return; }
+  crmAabnRaekke(key);
+}
+function crmTast(e) { if (e.key !== "Enter") return; if (e.target.matches && e.target.matches("input")) return; const rad = e.target.closest && e.target.closest(".crm2-ra"); if (rad && e.target === rad) crmAabnRaekke(rad.getAttribute("data-rk")); }
+function crmCelleAabn(td, r, k) {
+  crmPopLuk(); td.setAttribute("data-crm-anker", "1");
+  if (k === "st") return crmStDropdown(td, r);
+  if (k === "produkt") return crmPrDropdown(td, r);
+  if (k === "naeste") return crmDatoVaelger(td, r);
+  crmTekstRet(td, r, k);
+}
+function crmGruppeHtml(grp, valgt, fn) { return grp.map(function (g) { return '<div class="crm2-grp"><div class="crm2-gh">' + esc(g[0]) + '</div>' + g[1].map(function (t) { return '<button type="button" class="crm2-it' + (String(t) === String(valgt) ? ' h' : '') + '" data-v="' + esc(t) + '" onclick="' + fn + '(this.getAttribute(\'data-v\'))">' + crmChip(t, fn === "crmVaelgSt" ? (CRM_ST_FARVE[t] || "gra") : crmPrFarve(t)) + '</button>'; }).join("") + '</div>'; }).join(""); }
+function crmSoegFelt(ph) { return '<div class="crm2-sok"><span class="crm2-sok-i">' + CRM_IK.sog + '</span><input type="text" placeholder="' + ph + '" autocomplete="off" oninput="crmDropFiltrer(this)"></div>'; }
+function crmDropFiltrer(inp) { const q = inp.value.trim().toLowerCase(); const p = document.getElementById("crmPop"); if (!p) return; p.querySelectorAll(".crm2-it").forEach(function (b) { b.style.display = !q || String(b.getAttribute("data-v") || "").toLowerCase().indexOf(q) > -1 ? "" : "none"; }); p.querySelectorAll(".crm2-grp").forEach(function (g) { g.style.display = [].some.call(g.querySelectorAll(".crm2-it"), function (b) { return b.style.display !== "none"; }) ? "" : "none"; }); }
+let CRM_AKTIV_KEY = "";
+function crmStDropdown(td, r) {
+  CRM_AKTIV_KEY = r.key; const grp = CRM_ST_GRP.map(function (g) { return [g[0], g[1].slice()]; });
+  if (r.st && !grp.some(function (g) { return g[1].indexOf(r.st) > -1; })) grp[1][1].push(r.st);   /* en kendt status uden for grupperne (fx Kunde) står under I gang, så den kan ses som valgt */
+  crmPopAabn(td, crmSoegFelt("Søg i status …") + '<div class="crm2-pop-rul">' + crmGruppeHtml(grp, r.st, "crmVaelgSt") + '</div>', "crm2-pop-valg");
+  setTimeout(function () { const f = document.querySelector("#crmPop .crm2-sok input"); if (f && window.matchMedia("(min-width:900px)").matches) f.focus(); }, 30);
+}
+function crmPrDropdown(td, r) {
+  CRM_AKTIV_KEY = r.key; const liste = CRM_PR_LISTE.slice(); r.produkt.forEach(function (p) { if (liste.indexOf(p) < 0) liste.push(p); });
+  crmPopAabn(td, crmSoegFelt("Søg i produkt …") + '<div class="crm2-pop-rul">' + crmGruppeHtml([["", liste]], r.produkt[0] || "", "crmVaelgPr") + '</div>', "crm2-pop-valg");
+  setTimeout(function () { const f = document.querySelector("#crmPop .crm2-sok input"); if (f && window.matchMedia("(min-width:900px)").matches) f.focus(); }, 30);
+}
+function crmVaelgSt(v) { const r = CRM_RK[CRM_AKTIV_KEY]; crmPopLuk(); if (!r) return; crmSkrivKontakt(r, "status", String(r.st) === String(v) ? "" : v); }   /* samme valg igen = tom celle */
+function crmVaelgPr(v) { const r = CRM_RK[CRM_AKTIV_KEY]; crmPopLuk(); if (!r) return; crmSkrivKontakt(r, "produkt", (r.produkt.length === 1 && r.produkt[0] === v) ? "" : v); }
+/* ---------- datovælger ved cellen (husets netbank-stil: runde dage, valgt rød, forbi lysegrå, hurtigvalg) ---------- */
+let CRM_DATO = null;
+function crmIso(d) { return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); }
+function crmDatoVaelger(td, r) {
+  CRM_AKTIV_KEY = r.key; const d0 = r.naeste ? new Date(r.naeste + "T12:00:00") : new Date(); const d = isNaN(d0) ? new Date() : d0;
+  CRM_DATO = { y: d.getFullYear(), m: d.getMonth(), valgt: r.naeste || "", td: td }; crmDatoTegn(true);
+}
+function crmDatoTegn(nyt) {
+  const S = CRM_DATO; if (!S) return; const idag = datoDK(); const MDR = ["januar", "februar", "marts", "april", "maj", "juni", "juli", "august", "september", "oktober", "november", "december"];
+  const foerste = new Date(S.y, S.m, 1); const start = (foerste.getDay() + 6) % 7; const dage = new Date(S.y, S.m + 1, 0).getDate(); let g = "";
+  for (let i = 0; i < start; i++) g += "<span></span>";
+  for (let n = 1; n <= dage; n++) { const iso = S.y + "-" + String(S.m + 1).padStart(2, "0") + "-" + String(n).padStart(2, "0"); g += '<button type="button" class="crm2-dag' + (iso === S.valgt ? ' v' : '') + (iso === idag ? ' t' : '') + (iso < idag && iso !== S.valgt ? ' o' : '') + '" onclick="crmDatoVaelg(\'' + iso + '\')">' + n + '</button>'; }
+  const html = '<div class="crm2-datofelt"><input type="text" id="crmDatoInd" class="crm2-ind" value="' + esc(S.valgt ? crmDatoTxt(S.valgt) : "") + '" placeholder="" autocomplete="off" onkeydown="if(event.key===\'Enter\'){crmDatoSkriv(this.value)}"></div>'
+    + '<div class="crm2-dh"><button type="button" class="crm2-ik" aria-label="Forrige måned" onclick="crmDatoSkift(-1)">' + CRM_IK.ven + '</button><span>' + MDR[S.m] + ' ' + S.y + '</span><button type="button" class="crm2-ik" aria-label="Næste måned" onclick="crmDatoSkift(1)">' + CRM_IK.hoj + '</button></div>'
+    + '<div class="crm2-dgr crm2-dug">' + ["M", "T", "O", "T", "F", "L", "S"].map(function (x) { return "<i>" + x + "</i>"; }).join("") + '</div><div class="crm2-dgr">' + g + '</div>'
+    + '<div class="crm2-hurtig"><button type="button" onclick="crmDatoHurtig(\'idag\')">I dag</button><button type="button" onclick="crmDatoHurtig(\'imorgen\')">I morgen</button><button type="button" onclick="crmDatoHurtig(\'uge\')">Næste uge</button><button type="button" onclick="crmDatoVaelg(\'\')">Fjern dato</button></div>';
+  if (nyt) { crmPopAabn(S.td, html, "crm2-pop-dato"); } else { const p = document.getElementById("crmPop"); if (p) p.innerHTML = html; }
+}
+function crmDatoSkift(n) { const S = CRM_DATO; if (!S) return; S.m += n; if (S.m < 0) { S.m = 11; S.y--; } if (S.m > 11) { S.m = 0; S.y++; } crmDatoTegn(false); }
+function crmDatoHurtig(h) { const d = new Date(); if (h === "imorgen") d.setDate(d.getDate() + 1); if (h === "uge") { const til = ((8 - d.getDay()) % 7) || 7; d.setDate(d.getDate() + til); } crmDatoVaelg(datoDK(d)); }   /* »Næste uge« = næste mandag */
+function crmDatoSkriv(t) { const m = String(t || "").trim().match(/^(\d{1,2})[\/.\-](\d{1,2})(?:[\/.\-](\d{2,4}))?$/); if (!m) { try { husBesked("Skriv datoen som 12/11."); } catch (e) {} return; } const nu = new Date(); let y = m[3] ? parseInt(m[3], 10) : nu.getFullYear(); if (y < 100) y += 2000; const d = new Date(y, parseInt(m[2], 10) - 1, parseInt(m[1], 10), 12); if (isNaN(d) || d.getMonth() !== parseInt(m[2], 10) - 1) { try { husBesked("Skriv datoen som 12/11."); } catch (e) {} return; } crmDatoVaelg(crmIso(d)); }
+function crmDatoVaelg(iso) { const r = CRM_RK[CRM_AKTIV_KEY]; crmPopLuk(); CRM_DATO = null; if (!r) return; crmSkrivKontakt(r, "naeste_aktivitet", iso || null); }
+/* ---------- tekstceller (kontaktperson · postnummer · by · kommentar) redigeres lige i cellen ---------- */
+const CRM_TEKST_FELT = { kontakt: "kontaktperson", kom: "kommentar", postnr: "postnr", by: "by" };
+function crmTekstRet(td, r, k) {
+  const gl = String(r[k] || ""); td.classList.add("redigerer");
+  td.innerHTML = '<input type="text" class="crm2-ind" value="' + esc(gl).replace(/"/g, "&quot;") + '"' + (k === "postnr" ? ' inputmode="numeric" maxlength="4"' : '') + ' autocomplete="off">';
+  const inp = td.querySelector("input"); let ferdig = false;
+  const afslut = function (gem) { if (ferdig) return; ferdig = true; td.classList.remove("redigerer"); td.removeAttribute("data-crm-anker"); const ny = inp.value.trim(); if (gem && ny !== gl.trim()) crmSkrivTekst(r, k, ny); else { try { kunderneTegn(true); } catch (e) {} } };
+  inp.addEventListener("keydown", function (e) { if (e.key === "Enter") { e.preventDefault(); afslut(true); } else if (e.key === "Escape") { e.preventDefault(); afslut(false); } e.stopPropagation(); });
+  inp.addEventListener("blur", function () { afslut(true); });
+  inp.addEventListener("click", function (e) { e.stopPropagation(); });
+  inp.focus(); inp.setSelectionRange(inp.value.length, inp.value.length);
+}
+/* ---------- skrivning: .select() + rækketælling, rulles tilbage ved fejl, så tegnes alle flader om ---------- */
+async function crmSkrivKontakt(r, felt, vaerdi) {
+  const c = crmKontakt(r.id); if (!c || !sb) { try { husBesked("Det blev ikke gemt. Prøv igen."); } catch (e) {} return false; }
+  const gl = c[felt]; c[felt] = vaerdi; try { kunderneTegn(true); } catch (e) {}   /* vises med det samme */
   const ny = {}; ny[felt] = vaerdi;
   try {
-    const r = await sb.from("contacts").update(ny).eq("id", id).select("id");
-    if (r.error || !r.data || !r.data.length) throw r.error || new Error("0 rækker");   /* §5: tæl rækkerne — en afvist skrivning svarer error = null */
-    c[felt] = vaerdi;
+    const res = await sb.from("contacts").update(ny).eq("id", c.id).select("id");
+    if (res.error || !res.data || !res.data.length) throw res.error || new Error("0 rækker");   /* §5: en afvist skrivning svarer error = null og 0 rækker */
     try { husKvit("Gemt"); } catch (e) {}
-    try { kunderneTegn(true); } catch (e) {}
-    return true;
-  } catch (e) { c[felt] = gl; try { husBesked("Det blev ikke gemt. Prøv igen."); } catch (e2) {} return false; }
+    crmSynk(c.id, felt); return true;
+  } catch (e) { c[felt] = gl; try { husBesked("Det blev ikke gemt. Prøv igen."); } catch (e2) {} crmSynk(c.id, felt); return false; }
 }
+async function crmGem(id, felt, vaerdi) { const r = CRM_RK["c:" + id] || { id: id }; return crmSkrivKontakt(r, felt, vaerdi); }   /* bevaret navn: ældre kald */
+async function crmSkrivTekst(r, k, ny) {
+  if (r.erKode) return crmSkrivInfo(r, k, ny);
+  if (k === "postnr" || k === "by") return crmAdrSkriv(r.id, k, ny);
+  return crmSkrivKontakt(r, CRM_TEKST_FELT[k], ny);
+}
+/* Postnummer og By for kontakter: Idas egen vane-række »crm_adresse« (ingen kolonne i contacts) */
+async function crmAdrSkriv(id, k, v, fraKort) {
+  await crmAdrHent(); const gl = Object.assign({ postnr: "", by: "" }, CRM_ADR[String(id)] || {}); const ny = Object.assign({}, gl); ny[k] = String(v || "").trim();
+  if (k === "postnr" && ny.postnr && !gl.by) { try { const by = postnrBy(ny.postnr); if (by) ny.by = by; } catch (e) {} }   /* postnummer → by af sig selv (11/10); det, der er skrevet, overskrives aldrig */
+  CRM_ADR[String(id)] = ny; try { kunderneTegn(true); } catch (e) {}
+  const ok = await crmAdrGemAlle();
+  if (!ok) { CRM_ADR[String(id)] = gl; try { husBesked("Det blev ikke gemt. Prøv igen."); } catch (e) {} } else { try { husKvit("Gemt"); } catch (e) {} }
+  try { const bi = document.getElementById("kkBy"); if (bi && document.activeElement !== bi && CRM_ADR[String(id)]) bi.value = CRM_ADR[String(id)].by || ""; } catch (e) {}
+  crmSynk(id, k, fraKort ? true : undefined); return ok;
+}
+let CRM_ADR_T = null;
+function crmAdrModal(id, k, v) { clearTimeout(CRM_ADR_T); CRM_ADR_T = setTimeout(function () { crmAdrSkriv(id, k, v, true); }, 700); }
+function crmAdrFeltHtml(id, k, lbl) {
+  const ad = CRM_ADR[String(id)] || {}; const idE = esc(String(id)).replace(/'/g, "");
+  return '<div class="mfield"><div class="k">' + lbl + '</div><input type="text" id="kk' + (k === "by" ? "By" : "Postnr") + '"' + (k === "postnr" ? ' inputmode="numeric" maxlength="4"' : '') + ' value="' + esc(ad[k] || "").replace(/"/g, "&quot;") + '" oninput="crmAdrModal(\'' + idE + '\',\'' + k + '\',this.value)" style="width:100%;border:1px solid var(--border);border-radius:12px;padding:10px 12px;font-size:12.5px;font-family:Poppins,sans-serif;"></div>';
+}
+async function crmAdrGemAlle() { const liste = Object.keys(CRM_ADR).map(function (id) { return { id: id, postnr: CRM_ADR[id].postnr || "", by: CRM_ADR[id].by || "" }; }); return (await vaneGemRow("crm_adresse", liste)) !== false; }
+/* Kunder med kode: kontaktperson · postnummer · by bor i skema_svar › kunde_info (samme række som kundekortet) */
+async function crmSkrivInfo(r, k, v) {
+  if (!sb) return false; const kode = r.kode; await crmInfoHent(); const gl = Object.assign({}, KUNDE_INFO[kode] || {}); const pb = (function () { try { return postnrOgBy(gl) || { postnr: "", by: "" }; } catch (e) { return { postnr: "", by: "" }; } })();
+  const ny = Object.assign({}, gl, { postnr: pb.postnr || "", by: pb.by || "" }); ny[k === "kontakt" ? "kontakt" : k] = String(v || "").trim();
+  if (k === "postnr" && ny.postnr && !pb.by) { try { const by = postnrBy(ny.postnr); if (by) ny.by = by; } catch (e) {} }
+  KUNDE_INFO[kode] = ny; try { kunderneTegn(true); } catch (e) {}
+  try {
+    let res = await sb.from("skema_svar").update({ svar: ny }).eq("kode", kode).eq("navn", "config").eq("skema", "kunde_info").select("id");
+    if (res.error) throw res.error;
+    if (!res.data || !res.data.length) { res = await sb.from("skema_svar").insert({ kode: kode, navn: "config", skema: "kunde_info", svar: ny }).select("id"); if (res.error || !res.data || !res.data.length) throw res.error || new Error("0 rækker"); }
+    try { husKvit("Gemt"); } catch (e) {}
+    try { if (typeof KUNDEKORT !== "undefined" && KUNDEKORT && KUNDEKORT.kode === kode) KUNDEKORT.info = ny; } catch (e) {}
+    try { KUNDE_MAILS[kode] = ((ny.mail || "") + " " + (ny.kontakt || "")).toLowerCase(); } catch (e) {}
+    crmSynk(kode, k); return true;
+  } catch (e) { KUNDE_INFO[kode] = gl; try { husBesked("Det blev ikke gemt. Prøv igen."); } catch (e2) {} crmSynk(kode, k); return false; }
+}
+/* ---------- pin ---------- */
+function crmPinSkift(key) { const r = CRM_RK[key]; if (!r) return; kundePinSkift(r.pinKey); }
+/* ---------- SYNK: efter hver skrivning (og når kundekortet skriver) tegnes alle flader, der viser feltet, om fra de samme kilder ---------- */
+function crmSynk(id, felt, fraKortOk) {
+  const synlig = function (sel) { const e = document.querySelector(sel); return !!(e && e.offsetParent !== null); };
+  try { if (synlig("#dside-crm") || document.getElementById("dside-crm") && document.getElementById("dside-crm").style.display !== "none") kunderneTegn(true); } catch (e) {}
+  try { renderTable(); } catch (e) {} try { renderKpis(); } catch (e) {} try { renderFollowUp(); } catch (e) {}
+  try { if (synlig("#mro_salg")) salgTegn(); } catch (e) {}
+  try { if (synlig("#dside-overblik")) dashForsideTegn(); } catch (e) {}
+  try { if (!fraKortOk && synlig("#dside-kundeside") && typeof kundeSideTegn === "function") kundeSideTegn(); } catch (e) {}
+  try { if (fraKortOk === true) return; const mb = document.getElementById("modalBack"); const ms = document.querySelector("#modalBody .msub"); const c = crmKontakt(id); if (mb && mb.classList.contains("on") && c && ms && !document.querySelector("#modalBody input:focus, #modalBody textarea:focus")) { const h2 = document.querySelector("#modalBody h2"); if (h2 && h2.textContent === String(c.kunde || "")) openModal(c.id); } } catch (e) {}   /* kortet åbent på samme kontakt: tegnes om, så status og produkt står ens (tabel → kort) */
+}
+/* en rettelse direkte i basen: frisk hentning, når fanen får fokus igen (højst hvert 20. sekund) */
+let CRM_SIDST_HENTET = 0;
+try { document.addEventListener("visibilitychange", async function () { if (document.visibilityState !== "visible" || Date.now() - CRM_SIDST_HENTET < 20000) return; const kc = document.getElementById("dside-crm"); if (!kc || kc.style.display === "none" || !sb) return; if (document.activeElement && document.activeElement.closest && document.activeElement.closest(".crm2-tw")) return; CRM_SIDST_HENTET = Date.now(); try { const fr = await fetchCustomers(); if (Array.isArray(fr) && fr.length) { CUSTOMERS = fr; kunderneTegn(true); } } catch (e) {} }); } catch (e) {}
 /* ---------- KONTAKTERNE SOM DOERE PR. PRODUKT (Idas klik 26/9 ~00.35 »Døre i CRM«) ----------
    MAALT 26/9: 90 af Notions 94 CRM-kort ligger i contacts (importeret 5/7) med produkt og status — men laa i een bunke under Pipeline.
    Nu faar hvert produkt sin doer i CRM, som Notions visninger; doeren viser kontakterne sorteret efter status. Navnene er Notion-visningernes egne. */
@@ -88568,7 +88804,7 @@ async function salgTegn() {
 async function bf3FulgtOp(id) {
   try { if (sb) { const r = await sb.from("contacts").update({ sidste_kontakt: bf3Idag(), naeste_aktivitet: null }).eq("id", id).select(); if (!r.data || !r.data.length) { husBesked("Kunne ikke gemme. Prøv igen."); return; } } } catch (e) { husBesked("Kunne ikke gemme. Prøv igen."); return; }
   try { CUSTOMERS = await fetchCustomers(); } catch (e) {}
-  husBesked("Fulgt op."); try { salgTegn(); } catch (e) {} try { dashForsideTegn(); } catch (e) {}
+  husBesked("Fulgt op."); try { salgTegn(); } catch (e) {} try { dashForsideTegn(); } catch (e) {} try { crmSynk(id, "naeste_aktivitet"); } catch (e) {}
 }
 
 /* ---------- ENERGIDA STUDIO = DIT PRODUKTIONSRUM (klipperen er ude) ---------- */
@@ -89631,7 +89867,7 @@ function bf3NytRumArk(side) {
   window.visDashSide = function (side) {
     const r = gV.apply(this, arguments);
     try { const t = document.getElementById("klipHeadTgl"); if (t && t.classList.contains("i-baandet")) t.style.display = (side === "klip") ? "" : "none"; } catch (e) {}
-    try { bf3BaandKnapVis(side === "overblik" ? "hjem" : side === "energida" ? "energida" : side === "crm" ? "kunder" : side === "indbakke" ? "indbakke" : null); } catch (e) {}
+    try { bf3BaandKnapVis(side === "overblik" ? "hjem" : side === "energida" ? "energida" : side === "crm" ? "" : side === "indbakke" ? "indbakke" : null); } catch (e) {}
     try { if (side !== "kundeside") bf3KundeNaalVis(null); } catch (e) {}
     return r;
   };
@@ -91410,6 +91646,139 @@ html body .mails .mails-input:disabled { color:var(--gray2) !important; -webkit-
   .mails-to { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:24px; align-items:start; }
   .mails-ret .mails-ret-side, .mails-ret.se-mail .mails-ret-side { display:block; }
   .mails-ret .mails-ret-forh, .mails-ret.se-mail .mails-ret-forh { display:block; position:sticky; top:16px; }
+}
+/* ===================== CRM · BUD 1 (Ida 11/11) — mål fra Artifact »CRM · tre bud« bud 1 + »CRM bud 1 redigering«. Egne klasser (.crm2-); ingen chip-regler fra resten af appen rammer dem. ===================== */
+.crm2 { position:relative; --crm-lys:#F4F3F0; --crm-sand:#F4F2EE; --crm-gra:#8F8B85; }
+.crm2-pins { display:flex; flex-wrap:nowrap; gap:10px; align-items:center; min-height:40px; margin:0 0 20px; overflow-x:auto; scrollbar-width:none; -webkit-overflow-scrolling:touch; }
+.crm2-pins::-webkit-scrollbar { display:none; }
+.crm2-pins[hidden] { display:none; }
+.crm2-pin { flex:none; height:40px; border:1px solid #E3E2DE; border-radius:999px; background:#fff; padding:0 8px 0 16px; display:inline-flex; align-items:center; gap:6px; cursor:pointer; font-family:Poppins,sans-serif; }
+.crm2-pin b { font-weight:400; font-size:13px; color:#1A1A1A; white-space:nowrap; }
+.crm2-pin-i, .crm2-pin-i:hover { border:0; background:transparent; padding:0; width:28px; height:28px; border-radius:999px; display:grid; place-items:center; cursor:pointer; box-shadow:none; position:relative; }
+.crm2-pin-i svg, .crm2-pinbtn svg { transform:rotate(45deg); display:block; flex:none; }
+.crm2-pin-i::after { content:""; position:absolute; inset:-8px; }
+.crm2-bar { display:flex; align-items:center; justify-content:space-between; gap:16px; margin:0 0 6px; }
+.crm2-faner { display:flex; align-items:center; min-width:0; gap:6px; padding:8px 0; flex-wrap:nowrap; }
+.crm2-fane { flex:none; white-space:nowrap; font-family:Poppins,sans-serif; font-size:14px; font-weight:400; color:#6F6B66; display:inline-flex; align-items:center; gap:8px; height:30px; padding:0 12px; border-radius:999px; border:0; background:transparent; cursor:pointer; box-shadow:none; position:relative; }
+.crm2-fane::before { content:""; position:absolute; inset:-7px -2px; }
+.crm2-fane.on { color:#1A1A1A; background:#E9E7E3; }
+.crm2-flere svg { margin-left:-2px; }
+.crm2-vaerk { display:flex; align-items:center; gap:2px; flex:none; }
+.crm2-ik { width:36px; height:36px; border-radius:999px; display:grid; place-items:center; color:#6F6B66; background:transparent; border:0; padding:0; position:relative; cursor:pointer; box-shadow:none; font-family:Poppins,sans-serif; }
+.crm2-ik::before { content:""; position:absolute; inset:-4px; }
+.crm2-ik:hover, .crm2-ik.on, .crm2-ik.crm2-aktiv { background:var(--crm-sand); }
+.crm2-ik.on, .crm2-ik.crm2-aktiv { color:#1A1A1A; }
+.crm2-ik svg { display:block; }
+.crm2-ib { position:absolute; top:2px; right:1px; min-width:14px; height:14px; border-radius:999px; background:#FC2404; color:#fff; font:400 9px/14px Poppins,sans-serif; text-align:center; font-style:normal; padding:0 3px; }
+.crm2-ny { height:40px; padding:0 22px; margin-left:10px; border-radius:999px; background:#FC2404; color:#fff; font-family:Poppins,sans-serif; font-weight:400; font-size:13px; display:inline-flex; align-items:center; border:0; cursor:pointer; box-shadow:none; position:relative; }
+.crm2-ny::before { content:""; position:absolute; inset:-2px; }
+.crm2-soeg { display:flex; align-items:center; gap:6px; height:36px; width:220px; padding:0 14px 0 10px; border-radius:999px; background:var(--crm-sand); color:#6F6B66; }
+.crm2-soeg input { flex:1; min-width:0; border:0; outline:0; background:transparent; font-family:Poppins,sans-serif; font-size:13px; font-weight:300; color:#1A1A1A; padding:0; height:34px; }
+.crm2-soeg-i { display:flex; }
+/* tabellen — meget lyse streger (#F4F3F0), grå overskrifter (#8F8B85), ingen linje mellem faner og overskrifter */
+.crm2-tw { position:relative; margin-top:0; }
+.crm2-rul { overflow-x:auto; -webkit-overflow-scrolling:touch; }
+.crm2-tabel { font-family:Poppins,sans-serif; }
+.crm2-r { display:grid; align-items:stretch; min-height:52px; border-bottom:1px solid var(--crm-lys); font-size:14px; font-weight:300; position:relative; }
+.crm2-h { min-height:42px; background:#fff; }
+.crm2-c { padding:0 10px; min-height:51px; display:flex; align-items:center; gap:6px; white-space:nowrap; position:relative; color:#1A1A1A; min-width:0; }
+.crm2-h .crm2-c { min-height:41px; font-size:13px; font-weight:400; color:var(--crm-gra); cursor:pointer; user-select:none; }
+.crm2-hi { display:inline-flex; align-items:center; gap:4px; }
+.crm2-hi svg { color:var(--crm-gra); margin-left:-3px; }
+.crm2-hi em { font-style:normal; color:var(--crm-gra); margin-left:2px; }
+.crm2-r .crm2-c + .crm2-c { border-left:1px solid var(--crm-lys); }
+.crm2-pc { display:flex; align-items:center; justify-content:center; padding:0; min-width:0; }
+.crm2-pc + .crm2-c { border-left:0 !important; }
+.crm2-ra { cursor:pointer; }
+.crm2-ra:hover, .crm2-ra:focus-visible { background:var(--crm-sand); outline:0; }
+.crm2-c.c-kontakt, .crm2-c.c-postnr, .crm2-c.c-by, .crm2-c.c-sidst, .crm2-c.c-oprettet { color:#6F6B66; }
+.crm2-c.c-kom { color:#6F6B66; }
+.crm2-c.c-naeste { color:#6F6B66; }
+.crm2-c.crm2-forfalden { color:#FC2404; }
+.crm2-kom { overflow:hidden; text-overflow:ellipsis; min-width:0; display:block; }
+.crm2-c.c-kunde { overflow:hidden; text-overflow:ellipsis; display:block; line-height:51px; }
+.crm2-c.c-produkt { gap:6px; overflow:hidden; }
+.crm2-c.red { cursor:text; }
+.crm2-c.red.c-st, .crm2-c.red.c-produkt, .crm2-c.red.c-naeste { cursor:pointer; }
+.crm2-c.red:hover { box-shadow:inset 0 0 0 1px #E3E2DE; border-radius:8px; }
+.crm2-c.crm2-aktiv, .crm2-c[data-crm-anker] { box-shadow:inset 0 0 0 1.5px #8F8B85; border-radius:8px; }
+.crm2-c.redigerer { padding:0 4px; }
+.crm2-ind { width:100%; height:36px; border:0; outline:0; background:#fff; font-family:Poppins,sans-serif; font-size:14px; font-weight:400; color:#1A1A1A; padding:0 6px; border-radius:8px; box-shadow:none; }
+.crm2-p { display:inline-flex; align-items:center; height:26px; padding:0 10px; border-radius:999px; font-size:13px; font-weight:400; white-space:nowrap; border:0; }
+.crm2-pinbtn { border:0; background:transparent; padding:0; width:28px; height:40px; display:grid; place-items:center; cursor:pointer; box-shadow:none; position:relative; }
+.crm2-pinbtn::after { content:""; position:absolute; inset:-4px -2px; }
+.crm2-ra:not(.pinnet) .crm2-pinbtn { opacity:0; }
+.crm2-ra:not(.pinnet):hover .crm2-pinbtn, .crm2-ra:not(.pinnet):focus-within .crm2-pinbtn, .crm2-ra .crm2-pinbtn:focus-visible { opacity:1; }
+/* popover: lille, kun så bred som nødvendigt, runde chips */
+.crm2-pop { position:fixed; z-index:10090; background:#fff; border:1px solid #E3E2DE; border-radius:16px; box-shadow:0 8px 30px rgba(26,26,26,.10),0 1px 3px rgba(26,26,26,.06); padding:8px; width:max-content; max-width:min(340px,calc(100vw - 16px)); max-height:min(520px,calc(100vh - 16px)); display:flex; flex-direction:column; font-family:Poppins,sans-serif; }
+.crm2-pop-rul { overflow-y:auto; overscroll-behavior:contain; min-height:0; }
+.crm2-pop-valg { min-width:196px; }
+.crm2-pop-smal { min-width:180px; }
+.crm2-pop-hd { font-size:15px; font-weight:400; padding:8px 10px 6px; color:#1A1A1A; }
+.crm2-sok { display:flex; align-items:center; gap:8px; height:36px; padding:0 12px; border-radius:999px; background:var(--crm-sand); color:#6F6B66; flex:none; margin-bottom:2px; }
+.crm2-sok input { flex:1; min-width:0; border:0; outline:0; background:transparent; font-family:Poppins,sans-serif; font-size:13px; font-weight:300; color:#1A1A1A; padding:0; height:34px; }
+.crm2-sok-i { display:flex; }
+.crm2-gh { font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:#9A9590; padding:12px 10px 6px; font-weight:400; }
+.crm2-it { display:flex; align-items:center; gap:14px; width:100%; min-height:34px; padding:0 10px; border:0; background:transparent; border-radius:999px; cursor:pointer; text-align:left; font-family:Poppins,sans-serif; color:#1A1A1A; box-shadow:none; }
+.crm2-it:hover { background:var(--crm-sand); }
+.crm2-it .crm2-p { padding:0 12px; }
+.crm2-it.h .crm2-p { filter:brightness(.93); box-shadow:none; }   /* valgt chip = mørkere fyld, ingen ramme, intet flueben */
+.crm2-it-tekst { min-height:38px; font-size:14px; font-weight:300; gap:12px; }
+.crm2-it-tekst .crm2-ikon { display:flex; color:#8F8B85; }
+.crm2-it-tekst > em { margin-left:auto; font-style:normal; color:#6F6B66; }
+.crm2-it .crm2-fane { height:30px; }
+.crm2-vip { margin-left:auto; width:34px; height:20px; border-radius:999px; background:#D8D6D1; position:relative; flex:none; }
+.crm2-vip::after { content:""; position:absolute; top:2px; left:2px; width:16px; height:16px; border-radius:50%; background:#fff; box-shadow:0 1px 2px rgba(26,26,26,.25); }
+.crm2-vip.on { background:#FC2404; } .crm2-vip.on::after { left:16px; }
+/* datovælgeren */
+.crm2-pop-dato { width:352px; max-width:calc(100vw - 16px); padding:16px; }
+.crm2-datofelt { display:flex; align-items:center; height:36px; padding:0 4px; border:1px solid #E3E2DE; border-radius:999px; }
+.crm2-datofelt .crm2-ind { height:34px; padding:0 10px; background:transparent; font-size:13px; }
+.crm2-dh { display:flex; align-items:center; justify-content:space-between; font-size:13px; font-weight:400; padding:8px 0 4px; }
+.crm2-dh .crm2-ik { width:28px; height:28px; }
+.crm2-dgr { display:grid; grid-template-columns:repeat(7,1fr); row-gap:2px; text-align:center; font-size:12.5px; }
+.crm2-dgr i { font-style:normal; color:#9A9590; height:24px; font-size:11px; line-height:24px; }
+.crm2-dag { width:34px; height:34px; border-radius:50%; margin:0 auto; border:0; background:transparent; color:#1A1A1A; font-family:Poppins,sans-serif; font-size:12.5px; font-weight:300; display:grid; place-items:center; cursor:pointer; padding:0; box-shadow:none; position:relative; }
+.crm2-dag:hover { background:var(--crm-sand); }
+.crm2-dag.o { color:#C9C6C0; }
+.crm2-dag.t { box-shadow:inset 0 0 0 1px #E3E2DE; }
+.crm2-dag.v, .crm2-dag.v:hover { background:#FC2404; color:#fff; font-weight:400; box-shadow:none; }
+.crm2-hurtig { display:flex; gap:6px; margin-top:12px; flex-wrap:nowrap; overflow-x:auto; scrollbar-width:none; }
+.crm2-hurtig::-webkit-scrollbar { display:none; }
+.crm2-hurtig button { flex:none; height:26px; padding:0 10px; border-radius:999px; background:#F1F0ED; color:#6F6B66; border:0; font-family:Poppins,sans-serif; font-size:12.5px; font-weight:400; cursor:pointer; box-shadow:none; position:relative; }
+.crm2-hurtig button::before { content:""; position:absolute; inset:-9px -2px; }
+/* telefon: tabellen bliver til rolige kort — kunden og status øverst, så kontakt og by, produkt og næste, kommentar nederst */
+@media (max-width:899px) {
+  .crm2-bar { flex-direction:column; align-items:stretch; gap:6px; }
+  .crm2-fane { height:44px; padding:0 14px; }
+  .crm2-faner { overflow-x:auto; scrollbar-width:none; -webkit-overflow-scrolling:touch; margin:0 -2px; padding:4px 2px; }
+  .crm2-faner::-webkit-scrollbar { display:none; }
+  .crm2-vaerk { justify-content:space-between; gap:0; }
+  .crm2-ik { width:44px; height:44px; }
+  .crm2-ny { height:44px; }
+  .crm2-soeg { flex:1; width:auto; margin:0 6px; height:44px; }
+  .crm2-pins { margin:0 -2px 14px; padding:0 2px; }
+  .crm2-rul { overflow:visible; }
+  .crm2-tabel { min-width:0 !important; }
+  .crm2-h { display:none; }
+  .crm2-r { grid-template-columns:minmax(0,1fr) auto !important; gap:2px 12px; align-items:center; min-height:0; padding:14px 16px 14px 14px; margin:0 0 10px; background:#fff; border:1px solid #E3E2DE; border-radius:20px; position:relative; }
+  .crm2-ra:hover { background:#fff; }
+  .crm2-c { display:block; border-left:0 !important; padding:0; min-height:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-size:13px; line-height:20px; }
+  .crm2-c.tom { display:none; }
+  .crm2-pc { grid-column:1; grid-row:1; justify-content:flex-start; position:absolute; right:12px; top:10px; width:44px; height:44px; z-index:2; }
+  .crm2-pinbtn { width:44px; height:44px; }
+  .crm2-ra:not(.pinnet) .crm2-pinbtn { opacity:1; }
+  .crm2-c.c-kunde { grid-column:1; grid-row:1; font-size:15px; font-weight:400; line-height:24px; padding-right:0; }
+  .crm2-c.c-st { grid-column:2; grid-row:1; justify-self:end; margin-right:36px; }
+  .crm2-c.c-kontakt { grid-column:1; grid-row:2; }
+  .crm2-c.c-by { grid-column:2; grid-row:2; justify-self:end; margin-right:0; }
+  .crm2-c.c-postnr { display:none; }
+  .crm2-c.c-produkt { grid-column:1; grid-row:3; padding-top:6px; }
+  .crm2-c.c-naeste { grid-column:2; grid-row:3; justify-self:end; padding-top:6px; }
+  .crm2-c.c-kom { grid-column:1 / -1; grid-row:4; padding-top:4px; }
+  .crm2-c.c-sidst, .crm2-c.c-oprettet { grid-column:1 / -1; }
+  .crm2-c.red:hover { box-shadow:none; }
+  .crm2-pop { max-width:calc(100vw - 16px); }
 }
 </style>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-hvid.png" alt=""><span>Henter…</span></div>
