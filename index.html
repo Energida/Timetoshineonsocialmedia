@@ -88168,7 +88168,9 @@ function gamleKunderMailTekst(navn) {
 /* KOEEN FOR GAMLE KUNDER UDEN NET (13/10): ligger i telefonen, til basen har svaret med en kvittering (.select) — slettes aldrig foer */
 function gkKoeLaes() { try { return JSON.parse(localStorage.getItem("gk_koe") || "[]") || []; } catch (e) { return []; } }
 function gkKoeSkriv(a) { try { localStorage.setItem("gk_koe", JSON.stringify(a)); return true; } catch (e) { return false; } }
-async function gkIndsaet(rk) { if (!sb || !navigator.onLine) return false; try { const tags = Array.isArray(rk._tags) ? rk._tags : []; const rad = Object.assign({}, rk); delete rad._tags; const r = await sb.from("contacts").insert(rad).select("id"); if (r.error || !(r.data && r.data.length)) return false; const id = r.data[0].id; if (tags.length) { try { await crmTagsSaet(id, tags); } catch (e) {} } return id || true; } catch (e) { return false; } }
+/* FEJL 11/11 (Ida: »når jeg sender nyt lead igennem, selvom jeg har internet, siger den: gemt på telefonen«): contacts.source er NOT NULL, og et lead uden »Gamle kunder« sendte source = null. Basen afviste (23502), og leadet — med sine tags — blev lagt i telefonens kø og sendt igen og igen uden held. Nu får et lead altid en kilde, og en afvisning fra basen (modsat manglende net) lægges ikke i køen, men vises. */
+let GK_SIDSTE_FEJL = null;
+async function gkIndsaet(rk) { GK_SIDSTE_FEJL = null; if (!sb || !navigator.onLine) return false; try { const tags = Array.isArray(rk._tags) ? rk._tags : []; const rad = Object.assign({}, rk); delete rad._tags; if (rad.source == null || rad.source === "") rad.source = "backstage"; const r = await sb.from("contacts").insert(rad).select("id"); if (r.error) { if (r.error.code) GK_SIDSTE_FEJL = r.error; return false; } if (!(r.data && r.data.length)) { GK_SIDSTE_FEJL = { code: "0rk", message: "0 rækker" }; return false; } const id = r.data[0].id; if (tags.length) { try { await crmTagsSaet(id, tags); } catch (e) {} } return id || true; } catch (e) { return false; } }
 let GK_SENDER = false;
 async function gkKoeSend() {
   if (GK_SENDER || !sb || !navigator.onLine) return; const a = gkKoeLaes(); if (!a.length) return;
@@ -88269,10 +88271,11 @@ async function gamleKunderSend(knap) {
   if (mail && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(mail)) { sig("Skriv en rigtig mail, fx navn@butikken.dk."); document.getElementById("gkMail").focus(); return; }   /* MAILEN ER VALGFRI (Ida 26/10: »gemme leads uden mail«) — men står der en, skal den være rigtig */
   if (knap) knap.disabled = true; sig("Gemmer …");
   /* RIGTIGE FELTER (Ida 13/10: »hvor indtaster jeg kundens oplysninger – mail mm?«): kontaktperson · email · telefon er kontaktkortets egne felter */
-  const rk = { kunde: GK_PERSON ? navn : butik, kontaktperson: navn || null, email: mail || null, telefon: tlf || null, status: crmStStandard(), source: GK_TAG ? "Gamle kunder" : null, kommentar: GK_TAG ? "Kode ikke sendt endnu" : null };
+  const rk = { kunde: GK_PERSON ? navn : butik, kontaktperson: navn || null, email: mail || null, telefon: tlf || null, status: crmStStandard(), source: GK_TAG ? "Gamle kunder" : "backstage", kommentar: GK_TAG ? "Kode ikke sendt endnu" : null };
   const prod = (window.BF3_DROP_VALG || {}).gkProdukt || ""; if (prod) rk.produkt = prod;   /* produktet følger med (22/10) — samme felt som Hjems gamle lead-ark */
   if (GK_TAGS.length) rk._tags = GK_TAGS.slice();   /* egne tags følger med, også i offline-køen (gkIndsaet tager dem af, før rækken sendes) */
   let ok = await gkIndsaet(rk);
+  if (!ok && GK_SIDSTE_FEJL) { if (knap) knap.disabled = false; sig("Kontakten blev ikke gemt. Prøv igen."); try { console.warn("Nyt lead afvist af basen:", GK_SIDSTE_FEJL.code, GK_SIDSTE_FEJL.message); } catch (e) {} return; }   /* basen svarede nej — det er ikke »uden net«, så leadet lægges ikke i køen */
   if (!ok) {
     /* UDEN NET (Ida 13/10: »gøre den liste og funktion offline«): kontakten lægges i telefonens kø og sendes af sig selv, når der er net */
     const k = gkKoeLaes(); k.push(rk); if (!gkKoeSkriv(k)) { if (knap) knap.disabled = false; sig("Kontakten blev ikke gemt. Prøv igen."); return; }
