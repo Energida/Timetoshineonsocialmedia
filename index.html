@@ -22650,9 +22650,8 @@ select titel,
       <input type="text" id="nkKode" placeholder="Foreslås automatisk" oninput="this.dataset.roert=1;this.value=this.value.toUpperCase()" style="width:100%;border:1px solid var(--border);outline:none;font-size:13.5px;font-family:Poppins,sans-serif;background:#fff;border-radius:12px;padding:12px 14px;letter-spacing:1px;"></div>
     <div class="mfield"><div class="k">Produkt</div>   <!-- hed Pakke; Ida 8/9: »pakke skal laves om til produkt« — feltet i basen hedder stadig pakke -->
       <select id="nkPakke" onchange="nkPakkeSkift()" style="width:100%;border:1px solid var(--border);font-size:13.5px;font-family:Poppins,sans-serif;background:#fff;border-radius:12px;padding:12px 14px;color:var(--black);">
-        <option value="detaildrift">YOU GOT THIS · DETAIL-koden — lektionerne + Værktøjskassen (standard)</option>
+        <option value="detaildrift">YOU GOT THIS — lektionerne + Værktøjskassen (standard)</option>
         <option value="igotyou">I GOT YOU — forløbet</option>
-        <option value="ttsosm">YOU GOT THIS · standard — lektionerne uden Værktøjskassen</option>
         <option value="ldit">WE GOT THIS — energimodulerne + Content Studio</option>
         <option value="contentstudio">CONTENT STUDIO — Energida planlægger og producerer content</option>
         <option value="ingen">Intet produkt (privat eller intern)</option>
@@ -41305,10 +41304,12 @@ function pubPanelRender() {
    modul 1 og 2 aabne, og intet skrives. Gaelder KUN koder med forloeb »YOU GOT THIS« — aldrig Ida, der kigger med som kunde. */
 const YGT_DAG = { "1": 0, "2": 0, "3": 7, "4": 14, "5": 21, "6": 28, "7": 35, "8": 42, "9": 49, "10": 56, "11": 63 };
 let YGT_START = null;
+/* ÉT YOU GOT THIS (Ida 11/11: »you got this detail skal helt slettes«): en kunde, hvis forløb i basen stadig hedder »YOU GOT THIS — DETAIL« (eller pakken »ttsosm«), læses som ÉT YOU GOT THIS. Alle kontroller rundt i appen sammenligner med »YOU GOT THIS«, så de tre steder kunden bliver til en def (kodelisten, kundevisningen, kundekortet) går gennem her. Basen røres ikke. */
+function ygtEtLayout(d) { try { if (d && /^YOU GOT THIS/i.test(String(d.forloeb || ""))) { d.forloeb = "YOU GOT THIS"; if (d.pakke === "ttsosm") d.pakke = "detaildrift"; } } catch (e) {} return d; }
 function ygtHold(def) {
   try {
     def = def || (typeof CURRENT_DEF !== "undefined" ? CURRENT_DEF : null);
-    if (!def || def.type !== "kursus" || !(String(def.forloeb || "") === "YOU GOT THIS" || /^Gratis kursusadgang/i.test(String(def.forloeb || "")))) return false;   /* 9/11: Ringkøbing-kunder (Gratis kursusadgang) er YOU GOT THIS-kunder — samme menu, samme rundvisning, samme låse (Ida 9/11 efter testkøbet: Content Studio og Performance stod i menuen) */
+    if (!def || def.type !== "kursus" || !/^(YOU GOT THIS|Gratis kursusadgang)/i.test(String(def.forloeb || ""))   /* ÉT YOU GOT THIS (Ida 11/11: »you got this detail skal helt slettes«): alle YOU GOT THIS-koder får ÉT layout, også dem hvis forløb stadig staar som »… — DETAIL« i basen. */) return false;   /* 9/11: Ringkøbing-kunder (Gratis kursusadgang) er YOU GOT THIS-kunder — samme menu, samme rundvisning, samme låse (Ida 9/11 efter testkøbet: Content Studio og Performance stod i menuen) */
     if (typeof SOM_KUNDE !== "undefined" && SOM_KUNDE) return false;
     return true;
   } catch (e) { return false; }
@@ -43833,7 +43834,7 @@ function erEjerOevelse(id) { return /^(5|6)-/.test(String(id)); }   // brandiden
 /* Standard-kursuskoden (#34): Værktøjskassen følger med DETAIL-koden — låsen er permanent */
 function vkPermanentLaast() {
   const d = CURRENT_DEF || {};
-  return d.type === "kursus" && d.pakke !== "detaildrift";
+  return false;   /* ÉT YOU GOT THIS (Ida 11/11): Værktøjskassen følger med alle YOU GOT THIS-kunder — ingen permanent lås */
 }
 /* ARKIVERET 22/9 (Ida: »denne tekst skal ikke med nogle steder«) — kaldes ikke laengere; staar, til hun har sagt, hvad der skal ske i stedet. */
 function vkStandardBesked() {
@@ -63986,7 +63987,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "3206";
+const APP_VERSION = "3207";
 const APP_BYGGET = "3. november";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_VERSION;   /* ingen dato (Ida 7/11: »hvorfor står der version 3. november?«) — datoen blev ikke rettet med, nummeret er sandheden */ } catch (e) {} });
 let NY_VERSION_KLAR = false;
@@ -70141,6 +70142,7 @@ async function appBrugLog() {
 function applyCustomerView(def) {
   if (!def) return;
   CUSTOMER_NAV = true;
+  ygtEtLayout(def);
   CURRENT_DEF = def;
   try { appBrugLog(); } catch(e) {}
   try { funkAnvend(def); } catch(e) {}   /* fluebenene paa Adgang-fanen gaelder ogsaa FLADERNE (Ida 5/8) */
@@ -80238,7 +80240,7 @@ async function hentDynKoder() {
       try { Object.keys(rk).forEach(function (k) { DYN_KODER_SET.add(k); }); } catch (e) {}
       /* Idas rettelser VINDER altid over de indbyggede koder (fx omdøbt kundenavn på en forberedt kode).
          Merge frem for skip — så tekniske flag fra den indbyggede def overlever, medmindre Ida har ændret dem. */
-      Object.keys(rk).forEach(k => { VIRKSOMHEDSKODER[k] = Object.assign({}, VIRKSOMHEDSKODER[k] || {}, rk[k]); });
+      Object.keys(rk).forEach(k => { VIRKSOMHEDSKODER[k] = ygtEtLayout(Object.assign({}, VIRKSOMHEDSKODER[k] || {}, rk[k])); });
     }
   } catch(e) {}
   DYN_KODER_HENTET = true;
@@ -80421,8 +80423,8 @@ function harLektionsadgang(def) {
    fluebenene. Kender vi ikke produktet, er alt taendt som foer — en ukendt kode maa aldrig
    miste noget, hun har betalt for. */
 const PRODUKT_FUNKTIONER = {
-  ttsosm:        ["indbakke", "strategi"],                                       /* YOU GOT THIS: lektionerne + Drejebogen */
-  detaildrift:   ["indbakke", "strategi", "vaerktoej"],                          /* YOU GOT THIS · DETAIL: + Vaerktoejskassen */
+  ttsosm:        ["indbakke", "strategi", "vaerktoej"],                          /* YOU GOT THIS (ældre række): lektionerne + Værktøjskassen — ÉT YOU GOT THIS (Ida 11/11) */
+  detaildrift:   ["indbakke", "strategi", "vaerktoej"],                          /* YOU GOT THIS: lektionerne + Værktøjskassen */
   igotyou:       ["indbakke", "content", "strategi", "resultat", "vaerktoej"],    /* I GOT YOU: forloebet, alt med */
   ldit:          ["indbakke", "energi", "content", "strategi", "resultat"],       /* WE GOT THIS: energimodulerne + Content Studio */
   contentstudio: ["indbakke", "content", "strategi", "resultat", "vaerktoej"]     /* CONTENT STUDIO */
@@ -80678,7 +80680,7 @@ async function opretKunde() {
   const pass = adgang === "login" ? (document.getElementById("nkPass").value || "") : "";
   if (adgang === "login" && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(bruger)) { vis("Skriv kundens e-mail — den bruges som deres login. Eller vælg, at de opretter sig selv med koden.", "var(--red)"); const f = document.getElementById("nkMail"); if (f) { f.scrollIntoView({ behavior: "smooth", block: "center" }); f.focus(); } return; }
   if (adgang === "login" && pass.length < 6) { vis("Vælg en adgangskode på mindst 6 tegn.", "var(--red)"); return; }
-  const PAKKER = { detaildrift: "YOU GOT THIS — DETAIL", igotyou: "I GOT YOU", ttsosm: "YOU GOT THIS", ldit: "WE GOT THIS", contentstudio: "CONTENT STUDIO" };
+  const PAKKER = { detaildrift: "YOU GOT THIS", igotyou: "I GOT YOU", ttsosm: "YOU GOT THIS", ldit: "WE GOT THIS", contentstudio: "CONTENT STUDIO" };
   const pakke = (document.getElementById("nkPakke") || {}).value || "detaildrift";
   const UDEN = { kaereste: "Kæreste", klipper: "Klipper", medarbejder: "Medarbejderforløb", reset: "Reset din energi" };
   const udenType = pakke === "ingen" ? (((document.getElementById("nkIngenType") || {}).value || "klipper")) : "";
