@@ -1220,6 +1220,12 @@ html body .lek-favchip.valgt{background:#fff;color:#1A1A1A;border-color:#8A8782}
 .lek-fav.paa svg{fill:var(--red);stroke:var(--red)}
 .lks-lek.nu .lek-fav svg{stroke:#fff}.lks-lek.nu .lek-fav.paa svg{fill:#fff;stroke:#fff}
 .lks-mod{font-size:12px;color:var(--gray2);margin-top:2px}
+.kbs-fb{background:#fff;border-radius:20px;box-shadow:var(--mb-skygge,0 0 4px rgba(46,44,41,.10),0 0 36px rgba(46,44,41,.20));padding:20px 24px;margin-top:16px;text-align:left}
+.kbs-fb-eye{font-size:10px;letter-spacing:1.6px;text-transform:uppercase;color:var(--gray3);padding-bottom:10px;border-bottom:1px solid var(--border);margin-bottom:12px}
+.kbs-fb-snit{display:flex;align-items:center;gap:8px;margin:0 0 12px}.kbs-fb-snit b{font-weight:400;font-size:18px}.kbs-fb-snit span{font-size:12px;color:var(--gray3)}
+.kbs-fb-kom{padding:10px 0;border-top:1px solid #ECE9E3}.kbs-fb-kom:first-of-type{border-top:0}
+.kbs-fb-t{font-family:Didot,'Bodoni 72',Georgia,serif;font-style:italic;font-size:15px;line-height:1.5;color:var(--black)}
+.kbs-fb-s{font-size:12px;color:var(--gray3);margin:2px 0}.lv-fb-kl{cursor:pointer}
 html body .lks-opg{flex:none;display:inline-flex;align-items:center;justify-content:center;height:30px;padding:0 12px;border:1px solid #D6D3CE;border-radius:999px;background:#fff;color:#6B6864;font:400 12px Poppins,sans-serif}
 .lek-favtom{font-size:14px;color:#6B6864;line-height:1.6;padding:4px 2px 14px}
 .lk-overblik-t{display:flex;align-items:center;justify-content:space-between;gap:12px}
@@ -47417,11 +47423,13 @@ async function klipHent() {
    klipFeedback(o) under hvert kort. Kun laesning; ingen ny tabel, ingen ny policy. Kan admin
    ikke laese raekkerne (RLS), er kortet tomt — det siger "Ingen feedback endnu". ===== */
 let KLIP_LEKFB = {};   /* lektions-id -> [{ kode, navn, stjerner, kommentar, dato }] */
-let KLIP_LEKFB_HENTET = false;
+let KLIP_LEKFB_HENTET = false, KLIP_LEKFB_FEJL = false;
 async function klipFeedbackHent() {
   if (!sb) return;
   try {
-    const { data } = await sb.from("skema_svar").select("kode,navn,skema,svar,created_at").like("skema", "lektion_feedback_%");
+    const { data, error } = await sb.from("skema_svar").select("kode,navn,skema,svar,created_at").like("skema", "lektion_feedback_%");
+    if (error) { KLIP_LEKFB_FEJL = true; return; }   /* en fejl maa ikke ligne »ingen feedback« (11/11) */
+    KLIP_LEKFB_FEJL = false;
     const m = {};
     (data || []).forEach(function (r) {
       const id = String(r.skema || "").slice(17);   /* "lektion_feedback_".length === 17 */
@@ -47441,6 +47449,74 @@ function klipFeedbackFor(o) {
   const med = rk.filter(function (r) { return r.stjerner > 0; });
   const snit = med.length ? med.reduce(function (a, r) { return a + r.stjerner; }, 0) / med.length : 0;
   return { id: id, raekker: rk, antal: med.length, snit: snit, kommentarer: rk.filter(function (r) { return r.kommentar; }) };
+}
+/* KUNDERNES FEEDBACK PAA LEKTIONEN (Ida 11/11: »klik på en lektion og se gns. rating og kommentarer«): snit af hver kundes SENESTE vurdering, kommentarerne nyeste foerst (tre synlige, resten foldet). Kun skema lektion_feedback_ — aldrig opgave- eller refleksionssvar. Kun virksomhedsnavn og dato, aldrig personnavn */
+let KBS_FB_KUN = false, KBS_FB_ALLE = false;
+function kbsFbVirk(kode) { try { const d = VIRKSOMHEDSKODER[String(kode).toUpperCase()]; return (d && d.virksomhed) || "Kunde"; } catch (e) { return "Kunde"; } }
+function kbsFbData(id) {
+  const rk = ((KLIP_LEKFB || {})[id] || []).slice().sort(function (a, b) { return String(a.dato || "").localeCompare(String(b.dato || "")); });
+  const senest = {}; rk.forEach(function (r) { if (r.stjerner > 0) senest[r.kode || ("n:" + r.navn)] = Math.max(0, Math.min(5, r.stjerner)); });
+  const tal = Object.keys(senest).map(function (k) { return senest[k]; });
+  const kom = rk.filter(function (r) { return r.kommentar; }).reverse();
+  return { antal: tal.length, snit: tal.length ? tal.reduce(function (a, b) { return a + b; }, 0) / tal.length : 0, kom: kom };
+}
+function kbsFeedbackHtml(o) {
+  const id = klipLekIdFor(o);
+  let krop = "";
+  if (!id) krop = '<div class="lek-favtom">Lektionen er ikke koblet til kundernes lektioner endnu.</div>';
+  else if (!KLIP_LEKFB_HENTET) {
+    if (KLIP_LEKFB_FEJL) krop = '<div class="lek-favtom">Feedback kan ikke hentes lige nu.</div>';
+    else { krop = '<div class="lek-favtom">Henter feedback …</div>'; if (!window.__KBS_FB_HENTER) { window.__KBS_FB_HENTER = true; try { klipFeedbackHent().then(function () { window.__KBS_FB_HENTER = false; kbsFbTegn(); }); } catch (e) { window.__KBS_FB_HENTER = false; } } }
+  } else {
+    const d = kbsFbData(id);
+    if (!d.antal && !d.kom.length) krop = '<div class="lek-favtom">Ingen feedback endnu.</div>';
+    else {
+      const vis = (KBS_FB_KUN ? d.kom : d.kom).slice(0, KBS_FB_ALLE ? 999 : 3);
+      krop = (d.antal ? '<div class="kbs-fb-snit">' + lekStjerne(22).replace("<svg ", '<svg style="fill:var(--red);stroke:var(--red);stroke-width:1.6;stroke-linejoin:round" ') + '<b>' + d.snit.toFixed(1).replace(".", ",") + '</b><span>' + d.antal + (d.antal === 1 ? ' vurdering' : ' vurderinger') + '</span></div>' : '')
+        + '<div class="lek-favchips"><button type="button" class="lek-favchip' + (KBS_FB_KUN ? '' : ' valgt') + '" onclick="kbsFbFilter(false)">Alle</button><button type="button" class="lek-favchip' + (KBS_FB_KUN ? ' valgt' : '') + '" onclick="kbsFbFilter(true)">Kun med kommentar</button></div>'
+        + (KBS_FB_KUN && !d.kom.length ? '<div class="lek-favtom">Ingen kommentarer endnu.</div>' : '')
+        + vis.map(function (r) { return '<div class="kbs-fb-kom"><div class="kbs-fb-t">\u201c' + esc(r.kommentar) + '\u201d</div><div class="kbs-fb-s">' + esc(kbsFbVirk(r.kode)) + (r.dato ? ' \u00b7 ' + esc(r.dato) : '') + (r.stjerner ? ' \u00b7 ' + r.stjerner + ' af 5' : '') + '</div></div>'; }).join("")
+        + (!KBS_FB_ALLE && d.kom.length > 3 ? '<button type="button" class="lek-favchip" onclick="kbsFbAlle()">Vis alle ' + d.kom.length + '</button>' : '');
+    }
+  }
+  return '<div id="kbsFb" class="kbs-fb"><div class="kbs-fb-eye">Kundernes feedback</div>' + krop + '</div>';
+}
+function kbsFbTegn() { try { const el = document.getElementById("kbsFb"); const o = KLIP_OPGAVER.find(function (x) { return String(x.id) === String(KLIP_BRIEF_ID); }); if (el && o) el.outerHTML = kbsFeedbackHtml(o); } catch (e) {} }
+function kbsFbFilter(kun) { KBS_FB_KUN = !!kun; kbsFbTegn(); }
+function kbsFbAlle() { KBS_FB_ALLE = true; kbsFbTegn(); }
+/* NYT FRA KUNDERNE PAA DASHBOARDET (Ida 11/11): de nyeste kommentarer paa lektionerne. »Laest« gemmes paa denne enhed (localStorage) — ingen ny tabel, ingen raekke i basen roeres */
+function liveFbNoegle(r) { return [r.kode || r.navn || "", r.id, r.dato || "", String(r.kommentar || "").slice(0, 24)].join("|"); }
+function liveFbLaesteHent() { try { return JSON.parse(localStorage.getItem("bs_lekfb_laest") || "[]") || []; } catch (e) { return []; } }
+function liveFbAlle() {
+  const ud = [];
+  Object.keys(KLIP_LEKFB || {}).forEach(function (id) { (KLIP_LEKFB[id] || []).forEach(function (r) { if (r.kommentar) ud.push({ id: id, kode: r.kode, navn: r.navn, kommentar: r.kommentar, dato: r.dato, stjerner: r.stjerner }); }); });
+  return ud.sort(function (a, b) { return String(b.dato || "").localeCompare(String(a.dato || "")); });
+}
+function liveFeedbackFlise() {
+  let h = "";
+  try {
+    if (!KLIP_LEKFB_HENTET) return '';
+    const alle = liveFbAlle(); if (!alle.length) return '';
+    const laest = liveFbLaesteHent(), nye = alle.filter(function (r) { return laest.indexOf(liveFbNoegle(r)) < 0; });
+    const liste = (nye.length ? nye : alle).slice(0, 3);
+    const lekNavn = function (id) { try { const l = KURSUS_LEKTIONER.find(function (x) { return String(x.id) === String(id); }); return l ? (lekVisNr(l.id) + " " + (typeof lekVisTitel === "function" ? lekVisTitel(l) : l.titel)) : "Lektion"; } catch (e) { return "Lektion"; } };
+    h = '<div id="lvFb" class="bs3-fl"><div class="bs3-et"><span>Nyt fra kunderne</span>' + (nye.length ? '<button type="button" class="lek-favchip" onclick="liveFbMarker()">Marker alle som læst</button>' : '') + '</div>'
+      + '<div class="kbs-fb-snit"><b>' + (nye.length ? nye.length + (nye.length === 1 ? ' ny kommentar' : ' nye kommentarer') : 'Ingen nye kommentarer') + '</b></div>'
+      + liste.map(function (r) { return '<div class="kbs-fb-kom lv-fb-kl" role="button" tabindex="0" onclick="lekFbAabn(\'' + esc(String(r.id)).replace(/'/g, "") + '\')"><div class="kbs-fb-s">' + esc(lekNavn(r.id)) + '</div><div class="kbs-fb-t">\u201c' + esc(r.kommentar) + '\u201d</div><div class="kbs-fb-s">' + esc(kbsFbVirk(r.kode)) + (r.dato ? ' \u00b7 ' + esc(r.dato) : '') + '</div></div>'; }).join("")
+      + '</div><!--/lvFb-->';
+  } catch (e) { return ""; }
+  return h;
+}
+function liveFbMarker() {
+  try { const nu = liveFbLaesteHent(); liveFbAlle().forEach(function (r) { const k = liveFbNoegle(r); if (nu.indexOf(k) < 0) nu.push(k); }); localStorage.setItem("bs_lekfb_laest", JSON.stringify(nu.slice(-400))); } catch (e) {}
+  try { const ny = liveFeedbackFlise(); const el = document.getElementById("lvFb"); if (el) { el.outerHTML = ny || ""; } if (window.__LIVE_HTML) window.__LIVE_HTML = window.__LIVE_HTML.replace(/<div id="lvFb"[\s\S]*?<!--\/lvFb-->/, ny); } catch (e) {}
+}
+function lekFbAabn(id) {
+  try { visDashSide("klip"); } catch (e) { return; }
+  let n = 0; const t = setInterval(function () {
+    n++; try { const o = (KLIP_OPGAVER || []).find(function (x) { return klipLekIdFor(x) === String(id); }); if (o) { clearInterval(t); klipBriefAaben(o.id); return; } } catch (e) {}
+    if (n > 30) clearInterval(t);
+  }, 300);
 }
 function klipFeedbackChip(o) {
   const f = klipFeedbackFor(o); if (!f || !f.antal) return "";
@@ -47716,6 +47792,7 @@ function klipBriefRender() {
     + '<div class="kbs-kun-optag">' + kbUnderKortHtml(o) + '</div>'
     + '<div class="kbs-kun-skriv">' + kbLekIdeerHtml(o) + '</div>'   /* idéerne til manus under manus (Ida 27/9: »kan ikke se nogle forslag til ideer til manus under lektionen«) */
     + '<div class="kbs-kun-skriv">' + ovelser + '</div>'
+    + '<div class="kbs-kun-skriv">' + kbsFeedbackHtml(o) + '</div>'
     + ((lek && lek.l) ? '<div class="kbs-kun-skriv">' + label("Materialer til kunden") + '<div id="kbFiler" data-lek="' + esc(lek.l.id) + '"></div><div style="font-size:10.5px;color:var(--gray3);margin-top:4px;">PDF, billeder og Office-filer, højst 25 MB. Kunden henter dem på lektionen og i Værktøjskassen.</div></div>' : '')
     + '<div class="kbs-skjult">' + label("Kommentarer & rettelser")
     + '<div id="kbKommListe">' + klipKommListeHtml(o) + '</div>'
@@ -64274,7 +64351,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "3218";
+const APP_VERSION = "3219";
 const APP_BYGGET = "3. november";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_VERSION;   /* ingen dato (Ida 7/11: »hvorfor står der version 3. november?«) — datoen blev ikke rettet med, nummeret er sandheden */ } catch (e) {} });
 let NY_VERSION_KLAR = false;
@@ -90044,7 +90121,7 @@ function liveOverblikHtml(D) {
       + (alle.length ? '<div class="lv-trin lv-mails">' + alle.join("") + '</div>' : '<div class="bs3-s">Ingen klik fra mails endnu.</div>') + '</div>';
   }
   return '<div class="lv"><div class="lv-top">' + stor + '<div class="lv-kol">' + belobHtml + '</div></div>'
-    + '<div class="lv-tre-fl">' + koder + akt24 + lek7 + '</div>' + tragt + mailFl + '</div>';
+    + '<div class="lv-tre-fl">' + koder + akt24 + lek7 + '</div>' + liveFeedbackFlise() + tragt + mailFl + '</div>';
 }
 function liveToast(k) {
   let t = document.getElementById("lvToast"); if (!t) { t = document.createElement("div"); t.id = "lvToast"; t.className = "lv-toast"; document.body.appendChild(t); }
@@ -90061,6 +90138,7 @@ async function liveOverblikTegn(tving) {
   const D = await liveOverblikHent(); if (!D) return;
   const nye = LIVE_SET_KOEB ? D.koeb.filter(function (k) { return !LIVE_SET_KOEB[k.id]; }) : [];
   LIVE_SET_KOEB = {}; D.koeb.forEach(function (k) { LIVE_SET_KOEB[k.id] = 1; });
+  try { if (!KLIP_LEKFB_HENTET && typeof klipFeedbackHent === "function") await klipFeedbackHent(); } catch (e) {}   /* kommentarer fra kunderne til dashboardet (Ida 11/11) */
   window.__LIVE_HTML = liveOverblikHtml(D); fyld();
   if (nye.length) { try { if (!plKontakter().length && typeof fetchCustomers === "function") CUSTOMERS = await fetchCustomers(); } catch (e) {} try { liveToast(nye[0]); } catch (e) {} }   /* leadene skal være hentet, før popuppen kan sige »Var lead« */
   if (!LIVE_TIMER) LIVE_TIMER = setInterval(function () { try { if (document.visibilityState === "visible") liveOverblikTegn(true); } catch (e) {} }, 60000);
