@@ -1220,6 +1220,7 @@ html body .lek-favchip.valgt{background:#fff;color:#1A1A1A;border-color:#8A8782}
 .lek-fav.paa svg{fill:var(--red);stroke:var(--red)}
 .lks-lek.nu .lek-fav svg{stroke:#fff}.lks-lek.nu .lek-fav.paa svg{fill:#fff;stroke:#fff}
 .lks-mod{font-size:12px;color:var(--gray2);margin-top:2px}
+html body .lks-opg{flex:none;display:inline-flex;align-items:center;justify-content:center;height:30px;padding:0 12px;border:1px solid #D6D3CE;border-radius:999px;background:#fff;color:#6B6864;font:400 12px Poppins,sans-serif}
 .lek-favtom{font-size:14px;color:#6B6864;line-height:1.6;padding:4px 2px 14px}
 .lk-overblik-t{display:flex;align-items:center;justify-content:space-between;gap:12px}
 .ftl2-ll{display:flex;align-items:center;gap:12px;padding:11px 0;font-size:14px;color:#8A8782;border-top:1px solid #ECE9E3}
@@ -43222,12 +43223,35 @@ const LKS_FB = '<span class="lks-fb"><svg viewBox="0 0 24 24" width="12" height=
 const LKS_FB_HV = '<span class="lks-fb hv"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="#FC2404" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></span>';
 const LKS_LAAS = '<svg class="lks-laas" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>';
 function lksPil(aaben) { return '<svg class="lks-pil' + (aaben ? ' op' : '') + '" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>'; }
+/* TID VED LEKTIONEN (Ida 11/11: »jeg kan heller ikke se hvor lang tid hver lektion tager«): videoens laengde fra Vimeo (oEmbed), gemt paa enheden. Findes laengden ikke, staar der intet — aldrig et gaet */
+let LEK_TID = {}, LEK_TID_HENT = {};
+try { LEK_TID = JSON.parse(localStorage.getItem("lek_tid_v1") || "{}") || {}; } catch (e) { LEK_TID = {}; }
+function lekTidTekst(id) { const sek = Number(LEK_TID[String(id)]) || 0; return sek > 0 ? "ca. " + Math.max(1, Math.round(sek / 60)) + " min." : ""; }
+function lekTidHent(liste) {
+  try {
+    let nye = 0;
+    (liste || []).forEach(function (l) {
+      if (!l || !l.video || !/vimeo\.com/i.test(String(l.video)) || LEK_TID[String(l.id)] || LEK_TID_HENT[String(l.id)]) return;
+      LEK_TID_HENT[String(l.id)] = 1; nye++;
+      fetch("https://vimeo.com/api/oembed.json?url=" + encodeURIComponent(String(l.video))).then(function (r) { return r.ok ? r.json() : null; }).then(function (j) {
+        if (!j || !(Number(j.duration) > 0)) return;
+        LEK_TID[String(l.id)] = Number(j.duration);
+        try { localStorage.setItem("lek_tid_v1", JSON.stringify(LEK_TID)); } catch (e) {}
+        try { const ov = document.getElementById("forloebTidslinje"); if (ov && ov.offsetParent && !LEK_TID_REN) { LEK_TID_REN = setTimeout(function () { LEK_TID_REN = 0; try { ov.innerHTML = forloebTidslinjeHtml(); } catch (e) {} }, 400); } } catch (e) {}
+      }).catch(function () {});
+    });
+  } catch (e) {}
+}
+let LEK_TID_REN = 0;
 function lksLek(x, aktivId, mod) {
   const s = !!KURSUS_SET[x.id], nu = x.id === aktivId && !LEK_SKEMA;
   const ven = (x.ovelse && KURSUS_UDSAT[x.id] && !oevKlaret(x.id)) ? '<div class="lks-ven">Opgave venter</div>' : '';
   const st = s ? LKS_FB : '<span class="lks-tom"></span>';   /* hvid flise, ogsaa naar man staar i den (Idas klik 28/10, kombi A) */
   const idS = esc(String(x.id)).replace(/'/g, "");
-  return '<div class="lks-fl lks-lek' + (nu ? ' nu' : '') + (s ? ' set' : '') + '" role="button" tabindex="0" onclick="visLektion(\'' + idS + '\')">' + st + '<span class="lks-num">' + esc(lekVisNr(x.id)) + '</span><div class="lks-lt"><div class="lks-ln">' + esc(typeof lekVisTitel === "function" ? lekVisTitel(x) : x.titel) + '</div>' + ven + (mod ? '<div class="lks-mod">' + esc(mod) + '</div>' : '') + '</div>' + lekFavKnap(x.id) + '</div>';   /* FLUEBENET TIL VENSTRE (Ida 28/10) · STJERNEN TIL HOEJRE (Ida 11/11) */
+  /* OPGAVEN SYNES UNDER MODULET (Ida 11/11: »hvorfor kan jeg slet ikke se opgaverne under modulerne?«): chip paa de lektioner, der har en opgave — hvid pille med graa kant */
+  const harOpg = !!(x.ovelse && x.ovelse.length);
+  const opgChip = harOpg ? '<span class="lks-opg">' + (oevKlaret(x.id) ? 'Opgave taget' : 'Opgave') + '</span>' : '';
+  return '<div class="lks-fl lks-lek' + (nu ? ' nu' : '') + (s ? ' set' : '') + '" role="button" tabindex="0" onclick="visLektion(\'' + idS + '\')">' + st + '<span class="lks-num">' + esc(lekVisNr(x.id)) + '</span><div class="lks-lt"><div class="lks-ln">' + esc(typeof lekVisTitel === "function" ? lekVisTitel(x) : x.titel) + '</div>' + ven + (mod ? '<div class="lks-mod">' + esc(mod) + '</div>' : '') + (lekTidTekst(x.id) ? '<div class="lks-mod lks-tid">' + esc(lekTidTekst(x.id)) + '</div>' : '') + '</div>' + opgChip + lekFavKnap(x.id) + '</div>';   /* FLUEBENET TIL VENSTRE (Ida 28/10) · STJERNEN TIL HOEJRE (Ida 11/11) */
 }
 function lksModul(m, aktivId, oversigt) {
   const ids = m.lektioner || []; if (!ids.length) return '';
@@ -43250,7 +43274,7 @@ function lksModul(m, aktivId, oversigt) {
   return '<div class="lks-gruppe">' + hoved + ids.map(function (x, i) { return lksLek(x, aktivId) + ((skemaHer && i === ids.length - 1) ? lksSkemaHtml(lksSkemaNr(ids)) : ''); }).join("") + '</div>';
 }
 function lksSkemaHer(nr) {
-  try { const d = CURRENT_DEF; return String(nr) === "1" && !!d && d.type === "kursus" && d.skema !== false && !SOM_KUNDE; } catch (e) { return false; }
+  try { const d = CURRENT_DEF; return String(nr) === "1" && !!d && d.type === "kursus" && d.skema !== false; }   /* Ida ser det ogsaa som kunde (11/11: »hvordan kan det lade sig gøre, at jeg ikke længere kan se spørgeskemaet som modul 0.6?«) — men Send er spærret, saa intet skrives hos testkunden */ catch (e) { return false; }
 }
 /* SPØRGESKEMAET STÅR I LEKTIONSSIDEN (Ida 26/10: »designet på find dit udgangspunkt skal ikke være som pop up men som education on air - en flise hvor videoen idag er«).
    Samme wizard som før (skemaWizTegn, kladden, Send) — kun stedet skifter: skemaets kasse flyttes ind i en flise i lekMain og tilbage i popuppen, når man går videre. */
@@ -44202,6 +44226,7 @@ const FTL_LAAS = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" st
 function ftlAntal(n) { return n + (n === 1 ? " lektion" : " lektioner"); }
 function ftlLektioner(m, nr) {
   const ids = m.lektioner || [], skemaHer = lksSkemaHer(nr);
+  lekTidHent(ids);
   return '<div class="ftl2-lek">' + ids.map(function (x, i) { return lksLek(x, null) + ((skemaHer && i === ids.length - 1) ? lksSkemaHtml(lksSkemaNr(ids)) : ''); }).join("") + '</div>';
 }
 /* FAVORITTER PAA LEKTIONERNE (Ida 11/11, bud 1): stjerne paa hver lektion; »Favoritter« over modulerne viser kun dem. Gemmes i kursus_pref.fav (samme sted som kundens andre valg, foelger kunden paa tvaers af enheder) */
@@ -55707,6 +55732,7 @@ const saveSkema = etTryk(saveSkemaInd, 1500);
 async function saveSkemaInd() {
   const def = SKEMAER[SKEMA_KEY];
   if (!def) return;
+  if (somKundeKigger()) { const m0 = document.getElementById("swMsg") || document.getElementById("skemaMsg"); if (m0) { m0.style.color = "var(--gray3)"; m0.textContent = "Du ser som kunden. Svaret sendes ikke."; } return; }   /* Ida kigger, kunden svarer (11/11) */
   /* Wizarden gemmer hvert svar, mens der skrives (skemaWizSvar), saa der er intet at
      hoeste her. Den GAMLE lange formular havde et felt pr. spoergsmaal (#sk_open_0 ...);
      de findes ikke laengere, og et opslag paa dem kastede en fejl ved tryk paa Send.
@@ -64232,7 +64258,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "3212";
+const APP_VERSION = "3213";
 const APP_BYGGET = "3. november";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_VERSION;   /* ingen dato (Ida 7/11: »hvorfor står der version 3. november?«) — datoen blev ikke rettet med, nummeret er sandheden */ } catch (e) {} });
 let NY_VERSION_KLAR = false;
