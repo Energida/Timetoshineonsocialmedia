@@ -1967,7 +1967,21 @@ html body .pf-tre:has(.pf-sel) { grid-template-columns:0.85fr 1.5fr 1.05fr; }
 .pf-knap { height:52px; border:0; border-radius:999px; background:var(--red); color:#fff; font:400 15px Poppins,sans-serif; cursor:pointer; margin-top:4px; }
 .pf-knap:disabled { opacity:.7; }
 .pf-knap.laast { background:var(--border); color:var(--gray2); }   /* låst, til alle felter er udfyldt (Ida 3/11) */
-@media (min-width:900px) { #pfFlow { padding:40px 24px; } .pf-ark { margin:auto; padding:28px 32px 26px; } }   /* margin:auto centrerer uden at skære toppen af, når arket er højere end skærmen */
+@media (min-width:900px) { #pfFlow { padding:40px 24px; } .pf-ark { margin:auto; padding:28px 32px 26px; } }
+/* PROFILEN SOM BUD 1 (Idas klik 11/11): ét spørgsmål pr. skærm, store sorte spørgsmål, små chips på én linje, arket midt på skærmen også på telefonen */
+#pfFlow { align-items:center; }
+.pf-ark { margin:auto 0; }
+.pf-spor3 { display:flex; gap:6px; } .pf-spor3 span { flex:1; height:4px; border-radius:99px; background:#E3E2DE; overflow:hidden; } .pf-spor3 i { display:block; height:100%; background:var(--red); border-radius:99px; transition:width .3s; }
+.pf-sp { font-size:12px; color:var(--gray2); text-align:right; margin-top:-2px; }
+html body .pf-ark .pf-t { font-size:24px; line-height:1.25; font-weight:500; color:var(--black); margin:6px 0 4px; }
+.pf-frv { color:#9A9590; font-weight:400; }
+html body .pf-ark .pf-lab { font-size:15px; color:var(--black); }
+html body .pf-ark .pf-chips { flex-wrap:nowrap; overflow-x:auto; scrollbar-width:none; padding:2px 1px 4px; }
+html body .pf-ark .pf-chips::-webkit-scrollbar { display:none; }
+html body .pf-ark .pf-chip { flex:none; white-space:nowrap; text-align:center; height:34px !important; min-height:34px !important; padding:0 14px !important; font-size:13px !important; line-height:1 !important; }   /* små chips (Ida 11/11); trykfeltet er større end chippen via ::before */
+html body .pf-ark .pf-chip::before { inset:-6px -2px; }
+html body .pf-ark .pf-klar { padding:26px 0 10px; }
+   /* margin:auto centrerer uden at skære toppen af, når arket er højere end skærmen */
 html body .ark.vk-profil .ark-streg { display:none !important; }
 .ark-kvit { font-size:12.5px; color:var(--red); margin-top:10px; display:flex; align-items:center; gap:7px; min-height:18px; }
 .ark-ekstra { display:flex; flex-direction:column; gap:8px; }
@@ -35073,7 +35087,7 @@ async function velkomstStart() {
 let PF = null;
 const PF_MDR = ["januar","februar","marts","april","maj","juni","juli","august","september","oktober","november","december"];
 function pfKladdeNoegle() { try { return nsKey("profil_kladde"); } catch (e) { return "profil_kladde_X"; } }
-function pfKladdeGem() { try { if (PF) { const fu = Object.assign({}, PF.f); delete fu.pw; localStorage.setItem(pfKladdeNoegle(), JSON.stringify({ trin: PF.trin, f: fu })); } } catch (e) {} }   /* adgangskoden gemmes ALDRIG i kladden */
+function pfKladdeGem() { try { if (PF) { const fu = Object.assign({}, PF.f); delete fu.pw; localStorage.setItem(pfKladdeNoegle(), JSON.stringify({ trin: PF.trin, sp: PF.sp || 0, f: fu })); } } catch (e) {} }   /* adgangskoden gemmes ALDRIG i kladden */
 function pfKladdeHent() { try { return JSON.parse(localStorage.getItem(pfKladdeNoegle()) || "null"); } catch (e) { return null; } }
 async function pfMail() { try { const r = await sb.auth.getUser(); return String((r && r.data && r.data.user && r.data.user.email) || "").toLowerCase(); } catch (e) { return ""; } }
 async function pfRaekkeGem(navn, skema, svar) {
@@ -35119,9 +35133,47 @@ async function profilFlowStart() {
       branche: (butik && butik.branche) || "", branche_andet: (butik && butik.branche_andet) || "", forretningstype: (butik && butik.forretningstype) || d.forretningstype || "",
       inviter: "", kolleger: [{ navn: "", mail: "" }, { navn: "", mail: "" }] }, (k && k.f) || {}) };
   while (PF.f.kolleger.length < 2) PF.f.kolleger.push({ navn: "", mail: "" });
-  if (k && k.trin && !pw) PF.trin = Math.min(k.trin, pfAntal());
+  PF.sp = 0;
+  if (k && k.trin && !pw) { PF.trin = Math.min(k.trin, pfAntal()); PF.sp = Math.max(0, Math.min(parseInt(k.sp, 10) || 0, pfSkaerme().length - 1)); }
   pfTegn();
 }
+/* ÉT SPØRGSMÅL PR. SKÆRM (Idas klik 11/11, bud 1 i artifact NyWuDfXvxyAK8F12nPnN7C: »spørgsmålene er for små og chipsene for store … kunne ikke engang se at der var et spørgsmål nederst«): hvert trin er delt i skærme; felter, der hører sammen, står på samme skærm. Data og gemning er som før (gemmes, når trinnets sidste skærm er besvaret). */
+function pfSkaerme(t) {
+  t = t == null ? PF.trin : t;
+  if (t === 0) return ["pw0"];
+  if (PF.ygt && !PF.kollega && t === pfAntal() && t > 2) return ["klar"];
+  if (t === 1) return ["navn", "foed", "rolle"].concat(PF.pw ? ["pw"] : []);
+  if (t === 2) return ["butik", "adr", "cvr", "branche", "koeb"];
+  return ["kolleger"];
+}
+function pfSkaerm() { const l = pfSkaerme(); return l[Math.max(0, Math.min(PF.sp || 0, l.length - 1))]; }
+function pfSidsteSkaerm() { return (PF.sp || 0) >= pfSkaerme().length - 1; }
+function pfSkaermKlar(sk) {
+  const f = PF.f;
+  switch (sk) {
+    case "navn": return !pfTom(f.navn) && !pfTom(f.efternavn);
+    case "foed": return !!pfDato();
+    case "rolle": return (f.ejer === "ja") || (f.ejer === "nej" && !pfTom(f.rolle));
+    case "pw": case "pw0": return String(f.pw || "").length >= 6;
+    case "butik": return !pfTom(f.butik_navn);
+    case "adr": return !pfTom(f.adresse) && /^\d{4}$/.test(String(f.postnr || "").trim()) && !pfTom(f.by);
+    case "cvr": return true;
+    case "branche": return !pfTom(f.branche) && (f.branche !== "Andet" || !pfTom(f.branche_andet));
+    case "koeb": return !pfTom(f.forretningstype);
+    default: return true;
+  }
+}
+function pfSkaermFejl(sk) {
+  const f = PF.f;
+  if (sk === "foed") return "Vælg din fødselsdag med dag, måned og år.";
+  if (sk === "rolle") return f.ejer === "nej" ? "Skriv din rolle i forretningen." : "Vælg din rolle.";
+  if (sk === "adr") return "Skriv adresse, postnr. med 4 cifre og by.";
+  if (sk === "branche") return f.branche === "Andet" ? "Skriv, hvad forretningen sælger." : "Vælg, hvad forretningen sælger.";
+  if (sk === "koeb") return "Vælg, hvor kunderne kan købe.";
+  if (sk === "pw" || sk === "pw0") return "Mindst 6 tegn.";
+  return "Udfyld feltet for at gå videre.";
+}
+function pfKnapTekst() { if (!(pfSidsteSkaerm() && PF.trin === pfAntal())) return "Næste"; return (PF.ygt && !PF.kollega) ? "Start" : "Start første lektion"; }
 function pfAntal() { return PF.kollega ? 1 : (PF.ygt ? 3 : 2); }   /* YGT: Om dig · Om virksomheden · Kolleger · Så er du klar (Ida 3/11, tegning JtzXmECoWxj1wXJ8TfUeV9) */
 function pfFelt(id, lab, v, o) {
   o = o || {};
@@ -35160,7 +35212,7 @@ function pfKlar() {
   /* SIDSTE SIDE VISER KODEN TIL KOLLEGERNE (Ida 8/11) — intet at udfylde */
   return true;
 }
-function pfKnapOpdat() { try { const k = document.getElementById("pfNaeste"); if (!k) return; const ok = pfKlar(); k.classList.toggle("laast", !ok); k.setAttribute("aria-disabled", ok ? "false" : "true"); } catch (e) {} }
+function pfKnapOpdat() { try { const k = document.getElementById("pfNaeste"); if (!k) return; const ok = pfSkaermKlar(pfSkaerm()); k.classList.toggle("laast", !ok); k.setAttribute("aria-disabled", ok ? "false" : "true"); } catch (e) {} }
 function pfInput(id, v) {
   if (!PF) return;
   /* FØRSTE BOGSTAV ER ALTID STORT — OGSÅ I DET, DER GEMMES (Ida 10/11): feltets egen oninput løber FØR sidens fælles regel, så kladden fik det lille bogstav og tegnede det igen ved næste trin */
@@ -35176,15 +35228,18 @@ function pfInput(id, v) {
   const fe = document.getElementById("pfFejl"); if (fe) fe.textContent = "";
   if (id === "branche_andet") { clearTimeout(PF.tAndet); PF.tAndet = setTimeout(pfAndetGem, 700); }   /* Andet gemmes, mens der skrives — og »Gemt« står først, når basen har svaret */
 }
-function pfValg(id, k) { if (!PF) return; PF.f[id] = k; pfKladdeGem(); pfTegn(); }
+function pfValg(id, k) { if (!PF) return; PF.f[id] = k; pfKladdeGem(); pfTegn();
+  /* chips går selv videre, når der er valgt (bud 1) — undtagen »Andet«, hvor der skal skrives */
+  if ((id === "ejer" && k === "ja") || (id === "branche" && k !== "Andet") || id === "forretningstype") { clearTimeout(PF.tVidere); PF.tVidere = setTimeout(function () { if (PF && pfSkaermKlar(pfSkaerm())) pfNaeste(); }, 260); }
+}
 async function pfAndetGem() {
   const st = document.getElementById("pfAndetSt"); if (!PF || !String(PF.f.branche_andet || "").trim()) { if (st) st.innerHTML = ""; return; }
   try { await pfButikGem(); const s2 = document.getElementById("pfAndetSt"); if (s2) s2.innerHTML = '<span class="pf-fb">' + energidaFlueben(10) + '</span>Gemt'; }
   catch (e) { const s2 = document.getElementById("pfAndetSt"); if (s2) s2.innerHTML = '<span class="pf-ikke">Ikke gemt endnu. Det står stadig i feltet.</span>'; }
 }
-function pfPwHtml(f) {
+function pfPwHtml(f, labTekst) {
   return '<input type="email" id="pf_mailskjult" autocomplete="username" value="' + esc(PF.mail || "") + '" aria-hidden="true" tabindex="-1" style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;">'
-    + '<label class="pf-fl"><span class="pf-lab">Vælg din adgangskode</span><span style="position:relative;display:block;"><input class="pf-in" id="pf_pw" type="' + (PF.pwVis ? 'text' : 'password') + '" autocomplete="new-password" placeholder="Mindst 6 tegn" value="' + esc(f.pw || "") + '" oninput="pfInput(\'pw\', this.value)" style="padding-right:48px;">'
+    + '<label class="pf-fl"><span class="pf-lab">' + esc(labTekst || "Vælg din adgangskode") + '</span><span style="position:relative;display:block;"><input class="pf-in" id="pf_pw" type="' + (PF.pwVis ? 'text' : 'password') + '" autocomplete="new-password" placeholder="Mindst 6 tegn" value="' + esc(f.pw || "") + '" oninput="pfInput(\'pw\', this.value)" style="padding-right:48px;">'
     + '<button type="button" class="mq-tap" onclick="pfPwVis()" title="Vis adgangskoden" aria-label="Vis adgangskoden" style="position:absolute;right:4px;top:0;bottom:0;width:44px;background:none;border:0;padding:0;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--gray2);">' + (typeof authOejeSvg === "function" ? authOejeSvg(!!PF.pwVis) : "") + '</button></span></label>';
 }
 function pfTegn() {
@@ -35194,39 +35249,46 @@ function pfTegn() {
   document.body.classList.add("pf-aaben");
   const n = pfAntal(), t = PF.trin, f = PF.f;
   const off = 0, tv = t + off, nv = n + off;   /* ADGANGSKODEN ER ET FELT PÅ SAMME SIDE SOM NAVNET (Ida 10/11: »adgangskoden skal ikke have sin egen side«) — ikke et eget trin */
-  const top = '<div class="pf-top"><span>' + (t > 1 ? '<button type="button" class="pf-tb mq-tap" onclick="pfTilbage()">Tilbage</button>' : '<span class="pf-tt">Opret din profil</span>') + '</span><span class="pf-tr">Trin ' + tv + ' af ' + nv + '</span></div><div class="pf-spor"><i style="width:' + Math.round(tv / nv * 100) + '%"></i></div>';
+  const skl = pfSkaerme(), sp = Math.max(0, Math.min(PF.sp || 0, skl.length - 1)), sk = skl[sp];
+  const forste = (t <= 1 && sp === 0);
+  /* TOP (bud 1): Tilbage eller »Opret din profil« · Trin X af N · én streg pr. trin · Spørgsmål i af M */
+  const spor = '<div class="pf-spor3">' + Array.from({ length: nv }, function (_, k) { const tr = k + 1; const fyld = tr < tv ? 100 : (tr > tv ? 0 : Math.round(((sk === "klar" ? skl.length : sp + 1) / skl.length) * 100)); return '<span><i style="width:' + fyld + '%"></i></span>'; }).join("") + '</div>';
+  const top = '<div class="pf-top"><span>' + (!forste ? '<button type="button" class="pf-tb mq-tap" onclick="pfTilbage()">Tilbage</button>' : '<span class="pf-tt">Opret din profil</span>') + '</span><span class="pf-tr">Trin ' + tv + ' af ' + nv + '</span></div>' + spor
+    + (skl.length > 1 ? '<div class="pf-sp">Spørgsmål ' + (sp + 1) + ' af ' + skl.length + '</div>' : '');
   /* ALLE FELTER ER ENS (Ida 3/11: »ALLE ting skal for helvede være ens … du skal da ikke stille 2 spørgsmål i samme pop-up med forskellig farve og størrelse«): ét lille grå ord over hvert felt, ingen skillelinjer, ingen hjælpelinjer; trinnets navn er den eneste store tekst */
   const lab = function (x) { return '<span class="pf-lab">' + esc(x) + '</span>'; };
   const ygtTrin = PF.ygt && !PF.kollega;
-  let krop = "", knap = (t === n) ? (ygtTrin ? "Start" : "Start første lektion") : "Næste";
+  let krop = "", knap = pfKnapTekst();
   if (t === 0) {
     /* ADGANGSKODEN ER FOERSTE SIDE I »OPRET DIN PROFIL« (Ida 8/11: »vælg adgangskode skal være en del af 1. side … næste side skal så være om dig«) — samme felt og oeje som loginet; skjult mailfelt, saa noeglering gemmer koden paa den rigtige konto */
     krop = '<div class="pf-t">Vælg din adgangskode</div>'
       + '<input type="email" id="pf_mailskjult" autocomplete="username" value="' + esc(PF.mail || "") + '" aria-hidden="true" tabindex="-1" style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;">'
       + '<label class="pf-fl"><span class="pf-lab">Adgangskode</span><span style="position:relative;display:block;"><input class="pf-in" id="pf_pw" type="' + (PF.pwVis ? 'text' : 'password') + '" autocomplete="new-password" placeholder="Mindst 6 tegn" value="' + esc(f.pw || "") + '" oninput="pfInput(\'pw\', this.value)" onkeydown="if(event.key===\'Enter\'){event.preventDefault();pfNaeste();}" style="padding-right:48px;">'
       + '<button type="button" class="mq-tap" onclick="pfPwVis()" title="Vis adgangskoden" aria-label="Vis adgangskoden" style="position:absolute;right:4px;top:0;bottom:0;width:44px;background:none;border:0;padding:0;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--gray2);">' + (typeof authOejeSvg === "function" ? authOejeSvg(!!PF.pwVis) : "") + '</button></span></label>';
-  } else if (ygtTrin && t === n) {
-    /* SIDSTE SIDE: KODEN TIL TO KOLLEGER (Ida 8/11: »her er din kode: xxxx som man kan give til 2 kollegaer og de skal bruge den på b2b.energida.dk«) — den gamle maade med kode, ikke invitationer */
-    const kode = String(currentKode || "");
-    krop = '<div class="pf-klar"><div class="pf-ok">' + energidaFlueben(26) + '</div><div class="pf-t">Så er du klar</div></div>'
-      + '<div class="pf-fl"><span class="pf-lab">Her er din kode</span><div class="pf-kode" style="font-size:22px;letter-spacing:2px;text-align:center;padding:14px 10px;border:1px solid var(--border);border-radius:16px;background:#fff;color:var(--black);">' + esc(kode) + '</div></div>'
-      + '<div class="pf-fl"><span class="pf-lab">Giv koden til op til to kolleger. De bruger den på b2b.energida.dk under “Jeg har en kode”.</span></div>';
-  } else if (t === 1) {
+  } else if (sk === "klar") {
+    /* SÅ ER DU KLAR (Ida 11/11): ingen kollegakode og ingen tekst om kolleger her — koden står i velkomstmailen */
+    krop = '<div class="pf-klar"><div class="pf-ok">' + energidaFlueben(26) + '</div><div class="pf-t">Så er du klar</div></div>';
+  } else if (sk === "navn") {
+    krop = '<div class="pf-t">Om dig</div>' + pfFelt("navn", "Fornavn", f.navn) + pfFelt("efternavn", "Efternavn", f.efternavn);
+  } else if (sk === "foed") {
+    krop = '<div class="pf-t">Fødselsdag</div><div class="pf-tre">' + pfVaelg("dag", "Dag", f.dag, pfDage()) + pfVaelg("mdr", "Måned", f.mdr, pfMdr()) + pfVaelg("aar", "År", f.aar, pfAar()) + '</div>';
+  } else if (sk === "rolle") {
     const butikNavn = String(f.butik_navn || "").trim();
-    krop = '<div class="pf-t">Om dig</div>'
-      + pfFelt("navn", "Fornavn", f.navn) + pfFelt("efternavn", "Efternavn", f.efternavn)
-      + '<div class="pf-fl">' + lab("Fødselsdag") + '<div class="pf-tre">' + pfVaelg("dag", "Dag", f.dag, pfDage()) + pfVaelg("mdr", "Måned", f.mdr, pfMdr()) + pfVaelg("aar", "År", f.aar, pfAar()) + '</div></div>'
-      + '<div class="pf-fl">' + lab("Hvad er din rolle i " + (butikNavn || "forretningen") + "?") + pfChips("ejer", [{ k: "ja", n: "Indehaver" }, { k: "nej", n: "Andet" }], f.ejer) + '</div>'
-      + (f.ejer === "nej" ? pfFelt("rolle", "Din rolle", f.rolle) : '')
-      + (PF.pw ? pfPwHtml(f) : '');
-  } else if (t === 2) {
-    krop = '<div class="pf-t">Om virksomheden</div>'
-      + pfFelt("butik_navn", "Forretningens navn", f.butik_navn)
-      + pfFelt("adresse", "Adresse", f.adresse) + '<div class="pf-to">' + pfFelt("postnr", "Postnr.", f.postnr, { num: true, max: 4 }) + pfFelt("by", "By", f.by) + '</div>'
-      + pfFelt("cvr", "CVR (frivilligt)", f.cvr, { ph: "8 cifre", num: true, max: 8 })
-      + '<div class="pf-fl">' + lab("Hvad sælger forretningen?") + pfChips("branche", VK_BRANCHER, f.branche) + '</div>'
-      + (f.branche === "Andet" ? pfFelt("branche_andet", "Skriv, hvad forretningen sælger", f.branche_andet) + '<div class="pf-gemt" id="pfAndetSt"></div>' : '')
-      + '<div class="pf-fl">' + lab("Hvor kan kunderne købe dine produkter?") + pfChips("forretningstype", VK_KOEB, f.forretningstype) + '</div>';
+    krop = '<div class="pf-t">Hvad er din rolle i ' + esc(butikNavn || "forretningen") + '?</div>' + pfChips("ejer", [{ k: "ja", n: "Indehaver" }, { k: "nej", n: "Andet" }], f.ejer)
+      + (f.ejer === "nej" ? pfFelt("rolle", "Din rolle", f.rolle) : '');
+  } else if (sk === "pw") {
+    krop = '<div class="pf-t">Vælg din adgangskode</div>' + pfPwHtml(f, "Adgangskode");
+  } else if (sk === "butik") {
+    krop = '<div class="pf-t">Forretningens navn</div>' + pfFelt("butik_navn", "", f.butik_navn);
+  } else if (sk === "adr") {
+    krop = '<div class="pf-t">Om virksomheden</div>' + pfFelt("adresse", "Adresse", f.adresse) + '<div class="pf-to">' + pfFelt("postnr", "Postnr.", f.postnr, { num: true, max: 4 }) + pfFelt("by", "By", f.by) + '</div>';
+  } else if (sk === "cvr") {
+    krop = '<div class="pf-t">CVR <span class="pf-frv">(frivilligt)</span></div>' + pfFelt("cvr", "", f.cvr, { ph: "8 cifre", num: true, max: 8 });
+  } else if (sk === "branche") {
+    krop = '<div class="pf-t">Hvad sælger forretningen?</div>' + pfChips("branche", VK_BRANCHER, f.branche)
+      + (f.branche === "Andet" ? pfFelt("branche_andet", "Skriv, hvad forretningen sælger", f.branche_andet) + '<div class="pf-gemt" id="pfAndetSt"></div>' : '');
+  } else if (sk === "koeb") {
+    krop = '<div class="pf-t">Hvor kan kunderne købe dine produkter?</div>' + pfChips("forretningstype", VK_KOEB, f.forretningstype);
   } else {
     krop = '<div class="pf-t">Kolleger</div>'
       + f.kolleger.map(function (c, i) { return pfFelt("kol" + i + "_navn", "Kollega " + (i + 1) + " · Navn", c.navn) + pfFelt("kol" + i + "_mail", "E-mail", c.mail, { mail: true }); }).join("");
@@ -35234,12 +35296,12 @@ function pfTegn() {
   el.innerHTML = '<div class="pf-ark" role="dialog" aria-label="Din profil">' + top + krop + '<div class="pf-fejl" id="pfFejl"></div><button type="button" class="pf-knap mq-tap" id="pfNaeste" onclick="pfNaeste()">' + knap + '</button></div>';
   try { el.scrollTop = 0; } catch (e) {}
   pfKnapOpdat();
-  if (t === 2 && f.branche === "Andet" && String(f.branche_andet || "").trim()) pfAndetGem();
+  if (sk === "branche" && f.branche === "Andet" && String(f.branche_andet || "").trim()) pfAndetGem();
 }
 function pfPwVis() { if (!PF) return; const i = document.getElementById("pf_pw"); PF.pwVis = !PF.pwVis; if (i) { const v = i.value; PF.f.pw = v; } pfTegn(); try { const j = document.getElementById("pf_pw"); if (j) j.focus(); } catch (e) {} }
 function pfKollegaTil() { if (!PF || PF.f.kolleger.length >= 2) return; PF.f.kolleger.push({ navn: "", mail: "" }); pfKladdeGem(); pfTegn(); }
-function pfTilbage() { if (!PF || PF.trin <= 1) return; PF.trin--; pfKladdeGem(); pfTegn(); }   /* trin 1 (Om dig) har intet Tilbage — adgangskoden er gemt */
-function pfFejl(t) { const fe = document.getElementById("pfFejl"); if (fe) fe.textContent = t; const k = document.getElementById("pfNaeste"); if (k) { k.disabled = false; k.textContent = (PF && PF.trin === pfAntal()) ? "Start første lektion" : "Næste"; } }
+function pfTilbage() { if (!PF) return; if ((PF.sp || 0) > 0) { PF.sp--; } else { if (PF.trin <= 1) return; PF.trin--; PF.sp = pfSkaerme().length - 1; } pfKladdeGem(); pfTegn(); }   /* trin 1 (Om dig) har intet Tilbage — adgangskoden er gemt */
+function pfFejl(t) { const fe = document.getElementById("pfFejl"); if (fe) fe.textContent = t; const k = document.getElementById("pfNaeste"); if (k) { k.disabled = false; k.textContent = PF ? pfKnapTekst() : "Næste"; } }
 function pfDato() {
   const f = PF.f, dag = parseInt(f.dag, 10), md = parseInt(f.mdr, 10), aar = parseInt(f.aar, 10), nu = new Date().getFullYear();
   if (!dag || !md || !aar || String(f.aar).length !== 4) return null;
@@ -35266,6 +35328,13 @@ async function pfButikGem() {
 async function pfNaeste() {
   if (!PF) return;
   const f = PF.f, t = PF.trin, knap = document.getElementById("pfNaeste");
+  /* ÉN SKÆRM AD GANGEN (bud 1): inden for trinnet går Næste bare videre; trinnet gemmes på sin sidste skærm som før */
+  if (t !== 0 && !pfSidsteSkaerm()) {
+    const sk = pfSkaerm();
+    if (!pfSkaermKlar(sk)) { pfFejl(pfSkaermFejl(sk)); return; }
+    PF.sp = (PF.sp || 0) + 1; pfKladdeGem(); pfTegn(); return;
+  }
+  if (t !== 0 && !pfSkaermKlar(pfSkaerm())) { pfFejl(pfSkaermFejl(pfSkaerm())); return; }
   if (!pfKlar()) { pfFejl(t === 0 ? "Mindst 6 tegn." : "Udfyld alle felter for at gå videre."); return; }
   if (t === 0) {
     /* ADGANGSKODEN GEMMES, FOER MAN KOMMER VIDERE — samme kald og samme fejlsprog som arket (gemNyAdgangskodeInd) */
@@ -35296,7 +35365,7 @@ async function pfNaeste() {
     if (t === 1) await pfPersonGem();
     if (t === 2) await pfButikGem();
   } catch (e) { pfFejl("Det blev ikke gemt. Dine svar står stadig her. Prøv igen."); return; }
-  if (t < pfAntal()) { PF.trin++; pfKladdeGem(); pfTegn(); return; }
+  if (t < pfAntal()) { PF.trin++; PF.sp = 0; pfKladdeGem(); pfTegn(); return; }
   await pfSlut();
 }
 async function pfSlut() {
@@ -65471,7 +65540,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "3243";
+const APP_VERSION = "3244";
 const APP_BYGGET = "3. november";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_VERSION;   /* ingen dato (Ida 7/11: »hvorfor står der version 3. november?«) — datoen blev ikke rettet med, nummeret er sandheden */ } catch (e) {} });
 let NY_VERSION_KLAR = false;
