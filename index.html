@@ -63986,7 +63986,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "3206";
+const APP_VERSION = "3207";
 const APP_BYGGET = "3. november";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_VERSION;   /* ingen dato (Ida 7/11: »hvorfor står der version 3. november?«) — datoen blev ikke rettet med, nummeret er sandheden */ } catch (e) {} });
 let NY_VERSION_KLAR = false;
@@ -87903,7 +87903,7 @@ async function gamleKunderSend(knap) {
   if (mail && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(mail)) { sig("Skriv en rigtig mail, fx navn@butikken.dk."); document.getElementById("gkMail").focus(); return; }   /* MAILEN ER VALGFRI (Ida 26/10: »gemme leads uden mail«) — men står der en, skal den være rigtig */
   if (knap) knap.disabled = true; sig("Gemmer …");
   /* RIGTIGE FELTER (Ida 13/10: »hvor indtaster jeg kundens oplysninger – mail mm?«): kontaktperson · email · telefon er kontaktkortets egne felter */
-  const rk = { kunde: GK_PERSON ? navn : butik, kontaktperson: navn || null, email: mail || null, telefon: tlf || null, status: "Lead", source: GK_TAG ? "Gamle kunder" : null, kommentar: GK_TAG ? "Kode ikke sendt endnu" : null };
+  const rk = { kunde: GK_PERSON ? navn : butik, kontaktperson: navn || null, email: mail || null, telefon: tlf || null, status: crmStStandard(), source: GK_TAG ? "Gamle kunder" : null, kommentar: GK_TAG ? "Kode ikke sendt endnu" : null };
   const prod = (window.BF3_DROP_VALG || {}).gkProdukt || ""; if (prod) rk.produkt = prod;   /* produktet følger med (22/10) — samme felt som Hjems gamle lead-ark */
   if (GK_TAGS.length) rk._tags = GK_TAGS.slice();   /* egne tags følger med, også i offline-køen (gkIndsaet tager dem af, før rækken sendes) */
   let ok = await gkIndsaet(rk);
@@ -88043,8 +88043,7 @@ let CRM_VISNING = null, CRM_VIS_LOFTE = null, CRM_FILTER = { st: [], pr: [] }, C
 let KUNDE_INFO = {}, CRM_ADR = {}, CRM_ADR_LOFTE = null, CRM_INFO_LOFTE = null;
 function crmFarve(k) { return CRM_FARVER[k] || CRM_FARVER.gra; }
 function crmChip(tekst, farve) { const t = String(tekst || "").trim(); if (!t) return ""; const f = crmFarve(farve); return '<span class="crm2-p" style="background:' + f[0] + ';color:' + f[1] + '">' + esc(t) + '</span>'; }
-function crmStChip(st) { return crmChip(st, CRM_ST_FARVE[String(st || "").trim()] || "gra"); }
-function crmPrFarve(p) { return CRM_PR_FARVE[String(p || "").trim().toLowerCase()] || "gra"; }
+function crmStChip(st) { return crmChip(st, crmStFarve(st)); }
 function crmPrChips(liste) { return (liste || []).map(function (p) { return crmChip(p, crmPrFarve(p)); }).join(""); }
 function crmProdukter(v) { if (Array.isArray(v)) return v.map(function (x) { return String(x || "").trim(); }).filter(Boolean); return String(v || "").split(/\s*,\s*/).map(function (x) { return x.trim(); }).filter(Boolean); }
 function crmDatoTxt(iso) { if (!iso) return ""; try { const d = new Date(String(iso).slice(0, 10) + "T12:00:00"); if (isNaN(d)) return ""; const U = ["Søn.", "Man.", "Tirs.", "Ons.", "Tors.", "Fre.", "Lør."]; return U[d.getDay()] + " " + d.getDate() + ". " + ["jan.", "feb.", "mar.", "apr.", "maj", "jun.", "jul.", "aug.", "sep.", "okt.", "nov.", "dec."][d.getMonth()]; } catch (e) { return ""; } }
@@ -88166,7 +88165,7 @@ async function kunderneTegn(hurtig) {
   const el = document.getElementById("bsKunder"); if (!el) return;
   if (!hurtig) {
     try { await venterHent(); } catch (e) {} try { await kundePinsHent(); } catch (e) {}
-    try { await crmAdrHent(); } catch (e) {} try { await crmInfoHent(true); } catch (e) {}
+    try { await crmAdrHent(); } catch (e) {} try { await crmInfoHent(true); } catch (e) {} try { await crmValgHent(); } catch (e) {}
     try { if (typeof fetchCustomers === "function") { const fr = await fetchCustomers(); if (Array.isArray(fr) && (fr.length || !plKontakter().length)) CUSTOMERS = fr; } } catch (e) {}   /* frisk hentning ved hver åbning: en rettelse i basen står på tabel OG kort */
     try { crmTagsHent(); } catch (e) {} try { crmVisningHent(); } catch (e) {}
   }
@@ -88204,9 +88203,9 @@ let CRM_SOEG_T = null;
 function crmSoeg(v) { BS_KUNDE_SOEG = v; clearTimeout(CRM_SOEG_T); CRM_SOEG_T = setTimeout(function () { kunderneTegn(true); }, 60); }
 /* ---------- sortering og visning ---------- */
 function crmSorter(k) { const v = crmVis(); if (v.sort && v.sort.k === k) { if (v.sort.ned) v.sort = { k: "", ned: false }; else v.sort.ned = true; } else v.sort = { k: k, ned: false }; crmPopLuk(); try { kunderneTegn(true); } catch (e) {} crmVisningGem(); }
-function crmKolSkift(k) { const v = crmVis(), i = v.kolonner.indexOf(k); if (i > -1) v.kolonner.splice(i, 1); else v.kolonner.push(k); const p = document.getElementById("crmPop"); const rul = p && p.querySelector(".crm2-pop-rul"); const top = rul ? rul.scrollTop : 0; try { kunderneTegn(true); } catch (e) {} const an = document.querySelector(".crm2-ik[aria-label=Visning]"); if (p && an) { crmVisningAabn(an, top); } crmVisningGem(); }
+function crmKolSkift(k) { const v = crmVis(), i = v.kolonner.indexOf(k); if (i > -1) v.kolonner.splice(i, 1); else v.kolonner.push(k); try { kunderneTegn(true); } catch (e) {} crmPanelTegn(); crmVisningGem(); }
 /* ---------- popover ---------- */
-function crmPopLuk() { const p = document.getElementById("crmPop"); if (p) p.remove(); document.removeEventListener("pointerdown", crmPopUd, true); document.removeEventListener("keydown", crmPopTast, true); window.removeEventListener("resize", crmPopLuk); const r = document.getElementById("bsKunder"); if (r) r.querySelectorAll(".crm2-aktiv").forEach(function (e) { e.classList.remove("crm2-aktiv"); }); }
+function crmPopLuk() { CRM_PANEL = null; const p = document.getElementById("crmPop"); if (p) p.remove(); document.removeEventListener("pointerdown", crmPopUd, true); document.removeEventListener("keydown", crmPopTast, true); window.removeEventListener("resize", crmPopLuk); const r = document.getElementById("bsKunder"); if (r) r.querySelectorAll(".crm2-aktiv").forEach(function (e) { e.classList.remove("crm2-aktiv"); }); }
 function crmPopUd(e) { const p = document.getElementById("crmPop"); if (p && p.contains(e.target)) return; if (e.target.closest && e.target.closest("[data-crm-anker]")) { return; } crmPopLuk(); }
 function crmPopTast(e) { if (e.key === "Escape") { e.stopPropagation(); crmPopLuk(); } }
 function crmPopAabn(anker, html, klasse) {
@@ -88221,16 +88220,17 @@ function crmFlereAabn(an) { const aktiv = BS_KUNDE_CHIP || "alle"; const d = crm
   crmPopAabn(an, '<div class="crm2-pop-rul">' + d.rest.map(function (f) { return '<button type="button" class="crm2-it" onclick="crmFaneVaelg(\'' + esc(f[0]).replace(/'/g, "\\'") + '\')"><span class="crm2-fane">' + esc(f[1]) + '</span></button>'; }).join("") + '</div>', "crm2-pop-smal"); }
 function crmSortAabn(an) { const v = crmVis(); crmPopAabn(an, '<div class="crm2-pop-rul">' + CRM_KOL.filter(function (c) { return CRM_KOL_STD.indexOf(c.k) > -1 || v.kolonner.indexOf(c.k) > -1; }).map(function (c) { const pil = v.sort && v.sort.k === c.k ? (v.sort.ned ? "↓" : "↑") : ""; return '<button type="button" class="crm2-it crm2-it-tekst" onclick="crmSorter(\'' + c.k + '\')"><span class="crm2-ikon">' + CRM_IK[c.ik] + '</span><span>' + esc(c.n) + '</span><em>' + pil + '</em></button>'; }).join("") + '</div>', "crm2-pop-smal hoejre"); }
 function crmFilterAabn(an) {
-  const stL = []; CRM_ST_GRP.forEach(function (g) { g[1].forEach(function (s) { stL.push(s); }); });
+  const stL = []; crmStGrupper().forEach(function (g) { g[1].forEach(function (s) { stL.push(s); }); });
   const chips = function (liste, felt, farve) { return liste.map(function (t) { const on = CRM_FILTER[felt].indexOf(t) > -1; return '<button type="button" class="crm2-it crm2-fchip' + (on ? ' h' : '') + '" onclick="crmFilterSkift(\'' + felt + '\',this.getAttribute(\'data-v\'))" data-v="' + esc(t) + '">' + crmChip(t, farve(t)) + '</button>'; }).join(""); };
-  crmPopAabn(an, '<div class="crm2-pop-rul"><div class="crm2-gh">Status</div>' + chips(stL, "st", function (t) { return CRM_ST_FARVE[t] || "gra"; }) + '<div class="crm2-gh">Produkt</div>' + chips(CRM_PR_LISTE, "pr", crmPrFarve) + '</div>', "crm2-pop-smal hoejre");
+  crmPopAabn(an, '<div class="crm2-pop-rul"><div class="crm2-gh">Status</div>' + chips(stL, "st", crmStFarve) + '<div class="crm2-gh">Produkt</div>' + chips(crmPrListe(), "pr", crmPrFarve) + '</div>', "crm2-pop-smal hoejre");
 }
 function crmFilterSkift(felt, v) { const a = CRM_FILTER[felt], i = a.indexOf(v); if (i > -1) a.splice(i, 1); else a.push(v); const p = document.getElementById("crmPop"); const rul = p && p.querySelector(".crm2-pop-rul"); const top = rul ? rul.scrollTop : 0; kunderneTegn(true); const an = document.querySelector(".crm2-ik[aria-label=Filtrér]"); if (an) { crmFilterAabn(an); const r2 = document.querySelector("#crmPop .crm2-pop-rul"); if (r2) r2.scrollTop = top; } }
-function crmVisningAabn(an, rulTop) {
+function crmVisningHtml() {
   const v = crmVis();
-  const p = crmPopAabn(an, '<div class="crm2-pop-hd">Visning</div><div class="crm2-pop-rul">' + CRM_KOL.filter(function (c) { return !c.fast; }).map(function (c) { const on = v.kolonner.indexOf(c.k) > -1; return '<button type="button" class="crm2-it crm2-it-tekst" onclick="crmKolSkift(\'' + c.k + '\')"><span class="crm2-ikon">' + CRM_IK[c.ik] + '</span><span>' + esc(c.n) + '</span><span class="crm2-vip' + (on ? ' on' : '') + '" aria-hidden="true"></span></button>'; }).join("") + '</div>', "crm2-pop-smal hoejre");
-  if (rulTop) { const r = p.querySelector(".crm2-pop-rul"); if (r) r.scrollTop = rulTop; }
+  return crmPanelHd("Visning") + '<div class="crm2-pop-rul">' + CRM_KOL.filter(function (c) { return !c.fast; }).map(function (c) { const on = v.kolonner.indexOf(c.k) > -1; return '<button type="button" class="crm2-it crm2-it-tekst" onclick="crmKolSkift(\'' + c.k + '\')"><span class="crm2-ikon">' + CRM_IK[c.ik] + '</span><span>' + esc(c.n) + '</span><span class="crm2-vip' + (on ? ' on' : '') + '" aria-hidden="true"></span></button>'; }).join("")
+    + '<div class="crm2-ln"></div><button type="button" class="crm2-it crm2-it-tekst" onclick="crmPanel(\'egenskaber\')"><span class="crm2-ikon">' + CRM_IK.sett + '</span><span>Rediger egenskaber</span><span class="crm2-vt">' + CRM_PIL_H + '</span></button></div>';
 }
+function crmVisningAabn(an) { crmPopAabn(an, crmVisningHtml(), "crm2-pop-smal crm2-pop-panel hoejre"); CRM_PANEL = { side: "visning", felt: "", n: "" }; }
 /* ---------- klik i tabellen ---------- */
 function crmAabnRaekke(key) { const r = CRM_RK[key]; if (!r) return; crmPopLuk(); if (r.erKode) kundeSideVis(r.kode); else openModal(r.id); }
 function crmKlik(e) {
@@ -88250,18 +88250,18 @@ function crmCelleAabn(td, r, k) {
   if (k === "naeste") return crmDatoVaelger(td, r);
   crmTekstRet(td, r, k);
 }
-function crmGruppeHtml(grp, valgt, fn) { return grp.map(function (g) { return '<div class="crm2-grp"><div class="crm2-gh">' + esc(g[0]) + '</div>' + g[1].map(function (t) { return '<button type="button" class="crm2-it' + (String(t) === String(valgt) ? ' h' : '') + '" data-v="' + esc(t) + '" onclick="' + fn + '(this.getAttribute(\'data-v\'))">' + crmChip(t, fn === "crmVaelgSt" ? (CRM_ST_FARVE[t] || "gra") : crmPrFarve(t)) + '</button>'; }).join("") + '</div>'; }).join(""); }
+function crmGruppeHtml(grp, valgt, fn) { return grp.map(function (g) { return '<div class="crm2-grp"><div class="crm2-gh">' + esc(g[0]) + '</div>' + g[1].map(function (t) { return '<button type="button" class="crm2-it' + (String(t) === String(valgt) ? ' h' : '') + '" data-v="' + esc(t) + '" onclick="' + fn + '(this.getAttribute(\'data-v\'))">' + crmChip(t, fn === "crmVaelgSt" ? crmStFarve(t) : crmPrFarve(t)) + '</button>'; }).join("") + '</div>'; }).join(""); }
 function crmSoegFelt(ph) { return '<div class="crm2-sok"><span class="crm2-sok-i">' + CRM_IK.sog + '</span><input type="text" placeholder="' + ph + '" autocomplete="off" oninput="crmDropFiltrer(this)"></div>'; }
 function crmDropFiltrer(inp) { const q = inp.value.trim().toLowerCase(); const p = document.getElementById("crmPop"); if (!p) return; p.querySelectorAll(".crm2-it").forEach(function (b) { b.style.display = !q || String(b.getAttribute("data-v") || "").toLowerCase().indexOf(q) > -1 ? "" : "none"; }); p.querySelectorAll(".crm2-grp").forEach(function (g) { g.style.display = [].some.call(g.querySelectorAll(".crm2-it"), function (b) { return b.style.display !== "none"; }) ? "" : "none"; }); }
 let CRM_AKTIV_KEY = "";
 function crmStDropdown(td, r) {
-  CRM_AKTIV_KEY = r.key; const grp = CRM_ST_GRP.map(function (g) { return [g[0], g[1].slice()]; });
+  CRM_AKTIV_KEY = r.key; const grp = crmStGrupper();
   if (r.st && !grp.some(function (g) { return g[1].indexOf(r.st) > -1; })) grp[1][1].push(r.st);   /* en kendt status uden for grupperne (fx Kunde) står under I gang, så den kan ses som valgt */
   crmPopAabn(td, crmSoegFelt("Søg i status …") + '<div class="crm2-pop-rul">' + crmGruppeHtml(grp, r.st, "crmVaelgSt") + '</div>', "crm2-pop-valg");
   setTimeout(function () { const f = document.querySelector("#crmPop .crm2-sok input"); if (f && window.matchMedia("(min-width:900px)").matches) f.focus(); }, 30);
 }
 function crmPrDropdown(td, r) {
-  CRM_AKTIV_KEY = r.key; const liste = CRM_PR_LISTE.slice(); r.produkt.forEach(function (p) { if (liste.indexOf(p) < 0) liste.push(p); });
+  CRM_AKTIV_KEY = r.key; const liste = crmPrListe(); r.produkt.forEach(function (p) { if (liste.indexOf(p) < 0) liste.push(p); });
   crmPopAabn(td, crmSoegFelt("Søg i produkt …") + '<div class="crm2-pop-rul">' + crmGruppeHtml([["", liste]], r.produkt[0] || "", "crmVaelgPr") + '</div>', "crm2-pop-valg");
   setTimeout(function () { const f = document.querySelector("#crmPop .crm2-sok input"); if (f && window.matchMedia("(min-width:900px)").matches) f.focus(); }, 30);
 }
@@ -88351,6 +88351,148 @@ async function crmSkrivInfo(r, k, v) {
     try { KUNDE_MAILS[kode] = ((ny.mail || "") + " " + (ny.kontakt || "")).toLowerCase(); } catch (e) {}
     crmSynk(kode, k); return true;
   } catch (e) { KUNDE_INFO[kode] = gl; try { husBesked("Det blev ikke gemt. Prøv igen."); } catch (e2) {} crmSynk(kode, k); return false; }
+}
+/* ===================== CRM · TRIN 2 — REDIGÉR VALG OG FARVER (Ida 11/11, Artifact »CRM bud 1 redigering« skærm 2-3) =====================
+   Statusser (med grupper) og produkter er data i Idas egen vane-række »crm_valg« (ingen ny tabel): [{ id:"valg", v:1, status:{ grupper:[{navn, valg:[{n,f,arkiv}]}], std }, produkt:{ valg:[{n,f,arkiv}] } }].
+   STATUSES og KONTAKT_TYPER (kontaktkortets chips) opdateres på stedet, så kort, Salg og tabel bruger samme ord.
+   Omdøb flytter kontakterne med (rækketælling bevist); slet = arkivér, og kontakter, der bruger valget, flyttes først, når der er svaret. Intet slettes aldrig i basen. */
+let CRM_VALG = null, CRM_VALG_LOFTE = null, CRM_PANEL = null, CRM_DRAG = null;
+function crmValgStd() {
+  return { id: "valg", v: 1, status: { std: "Lead", grupper: CRM_ST_GRP.map(function (g) { return { navn: g[0], valg: g[1].map(function (n) { return { n: n, f: CRM_ST_FARVE[n] || "gra" }; }) }; }) },
+    produkt: { valg: CRM_PR_LISTE.map(function (n) { return { n: n, f: CRM_PR_FARVE[n.toLowerCase()] || "gra" }; }) } };
+}
+function crmValg() { if (!CRM_VALG) CRM_VALG = crmValgStd(); return CRM_VALG; }
+function crmValgHent() { if (CRM_VALG_LOFTE) return CRM_VALG_LOFTE; CRM_VALG_LOFTE = (async function () { try { const v = await vaneRow("crm_valg"); const r = Array.isArray(v) ? v.find(function (x) { return x && x.id === "valg"; }) : null; if (r && r.status && r.produkt) { CRM_VALG = r; crmValgAnvend(true); } } catch (e) {} })(); return CRM_VALG_LOFTE; }
+function crmValgKlon() { return JSON.parse(JSON.stringify(crmValg())); }
+async function crmValgGem() { const ok = await vaneGemRow("crm_valg", [crmValg()]); if (ok === false) { try { visSyncFejl("crm_valg — valgene blev ikke gemt"); } catch (e) {} } return ok !== false; }
+function crmStGrupper() { return crmValg().status.grupper.map(function (g) { return [g.navn, g.valg.filter(function (v) { return !v.arkiv; }).map(function (v) { return v.n; })]; }); }
+function crmStAlle() { const a = []; crmValg().status.grupper.forEach(function (g) { g.valg.forEach(function (v) { a.push(v); }); }); return a; }
+function crmStFarve(n) { n = String(n || "").trim(); const v = crmStAlle().find(function (x) { return x.n === n; }); return v ? v.f : (CRM_ST_FARVE[n] || "gra"); }
+function crmPrListe() { return crmValg().produkt.valg.filter(function (v) { return !v.arkiv; }).map(function (v) { return v.n; }); }
+function crmPrFarve(p) { p = String(p || "").trim(); const v = crmValg().produkt.valg.find(function (x) { return x.n.toLowerCase() === p.toLowerCase(); }); return v ? v.f : (CRM_PR_FARVE[p.toLowerCase()] || "gra"); }
+function crmStStandard() { const s = crmValg().status.std; return s && crmStAlle().some(function (v) { return v.n === s && !v.arkiv; }) ? s : "Lead"; }
+/* STATUSES og kontaktkortets type-chips følger valgene (samme array, så ingen anden kode mister referencen) */
+function crmValgAnvend(udenTegn) {
+  try { const nu = []; crmStGrupper().forEach(function (g) { g[1].forEach(function (n) { nu.push(n); }); }); STATUSES.length = 0; nu.forEach(function (n) { STATUSES.push(n); }); } catch (e) {}
+  try { crmPrListe().forEach(function (n) { if (KONTAKT_TYPER.indexOf(n) < 0) KONTAKT_TYPER.splice(KONTAKT_TYPER.length - 1, 0, n); }); } catch (e) {}
+  if (!udenTegn) { try { kunderneTegn(true); } catch (e) {} }
+}
+function crmValgFelt(felt) { return felt === "status" ? "status" : "produkt"; }
+function crmValgListe(felt) { return felt === "status" ? crmStAlle() : crmValg().produkt.valg; }
+function crmValgFind(felt, n) { return crmValgListe(felt).find(function (v) { return v.n === n; }) || null; }
+function crmValgTal(felt, n) { return plKontakter().filter(function (c) { return String(c.produkt != null && felt === "produkt" ? (Array.isArray(c.produkt) ? c.produkt.join(", ") : c.produkt) : c[felt] || "").trim() === n; }).length; }
+async function crmValgAendr(aendr, fejltekst) {   /* gem en ændring af valgene; ved fejl rulles de tilbage */
+  const foer = crmValgKlon(); try { aendr(); } catch (e) { CRM_VALG = foer; return false; }
+  crmValgAnvend(true); const ok = await crmValgGem();
+  if (!ok) { CRM_VALG = foer; crmValgAnvend(true); try { husBesked(fejltekst || "Det blev ikke gemt. Prøv igen."); } catch (e) {} }
+  else { try { husKvit("Gemt"); } catch (e) {} }
+  try { kunderneTegn(true); } catch (e) {}
+  crmPanelTegn(); return ok;
+}
+function crmNavnLedigt(felt, n, undtagen) { const l = n.toLowerCase(); return !crmValgListe(felt).some(function (v) { return v.n.toLowerCase() === l && v.n !== undtagen; }); }
+async function crmValgNyt(felt, gi) {
+  let navn = "Nyt valg", i = 2; while (!crmNavnLedigt(felt, navn)) navn = "Nyt valg " + (i++);
+  const ok = await crmValgAendr(function () { const o = { n: navn, f: "gra" }; if (felt === "status") crmValg().status.grupper[gi].valg.push(o); else crmValg().produkt.valg.push(o); });
+  if (ok) { CRM_PANEL = { side: "kort", felt: felt, n: navn }; crmPanelTegn(); setTimeout(function () { const f = document.getElementById("crmValgNavn"); if (f) { f.focus(); f.select(); } }, 30); }
+}
+function crmValgFarveSaet(felt, n, f) { return crmValgAendr(function () { crmValgFind(felt, n).f = f; }); }
+function crmValgStdSaet(n) { return crmValgAendr(function () { crmValg().status.std = n; }); }
+function crmValgGruppeSaet(n, gi) { return crmValgAendr(function () { const g = crmValg().status.grupper; let v = null; g.forEach(function (x) { const i = x.valg.findIndex(function (y) { return y.n === n; }); if (i > -1) v = x.valg.splice(i, 1)[0]; }); if (v) g[gi].valg.push(v); }); }
+async function crmValgOmdoeb(felt, gl, ny) {
+  ny = String(ny || "").trim(); if (!ny || ny === gl) { crmPanelTegn(); return true; }
+  if (!crmNavnLedigt(felt, ny, gl)) { try { husBesked("Det navn findes allerede."); } catch (e) {} crmPanelTegn(); return false; }
+  const kol = crmValgFelt(felt); const rk = plKontakter().filter(function (c) { return String(Array.isArray(c[kol]) ? c[kol].join(", ") : (c[kol] || "")).trim() === gl; }); const tal = rk.length;
+  if (tal) {   /* kontakterne følger med (rækketælling, §5) */
+    try {
+      const patch = {}; patch[kol] = ny; const r = await sb.from("contacts").update(patch).eq(kol, gl).select("id");
+      if (r.error || !r.data || r.data.length !== tal) { try { const bak = {}; bak[kol] = gl; if (r.data && r.data.length) await sb.from("contacts").update(bak).eq(kol, ny).select("id"); } catch (e2) {} throw r.error || new Error("rækketal " + (r.data ? r.data.length : 0) + " ≠ " + tal); }
+      rk.forEach(function (c) { c[kol] = ny; });
+    } catch (e) { try { husBesked("Det blev ikke omdøbt. Kontakterne er uændrede."); } catch (e3) {} crmPanelTegn(); return false; }
+  }
+  const ok = await crmValgAendr(function () { const v = crmValgFind(felt, gl); v.n = ny; if (felt === "status" && crmValg().status.std === gl) crmValg().status.std = ny; });
+  if (ok) { CRM_PANEL = { side: "kort", felt: felt, n: ny }; crmPanelTegn(); crmSynk("", kol); }
+  else if (tal) { rk.forEach(function (c) { c[kol] = ny; }); /* kontakterne er allerede flyttet i basen; valget mangler kun navnet */ }
+  return ok;
+}
+/* SLET = ARKIVÉR. Bruger kontakter valget, spørges der først, hvor de skal hen. */
+async function crmValgSlet(felt, n) {
+  const tal = crmValgTal(felt, n); if (tal > 0) { CRM_PANEL = { side: "slet", felt: felt, n: n, tal: tal }; crmPanelTegn(); return; }
+  await crmValgArkiver(felt, n);
+}
+async function crmValgArkiver(felt, n) {
+  const ok = await crmValgAendr(function () { crmValgFind(felt, n).arkiv = true; if (felt === "status" && crmValg().status.std === n) crmValg().status.std = ""; });
+  if (ok) { CRM_PANEL = { side: "valg", felt: felt }; crmPanelTegn(); }
+}
+async function crmValgFlytOgArkiver(felt, n, til) {
+  const kol = crmValgFelt(felt); const rk = plKontakter().filter(function (c) { return String(Array.isArray(c[kol]) ? c[kol].join(", ") : (c[kol] || "")).trim() === n; }); const tal = rk.length;
+  if (til !== null) {
+    try { const patch = {}; patch[kol] = til; const r = await sb.from("contacts").update(patch).eq(kol, n).select("id");
+      if (r.error || !r.data || r.data.length !== tal) { try { const bak = {}; bak[kol] = n; if (r.data && r.data.length) await sb.from("contacts").update(bak).eq(kol, til).in("id", r.data.map(function (x) { return x.id; })).select("id"); } catch (e2) {} throw r.error || new Error("rækketal"); }
+      rk.forEach(function (c) { c[kol] = til; });
+    } catch (e) { try { husBesked("Kontakterne blev ikke flyttet. Intet er ændret."); } catch (e3) {} crmPanelTegn(); return; }
+  }
+  await crmValgArkiver(felt, n); crmSynk("", kol);
+}
+/* flyt i rækkefølgen (træk): før et valg, eller sidst i en gruppe */
+function crmValgFlyt(felt, n, tilGruppe, foerN) {
+  return crmValgAendr(function () {
+    let v = null;
+    if (felt === "status") { crmValg().status.grupper.forEach(function (g) { const i = g.valg.findIndex(function (y) { return y.n === n; }); if (i > -1) v = g.valg.splice(i, 1)[0]; }); }
+    else { const l = crmValg().produkt.valg; const i = l.findIndex(function (y) { return y.n === n; }); if (i > -1) v = l.splice(i, 1)[0]; }
+    if (!v) throw new Error("findes ikke");
+    let mal = felt === "status" ? crmValg().status.grupper[tilGruppe].valg : crmValg().produkt.valg;
+    let ix = foerN ? mal.findIndex(function (y) { return y.n === foerN; }) : -1; if (ix < 0) mal.push(v); else mal.splice(ix, 0, v);
+  });
+}
+/* ---------- paneler (Visning → Rediger egenskaber → Status/Produkt → valget) ---------- */
+const CRM_PIL_V = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>';
+const CRM_PIL_H = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>';
+const CRM_X = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>';
+const CRM_PLUS = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>';
+const CRM_GRIP = '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg>';
+function crmPanel(side, felt, n) { CRM_PANEL = { side: side, felt: felt || "", n: n || "" }; crmPanelTegn(); }
+function crmPanelLuk() { CRM_PANEL = null; crmPopLuk(); }
+function crmPanelHd(titel, tilbage) { return '<div class="crm2-pn-hd">' + (tilbage ? '<button type="button" class="crm2-ik crm2-pn-tb" aria-label="Tilbage" onclick="' + tilbage + '">' + CRM_PIL_V + '</button>' : '') + '<h3>' + titel + '</h3><button type="button" class="crm2-ik" aria-label="Luk" onclick="crmPanelLuk()">' + CRM_X + '</button></div>'; }
+function crmPanelHtml() {
+  const P = CRM_PANEL; if (!P) return "";
+  if (P.side === "visning") return crmVisningHtml();
+  if (P.side === "egenskaber") return crmPanelHd("Rediger egenskaber", "crmPanel('visning')") + '<div class="crm2-pop-rul">' + [["status", "Status", "st"], ["produkt", "Produkt", "lst"]].map(function (x) { return '<button type="button" class="crm2-it crm2-it-tekst" onclick="crmPanel(\'valg\',\'' + x[0] + '\')"><span class="crm2-ikon">' + CRM_IK[x[2]] + '</span><span>' + x[1] + '</span><span class="crm2-vt">' + CRM_PIL_H + '</span></button>'; }).join("") + '</div>';
+  const felt = P.felt, navnFelt = felt === "status" ? "Status" : "Produkt";
+  if (P.side === "valg") {
+    const rk = function (v, std) { return '<div class="crm2-vr" draggable="true" data-n="' + esc(v.n) + '" ondragstart="crmDragStart(event,\'' + felt + '\',this)" ondragover="event.preventDefault();this.classList.add(\'over\')" ondragleave="this.classList.remove(\'over\')" ondrop="crmDragSlip(event,\'' + felt + '\',this)" onclick="crmPanel(\'kort\',\'' + felt + '\',this.getAttribute(\'data-n\'))"><span class="crm2-gp">' + CRM_GRIP + '</span>' + crmChip(v.n, v.f) + '<span class="crm2-vt">' + (std ? 'Standard' : '') + CRM_PIL_H + '</span></div>'; };
+    let inde = "";
+    if (felt === "status") inde = crmValg().status.grupper.map(function (g, gi) { return '<div class="crm2-grp" data-gi="' + gi + '"><div class="crm2-gl" ondragover="event.preventDefault()" ondrop="crmDragSlip(event,\'status\',this)" data-gi="' + gi + '">' + esc(g.navn) + '<button type="button" class="crm2-pls" aria-label="Tilføj" onclick="crmValgNyt(\'status\',' + gi + ')">' + CRM_PLUS + '</button></div>' + g.valg.filter(function (v) { return !v.arkiv; }).map(function (v) { return rk(v, crmValg().status.std === v.n); }).join("") + '</div>'; }).join("");
+    else inde = '<div class="crm2-grp"><div class="crm2-gl" ondragover="event.preventDefault()" ondrop="crmDragSlip(event,\'produkt\',this)" data-gi="0">&nbsp;<button type="button" class="crm2-pls" aria-label="Tilføj" onclick="crmValgNyt(\'produkt\',0)">' + CRM_PLUS + '</button></div>' + crmValg().produkt.valg.filter(function (v) { return !v.arkiv; }).map(function (v) { return rk(v, false); }).join("") + '</div>';
+    return crmPanelHd(navnFelt, "crmPanel('egenskaber')") + '<div class="crm2-pop-rul"><div class="crm2-sek">Valg</div>' + inde + '</div>';
+  }
+  const v = crmValgFind(felt, P.n);
+  if (!v) { return crmPanelHd(navnFelt, "crmPanel('valg','" + felt + "')") + '<div class="crm2-pop-rul"></div>'; }
+  if (P.side === "slet") {
+    const andre = (felt === "status" ? crmStAlle() : crmValg().produkt.valg).filter(function (x) { return !x.arkiv && x.n !== P.n; });
+    return crmPanelHd(esc(P.n), "crmPanel('kort','" + felt + "','" + esc(P.n).replace(/'/g, "\\'") + "')") + '<div class="crm2-pop-rul"><div class="crm2-sek">' + P.tal + (P.tal === 1 ? ' kontakt bruger det' : ' kontakter bruger det') + '</div><div class="crm2-gl">Flyt dem til</div>'
+      + andre.map(function (x) { return '<button type="button" class="crm2-it" data-v="' + esc(x.n) + '" onclick="crmValgFlytOgArkiver(\'' + felt + '\',\'' + esc(P.n).replace(/'/g, "\\'") + '\',this.getAttribute(\'data-v\'))">' + crmChip(x.n, x.f) + '</button>'; }).join("")
+      + '<button type="button" class="crm2-it crm2-it-tekst" onclick="crmValgFlytOgArkiver(\'' + felt + '\',\'' + esc(P.n).replace(/'/g, "\\'") + '\',null)"><span>Slet uden at flytte dem</span></button></div>';
+  }
+  /* kort: navn · Slet · Standard · Gruppe · Farve */
+  const gi = felt === "status" ? crmValg().status.grupper.findIndex(function (g) { return g.valg.some(function (y) { return y.n === P.n; }); }) : -1;
+  const gnavn = gi > -1 ? crmValg().status.grupper[gi].navn : "";
+  return crmPanelHd(navnFelt, "crmPanel('valg','" + felt + "')") + '<div class="crm2-pop-rul"><input type="text" id="crmValgNavn" class="crm2-nm" value="' + esc(P.n).replace(/"/g, "&quot;") + '" autocomplete="off" onkeydown="if(event.key===\'Enter\'){this.blur()}" onblur="crmValgOmdoeb(\'' + felt + '\',\'' + esc(P.n).replace(/'/g, "\\'") + '\',this.value)">'
+    + '<button type="button" class="crm2-ai sl" onclick="crmValgSlet(\'' + felt + '\',\'' + esc(P.n).replace(/'/g, "\\'") + '\')">' + (typeof BS_SKRALD_SVG !== "undefined" ? BS_SKRALD_SVG : "") + '<span>Slet</span></button>'
+    + (felt === "status" ? '<button type="button" class="crm2-ai" onclick="crmValgStdSaet(\'' + esc(P.n).replace(/'/g, "\\'") + '\')"><span class="crm2-ikon">' + CRM_IK.st + '</span><span>Angiv som standard</span>' + (crmValg().status.std === P.n ? '<span class="crm2-vt">Standard</span>' : '') + '</button>'
+      + '<button type="button" class="crm2-ai" onclick="crmGruppeSkift(\'' + esc(P.n).replace(/'/g, "\\'") + '\')"><span class="crm2-ikon">' + CRM_IK.lst + '</span><span>Gruppe</span><span class="crm2-vt">' + esc(gnavn) + ' ' + CRM_PIL_H + '</span></button>' : '')
+    + '<div class="crm2-ln"></div><div class="crm2-gl">Farve</div><div class="crm2-cg">' + Object.keys(CRM_FARVER).map(function (k) { const f = CRM_FARVER[k]; return '<button type="button" class="crm2-fv' + (k === v.f ? ' v' : '') + '" style="background:' + f[0] + ';color:' + f[1] + '" onclick="crmValgFarveSaet(\'' + felt + '\',\'' + esc(P.n).replace(/'/g, "\\'") + '\',\'' + k + '\')"><span>' + f[2] + '</span>' + (k === v.f ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>' : '') + '</button>'; }).join("") + '</div></div>';
+}
+function crmGruppeSkift(n) { const g = crmValg().status.grupper; const gi = g.findIndex(function (x) { return x.valg.some(function (y) { return y.n === n; }); }); crmValgGruppeSaet(n, (gi + 1) % g.length); }
+function crmPanelTegn() {
+  const P = CRM_PANEL; const p = document.getElementById("crmPop"); if (!P || !p) return;
+  const rul = p.querySelector(".crm2-pop-rul"); const top = rul ? rul.scrollTop : 0;
+  p.innerHTML = crmPanelHtml(); const r2 = p.querySelector(".crm2-pop-rul"); if (r2) r2.scrollTop = top;
+}
+function crmDragStart(e, felt, el) { CRM_DRAG = { felt: felt, n: el.getAttribute("data-n") }; try { e.dataTransfer.setData("text/plain", CRM_DRAG.n); e.dataTransfer.effectAllowed = "move"; } catch (x) {} }
+function crmDragSlip(e, felt, el) {
+  e.preventDefault(); e.stopPropagation(); el.classList.remove("over"); const d = CRM_DRAG; CRM_DRAG = null; if (!d || d.felt !== felt) return;
+  if (el.classList.contains("crm2-vr")) { const foer = el.getAttribute("data-n"); if (foer === d.n) return; const gi = felt === "status" ? parseInt(el.closest(".crm2-grp").getAttribute("data-gi"), 10) : 0; crmValgFlyt(felt, d.n, gi, foer); }
+  else { crmValgFlyt(felt, d.n, parseInt(el.getAttribute("data-gi"), 10) || 0, null); }
 }
 /* ---------- pin ---------- */
 function crmPinSkift(key) { const r = CRM_RK[key]; if (!r) return; kundePinSkift(r.pinKey); }
@@ -91780,6 +91922,33 @@ html body .mails .mails-input:disabled { color:var(--gray2) !important; -webkit-
   .crm2-c.red:hover { box-shadow:none; }
   .crm2-pop { max-width:calc(100vw - 16px); }
 }
+
+/* trin 2: paneler til valg og farver (skærm 2-3 i »CRM bud 1 redigering«) */
+.crm2-pop-panel { width:344px; max-width:calc(100vw - 16px); padding:14px; border-radius:20px; }
+.crm2-pn-hd { display:flex; align-items:center; gap:4px; min-height:36px; margin-bottom:2px; }
+.crm2-pn-hd h3 { flex:1; margin:0; font-weight:400; font-size:15px; padding-left:6px; }
+.crm2-pn-hd .crm2-pn-tb + h3 { padding-left:0; }
+.crm2-pn-hd .crm2-ik { width:30px; height:30px; }
+.crm2-sek { font-size:13px; font-weight:400; color:#1A1A1A; padding:12px 6px 2px; }
+.crm2-gl { display:flex; align-items:center; justify-content:space-between; padding:10px 0 4px 6px; font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:#9A9590; font-weight:400; min-height:32px; }
+.crm2-pls { width:30px; height:30px; border-radius:999px; display:grid; place-items:center; color:#6F6B66; background:transparent; border:0; padding:0; cursor:pointer; box-shadow:none; position:relative; }
+.crm2-pls:hover { background:var(--crm-sand); }
+.crm2-vr { display:flex; align-items:center; gap:10px; min-height:40px; padding:0 10px 0 4px; border-radius:999px; cursor:pointer; }
+.crm2-vr:hover, .crm2-vr.over { background:var(--crm-sand); }
+.crm2-vr .crm2-gp { color:#C9C6C0; display:flex; cursor:grab; }
+.crm2-vt { margin-left:auto; display:flex; align-items:center; gap:6px; color:#9A9590; font-size:12px; font-weight:400; }
+.crm2-vt svg { color:#B9B5AF; }
+.crm2-nm { width:100%; height:40px; border-radius:999px; border:1.5px solid #8F8B85; padding:0 16px; font-family:Poppins,sans-serif; font-size:14px; font-weight:400; color:#1A1A1A; background:#fff; outline:0; margin:4px 0 6px; box-sizing:border-box; }
+.crm2-ai { display:flex; align-items:center; gap:12px; width:100%; height:38px; padding:0 12px 0 10px; border:0; background:transparent; border-radius:999px; font-family:Poppins,sans-serif; font-size:14px; font-weight:300; color:#1A1A1A; cursor:pointer; box-shadow:none; text-align:left; }
+.crm2-ai:hover { background:var(--crm-sand); }
+.crm2-ai .crm2-ikon { display:flex; color:#6F6B66; }
+.crm2-ai.sl { color:#FC2404; }
+.crm2-ln { height:1px; background:var(--crm-lys); margin:10px 0 4px; }
+.crm2-cg { display:grid; grid-template-columns:1fr 1fr; gap:8px; padding:8px 4px 2px; }
+.crm2-fv { height:32px; border-radius:999px; border:0; display:flex; align-items:center; justify-content:space-between; padding:0 12px; font-family:Poppins,sans-serif; font-size:13px; font-weight:400; cursor:pointer; box-shadow:none; position:relative; }
+.crm2-fv.v { box-shadow:inset 0 0 0 2px #1A1A1A; }
+.crm2-fv::before { content:""; position:absolute; inset:-4px 0; }
+@media (max-width:899px) { .crm2-pop-panel { width:calc(100vw - 16px); } .crm2-vr { min-height:44px; } .crm2-ai { height:44px; } .crm2-fv { height:44px; } .crm2-pls { width:44px; height:44px; } .crm2-pn-hd .crm2-ik { width:44px; height:44px; } }
 </style>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-hvid.png" alt=""><span>Henter…</span></div>
 <div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 8. oktober · 2600</div>

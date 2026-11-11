@@ -17,3 +17,6 @@ CUSTOMERS · KUNDE_INFO · CRM_ADR · KUNDE_PINS. Efter hver skrivning: `crmSynk
 
 ## Ingen DB-ændringer
 Ingen nye tabeller/kolonner/policies/Edge Functions. Kun eksisterende skema_svar-vanerækker (Idas egen række).
+
+## Trin 2 (v3207, ikke deployet)
+Statusser (med grupper) og produkter er data i vane-rækken `crm_valg` [{id:"valg", status:{std, grupper:[{navn, valg:[{n,f,arkiv}]}]}, produkt:{valg:[…]}}]. STATUSES og KONTAKT_TYPER opdateres på stedet (samme array). Omdøb flytter kontakter med (rækketal verificeres; ved afvisning rulles tilbage). Slet = arkivér; bruges valget, spørges der først, hvor kontakterne skal hen. Standard-status bruges kun i »Nyt lead« (Ny). Intet slettes i basen.
