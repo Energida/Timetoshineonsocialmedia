@@ -3816,3 +3816,8 @@ Mødet er en SIDE, aldrig en popup (Ida 21/9 kl. 22.30: »en slags moderne teams
 
 ## DE 4 BYGGESTEN = FIRE FLISER, FRA BYGGESTEN TIL CONTENT (Idas klik 21/9 kl. 23.40 på greb B, bud 8ngX4kxGpNVshUZhg1WVsV v2 + det byggede PaEwEEpVVDzBihsePtfNvs — LIVE v2220)
 Hver byggesten er sin egen flise i contentmodellens rækkefølge (USP · Målgruppen · Drivkraften · Værdierne = 1A · 1B · 2A · 2B): etiket · én streg · teksten (sort 14, forklaringer grå 13) · blyanten i hjørnet (28 px, trykfelt 44) · nederst efter en hårfin streg den indholdssøjle, byggestenen bliver til (pil ned + »1A · Produkt«). Fire side om side på computeren (to og to 900–1199), under hinanden på telefonen; hele bredden. Blyanten åbner det lille ark: Drivkraften og USP = arkets eget felt; Målgruppen og Værdierne = husets felter uden etiketter (popup-låsen), pladsholderne bærer ordene. Kundens egne eksempler og hooks er UDE af siden (Idas kommentar 21/9 kl. 23.27) og hører til på det nye menupunkt Indholdssøjlerne. »Fra byggesten til content«-kortet er selve siden nu; »Spørgsmålene« står som flise under, kun for Ida. VÆLTER 19/9-undtagelsen »De 4 byggesten = rækker i én kasse« — undtagelserne er nu to: fakta-boksen og lektionssidens Forløbet-boks.
+
+
+## Navigationsknapper = 56 (LÅST 12. november, Idas valg i artifact AYsLo8hWHexAskZxZvdM9g)
+
+Knapper med tekst, der fører videre eller tilbage (den røde primære og den grå sekundære), er **56 høje** i hele appen. Chips er låst på 32 og er ikke navigationsknapper. Ikonknapper er 36. Kilden i koden er blokken »NAVIGATIONSKNAPPER = 56« sidst i det sidste `<style>` i `index.html`; nye navigationsknapper føjes til den blok. Målet står også i MÅLKORT.md.

@@ -13,11 +13,12 @@ Kilden i koden er **MÅLKORT-BLOKKEN** sidst i det første `<style>` i `index.ht
 | **Hjælpetekst** | Poppins 12,5 / 400 / #6F6B66 · 4 under titlen |
 | **Felt** (.sk-input) | Poppins 13 / 400 / #1A1A1A · radius 14 · 1 px #DEDAD4 · luft 10/12 (40 til mikrofon til højre) · **mindst 44 høj** · aldrig kursiv · mikrofonen inde i feltet, grå |
 | **Feltflugt** | alle felter i samme flise starter og slutter på samme x (hook-valgets cirkel ligger INDE i feltet til venstre, 28 rund, 8 fra kanten) |
-| **Chip** | højde **32** · Poppins 12,5 / 400 · #6F6B66 · 1 px #DEDAD4 · radius 999 · luft **14** hver side (Ida 9/11, bud 2) · hvid · gap mellem chips 8 · én linje · valgt = mørkere grå ramme (aldrig fyldt) |
+| **Chip** | højde **32** · Poppins 12,5 / 400 · #6F6B66 · 1 px #DEDAD4 · radius 999 · luft **14** hver side (Ida 9/11, bud 2) · hvid · gap mellem chips 8 · én linje · IKKE valgt = hvid, aldrig baggrundsfarve · valgt = må være rød fyldt (#FC2404) med hvid tekst (Ida 12/11: »det var når den ikke var valgt må der ikke være baggrund. Valgt chip må godt være rød«); ældre valgte chips med mørkere grå ramme er stadig i orden |
 | **Plus-chip** (»Tilføj forslag/klip/scene/CTA«) | som chip + plus 14 × 14 grå, **6** mellem plus og tekst (ikke 8 + 8), venstrestillet i rækken (aldrig højre), 12 over |
 | **Knap, grå** | pille radius 999 · hvid · 1 px #DEDAD4 · tekst #6F6B66 · Poppins 12–13 / 400 |
 | **Knap, rød** | pille · #FC2404 · hvid tekst · gør noget færdigt |
-| **Knaphøjder** | ikon-/chip-/lille knap **36** · status/dropdown/bundknap i briefen **40** · knap i ark/popup **44** · rød primær på tilføj-felt **44** |
+| **Navigationsknapper** (Ida 12/11, LÅST) | knapper med tekst, der fører videre eller tilbage (rød primær og grå sekundær): **56 høje** i hele appen · pille · tekst i midten. Chips (32) og ikonknapper (36) er IKKE navigationsknapper og ændres aldrig med dem |
+| **Øvrige knaphøjder** | ikonknap **36** · status/dropdown i briefen **40** · luk/send i ark **44** |
 | **Ikonknap** | rund **36 × 36** · hvid · 1 px #DEDAD4 · streg #6F6B66 · ikonet 16 i midten · trykfelt 44 via ::before |
 | **Centrering (alle knapper)** | tekstens lodrette midte = knappens midte (≤ 1 px) · samlet ikon + tekst vandret i midten (≤ 1,5 px) · ikon og tekst flugter lodret. Mønster: `display:inline-flex; align-items:center; justify-content:center` (`:where(.dbtn)` nederst i basis-CSS) — aldrig lodret polstring 11/11 på en inline-block med tvunget højde |
 | **Skillelinje i flise** | 1 px #E3E2DE · KUN mellem forskelligt indhold (hook-delene, klippets felter) og under etiketten, når der er tekst under · **aldrig to streger i træk** (< 24 px imellem) · ingen streg i en dør · ingen streg over et enligt felt |
