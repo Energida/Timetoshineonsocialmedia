@@ -34484,6 +34484,7 @@ async function onboardingStrategiTjek() {
     const s = data && data.svar;
     OB_STRATEGI = !!(s && typeof s === "object" && Object.keys(s).some(k => s[k]));
   } catch(e) { OB_STRATEGI = false; }
+  try { drejebogMenuSynk(); } catch (e) {}
   try { renderHome(); } catch(e) {}
 }
 function onboardingVariant(def) {
@@ -43024,7 +43025,7 @@ function lekOpgFliseHtml(id, l, aktive, ix) {
   /* EN OPGAVE SKRIVES SOM EN REFLEKSIONSØVELSE (Idas klik 12/11 »Skriv svar som i dag«: Modul 1's opgaver har spørgsmål, der skal svares på) — forskellen er, at en opgave kan sættes til senere, så næste lektion åbner imens */
   if (!g) knapper = '<button type="button" class="lopg-kn lopg-roed mq-tap" onclick="startOvelse(\'' + idS + '\')">Tag ' + esc(oevOrd(id, true)) + '</button>' + (udsat ? '' : '<button type="button" class="lopg-kn lopg-graa mq-tap" onclick="lekOpgSenereBliv(\'' + idS + '\')">' + (opg ? 'Jeg gør den senere' : 'Senere') + '</button>');
   else knapper = '<button type="button" class="lopg-kn lopg-graa mq-tap" onclick="vkSvarAabn()">Se dine svar</button>';
-  return '<div class="lk-flise lopg-fl" id="lekOpgFlise">'
+  return '<div class="lk-flise lopg-fl' + (!g && !udsat ? ' lopg-ren' : '') + '" id="lekOpgFlise">'
     + '<div class="lopg-rk"><span class="lgjort-c' + (g ? ' ok' : '') + '">' + (g ? fb : '') + '</span><span class="lopg-tt"><span class="lopg-t1">' + esc(tit) + '</span>' + (under ? '<span class="lopg-t2">' + esc(under) + '</span>' : '') + '</span></div>'
     + liste + '<div class="lopg-kns">' + knapper + '</div></div>';
 }
@@ -43856,7 +43857,7 @@ function lukLektion() {
   if (lv) lv.classList.remove("on");
   document.body.classList.remove("lek-open");
   try { if (document.body.classList.contains("lek-mb")) { lekNoteGemRig(); } } catch(e) {}
-  document.body.classList.remove("lek-mb");
+  document.body.classList.remove("lek-mb"); document.body.classList.remove("lek-ucov");
   LEK_AABEN = null;
   try { WORKOUT_LEK_AABEN = null; } catch(e) {}
   try { lukNotePanel(true); } catch(e) {}
@@ -43864,6 +43865,7 @@ function lukLektion() {
   /* HJEM FØLGER MED (krydstjekket 22/10, Hans): fra den røde flise ind i en lektion og Tilbage viste Hjem de gamle tal og den samme lektion */
   try { const h = document.getElementById("screen3"); if (h && h.classList.contains("active") && typeof renderHome === "function") renderHome(); } catch(e) {}
 }
+function lekTilForloebet() { lukLektion(); try { showTab(12); } catch (e) {} }   /* telefonens »‹ Forløbet« øverst i lektionen (12/11) */
 function lekModulFor(id) { return kursusModulerAktive().find(m => m.lektioner.some(x => x.id === id)) || null; }
 
 /* ---------- MODUL-FORSIDEN: skaermen (Ida 3/8) ---------- */
@@ -44206,6 +44208,7 @@ function lekHeroModul(id, reserve) {
 }
 function lekBaandTegn(navn, sti) {
   const lv = document.getElementById("lekVis"); if (!lv) return;
+  document.body.classList.remove("lek-ucov");   /* kun selve lektionen står uden cover på telefonen (lekMbRender sætter den igen) */
   let b = lv.querySelector(":scope > .mb-baand");
   if (!b) { b = document.createElement("div"); b.className = "mb-baand"; lv.insertBefore(b, lv.firstChild); }
   b.innerHTML = '<div class="mb-foto"></div><img class="mb-hjerte" src="logo-hjerte-hvid.png" alt="">'
@@ -44271,6 +44274,11 @@ function lekMbRender() {
   const forrige = ix > 0 ? aktive[ix - 1] : null;
   let tlf = false; try { tlf = window.matchMedia("(max-width:899px)").matches; } catch (e) {}
   lekBaandTegn(lekHeroModul(l.id, l.titel), lekStiHtml(modul, null));
+  /* LEKTIONEN UDEN COVER PÅ TELEFONEN (Idas ja 12/11, Artifact Y6aQibKkUGRDRQFiAZTPuh): »‹ Forløbet« øverst, videoen i fuld bredde, lektionens navn 22/30 og én grå linje under,
+     »Opgave« og »Mine noter« som overskrifter uden for fliserne. Kun med bundmenu B (forløbskunden); computeren og de andre kunder er urørt. */
+  const ucov = tlf && document.body.classList.contains("bn-ygt4") && (typeof YGT_TLF_FORSIDE !== "undefined" && YGT_TLF_FORSIDE);
+  document.body.classList.toggle("lek-ucov", !!ucov);
+  if (ucov) { try { lekTidHent([l]); } catch (e) {} }
   /* den roede knap: samme rejse som foer (set -> feedback-arket -> oevelsen -> naeste) */
   let roed;
   /* KNAPPEN SIGER, HVAD DER SKER (Hans-testen 24/9: »Færdig · Næste lektion« foerte til oevelsen). Oevelsen naevnes ikke, foer videoen er set (Ida 24/9). */
@@ -44282,7 +44290,7 @@ function lekMbRender() {
   else roed = sidsteAabne ? lekMbPil('Tilbage til forløbet', "lukLektion()", true) : lekMbPil('Næste lektion', "lekNaeste()", true, "pilH", true);
   const hvid = (harOv && ovTaget && oevKlaret(id) ? lekMbPil('Ret dine svar', "startOvelse('" + id + "')") : '')
     + (forrige ? lekMbPil('Forrige lektion', "visLektion('" + forrige.id + "')", false, "pilV") : '')
-    + (tlf ? lekMbPil('Tilbage', "lukLektion()") : '');
+    + (tlf && !ucov ? lekMbPil('Tilbage', "lukLektion()") : '');
   /* OVERBLIKKET ER EEN LINJE (Idas klik 24/9, lektions-bud 1): modulets lektioner, ikke alle 48 — og en tynd bjaelke */
   const modAkt = aktive.filter(x => { const m2 = lekModulFor(x.id); return m2 && modul && m2.titel === modul.titel; });
   const modIx = Math.max(0, modAkt.findIndex(x => x.id === id));
@@ -44299,14 +44307,19 @@ function lekMbRender() {
   const vk = [["H", "lekNoteFormat('H')", "Overskrift"], ["ul", "lekNoteFormat('ul')", "Punkter"], ["ol", "lekNoteFormat('ol')", "Nummereret"], ["B", "lekNoteFormat('B')", "Fed"], ["I", "lekNoteFormat('I')", "Kursiv"], ["tjek", "lekNoteFormat('tjek')", "Tjekliste"]]
     .map(k => '<button type="button" data-f="' + k[0] + '" title="' + k[2] + '" aria-label="' + k[2] + '" onmousedown="event.preventDefault()" onclick="' + k[1] + '">' + LK_SVG[k[0]] + '</button>').join("");
   const gemt = (KURSUS_NOTER[id] || []).find(n => n.html);
+  const lkuTop = ucov ? '<div class="lku-top"><div role="button" tabindex="0" class="lku-tilb dbtn" onclick="lekTilForloebet()"><svg width="8" height="14" viewBox="0 0 8 14" fill="none" aria-hidden="true"><path d="M7 1L1 7l6 6" stroke="#6F6B66" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>' + esc(lekSideNavn()) + '</div>' + lekFavKnap(id) + '</div>' : '';
+  const lkuTid = ucov ? lekTidTekst(id) : '';
+  const lkuTitel = ucov ? '<div class="lku-titel">' + esc(lekVisNr(id) + " " + lekVisTitel(l)) + '</div><div class="lku-meta">' + esc(lekHeroModul(l.id, "")) + '<span id="lkuTid">' + (lkuTid ? ' · ' + lkuTid : '') + '</span></div>' : '';
+  const lkuOpg = (l.ovelse && !mgErGentagelig(id)) ? lekOpgFliseHtml(id, l, aktive, ix) : '';
   document.getElementById("lekMain").innerHTML =
-      overblik   /* titlen staar i heroen — ikke en gang til (Hans-testen 24/9: titlen stod tre gange) */
+      (ucov ? lkuTop : overblik)   /* titlen staar i heroen — ikke en gang til (Hans-testen 24/9: titlen stod tre gange) */
     + (l.ovelse && erEjerOevelse(id) ? '<div class="lk-versal" style="margin:-8px 0 14px;">Ejerens øvelse</div>' : '')
-    + video
-    + ((l.ovelse && !mgErGentagelig(id)) ? lekOpgFliseHtml(id, l, aktive, ix) : '')   /* opgaven under videoen (bud 1, 11/11) */
+    + video + lkuTitel
+    + (ucov && lkuOpg ? '<div class="lku-sek">' + esc(storStart(oevOrd(id))) + '</div>' : '') + lkuOpg   /* opgaven under videoen (bud 1, 11/11) */
     + '<div id="lekFiler"></div>'   /* MATERIALER (Idas klik 23/10): filerne paa lektionen — tegnes, naar listen er hentet */
     /* MODULETS LEKTIONER UNDER VIDEOEN PAA TELEFONEN (bud 1): hvor er jeg, og hvad kommer — ét tryk til en anden lektion */
-    + ((tlf && modul && (modAkt.length > 1 || lksSkemaHer(modulNrFor(id)))) ? '<div class="lks lks-tlf" id="lksTlf">' + lksModul(modul, id) + '</div>' : '')   /* telefonen: modulets lektioner som fliser, den røde er lektionen du står i (Idas klik 26/10, bud 1 + B) */
+    + ((tlf && !ucov && modul && (modAkt.length > 1 || lksSkemaHer(modulNrFor(id)))) ? '<div class="lks lks-tlf" id="lksTlf">' + lksModul(modul, id) + '</div>' : '')   /* telefonen: modulets lektioner som fliser, den røde er lektionen du står i (Idas klik 26/10, bud 1 + B) */
+    + (ucov ? '<div class="lku-sek">Mine noter</div>' : '')
     + '<div class="lk-flise' + (noteAaben ? '' : ' luk') + '" id="lekNotePanel">'
     + '<div class="lk-note-top"><span class="lk-note-etiket">Dine noter</span></div>'
     + '<div class="lk-note-krop"><div class="lk-vaerktoej">' + vk + '</div>'
@@ -44550,6 +44563,7 @@ function lekTidHent(liste) {
       fetch("https://vimeo.com/api/oembed.json?url=" + encodeURIComponent(String(l.video))).then(function (r) { return r.ok ? r.json() : null; }).then(function (j) {
         if (!j || !(Number(j.duration) > 0)) return;
         LEK_TID[String(l.id)] = Number(j.duration);
+        try { const lt = document.getElementById("lkuTid"); if (lt && String(LEK_AABEN) === String(l.id)) lt.textContent = " · " + lekTidTekst(l.id); } catch (e) {}
         try { localStorage.setItem("lek_tid_v1", JSON.stringify(LEK_TID)); } catch (e) {}
         try { const ov = document.getElementById("forloebTidslinje"); if (ov && ov.offsetParent && !LEK_TID_REN) { LEK_TID_REN = setTimeout(function () { LEK_TID_REN = 0; try { ov.innerHTML = forloebTidslinjeHtml(); } catch (e) {} }, 400); } } catch (e) {}
       }).catch(function () {});
@@ -58122,7 +58136,7 @@ function buildSideNav(def) {
     + '<div id="virkMenu" style="display:none;position:fixed;left:14px;bottom:96px;width:208px;background:#fff;border:1px solid var(--border);border-radius:20px;box-shadow:0 16px 40px rgba(0,0,0,0.15);padding:8px;z-index:90;">'
     + '<div style="padding:10px 12px 6px;font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:var(--gray3);">' + esc(virkNavn) + '</div>'
     + '<button class="dbtn ghost" style="width:100%;text-align:left;font-weight:400;" onclick="toggleVirkMenu();minProfilAaben()">Profil</button>'
-    + ((F("strategi")) ? '<button class="dbtn ghost" style="width:100%;text-align:left;font-weight:400;" onclick="toggleVirkMenu();drejebogAaben()">Drejebogen</button>' : '')   /* under Profil (Ida 21/9 kl. 14.55) '
+    + ((F("strategi")) ? '<button class="dbtn ghost" id="virkDrejebog" style="width:100%;text-align:left;font-weight:400;' + (drejebogBegyndt(def) ? '' : 'display:none;') + '" onclick="toggleVirkMenu();drejebogAaben()">Drejebogen</button>' : '')   /* under Profil (Ida 21/9 kl. 14.55) '
     + '<button class="dbtn ghost" style="width:100%;text-align:left;font-weight:400;" onclick="toggleVirkMenu();appOenskeAabn()">Ønsker til appen</button>'   /* haengeparti 3 (13/9) '   /* manglede på desktop (Freja-fundet 28/7) */
     + (!erSelvkoeb(def) || selvkoebAabnet(def)
       ? '<button class="dbtn ghost" style="width:100%;text-align:left;font-weight:400;" onclick="toggleVirkMenu();turStart(true)">Se rundvisningen igen</button>'
@@ -58144,7 +58158,7 @@ function buildSideNav(def) {
   /* TELEFONENS BURGER FOELGER MED (13/8: en layout-aendring skal ind ALLE steder).
      Punkterne er statisk markup; laasen laegges paa og tages af her, saa den forsvinder
      i samme sekund, Drejebogen er faerdig og menuen tegnes om. */
-  try { const bd = document.getElementById("burgerDrejebog"); if (bd) bd.style.display = F("strategi") ? "" : "none"; const bt = document.getElementById("burgerTur"); if (bt) bt.style.display = (!erSelvkoeb(def) || selvkoebAabnet(def)) ? "" : "none"; } catch (e) {}   /* tvillingen til profilmenuen (fund 21) */
+  try { const bd = document.getElementById("burgerDrejebog"); window.__DREJ_F = !!F("strategi"); if (bd) bd.style.display = (F("strategi") && drejebogBegyndt(def)) ? "" : "none"; const bt = document.getElementById("burgerTur"); if (bt) bt.style.display = (!erSelvkoeb(def) || selvkoebAabnet(def)) ? "" : "none"; } catch (e) {}   /* tvillingen til profilmenuen (fund 21) */
   try {
     document.body.classList.toggle("rejse-laas", rejseLaas);
     [["burgerContent", "Content kalenderen"], ["burgerPerformance", "Performance"]].forEach(function (par) {
@@ -60955,7 +60969,11 @@ function drejebogLavNu() {
   catch (e) { try { console.warn("Drejebogen kunne ikke saettes i gang: " + (e && e.message ? e.message : e)); } catch (x) {} }
 }
 function drejebogTomLuk() { const b = document.getElementById("drejebogTom"); if (b) { b.style.display = "none"; b.classList.remove("on"); } }
+/* DREJEBOGEN STÅR FØRST I MENUEN, NÅR DER ER ARBEJDET I DEN (Ida 12/11: »drejebogen skal ikke være der før man har arbejdet den«): samme sandhed som rejsens trin (onboardingTrin.s1). */
+function drejebogBegyndt(def) { try { return !!onboardingTrin(def || CURRENT_DEF).s1; } catch (e) { return false; } }
+function drejebogMenuSynk() { try { const vis = !!window.__DREJ_F && drejebogBegyndt(CURRENT_DEF); const a = document.getElementById("virkDrejebog"); if (a) a.style.display = vis ? "" : "none"; const b = document.getElementById("burgerDrejebog"); if (b) b.style.display = vis ? "" : "none"; } catch (e) {} }
 function toggleVirkMenu(ev) {
+  drejebogMenuSynk();
   if (ev) ev.stopPropagation();   // åbne-klikket må ikke straks lukke via dokument-lytteren
   const m = document.getElementById("virkMenu");
   if (m) m.style.display = m.style.display === "none" ? "block" : "none";
@@ -65778,7 +65796,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "3258";
+const APP_VERSION = "3259";
 const APP_BYGGET = "3. november";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_VERSION;   /* ingen dato (Ida 7/11: »hvorfor står der version 3. november?«) — datoen blev ikke rettet med, nummeret er sandheden */ } catch (e) {} });
 let NY_VERSION_KLAR = false;
@@ -94352,6 +94370,36 @@ html body .auth-btn, html body #authGate.nyt .auth-btn, html body .tur-knap, htm
   height:56px !important; min-height:56px !important; padding-top:0 !important; padding-bottom:0 !important; box-sizing:border-box !important;
   display:inline-flex; align-items:center; justify-content:center; }
 html body .ark .ark-knap, html body .ark-knap, html body .ark-knap-roed, html body .ark-knap-graa, html body .pf-knap, html body .lopg-kn, html body .auth-btn { display:flex; }
+/* ===== LEKTIONEN PÅ TELEFONEN UDEN COVER (Idas ja 12/11, Artifact Y6aQibKkUGRDRQFiAZTPuh) — kun under 900 px og kun med bundmenu B =====
+   »‹ Forløbet« 48 høj øverst · videoen i fuld bredde uden hjørner · lektionens navn 22/30 sort · én grå linje 13 (modul · minutter) ·
+   overskrift over fliser 12/versal/1,5/#6F6B66, 8 ned, 32 over (24 efter den grå linje) · fliser radius 20 · knapper 56. */
+.lku-top, .lku-titel, .lku-meta, .lku-sek { display:none; }
+@media (max-width:899px) {
+  html body.lek-mb.lek-ucov #lekVis { background:#FAF9F5; }
+  html body.lek-mb.lek-ucov #lekVis > .mb-baand { display:none !important; }
+  html body.lek-mb.lek-ucov #lekVis .lek-grid { padding:0 16px calc(96px + env(safe-area-inset-bottom,0px)) !important; }
+  html body.lek-mb.lek-ucov #lekVis .lku-top { display:flex; align-items:center; justify-content:space-between; height:48px; margin:calc(8px + env(safe-area-inset-top,0px)) 0 0; }
+  html body.lek-mb.lek-ucov #lekVis#lekVis .lku-tilb.dbtn { display:inline-flex !important; align-items:center; gap:8px; height:48px !important; min-height:48px !important; padding:0 16px 0 0 !important; margin:0 !important; border:0 !important; border-radius:0 !important; background:none !important; box-shadow:none !important; font:400 15px/22px Poppins,sans-serif !important; letter-spacing:0 !important; text-transform:none !important; color:#6F6B66 !important; cursor:pointer; width:auto !important; }
+  html body.lek-mb.lek-ucov #lekVis .lku-top .lek-fav { margin-right:-10px; }
+  html body.lek-mb.lek-ucov #lekVis .lek-video { margin:0 -16px !important; width:auto; border-radius:0 !important; box-shadow:none !important; }
+  html body.lek-mb.lek-ucov #lekVis .lku-titel { display:block; font:400 22px/30px Poppins,sans-serif; color:#1A1A1A; margin:20px 0 0; }
+  html body.lek-mb.lek-ucov #lekVis .lku-meta { display:block; font:400 13px/18px Poppins,sans-serif; color:#6F6B66; margin:4px 0 0; }
+  html body.lek-mb.lek-ucov #lekVis .lku-sek, html body.lek-mb.lek-ucov #lekVis .lfil-sek > .lk-versal { display:block; font:400 12px/16px Poppins,sans-serif !important; letter-spacing:1.5px !important; text-transform:uppercase; color:#6F6B66 !important; margin:32px 0 8px !important; padding:0 !important; }
+  html body.lek-mb.lek-ucov #lekVis .lku-meta + .lku-sek, html body.lek-mb.lek-ucov #lekVis .lku-meta + #lekFiler .lfil-sek > .lk-versal { margin-top:24px !important; }
+  html body.lek-mb.lek-ucov #lekVis .lk-flise { margin:0 !important; border-radius:20px !important; }
+  html body.lek-mb.lek-ucov #lekVis .lopg-ren > .lopg-rk, html body.lek-mb.lek-ucov #lekVis .lopg-ren > .lopg-skl { display:none !important; }
+  html body.lek-mb.lek-ucov #lekVis .lopg-qr { font-size:15px; line-height:22px; }
+  html body.lek-mb.lek-ucov #lekVis#lekVis .lopg-kn { height:56px !important; min-height:56px !important; font-size:15px !important; }
+  html body.lek-mb.lek-ucov #lekVis .lk-note-top { display:none !important; }
+  html body.lek-mb.lek-ucov #lekVis#lekVis .lk-note-alle { height:56px !important; min-height:56px !important; font-size:15px !important; }
+  html body.lek-mb.lek-ucov.lek-open .bottom-nav { display:flex !important; }   /* bundmenu B står også i lektionen (buddet 12/11) */
+  html body.lek-mb.lek-ucov #lekVis .lk-knapper.lek-bar { margin:32px 0 0 !important; gap:10px !important; }
+  html body.lek-mb.lek-ucov #lekVis .lk-knapper.lek-bar:empty { display:none !important; }
+  html body.lek-mb.lek-ucov #lekVis#lekVis .lk-knapper .lk-pil { height:56px !important; min-height:56px !important; font-size:15px !important; }
+}
+@media (max-width:1000px) and (orientation:landscape) and (max-height:520px) { html body.lek-mb.lek-ucov.lek-open .bottom-nav { display:none !important; } }   /* drejet telefon: videoen fylder skærmen, menuen væk */
+/* PROFILMENUEN ER VENSTRESTILLET (Ida 12/11: »menuen skal ikke være centreret«) */
+html body #virkMenu .dbtn, html body #dashMenu .dbtn { justify-content:flex-start !important; text-align:left !important; }
 </style>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-hvid.png" alt=""><span>Henter…</span></div>
 <div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 8. oktober · 3236</div>
