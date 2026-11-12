@@ -107,9 +107,11 @@ function maalForsideTlf(){
 }
 function maalStory(){
   /* STORY-SIDEN (Ida 4/11): [status] [dato] i samme højde 36 og på samme linje, storytype-chips 36 på én linje, ingen pil på nogen flise, upload-placeholderen er lys (aldrig mørk) */
-  var st=document.querySelector("#storySerie .ss-top > .ss-stat"), da=document.querySelector("#storySerie .ss-top > .ss-dato");
-  if(st&&da){ var a=st.getBoundingClientRect(), b=da.getBoundingClientRect(); er("STORY-RÆKKE", st, Math.round(a.height)===32&&Math.round(b.height)===32&&Math.abs(a.top-b.top)<1&&Math.abs((b.left-a.right)-8)<=1&&a.left<b.left, "status h"+Math.round(a.height)+" dato h"+Math.round(b.height)+" afstand "+Math.round(b.left-a.right)+" (skal 32/32, 8 imellem, status til venstre for dato)"); }
-  else fejl("STORY-RÆKKE: status og dato mangler i rækken");
+  /* STATUS ER HELT VÆK FRA STORY (Ida 12/11): rækken har kun datoen (32 høj) — en status i rækken er en fejl */
+  var st=document.querySelector("#storySerie .ss-top .ss-stat"), da=document.querySelector("#storySerie .ss-top > .ss-dato");
+  N++; if(st) fejl("STORY-RÆKKE: status står stadig på story-siden (skal være helt væk)");
+  if(da){ var b=da.getBoundingClientRect(); er("STORY-RÆKKE", da, Math.round(b.height)===32, "dato h"+Math.round(b.height)+" (skal 32)"); }
+  else fejl("STORY-RÆKKE: datoen mangler i rækken");
   var cs=[].slice.call(document.querySelectorAll("#storySerie .ss-typrk .ss-chip")).filter(synlig);
   N++; if(cs.length!==2) fejl("STORYTYPE: forventer to valgchips, fandt "+cs.length);
   cs.forEach(function(c){ var r=c.getBoundingClientRect(); er("STORYTYPE-CHIP", c, Math.round(r.height)===32&&Math.abs(r.top-cs[0].getBoundingClientRect().top)<1, "h"+Math.round(r.height)+" (skal 32, én linje)"); });

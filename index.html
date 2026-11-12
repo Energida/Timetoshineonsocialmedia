@@ -26492,7 +26492,7 @@ function briefTrinAnvend(wrap, sider, akt) {
   if (alle.length) trin.push(alle.slice());
   /* FAKTA ER FOERSTE TRIN PAA START, PAA TELEFONEN (Ida 8/11: »fakta skulle vaere den foerste side i briefen, separat, inden fang dem« — klik »Fakta foer Idéen«):
      trin 0 = fakta-boksen alene (de andre felter skjules), trin 1 = Idéen. Fakta-boksen vises kun dér; paa Fang dem, Fasthold og Handle er den ude. Computeren er uroert (fakta har sin egen spalte). */
-  const faktaTrin = (akt === 0 && alle.length > 0 && document.body.classList.contains("mb-brief-tlf") && !wrap.querySelector(".ss-stat"));   /* en Story har sin egen foerste skaerm (status + dato + type) — den faar ikke Fakta-trinnet */
+  const faktaTrin = (akt === 0 && alle.length > 0 && document.body.classList.contains("mb-brief-tlf") && !wrap.querySelector(".ss-stat, .ss-top, #storySerie") && !document.body.classList.contains("brief-story"));   /* en Story har sin egen foerste skaerm (status + dato + type) — den faar ikke Fakta-trinnet */
   if (faktaTrin) trin.unshift([]);
   if (!trin.length) trin.push([]);
   const t = Math.max(0, Math.min(trin.length - 1, BRIEF_TRIN_AKTIV)); BRIEF_TRIN_AKTIV = t;
@@ -29246,13 +29246,14 @@ function storyStatusMenu(id, knap) {
 /* STATUSLINJEN PAA EN STORY-FLISE: gra tekst + lille pil; trykket aabner de to valg (stopper flisens eget klik) */
 function storyStatusHtml(x, cls) {
   /* FLISERNE VISER KUN STATUS SOM TEKST (Ida 4/11): ingen pil, ingen knap, ingen menu — statusvaelgeren bor paa Story-siden (ssStatKnap) */
-  return '<span class="' + (cls || "") + '">' + esc(storyStatusVis(x)) + '</span>';
+  return '';   /* STATUS ER HELT VÆK FRA STORY (Ida 12/11: »status skal helt væk fra story«) — fliser, kalender, Hjem og Story-siden */
 }
 const SS_PIL = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>';
 /* STATUSVAELGEREN PAA STORY-SIDEN: de to valg, ved siden af datoen (Ida 4/11). Postet/Målt vises, men kan ikke ændres her. */
 function ssStatKnap() {
   const it = (IDEER || []).find(function (x) { return String(x.id) === String(BRIEF_ID); }) || {};
   const fast = String(it.status || "") === "Postet" || String(it.status || "") === "Målt";
+  return '';   /* status er helt væk fra story (Ida 12/11) */
   return fast ? '<span class="ss-stat fast">' + esc(storyStatusVis(it)) + '</span>'
     : '<button type="button" class="ss-stat" onclick="storyStatusMenu(BRIEF_ID,this)"><span class="ss-stat-t">' + esc(storyStatusVis(it)) + '</span>' + SS_PIL + '</button>';
 }
@@ -40089,7 +40090,7 @@ const KOP_PERSON_IK = '<svg viewBox="0 0 24 24" width="14" height="14" fill="non
 function kopChipsHtml(x) {
   /* ÉN LINJE (Ida 10/10: »status og tidspunkt skal stå i flisen også, og status skal stå i én linje«): format · status · kl. · ansvarlige som grå tekst under titlen — chips brækkede over to linjer paa telefonen */
   const fmt = String((x.brief && x.brief.format) || x.type || "").replace("Kort-reel", "Kort reel");
-  const dele = ssEr(x) ? [storyEtiket(x), storyStatusVis(x)] : [fmt, x.status || ""];   /* en story: etiket + Ikke startet / Klar til post (Ida 4/11) */
+  const dele = ssEr(x) ? [storyEtiket(x)] : [fmt, x.status || ""];   /* en story: etiket + Ikke startet / Klar til post (Ida 4/11) */
   try { const t = x.brief && x.brief.tid ? String(x.brief.tid).slice(0, 5) : ""; if (t) dele.push("kl. " + t.replace(":", ".")); } catch (e) {}
   try { const b = x.brief || {}; const folk = String(b.hvemPerson || b.hvemLaver || "").split(/\s*·\s*|\s*,\s*/).map(function (n) { return storStart(n.trim()); }).filter(Boolean).slice(0, 3); if (folk.length) dele.push(folk.join(" + ")); } catch (e) {}
   return '<span class="kop-s kop-linje">' + esc(dele.filter(Boolean).join(" · ")) + '</span>';
@@ -40788,7 +40789,7 @@ function hjemDagFlise(x, i) {
   try {
     if (/^(opt|pub)-/.test(String(x.dagsId || ""))) {
       const it = (IDEER || []).find(function (q) { return String(q.id) === String(x.dagsId).replace(/^(opt|pub)-/, ""); });
-      if (it) { const tid = (it.brief && it.brief.tid) ? (typeof tidVis === "function" ? tidVis(it.brief.tid) : String(it.brief.tid).slice(0, 5)) : ""; const dele = []; if (tid) dele.push(/^\d/.test(tid) ? "Kl. " + tid : tid); if (it.status) dele.push(ssEr(it) ? storyStatusVis(it) : it.status); if (dele.length) linje = dele.join(" · "); }
+      if (it) { const tid = (it.brief && it.brief.tid) ? (typeof tidVis === "function" ? tidVis(it.brief.tid) : String(it.brief.tid).slice(0, 5)) : ""; const dele = []; if (tid) dele.push(/^\d/.test(tid) ? "Kl. " + tid : tid); if (it.status && !ssEr(it)) dele.push(it.status); if (dele.length) linje = dele.join(" · "); }
     }
     /* planlaegningsmoedet: dag + klokkeslaet er fakta (21/9) */
     if (/^moede-/.test(String(x.dagsId || x.id || "")) && x.sub) linje = String(x.sub);
@@ -40802,7 +40803,7 @@ function hjemDagFremHtml(iso) {
   const ud = [];
   try { (IDEER || []).filter(function (x) { return x.dato === iso && x.status !== "Postet"; }).forEach(function (x) {
     const tid = (x.brief && x.brief.tid) ? (typeof tidVis === "function" ? tidVis(x.brief.tid) : String(x.brief.tid).slice(0, 5)) : "";
-    ud.push({ t: "Skal du poste:", navn: (x.titel || "Uden titel"), s: (ssEr(x) ? [tid ? (/^\d/.test(tid) ? "Kl. " + tid : tid) : "", storyEtiket(x), storyStatusVis(x)] : [tid ? (/^\d/.test(tid) ? "Kl. " + tid : tid) : "", "Opslag", x.status || ""]).filter(Boolean).join(" · "), klik: "openBriefSide('" + esc(String(x.id)) + "')" }); }); } catch (e) {}
+    ud.push({ t: "Skal du poste:", navn: (x.titel || "Uden titel"), s: (ssEr(x) ? [tid ? (/^\d/.test(tid) ? "Kl. " + tid : tid) : "", storyEtiket(x)] : [tid ? (/^\d/.test(tid) ? "Kl. " + tid : tid) : "", "Opslag", x.status || ""]).filter(Boolean).join(" · "), klik: "openBriefSide('" + esc(String(x.id)) + "')" }); }); } catch (e) {}
   try { (window.__kundeAftalerAlle || window.__kundeAftaler || []).filter(function (a) { return a.dato === iso; }).forEach(function (a) { ud.push({ t: a.titel || "", s: (a.tid ? "Kl. " + String(a.tid).slice(0, 5) + " · " : "") + "Aftale", klik: erMoedeTitel(a.titel) ? "moedeSideAaben()" : aftErUrl(a.link) ? "window.open(" + JSON.stringify(String(a.link)).replace(/"/g, "&quot;") + ",'_blank','noopener')" : "" }); }); } catch (e) {}
   try { (OPGAVER || []).filter(function (o) { return !o.done && o.aktiv !== false && String(o.deadline || "").slice(0, 10) === iso && opgaveErTilMig(o); }).forEach(function (o) { ud.push({ t: o.titel || "", s: "To-do", klik: "haengSideAabn()" }); }); } catch (e) {}
   if (!ud.length) return '<div class="idag-flise tom">Ingenting planlagt.</div>';
@@ -40994,7 +40995,7 @@ function hjemFacitTegn(){
     try {
       if (/^(opt|pub)-/.test(String(x.dagsId || ""))) {
         const it = (IDEER || []).find(function (q) { return String(q.id) === String(x.dagsId).replace(/^(opt|pub)-/, ""); });
-        if (it) { const tid = (it.brief && it.brief.tid) ? (typeof tidVis === "function" ? tidVis(it.brief.tid) : String(it.brief.tid).slice(0, 5)) : ""; const dele = []; if (tid) dele.push(/^\d/.test(tid) ? "Kl. " + tid : tid); if (it.status) dele.push(ssEr(it) ? storyStatusVis(it) : it.status); if (dele.length) linje = dele.join(" · "); }
+        if (it) { const tid = (it.brief && it.brief.tid) ? (typeof tidVis === "function" ? tidVis(it.brief.tid) : String(it.brief.tid).slice(0, 5)) : ""; const dele = []; if (tid) dele.push(/^\d/.test(tid) ? "Kl. " + tid : tid); if (it.status && !ssEr(it)) dele.push(it.status); if (dele.length) linje = dele.join(" · "); }
       }
     } catch (e) {}
     const titel = titelMedNavn(String(x.titel || "").replace(/^I dag skal du lave$/i, "Du skal optage").replace(/^I dag skal du poste$/i, "Skal du poste:")) + (x.navn ? ' <i class="fokus-navn">' + esc(x.navn) + '</i>' : '');
@@ -41045,7 +41046,7 @@ function hjemFacitTegn(){
           const dele = [];
           /* "Kl." kun foran et klokkeslaet — en dagsdel ("Formiddag") staar alene (set 6/9: "Kl. Formiddag"). */
           if (tid) dele.push(/^\d/.test(tid) ? "Kl. " + tid : tid);
-          if (it.status) dele.push(ssEr(it) ? storyStatusVis(it) : it.status);
+          if (it.status && !ssEr(it)) dele.push(it.status);
           const soejle = it.soejle ? (typeof soejleVis === "function" ? soejleVis(it.soejle) : it.soejle) : "";
           return '<div class="hf-hjaelp" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:6px;">'
             + (dele.length ? '<span>' + esc(dele.join(" \u00b7 ")) + '</span>' : '')
@@ -54713,7 +54714,7 @@ function kopFliseHtml(x) {
   const d = new Date(x.dato + "T12:00:00"), chip = huSoejleChip(x);
   return '<div class="hu-kort kop-fl' + (huVenterGodk(x) ? ' hu-venter' : '') + '" role="button" tabindex="0" onclick="openBriefSide(\'' + esc(String(x.id)) + '\')">'
     + '<span class="kop-sym"><b>' + d.getDate() + '</b><i>' + ["jan", "feb", "mar", "apr", "maj", "jun", "jul", "aug", "sep", "okt", "nov", "dec"][d.getMonth()] + '</i></span>'
-    + '<span class="hu-tekst"><span class="hu-et">' + esc(huVenterGodk(x) ? huForslagEt(x) : huOpslagEt(x)) + '</span><span class="hu-titel">' + esc(storStart(titelVis(x.titel || "Uden titel"))) + '</span>' + (ssEr(x) ? '<span class="hu-under">' + storyStatusHtml(x) + '</span>' : '') + '</span>'
+    + '<span class="hu-tekst"><span class="hu-et">' + esc(huVenterGodk(x) ? huForslagEt(x) : huOpslagEt(x)) + '</span><span class="hu-titel">' + esc(storStart(titelVis(x.titel || "Uden titel"))) + '</span>' + '</span>'
     + (chip ? '<span class="hu-chip">' + esc(chip) + '</span>' : '')
     + '</div>';
 }
@@ -54920,7 +54921,7 @@ async function huKalLaegInd(iso, titel, fra, til) {
 function huImorgenPost(d) {
   try {
     const m = new Date(d); m.setDate(m.getDate() + 1); const iso = huIso(m);
-    return (IDEER || []).filter(function (x) { return x && x.dato === iso && x.status !== "Arkiveret" && x.status !== "Idé" && x.status !== "Postet" && !huVenterGodk(x); });   /* et forslag, ingen har sagt ja til, skal ikke postes i morgen (Hans-testen 31/10, Idas »Ja, ret dem«) */
+    return (IDEER || []).filter(function (x) { return x && x.dato === iso && x.status !== "Arkiveret" && x.status !== "Idé" && x.status !== "Postet" && !huVenterGodk(x) && !(typeof ssEr === "function" && ssEr(x)); });   /* ALDRIG »I morgen skal du poste« for en story (Ida 12/11) */   /* et forslag, ingen har sagt ja til, skal ikke postes i morgen (Hans-testen 31/10, Idas »Ja, ret dem«) */
   } catch (e) { return []; }
 }
 function huTjekAabn(id) { if (!window.BLIV_KLAR_VIS) { openBriefSide(id); return; }   /* SOS FORTRYD 27/10: tjeklisten er slået fra — trykket åbner briefen */ HU_TJEK.id = (String(HU_TJEK.id) === String(id)) ? null : id; HU_TJEK.fane = "brief"; hjemUgeTegn(); }
@@ -65796,7 +65797,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "3259";
+const APP_VERSION = "3260";
 const APP_BYGGET = "3. november";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_VERSION;   /* ingen dato (Ida 7/11: »hvorfor står der version 3. november?«) — datoen blev ikke rettet med, nummeret er sandheden */ } catch (e) {} });
 let NY_VERSION_KLAR = false;
@@ -68384,7 +68385,7 @@ function kalOpKortIndhold(h, dateStr) {
     ? '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px;">'
       + '<span class="uge-chip behov">' + esc(soejleNavn) + '</span></div>'
     : '';
-  if (erStory) return '<div class="uge-et">' + esc(kalTypeEtiket(h)) + '</div><div class="t">' + esc(storStart(titelVis(h.titel || "Uden titel"))) + '</div><div style="font-size:9.5px;color:' + (h.status === "Postet" || h.status === "Målt" ? 'var(--lys-groen)' : 'var(--gray3)') + ';margin-top:3px;">' + storyStatusHtml(h) + '</div>';
+  if (erStory) return '<div class="uge-et">' + esc(kalTypeEtiket(h)) + '</div><div class="t">' + esc(storStart(titelVis(h.titel || "Uden titel"))) + '</div>';
   return '<div class="uge-et">' + esc(kalTypeEtiket(h)) + '</div><div class="t">' + esc(storStart(titelVis(h.titel || "Uden titel"))) + '</div>' + statuslinje + chipRaekke;
 }
 /* TYPEN STAAR SOM ETIKET OVER TITLEN (Idas klik 2/11): titlen er kun indholdets navn; »Story · Opbygning til deling« / »Opslag · Reel« staar for sig */
@@ -94398,6 +94399,8 @@ html body .ark .ark-knap, html body .ark-knap, html body .ark-knap-roed, html bo
   html body.lek-mb.lek-ucov #lekVis#lekVis .lk-knapper .lk-pil { height:56px !important; min-height:56px !important; font-size:15px !important; }
 }
 @media (max-width:1000px) and (orientation:landscape) and (max-height:520px) { html body.lek-mb.lek-ucov.lek-open .bottom-nav { display:none !important; } }   /* drejet telefon: videoen fylder skærmen, menuen væk */
+/* KALENDERENS PERIODE PÅ COMPUTEREN ER KUN DROPDOWNEN (21/9; Ida 12/11: »alt dette rod«): chiplåsen (9/11) tvang de fire periode-chips frem ved siden af dropdownen */
+@media (min-width:900px) { html body:not(#cx1):not(#cx2):not(#cx3):not(#cx4):not(#cx5):not(#cx6):not(#cx7) #calVisVaelger > .ark-chip[data-v] { display:none !important; } }
 /* PROFILMENUEN ER VENSTRESTILLET (Ida 12/11: »menuen skal ikke være centreret«) */
 html body #virkMenu .dbtn, html body #dashMenu .dbtn { justify-content:flex-start !important; text-align:left !important; }
 </style>
