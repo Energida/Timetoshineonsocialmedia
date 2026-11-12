@@ -40698,6 +40698,43 @@ function hjemMiniData() {
     return { nr: "Lektion " + lekVisNr(nl.id), titel: lekVisTitel(nl), klik: "visLektion('" + esc(String(nl.id)).replace(/'/g, "") + "')", bill: LEK_THUMB[nl.id] || "dagens/kort.jpg", lek: String(nl.id) };
   } catch (e) { return null; }
 }
+/* FORLØBSKUNDENS FORSIDE PÅ TELEFONEN (Idas ja 12/11 »Ja, byg den«, Artifact Y6aQibKkUGRDRQFiAZTPuh · »B og miniafspiller B«):
+   lavt cover med hilsen og dato · NÆSTE LEKTION = afspilleren med videoens billede over flisen · VENTER PÅ DIG = én flise pr. opgave · DIT FORLØB = én flise pr. åbent modul
+   med én bar i procent. Overskrifterne står uden for fliserne (låst 12/11). Miniafspilleren over bundmenuen er væk på telefonen — afspilleren står på siden.
+   Alt kommer fra motorer, der findes (hjemMiniData · kursusLektionerAktive · KURSUS_SET · oevKlaret); intet gemmes. Computeren er urørt. Slås fra med YGT_TLF_FORSIDE = false. */
+const YGT_TLF_FORSIDE = true;
+function hjemYgtTlfHtml() {
+  const sek = function (t) { return '<div class="cf-sek hu-sek yf-sek">' + esc(t) + '</div>'; };
+  let ud = "";
+  const d = hjemMiniData();
+  if (d) {
+    let nogenSet = false; try { nogenSet = Object.keys(KURSUS_SET || {}).some(function (k) { return KURSUS_SET[k]; }); } catch (e) {}
+    let under = "";
+    if (d.lek) { try { const nr = modulNrFor(d.lek), info = modulInfoFor(nr), m = lekModulFor(d.lek); under = "Modul " + modulVisNr(nr) + " · " + modulVisNavn(nr, (info && info.titel) || (m && m.titel) || ""); } catch (e) {} }
+    const titel = d.lek ? (lekVisNr(d.lek) + " " + d.titel) : d.titel;
+    ud += sek(d.lek ? (nogenSet ? "Næste lektion" : "Din første lektion") : "Spørgeskema")
+      + '<div class="yf-spil" role="button" tabindex="0" onclick="' + d.klik + '">'
+      + '<div class="yf-still hfs-bill hmini-bill"' + (d.lek ? ' data-lek="' + esc(d.lek) + '"' : '') + ' style="background-image:url(&quot;' + esc(d.bill) + '&quot;)"></div>'
+      + '<div class="yf-spil-rk"><div class="yf-tekst"><div class="yf-t">' + esc(titel) + '</div>' + (under ? '<div class="yf-u">' + esc(under) + '</div>' : '') + '</div>'
+      + '<button type="button" class="yf-play" aria-label="' + (d.lek ? 'Se lektionen' : 'Åbn spørgeskemaet') + '" onclick="event.stopPropagation();' + d.klik + '"><svg width="14" height="16" viewBox="0 0 14 16" aria-hidden="true"><path d="M2 1.5v13l11-6.5z" fill="#fff"/></svg></button></div></div>';
+  }
+  let venter = []; try { venter = kursusLektionerAktive().filter(function (l) { return l.ovelse && KURSUS_UDSAT[l.id] && !oevKlaret(l.id); }); } catch (e) { venter = []; }
+  if (venter.length) ud += sek("Venter på dig") + venter.map(function (l) {
+    const idS = esc(String(l.id)).replace(/'/g, "");
+    return '<div class="yf-fl yf-rk" role="button" tabindex="0" onclick="visLektion(\'' + idS + '\');setTimeout(function(){startOvelse(\'' + idS + '\')},600)"><span class="yf-ring"></span><span class="yf-t">' + esc(storStart(oevOrd(l.id, true))) + ' til ' + esc(lekVisNr(l.id)) + '</span></div>';
+  }).join("");
+  let akt = []; try { akt = kursusLektionerAktive(); } catch (e) {}
+  const moduler = [], paa = {};
+  akt.forEach(function (l) { const nr = modulNrFor(l.id); if (!nr) return; let laast = false; try { laast = !!lekModulLaastFor(l.id); } catch (e) {} if (laast) return; if (!paa[nr]) { paa[nr] = { nr: nr, l: [] }; moduler.push(paa[nr]); } paa[nr].l.push(l); });
+  if (moduler.length) ud += sek("Dit forløb") + moduler.map(function (m) {
+    let navn = ""; try { const info = modulInfoFor(m.nr), mm = lekModulFor(m.l[0].id); navn = "Modul " + modulVisNr(m.nr) + " · " + modulVisNavn(m.nr, (info && info.titel) || (mm && mm.titel) || ""); } catch (e) { navn = "Modul " + modulVisNr(m.nr); }
+    const set = m.l.filter(function (l) { return KURSUS_SET[l.id]; }).length, n = m.l.length, pct = n ? Math.round(set / n * 100) : 0;
+    const ord = set === n ? ("Alle " + n + " lektioner set") : (set + " af " + n + " lektioner set");
+    return '<div class="yf-fl" role="button" tabindex="0" onclick="showTab(12)"><div class="yf-t">' + esc(navn) + '</div><div class="yf-u">' + esc(ord) + '</div><div class="yf-bar"><span><i style="width:' + pct + '%"></i></span><b>' + pct + ' %</b></div></div>';
+  }).join("");
+  if (!d && !moduler.length) ud += '<div class="hu-ringe">' + huRinge(true) + '</div>';   /* »Forløbet er på vej« — den ene tilstand uden noget at vise */
+  return '<div class="hu hu-tlf hu-ygt yf">' + ud + huTodoHtml() + '</div>';
+}
 function hjemMiniTegn() {
   const h = document.getElementById("screen3");
   const paaHjem = !!(h && h.classList.contains("active")) && !document.body.classList.contains("lek-open");
@@ -40710,7 +40747,7 @@ function hjemMiniTegn() {
   const bill = '<div class="hmini-bill"' + (d.lek ? ' data-lek="' + esc(d.lek) + '"' : '') + ' style="background-image:url(&quot;' + esc(d.bill) + '&quot;)"></div>';
   const tekst = '<div class="hmini-tekst"><div class="hmini-nr">' + esc(d.nr) + '</div><div class="hmini-titel">' + esc(d.titel) + '</div></div>';
   /* COMPUTEREN: AFSPILLEREN BOR PAA DASHBOARDET, ALDRIG I MENUEN (Ida 28/10: »miniafspilleren skal jo for pokker ikke ligge i menuen??? den skal selvfølgelig ligge på dashboardet«) — hjemFortsaetPcHtml tegner den som første flise */
-  if (!tlf) {
+  if (!tlf || YGT_TLF_FORSIDE) {   /* telefonen (12/11): afspilleren står på siden som »Næste lektion« — ingen flydende bjælke over bundmenuen */
     if (t) t.remove(); (document.body.classList.contains("har-mini") && document.body.classList.remove("har-mini"));
     if (sn) sn.innerHTML = "";
     return;
@@ -55194,6 +55231,7 @@ function hjemUgeHtml(tlf, kunKal) {
     const nm = hjemNaesteModulHtml(), ud = (function () { try { return (CURRENT_DEF && CURRENT_DEF.type === "kursus") ? udsatFliserHtml() : ""; } catch (e) { return ""; } })();
     setTimeout(function () { try { hjemMiniTegn(); } catch (e) {} }, 0);
     const fs = tlf ? "" : hjemFortsaetPcHtml();
+    if (tlf && YGT_TLF_FORSIDE) { try { return hjemYgtTlfHtml(); } catch (e) {} }
     if (!tlf && nm) return '<div class="hu hu-pc uden-fokus hu-ygt">' + fs + '<div class="hnm-rk">' + nm + huRinge(false) + '</div>' + (ud ? '<div class="hu-dagen hu-naeste">' + ud + '</div>' : '') + huTodoHtml() + '</div>';
     return '<div class="hu ' + (tlf ? 'hu-tlf' : 'hu-pc uden-fokus') + ' hu-ygt">'
       + fs + ((nm || ud) ? '<div class="hu-dagen hu-naeste">' + nm + ud + '</div>' : '')
@@ -65736,7 +65774,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "3256";
+const APP_VERSION = "3257";
 const APP_BYGGET = "3. november";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_VERSION;   /* ingen dato (Ida 7/11: »hvorfor står der version 3. november?«) — datoen blev ikke rettet med, nummeret er sandheden */ } catch (e) {} });
 let NY_VERSION_KLAR = false;
@@ -94202,6 +94240,31 @@ html body .mails .mails-input:disabled { color:var(--gray2) !important; -webkit-
 .crm2-ai:disabled { opacity:.4; cursor:default; }
 @media (max-width:899px) { .crm2-pop-regler.crm2-ark .crm2-rr { gap:8px; } .crm2-pop-regler.crm2-ark .crm2-rx { order:3; margin-left:auto; } .crm2-pop-regler.crm2-ark .crm2-selv { order:4; flex:0 0 auto; margin-left:44px; } .crm2-pop-regler.crm2-ark { width:auto; } .crm2-hv { width:36px; } .crm2-sel { height:44px; } .crm2-rx { width:44px; height:44px; } .crm2-til { height:44px; padding-left:44px; } .crm2-regel-valg { margin-left:0; } .crm2-regel, .crm2-plusf { height:44px; } .crm2-fl { padding-bottom:2px; } }
 
+/* ===== FORLØBSKUNDENS FORSIDE PÅ TELEFONEN (Idas ja 12/11, Artifact Y6aQibKkUGRDRQFiAZTPuh) — kun under 900 px, kun .hu-ygt.yf =====
+   Overskrift over flise: 12 / versal / 1,5 / #6F6B66, flugter med flisens kant, 8 ned til flisen, 32 fra forrige flise (24 fra coveret) — låst 12/11. Flise: hvid, radius 20, 18/20, 10 imellem. */
+@media (max-width:899px) {
+  html body #screen3:has(.hu-ygt.yf) .hf-hero { height:calc(178px + env(safe-area-inset-top,0px) + 72px - 18px) !important; }   /* 150 synligt cover: fladen løfter sig 28 op i fotoet, og heroen starter 72 px + sikkerhedszonen over skærmens top */
+  html body.hjem-facit #screen3:has(.hu-ygt.yf) .hf-ark { padding-top:24px !important; }   /* 24 fra coveret til første overskrift (låst 12/11) */
+  html body .hu-ygt.yf .yf-sek { font-size:12px !important; line-height:16px !important; letter-spacing:1.5px !important; text-transform:uppercase; color:#6F6B66 !important; margin:32px 0 8px !important; padding:0 !important; display:block !important; }
+  html body .hu-ygt.yf .yf-sek::after, html body .hu-ygt.yf .yf-sek::before { content:none !important; display:none !important; }
+  html body .hu-ygt.yf > .yf-sek:first-child { margin-top:0 !important; }
+  html body .hu-ygt.yf .yf-fl, html body .hu-ygt.yf .yf-spil { background:#fff; border-radius:20px; box-shadow:var(--mb-skygge, 0 0 4px rgba(46,44,41,.10), 0 0 36px rgba(46,44,41,.20)); cursor:pointer; }
+  html body .hu-ygt.yf .yf-fl { padding:18px 20px; }
+  html body .hu-ygt.yf .yf-fl + .yf-fl { margin-top:10px; }
+  html body .hu-ygt.yf .yf-rk { display:flex; align-items:center; gap:16px; min-height:64px; box-sizing:border-box; }
+  html body .hu-ygt.yf .yf-ring { flex:none; width:26px; height:26px; border-radius:50%; border:1.5px solid #6F6B66; box-sizing:border-box; }
+  html body .hu-ygt.yf .yf-t { font-size:17px; line-height:24px; color:var(--black); }
+  html body .hu-ygt.yf .yf-u { font-size:13px; line-height:18px; color:#6F6B66; margin-top:4px; }
+  html body .hu-ygt.yf .yf-spil { overflow:hidden; }
+  html body .hu-ygt.yf .yf-still { width:100%; aspect-ratio:2 / 1; background-color:#E3E2DE; background-size:cover; background-position:center; border-radius:0; height:auto; }
+  html body .hu-ygt.yf .yf-spil-rk { display:flex; align-items:center; gap:14px; padding:14px 16px 14px 20px; }
+  html body .hu-ygt.yf .yf-tekst { flex:1; min-width:0; }
+  html body .hu-ygt.yf .yf-play { flex:none; width:44px; height:44px; min-height:44px; border-radius:50%; border:0; background:var(--red); display:flex; align-items:center; justify-content:center; padding:0 0 0 3px; cursor:pointer; }
+  html body .hu-ygt.yf .yf-bar { display:flex; align-items:center; gap:12px; margin-top:14px; }
+  html body .hu-ygt.yf .yf-bar span { flex:1; height:4px; border-radius:99px; background:#E3E2DE; overflow:hidden; }
+  html body .hu-ygt.yf .yf-bar i { display:block; height:100%; background:var(--red); border-radius:99px; }
+  html body .hu-ygt.yf .yf-bar b { font-weight:400; font-size:13px; line-height:18px; color:#6F6B66; white-space:nowrap; }
+}
 /* ===== OPRET OPSLAG PÅ TELEFONEN (Idas ja 12/11, Artifact LyGHGyTzBMzUUAPffxsfLd) — kun arket for et NYT opslag (.ftf-ny), kun under 900 px =====
    Fliser 56 høje m. tom ring / rødt flueben til højre · stort navnefelt · datohjul m. kontakten »Vælg klokkeslæt« · rund Tilbage 36 · rød knap 56 (navigationsknap). */
 @media (max-width:899px) {
