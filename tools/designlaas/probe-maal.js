@@ -153,6 +153,7 @@ async function maalHjem(vent){
   var pl=[].slice.call(rod.querySelectorAll(".hu-strib-rk > .hu-pil")); N++; if(pl.length!==2||pl.some(function(b){var r=b.getBoundingClientRect();return Math.round(r.width)!==32||Math.round(r.height)!==32})) fejl("HJEM: pilene skal være to runde 32 px knapper ved datofliserne");
 }
 async function maalForloeb(vent){
+  /* TELEFONEN HAR SIN EGEN FORM FRA 12/11 (måles i TLF-grenen nedenfor); bud 1 gælder computeren. */
   /* FORLØBSSIDEN = BUD 1 (Ida 4/11 »implementer bud 1«): én stor flise for det åbne modul (sort titel 18/telefon 16, antal 12, rød knap 44), SENERE-rækker 64 (dæmpede, 1 px #E3E2DE, ingen skygge), FÆRDIGE-rækker, sektionsetiket 10 versal, 32 under heroen, 24 mellem sektioner, 10 mellem fliser; ingen rød titel/kant/stribe; NÆSTE SKRIDT/Lektioner set/Opgaver er væk */
   var idag=datoDK(); var L=function(m,n,v){var a=[];for(var i=1;i<=n;i++)a.push({id:m+"-"+i,titel:"Lektion "+m+"."+i,video:v===false?"":"x.mp4"});return a;};
   CURRENT_DEF=Object.assign({},CURRENT_DEF||{},{type:"kursus",forloeb:"YOU GOT THIS"});
@@ -165,7 +166,30 @@ async function maalForloeb(vent){
     showTab(12); try{renderKursusHjem();}catch(e){} await vent(900);
     var rod=document.getElementById("forloebTidslinje"); if(!rod||!rod.querySelector(".ftl2")){ fejl("FORLØB: bud 1-listen (.ftl2) findes ikke"); return; }
     var skr=document.getElementById("screen12").innerText;
-    N++; if(/Næste skridt|Lektioner set|Opgaver\s*\d|NÆSTE SKRIDT/i.test(skr)) fejl("FORLØB: Næste skridt / Lektioner set / Opgaver står stadig på siden");
+    N++; if(/Næste skridt|NÆSTE SKRIDT|Opgaver\s*\d|OPGAVER\s*\d/.test(skr) || /^\s*(Lektioner set|LEKTIONER SET)\s*$/m.test(skr)) fejl("FORLØB: Næste skridt / Lektioner set / Opgaver står stadig på siden");
+    if(TLF){
+      /* FORLØBET PÅ TELEFONEN (Idas ja 12/11, Artifact Y6aQibKkUGRDRQFiAZTPuh): overskrift over fliser 12 versal · 1,5 · #6F6B66, 8 ned til flisen og 32 fra forrige · modulet = hvid flise (20 · skygge · ingen kant), titel 17 sort ·
+         hver lektion sin egen flise som søskende, 14 px inde, 10 imellem · rækker (færdige og låste) = hvide fliser ≥64 med 10 imellem. Computeren måles som før (bud 1, 4/11). */
+      var h1=document.querySelector("#forloebTidslinje .ftl2-hoved"); if(h1&&!rod.querySelector(".ftl2-stor .lks-lek")){ h1.click(); await vent(300); rod=document.getElementById("forloebTidslinje"); }
+      [].slice.call(rod.querySelectorAll(".ftl2-sek")).filter(synlig).forEach(function(e,i){ var t=e.querySelector("span"), ts=getComputedStyle(t), r=e.getBoundingClientRect();
+        er("FORLØB tlf overskrift", t, px(ts.fontSize)===12&&ts.textTransform==="uppercase"&&rgb(ts.color)===G2&&ts.fontWeight==="400"&&px(ts.letterSpacing)===1.5, ts.fontSize+" "+ts.color+" ls"+ts.letterSpacing+" (skal 12 versal · #6F6B66 · 1,5)");
+        var nx=e.nextElementSibling; if(nx){ var d=Math.round(nx.getBoundingClientRect().top-r.bottom); er("FORLØB tlf overskrift→flise", e, Math.abs(d-8)<=1, "afstand "+d+" (skal 8)"); }
+        var pv=e.previousElementSibling; if(pv&&synlig(pv)&&(pv.classList.contains("ftl2-rk")||pv.classList.contains("ftl2-stor"))){ var d2=Math.round(r.top-pv.getBoundingClientRect().bottom); er("FORLØB tlf flise→overskrift", e, Math.abs(d2-32)<=1, "afstand "+d2+" (skal 32)"); } });
+      var kt=rod.querySelector(".ftl2-stor .ftl2-kort"); N++; if(!kt) fejl("FORLØB tlf: det åbne modul har ingen flise (.ftl2-kort)");
+      if(kt){ var kc=getComputedStyle(kt), kr=kt.getBoundingClientRect(); er("FORLØB tlf modulflise", kt, px(kc.borderTopLeftRadius)===20&&rgb(kc.backgroundColor)==="rgb(255,255,255)"&&px(kc.borderTopWidth)===0&&kc.boxShadow!=="none", "r"+kc.borderTopLeftRadius+" "+kc.backgroundColor+" kant "+kc.borderTopWidth+" (skal 20 · hvid · skygge · ingen kant)");
+        var tn=kt.querySelector(".ftl2-n"), tns=getComputedStyle(tn); er("FORLØB tlf modultitel", tn, px(tns.fontSize)===17&&tns.fontWeight==="400"&&rgb(tns.color)===SORT, tns.fontSize+"/"+tns.fontWeight+" "+tns.color+" (skal 17/400 sort)");
+        var lf=[].slice.call(rod.querySelectorAll(".ftl2-stor .ftl2-lek .lks-lek")).filter(synlig); N++; if(!lf.length) fejl("FORLØB tlf: det åbne modul viser ingen lektioner");
+        lf.forEach(function(e,i){ var c=getComputedStyle(e), r=e.getBoundingClientRect();
+          er("FORLØB tlf lektionsflise", e, px(c.borderTopLeftRadius)===20&&rgb(c.backgroundColor)==="rgb(255,255,255)"&&c.boxShadow!=="none"&&Math.round(r.height)>=64&&Math.abs(Math.round(r.left-kr.left)-14)<=1, "r"+c.borderTopLeftRadius+" h"+Math.round(r.height)+" ind "+Math.round(r.left-kr.left)+" (skal 20 · hvid · skygge · ≥64 · 14 inde)");
+          var f0=i===0?kt:lf[i-1], d=Math.round(r.top-f0.getBoundingClientRect().bottom); er("FORLØB tlf flise→lektion", e, Math.abs(d-10)<=1, "afstand "+d+" (skal 10)"); });
+        N++; if(kt.querySelector(".lks-lek")) fejl("FORLØB tlf: en lektion ligger inde i modulets flise (hver lektion skal være sin egen flise)"); }
+      [].slice.call(rod.querySelectorAll(".ftl2 > .ftl2-rk")).filter(synlig).forEach(function(e){ var c=getComputedStyle(e), r=e.getBoundingClientRect();
+        er("FORLØB tlf række", e, Math.round(r.height)>=64&&px(c.borderTopLeftRadius)===20&&rgb(c.backgroundColor)==="rgb(255,255,255)"&&px(c.borderTopWidth)===0&&c.boxShadow!=="none", "h"+Math.round(r.height)+" r"+c.borderTopLeftRadius+" "+c.backgroundColor+" (skal ≥64 · 20 · hvid · skygge)");
+        var nx=e.nextElementSibling; if(nx&&nx.classList.contains("ftl2-rk")){ var d=Math.round(nx.getBoundingClientRect().top-r.bottom); er("FORLØB tlf række→række", nx, Math.abs(d-10)<=1, "afstand "+d+" (skal 10)"); } });
+      [].slice.call(rod.querySelectorAll("*")).filter(synlig).forEach(function(e){ if(e.closest(".ftl2-pil, .lks-fort, .lks-fb, .lks-num, svg, .lek-favchips")||e.tagName==="svg") return; var cs=getComputedStyle(e); var tekst=[].some.call(e.childNodes,function(n){return n.nodeType===3&&n.textContent.trim();}); N++; if(tekst&&rgb(cs.color)===RED) fejl("FORLØB tlf: rød tekst »"+txt(e)+"« ["+kl(e)+"] — rød er aldrig titel"); });
+      var h2=document.querySelector("#forloebTidslinje .ftl2-hoved"); if(h2&&document.querySelector("#forloebTidslinje .ftl2-stor .lks-lek")){ h2.click(); await vent(250); }
+      continue;
+    }
     /* sektionsetiketter */
     var seks=[].slice.call(rod.querySelectorAll(".ftl2-sek")).filter(synlig);
     seks.forEach(function(e,i){ var cs=getComputedStyle(e), t=e.querySelector("span"), ts=getComputedStyle(t), r=e.getBoundingClientRect();
