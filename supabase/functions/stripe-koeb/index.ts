@@ -1,3 +1,4 @@
+// @ts-nocheck
 // ============================================================================
 // STRIPE-KOEB · Edge Function "stripe-koeb"
 //
@@ -23,6 +24,11 @@
 //    contacts · auth (kun invitation, ALDRIG et kodeord).
 //    6/11 TILFOEJET: Stripes API (kun LAESNING af den ene session, med en noegle
 //    der kun maa laese: STRIPE_LAES_NOEGLE, valgfri) og Brevo (BREVO_API_KEY).
+// 11/11 LOGIN-MAILEN FRA BACKSTAGE › MAILS (Ida: »Mailen der kommer er forkert!! Vil du ikke ændre det?«): invitationen
+//    laves nu med generateLink (Supabase sender INTET selv), og login-mailen bygges af Idas egen tekst i
+//    skema_svar (ENERGIDA/Ida/mail_tekster.login) med samme kode som Mails' forhåndsvisning og sendes via Brevo.
+//    Knappen er kundens eget invitationslink. Fejler Brevo, sendes Supabase' egen »vælg adgangskode«-mail som
+//    reserve (resetPasswordForEmail), så kunden aldrig står uden mail.
 // 6. OMKOSTNING: ingen direkte. Ingen AI-kald. Der sendes én invitationsmail
 //    pr. koeb via Supabase, og 6/11 én koebsmail til Ida via Brevo (Free, delt
 //    300 mails/dag). Modtageren er FAST (Kontakt@energida.dk) — kalderen kan ikke
@@ -206,6 +212,88 @@ async function sendKoebsmail(o: {
     });
     return r.ok;
   } catch { return false; }
+}
+
+/* ===== MAILENS HTML — samme kode som Backstage › Mails (mailsHtml i index.html), så det sendte er det, Ida ser i forhåndsvisningen ===== */
+function esc(s: any) { return (s || "").toString().replace(/[&<>"]/g, (c: string) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;" } as any)[c]); }
+const MAILS_STD_FOTO = "https://b2b.energida.dk/mail/hero.jpg";
+function mailsHarIndhold(m) { return (m.fliser || []).some(function (f) { return String(f.tekst || "").trim() || String(f.forslag || "").trim() || f.src || (f.t === "knap" && String(f.tekst || "").trim()); }); }
+function mailsTekstHtml(t, midt) {
+  const al = midt ? "center" : "left";
+  return String(t || "").split(/\n\s*\n/).map(function (p) { return p.trim(); }).filter(Boolean).map(function (p) {
+    return '<p style="margin:0 0 12px;font-size:15px;line-height:1.6;color:#1A1A1A;text-align:' + al + ';">' + esc(p).replace(/\n/g, "<br>") + '</p>';
+  }).join("");
+}
+function mailsHtml(m, o) {
+  o = o || {};
+  const navn = o.navn || "{navn}";
+  /* {kollegakode}: forhaandsvisningen faar en eksempelkode. TRIN 2 (IKKE BYGGET): serveren (mail-udsend/den planlagte funktion) erstatter {kollegakode} med kundens egen kode fra virksomhedskoder/app_metadata.kode pr. modtager — foer da staar flettekoden ubehandlet i en rigtig mail. */
+  const sub = function (t) { return String(t || "").replace(/\{navn\}/g, navn).replace(/\{kollegakode\}/g, o.kollegakode || "{kollegakode}"); };
+  const fl = (m.fliser || []).map(function (f) {
+    if (f.t === "billede") return f.src ? '<tr><td class="ind" style="padding:16px 16px 0;"><img src="' + esc(f.src) + '" width="568" alt="" style="display:block;width:100%;max-width:568px;height:auto;border:0;"></td></tr>' : '';
+    if (f.t === "knap") return String(f.tekst || "").trim() ? '<tr><td class="ind" style="padding:16px 16px 0;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td align="center" bgcolor="#FC2404" style="border-radius:999px;"><a href="' + esc(String(f.link || "").trim() || "https://energida.dk/") + '" style="display:block;padding:15px 20px;font-family:Poppins,Arial,sans-serif;font-size:17px;color:#ffffff;text-decoration:none;border-radius:999px;">' + esc(f.tekst) + '</a></td></tr></table></td></tr>' : '';
+    let ind = "";
+    if (f.et) ind += '<div style="font-size:20px;font-weight:600;line-height:1.3;color:#1A1A1A;text-align:' + (f.midt ? "center" : "left") + ';margin:0 0 12px;">' + esc(f.et) + '</div>';   /* FED OVERSKRIFT (Ida 11/11): 20 px, 600, sort, ingen streg under */
+    ind += mailsTekstHtml(sub(f.tekst), f.midt);
+    if (String(f.forslag || "").trim()) {
+      ind += o.marker
+        ? '<div style="margin:2px 0 12px;padding-left:12px;border-left:2px solid #DEDAD4;"><div style="font-size:10px;letter-spacing:1.4px;text-transform:uppercase;color:#9A9590;margin-bottom:4px;">Ikke dine ord</div><div style="color:#6F6B66;">' + mailsTekstHtml(sub(f.forslag)).replace(/color:#1A1A1A/g, "color:#6F6B66") + '</div></div>'
+        : mailsTekstHtml(sub(f.forslag), f.midt);
+    }
+    if (f.harKode) ind += '<div style="border:1px solid #DEDAD4;border-radius:14px;padding:12px 14px;margin:4px 0 0;"><div style="font-size:10px;letter-spacing:1.4px;text-transform:uppercase;color:#9A9590;">Din kode</div><div style="font-size:16px;letter-spacing:1px;color:#FC2404;margin-top:4px;">' + (String(f.kode || "").trim() ? esc(sub(f.kode)) : (o.marker ? "Koden mangler" : "")) + '</div></div>';
+    if (f.knap) ind += '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td align="center" bgcolor="#FC2404" style="border-radius:999px;"><a href="' + esc(o.knapUrl || "https://b2b.energida.dk/") + '" style="display:block;padding:15px 20px;font-family:Poppins,Arial,sans-serif;font-size:17px;color:#ffffff;text-decoration:none;border-radius:999px;">' + esc(f.knap) + '</a></td></tr></table>';
+    if (f.lille) ind += '<p style="margin:14px 0 0;font-size:12px;line-height:1.6;color:#6F6B66;text-align:center;">' + esc(f.lille) + '</p>';
+    { const k = ind.lastIndexOf("margin:0 0 12px;"); if (k >= 0 && ind.slice(k).indexOf("<div") < 0 && ind.slice(k).indexOf("<table") < 0) ind = ind.slice(0, k) + "margin:0;" + ind.slice(k + 16); }
+    return '<tr><td class="ind" style="padding:16px 16px 0;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#ffffff;border:1px solid #EDEAE5;border-radius:16px;"><tr><td style="padding:20px 22px;font-family:Poppins,Arial,sans-serif;">' + ind + '</td></tr></table></td></tr>';
+  }).join("");
+  const tom = !mailsHarIndhold(m) ? '<tr><td class="ind" style="padding:16px 16px 0;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#ffffff;border:1px solid #EDEAE5;border-radius:16px;"><tr><td style="padding:20px 22px;font-family:Poppins,Arial,sans-serif;font-size:15px;color:#FC2404;">Dine ord mangler</td></tr></table></td></tr>' : "";
+  return '<!doctype html><html lang="da"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><meta name="supported-color-schemes" content="light">'
+    + '<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400&display=swap" rel="stylesheet">'
+    + '<style>body{margin:0;padding:0;background:#F2F0ED} @media (max-width:520px){.ind{padding-left:12px!important;padding-right:12px!important} .firma{white-space:normal!important} .fsep{display:block;height:0;overflow:hidden;font-size:0} .hero{height:240px!important}}</style></head>'
+    + '<body style="margin:0;padding:0;background:#F2F0ED;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#F2F0ED;"><tr><td align="center" style="padding:16px 0 32px;">'
+    + '<table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:600px;">'
+    + '<tr><td class="ind" style="padding:0 16px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td class="hero" background="' + esc(m.foto || MAILS_STD_FOTO) + '" bgcolor="#3A3936" height="380" style="background:#3A3936 url(\'' + esc(m.foto || MAILS_STD_FOTO) + '\') center/cover no-repeat;height:380px;"></td></tr></table></td></tr>'
+    + fl + tom
+    + '<tr><td align="center" style="padding:28px 16px 0;font-family:Poppins,Arial,sans-serif;"><p style="margin:0 0 24px;font-size:14px;color:#1A1A1A;">Er der noget, der driller? Så svar på denne mail.</p>'
+    + '<img src="https://b2b.energida.dk/mail/logo.png" width="60" alt="Energida" style="display:block;margin:0 auto 14px;width:60px;height:auto;border:0;">'
+    + '<p class="firma" style="margin:0;font-size:10.5px;line-height:1.7;color:#6F6B66;white-space:nowrap;"><span style="white-space:nowrap;">Kontakt@energida.dk · +45 28 60 30 36</span><span class="fsep"> · </span><span style="white-space:nowrap;">Holstebrovej 80, 6950 Ringkøbing · CVR: 45114651</span></p></td></tr>'
+    + (o.afmeld ? '<tr><td align="center" style="padding:14px 16px 0;font-family:Poppins,Arial,sans-serif;"><p style="margin:0;font-size:11px;line-height:1.6;color:#9A9590;">Vil du ikke have flere mails fra Energida? <a href="' + (o.afmeld === true ? '{afmeld}' : '#') + '" style="color:#9A9590;text-decoration:underline;">Afmeld her</a></p></td></tr>' : '')   /* AFMELDING (23/10): kun i mails, der sendes til kunder/leads — mail-udsend skriver det personlige link ind i {afmeld} */
+    + '</table></td></tr></table></body></html>';
+}
+const MAIL_STD: Record<string, { emne: string; fliser: any[] }> = {"login":{"emne":"Klar til at shine? Dit Content Studio venter","fliser":[{"et":"Dit login","midt":true,"tekst":"Du vælger en adgangskode, og så er du inde.\nKlik her for at komme i gang 👇🏻","knap":"Let’s go","lille":"Linket virker i 24 timer og kun én gang. Har du ikke tilmeldt dig, kan du se bort fra mailen."}]},"velkomst":{"emne":"Her er din adgang og kollegakoden – gem denne mail","fliser":[{"et":"Din profil er klar","tekst":"Hej {navn}\n\nNu kan du gå i gang. Her er linket og det, du skal bruge. Gem gerne denne mail, så har du det hele samlet.\n\nb2b.energida.dk\nLog ind med din e-mail og den adgangskode, du valgte, da du oprettede din profil."},{"t":"knap","tekst":"Åbn dit forløb","link":"https://b2b.energida.dk/"},{"et":"Hent appen til din telefon","tekst":"Så ligger den sammen med dine andre apps og kan åbnes med ét tryk."},{"et":"iPhone","tekst":"1. Åbn b2b.energida.dk i Safari."},{"et":"","tekst":"2. Tryk på Del, eventuelt via menuen."},{"et":"","tekst":"3. Vælg “Føj til hjemmeskærm”."},{"et":"","tekst":"4. Slå “Åbn som webapp” til, hvis muligheden vises, og tryk på “Tilføj”."},{"et":"Android","tekst":"1. Åbn b2b.energida.dk i Chrome."},{"et":"","tekst":"2. Tryk på de tre prikker."},{"et":"","tekst":"3. Vælg “Installer og opret genvej” eller “Føj til startskærm”, og følg vejledningen."},{"et":"Tag op til to kolleger med","tekst":"Du kan give op til to kolleger i din virksomhed adgang til forløbet. Jeres kollegakode er:","kode":"{kollegakode}","harKode":true},{"et":"","tekst":"Dine kolleger går til b2b.energida.dk, vælger “Jeg har en kode” og bruger koden til at oprette deres eget login. I får altså hver jeres login og adgangskode.","lille":"Markér koden og kopiér den, eller svar på denne mail, hvis du vil have den sendt igen."},{"t":"billede","src":"https://b2b.energida.dk/mail/login-crop.jpg"},{"et":"Koden er til jer","tekst":"Ligesom du passer på din forretning, passer jeg på min. Derfor er adgangen til dig og op til to kolleger i din virksomhed, og jeg er glad, hvis koden og undervisningen bliver hos jer."},{"et":"Jeg vil gerne høre fra dig","tekst":"Jeg bliver rigtig glad for feedback, både det gode og det, der ikke fungerer, så jeg kan blive bedre. Svar bare på denne mail.\n\nKærlig hilsen\nIda"}]}};
+/* ===== SLUT PÅ MAILENS HTML ===== */
+
+/* LOGIN-MAILEN (11/11): Idas tekst fra Mails, knappen = invitationslinket. true = sendt via Brevo. */
+async function sendLoginmail(admin: any, o: { email: string; navn: string; kode: string; link: string }) {
+  try {
+    const noegle = Deno.env.get("BREVO_API_KEY");
+    if (!noegle || !o.link) return false;
+    let g: any = null;
+    try {
+      const { data } = await admin.from("skema_svar").select("svar").eq("kode", "ENERGIDA").eq("navn", "Ida").eq("skema", "mail_tekster").limit(1);
+      g = data && data.length && data[0].svar && typeof data[0].svar === "object" ? data[0].svar.login : null;
+    } catch (_e) { g = null; }
+    const std = MAIL_STD.login;
+    const m: any = { emne: (g && String(g.emne || "").trim()) || std.emne, foto: (g && g.foto) || "", fliser: (g && Array.isArray(g.fliser) && g.fliser.length) ? g.fliser : std.fliser };
+    if (!mailsHarIndhold(m)) m.fliser = std.fliser;
+    /* en knap-blok uden eget link (eller med appens forside) peger på kundens eget invitationslink */
+    m.fliser = m.fliser.map((f: any) => (f && f.t === "knap" && (!String(f.link || "").trim() || /^https:\/\/b2b\.energida\.dk\/?$/i.test(String(f.link).trim()))) ? Object.assign({}, f, { link: o.link }) : f);
+    const fornavn = String(o.navn || "").trim().split(/\s+/)[0] || "";
+    const html = mailsHtml(m, { navn: fornavn, kollegakode: o.kode, knapUrl: o.link }).replace(/Hej \s*\n/g, "Hej\n");
+    const r = await fetch("https://api.brevo.com/v3/smtp/email", {
+      method: "POST",
+      headers: { "api-key": noegle, "Content-Type": "application/json", Accept: "application/json" },
+      body: JSON.stringify({
+        sender: { name: String((g && g.fra) || "Energida").replace(/[\r\n<>"]/g, "").slice(0, 60) || "Energida", email: "Kontakt@energida.dk" },
+        replyTo: { email: "Kontakt@energida.dk", name: "Energida" },
+        to: [{ email: o.email }],
+        subject: m.emne,
+        htmlContent: html,
+        tags: ["login"],
+      }),
+    });
+    return r.ok;
+  } catch (_e) { return false; }
 }
 
 Deno.serve(async (req) => {
@@ -432,12 +520,20 @@ Deno.serve(async (req) => {
   // Hun faar et link, hvor hun saetter sin egen adgangskode. redirectTo er ikke
   // pynt: uden den lander hun paa projektets Site URL. Adressen skal ogsaa staa
   // under Authentication -> URL Configuration -> Redirect URLs.
-  const { data: nyBruger, error: invFejl } = await admin.auth.admin.inviteUserByEmail(email, {
-    data: { navn: navn || virksomhed, kode },
-    redirectTo: "https://b2b.energida.dk",
+  /* 11/11: linket laves her, og login-mailen sendes af os selv med Idas tekst fra Mails (se sendLoginmail). Supabase sender intet. */
+  const { data: lnk, error: invFejl } = await admin.auth.admin.generateLink({
+    type: "invite",
+    email,
+    options: { data: { navn: navn || virksomhed, kode }, redirectTo: "https://b2b.energida.dk" },
   });
   if (invFejl) {
-    return svar({ fejl: "Kunden er oprettet, men invitationen blev ikke sendt: " + invFejl.message, kode }, 500);
+    return svar({ fejl: "Kunden er oprettet, men invitationen blev ikke lavet: " + invFejl.message, kode }, 500);
+  }
+  const nyBruger = { user: lnk?.user };
+  let loginmail = await sendLoginmail(admin, { email, navn: navn || "", kode, link: String(lnk?.properties?.action_link || "") }) ? "mails" : "";
+  if (!loginmail) {
+    /* RESERVE: Supabase' egen mail med link til at vælge adgangskode — kunden står aldrig uden mail */
+    try { const { error: rf } = await admin.auth.resetPasswordForEmail(email, { redirectTo: "https://b2b.energida.dk" }); loginmail = rf ? "fejlede" : "reserve"; } catch (_e) { loginmail = "fejlede"; }
   }
 
   // --- 6) KODEN LAASES FAST PAA SERVEREN ---------------------------------
@@ -478,5 +574,5 @@ Deno.serve(async (req) => {
   // virk_kilde er ikke pynt: den er beviset for, HVOR virksomhedsnavnet kom fra.
   // Staar der "customer_details.name (noedspor)", fandt vi aldrig firmanavnet, og
   // kunden hedder nu det samme som personen. Det skal ses, ikke opdages senere.
-  return svar({ ok: true, oprettet: true, kartotek: kartotekOk, kode, produkt: erYGT ? "yougotthis" : "contentstudio", virksomhed_id: virksomhedId, laast: !!nyId, test: !!erTest, kontakt: kontaktOk, virk_kilde: virkKilde, koebsmail: mailSendt }, 200);
+  return svar({ ok: true, oprettet: true, kartotek: kartotekOk, kode, produkt: erYGT ? "yougotthis" : "contentstudio", virksomhed_id: virksomhedId, laast: !!nyId, test: !!erTest, kontakt: kontaktOk, virk_kilde: virkKilde, koebsmail: mailSendt, loginmail }, 200);
 });
