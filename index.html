@@ -9061,9 +9061,11 @@ body.ov-ark-aaben { overflow:hidden; }
 .ova-knap { flex:1; min-height:48px; border-radius:999px; font:400 15px Poppins,sans-serif; cursor:pointer; padding:0 18px; }
 .ova-roed { flex:2; background:var(--red); color:#fff; border:0; }
 .ova-graa { background:#fff; color:#1A1A1A; border:1px solid #D6D3CE; }
-.lopg-rk { display:flex; align-items:center; gap:14px; margin-top:12px; }
+.lopg-rk { display:flex; align-items:center; gap:14px; }
+.lopg-fl { display:flex; flex-direction:column; gap:14px; } .lopg-skl { height:1px; background:var(--border, #E3E2DE); } .lopg-ql { display:flex; flex-direction:column; gap:10px; } .lopg-qr { display:flex; gap:12px; align-items:flex-start; font-size:14px; line-height:1.45; color:#1A1A1A; } .lopg-nr { flex:none; width:24px; text-align:center; color:#6F6B66; }
+.lopg-kns { display:flex; flex-direction:column; gap:8px; } .lopg-kns:empty { display:none; } .lopg-kn { height:46px; border-radius:999px; border:0; font:400 14px Poppins,sans-serif; cursor:pointer; } .lopg-roed { background:var(--red); color:#fff; font-weight:500; } .lopg-graa { background:#fff; box-shadow:0 0 0 1px #DEDAD4; color:#6F6B66; } .lopg-chip { align-self:flex-start; }
 .lopg-tt { display:flex; flex-direction:column; gap:2px; min-width:0; }
-.lopg-t1 { font-size:15px; color:#1A1A1A; } .lopg-t2 { font-size:13px; color:#6F6B66; }
+.lopg-t1 { font-size:17px; color:#1A1A1A; } .lopg-t2 { font-size:13px; color:#6F6B66; }
 .lgjort-c { width:26px; height:26px; border-radius:50%; border:1.5px solid var(--border); flex-shrink:0; display:flex; align-items:center; justify-content:center; box-sizing:border-box; }
 .lgjort-c.ok { background:var(--red); border-color:var(--red); }
 .lgjort-t { font-size:15px; color:var(--black); }
@@ -42182,7 +42184,7 @@ function forloebBarHtml(done, total) {
 function tidTilSek(t) { const d = String(t || "0:0").split(":"); return (parseInt(d[0], 10) || 0) * 60 + (parseInt(d[1], 10) || 0); }
 function fmtTid(s) { return String(Math.floor(s / 60)).padStart(2, "0") + ":" + String(s % 60).padStart(2, "0"); }
 function modulTid(m) { return fmtTid(m.lektioner.reduce((s, l) => s + tidTilSek(l.tid), 0)); }
-let KURSUS_SET = {}, KURSUS_SVAR = {}, KURSUS_NOTER = {}, KURSUS_PREF = {}, KURSUS_UDSAT = {}, KURSUS_GJORT = {};
+let KURSUS_SET = {}, KURSUS_SVAR = {}, KURSUS_NOTER = {}, KURSUS_PREF = {}, KURSUS_UDSAT = {}, KURSUS_GJORT = {}, KURSUS_SVAR_GL = {};
 
 /* adgang pr. kode: def.lektion_adgang = liste af lektions-id'er — udeladt = alle lektioner */
 
@@ -42691,7 +42693,9 @@ function lekLaastAfForrige(id) {
     }
     if (!KURSUS_SET[prev.id]) return { fra: lekVisNr(prev.id), tekst: "Lektion " + lekVisNr(id) + " åbner, når du har taget lektion " + lekVisNr(prev.id) + "." };
     const harOpg = !!(prev.ovelse && prev.ovelse.length);
-    if (harOpg && !oevKlaret(prev.id)) return { fra: lekVisNr(prev.id), tekst: "Lektion " + lekVisNr(id) + " åbner, når du har lavet opgaven til lektion " + lekVisNr(prev.id) + " og markeret den som udført." };
+    /* EN OPGAVE KAN SÆTTES TIL SENERE (Idas klik 12/11 »Ja, ved opgaver«): så åbner næste lektion, og opgaven står som »Venter på dig«. Refleksionsøvelser låser stadig. */
+    const prevOpg = oevArt(prev.id) === "opgave";
+    if (harOpg && !mgErGentagelig(prev.id) && !oevKlaret(prev.id) && !(prevOpg && KURSUS_UDSAT[prev.id])) return { fra: lekVisNr(prev.id), tekst: "Lektion " + lekVisNr(id) + " åbner, når " + oevOrd(prev.id, true) + " til lektion " + lekVisNr(prev.id) + " er udført" + (prevOpg ? " eller sat til senere." : ".") };
     return null;
   } catch (e) { return null; }
 }
@@ -42912,16 +42916,28 @@ function lekOpgFliseHtml(id, l, aktive, ix) {
   const naeste = (aktive && ix > -1) ? aktive[ix + 1] : null;
   let laasLinje = '';
   try { if (!g && naeste && lekLaastAfForrige(naeste.id)) laasLinje = 'Lektion ' + lekVisNr(naeste.id) + ' åbner, når ' + oevOrd(id, true) + ' er udført'; } catch (e) {}
-  const t1 = g ? storStart(oevOrd(id, true)) + ' er udført' : n + (n === 1 ? ' spørgsmål' : ' spørgsmål') + (n > 1 ? ', ét ad gangen' : '');
-  const t2 = g ? (naeste ? 'Lektion ' + lekVisNr(naeste.id) + ' er åben' : '') : laasLinje;
-  return '<div class="lk-flise lopg-fl" id="lekOpgFlise"><div class="lk-note-top"><span class="lk-note-etiket">' + esc(storStart(oevOrd(id))) + ' til lektion ' + esc(lekVisNr(id)) + '</span></div>'
-    + '<div class="lopg-rk"><span class="lgjort-c' + (g ? ' ok' : '') + '">' + (g ? fb : '') + '</span><span class="lopg-tt"><span class="lopg-t1">' + esc(t1) + '</span>' + (t2 ? '<span class="lopg-t2">' + esc(t2) + '</span>' : '') + '</span></div></div>';
+  /* FLISEN ER DØREN (Idas klik 12/11: refleksionsflisen bud A, artifact ExyFV9S2i4SitnZLJbDAVW + ekspertholdets bud NSNnEvHLhsfwU5beJKdjwM):
+     cirkel og sort overskrift øverst, svag streg, spørgsmålene/opgavens punkter som rolig liste, og knapperne i flisen.
+     Refleksionsøvelse: »Tag refleksionsøvelsen« / »Senere«. Opgave: »Tag opgaven« / »Jeg gør den senere« (næste lektion åbner imens). */
+  const opg = oevArt(id) === "opgave", idS = esc(String(id)).replace(/'/g, ""), udsat = !!KURSUS_UDSAT[id];
+  const tit = g ? storStart(oevOrd(id, true)) + ' er udført' : (udsat ? 'Venter på dig' : storStart(oevOrd(id)));
+  let under = 'Lektion ' + lekVisNr(id) + ' · ' + n + ' spørgsmål';
+  if (g) under = (naeste && !lekLaastAfForrige(naeste.id)) ? 'Lektion ' + lekVisNr(naeste.id) + ' er åben' : '';
+  else if (udsat) under = opg ? (naeste ? 'Lektion ' + lekVisNr(naeste.id) + ' er åben. ' : '') + 'Opgaven står også på Forsiden.' : (laasLinje || under);
+  const liste = g ? '' : '<div class="lopg-skl"></div><div class="lopg-ql">' + l.ovelse.map(function (q, i) { return '<div class="lopg-qr">' + (n > 1 ? '<span class="lopg-nr">' + (i + 1) + '</span>' : '') + '<span>' + esc(ovSpm(q)) + '</span></div>'; }).join("") + '</div>';
+  let knapper = '';
+  /* EN OPGAVE SKRIVES SOM EN REFLEKSIONSØVELSE (Idas klik 12/11 »Skriv svar som i dag«: Modul 1's opgaver har spørgsmål, der skal svares på) — forskellen er, at en opgave kan sættes til senere, så næste lektion åbner imens */
+  if (!g) knapper = '<button type="button" class="lopg-kn lopg-roed mq-tap" onclick="startOvelse(\'' + idS + '\')">Tag ' + esc(oevOrd(id, true)) + '</button>' + (udsat ? '' : '<button type="button" class="lopg-kn lopg-graa mq-tap" onclick="lekOpgSenereBliv(\'' + idS + '\')">' + (opg ? 'Jeg gør den senere' : 'Senere') + '</button>');
+  else knapper = '<button type="button" class="lopg-kn lopg-graa mq-tap" onclick="vkSvarAabn()">Se dine svar</button>';
+  return '<div class="lk-flise lopg-fl" id="lekOpgFlise">'
+    + '<div class="lopg-rk"><span class="lgjort-c' + (g ? ' ok' : '') + '">' + (g ? fb : '') + '</span><span class="lopg-tt"><span class="lopg-t1">' + esc(tit) + '</span>' + (under ? '<span class="lopg-t2">' + esc(under) + '</span>' : '') + '</span></div>'
+    + liste + '<div class="lopg-kns">' + knapper + '</div></div>';
 }
 function lekOpgSenere(id) {
   try { ovelseGem(); } catch (e) {}
   if (!oevKlaret(id) && !somKundeKigger()) {
     KURSUS_UDSAT[id] = true; kursusGemLocal();
-    if (sb && currentKode) { try { sb.from("skema_svar").insert({ kode: currentKode, navn: CURRENT_NAVN || "", skema: "lektion_udsat_" + id, svar: { udsat: true } }); } catch (e) {} }
+    if (sb && currentKode) { try { sb.from("skema_svar").insert({ kode: currentKode, navn: CURRENT_NAVN || "", skema: "lektion_udsat_" + id, svar: { udsat: true } }).then(function () {}, function () {}); } catch (e) {} }
   }
 }
 /* ARKET (bud 1): helskærm, ét spørgsmål ad gangen; krydset og »Senere« lukker uden popup og gemmer svarene */
@@ -42933,7 +42949,16 @@ function ovArkLuk(senere) {
   try { renderKursusHjem(); } catch (e) {}
   if (LEK_AABEN) renderLektionVis();
 }
-function oevKlaret(id) { try { return !!(KURSUS_SVAR[id] || KURSUS_GJORT[id]); } catch (e) { return false; } }
+/* UDFØRT SKER KUN, NÅR KUNDEN SELV TRYKKER (Idas klik 12/11 »Nej, byg det hele«, ekspertholdets bud NSNnEvHLhsfwU5beJKdjwM): før talte ethvert gemt svar som udført,
+   så en halv kladde stod som udført dagen efter. Nu er udført et eget mærke (lektion_gjort_). Svar gemt FØR skellet tæller stadig som udført — ingen kunde mister noget. */
+const OEV_UDFOERT_SKEL = "2026-11-12T12:00:00Z";
+function oevKlaret(id) { try { return !!(KURSUS_GJORT[id] || KURSUS_SVAR_GL[id]); } catch (e) { return false; } }
+async function oevUdfoertGem(id) {
+  if (somKundeKigger() || !sb || !currentKode) return true;
+  for (let n = 0; n < 2; n++) { try { const r = await sb.from("skema_svar").insert({ kode: currentKode, navn: CURRENT_NAVN || "", skema: "lektion_gjort_" + id, svar: { gjort: true } }).select("id"); if (!r.error && r.data && r.data.length) return true; } catch (e) {} }
+  return false;
+}
+function lekOpgSenereBliv(id) { lekOpgSenere(id); lekTegnUdenHop(id); try { renderKursusHjem(); } catch (e) {} }
 function lekGjortHtml(id) {
   if (!KURSUS_SET[id]) return '';   /* OPGAVEN KOMMER FØRST FREM, NÅR VIDEOEN ER SET (Ida 26/10: »reflektionsøvelsen skal først komme frem når man har set hele videoen«) */
   const svaret = !!KURSUS_SVAR[id], g = !!KURSUS_GJORT[id] || svaret, idS = esc(String(id)).replace(/'/g, "");   /* BESVARET = GJORT (Idas klik 26/10 »Viser flueben af sig selv«; Mette: »Det har jeg jo lige svaret på.«) — så kan den ikke trykkes af igen */
@@ -43154,10 +43179,10 @@ function modulSaetSet(nr) {
 
 function kursusLocalKey() { return "kursus_" + (currentKode || "X") + "_" + (CURRENT_NAVN || "X"); }
 let KURSUS_VIS = {};   // antal gange hver lektion er åbnet — så Ida kan se, hvad der ses igen
-function kursusGemLocal() { if (!currentKode) return; try { localStorage.setItem(kursusLocalKey(), JSON.stringify({ set: KURSUS_SET, svar: KURSUS_SVAR, noter: KURSUS_NOTER, pref: KURSUS_PREF, udsat: KURSUS_UDSAT })); } catch(e) {} }
+function kursusGemLocal() { if (!currentKode) return; try { localStorage.setItem(kursusLocalKey(), JSON.stringify({ set: KURSUS_SET, svar: KURSUS_SVAR, noter: KURSUS_NOTER, pref: KURSUS_PREF, udsat: KURSUS_UDSAT, gjort: KURSUS_GJORT, svarGl: KURSUS_SVAR_GL })); } catch(e) {} }
 async function kursusHent() {
-  KURSUS_SET = {}; KURSUS_SVAR = {}; KURSUS_NOTER = {}; KURSUS_PREF = {}; KURSUS_UDSAT = {}; KURSUS_GJORT = {}; MODUL_SET = {};   /* frisk start pr. kunde — ingen arv fra cachen (Ida 27/7 nat) */
-  if (currentKode) try { const v = JSON.parse(localStorage.getItem(kursusLocalKey())); if (v) { KURSUS_SET = v.set || {}; KURSUS_SVAR = v.svar || {}; KURSUS_NOTER = v.noter || {}; KURSUS_PREF = v.pref || {}; KURSUS_UDSAT = v.udsat || {}; } } catch(e) {}
+  KURSUS_SET = {}; KURSUS_SVAR = {}; KURSUS_NOTER = {}; KURSUS_PREF = {}; KURSUS_UDSAT = {}; KURSUS_GJORT = {}; KURSUS_SVAR_GL = {}; MODUL_SET = {};   /* frisk start pr. kunde — ingen arv fra cachen (Ida 27/7 nat) */
+  if (currentKode) try { const v = JSON.parse(localStorage.getItem(kursusLocalKey())); if (v) { KURSUS_SET = v.set || {}; KURSUS_SVAR = v.svar || {}; KURSUS_NOTER = v.noter || {}; KURSUS_PREF = v.pref || {}; KURSUS_UDSAT = v.udsat || {}; KURSUS_GJORT = v.gjort || {}; KURSUS_SVAR_GL = v.svarGl || {}; } } catch(e) {}
   if (currentKode) try { const mv = JSON.parse(localStorage.getItem(modulSetKey())); if (mv) MODUL_SET = mv; } catch(e) {}
   try { if (ygtModulHold()) { await ygtStartHent(); try { buildSideNav(CURRENT_DEF); buildBottomNav(CURRENT_DEF); } catch (e) {} if (ygtHold() && /^YOU GOT THIS/i.test(String((CURRENT_DEF || {}).forloeb || ""))) { try { ygtMailchimpMeld(); } catch (e) {} }   /* 9/11: Ringkøbing-kunder meldes IKKE til Mailchimp-forløbet af sig selv */ } } catch (e) {}   /* ti uger: kundens egen start + modul-mailene (30/9) */
   await modulerHent();   /* Idas modultekster — fejler den, staar appen praecis som foer */
@@ -43165,13 +43190,14 @@ async function kursusHent() {
   if (sb && currentKode) {
     try {
       // ældste først, så nyeste række vinder for noter/præference
-      const { data, error } = await sb.from("skema_svar").select("skema,svar").eq("kode", currentKode).eq("navn", CURRENT_NAVN || "").order("created_at", { ascending: true });
+      const { data, error } = await sb.from("skema_svar").select("skema,svar,created_at").eq("kode", currentKode).eq("navn", CURRENT_NAVN || "").order("created_at", { ascending: true });
       /* INTET GAAR TABT (sundhedstjekket 28/9): det, der kun er gemt paa denne enhed (et »set« eller en note, hvor skrivningen fejlede),
          flettes med basen og sendes op igen — foer erstattede basens noter de lokale, og et fejlet »set« naaede aldrig de andre enheder. */
       const lokalSet = Object.assign({}, KURSUS_SET), lokalNoter = JSON.parse(JSON.stringify(KURSUS_NOTER || {})), iBasen = {};
       if (!error && data) data.forEach(r => {
         if (r.skema.indexOf("lektion_set_") === 0) iBasen[r.skema.slice(12)] = true;
         if (r.skema.indexOf("lektion_set_") === 0) KURSUS_SET[r.skema.slice(12)] = true;
+        if (r.skema.indexOf("lektion_svar_") === 0 && r.created_at && String(r.created_at) < OEV_UDFOERT_SKEL) KURSUS_SVAR_GL[r.skema.slice(13)] = true;   /* svar fra før 12/11 tæller som udført, som de gjorde dengang */
         if (r.skema.indexOf("lektion_svar_") === 0) { const sid = r.skema.slice(13), usendtNu = ovelseLsHent("usendt"), lokalSv = KURSUS_SVAR[sid]; KURSUS_SVAR[sid] = (usendtNu[sid] && lokalSv) ? svarFlet(lokalSv, r.svar || {}, ovelseLsHent("beroert")[sid] || {}) : (r.svar || {}); }   /* et usendt lokalt svar flettes med basen i stedet for at blive overskrevet (8/10, hul 2) */
         if (r.skema === "maalgrupper" && r.svar && Array.isArray(r.svar.liste)) { const lok = Array.isArray(MAALGRUPPER) ? MAALGRUPPER : []; const bas = r.svar.liste.slice(); lok.forEach(function (m) { if (m && !bas.some(function (x) { return String(x.id) === String(m.id); })) bas.push(m); }); MAALGRUPPER = bas; }   /* malgruppelisten laeses tilbage, saa maalgruppe 2 staar der efter genindlaesning (8/10, hul 3) */
         if (r.skema.indexOf("lektion_udsat_") === 0) KURSUS_UDSAT[r.skema.slice(14)] = true;
@@ -44154,10 +44180,12 @@ function lekMbRender() {
   let roed;
   /* KNAPPEN SIGER, HVAD DER SKER (Hans-testen 24/9: »Færdig · Næste lektion« foerte til oevelsen). Oevelsen naevnes ikke, foer videoen er set (Ida 24/9). */
   if (!set) roed = lekMbPil('Videre til næste', "lekVidere('" + id + "')", true, "pilH", true);   /* Idas ord 26/10: »rød knap skal hedde videre til næste« */
-  else if (harOv && !oevKlaret(id)) roed = lekMbPil((KURSUS_UDSAT[id] || ovelseHarSvar(id)) ? 'Tag ' + oevOrd(id, true) : 'Næste', "startOvelse('" + id + "')", true, "pilH", true);   /* bud 1 (11/11): Næste åbner arket */
+  else if (harOv && !oevKlaret(id)) {   /* KNAPPERNE STÅR I FLISEN (ekspertholdet 12/11: »Næste« lignede næste video). Er en OPGAVE sat til senere, er næste lektion åben, og den røde knap fører videre. */
+    const nx = aktive[ix + 1];
+    roed = (oevArt(id) === "opgave" && KURSUS_UDSAT[id] && nx && !lekLaastAfForrige(nx.id) && !sidsteAabne) ? lekMbPil('Næste lektion', "lekNaeste()", true, "pilH", true) : '';
+  }
   else roed = sidsteAabne ? lekMbPil('Tilbage til forløbet', "lukLektion()", true) : lekMbPil('Næste lektion', "lekNaeste()", true, "pilH", true);
-  const hvid = (set && harOv && !oevKlaret(id) ? lekMbPil('Senere', "lekOpgSenere('" + id + "');lukLektion()") : '')   /* bud 1: Senere under Næste */
-    + (harOv && ovTaget ? lekMbPil('Ret dine svar', "startOvelse('" + id + "')") : '')
+  const hvid = (harOv && ovTaget && oevKlaret(id) ? lekMbPil('Ret dine svar', "startOvelse('" + id + "')") : '')
     + (forrige ? lekMbPil('Forrige lektion', "visLektion('" + forrige.id + "')", false, "pilV") : '')
     + (tlf ? lekMbPil('Tilbage', "lukLektion()") : '');
   /* OVERBLIKKET ER EEN LINJE (Idas klik 24/9, lektions-bud 1): modulets lektioner, ikke alle 48 — og en tynd bjaelke */
@@ -44388,7 +44416,7 @@ function lekMbOvelseRender() {
     + '</div>'
     + '<div class="ova-bund">'
     + (o.i > 0 ? '<button type="button" class="ova-knap ova-graa" onclick="ovelseGem();OVELSE.i--;renderOvelse()">Forrige</button>' : '')
-    + '<button type="button" class="ova-knap ova-roed" onclick="ovelseNaeste()">' + (sidst ? 'Markér som udført' : 'Næste spørgsmål') + '</button>'
+    + '<button type="button" class="ova-knap ova-roed" onclick="ovelseNaeste()">' + (sidst ? 'Gem og afslut' : 'Næste spørgsmål') + '</button>'
     + '</div></div>';
   try { a.scrollTop = 0; } catch (e) {}
   let tlf = false; try { tlf = window.matchMedia("(max-width:899px)").matches; } catch (e) {}
@@ -44436,7 +44464,7 @@ function lekTidHent(liste) {
 let LEK_TID_REN = 0;
 function lksLek(x, aktivId, mod) {
   const s = !!KURSUS_SET[x.id], nu = x.id === aktivId && !LEK_SKEMA;
-  const ven = (x.ovelse && KURSUS_UDSAT[x.id] && !oevKlaret(x.id)) ? '<div class="lks-ven">Opgave venter</div>' : '';
+  const ven = (x.ovelse && KURSUS_UDSAT[x.id] && !oevKlaret(x.id)) ? '<div class="lks-ven">' + esc(storStart(oevOrd(x.id))) + ' venter</div>' : '';
   const st = s ? LKS_FB : '<span class="lks-tom"></span>';
   /* LÅST LEKTION (Ida 11/11): hængelås i stedet for cirklen, ingen tekst under navnet */
   const stL = '<span class="lks-laas">' + FTL_LAAS + '</span>';   /* hvid flise, ogsaa naar man staar i den (Idas klik 28/10, kombi A) */
@@ -45189,13 +45217,20 @@ async function ovelseNaeste() {
   if (OVELSE.i < l.ovelse.length - 1) { OVELSE.i++; renderOvelse(); return; }
   /* LEKTIONEN OG SVARET LAESES FOER ENHVER VENTETID (8/10, hul 4): skifter kunden lektion, mens dette gemmer, maa intet ramme den nye */
   const oId = OVELSE.id, oSvar = OVELSE.svar, oBasis = mgBasisId(OVELSE.id);
+  /* TOMT KAN IKKE AFSLUTTES (ekspertholdet 12/11: »Markér som udført« godtog tomme felter): mindst ét svar kræves, både i refleksionsøvelser og opgaver */
+  const oOpg = false, oGent = mgErGentagelig(oBasis);
+  if (!oOpg && !oGent && !l.ovelse.some(function (q, i) { return !svarTom(ovSvarFor(OVELSE, l, i)); })) {
+    try { const fl = document.getElementById("lekOvFlise"); if (fl) { const d = document.createElement("div"); d.id = "ovelseFejl"; d.style.cssText = "font-size:14px;color:var(--black);margin-top:10px;"; d.textContent = "Skriv et par ord, før du afslutter."; fl.appendChild(d); } } catch (e) {}
+    return;
+  }
   KURSUS_SVAR[oId] = oSvar;
+  if (!oOpg && !oGent) KURSUS_GJORT[oBasis] = true;
   /* KLADDEN SLETTES FOERST, NAAR SERVEREN HAR SVARET (8/10, hul 2): foer blev den slettet inden, saa et svar, der ikke naaede frem, kun fandtes i KURSUS_SVAR */
   try { const u = ovelseLsHent("usendt"); if (!u[oId]) { u[oId] = Date.now(); ovelseLsGem("usendt", u); } } catch (e) {}
   /* "Set" og "venter" hoerer til LEKTIONEN, ikke til den enkelte maalgruppe — ellers saa
      lektionen ugennemfoert ud, saa snart man tilfoejede en maalgruppe mere. */
   KURSUS_SET[oBasis] = true;                        // en gennemført øvelse tæller også som set lektion
-  delete KURSUS_UDSAT[oBasis];                      // og fjerner "øvelse venter"-mærket
+  if (!oOpg) delete KURSUS_UDSAT[oBasis];           // og fjerner "øvelse venter"-mærket (en opgaves notat gør ikke opgaven udført)
   kursusGemLocal();
   // ugerytme-svaret skriver direkte i ugemålet (kunde_maal.opslag_uge) — øvelsen ER målsætningen
   const dageIx = l.ovelse.findIndex(q => typeof q === "object" && q.type === "dage");
@@ -45217,6 +45252,7 @@ async function ovelseNaeste() {
     if (gemt && !LEK_SET_SENDT[oBasis] && !somKundeKigger()) { try { const lr2 = await sb.from("skema_svar").insert({ kode: currentKode, navn: CURRENT_NAVN || "", skema: "lektion_set_" + oBasis, svar: { set: true } }); if (!(lr2 && lr2.error)) LEK_SET_SENDT[oBasis] = true; } catch(e) {} }
     /* Naaede svarene ikke serveren, bliver vinduet staaende. De ER gemt her paa enheden
        (kursusGemLocal ovenfor), saa beskeden siger praecis det — hverken mere eller mindre. */
+    if (gemt && !oOpg && !oGent) { try { await oevUdfoertGem(oBasis); } catch (e) {} }   /* udført-mærket sendes først, når svaret er bekræftet */
     if (!gemt) { if (OVELSE && OVELSE.id === oId) ovelseGemFejl(); else { try { husBesked("Svaret til den forrige lektion nåede ikke frem. Det ligger på din enhed og sendes igen."); } catch (e) {} } return; }
     try { const u = ovelseLsHent("usendt"); delete u[oId]; ovelseLsGem("usendt", u); const b = ovelseLsHent("beroert"); delete b[oId]; ovelseLsGem("beroert", b); ovelseKladdeSlet(oId); } catch (e) {}
   } else { try { ovelseKladdeSlet(oId); } catch (e) {} }
@@ -45226,7 +45262,7 @@ async function ovelseNaeste() {
   try { const a0 = document.getElementById("ovArk"); if (a0) a0.remove(); document.body.classList.remove("ov-ark-aaben"); } catch (e) {}
   renderKursusHjem();
   if (LEK_AABEN) renderLektionVis();
-  if (varArk) { try { husKvit(storStart(oevOrd(oBasis, true)) + " er udført."); } catch (e) {} return; }
+  if (varArk) { try { husKvit(oOpg ? "Notatet er gemt." : storStart(oevOrd(oBasis, true)) + " er udført."); } catch (e) {} return; }
   /* Oevelsen er gjort: faerdig-kortet med tallet, der rykker (13/9). */
   try { if (LEK_AABEN && LEK_AABEN === oBasis) lekMoment(LEK_AABEN, "faerdig", oId); } catch (e) {}   /* svarId: kundens egne ord vises paa kortet (23/10) */
 }
@@ -65629,7 +65665,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "3248";
+const APP_VERSION = "3249";
 const APP_BYGGET = "3. november";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_VERSION;   /* ingen dato (Ida 7/11: »hvorfor står der version 3. november?«) — datoen blev ikke rettet med, nummeret er sandheden */ } catch (e) {} });
 let NY_VERSION_KLAR = false;
