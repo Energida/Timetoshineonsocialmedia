@@ -24947,6 +24947,8 @@ function briefFtfTrin(it) {
   let alle = []; try { alle = soejleSort((strategyPillars || []).filter(x => !!soejleModel(x))); } catch (e) {}
   const b = (it && it.brief) || {};
   const harFormat = !!String(b.format || "").trim() || FTF_FORMATER.concat(["Prøvereel", "Story"]).indexOf(String(it && it.type || "")) > -1;
+  /* OPRET OPSLAG PAA TELEFONEN (Ida 12/11, Artifact LyGHGyTzBMzUUAPffxsfLd: »første spørgsmål: hvad vil du oprette … så skal man vælge dato«): et NYT opslag fra plusset faar fem trin i fast rækkefølge — Hvad · Hvornår · Format · Navn · Indholdssøjle. En idé har ingen dato; en story ingen indholdssøjle. */
+  if (ftfNyTlf(it)) { const t2 = ["hvad"]; if (FTF_HVAD !== "ide") t2.push("postes"); t2.push("format", "titel"); const fm2 = (FTF_FORMAT && FTF_FORMAT !== "__ingen") ? FTF_FORMAT : ""; if (alle.length && !/^story$/i.test(fm2)) t2.push("soejle"); return t2; }
   const trin = [];
   /* NAVNET FOERST (Ida 29/9: »I First thing first skal det aller første spørgsmål være "Giv opslaget et navn"«) — kun naar opslaget ikke har et navn endnu */
   /* STORY: TYPEN FOERST, SAA HVILKET OPSLAG DEN HOERER TIL (Idas klik 2/11) — typen gemmes i briefen (storytype); navnet er opslagets eller et nyt */
@@ -24966,6 +24968,40 @@ function briefFtfTrin(it) {
   if (fm && !/reel/i.test(fm)) { const li = trin.indexOf("lyd"); if (li > -1) trin.splice(li, 1); }
   return trin;
 }
+let FTF_HVAD = "", FTF_KLOK = false;
+function ftfNyTlf(it) { try { return !!(it && briefTelefonBred() && window.__FTF_NY && String(window.__FTF_NY) === String(it.id) && !/^story$/i.test(String(it.type || ""))); } catch (e) { return false; } }
+function briefFtfHvadVaelg(v) { FTF_HVAD = v; try { const F = window.__FTF, it0 = window.__SOEJLE_ARK_IT; if (F && it0 && F.ny) { F.trin = briefFtfTrin(it0); F.i = 0; } } catch (e) {} briefSoejleArkDropTegn(); }
+/* HJULET (Ida 12/11: »et hjul til klokkeslæt vælgeren« · »slå til hvis man vil vælge tidspunkt«): datoen i ét hjul; kontakten »Vælg klokkeslæt« lægger timer og minutter i samme hjul. Hvert hjul er en liste, der klikker på plads (scroll-snap); det midterste er valgt. */
+function ftfIso(d) { return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); }
+function ftfHjulHtml() {
+  const UD = ["Søn.", "Man.", "Tirs.", "Ons.", "Tors.", "Fre.", "Lør."], MD = ["jan.", "feb.", "mar.", "apr.", "maj", "jun.", "jul.", "aug.", "sep.", "okt.", "nov.", "dec."];
+  const nu = new Date(); nu.setHours(12, 0, 0, 0); let dage = "";
+  for (let i = 0; i < 366; i++) { const d = new Date(nu.getFullYear(), nu.getMonth(), nu.getDate() + i, 12); dage += '<div class="hj-i" data-v="' + ftfIso(d) + '">' + UD[d.getDay()] + " " + d.getDate() + ". " + MD[d.getMonth()] + '</div>'; }
+  if (!FTF_DATO || FTF_DATO < ftfIso(nu)) FTF_DATO = ftfIso(nu);
+  let tm = "", mi = ""; for (let h = 0; h < 24; h++) tm += '<div class="hj-i" data-v="' + String(h).padStart(2, "0") + '">' + String(h).padStart(2, "0") + '</div>'; for (let q = 0; q < 60; q += 5) mi += '<div class="hj-i" data-v="' + String(q).padStart(2, "0") + '">' + String(q).padStart(2, "0") + '</div>';
+  return '<div class="ftf-hjul' + (FTF_KLOK ? ' med' : '') + '"><div class="hj-baand"></div><div class="hj-kol hj-dato" data-hj="dato">' + dage + '</div>' + (FTF_KLOK ? '<div class="hj-kol hj-tal" data-hj="time">' + tm + '</div><div class="hj-kol hj-tal" data-hj="min">' + mi + '</div>' : '') + '</div>'
+    + '<input type="hidden" id="ftfDato" value="' + esc(FTF_DATO) + '"><input type="hidden" id="ftfTid" value="' + esc(FTF_KLOK ? (FTF_TID || "") : "") + '">'
+    + '<div class="ftf-swrk"><span>Vælg klokkeslæt</span><button type="button" class="ftf-sw' + (FTF_KLOK ? ' on' : '') + '" role="switch" aria-checked="' + (FTF_KLOK ? 'true' : 'false') + '" aria-label="Vælg klokkeslæt" onclick="briefFtfKlokSkift()"><i></i></button></div>';
+}
+function briefFtfKlokSkift() { ftfHjulLaes(); FTF_KLOK = !FTF_KLOK; if (FTF_KLOK) { if (!/^\d\d:\d\d/.test(String(FTF_TID || ""))) FTF_TID = "12:00"; } else FTF_TID = ""; briefSoejleArkDropTegn(); }
+function ftfHjulStart() {
+  const rod = document.querySelector("#bsFlytMenu .ftf-hjul"); if (!rod) return;
+  const H = 44, tid = String(FTF_TID || "12:00");
+  const maal = { dato: FTF_DATO, time: tid.slice(0, 2), min: String(Math.round((parseInt(tid.slice(3, 5), 10) || 0) / 5) * 5 % 60).padStart(2, "0") };
+  const laes = function () {
+    const v = {}; rod.querySelectorAll(".hj-kol").forEach(function (k) { const ix = Math.max(0, Math.min(k.children.length - 1, Math.round(k.scrollTop / H))); [].forEach.call(k.children, function (c, i) { c.classList.toggle("nu", i === ix); }); v[k.dataset.hj] = k.children[ix].dataset.v; });
+    if (v.dato) FTF_DATO = v.dato; FTF_TID = (FTF_KLOK && v.time) ? (v.time + ":" + (v.min || "00")) : "";
+    const d = document.getElementById("ftfDato"), t = document.getElementById("ftfTid"); if (d) d.value = FTF_DATO; if (t) t.value = FTF_TID;
+  };
+  rod.querySelectorAll(".hj-kol").forEach(function (k) {
+    const ix = Math.max(0, [].findIndex.call(k.children, function (c) { return c.dataset.v === maal[k.dataset.hj]; }));
+    k.scrollTop = ix * H;
+    let r = 0; k.addEventListener("scroll", function () { if (r) return; r = setTimeout(function () { r = 0; laes(); }, 50); }, { passive: true });
+    k.addEventListener("click", function (e) { const c = e.target.closest(".hj-i"); if (!c) return; k.scrollTo({ top: [].indexOf.call(k.children, c) * H, behavior: "smooth" }); });
+  });
+  rod.__laes = laes; laes();
+}
+function ftfHjulLaes() { try { const rod = document.querySelector("#bsFlytMenu .ftf-hjul"); if (rod && rod.__laes) rod.__laes(); } catch (e) {} }   /* hjulet aflæses, dér hvor det står, før svaret bruges — aldrig kun på en forsinket scroll-hændelse */
 let FTF_DATO = "", FTF_TID = "", FTF_PLATFORM = [], FTF_HVEM = [], FTF_LYD = [], FTF_TITEL = "", FTF_STORYTYPE = "", FTF_NYTNAVN = false;
 function briefFtfMulti(liste, v, fn) { const ix = liste.indexOf(v); if (ix > -1) liste.splice(ix, 1); else liste.push(v); briefSoejleArkDropTegn(); }
 function briefFtfPlatformVaelg(v) { briefFtfMulti(FTF_PLATFORM, v); }
@@ -24975,7 +25011,7 @@ function briefFtfLydVaelg(v) { briefFtfMulti(FTF_LYD, v); }
 function briefFtfTidVaelg(v) { briefFtfDatoLaes(); FTF_TID = v; window.__FTF_EGET = false; briefSoejleArkDropTegn(); }
 function briefFtfTidEget() { briefFtfDatoLaes(); window.__FTF_EGET = true; briefSoejleArkDropTegn(); setTimeout(function () { try { const f = document.querySelector(".ftf-tidfelt"); if (f) f.focus(); } catch (e) {} }, 60); }
 function briefFtfTidInd(v) { FTF_TID = String(v || ""); const h = document.getElementById("ftfTid"); if (h) h.value = FTF_TID; }
-function briefFtfDatoLaes() { try { const d = document.getElementById("ftfDato"); if (d) FTF_DATO = String(d.value || ""); const t = document.getElementById("ftfTid"); if (t) FTF_TID = String(t.value || ""); } catch (e) {} }
+function briefFtfDatoLaes() { ftfHjulLaes(); try { const d = document.getElementById("ftfDato"); if (d) FTF_DATO = String(d.value || ""); const t = document.getElementById("ftfTid"); if (t) FTF_TID = String(t.value || ""); } catch (e) {} }
 /* Én læser til den nye liste og de ældre felter. Gamle kunders tekst flyttes ikke
    automatisk; først når målgruppen rettes, gemmes listen som selvstændige records. */
 function kundeMaalgrupper(k) {
@@ -25015,20 +25051,21 @@ function briefSoejleArkVis(it, kunEn) {
   SOEJLE_ARK_MG = (it.brief && it.brief.maalgruppe) || (mg.navne.length === 1 ? mg.navne[0] : "");
   FTF_FORMAT = (it.brief && it.brief.format) || (FTF_FORMATER.concat(["Prøvereel", "Story"]).indexOf(String(it.type || "")) > -1 ? it.type : "");
   if (!it.soejle) SOEJLE_ARK_VALG = "";
-  FTF_DATO = String(it.dato || ""); FTF_TID = String((it.brief && it.brief.tid) || ""); FTF_TITEL = String(it.titel || ""); FTF_STORYTYPE = storyTypeNoegle((it.brief && it.brief.storytype) || "") || ((/^story$/i.test(String(it.type || "")) && window.__FTF_NY && String(window.__FTF_NY) === String(it.id)) ? "Opbygning til deling" : ""); FTF_NYTNAVN = false;
+  FTF_HVAD = ""; FTF_DATO = String(it.dato || ""); FTF_TID = String((it.brief && it.brief.tid) || ""); FTF_KLOK = /^\d\d:\d\d/.test(FTF_TID); FTF_TITEL = String(it.titel || ""); FTF_STORYTYPE = storyTypeNoegle((it.brief && it.brief.storytype) || "") || ((/^story$/i.test(String(it.type || "")) && window.__FTF_NY && String(window.__FTF_NY) === String(it.id)) ? "Opbygning til deling" : ""); FTF_NYTNAVN = false;
   FTF_PLATFORM = Array.isArray(it.brief && it.brief.platform) ? it.brief.platform.slice() : []; FTF_LYD = Array.isArray(it.brief && it.brief.lyd) ? it.brief.lyd.slice() : [];
   FTF_HVEM = String((it.brief && (it.brief.hvemPerson || it.brief.hvemLaver)) || "").split("·").map(function (x) { return x.trim(); }).filter(Boolean);
   let trin = briefFtfTrin(it);
   if (!trin.length) trin = ["soejle"];   /* aabnet fra fakta-boksen for at skifte: kun det ene spoergsmaal */
   /* FAKTA-RAEKKEN ER KUN DET ENE SPOERGSMAAL, ALDRIG FIRST THING FIRST (Ida 7/10: »når jeg klikker på indholdssøjle i fakta så kommer dette op???« — Format MANGLER startede hele rækken »1 af 3«) */
   if (kunEn) trin = ["soejle"];
-  window.__SOEJLE_ARK_IT = it; window.__FTF = { trin: trin, i: 0, kunEn: !!kunEn };
+  window.__SOEJLE_ARK_IT = it; window.__FTF = { trin: trin, i: 0, kunEn: !!kunEn, ny: (!kunEn && ftfNyTlf(it)) };
   briefSoejleArkDropTegn();
 }
 function briefFtfSvaret() {
   const F = window.__FTF; if (!F) return false; const t = F.trin[F.i];
   if (t === "titel") { const f = document.getElementById("ftfTitel"); if (f) FTF_TITEL = f.value; return !!String(FTF_TITEL).trim(); }
   if (t === "storytype") return !!FTF_STORYTYPE;
+  if (t === "hvad") return !!FTF_HVAD;
   if (t === "soejle") return !!SOEJLE_ARK_VALG;
   if (t === "format") return !!FTF_FORMAT;
   if (t === "mg") return !!SOEJLE_ARK_MG;
@@ -25060,7 +25097,7 @@ function briefFtfFormatVaelg(f) {
   /* LYD-TRINNET FOELGER FORMATET (Ida/revision 6/10): trinene blev regnet ud, foer formatet var valgt, saa en karrusel/et billede/en story blev spurgt »Hvad skal man høre?«. Samme regel som briefFtfTrin (kun video = /reel/); vaelges en reel igen, kommer trinnet tilbage. */
   /* HELE LISTEN REGNES UD IGEN, NAAR FORMATET ER VALGT (Ida 7/10): Story → ingen soejle; lyd kun ved video; resten uaendret. Formatet staar stadig foerst, og pladsen i listen holdes. */
   try { const F = window.__FTF, it0 = window.__SOEJLE_ARK_IT; if (F && it0 && F.trin[F.i] === "format") { const ny = briefFtfTrin(it0); const ix = ny.indexOf("format"); if (ix > -1) { F.trin = ny; F.i = ix; } } } catch (e) {}
-  briefSoejleArkDropTegn(); if (briefTelefonBred()) briefFtfNaeste();
+  briefSoejleArkDropTegn(); if (briefTelefonBred() && !(window.__FTF && window.__FTF.ny)) briefFtfNaeste();
 }
 function briefSoejleArkDropTegn() {
   const it = window.__SOEJLE_ARK_IT; const F = window.__FTF; if (!it || !F) return;
@@ -25072,7 +25109,18 @@ function briefSoejleArkDropTegn() {
   /* »JEG VED DET IKKE ENDNU« ER EN FLISE SOM DE ANDRE (Ida 9/11: »layout og design i flisen jeg ved det ikke endnu er simpelthen ikke acceptabelt«): samme klasse som søjle- og formatfliserne (sa-lang), så den får samme højde, luft og flueben; før arvede den 40 px-chipreglen og blev klippet med teksten for lavt */
   const vedIk = (on, klik) => '<button type="button" class="ark-chip sa-lang sa-ved-ik' + (on ? ' on' : '') + '" onclick="' + klik + '">Jeg ved det ikke endnu</button>';
   let krop = '';
-  if (t === "storytype") {
+  const flNy = function (navn, on, klik, graa) { return '<button type="button" class="ark-chip sa-lang' + (on ? ' on' : '') + '" onclick="' + klik + '">' + esc(navn) + (graa ? '<span class="sa-inl">' + esc(graa) + '</span>' : '') + '</button>'; };
+  if (F.ny && t === "hvad") {
+    krop = '<div class="ark-t">Hvad vil du oprette?</div><div class="ark-chips i-fladen sa-chips">' + flNy("En idé", FTF_HVAD === "ide", "briefFtfHvadVaelg('ide')") + flNy("Et opslag med dato", FTF_HVAD === "opslag", "briefFtfHvadVaelg('opslag')") + flNy("Et forslag", FTF_HVAD === "forslag", "briefFtfHvadVaelg('forslag')") + '</div>';
+  } else if (F.ny && t === "postes") {
+    krop = '<div class="ark-t">Hvornår skal det postes?</div><div class="ftf-hjulrum">' + ftfHjulHtml() + '</div>';
+  } else if (F.ny && t === "format") {
+    krop = '<div class="ark-t">Vælg format</div><div class="ark-chips i-fladen sa-chips">' + FTF_FORMATER.concat(["Prøvereel", "Story"]).map(function (f) { return flNy(f === "Kort-reel" ? "Kort reel" : f, FTF_FORMAT === f, "briefFtfFormatVaelg('" + f + "')", f === "Kort-reel" ? "4-6 sekunder" : ""); }).join("") + vedIk(FTF_FORMAT === "__ingen", "briefFtfFormatVaelg('__ingen')") + '</div>';
+  } else if (F.ny && t === "titel") {
+    krop = '<div class="ark-t">Giv opslaget et navn</div><textarea id="ftfTitel" class="ark-titel-felt ftf-titel ftf-stor" rows="4" maxlength="90" autocomplete="off" oninput="FTF_TITEL=this.value" onkeydown="if(event.key===\'Enter\'){event.preventDefault();briefFtfNaeste();}">' + esc(FTF_TITEL) + '</textarea>';
+  } else if (F.ny && t === "soejle") {
+    krop = '<div class="ark-t">Vælg indholdssøjle</div><div class="ark-chips i-fladen sa-chips">' + alle.map(function (x) { return flNy(soejleVis(x), SOEJLE_ARK_VALG === x, "briefSoejleArkVaelg('" + esc(x).replace(/'/g, "\\'") + "')"); }).join("") + vedIk(SOEJLE_ARK_VALG === "__ingen", "briefSoejleArkVaelg('__ingen')") + '</div>';
+  } else if (t === "storytype") {
     /* NY STORY (Idas bestilling 4/11, facit story-side-mockup, ark 3): lille ark — kryds i hjørnet, »Story«, to valg som chips, én rød »Opret«. Basen gemmer stadig »Opbygning til deling« / »Check-in«; »Daglig check-in« er visningsnavnet. */
     krop = ''   /* krydset i hjørnet sættes af husets ark selv (arkKrydsPlacer) */
       + '<div class="ark-t">Story</div>'
@@ -25125,12 +25173,12 @@ function briefSoejleArkDropTegn() {
     krop = '<div class="ark-t">Hvem taler indholdet til?</div>'
       + '<div class="ark-chips i-fladen sa-chips">' + mg.chips.map(x => chip(x, SOEJLE_ARK_MG === x, "briefSoejleArkMgVaelg('" + esc(x).replace(/'/g, "\\'") + "')")).join("") + '</div>';
   }
-  const prikker = n > 1 ? '<div class="ftf-prikker">' + F.trin.map((_, i) => '<i' + (i === F.i ? ' class="nu"' : '') + '></i>').join("") + '</div>' : '';
+  const prikker = (n > 1 && !F.ny) ? '<div class="ftf-prikker">' + F.trin.map((_, i) => '<i' + (i === F.i ? ' class="nu"' : '') + '></i>').join("") + '</div>' : '';
   /* INGEN »VÆLG, OG SWIPE TIL NÆSTE« (Ida 30/9: »Der skal ikke stå det her vælg og swipe for når man har valgt swiper den jo automatisk«): trin med EET valg
      gaar selv videre; trin med flere valg (dato/tid, platform, hvem, lyd) faar Naeste-knappen, saa snart der er svaret. Ingen hjaelpelinje. */
   const flereValg = ["storytype", "postes", "platform", "hvem", "lyd"].indexOf(t) > -1;
   const gemOrd = (t === "storytype" && sidste && !F.kunEn) ? "Opret" : ((F.kunEn || sidste) ? "Gem" : "Næste");   /* NY STORY: »Opret« (Ida 4/11) */
-  const knapper = tlf
+  const knapper = F.ny ? ('<button type="button" class="ark-knap ark-knap-roed" onclick="briefFtfNaeste()">' + (sidste ? "Opret" : "Næste") + '</button>') : tlf
     ? ((t === "titel" || ((sidste || flereValg) && briefFtfSvaret())) ? '<button type="button" class="ark-knap ark-knap-roed" onclick="briefFtfNaeste()">' + gemOrd + '</button>' : '')
     : ('<button type="button" class="ark-knap ark-knap-roed" onclick="briefFtfNaeste()">' + gemOrd + '</button>'   /* KUN NAESTE OG ANNULLER (Ida 22/9 kl. 08.10: »på dette stadie skal der kun være næste og annuller som knapper«) — knappen hedder Naeste hele vejen, ogsaa paa sidste trin */
       + (F.i > 0 ? '<button type="button" class="ark-knap" onclick="briefFtfTilbage()">Tilbage</button>' : ''));
@@ -25142,7 +25190,7 @@ function briefSoejleArkDropTegn() {
   /* EYEBROWEN HEDDER »TRIN N AF M« (ekspertholdet 2/11, Idas ja til nye ord) og telefonen faar en lille pil uden tekst fra trin 2 (aria-label Tilbage); swipe fra hoejre findes allerede */
   const tilbagePil = (tlf && !F.kunEn && F.i > 0) ? '<button type="button" class="ftf-tilbage" aria-label="Tilbage" onclick="briefFtfTilbage()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></button>' : '';
   const indhold = (F.kunEn ? '' : tilbagePil + (n > 1 ? '<div class="ark-eye">Trin ' + (F.i + 1) + ' af ' + n + '</div>' : '')) + krop + prikker + knapper
-    + (t === "storytype" ? '' : '<button type="button" class="ark-luk" onclick="bsFlytLuk()">Annullér</button>') + sletKnap;
+    + ((t === "storytype" || F.ny) ? '' : '<button type="button" class="ark-luk" onclick="bsFlytLuk()">Annullér</button>') + sletKnap;
   const fremme = m.style.display === "flex" && m.querySelector(":scope > .ftf-ark");
   /* ET TRYK PAA EN CHIP TEGNER INTET OM (Ida 30/9: »det er stadig træls pop-uppen hopper når jeg vælger chips«): 29/9 blev arket staaende, men HELE
      indholdet blev skrevet forfra, saa chipsene blev bygget paany og arket hoppede. Nu: samme trin = kun chipsenes markering skiftes, og kun de dele,
@@ -25163,9 +25211,10 @@ function briefSoejleArkDropTegn() {
     }
   }
   if (!byttet) { if (fremme) fremme.innerHTML = indhold; else m.innerHTML = '<div class="bs-flyt-ark brief-soejle-ark ftf-ark">' + indhold + '</div>'; }
-  try { const a0 = m.querySelector(":scope > .ftf-ark"); if (a0) a0.__ftfTrin = trinNoegle; } catch (e) {}
+  try { const a0 = m.querySelector(":scope > .ftf-ark"); if (a0) { a0.__ftfTrin = trinNoegle; a0.classList.toggle("ftf-ny", !!F.ny); } } catch (e) {}
+  if (F.ny && t === "postes") { try { ftfHjulStart(); } catch (e) {} }
   m.style.display = "flex";
-  if (t === "titel") setTimeout(function () { const f = document.getElementById("ftfTitel"); if (f) f.focus(); }, 120);
+  if (t === "titel" && !(F.ny && document.activeElement && document.activeElement.id === "ftfTitel")) setTimeout(function () { const f = document.getElementById("ftfTitel"); if (f) f.focus(); }, 120);
   m.onclick = function (e) { if (e.target === m) { bsFlytLuk(); } };
   /* SWIPE PAA TELEFONEN (Idas ord 20/9): venstre = naeste (naar der er svaret), hoejre = tilbage */
   const ark = m.querySelector(".ftf-ark");
@@ -25179,7 +25228,7 @@ function briefSoejleArkDropTegn() {
 function briefSoejleArkVaelg(navn) {
   SOEJLE_ARK_VALG = navn;
   briefSoejleArkDropTegn();
-  if (briefTelefonBred()) briefFtfNaeste();   /* telefonen: et tryk gaar videre (som foer); computeren: Naeste */
+  if (briefTelefonBred() && !(window.__FTF && window.__FTF.ny)) briefFtfNaeste();   /* telefonen: et tryk gaar videre (som foer); computeren: Naeste · det nye Opret opslag-forløb (12/11): altid »Næste« */
 }
 async function briefSoejleArkStart(id) {
   const F = window.__FTF || { trin: ["soejle"], i: 0 };
@@ -25201,6 +25250,8 @@ async function briefFtfSkriv(it, F) {
   const opd = {};
   it.brief = it.brief || {};
   if (F.trin.indexOf("storytype") > -1 && FTF_STORYTYPE) { it.brief.storytype = FTF_STORYTYPE; opd.brief = it.brief; if (BRIEF_ID === id && BRIEF_STATE) BRIEF_STATE.storytype = FTF_STORYTYPE; }
+  /* HVAD VIL DU OPRETTE (12/11): svaret ER status — en idé har ingen dato; et forslag hedder »Klar til godkendelse« i basen (vises som »Forslag«) */
+  if (F.trin.indexOf("hvad") > -1 && FTF_HVAD) { const st = FTF_HVAD === "ide" ? "Idé" : (FTF_HVAD === "forslag" ? "Klar til godkendelse" : "Planlagt"); if (it.status !== st) { it.status = st; opd.status = st; } if (FTF_HVAD === "ide" && it.dato) { it.dato = null; opd.dato = null; } }
   if (F.trin.indexOf("soejle") > -1 && SOEJLE_ARK_VALG && SOEJLE_ARK_VALG !== "__ingen") { it.soejle = SOEJLE_ARK_VALG; opd.soejle = SOEJLE_ARK_VALG; }
   if (F.trin.indexOf("format") > -1 && FTF_FORMAT && FTF_FORMAT !== "__ingen") { it.brief.format = FTF_FORMAT; it.type = FTF_FORMAT; opd.type = FTF_FORMAT; opd.brief = it.brief; if (BRIEF_ID === id && BRIEF_STATE) BRIEF_STATE.format = FTF_FORMAT; }
   if (SOEJLE_ARK_MG) { it.brief.maalgruppe = SOEJLE_ARK_MG; opd.brief = it.brief; if (BRIEF_ID === id && BRIEF_STATE) BRIEF_STATE.maalgruppe = SOEJLE_ARK_MG; }
@@ -26401,7 +26452,7 @@ function briefSiderTegn(G, grupper, wrap, navM, bud) {
     /* TILBAGE PAA SKRIVESIDENS FOERSTE SIDE PAA TELEFONEN (natten 7/10, revision fund 49 — CLAUDE.md §4 »Der skal altid staa Tilbage«): kun oejet foerte
        tilbage til briefoversigten. Samme graa knap som de andre sider; gemmer og viser briefoversigten. Kun telefonen (computeren har stien). */
     navM.innerHTML = '<span class="bsd-venstre">' + (akt > 0 || ti.t > 0 ? '<button type="button" class="dbtn bsd-tilbage" onclick="briefTrinGaa(-1)">Tilbage</button>' : '<button type="button" class="dbtn bsd-tilbage bsd-tilbage-tlf" onclick="try{saveBrief(true)}catch(e){}briefMbVis(\'forside\')">Tilbage</button>') + '</span>'
-      + ((akt === sider.length - 1 && ti.t === ti.n - 1) ? briefSendKnapHtml() + '<button type="button" class="dbtn primary" onclick="briefSkrivGem(this)">Gem ændringer</button>' : '<button type="button" class="dbtn bsd-gem" onclick="briefSkrivGem(this)">Gem ændringer</button><button type="button" class="dbtn primary" onclick="briefTrinGaa(1)">Næste</button>');   /* GEM AENDRINGER PAA HVER SIDE (Ida 24/9 kl. 23.19: »På hver side i briefen skal man kunne klikke gem ændringer! Og så komme tilbage til briefoversigten«) — graa, roed er Naeste */
+      + ((akt === sider.length - 1 && ti.t === ti.n - 1) ? briefSendKnapHtml() + '<button type="button" class="dbtn primary" onclick="briefSkrivGem(this)">Gem ændringer</button>' : '<button type="button" class="dbtn bsd-gem" onclick="briefSkrivGem(this)">Gem ændringer</button><button type="button" class="dbtn primary" onclick="briefTrinGaa(1)">' + ((briefTelefonBred() && ti.t < ti.n - 1 && ti.navne && ti.navne[ti.t + 1]) ? "Næste: " + esc(ti.navne[ti.t + 1]) : "Næste") + '</button>');   /* »NÆSTE: IDÉEN« PAA TELEFONEN (Ida 12/11: »ingen kunder forstå at de selv skal klikke på chipsen med ideen«) — knappen siger, hvilken chip den fører til */   /* GEM AENDRINGER PAA HVER SIDE (Ida 24/9 kl. 23.19: »På hver side i briefen skal man kunne klikke gem ændringer! Og så komme tilbage til briefoversigten«) — graa, roed er Naeste */
     navM.classList.add("bsd-nav");
     return;
   }
@@ -64477,7 +64528,7 @@ function bsFlytLuk() {
   const start = function (e) {
     const t = e.touches ? e.touches[0] : null; if (!t) return;
     const k = e.target && e.target.closest ? e.target.closest("#bsFlytMenu .bs-flyt-ark") : null; if (!k) return;
-    try { if (e.target.closest("textarea:focus, input:focus, select")) return; } catch (x) {}
+    try { if (e.target.closest("textarea:focus, input:focus, select, .ftf-hjul")) return; } catch (x) {}
     if (k.scrollTop > 2) return;
     kort = k; m = document.getElementById("bsFlytMenu"); y0 = t.clientY; x0 = t.clientX; t0 = Date.now(); dy = 0; traek = true;
     kort.style.transition = "none";
@@ -65685,7 +65736,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "3255";
+const APP_VERSION = "3256";
 const APP_BYGGET = "3. november";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_VERSION;   /* ingen dato (Ida 7/11: »hvorfor står der version 3. november?«) — datoen blev ikke rettet med, nummeret er sandheden */ } catch (e) {} });
 let NY_VERSION_KLAR = false;
@@ -94151,6 +94202,36 @@ html body .mails .mails-input:disabled { color:var(--gray2) !important; -webkit-
 .crm2-ai:disabled { opacity:.4; cursor:default; }
 @media (max-width:899px) { .crm2-pop-regler.crm2-ark .crm2-rr { gap:8px; } .crm2-pop-regler.crm2-ark .crm2-rx { order:3; margin-left:auto; } .crm2-pop-regler.crm2-ark .crm2-selv { order:4; flex:0 0 auto; margin-left:44px; } .crm2-pop-regler.crm2-ark { width:auto; } .crm2-hv { width:36px; } .crm2-sel { height:44px; } .crm2-rx { width:44px; height:44px; } .crm2-til { height:44px; padding-left:44px; } .crm2-regel-valg { margin-left:0; } .crm2-regel, .crm2-plusf { height:44px; } .crm2-fl { padding-bottom:2px; } }
 
+/* ===== OPRET OPSLAG PÅ TELEFONEN (Idas ja 12/11, Artifact LyGHGyTzBMzUUAPffxsfLd) — kun arket for et NYT opslag (.ftf-ny), kun under 900 px =====
+   Fliser 56 høje m. tom ring / rødt flueben til højre · stort navnefelt · datohjul m. kontakten »Vælg klokkeslæt« · rund Tilbage 36 · rød knap 56 (navigationsknap). */
+@media (max-width:899px) {
+  html body #bsFlytMenu .ftf-ark.ftf-ny { padding:18px 18px 18px !important; }
+  html body #bsFlytMenu .ftf-ark.ftf-ny .ark-eye { margin:10px 0 0 !important; line-height:16px; }
+  html body #bsFlytMenu .ftf-ark.ftf-ny .ark-t { font-size:22px !important; line-height:30px !important; text-align:center; margin:18px 0 18px !important; }
+  html body #bsFlytMenu .ftf-ark.ftf-ny .ark-streg, html body #bsFlytMenu .ftf-ark.ftf-ny > hr { display:none !important; }
+  html body #bsFlytMenu .ftf-ark.ftf-ny .ftf-tilbage { left:14px; top:14px; width:36px; height:36px; border:1px solid var(--border); border-radius:50%; background:#fff; }
+  html body #bsFlytMenu .ftf-ark.ftf-ny .ftf-tilbage::before { content:""; position:absolute; inset:-4px; }
+  html body #bsFlytMenu .ftf-ark.ftf-ny .sa-chips:has(.sa-lang) { gap:10px !important; }
+  html body #bsFlytMenu .ftf-ark.ftf-ny .sa-chips:has(.sa-lang) .ark-chip { min-height:56px !important; border-radius:20px !important; border-color:#E3E2DE !important; padding:15px 56px 15px 18px !important; font-size:17px !important; line-height:24px !important; color:var(--black) !important; display:block !important; }
+  html body #bsFlytMenu .ftf-ark.ftf-ny .sa-chips:has(.sa-lang) .ark-chip:not(.on)::after { content:""; position:absolute; right:16px; top:50%; width:26px; height:26px; margin-top:-13px; border-radius:50%; border:1.5px solid #E3E2DE; box-sizing:border-box; background:none; }
+  html body #bsFlytMenu .ftf-ark.ftf-ny .sa-chips:has(.sa-lang) .ark-chip.on::after { right:16px; width:26px; height:26px; margin-top:-13px; background-size:26px 26px; }
+  html body #bsFlytMenu .ftf-ark.ftf-ny .sa-inl { font-size:13px; color:#6F6B66; margin-left:8px; }
+  html body #bsFlytMenu .ftf-ark.ftf-ny .ftf-stor { height:auto !important; min-height:132px; border:1px solid #E3E2DE; border-radius:20px; padding:18px; font-size:17px; line-height:24px; resize:none; margin:0; }
+  html body #bsFlytMenu#bsFlytMenu#bsFlytMenu .ftf-ark.ftf-ny .ark-knap-roed { margin-top:16px !important; height:56px !important; min-height:56px !important; max-height:56px !important; }
+  html body #bsFlytMenu#bsFlytMenu .ftf-ark.ftf-ny .ftf-stor { font-size:17px !important; }
+  html body #bsFlytMenu .ftf-hjul { position:relative; height:132px; display:grid; grid-template-columns:1fr; align-items:stretch; }
+  html body #bsFlytMenu .ftf-hjul.med { grid-template-columns:1.5fr .5fr .5fr; column-gap:6px; }
+  html body #bsFlytMenu .ftf-hjul .hj-baand { position:absolute; left:0; right:0; top:44px; height:44px; background:#F4F2EE; border-radius:14px; pointer-events:none; }
+  html body #bsFlytMenu .ftf-hjul .hj-kol { position:relative; height:132px; overflow-y:auto; overflow-x:hidden; scroll-snap-type:y mandatory; padding:44px 0; box-sizing:border-box; scrollbar-width:none; overscroll-behavior:contain; -webkit-overflow-scrolling:touch; touch-action:pan-y; }
+  html body #bsFlytMenu .ftf-hjul .hj-kol::-webkit-scrollbar { display:none; }
+  html body #bsFlytMenu .ftf-hjul .hj-i { height:44px; line-height:44px; scroll-snap-align:center; text-align:center; font-size:17px; color:#B9B5AF; white-space:nowrap; }
+  html body #bsFlytMenu .ftf-hjul .hj-i.nu { font-size:20px; color:var(--black); }
+  html body #bsFlytMenu .ftf-hjul.med .hj-dato .hj-i { text-align:left; padding-left:14px; }
+  html body #bsFlytMenu .ftf-swrk { display:flex; justify-content:space-between; align-items:center; gap:12px; min-height:44px; margin-top:16px; padding:0 4px; font-size:17px; line-height:24px; color:var(--black); }
+  html body #bsFlytMenu .ftf-sw { flex:none; position:relative; width:64px; height:32px; min-height:32px; border-radius:16px; border:1.5px solid #D6D3CE; background:#fff; padding:0; box-sizing:border-box; cursor:pointer; }
+  html body #bsFlytMenu .ftf-sw i { position:absolute; top:2px; left:2px; width:25px; height:25px; border-radius:50%; background:#9A9590; transition:left 160ms cubic-bezier(.23,1,.32,1); }
+  html body #bsFlytMenu .ftf-sw.on { border-color:var(--red); } html body #bsFlytMenu .ftf-sw.on i { left:33px; background:var(--red); }
+}
 /* ===== NAVIGATIONSKNAPPER = 56 (Idas valg 12/11, artifact AYsLo8hWHexAskZxZvdM9g: »Lås 56 i designlåsen og rul det ud på hele appen«) =====
    Gælder knapper med tekst, der fører videre eller tilbage: den røde primære og den grå sekundære. CHIPS ER LÅST PÅ 32 OG RØRES ALDRIG (Ida 12/11: »Nu blander du chips og navigationsknapper«).
    Ikonknapper (36, målkortet) er heller ikke med. TRIN 1: ark og popups, profilen, login, lektionens bundknapper, opgaveflisen, Forsidens »Fortsæt«, rundvisningen.
