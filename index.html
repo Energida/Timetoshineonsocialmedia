@@ -1957,7 +1957,7 @@ html body .pf-tre:has(.pf-sel) { grid-template-columns:0.85fr 1.5fr 1.05fr; }
 .pf-chips { display:flex; flex-wrap:wrap; gap:8px; }
 .pf-chip { height:36px; padding:0 16px; border-radius:999px; border:0; background:#fff; box-shadow:0 0 0 1px #E3E2DE; font:400 13px Poppins,sans-serif; color:var(--gray2); cursor:pointer; position:relative; }
 .pf-chip::before { content:""; position:absolute; inset:-4px 0; }
-.pf-chip.on { background:#fff; box-shadow:0 0 0 1.5px var(--gray2); color:var(--black); }   /* valgt = mørkere grå ramme, aldrig baggrundsfarve (designlås 2/11) */
+.pf-chip.on { background:var(--red); box-shadow:0 0 0 1px var(--red); color:#fff; }   /* valgt = rød med hvid tekst i profilen (Ida 12/11: »chips skal blive rød og man skal klikke næste«) */
 .pf-kendt { font-size:12px; color:var(--gray3); margin-top:-8px; }
 .pf-gemt { display:flex; align-items:center; gap:6px; font-size:12px; color:var(--gray2); min-height:16px; margin-top:-4px; }
 .pf-fb { width:16px; height:16px; border-radius:50%; background:var(--red); display:inline-flex; align-items:center; justify-content:center; } .pf-fb svg { width:10px; height:10px; }
@@ -1971,6 +1971,7 @@ html body .pf-tre:has(.pf-sel) { grid-template-columns:0.85fr 1.5fr 1.05fr; }
 /* PROFILEN SOM BUD 1 (Idas klik 11/11): ét spørgsmål pr. skærm, store sorte spørgsmål, små chips på én linje, arket midt på skærmen også på telefonen */
 #pfFlow { align-items:center; }
 .pf-ark { margin:auto 0; }
+.pf-bar1 { display:flex; align-items:center; gap:12px; } .pf-bar1 span { flex:1; height:4px; border-radius:99px; background:#E3E2DE; overflow:hidden; } .pf-bar1 i { display:block; height:100%; background:var(--red); border-radius:99px; transition:width .3s; } .pf-bar1 b { font-weight:400; font-size:12px; color:var(--gray2); white-space:nowrap; }
 .pf-spor3 { display:flex; gap:6px; } .pf-spor3 span { flex:1; height:4px; border-radius:99px; background:#E3E2DE; overflow:hidden; } .pf-spor3 i { display:block; height:100%; background:var(--red); border-radius:99px; transition:width .3s; }
 .pf-sp { font-size:12px; color:var(--gray2); text-align:right; margin-top:-2px; }
 html body .pf-ark .pf-t { font-size:24px; line-height:1.25; font-weight:500; color:var(--black); margin:6px 0 4px; }
@@ -35229,8 +35230,7 @@ function pfInput(id, v) {
   if (id === "branche_andet") { clearTimeout(PF.tAndet); PF.tAndet = setTimeout(pfAndetGem, 700); }   /* Andet gemmes, mens der skrives — og »Gemt« står først, når basen har svaret */
 }
 function pfValg(id, k) { if (!PF) return; PF.f[id] = k; pfKladdeGem(); pfTegn();
-  /* chips går selv videre, når der er valgt (bud 1) — undtagen »Andet«, hvor der skal skrives */
-  if ((id === "ejer" && k === "ja") || (id === "branche" && k !== "Andet") || id === "forretningstype") { clearTimeout(PF.tVidere); PF.tVidere = setTimeout(function () { if (PF && pfSkaermKlar(pfSkaerm())) pfNaeste(); }, 260); }
+  /* CHIPS GÅR IKKE SELV VIDERE (Ida 12/11: »her skal chips i stedet blive rød og man skal klikke næste«) */
 }
 async function pfAndetGem() {
   const st = document.getElementById("pfAndetSt"); if (!PF || !String(PF.f.branche_andet || "").trim()) { if (st) st.innerHTML = ""; return; }
@@ -35252,9 +35252,11 @@ function pfTegn() {
   const skl = pfSkaerme(), sp = Math.max(0, Math.min(PF.sp || 0, skl.length - 1)), sk = skl[sp];
   const forste = (t <= 1 && sp === 0);
   /* TOP (bud 1): Tilbage eller »Opret din profil« · Trin X af N · én streg pr. trin · Spørgsmål i af M */
-  const spor = '<div class="pf-spor3">' + Array.from({ length: nv }, function (_, k) { const tr = k + 1; const fyld = tr < tv ? 100 : (tr > tv ? 0 : Math.round(((sk === "klar" ? skl.length : sp + 1) / skl.length) * 100)); return '<span><i style="width:' + fyld + '%"></i></span>'; }).join("") + '</div>';
-  const top = '<div class="pf-top"><span>' + (!forste ? '<button type="button" class="pf-tb mq-tap" onclick="pfTilbage()">Tilbage</button>' : '<span class="pf-tt">Opret din profil</span>') + '</span><span class="pf-tr">Trin ' + tv + ' af ' + nv + '</span></div>' + spor
-    + '';   /* »Spørgsmål X af Y« er fjernet (Ida 11/11: kun én tæller; stregerne viser, hvor langt man er) */
+  /* ÉN PROCESBAR MED PROCENT (Idas klik 12/11 »Bud A«, artifact JscL7UGHBtj39VSNQJ5Aqg: »forvirrende at man ser Trin 2 af 3 og … så kommer der bare flere trin«): alle skærme i hele profilen tælles under ét; baren og procenten står på samme linje */
+  let pfAlle = 0, pfFoer = 0; for (let k = (t === 0 ? 0 : 1); k <= n; k++) { const l = pfSkaerme(k).length; if (k < t) pfFoer += l; pfAlle += l; }
+  const pct = Math.max(0, Math.min(100, Math.round(((pfFoer + sp + 1) / Math.max(1, pfAlle)) * 100)));
+  const top = '<div class="pf-top"><span>' + (!forste ? '<button type="button" class="pf-tb mq-tap" onclick="pfTilbage()">Tilbage</button>' : '<span class="pf-tt">Opret din profil</span>') + '</span></div>'
+    + '<div class="pf-bar1" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' + pct + '"><span><i style="width:' + pct + '%"></i></span><b>' + pct + ' %</b></div>';
   /* ALLE FELTER ER ENS (Ida 3/11: »ALLE ting skal for helvede være ens … du skal da ikke stille 2 spørgsmål i samme pop-up med forskellig farve og størrelse«): ét lille grå ord over hvert felt, ingen skillelinjer, ingen hjælpelinjer; trinnets navn er den eneste store tekst */
   const lab = function (x) { return '<span class="pf-lab">' + esc(x) + '</span>'; };
   const ygtTrin = PF.ygt && !PF.kollega;
@@ -35274,14 +35276,14 @@ function pfTegn() {
     krop = '<div class="pf-t">Fødselsdag</div><div class="pf-tre">' + pfVaelg("dag", "Dag", f.dag, pfDage()) + pfVaelg("mdr", "Måned", f.mdr, pfMdr()) + pfVaelg("aar", "År", f.aar, pfAar()) + '</div>';
   } else if (sk === "rolle") {
     const butikNavn = String(f.butik_navn || "").trim();
-    krop = '<div class="pf-t">Hvad er din rolle i ' + esc(butikNavn || "forretningen") + '?</div>' + pfChips("ejer", [{ k: "ja", n: "Indehaver" }, { k: "nej", n: "Andet" }], f.ejer)
+    krop = '<div class="pf-t">Hvad er din rolle i forretningen?</div>' + pfChips("ejer", [{ k: "ja", n: "Indehaver" }, { k: "nej", n: "Andet" }], f.ejer)
       + (f.ejer === "nej" ? pfFelt("rolle", "Din rolle", f.rolle) : '');
   } else if (sk === "pw") {
     krop = '<div class="pf-t">Vælg din adgangskode</div>' + pfPwHtml(f, "Adgangskode");
   } else if (sk === "butik") {
     krop = '<div class="pf-t">Forretningens navn</div>' + pfFelt("butik_navn", "", f.butik_navn);
   } else if (sk === "adr") {
-    krop = '<div class="pf-t">Om virksomheden</div>' + pfFelt("adresse", "Adresse", f.adresse) + '<div class="pf-to">' + pfFelt("postnr", "Postnr.", f.postnr, { num: true, max: 4 }) + pfFelt("by", "By", f.by) + '</div>';
+    krop = '<div class="pf-t">Forretningens adresse</div>' + pfFelt("adresse", "Adresse", f.adresse) + '<div class="pf-to">' + pfFelt("postnr", "Postnr.", f.postnr, { num: true, max: 4 }) + pfFelt("by", "By", f.by) + '</div>';
   } else if (sk === "cvr") {
     krop = '<div class="pf-t">CVR <span class="pf-frv">(frivilligt)</span></div>' + pfFelt("cvr", "", f.cvr, { ph: "8 cifre", num: true, max: 8 });
   } else if (sk === "branche") {
@@ -35348,9 +35350,9 @@ async function pfNaeste() {
   }
   if (t === 1) {
     if (!pfDato()) { pfFejl("Skriv din fødselsdag med dag, måned og år."); return; }
-    if (f.ejer === "nej" && !String(f.rolle || "").trim()) { pfFejl("Skriv din rolle i butikken."); return; }
+    if (f.ejer === "nej" && !String(f.rolle || "").trim()) { pfFejl("Skriv din rolle i forretningen."); return; }
   }
-  if (t === 2 && f.branche === "Andet" && !String(f.branche_andet || "").trim()) { pfFejl("Skriv, hvad butikken sælger."); return; }
+  if (t === 2 && f.branche === "Andet" && !String(f.branche_andet || "").trim()) { pfFejl("Skriv, hvad forretningen sælger."); return; }
   if (knap) { knap.disabled = true; knap.textContent = "Gemmer …"; }
   if (t === 1 && PF.pw) {
     /* ADGANGSKODEN GEMMES SAMMEN MED FØRSTE SIDE — samme kald og samme fejlsprog som arket (gemNyAdgangskodeInd) */
@@ -65540,7 +65542,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "3245";
+const APP_VERSION = "3246";
 const APP_BYGGET = "3. november";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_VERSION;   /* ingen dato (Ida 7/11: »hvorfor står der version 3. november?«) — datoen blev ikke rettet med, nummeret er sandheden */ } catch (e) {} });
 let NY_VERSION_KLAR = false;
