@@ -23799,6 +23799,9 @@ async function minProfilAaben() {
   } catch(e) {}
   const gaet = (CURRENT_DEF && typeof studioTitel === "function") ? studioTitel(CURRENT_DEF).replace(/ Studio$/, "") : "";
   const fl = function (et, indhold, bred) { return '<div class="prof-fl' + (bred ? ' prof-bred' : '') + '"><div class="prof-e">' + et + '</div>' + indhold + '</div>'; };
+  /* FORRETNINGEN (Idas klik 12/11 »Ud af popuppen«): adresse og CVR spørges ikke længere i profil-popuppen, men udfyldes her; samme skuffe som før (config · profil_svar) */
+  let pfs = {}; try { const rr = await sb.from("skema_svar").select("svar").eq("kode", currentKode).eq("navn", "config").eq("skema", "profil_svar").maybeSingle(); pfs = (rr && rr.data && rr.data.svar) || {}; } catch (e) {}
+  const pfsFelt = function (id, lab, v, ekstra) { return '<div class="ml-eye"' + (ekstra && ekstra.luft ? ' style="margin-top:12px;"' : '') + '>' + lab + '</div><input type="text" id="' + id + '" value="' + String(v || "").replace(/"/g, "&quot;") + '"' + ((ekstra && ekstra.attr) || '') + ' style="width:100%;background:#fff;border:1px solid var(--border);border-radius:12px;padding:11px 13px;font-family:Poppins,sans-serif;font-size:13px;outline:none;margin-bottom:12px;">'; };
   const hellig = !!(MAALS && MAALS.helligdage);
   const tommeDage = !(MAALS && MAALS.tommeDageSkjult);
   host.innerHTML = '<div class="prof-grid">'
@@ -23818,6 +23821,7 @@ async function minProfilAaben() {
        vil noget andet, og et tomt felt kan aldrig slette navnet (gem-reglen 4/8). */
     /* DINE SKRIFTER (Ida 24/9 kl. 23.34: »man inde i profil vælger favoritter ift skriftstyper! Og det kun er dem der kommer frem«): valgt = roed chip; gemmes med Gem */
     )
+    + fl("Forretningen", pfsFelt("profilAdresse", "Adresse", pfs.adresse) + pfsFelt("profilPostnr", "Postnr.", pfs.postnr, { attr: ' inputmode="numeric" maxlength="4" oninput="postnrUdfyld(this,\'profilBy\')"' }) + pfsFelt("profilBy", "By", pfs.by) + pfsFelt("profilCvr", "CVR", pfs.cvr, { attr: ' inputmode="numeric" maxlength="8" placeholder="8 cifre"' }))
     + fl("Tilpasninger", '<div class="prof-rk"><div><div class="prof-rk-t">Helligdage i årshjulet</div><div class="prof-rk-s">Påske, pinse, jul og de andre står af sig selv</div></div><button type="button" class="hus-kontakt' + (hellig ? ' on' : '') + '" id="profilHellig" role="switch" aria-checked="' + hellig + '" aria-label="Helligdage i årshjulet" onclick="profilHelligSkift(this)"><i></i></button></div>'
       + '<div class="prof-rk"><div><div class="prof-rk-t">Vis dage uden aftaler</div><div class="prof-rk-s">Slå fra, så ugen kun viser de dage, hvor der er planlagt noget</div></div><button type="button" class="hus-kontakt' + (tommeDage ? ' on' : '') + '" id="profilTomme" role="switch" aria-checked="' + tommeDage + '" aria-label="Vis dage uden aftaler" onclick="profilTommeSkift(this)"><i></i></button></div>')   /* gemmer med det samme (fund 22) */
     + fl("Mere", (function () { const rk = function (t, k) { return '<div class="prof-rk mq-tap" role="button" tabindex="0" style="cursor:pointer;" onclick="' + k + '"><div><div class="prof-rk-t">' + t + '</div></div></div>'; }; let tur = false; try { const bt = document.getElementById("burgerTur"); tur = !!(bt && bt.style.display !== "none"); } catch (e) {}
@@ -23936,6 +23940,18 @@ async function minProfilGemInd() {
   try { if (window.__PROF_FAV && JSON.stringify(window.__PROF_FAV) !== JSON.stringify(CV_FAV || [])) { CV_FAV = window.__PROF_FAV.slice(); await cvFavGem(); } } catch (e) {}
   const sf = document.getElementById("profilStudio"), hf = document.getElementById("profilHilsen");
   if (!sf || !sb || !currentKode) return;
+  /* FORRETNINGEN: adresse og CVR flettes ind i config · profil_svar. Et tomt felt sletter aldrig det gemte (gem-reglen 4/8). */
+  try {
+    const ny = {}; [["profilAdresse", "adresse"], ["profilPostnr", "postnr"], ["profilBy", "by"], ["profilCvr", "cvr"]].forEach(function (x) { const el = document.getElementById(x[0]); const v = el ? String(el.value || "").trim() : ""; if (v) ny[x[1]] = v; });
+    if (Object.keys(ny).length) {
+      let gl = {}; const rr = await sb.from("skema_svar").select("svar").eq("kode", currentKode).eq("navn", "config").eq("skema", "profil_svar").maybeSingle(); gl = (rr && rr.data && rr.data.svar) || {};
+      if (Object.keys(ny).some(function (k) { return String(gl[k] || "") !== ny[k]; })) {
+        const svar = Object.assign({}, gl, ny);
+        const eks = await sb.from("skema_svar").update({ svar: svar }).eq("kode", currentKode).eq("navn", "config").eq("skema", "profil_svar").select();
+        if (!(eks.data && eks.data.length)) await sb.from("skema_svar").insert({ kode: currentKode, navn: "config", skema: "profil_svar", svar: svar }).select();
+      }
+    }
+  } catch (e) {}
   /* Knapnavnene gemmes i MAALS — samme skuffe som resten af kundens opsaetning.
      Et TOMT felt betyder "brug standarden", ikke "slet navnet": derfor slettes
      noeglen i stedet for at blive skrevet som tom streng. */
@@ -35144,7 +35160,7 @@ function pfSkaerme(t) {
   if (t === 0) return ["pw0"];
   if (PF.ygt && !PF.kollega && t === pfAntal() && t > 2) return ["klar"];
   if (t === 1) return ["navn", "foed", "rolle"].concat(PF.pw ? ["pw"] : []);
-  if (t === 2) return ["butik", "adr", "cvr", "branche", "koeb"];
+  if (t === 2) return ["butik", "branche", "koeb"];   /* ADRESSE OG CVR ER UDE AF POPUPPEN (Idas klik 12/11 »Ud af popuppen«: »forvirrende at … praktiske oplysninger som adresse [kommer] midt i det hele«) — de udfyldes under Profil › Forretningen */
   return ["kolleger"];
 }
 function pfSkaerm() { const l = pfSkaerme(); return l[Math.max(0, Math.min(PF.sp || 0, l.length - 1))]; }
@@ -35206,7 +35222,7 @@ function pfKlar() {
     return true;
   }
   if (t === 2) {
-    if (pfTom(f.butik_navn) || pfTom(f.adresse) || !/^\d{4}$/.test(String(f.postnr || "").trim()) || pfTom(f.by) || pfTom(f.branche) || pfTom(f.forretningstype)) return false;
+    if (pfTom(f.butik_navn) || pfTom(f.branche) || pfTom(f.forretningstype)) return false;
     if (f.branche === "Andet" && pfTom(f.branche_andet)) return false;
     return true;
   }
@@ -35322,7 +35338,7 @@ async function pfPersonGem() {
 async function pfButikGem() {
   const f = PF.f;
   let gl = {}; try { const r = await sb.from("skema_svar").select("svar").eq("kode", currentKode).eq("navn", "config").eq("skema", "profil_svar").maybeSingle(); gl = (r && r.data && r.data.svar) || {}; } catch (e) {}
-  const svar = Object.assign({}, gl, { butik_navn: String(f.butik_navn || "").trim(), adresse: String(f.adresse || "").trim(), postnr: String(f.postnr || "").trim(), by: String(f.by || "").trim(), cvr: String(f.cvr || "").trim(),
+  const svar = Object.assign({}, gl, { butik_navn: String(f.butik_navn || "").trim(), adresse: String(f.adresse || "").trim() || gl.adresse || "", postnr: String(f.postnr || "").trim() || gl.postnr || "", by: String(f.by || "").trim() || gl.by || "", cvr: String(f.cvr || "").trim() || gl.cvr || "",   /* popuppen spørger ikke længere om adresse/CVR — det, der står under Profil, må aldrig overskrives med tomt */
     branche: f.branche || "", branche_andet: f.branche === "Andet" ? String(f.branche_andet || "").trim() : "", forretningstype: f.forretningstype || "", udfyldt_af: gl.udfyldt_af || PF.mail || "kunden" });
   await pfRaekkeGem("config", "profil_svar", svar);
   if (f.forretningstype && !(CURRENT_DEF && CURRENT_DEF.forretningstype)) { KUNDE_VALG_TYPE = f.forretningstype; await pfRaekkeGem("config", "kunde_valg", { forretningstype: f.forretningstype }); }
@@ -65542,7 +65558,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "3246";
+const APP_VERSION = "3247";
 const APP_BYGGET = "3. november";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_VERSION;   /* ingen dato (Ida 7/11: »hvorfor står der version 3. november?«) — datoen blev ikke rettet med, nummeret er sandheden */ } catch (e) {} });
 let NY_VERSION_KLAR = false;
