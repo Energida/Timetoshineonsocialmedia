@@ -3821,3 +3821,8 @@ Hver byggesten er sin egen flise i contentmodellens rækkefølge (USP · Målgru
 ## Navigationsknapper = 56 (LÅST 12. november, Idas valg i artifact AYsLo8hWHexAskZxZvdM9g)
 
 Knapper med tekst, der fører videre eller tilbage (den røde primære og den grå sekundære), er **56 høje** i hele appen. Chips er låst på 32 og er ikke navigationsknapper. Ikonknapper er 36. Kilden i koden er blokken »NAVIGATIONSKNAPPER = 56« sidst i det sidste `<style>` i `index.html`; nye navigationsknapper føjes til den blok. Målet står også i MÅLKORT.md.
+
+
+## Overskrift over fliser (LÅST 12. november, bud 1 + placering A, artifact Q9bqoBbxx7f3bMfau6tJNM)
+
+Overskriften står altid uden for flisen, aldrig inde i den. Poppins 12 / 400, versaler, bogstavafstand 1,5, farve #6F6B66. Venstrekanten flugter med flisens ydre kant, samme lodrette linje som hilsen og dato. 8 ned til flisen, 32 fra forrige flise op til overskriften, 24 fra coverets bund til den første overskrift. Fremdrift i et modul vises som én procesbar med procent for enden (som i profilen), ikke som små felter. Målene står også i MÅLKORT.md.
