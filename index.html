@@ -9069,12 +9069,21 @@ body.ov-ark-aaben { overflow:hidden; }
 .lgjort-t { font-size:15px; color:var(--black); }
 /* FORTSÆT HVOR DU SLAP (23/10, bud 2): hvid flise · etiket · én streg · foto (skarpe hjørner) m. afspil · nummer · navn · modul · rød knap */
 .hfs { background:#fff; border-radius:20px; box-shadow:var(--mb-skygge); padding:18px 20px 20px; cursor:pointer; margin:0 0 12px; }
-.tks { background:#fff; border-radius:20px; box-shadow:var(--mb-skygge); padding:18px 20px 20px; margin:0 0 28px; }
-.tks-eti { font-size:10px; letter-spacing:1.6px; text-transform:uppercase; color:var(--gray3); }
-.tks-streg { border-top:1px solid var(--gray); margin:10px 0 14px; }
-.tks-t { font-size:16px; line-height:1.4; color:var(--black); margin:0 0 16px; }
-.tks-knap { height:48px; padding:0 28px; border:0; border-radius:999px; background:var(--red); color:#fff; font:inherit; font-size:15px; display:inline-flex; align-items:center; justify-content:center; cursor:pointer; }
-@media (max-width:899px) { .tks-knap { width:100%; } }
+/* RUNDVISNINGEN KØRER I DEN RØDE FLISE (Ida 12/11, godkendte bud på computer og telefon): flisen står stille øverst på Forsiden, kun teksten skifter */
+.tfl { background:var(--red); color:#fff; border-radius:18px; padding:30px; display:flex; flex-direction:column; align-items:flex-start; text-align:left; box-sizing:border-box; min-height:300px; margin:0 0 28px; font-family:Poppins,sans-serif; font-weight:400; }
+.tfl-t { font-size:30px; line-height:1.18; font-weight:400; }
+.tfl-cs { display:inline-block; white-space:nowrap; font-family:Didot,"Bodoni MT","Playfair Display",serif; font-style:italic; font-weight:400; }
+.tfl-sk { width:100%; height:1px; background:rgba(255,255,255,.35); margin:14px 0; }
+.tfl-x { font-size:15px; line-height:1.5; font-weight:400; max-width:58ch; }
+.tfl-x b { display:block; font-weight:400; font-size:24px; margin-bottom:8px; }
+.tfl-kn { margin-top:auto; padding-top:14px; display:flex; align-items:center; gap:18px; width:100%; }
+.tfl-hk { height:48px; padding:0 26px; border:0; border-radius:99px; background:#fff; color:#000; font:400 15px Poppins,sans-serif; cursor:pointer; white-space:nowrap; }
+.tfl-tl { background:none; border:0; color:#fff; font:400 14px Poppins,sans-serif; cursor:pointer; padding:0; }
+.tfl-dots { margin-left:auto; display:flex; gap:6px; }
+.tfl-dots i { width:6px; height:6px; border-radius:50%; background:rgba(255,255,255,.45); }
+.tfl-dots i.on { background:#fff; }
+@media (max-width:899px) { .tfl { padding:22px 20px 18px; min-height:330px; } }
+body.tur-foerst .hu-ygt, body.tur-foerst #hjemMiniTlf, body.tur-foerst #snMini, body.tur-foerst .hfs, body.tur-foerst .hf-fliser { display:none !important; }
 .hfs-eti { font-size:10px; letter-spacing:1.6px; text-transform:uppercase; color:var(--gray3); }
 .hfs-streg { border-top:1px solid var(--gray); margin:10px 0 16px; }
 /* NUMMER OG VARIGHED I TITELLINJEN, ALT I SORT (Ida 11/11, bud A: »helt normal i sort og ikke grå«): nummeret er første ord i navnet, varigheden står bag */
@@ -35511,23 +35520,86 @@ async function kundeValgHent() {
   if (!sb || !currentKode) return;
   try { const r = await sb.from("skema_svar").select("svar").eq("kode", currentKode).eq("navn", "config").eq("skema", "kunde_valg").maybeSingle(); KUNDE_VALG_TYPE = String((r.data && r.data.svar && r.data.svar.forretningstype) || ""); } catch (e) {}
 }
-/* KOM GODT I GANG (Ida 11/11: »kunden lander på forsiden … det første de ser er 'kom godt i gang', Start rundvisningen øverst på forsiden«): ingen pop-up af sig selv — en flise øverst på Forsiden starter rundvisningen. Den forsvinder, når turen er taget eller lukket (turMarker). */
+/* RUNDVISNINGEN I DEN RØDE FLISE (Ida 12/11: »Ja, godkendt« på bud for computer og telefon): første besøg viser KUN den røde flise øverst på Forsiden; turen kører i flisen. Trin 1 uden mørke; fra trin 2 mørknes siden, flisen står lys, og en hvid streg peger fra flisen ud på menuen; sidste trin uden mørke og med knappen »Se din første lektion«. Bagefter er flisen væk. */
+let TUR_FL_I = 0, TUR_FL_FORCE = false;
+function turFlStops() {
+  const fejl = (function () { try { return fejlKnapVises(); } catch (e) { return false; } })();
+  const st = [{ v: true },
+    { t: "Forsiden", x: "Her ser du altid dit næste skridt. Ét tryk, så er du i gang.", m: ['#sideNav [data-k="d3"]', "#bn-d3"] },
+    { t: "Forløbet", x: "Her ligger lektionerne, én ad gangen. Dem med mærket Opgave har noget, du skal gøre. Stjernen gemmer dem, du vil finde igen.", m: ['#sideNav [data-k="d12"]', "#bn-d12"] }];
+  if (fejl) st.push({ t: "Meld en fejl", x: "Skulle du mod forventning opleve, at noget ikke virker, så tryk her, så fikser jeg det hurtigst muligt.", m: ["#sideNav .sn-fejl", "#burgerFejl"], burger: true });
+  st.push({ slut: true, t: "Rigtig god fornøjelse.", x: "Din første lektion venter." });
+  return st;
+}
+function turFlHtml(i) {
+  const S = turFlStops(), s = S[i] || S[0];
+  let h;
+  if (s.v) h = '<div class="tfl-t">Velkommen til dit<br><span class="tfl-cs">Content Studio</span></div><div class="tfl-sk"></div><div class="tfl-x">Her har du alt, hvad du skal bruge i forløbet, samlet ét sted. Undervejs i forløbet åbner nye funktioner løbende, så du kan arbejde med det, du lærer i lektionerne.</div><div class="tfl-kn"><button type="button" class="tfl-hk mq-tap" onclick="turFl(1)">Start rundvisning</button></div>';
+  else {
+    let dots = ""; for (let j = 1; j < S.length - 1; j++) dots += '<i' + (j === i ? ' class="on"' : '') + '></i>';
+    h = '<div class="tfl-x"><b>' + s.t + '</b>' + s.x + '</div><div class="tfl-kn"><button type="button" class="tfl-tl mq-tap" onclick="turFl(' + (i - 1) + ')">Tilbage</button>'
+      + (s.slut ? '<button type="button" class="tfl-hk mq-tap" onclick="turFlSlut()">Se din første lektion</button>' : '<button type="button" class="tfl-hk mq-tap" onclick="turFl(' + (i + 1) + ')">Næste</button><span class="tfl-dots">' + dots + '</span>') + '</div>';
+  }
+  return '<div class="tfl">' + h + '</div>';
+}
 function turStartKortTegn() {
   const hs = [document.getElementById("turStartKort"), document.getElementById("turStartKortTlf")].filter(Boolean); if (!hs.length) return;
   let vis = false;
   try {
     const d = typeof CURRENT_DEF !== "undefined" ? CURRENT_DEF : null;
-    vis = !!(d && typeof ygtHold === "function" && ygtHold(d) && !turSet() && !(typeof SOM_KUNDE !== "undefined" && SOM_KUNDE)
+    vis = !!(d && typeof ygtHold === "function" && ygtHold(d) && (!turSet() || TUR_FL_FORCE) && !(typeof SOM_KUNDE !== "undefined" && SOM_KUNDE)
       && !((typeof DEPLOY !== "undefined" && DEPLOY === "crm") || document.body.classList.contains("dash-mode") || (typeof KLIP_ER_IDA !== "undefined" && KLIP_ER_IDA))
       && ["medarbejder", "klipper", "reset", "kaereste"].indexOf(d.type) < 0);
   } catch (e) { vis = false; }
-  const html = vis ? '<div class="tks"><div class="tks-eti">Kom godt i gang</div><div class="tks-streg"></div><div class="tks-t">Tag en kort rundvisning, så ved du, hvor tingene er.</div><button type="button" class="tks-knap mq-tap" onclick="turStart(true)">Start rundvisningen</button></div>' : "";
+  const html = vis ? turFlHtml(Math.min(TUR_FL_I, turFlStops().length - 1)) : "";
   hs.forEach(function (h) { h.innerHTML = html; });
+  document.body.classList.toggle("tur-foerst", vis);
+  if (!vis) turFlOverlayFjern();
+}
+function turFlOverlayFjern() { const o = document.getElementById("turFlOverlay"); if (o) o.remove(); }
+function turFlSynlig() { return Array.prototype.find.call(document.querySelectorAll("#turStartKort .tfl, #turStartKortTlf .tfl"), function (e) { return e.getBoundingClientRect().height > 0; }) || null; }
+function turFl(i) {
+  TUR_FL_I = i; window.__TUR_FL_NU = i;
+  const S = turFlStops(); if (i >= S.length) { turFlSlut(); return; }
+  const s = S[i];
+  turFlOverlayFjern();
+  try { const tlf = window.matchMedia("(max-width: 899px)").matches; const bm = document.getElementById("burgerMenu"); const aab = !!(bm && bm.classList.contains("open")); if (tlf && s.burger && !aab) toggleBurger(); else if (aab && !(tlf && s.burger)) toggleBurger(); } catch (e) {}
+  turStartKortTegn();
+  const t0 = turFlSynlig();
+  if (t0) { try { const r = t0.getBoundingClientRect(); if (r.top < 0 || r.bottom > innerHeight) t0.scrollIntoView({ block: "center", behavior: "auto" }); } catch (e) {} }
+  if (s.m) setTimeout(function () { turFlOverlay(i, 0); }, s.burger ? 380 : 60);
+}
+function turFlOverlay(i, forsoeg) {
+  if (window.__TUR_FL_NU !== i) return;
+  const s = turFlStops()[i]; if (!s || !s.m) return;
+  const tile = turFlSynlig(); if (!tile) return;
+  let maal = null;
+  for (let k = 0; k < s.m.length && !maal; k++) { const e = Array.prototype.find.call(document.querySelectorAll(s.m[k]), function (x) { const b = x.getBoundingClientRect(); return b.height > 0 && b.width > 0 && (x.offsetParent !== null || getComputedStyle(x).position === "fixed"); }); if (e) maal = e; }
+  if (!maal) { if (forsoeg < 8) setTimeout(function () { turFlOverlay(i, forsoeg + 1); }, 300); return; }
+  turFlOverlayFjern();
+  const r = maal.getBoundingClientRect(), pad = 6, L = Math.max(4, r.left - pad), T = r.top - pad, W = r.width + pad * 2, H = r.height + pad * 2;
+  const m = { L: L, T: T, W: W, H: H };
+  const el = document.createElement("div"); el.id = "turFlOverlay"; el.style.cssText = "position:fixed;inset:0;z-index:230;";
+  el.innerHTML = '<svg aria-hidden="true" style="position:fixed;left:0;top:0;width:100vw;height:100vh;pointer-events:auto;"><defs><mask id="turFlMaske"><rect x="0" y="0" width="100%" height="100%" fill="#fff"/><rect x="' + L + '" y="' + T + '" width="' + W + '" height="' + H + '" rx="' + Math.min(14, H / 2) + '" fill="#000"/></mask></defs><rect x="0" y="0" width="100%" height="100%" fill="rgba(0,0,0,0.5)" mask="url(#turFlMaske)"/></svg>';
+  const tb = tile.getBoundingClientRect(), klon = tile.cloneNode(true);
+  klon.style.cssText = "position:fixed;margin:0;left:" + tb.left + "px;top:" + tb.top + "px;width:" + tb.width + "px;height:" + tb.height + "px;z-index:1;";
+  el.appendChild(klon);
+  document.body.appendChild(el);
+  try { turPil(el, klon, m, window.matchMedia("(max-width: 899px)").matches); } catch (e) {}
+}
+function turFlSlut() {
+  window.__TUR_FL_NU = -1; turFlOverlayFjern();
+  try { const bm = document.getElementById("burgerMenu"); if (bm && bm.classList.contains("open")) toggleBurger(); } catch (e) {}
+  TUR_FL_FORCE = false; TUR_FL_I = 0;
+  turMarker();
+  try { turStartKortTegn(); } catch (e) {}
+  try { renderHome(); } catch (e) {}
+  setTimeout(function () { try { kursusNaeste(); } catch (e) {} }, 80);
 }
 function turStart(igen) {
   if (!igen && turSet()) return;
   /* INGEN POP-UP AF SIG SELV I YOU GOT THIS (Ida 11/11): kunden lander i ro på Forsiden; flisen Kom godt i gang starter turen */
-  try { if (!igen && typeof ygtHold === "function" && ygtHold(typeof CURRENT_DEF !== "undefined" ? CURRENT_DEF : null)) { turStartKortTegn(); return; } } catch (e) {}
+  try { if (typeof ygtHold === "function" && ygtHold(typeof CURRENT_DEF !== "undefined" ? CURRENT_DEF : null)) { if (igen) { TUR_FL_FORCE = true; TUR_FL_I = 0; try { showTab(3); } catch (e) {} } setTimeout(function () { try { turStartKortTegn(); const t = turFlSynlig(); if (t && igen) t.scrollIntoView({ block: "center", behavior: "auto" }); } catch (e) {} }, 60); return; } } catch (e) {}
   /* ALDRIG AF SIG SELV I ADMIN (23/10: kundernes »Din Drejebog bor her« lå oven på Get shit done i testkopien) — samme vagt som profilarket */
   try { if (!igen && ((typeof DEPLOY !== "undefined" && DEPLOY === "crm") || document.body.classList.contains("dash-mode") || (typeof KLIP_ER_IDA !== "undefined" && KLIP_ER_IDA))) return; } catch (e) {}
   if (!igen && typeof velkomstSkalVises === "function" && velkomstSkalVises()) return;   /* velkomsten foerst (4/10) — den starter selv rundvisningen bagefter */
@@ -35546,7 +35618,6 @@ function turLuk() {
   if (TUR_MODUS === "lek") { TUR_MODUS = ""; lekTurMarker(); return; }
   try { if (Array.isArray(TUR_STOPS) && TUR_STOPS.some(function (st) { return st && st.lek; })) lekTurMarker(); } catch (e) {}   /* lektionstrinnene var med i den første rundvisning (26/10) */   /* lektionssidens rundvisning rører aldrig hovedturens markering */
   turMarker();
-  try { turStartKortTegn(); } catch (e) {}
 }
 /* ---------- RUNDVISNINGEN PÅ LEKTIONSSIDEN (Idas klik »Ja, byg den« 22/10: »en rundvisning på selve lektionssiden … med noter og hvor de kan
    finde deres noter samlet og hvor de kan finde deres svar på opgaverne undervejs og at det kun er dem der kan tilgå dem«) ----------
@@ -65558,7 +65629,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "3247";
+const APP_VERSION = "3248";
 const APP_BYGGET = "3. november";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_VERSION;   /* ingen dato (Ida 7/11: »hvorfor står der version 3. november?«) — datoen blev ikke rettet med, nummeret er sandheden */ } catch (e) {} });
 let NY_VERSION_KLAR = false;

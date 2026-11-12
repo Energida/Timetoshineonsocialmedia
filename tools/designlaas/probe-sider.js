@@ -167,6 +167,8 @@ setTimeout(async function () {
         + ".kal-fpill,.lek-top,.kort-plus,.uge-opret,.bf-plads,.lk-note-fold,.lk-tekstknap,.lk-vaerktoej,"
         /* .cover-tilbage: Tilbage i knapraekken under coveret er en pille i sin egen bredde (Idas klik 24/9: »I knaprækken«) — samme hoejde (44) som knapperne ved siden af */
         + ".cover-tilbage,"
+        /* .tfl: RUNDVISNINGEN I DEN RØDE FLISE (Ida 12/11, godkendt telefonbud https://claude.ai/artifact/PbCcGu37nsTDsUxkxrT1jZ): hvid pille-knap, Tilbage som tekst og prikker i flisens bund — NAVNGIVEN undtagelse, Idas valg */
+        + ".tfl,"
         /* HJEM = UGESTRIMLEN (25/9): datofliserne er fliser som .uge-dag (trykfelt 44+), og »I dag« er linjens pille som stiens Tilbage */
         /* »SE ALLE« FOR ENDEN AF SEKTIONSLINJEN (Idas klik 29/9, bud 1, K4x3Ln4DduuT16Bq6Euizx): en tekstknap i linjens hoejre ende paa Hjem (Opgaver, Kommende aktiviteter) — trykfeltet er 44 via ::before (revision 6/10) */
         + ".cf-se,"
