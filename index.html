@@ -25878,7 +25878,12 @@ function cvTegn(cx, W, H, design, noegle, foto, valgt) {
     const b0 = { x: mx - bredest / 2 - pad, y: y0, w: bredest + pad * 2, h: hoejde };
     const b = { x: mx + (b0.x - mx) * kk, y: my + (b0.y - my) * kk, w: b0.w * kk, h: b0.h * kk };   /* trykfladen og den stiplede ramme foelger den skalerede tekst */
     bokse.push(b);
-    if (valgt === idx) { cx.save(); cx.setLineDash([W * 0.012, W * 0.01]); cx.lineWidth = Math.max(1.5, W * 0.003); cx.strokeStyle = "rgba(255,255,255,.9)"; cx.strokeRect(b.x - W * 0.015, b.y - W * 0.015, b.w + W * 0.03, b.h + W * 0.03); cx.restore(); }
+    if (valgt === idx) { cx.save(); cx.setLineDash([W * 0.012, W * 0.01]); cx.lineWidth = Math.max(1.5, W * 0.003); cx.strokeStyle = "rgba(255,255,255,.9)"; cx.strokeRect(b.x - W * 0.015, b.y - W * 0.015, b.w + W * 0.03, b.h + W * 0.03); cx.restore();
+      /* HJOERNEHAANDTAG PAA COMPUTEREN (Ida 13/11: »jeg skal på computeren også kunne trække i hjørnerne og tilpasse størelsen på teksten … ligesom på telefonen hvor jeg kniber«):
+         fire hvide prikker i rammens hjoerner; et traek aendrer samme faktor som knibet (l.k) — kun stoerrelsen som helhed, aldrig layoutet. Skyderen bestaar. */
+      if (cvHjTil()) { const u = W * 0.015, rr = Math.max(4, W * 0.011); cx.save(); cx.fillStyle = "#FFFFFF"; cx.strokeStyle = "#6F6B66"; cx.lineWidth = Math.max(1, W * 0.002);
+        [[b.x - u, b.y - u], [b.x + b.w + u, b.y - u], [b.x - u, b.y + b.h + u], [b.x + b.w + u, b.y + b.h + u]].forEach(function (h) { cx.beginPath(); cx.arc(h[0], h[1], rr, 0, Math.PI * 2); cx.fill(); cx.stroke(); }); cx.restore(); }
+    }
   });
   return bokse;
 }
@@ -26035,6 +26040,14 @@ function cvFavSkift() {
   const i = CV_FAV.indexOf(l.s); if (i > -1) CV_FAV.splice(i, 1); else CV_FAV.unshift(l.s);
   cvUI(); cvFavGem();
 }
+function cvHjTil() { try { return window.matchMedia("(min-width:900px)").matches; } catch (e) { return false; } }
+function cvHjRamt(p) {   /* 0 = intet hjoerne; 1-4 = oeverst venstre · oeverst hoejre · nederst venstre · nederst hoejre */
+  if (!CV || CV.ramme === false || !cvHjTil()) return 0; const b = (CV.bokse || [])[CV.valgt]; if (!b) return 0;
+  const u = p.W * 0.015, r = Math.max(p.W * 0.03, 14 * (CV.skala || 1));
+  const hj = [[b.x - u, b.y - u], [b.x + b.w + u, b.y - u], [b.x - u, b.y + b.h + u], [b.x + b.w + u, b.y + b.h + u]];
+  for (let i = 0; i < 4; i++) if (Math.hypot(p.x - hj[i][0], p.y - hj[i][1]) <= r) return i + 1;
+  return 0;
+}
 function cvPunkt(e) { const c = document.getElementById("cvC"), r = c.getBoundingClientRect(); return { x: (e.clientX - r.left) * CV.skala, y: (e.clientY - r.top) * CV.skala, W: c.width, H: c.height }; }
 /* TRÆK OG KNIB (Ida 29/10 på sin iPhone: »funktionen med at tilpasse størrelsen på teksten og placerer den fungerer heller ikke … man kan kunne knibe teksten sammen så den får den rette størrelse«):
    ét fingertryk flytter den valgte tekst, også når fingeren ikke rammer præcis på bogstaverne; to fingre kniber teksten større/mindre (samme z som skyderen). */
@@ -26046,6 +26059,7 @@ function cvNed(e) {
   const ids = Object.keys(CV.ptr);
   if (ids.length === 2) { const l0 = cvLag(); if (!l0) return; const a = CV.ptr[ids[0]], b = CV.ptr[ids[1]]; CV.knib = { d0: Math.max(10, Math.hypot(a.x - b.x, a.y - b.y)), k0: l0.k || 1 }; CV.traek = null; cvHjaelp(false, false); return; }
   if (ids.length > 2) return;
+  if (cvHjRamt(p)) { const lh = cvLag(); if (lh) { const hx = (lh.x / 100) * p.W, hy = (lh.y / 100) * p.H; CV.hjoerne = { d0: Math.max(10, Math.hypot(p.x - hx, p.y - hy)), k0: lh.k || 1 }; CV.traek = null; cvHjaelp(false, false); return; } }
   let hit = -1; (CV.bokse || []).forEach(function (b, i) { if (b && p.x >= b.x - m && p.x <= b.x + b.w + m && p.y >= b.y - m && p.y <= b.y + b.h + m) hit = i; });
   if (hit < 0 && !cvLag()) return;
   if (hit >= 0 && hit !== CV.valgt) { CV.valgt = hit; cvUI(); }
@@ -26055,6 +26069,8 @@ function cvNed(e) {
 function cvFlyt(e) {
   if (CV && CV.ptr && CV.ptr[e.pointerId]) CV.ptr[e.pointerId] = { x: e.clientX, y: e.clientY };
   if (CV && CV.knib) { const ids = Object.keys(CV.ptr || {}); if (ids.length < 2) return; const a = CV.ptr[ids[0]], b = CV.ptr[ids[1]]; const lk = cvLag(); if (lk) { lk.k = Math.max(0.2, Math.min(6, CV.knib.k0 * Math.hypot(a.x - b.x, a.y - b.y) / CV.knib.d0)); cvTegnNu(); } e.preventDefault(); return; }   /* knib aendrer kun størrelsen som helhed (l.k), aldrig layoutet (Ida 2/11) */
+  if (CV && CV.hjoerne) { const ph = cvPunkt(e), lh = cvLag(); if (lh) { const hx = (lh.x / 100) * ph.W, hy = (lh.y / 100) * ph.H; lh.k = Math.max(0.2, Math.min(6, CV.hjoerne.k0 * Math.hypot(ph.x - hx, ph.y - hy) / CV.hjoerne.d0)); cvTegnNu(); } e.preventDefault(); return; }
+  if (CV && !CV.traek) { try { const hh = cvHjRamt(cvPunkt(e)); e.currentTarget.style.cursor = hh ? ((hh === 1 || hh === 4) ? "nwse-resize" : "nesw-resize") : ""; } catch (x) {} }
   if (!CV || !CV.traek) return; const p = cvPunkt(e), l = cvLag(); if (!l) return;
   l.x = Math.min(95, Math.max(5, (p.x - CV.traek.dx) / p.W * 100)); l.y = Math.min(95, Math.max(5, (p.y - CV.traek.dy) / p.H * 100));
   /* HJAELPESTREGER OG MIDTEN KLIKKER (Ida 18/10: »de streger der hjælper med placeringen ift hvad der er centreret på både coverbilleder karrusseller«):
@@ -26078,6 +26094,7 @@ function cvHjaelp(v, h) {
 function cvOp(e) {
   if (CV && CV.ptr && e && e.pointerId !== undefined) delete CV.ptr[e.pointerId];
   if (CV && CV.knib) { if (Object.keys(CV.ptr || {}).length < 2) { CV.knib = null; CV.traek = null; cvGemSnart(); } return; }   /* efter et knib flytter den sidste finger ikke teksten */
+  if (CV && CV.hjoerne) { CV.hjoerne = null; cvGemSnart(); return; }
   if (CV && CV.traek) { CV.traek = null; cvGemSnart(); } cvHjaelp(false, false);
 }
 function cvFotoVaelg() { const f = document.getElementById("cvFil"); if (f) { f.value = ""; f.click(); } }
@@ -65815,7 +65832,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "3261";
+const APP_VERSION = "3262";
 const APP_BYGGET = "3. november";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_VERSION;   /* ingen dato (Ida 7/11: »hvorfor står der version 3. november?«) — datoen blev ikke rettet med, nummeret er sandheden */ } catch (e) {} });
 let NY_VERSION_KLAR = false;
