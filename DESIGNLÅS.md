@@ -1,3 +1,6 @@
+## 13. november · HEALTH COACH — NOTERNE TIL DEN ENKELTE TEST (Idas klik 13/11, v3265)
+Idas noter fra de 22 Notion-undersider står ved hver test under hendes egne overskrifter »Noter« · »Kig efter« · »Kig på« (12 versal uden for flisen), hvert punkt sin egen flise, foldet ud. Telefon: efter »Læs først« og LIGE OVER testen. Computer: i højre spalte under »Læs først«. Underpunkter står som grå linjer i samme flise. Første bogstav vises stort; ordene er ellers ordret. Bud: https://claude.ai/artifact/EKsQknm2j7MnbzgmArs6CD. Billederne fra Notion er ikke med.
+
 ## 13. november · HEALTH COACH I BACKSTAGE — TESTSKEMAET (Idas klik 13/11, v3264)
 Idas egne testsider fra Notion (Scientific Core Condition · Biomekanik · Infant development · Basisbevægelser · Analyse af tests) er et skema i Backstage. Kun admin; i menuen lige efter CRM (hendes klik). Godkendte bud: telefon https://claude.ai/artifact/1TiFuGKjqhhky69PZBWaib · computer https://claude.ai/artifact/1V6F8gtDjhHMNMww3uKSHh.
 - »Læs først« står FOLDET UD (Ida: »læs først skal være foldet ud«): telefon øverst, computer i en spalte på 380 til højre. Hvert punkt sin egen flise (13 px, luft 14/20).
