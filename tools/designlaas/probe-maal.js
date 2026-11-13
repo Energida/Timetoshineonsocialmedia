@@ -72,7 +72,7 @@ function maalSide(){
     if(!synlig(e)) return; var r=e.getBoundingClientRect(); er("IKONKNAP", e, Math.round(r.width)===36&&Math.round(r.height)===36, Math.round(r.width)+"x"+Math.round(r.height)+" (skal 36x36)");
   });
   /* KNAPPER i bunden: 44 (Ida 7/11). Navigationsknapper er låst til 56 fra 12/11, men briefens piller flyttes samlet i et eget trin — ret tallet her, når det sker */
-  rod.querySelectorAll("#briefSideNav .dbtn").forEach(function(e){ if(!synlig(e)) return; var r=e.getBoundingClientRect(); er("KNAP højde", e, Math.round(r.height)===44, "h"+Math.round(r.height)+" (skal 44)"); });
+  rod.querySelectorAll("#briefSideNav .dbtn").forEach(function(e){ if(!synlig(e)) return; var r=e.getBoundingClientRect(); er("KNAP højde", e, Math.round(r.height)===56, "h"+Math.round(r.height)+" (skal 56)"); });   /* navigationsknapper = 56 (låst 12/11; briefen 13/11) */
   /* KNAPPERS TEKST I MIDTEN: lodret ≤ 1 px (pille/ikon/chip med én linje); ikon og tekst flugter */
   rod.querySelectorAll("button, .dbtn, .ark-chip").forEach(function(e){
     if(!synlig(e)) return; var cs=getComputedStyle(e), r=e.getBoundingClientRect(); var rad=px(cs.borderTopLeftRadius);
@@ -91,7 +91,7 @@ function maalSide(){
     ys.sort(function(a,b){return a-b}); for(var i=1;i<ys.length;i++){ N++; if(ys[i]-ys[i-1]<24) fejl("SKILLELINJE: to streger med "+(ys[i]-ys[i-1])+" px imellem i "+kl(f)); }
   });
   /* IKONRÆKKEN PÅ COMPUTER: kun ⋯ */
-  if(!TLF){ var lose=[].slice.call(document.querySelectorAll("#screen7 .bt-ik-baand > *, #briefWrap .brief-titel-over > .bt-blyant, #screen7 .ss-top > .ss-cirk:not(.ss-mere)")).filter(synlig).filter(function(e){ return !e.classList.contains("bt-mere-tlf") && !e.classList.contains("bt-status-baand"); });   /* status står foran ⋯ (Ida 9/11) */
+  if(!TLF){ var lose=[].slice.call(document.querySelectorAll("#screen7 .bt-ik-baand > *, #screen7 .ss-top > .ss-cirk:not(.ss-mere)")   /* blyanten står ved de tre prikker på computeren (Ida 13/11: »de 3 prikker og blyant som de eneste«) */).filter(synlig).filter(function(e){ return !e.classList.contains("bt-mere-tlf") && !e.classList.contains("bt-status-baand"); });   /* status står foran ⋯ (Ida 9/11) */
     N++; if(lose.length) fejl("IKONRÆKKE: løse ikoner uden for ⋯: "+lose.map(function(e){return e.title||kl(e)}).join(", ")); }
 }
 function maalForsideTlf(){

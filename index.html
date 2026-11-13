@@ -25387,7 +25387,11 @@ function briefProcesTegn() {
   else if (wrap.firstElementChild !== el) wrap.insertBefore(el, wrap.firstChild);
   const RK = '<svg class="bp-rk" viewBox="0 0 24 24" aria-hidden="true"><g transform="rotate(90 12 12)"><path d="M12 1.5c3.2 2.6 4.8 6.3 4.8 10.5v3.6l2.7 3.4-3.4-.6-1.6 2.4H9.5L7.9 18.4l-3.4.6 2.7-3.4V12c0-4.2 1.6-7.9 4.8-10.5z"/><circle cx="12" cy="9.5" r="2"/></g></svg>';
   const knap = function (i, kl) { return '<button type="button" class="bp-trin ' + kl + (i === A ? ' nu' : '') + '" onclick="briefProcesGaa(' + i + ')"' + (i === A ? ' aria-current="step"' : '') + '>' + (i === 0 ? '<i></i>' : '<b></b>') + '<span class="bp-l">' + N[i] + '</span><span class="bp-k">' + K[i] + '</span></button>'; };
-  el.innerHTML = /* PARENTESEN OG ORDET SUCCESRAKETTEN ER UDE (Ida 30/10: »bevar den nuværende men slet parentesen og succesraketten over«) */ knap(0, "bp-st" + (A > 0 ? " gaa" : "")) + '<span class="bp-bro' + (A > 0 ? " gaa" : "") + '" aria-hidden="true"></span><div class="bp-rb' + (A === 0 ? " hviler" : "") + '" style="--i:' + (A > 0 ? A - 1 : 0) + '">' + RK
+  const FT = briefHarFaktaTrin(wrap), T = (A === 0 && BRIEF_TRIN_INFO) ? (BRIEF_TRIN_INFO.t || 0) : 0;
+  const cirkel = function (t, navn, gaaet, nu) { return '<button type="button" class="bp-trin bp-st bp-f' + (t + 1) + (gaaet ? ' gaa' : '') + (nu ? ' nu' : '') + '" onclick="briefProcesTrin(' + t + ')"' + (nu ? ' aria-current="step"' : '') + '><i></i><span class="bp-l">' + navn + '</span><span class="bp-k">' + navn + '</span></button>'; };
+  const start = FT ? cirkel(0, "Fakta", A > 0 || T > 0, A === 0 && T === 0) + '<span class="bp-bro' + (A > 0 || T > 0 ? " gaa" : "") + '" aria-hidden="true"></span>' + cirkel(1, "Idéen", A > 0, A === 0 && T > 0) : knap(0, "bp-st" + (A > 0 ? " gaa" : ""));
+  el.classList.toggle("bp-to", FT);
+  el.innerHTML = /* PARENTESEN OG ORDET SUCCESRAKETTEN ER UDE (Ida 30/10: »bevar den nuværende men slet parentesen og succesraketten over«) */ start + '<span class="bp-bro' + (A > 0 ? " gaa" : "") + '" aria-hidden="true"></span><div class="bp-rb' + (A === 0 ? " hviler" : "") + '" style="--i:' + (A > 0 ? A - 1 : 0) + '">' + RK
     + [1, 2, 3].map(function (i) { return knap(i, "bp-bar" + (i <= A ? " gaa" : "")); }).join("") + '</div>';
 }
 function briefProcesGaa(i) { try { briefKlipLaes(); } catch (e) {} BRIEF_SIDE_AKTIV = i; BRIEF_TRIN_AKTIV = 0; briefMbVis("skriv"); }
@@ -26093,8 +26097,10 @@ function heic2anyHent() { if (window.heic2any) return Promise.resolve(window.hei
 async function heicKlar(f) {
   if (!f || !cvErHeic(f)) return f;
   let blob = null;
-  try { const H = await cvHeicHent(); blob = await H({ blob: f, type: "image/jpeg", quality: 0.92 }); } catch (e) { blob = null; }
-  if (!blob) { try { const h = await heic2anyHent(); const ud = await h({ blob: f, toType: "image/jpeg", quality: 0.92 }); blob = Array.isArray(ud) ? ud[0] : ud; } catch (e) { blob = null; } }
+  /* TIDSGRAENSE (Ida 13/11: »det tager enormt lang tid at oploade?« — knappen stod paa »Henter fotoet …«): en omformer, der aldrig svarer, maa ikke holde fotoet fast. 25 sek. pr. forsoeg, saa reserven, saa besked. */
+  const graense = function (p) { return Promise.race([p, new Promise(function (_, fejl) { setTimeout(function () { fejl(new Error("tog for lang tid")); }, 25000); })]); };
+  try { const H = await graense(cvHeicHent()); blob = await graense(H({ blob: f, type: "image/jpeg", quality: 0.92 })); } catch (e) { blob = null; }
+  if (!blob) { try { const h = await graense(heic2anyHent()); const ud = await graense(h({ blob: f, toType: "image/jpeg", quality: 0.92 })); blob = Array.isArray(ud) ? ud[0] : ud; } catch (e) { blob = null; } }
   if (!blob) throw new Error("HEIC kunne ikke læses");
   const navn = String(f.name || "billede").replace(/\.hei[cf]$/i, "") + ".jpg";
   try { return new File([blob], navn, { type: "image/jpeg" }); } catch (e) { blob.name = navn; return blob; }
@@ -26115,6 +26121,7 @@ async function cvFotoValgt(inp) {
   let fejl = 0;
   for (let n = 0; n < filer.length; n++) {
     const k = CV.nogler[start + n]; if (k == null) break;
+    if (filer.length > 1) { const fo2 = document.getElementById("cvFotoOrd"); if (fo2) fo2.textContent = "Henter foto " + (n + 1) + " af " + filer.length + " …"; }   /* aldrig en knap, der bare staar stille (Ida 13/11) */
     let url = ""; try { url = await cvFilTilUrl(filer[n]); } catch (e) { url = ""; }
     if (!url) { fejl++; continue; }
     if (m[k]) { try { URL.revokeObjectURL(m[k]); } catch (e) {} }
@@ -26439,7 +26446,7 @@ function briefSiderTegn(G, grupper, wrap, navM, bud) {
     /* »N AF 4« ER UDE AF BJAELKEN (Ida 18/9 kl. 12.33: »efter vi har samlet alt paa én side skal det der 2 af 4 slettes paa alle«) — vaelter 17/9 kl. 11.57 */
     /* »STEP 1: FANG DEM« · »STEP 2: FASTHOLD DEM« · »STEP 3: FAA DEM TIL AT HANDLE …« (Ida 18/9 kl. 15.00: »skriv step 1: Fang dem og self 2. 3. ved de kommende«) — Retning er ikke et step */
     try { wrap.querySelectorAll(".rk-fold-tekst b[data-navn]").forEach(function (b) { b.textContent = b.dataset.navn; }); if (hoved && akt > 0) { const hb = hoved.querySelector(".rk-fold-tekst b"); if (hb) { if (!hb.dataset.navn) hb.dataset.navn = String(hb.textContent || "").trim(); hb.textContent = hb.dataset.navn;   /* uden »Step n:« (Idas ja 19/9 aften, ordene i b2b fund 2) */ } } } catch (e) {}
-    if (hoved && ti.n > 1) {
+    if (hoved && ti.n > 1 && !ti.fakta) {
       const row = document.createElement("div"); row.className = "bss-chips";
       row.innerHTML = (ti.navne || []).map(function (nv, i) { return '<button type="button" class="ark-chip' + (i === ti.t ? ' on' : '') + '" onclick="BRIEF_TRIN_AKTIV=' + i + ';briefMbVis(\'skriv\', undefined, true)">' + esc(nv || ("Trin " + (i + 1))) + '</button>'; }).join("");
       let efter = hoved; if (efter.nextElementSibling && efter.nextElementSibling.classList.contains("rk-hvorfor")) efter = efter.nextElementSibling;
@@ -26452,7 +26459,7 @@ function briefSiderTegn(G, grupper, wrap, navM, bud) {
     /* TILBAGE PAA SKRIVESIDENS FOERSTE SIDE PAA TELEFONEN (natten 7/10, revision fund 49 — CLAUDE.md §4 »Der skal altid staa Tilbage«): kun oejet foerte
        tilbage til briefoversigten. Samme graa knap som de andre sider; gemmer og viser briefoversigten. Kun telefonen (computeren har stien). */
     navM.innerHTML = '<span class="bsd-venstre">' + (akt > 0 || ti.t > 0 ? '<button type="button" class="dbtn bsd-tilbage" onclick="briefTrinGaa(-1)">Tilbage</button>' : '<button type="button" class="dbtn bsd-tilbage bsd-tilbage-tlf" onclick="try{saveBrief(true)}catch(e){}briefMbVis(\'forside\')">Tilbage</button>') + '</span>'
-      + ((akt === sider.length - 1 && ti.t === ti.n - 1) ? briefSendKnapHtml() + '<button type="button" class="dbtn primary" onclick="briefSkrivGem(this)">Gem ændringer</button>' : '<button type="button" class="dbtn bsd-gem" onclick="briefSkrivGem(this)">Gem ændringer</button><button type="button" class="dbtn primary" onclick="briefTrinGaa(1)">' + ((briefTelefonBred() && ti.t < ti.n - 1 && ti.navne && ti.navne[ti.t + 1]) ? "Næste: " + esc(ti.navne[ti.t + 1]) : "Næste") + '</button>');   /* »NÆSTE: IDÉEN« PAA TELEFONEN (Ida 12/11: »ingen kunder forstå at de selv skal klikke på chipsen med ideen«) — knappen siger, hvilken chip den fører til */   /* GEM AENDRINGER PAA HVER SIDE (Ida 24/9 kl. 23.19: »På hver side i briefen skal man kunne klikke gem ændringer! Og så komme tilbage til briefoversigten«) — graa, roed er Naeste */
+      + ((akt === sider.length - 1 && ti.t === ti.n - 1) ? briefSendKnapHtml() + '<button type="button" class="dbtn primary" onclick="briefSkrivGem(this)">Gem ændringer</button>' : '<button type="button" class="dbtn bsd-gem" onclick="briefSkrivGem(this)">Gem ændringer</button><button type="button" class="dbtn primary" onclick="briefTrinGaa(1)">' + ((ti.t < ti.n - 1 && ti.navne && ti.navne[ti.t + 1]) ? "Næste: " + esc(ti.navne[ti.t + 1]) : "Næste") + '</button>');   /* »NÆSTE: IDÉEN« PAA TELEFONEN (Ida 12/11: »ingen kunder forstå at de selv skal klikke på chipsen med ideen«) — knappen siger, hvilken chip den fører til */   /* GEM AENDRINGER PAA HVER SIDE (Ida 24/9 kl. 23.19: »På hver side i briefen skal man kunne klikke gem ændringer! Og så komme tilbage til briefoversigten«) — graa, roed er Naeste */
     navM.classList.add("bsd-nav");
     return;
   }
@@ -26466,6 +26473,10 @@ function briefSiderTegn(G, grupper, wrap, navM, bud) {
 /* TRINNENE INDEN FOR ET AFSNIT: hvert oeverste .sk-q paa siden er eet trin; paa Retning er soejle-bjaelken + guiden trin 0. Fakta-felterne (de flyttes til
    fakta-boksen af briefFaktaFelterFlyt) og felter, motoren selv har skjult, taeller ikke. Skjulte trin baerer data-trin-skjult, saa de kan taendes igen. */
 let BRIEF_TRIN_AKTIV = 0, BRIEF_TRIN_INFO = { t: 0, n: 1 };
+/* FAKTA OG IDÉEN ER TO SELVSTAENDIGE SIDER — TO CIRKLER I PROCESBAREN, IKKE CHIPS UNDER »START« (Ida 12/11: »det skal ikke være 2 chips. det skal være 2 cirkler …
+   helt selvstændige sider og ikke under start«; bud godkendt 13/11 paa telefon og computer). En Story har sin egen foerste skaerm og faar ikke Fakta-siden. */
+function briefHarFaktaTrin(wrap) { try { wrap = wrap || document.getElementById("briefWrap"); return !!wrap && !wrap.querySelector(".ss-stat, .ss-top, #storySerie") && !document.body.classList.contains("brief-story"); } catch (e) { return false; } }
+function briefProcesTrin(t) { try { briefKlipLaes(); } catch (e) {} try { saveBrief(true); } catch (e) {} BRIEF_SIDE_AKTIV = 0; BRIEF_TRIN_AKTIV = t; briefMbVis("skriv", undefined, true); }
 function briefTrinAnvend(wrap, sider, akt) {
   /* Wrap-boern med data-bside har sidens loekke lige afgjort (vis/skjul); felter INDE i et kort taendes altid igen her — de er usynlige, naar kortet er skjult */
   wrap.querySelectorAll("[data-trin-skjult]").forEach(function (e) { if (!e.hasAttribute("data-bside")) e.style.display = ""; e.removeAttribute("data-trin-skjult"); });
@@ -26492,11 +26503,12 @@ function briefTrinAnvend(wrap, sider, akt) {
   if (alle.length) trin.push(alle.slice());
   /* FAKTA ER FOERSTE TRIN PAA START, PAA TELEFONEN (Ida 8/11: »fakta skulle vaere den foerste side i briefen, separat, inden fang dem« — klik »Fakta foer Idéen«):
      trin 0 = fakta-boksen alene (de andre felter skjules), trin 1 = Idéen. Fakta-boksen vises kun dér; paa Fang dem, Fasthold og Handle er den ude. Computeren er uroert (fakta har sin egen spalte). */
-  const faktaTrin = (akt === 0 && alle.length > 0 && document.body.classList.contains("mb-brief-tlf") && !wrap.querySelector(".ss-stat, .ss-top, #storySerie") && !document.body.classList.contains("brief-story"));   /* en Story har sin egen foerste skaerm (status + dato + type) — den faar ikke Fakta-trinnet */
+  const faktaTrin = (akt === 0 && alle.length > 0 && briefHarFaktaTrin(wrap));   /* FAKTA OG IDÉEN ER TO SIDER PAA BEGGE FLADER (Idas klik 13/11) */   /* en Story har sin egen foerste skaerm (status + dato + type) — den faar ikke Fakta-trinnet */
   if (faktaTrin) trin.unshift([]);
   if (!trin.length) trin.push([]);
   const t = Math.max(0, Math.min(trin.length - 1, BRIEF_TRIN_AKTIV)); BRIEF_TRIN_AKTIV = t;
   document.body.setAttribute("data-bfakta", (faktaTrin && t === 0) ? "ja" : "nej");
+  try { document.body.toggleAttribute("data-bto", briefHarFaktaTrin(wrap)); } catch (e) {}
   const vis = trin[t];
   const skjul = function (e) { if (!e) return; e.style.display = "none"; e.setAttribute("data-trin-skjult", "1"); };
   alle.forEach(function (f) { if (vis.indexOf(f) === -1) skjul(f); });
@@ -26515,7 +26527,7 @@ function briefTrinAnvend(wrap, sider, akt) {
     return KORT[n] || (n.length > 22 ? n.slice(0, 20) + "…" : n);
   };
   BRIEF_TRIN_INFO = { t: t, n: trin.length, navne: trin.map(navnAf) };
-  if (faktaTrin) { BRIEF_TRIN_INFO.navne[0] = "Fakta"; BRIEF_TRIN_INFO.navne[1] = "Idéen"; }
+  if (faktaTrin) { BRIEF_TRIN_INFO.navne[0] = "Fakta"; BRIEF_TRIN_INFO.navne[1] = "Idéen"; BRIEF_TRIN_INFO.fakta = true; }
   return BRIEF_TRIN_INFO;
 }
 /* TITLEN OVER FAKTA PAA TELEFONEN (Ida 24/9 kl. 22.54: »På mobilbriefen står overskriften under fakta!«): inde i briefen staar titlen (.brief-titel-over)
@@ -29122,7 +29134,13 @@ let BRIEF_CTA_AABEN = false;
 function briefCtaErVideo() { const f = (BRIEF_STATE && BRIEF_STATE.format) || ""; return f !== "Karrusel" && f !== "Billede"; }
 function briefCtaFremme() { return briefCtaErVideo() && (!!String((BRIEF_STATE && BRIEF_STATE.ctaVideo) || "").trim() || BRIEF_CTA_AABEN); }
 /* CTA I VIDEOEN: EGEN FLISE UNDER KLIPPENE (Ida 7/10) — staar kun fremme, hvis der er skrevet noget, eller kunden har trykket »Tilføj CTA« */
+function briefCtaKarruselHtml() {
+  return '<div class="sk-q"><div class="sk-label">Handlingen på sidste slide</div><div class="kk-ram"><textarea class="sk-input" id="bf_ctaVideo" rows="2" placeholder="Hvad siger eller skriver vi, så de læser captionen eller svarer på spørgsmålet?">' + esc(String((BRIEF_STATE && BRIEF_STATE.ctaVideo) || "")) + '</textarea>' + (typeof taleMikHtml === "function" ? taleMikHtml("bf_ctaVideo") : "") + '</div></div>';
+}
 function briefCtaBlokHtml() {
+  /* KARRUSEL: »HANDLINGEN PÅ SIDSTE SLIDE« STAAR SAMMEN MED DE ANDRE SLIDES (Ida 13/11: »denne cta skal flyttes om på foregående side når man laver en karrussel hvor man laver alle de andre slides«).
+     Samme id og noegle (bf_ctaVideo / ctaVideo) — intet gemt flyttes eller mistes; feltet findes stadig kun ET sted. */
+  if (BRIEF_STATE && BRIEF_STATE.format === "Karrusel") return "";   /* karrusellens felt staar som egen flise under slides (briefCtaKarruselHtml) */
   if (!briefCtaFremme()) return "";
   return '<div class="klip-kort kk-cta">' + briefKlipFeltHtml('bf_ctaVideo', 'CTA i videoen', 'Hvad siger eller skriver vi, så de læser captionen eller svarer på spørgsmålet?', String(BRIEF_STATE.ctaVideo || ""), FB_IK.cta, false, '', false) + '</div>';
 }
@@ -31779,7 +31797,7 @@ function openBriefSide(id) {
       /* "Handlingen paa sidste slide" er FJERNET (Ida 31/8: "CTA slide står dobbelt")
          — sidste slide-kort HEDDER CTA-slide og baerer selv handlingen. Gammelt
          ctaVideo-svar slettes ikke (feltet laeses kun, naar det findes paa skaermen). */
-      ? briefSlidesHtml(1)
+      ? (briefSlidesHtml(1) + briefCtaKarruselHtml())
       /* KORT-REEL HAR INGEN OPBYGNING (Idas valg 25/8) — den har ét klip. Overskriften
          og hjaelpen foelger med: "beskriv scenerne trin for trin" giver ingen mening,
          naar der kun er én scene. */
@@ -31821,7 +31839,7 @@ function openBriefSide(id) {
     /* FELTET FOELGER FORMATET (Acorns-gennemgangen 29/9: karrusel og billede viste »CTA i videoen«): billede = ingen felt (handlingen bor i captionen, 31/8),
        karrusel = »Handlingen på sidste slide« (samme navn som forsiden), reel = »CTA i videoen«. Samme id og noegle, saa intet gemt forsvinder — et skrevet felt staar altid. */
     /* CTA I VIDEOEN BOR NU MED INDHOLDET, UNDER KLIPPENE (Ida 7/10: »selvom cta hører til få dem til at handle er det blevet for forvirrende — den skal flyttes om til resten af indholdet«) — vaelter 29/9. Her staar kun karrusellens »Handlingen på sidste slide« (og et skrevet svar paa et billede); feltet findes ET sted ad gangen (samme id bf_ctaVideo). */
-    + ((BRIEF_STATE.format === "Karrusel" || (BRIEF_STATE.format === "Billede" && String(BRIEF_STATE.ctaVideo || "").trim())) ? q((BRIEF_STATE.format === "Karrusel" ? 'Handlingen på sidste slide' : 'CTA i videoen'), '<div class="kk-ram"><textarea class="sk-input" id="bf_ctaVideo" rows="2" placeholder="Hvad siger eller skriver vi, så de læser captionen eller svarer på spørgsmålet?">' + esc(String(BRIEF_STATE.ctaVideo || "")) + '</textarea>' + (typeof taleMikHtml === "function" ? taleMikHtml("bf_ctaVideo") : "") + '</div>') : '')
+    + ((BRIEF_STATE.format === "Billede" && String(BRIEF_STATE.ctaVideo || "").trim()) ? q((BRIEF_STATE.format === "Karrusel" ? 'Handlingen på sidste slide' : 'CTA i videoen'), '<div class="kk-ram"><textarea class="sk-input" id="bf_ctaVideo" rows="2" placeholder="Hvad siger eller skriver vi, så de læser captionen eller svarer på spørgsmålet?">' + esc(String(BRIEF_STATE.ctaVideo || "")) + '</textarea>' + (typeof taleMikHtml === "function" ? taleMikHtml("bf_ctaVideo") : "") + '</div>') : '')
     /* "VINKLEN" ER FJERNET FRA BRIEFEN (Ida 13/8). Spoergsmaalet lod "Hvad kan faa
        maalgruppen til at faa lyst til at gemme opslaget?" og var det eneste felt paa
        trin 3 ud over captionen.
@@ -65797,7 +65815,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "3260";
+const APP_VERSION = "3261";
 const APP_BYGGET = "3. november";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_VERSION;   /* ingen dato (Ida 7/11: »hvorfor står der version 3. november?«) — datoen blev ikke rettet med, nummeret er sandheden */ } catch (e) {} });
 let NY_VERSION_KLAR = false;
@@ -94403,6 +94421,62 @@ html body .ark .ark-knap, html body .ark-knap, html body .ark-knap-roed, html bo
 @media (min-width:900px) { html body:not(#cx1):not(#cx2):not(#cx3):not(#cx4):not(#cx5):not(#cx6):not(#cx7) #calVisVaelger > .ark-chip[data-v] { display:none !important; } }
 /* PROFILMENUEN ER VENSTRESTILLET (Ida 12/11: »menuen skal ikke være centreret«) */
 html body #virkMenu .dbtn, html body #dashMenu .dbtn { justify-content:flex-start !important; text-align:left !important; }
+/* FAKTA-SIDEN-3261-START */
+/* FAKTA OG IDÉEN SOM TO SIDER (Idas klik 13/11 paa telefon-bud PpiwygrB… og computer-bud MB2jQdRL…):
+   FAKTA-SIDEN = EN FLISE PR. FELT (72 hoej, 10 imellem) med graat symbol i en bloed flade uden ramme (Ida 12/11: »hvert felt har sin egen flise«, »symbolet ikke rød«). Begge flader. */
+html body.mb[data-bto]:not([data-bforside])[data-bfakta="ja"] #briefRail .fb-boks:not(#f1):not(#f2) { padding:0 !important; background:transparent !important; box-shadow:none !important; border-radius:0 !important; display:flex !important; flex-direction:column; gap:10px; }
+html body.mb[data-bto]:not([data-bforside])[data-bfakta="ja"] #briefRail .fb-boks:not(#f1):not(#f2) > .fb-rk { min-height:72px; box-sizing:border-box; padding:14px 48px 14px 14px !important; gap:12px !important; background:#fff !important; border:0 !important; border-radius:20px !important; box-shadow:0 0 2px rgba(46,44,41,.05), 0 6px 30px rgba(46,44,41,.11) !important; align-items:center; }
+html body.mb[data-bto]:not([data-bforside])[data-bfakta="ja"] #briefRail .fb-boks:not(#f1):not(#f2) > .fb-rk > .fb-ik { display:flex !important; flex:none; width:44px !important; height:44px !important; border-radius:12px !important; background:#FAF9F5 !important; color:#6F6B66 !important; align-items:center; justify-content:center; }
+html body.mb[data-bto]:not([data-bforside])[data-bfakta="ja"] #briefRail .fb-boks:not(#f1):not(#f2) > .fb-rk > .fb-ik svg { width:22px !important; height:22px !important; fill:none !important; stroke:#6F6B66 !important; stroke-width:1.5 !important; stroke-linecap:round; stroke-linejoin:round; }
+html body.mb[data-bto]:not([data-bforside])[data-bfakta="ja"] #briefRail .fb-boks:not(#f1):not(#f2) > .fb-rk .fb-n { font-size:12px !important; line-height:16px !important; color:#6F6B66 !important; margin:0 0 2px !important; }
+html body.mb[data-bto]:not([data-bforside])[data-bfakta="ja"] #briefRail .fb-boks:not(#f1):not(#f2) > .fb-rk .fb-v { font-size:15px !important; line-height:22px !important; white-space:normal !important; }
+html body.mb[data-bto]:not([data-bforside])[data-bfakta="ja"] #briefRail .fb-boks:not(#f1):not(#f2) > .fb-rk::after { right:22px !important; top:50% !important; margin-top:-6px !important; width:7px !important; height:7px !important; border-right:2px solid #6F6B66 !important; border-bottom:2px solid #6F6B66 !important; }
+@media (min-width:900px) {
+  /* COMPUTEREN: EEN SPALTE I FULD BREDDE — procesbaren · status foran blyanten og de tre prikker (Ida 13/11: »flyttes over foran blyanten«, »de 3 prikker og blyant som de eneste«) · fliserne · knapperne.
+     Skinnen og skrivefladen loeses op (display:contents), saa deres dele kan staa i samme raekkefoelge som paa telefonen. Fakta-boksen staar kun paa Fakta-siden. */
+  html body.mb[data-bto]:not([data-bforside]) #briefGrid:not(#g1):not(#g2) { display:grid !important; grid-template-columns:minmax(0,1fr) auto !important; column-gap:8px !important; row-gap:0 !important; align-items:center !important; max-width:none !important; }
+  html body.mb[data-bto]:not([data-bforside]) #briefGrid:not(#g1):not(#g2) > #briefRail, html body.mb[data-bto]:not([data-bforside]) #briefGrid:not(#g1):not(#g2) > #briefRail > #fbBoks, html body.mb[data-bto]:not([data-bforside]) #briefGrid:not(#g1):not(#g2) > #briefWrap { display:contents !important; }
+  html body.mb[data-bto]:not([data-bforside]) #briefGrid:not(#g1):not(#g2) > #briefWrap > *, html body.mb[data-bto]:not([data-bforside]) #briefGrid:not(#g1):not(#g2) > #briefRail > *, html body.mb[data-bto]:not([data-bforside]) #briefGrid:not(#g1):not(#g2) #fbBoks > * { grid-column:1 / -1; min-width:0; }
+  html body.mb[data-bto]:not([data-bforside]) #briefGrid:not(#g1):not(#g2) #briefProces { order:-6; margin:0 !important; }
+  html body.mb[data-bto]:not([data-bforside]) #briefGrid:not(#g1):not(#g2) #fbStatusHost { order:-5; grid-column:1 !important; justify-self:end; width:340px !important; margin:16px 0 0 !important; }
+  html body.mb[data-bto]:not([data-bforside]) #briefGrid:not(#g1):not(#g2) > #briefWrap > .brief-titel-over { order:-5; grid-column:2 !important; display:flex !important; align-items:center; gap:8px; margin:16px 0 0 !important; padding:0 !important; min-height:0 !important; }
+  html body.mb[data-bto]:not([data-bforside]) #briefGrid:not(#g1):not(#g2) > #briefWrap > .brief-titel-over > .bt-ord { display:none !important; }
+  html body.mb[data-bto]:not([data-bforside]) #briefGrid:not(#g1):not(#g2) > #briefWrap > .brief-titel-over > .bt-blyant:not(#b1):not(#b2) { display:inline-flex !important; align-items:center; justify-content:center; width:36px !important; height:36px !important; min-width:36px; padding:0 !important; margin:0 !important; border-radius:50% !important; border:1px solid #DEDAD4 !important; background:#fff !important; color:#6F6B66 !important; cursor:pointer; }
+  html body.mb[data-bto]:not([data-bforside]) #briefGrid:not(#g1):not(#g2) > #briefWrap > .brief-titel-over > .bt-blyant svg { width:16px; height:16px; }
+  html body.mb[data-bto]:not([data-bforside]) #briefGrid:not(#g1):not(#g2) #fbBoks > .fb-boks { order:-4; margin:16px 0 0 !important; }
+  html body.mb[data-bto]:not([data-bforside]) #briefGrid:not(#g1):not(#g2) #fbBoks > .fb-piller { order:-3; }
+  html body.mb[data-bto]:not([data-bforside]) #briefGrid:not(#g1):not(#g2) > #briefRail > .fb-soejle { order:-2; margin-top:16px; }
+  html body.mb[data-bto]:not([data-bforside]) #briefGrid:not(#g1):not(#g2) #briefSideNav { order:9; margin-top:24px !important; }
+  html body.mb[data-bto]:not([data-bforside])[data-bfakta="nej"] #briefGrid:not(#g1):not(#g2) #fbBoks > .fb-boks, html body.mb[data-bto]:not([data-bforside])[data-bfakta="nej"] #briefGrid:not(#g1):not(#g2) #fbBoks > .fb-piller, html body.mb[data-bto]:not([data-bforside])[data-bfakta="ja"] #briefGrid:not(#g1):not(#g2) > #briefRail > .fb-soejle { display:none !important; }
+  /* NAVIGATIONSKNAPPERNE ER 56 (laast 12/11) — ogsaa i briefen paa computeren (Ida 13/11: »størrelsen på knapperne og det hele?«) */
+  html body.mb[data-bto]:not([data-bforside]) #briefSideNav:not(#n1):not(#n2) .dbtn { height:56px !important; min-height:56px !important; max-height:56px !important; border-radius:28px !important; font-size:16px !important; line-height:24px !important; padding:0 32px !important; min-width:200px !important; }
+}
+/* den cirkel, man ikke er naaet til, er tom med graa kant (som tegnet) — roed er kun dér, man er eller har vaeret */
+html body .bp-proces.bp-to .bp-st:not(.gaa):not(.nu) i { border:1.5px solid #9A9590 !important; background:#fff !important; }
+@media (min-width:900px) {
+  html body.mb[data-bto]:not([data-bforside]) #briefGrid:not(#g1):not(#g2) > #briefWrap > .basis-kort:not(#k1) { margin-top:16px !important; }
+  html body.mb[data-bto]:not([data-bforside]) #briefSideNav:not(#n1):not(#n2) .bsd-tilbage-tlf { display:inline-flex !important; }
+}
+@media (max-width:899px) {
+  /* TELEFONEN: 16 over og under status (eksperternes luft, godkendt 13/11), og DEN ROEDE KNAP STAAR FAST OVER BUNDMENUEN (Idas klik 13/11: »Ja, fast«) — fliserne ruller bag den.
+     Paa Fakta-siden gemmes hvert valg med det samme, og Tilbage staar i coveret — saa kun »Næste: Idéen« staar dér. */
+  html body.mb[data-bto]:not([data-bforside]).mb-brief-tlf[data-bfakta="ja"] #briefProces { margin-bottom:16px !important; }
+  html body.mb[data-bto]:not([data-bforside]).mb-brief-tlf[data-bfakta="ja"] #briefRail .fb-status-tlf:not(#s1) { margin:0 0 16px !important; }
+  html body.mb[data-bto]:not([data-bforside]).mb-brief-tlf[data-bfakta="ja"] #briefRail:not(#r1):not(#r2) { margin-top:0 !important; padding-top:0 !important; }
+  html body.mb[data-bto]:not([data-bforside]).mb-brief-tlf[data-bfakta="ja"] #briefSideNav:not(#n1):not(#n2) { position:fixed !important; left:0; right:0; bottom:calc(72px + env(safe-area-inset-bottom, 0px)); z-index:60; margin:0 !important; padding:12px 16px 20px !important; background:#FAF9F5 !important; border-top:1px solid #DEDAD4; display:block !important; box-sizing:border-box; }
+  html body.mb[data-bto]:not([data-bforside]).mb-brief-tlf[data-bfakta="ja"] #briefSideNav:not(#n1):not(#n2) > *:not(.primary) { display:none !important; }
+  html body.mb[data-bto]:not([data-bforside]).mb-brief-tlf[data-bfakta="ja"] #briefSideNav:not(#n1):not(#n2) > .dbtn.primary { display:flex !important; width:100% !important; height:56px !important; min-height:56px !important; max-height:56px !important; border-radius:28px !important; font-size:16px !important; line-height:24px !important; margin:0 !important; }
+  html body.mb[data-bto]:not([data-bforside]).mb-brief-tlf[data-bfakta="ja"] #briefWrap { padding-bottom:112px !important; }
+}
+@media (max-width:899px) {
+  /* mens en liste staar aaben under en flise, viger den faste knap — ellers ligger den oven i valgene (maalt 13/11) */
+  html body.mb[data-bto]:not([data-bforside]).mb-brief-tlf[data-bfakta="ja"]:has(#briefRail .fb-rk.aaben) #briefSideNav:not(#n1):not(#n2) { display:none !important; }
+}
+@media (max-width:899px) {
+  /* navigationsknapperne er 56 paa alle briefens sider paa telefonen (laast 12/11) — ikke kun Fakta-sidens faste knap */
+  html body.mb[data-bto]:not([data-bforside]) #briefSideNav:not(#n1):not(#n2) .dbtn { height:56px !important; min-height:56px !important; max-height:56px !important; border-radius:28px !important; font-size:16px !important; line-height:24px !important; }
+}
+/* FAKTA-SIDEN-3261-SLUT */
 </style>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-hvid.png" alt=""><span>Henter…</span></div>
 <div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 8. oktober · 3236</div>
