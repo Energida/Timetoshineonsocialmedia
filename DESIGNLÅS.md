@@ -1,3 +1,13 @@
+## 13. november · HEALTH COACH I BACKSTAGE — TESTSKEMAET (Idas klik 13/11, v3264)
+Idas egne testsider fra Notion (Scientific Core Condition · Biomekanik · Infant development · Basisbevægelser · Analyse af tests) er et skema i Backstage. Kun admin; i menuen lige efter CRM (hendes klik). Godkendte bud: telefon https://claude.ai/artifact/1TiFuGKjqhhky69PZBWaib · computer https://claude.ai/artifact/1V6F8gtDjhHMNMww3uKSHh.
+- »Læs først« står FOLDET UD (Ida: »læs først skal være foldet ud«): telefon øverst, computer i en spalte på 380 til højre. Hvert punkt sin egen flise (13 px, luft 14/20).
+- KUN ÉN TEST AD GANGEN (Ida: »vil gerne at jeg kun ser en af gangen«). Overskriften (gruppen) står uden for flisen, 12 versal.
+- Højre og venstre side om side i samme flise (felt 44, »grader« gråt i feltet); forskel over 10 % = rød prik 8 + »Forskel N %« (reglen er Idas egen). Én streg mellem tallene og »Hvordan føles det?«.
+- Næste (rød) og Tilbage (grå) er 56: telefon under hinanden med rød øverst, computer side om side. På telefonen er den lange Tilbage nederst skjult, mens en test er fremme (den grå knap er forrige test).
+- »Ny test«, »Ny test i dag« og »Tilføj test« ligger på husets plus (bf3PlusAuto), ikke som knapper på siden.
+- Ordene er Idas, ordret fra Notion; kun »Ekstention« er rettet til »Ekstension«. Ret ikke flere uden at spørge.
+- Svarene er helbredsoplysninger: Idas egne rækker i workout_data (skema »hc:<kontakt>:<dato>«), aldrig i browserens lager. Ingen ny tabel.
+
 ## HÅRD REGEL · 9. november · ALLE CHIPS ER 12,5 PX / 32 PX / 14 PX LUFT I HELE B2B (Ida 9/11: »alle chips skal ændres til bud 2 i hele b2b!«)
 Afløser 15/40 (7/11) og 13/36 (21/9). Uvalgt tekst #6F6B66, valgt = rød med hvid tekst. Trykfladen er 44 px (::before). Én blok sidst i CSS'en (seks id-negationer). Undtaget: flise-valg i arkene (sa-lang), initial-cirklerne i klip (kk-ini), dropdown-pillerne (bs3-drop, bdrop-knap). Statuspillen foran ⋯ er 13 px / 36 px.
 
