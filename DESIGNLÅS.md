@@ -3,6 +3,14 @@
 - »Kun det færdige står på briefoversigten« (26/9) gælder stadig: i en karrusel er et slide med eget billede færdigt. Coverbilledet til en reel er uændret (står, når det har tekst).
 - Koden: `cvEgetFoto(k)` (slidets eget foto, ikke coverets fælles billede) bruges i `cvSlideIdx()` og `cvForsideHtml()`.
 
+## HEALTH COACH: SPØRGESKEMA, HOLDNING, VEJRTRÆKNING, BEND, GANG OG GENTEST (v3292, Idas klik 14/11 »byg det hele ind« + »Ja, deploy«)
+
+- Klientens side har fire faner: **Spørgeskema · Screening · Test · Gennemgang** (chips på én linje, swipes sidelæns).
+- **Spørgeskema** = Idas »Evolutionær sundhedsprofil« fra Notion, ORDRET og i samme rækkefølge (40 nummererede + 2 uden nummer), seks sider efter numrene. Spørgsmålet står som versal-overskrift over feltet; valgspørgsmål er chips på én linje (flere valg som i formularen, nr. 15 kun ét); formularens hjælpetekst står i feltet. Skemaet har ingen point, og systemet finder ikke på nogen.
+- **Holdning** er en ny runde før de andre (Forfra · Fra siden · Bagfra). **Vejrtrækning** er første test i core. **Bend** og **Gang** står sidst i Basisbevægelser.
+- Tekst, der ikke kommer fra Idas eget materiale, slutter med »(Almen viden)« (Idas klik 14/11: »Min viden først, almen viden mærket«).
+- **Gentest:** under dagens tal står »Sidst« med sidste gangs tal og dato, når klienten har en ældre test.
+
 ## HEALTH COACH: BILLEDER VED TESTENE (v3288, Idas klik 14/11 »Ja, byg dem ind« + »Ja, deploy«)
 
 - Under noterne på hver test (ikke Screening og Analyse af tests) står **Billeder**: billederne i fuld bredde med skarpe hjørner, skraldespand + »Slet« under hvert, og chippen »Tilføj billede«. Ida kan selv tilføje og slette.
