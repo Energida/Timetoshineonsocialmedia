@@ -461,7 +461,9 @@
         document.getElementById("gkNavn").value = "Lise"; document.getElementById("gkButik").value = "SC Lead uden tag"; document.getElementById("gkMail").value = "lise@sc.dk";
         await gamleKunderSend(null); await V(300); window.matchMedia = mmL; try { bsFlytLuk(); } catch (e) {}
         var lR = ((JSON.parse(localStorage.getItem("SELE_DB") || "{}").contacts) || []).filter(function (x) { return x.kunde === "SC Lead uden tag"; })[0];
-        tjek(1, "Nyt lead gemmes som Lead uden tag", !!(lR && lR.status === "Lead" && !lR.source), lR ? JSON.stringify({ status: lR.status, source: lR.source }) : "ikke gemt");
+        /* et lead oprettet i Backstage får kilden »backstage« (gkIndsaet) — det, løftet handler om, er at det IKKE får taget/kilden »Gamle kunder« og ingen tags (rettet 14/11) */
+        var lTags = []; try { lTags = lR ? (crmTagsPaa(lR.id) || []) : []; } catch (e) {}
+        tjek(1, "Nyt lead gemmes som Lead uden tag", !!(lR && lR.status === "Lead" && lR.source !== "Gamle kunder" && !lTags.length), lR ? JSON.stringify({ status: lR.status, source: lR.source, tags: lTags }) : "ikke gemt");
       } catch (e) { tjek(1, "Nyt lead kunne testes", false, e.message); }
       /* PERSON-LEAD (Ida 22/10: familie og venner, der tester, »er altså ikke en butik«): Person → intet butiksfelt, navnet kræves, leadet står under navnet */
       try {
@@ -496,9 +498,15 @@
         var tPaa = tR ? crmTagsPaa(tR.id) : [];
         var tBase = ((JSON.parse(localStorage.getItem("SELE_DB") || "{}").skema_svar) || []).filter(function (x) { return x.skema === "crm_tags"; })[0];
         tjek(1, "Eget tag sidder på det nye lead og er gemt i basen", tPaa.indexOf("Sc messe") > -1 && !!tBase && JSON.stringify(tBase.svar).indexOf("Sc messe") > -1, JSON.stringify(tPaa) + (tBase ? " · gemt" : " · ikke i basen"));
-        BS_KUNDE_CHIP = "tag:Sc messe"; kunderneTegn(true); await V(200);
-        var tFl = Array.prototype.map.call(document.querySelectorAll("#dside-crm .bs3-kunde .bs3-n, #dside-crm .crmt td.crmt-k, #dside-crm .crmt-rk-n"), function (x) { return x.textContent; });
-        BS_KUNDE_CHIP = "alle"; try { kunderneTegn(true); } catch (e) {}
+        /* DET NYE CRM FILTRERER MED REGLER (visninger, 11/11) — ikke længere med chippen BS_KUNDE_CHIP. Reglen »Tags er Sc messe« sættes, listen tegnes, og kun leadet med tagget må stå der. */
+        var tFl = [];
+        try {
+          await crmRegelNy(); var tRi = crmVisAktiv().regler.length - 1; await crmRegelSaet(tRi, "felt", "tags"); await crmRegelSaet(tRi, "vaerdi", "Sc messe");
+          try { crmPopLuk(); } catch (e) {} await kunderneTegn(true); await V(400);
+          var tTxt = String((document.getElementById("dside-crm") || {}).textContent || "");
+          tFl = ["SC Tagbutik", "SC Lead uden tag", "SC Opdigtet Person"].filter(function (n) { return tTxt.indexOf(n) > -1; });
+          await crmRegelFjern(tRi); try { crmPopLuk(); } catch (e) {} await kunderneTegn(true);
+        } catch (e) { tFl = ["fejl: " + e.message]; }
         tjek(1, "Filterchippen med et eget tag viser kun leads med tagget", tFl.length === 1 && tFl[0] === "SC Tagbutik", JSON.stringify(tFl));
       } catch (e) { tjek(1, "Egne tags kunne testes", false, e.message); }
       /* ET NYT TAG OVERLEVER, AT ARKET LUKKES (Ida 27/10: »Jeg har tidligere oprettet et tag der hedder netværk … hvorfor fremgår netværk ikke nu?«):
