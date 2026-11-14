@@ -49143,6 +49143,7 @@ function kbuErUdgivet() {
     && !KBU.filKladde.length && !KBU.slet.length && !kbuOpgAendret();
 }
 function kbuStatusTegn() {
+  try { LEK_KLADDE_HENTET = false; } catch (e) {}
   const t = document.getElementById("kbuStatusT"); if (!t) return;
   if (!KBU.hentet) { t.textContent = "Henter …"; return; }
   if (!KBU.lekId) { t.textContent = "Ikke koblet til kundernes lektioner"; return; }
@@ -49394,6 +49395,47 @@ function kbuOpgSletSpoerg() {
     kbuOpgSikr(); KBU.oev.spm.forEach(function (x) { (KBU.arkiv = KBU.arkiv || []).push(Object.assign({}, typeof x === "object" ? x : { spm: x }, { arkiveret: new Date().toISOString() })); });
     KBU.oev.spm = []; kbuOpgGemKladde(); kbuUnderLuk(); KBU.under = null;
   } });
+}
+/* KLADDE I MODULLISTEN (Idas klik 14/11 »Kundens Status«): lektionsflisens vælger siger Kladde, når kunden ikke har den nyeste udgave
+   (samme regel som Status på fanen Indhold: navn, beskrivelse, video, kladdefiler, slet-liste og opgaver). Vælges Udgivet på en lektion
+   i kladde, åbner lektionen på fanen Indhold, så Ida ser, hvad der går ud, før hun udgiver. Skjul virker som før (lektioner.skjult). */
+let LEK_PUB = {}, LEK_KLADDE_RAEKKE = {}, LEK_KLADDE_MAPPE = {}, LEK_KLADDE_HENTET = false, LEK_KLADDE_HENTER = false;
+async function lekKladdeHent() {
+  if (LEK_KLADDE_HENTET || LEK_KLADDE_HENTER || typeof sb === "undefined" || !sb || !KLIP_ER_IDA) return;
+  LEK_KLADDE_HENTER = true;
+  try {
+    let r = await sb.from("lektioner").select("id,titel,beskrivelse,video_link,oevelse_art");
+    if (r.error) r = await sb.from("lektioner").select("id,titel,beskrivelse,video_link");
+    const pub = {}; ((r && r.data) || []).forEach(function (x) { pub[x.id] = x; });
+    const k = await sb.from("skema_svar").select("skema,svar").eq("kode", "ENERGIDA").eq("navn", "config").like("skema", "lektion_kladde_%");
+    const rk = {}; ((k && k.data) || []).forEach(function (x) { rk[String(x.skema).slice(15)] = x.svar || {}; });   /* "lektion_kladde_".length === 15 */
+    const m = {}; try { const l = await sb.storage.from(LEK_LAGER).list("_kladde", { limit: 1000 }); ((l && l.data) || []).forEach(function (f) { if (f && f.name) m[f.name] = true; }); } catch (e) {}
+    if (!r.error) { LEK_PUB = pub; LEK_KLADDE_RAEKKE = rk; LEK_KLADDE_MAPPE = m; LEK_KLADDE_HENTET = true; }
+  } catch (e) {}
+  LEK_KLADDE_HENTER = false;
+  if (LEK_KLADDE_HENTET) { try { renderKlipperum(); } catch (e) {} }
+}
+function lekErKladde(o) {
+  try {
+    const id = klipLekIdFor(o); if (!id || !LEK_KLADDE_HENTET) return false;
+    const p = LEK_PUB[id]; if (!p) return false;
+    if (kbuNorm(p.titel) !== kbuNorm(kbuNavn(o)) || kbuNorm(p.beskrivelse) !== kbuNorm(o.beskrivelse) || kbuNorm(p.video_link) !== kbuNorm(o.video_link)) return true;
+    if (LEK_KLADDE_MAPPE[id]) return true;
+    const rk = LEK_KLADDE_RAEKKE[id] || {};
+    if (Array.isArray(rk.slet) && rk.slet.length) return true;
+    if (rk.oev && Array.isArray(rk.oev.spm)) {
+      const l = (KURSUS_LEKTIONER || []).find(function (x) { return x.id === id; });
+      const art = (p.oevelse_art === "opgave" || p.oevelse_art === "refleksion") ? p.oevelse_art : oevArt(id);
+      if (kbuOpgNorm(rk.oev.spm) !== kbuOpgNorm((l && l.ovelse) || []) || rk.oev.art !== art) return true;
+    }
+    return false;
+  } catch (e) { return false; }
+}
+function lekStatusValgt(o, k) {
+  if (k === "kladde") return;
+  const lid = klipLekIdFor(o), skjult = !!(lid && LEK_SKJULT_KUNDE[lid]);
+  if (k === "udgivet" && lekErKladde(o)) { if (skjult) lekSkjultSaet(o, k); KBS_TILSTAND = "udgiv"; try { klipBriefAaben(o.id); } catch (e) {} return; }
+  lekSkjultSaet(o, k);
 }
 /* NYT FRA KUNDERNE PAA DASHBOARDET (Ida 11/11): de nyeste kommentarer paa lektionerne. »Laest« gemmes paa denne enhed (localStorage) — ingen ny tabel, ingen raekke i basen roeres */
 function liveFbNoegle(r) { return [r.kode || r.navn || "", r.id, r.dato || "", String(r.kommentar || "").slice(0, 24)].join("|"); }
@@ -66280,7 +66322,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "3272";
+const APP_VERSION = "3273";
 const APP_BYGGET = "3. november";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_VERSION;   /* ingen dato (Ida 7/11: »hvorfor står der version 3. november?«) — datoen blev ikke rettet med, nummeret er sandheden */ } catch (e) {} });
 let NY_VERSION_KLAR = false;
@@ -89600,7 +89642,7 @@ function bf3DropVaelg(id, k) {
   l.querySelectorAll("button").forEach(function (x) { x.classList.toggle("on", x === knap); });
   try { if (window.ARK && id === "bf3ArkDrop") { ARK.valgt = k; } } catch (e) {}
   try { if (typeof window["bf3Drop_" + id] === "function") window["bf3Drop_" + id](k); } catch (e) {}
-  try { if (id.indexOf("lekSt_") === 0) { const o = KLIP_OPGAVER.find(function (x) { return String(x.id).replace(/[^A-Za-z0-9_-]/g, "") === id.slice(6); }); if (o) { lekSkjultSaet(o, k); } } } catch (e) {}
+  try { if (id.indexOf("lekSt_") === 0) { const o = KLIP_OPGAVER.find(function (x) { return String(x.id).replace(/[^A-Za-z0-9_-]/g, "") === id.slice(6); }); if (o) { lekStatusValgt(o, k); } } } catch (e) {}
 }
 /* ORDENE ER IDAS (21/9 kl. 10.26): »Jeg skal bare have skrevet det ned« (aldrig »Skrevet ned« eller »Indbakken«) · »Idé til manus« staar med */
 const BF3_HJEM_VALG = [{ k: "note", n: "Jeg skal bare have skrevet det ned" }, { k: "todo", n: "To-do" }, { k: "aftale", n: "Aftale" }   /* EEN LISTE: plusset paa Hjem og swipe op tilbyder de samme valg (Ida 26/9: »Hvorfor er disse ikke ens? … valgmulighederne«) */, { k: "manus", n: "Idé til manus" }   /* uden »· Energida Studio« (Ida 26/9 08.01) */, { k: "broll", n: "Idé til B-roll" }   /* lander under B-rolls i Energida Studio (Ida 27/9) */, { k: "kundeide", n: "Content-idé til kunde" }   /* TILBAGE (Idas klik 28/9): lander i kundens Idébank; kun I GOT YOU + content planner */, { k: "lead", n: "Ny lead" }   /* en kommende kunde paa farten (Ida 26/9: »vil du også tilføje lead?«) */, { k: "indkoeb", n: "Indkøbslister" }, { k: "cs", n: "Content Studio" }, { k: "workout", n: "Workout Studio" }, { k: "food", n: "Food Studio" }, { k: "mindful", n: "Mindful Studio" }, { k: "vidensbank", n: "Biblioteket" }, { k: "app", n: "App-ønske · Teknik" }];
@@ -91429,7 +91471,7 @@ async function bf3FulgtOp(id) {
 /* ---------- ENERGIDA STUDIO = DIT PRODUKTIONSRUM (klipperen er ude) ---------- */
 /* LEKTIONENS STATUS ER FIRE TRIN (Idas klik 24/9 »Fire trin«): Manus mangler · Klar til optagelse · Optaget · Udgivet.
    »Rettelser« og »Klippet« hoerte til klipper-runden, som er ude — de vises som Optaget. Datanoeglen i basen roeres ikke. */
-const BF3_KLIP_VIS = { "Manus ikke godkendt": "Manus mangler", "Manus godkendt": "Klar til optagelse", "Råfiler klar": "Optaget", "Rettelser": "Optaget", "Klippet": "Optaget", "Godkendt": "Udgivet" };
+const BF3_KLIP_VIS = { "Manus ikke godkendt": "Manus mangler", "Manus godkendt": "Klar til optagelse", "Råfiler klar": "Optaget", "Rettelser": "Optaget", "Klippet": "Optaget", "Godkendt": "Færdig" };   /* »Færdig«, ikke »Udgivet« (Idas klik 14/11): Udgivet betyder kun, at kunden har den nyeste udgave */
 /* LEKTIONENS STATUS I LISTEN ER KUN »UDGIVET« ELLER »SKJUL« (Ida 3/11): Skjul = lektioner.skjult = true, som kundens app læser og skjuler lektionen efter; produktionstrinnene (LEK_STATUS) bor videre på selve lektionen */
 const LEK_VIS = [{ k: "udgivet", n: "Udgivet" }, { k: "skjult", n: "Skjul" }];
 let LEK_SKJULT_HENTET = false;
@@ -91448,13 +91490,15 @@ async function lekSkjultSaet(o, k) {
   } catch (e) { try { husBesked("Det blev ikke gemt. Prøv igen."); } catch (x) {} }
   try { renderKlipperum(); } catch (e) {}
 }
-const LEK_STATUS = [{ k: "Manus ikke godkendt", n: "Manus mangler" }, { k: "Manus godkendt", n: "Klar til optagelse" }, { k: "Råfiler klar", n: "Optaget" }, { k: "Godkendt", n: "Udgivet" }];
+const LEK_STATUS = [{ k: "Manus ikke godkendt", n: "Manus mangler" }, { k: "Manus godkendt", n: "Klar til optagelse" }, { k: "Råfiler klar", n: "Optaget" }, { k: "Godkendt", n: "Færdig" }];
 function lekStatusK(o) { const st = klipStatusNorm(o.status); return (st === "Rettelser" || st === "Klippet") ? "Råfiler klar" : st; }
 function lekStatusDrop(o) {
   const id = "lekSt_" + String(o.id).replace(/[^A-Za-z0-9_-]/g, "");
   try { lekSkjultHent(); } catch (e) {}
   const lid = (function () { try { return klipLekIdFor(o); } catch (e) { return ""; } })();
-  return '<span class="bs3-lekst" onclick="event.stopPropagation()">' + bf3DropHtml(id, "Vælg status", LEK_VIS, (lid && LEK_SKJULT_KUNDE[lid]) ? "skjult" : "udgivet") + '</span>';
+  try { lekKladdeHent(); } catch (e) {}
+  const skjult = !!(lid && LEK_SKJULT_KUNDE[lid]), kladde = !skjult && lekErKladde(o);
+  return '<span class="bs3-lekst" onclick="event.stopPropagation()">' + bf3DropHtml(id, "Vælg status", kladde ? [{ k: "kladde", n: "Kladde" }].concat(LEK_VIS) : LEK_VIS, skjult ? "skjult" : (kladde ? "kladde" : "udgivet")) + '</span>';
 }
 function klipLinje(o) { const st = klipStatusNorm(o.status); return BF3_KLIP_VIS[st] || st || ""; }
 function klipAnsvarlig() { return "Ida"; }
