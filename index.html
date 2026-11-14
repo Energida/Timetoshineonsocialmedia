@@ -46707,6 +46707,33 @@ function sqlSkjulteVis() {
     + ' Listen ligger kun i denne browser.</span>'
     + '<button type="button" class="row-btn" style="font-weight:400;" onclick="sqlKortNulstil()">Vis dem igen</button>';
 }
+/* KORTENE TJEKKER SELV, OM DE ER KOERT (Ida 14/11: »vil du ikke rydde op så der aldrig er andre end dem jeg skal køre«).
+   Naar Maskinrummet aabner, spoerger hvert kort med et tjek basen, om det, kortet laver, allerede findes. Findes det, markeres kortet som koert
+   og forsvinder. Et tjek maa KUN sige ja, naar det er bevist (en fejl eller tvivl = kortet bliver staaende): 3/8 forsvandt et kort, der aldrig var koert.
+   Kort uden tjek (fx Edge Functions og kort med flere trin) bliver staaende, til Ida selv fjerner dem. NYE KORT SKAL HAVE ET TJEK HER. */
+async function sqlLagerFindes(navn) {
+  const s = (await sb.auth.getSession()).data.session; if (!s || !window.SUPABASE_URL) return false;
+  const r = await fetch(window.SUPABASE_URL + "/storage/v1/object/info/" + navn + "/findes-ikke-" + Date.now(), { headers: { apikey: window.SUPABASE_ANON_KEY, Authorization: "Bearer " + s.access_token } });
+  const j = await r.json(); const tekst = JSON.stringify(j || {});
+  return /Object not found|NoSuchKey/i.test(tekst) && !/Bucket not found|NoSuchBucket/i.test(tekst);   /* lageret findes, filen goer ikke */
+}
+async function sqlKolonneFindes(tabel, kolonne) { const r = await sb.from(tabel).select(kolonne).limit(1); return !r.error && Array.isArray(r.data); }
+const SQL_TJEK = {
+  sqlk_hcbilleder_14nov: function () { return sqlLagerFindes("hc-billeder"); },
+  sqlk_lektionfiler_23okt: function () { return sqlLagerFindes("lektion-filer"); },
+  sqlk_popup_1411: function () { return sqlKolonneFindes("lektioner", "popup"); },
+  sqlk_skjult_lektion: function () { return sqlKolonneFindes("lektioner", "skjult"); }
+};
+async function sqlTjekSelv() {
+  if (!sb) return;
+  const koert = sqlKoerte(); let nyt = 0;
+  for (const id of Object.keys(SQL_TJEK)) {
+    if (koert.indexOf(id) >= 0 || !document.getElementById(id)) continue;
+    let ok = false; try { ok = (await SQL_TJEK[id]()) === true; } catch (e) { ok = false; }
+    if (ok) { koert.push(id); nyt++; }
+  }
+  if (nyt) { await sqlGemKoert(koert); sqlKoerteFjern(); }
+}
 async function sqlKoertHent() {
   if (!sb) return;
   try {
@@ -46722,6 +46749,7 @@ async function sqlKoertHent() {
       .eq("kode", "ENERGIDA").eq("navn", "config").eq("skema", "manus_fb_ok").maybeSingle();
     if (data && data.svar && Array.isArray(data.svar.lek)) localStorage.setItem("energida_manus_fb_ok", JSON.stringify(data.svar.lek));
   } catch(e) {}
+  try { await sqlTjekSelv(); } catch(e) {}
 }
 
 /* RYD HELE BUNKEN PAA EEN GANG (Ida 2/8: "få venligst styr på dette").
@@ -66946,7 +66974,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "3288";
+const APP_VERSION = "3289";
 const APP_BYGGET = "3. november";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_VERSION;   /* ingen dato (Ida 7/11: »hvorfor står der version 3. november?«) — datoen blev ikke rettet med, nummeret er sandheden */ } catch (e) {} });
 let NY_VERSION_KLAR = false;
