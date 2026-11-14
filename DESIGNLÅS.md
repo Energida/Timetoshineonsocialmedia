@@ -9,6 +9,15 @@
 - **Porten måler de tre regler** i `tools/designlaas/probe-regler.js` (REGEL-PORTEN i `koer.sh`, 390 og 1440). `probe-maal.js` er fuld (URL-grænsen på 65.536 tegn) – nye målinger skrives i `probe-regler.js`.
 - Ikke målt endnu: Backstages sider i `probe-regler.js` (den besøger kundeappen), og ark/popups åbnet én for én. Reglerne er fælles og rammer dem, men de er ikke set enkeltvis.
 
+## HEALTH COACH: KLIENTENS SIDE MED TEST OG GENNEMGANG (v3280, Idas klik 14/11 »Ja, deploy«)
+
+- **To faner (chips) på klientens side: Test · Gennemgang.** »Spørgeskema« og »Program« vises først, når de er bygget.
+- **Test:** hver runde er sin egen flise med status (»Ikke startet« · »I gang · N af M« · »Færdig«) og en ring til højre, lodret centreret; fuld rød med hvidt flueben, når runden er færdig. Rød knap »Fortsæt <runde>«.
+- **Gennemgang · Fund** regnes af svarene uden AI: smerte under testen, over 10 % forskel (og over 3 grader), eller en side under/over optimal. Hvert fund sin egen flise med tallene.
+- **Prioritet · Anbefaling · Spørg klienten om** er Idas egne felter (ordene er hendes valg 14/11), gemt i testens svar under `g`. AI-udkast kommer oven på senere og må kun bygge på hendes egen viden.
+- Øverst: »Foreløbig · N af 4 runder færdige« + »Mangler: …«, så længe der mangler runder.
+- Ordet »Ingenting endnu« er væk fra Health Coach-forsiden.
+
 ## HEALTH COACH: DEN NYE TESTSKÆRM (v3276, Idas klik 14/11 »Byg testskærmen« + »Ja, deploy«)
 
 Hver test (ikke »Analyse af tests«) står i rækkefølgen læs → gør → videre: **Test · Hvad vi tester · Hvorfor · Obs · Noter**, derefter **Optimal · Højre/Venstre · Forskel · Mod optimal · Smerte under testen · Hvordan føles det?**. Computer: læs til venstre, udfyld + knapper til højre. Telefon: Tilbage/Næste står fast i bunden, og bundmenuen er skjult inde i en test.

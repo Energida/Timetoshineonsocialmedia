@@ -66913,7 +66913,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "3279";
+const APP_VERSION = "3280";
 const APP_BYGGET = "3. november";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_VERSION;   /* ingen dato (Ida 7/11: »hvorfor står der version 3. november?«) — datoen blev ikke rettet med, nummeret er sandheden */ } catch (e) {} });
 let NY_VERSION_KLAR = false;
@@ -93229,7 +93229,7 @@ function hcTegn() {
   const set = {}; const kl = [];
   (HC.liste || []).forEach(function (r) { const p = String(r.skema).split(":"); if (p.length < 3 || set[p[1]]) return; set[p[1]] = 1; kl.push({ id: p[1], navn: hcKlientNavn(p[1]) || "Klient" }); });
   el.innerHTML = '<div class="hc">'
-    + (kl.length ? hcOversk("Klienter") + '<div class="hc-doere">' + kl.map(function (k) { return hcDoer(k.navn, "hcKlientAabn('" + esc(String(k.id)) + "')"); }).join("") + '</div>' : (HC.hentet ? '<div class="bs3-tom hc-flise hc-note">Ingenting endnu.</div>' : '<div class="bs3-tom hc-flise hc-note">Henter …</div>'))
+    + (kl.length ? hcOversk("Klienter") + '<div class="hc-doere">' + kl.map(function (k) { return hcDoer(k.navn, "hcKlientAabn('" + esc(String(k.id)) + "')"); }).join("") + '</div>' : (HC.hentet ? '' : '<div class="bs3-tom hc-flise hc-note">Henter …</div>'))
     + '<div class="hc-knapper hc-en">' + hcKnap("Ny test", "hcVis('vaelg')", true) + '</div></div>';
 }
 function hcVaelgTegn(el) {
@@ -93280,15 +93280,59 @@ async function hcTestHent(noegle) {
   } catch (e) {}
 }
 async function hcTestSkift(noegle) { await hcGemNu(); await hcTestHent(noegle); hcTegn(); }
+/* KLIENTENS SIDE (14/11, efter Idas klik paa klientsiden + det samlede bud): fanerne Test · Gennemgang.
+   Test = runderne som fliser med status og ring + »Fortsæt …«. Gennemgang = Fund (regnet af svarene, ingen AI) og
+   Idas egne felter Prioritet · Anbefaling · Spørg klienten om (gemmes i testens svar under »g«). */
+function hcRundeStatus(d) {
+  let n = 0; const v = (HC.data && HC.data.v) || {};
+  d.trin.forEach(function (x) { const s = v[x.id]; if (x.rk ? (Array.isArray(s) && s.some(function (r) { return r && Object.keys(r).length; })) : hcHarSvar(x, s)) n++; });
+  return { n: n, m: d.trin.length, ord: n === 0 ? "Ikke startet" : n >= d.trin.length ? "Færdig" : "I gang · " + n + " af " + d.trin.length };
+}
+function hcFundListe() {
+  const ud = [], v = (HC.data && HC.data.v) || {};
+  HC_DELE.forEach(function (d) { d.trin.forEach(function (x) { if (x.rk) return; const s = v[x.id]; if (!s || Array.isArray(s)) return;
+    const navn = x.n || x.g, foeles = String(s.f || "").trim();
+    if (s.sm === "j") ud.push(["Smerte under testen" + (s.sms ? " · " + s.sms : ""), navn + (foeles ? " · “" + foeles + "”" : "")]);
+    const a = hcTal(s.h), b = hcTal(s.v), o = hcTestDele(x);
+    if (a === null || b === null || !x.f.some(function (f) { return f.k === "h" && f.t === "g"; })) return;
+    const st = Math.max(Math.abs(a), Math.abs(b)); if (!st) return;
+    const dd = Math.round(Math.abs(a - b) * 10) / 10, pr = dd / st * 100, over = dd > 3 && pr > 10;
+    const mod = function (k) { if (o.lo == null) return ""; if (o.hi != null) return k < o.lo ? "under" : k > o.hi ? "over" : "inden for"; return Math.abs(k - o.lo) <= 3 ? "inden for" : k < o.lo ? "under" : "over"; };
+    const ma = mod(a), mb = mod(b), skaev = (ma && ma !== "inden for") || (mb && mb !== "inden for");
+    if (!over && !skaev) return;
+    ud.push([navn, "Højre " + hcKomma(a) + (ma ? " (" + ma + ")" : "") + " · Venstre " + hcKomma(b) + (mb ? " (" + mb + ")" : "") + (o.opt ? " · Optimal " + o.opt : "") + (over ? " · " + ((pr > 9 && pr < 11) ? hcKomma(pr) : Math.round(pr)) + " % · " + (a < b ? "Højre" : "Venstre") + " mindst" : "")]);
+  }); });
+  return ud;
+}
+function hcFane(f) { hcGemNu(); HC.fane = f; hcTegn(); }
+function hcGSkriv(k, val) { if (!HC.data) return; if (!HC.data.g) HC.data.g = {}; HC.data.g[k] = val; HC.snavset = true; hcGemtVis(""); hcHoejde(); clearTimeout(HC.gemT); HC.gemT = setTimeout(function () { hcGemNu(); }, 700); }
 function hcKlientTegn(el) {
-  const id = HC.klient.id;
+  const id = HC.klient.id; const fane = HC.fane === "gennemgang" ? "gennemgang" : "test";
   const egne = (HC.liste || []).filter(function (r) { return String(r.skema).split(":")[1] === String(id) && r.skema !== HC.noegle; }).map(function (r) { return r.skema; }).sort().reverse();
   const erIdag = HC.noegle.split(":")[2] === hcIdag();
-  el.innerHTML = '<div class="hc">' + hcOversk("Test")
-    + '<div class="hc-doere">' + HC_DELE.map(function (d, i) { return hcDoer(d.navn, "hcDelAabn(" + i + ")"); }).join("") + '</div>'
-    + (egne.length ? hcOversk("Andre datoer") + '<div class="hc-doere">' + egne.map(function (n) { const dt = hcDatoTekst(n.split(":")[2]); return hcDoer(dt.charAt(0).toUpperCase() + dt.slice(1), "hcTestSkift('" + esc(n) + "')"); }).join("") + '</div>' : '')
-    + (erIdag ? '' : '<div class="hc-knapper hc-en">' + hcKnap("Ny test i dag", "hcKlientAabn('" + esc(id) + "',true)", true) + '</div>')
-    + '</div>';
+  const faner = '<div class="hc-chips hc-faner">' + [["test", "Test"], ["gennemgang", "Gennemgang"]].map(function (x) { return '<button type="button" class="hc-chip' + (fane === x[0] ? ' on' : '') + '"' + (fane === x[0] ? ' aria-current="page"' : '') + ' onclick="hcFane(\'' + x[0] + '\')">' + x[1] + '</button>'; }).join("") + '</div>';
+  const runder = HC_DELE.map(function (d, i) { return { d: d, i: i, s: hcRundeStatus(d) }; });
+  if (fane === "test") {
+    const naeste = runder.find(function (r) { return r.d.id !== "ana" && r.s.n < r.s.m; });
+    el.innerHTML = '<div class="hc">' + faner + hcOversk("Test")
+      + runder.map(function (r) { return '<div class="hc-flise hc-note hc-med hc-runde" role="button" tabindex="0" onclick="hcDelAabn(' + r.i + ')" onkeydown="if(event.key===\'Enter\'){this.click()}"><span>' + esc(r.d.navn) + '<span class="hc-hj">' + esc(r.s.ord) + '</span></span><span class="hc-ring' + (r.s.ord === "Færdig" ? ' hc-fuld' : '') + '"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span></div>'; }).join("")
+      + (naeste ? '<div class="hc-knapper hc-en">' + hcKnap("Fortsæt " + naeste.d.navn, "hcDelAabn(" + naeste.i + ")", true) + '</div>' : '')
+      + (egne.length ? hcOversk("Andre datoer") + '<div class="hc-doere">' + egne.map(function (n) { const dt = hcDatoTekst(n.split(":")[2]); return hcDoer(dt.charAt(0).toUpperCase() + dt.slice(1), "hcTestSkift('" + esc(n) + "')"); }).join("") + '</div>' : '')
+      + (erIdag ? '' : '<div class="hc-knapper hc-en">' + hcKnap("Ny test i dag", "hcKlientAabn('" + esc(id) + "',true)", !naeste) + '</div>')
+      + '</div>';
+    return;
+  }
+  const fire = runder.filter(function (r) { return r.d.id !== "ana"; }), faerdige = fire.filter(function (r) { return r.s.ord === "Færdig"; }).length, mgl = fire.filter(function (r) { return r.s.ord !== "Færdig"; }).map(function (r) { return r.d.navn; });
+  const fund = hcFundListe(), g = (HC.data && HC.data.g) || {};
+  const kanTale = !!(window.SpeechRecognition || window.webkitSpeechRecognition);
+  const felt = function (k, navn) { const fid = "hcG_" + k; return hcOversk(navn) + '<div class="hc-felt hc-tekst"><textarea id="' + fid + '" rows="1" aria-label="' + esc(navn) + '" oninput="hcGSkriv(\'' + k + '\',this.value)" onblur="hcGSkriv(\'' + k + '\',this.value)">' + esc(g[k] || "") + '</textarea>'
+    + (kanTale ? '<button type="button" class="hc-mik" id="taleKnap_' + fid + '" onclick="taleToggle(\'' + fid + '\')" title="Tal i stedet for at skrive" aria-label="Tal i stedet for at skrive">' + HC_MIK + '</button>' : '') + '</div>'; };
+  el.innerHTML = '<div class="hc hc-ny">' + faner
+    + (mgl.length ? '<div class="hc-sted hc-forelobig"><span>Foreløbig · ' + faerdige + ' af ' + fire.length + ' runder færdige</span></div><div class="hc-hj">Mangler: ' + esc(mgl.join(", ")) + '</div>' : '')
+    + '<div class="hc-gemt" id="hcGemt" aria-live="polite"></div>'
+    + '<div class="hc-ny-flade"><div class="hc-ny-laes">' + hcOversk("Fund") + (fund.length ? fund.map(function (x) { return hcNyFlise(x[0], x[1]); }).join("") : hcNyFlise("Ingen fund"))
+    + '</div><div class="hc-ny-goer">' + felt("prioritet", "Prioritet") + felt("anbefaling", "Anbefaling") + felt("spoerg", "Spørg klienten om") + '</div></div></div>';
+  hcHoejde();
 }
 function hcDelAabn(i) { HC.del = i; HC.trin = 0; HC.ret = "";
   try { const dl = HC_DELE[i]; const n = dl.trin.findIndex(function (x) { return !x.rk && !hcHarSvar(x, HC.data.v[x.id]); }); if (n > 0 && !dl.trin[0].rk) HC.trin = n; } catch (e) {}   /* fortsaet, hvor testen slap */
@@ -96226,6 +96270,16 @@ html body:not(#l1):not(#l2):not(#l3):not(#l4):not(#l5):not(#l6):not(#l7):not(#l8
 #hcHost .hc-chip::before { content:""; position:absolute; inset:-6px 0; }
 #hcHost .hc-chip.on { background:#FC2404; border-color:#FC2404; color:#fff; }
 #hcHost .hc-bund { display:grid; grid-template-columns:1fr 2fr; gap:10px; }
+#hcHost .hc-faner { margin-bottom:24px; }
+#hcHost .hc-faner .hc-chip { flex:0 0 auto; }
+#hcHost .hc-runde { cursor:pointer; font-size:15px; padding:16px 20px; }
+#hcHost .hc-runde .hc-hj { display:block; }
+#hcHost .hc-ring { flex:0 0 24px; width:24px; height:24px; border-radius:50%; border:1.5px solid #DEDAD4; display:inline-flex; align-items:center; justify-content:center; }
+#hcHost .hc-med > .hc-ring { flex:0 0 24px; min-width:24px; }
+#hcHost .hc-ring svg { display:none; }
+#hcHost .hc-ring.hc-fuld { background:#FC2404; border-color:#FC2404; }
+#hcHost .hc-ring.hc-fuld svg { display:block; }
+#hcHost .hc-forelobig + .hc-hj { margin-top:6px; }
 #hcHost .hc-bund .hc-knap { margin:0; }
 @media (max-width:899px) {
   #hcHost .hc-kun-pc { display:none; }
