@@ -72,7 +72,7 @@ function maalSide(){
     if(!synlig(e)) return; var r=e.getBoundingClientRect(); er("IKONKNAP", e, Math.round(r.width)===36&&Math.round(r.height)===36, Math.round(r.width)+"x"+Math.round(r.height)+" (skal 36x36)");
   });
   /* KNAPPER i bunden: 44 (Ida 7/11). Navigationsknapper er låst til 56 fra 12/11, men briefens piller flyttes samlet i et eget trin — ret tallet her, når det sker */
-  rod.querySelectorAll("#briefSideNav .dbtn").forEach(function(e){ if(!synlig(e)) return; var r=e.getBoundingClientRect(); er("KNAP højde", e, Math.round(r.height)===56, "h"+Math.round(r.height)+" (skal 56)"); });   /* navigationsknapper = 56 (låst 12/11; briefen 13/11) */
+  rod.querySelectorAll("#briefSideNav .dbtn").forEach(function(e){ if(!synlig(e)) return; var r=e.getBoundingClientRect(); er("KNAP højde", e, Math.round(r.height)===(innerWidth>=900?44:56), "h"+Math.round(r.height)+" (skal "+(innerWidth>=900?44:56)+")"); });   /* navigationsknapper = 56 (låst 12/11; briefen 13/11) */
   /* KNAPPERS TEKST I MIDTEN: lodret ≤ 1 px (pille/ikon/chip med én linje); ikon og tekst flugter */
   rod.querySelectorAll("button, .dbtn, .ark-chip").forEach(function(e){
     if(!synlig(e)) return; var cs=getComputedStyle(e), r=e.getBoundingClientRect(); var rad=px(cs.borderTopLeftRadius);
@@ -183,11 +183,11 @@ async function maalForloeb(vent){
         var lf=[].slice.call(rod.querySelectorAll(".ftl2-stor .ftl2-lek .lks-lek")).filter(synlig); N++; if(!lf.length) fejl("FORLØB tlf: det åbne modul viser ingen lektioner");
         lf.forEach(function(e,i){ var c=getComputedStyle(e), r=e.getBoundingClientRect();
           er("FORLØB tlf lektionsflise", e, px(c.borderTopLeftRadius)===20&&rgb(c.backgroundColor)==="rgb(255,255,255)"&&c.boxShadow!=="none"&&Math.round(r.height)>=64&&Math.abs(Math.round(r.left-kr.left)-14)<=1, "r"+c.borderTopLeftRadius+" h"+Math.round(r.height)+" ind "+Math.round(r.left-kr.left)+" (skal 20 · hvid · skygge · ≥64 · 14 inde)");
-          var f0=i===0?kt:lf[i-1], d=Math.round(r.top-f0.getBoundingClientRect().bottom); er("FORLØB tlf flise→lektion", e, Math.abs(d-10)<=1, "afstand "+d+" (skal 10)"); });
+          var f0=i===0?kt:lf[i-1], d=Math.round(r.top-f0.getBoundingClientRect().bottom); er("FORLØB tlf flise→lektion", e, Math.abs(d-12)<=1, "afstand "+d+" (skal 12 — afstandsskalaen 14/11)"); });
         N++; if(kt.querySelector(".lks-lek")) fejl("FORLØB tlf: en lektion ligger inde i modulets flise (hver lektion skal være sin egen flise)"); }
       [].slice.call(rod.querySelectorAll(".ftl2 > .ftl2-rk")).filter(synlig).forEach(function(e){ var c=getComputedStyle(e), r=e.getBoundingClientRect();
         er("FORLØB tlf række", e, Math.round(r.height)>=64&&px(c.borderTopLeftRadius)===20&&rgb(c.backgroundColor)==="rgb(255,255,255)"&&px(c.borderTopWidth)===0&&c.boxShadow!=="none", "h"+Math.round(r.height)+" r"+c.borderTopLeftRadius+" "+c.backgroundColor+" (skal ≥64 · 20 · hvid · skygge)");
-        var nx=e.nextElementSibling; if(nx&&nx.classList.contains("ftl2-rk")){ var d=Math.round(nx.getBoundingClientRect().top-r.bottom); er("FORLØB tlf række→række", nx, Math.abs(d-10)<=1, "afstand "+d+" (skal 10)"); } });
+        var nx=e.nextElementSibling; if(nx&&nx.classList.contains("ftl2-rk")){ var d=Math.round(nx.getBoundingClientRect().top-r.bottom); er("FORLØB tlf række→række", nx, Math.abs(d-12)<=1, "afstand "+d+" (skal 12 — afstandsskalaen 14/11)"); } });
       [].slice.call(rod.querySelectorAll("*")).filter(synlig).forEach(function(e){ if(e.closest(".ftl2-pil, .lks-fort, .lks-fb, .lks-num, svg, .lek-favchips")||e.tagName==="svg") return; var cs=getComputedStyle(e); var tekst=[].some.call(e.childNodes,function(n){return n.nodeType===3&&n.textContent.trim();}); N++; if(tekst&&rgb(cs.color)===RED) fejl("FORLØB tlf: rød tekst »"+txt(e)+"« ["+kl(e)+"] — rød er aldrig titel"); });
       var h2=document.querySelector("#forloebTidslinje .ftl2-hoved"); if(h2&&document.querySelector("#forloebTidslinje .ftl2-stor .lks-lek")){ h2.click(); await vent(250); }
       continue;
@@ -195,9 +195,9 @@ async function maalForloeb(vent){
     /* sektionsetiketter */
     var seks=[].slice.call(rod.querySelectorAll(".ftl2-sek")).filter(synlig);
     seks.forEach(function(e,i){ var cs=getComputedStyle(e), t=e.querySelector("span"), ts=getComputedStyle(t), r=e.getBoundingClientRect();
-      er("FORLØB sektionsetiket", t, Math.round(r.height)===16&&px(ts.fontSize)===10&&ts.textTransform==="uppercase"&&rgb(ts.color)===G3&&ts.fontWeight==="400"&&px(ts.letterSpacing)===1.5, "h"+Math.round(r.height)+" "+ts.fontSize+" "+ts.color+" ls"+ts.letterSpacing+" (skal 16 · 10 versal · #9A9590 · 1,5)");
-      var nx=e.nextElementSibling; if(nx){ var d=Math.round(nx.getBoundingClientRect().top-r.bottom); er("FORLØB etiket→flise", e, Math.abs(d-16)<=1, "afstand "+d+" (skal 16)"); }
-      if(i>0){ var pv=e.previousElementSibling, d2=Math.round(r.top-pv.getBoundingClientRect().bottom); er("FORLØB sektion→sektion", e, Math.abs(d2-24)<=1, "afstand "+d2+" (skal 24)"); } });
+      er("FORLØB sektionsetiket", t, Math.round(r.height)===16&&px(ts.fontSize)===12&&ts.textTransform==="uppercase"&&rgb(ts.color)==="rgb(111,107,102)"&&ts.fontWeight==="400"&&px(ts.letterSpacing)===1.5, "h"+Math.round(r.height)+" "+ts.fontSize+" "+ts.color+" ls"+ts.letterSpacing+" (skal 16 · 12 versal · #6F6B66 · 1,5 — overskrift over fliser, LÅST 12/11)");
+      var nx=e.nextElementSibling; if(nx){ var d=Math.round(nx.getBoundingClientRect().top-r.bottom); er("FORLØB etiket→flise", e, Math.abs(d-8)<=1, "afstand "+d+" (skal 8 — afstandsskalaen 14/11)"); }
+      if(i>0){ var pv=e.previousElementSibling, d2=Math.round(r.top-pv.getBoundingClientRect().bottom); er("FORLØB sektion→sektion", e, Math.abs(d2-32)<=1, "afstand "+d2+" (skal 32 — afstandsskalaen 14/11)"); } });
     /* 32 under heroen */
     var hero=document.querySelector("#screen12 .mb-baand"), foerst=[].slice.call(document.getElementById("screen12").querySelectorAll("#forloebBento > *, #forloebTidslinje > .ftl2 > *")).filter(synlig)[0];
     if(hero&&foerst){ var dh=Math.round(foerst.getBoundingClientRect().top-hero.getBoundingClientRect().bottom)+28; /* arket ligger 28 px over båndet */ er("FORLØB luft under heroen", foerst, Math.abs(dh-32)<=1, "afstand "+dh+" (skal 32)"); }
@@ -223,7 +223,7 @@ async function maalForloeb(vent){
       var rr=h.parentElement.getBoundingClientRect(); N++; if(Math.abs((r.right-rr.right)-21)>2) fejl("FORLØB række: højre indhold står "+Math.round(r.right-rr.right)+" fra kanten (skal ~21)");
       var yy=Math.abs((r.top+r.height/2)-(h.getBoundingClientRect().top+h.getBoundingClientRect().height/2)); N++; if(yy>1.5) fejl("FORLØB række: højre tekst er ikke lodret midt ("+Math.round(yy*10)/10+")");
     });
-    var rk=[].slice.call(rod.querySelectorAll(".ftl2 > .ftl2-rk")).filter(synlig); rk.forEach(function(e,i){ var nx=e.nextElementSibling; if(nx&&nx.classList.contains("ftl2-rk")){ var d=Math.round(nx.getBoundingClientRect().top-e.getBoundingClientRect().bottom); er("FORLØB række→række", nx, Math.abs(d-10)<=1, "afstand "+d+" (skal 10)"); } });
+    var rk=[].slice.call(rod.querySelectorAll(".ftl2 > .ftl2-rk")).filter(synlig); rk.forEach(function(e,i){ var nx=e.nextElementSibling; if(nx&&nx.classList.contains("ftl2-rk")){ var d=Math.round(nx.getBoundingClientRect().top-e.getBoundingClientRect().bottom); er("FORLØB række→række", nx, Math.abs(d-12)<=1, "afstand "+d+" (skal 12 — afstandsskalaen 14/11)"); } });
     /* ALDRIG RØD TITEL, KANT ELLER STRIBE på siden (undtagen knappen og markørerne) */
     [].slice.call(rod.querySelectorAll("*")).filter(synlig).forEach(function(e){ if(e.closest(".ftl2-pil, .ftl2-knap, .lks-fb, .lks-num, svg")||e.tagName==="svg") return; var cs=getComputedStyle(e); var tekst=[].some.call(e.childNodes,function(n){return n.nodeType===3&&n.textContent.trim();});
       N++; if(tekst&&rgb(cs.color)===RED) fejl("FORLØB: rød tekst »"+txt(e)+"« ["+kl(e)+"] — rød er aldrig titel");

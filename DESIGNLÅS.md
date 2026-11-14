@@ -3921,3 +3921,35 @@ Knapper med tekst, der fører videre eller tilbage (den røde primære og den gr
 ## Overskrift over fliser (LÅST 12. november, bud 1 + placering A, artifact Q9bqoBbxx7f3bMfau6tJNM)
 
 Overskriften står altid uden for flisen, aldrig inde i den. Poppins 12 / 400, versaler, bogstavafstand 1,5, farve #6F6B66. Venstrekanten flugter med flisens ydre kant, samme lodrette linje som hilsen og dato. 8 ned til flisen, 32 fra forrige flise op til overskriften, 24 fra coverets bund til den første overskrift. Fremdrift i et modul vises som én procesbar med procent for enden (som i profilen), ikke som små felter. Målene står også i MÅLKORT.md.
+
+
+## Knapper med tekst: 56 på telefonen, 44 på computeren (LÅST 14. november, Idas klik på bud 1 af 5, artifact LwUvn5F95Tr2WXTPNjJmoe)
+
+Ida 14/11: »det er kun på mobilen at knapper skal være 56px ! det ser fjollet ud på desktop!!« Vælter 56-låsen fra 12/11 på computeren.
+- **Telefon (under 900 px):** hver knap med tekst er **56** høj, som før.
+- **Computer (900 px og bredere):** hver knap med tekst er **44** høj, helt runde ender (radius 22), samme højde som dropdownen. Mette (supertester) valgte samme bud: »Det står pænt og lige med rullegardinet«.
+- Chips 32 og runde ikonknapper 36 er uændrede. Datofelter, ikoner og søgefelter er ikke knapper.
+- Koden: blokken »KNAPPER MED TEKST ER 44 PÅ COMPUTEREN« sidst i det sidste stilark; porten (probe-regler.js, probe-maal.js) måler 56 under 900 og 44 fra 900.
+
+
+## Afstande: én fast skala i hele systemet (LÅST 14. november, Idas klik på bud 1 af 5 »Rolig skala«, artifact D7XFvQDz7kafpFN538fjsz)
+
+Ida 14/11: »det kan simpelthen ikke passe vi ikke har nogen lås nogen steder på afstande mellem ting??« og »tekst under overskrift på modulet skal flyttes længere op - tættere på overskriften«. Mette (supertester) valgte samme bud. Gælder app, b2b og admin, telefon og computer:
+- **Titel → teksten under (i en flise): 4**
+- **Overskrift → flisen under den: 8** (overskriften står altid over flisen, uden streg — låsen 12/11)
+- **Flise → flise: 12** (vælter målkortets 10)
+- **Filtre/chips-række → indholdet under: 20**
+- **Sektion → sektion: 32** (vælter målkortets 24)
+- **Luft inde i en flise: 20** (alle sider)
+Ingen andre afstande mellem disse ting. Finder du en anden, er det en fejl.
+
+
+## Markeringsfarver: »variation 1 + 7« (LÅST 14. november, Idas klik, artifact SuuxU7hqCKB43QhQzfg2eB)
+
+Ida 14/11: »jeg HADER denne farve!« (den sandfarvede markering #FAF9F5 / #F1EFEA / #F3F0EA på låste moduler, valgt menupunkt og ikke-valgte forslag) → efter fire runder bud: »vi låser variationen ja«. Den sandfarvede markering er død overalt.
+- **Tynde kanter** (fliser, chips der ikke er valgt, felter): **#DCE8F0** (lys blå fra designmanualens blå #C9DBE7).
+- **Venter / låst** (låste moduler, ting der åbner senere): flade **#F0F5F8** med kant **#DCE8F0**, tekst grå #6F6B66, hængelås grå.
+- **Valgt menupunkt og ting, der ikke er valgt** (fx forslag uden flueben): flade **#EEEEEE**, ingen kant.
+- Rød #FC2404 er stadig kun det aktive/valgte, man trykker på (Næste, valgt chip, valgt cirkel). Fliser er hvide.
+- Aldrig sort eller mørk flade (Ida 14/11: »ALDRIG SORT!!!«).
+- ÅBENT (ekspertgennemgangen 14/11 afgør definitionerne): sidens baggrund (buddet var hvid), og hvordan briefens lyseblå hjælpefliser (#F0F5F8) skilles fra »venter«.

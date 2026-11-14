@@ -119,6 +119,16 @@ for RK in "390 1200" "1440 940"; do
   echo "[$1] ${UDR:-SELE REGLER FEJL: ingen maaling fra chromium}"
   echo "$UDR" | grep -q "SELE REGLER OK" || REGLER_OK=0
 done
+# FLISE-PORTEN (Ida 14/11, UX-politiet): overskrift over flisen uden streg · flise → flise 12 · overskrift → flise 8 · chips → indhold 20 · titel → beskrivelse 4 · chipsene staar stille ved fold — paa 390 og 1440, Content aaben og laast.
+KF=$(python3 -c "import urllib.parse,sys;print(urllib.parse.quote('window.SELE_BEGGE=1;' + open(sys.argv[1]).read()))" "$ROD/tools/designlaas/probe-fliser.js")
+for FK in "390 1200" "1440 940"; do
+  set -- $FK
+  RAAF=$($TO "$C" $HL --no-sandbox --disable-gpu --window-size=$(($1+40)),$(($2+60)) --virtual-time-budget=60000 --enable-logging=stderr --v=0 --screenshot="$MAAL/fliser-$1.png" "http://127.0.0.1:$PORT/sele.html?vis=kunde&fil=index-sele.html%3Fselekode%3DHINGES2026&bred=$1&hoej=$2&kode=$KF" 2>&1)
+  UDF=$(echo "$RAAF" | grep -a 'CONSOLE' | sed -E 's/^.*CONSOLE[:(][0-9]+\)?\] //; s/", source:.*$//; s/^"//' | grep -a 'SELE FLISER')
+  echo "$UDF" | sed "s/^/[$1] /"
+  [ -z "$UDF" ] && echo "[$1] SELE FLISER FEJL: ingen maaling fra chromium"
+  echo "$UDF" | grep -q "SELE FLISER OK" || REGLER_OK=0
+done
 [ "$REGLER_OK" = "1" ] && echo "SELE REGLER OK: de tre regler holder paa 390 og 1440" || echo "SELE REGLER FEJL: afvigelser staar ovenfor"
 # REGEL-PORTEN, DEL 2 (Ida 14/11: »få porten til at måle ark og backstage også«): de samme tre regler paa Backstages sider og inde i ark og popups, aabnet én for én — kundeappen og Backstage, 390 og 1440.
 for RF in "kunde 390 1200" "dash 390 1200" "kunde 1440 940" "dash 1440 940"; do

@@ -6,6 +6,7 @@ Kilden i koden er **MÅLKORT-BLOKKEN** sidst i det første `<style>` i `index.ht
 
 | Element | Facit |
 |---|---|
+| **Afstande** (Ida 14/11, LÅST, bud 1 »Rolig skala«) | titel → tekst **4** · overskrift → flise **8** · flise → flise **12** · filtre/chips → indhold **20** · sektion → sektion **32** · luft i flise **20** · vælter »afstand til næste flise 10« og »24 fra sektion til sektion« herunder |
 | **Flise** (.sk-q, .klip-kort) | hvid · radius 20 · luft 18 øverst/nederst, 20 siderne · afstand til næste flise **10** · skygge `--mb-skygge` · ingen ramme |
 | **Flisetitel** (spørgsmål, »Tekst på coverbilledet«, »Hashtags«, »Hvem taler opslaget til?«) | Poppins **18** (telefon **16**) / 400 / #1A1A1A / linjehøjde 1,35 · **16** til første indhold · ingen streg, når der kun står ét felt under |
 | **Klip-etiket** (»Klip 1 · Hook«, »Klip 2«) | Poppins 10 / 400 · versal · bogstavafstand 1,5 · #9A9590 · højre side: ikonknapper 36 · **én** streg under (1 px #E3E2DE, 12 over / 16 under) |
@@ -19,6 +20,7 @@ Kilden i koden er **MÅLKORT-BLOKKEN** sidst i det første `<style>` i `index.ht
 | **Knap, rød** | pille · #FC2404 · hvid tekst · gør noget færdigt |
 | **Overskrift over fliser** (Ida 12/11, LÅST, bud 1 + placering A, artifact Q9bqoBbxx7f3bMfau6tJNM) | står ALTID uden for flisen · Poppins **12** / 400 · VERSALER · bogstavafstand **1,5** · **#6F6B66** (aldrig #9A9590: for svag) · venstrekant flugter med FLISENS YDRE KANT (samme linje som hilsen og dato) · **8** ned til flisen · **32** fra forrige flise op til overskriften · **24** fra coverets bund til første overskrift · aldrig en overskrift inde i en flise. Afløser sektionsetiketten 10 / #9A9590 fra 4/11, når siderne bygges om (porten måler stadig den gamle på forløbssiden, til den er bygget) |
 | **Navigationsknapper** (Ida 12/11, LÅST) | HVER knap med tekst (rød primær og grå sekundær, også »Rediger« og coverets »Tilbage«, Ida 14/11): **56 høje** i hele appen · pille · tekst i midten. Chips (32) og ikonknapper (36) er IKKE navigationsknapper og ændres aldrig med dem |
+| **Knap med tekst** (Ida 14/11, LÅST) | telefon **56** høj · computer (≥900) **44** høj, radius 22 (helt rund) · rød primær / hvid sekundær med 1 px #DEDAD4 og grå tekst · chips 32 og ikonknapper 36 er ikke knapper |
 | **Dropdown** (Ida 14/11, LÅST: som Content kalenderens) | **44 høj** · hjørner **14** · 1 px #DEDAD4 · hvid · luft 14 · tekst til venstre i sort #1A1A1A, 13 · pil 16 til højre i grå #6F6B66 · aldrig pille, aldrig centreret tekst · bredden følger stedet |
 | **Øvrige knaphøjder** | ikonknap **36** · luk/send i ark **44** |
 | **Ikonknap** | rund **36 × 36** · hvid · 1 px #DEDAD4 · streg #6F6B66 · ikonet 16 i midten · trykfelt 44 via ::before |

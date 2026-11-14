@@ -1,5 +1,5 @@
 /* REGEL-PORTEN (Ida 14/11): de tre låste regler måles, så de ikke glider igen.
-   1) en valgt chip er rød med hvid tekst og uden flueben · 2) en dropdown har Content kalenderens form · 3) en knap med tekst er 56 høj.
+   1) en valgt chip er rød med hvid tekst og uden flueben · 2) en dropdown har Content kalenderens form · 3) en knap med tekst er 56 høj på telefonen og 44 på computeren (Idas klik 14/11).
    Dertil køen fra 14/11: kalenderens røde knap hedder »+ Ny«, Drive-mappen står ikke i værktøjslinjen, og briefen på computeren har ingen blyant ved status.
    Kører på den bredde, vinduet har (390 og 1440). Én afvigelse = linje med »FEJL«, og porten (koer.sh) stopper. */
 function px(v){ return Math.round(parseFloat(v)*10)/10||0; }
@@ -24,7 +24,7 @@ function maalLaas1411(){
     if(sp){ var ss=getComputedStyle(sp), rg=document.createRange(); rg.selectNodeContents(sp); var tr=rg.getBoundingClientRect(); er("DROPDOWN tekst", e, rgb(ss.color)===SORT&&Math.abs(tr.left-r.left-15)<=2, "tekst "+ss.color+", "+Math.round(tr.left-r.left)+" px fra venstre kant (skal sort #1A1A1A, 15 fra kanten)"); }
     if(sv){ var vr=sv.getBoundingClientRect(); er("DROPDOWN pil", e, Math.abs(r.right-vr.right-15)<=2&&rgb(getComputedStyle(sv).color)===G2, "pilen står "+Math.round(r.right-vr.right)+" px fra højre kant i "+getComputedStyle(sv).color+" (skal 15, grå #6F6B66)"); }
   });
-  document.querySelectorAll(".cover-tilbage, .navsti .navsti-tilbage, .mb-baand .navsti-tilbage, .mb-baand button.mb-tilbage, #briefRedigerKnap, .dbtn:not(.ark-chip):not(.chip-btn):not(.ss-chip):not(.kk-chip):not(.vt-pille):not(.lku-tilb), .db-knap, .bsam-mobknap:not(.cf-ny), .bsam-knap, .lk-note-alle, .hu-graa, .row-btn, .tom-knap, .prof-gem").forEach(function(e){ if(!synlig(e)||e.closest("#virkMenu, #dashMenu, .burger, #burgerMenu")||!(e.innerText||"").trim()) return; var r=e.getBoundingClientRect(); er("KNAP 56", e, Math.round(r.height)===56, "h"+Math.round(r.height)+" (skal 56)"); });
+  document.querySelectorAll(".cover-tilbage, .navsti .navsti-tilbage, .mb-baand .navsti-tilbage, .mb-baand button.mb-tilbage, #briefRedigerKnap, .dbtn:not(.ark-chip):not(.chip-btn):not(.ss-chip):not(.kk-chip):not(.vt-pille):not(.lku-tilb), .db-knap, .bsam-mobknap:not(.cf-ny), .bsam-knap, .lk-note-alle, .hu-graa, .row-btn, .tom-knap, .prof-gem").forEach(function(e){ if(!synlig(e)||e.closest("#virkMenu, #dashMenu, .burger, #burgerMenu")||!(e.innerText||"").trim()) return; var r=e.getBoundingClientRect(); er("KNAP 56", e, Math.round(r.height)===(innerWidth>=900?44:56), "h"+Math.round(r.height)+" (skal "+(innerWidth>=900?44:56)+")"); });
 }
 function maalKalender1411(){
   var ny=document.querySelector("#kalBlok .cal-header .vt-primaer"); if(ny&&synlig(ny)) er("KALENDER knap", ny, (ny.innerText||"").trim()==="+ Ny", "hedder »"+(ny.innerText||"").trim()+"« (skal »+ Ny«)");
