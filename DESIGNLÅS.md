@@ -1,3 +1,8 @@
+## 14. november · ET SLIDE MED BILLEDE STÅR PÅ BRIEFOVERSIGTEN (Ida 14/11: »hvorfor kan jeg ikke se disse slides på briefoversigten og downloade dem??«, v3287)
+- Flisen »Slides« med »Download alle billeder« på briefoversigten viser et slide, når det har skrevet tekst, en note ELLER sit eget billede. Før talte kun tekst og note, så en karrusel af færdige billeder uden tekstlag var skjult.
+- »Kun det færdige står på briefoversigten« (26/9) gælder stadig: i en karrusel er et slide med eget billede færdigt. Coverbilledet til en reel er uændret (står, når det har tekst).
+- Koden: `cvEgetFoto(k)` (slidets eget foto, ikke coverets fælles billede) bruges i `cvSlideIdx()` og `cvForsideHtml()`.
+
 ## 14. november · PORTEN MÅLER DE TRE REGLER I ARK OG I BACKSTAGE (Idas ord 14/11, v3285)
 - Ny måling `tools/designlaas/probe-regler2.js` (REGEL-PORTEN, DEL 2 i `koer.sh`), kundeappen og Backstage, 390 og 1440: valgt chip rød · dropdown 44 med hjørner 14 · knap med tekst 56.
 - Den besøger 15 af Backstages sider og åbner ark og popups én for én (81 i kundeappen, 66 i Backstage) og måler inde i hvert.
