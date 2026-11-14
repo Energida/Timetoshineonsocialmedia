@@ -217,9 +217,9 @@ async function maalForloeb(vent){
     [].slice.call(rod.querySelectorAll(".ftl2-rk")).filter(synlig).forEach(function(e){ var cs=getComputedStyle(e), r=e.getBoundingClientRect();
       er("FORLØB række", e, Math.round(r.height)>=64&&Math.round(r.height)<=100&&px(cs.borderTopLeftRadius)===20&&rgb(cs.backgroundColor)===(e.matches(".laast")?"rgb(240,245,248)":"rgb(255,255,255)")&&px(cs.borderTopWidth)===1&&rgb(cs.borderTopColor)==="rgb(220,232,240)"&&cs.boxShadow==="none", "h"+Math.round(r.height)+" r"+cs.borderTopLeftRadius+" "+cs.backgroundColor+" kant "+cs.borderTopWidth+" "+cs.borderTopColor+" skygge "+cs.boxShadow.slice(0,20)+" (skal ≥64·20·1px #DCE8F0)");
       if(e.classList.contains("laast")&&!e.querySelector(".ftl2-a")){ N++; if(Math.round(r.height)!==64) fejl("FORLØB låst række uden antal er "+Math.round(r.height)+" høj (skal 64)"); }
-      var n=e.querySelector(".ftl2-n"), ns=getComputedStyle(n); er("FORLØB række-titel", n, px(ns.fontSize)===15&&ns.fontWeight==="400"&&rgb(ns.color)===G2, ns.fontSize+" "+ns.color+" (skal 15 · #6F6B66)");
-      var a=e.querySelector(".ftl2-a"); if(a){ var as=getComputedStyle(a); er("FORLØB række-antal", a, px(as.fontSize)===12&&rgb(as.color)===G2, as.fontSize+" "+as.color+" (skal 12 · #6F6B66, laesbart paa sand)"); }
-      var h=e.querySelector(".ftl2-h > span"), hs2=getComputedStyle(h); er("FORLØB række-højre", h, px(hs2.fontSize)===12&&rgb(hs2.color)===G2, hs2.fontSize+" "+hs2.color+" (skal 12 · #6F6B66)");
+      var FK=e.classList.contains("laast")?SORT:G2, n=e.querySelector(".ftl2-n"), ns=getComputedStyle(n); er("FORLØB række-titel", n, px(ns.fontSize)===15&&ns.fontWeight==="400"&&rgb(ns.color)===FK, ns.fontSize+" "+ns.color+" (skal 15 · sort)");
+      var a=e.querySelector(".ftl2-a"); if(a){ var as=getComputedStyle(a); er("FORLØB række-antal", a, px(as.fontSize)===12&&rgb(as.color)===FK, as.fontSize+" "+as.color+" (skal 12 · sort paa blaa)"); }
+      var h=e.querySelector(".ftl2-h > span"), hs2=getComputedStyle(h); er("FORLØB række-højre", h, px(hs2.fontSize)===12&&rgb(hs2.color)===FK, hs2.fontSize+" "+hs2.color+" (skal 12 · sort)");
       var rr=h.parentElement.getBoundingClientRect(); N++; if(Math.abs((r.right-rr.right)-21)>2) fejl("FORLØB række: højre indhold står "+Math.round(r.right-rr.right)+" fra kanten (skal ~21)");
       var yy=Math.abs((r.top+r.height/2)-(h.getBoundingClientRect().top+h.getBoundingClientRect().height/2)); N++; if(yy>1.5) fejl("FORLØB række: højre tekst er ikke lodret midt ("+Math.round(yy*10)/10+")");
     });

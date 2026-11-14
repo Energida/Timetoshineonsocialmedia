@@ -3967,7 +3967,7 @@ Ingen andre afstande mellem disse ting. Finder du en anden, er det en fejl.
 
 Ida 14/11: »jeg HADER denne farve!« (den sandfarvede markering #FAF9F5 / #F1EFEA / #F3F0EA på låste moduler, valgt menupunkt og ikke-valgte forslag) → efter fire runder bud: »vi låser variationen ja«. Den sandfarvede markering er død overalt.
 - **Tynde kanter** (fliser, chips der ikke er valgt, felter): **#DCE8F0** (lys blå fra designmanualens blå #C9DBE7).
-- **Venter / låst** (låste moduler, ting der åbner senere): flade **#F0F5F8** med kant **#DCE8F0**, tekst grå #6F6B66, hængelås grå.
+- **Venter / låst** (låste moduler, ting der åbner senere): flade **#F0F5F8** med kant **#DCE8F0**, **tekst SORT #1A1A1A, hængelås RØD #FC2404** (Ida 14/11: »teksten på blå baggrund skal være sort og hængelåsen må gerne være farvet« → Bud 2 rød, artifact QvogXbKYyn3eXyD4J2kwtC).
 - **Valgt menupunkt og ting, der ikke er valgt** (fx forslag uden flueben): flade **#EEEEEE**, ingen kant.
 - Rød #FC2404 er stadig kun det aktive/valgte, man trykker på (Næste, valgt chip, valgt cirkel). Fliser er hvide.
 - Aldrig sort eller mørk flade (Ida 14/11: »ALDRIG SORT!!!«).
