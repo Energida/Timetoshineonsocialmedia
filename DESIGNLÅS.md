@@ -1,3 +1,10 @@
+## 14. november · PORTEN MÅLER DE TRE REGLER I ARK OG I BACKSTAGE (Idas ord 14/11, v3285)
+- Ny måling `tools/designlaas/probe-regler2.js` (REGEL-PORTEN, DEL 2 i `koer.sh`), kundeappen og Backstage, 390 og 1440: valgt chip rød · dropdown 44 med hjørner 14 · knap med tekst 56.
+- Den besøger 15 af Backstages sider og åbner ark og popups én for én (81 i kundeappen, 66 i Backstage) og måler inde i hvert.
+- Åbner færre end 70 % af arkene, fejler porten – så ser den ikke længere det, den skal.
+- Prøvet: med arkets knapper sat tilbage til 52 og CRM's »Ny« til 44 melder den fejl med arkets navn.
+- Et nyt ark kommer med ved at skrive funktionens navn i `ARK_KUNDE` eller `ARK_DASH` øverst i filen. Ark, der kun åbner med bestemte data, er ikke med.
+
 ## 14. november · ARK OG POPUPS SET ÉN FOR ÉN: KNAPPERNE ER 56 (UX-politiet, Idas ord 14/11, v3282)
 - Alle ark og popups, der kunne åbnes i testudgaven (ca. 80 i kundeappen og 74 i Backstage, telefon og computer), er målt for de tre regler.
 - **Arkets knapper med tekst er 56** som alle andre: `.ark-knap` (rød og grå), `.ark-send-pille` og `.sw-knap` var 48–52. Vælter 21/9-reglen »knapper 44 i popups«.

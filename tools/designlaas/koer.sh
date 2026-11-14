@@ -120,6 +120,17 @@ for RK in "390 1200" "1440 940"; do
   echo "$UDR" | grep -q "SELE REGLER OK" || REGLER_OK=0
 done
 [ "$REGLER_OK" = "1" ] && echo "SELE REGLER OK: de tre regler holder paa 390 og 1440" || echo "SELE REGLER FEJL: afvigelser staar ovenfor"
+# REGEL-PORTEN, DEL 2 (Ida 14/11: »få porten til at måle ark og backstage også«): de samme tre regler paa Backstages sider og inde i ark og popups, aabnet én for én — kundeappen og Backstage, 390 og 1440.
+for RF in "kunde 390 1200" "dash 390 1200" "kunde 1440 940" "dash 1440 940"; do
+  set -- $RF
+  KR2=$(python3 -c "import urllib.parse,sys;print(urllib.parse.quote('var REGLER_FLADE=\"'+sys.argv[2]+'\";'+open(sys.argv[1]).read()))" "$ROD/tools/designlaas/probe-regler2.js" "$1")
+  [ "$1" = "dash" ] && VIS2="vis=dash&side=overblik&" || VIS2="vis=kunde&"
+  RAAR2=$(${TO/90/240} "$C" $HL --no-sandbox --disable-gpu --window-size=$(($2+40)),$(($3+60)) --virtual-time-budget=300000 --enable-logging=stderr --v=0 --screenshot="$MAAL/regler2-$1-$2.png" "http://127.0.0.1:$PORT/sele.html?${VIS2}fil=index-sele.html%3Fselekode%3DHINGES2026&bred=$2&hoej=$3&kode=$KR2" 2>&1)
+  UDR2=$(echo "$RAAR2" | grep -a 'CONSOLE' | sed -E 's/^.*CONSOLE[:(][0-9]+\)?\] //; s/", source:.*$//; s/^"//' | grep -a 'SELE REGLER2')
+  echo "[$1 $2] ${UDR2:-SELE REGLER2 FEJL: ingen maaling fra chromium}"
+  echo "$UDR2" | grep -q "SELE REGLER2 OK" || REGLER_OK=0
+done
+[ "$REGLER_OK" = "1" ] && echo "SELE REGLER2 OK: reglerne holder ogsaa i ark og i Backstage" || echo "SELE REGLER2 FEJL: afvigelser staar ovenfor"
 # HEROENS PLADS (HAARD, Ida 26/9): titlen 40 px over coverets bund, 20/48 px fra venstre — kundeappen og Backstage, 390 og 1440.
 KH=$(python3 -c "import urllib.parse,sys;print(urllib.parse.quote(open(sys.argv[1]).read()))" "$ROD/tools/designlaas/probe-hero.js")
 HERO_OK=1
