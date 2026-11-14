@@ -25805,8 +25805,10 @@ async function cvMedieHent() {
   const m = CV_FOTO[BRIEF_ID] || (CV_FOTO[BRIEF_ID] = {});
   const forsoegt = cvMedieHent.__f || (cvMedieHent.__f = {});
   for (let i = 0; i < liste.length; i++) {
-    if (m["m" + i] || forsoegt[liste[i].sti]) continue; forsoegt[liste[i].sti] = 1;
-    try { const d = await sb.storage.from(CV_LAGER).download(liste[i].sti); if (d && d.data && String(BRIEF_ID) === String(briefId)) m["m" + i] = URL.createObjectURL(d.data); } catch (e) {}
+    if (m["m" + i]) continue;
+    if (CV_STI_URL[liste[i].sti]) { m["m" + i] = CV_STI_URL[liste[i].sti]; continue; }   /* DUPLIKERET OPSLAG (Ida 14/11: »hverken billeder eller samme layout er fulgt med«): kopien peger paa de samme filer — en sti, fanen allerede har hentet, genbruges i stedet for at blive sprunget over */
+    if (forsoegt[liste[i].sti]) continue; forsoegt[liste[i].sti] = 1;
+    try { const d = await sb.storage.from(CV_LAGER).download(liste[i].sti); if (d && d.data) { CV_STI_URL[liste[i].sti] = URL.createObjectURL(d.data); if (String(BRIEF_ID) === String(briefId)) m["m" + i] = CV_STI_URL[liste[i].sti]; } } catch (e) {}
   }
 }
 function cvMedieVaelg(i) {
@@ -26151,7 +26153,7 @@ async function cvFotoValgt(inp) {
     if (filer.length > 1) { const fo2 = document.getElementById("cvFotoOrd"); if (fo2) fo2.textContent = "Henter foto " + (n + 1) + " af " + filer.length + " …"; }   /* aldrig en knap, der bare staar stille (Ida 13/11) */
     let url = ""; try { url = await cvFilTilUrl(filer[n]); } catch (e) { url = ""; }
     if (!url) { fejl++; continue; }
-    if (m[k]) { try { URL.revokeObjectURL(m[k]); } catch (e) {} }
+    if (m[k] && !Object.keys(CV_STI_URL).some(function (st) { return CV_STI_URL[st] === m[k]; })) { try { URL.revokeObjectURL(m[k]); } catch (e) {} }   /* en delt adresse (kopi af et opslag) lukkes aldrig — originalen bruger den stadig */
     m[k] = url;
     try { cvFotoOpload(k, url); } catch (e) {}
   }
@@ -26162,6 +26164,7 @@ async function cvFotoValgt(inp) {
    Lukket lager »brief-filer« (SQL-kortet sqlk_lager_2409): <virksomhed_id>/<briefens id>/<noegle>-foto.jpg. Kun fotoet gemmes — det faerdige
    billede tegnes altid frisk af fotoet + teksterne, saa det, teamet henter, er det nyeste. Mangler lageret endnu, bliver fotoet i fanen som foer. */
 const CV_LAGER = "brief-filer";
+const CV_STI_URL = {};   /* sti i lageret → adresse i fanen; deles af alle briefs, der peger paa samme fil */
 async function cvFotoOpload(k, url) {
   if (!sb || !BRIEF_ID) return;
   const briefId = BRIEF_ID;
@@ -26183,11 +26186,13 @@ async function cvFotoHent() {
   try { const f0 = !!cvFotoUrl("cover"); await cvMedieHent(); if (!f0 && cvFotoUrl("cover")) { try { const fs0 = document.getElementById("briefForside"); const gl0 = fs0 && fs0.querySelector(".pf-cv"); if (gl0) { gl0.outerHTML = cvForsideHtml(); cvForsideTegn(); } } catch (e) {} try { if (CV) { cvUI(); cvGentegn(); } } catch (e) {} } } catch (e) {}
   const m = CV_FOTO[BRIEF_ID] || (CV_FOTO[BRIEF_ID] = {}); const briefId = BRIEF_ID;
   const forsoegt = cvFotoHent.__forsoegt || (cvFotoHent.__forsoegt = {});   /* hvert foto hentes hoejst een gang pr. fane — en fejlet hentning maa aldrig gentegne i ring */
-  const mangler = Object.keys(stier).filter(function (k) { return stier[k] && !m[k] && !forsoegt[stier[k]]; }); if (!mangler.length) return;
+  let genbrugt = false; Object.keys(stier).forEach(function (k) { if (stier[k] && !m[k] && CV_STI_URL[stier[k]]) { m[k] = CV_STI_URL[stier[k]]; genbrugt = true; } });   /* kopien af et opslag genbruger de fotos, fanen allerede har hentet (14/11) */
+  const mangler = Object.keys(stier).filter(function (k) { return stier[k] && !m[k] && !forsoegt[stier[k]]; });
+  if (!mangler.length) { if (genbrugt) { try { const fs = document.getElementById("briefForside"); const gl = fs && fs.querySelector(".pf-cv"); if (gl) { gl.outerHTML = cvForsideHtml(); cvForsideTegn(); } } catch (e) {} try { if (CV) cvUI(); } catch (e) {} } return; }
   mangler.forEach(function (k) { forsoegt[stier[k]] = 1; });
   for (let n = 0; n < mangler.length; n++) {
     const k = mangler[n];
-    try { const d = await sb.storage.from(CV_LAGER).download(stier[k]); if (d && d.data && String(BRIEF_ID) === String(briefId)) m[k] = URL.createObjectURL(d.data); } catch (e) {}
+    try { const d = await sb.storage.from(CV_LAGER).download(stier[k]); if (d && d.data) { CV_STI_URL[stier[k]] = URL.createObjectURL(d.data); if (String(BRIEF_ID) === String(briefId)) m[k] = CV_STI_URL[stier[k]]; } } catch (e) {}
   }
   try { const fs = document.getElementById("briefForside"); const gl = fs && fs.querySelector(".pf-cv"); if (gl) { gl.outerHTML = cvForsideHtml(); cvForsideTegn(); } } catch (e) {}
   try { if (CV) cvUI(); } catch (e) {}
@@ -29404,43 +29409,51 @@ function ssLaes() {   /* kun felter, der findes paa skaermen — et gem fra en a
   });
 }
 /* OPBYGNING TIL DELING PAA SELVE OPSLAGET (Ida 13/11: »opbygning til deling og ideer til opbygning til deling på selve indholdet altså opslaget at man kunne tilføje det«;
-   bud godkendt paa telefon 4sjDa7B7… og computer FrN6mXWU…). Nederst paa briefoversigten: de fem idéer (HU_RAAD.foer, Idas klik 4/10), hver sin flise med graat plus.
+   bud godkendt paa telefon 4sjDa7B7… og computer FrN6mXWU…). Nederst paa briefoversigten. 14/11: de fem faste forslag er slettet; kunden skriver sin egen idé via chippen »+ Tilføj idé«.
    Et tryk opretter en story fire timer foer opslaget, bundet til opslaget (story.brief.forOpslag), og laegger idéen ind som et element (element.ide — vises som feltets graa hjaelpetekst, aldrig i det faerdige billede).
    OPSLAGETS EGNE DATA ROERES IKKE: bindingen bor paa story'en. Findes story'en allerede, faar den bare et element mere. */
 function delingStory(it) { if (!it) return null; return (IDEER || []).find(function (x) { return x && ssEr(x) && x.status !== "Arkiveret" && x.brief && String(x.brief.forOpslag || "") === String(it.id); }) || null; }
 function delingTid(tid) { const m = /^(\d\d):(\d\d)/.exec(String(tid || "")); if (!m) return ""; const h = parseInt(m[1], 10) - 4; return h < 0 ? "" : (h < 10 ? "0" : "") + h + ":" + m[2]; }
 function delingForsideHtml() {
-  const it = (IDEER || []).find(function (x) { return String(x.id) === String(BRIEF_ID); }); if (!it || ssEr(it) || typeof HU_RAAD === "undefined" || !HU_RAAD.foer) return "";
+  const it = (IDEER || []).find(function (x) { return String(x.id) === String(BRIEF_ID); }); if (!it || ssEr(it)) return "";
   const st = delingStory(it); const valgt = st && st.brief && Array.isArray(st.brief.storyserie) ? st.brief.storyserie.map(function (e) { return e && e.ide; }).filter(Boolean) : [];
   const pil = '<svg class="dl-pil" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6F6B66" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>';
   let hvornaar = "Uden dato"; try { if (st && st.dato) { const dk = String(dkDatoKort(st.dato) || ""); const kl = /^\d\d:\d\d/.test(String((st.brief && st.brief.tid) || "")) ? " kl. " + String(st.brief.tid).slice(0, 5).replace(":", ".") : ""; hvornaar = dk.charAt(0).toUpperCase() + dk.slice(1) + kl; } } catch (e) {}
   const storyFl = st ? '<div class="dl-fl" role="button" tabindex="0" onclick="openBriefSide(\'' + esc(String(st.id)) + '\')"><span class="dl-sym"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/></svg></span><div class="dl-tx"><span class="dl-un">Story</span><span class="dl-ti">' + esc(hvornaar) + '</span></div>' + pil + '</div><div class="dl-sek">Idéer til story’en</div>' : '';
-  const ideer = HU_RAAD.foer.r.map(function (r, i) {
-    const on = valgt.indexOf(r[0]) >= 0;
-    return '<div class="dl-fl" role="button" tabindex="0" aria-pressed="' + (on ? "true" : "false") + '" onclick="delingIdeVaelg(' + i + ')"><div class="dl-tx"><span class="dl-ti">' + esc(r[0]) + '</span><span class="dl-un">' + esc(r[1]) + '</span></div>'
-      + (on ? '<span class="dl-ok"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7"/></svg></span>' : '<span class="dl-pl"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6F6B66" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></span>') + '</div>';
+  /* DE FEM FORSLAG ER SLETTET (Ida 14/11: »disse forslag skal slettes - men jeg skal kunne tilføje ide til opbygning til deling«; klik: chip »+ Tilføj idé«).
+     Kundens egne idéer staar som hver sin flise (et tryk aabner story'en); plus-chippen giver et tomt felt lige dér, Enter eller et tryk udenfor gemmer. */
+  const ideer = valgt.map(function (tx) {
+    return '<div class="dl-fl" role="button" tabindex="0" onclick="openBriefSide(\'' + esc(String(st.id)) + '\')"><div class="dl-tx"><span class="dl-ti">' + esc(tx) + '</span></div>' + pil + '</div>';
   }).join("");
-  return '<div id="delingSek"><div class="dl-sek">Opbygning til deling</div>' + storyFl + ideer + '</div>';
+  const felt = window.__DELING_NY ? '<div class="dl-fl dl-ny"><input type="text" id="delingNyFelt" class="dl-felt" placeholder="Din idé" aria-label="Din idé" maxlength="200" onkeydown="if(event.key===\'Enter\'){event.preventDefault();this.blur();}else if(event.key===\'Escape\'){this.value=\'\';this.blur();}" onblur="delingIdeGem(this.value)"></div>' : '';
+  const chip = window.__DELING_NY ? '' : '<div class="dl-plus-rk"><button type="button" class="ark-chip dl-plus" onclick="delingIdeNy()">' + CHIP_PLUS + 'Tilføj idé</button></div>';
+  return '<div id="delingSek"><div class="dl-sek">Opbygning til deling</div>' + storyFl.replace('<div class="dl-sek">Idéer til story’en</div>', '') + ideer + felt + chip + '</div>';
 }
 function delingTegnOm() { try { const g = document.getElementById("delingSek"); if (g) g.outerHTML = delingForsideHtml(); } catch (e) {} }
-async function delingIdeVaelg(i) {
-  if (window.__DELING_I_GANG) return; window.__DELING_I_GANG = true;
+function delingIdeNy() { window.__DELING_NY = true; delingTegnOm(); setTimeout(function () { try { const f = document.getElementById("delingNyFelt"); if (f) f.focus(); } catch (e) {} }, 40); }
+async function delingIdeGem(tekst) {
+  if (!window.__DELING_NY || window.__DELING_I_GANG) return;
+  const tx = String(tekst || "").replace(/\s+/g, " ").trim();
+  window.__DELING_NY = false;
+  if (!tx) { delingTegnOm(); return; }
+  window.__DELING_I_GANG = true;
   try {
-    const it = (IDEER || []).find(function (x) { return String(x.id) === String(BRIEF_ID); }); const r = HU_RAAD.foer.r[i]; if (!it || !r) return;
+    const it = (IDEER || []).find(function (x) { return String(x.id) === String(BRIEF_ID); }); if (!it) return;
     let st = delingStory(it);
-    const el = { t: "", q: "", s: ["", ""], m: "", ide: r[0] };
+    const el = { t: "", q: "", s: ["", ""], m: "", ide: tx };
     if (st) {
       const b = Object.assign({}, st.brief || {}); const a = Array.isArray(b.storyserie) ? b.storyserie.slice() : [];
-      if (a.some(function (e) { return e && e.ide === r[0]; })) { openBriefSide(st.id); return; }   /* allerede lagt ind: et tryk aabner story'en */
-      b.storyserie = a.concat([el]);
-      const ok = await ideUpdate(st.id, { brief: b }); if (ok === false) { try { visSyncFejl(); } catch (e) {} }
+      if (!a.some(function (e) { return e && e.ide === tx; })) {
+        b.storyserie = a.concat([el]);
+        const ok = await ideUpdate(st.id, { brief: b }); if (ok === false) { try { visSyncFejl(); } catch (e) {} }
+      }
     } else {
       const tid0 = (BRIEF_STATE && BRIEF_STATE.tid) || (it.brief && it.brief.tid) || "";
       st = await ideAdd({ titel: it.titel, type: "Story", soejle: "Story", status: it.dato ? "Planlagt" : "Idé", dato: it.dato || null, brief: { format: "Story", storytype: "Opbygning til deling", tid: delingTid(tid0), forOpslag: String(it.id), storyserie: [el] } });
-      if (!st) return;
+      if (!st) { try { visSyncFejl(); } catch (e) {} return; }
     }
-    delingTegnOm(); try { husKvit("Lagt i story’en"); } catch (e) {}
-  } finally { window.__DELING_I_GANG = false; }
+    try { husKvit("Lagt i story’en"); } catch (e) {}
+  } finally { window.__DELING_I_GANG = false; delingTegnOm(); }
 }
 function ssElHtml(e, i, n, dimmet) {
   const skr = (typeof BS_SKRALD_SVG !== "undefined") ? BS_SKRALD_SVG : "Slet";
@@ -65881,7 +65894,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "3269";
+const APP_VERSION = "3270";
 const APP_BYGGET = "3. november";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_VERSION;   /* ingen dato (Ida 7/11: »hvorfor står der version 3. november?«) — datoen blev ikke rettet med, nummeret er sandheden */ } catch (e) {} });
 let NY_VERSION_KLAR = false;
@@ -94899,6 +94912,13 @@ html body #briefForside #delingSek .dl-ok { flex:none; width:24px; height:24px; 
 html body #briefForside #delingSek .dl-sym { flex:none; width:44px; height:44px; border-radius:12px; background:#FAF9F5; color:#6F6B66; display:flex; align-items:center; justify-content:center; }
 html body #briefForside #delingSek .dl-pil { flex:none; }
 @media (min-width:900px) { html body #briefForside #delingSek .dl-fl { padding:16px 20px; } html body #briefForside #delingSek .dl-pil { margin-right:10px; } }
+html body #briefForside #delingSek .dl-fl.dl-ny { cursor:default; padding:10px 12px; }
+html body #briefForside #delingSek .dl-felt { flex:1; min-width:0; height:44px; box-sizing:border-box; border:1px solid #DEDAD4; border-radius:14px; background:#fff; padding:0 12px; font:400 13px Poppins,sans-serif; color:#1A1A1A; outline:none; box-shadow:none; }
+html body #briefForside #delingSek .dl-felt:focus { border-color:#9A9590; }
+@media (max-width:899px) { html body #briefForside #delingSek input.dl-felt:not(#x1):not(#x2) { font-size:16px !important; } }   /* under 16 zoomer iPhone ind på feltet */
+html body #briefForside #delingSek .dl-plus-rk { display:flex; justify-content:flex-start; margin-top:12px; }
+html body #briefForside #delingSek .dl-sek + .dl-plus-rk { margin-top:0; }
+html body #briefForside #delingSek .dl-plus { gap:6px; }
 /* FAKTA-SIDEN-3261-SLUT */
 /* HEALTH COACH (13/11) — Idas testskemaer i Backstage. Maal efter MÅLKORT: flise radius 20 luft 18/20, 10 mellem fliser, overskrift 12 versal 1,5 #6F6B66 uden for flisen (8 ned, 32 op),
    felt 44 / radius 14 / 1 px #DEDAD4, navigationsknapper 56, Poppins 400, Didot kun i coveret. Godkendte bud: telefon 1TiFuGKjqhhky69PZBWaib · computer 1V6F8gtDjhHMNMww3uKSHh. */
@@ -95006,6 +95026,10 @@ html body:not(#l1):not(#l2):not(#l3):not(#l4):not(#l5):not(#l6):not(#l7):not(#l8
 @media (min-width:900px) {
   html body:not(#l1):not(#l2):not(#l3):not(#l4):not(#l5):not(#l6):not(#l7):not(#l8) #screen7 .bt-ik-baand > *:not(.bt-mere-tlf):not(.bt-status-baand), html body:not(#l1):not(#l2):not(#l3):not(#l4):not(#l5):not(#l6):not(#l7):not(#l8) #screen7 .brief-titel-over > .bt-blyant, html body:not(#l1):not(#l2):not(#l3):not(#l4):not(#l5):not(#l6):not(#l7):not(#l8) #screen7 .bt-titel > .bt-blyant, html body:not(#l1):not(#l2):not(#l3):not(#l4):not(#l5):not(#l6):not(#l7):not(#l8) #screen7 .fb-ik-host > button:not(.bt-mere-tlf) { display:none !important; }
 }
+/* 5) SYMBOLERNE STÅR OGSÅ PÅ BRIEFOVERSIGTEN (Ida 14/11: »når symbolerne er inde i briefen at de så også SELVFØLGELIG skal være ude på briefoversigten«): samme grå symbol i blød flade som på Fakta-siden (44 · hjørner 12 · #FAF9F5 · streg 1,5 #6F6B66). Vælter »ingen ikoner« i faktaboksen fra 27/10. */
+html body[data-bforside]:not(#l1):not(#l2):not(#l3):not(#l4):not(#l5):not(#l6):not(#l7):not(#l8) #briefRail .fb-rk { display:flex !important; align-items:center !important; gap:12px !important; }
+html body[data-bforside]:not(#l1):not(#l2):not(#l3):not(#l4):not(#l5):not(#l6):not(#l7):not(#l8) #briefRail .fb-rk > .fb-ik { display:flex !important; flex:none; width:44px !important; height:44px !important; border-radius:12px !important; background:#FAF9F5 !important; color:#6F6B66 !important; align-items:center; justify-content:center; }
+html body[data-bforside]:not(#l1):not(#l2):not(#l3):not(#l4):not(#l5):not(#l6):not(#l7):not(#l8) #briefRail .fb-rk > .fb-ik svg { width:22px !important; height:22px !important; fill:none !important; stroke:#6F6B66 !important; stroke-width:1.5 !important; stroke-linecap:round; stroke-linejoin:round; }
 /* ===== LÅS 14/11 SLUT ===== */
 </style>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-hvid.png" alt=""><span>Henter…</span></div>
