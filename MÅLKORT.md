@@ -13,13 +13,14 @@ Kilden i koden er **MÅLKORT-BLOKKEN** sidst i det første `<style>` i `index.ht
 | **Hjælpetekst** | Poppins 12,5 / 400 / #6F6B66 · 4 under titlen |
 | **Felt** (.sk-input) | Poppins 13 / 400 / #1A1A1A · radius 14 · 1 px #DEDAD4 · luft 10/12 (40 til mikrofon til højre) · **mindst 44 høj** · aldrig kursiv · mikrofonen inde i feltet, grå |
 | **Feltflugt** | alle felter i samme flise starter og slutter på samme x (hook-valgets cirkel ligger INDE i feltet til venstre, 28 rund, 8 fra kanten) |
-| **Chip** | højde **32** · Poppins 12,5 / 400 · #6F6B66 · 1 px #DEDAD4 · radius 999 · luft **14** hver side (Ida 9/11, bud 2) · hvid · gap mellem chips 8 · én linje · IKKE valgt = hvid, aldrig baggrundsfarve · valgt = må være rød fyldt (#FC2404) med hvid tekst (Ida 12/11: »det var når den ikke var valgt må der ikke være baggrund. Valgt chip må godt være rød«); ældre valgte chips med mørkere grå ramme er stadig i orden |
+| **Chip** | højde **32** · Poppins 12,5 / 400 · #6F6B66 · 1 px #DEDAD4 · radius 999 · luft **14** hver side (Ida 9/11, bud 2) · hvid · gap mellem chips 8 · én linje · IKKE valgt = hvid, aldrig baggrundsfarve · **valgt = rød fyldt (#FC2404) med hvid tekst, overalt, uden flueben** (Ida 14/11: »ja rød overalt« · »ingen chips må have disse flueben«); grå, lysegrå og flueben som »valgt« er fejl. Undtaget: fakta-chipsene øverst på briefoversigten (kun visning) og de lange valgfliser |
 | **Plus-chip** (»Tilføj forslag/klip/scene/CTA«) | som chip + plus 14 × 14 grå, **6** mellem plus og tekst (ikke 8 + 8), venstrestillet i rækken (aldrig højre), 12 over |
 | **Knap, grå** | pille radius 999 · hvid · 1 px #DEDAD4 · tekst #6F6B66 · Poppins 12–13 / 400 |
 | **Knap, rød** | pille · #FC2404 · hvid tekst · gør noget færdigt |
 | **Overskrift over fliser** (Ida 12/11, LÅST, bud 1 + placering A, artifact Q9bqoBbxx7f3bMfau6tJNM) | står ALTID uden for flisen · Poppins **12** / 400 · VERSALER · bogstavafstand **1,5** · **#6F6B66** (aldrig #9A9590: for svag) · venstrekant flugter med FLISENS YDRE KANT (samme linje som hilsen og dato) · **8** ned til flisen · **32** fra forrige flise op til overskriften · **24** fra coverets bund til første overskrift · aldrig en overskrift inde i en flise. Afløser sektionsetiketten 10 / #9A9590 fra 4/11, når siderne bygges om (porten måler stadig den gamle på forløbssiden, til den er bygget) |
-| **Navigationsknapper** (Ida 12/11, LÅST) | knapper med tekst, der fører videre eller tilbage (rød primær og grå sekundær): **56 høje** i hele appen · pille · tekst i midten. Chips (32) og ikonknapper (36) er IKKE navigationsknapper og ændres aldrig med dem |
-| **Øvrige knaphøjder** | ikonknap **36** · status/dropdown i briefen **40** · luk/send i ark **44** |
+| **Navigationsknapper** (Ida 12/11, LÅST) | HVER knap med tekst (rød primær og grå sekundær, også »Rediger« og coverets »Tilbage«, Ida 14/11): **56 høje** i hele appen · pille · tekst i midten. Chips (32) og ikonknapper (36) er IKKE navigationsknapper og ændres aldrig med dem |
+| **Dropdown** (Ida 14/11, LÅST: som Content kalenderens) | **44 høj** · hjørner **14** · 1 px #DEDAD4 · hvid · luft 14 · tekst til venstre i sort #1A1A1A, 13 · pil 16 til højre i grå #6F6B66 · aldrig pille, aldrig centreret tekst · bredden følger stedet |
+| **Øvrige knaphøjder** | ikonknap **36** · luk/send i ark **44** |
 | **Ikonknap** | rund **36 × 36** · hvid · 1 px #DEDAD4 · streg #6F6B66 · ikonet 16 i midten · trykfelt 44 via ::before |
 | **Centrering (alle knapper)** | tekstens lodrette midte = knappens midte (≤ 1 px) · samlet ikon + tekst vandret i midten (≤ 1,5 px) · ikon og tekst flugter lodret. Mønster: `display:inline-flex; align-items:center; justify-content:center` (`:where(.dbtn)` nederst i basis-CSS) — aldrig lodret polstring 11/11 på en inline-block med tvunget højde |
 | **Skillelinje i flise** | 1 px #E3E2DE · KUN mellem forskelligt indhold (hook-delene, klippets felter) og under etiketten, når der er tekst under · **aldrig to streger i træk** (< 24 px imellem) · ingen streg i en dør · ingen streg over et enligt felt |
@@ -34,9 +35,11 @@ Kilden i koden er **MÅLKORT-BLOKKEN** sidst i det første `<style>` i `index.ht
 |---|---|
 | **Hjem computer, bud 4B** | panel **#F6F4F1** radius 28 luft 12, 24 mellem paneler · flise i panel hvid, **80 høj**, radius 20, ramme 1 px **#E3E2DE**, ingen skygge, 10 mellem · overskrift→panel 16 · datoen under hilsnen i heroen (den røde datobjælke er fjernet 11/11) (#FC2404, hvid 13/400) · datoboks 56 · pile runde 32 · første overskrift flugter med datofliserne (≤ 1 px) |
 | **Telefonens oplysnings-chips (briefoversigt)** | under statuslinjen, én linje, swipe sidelæns, chip 32 (12,5/400 #6F6B66), kun udfyldte, ingen +, ingen ikon, kun visning; coveret 228 |
-| **Story-række** | [status ⌄] [dato] samme højde **36**, 8 imellem, status til venstre, ⋯ yderst til højre; storytype-chips 36 på én linje under Titel (valgt = grå flueben) |
+| **Story-række** | [status ⌄] [dato] samme højde **36**, 8 imellem, status til venstre, ⋯ yderst til højre; storytype-chips 32 på én linje under Titel (valgt = rød, 14/11) |
 | **Upload-flise** (cover, Story, Den færdige video) | `.cv-upload`: hvid, stiplet 1,5 px #DEDAD4, radius 14, 9:16, grønt symbol + »Upload«; under upload står procesringen (husets ring, ubestemt) i flisen; ved fejl står årsagen + »Prøv igen« i flisen; færdig = video 9:16 + »Skift video« · »Download« · skraldespand (36) |
-| **Valgt chip i cover-editoren** | grå flueben, aldrig rød fyldt |
+| **Valgt chip i cover-editoren og slide-værktøjet** | rød fyldt med hvid tekst, intet flueben (14/11) |
+| **Content kalenderens værktøjslinje** | filter · søg · Arkiv · periode-dropdown · rød knap »+ Ny«; ingen Drive-mappe (14/11) |
+| **Briefen på computeren, ved status** | status-dropdown + de tre prikker; ingen blyant (»Ret titlen« ligger under prikkerne, 14/11) |
 
 ## Valg, hvor to udseender var »rigtige« (begrundelse)
 - **Flisetitel 18 (telefon 16), sort Poppins** — mest brugt på Retning-siden og samme som »Hvad er idéen?«, som Ida peger på som det rigtige. Den lille versal-etiket (»HVEM TALER OPSLAGET TIL?«) er væk.

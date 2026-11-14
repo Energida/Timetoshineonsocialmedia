@@ -109,6 +109,17 @@ for MK in "390 1200" "1440 940"; do
   echo "$UDM" | grep -q "SELE MAAL OK" || MAAL_OK=0
 done
 [ "$MAAL_OK" = "1" ] && echo "SELE MAAL OK: maalkortet holder paa 390 og 1440" || echo "SELE MAAL FEJL: afvigelser staar ovenfor"
+# REGEL-PORTEN (Ida 14/11: »lås i designlåsen og implementer i hele systemet«): valgt chip = rød uden flueben · dropdown i kalenderens form · knap med tekst = 56 — paa 390 og 1440.
+KR=$(python3 -c "import urllib.parse,sys;print(urllib.parse.quote(open(sys.argv[1]).read()))" "$ROD/tools/designlaas/probe-regler.js")
+REGLER_OK=1
+for RK in "390 1200" "1440 940"; do
+  set -- $RK
+  RAAR=$($TO "$C" $HL --no-sandbox --disable-gpu --window-size=$(($1+40)),$(($2+60)) --virtual-time-budget=60000 --enable-logging=stderr --v=0 --screenshot="$MAAL/regler-$1.png" "http://127.0.0.1:$PORT/sele.html?vis=kunde&fil=index-sele.html%3Fselekode%3DHINGES2026&bred=$1&hoej=$2&kode=$KR" 2>&1)
+  UDR=$(echo "$RAAR" | grep -a 'CONSOLE' | sed -E 's/^.*CONSOLE[:(][0-9]+\)?\] //; s/", source:.*$//; s/^"//' | grep -a 'SELE REGLER')
+  echo "[$1] ${UDR:-SELE REGLER FEJL: ingen maaling fra chromium}"
+  echo "$UDR" | grep -q "SELE REGLER OK" || REGLER_OK=0
+done
+[ "$REGLER_OK" = "1" ] && echo "SELE REGLER OK: de tre regler holder paa 390 og 1440" || echo "SELE REGLER FEJL: afvigelser staar ovenfor"
 # HEROENS PLADS (HAARD, Ida 26/9): titlen 40 px over coverets bund, 20/48 px fra venstre — kundeappen og Backstage, 390 og 1440.
 KH=$(python3 -c "import urllib.parse,sys;print(urllib.parse.quote(open(sys.argv[1]).read()))" "$ROD/tools/designlaas/probe-hero.js")
 HERO_OK=1
@@ -133,5 +144,5 @@ print('SELE SPOEGELSE OK: alle sideskift er rene paa 390 og 1440' if not fejl el
 " "$ROD" 2>&1)
 echo "$UDJ"
 echo "$UDJ" | grep -q "SELE SPOEGELSE OK" || HERO_OK=0
-[ "$HERO_OK" = "1" ] && [ "$MAAL_OK" = "1" ] && echo "$UDG" | grep -q "SELE GENSTART OK" && echo "$UD0" | grep -q "SELE POPUP-KILDE OK" && echo "$UD" | grep -q "SELE LAAS OK" && echo "$UD2" | grep -q "SELE SIDER OK" && echo "$UD4" | grep -q "SELE SIDER OK" && echo "$UD5" | grep -q "SELE BUD OK" && echo "$UD6" | grep -q "SELE BUD OK" && [ "$UX_OK" = "1" ] && [ "$BS_OK" = "1" ] && echo "$UD3" | grep -q "SELE BRIEF OK" && exit 0
+[ "$HERO_OK" = "1" ] && [ "$MAAL_OK" = "1" ] && [ "$REGLER_OK" = "1" ] && echo "$UDG" | grep -q "SELE GENSTART OK" && echo "$UD0" | grep -q "SELE POPUP-KILDE OK" && echo "$UD" | grep -q "SELE LAAS OK" && echo "$UD2" | grep -q "SELE SIDER OK" && echo "$UD4" | grep -q "SELE SIDER OK" && echo "$UD5" | grep -q "SELE BUD OK" && echo "$UD6" | grep -q "SELE BUD OK" && [ "$UX_OK" = "1" ] && [ "$BS_OK" = "1" ] && echo "$UD3" | grep -q "SELE BRIEF OK" && exit 0
 echo "SELE LAAS FEJL: maalingen sagde ikke OK"; exit 1

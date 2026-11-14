@@ -91,7 +91,7 @@ function maalSide(){
     ys.sort(function(a,b){return a-b}); for(var i=1;i<ys.length;i++){ N++; if(ys[i]-ys[i-1]<24) fejl("SKILLELINJE: to streger med "+(ys[i]-ys[i-1])+" px imellem i "+kl(f)); }
   });
   /* IKONRÆKKEN PÅ COMPUTER: kun ⋯ */
-  if(!TLF){ var lose=[].slice.call(document.querySelectorAll("#screen7 .bt-ik-baand > *, #screen7 .ss-top > .ss-cirk:not(.ss-mere)")   /* blyanten står ved de tre prikker på computeren (Ida 13/11: »de 3 prikker og blyant som de eneste«) */).filter(synlig).filter(function(e){ return !e.classList.contains("bt-mere-tlf") && !e.classList.contains("bt-status-baand"); });   /* status står foran ⋯ (Ida 9/11) */
+  if(!TLF){ var lose=[].slice.call(document.querySelectorAll("#screen7 .bt-ik-baand > *, #screen7 .ss-top > .ss-cirk:not(.ss-mere), #screen7 .brief-titel-over > .bt-blyant")   /* blyanten er væk på computeren (Ida 14/11): kun de tre prikker; »Ret titlen« ligger under dem */).filter(synlig).filter(function(e){ return !e.classList.contains("bt-mere-tlf") && !e.classList.contains("bt-status-baand"); });   /* status står foran ⋯ (Ida 9/11) */
     N++; if(lose.length) fejl("IKONRÆKKE: løse ikoner uden for ⋯: "+lose.map(function(e){return e.title||kl(e)}).join(", ")); }
 }
 function maalForsideTlf(){

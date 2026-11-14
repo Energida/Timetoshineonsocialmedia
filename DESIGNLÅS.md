@@ -1,3 +1,10 @@
+## HÅRD REGEL · 14. november · FIRE LÅSE: VALGT CHIP ER RØD · ALLE DROPDOWNS SOM KALENDERENS · HVER KNAP MED TEKST ER 56 · KALENDER OG BLYANT
+Kilden i koden er blokken »LÅS 14/11« sidst i det sidste `<style>` i `index.html`. Porten måler dem (`probe-maal.js`: `maalLaas1411`, `maalKalender1411`).
+1. **En valgt chip er rød med hvid tekst overalt** (Ida 14/11: »ja rød overalt - pånær de øverste chips i briefoversigten der viser de pågældende valg i fakta« · »ingen chips må have disse flueben - der skal de i stedet blive røde som alt andet«). Flade #FC2404, hvid tekst, intet flueben, ingen grå eller lysegrå »valgt«. Gælder b2b og admin: story-siden, story-arket, slide-værktøjet, cover-editoren, Profilen, mødenoterne og alle ark. Ikke valgt er stadig hvid med grå kant og grå tekst. Undtaget: fakta-chipsene øverst på briefoversigten (`.fb-hc`, kun visning) og de lange valgfliser (`.sa-lang`, som er fliser med husets flueben). Vælter 9/10 »valgt = lysegrå, aldrig rød«, 4/11 »grå flueben i cover-editoren« og 9/11 »valgt vises med mørkere kant«.
+2. **Alle dropdowns ser ud som Content kalenderens** (Ida 14/11: »alle drop downs i hele mit system skal låses som den i contentkalenderen«): 44 høj · hjørner 14 · 1 px kant #DEDAD4 · hvid · indre luft 14 · teksten til venstre i sort · pilen til højre i grå #6F6B66. Pillen med centreret tekst er død, og der findes ingen dropdown på 32, 36 eller 40. Bredden følger stedet; formen er låst. Listen, der åbner, er uændret. Vælter 9/11-statuspillen og 13/11 »dropdown i chipsform«. Bygget i v3269 for briefens status; resten af systemet rulles ud med UX-politiet.
+3. **Hver knap med tekst er 56 høj** (Ida 12/11 + 14/11: »og det er ALLE knapper. også rediger er en navigationsknap der skal have 56px« · klik »Ja, 56 også i coveret«). Også coverets »Tilbage« og briefoversigtens »Rediger«. Kun chips (32) og runde ikonknapper (36) er undtaget. En tekstknap i en anden højde er en fejl, ikke et valg.
+4. **Content kalenderen og briefen:** Drive-mappen står ikke som symbol i kalenderens værktøjslinje, og den røde knap hedder »+ Ny«. I briefen på computeren står kun de tre prikker ved status; blyanten er væk, og »Ret titlen« ligger under prikkerne. Porten forbyder løse ikoner dér.
+
 ## 13. november · HEALTH COACH — NOTERNE TIL DEN ENKELTE TEST (Idas klik 13/11, v3265)
 Idas noter fra de 22 Notion-undersider står ved hver test under hendes egne overskrifter »Noter« · »Kig efter« · »Kig på« (12 versal uden for flisen), hvert punkt sin egen flise, foldet ud. Telefon: efter »Læs først« og LIGE OVER testen. Computer: i højre spalte under »Læs først«. Underpunkter står som grå linjer i samme flise. Første bogstav vises stort; ordene er ellers ordret. Bud: https://claude.ai/artifact/EKsQknm2j7MnbzgmArs6CD. Billederne fra Notion er ikke med.
 
@@ -17,7 +24,7 @@ Afløser 15/40 (7/11) og 13/36 (21/9). Uvalgt tekst #6F6B66, valgt = rød med hv
 ## 9. november · STATUS: PILLE, AUTOMATIK OG FLISER (Ida 9/11)
 Statuspillen på briefoversigten står foran ⋯, 176 px bred, 44 px høj, sort 13 px tekst og pil centreret som én gruppe. · »Venter på godkendelse« og »Sendt til godkendelse« er ude som fliser: afsenderen ser »Forslag« i statuspillen. · Noget oprettet i kalenderen med en dato er automatisk »Planlagt«; »Brief i gang« kommer først, når man skriver i »Hvad er idéen?«. · Man bliver på kalenderen, til de tre trin i popuppen er udfyldt.
 
-## HÅRD REGEL · 9. november · NAVIGATIONSKNAPPER ER 44 PX I HELE B2B (Ida 9/11: »navigationsknapperne skal være 44 px i hele b2b … lås det i designlåsen«)
+## VÆLTET 12/11 og 14/11 (højden er 56, se »Navigationsknapper = 56« og låsen 14. november; statuspillen er nu en dropdown i kalenderens form) · 9. november · NAVIGATIONSKNAPPER VAR 44 PX I HELE B2B (Ida 9/11: »navigationsknapperne skal være 44 px i hele b2b … lås det i designlåsen«)
 Tilbage, Rediger, statuspillen, Næste, Gem ændringer og alle andre piller, der navigerer eller ændrer tilstand, er 44 px høje (Poppins 13, radius 999, kant 1 px). Porten måler det (»UENS pille«). Rediger er rød og primær; statuspillen står foran ⋯ i rækken til højre på computerens briefoversigt og skriveside og kan ændres uden først at trykke Rediger (Ida 9/11).
 
 ## 9. november · »KLAR TIL GODKENDELSE« HEDDER »FORSLAG« FOR KUNDEN (Ida 9/11)
@@ -3833,7 +3840,7 @@ Hver byggesten er sin egen flise i contentmodellens rækkefølge (USP · Målgru
 
 ## Navigationsknapper = 56 (LÅST 12. november, Idas valg i artifact AYsLo8hWHexAskZxZvdM9g)
 
-Knapper med tekst, der fører videre eller tilbage (den røde primære og den grå sekundære), er **56 høje** i hele appen. Chips er låst på 32 og er ikke navigationsknapper. Ikonknapper er 36. Kilden i koden er blokken »NAVIGATIONSKNAPPER = 56« sidst i det sidste `<style>` i `index.html`; nye navigationsknapper føjes til den blok. Målet står også i MÅLKORT.md.
+Knapper med tekst, der fører videre eller tilbage (den røde primære og den grå sekundære), er **56 høje** i hele appen. Præciseret 14/11: det gælder HVER knap med tekst, også »Rediger« og coverets »Tilbage«. Chips er låst på 32 og er ikke navigationsknapper. Ikonknapper er 36. Kilden i koden er blokken »NAVIGATIONSKNAPPER = 56« sidst i det sidste `<style>` i `index.html`; nye navigationsknapper føjes til den blok. Målet står også i MÅLKORT.md.
 
 
 ## Overskrift over fliser (LÅST 12. november, bud 1 + placering A, artifact Q9bqoBbxx7f3bMfau6tJNM)
