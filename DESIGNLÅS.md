@@ -3,6 +3,14 @@
 - »Kun det færdige står på briefoversigten« (26/9) gælder stadig: i en karrusel er et slide med eget billede færdigt. Coverbilledet til en reel er uændret (står, når det har tekst).
 - Koden: `cvEgetFoto(k)` (slidets eget foto, ikke coverets fælles billede) bruges i `cvSlideIdx()` og `cvForsideHtml()`.
 
+## HEALTH COACH: BILLEDER VED TESTENE (v3288, Idas klik 14/11 »Ja, byg dem ind« + »Ja, deploy«)
+
+- Under noterne på hver test (ikke Screening og Analyse af tests) står **Billeder**: billederne i fuld bredde med skarpe hjørner, skraldespand + »Slet« under hvert, og chippen »Tilføj billede«. Ida kan selv tilføje og slette.
+- Billederne ligger i det LUKKEDE lager `hc-billeder` (kun administrator må se, lægge op og slette; kortet »Billeder til Health Coach« i Maskinrummet). Aldrig i koden, aldrig på en offentlig adresse.
+- Mapper: `<del>-n-<test>` (kun den test), `<del>-g-<gruppe>` og `<del>-g-<område>` (fx hele Hofte). En fil, der hedder `<mappe>__<noget>.jpg`, lander selv i sin mappe, så mange billeder kan lægges op i ét valg.
+- Ved coretest 3, 4, 6, 7, 8 og 9 står **Kilde** med sidetallet i CHEK-manualen (kun sidetal, ingen afskrift).
+- Idas egne kursussider og fotos er til eget brug i det lukkede lager (Ida 14/11: »der er jo ingen der kommer til at se dette andet end mig« · »jeg har jo købt uddannelsen«). Skal en klient se dem, kræver det skolens tilladelse.
+
 ## 14. november · PORTEN MÅLER DE TRE REGLER I ARK OG I BACKSTAGE (Idas ord 14/11, v3285)
 - Ny måling `tools/designlaas/probe-regler2.js` (REGEL-PORTEN, DEL 2 i `koer.sh`), kundeappen og Backstage, 390 og 1440: valgt chip rød · dropdown 44 med hjørner 14 · knap med tekst 56.
 - Den besøger 15 af Backstages sider og åbner ark og popups én for én (81 i kundeappen, 66 i Backstage) og måler inde i hvert.

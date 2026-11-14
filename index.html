@@ -21805,7 +21805,41 @@ select c.relname as tabel, c.relrowsecurity as rls, p.policyname, p.cmd, p.roles
 from pg_class c join pg_namespace n on n.oid = c.relnamespace
 left join pg_policies p on p.schemaname = &#x27;public&#x27; and p.tablename = c.relname
 where n.nspname = &#x27;public&#x27; and c.relname in (&#x27;mail_log&#x27;,&#x27;mail_afmeldt&#x27;)
-order by 1;</pre></div><div id="sqlk_lektionfiler_23okt" data-kode="sql" data-dato="23. oktober 2026 14.30" style="border:1px solid var(--border);border-radius:12px;background:#fff;padding:12px 14px;margin-bottom:2px;margin-top:8px;"><div style="font-size:12.5px;font-weight:400;margin-bottom:3px;">Filer til lektionerne (fx PDF)</div><div style="font-size:11px;color:var(--gray3);line-height:1.6;">Laver et <b style="font-weight:400;">lukket</b> lager til filer på lektionerne. Kun du kan lægge filer op og slette dem. Kun dem, der er logget ind, kan hente dem. Intet for anonyme, ingen eksisterende data røres. Kan køres igen uden skade. Sig til Claude, når den er kørt &mdash; så testes de fire roller.</div><div style="display:flex;gap:6px;margin-top:9px;"><button class="row-btn" onclick="sqlKortKoert('sqlk_lektionfiler_23okt', this)" title="Er den k&oslash;rt i Supabase, s&aring; fjern kortet">K&oslash;rt <span style="width:14px;height:14px;border-radius:50%;background:var(--red);display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;vertical-align:-2px;"><svg width="7" height="7" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span> &mdash; fjern kortet</button><button class="dbtn primary" style="padding:7px 15px;" onclick="sqlKopier('sqlLektionFilerKode', this)">Kopi&eacute;r koden</button></div><pre id="sqlLektionFilerKode" style="display:none;margin:9px 0 0;background:#F7F9FB;border:1px solid var(--border);border-radius:12px;padding:12px 14px;font-size:10.5px;line-height:1.5;overflow-x:auto;white-space:pre-wrap;word-break:break-word;font-family:ui-monospace,Menlo,monospace;color:var(--black);">-- ================================================================
+order by 1;</pre></div><div id="sqlk_hcbilleder_14nov" data-kode="sql" data-dato="14. november 2026 14.00" style="border:1px solid var(--border);border-radius:12px;background:#fff;padding:12px 14px;margin-bottom:2px;margin-top:8px;"><div style="font-size:12.5px;font-weight:400;margin-bottom:3px;">Billeder til Health Coach</div><div style="font-size:11px;color:var(--gray3);line-height:1.6;">Laver et <b style="font-weight:400;">lukket</b> lager til billederne ved testene i Health Coach. Kun du (administrator) kan se dem, l&aelig;gge dem op og slette dem. Intet for kunder eller anonyme, ingen eksisterende data r&oslash;res. Kan k&oslash;res igen uden skade. Sig til Claude, n&aring;r den er k&oslash;rt.</div><div style="display:flex;gap:6px;margin-top:9px;"><button class="row-btn" onclick="sqlKortKoert('sqlk_hcbilleder_14nov', this)" title="Er den k&oslash;rt i Supabase, s&aring; fjern kortet">K&oslash;rt <span style="width:14px;height:14px;border-radius:50%;background:var(--red);display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;vertical-align:-2px;"><svg width="7" height="7" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span> &mdash; fjern kortet</button><button class="dbtn primary" style="padding:7px 15px;" onclick="sqlKopier('sqlHcBillederKode', this)">Kopi&eacute;r koden</button></div><pre id="sqlHcBillederKode" style="display:none;margin:9px 0 0;background:#F7F9FB;border:1px solid var(--border);border-radius:12px;padding:12px 14px;font-size:10.5px;line-height:1.5;overflow-x:auto;white-space:pre-wrap;word-break:break-word;font-family:ui-monospace,Menlo,monospace;color:var(--black);">-- ================================================================
+-- BILLEDER TIL HEALTH COACH · 14. november 2026
+-- Idas klik: »Ja, byg dem ind«. Kør i Supabase › SQL Editor.
+-- Kan køres igen uden skade.
+--
+-- HVAD DEN GØR (Security Contract §1 + §7):
+--  1. Et LUKKET lager »hc-billeder« (ikke offentligt), højst 10 MB
+--     pr. fil, kun billeder (jpg, png, webp).
+--  2. Se, lægge op, rette og slette: KUN administrator (er_admin()).
+--     Health Coach er Idas eget værktøj; ingen kunde har adgang.
+--  Intet for anon/public. Rører ingen eksisterende filer eller rækker.
+-- ================================================================
+begin;
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values (&#x27;hc-billeder&#x27;, &#x27;hc-billeder&#x27;, false, 10485760, array[&#x27;image/jpeg&#x27;, &#x27;image/png&#x27;, &#x27;image/webp&#x27;])
+on conflict (id) do update set public = false, file_size_limit = excluded.file_size_limit, allowed_mime_types = excluded.allowed_mime_types;
+
+drop policy if exists &quot;hc-billeder ses af admin&quot; on storage.objects;
+create policy &quot;hc-billeder ses af admin&quot; on storage.objects
+  for select to authenticated using (bucket_id = &#x27;hc-billeder&#x27; and er_admin());
+drop policy if exists &quot;hc-billeder laegges op af admin&quot; on storage.objects;
+create policy &quot;hc-billeder laegges op af admin&quot; on storage.objects
+  for insert to authenticated with check (bucket_id = &#x27;hc-billeder&#x27; and er_admin());
+drop policy if exists &quot;hc-billeder rettes af admin&quot; on storage.objects;
+create policy &quot;hc-billeder rettes af admin&quot; on storage.objects
+  for update to authenticated using (bucket_id = &#x27;hc-billeder&#x27; and er_admin()) with check (bucket_id = &#x27;hc-billeder&#x27; and er_admin());
+drop policy if exists &quot;hc-billeder slettes af admin&quot; on storage.objects;
+create policy &quot;hc-billeder slettes af admin&quot; on storage.objects
+  for delete to authenticated using (bucket_id = &#x27;hc-billeder&#x27; and er_admin());
+commit;
+
+-- KONTROL (skal vise: public = false · og fire regler, alle for authenticated)
+select id, public, file_size_limit from storage.buckets where id = &#x27;hc-billeder&#x27;;
+select policyname, cmd, roles from pg_policies
+where schemaname = &#x27;storage&#x27; and tablename = &#x27;objects&#x27; and policyname like &#x27;hc-billeder%&#x27; order by 1;</pre></div><div id="sqlk_lektionfiler_23okt" data-kode="sql" data-dato="23. oktober 2026 14.30" style="border:1px solid var(--border);border-radius:12px;background:#fff;padding:12px 14px;margin-bottom:2px;margin-top:8px;"><div style="font-size:12.5px;font-weight:400;margin-bottom:3px;">Filer til lektionerne (fx PDF)</div><div style="font-size:11px;color:var(--gray3);line-height:1.6;">Laver et <b style="font-weight:400;">lukket</b> lager til filer på lektionerne. Kun du kan lægge filer op og slette dem. Kun dem, der er logget ind, kan hente dem. Intet for anonyme, ingen eksisterende data røres. Kan køres igen uden skade. Sig til Claude, når den er kørt &mdash; så testes de fire roller.</div><div style="display:flex;gap:6px;margin-top:9px;"><button class="row-btn" onclick="sqlKortKoert('sqlk_lektionfiler_23okt', this)" title="Er den k&oslash;rt i Supabase, s&aring; fjern kortet">K&oslash;rt <span style="width:14px;height:14px;border-radius:50%;background:var(--red);display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;vertical-align:-2px;"><svg width="7" height="7" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span> &mdash; fjern kortet</button><button class="dbtn primary" style="padding:7px 15px;" onclick="sqlKopier('sqlLektionFilerKode', this)">Kopi&eacute;r koden</button></div><pre id="sqlLektionFilerKode" style="display:none;margin:9px 0 0;background:#F7F9FB;border:1px solid var(--border);border-radius:12px;padding:12px 14px;font-size:10.5px;line-height:1.5;overflow-x:auto;white-space:pre-wrap;word-break:break-word;font-family:ui-monospace,Menlo,monospace;color:var(--black);">-- ================================================================
 -- FILER TIL LEKTIONERNE (fx PDF) · 23. oktober 2026
 -- Idas klik: »På lektionen + Værktøjskassen«. Kør i Supabase › SQL
 -- Editor. Kan køres igen uden skade.
@@ -66912,7 +66946,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "3287";
+const APP_VERSION = "3288";
 const APP_BYGGET = "3. november";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_VERSION;   /* ingen dato (Ida 7/11: »hvorfor står der version 3. november?«) — datoen blev ikke rettet med, nummeret er sandheden */ } catch (e) {} });
 let NY_VERSION_KLAR = false;
@@ -93462,6 +93496,56 @@ async function hcTeksterGem() {
     hcGemtVis("Gemt"); return true;
   } catch (e) { HC.teksterSnavset = true; try { husBesked("Kunne ikke gemme. Prøv igen."); } catch (e2) {} return false; }
 }
+/* ===== HEALTH COACH: BILLEDER VED TESTENE (Idas klik 14/11 »Ja, byg dem ind«) =====
+   Idas billeder fra Notion (og dem, hun selv tilfoejer) ligger i det LUKKEDE lager »hc-billeder« (kun administrator, kortet i Maskinrummet).
+   Mapper: <del>-n-<test> (kun den test), <del>-g-<gruppe> (alle tests i gruppen) og <del>-g-<omraade> (fx hele Hofte).
+   En fil, der hedder <mappe>__<nr>.jpg, lander selv i sin mappe, saa alle Notion-billederne kan laegges op i eet valg. */
+HC.bil = {}; HC.bilFejl = false;
+function hcSlug(s) { return String(s || "").toLowerCase().replace(/æ/g, "ae").replace(/ø/g, "oe").replace(/å/g, "aa").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""); }
+function hcBilMapper(del, t) { const ud = []; [del.id + "-n-" + hcSlug(t.n), del.id + "-g-" + hcSlug(t.g), del.id + "-g-" + hcSlug(String(t.g || "").split(" · ")[0])].forEach(function (x) { if (ud.indexOf(x) < 0) ud.push(x); }); return ud; }
+function hcBilHtml(del, t) {
+  if (HC.bilFejl) return "";
+  const alle = []; hcBilMapper(del, t).forEach(function (m) { (HC.bil[m] || []).forEach(function (b) { alle.push(b); }); });
+  const skrald = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg>';
+  return hcOversk("Billeder") + alle.map(function (b) { return '<div class="hc-bil"><img src="' + esc(b.url) + '" alt="' + esc(t.n || t.g) + '" loading="lazy"><div class="hc-slet-rk"><button type="button" class="hc-ikon" aria-label="Slet" title="Slet" onclick="hcBilSlet(\'' + esc(b.sti) + '\')">' + skrald + '</button><span>Slet</span></div></div>'; }).join("")
+    + '<div class="hc-pluslinje"><button type="button" class="hc-pluschip" onclick="document.getElementById(\'hcBilFil\').click()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Tilføj billede</button><input type="file" id="hcBilFil" accept="image/jpeg,image/png,image/webp" multiple hidden onchange="hcBilOp(this)"></div>';
+}
+function hcBilTegn() { try { if (HC.vis !== "del") return; const del = HC_DELE[HC.del], t = del.trin[HC.trin]; const el = document.getElementById("hcBil"); if (el && t && !t.rk && !t.scr) el.innerHTML = hcBilHtml(del, t); } catch (e) {} }
+async function hcBilHent(del, t, tving) {
+  try {
+    if (!sb || HC.bilFejl) return; let nyt = false;
+    for (const m of hcBilMapper(del, t)) {
+      if (HC.bil[m] && !tving) continue;
+      const r = await sb.storage.from("hc-billeder").list(m, { limit: 100, sortBy: { column: "name", order: "asc" } });
+      if (r.error) { HC.bilFejl = true; hcBilTegn(); return; }   /* lageret findes ikke endnu (kortet er ikke koert): vis ingenting */
+      const filer = (r.data || []).filter(function (f) { return f && f.name && f.id; }).map(function (f) { return m + "/" + f.name; });
+      let ud = [];
+      if (filer.length) { const s = await sb.storage.from("hc-billeder").createSignedUrls(filer, 3600); if (!s.error && s.data) ud = s.data.filter(function (x) { return x && x.signedUrl; }).map(function (x) { return { sti: x.path, url: x.signedUrl }; }); }
+      HC.bil[m] = ud; nyt = true;
+    }
+    if (nyt) hcBilTegn();
+  } catch (e) {}
+}
+async function hcBilOp(felt) {
+  const filer = [].slice.call((felt && felt.files) || []); if (!filer.length || !sb) return;
+  const del = HC_DELE[HC.del], t = del.trin[HC.trin], egen = hcBilMapper(del, t)[0]; let fejl = 0, ok = 0; const ramt = {};
+  for (let i = 0; i < filer.length; i++) { const f = filer[i];
+    const mm = String(f.name).match(/^([a-z0-9-]+)__/), mappe = mm ? mm[1] : egen;
+    const ext = (String(f.name).match(/\.(jpe?g|png|webp)$/i) || [0, "jpg"])[1].toLowerCase();
+    try { const r = await sb.storage.from("hc-billeder").upload(mappe + "/" + Date.now() + "-" + i + "." + ext, f, { contentType: f.type || "image/jpeg", upsert: false });
+      if (r.error || !r.data) fejl++; else { ok++; ramt[mappe] = 1; } } catch (e) { fejl++; } }
+  try { felt.value = ""; } catch (e) {}
+  Object.keys(ramt).forEach(function (m) { delete HC.bil[m]; });
+  if (fejl) { try { husBesked(ok ? fejl + " af " + filer.length + " billeder kom ikke op. Prøv igen." : "Kunne ikke lægge billedet op. Prøv igen."); } catch (e) {} }
+  await hcBilHent(del, t, true);
+}
+function hcBilSlet(sti) {
+  const gaa = async function () { try { const r = await sb.storage.from("hc-billeder").remove([sti]); if (r.error || !r.data || !r.data.length) throw new Error("ikke slettet");
+      const m = String(sti).split("/")[0]; HC.bil[m] = (HC.bil[m] || []).filter(function (b) { return b.sti !== sti; }); hcBilTegn(); } catch (e) { try { husBesked("Kunne ikke slette billedet. Prøv igen."); } catch (e2) {} } };
+  try { arkSpoerg({ titel: "Slet billedet?", jaTekst: "Slet", nejTekst: "Annuller", ja: gaa }); } catch (e) { gaa(); }
+}
+/* hvor i CHEK-manualen testen staar (kun sidetal, ingen afskrift): fra laesningen 14/11 */
+const HC_KILDE = { "Test 3 - Tummy vacuums deep abdominal wall exercises": "82-84", "Test 4 - Forward flexion activation": "74-76", "Test 6 - Transversus abdominis strength": "78", "Test 7 - Lower abdominal coordination": "92", "Test 8 - Lower abdominal strength": "90", "Test 9 - Oblique muscle balance": "88" };
 function hcTestTegn(el, del, t) {
   const v = (HC.data.v[t.id] && !Array.isArray(HC.data.v[t.id])) ? HC.data.v[t.id] : {};
   const o = hcTestDele(t), sidst = HC.trin === del.trin.length - 1;
@@ -93472,6 +93556,8 @@ function hcTestTegn(el, del, t) {
     laes += hcTekstHtml(t, "hvad", "Hvad vi tester", o.hvad) + hcTekstHtml(t, "hvorfor", "Hvorfor", null); }
   if (o.obs.length) laes += hcOversk("Obs") + o.obs.map(function (x) { return hcNyFlise(x); }).join("");
   laes += hcNoterHtml(t);
+  if (!t.scr) { if (HC_KILDE[t.g]) laes += hcOversk("Kilde") + hcNyFlise("Scientific Core Conditioning, side " + HC_KILDE[t.g]);
+    laes += '<div id="hcBil">' + hcBilHtml(del, t) + '</div>'; }
   if (del.laes.length) laes += '<div class="hc-laesfoerst' + (HC.trin === 0 ? '' : ' hc-kun-pc') + '">' + hcOversk("Læs først") + del.laes.map(function (x) { return hcNyFlise(x); }).join("") + '</div>';
   let goer = "";
   if (o.opt) goer += hcOversk("Optimal") + hcNyFlise(o.opt);
@@ -93494,6 +93580,7 @@ function hcTestTegn(el, del, t) {
     + '<div class="hc-ny-flade"><div class="hc-ny-laes">' + laes + '</div><div class="hc-ny-goer hc-test">' + goer + '</div>'
     + '<div class="hc-bund">' + hcKnap("Tilbage", "hcTrin(-1)", false) + hcKnap(hcHarSvar(t, v) ? (sidst ? "Færdig" : "Næste") : "Spring over", "hcTrin(1)", true, "hcNaeste") + '</div></div></div>';
   hcHoejde();
+  if (!t.scr) hcBilHent(del, t);
 }
 function hcDelTegn(el) {
   const del = HC_DELE[HC.del]; if (HC.trin < 0) HC.trin = 0; if (HC.trin >= del.trin.length) HC.trin = del.trin.length - 1;
@@ -93557,7 +93644,7 @@ function hcRaekkeSlet(i) {
   try { arkSpoerg({ titel: "Slet testen?", jaTekst: "Slet", nejTekst: "Annuller", ja: gaa }); } catch (e) { gaa(); }
 }
 try { window.addEventListener("pagehide", function () { try { hcGemNu(); } catch (e) {} }); document.addEventListener("visibilitychange", function () { if (document.hidden) { try { hcGemNu(); } catch (e) {} } }); } catch (e) {}
-try { const hcGl = window.nulstilBrugerCache; if (typeof hcGl === "function") window.nulstilBrugerCache = function () { try { HC.liste = []; HC.klient = null; HC.data = null; HC.noegle = ""; HC.snavset = false; HC.hentet = false; HC.vis = "forside"; HC.tekster = {}; HC.teksterHentet = false; HC.teksterSnavset = false; HC.ret = ""; } catch (e) {} return hcGl.apply(this, arguments); }; } catch (e) {}
+try { const hcGl = window.nulstilBrugerCache; if (typeof hcGl === "function") window.nulstilBrugerCache = function () { try { HC.liste = []; HC.klient = null; HC.data = null; HC.noegle = ""; HC.snavset = false; HC.hentet = false; HC.vis = "forside"; HC.tekster = {}; HC.teksterHentet = false; HC.teksterSnavset = false; HC.ret = ""; HC.bil = {}; HC.bilFejl = false; } catch (e) {} return hcGl.apply(this, arguments); }; } catch (e) {}
 /* den lange Tilbage paa telefonen er kun skjult, mens en test er fremme — klassen ryddes, saa snart en anden side aabner */
 (function () { try { const gA = window.mrAabn, gV = window.visDashSide; const ryd = function () { try { document.body.classList.remove("hc-del"); } catch (e) {} };
   if (typeof gA === "function") window.mrAabn = function (id) { if (id !== "healthcoach") ryd(); return gA.apply(this, arguments); };
@@ -96282,6 +96369,10 @@ html body:not(#l1):not(#l2):not(#l3):not(#l4):not(#l5):not(#l6):not(#l7):not(#l8
 #hcHost .hc-chip.on { background:#FC2404; border-color:#FC2404; color:#fff; }
 #hcHost .hc-bund { display:grid; grid-template-columns:1fr 2fr; gap:10px; }
 #hcHost .hc-faner { margin-bottom:24px; }
+#hcHost .hc-bil { margin-top:10px; }
+#hcHost .hc-oversk + .hc-bil { margin-top:0; }
+#hcHost .hc-bil img { display:block; width:100%; height:auto; border-radius:0; background:#fff; }
+#hcHost .hc-bil .hc-slet-rk { margin-top:8px; }
 #hcHost .hc-faner .hc-chip { flex:0 0 auto; }
 #hcHost .hc-runde { cursor:pointer; font-size:15px; padding:16px 20px; }
 #hcHost .hc-runde .hc-hj { display:block; }
