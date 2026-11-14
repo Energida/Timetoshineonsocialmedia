@@ -127,7 +127,7 @@ setTimeout(async function () {
         var smaa = [];
         kn.forEach(function (b) {
           var q = b.getBoundingClientRect(); if (q.height >= 44) return;
-          if (q.top < 30 || q.bottom > innerHeight - 30) { try { b.scrollIntoView({ block: "center" }); } catch (e) {} q = b.getBoundingClientRect(); }
+          if (q.top < 110 || q.bottom > innerHeight - 110) { try { b.scrollIntoView({ block: "center" }); } catch (e) {} q = b.getBoundingClientRect(); }   /* 14/11: 110, saa bundmenuen ikke daekker trykfeltet under maalingen */
           if (q.left < 0 || q.right > innerWidth) { try { b.scrollIntoView({ block: "nearest", inline: "center" }); } catch (e) {} q = b.getBoundingClientRect(); }   /* swipe-raekker (25/10): chippen rulles ind sidelaens, foer trykfladen maales */
           var cx = q.left + q.width / 2, cy = q.top + q.height / 2;
           var op = document.elementFromPoint(cx, cy - 21), ned = document.elementFromPoint(cx, cy + 21);
