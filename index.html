@@ -6356,6 +6356,17 @@ textarea.kbu-lang { min-height:72px; }
 .kbu-chip { height:36px; padding:0 14px; border-radius:999px; border:1px solid var(--border); background:#fff; color:#6F6B66; font:400 12.5px Poppins,sans-serif; cursor:pointer; }
 .kbu-chip.on { background:var(--red); border-color:var(--red); color:#fff; }
 .kbu-under { position:fixed; top:0; bottom:0; right:0; left:var(--kbs-venstre, 0px); background:#fff; overflow-y:auto; z-index:20; text-align:left; }
+.kbu-fl, button.kbu-fl { white-space:normal; }   /* appens »knapper deler sig aldrig« (22/7) må ikke ramme en flise, der er en knap (lære 12/9, v1849) */
+.kbu-skl { display:block; height:1px; background:var(--border); margin:14px 0 12px; }
+.kbu-besk { display:block; font-size:14px; line-height:1.5; color:#6F6B66; }
+.kbu-besk.udf { color:var(--black); }
+.kbu-tom { color:#6F6B66; }
+.kbu-chips { display:flex; flex-wrap:wrap; gap:8px; }
+.kbu-chips .kbu-chip { height:32px; }
+.kbu-ark-et { font:400 10px Poppins,sans-serif; letter-spacing:1.5px; text-transform:uppercase; color:#6F6B66; margin:0 0 6px; }
+.kbu-ark-felt { display:block; width:100%; box-sizing:border-box; min-height:44px; border:1px solid var(--border); border-radius:14px; padding:11px 14px; font:400 16px/1.45 Poppins,sans-serif; color:var(--black); background:#fff; outline:none; resize:vertical; margin:0 0 16px; }
+.kbu-ark-kn { display:grid; gap:10px; margin-top:8px; }
+.kbu-knap.kbu-roed { background:var(--red); border-color:var(--red); color:#fff; }
 @media (min-width:1000px) {
   .kbu { display:grid; grid-template-columns:minmax(0,1fr) 380px; gap:48px; align-items:start; }
   .kbu-v { grid-column:1; grid-row:1; min-width:0; }
@@ -6381,6 +6392,8 @@ textarea.kbu-lang { min-height:72px; }
   .kbu-h > .kbu-valg { margin-bottom:32px; }
   .kbu-h > #kbuKvit { order:0; margin:-24px 0 32px; }
   .kbu-under { left:0; }
+  .kbu-h > .kbu-type { order:2; }
+  .kbu-h > .kbu-ovr.kbu-type { margin-top:32px; }
   .kbu-under .kbs-rk { display:none; }
 }
 /* MANUS I FULD SKAERM (Ida 2/9: "jeg vil gerne at manus aabner som hel skaerm hvis man
@@ -49100,6 +49113,7 @@ function kbuHtml(o) {
     + '<div class="kbu-fl"><input id="kbVideo" class="kbu-felt" type="url" inputmode="url" aria-label="Video" placeholder="Indsæt linket til videoen" value="' + esc(String(o.video_link || "")) + '" onchange="kbLinksGem(this)"></div>'
     + '<div class="kbu-kvit" id="kbLinksStatus"></div>'
     + '<div id="kbuFiler"></div>'
+    + '<div id="kbuOpg"></div>'
     + '</div></div>';
 }
 /* Henter kundens udgave + kladdens filer og tegner fliserne og Status. Kaldes, når fanen åbnes. */
@@ -49111,20 +49125,22 @@ async function kbuTegn() {
   kbuStatusTegn();
   if (!lekId || typeof sb === "undefined" || !sb) { KBU.hentet = true; kbuStatusTegn(); kbuFilerTegn(); return; }
   try {
-    const r = await sb.from("lektioner").select("id,titel,beskrivelse,video_link").eq("id", lekId).maybeSingle();
+    let r = await sb.from("lektioner").select("id,titel,beskrivelse,video_link,oevelse_art").eq("id", lekId).maybeSingle();
+    if (r.error) { KBU.udenArt = true; r = await sb.from("lektioner").select("id,titel,beskrivelse,video_link").eq("id", lekId).maybeSingle(); }
     if (r.error) KBU.fejl = true; else KBU.pub = r.data || null;
   } catch (e) { KBU.fejl = true; }
   try { KBU.filPub = await lekFilerHent(lekId, true); } catch (e) { KBU.filPub = []; }
   try { const r = await sb.storage.from(LEK_LAGER).list(KBU_KLADDE + lekId, { limit: 100, sortBy: { column: "name", order: "asc" } }); KBU.filKladde = ((r && r.data) || []).filter(function (f) { return f && f.name && f.id !== null && f.name !== ".emptyFolderPlaceholder"; }); } catch (e) { KBU.filKladde = []; }
-  try { const r = await sb.from("skema_svar").select("svar").eq("kode", "ENERGIDA").eq("navn", "config").eq("skema", "lektion_kladde_" + lekId).maybeSingle(); KBU.slet = (r && r.data && r.data.svar && Array.isArray(r.data.svar.slet)) ? r.data.svar.slet : []; } catch (e) { KBU.slet = []; }
+  try { const r = await sb.from("skema_svar").select("svar").eq("kode", "ENERGIDA").eq("navn", "config").eq("skema", "lektion_kladde_" + lekId).maybeSingle(); const sv = (r && r.data && r.data.svar) || {}; KBU.slet = Array.isArray(sv.slet) ? sv.slet : []; KBU.oev = (sv.oev && Array.isArray(sv.oev.spm)) ? sv.oev : null; KBU.arkiv = Array.isArray(sv.arkiv) ? sv.arkiv : []; } catch (e) { KBU.slet = []; KBU.oev = null; KBU.arkiv = []; }
   if (String(KBU.id) !== String(KLIP_BRIEF_ID)) return;
   KBU.hentet = true;
-  kbuStatusTegn(); kbuFilerTegn();
+  kbuStatusTegn(); kbuFilerTegn(); kbuOpgTegn();
+  if (KBU.under === "__opg") kbuOpgAabn();
 }
 function kbuErUdgivet() {
   const o = kbuO(); if (!o || !KBU.pub) return false;
   return kbuNorm(KBU.pub.titel) === kbuNorm(kbuNavn(o)) && kbuNorm(KBU.pub.beskrivelse) === kbuNorm(o.beskrivelse) && kbuNorm(KBU.pub.video_link) === kbuNorm(o.video_link)
-    && !KBU.filKladde.length && !KBU.slet.length;
+    && !KBU.filKladde.length && !KBU.slet.length && !kbuOpgAendret();
 }
 function kbuStatusTegn() {
   const t = document.getElementById("kbuStatusT"); if (!t) return;
@@ -49140,7 +49156,7 @@ function kbuArk(titel, chips, valgt, klik) {
   window.__KBU_VALG = klik;
   m.innerHTML = '<div class="bs-flyt-ark kbu-ark"><div class="kbu-ark-t">' + esc(titel) + '</div><div class="kbu-ark-chips">'
     + chips.map(function (c) { return '<button type="button" class="kbu-chip' + (c === valgt ? ' on' : '') + '" onclick="bsFlytLuk();try{window.__KBU_VALG(\'' + esc(c).replace(/'/g, "") + '\')}catch(e){}">' + esc(c) + '</button>'; }).join("")
-    + '</div><button type="button" class="kbu-knap" onclick="bsFlytLuk()">Annuller</button></div>';
+    + '</div></div>';   /* intet Annuller: krydset er vejen ud (Ida 7/10) */
   m.style.display = "flex";
   m.onclick = function (e) { if (e.target === m) bsFlytLuk(); };
 }
@@ -49151,7 +49167,11 @@ function kbuStatusArk() {
 }
 function kbuTilfoej() {
   if (!KBU.lekId) { kbuKvit("Lektionen er ikke koblet til kundernes lektioner.", true); return; }
-  kbuArk("Tilføj", ["Materiale"], "", function (v) { if (v === "Materiale") { const i = document.getElementById("kbuFilInput"); if (i) i.click(); } });
+  const valg = ["Materiale"]; if (!kbuOpgListe().length) { valg.push("Opgave", "Refleksionsøvelse"); }
+  kbuArk("Tilføj", valg, "", function (v) {
+    if (v === "Materiale") { const i = document.getElementById("kbuFilInput"); if (i) i.click(); return; }
+    kbuOpgSikr(); KBU.oev.art = v === "Opgave" ? "opgave" : "refleksion"; kbuOpgGemKladde(); kbuOpgAabn(); setTimeout(function () { kbuSpmArk(-1); }, 150);
+  });
 }
 function kbuNavnGem() {
   const el = document.getElementById("kbuNavn"), t = document.getElementById("kbTitel"); if (!el || !t) return;
@@ -49180,7 +49200,7 @@ function kbuFilerTegn() {
   try { if (window.matchMedia("(max-width:999px)").matches) [].forEach.call(el.querySelectorAll(".kbu-dor"), function (d) { bsSwipeSlet(d); }); } catch (e) {}
 }
 async function kbuKladdeGem() {
-  const raekke = { kode: "ENERGIDA", navn: "config", skema: "lektion_kladde_" + KBU.lekId, svar: { slet: KBU.slet.slice() } };
+  const raekke = { kode: "ENERGIDA", navn: "config", skema: "lektion_kladde_" + KBU.lekId, svar: { slet: KBU.slet.slice(), oev: KBU.oev || null, arkiv: (KBU.arkiv || []).slice() } };
   const u = await sb.from("skema_svar").update({ svar: raekke.svar }).eq("kode", "ENERGIDA").eq("navn", "config").eq("skema", raekke.skema).select("id");
   if (u.error) return false;
   if (u.data && u.data.length) return true;
@@ -49235,7 +49255,7 @@ function kbuMaterialeAabn(navn) {
     + '<div class="kbu-kvit" id="kbuUnderKvit"></div></div></div></div>';
   const m = document.querySelector("#modalBack.kbs-side > .modal") || document.body; m.appendChild(d);
 }
-function kbuUnderLuk() { const d = document.getElementById("kbuUnder"); if (d) d.remove(); }
+function kbuUnderLuk() { const d = document.getElementById("kbuUnder"); if (d) d.remove(); if (KBU.under === "__opg") KBU.under = null; }
 async function kbuFilHent(navn) {
   const kladde = KBU.filKladde.some(function (f) { return f.name === navn; });
   try { const r = await sb.storage.from(LEK_LAGER).createSignedUrl((kladde ? KBU_KLADDE : "") + KBU.lekId + "/" + navn, 3600); if (r.error || !r.data) throw 0; const a = document.createElement("a"); a.href = r.data.signedUrl; a.target = "_blank"; a.rel = "noopener"; document.body.appendChild(a); a.click(); a.remove(); } catch (e) { husBesked("Filen kunne ikke hentes. Prøv igen."); }
@@ -49262,6 +49282,14 @@ async function kbuUdgiv() {
     const r = await sb.from("lektioner").update({ titel: navn, beskrivelse: kbuNorm(o.beskrivelse) ? String(o.beskrivelse).trim() : null, video_link: kbuNorm(o.video_link) || null }).eq("id", KBU.lekId).select("id");
     if (r.error || !(r.data && r.data.length)) mangler.push("navn, beskrivelse og video");
   } catch (e) { mangler.push("navn, beskrivelse og video"); }
+  if (kbuOpgAendret()) {
+    const liste = KBU.oev.spm.map(ovNorm).filter(Boolean);
+    try { const g = await oevelserGem(KBU.lekId, liste, liste.length === 0); if (!g || !g.ok) mangler.push("spørgsmålene"); else KBU.oevSkrevet = true; } catch (e) { mangler.push("spørgsmålene"); }
+    if (KBU.oev.art !== kbuOpgPubArt()) {
+      try { const ra = await sb.from("lektioner").update({ oevelse_art: KBU.oev.art }).eq("id", KBU.lekId).select("id"); if (ra.error || !(ra.data && ra.data.length)) mangler.push("typen"); else { const l = (KURSUS_LEKTIONER || []).find(function (x) { return x.id === KBU.lekId; }); if (l) l.oevelse_art = KBU.oev.art; } } catch (e) { mangler.push("typen"); }
+    }
+    if (mangler.indexOf("spørgsmålene") < 0 && mangler.indexOf("typen") < 0) KBU.oev = null;
+  }
   for (const f of KBU.filKladde.slice()) {
     try {
       if (KBU.filPub.some(function (x) { return x.name === f.name; })) { const d = await sb.storage.from(LEK_LAGER).remove([KBU.lekId + "/" + f.name]); if (d.error) throw d.error; }
@@ -49278,6 +49306,94 @@ async function kbuUdgiv() {
   await kbuTegn();
   if (mangler.length) kbuKvit("Ikke udgivet: " + mangler.join(", ") + ". Prøv igen.", true);
   else { kbuKvit(""); try { husKvit("Lektionen er udgivet."); } catch (e) {} }
+}
+/* ===== OPGAVER OG REFLEKSIONSØVELSER PÅ FANEN INDHOLD (Idas klik 14/11, trin b; låst bud 4/computer bud 2) =====
+   Kladden står i KBU.oev = { art, spm:[{id, spm, besk}] } i skema_svar ENERGIDA/config/lektion_kladde_<id> (kunder kan ikke læse den).
+   Kunden har stadig den udgivne liste (lektion_oevelser), til Status sættes til Udgivet. KUNDERNES SVAR hænger på spørgsmålets id
+   (ovNoegle) og røres aldrig: et nyt spørgsmål får et nyt id (ovNytId, genbruges aldrig), et slettet lægges i KBU.arkiv med sit id,
+   og mangler bare ét spørgsmål et id, spærres slet og flyt (svar på pladsen må ikke skifte spørgsmål). */
+function kbuOpgPubListe() { try { const l = (KURSUS_LEKTIONER || []).find(function (x) { return x.id === KBU.lekId; }); return (l && Array.isArray(l.ovelse)) ? l.ovelse : []; } catch (e) { return []; } }
+function kbuOpgPubArt() { const a = KBU.pub && KBU.pub.oevelse_art; return (a === "opgave" || a === "refleksion") ? a : oevArt(KBU.lekId); }
+function kbuOpgListe() { return KBU.oev ? KBU.oev.spm : kbuOpgPubListe(); }
+function kbuOpgArt() { return KBU.oev ? KBU.oev.art : kbuOpgPubArt(); }
+function kbuOpgOrd() { return kbuOpgArt() === "opgave" ? "Opgave" : "Refleksionsøvelse"; }
+function kbuOpgNorm(liste) { return JSON.stringify((liste || []).map(ovNorm).filter(Boolean)); }
+function kbuOpgAendret() { return !!(KBU.oev && (kbuOpgNorm(KBU.oev.spm) !== kbuOpgNorm(kbuOpgPubListe()) || KBU.oev.art !== kbuOpgPubArt())); }
+function kbuOpgSikr() { if (!KBU.oev) KBU.oev = { art: kbuOpgPubArt(), spm: kbuOpgPubListe().map(function (x) { return (x && typeof x === "object") ? Object.assign({}, x) : x; }) }; }
+function kbuOpgAlleHarId() { return kbuOpgListe().every(function (x) { return !!ovId(x); }); }
+async function kbuOpgGemKladde() {
+  kbuStatusTegn(); kbuOpgTegn();
+  try { if (!(await kbuKladdeGem())) kbuKvit("Kladden blev ikke gemt. Prøv igen.", true); } catch (e) { kbuKvit("Kladden blev ikke gemt. Prøv igen.", true); }
+}
+function kbuOpgTegn() {
+  const el = document.getElementById("kbuOpg"); if (!el) return;
+  const n = kbuOpgListe().length;
+  el.innerHTML = n ? '<div class="kbu-ovr">' + esc(kbuOpgOrd()) + '</div><button type="button" class="kbu-fl kbu-dor" onclick="kbuOpgAabn()">' + n + (n === 1 ? ' spørgsmål' : ' spørgsmål') + '</button>' : '';
+}
+/* OPGAVENS SIDE: venstre = en flise pr. spørgsmål (spørgsmål · streg · beskrivelse); højre/nederst = Type, Tilføj, Slet */
+function kbuOpgAabn() {
+  KBU.under = "__opg"; kbuUnderLuk(); KBU.under = "__opg";
+  const o = kbuO(); const tb = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>';
+  const plus = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>';
+  const liste = kbuOpgListe(), art = kbuOpgArt();
+  const fl = liste.map(function (x, i) {
+    const b = ovBesk(x);
+    return '<div class="kbu-ovr' + (i ? '' : ' kbu-foerst') + '">Spørgsmål ' + (i + 1) + '</div>'
+      + '<button type="button" class="kbu-fl kbu-dor kbu-spm" data-slet="kbuSpmSletSpoerg(' + i + ')" onclick="kbuSpmArk(' + i + ')">' + esc(ovSpm(x))
+      + '<span class="kbu-skl"></span><span class="kbu-besk' + (b ? ' udf' : '') + '">' + esc(b || "Beskrivelse (valgfri)") + '</span></button>';
+  }).join("") || '<div class="kbu-ovr kbu-foerst">Spørgsmål</div><button type="button" class="kbu-fl kbu-dor kbu-tom" onclick="kbuSpmArk(-1)">Skriv det første spørgsmål</button>';
+  const d = document.createElement("div"); d.id = "kbuUnder"; d.className = "kbu-under";
+  d.innerHTML = '<div class="kbs-cover"><button type="button" class="kbs-tilbage-tlf" onclick="kbuUnderLuk()">' + tb + 'Tilbage</button>'
+    + '<div class="kbs-hero"><h2 class="kbs-titel">' + esc(kbuOpgOrd()) + '</h2><div class="kbs-modul">' + esc(titelVis((o && o.titel) || "")) + '</div></div></div>'
+    + '<div class="kbs-rk"><button type="button" class="kbs-tilbage" onclick="kbuUnderLuk()">' + tb + 'Tilbage</button></div>'
+    + '<div class="kbs-krop"><div class="kbu"><div class="kbu-h">'
+    + '<div class="kbu-ovr kbu-foerst kbu-type">Type</div><div class="kbu-chips kbu-type">'
+    + ['opgave', 'refleksion'].map(function (a) { return '<button type="button" class="kbu-chip' + (a === art ? ' on' : '') + '" onclick="kbuOpgArtSaet(\'' + a + '\')">' + (a === "opgave" ? "Opgave" : "Refleksionsøvelse") + '</button>'; }).join("") + '</div>'
+    + '<div class="kbu-kn"><button type="button" class="kbu-knap" onclick="kbuSpmArk(-1)">' + plus + 'Tilføj</button>'
+    + (liste.length ? '<button type="button" class="kbu-knap" onclick="kbuOpgSletSpoerg()">' + ((typeof BS_SKRALD_SVG !== "undefined") ? BS_SKRALD_SVG : "") + '<span>Slet</span></button>' : '') + '</div>'
+    + '<div class="kbu-kvit" id="kbuOpgKvit"></div></div>'
+    + '<div class="kbu-v">' + fl + '</div></div></div>';
+  const m = document.querySelector("#modalBack.kbs-side > .modal") || document.body; m.appendChild(d);
+  try { if (window.matchMedia("(max-width:999px)").matches) [].forEach.call(d.querySelectorAll(".kbu-spm"), function (x) { bsSwipeSlet(x); }); } catch (e) {}
+}
+function kbuOpgKvit(t, fejl) { const k = document.getElementById("kbuOpgKvit"); if (k) { k.textContent = t || ""; k.classList.toggle("fejl", !!fejl); } }
+function kbuOpgArtSaet(a) { kbuOpgSikr(); KBU.oev.art = a === "opgave" ? "opgave" : "refleksion"; kbuOpgGemKladde(); kbuOpgAabn(); }
+/* Det lille ark til ét spørgsmål: Spørgsmål · Beskrivelse (valgfri) · Gem · Slet · Annuller. i = -1 er et nyt spørgsmål. */
+function kbuSpmArk(i) {
+  const x = i >= 0 ? kbuOpgListe()[i] : null;
+  let m = document.getElementById("bsFlytMenu"); if (!m) { m = document.createElement("div"); m.id = "bsFlytMenu"; document.body.appendChild(m); }
+  m.innerHTML = '<div class="bs-flyt-ark kbu-ark"><div class="kbu-ark-t">' + (i >= 0 ? 'Spørgsmål ' + (i + 1) : 'Nyt spørgsmål') + '</div>'
+    + '<div class="kbu-ark-et">Spørgsmål</div><textarea id="kbuSpmFelt" class="kbu-ark-felt" rows="2">' + esc(x ? String((typeof x === "object" ? x.spm : x) || "") : "") + '</textarea>'
+    + '<div class="kbu-ark-et">Beskrivelse (valgfri)</div><textarea id="kbuBeskFelt" class="kbu-ark-felt" rows="2" placeholder="Skriv beskrivelsen her">' + esc(x && typeof x === "object" ? String(x.besk || "") : "") + '</textarea>'
+    + '<div class="kbu-ark-kn"><button type="button" class="kbu-knap kbu-roed" onclick="kbuSpmGem(' + i + ')">Gem</button>'
+    + (i >= 0 ? '<button type="button" class="kbu-knap" onclick="bsFlytLuk();kbuSpmSletSpoerg(' + i + ')">' + ((typeof BS_SKRALD_SVG !== "undefined") ? BS_SKRALD_SVG : "") + '<span>Slet</span></button>' : '')
+    + '</div></div>';   /* intet Annuller: krydset er vejen ud (Ida 7/10) */
+  m.style.display = "flex"; m.onclick = function (e) { if (e.target === m) bsFlytLuk(); };
+  setTimeout(function () { const f = document.getElementById("kbuSpmFelt"); if (f && i < 0) f.focus(); }, 60);
+}
+function kbuSpmGem(i) {
+  const q = String((document.getElementById("kbuSpmFelt") || {}).value || "").trim(), b = String((document.getElementById("kbuBeskFelt") || {}).value || "").trim();
+  if (!q) { const f = document.getElementById("kbuSpmFelt"); if (f) f.focus(); return; }
+  kbuOpgSikr();
+  if (i < 0) KBU.oev.spm.push(b ? { id: ovNytId(), spm: q, besk: b } : { id: ovNytId(), spm: q });   /* et nyt spørgsmål fødes med sit id (6/8) */
+  else { const x = KBU.oev.spm[i]; KBU.oev.spm[i] = (x && typeof x === "object") ? Object.assign({}, x, { spm: q, besk: b }) : (b ? { spm: q, besk: b } : q); }
+  bsFlytLuk(); kbuOpgGemKladde(); kbuOpgAabn();
+}
+function kbuSpmSletSpoerg(i) {
+  if (!kbuOpgAlleHarId()) { kbuOpgKvit("Et spørgsmål her mangler sit id, så intet kan slettes, før det er rettet. Kundernes svar kunne ellers skifte spørgsmål.", true); setTimeout(kbuOpgAabn, 200); return; }
+  arkSpoerg({ titel: "Slet spørgsmålet?", tekst: "Kundernes svar bliver gemt. Spørgsmålet forsvinder fra lektionen, når du udgiver.", jaTekst: "Ja, slet", nejTekst: "Nej", ja: function () {
+    kbuOpgSikr(); const x = KBU.oev.spm.splice(i, 1)[0];
+    if (x) (KBU.arkiv = KBU.arkiv || []).push(Object.assign({}, typeof x === "object" ? x : { spm: x }, { arkiveret: new Date().toISOString() }));
+    kbuOpgGemKladde(); kbuOpgAabn();
+  } });
+  setTimeout(function () { if (KBU.under === "__opg" && !document.getElementById("kbuSpmFelt")) kbuOpgAabn(); }, 200);   /* en fortrudt swipe lægger flisen tilbage */
+}
+function kbuOpgSletSpoerg() {
+  if (!kbuOpgAlleHarId()) { kbuOpgKvit("Et spørgsmål her mangler sit id, så intet kan slettes, før det er rettet.", true); return; }
+  arkSpoerg({ titel: "Slet " + kbuOpgOrd().toLowerCase() + "en?", tekst: "Kundernes svar bliver gemt. Alle spørgsmål forsvinder fra lektionen, når du udgiver.", jaTekst: "Ja, slet", nejTekst: "Nej", ja: function () {
+    kbuOpgSikr(); KBU.oev.spm.forEach(function (x) { (KBU.arkiv = KBU.arkiv || []).push(Object.assign({}, typeof x === "object" ? x : { spm: x }, { arkiveret: new Date().toISOString() })); });
+    KBU.oev.spm = []; kbuOpgGemKladde(); kbuUnderLuk(); KBU.under = null;
+  } });
 }
 /* NYT FRA KUNDERNE PAA DASHBOARDET (Ida 11/11): de nyeste kommentarer paa lektionerne. »Laest« gemmes paa denne enhed (localStorage) — ingen ny tabel, ingen raekke i basen roeres */
 function liveFbNoegle(r) { return [r.kode || r.navn || "", r.id, r.dato || "", String(r.kommentar || "").slice(0, 24)].join("|"); }
@@ -49587,7 +49703,7 @@ function klipBriefRender() {
     + '<div class="kbs-kun-optag">' + kbUnderKortHtml(o) + '</div>'
     + '<div class="kbs-kun-skriv">' + kbLekIdeerHtml(o) + '</div>'   /* idéerne til manus under manus (Ida 27/9: »kan ikke se nogle forslag til ideer til manus under lektionen«) */
     + '<div class="kbs-kun-udgiv">' + kbuHtml(o) + '</div>'   /* FANEN UDGIV (Idas klik 14/11): navn, beskrivelse, video, materialer og Status samlet ét sted */
-    + '<div class="kbs-kun-skriv">' + ovelser + '</div>'
+    /* Opgaver og refleksionsøvelser bor på fanen Indhold (Idas klik 14/11, trin b) */
     + '<div class="kbs-kun-skriv">' + kbsFeedbackHtml(o) + '</div>'
     + '<div class="kbs-skjult">' + label("Kommentarer & rettelser")
     + '<div id="kbKommListe">' + klipKommListeHtml(o) + '</div>'
@@ -66164,7 +66280,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "3271";
+const APP_VERSION = "3272";
 const APP_BYGGET = "3. november";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_VERSION;   /* ingen dato (Ida 7/11: »hvorfor står der version 3. november?«) — datoen blev ikke rettet med, nummeret er sandheden */ } catch (e) {} });
 let NY_VERSION_KLAR = false;
