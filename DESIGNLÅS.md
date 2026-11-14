@@ -8,6 +8,12 @@
 - »Kun det færdige står på briefoversigten« (26/9) gælder stadig: i en karrusel er et slide med eget billede færdigt. Coverbilledet til en reel er uændret (står, når det har tekst).
 - Koden: `cvEgetFoto(k)` (slidets eget foto, ikke coverets fælles billede) bruges i `cvSlideIdx()` og `cvForsideHtml()`.
 
+## HEALTH COACH: PROGRAM OG NEGATIV/POSITIV (Idas klik 14/11 »Chips plus tekstfelt« + »Ja, deploy«)
+
+- Klientens side har fem faner: **Spørgeskema · Screening · Test · Gennemgang · Program**; den valgte fane rulles ind i billedet på telefonen.
+- **Program:** »Forslag ud fra fundene« (hver sin flise, med »Bygger på: test · grund«), »Læs først« med Idas tre regler, og hendes eget felt »Program«. Forslagene er Idas egne ark »Restriktioner« og »Anbefalet ved restriktioner« (`HC_PROGRAM`), aldrig AI; et forslag vises kun ved et fund (under optimal, over 10 % forskel eller positiv coretest).
+- **Coretestene** har to chips »Negativ · Positiv« (ét valg) under overskriften »Negativ eller positiv«; tekstfelterne består. En positiv coretest er et fund i Gennemgang.
+
 ## HEALTH COACH: SPØRGESKEMA, HOLDNING, VEJRTRÆKNING, BEND, GANG OG GENTEST (v3292, Idas klik 14/11 »byg det hele ind« + »Ja, deploy«)
 
 - Klientens side har fire faner: **Spørgeskema · Screening · Test · Gennemgang** (chips på én linje, swipes sidelæns).

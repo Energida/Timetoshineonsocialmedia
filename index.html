@@ -67160,7 +67160,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "3292";
+const APP_VERSION = "3293";
 const APP_BYGGET = "3. november";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_VERSION;   /* ingen dato (Ida 7/11: »hvorfor står der version 3. november?«) — datoen blev ikke rettet med, nummeret er sandheden */ } catch (e) {} });
 let NY_VERSION_KLAR = false;
@@ -93376,6 +93376,8 @@ const HC_DELE = [
     Object.assign(hcEn("Screening", "Observationer", [], ["Observationer"]), { scr: true })
   ] }
 ];
+/* NEGATIV/POSITIV PAA CORETESTENE (Idas klik 14/11 »Chips plus tekstfelt«): et valg sidst i felterne, saa de gamle noegler f0, f1 … staar uroert. */
+HC_DELE.forEach(function (d) { if (d.id !== "scc") return; d.trin.forEach(function (t) { if (t.g !== "Vejrtrækning") t.f.push({ k: "res", n: "Negativ eller positiv", t: "c", o: ["Negativ", "Positiv"], m: 0 }); }); });
 /* hvert trin faar en fast noegle af delens id + gruppens og testens navn — raekkefoelgen kan aendres uden at svar flytter sig */
 HC_DELE.forEach(function (d) { d.trin.forEach(function (t) { t.id = d.id + ":" + (t.g + "|" + t.n).toLowerCase().replace(/[^a-z0-9æøå]+/g, "-").replace(/^-|-$/g, ""); }); });
 /* NOTERNE TIL DEN ENKELTE TEST (Idas klik 13/11, bud EKsQknm2j7MnbzgmArs6CD): Idas egne noter fra Notions undersider (UDDANNELSER › HEALTH COACH › Tests), ordret.
@@ -93495,7 +93497,7 @@ function hcTegn() {
   const el = document.getElementById("hcHost"); if (!el) return;
   hcRamme();
   if (HC.vis === "vaelg") return hcVaelgTegn(el);
-  if (HC.vis === "klient" && HC.klient) return hcKlientTegn(el);
+  if (HC.vis === "klient" && HC.klient) { hcKlientTegn(el); try { const fr = el.querySelector(".hc-faner"), on = fr && fr.querySelector(".hc-chip.on"); if (on) fr.scrollLeft = Math.max(0, on.offsetLeft - 16); } catch (e) {} return; }   /* den valgte fane skal vaere i billedet paa telefonen */
   if (HC.vis === "del" && HC.klient && HC.data) return hcDelTegn(el);
   HC.vis = "forside";
   /* forsiden: klienterne med en test (nyeste foerst, een flise pr. klient) + den roede knap */
@@ -93587,6 +93589,7 @@ function hcFundListe() {
   HC_DELE.forEach(function (d) { d.trin.forEach(function (x) { if (x.rk) return; const s = v[x.id]; if (!s || Array.isArray(s)) return;
     const navn = x.n || x.g, foeles = String(s.f || "").trim();
     if (s.sm === "j") ud.push(["Smerte under testen" + (s.sms ? " · " + s.sms : ""), navn + (foeles ? " · “" + foeles + "”" : "")]);
+    if (s.res === "Positiv") ud.push([x.g || navn, "Positiv" + (x.n && x.n !== x.g ? " · " + x.n : "")]);
     const a = hcTal(s.h), b = hcTal(s.v), o = hcTestDele(x);
     if (a === null || b === null || !x.f.some(function (f) { return f.k === "h" && f.t === "g"; })) return;
     const st = Math.max(Math.abs(a), Math.abs(b)); if (!st) return;
@@ -93598,13 +93601,62 @@ function hcFundListe() {
   }); });
   return ud;
 }
+/* PROGRAM (14/11, »byg det hele ind«): forslag ud fra fundene. Reglerne er Idas egne ark »Restriktioner« og »Anbefalet ved restriktioner« (Træner Akademiet),
+   ikke AI: et forslag vises kun, naar testen har et fund (under optimal, over 10 % forskel eller positiv coretest). Ida skriver selv programmet i feltet. */
+const HC_PROGRAM = {
+  "bio|Fleksion": "Stræk dem, der laver ekstension: Latissimus dorsi-stræk",
+  "bio|Abduktion og medial rotation": "Gør det, klienten har svært ved: Lig på siden, armen ud i 90°, pres armen ned med den modsatte. Pec minor-stræk",
+  "bio|Abduktion og lateral rotation": "Stræk dem, der gør det modsatte: Dørkarmsstræk + Barnets stilling med armene lidt ud til siden",
+  "bio|Lateral rotation": "Stram latissimus + pec major? Øv lateral rotation",
+  "bio|Thorakal rotation": "Tilføj twist i programmet: SB Twist, SB upperbody russian twist, Woodchop",
+  "bio|Ekstension": "Stræk dem, der laver det modsatte: SB delt anterior + pec major",
+  "bio|Fleksion mål ved hofte": "Stræk gluteus maximus: Træk knæ til bryst på ryggen. Øvelse: Ass to the grass squat",
+  "bio|Fleksion med strakte ben mål ved hofte": "Stræk øverste del af hamstring: RDL-stræk med strakte ben og lige overkrop",
+  "bio|Hamstring ved knæ mål ved knæ": "Stræk hele hamstring: Almindeligt hamstringstræk",
+  "bio|Hofte abduktion": "Stræk adduktorerne: Sidelæns lunge-stræk · Sid rank med benene i V og bøj forover",
+  "bio|Hofte adduktion": "Stræk sartorius, glute min + med: Halv lunge med twist · Ankel på modsatte knæ og træk til bryst",
+  "bio|Hofte rotation medial": "Hip internal/external · Supine Hip Rotation Stretch · Piriformisstræk · Havfrue",
+  "bio|Hofte rotation - lateral": "Hip internal/external · Supine Hip Rotation Stretch · Piriformisstræk · Havfrue",
+  "bio|Dorsal fleksion - closed chain": "Lav strækket, test igen",
+  "bio|Dorsal fleksion bøj i knæet": "Lav strækket, test igen",
+  "bio|Storetå": "Sid på hug på tæerne med storetåen",
+  "scc|Test 1 - Skub på panden": "Tydeliggør “tungen i ganen” i øvelserne",
+  "scc|Test 2 - Mavebøjning på bold": "Blot observér, hvor klienten udtrættes først",
+  "scc|Test 3 - Tummy vacuums deep abdominal wall exercises": "Four point, navlen suges ind. Kig også på fordøjelsen, hvis TVA ikke kan aktiveres",
+  "scc|Test 4 - Forward flexion activation": "Four point, navlen suges ind. Kig også på fordøjelsen, hvis TVA ikke kan aktiveres",
+  "scc|Test 5 - Techniques for charging the thoracic and abdominal cavities": "Four point, navlen suges ind. Kig også på fordøjelsen, hvis TVA ikke kan aktiveres",
+  "scc|Test 6 - Transversus abdominis strength": "Four point, navlen suges ind",
+  "scc|Test 7 - Lower abdominal coordination": "Lower abdominals med hånd bag lænden og skiftevis fod-drop",
+  "scc|Test 8 - Lower abdominal strength": "Legdrop med aktivering"
+};
+function hcProgramListe() {
+  const ud = [], set = {}, v = (HC.data && HC.data.v) || {};
+  HC_DELE.forEach(function (d) { d.trin.forEach(function (x) { if (x.rk || x.scr) return; const s = v[x.id]; if (!s || Array.isArray(s)) return;
+    const regel = HC_PROGRAM[d.id + "|" + x.n] || HC_PROGRAM[d.id + "|" + x.g]; if (!regel) return;
+    let grund = "";
+    if (s.res === "Positiv") grund = "Positiv";
+    else { const a = hcTal(s.h), b = hcTal(s.v), o = hcTestDele(x);
+      if (a !== null && b !== null && x.f.some(function (f) { return f.k === "h" && f.t === "g"; })) {
+        const st = Math.max(Math.abs(a), Math.abs(b)); if (!st) return;
+        const dd = Math.round(Math.abs(a - b) * 10) / 10, pr = dd / st * 100, over = dd > 3 && pr > 10;
+        const under = function (k) { if (o.lo == null) return false; return o.hi != null ? k < o.lo : (k < o.lo && Math.abs(k - o.lo) > 3); };
+        const ua = under(a), ub = under(b);
+        if (over) grund = "Over 10 % forskel, " + (a < b ? "højre" : "venstre") + " mindst";
+        else if (ua || ub) grund = (ua && ub ? "Begge sider" : ua ? "Højre" : "Venstre") + " under optimal";
+      } }
+    if (!grund) return;
+    const noegle = regel + "|" + (x.g || x.n); if (set[noegle]) return; set[noegle] = 1;
+    ud.push([regel, "Bygger på: " + (d.id === "scc" ? x.g : x.n) + " · " + grund + (s.sm === "j" ? " · Smerte under testen: Ja" : "")]);
+  }); });
+  return ud;
+}
 function hcFane(f) { hcGemNu(); HC.fane = f; hcTegn(); }
 function hcGSkriv(k, val) { if (!HC.data) return; if (!HC.data.g) HC.data.g = {}; HC.data.g[k] = val; HC.snavset = true; hcGemtVis(""); hcHoejde(); clearTimeout(HC.gemT); HC.gemT = setTimeout(function () { hcGemNu(); }, 700); }
 function hcKlientTegn(el) {
-  const id = HC.klient.id; const fane = HC.fane === "gennemgang" ? "gennemgang" : "test";
+  const id = HC.klient.id; const fane = HC.fane === "gennemgang" ? "gennemgang" : HC.fane === "program" ? "program" : "test";
   const egne = (HC.liste || []).filter(function (r) { return String(r.skema).split(":")[1] === String(id) && r.skema !== HC.noegle; }).map(function (r) { return r.skema; }).sort().reverse();
   const erIdag = HC.noegle.split(":")[2] === hcIdag();
-  const faner = '<div class="hc-chips hc-faner">' + [["spm", "Spørgeskema"], ["screening", "Screening"], ["test", "Test"], ["gennemgang", "Gennemgang"]].map(function (x) { return '<button type="button" class="hc-chip' + (fane === x[0] ? ' on' : '') + '"' + (fane === x[0] ? ' aria-current="page"' : '') + ' onclick="' + (x[0] === "screening" || x[0] === "spm" ? 'hcDelAabn(' + HC_DELE.findIndex(function (d) { return d.id === (x[0] === "spm" ? "spm" : "scr"); }) + ')' : 'hcFane(\'' + x[0] + '\')') + '">' + x[1] + '</button>'; }).join("") + '</div>';
+  const faner = '<div class="hc-chips hc-faner">' + [["spm", "Spørgeskema"], ["screening", "Screening"], ["test", "Test"], ["gennemgang", "Gennemgang"], ["program", "Program"]].map(function (x) { return '<button type="button" class="hc-chip' + (fane === x[0] ? ' on' : '') + '"' + (fane === x[0] ? ' aria-current="page"' : '') + ' onclick="' + (x[0] === "screening" || x[0] === "spm" ? 'hcDelAabn(' + HC_DELE.findIndex(function (d) { return d.id === (x[0] === "spm" ? "spm" : "scr"); }) + ')' : 'hcFane(\'' + x[0] + '\')') + '">' + x[1] + '</button>'; }).join("") + '</div>';
   const runder = HC_DELE.map(function (d, i) { return { d: d, i: i, s: hcRundeStatus(d) }; }).filter(function (r) { return r.d.id !== "scr" && r.d.id !== "spm"; });
   if (fane === "test") {
     const naeste = runder.find(function (r) { return r.d.id !== "ana" && r.s.n < r.s.m; });
@@ -93617,10 +93669,19 @@ function hcKlientTegn(el) {
     return;
   }
   const fire = runder.filter(function (r) { return r.d.id !== "ana"; }), faerdige = fire.filter(function (r) { return r.s.ord === "Færdig"; }).length, mgl = fire.filter(function (r) { return r.s.ord !== "Færdig"; }).map(function (r) { return r.d.navn; });
-  const fund = hcFundListe(), g = (HC.data && HC.data.g) || {};
+  const g = (HC.data && HC.data.g) || {};
   const kanTale = !!(window.SpeechRecognition || window.webkitSpeechRecognition);
   const felt = function (k, navn) { const fid = "hcG_" + k; return hcOversk(navn) + '<div class="hc-felt hc-tekst"><textarea id="' + fid + '" rows="1" aria-label="' + esc(navn) + '" oninput="hcGSkriv(\'' + k + '\',this.value)" onblur="hcGSkriv(\'' + k + '\',this.value)">' + esc(g[k] || "") + '</textarea>'
     + (kanTale ? '<button type="button" class="hc-mik" id="taleKnap_' + fid + '" onclick="taleToggle(\'' + fid + '\')" title="Tal i stedet for at skrive" aria-label="Tal i stedet for at skrive">' + HC_MIK + '</button>' : '') + '</div>'; };
+  if (fane === "program") {
+    const forslag = hcProgramListe();
+    el.innerHTML = '<div class="hc hc-ny">' + faner + '<div class="hc-gemt" id="hcGemt" aria-live="polite"></div>'
+      + '<div class="hc-ny-flade"><div class="hc-ny-laes">' + hcOversk("Forslag ud fra fundene") + (forslag.length ? forslag.map(function (x) { return hcNyFlise(x[0], x[1]); }).join("") : hcNyFlise("Ingen forslag endnu"))
+      + hcOversk("Læs først") + hcNyFlise("HUSK 1 test kan ikke stå alene") + hcNyFlise("De muskler der laver det modsatte skal strækkes ud") + hcNyFlise("Før mobilitet, stræk eller øvelse vælges, kig på andre svarresultater")
+      + '</div><div class="hc-ny-goer">' + felt("program", "Program") + '</div></div></div>';
+    hcHoejde(); return;
+  }
+  const fund = hcFundListe();
   el.innerHTML = '<div class="hc hc-ny">' + faner
     + (mgl.length ? '<div class="hc-sted hc-forelobig"><span>Foreløbig · ' + faerdige + ' af ' + fire.length + ' runder færdige</span></div><div class="hc-hj">Mangler: ' + esc(mgl.join(", ")) + '</div>' : '')
     + '<div class="hc-gemt" id="hcGemt" aria-live="polite"></div>'
@@ -93839,7 +93900,8 @@ function hcTestTegn(el, del, t) {
     goer += hcOversk(f.n) + '<div class="hc-felt hc-tekst"><textarea id="' + id + '" data-hc="' + esc(f.k) + '" rows="1" aria-label="' + esc(f.n) + '"' + (f.h ? ' placeholder="' + esc(f.h) + '"' : '') + ' oninput="hcSkriv()" onblur="hcSkriv()">' + esc(v[f.k] || "") + '</textarea>'
       + (kanTale ? '<button type="button" class="hc-mik" id="taleKnap_' + id + '" onclick="taleToggle(\'' + id + '\')" title="Tal i stedet for at skrive" aria-label="Tal i stedet for at skrive">' + HC_MIK + '</button>' : '') + '</div>'; };
   if (t.scr) t.f.forEach(function (f) { if (f.t === "c") goer += hcOversk(f.n) + (f.h ? hcNyFlise(f.h) : '') + hcValgHtml(f, v[f.k]); else langFelt(f); });
-  else { andre.forEach(langFelt);
+  else { t.f.forEach(function (f) { if (f.t === "c") goer += hcOversk(f.n) + hcValgHtml(f, v[f.k]); });
+    andre.forEach(langFelt);
     goer += '<div class="hc-smerte">' + hcSmerteHtml(t, v) + '</div>';
     foeles.forEach(langFelt); }
   el.innerHTML = '<div class="hc hc-ny"><div class="hc-sted"><span>' + esc(t.scr ? t.n : (t.g || del.navn)) + '</span><span>' + (HC.trin + 1) + ' af ' + del.trin.length + '</span></div>'
@@ -96646,6 +96708,7 @@ html body:not(#l1):not(#l2):not(#l3):not(#l4):not(#l5):not(#l6):not(#l7):not(#l8
 #hcHost .hc-bil img { display:block; width:100%; height:auto; border-radius:0; background:#fff; }
 #hcHost .hc-bil .hc-slet-rk { margin-top:8px; }
 #hcHost .hc-faner .hc-chip, #hcHost .hc-valg .hc-chip { flex:0 0 auto; white-space:nowrap; }
+#hcHost .hc-valg .hc-chip { min-width:96px; }
 #hcHost .hc-faner, #hcHost .hc-valg { overflow-x:auto; scrollbar-width:none; padding:6px 0; }
 #hcHost .hc-faner::-webkit-scrollbar, #hcHost .hc-valg::-webkit-scrollbar { display:none; }
 #hcHost .hc-oversk + .hc-flise + .hc-valg { margin-top:10px; }
