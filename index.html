@@ -66424,7 +66424,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "3275";
+const APP_VERSION = "3276";
 const APP_BYGGET = "3. november";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_VERSION;   /* ingen dato (Ida 7/11: »hvorfor står der version 3. november?«) — datoen blev ikke rettet med, nummeret er sandheden */ } catch (e) {} });
 let NY_VERSION_KLAR = false;
@@ -92702,7 +92702,7 @@ function hcSti() {
 }
 function hcDatoTekst(iso) { try { const d = new Date(String(iso).slice(0, 10) + "T12:00:00"); return d.toLocaleDateString("da-DK", { weekday: "short", day: "numeric", month: "long" }); } catch (e) { return ""; } }
 function hcIdag() { try { return (typeof idagIso === "function") ? idagIso() : new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10); } catch (e) { return new Date().toISOString().slice(0, 10); } }
-function hcAabn() { HC.vis = "forside"; mrGaaTil("healthcoach"); try { dsbDoereTegn("healthcoach"); } catch (e) {} hcTegn(); hcListeHent(); }
+function hcAabn() { HC.vis = "forside"; mrGaaTil("healthcoach"); try { dsbDoereTegn("healthcoach"); } catch (e) {} hcTegn(); hcListeHent(); if (!HC.teksterHentet) hcTeksterHent(); }
 async function hcVis(vis) { await hcGemNu(); HC.vis = vis; if (vis === "forside") hcListeHent(); hcTegn(); try { window.scrollTo(0, 0); const dm = document.getElementById("dashMain"); if (dm) dm.scrollTop = 0; } catch (e) {} }
 function hcRamme() {
   /* heroen, datolinjen og stien foelger visningen — baandet laeser dem herfra */
@@ -92801,7 +92801,9 @@ function hcKlientTegn(el) {
     + (erIdag ? '' : '<div class="hc-knapper hc-en">' + hcKnap("Ny test i dag", "hcKlientAabn('" + esc(id) + "',true)", true) + '</div>')
     + '</div>';
 }
-function hcDelAabn(i) { HC.del = i; HC.trin = 0; HC.vis = "del"; hcTegn(); try { window.scrollTo(0, 0); const dm = document.getElementById("dashMain"); if (dm) dm.scrollTop = 0; } catch (e) {} }
+function hcDelAabn(i) { HC.del = i; HC.trin = 0; HC.ret = "";
+  try { const dl = HC_DELE[i]; const n = dl.trin.findIndex(function (x) { return !x.rk && !hcHarSvar(x, HC.data.v[x.id]); }); if (n > 0 && !dl.trin[0].rk) HC.trin = n; } catch (e) {}   /* fortsaet, hvor testen slap */
+  HC.vis = "del"; hcTegn(); try { window.scrollTo(0, 0); const dm = document.getElementById("dashMain"); if (dm) dm.scrollTop = 0; } catch (e) {} }
 function hcTal(s) { const n = parseFloat(String(s == null ? "" : s).replace(",", ".")); return isFinite(n) ? n : null; }
 function hcForskelHtml(h, v) {
   const a = hcTal(h), b = hcTal(v); if (a === null || b === null) return "";
@@ -92830,9 +92832,132 @@ function hcFliseHtml(t, v, rk) {
   if (rk != null && rk > 0) h += '<div class="hc-streg"></div><div class="hc-slet-rk"><button type="button" class="hc-ikon" aria-label="Slet" title="Slet" onclick="hcRaekkeSlet(' + rk + ')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg></button><span>Slet</span></div>';
   return h + '</section>';
 }
+/* ===== HEALTH COACH: DEN NYE TESTSKAERM (Idas klik 14/11 »Byg testskærmen«) =====
+   Laes -> goer -> videre: Hvad vi tester · Hvorfor · Obs · Noter (venstre paa computeren) og Optimal · maaling · Forskel · Mod optimal ·
+   Smerte under testen · Hvordan foeles det (hoejre). Versal-overskrifter OVER fliserne, hver ting sin egen flise (laasen 12/11 + 14/11).
+   Idas egne ord om hvad og hvorfor ligger i hendes egen raekke (skema »hc-tekster«) og kan rettes paa stedet; mangler de, staar der »Dine ord mangler«.
+   Analyse af tests (tabellerne med flere raekker) tegnes som foer. Gemte svar faar kun to nye noegler: sm (n/j) og sms (side). */
+HC.tekster = {}; HC.teksterHentet = false; HC.ret = "";
+function hcTestDele(t) {
+  const o = { hvad: [], obs: [], opt: "" };
+  (t.l || []).forEach(function (x) { x = String(x);
+    if (x.indexOf("Optimal ") === 0) o.opt = x.slice(8);
+    else if (x.indexOf("Hvad tester vi: ") === 0) o.hvad.push(x.slice(16));
+    else if (x.indexOf("OBS: ") === 0) o.obs.push(x.slice(5));
+    else o.hvad.push(x); });
+  const m = o.opt.match(/^(\d+(?:[.,]\d+)?)(?:\s*-\s*(\d+(?:[.,]\d+)?))?\s*grader/);
+  if (m) { o.lo = hcTal(m[1]); o.hi = m[2] ? hcTal(m[2]) : null; }
+  return o;
+}
+function hcKomma(n) { return String(Math.round(n * 10) / 10).replace(".", ","); }
+function hcHarSvar(t, v) { if (!v || typeof v !== "object") return false; return t.f.some(function (f) { return String(v[f.k] == null ? "" : v[f.k]).trim() !== ""; }); }
+function hcNyFlise(x, under) { return '<div class="hc-flise hc-note">' + esc(x) + (under ? '<div class="hc-hj">' + esc(under) + '</div>' : '') + '</div>'; }
+function hcForskelNy(t, h, v) {
+  const a = hcTal(h), b = hcTal(v); if (a === null || b === null) return "";
+  const st = Math.max(Math.abs(a), Math.abs(b)); if (!st) return "";
+  const d = Math.round(Math.abs(a - b) * 10) / 10, pr = d / st * 100;
+  const mindst = a === b ? "" : (a < b ? "Højre" : "Venstre") + " mindst";
+  const pt = (pr > 9 && pr < 11) ? hcKomma(pr) : String(Math.round(pr));
+  let ud = hcOversk("Forskel");
+  if (d <= 3) ud += hcNyFlise(hcKomma(d) + (d === 1 ? " grad" : " grader"), "3 grader vil være normalt at måle “forkert”");
+  else if (pr > 10) ud += hcNyFlise(pt + " % · " + mindst, "Over 10 %. Det vil være aktuelt at øge strækket på den side vi er mere stive.");
+  else ud += hcNyFlise(pt + " % · " + mindst, "Ikke over 10 %.");
+  const o = hcTestDele(t);
+  if (o.lo != null) { const mod = function (n) { if (o.hi != null) return n < o.lo ? "under" : n > o.hi ? "over" : "inden for"; return Math.abs(n - o.lo) <= 3 ? "inden for" : n < o.lo ? "under" : "over"; };
+    ud += hcOversk("Mod optimal") + hcNyFlise("Højre " + mod(a) + " · Venstre " + mod(b)); }
+  return ud;
+}
+function hcChipRaekke(noegle, valg, vaerdi) {
+  return '<div class="hc-chips" data-hc-chips="' + noegle + '">' + valg.map(function (x) { const on = vaerdi === x[0]; return '<button type="button" class="hc-chip' + (on ? ' on' : '') + '" aria-pressed="' + on + '" onclick="hcChipVaelg(\'' + noegle + '\',\'' + x[0] + '\')">' + esc(x[1]) + '</button>'; }).join("") + '</div>';
+}
+function hcSmerteHtml(t, v) {
+  const par = t.f.some(function (f) { return f.k === "h"; }) && t.f.some(function (f) { return f.k === "v"; });
+  return hcOversk("Smerte under testen") + hcChipRaekke("sm", [["n", "Nej"], ["j", "Ja"]], v.sm || "")
+    + '<div id="hcSmSide">' + (par && v.sm === "j" ? hcChipRaekke("sms", [["Højre", "Højre"], ["Venstre", "Venstre"], ["Begge", "Begge"]], v.sms || "") : '') + '</div>'
+    + '<input type="hidden" data-hc="sm" value="' + esc(v.sm || "") + '"><input type="hidden" data-hc="sms" value="' + esc(v.sms || "") + '">';
+}
+function hcChipVaelg(noegle, x) {
+  const el = document.getElementById("hcHost"); if (!el) return;
+  const felt = el.querySelector('input[data-hc="' + noegle + '"]'); if (!felt) return;
+  felt.value = felt.value === x ? "" : x;   /* et tryk til paa den valgte fortryder */
+  if (noegle === "sm" && felt.value !== "j") { const s = el.querySelector('input[data-hc="sms"]'); if (s) s.value = ""; }
+  hcSkriv();
+  try { const t = HC_DELE[HC.del].trin[HC.trin]; const v = HC.data.v[t.id] || {}; const gl = el.querySelector(".hc-smerte"); if (gl) gl.innerHTML = hcSmerteHtml(t, v); } catch (e) {}
+}
+function hcNaesteOrd() {
+  try { const kn = document.getElementById("hcNaeste"); if (!kn) return; const del = HC_DELE[HC.del], t = del.trin[HC.trin];
+    kn.textContent = hcHarSvar(t, HC.data.v[t.id]) ? (HC.trin === del.trin.length - 1 ? "Færdig" : "Næste") : "Spring over"; } catch (e) {}
+}
+function hcGemtVis(x) { try { const g = document.getElementById("hcGemt"); if (g) g.textContent = x || ""; } catch (e) {} }
+function hcTekstHtml(t, felt, navn, faste) {
+  const egen = String(((HC.tekster[t.id] || {})[felt]) || "").trim();
+  let h = hcOversk(navn);
+  if (HC.ret === felt) { const kanTale = !!(window.SpeechRecognition || window.webkitSpeechRecognition);
+    return h + '<div class="hc-felt hc-tekst hc-egen"><textarea id="hcEgen" rows="1" aria-label="' + esc(navn) + '" oninput="hcHoejde();hcTekstSkriv(\'' + felt + '\',this.value)" onblur="hcTekstFaerdig()">' + esc(egen) + '</textarea>'
+      + (kanTale ? '<button type="button" class="hc-mik" id="taleKnap_hcEgen" onmousedown="event.preventDefault()" onclick="taleToggle(\'hcEgen\')" title="Tal i stedet for at skrive" aria-label="Tal i stedet for at skrive">' + HC_MIK + '</button>' : '') + '</div>'; }
+  const knap = function (ord) { return '<button type="button" class="hc-smaa" onclick="hcTekstRet(\'' + felt + '\')">' + ord + '</button>'; };
+  if (egen) return h + '<div class="hc-flise hc-note hc-med"><span>' + esc(egen) + '</span>' + knap("Ret") + '</div>';
+  if (faste && faste.length) return h + faste.map(function (x, i) { return i === 0 ? '<div class="hc-flise hc-note hc-med"><span>' + esc(x) + '</span>' + knap("Ret") + '</div>' : hcNyFlise(x); }).join("");
+  return h + '<div class="hc-flise hc-note hc-med"><span class="hc-mangler">Dine ord mangler</span>' + knap("Skriv") + '</div>';
+}
+function hcTekstRet(felt) { hcLaes(); HC.ret = felt; hcTegn(); try { const f = document.getElementById("hcEgen"); if (f) { f.focus(); f.setSelectionRange(f.value.length, f.value.length); } } catch (e) {} }
+function hcTekstSkriv(felt, val) {
+  try { const t = HC_DELE[HC.del].trin[HC.trin]; const o = HC.tekster[t.id] || {}; o[felt] = val; HC.tekster[t.id] = o; HC.teksterSnavset = true; clearTimeout(HC.tekstT); HC.tekstT = setTimeout(function () { hcTeksterGem(); }, 700); } catch (e) {}
+}
+function hcTekstFaerdig() { setTimeout(function () { try { if (document.activeElement && document.activeElement.id === "hcEgen") return; hcLaes(); HC.ret = ""; hcTeksterGem(); if (HC.vis === "del") hcTegn(); } catch (e) {} }, 180); }
+async function hcTeksterHent() {
+  try { const uid = await woBrugerId(); if (!sb || !uid) return;
+    const r = await sb.from("workout_data").select("svar").eq("bruger", uid).eq("skema", "hc-tekster").maybeSingle();
+    if (r && !r.error) { HC.tekster = (r.data && r.data.svar && typeof r.data.svar === "object" && r.data.svar.t) || {}; HC.teksterHentet = true; if (HC.vis === "del" && !HC.ret) hcTegn(); }
+  } catch (e) {}
+}
+/* samme kvittering som svarene: upsert + .select() og en raekketaelling. Gemmer aldrig, foer raekken er hentet — ellers kunne et tomt ark overskrive hendes ord. */
+async function hcTeksterGem() {
+  try { clearTimeout(HC.tekstT); } catch (e) {}
+  if (!HC.teksterSnavset || !HC.teksterHentet) return true;
+  HC.teksterSnavset = false;
+  try { const uid = await woBrugerId(); if (!sb || !uid) throw new Error("ingen bruger");
+    const r = await sb.from("workout_data").upsert({ bruger: uid, skema: "hc-tekster", svar: { t: JSON.parse(JSON.stringify(HC.tekster)) }, opdateret: new Date().toISOString() }, { onConflict: "bruger,skema" }).select("skema");
+    if (r.error || !r.data || !r.data.length) throw new Error("ingen række");
+    hcGemtVis("Gemt"); return true;
+  } catch (e) { HC.teksterSnavset = true; try { husBesked("Kunne ikke gemme. Prøv igen."); } catch (e2) {} return false; }
+}
+function hcTestTegn(el, del, t) {
+  const v = (HC.data.v[t.id] && !Array.isArray(HC.data.v[t.id])) ? HC.data.v[t.id] : {};
+  const o = hcTestDele(t), sidst = HC.trin === del.trin.length - 1;
+  const pct = Math.round((HC.trin + 1) / del.trin.length * 100);
+  let laes = "";
+  if (t.n) laes += hcOversk("Test") + hcNyFlise(t.n);
+  laes += hcTekstHtml(t, "hvad", "Hvad vi tester", o.hvad) + hcTekstHtml(t, "hvorfor", "Hvorfor", null);
+  if (o.obs.length) laes += hcOversk("Obs") + o.obs.map(function (x) { return hcNyFlise(x); }).join("");
+  laes += hcNoterHtml(t);
+  if (del.laes.length) laes += '<div class="hc-laesfoerst' + (HC.trin === 0 ? '' : ' hc-kun-pc') + '">' + hcOversk("Læs først") + del.laes.map(function (x) { return hcNyFlise(x); }).join("") + '</div>';
+  let goer = "";
+  if (o.opt) goer += hcOversk("Optimal") + hcNyFlise(o.opt);
+  const korte = t.f.filter(function (f) { return f.t === "g" || f.t === "k"; }), lange = t.f.filter(function (f) { return f.t === "t"; });
+  if (korte.length) goer += '<div class="hc-par' + (korte.length === 1 ? ' hc-een' : '') + '">' + korte.map(function (f) {
+    return '<div>' + hcOversk(f.n) + '<label class="hc-flise hc-stortal"><input type="text"' + (f.t === "g" ? ' inputmode="decimal"' : '') + ' data-hc="' + esc(f.k) + '" value="' + esc(v[f.k] || "") + '" oninput="hcSkriv()" autocomplete="off" enterkeyhint="next" aria-label="' + esc(f.n) + (f.t === "g" ? ' i grader' : '') + '">' + (f.t === "g" ? '<i>grader</i>' : '') + '</label></div>'; }).join("") + '</div>';
+  if (korte.length === 2 && korte[0].t === "g") goer += '<div data-hc-forskel data-ny="1">' + hcForskelNy(t, v.h, v.v) + '</div>';
+  const kanTale = !!(window.SpeechRecognition || window.webkitSpeechRecognition);
+  /* raekkefoelgen: resultatfelterne · smerte · »Hvordan foeles det?« sidst */
+  const foeles = lange.filter(function (f) { return f.n === HC_FOELES; }), andre = lange.filter(function (f) { return f.n !== HC_FOELES; });
+  const langFelt = function (f) { const id = "hcF_" + f.k;
+    goer += hcOversk(f.n) + '<div class="hc-felt hc-tekst"><textarea id="' + id + '" data-hc="' + esc(f.k) + '" rows="1" aria-label="' + esc(f.n) + '" oninput="hcSkriv()" onblur="hcSkriv()">' + esc(v[f.k] || "") + '</textarea>'
+      + (kanTale ? '<button type="button" class="hc-mik" id="taleKnap_' + id + '" onclick="taleToggle(\'' + id + '\')" title="Tal i stedet for at skrive" aria-label="Tal i stedet for at skrive">' + HC_MIK + '</button>' : '') + '</div>'; };
+  andre.forEach(langFelt);
+  goer += '<div class="hc-smerte">' + hcSmerteHtml(t, v) + '</div>';
+  foeles.forEach(langFelt);
+  el.innerHTML = '<div class="hc hc-ny"><div class="hc-sted"><span>' + esc(t.g || del.navn) + '</span><span>' + (HC.trin + 1) + ' af ' + del.trin.length + '</span></div>'
+    + '<div class="hc-frem" role="progressbar" aria-label="Test ' + (HC.trin + 1) + ' af ' + del.trin.length + '" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' + pct + '"><i style="width:' + pct + '%"></i></div>'
+    + '<div class="hc-gemt" id="hcGemt" aria-live="polite"></div>'
+    + '<div class="hc-ny-flade"><div class="hc-ny-laes">' + laes + '</div><div class="hc-ny-goer hc-test">' + goer + '</div>'
+    + '<div class="hc-bund">' + hcKnap("Tilbage", "hcTrin(-1)", false) + hcKnap(hcHarSvar(t, v) ? (sidst ? "Færdig" : "Næste") : "Spring over", "hcTrin(1)", true, "hcNaeste") + '</div></div></div>';
+  hcHoejde();
+}
 function hcDelTegn(el) {
   const del = HC_DELE[HC.del]; if (HC.trin < 0) HC.trin = 0; if (HC.trin >= del.trin.length) HC.trin = del.trin.length - 1;
   const t = del.trin[HC.trin]; const v = HC.data.v[t.id];
+  if (!t.rk) return hcTestTegn(el, del, t);
   let test = hcOversk(t.g);
   if (t.rk) { const rk = (Array.isArray(v) && v.length) ? v : [{}]; test += rk.map(function (x, i) { return hcFliseHtml(t, x, i); }).join("") + '<div class="hc-pluslinje"><button type="button" class="hc-pluschip" onclick="hcRaekkeNy()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Tilføj test</button></div>'; }
   else test += hcFliseHtml(t, v, null);
@@ -92854,10 +92979,10 @@ function hcLaes() {
   const foer = JSON.stringify(HC.data.v[t.id] || null);
   if (t.rk) { const rk = []; el.querySelectorAll(".hc-test").forEach(function (fl) { const o = {}; fl.querySelectorAll("[data-hc]").forEach(function (f) { if (String(f.value).trim()) o[f.getAttribute("data-hc")] = f.value; }); rk.push(o); }); HC.data.v[t.id] = rk; }
   else { const o = {}; el.querySelectorAll(".hc-test [data-hc]").forEach(function (f) { if (String(f.value).trim()) o[f.getAttribute("data-hc")] = f.value; }); HC.data.v[t.id] = o;
-    try { const fs = el.querySelector("[data-hc-forskel]"); if (fs) fs.innerHTML = hcForskelHtml(o.h, o.v); } catch (e) {} }
+    try { const fs = el.querySelector("[data-hc-forskel]"); if (fs) fs.innerHTML = fs.hasAttribute("data-ny") ? hcForskelNy(t, o.h, o.v) : hcForskelHtml(o.h, o.v); } catch (e) {} hcNaesteOrd(); }
   return JSON.stringify(HC.data.v[t.id] || null) !== foer;
 }
-function hcSkriv() { hcHoejde(); if (hcLaes()) { HC.snavset = true; clearTimeout(HC.gemT); HC.gemT = setTimeout(function () { hcGemNu(); }, 700); } }
+function hcSkriv() { hcHoejde(); if (hcLaes()) { HC.snavset = true; hcGemtVis(""); clearTimeout(HC.gemT); HC.gemT = setTimeout(function () { hcGemNu(); }, 700); } }
 /* GEMMER MED KVITTERING (reglen 3/8): upsert + .select() og en raekketaelling — et afvist gem maa aldrig ligne et vellykket */
 async function hcGemNu() {
   try { clearTimeout(HC.gemT); } catch (e) {}
@@ -92871,12 +92996,14 @@ async function hcGemNu() {
       const r = await sb.from("workout_data").upsert({ bruger: uid, skema: noegle, svar: svar, opdateret: new Date().toISOString() }, { onConflict: "bruger,skema" }).select("skema");
       if (r.error || !r.data || !r.data.length) throw new Error("ingen række");
       if (!(HC.liste || []).some(function (x) { return x.skema === noegle; })) HC.liste = [{ skema: noegle, opdateret: new Date().toISOString() }].concat(HC.liste || []);
+      hcGemtVis("Gemt");
       return true;
     } catch (e) { HC.snavset = true; try { husBesked("Kunne ikke gemme. Prøv igen."); } catch (e2) {} return false; }
   })();
   const ok = await HC.gemmer; HC.gemmer = null; return ok;
 }
 async function hcTrin(d) {
+  HC.ret = ""; try { await hcTeksterGem(); } catch (e) {}
   await hcGemNu();
   const del = HC_DELE[HC.del]; const n = HC.trin + d;
   if (n < 0 || n >= del.trin.length) { HC.vis = "klient"; hcTegn(); return; }
@@ -92889,7 +93016,7 @@ function hcRaekkeSlet(i) {
   try { arkSpoerg({ titel: "Slet testen?", jaTekst: "Slet", nejTekst: "Annuller", ja: gaa }); } catch (e) { gaa(); }
 }
 try { window.addEventListener("pagehide", function () { try { hcGemNu(); } catch (e) {} }); document.addEventListener("visibilitychange", function () { if (document.hidden) { try { hcGemNu(); } catch (e) {} } }); } catch (e) {}
-try { const hcGl = window.nulstilBrugerCache; if (typeof hcGl === "function") window.nulstilBrugerCache = function () { try { HC.liste = []; HC.klient = null; HC.data = null; HC.noegle = ""; HC.snavset = false; HC.hentet = false; HC.vis = "forside"; } catch (e) {} return hcGl.apply(this, arguments); }; } catch (e) {}
+try { const hcGl = window.nulstilBrugerCache; if (typeof hcGl === "function") window.nulstilBrugerCache = function () { try { HC.liste = []; HC.klient = null; HC.data = null; HC.noegle = ""; HC.snavset = false; HC.hentet = false; HC.vis = "forside"; HC.tekster = {}; HC.teksterHentet = false; HC.teksterSnavset = false; HC.ret = ""; } catch (e) {} return hcGl.apply(this, arguments); }; } catch (e) {}
 /* den lange Tilbage paa telefonen er kun skjult, mens en test er fremme — klassen ryddes, saa snart en anden side aabner */
 (function () { try { const gA = window.mrAabn, gV = window.visDashSide; const ryd = function () { try { document.body.classList.remove("hc-del"); } catch (e) {} };
   if (typeof gA === "function") window.mrAabn = function (id) { if (id !== "healthcoach") ryd(); return gA.apply(this, arguments); };
@@ -95452,8 +95579,6 @@ html body #briefForside #delingSek .dl-plus-rk { display:flex; justify-content:f
 html body #briefForside #delingSek .dl-sek + .dl-plus-rk { margin-top:0; }
 html body #briefForside #delingSek .dl-plus { gap:6px; }
 /* FAKTA-SIDEN-3261-SLUT */
-/* HEALTH COACH (13/11) — Idas testskemaer i Backstage. Maal efter MÅLKORT: flise radius 20 luft 18/20, 10 mellem fliser, overskrift 12 versal 1,5 #6F6B66 uden for flisen (8 ned, 32 op),
-   felt 44 / radius 14 / 1 px #DEDAD4, navigationsknapper 56, Poppins 400, Didot kun i coveret. Godkendte bud: telefon 1TiFuGKjqhhky69PZBWaib · computer 1V6F8gtDjhHMNMww3uKSHh. */
 #hcHost .hc { font-family:"Poppins",sans-serif; font-weight:400; color:#1A1A1A; }
 #hcHost .hc-oversk { font-size:12px; line-height:16px; letter-spacing:1.5px; text-transform:uppercase; color:#6F6B66; margin:32px 0 8px; font-weight:400; }
 #hcHost .hc > .hc-oversk:first-child, #hcHost .hc-laes > .hc-oversk:first-child, #hcHost .hc-hoved > .hc-oversk:first-child { margin-top:0; }
@@ -95585,6 +95710,49 @@ html body:not(#l1):not(#l2):not(#l3):not(#l4):not(#l5):not(#l6):not(#l7):not(#l8
 html body:not(#l1):not(#l2):not(#l3):not(#l4):not(#l5):not(#l6):not(#l7):not(#l8) .ibb-plus::before, html body:not(#l1):not(#l2):not(#l3):not(#l4):not(#l5):not(#l6):not(#l7):not(#l8) .crm2-fane::before, html body:not(#l1):not(#l2):not(#l3):not(#l4):not(#l5):not(#l6):not(#l7):not(#l8) .mails-kodeknap::before, html body:not(#l1):not(#l2):not(#l3):not(#l4):not(#l5):not(#l6):not(#l7):not(#l8) .lek-favchip::before, html body:not(#l1):not(#l2):not(#l3):not(#l4):not(#l5):not(#l6):not(#l7):not(#l8) .ark-vchip::before { content:""; position:absolute; inset:-7px -1px; }   /* trykfeltet er stadig 44 */
 html body:not(#l1):not(#l2):not(#l3):not(#l4):not(#l5):not(#l6):not(#l7):not(#l8) .crm2-faner, html body:not(#l1):not(#l2):not(#l3):not(#l4):not(#l5):not(#l6):not(#l7):not(#l8) .mails-kodechip { padding-top:6px !important; padding-bottom:6px !important; } html body:not(#l1):not(#l2):not(#l3):not(#l4):not(#l5):not(#l6):not(#l7):not(#l8) .mails-kodechip { overflow:visible !important; margin-top:0 !important; margin-bottom:0 !important; }   /* plads til chippens trykfelt (44) i en række, der klipper */
 /* ===== LÅS 14/11 SLUT ===== */
+/* HEALTH COACH: DEN NYE TESTSKAERM (14/11) */
+#hcHost .hc-sted > span:first-child { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+#hcHost .hc-sted > span:last-child { flex:0 0 auto; }
+#hcHost .hc-sted { display:flex; justify-content:space-between; gap:12px; font-size:12px; line-height:16px; letter-spacing:1.5px; text-transform:uppercase; color:#6F6B66; }
+#hcHost .hc-frem { height:2px; background:#E3E2DE; border-radius:2px; margin-top:10px; }
+#hcHost .hc-frem i { display:block; height:2px; background:#FC2404; border-radius:2px; }
+#hcHost .hc-gemt { min-height:18px; margin-top:6px; text-align:right; font-size:12.5px; color:#6F6B66; }
+#hcHost .hc-ny .hc-oversk { margin-top:24px; }
+#hcHost .hc-ny .hc-ny-laes > .hc-oversk:first-child { margin-top:8px; }
+#hcHost .hc-med { display:flex; align-items:center; gap:14px; }
+#hcHost .hc-med > span { flex:1 1 auto; min-width:0; }
+#hcHost .hc-mangler { color:#6F6B66; }
+#hcHost .hc-smaa { flex:0 0 auto; height:32px; padding:0 14px; border-radius:999px; background:#fff; border:1px solid #DEDAD4; color:#6F6B66; font-family:"Poppins",sans-serif; font-size:12.5px; font-weight:400; cursor:pointer; position:relative; }
+#hcHost .hc-smaa::before { content:""; position:absolute; inset:-6px 0; }
+#hcHost .hc-egen { min-height:56px; }
+#hcHost .hc-par { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+#hcHost .hc-par.hc-een { grid-template-columns:1fr; }
+#hcHost .hc-stortal { display:flex; align-items:baseline; gap:8px; padding:12px 20px; margin-top:0; border:1px solid transparent; cursor:text; }
+#hcHost .hc-stortal:focus-within { border-color:#9A9590; }
+#hcHost .hc-stortal input { flex:1 1 auto; min-width:0; width:100%; border:0; outline:none; background:transparent; padding:0; height:40px; font-family:"Poppins",sans-serif; font-size:26px; font-weight:300; color:#1A1A1A; font-variant-numeric:tabular-nums; box-shadow:none; border-radius:0; }
+#hcHost .hc-stortal i { font-style:normal; color:#6F6B66; font-size:12.5px; flex:0 0 auto; }
+#hcHost .hc-chips { display:flex; gap:8px; }
+#hcHost .hc-chips + #hcSmSide .hc-chips { margin-top:10px; }
+#hcHost .hc-chip { flex:1 1 0; height:32px; border-radius:999px; background:#fff; border:1px solid #DEDAD4; color:#6F6B66; font-family:"Poppins",sans-serif; font-size:12.5px; font-weight:400; text-align:center; cursor:pointer; padding:0 14px; position:relative; }
+#hcHost .hc-chip::before { content:""; position:absolute; inset:-6px 0; }
+#hcHost .hc-chip.on { background:#FC2404; border-color:#FC2404; color:#fff; }
+#hcHost .hc-bund { display:grid; grid-template-columns:1fr 2fr; gap:10px; }
+#hcHost .hc-bund .hc-knap { margin:0; }
+@media (max-width:899px) {
+  #hcHost .hc-kun-pc { display:none; }
+  /* i en test er bundmenuen vaek, saa Tilbage/Naeste kan staa fast nederst (Tilbage staar baade i coveret og i bunden) */
+  body.hc-del:has(#hcHost .hc-ny) #dashBundnav { display:none !important; }
+  #hcHost .hc-bund { position:sticky; bottom:0; z-index:5; margin:24px -16px 0; padding:12px 16px calc(12px + env(safe-area-inset-bottom, 0px)); background:#FAF9F5; box-shadow:0 -1px 0 #E3E2DE; }
+}
+@media (min-width:900px) {
+  #hcHost .hc-ny-flade { display:grid; grid-template-columns:minmax(0, 1.15fr) minmax(0, 1fr); gap:0 48px; align-items:start; }
+  #hcHost .hc-bund { grid-column:2; margin-top:32px; }
+  #hcHost .hc-ny .hc-ny-goer > .hc-oversk:first-child, #hcHost .hc-ny .hc-ny-goer > .hc-par:first-child .hc-oversk, #hcHost .hc-ny .hc-ny-goer > .hc-smerte:first-child > .hc-oversk:first-child { margin-top:8px; }
+  #hcHost .hc-ny .hc-tekst { min-height:72px; }
+}
+
+/* HEALTH COACH (13/11) — Idas testskemaer i Backstage. Maal efter MÅLKORT: flise radius 20 luft 18/20, 10 mellem fliser, overskrift 12 versal 1,5 #6F6B66 uden for flisen (8 ned, 32 op),
+   felt 44 / radius 14 / 1 px #DEDAD4, navigationsknapper 56, Poppins 400, Didot kun i coveret. Godkendte bud: telefon 1TiFuGKjqhhky69PZBWaib · computer 1V6F8gtDjhHMNMww3uKSHh. */
 </style>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-hvid.png" alt=""><span>Henter…</span></div>
 <div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 8. oktober · 3236</div>
