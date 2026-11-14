@@ -1,3 +1,10 @@
+## 14. november · ARK OG POPUPS SET ÉN FOR ÉN: KNAPPERNE ER 56 (UX-politiet, Idas ord 14/11, v3282)
+- Alle ark og popups, der kunne åbnes i testudgaven (ca. 80 i kundeappen og 74 i Backstage, telefon og computer), er målt for de tre regler.
+- **Arkets knapper med tekst er 56** som alle andre: `.ark-knap` (rød og grå), `.ark-send-pille` og `.sw-knap` var 48–52. Vælter 21/9-reglen »knapper 44 i popups«.
+- **»Vælg«-feltet i arket (`.fv-knap`) er en dropdown: 44, hjørner 14** (var 48).
+- Dropdowns i arket har arkets egen kant (ingen grå streg) – med vilje. Valgfliser, rækker og fil-feltet er ikke knapper og er ikke rørt.
+- Ikke åbnet: de ark, der kræver bestemte data for at åbne (ca. 95 funktioner, de fleste tegner kun en del af et ark). De bruger de samme klasser og får samme mål.
+
 ## 14. november · CRM-FANERNE ER CHIPS · TITLEN I DET HVIDE ARK ER SORT (Idas ord 14/11 »ret de to ting«, v3278)
 - **CRM-fanerne** (»Alle«, produkterne, »Flere«) er chips som alle andre: ikke valgt = hvid med 1 px grå kant #DEDAD4 og grå tekst; valgt = rød med hvid tekst. Aldrig en fane uden kant.
 - **Titlen i det hvide ark** (`.ark-hvid > .ark-t`, fx »Tøm hovedet«) er sort #1A1A1A. Rød er aldrig en overskrift (Ida 4/11).
