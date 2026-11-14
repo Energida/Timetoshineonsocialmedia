@@ -1,3 +1,16 @@
+## 13. november · HEALTH COACH — NOTERNE TIL DEN ENKELTE TEST (Idas klik 13/11, v3265)
+Idas noter fra de 22 Notion-undersider står ved hver test under hendes egne overskrifter »Noter« · »Kig efter« · »Kig på« (12 versal uden for flisen), hvert punkt sin egen flise, foldet ud. Telefon: efter »Læs først« og LIGE OVER testen. Computer: i højre spalte under »Læs først«. Underpunkter står som grå linjer i samme flise. Første bogstav vises stort; ordene er ellers ordret. Bud: https://claude.ai/artifact/EKsQknm2j7MnbzgmArs6CD. Billederne fra Notion er ikke med.
+
+## 13. november · HEALTH COACH I BACKSTAGE — TESTSKEMAET (Idas klik 13/11, v3264)
+Idas egne testsider fra Notion (Scientific Core Condition · Biomekanik · Infant development · Basisbevægelser · Analyse af tests) er et skema i Backstage. Kun admin; i menuen lige efter CRM (hendes klik). Godkendte bud: telefon https://claude.ai/artifact/1TiFuGKjqhhky69PZBWaib · computer https://claude.ai/artifact/1V6F8gtDjhHMNMww3uKSHh.
+- »Læs først« står FOLDET UD (Ida: »læs først skal være foldet ud«): telefon øverst, computer i en spalte på 380 til højre. Hvert punkt sin egen flise (13 px, luft 14/20).
+- KUN ÉN TEST AD GANGEN (Ida: »vil gerne at jeg kun ser en af gangen«). Overskriften (gruppen) står uden for flisen, 12 versal.
+- Højre og venstre side om side i samme flise (felt 44, »grader« gråt i feltet); forskel over 10 % = rød prik 8 + »Forskel N %« (reglen er Idas egen). Én streg mellem tallene og »Hvordan føles det?«.
+- Næste (rød) og Tilbage (grå) er 56: telefon under hinanden med rød øverst, computer side om side. På telefonen er den lange Tilbage nederst skjult, mens en test er fremme (den grå knap er forrige test).
+- »Ny test«, »Ny test i dag« og »Tilføj test« ligger på husets plus (bf3PlusAuto), ikke som knapper på siden.
+- Ordene er Idas, ordret fra Notion; kun »Ekstention« er rettet til »Ekstension«. Ret ikke flere uden at spørge.
+- Svarene er helbredsoplysninger: Idas egne rækker i workout_data (skema »hc:<kontakt>:<dato>«), aldrig i browserens lager. Ingen ny tabel.
+
 ## HÅRD REGEL · 9. november · ALLE CHIPS ER 12,5 PX / 32 PX / 14 PX LUFT I HELE B2B (Ida 9/11: »alle chips skal ændres til bud 2 i hele b2b!«)
 Afløser 15/40 (7/11) og 13/36 (21/9). Uvalgt tekst #6F6B66, valgt = rød med hvid tekst. Trykfladen er 44 px (::before). Én blok sidst i CSS'en (seks id-negationer). Undtaget: flise-valg i arkene (sa-lang), initial-cirklerne i klip (kk-ini), dropdown-pillerne (bs3-drop, bdrop-knap). Statuspillen foran ⋯ er 13 px / 36 px.
 
@@ -3821,3 +3834,8 @@ Hver byggesten er sin egen flise i contentmodellens rækkefølge (USP · Målgru
 ## Navigationsknapper = 56 (LÅST 12. november, Idas valg i artifact AYsLo8hWHexAskZxZvdM9g)
 
 Knapper med tekst, der fører videre eller tilbage (den røde primære og den grå sekundære), er **56 høje** i hele appen. Chips er låst på 32 og er ikke navigationsknapper. Ikonknapper er 36. Kilden i koden er blokken »NAVIGATIONSKNAPPER = 56« sidst i det sidste `<style>` i `index.html`; nye navigationsknapper føjes til den blok. Målet står også i MÅLKORT.md.
+
+
+## Overskrift over fliser (LÅST 12. november, bud 1 + placering A, artifact Q9bqoBbxx7f3bMfau6tJNM)
+
+Overskriften står altid uden for flisen, aldrig inde i den. Poppins 12 / 400, versaler, bogstavafstand 1,5, farve #6F6B66. Venstrekanten flugter med flisens ydre kant, samme lodrette linje som hilsen og dato. 8 ned til flisen, 32 fra forrige flise op til overskriften, 24 fra coverets bund til den første overskrift. Fremdrift i et modul vises som én procesbar med procent for enden (som i profilen), ikke som små felter. Målene står også i MÅLKORT.md.

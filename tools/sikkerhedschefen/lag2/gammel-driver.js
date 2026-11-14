@@ -9,6 +9,8 @@
     await V(7000);
     openBriefSide("ga1"); await V(2500);
     try { briefMbVis("skriv", 0); } catch (e) {} await V(1500);
+    /* FAKTA ER BRIEFENS FØRSTE SIDE (v3261, 13/11) og har ingen tekstfelter — tekstfelterne står på Idéen */
+    try { if (typeof briefProcesTrin === "function") briefProcesTrin(1); } catch (e) {} await V(1500);
     /* DEN ANDEN: skriver CTA'en og en ny beskrivelse direkte i basen */
     var d = JSON.parse(localStorage.getItem("SELE_DB") || "{}"); var x = d.content_ideer.filter(function (z) { return z.id === "ga1"; })[0];
     x.brief = Object.assign({}, x.brief, { ctaCaption: "Skrevet af den anden", beskrivelse: "Den andens beskrivelse" }); localStorage.setItem("SELE_DB", JSON.stringify(d));
@@ -25,7 +27,7 @@
     tjek("Den andens beskrivelse står stadig (medmindre det var dét felt, der blev rettet her)", b.beskrivelse === "Den andens beskrivelse" || /rettet her/.test(b.beskrivelse || ""), "beskrivelse: " + JSON.stringify(b.beskrivelse));
     tjek("Rettelsen herfra er også gemt", JSON.stringify(efter).indexOf("rettet her") > -1, "felt: " + feltNavn);
     /* BAGEFTER RETTER KUNDEN SELV FELTET: kundens nye tekst skal vinde (fletningen må ikke låse feltet) */
-    openBriefSide("ga1"); await V(2000); try { briefMbVis("skriv", 0); } catch (e) {} await V(1200);
+    openBriefSide("ga1"); await V(2000); try { briefMbVis("skriv", 0); } catch (e) {} await V(1200); try { if (typeof briefProcesTrin === "function") briefProcesTrin(1); } catch (e) {} await V(1200);
     var f2 = document.getElementById(feltNavn) || felt; if (f2 && f2.isConnected) { f2.value = "Kundens nye tekst"; f2.dispatchEvent(new Event("input", { bubbles: true })); await V(1500); try { saveBrief(true); } catch (e) {} await V(3000); }
     var efter2 = raek(); tjek("Når kunden selv retter feltet bagefter, er det kundens tekst, der gemmes", JSON.stringify(efter2).indexOf("Kundens nye tekst") > -1, "felt: " + feltNavn);
     tjek("Den andens CTA står stadig efter kundens egen rettelse", ((efter2 && efter2.brief) || {}).ctaCaption === "Skrevet af den anden", "CTA: " + JSON.stringify(((efter2 && efter2.brief) || {}).ctaCaption));

@@ -8,7 +8,16 @@
   var fase = localStorage.getItem("FT_FASE") || "skriv";
   var dbRaekker = function (skema) { return ((JSON.parse(localStorage.getItem("SELE_DB") || "{}").skema_svar) || []).filter(function (x) { return x.skema === skema; }); };
   /* forsidens ring »Lektioner set« (huRinge) læses PÅ SKÆRMEN — »10 af 14« — og Forløbet-sidens tal (obFremdriftHtml) ved siden af */
-  var ringTal = async function () { try { showTab(3); } catch (e) {} await V(900); var ring = [].filter.call(document.querySelectorAll("#screen3 .hu-ring"), function (e) { return e.getClientRects().length && /Lektioner set/i.test(e.innerText || ""); })[0]; var m = ring ? String(ring.innerText).replace(/\s+/g, " ").match(/(\d+)\s*af\s*(\d+)/) : null; var f = String(obFremdriftHtml(CURRENT_DEF) || "").match(/(\d+)\/(\d+)/); return { skaerm: m ? m[1] + "/" + m[2] : "", funktion: f ? f[1] + "/" + f[2] : "" }; };
+  var ringTal = async function () { try { showTab(3); } catch (e) {} await V(900); var ring = [].filter.call(document.querySelectorAll("#screen3 .hu-ring"), function (e) { return e.getClientRects().length && /Lektioner set/i.test(e.innerText || ""); })[0]; var m = ring ? String(ring.innerText).replace(/\s+/g, " ").match(/(\d+)\s*af\s*(\d+)/) : null; var f = String(obFremdriftHtml(CURRENT_DEF) || "").match(/(\d+)\/(\d+)/);
+    /* TELEFONENS FORSIDE HAR INGEN RING LÆNGERE (v3257, 12/11): »Dit forløb« viser ét modul pr. flise med procent. Skærmen tæller som rigtig, når HVER vist procent
+       svarer til et moduls sete lektioner lige nu (samme regnestykke som forsiden: aktive, ulåste lektioner pr. modul). Så gives funktionens tal videre; ellers tomt = fejl. */
+    if (!m && f) { try {
+      var vist = [].filter.call(document.querySelectorAll("#screen3 .yf-fl .yf-bar b"), function (e) { return e.getClientRects().length; }).map(function (e) { return parseInt(e.textContent, 10); });
+      var grp = {}; (kursusLektionerAktive() || []).forEach(function (l) { var nr = modulNrFor(l.id); if (!nr) return; var laast = false; try { laast = !!lekModulLaastFor(l.id); } catch (e) {} if (laast) return; (grp[nr] = grp[nr] || []).push(l); });
+      var forv = Object.keys(grp).map(function (k) { var a = grp[k]; return Math.round(a.filter(function (l) { return KURSUS_SET[l.id]; }).length / a.length * 100); });
+      if (vist.length && vist.length === forv.length && vist.slice().sort().join() === forv.slice().sort().join()) m = [0, f[1], f[2]];
+    } catch (e) {} }
+    return { skaerm: m ? m[1] + "/" + m[2] : "", funktion: f ? f[1] + "/" + f[2] : "" }; };
   try {
     await V(7000); try { dagensKortLuk(); } catch (e) {} try { turLuk(); } catch (e) {}
     if (fase === "skriv") {

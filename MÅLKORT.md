@@ -17,6 +17,7 @@ Kilden i koden er **MÅLKORT-BLOKKEN** sidst i det første `<style>` i `index.ht
 | **Plus-chip** (»Tilføj forslag/klip/scene/CTA«) | som chip + plus 14 × 14 grå, **6** mellem plus og tekst (ikke 8 + 8), venstrestillet i rækken (aldrig højre), 12 over |
 | **Knap, grå** | pille radius 999 · hvid · 1 px #DEDAD4 · tekst #6F6B66 · Poppins 12–13 / 400 |
 | **Knap, rød** | pille · #FC2404 · hvid tekst · gør noget færdigt |
+| **Overskrift over fliser** (Ida 12/11, LÅST, bud 1 + placering A, artifact Q9bqoBbxx7f3bMfau6tJNM) | står ALTID uden for flisen · Poppins **12** / 400 · VERSALER · bogstavafstand **1,5** · **#6F6B66** (aldrig #9A9590: for svag) · venstrekant flugter med FLISENS YDRE KANT (samme linje som hilsen og dato) · **8** ned til flisen · **32** fra forrige flise op til overskriften · **24** fra coverets bund til første overskrift · aldrig en overskrift inde i en flise. Afløser sektionsetiketten 10 / #9A9590 fra 4/11, når siderne bygges om (porten måler stadig den gamle på forløbssiden, til den er bygget) |
 | **Navigationsknapper** (Ida 12/11, LÅST) | knapper med tekst, der fører videre eller tilbage (rød primær og grå sekundær): **56 høje** i hele appen · pille · tekst i midten. Chips (32) og ikonknapper (36) er IKKE navigationsknapper og ændres aldrig med dem |
 | **Øvrige knaphøjder** | ikonknap **36** · status/dropdown i briefen **40** · luk/send i ark **44** |
 | **Ikonknap** | rund **36 × 36** · hvid · 1 px #DEDAD4 · streg #6F6B66 · ikonet 16 i midten · trykfelt 44 via ::before |

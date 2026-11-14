@@ -25,6 +25,22 @@
   try {
     await V(7000); try { dagensKortLuk(); } catch (e) {}
     if (fase === "skriv") {
+      /* YOU GOT THIS HAR INGEN POP-UP AF SIG SELV (Ida 11/11): rundvisningen starter fra flisen »Kom godt i gang« på Forsiden (turFl). Dén gås igennem her, trin for trin. */
+      var FL = false; try { FL = typeof ygtHold === "function" && !!ygtHold(CURRENT_DEF); } catch (e) {}
+      if (FL) {
+        try { showTab(3); } catch (e) {} await V(600); try { turStartKortTegn(); } catch (e) {} await V(200);
+        tjek(55, "Ingen pop-up af sig selv: flisen Kom godt i gang står på Forsiden ved første login", !document.getElementById("turOverlay") && !!turFlSynlig(), "popup " + !!document.getElementById("turOverlay") + " · flise " + !!turFlSynlig());
+        var FS = turFlStops(), flUden = [], flTomme = [];
+        for (var fi = 1; fi < FS.length; fi++) {
+          turFl(fi); await V(FS[fi].burger ? 1400 : 900);
+          var fliseNu = turFlSynlig(); if (!fliseNu || !String(fliseNu.innerText || "").trim()) flTomme.push("trin " + fi);
+          if (FS[fi].m && !document.getElementById("turFlOverlay")) flUden.push(fi + " " + (FS[fi].t || "") + " [" + FS[fi].m.join(" | ") + "]");
+        }
+        tjek(55, "Rundvisningen har " + (FS.length - 1) + " trin, hver med tekst", FS.length > 1 && !flTomme.length, flTomme.join(", "));
+        tjek(55, "Hvert trin peger på noget, der findes på skærmen", !flUden.length, flUden.length ? "uden mål: " + flUden.join(" · ") : "");
+        turFlSlut(); await V(500);
+        tjek(55, "Rundvisningen er markeret som set (telefon og konto)", turSet() && JSON.parse(localStorage.getItem("SELE_USER_META") || "{}").tur_set === true, "");
+      } else {
       var autoTur = !!document.getElementById("turOverlay");   /* rundvisningen starter selv ved første login — og gås igennem PRÆCIS dér (på Hjem, ved første login) */
       tjek(55, "Rundvisningen starter af sig selv ved første login", autoTur, "");
       if (!autoTur) { turStart(true); await V(300); }
@@ -41,6 +57,7 @@
       tjek(55, "Hvert trin peger på noget, der findes på skærmen", !udenMaal.length, udenMaal.length ? "uden mål: " + udenMaal.slice(0, 6).join(" · ") : "");
       turLuk(); await V(400);
       tjek(55, "Rundvisningen er markeret som set (telefon og konto)", turSet() && JSON.parse(localStorage.getItem("SELE_USER_META") || "{}").tur_set === true, "");
+      }
 
       var keys = Object.keys(SKEMAER), fejl54 = [], nAlle = 0;
       for (var ki = 0; ki < keys.length; ki++) {
@@ -71,8 +88,10 @@
     tjek(54, "Skemaet står som udfyldt på en anden enhed", /Udfyldt/i.test(stt), "»" + stt + "«");
     var ovNu = !!document.getElementById("turOverlay");
     tjek(55, "Rundvisningen kommer ikke igen på en anden enhed", turSet() && !ovNu, "turSet " + turSet() + " · vises " + ovNu);
-    turStart(true); await V(300);
-    tjek(55, "»Se rundvisningen igen« starter den forfra", !!document.getElementById("turOverlay"), "");
+    var FL2 = false; try { FL2 = typeof ygtHold === "function" && !!ygtHold(CURRENT_DEF); } catch (e) {}
+    turStart(true); await V(FL2 ? 900 : 300);
+    tjek(55, "»Se rundvisningen igen« starter den forfra", FL2 ? (!!turFlSynlig() && TUR_FL_I === 0) : !!document.getElementById("turOverlay"), "");
+    if (FL2) { try { turFlSlut(); } catch (e) {} }
     try { turLuk(); } catch (e) {}
   } catch (e) { r.fejl = String(e && e.message || e); }
   L();
