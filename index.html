@@ -6363,6 +6363,7 @@ textarea.kbu-lang { min-height:72px; }
 .kbu-tom { color:#6F6B66; }
 .kbu-chips { display:flex; flex-wrap:wrap; gap:8px; }
 .kbu-chips .kbu-chip { height:32px; }
+.kbu-chip:disabled { opacity:.55; cursor:default; }
 .kbu-ark-et { font:400 10px Poppins,sans-serif; letter-spacing:1.5px; text-transform:uppercase; color:#6F6B66; margin:0 0 6px; }
 .kbu-ark-felt { display:block; width:100%; box-sizing:border-box; min-height:44px; border:1px solid var(--border); border-radius:14px; padding:11px 14px; font:400 16px/1.45 Poppins,sans-serif; color:var(--black); background:#fff; outline:none; resize:vertical; margin:0 0 16px; }
 .kbu-ark-kn { display:grid; gap:10px; margin-top:8px; }
@@ -43796,6 +43797,7 @@ async function kursusHent() {
   try { if (ygtModulHold()) { await ygtStartHent(); try { buildSideNav(CURRENT_DEF); buildBottomNav(CURRENT_DEF); } catch (e) {} if (ygtHold() && /^YOU GOT THIS/i.test(String((CURRENT_DEF || {}).forloeb || ""))) { try { ygtMailchimpMeld(); } catch (e) {} }   /* 9/11: Ringkøbing-kunder meldes IKKE til Mailchimp-forløbet af sig selv */ } } catch (e) {}   /* ti uger: kundens egen start + modul-mailene (30/9) */
   await modulerHent();   /* Idas modultekster — fejler den, staar appen praecis som foer */
   await oevelserHent();  /* Idas rettede oevelser — fejler den, staar kodens liste */
+  try { await skemaDefsHent(); } catch (e) {}   /* spørgeskemaerne fra Energida Studio (14/11) — fejler den, står kodens */
   if (sb && currentKode) {
     try {
       // ældste først, så nyeste række vinder for noter/præference
@@ -49468,6 +49470,7 @@ function kbuHtml(o) {
     + '<div class="kbu-kvit" id="kbLinksStatus"></div>'
     + '<div id="kbuFiler"></div>'
     + '<div id="kbuOpg"></div>'
+    + '<div id="kbuSkema"></div>'
     + '<div id="kbuPop"></div>'
     + '</div></div>';
 }
@@ -49490,7 +49493,11 @@ async function kbuTegn() {
   try { const r = await sb.from("skema_svar").select("svar").eq("kode", "ENERGIDA").eq("navn", "config").eq("skema", "lektion_kladde_" + lekId).maybeSingle(); const sv = (r && r.data && r.data.svar) || {}; KBU.slet = Array.isArray(sv.slet) ? sv.slet : []; KBU.oev = (sv.oev && Array.isArray(sv.oev.spm)) ? sv.oev : null; KBU.arkiv = Array.isArray(sv.arkiv) ? sv.arkiv : []; KBU.pop = (sv.pop && typeof sv.pop === "object") ? sv.pop : null; } catch (e) { KBU.slet = []; KBU.oev = null; KBU.arkiv = []; KBU.pop = null; }
   if (String(KBU.id) !== String(KLIP_BRIEF_ID)) return;
   KBU.hentet = true;
-  kbuStatusTegn(); kbuFilerTegn(); kbuOpgTegn(); kbuPopTegn();
+  await kbuSkHent();
+  if (String(KBU.id) !== String(KLIP_BRIEF_ID)) return;
+  kbuStatusTegn(); kbuFilerTegn(); kbuOpgTegn(); kbuSkTegn(); kbuPopTegn();
+  if (KBU.under === "__sk") kbuSkAabn();
+  if (/^__skspm/.test(String(KBU.under || ""))) kbuSkSpmAabn(parseInt(String(KBU.under).slice(8), 10));
   if (KBU.under === "__opg") kbuOpgAabn();
   if (KBU.under === "__fb") kbuFbAabn();
   if (KBU.under === "__pop") kbuPopAabn();
@@ -49498,7 +49505,7 @@ async function kbuTegn() {
 function kbuErUdgivet() {
   const o = kbuO(); if (!o || !KBU.pub) return false;
   return kbuNorm(KBU.pub.titel) === kbuNorm(kbuNavn(o)) && kbuNorm(KBU.pub.beskrivelse) === kbuNorm(o.beskrivelse) && kbuNorm(KBU.pub.video_link) === kbuNorm(o.video_link)
-    && !KBU.filKladde.length && !KBU.slet.length && !kbuOpgAendret() && !kbuPopAendret();
+    && !KBU.filKladde.length && !KBU.slet.length && !kbuOpgAendret() && !kbuPopAendret() && !kbuSkAendret();
 }
 function kbuStatusTegn() {
   try { LEK_KLADDE_HENTET = false; } catch (e) {}
@@ -49648,6 +49655,15 @@ async function kbuUdgiv() {
       try { const ra = await sb.from("lektioner").update({ oevelse_art: KBU.oev.art }).eq("id", KBU.lekId).select("id"); if (ra.error || !(ra.data && ra.data.length)) mangler.push("typen"); else { const l = (KURSUS_LEKTIONER || []).find(function (x) { return x.id === KBU.lekId; }); if (l) l.oevelse_art = KBU.oev.art; } } catch (e) { mangler.push("typen"); }
     }
     if (mangler.indexOf("spørgsmålene") < 0 && mangler.indexOf("typen") < 0) KBU.oev = null;
+  }
+  if (kbuSkAendret()) {
+    try {
+      const rk = "skema:" + KBU.skKey, nu = new Date().toISOString();
+      let u = await sb.from("lektion_oevelser").update({ spm: KBU.sk, opdateret: nu }).eq("lektion_id", rk).select("lektion_id");
+      if (!u.error && !(u.data && u.data.length)) u = await sb.from("lektion_oevelser").insert({ lektion_id: rk, spm: KBU.sk, opdateret: nu }).select("lektion_id");
+      if (u.error || !(u.data && u.data.length)) mangler.push("spørgeskemaet");
+      else { SKEMA_UDGIVET[KBU.skKey] = KBU.sk; skemaAnvend(KBU.skKey, KBU.sk); KBU.skPub = kbuSkKopi(KBU.sk); KBU.sk = null; await kbuSkKladdeGem(); }
+    } catch (e) { mangler.push("spørgeskemaet"); }
   }
   if (kbuPopAendret()) {
     try { const rp = await sb.from("lektioner").update({ popup: KBU.pop }).eq("id", KBU.lekId).select("id"); if (rp.error || !(rp.data && rp.data.length)) mangler.push(rp && rp.error && /popup/i.test(String(rp.error.message || "")) ? "popupperne (kør SQL-kortet »Popupperne pr. lektion« i Maskinrummet)" : "popupperne"); else KBU.pop = null; } catch (e) { mangler.push("popupperne"); }
@@ -49874,6 +49890,111 @@ function kbuPopVis() {
       + '<button type="button" class="dbtn primary lek-moment-knap" onclick="lukLekPop()">' + esc(p.knap) + '</button></div>');
     const lp = document.getElementById("lekPop"); if (lp) { if (lp.parentElement !== document.body) document.body.appendChild(lp); lp.style.zIndex = "1200"; }   /* popuppen bor i kundens lektionsvisning, som er skjult i Studio — den løftes ud til siden og over lektionssiden (z 900) */
   } catch (e) { husBesked("Popuppen kan ikke vises her."); }
+}
+/* ===== SPØRGESKEMAET PÅ FANEN INDHOLD (Idas klik 14/11, trin d, med reglerne: tekst må rettes · nye spørgsmål sidst · slet skjuler · ingen flytning
+   · svartypen låses, når der findes svar). »Find dit udgangspunkt« (inden_start) står efter sidste lektion i basens modul 1; slutskemaet
+   (efter_forloebet) efter forløbets sidste lektion — netop de to lektioner får flisen. Kladden: skema_svar ENERGIDA/config/skema_kladde_<nøgle>.
+   Udgivet: lektion_oevelser »skema:<nøgle>«. Kundens svar ligger på pladsen (q1, q2 …): intet spørgsmål fjernes eller flyttes nogensinde. ===== */
+const KBU_SK_TYPER = [{ t: "open", n: "Skriv selv" }, { t: "choice", n: "Vælg ét" }, { t: "multi", n: "Vælg flere" }, { t: "scale", n: "Skala" }];
+function kbuSkKopi(d) { try { return JSON.parse(JSON.stringify(d)); } catch (e) { return null; } }
+function kbuSkemaFor(lekId) {
+  try {
+    const mods = KURSUS_MODULER || []; const alle = mods.flatMap(function (m) { return m.lektioner || []; });
+    const m1 = mods.find(function (m) { return modulNrFor(((m.lektioner || [])[0] || {}).id) === "1"; });
+    if (m1 && m1.lektioner.length && m1.lektioner[m1.lektioner.length - 1].id === lekId) return "inden_start";
+    if (alle.length && alle[alle.length - 1].id === lekId) return "efter_forloebet";
+  } catch (e) {}
+  return null;
+}
+function kbuSkStd(key) { const d = SKEMA_STD[key] || SKEMAER[key] || { sp: [] }; return { titel: d.titel || "", intro: d.intro || "", sp: (d.sp || []).map(function (x) { return Object.assign({}, x); }) }; }
+async function kbuSkHent() {
+  KBU.skKey = KBU.lekId ? kbuSkemaFor(KBU.lekId) : null; KBU.sk = null; KBU.skPub = null; KBU.skSvar = 0;
+  if (!KBU.skKey) return;
+  try { await skemaDefsHent(true); } catch (e) {}
+  KBU.skPub = kbuSkKopi(SKEMA_UDGIVET[KBU.skKey]) || kbuSkStd(KBU.skKey);
+  try { const r = await sb.from("skema_svar").select("svar").eq("kode", "ENERGIDA").eq("navn", "config").eq("skema", "skema_kladde_" + KBU.skKey).maybeSingle(); const d = r && r.data && r.data.svar && r.data.svar.def; if (d && Array.isArray(d.sp)) KBU.sk = d; } catch (e) {}
+  try { const c = await sb.from("skema_svar").select("id", { count: "exact", head: true }).eq("skema", KBU.skKey).neq("kode", "ENERGIDA"); KBU.skSvar = (c && c.count) || 0; } catch (e) { KBU.skSvar = 1; }   /* kun ANTAL — aldrig svarene. Kan det ikke tælles, regnes der med svar (typen låses) */
+}
+function kbuSkNu() { return KBU.sk || KBU.skPub || { titel: "", intro: "", sp: [] }; }
+function kbuSkAendret() { return !!(KBU.skKey && KBU.sk && JSON.stringify(KBU.sk) !== JSON.stringify(KBU.skPub)); }
+async function kbuSkKladdeGem() {
+  const rk = { kode: "ENERGIDA", navn: "config", skema: "skema_kladde_" + KBU.skKey, svar: { def: KBU.sk || null } };
+  try {
+    const u = await sb.from("skema_svar").update({ svar: rk.svar }).eq("kode", "ENERGIDA").eq("navn", "config").eq("skema", rk.skema).select("id");
+    if (u.error) return false; if (u.data && u.data.length) return true;
+    const n = await sb.from("skema_svar").insert(rk).select("id"); return !n.error && !!(n.data && n.data.length);
+  } catch (e) { return false; }
+}
+function kbuSkSaet(fn) {
+  if (!KBU.sk) KBU.sk = kbuSkKopi(kbuSkNu());
+  fn(KBU.sk); kbuStatusTegn(); kbuSkTegn();
+  kbuSkKladdeGem().then(function (ok) { if (!ok) kbuKvit("Kladden blev ikke gemt. Prøv igen.", true); });
+}
+function kbuSkTegn() {
+  const el = document.getElementById("kbuSkema"); if (!el) return;
+  if (!KBU.skKey) { el.innerHTML = ""; return; }
+  const d = kbuSkNu(), n = (d.sp || []).filter(function (x) { return !x.skjult; }).length;
+  el.innerHTML = '<div class="kbu-ovr">Spørgeskema</div><button type="button" class="kbu-fl kbu-dor" onclick="kbuSkAabn()">' + esc(d.titel || "Spørgeskema") + '<i>' + n + ' spørgsmål</i></button>';
+}
+function kbuSkTypeNavn(t) { const x = KBU_SK_TYPER.find(function (y) { return y.t === t; }); return x ? x.n : "Fast svar"; }
+function kbuSkAabn() {
+  KBU.under = "__sk";
+  const d = kbuSkNu(); const plus = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>';
+  const fl = (d.sp || []).map(function (x, i) {
+    return '<div class="kbu-ovr">Spørgsmål ' + (i + 1) + '</div><button type="button" class="kbu-fl kbu-dor' + (x.skjult ? ' kbu-tom' : '') + '" onclick="kbuSkSpmAabn(' + i + ')">' + esc(x.q || "") + '<i>' + (x.skjult ? 'Skjult' : esc(kbuSkTypeNavn(x.t))) + '</i></button>';
+  }).join("");
+  kbuUnderSide("Spørgeskema",
+    '<div class="kbu-ovr kbu-foerst">Navn</div><button type="button" class="kbu-fl kbu-dor" onclick="kbuTekstArk(\'Navn\', \'Navn\', kbuSkNu().titel, \'\', function (v) { if (v) kbuSkSaet(function (d) { d.titel = v; }); kbuSkAabn(); })">' + esc(d.titel || "") + '</button>'
+    + '<div class="kbu-ovr">Indledning</div><button type="button" class="kbu-fl kbu-dor' + (d.intro ? '' : ' kbu-tom') + '" onclick="kbuTekstArk(\'Indledning\', \'Indledning\', kbuSkNu().intro, \'Skriv indledningen her\', function (v) { kbuSkSaet(function (d) { d.intro = v; }); kbuSkAabn(); })">' + esc(d.intro || "Skriv indledningen her") + '</button>'
+    + fl,
+    '<div class="kbu-kn kbu-kn-top"><button type="button" class="kbu-knap" onclick="kbuSkNyt()">' + plus + 'Tilføj</button></div>');
+}
+function kbuSkNyt() {
+  kbuTekstArk("Nyt spørgsmål", "Spørgsmål", "", "Skriv spørgsmålet her", function (v) {
+    if (!v) return; kbuSkSaet(function (d) { d.sp.push({ t: "open", q: v, frivillig: true }); });   /* et nyt spørgsmål lægges SIDST (pladserne flytter sig aldrig) og er frivilligt, så ingen kunde, der har sendt, skylder et svar */
+    kbuSkSpmAabn(kbuSkNu().sp.length - 1);
+  });
+}
+function kbuSkSpmAabn(i) {
+  const d = kbuSkNu(), x = (d.sp || [])[i]; if (!x) { kbuSkAabn(); return; }
+  KBU.under = "__skspm" + i;
+  const plus = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>';
+  const kendt = KBU_SK_TYPER.some(function (y) { return y.t === x.t; });
+  const nyt = i >= ((KBU.skPub && KBU.skPub.sp) || []).length;   /* et spørgsmål, der endnu ikke er udgivet, har ingen svar */
+  const laast = !kendt || (KBU.skSvar > 0 && !nyt);
+  const chips = '<div class="kbu-chips kbu-type">' + KBU_SK_TYPER.map(function (y) { return '<button type="button" class="kbu-chip' + (y.t === x.t ? ' on' : '') + '"' + (laast ? ' disabled' : ' onclick="kbuSkType(' + i + ', \'' + y.t + '\')"') + '>' + y.n + '</button>'; }).join("") + '</div>'
+    + (laast ? '<div class="kbu-kvit kbu-type">' + (kendt ? 'Svartypen kan ikke skiftes, når der er svar.' : 'Svartypen er fast.') + '</div>' : '');
+  const valg = (x.t === "choice" || x.t === "multi") ? '<div class="kbu-ovr">Svarmuligheder</div>' + (x.o || []).map(function (o, j) { return '<button type="button" class="kbu-fl kbu-dor" onclick="kbuSkValgArk(' + i + ', ' + j + ')">' + esc(o) + '</button>'; }).join("") : '';
+  kbuUnderSide("Spørgsmål " + (i + 1),
+    '<div class="kbu-ovr kbu-foerst">Spørgsmål</div><button type="button" class="kbu-fl kbu-dor" onclick="kbuTekstArk(\'Spørgsmål\', \'Spørgsmål\', kbuSkNu().sp[' + i + '].q, \'\', function (v) { if (v) kbuSkSaet(function (d) { d.sp[' + i + '].q = v; }); kbuSkSpmAabn(' + i + '); })">' + esc(x.q || "") + '</button>'
+    + valg,
+    '<div class="kbu-ovr kbu-foerst kbu-type">Svartype</div>' + chips
+    + '<div class="kbu-kn">' + ((x.t === "choice" || x.t === "multi") ? '<button type="button" class="kbu-knap" onclick="kbuSkValgArk(' + i + ', -1)">' + plus + 'Tilføj</button>' : '')
+    + (x.skjult ? '<button type="button" class="kbu-knap" onclick="kbuSkSaet(function (d) { d.sp[' + i + '].skjult = false; }); kbuSkSpmAabn(' + i + ')">Vis igen</button>'
+       : '<button type="button" class="kbu-knap" onclick="kbuSkSkjulSpoerg(' + i + ')">' + ((typeof BS_SKRALD_SVG !== "undefined") ? BS_SKRALD_SVG : "") + '<span>Slet</span></button>') + '</div>');
+}
+function kbuSkType(i, t) { kbuSkSaet(function (d) { const x = d.sp[i]; x.t = t; if ((t === "choice" || t === "multi") && !Array.isArray(x.o)) x.o = []; }); kbuSkSpmAabn(i); }
+function kbuSkSkjulSpoerg(i) {
+  arkSpoerg({ titel: "Slet spørgsmålet?", tekst: "Kunderne ser det ikke længere, når du udgiver. De svar, der er givet, bliver gemt.", jaTekst: "Ja, slet", nejTekst: "Nej", ja: function () {
+    kbuSkSaet(function (d) { d.sp[i].skjult = true; d.sp[i].frivillig = true; }); kbuSkAabn();
+  } });
+}
+function kbuSkValgArk(i, j) {
+  const x = kbuSkNu().sp[i] || {}; const v = j >= 0 ? (x.o || [])[j] : "";
+  let m = document.getElementById("bsFlytMenu"); if (!m) { m = document.createElement("div"); m.id = "bsFlytMenu"; document.body.appendChild(m); }
+  m.innerHTML = '<div class="bs-flyt-ark kbu-ark"><div class="kbu-ark-t">' + (j >= 0 ? 'Svarmulighed' : 'Ny svarmulighed') + '</div><div class="kbu-ark-et">Svarmulighed</div>'
+    + '<textarea id="kbuValgFelt" class="kbu-ark-felt" rows="1">' + esc(v || "") + '</textarea>'
+    + '<div class="kbu-ark-kn"><button type="button" class="kbu-knap kbu-roed" onclick="kbuSkValgGem(' + i + ', ' + j + ')">Gem</button>'
+    + (j >= 0 ? '<button type="button" class="kbu-knap" onclick="kbuSkValgSlet(' + i + ', ' + j + ')">' + ((typeof BS_SKRALD_SVG !== "undefined") ? BS_SKRALD_SVG : "") + '<span>Slet</span></button>' : '') + '</div></div>';
+  m.style.display = "flex"; m.onclick = function (e) { if (e.target === m) bsFlytLuk(); };
+}
+function kbuSkValgGem(i, j) {
+  const v = String((document.getElementById("kbuValgFelt") || {}).value || "").trim(); if (!v) return;
+  kbuSkSaet(function (d) { const x = d.sp[i]; x.o = Array.isArray(x.o) ? x.o : []; if (j >= 0) x.o[j] = v; else x.o.push(v); });
+  bsFlytLuk(); kbuSkSpmAabn(i);
+}
+function kbuSkValgSlet(i, j) {   /* kundens svar er gemt som teksten — en fjernet svarmulighed tager ingen svar med sig */
+  kbuSkSaet(function (d) { d.sp[i].o.splice(j, 1); }); bsFlytLuk(); kbuSkSpmAabn(i);
 }
 /* NYT FRA KUNDERNE PAA DASHBOARDET (Ida 11/11): de nyeste kommentarer paa lektionerne. »Laest« gemmes paa denne enhed (localStorage) — ingen ny tabel, ingen raekke i basen roeres */
 function liveFbNoegle(r) { return [r.kode || r.navn || "", r.id, r.dato || "", String(r.kommentar || "").slice(0, 24)].join("|"); }
@@ -57975,6 +58096,32 @@ async function skemaFoerHent() {
   } catch (e) {}
   try { if (SKEMA_KEY && (SKEMAER[SKEMA_KEY] || {}).sp) skemaWizTegn(); } catch (e) {}
 }
+/* SPØRGESKEMAERNE FRA ENERGIDA STUDIO (Idas klik 14/11, trin d, med reglerne »tekst må rettes · nye sidst · slet skjuler · ingen flytning«).
+   Det udgivne skema står i lektion_oevelser med lektion_id »skema:<nøgle>« (læses af alle indloggede som opgaverne, skrives af admin).
+   Kundens svar gemmes på pladsen (q1, q2 …), så et udgivet skema bruges KUN, hvis det har mindst lige så mange spørgsmål som kodens —
+   et skjult spørgsmål beholder sin plads (skjult: true) og springes over. */
+const SKEMA_STD = (function () { try { return JSON.parse(JSON.stringify(SKEMAER)); } catch (e) { return {}; } })();
+let SKEMA_UDGIVET = {}, SKEMA_DEF_HENTET = false;
+function skemaAnvend(key, d) {
+  const std = SKEMA_STD[key]; if (!std || !d || typeof d !== "object") return false;
+  const ny = Object.assign({}, std);
+  if (String(d.titel || "").trim()) ny.titel = String(d.titel).trim();
+  if (String(d.intro || "").trim()) ny.intro = String(d.intro).trim();
+  if (Array.isArray(d.sp) && d.sp.length >= std.sp.length) ny.sp = d.sp.map(function (x, i) { return Object.assign({}, std.sp[i] || {}, x); });
+  SKEMAER[key] = ny; return true;
+}
+async function skemaDefsHent(frisk) {
+  if ((SKEMA_DEF_HENTET && !frisk) || typeof sb === "undefined" || !sb) return false;
+  try {
+    const r = await sb.from("lektion_oevelser").select("lektion_id,spm").like("lektion_id", "skema:%");
+    if (r.error) return false;
+    SKEMA_DEF_HENTET = true; SKEMA_UDGIVET = {};
+    (r.data || []).forEach(function (x) { const k = String(x.lektion_id).slice(6); SKEMA_UDGIVET[k] = x.spm; skemaAnvend(k, x.spm); });
+    return true;
+  } catch (e) { return false; }
+}
+function skemaSpSkjult(def, i) { return !!(def && def.sp && def.sp[i] && def.sp[i].skjult); }
+function skemaSynlige(def) { return ((def && def.sp) || []).map(function (x, i) { return i; }).filter(function (i) { return !skemaSpSkjult(def, i); }); }
 function openSkema(key, iFlise) {
   if (!iFlise) lekSkemaUd();
   const def = SKEMAER[key];
@@ -57987,7 +58134,8 @@ function openSkema(key, iFlise) {
   setTxt("swNavn", def.titel);
   /* LANDER DER, HVOR MAN SLAP (Ida 26/8): punktet REGNES ud som foerste ubesvarede —
      en gemt markoer kan blive forkert, hvis et svar rettes eller et spoergsmaal flyttes. */
-  const foerste = def.sp.findIndex((s2, i) => SKEMA_ANSWERS["q" + (i + 1)] === undefined || SKEMA_ANSWERS["q" + (i + 1)] === "");
+  if (!SKEMA_DEF_HENTET) { skemaDefsHent().then(function (ok) { if (ok && SKEMA_KEY === key) { try { setTxt("swNavn", (SKEMAER[key] || def).titel); if (skemaSpSkjult(SKEMAER[key], SKEMA_I)) skemaWizGaa(1); else skemaWizTegn(); } catch (e) {} } }); }
+  const foerste = def.sp.findIndex((s2, i) => !s2.skjult && (SKEMA_ANSWERS["q" + (i + 1)] === undefined || SKEMA_ANSWERS["q" + (i + 1)] === ""));
   SKEMA_I = foerste < 0 ? 0 : foerste;
   const msg = document.getElementById("swMsg"); if (msg) { msg.textContent = ""; msg.className = "sw-msg"; }
   skemaWizTegn();
@@ -58005,8 +58153,11 @@ function skemaWizLuk() {
 
 function skemaWizGaa(n) {
   const def = SKEMAER[SKEMA_KEY]; if (!def) return;
-  if (n > 0 && SKEMA_I >= def.sp.length - 1) { saveSkema(); return; }
-  SKEMA_I = Math.max(0, Math.min(def.sp.length - 1, SKEMA_I + n));
+  /* skjulte spørgsmål springes over — deres plads (og kundens svar på den) bevares */
+  const syn = skemaSynlige(def); const pos = syn.indexOf(SKEMA_I);
+  if (n > 0 && (pos < 0 ? syn.filter(function (x) { return x > SKEMA_I; }).length === 0 : pos >= syn.length - 1)) { saveSkema(); return; }
+  if (pos < 0) { const fx = n > 0 ? syn.find(function (x) { return x > SKEMA_I; }) : syn.slice().reverse().find(function (x) { return x < SKEMA_I; }); SKEMA_I = fx == null ? (syn[0] || 0) : fx; }
+  else SKEMA_I = syn[Math.max(0, Math.min(syn.length - 1, pos + n))];
   skemaWizTegn();
 }
 
@@ -58023,14 +58174,16 @@ function skemaWizSvar(i, v) {
    love fremgang, man ikke har lavet (en flade, der lyver, 2/8). */
 function skemaWizFremdrift() {
   const def = SKEMAER[SKEMA_KEY]; if (!def) return;
-  const n = def.sp.filter((s2, i) => { const v = SKEMA_ANSWERS["q" + (i + 1)]; return v !== undefined && v !== ""; }).length;
+  const syn = skemaSynlige(def), alle = syn.length || 1;
+  const n = syn.filter((i) => { const v = SKEMA_ANSWERS["q" + (i + 1)]; return v !== undefined && v !== ""; }).length;
   const bar = document.getElementById("swLinje");
-  if (bar) bar.style.width = Math.round(n / def.sp.length * 100) + "%";
-  setTxt("swTal", n + " af " + def.sp.length + " besvaret");
+  if (bar) bar.style.width = Math.round(n / alle * 100) + "%";
+  setTxt("swTal", n + " af " + syn.length + " besvaret");
 }
 
 function skemaWizTegn() {
   const def = SKEMAER[SKEMA_KEY]; if (!def) return;
+  if (skemaSpSkjult(def, SKEMA_I)) { const syn = skemaSynlige(def); const fx = syn.find(function (x) { return x > SKEMA_I; }); SKEMA_I = fx != null ? fx : (syn.length ? syn[syn.length - 1] : 0); }   /* et skjult spørgsmål vises aldrig */
   const i = SKEMA_I, sp = def.sp[i], krop = document.getElementById("swKrop");
   if (!krop || !sp) return;
   const svar = SKEMA_ANSWERS["q" + (i + 1)];
@@ -58213,7 +58366,7 @@ async function saveSkemaInd() {
     const v = f ? String(f.value || "").trim() : "";
     if (v) SKEMA_ANSWERS["q" + (i + 1)] = v;
   });
-  const mangler = def.sp.map((s, i) => i).filter(i => { if (def.sp[i] && def.sp[i].frivillig) return false;   /* »s« fandtes ikke her — Send crashede for ALLE kunder (YGT-rejsen 28/9) */ const v = SKEMA_ANSWERS["q" + (i + 1)]; return v === undefined || v === ""; });
+  const mangler = def.sp.map((s, i) => i).filter(i => { if (def.sp[i] && (def.sp[i].frivillig || def.sp[i].skjult)) return false;   /* »s« fandtes ikke her — Send crashede for ALLE kunder (YGT-rejsen 28/9) */ const v = SKEMA_ANSWERS["q" + (i + 1)]; return v === undefined || v === ""; });
   const msg = document.getElementById("swMsg") || document.getElementById("skemaMsg");
   /* SIG HVOR — og GAA DERHEN. "Du mangler at svare paa 6 spoergsmaal" uden en vej hen til
      dem er en blindgyde: i en wizard kan man ikke se, hvilke der mangler. */
@@ -66760,7 +66913,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "3278";
+const APP_VERSION = "3279";
 const APP_BYGGET = "3. november";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_VERSION;   /* ingen dato (Ida 7/11: »hvorfor står der version 3. november?«) — datoen blev ikke rettet med, nummeret er sandheden */ } catch (e) {} });
 let NY_VERSION_KLAR = false;
