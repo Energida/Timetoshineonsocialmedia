@@ -1,3 +1,8 @@
+## 14. november · PORTEN RYDDER TEST-CHROMES MELLEMLAGER EFTER SIG (Ida 14/11: »lad porten rydde test-chromes mellemlager efter sig«)
+- `tools/designlaas/koer.sh` sletter selv test-Chromes mapper (`scoped_dir…` i `~/Library/Caches/Google/Chrome-headless`), når den starter og når den slutter. Før blev de liggende: 23 GB på en dag, disken løb fuld, og porten faldt med »ingen måling fra browseren«.
+- Kun mapper over 15 minutter gamle slettes, så en anden tråds port, der kører samtidig, ikke mister sin. Idas egen Chrome røres ikke.
+- Koden: `rydChrome()` i `koer.sh` (kaldes ved start og fra `ryd` ved EXIT).
+
 ## 14. november · ET SLIDE MED BILLEDE STÅR PÅ BRIEFOVERSIGTEN (Ida 14/11: »hvorfor kan jeg ikke se disse slides på briefoversigten og downloade dem??«, v3287)
 - Flisen »Slides« med »Download alle billeder« på briefoversigten viser et slide, når det har skrevet tekst, en note ELLER sit eget billede. Før talte kun tekst og note, så en karrusel af færdige billeder uden tekstlag var skjult.
 - »Kun det færdige står på briefoversigten« (26/9) gælder stadig: i en karrusel er et slide med eget billede færdigt. Coverbilledet til en reel er uændret (står, når det har tekst).

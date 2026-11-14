@@ -29,8 +29,13 @@ cd "$MAAL" || exit 1
 python3 -m http.server "$PORT" --bind 127.0.0.1 >/dev/null 2>&1 &
 SERVER=$!
 # RYD OP (15/9): mktemp-mappen blev efterladt ved hver koersel (17 MB pr. gang) og fyldte disken paa en eftermiddag. Kun vores egen mappe slettes.
-ryd() { kill "$SERVER" >/dev/null 2>&1; if [ -z "${SELE_MAPPE:-}" ] && [ -f "$MAAL/sele.html" ]; then rm -rf "$MAAL"; fi; }
+ryd() { kill "$SERVER" >/dev/null 2>&1; if [ -z "${SELE_MAPPE:-}" ] && [ -f "$MAAL/sele.html" ]; then rm -rf "$MAAL"; fi; rydChrome; }
+# RYD TEST-CHROMES MELLEMLAGER (Ida 14/11): hver maaling efterlod en scoped_dir-mappe i Chrome-headless — 23 GB paa en dag, disken
+# blev fuld, og porten faldt med »ingen maaling fra browseren«. Kun test-Chromes egne mapper slettes, og kun dem, der er over 15 min.
+# gamle: en maaling varer hoejst et par minutter, saa en anden traads port, der koerer samtidig, mister ikke sin mappe.
+rydChrome() { for d in "$HOME/Library/Caches/Google/Chrome-headless" "$HOME/.cache/google-chrome-headless"; do [ -d "$d" ] && find "$d" -maxdepth 1 -type d -name 'scoped_dir*' -mmin +15 -exec rm -rf {} + 2>/dev/null; done; return 0; }
 trap ryd EXIT
+rydChrome
 for i in 1 2 3 4 5 6 7 8 9 10; do curl -s -o /dev/null "http://127.0.0.1:$PORT/sele.html" && break; sleep 0.4; done
 LEVERET=$(curl -s "http://127.0.0.1:$PORT/index-sele.html" | grep -c "const APP_VERSION = \"$VER\"")
 [ "$LEVERET" = "0" ] && { echo "SELE LAAS FEJL: serveren paa port $PORT leverer ikke v$VER — maalingen ville have vaeret paa en anden kopi"; exit 1; }
