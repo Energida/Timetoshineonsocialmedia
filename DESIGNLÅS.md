@@ -3971,4 +3971,9 @@ Ida 14/11: »jeg HADER denne farve!« (den sandfarvede markering #FAF9F5 / #F1EF
 - **Valgt menupunkt og ting, der ikke er valgt** (fx forslag uden flueben): flade **#EEEEEE**, ingen kant.
 - Rød #FC2404 er stadig kun det aktive/valgte, man trykker på (Næste, valgt chip, valgt cirkel). Fliser er hvide.
 - Aldrig sort eller mørk flade (Ida 14/11: »ALDRIG SORT!!!«).
-- ÅBENT (ekspertgennemgangen 14/11 afgør definitionerne): sidens baggrund (buddet var hvid), og hvordan briefens lyseblå hjælpefliser (#F0F5F8) skilles fra »venter«.
+- **AFGJORT 14/11 (Idas fire klik efter ekspertgennemgangen):**
+  1. **Sidens baggrund er hvid #FFFFFF overalt**, også Forløbet, lektionerne og log ind. Fliserne skilles fra siden med kant #DCE8F0 og den bløde skygge.
+  2. **Hjælpefliser (briefens hjælp, tips) er hvide** med kant #DCE8F0 og et lille rundt symbolfelt med en pære. Lyseblå FLADE betyder kun »venter/låst«.
+  3. **Chips, der ikke er valgt: flade #EEEEEE uden kant**, grå tekst. Valgt chip er rød.
+  4. **Symbolfelter** (pære, lås, info): rundt felt #F0F5F8 og symbol i grå #6F6B66. Den lyseblå bruges til symbolfelter, aldrig som symbolets streg.
+- Én opgave pr. farve: **rød** = det aktive, man trykker på · **grå #EEEEEE** = valgt menupunkt/ikke valgt · **lyseblå flade #F0F5F8** = venter/låst og symbolfelter · **#DCE8F0** = tynde kanter · **hvid** = side og fliser.

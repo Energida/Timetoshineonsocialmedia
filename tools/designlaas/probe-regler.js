@@ -11,7 +11,7 @@ var FUND=[], N=0, TRIN="start";
 function fejl(s){ FUND.push(TRIN+" · "+s); }
 function er(navn, e, ok, hvad){ N++; if(!ok) fejl(navn+" »"+txt(e)+"« ["+kl(e)+"] "+hvad); }
 var TLF=innerWidth<900;
-var RED="rgb(252,36,4)", SORT="rgb(26,26,26)", G2="rgb(111,107,102)", KANT="rgb(222,218,212)";
+var RED="rgb(252,36,4)", SORT="rgb(26,26,26)", G2="rgb(111,107,102)", KANT="rgb(220,232,240)";   /* kundeappens felter og dropdowns har kanten #DCE8F0 (markeringsfarver 1+7, LÅST 14/11) */
 function maalLaas1411(){
   document.querySelectorAll(".ark-chip.on, .ss-chip.on, .cm-chip.on, .chip-btn.on, .ark-vchip.on, .kk-chip.on, .lek-favchip.valgt").forEach(function(e){
     if(!synlig(e)||/dbtn|sa-lang|kk-ini|sa-ved-ik|bs3-drop|cv-plus|bdrop|fb-hc/.test(e.className)) return; var cs=getComputedStyle(e), af=getComputedStyle(e,"::after");
@@ -20,7 +20,7 @@ function maalLaas1411(){
   });
   document.querySelectorAll(".bs3-drop, .bdrop-knap, select:not([multiple]):not([size])").forEach(function(e){   /* ALLE dropdowns (v3271), ikke kun briefens status */
     if(!synlig(e)||e.closest(".ark-hvid, .ark-bue")) return; var cs=getComputedStyle(e), r=e.getBoundingClientRect(), sp=e.matches(".bs3-drop:not([data-etiket])")?e.querySelector("span"):null, sv=e.matches(".bs3-drop")?e.querySelector("svg"):null;
-    er("DROPDOWN form", e, Math.round(r.height)===44&&px(cs.borderTopLeftRadius)===14&&px(cs.borderTopWidth)===1&&rgb(cs.borderTopColor)===KANT&&rgb(cs.backgroundColor)==="rgb(255,255,255)"&&px(cs.paddingLeft)===14, "h"+Math.round(r.height)+" r"+cs.borderTopLeftRadius+" kant "+cs.borderTopColor+" flade "+cs.backgroundColor+" luft "+cs.paddingLeft+" (skal 44 · r14 · 1 px #DEDAD4 · hvid · luft 14)");
+    er("DROPDOWN form", e, Math.round(r.height)===44&&px(cs.borderTopLeftRadius)===14&&px(cs.borderTopWidth)===1&&rgb(cs.borderTopColor)===KANT&&rgb(cs.backgroundColor)==="rgb(255,255,255)"&&px(cs.paddingLeft)===14, "h"+Math.round(r.height)+" r"+cs.borderTopLeftRadius+" kant "+cs.borderTopColor+" flade "+cs.backgroundColor+" luft "+cs.paddingLeft+" (skal 44 · r14 · 1 px #DCE8F0 · hvid · luft 14)");
     if(sp){ var ss=getComputedStyle(sp), rg=document.createRange(); rg.selectNodeContents(sp); var tr=rg.getBoundingClientRect(); er("DROPDOWN tekst", e, rgb(ss.color)===SORT&&Math.abs(tr.left-r.left-15)<=2, "tekst "+ss.color+", "+Math.round(tr.left-r.left)+" px fra venstre kant (skal sort #1A1A1A, 15 fra kanten)"); }
     if(sv){ var vr=sv.getBoundingClientRect(); er("DROPDOWN pil", e, Math.abs(r.right-vr.right-15)<=2&&rgb(getComputedStyle(sv).color)===G2, "pilen står "+Math.round(r.right-vr.right)+" px fra højre kant i "+getComputedStyle(sv).color+" (skal 15, grå #6F6B66)"); }
   });

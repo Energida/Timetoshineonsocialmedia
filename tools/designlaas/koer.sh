@@ -134,6 +134,18 @@ for FK in "390 1200" "1440 940"; do
   [ -z "$UDF" ] && echo "[$1] SELE FLISER FEJL: ingen maaling fra chromium"
   echo "$UDF" | grep -q "SELE FLISER OK" || REGLER_OK=0
 done
+# FARVE-PORTEN (LAAST 14/11, Idas klik »variation 1 + 7«): ingen sandflade (#FAF9F5 · #F1EFEA · #F3F0EA · #F4F2EE · #F2F0ED) paa kundeappens sider, og siden er hvid — paa 390 og 1440.
+KFA=$(python3 -c "import urllib.parse,sys;print(urllib.parse.quote(open(sys.argv[1]).read()))" "$ROD/tools/designlaas/probe-farver.js")
+FARVER_OK=1
+for FA in "390 1200" "1440 940"; do
+  set -- $FA
+  RAAFA=$($TO "$C" $HL --no-sandbox --disable-gpu --window-size=$(($1+40)),$(($2+60)) --virtual-time-budget=90000 --enable-logging=stderr --v=0 --screenshot="$MAAL/farver-$1.png" "http://127.0.0.1:$PORT/sele.html?vis=kunde&fil=index-sele.html%3Fselekode%3DHINGES2026&bred=$1&hoej=$2&kode=$KFA" 2>&1)
+  UDFA=$(echo "$RAAFA" | grep -a 'CONSOLE' | sed -E 's/^.*CONSOLE[:(][0-9]+\)?\] //; s/", source:.*$//; s/^"//' | grep -a 'SELE FARVER')
+  echo "$UDFA" | sed "s/^/[$1] /"
+  [ -z "$UDFA" ] && echo "[$1] SELE FARVER FEJL: ingen maaling fra chromium"
+  echo "$UDFA" | grep -q "SELE FARVER OK" || FARVER_OK=0
+done
+[ "$FARVER_OK" = "1" ] && echo "SELE FARVER OK: ingen sandflade og hvid side paa 390 og 1440" || { echo "SELE FARVER FEJL: fund staar ovenfor"; REGLER_OK=0; }
 [ "$REGLER_OK" = "1" ] && echo "SELE REGLER OK: de tre regler holder paa 390 og 1440" || echo "SELE REGLER FEJL: afvigelser staar ovenfor"
 # REGEL-PORTEN, DEL 2 (Ida 14/11: »få porten til at måle ark og backstage også«): de samme tre regler paa Backstages sider og inde i ark og popups, aabnet én for én — kundeappen og Backstage, 390 og 1440.
 for RF in "kunde 390 1200" "dash 390 1200" "kunde 1440 940" "dash 1440 940"; do

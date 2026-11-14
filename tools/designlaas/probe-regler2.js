@@ -15,7 +15,7 @@ function txt(e){ return (e.innerText||e.getAttribute("aria-label")||e.placeholde
 function kl(e){ return (e.className&&e.className.toString().split(" ").filter(Boolean).slice(0,2).join("."))||e.tagName.toLowerCase(); }
 var FUND=[], N=0, TRIN="start", SET={};
 function er(navn, e, ok, hvad){ N++; if(ok) return; var f=navn+" ["+kl(e)+"] "+hvad; if(SET[f]){ SET[f].n++; return; } SET[f]={n:1,hvor:TRIN,eks:txt(e)}; FUND.push(f); }
-var RED="rgb(252,36,4)", KANT="rgb(222,218,212)";
+var RED="rgb(252,36,4)", KANT=(FLADE==="kunde")?"rgb(220,232,240)":"rgb(222,218,212)";   /* kundeappens felter har kanten #DCE8F0 (markeringsfarver 1+7, 14/11); Backstage er uroert */
 var CHIPS=".ark-chip.on, .ss-chip.on, .cm-chip.on, .chip-btn.on, .ark-vchip.on, .kk-chip.on, .lek-favchip.valgt, .crm2-fane.on";
 var KNAPPER=".dbtn:not(.ark-chip):not(.chip-btn):not(.ss-chip):not(.kk-chip):not(.vt-pille):not(.lku-tilb), .db-knap, .bsam-mobknap:not(.cf-ny), .bsam-knap, .lk-note-alle, .hu-graa, .crm2-ny, .tom-knap, .pb-knap, .prof-gem, .ark-knap, .ark-send-pille, .sw-knap";
 function maal(ROD, iArk){
@@ -24,7 +24,7 @@ function maal(ROD, iArk){
     er("VALGT CHIP flueben", e, af.content==="none"||af.display==="none", "har et mærke efter teksten"); });
   ROD.querySelectorAll(".bs3-drop, .bdrop-knap, .fv-knap, select:not([multiple]):not([size])").forEach(function(e){ if(!synlig(e)) return; var cs=getComputedStyle(e), r=e.getBoundingClientRect(), iHvid=!!e.closest(".ark-hvid, .ark-bue");
     er("DROPDOWN højde og hjørner", e, Math.round(r.height)===44&&px(cs.borderTopLeftRadius)===14, "h"+Math.round(r.height)+" r"+cs.borderTopLeftRadius+" (skal 44 · r14)");
-    if(!iHvid&&!e.matches(".fv-knap")) er("DROPDOWN kant og flade", e, px(cs.borderTopWidth)===1&&rgb(cs.borderTopColor)===KANT&&rgb(cs.backgroundColor)==="rgb(255,255,255)", "kant "+cs.borderTopWidth+" "+cs.borderTopColor+" flade "+cs.backgroundColor+" (skal 1 px #DEDAD4 på hvid)"); });
+    if(!iHvid&&!e.matches(".fv-knap")) er("DROPDOWN kant og flade", e, px(cs.borderTopWidth)===1&&rgb(cs.borderTopColor)===KANT&&rgb(cs.backgroundColor)==="rgb(255,255,255)", "kant "+cs.borderTopWidth+" "+cs.borderTopColor+" flade "+cs.backgroundColor+" (skal 1 px "+(FLADE==="kunde"?"#DCE8F0":"#DEDAD4")+" på hvid)"); });
   ROD.querySelectorAll(KNAPPER).forEach(function(e){ if(!synlig(e)||e.closest("#virkMenu, #dashMenu, .burger, #burgerMenu")||(e.innerText||"").trim().length<2) return; var r=e.getBoundingClientRect(); if(Math.abs(r.width-r.height)<=8) return; var mk=innerWidth>=900?44:56; er("KNAP "+mk, e, Math.round(r.height)===mk, "h"+Math.round(r.height)+" (skal "+mk+")");   /* 56 på telefonen, 44 på computeren (Idas klik 14/11) */ });
 }
 function lag(){ var u=[]; [].forEach.call(document.querySelectorAll("#bsFlytMenu, #arkSlor, .ark-slor, .modal-back, [class*='-back'], [class*='slor'], [class*='overlay'], [class*='popup'], [class*='-pop']"),function(e){ var c=getComputedStyle(e); if(c.display==="none"||c.visibility==="hidden"||parseFloat(c.opacity)===0) return; var r=e.getBoundingClientRect(); if(r.width<200||r.height<100) return; if(c.position!=="fixed"&&c.position!=="absolute") return; if(!(e.innerText||"").trim()) return; u.push(e); }); return u; }
