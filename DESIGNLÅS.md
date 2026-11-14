@@ -1,3 +1,7 @@
+## 14. november · CRM-FANERNE ER CHIPS · TITLEN I DET HVIDE ARK ER SORT (Idas ord 14/11 »ret de to ting«, v3278)
+- **CRM-fanerne** (»Alle«, produkterne, »Flere«) er chips som alle andre: ikke valgt = hvid med 1 px grå kant #DEDAD4 og grå tekst; valgt = rød med hvid tekst. Aldrig en fane uden kant.
+- **Titlen i det hvide ark** (`.ark-hvid > .ark-t`, fx »Tøm hovedet«) er sort #1A1A1A. Rød er aldrig en overskrift (Ida 4/11).
+
 ## 14. november · DE TRE REGLER ER RULLET UD I HELE SYSTEMET (UX-politiet, v3275)
 - **Alle dropdowns** (`.bs3-drop`, `.bdrop-knap`, hver `<select>`) har kalenderens form i kundeappen og Backstage: 44 høj, hjørner 14, 1 px kant #DEDAD4, hvid, tekst til venstre i sort (#1A1A1A), pil til højre i grå. Tom dropdown har grå tekst (#9A9590). Undtaget: dropdowns inde i det lille ark (`.ark-hvid`, `.ark-bue`), som har arkets egen kant.
 - **Hver knap med tekst er 56 høj**, begge flader, kundeapp og Backstage (`.dbtn`, `.db-knap`, `.bsam-knap`, `.bsam-mobknap`, `.lk-note-alle`, `.hu-graa`, `.crm2-ny`, `.row-btn` med tekst, `.tom-knap`, `.pb-knap`, `.pf-cv-gem`, `.prof-gem`, kalenderens »+ Ny«). Undtaget: chips (32) og runde ikonknapper (36).
