@@ -5,6 +5,12 @@
 - Dropdowns i arket har arkets egen kant (ingen grå streg) – med vilje. Valgfliser, rækker og fil-feltet er ikke knapper og er ikke rørt.
 - Ikke åbnet: de ark, der kræver bestemte data for at åbne (ca. 95 funktioner, de fleste tegner kun en del af et ark). De bruger de samme klasser og får samme mål.
 
+## HEALTH COACH: FANEN SCREENING (v3284, Idas klik 14/11 »Ja, deploy«)
+
+- Klientens side har tre faner: **Screening · Test · Gennemgang**.
+- Screening er Idas egen skabelon »1. Screening« fra Notion, ORDRET (også »idag«, »alt den energi«): fem sektioner, én ad gangen (Mål, mareridt og mening · Identitet · Smerter · Uddybelse af spørgeskema · Observationer), »Læs først« = hendes indledende punkter. Svarene gemmes i samme test som testsvarene. Screening tæller ikke som testrunde og giver ingen fund.
+- **FØLG DET SAMME DESIGN (HÅRD, Ida 14/11: »følg nu det samme design i stedet for at finde på ny! Lav spørgsmålet over flisen«).** Et spørgsmål eller en feltetiket står som versal-overskrift OVER feltet, præcis som på testskærmen; aldrig i sin egen flise. Før noget nyt tegnes, genbruges nabosidens godkendte mønster uændret.
+
 ## 14. november · CRM-FANERNE ER CHIPS · TITLEN I DET HVIDE ARK ER SORT (Idas ord 14/11 »ret de to ting«, v3278)
 - **CRM-fanerne** (»Alle«, produkterne, »Flere«) er chips som alle andre: ikke valgt = hvid med 1 px grå kant #DEDAD4 og grå tekst; valgt = rød med hvid tekst. Aldrig en fane uden kant.
 - **Titlen i det hvide ark** (`.ark-hvid > .ark-t`, fx »Tøm hovedet«) er sort #1A1A1A. Rød er aldrig en overskrift (Ida 4/11).
