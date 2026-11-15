@@ -547,13 +547,19 @@ Deno.serve(async (req) => {
   // Kontaktpersonens navn ligger derfor i kommentaren sammen med mail og telefon.
   let kontaktOk = true;
   // rabatInfo er hentet øverst (rabatkoden vinder over linket, 15/11) —: gemmes på kontakten (Live-overblikket: Køb pr. rabatkode) og står i købsmailen
-  try {
-    const { data, error } = await admin.from("contacts").insert({
+  // 15/11 FELTERNE UDFYLDES (Ida: »en kunde der køber … oprettes sådan her i mit system!! WTF« — kortet stod tomt):
+  // kontaktperson · email · telefon · produkt skrives nu i deres egne kolonner (de samme, CRM-kortet selv gemmer i
+  // via contacts.update), og kommentaren står som før. Afviser basen de ekstra felter, indsættes kontakten
+  // præcis som før (kunde · status · source · kommentar), så et køb aldrig mister sin kontakt.
+  const kontaktGrund = {
       kunde: virksomhed,
       status: "Kunde",
       source: erTest ? "Testlink" : (erYGT ? ("YOU GOT THIS" + (forening ? " · " + forening : "")) : "Stripe"),
       kommentar: [navn, email, telefon, "Kode: " + kode, (s.amount_total != null ? "Beløb: " + Math.round(Number(s.amount_total) / 100) + " kr." : ""), (rabatInfo.kode ? "Rabatkode: " + rabatInfo.kode : "")].filter(Boolean).join(" · "),   // BELØBET TIL LIVE-OVERBLIKKET (Idas klik 19/10 »Kroner pr. køb«): Stripes amount_total i øre → hele kroner
-    }).select("id");
+  };
+  try {
+    let { data, error } = await admin.from("contacts").insert({ ...kontaktGrund, kontaktperson: navn || null, email: email || null, telefon: telefon || null, produkt: erYGT ? "YOU GOT THIS" : "Content Studio" }).select("id");
+    if (error || !data || !data.length) ({ data, error } = await admin.from("contacts").insert(kontaktGrund).select("id"));
     if (error || !data || !data.length) kontaktOk = false;
   } catch { kontaktOk = false; }
 
