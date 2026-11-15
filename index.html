@@ -36847,6 +36847,7 @@ async function profilFlowStart() {
     f: Object.assign({ navn: pfFornavnForslag(d) || pfStripeNavn(d).fornavn, efternavn: pfStripeNavn(d).efternavn, dag: "", mdr: "", aar: "", ejer: "", rolle: "",
       butik_navn: String((butik && butik.butik_navn) || ((pfForening(d) && !d.stripe_virksomhed_fundet) ? "" : (d.studioNavn || d.virksomhed)) || "").replace(/\s*studio$/i, ""), adresse: "", postnr: "", by: "", cvr: "",
       branche: (butik && butik.branche) || "", branche_andet: (butik && butik.branche_andet) || "", forretningstype: (butik && butik.forretningstype) || d.forretningstype || "",
+      afd_valg: pfAntalValg(butik && butik.afdelinger), afd_antal: pfAntalTal(butik && butik.afdelinger), ans_valg: pfAntalValg(butik && butik.medarbejdere), ans_antal: pfAntalTal(butik && butik.medarbejdere),
       inviter: "", kolleger: [{ navn: "", mail: "" }, { navn: "", mail: "" }] }, (k && k.f) || {}) };
   while (PF.f.kolleger.length < 2) PF.f.kolleger.push({ navn: "", mail: "" });
   PF.butikKendt = !!String(PF.f.butik_navn || "").trim();   /* NAVNET ER KENDT FRA KØBET (Ida 15/11, testperson: »kan vi ikke fjerne denne, når det allerede er udfyldt i Stripe?«) — skærmen springes over; navnet rettes under Profil › Forretningen */
@@ -36860,7 +36861,7 @@ function pfSkaerme(t) {
   if (t === 0) return ["pw0"];
   if (PF.ygt && !PF.kollega && t === pfAntal() && t > 2) return ["klar"];
   if (t === 1) return ["navn", "foed", "rolle"].concat(PF.pw ? ["pw"] : []);
-  if (t === 2) return (PF.butikKendt ? [] : ["butik"]).concat(["branche", "koeb"]);   /* ADRESSE OG CVR ER UDE AF POPUPPEN (Idas klik 12/11 »Ud af popuppen«: »forvirrende at … praktiske oplysninger som adresse [kommer] midt i det hele«) — de udfyldes under Profil › Forretningen */
+  if (t === 2) return (PF.butikKendt ? [] : ["butik"]).concat(["branche", "koeb", "afd", "ansatte"]);   /* AFDELINGER OG MEDARBEJDERE (Ida 15/11) — efter, hvordan kunderne handler */   /* ADRESSE OG CVR ER UDE AF POPUPPEN (Idas klik 12/11 »Ud af popuppen«: »forvirrende at … praktiske oplysninger som adresse [kommer] midt i det hele«) — de udfyldes under Profil › Forretningen */
   return ["kolleger"];
 }
 function pfSkaerm() { const l = pfSkaerme(); return l[Math.max(0, Math.min(PF.sp || 0, l.length - 1))]; }
@@ -36877,6 +36878,8 @@ function pfSkaermKlar(sk) {
     case "cvr": return true;
     case "branche": return !pfTom(f.branche) && (f.branche !== "Andet" || !pfTom(f.branche_andet));
     case "koeb": return !pfTom(f.forretningstype);
+    case "afd": return f.afd_valg === "en" || (f.afd_valg === "flere" && parseInt(f.afd_antal, 10) >= 2);
+    case "ansatte": return f.ans_valg === "en" || (f.ans_valg === "flere" && parseInt(f.ans_antal, 10) >= 2);
     default: return true;
   }
 }
@@ -36887,6 +36890,8 @@ function pfSkaermFejl(sk) {
   if (sk === "adr") return "Skriv adresse, postnr. med 4 cifre og by.";
   if (sk === "branche") return f.branche === "Andet" ? "Skriv jeres branche for at komme videre." : "Vælg den branche, der passer på dig/jer.";
   if (sk === "koeb") return "Vælg, hvordan kunderne handler hos dig/jer i dag.";
+  if (sk === "afd") return f.afd_valg === "flere" ? "Skriv, hvor mange afdelinger I har (mindst 2)." : "Vælg Én eller Flere.";
+  if (sk === "ansatte") return f.ans_valg === "flere" ? "Skriv, hvor mange medarbejdere I er (mindst 2)." : "Vælg Én eller Flere.";
   if (sk === "pw" || sk === "pw0") return "Mindst 6 tegn.";
   return "Udfyld feltet for at gå videre.";
 }
@@ -36953,6 +36958,11 @@ function pfRolleNu(f) {
   if (f.ejer === "nej") return ["Leder", "Ansat", "Frivillig"].indexOf(String(f.rolle || "").trim()) > -1 ? String(f.rolle).trim() : "andet";
   return "";
 }
+/* ÉN ELLER FLERE (Ida 15/11): gemmes som et tal — 1 = én, ellers det tal, kunden skrev */
+const PF_EN_FLERE = [{ k: "en", n: "Én" }, { k: "flere", n: "Flere" }];
+function pfAntalValg(n) { n = parseInt(n, 10); return n === 1 ? "en" : n > 1 ? "flere" : ""; }
+function pfAntalTal(n) { n = parseInt(n, 10); return n > 1 ? String(n) : ""; }
+function pfAntalGem(valg, antal, gl) { if (valg === "en") return 1; const n = parseInt(antal, 10); if (valg === "flere" && n >= 2) return n; return gl == null ? null : gl; }
 function pfValg(id, k) { if (!PF) return;
   if (id === "rollevalg") { const forr = pfRolleNu(PF.f); PF.f.rollevalg = k; PF.f.ejer = k === "ja" ? "ja" : "nej";
     if (k === "ja") PF.f.rolle = ""; else if (k !== "andet") PF.f.rolle = k; else if (forr !== "andet") PF.f.rolle = "";
@@ -37021,6 +37031,12 @@ function pfTegn() {
   } else if (sk === "branche") {
     krop = '<div class="pf-t">Hvilken branche passer på dig/jer?</div>' + pfChips("branche", VK_BRANCHER, f.branche)   /* Idas ord 15/11 (testperson) */
       + (f.branche === "Andet" ? pfFelt("branche_andet", "Skriv jeres branche", f.branche_andet) + '<div class="pf-gemt" id="pfAndetSt"></div>' : '');
+  } else if (sk === "afd") {
+    krop = '<div class="pf-t">Har du/I én eller flere afdelinger/forretninger?</div>' + pfChips("afd_valg", PF_EN_FLERE, f.afd_valg)
+      + (f.afd_valg === "flere" ? pfFelt("afd_antal", "Hvor mange?", f.afd_antal, { num: true, max: 3, ph: "Antal" }) : '');
+  } else if (sk === "ansatte") {
+    krop = '<div class="pf-t">Hvor mange medarbejdere er I?</div>' + pfChips("ans_valg", PF_EN_FLERE, f.ans_valg)
+      + (f.ans_valg === "flere" ? pfFelt("ans_antal", "Hvor mange?", f.ans_antal, { num: true, max: 4, ph: "Antal" }) : '');
   } else if (sk === "koeb") {
     krop = '<div class="pf-t">Hvordan handler kunderne hos dig/jer i dag?</div>' + pfChips("forretningstype", VK_KOEB, f.forretningstype);
   } else {
@@ -37055,7 +37071,8 @@ async function pfButikGem() {
   const f = PF.f;
   let gl = {}; try { const r = await sb.from("skema_svar").select("svar").eq("kode", currentKode).eq("navn", "config").eq("skema", "profil_svar").maybeSingle(); gl = (r && r.data && r.data.svar) || {}; } catch (e) {}
   const svar = Object.assign({}, gl, { butik_navn: String(f.butik_navn || "").trim(), adresse: String(f.adresse || "").trim() || gl.adresse || "", postnr: String(f.postnr || "").trim() || gl.postnr || "", by: String(f.by || "").trim() || gl.by || "", cvr: String(f.cvr || "").trim() || gl.cvr || "",   /* popuppen spørger ikke længere om adresse/CVR — det, der står under Profil, må aldrig overskrives med tomt */
-    branche: f.branche || "", branche_andet: f.branche === "Andet" ? String(f.branche_andet || "").trim() : "", forretningstype: f.forretningstype || "", udfyldt_af: gl.udfyldt_af || PF.mail || "kunden" });
+    branche: f.branche || "", branche_andet: f.branche === "Andet" ? String(f.branche_andet || "").trim() : "", forretningstype: f.forretningstype || "", udfyldt_af: gl.udfyldt_af || PF.mail || "kunden",
+    afdelinger: pfAntalGem(f.afd_valg, f.afd_antal, gl.afdelinger), medarbejdere: pfAntalGem(f.ans_valg, f.ans_antal, gl.medarbejdere) });
   await pfRaekkeGem("config", "profil_svar", svar);
   if (f.forretningstype && !(CURRENT_DEF && CURRENT_DEF.forretningstype)) { KUNDE_VALG_TYPE = f.forretningstype; await pfRaekkeGem("config", "kunde_valg", { forretningstype: f.forretningstype }); }
 }
@@ -68365,7 +68382,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "3346";
+const APP_VERSION = "3347";
 const APP_BYGGET = "3. november";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_VERSION;   /* ingen dato (Ida 7/11: »hvorfor står der version 3. november?«) — datoen blev ikke rettet med, nummeret er sandheden */ } catch (e) {} });
 let NY_VERSION_KLAR = false;
