@@ -17,7 +17,7 @@
 //      forkert/ingen → 401. Databasen røres først bagefter. Kalderen kan intet vælge: ingen modtagere, ingen tekst,
 //      ingen datoer i kaldet — kun { proev: true }, som sender intet og svarer med tal.
 //   4. Service-role: JA, men først EFTER verificeret hemmelighed (§4: der er ingen bruger at spørge som).
-//   5. Når: virksomhedskoder (læse kode, forloeb, aktiv) · skema_svar (læse kunde_def + ygt_start pr. kode og
+//   5. Når: virksomhedskoder (læse kode, forloeb, aktiv) · lektion_oevelser (læse »ygt:dage«) · skema_svar (læse kunde_def + ygt_start pr. kode og
 //      ENERGIDA/Ida/mail_tekster) · auth.users (læse e-mail, navn og kode via listUsers) · mail_afmeldt (læse) ·
 //      mail_log (læse + skrive én række pr. sendt mail). Skriver intet andet.
 //   6. Direkte omkostning: nej — Brevo Free (300 mails/dag delt). Loft: 200 pr. kald og 280 sendte pr. døgn
@@ -111,6 +111,13 @@ Deno.serve(async (req) => {
 
   /* ===== 2 · Først nu: service-role ===== */
   const db = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+
+  /* Dage pr. modul fra Studio (lektion_oevelser »ygt:dage«, Ida 15/11) — samme tal, som kundens låse bruger */
+  try {
+    const { data: dg } = await db.from("lektion_oevelser").select("spm").eq("lektion_id", "ygt:dage").limit(1);
+    const o: any = dg && dg.length ? dg[0].spm : null;
+    if (o && typeof o === "object") for (const k of Object.keys(o)) { const n = parseInt(o[k], 10); if (YGT_DAG[k] > 0 && !isNaN(n) && n >= 0 && n <= 400) YGT_DAG[k] = n; }
+  } catch (_e) { /* standarden gælder */ }
 
   /* Idas mail (Backstage › Mails). Slukket eller uden tekst = intet sendes. */
   const { data: rk } = await db.from("skema_svar").select("svar").eq("kode", "ENERGIDA").eq("navn", "Ida").eq("skema", "mail_tekster").limit(1);

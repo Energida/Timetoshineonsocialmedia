@@ -43436,6 +43436,25 @@ function pubPanelRender() {
    Starten gemmes EEN gang pr. kode i skema_svar (config · ygt_start) — samme kilde, som mail-flowet skal laese. Kan starten ikke hentes, er kun
    modul 1 og 2 aabne, og intet skrives. Gaelder KUN koder med forloeb »YOU GOT THIS« — aldrig Ida, der kigger med som kunde. */
 const YGT_DAG = { "1": 0, "2": 0, "3": 7, "4": 14, "5": 21, "6": 28, "7": 35, "8": 42, "9": 49, "10": 56, "11": 63 };
+/* HVORNÅR MODULET ÅBNER SÆTTES I STUDIO (Idas klik 15/11 »På modulet i Studio«): dage efter start pr. modul gemmes i lektion_oevelser »ygt:dage« (læses af alle indloggede, skrives af admin — samme sted som skemaerne). Tallene ovenfor er standarden. */
+const YGT_DAG_STD = Object.assign({}, YGT_DAG);
+let YGT_DAGE_HENTET = false;
+function ygtDageAnvend(spm) { Object.keys(YGT_DAG_STD).forEach(function (k) { YGT_DAG[k] = YGT_DAG_STD[k]; }); if (spm && typeof spm === "object") Object.keys(spm).forEach(function (k) { const n = parseInt(spm[k], 10); if (Object.prototype.hasOwnProperty.call(YGT_DAG_STD, k) && YGT_DAG_STD[k] > 0 && !isNaN(n) && n >= 0 && n <= 400) YGT_DAG[k] = n; }); }
+async function ygtDageHent(frisk) {
+  if ((YGT_DAGE_HENTET && !frisk) || typeof sb === "undefined" || !sb) return false;
+  try { const r = await sb.from("lektion_oevelser").select("spm").eq("lektion_id", "ygt:dage").limit(1); if (r.error) return false; YGT_DAGE_HENTET = true; ygtDageAnvend(r.data && r.data[0] ? r.data[0].spm : null); return true; } catch (e) { return false; }
+}
+async function ygtDageGem(nr, n) {
+  if (typeof sb === "undefined" || !sb) return false;
+  await ygtDageHent(true);
+  const ud = {}; Object.keys(YGT_DAG_STD).forEach(function (k) { if (YGT_DAG_STD[k] > 0 && YGT_DAG[k] !== YGT_DAG_STD[k]) ud[k] = YGT_DAG[k]; });
+  ud[String(nr)] = n; if (n === YGT_DAG_STD[String(nr)]) delete ud[String(nr)];
+  const nu = new Date().toISOString();
+  let u = await sb.from("lektion_oevelser").update({ spm: ud, opdateret: nu }).eq("lektion_id", "ygt:dage").select("lektion_id");
+  if (!u.error && !(u.data && u.data.length)) u = await sb.from("lektion_oevelser").insert({ lektion_id: "ygt:dage", spm: ud, opdateret: nu }).select("lektion_id");
+  if (u.error || !(u.data && u.data.length)) return false;
+  ygtDageAnvend(ud); return true;
+}
 let YGT_START = null;
 /* ÉT YOU GOT THIS (Ida 11/11: »you got this detail skal helt slettes«): en kunde, hvis forløb i basen stadig hedder »YOU GOT THIS — DETAIL« (eller pakken »ttsosm«), læses som ÉT YOU GOT THIS. Alle kontroller rundt i appen sammenligner med »YOU GOT THIS«, så de tre steder kunden bliver til en def (kodelisten, kundevisningen, kundekortet) går gennem her. Basen røres ikke. */
 function ygtEtLayout(d) { try { if (d && /^YOU GOT THIS/i.test(String(d.forloeb || ""))) { d.forloeb = "YOU GOT THIS"; if (d.pakke === "ttsosm") d.pakke = "detaildrift"; } } catch (e) {} return d; }
@@ -43471,6 +43490,7 @@ function hjemFunktionerLaast() { try { return ygtBriefLaast(); } catch (e) { ret
 function ygtContentLaasVis(hvad) { if (!ygtBriefLaast()) return false; ygtLaasArk((hvad || "Idébanken") + " åbner med modul 7 " + ygtDatoOrd(ygtModulAabner("8"))); return true; }
 async function ygtStartHent() {
   if (!ygtModulHold() || typeof sb === "undefined" || !sb || !currentKode) return YGT_START;
+  try { await ygtDageHent(); } catch (e) {}   /* Studios dage pr. modul, før låsene regnes */
   try {
     /* TO KOLLEGER SAMME DAG (designgennemgangen 30/9): logger to ind samtidig, kan der ligge to raekker — maybeSingle ville saa fejle for altid,
        og kunden sad fast paa modul 1 og 2. Vi laeser alle og tager den TIDLIGSTE dato. */
@@ -44757,6 +44777,7 @@ function mrModulRet(nr) {
     ekstraAf: function () {
       return '<div class="ark-et">Titel</div><input id="mfTitel" class="ark-inp" placeholder="Titel" value="' + esc(titel) + '">'
         + '<div class="ark-et" style="margin-top:16px;">Hvor i metoden</div><div id="mfFaseHost" class="ark-chips" style="margin:8px 0 0;justify-content:flex-start;order:0;"></div>'
+        + ((YGT_DAG_STD[String(parseInt(nr, 10))] > 0) ? '<div class="ark-et" style="margin-top:16px;">Åbner antal dage efter start</div><input id="mfDage" class="ark-inp" type="number" inputmode="numeric" min="0" max="400" value="' + esc(String(YGT_DAG[String(parseInt(nr, 10))])) + '">' : '')   /* Idas klik 15/11 */
         + '<div class="ark-et" style="margin-top:16px;">Beskrivelse — hvad handler modulet om</div><textarea id="mfBesk" class="ark-inp mr-blok-arktekst" placeholder="Hvad modulet handler om, hvorfor det er vigtigt, og hvordan det hænger sammen med resten af forløbet.">' + esc(info.beskrivelse) + '</textarea>'
         + '<div class="ark-et" style="margin-top:16px;">Når du er igennem modulet, kan du… (2–4 punkter)</div>'
         + u.map(function (t, i) { return '<input id="mfU' + (i + 1) + '" class="ark-inp" placeholder="Punkt ' + (i + 1) + (i > 1 ? ' (valgfrit)' : '') + '" value="' + esc(t) + '">'; }).join("");
@@ -44769,11 +44790,13 @@ function mrModulRet(nr) {
         try { const up = await sb.from("moduler").update(rec).eq("nr", rec.nr).select(); if (up.data && up.data.length) ok = true; else { const ny = await sb.from("moduler").insert(rec).select(); ok = !!(ny.data && ny.data.length); } } catch (e) { ok = false; }
       }
       if (!ok) throw new Error("!Det blev ikke gemt. Basen tog ikke imod.");
+      try { const fd = document.getElementById("mfDage"); if (fd) { const n = parseInt(fd.value, 10); if (isNaN(n) || n < 0 || n > 400) throw new Error("!Antal dage skal være et tal fra 0 til 400."); if (n !== YGT_DAG[String(rec.nr)] && !(await ygtDageGem(rec.nr, n))) throw new Error("!Dagene blev ikke gemt. Basen tog ikke imod."); } } catch (e) { if (String(e.message || "").charAt(0) === "!") throw e; }
       MODUL_INFO[String(rec.nr)] = { nr: rec.nr, titel: rec.titel, fase: rec.fase, beskrivelse: rec.beskrivelse, udbytte: rec.udbytte };
       setTimeout(function () { try { mrModulListe(); } catch (e) {} try { if (typeof renderKlipperum === "function") renderKlipperum(); } catch (e) {} }, 0);
       return "Modulet er gemt.";
     } });
   mrModulFaseTegn();
+  try { ygtDageHent(true).then(function () { const fd = document.getElementById("mfDage"); if (fd && document.activeElement !== fd) fd.value = String(YGT_DAG[String(parseInt(nr, 10))]); }); } catch (e) {}
 }
 async function mrModulGem(nr) {
   const v = function (id) { const e = document.getElementById(id); return e ? String(e.value || "").trim() : ""; };
@@ -45415,12 +45438,13 @@ function lekSkemaTegn() {
     if (!har) {
       const pl = document.getElementById("lekSkemaPlads"); pl.classList.add("lk-skema-intro");
       /* IDAS EGET DESIGN (28/10: »DET her er et lækkert design jeg kan lide«): hvid flise · etiket · Didot-titel · tekst · to grå linjer · rød knap — teksten ordret fra Idas skærmbillede */
-      pl.innerHTML = '<div class="lsi-e">Spørgeskema · Før forløbet</div>'
-        + '<div class="lsi-t">Hvor står du lige nu?</div>'
-        + '<p>Dit udbytte af forløbet handler om mere end følgere og likes. Det handler også om din energi, dit overblik og din tryghed ved at arbejde med sociale medier.</p>'
-        + '<p>Første skridt er at blive bevidst om dit udgangspunkt. Derfor svarer du på spørgsmålene nu og igen efter modul 10, så du også kan se, hvad der har ændret sig, inden i dig.</p>'
-        + '<p class="lsi-g">Svar ud fra din hverdag, som den er lige nu.<br>Der er ingen rigtige eller forkerte svar.</p>'
-        + '<button type="button" class="lsi-knap" onclick="lekSkemaIntroStart()">Start spørgeskemaet</button>';
+      if (!SKEMA_DEF_HENTET) { try { skemaDefsHent().then(function (ok) { const p2 = document.getElementById("lekSkemaPlads"); if (ok && LEK_SKEMA && p2 && p2.classList.contains("lk-skema-intro")) lekSkemaTegn(); }); } catch (e) {} }   /* Studios tekst, ikke standarden */
+      const fs = skemaForside("inden_start");
+      pl.innerHTML = (fs.eye ? '<div class="lsi-e">' + esc(fs.eye) + '</div>' : '')
+        + '<div class="lsi-t">' + esc(fs.titel) + '</div>'
+        + String(fs.tekst || "").split(/\n\s*\n/).map(function (a) { return a.trim() ? '<p>' + esc(a.trim()).replace(/\n/g, "<br>") + '</p>' : ''; }).join("")
+        + (String(fs.note || "").trim() ? '<p class="lsi-g">' + esc(fs.note.trim()).replace(/\n/g, "<br>") + '</p>' : '')
+        + '<button type="button" class="lsi-knap" onclick="lekSkemaIntroStart()">' + esc(fs.knap || "Start spørgeskemaet") + '</button>';
       return;
     }
   }
@@ -50273,8 +50297,21 @@ function kbuSkAabn() {
   kbuUnderSide("Spørgeskema",
     '<div class="kbu-ovr kbu-foerst">Navn</div><button type="button" class="kbu-fl kbu-dor" onclick="kbuTekstArk(\'Navn\', \'Navn\', kbuSkNu().titel, \'\', function (v) { if (v) kbuSkSaet(function (d) { d.titel = v; }); kbuSkAabn(); })">' + esc(d.titel || "") + '</button>'
     + '<div class="kbu-ovr">Indledning</div><button type="button" class="kbu-fl kbu-dor' + (d.intro ? '' : ' kbu-tom') + '" onclick="kbuTekstArk(\'Indledning\', \'Indledning\', kbuSkNu().intro, \'Skriv indledningen her\', function (v) { kbuSkSaet(function (d) { d.intro = v; }); kbuSkAabn(); })">' + esc(d.intro || "Skriv indledningen her") + '</button>'
+    + (KBU.skKey === "inden_start" ? kbuSkForsideHtml(d) : '')
     + fl,
     '<div class="kbu-kn kbu-kn-top"><button type="button" class="kbu-knap" onclick="kbuSkNyt()">' + plus + 'Tilføj</button></div>');
+}
+/* STARTFLADEN I STUDIO (Ida 15/11): hver tekst på fladen før spørgsmålene er sin egen flise — tryk = ret. Tom = standardteksten. */
+const KBU_SK_FORSIDE = [["eye", "Etiket"], ["titel", "Overskrift"], ["tekst", "Tekst"], ["note", "Lille tekst"], ["knap", "Knappen"]];
+function kbuSkForsideHtml(d) {
+  const f = Object.assign({}, SKEMA_FORSIDE_STD, (d && d.forside) || {});
+  return KBU_SK_FORSIDE.map(function (x) { return '<div class="kbu-ovr">Startfladen · ' + x[1] + '</div><button type="button" class="kbu-fl kbu-dor" style="white-space:pre-line" onclick="kbuSkForsideRet(\'' + x[0] + '\')">' + esc(f[x[0]] || "") + '</button>'; }).join("");
+}
+function kbuSkForsideRet(k) {
+  const navn = (KBU_SK_FORSIDE.find(function (x) { return x[0] === k; }) || [k, k])[1];
+  const f = Object.assign({}, SKEMA_FORSIDE_STD, (kbuSkNu().forside) || {});
+  kbuTekstArk("Startfladen", navn, f[k], "", function (v) { kbuSkSaet(function (d) { d.forside = Object.assign({}, d.forside || {}); d.forside[k] = v || SKEMA_FORSIDE_STD[k]; }); kbuSkAabn(); });
+  try { const t = document.getElementById("kbuTekstFelt"); if (t && k === "tekst") t.rows = 8; else if (t && k === "note") t.rows = 3; } catch (e) {}
 }
 function kbuSkNyt() {
   kbuTekstArk("Nyt spørgsmål", "Spørgsmål", "", "Skriv spørgsmålet her", function (v) {
@@ -50294,6 +50331,9 @@ function kbuSkSpmAabn(i) {
   const valg = (x.t === "choice" || x.t === "multi") ? '<div class="kbu-ovr">Svarmuligheder</div>' + (x.o || []).map(function (o, j) { return '<button type="button" class="kbu-fl kbu-dor" onclick="kbuSkValgArk(' + i + ', ' + j + ')">' + esc(o) + '</button>'; }).join("") : '';
   kbuUnderSide("Spørgsmål " + (i + 1),
     '<div class="kbu-ovr kbu-foerst">Spørgsmål</div><button type="button" class="kbu-fl kbu-dor" onclick="kbuTekstArk(\'Spørgsmål\', \'Spørgsmål\', kbuSkNu().sp[' + i + '].q, \'\', function (v) { if (v) kbuSkSaet(function (d) { d.sp[' + i + '].q = v; }); kbuSkSpmAabn(' + i + '); })">' + esc(x.q || "") + '</button>'
+    + '<div class="kbu-ovr">Hjælpetekst</div><button type="button" class="kbu-fl kbu-dor' + (x.hj ? '' : ' kbu-tom') + '" onclick="kbuTekstArk(\'Hjælpetekst\', \'Hjælpetekst\', kbuSkNu().sp[' + i + '].hj, \'Fx Vælg én eller flere.\', function (v) { kbuSkSaet(function (d) { d.sp[' + i + '].hj = v; }); kbuSkSpmAabn(' + i + '); })">' + esc(x.hj || "Ingen hjælpetekst") + '</button>'   /* hjælpeteksten under spørgsmålet (Ida 15/11) */
+    + (x.t === "scale" ? '<div class="kbu-ovr">Laveste</div><button type="button" class="kbu-fl kbu-dor" onclick="kbuTekstArk(\'Laveste\', \'Ordet ved den laveste\', kbuSkNu().sp[' + i + '].lo, \'\', function (v) { kbuSkSaet(function (d) { d.sp[' + i + '].lo = v; }); kbuSkSpmAabn(' + i + '); })">' + esc(x.lo || "Intet ord") + '</button>'
+       + '<div class="kbu-ovr">Højeste</div><button type="button" class="kbu-fl kbu-dor" onclick="kbuTekstArk(\'Højeste\', \'Ordet ved den højeste\', kbuSkNu().sp[' + i + '].hi, \'\', function (v) { kbuSkSaet(function (d) { d.sp[' + i + '].hi = v; }); kbuSkSpmAabn(' + i + '); })">' + esc(x.hi || "Intet ord") + '</button>' : '')
     + valg,
     '<div class="kbu-ovr kbu-foerst kbu-type">Svartype</div>' + chips
     + '<div class="kbu-kn">' + ((x.t === "choice" || x.t === "multi") ? '<button type="button" class="kbu-knap" onclick="kbuSkValgArk(' + i + ', -1)">' + plus + 'Tilføj</button>' : '')
@@ -58428,6 +58468,7 @@ function skemaAnvend(key, d) {
   const ny = Object.assign({}, std);
   if (String(d.titel || "").trim()) ny.titel = String(d.titel).trim();
   if (String(d.intro || "").trim()) ny.intro = String(d.intro).trim();
+  if (d.forside && typeof d.forside === "object") ny.forside = Object.assign({}, d.forside);   /* startfladen kan rettes i Studio (Ida 15/11: »jeg skal kunne rette ALT i energida studio«) */
   if (Array.isArray(d.sp) && d.sp.length >= std.sp.length) ny.sp = d.sp.map(function (x, i) { return Object.assign({}, std.sp[i] || {}, x); });
   SKEMAER[key] = ny; return true;
 }
@@ -58441,6 +58482,11 @@ async function skemaDefsHent(frisk) {
     return true;
   } catch (e) { return false; }
 }
+/* STARTFLADEN FØR SPØRGSMÅLENE — standardteksten er Idas (28/10) og står her ÉT sted; Studio kan rette hvert felt (15/11) */
+const SKEMA_FORSIDE_STD = { eye: "Spørgeskema · Før forløbet", titel: "Hvor står du lige nu?",
+  tekst: "Dit udbytte af forløbet handler om mere end følgere og likes. Det handler også om din energi, dit overblik og din tryghed ved at arbejde med sociale medier.\n\nFørste skridt er at blive bevidst om dit udgangspunkt. Derfor svarer du på spørgsmålene nu og igen efter modul 10, så du også kan se, hvad der har ændret sig, inden i dig.",
+  note: "Svar ud fra din hverdag, som den er lige nu.\nDer er ingen rigtige eller forkerte svar.", knap: "Start spørgeskemaet" };
+function skemaForside(key) { const f = ((SKEMAER[key] || {}).forside) || {}; const ud = Object.assign({}, SKEMA_FORSIDE_STD); Object.keys(f).forEach(function (k) { if (typeof f[k] === "string") ud[k] = f[k]; }); return ud; }
 function skemaSpSkjult(def, i) { return !!(def && def.sp && def.sp[i] && def.sp[i].skjult); }
 function skemaSynlige(def) { return ((def && def.sp) || []).map(function (x, i) { return i; }).filter(function (i) { return !skemaSpSkjult(def, i); }); }
 function openSkema(key, iFlise) {
@@ -67236,7 +67282,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "3298";
+const APP_VERSION = "3299";
 const APP_BYGGET = "3. november";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_VERSION;   /* ingen dato (Ida 7/11: »hvorfor står der version 3. november?«) — datoen blev ikke rettet med, nummeret er sandheden */ } catch (e) {} });
 let NY_VERSION_KLAR = false;
