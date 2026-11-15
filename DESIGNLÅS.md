@@ -1,3 +1,13 @@
+## 15. november · HEALTH COACH: INTROSIDEN FØR HVER TESTAFDELING (Ida: »en introslide før hver test afdeling hvor vi forklarer i øjenhøjde hvad klienten skal igennem og hvorfor«) · v3324
+
+Før afdelingens første test (Holdning, Scientific Core Condition, Biomekanik, Infant development, Basisbevægelser) står en introside til at vise klienten: afdelingens navn, »Det skal du igennem«, »Hvorfor« og nederst »Øvelser vi skal igennem« med billeder. Ingen cover, ingen felter, én spalte, knapperne Tilbage og Start.
+- **»Vi«, aldrig »jeg«** (Ida: »Det skal ikke stå jeg men vi«).
+- **Hver sætning på sin egen linje** (Ida: »dele teksten op … så den bliver lettere at læse«). Stor læsetekst: 16 på telefon, 20 på computer.
+- **Billederne står nederst** under overskriften »Øvelser vi skal igennem« (Idas ord). De hentes fra det lukkede lager: egne billeder i mappen `intro-<afdeling>`, ellers første billede fra hver af afdelingens tests, højst otte. Et tryk åbner billedet i fuld størrelse. Der tegnes aldrig øvelser selv.
+- **»Ret teksten«** åbner felterne og »Tilføj billede«; teksten ligger i Idas egen række (`hc-tekster`, nøglen `intro-<afdeling>`). Udkastene er godkendt af Ida ét ad gangen 15/11.
+- Tilbage fra afdelingens første test fører til introsiden.
+- **»Normal styrke«:** klientens tal øverst, hårfin streg, og hver norm på sin egen linje (Ida: »der skulle det være på sin egen linje«).
+
 ## 15. november · HASHTAGS: BANKENS FORSLAG KOMMER, MENS MAN SKRIVER (Idas ord 15/11 — bud 4 af fem, artifact DEysqKZaKrv5YtQiJGQs7T, v3323)
 Idas ord: »kunne man gøre noget så når man begynder at skrive et hashtag kommer den op med det man har i banken??«
 - Når der står mindst ét bogstav i et #-felt i briefen, vises bankens hashtags, der passer, som chips lige under feltet: først dem, der begynder med det skrevne, så dem, der indeholder det; højst seks; aldrig dem, der allerede er valgt.

@@ -67497,7 +67497,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "3323";
+const APP_VERSION = "3324";
 const APP_BYGGET = "3. november";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_VERSION;   /* ingen dato (Ida 7/11: »hvorfor står der version 3. november?«) — datoen blev ikke rettet med, nummeret er sandheden */ } catch (e) {} });
 let NY_VERSION_KLAR = false;
@@ -93971,7 +93971,7 @@ function hcPctAfGrader(g) { if (g === null || g < 0 || g > 90) return null; if (
 /* eet tal (ikke hoejre/venstre): procent paa coretest 8, ellers mod optimal */
 function hcEnHtml(t, v) {
   try { const f = t.f.filter(function (x) { return x.t === "g"; }); if (f.length !== 1) return ""; const a = hcTal((v || {})[f[0].k]); if (a === null) return "";
-    if (t.pct) { const p = hcPctAfGrader(a); return p ? hcOversk("Normal styrke") + hcNyFlise(p, "Mænd 100 % · Kvinder 80 % · Unge 70-80 %") : ""; }
+    if (t.pct) { const p = hcPctAfGrader(a); return p ? hcOversk("Normal styrke") + '<div class="hc-flise hc-note hc-norm"><span class="hc-norm-tal">' + esc(p) + '</span><div class="hc-t2-hr"></div><div class="hc-hj">Mænd 100 %</div><div class="hc-hj">Kvinder 80 %</div><div class="hc-hj">Unge 70-80 %</div></div>' : "";   /* hver norm paa sin egen linje (Ida 15/11) */ }
     const o = hcTestDele(t); if (o.lo == null) return "";
     const m = o.hi != null ? (a < o.lo ? "Under" : a > o.hi ? "Over" : "Inden for") : (Math.abs(a - o.lo) <= 3 ? "Inden for" : a < o.lo ? "Under" : "Over");
     return hcOversk("Mod optimal") + hcNyFlise(m);
@@ -94075,7 +94075,7 @@ function hcRamme() {
   if (HC.vis === "klient" && HC.klient) { navn = HC.klient.navn; dato = HC.noegle ? hcDatoTekst(HC.noegle.split(":")[2]) : ""; }
   if (HC.vis === "del" && HC.klient) { navn = HC_DELE[HC.del].navn; dato = HC.klient.navn + " · " + hcDatoTekst(HC.noegle.split(":")[2]); }
   t.innerHTML = navn.length > 16 ? '<span class="hc-lang">' + esc(navn) + '</span>' : esc(navn); if (d) d.textContent = dato;
-  try { document.body.classList.toggle("hc-del", HC.vis === "del"); if (HC.vis !== "del") HC.opsum = null; document.body.classList.toggle("hc-t2-side", HC.vis === "del" && (HC.opsum != null || hcErT2(HC_DELE[HC.del].trin[HC.trin]))); } catch (e) {}
+  try { document.body.classList.toggle("hc-del", HC.vis === "del"); if (HC.vis !== "del") { HC.opsum = null; HC.intro = false; } document.body.classList.toggle("hc-t2-side", HC.vis === "del" && (HC.intro || HC.opsum != null || hcErT2(HC_DELE[HC.del].trin[HC.trin]))); } catch (e) {}
   try { const led = hcSti(); navstiSaet(led, function () { const f = led[led.length - 2]; if (f && f.klik) { try { (new Function(f.klik))(); return; } catch (e) {} } visDashSide("overblik"); }); } catch (e) {}
   try { bsBaandPlanlaeg(); } catch (e) {}
 }
@@ -94322,8 +94322,8 @@ function hcKlientTegn(el) {
     + '</div><div class="hc-ny-goer">' + felt("prioritet", "Prioritet") + felt("anbefaling", "Anbefaling") + felt("spoerg", "Spørg klienten om") + '</div></div></div>';
   hcHoejde();
 }
-function hcDelAabn(i) { HC.del = i; HC.trin = 0; HC.ret = ""; HC.opsum = null; HC.retTest = false;
-  try { const dl = HC_DELE[i]; const n = dl.trin.findIndex(function (x) { return !x.rk && !hcHarSvar(x, HC.data.v[x.id]); }); if (n > 0 && !dl.trin[0].rk) HC.trin = n; } catch (e) {}   /* fortsaet, hvor testen slap */
+function hcDelAabn(i) { HC.del = i; HC.trin = 0; HC.ret = ""; HC.opsum = null; HC.retTest = false; HC.intro = false; HC.introRet = false;
+  try { const dl = HC_DELE[i]; const n = dl.trin.findIndex(function (x) { return !x.rk && !hcHarSvar(x, HC.data.v[x.id]); }); if (n > 0 && !dl.trin[0].rk) HC.trin = n; if (HC_INTRO_DELE[dl.id] && HC.trin === 0) HC.intro = true; } catch (e) {}   /* fortsaet, hvor testen slap */
   HC.vis = "del"; hcTegn(); try { window.scrollTo(0, 0); const dm = document.getElementById("dashMain"); if (dm) dm.scrollTop = 0; } catch (e) {} }
 function hcTal(s) { const n = parseFloat(String(s == null ? "" : s).replace(",", ".")); return isFinite(n) ? n : null; }
 function hcForskelHtml(h, v) {
@@ -94600,6 +94600,71 @@ function hcT2Opd() {
 /* OPSUMMERING EFTER HVERT TESTOMRAADE (Ida 15/11: »efter hver testområde vil jeg gerne at den samler en opsummering og kommer med en side med et overblik«):
    efter omraadets sidste test (Hofte, Fod …) kommer een side med hver test som en raekke: navnet, forskellen og H/V i samme trafiklys.
    Et tryk paa en raekke aabner testen. Siden laeser kun; hcLaes roerer ingenting, mens den staar der. */
+/* INTROSIDEN FOER HVER TESTAFDELING (Ida 15/11: »en introslide før hver test afdeling hvor vi forklarer i øjenhøjde hvad klienten skal igennem og hvorfor«):
+   vises foer afdelingens foerste test (Holdning, Scientific Core Condition, Biomekanik, Infant development, Basisbevægelser). Den er til at vise klienten:
+   stor, rolig tekst, ingen felter. Teksten er Idas egen (raekken »hc-tekster«, noeglen intro-<afdeling>) og rettes paa stedet med »Ret teksten«. */
+HC.intro = false; HC.introRet = false;
+const HC_INTRO_DELE = { hol: 1, scc: 1, bio: 1, inf: 1, bas: 1 };
+const HC_INTRO = {
+  hol: { hvad: "Du skal stå, som du står af dig selv.\nVi ser dig forfra, fra siden og bagfra.", hvorfor: "Holdningen er det billede, de andre fund skal læses op imod." },
+  bio: { hvad: "Vi måler, hvor langt du kan bevæge nakke, skuldre, hofter og fødder, i højre og venstre side.\nVi måler med et goniometer, mens du står, sidder eller ligger.", hvorfor: "Fleksibilitet måles ved de ortopædiske målinger.\nVi ser efter forskel mellem højre og venstre.\nEr den over 10 %, er der noget at arbejde med på den side, der er mest stiv." },
+  inf: { hvad: "Du skal lave fire bevægelser fra barnets udvikling: op og kig, rundt og kig, reptilkravl og primatkravl.\nGør det, som du gør det naturligt.", hvorfor: "Kroppen har over 600 muskler, derfor har kroppen designet nogle bevægelsesmønstre for at spare energi.\nVi ser, hvordan dine led bevæger sig sammen, nedefra og op." },
+  bas: { hvad: "Du skal lave de grundlæggende bevægelser: squat, lunge, push, pull, twist, bend og gang.\nGør dem, som du gør dem naturligt.", hvorfor: "Alle bevægelser kommer af basisbevægelser.\nVi kigger på bevægelser frem for muskelgrupper." },
+  scc: { hvad: "Vi tester din core: om du kan finde og spænde de dybe mavemuskler, og om de holder, når du bevæger dig.\nDu skal blandt andet ligge på ryggen, stå på alle fire og ligge på en bold.", hvorfor: "Coren skaber stabilitet.\nMaven skal være som en mur og ikke en måtte.\nStabilitet er alfa omega for optimal kraftoverførsel i kroppen.\nHvis kroppen ikke kan koordinere, kan den heller ikke blive stærk." }
+};
+function hcIntroTekst(del, felt) { const e = (HC.tekster["intro-" + del.id] || {})[felt]; if (e != null && String(e).trim() !== "") return String(e); if (e === "") return ""; return (HC_INTRO[del.id] || {})[felt] || ""; }
+function hcIntroSkriv(felt, val) { try { const del = HC_DELE[HC.del], k = "intro-" + del.id, o = HC.tekster[k] || {}; o[felt] = val; HC.tekster[k] = o; HC.teksterSnavset = true; clearTimeout(HC.tekstT); HC.tekstT = setTimeout(function () { hcTeksterGem(); }, 700); hcHoejde(); } catch (e) {} }
+function hcIntroRet() { HC.introRet = !HC.introRet; if (!HC.introRet) { try { hcTeksterGem(); } catch (e) {} } hcTegn(); }
+function hcIntroStart() { HC.intro = false; HC.introRet = false; try { hcTeksterGem(); } catch (e) {} hcTegn(); try { window.scrollTo(0, 0); const dm = document.getElementById("dashMain"); if (dm) dm.scrollTop = 0; } catch (e) {} }
+function hcIntroUd() { HC.intro = false; HC.introRet = false; try { hcTeksterGem(); } catch (e) {} HC.vis = "klient"; hcTegn(); }
+/* introsidens billeder: egne (mappen intro-<afdeling>) hvis der er nogen; ellers det foerste billede fra hver af afdelingens tests (hoejst otte).
+   Alt ligger i det lukkede lager; et tryk aabner billedet i fuld stoerrelse. */
+HC.introBil = {};
+async function hcIntroBilHent(del, tving) {
+  try { if (!sb || HC.bilFejl) return; if (HC.introBil[del.id] && !tving) return;
+    const hent = async function (m) { if (HC.bil[m] && !(tving && m.indexOf("intro-") === 0)) return HC.bil[m];
+      const r = await sb.storage.from("hc-billeder").list(m, { limit: 100, sortBy: { column: "name", order: "asc" } }); if (r.error) { HC.bilFejl = true; return []; }
+      const filer = (r.data || []).filter(function (f) { return f && f.name && f.id; }).map(function (f) { return m + "/" + f.name; }); let ud = [];
+      if (filer.length) { const q = await sb.storage.from("hc-billeder").createSignedUrls(filer, 3600); if (!q.error && q.data) ud = q.data.filter(function (x) { return x && x.signedUrl; }).map(function (x) { return { sti: x.path, url: x.signedUrl }; }); }
+      HC.bil[m] = ud; return ud; };
+    const egne = await hent("intro-" + del.id); let ud = egne.map(function (b) { return { sti: b.sti, url: b.url, egen: true }; });
+    if (!ud.length) { const set = {}; for (const t of del.trin) { if (ud.length >= 8) break; if (t.rk || t.scr) continue;
+        for (const m of hcBilMapper(del, t)) { if (set[m]) continue; set[m] = 1; const b = await hent(m); if (b.length) { ud.push({ sti: b[0].sti, url: b[0].url, egen: false }); break; } } } }
+    HC.introBil[del.id] = ud; if (HC.vis === "del" && HC.intro && HC_DELE[HC.del] === del) { const el = document.getElementById("hcIntroBil"); if (el) el.innerHTML = hcIntroBilHtml(del); }
+  } catch (e) {}
+}
+function hcIntroBilHtml(del) {
+  const b = HC.introBil[del.id] || []; const skrald = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg>';
+  let h = b.length ? hcOversk("Øvelser vi skal igennem") + '<div class="hc-flise hc-t2-introbil">' + b.map(function (x) { return '<figure><img src="' + esc(x.url) + '" alt="' + esc(del.navn) + '" loading="lazy" role="button" tabindex="0" onclick="hcT2Lys(this.src)" onkeydown="if(event.key===\'Enter\')hcT2Lys(this.src)">' + (HC.introRet && x.egen ? '<div class="hc-slet-rk"><button type="button" class="hc-ikon" aria-label="Slet" title="Slet" onclick="hcIntroBilSlet(\'' + esc(x.sti) + '\')">' + skrald + '</button><span>Slet</span></div>' : '') + '</figure>'; }).join("") + '</div>' : '';
+  if (HC.introRet && !HC.bilFejl) h += '<div class="hc-pluslinje"><button type="button" class="hc-pluschip" onclick="document.getElementById(\'hcIntroFil\').click()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Tilføj billede</button><input type="file" id="hcIntroFil" accept="image/jpeg,image/png,image/webp" multiple hidden onchange="hcIntroBilOp(this)"></div>';
+  return h;
+}
+async function hcIntroBilOp(felt) {
+  const filer = [].slice.call((felt && felt.files) || []); if (!filer.length || !sb) return; const del = HC_DELE[HC.del]; let fejl = 0;
+  for (let i = 0; i < filer.length; i++) { const f = filer[i], ext = (String(f.name).match(/\.(jpe?g|png|webp)$/i) || [0, "jpg"])[1].toLowerCase();
+    try { const r = await sb.storage.from("hc-billeder").upload("intro-" + del.id + "/" + Date.now() + "-" + i + "." + ext, f, { contentType: f.type || "image/jpeg", upsert: false }); if (r.error || !r.data) fejl++; } catch (e) { fejl++; } }
+  try { felt.value = ""; } catch (e) {}
+  if (fejl) { try { husBesked("Kunne ikke lægge billedet op. Prøv igen."); } catch (e) {} }
+  delete HC.introBil[del.id]; await hcIntroBilHent(del, true);
+}
+function hcIntroBilSlet(sti) {
+  const del = HC_DELE[HC.del];
+  const gaa = async function () { try { const r = await sb.storage.from("hc-billeder").remove([sti]); if (r.error || !r.data || !r.data.length) throw new Error("ikke slettet"); delete HC.introBil[del.id]; await hcIntroBilHent(del, true); } catch (e) { try { husBesked("Kunne ikke slette billedet. Prøv igen."); } catch (e2) {} } };
+  try { arkSpoerg({ titel: "Slet billedet?", jaTekst: "Slet", nejTekst: "Annuller", ja: gaa }); } catch (e) { gaa(); }
+}
+function hcIntroTegn(el, del) {
+  const kanTale = !!(window.SpeechRecognition || window.webkitSpeechRecognition);
+  const blok = function (felt, navn) { const tx = hcIntroTekst(del, felt), fid = "hcIntro_" + felt;
+    if (HC.introRet) return hcOversk(navn) + '<div class="hc-felt hc-tekst"><textarea id="' + fid + '" rows="1" aria-label="' + esc(navn) + '" oninput="hcIntroSkriv(\'' + felt + '\',this.value)">' + esc(tx) + '</textarea>' + (kanTale ? '<button type="button" class="hc-mik" id="taleKnap_' + fid + '" onclick="taleToggle(\'' + fid + '\')" title="Tal i stedet for at skrive" aria-label="Tal i stedet for at skrive">' + HC_MIK + '</button>' : '') + '</div>';
+    /* hver linje i teksten er sit eget afsnit, saa den er let at laese hoejt */
+    return hcOversk(navn) + '<div class="hc-flise hc-t2-introtekst">' + (tx ? tx.split(/\n+/).filter(function (l) { return l.trim(); }).map(function (l) { return '<p>' + esc(l.trim()) + '</p>'; }).join("") : '<span class="hc-mangler">Dine ord mangler</span>') + '</div>'; };
+  el.innerHTML = '<div class="hc hc-ny hc-t2 hc-t2-intro"><div class="hc-gemt" id="hcGemt" aria-live="polite"></div>'
+    + '<div class="hc-t2-hoved hc-t2-opshoved"><h2 class="hc-t2-navn">' + esc(del.navn) + '</h2></div>'
+    + '<div class="hc-t2-opsflade">' + blok("hvad", "Det skal du igennem") + blok("hvorfor", "Hvorfor") + '<div id="hcIntroBil">' + hcIntroBilHtml(del) + '</div>' 
+    + '<div class="hc-t2-retlinje"><button type="button" class="hc-t2-retknap" onclick="hcIntroRet()">' + (HC.introRet ? "Luk" : "Ret teksten") + '</button></div>'
+    + '<div class="hc-bund">' + hcKnap("Tilbage", "hcIntroUd()", false) + hcKnap("Start", "hcIntroStart()", true) + '</div></div></div>';
+  hcHoejde(); hcIntroBilHent(del);
+}
 HC.opsum = null;
 function hcOpsumGaa(i) { HC.opsum = null; HC.trin = i; hcTegn(); try { window.scrollTo(0, 0); const dm = document.getElementById("dashMain"); if (dm) dm.scrollTop = 0; } catch (e) {} }
 function hcOpsumTegn(el, del, g) {
@@ -94705,6 +94770,7 @@ function hcTestTegn(el, del, t) {
 }
 function hcDelTegn(el) {
   const del = HC_DELE[HC.del]; if (HC.trin < 0) HC.trin = 0; if (HC.trin >= del.trin.length) HC.trin = del.trin.length - 1;
+  if (HC.intro) return hcIntroTegn(el, del);
   if (HC.opsum != null) return hcOpsumTegn(el, del, HC.opsum);
   const t = del.trin[HC.trin]; const v = HC.data.v[t.id];
   if (!t.rk) return hcTestTegn(el, del, t);
@@ -94724,6 +94790,7 @@ function hcHoejde() { try { document.querySelectorAll("#hcHost .hc-tekst textare
 /* laeser felterne paa skaermen ind i HC.data — kaldes ved hvert tastetryk og foer hvert sideskift */
 function hcLaes() {
   if (HC.vis !== "del" || !HC.data) return false;
+  if (HC.intro) return false;   /* introsiden har ingen svarfelter */
   if (HC.opsum != null) return false;   /* opsummeringen har ingen felter: laeses den, toemmes testens svar */
   const el = document.getElementById("hcHost"); if (!el) return false;
   const t = HC_DELE[HC.del].trin[HC.trin]; if (!t) return false;
@@ -94764,7 +94831,8 @@ async function hcTrin(d) {
     /* dele uden H/V-par (holdning, coretests, infant, basisbevaegelser): een opsummering efter delens sidste test */
     if (t && hcErT2(t) && !nt && !del.trin.some(hcErPar)) { HC.opsum = "*"; hcTegn(); top(); return; } }
   const n = HC.trin + d;
-  if (n < 0 || n >= del.trin.length) { HC.vis = "klient"; hcTegn(); return; }
+  if (n < 0 && HC_INTRO_DELE[del.id] && !HC.intro) { HC.intro = true; hcTegn(); top(); return; }   /* Tilbage fra foerste test = introsiden */
+  if (n < 0 || n >= del.trin.length) { HC.intro = false; HC.vis = "klient"; hcTegn(); return; }
   HC.trin = n; hcTegn();
   try { window.scrollTo(0, 0); const dm = document.getElementById("dashMain"); if (dm) dm.scrollTop = 0; } catch (e) {}
 }
@@ -98148,6 +98216,21 @@ body.hc-t2-side #bf3RumKnap { display:none !important; }   /* plusset bor i raek
 /* toplinjen klippes aldrig med prikker: et langt testnavn faar lov at staa paa to linjer */
 #hcHost .hc-t2 .hc-sted > span:first-child { white-space:normal; overflow:visible; text-overflow:clip; }
 #hcHost .hc-t2-par.hc-een { grid-template-columns:minmax(0, 1fr); }
+#hcHost .hc-norm .hc-norm-tal { display:block; font-size:20px; line-height:28px; color:#1A1A1A; }
+#hcHost .hc-norm .hc-t2-hr { height:1px; background:#DEDAD4; margin:12px 0 8px; }
+#hcHost .hc-norm .hc-hj { font-size:14px; line-height:20px; margin-top:4px; }
+/* introsiden: til at vise klienten — stoerre laesetekst, ingen felter, een spalte */
+#hcHost .hc-t2-intro .hc-t2-hoved { margin:20px 0; }
+#hcHost .hc-t2 .hc-t2-introbil { display:grid; grid-template-columns:repeat(4, minmax(0, 1fr)); gap:12px; padding:16px; }
+#hcHost .hc-t2-introbil figure { margin:0; }
+#hcHost .hc-t2-introbil img { display:block; width:100%; height:120px; object-fit:contain; background:#fff; border-radius:0; cursor:zoom-in; }
+@media (max-width:899px) { #hcHost .hc-t2 .hc-t2-introbil { grid-template-columns:repeat(2, minmax(0, 1fr)); } #hcHost .hc-t2-introbil img { height:96px; } }
+#hcHost .hc-t2-intro .hc-t2-introtekst { font-size:16px; line-height:24px; color:#1A1A1A; padding:20px; }
+#hcHost .hc-t2-introtekst p { margin:0; }
+#hcHost .hc-t2-introtekst p + p { margin-top:12px; }
+#hcHost .hc-t2-intro .hc-tekst textarea { font-size:16px; line-height:24px; }
+#hcHost .hc-t2-intro .hc-t2-opsflade > .hc-oversk:first-child { margin-top:0; }
+@media (min-width:900px) { #hcHost .hc-t2-intro .hc-t2-navn { font-size:32px; line-height:40px; letter-spacing:3px; } #hcHost .hc-t2-intro .hc-t2-introtekst { font-size:20px; line-height:32px; padding:32px; } }
 /* det samlede overblik i Gennemgang: opsummeringens raekker, flere bokse maa ombrydes under navnet paa telefonen */
 #hcHost .hc-fundside .hc-faner { margin-bottom:20px; }
 #hcHost .hc-fundside .hc-ny-flade { margin-top:20px; }
@@ -98693,7 +98776,7 @@ html body:not(.dash-mode):not(#fv1):not(#fv2):not(#fv3):not(#fv4):not(#fv5):not(
 }
 </style>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-hvid.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 15. november · 3319</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 15. november · 3324</div>
 <script>
 /* DROPDOWNEN RULLER SELV (Ida 4/10) — maal den aabne liste og klip den ved skaermens bund */
 (function () {
