@@ -1,3 +1,9 @@
+## 15. november · ALDRIG EN STREG UD FRA EN OVERSKRIFT (HÅRD, Ida 15/11: »fjerne skillestreger ud fra en overskrift alle steder i mit system - jeg så det også flere steder i briefen!! det har jeg aldrig godkendt og det er vigtigt at det bliver fjernet fra designlåsen!«)
+- En overskrift står ALENE. Der går aldrig en streg ud til højre fra den — hverken på Hjem, i briefen, i lektionerne, Forløbet, Biblioteket, kalenderen eller mødet. Gælder admin og b2b, computer og telefon, bud og mockups.
+- ALT i denne fil, der siger »sektionslinje«, »ord + streg« eller »streg ud til højre/ud for« (20/9, 21/9, 22/9, 18/9 m.fl.), er VÆLTET. Ordet »sektionslinje« betyder fremover kun overskriften selv.
+- Uberørt: den hårfine streg INDE I en flise, der skiller to slags indhold (27/10), og procesbarer.
+- Koden: blokken »ALDRIG EN STREG UD FRA EN OVERSKRIFT« sidst i stilarket skjuler alle tvillinger (`.cf-sek`, `.section-divider`, `.bsd-sek`, `.bsd-doere-eye`, `.pb-eye`, `.bs-sekl`, `.ftl2-sek i`, `.lks-sek i`, `.laes-sek i`, `.lk-sek`, `.kfs-streg`, `.hjem-dag-streg`, `.is3-afh`, `.cv-sek`, `.bb-sek`, `.bb-sekh`, `.hu-dagsek`, briefens `.brief-raketkort::after`). En ny overskrift må aldrig få en streg igen.
+
 ## 15. november · ALDRIG VERSAL-OVERSKRIFTER INDE I FLISER, I HELE SYSTEMET (HÅRD, Ida 15/11: »jeg vil aldrig nogensinde se de her versaler overskrifter stå inde i fliser!!«)
 - En versal-overskrift (etiket, fx »EMNE«, »SENDES«, »KØB I DAG«) står ALTID over flisen, aldrig inde i den. Det gælder kundeappen OG Backstage, alle sider. Før stod reglen kun under Health Coach (14/11) som »også her«; nu gælder den overalt.
 - Formen er Profilens godkendte: blok = overskrift (Poppins 12, versal, bogstavafstand 1,5, #6F6B66, ingen streg) + 8 px + flisen.
