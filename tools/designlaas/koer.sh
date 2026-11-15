@@ -7,6 +7,20 @@
 # optaget af en aeldre server, loed maalingen paa en GAMMEL kopi af appen — den kunne baade bestaa og fejle
 # uden grund. Nu vaelges en ledig port, og vi tjekker, at det, serveren leverer, ER det, vi lige byggede.
 set -u
+# PAA GITHUB PROEVES MAALINGEN TO GANGE (Ida 15/11: »jeg får fail hele tiden?« → »ja eller fortælle dig hvor den afviger!«): GitHubs maskine er
+# langsommere end vores, og fem gange i dag var porten groen lokalt men roed paa GitHub. Nu proeves der én gang til efter 20 sek.; fejler den igen,
+# staar HVER afvigelse som en fejllinje oeverst paa koerslen og i dens resume. Lokalt koerer den som foer: én gang.
+if [ "${GITHUB_ACTIONS:-}" = "true" ] && [ -z "${KOER_INDRE:-}" ]; then
+  export KOER_INDRE=1
+  L1=$(mktemp); bash "$0" "$@" 2>&1 | tee "$L1"; R=${PIPESTATUS[0]}
+  [ "$R" = 0 ] && exit 0
+  echo "Foerste forsoeg fejlede - proever igen om 20 sekunder"; sleep 20
+  L2=$(mktemp); bash "$0" "$@" 2>&1 | tee "$L2"; R=${PIPESTATUS[0]}
+  if [ "$R" = 0 ]; then echo "::notice title=Groen i andet forsoeg::Foerste forsoeg fandt: $(grep -a FEJL "$L1" | head -3 | tr '\n' ' ')"; exit 0; fi
+  grep -a "FEJL" "$L2" | grep -v "fund staar ovenfor\|maalingen sagde ikke OK\|i alt:" | head -20 | while IFS= read -r l; do echo "::error title=Her afviger siden fra designlåsen::$l"; done
+  [ -n "${GITHUB_STEP_SUMMARY:-}" ] && { echo "## Her afviger siden fra designlåsen"; grep -a "FEJL" "$L2" | head -20 | sed 's/^/- /'; } >> "$GITHUB_STEP_SUMMARY"
+  exit 1
+fi
 ROD="$(cd "$(dirname "$0")/../.." && pwd)"
 MAAL="${SELE_MAPPE:-$(mktemp -d)}"
 python3 "$ROD/tools/designlaas/byg-sele.py" "$MAAL" || exit 1
