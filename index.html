@@ -67384,7 +67384,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "3309";
+const APP_VERSION = "3310";
 const APP_BYGGET = "3. november";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_VERSION;   /* ingen dato (Ida 7/11: »hvorfor står der version 3. november?«) — datoen blev ikke rettet med, nummeret er sandheden */ } catch (e) {} });
 let NY_VERSION_KLAR = false;
@@ -86367,23 +86367,61 @@ function kkLoginMailSpoerg(felt) {
     } });
 }
 async function kkSletKunde(kode) {
+  /* SLET KUNDEN OG ALLE DATA (Ida 15/11: »så skal denne kundes data fjernes alle steder fra!« + »slet alt også sikkerhedskopier og teamet«, bud MN4jHE5dTYAWkp6T2Vg4aj):
+     arket tæller først (Edge Function kunde-slet, »taelling«), viser teamet og hvor meget der ligger hvert sted, og den røde knap sletter alt i én omgang.
+     Afmeldinger (stoplisten) bliver stående. Idas egne koder og koder med et administrator-login kan ikke slettes (tjekkes på serveren). */
   if (!DYN_KODER[kode]) { husBesked("Denne kunde er fast opsat og kan ikke slettes herfra."); return; }
   const navn = (VIRKSOMHEDSKODER[kode] && VIRKSOMHEDSKODER[kode].virksomhed) || kode;
-  if (!arkOk("kkSletKunde", arguments, { titel: "Slet " + esc(navn) + " (" + esc(kode) + ")?", tekst: "Koden lukkes, kortet forsvinder fra CRM, og kundens logins slettes.", jaTekst: "Ja, slet" })) return;
-  /* LOGINS SLETTES MED (Ida 11/10) — foerst, saa en fejl stopper, foer koden lukkes */
-  { const rl = await kundeAdminKald({ handling: "slet_logins", kode: kode });
-    if (rl.fejl && rl.fejl !== "ikke-klar") { husBesked("Kundens logins kunne ikke slettes: " + rl.fejl + " Intet er slettet."); return; }
-    if (rl.fejl === "ikke-klar") { try { husBesked("Koden lukkes. Logins kan først slettes herfra, når funktionen er lagt op."); } catch (e) {} }
-    window.__KA_SLETTET = rl.ok ? (rl.slettet || 0) : null; }
-  try { await sb.from("virksomhedskoder").update({ aktiv: false }).eq("kode", kode); } catch(e) {}   /* 0-RAEKKER-OK: rækken slettes i næste linje; findes den ikke, er der intet at lukke */
-  try { await sb.from("virksomhedskoder").delete().eq("kode", kode); } catch(e) {}
-  try { await sb.from("skema_svar").delete().eq("kode", kode).eq("navn", "config"); } catch(e) {}
-  delete DYN_KODER[kode];
-  delete VIRKSOMHEDSKODER[kode];
-  await vaneGemRow("kunde_koder", DYN_KODER);
-  visDashSide("crm");
-  try { if (window.__KA_SLETTET != null) husKvit(navn + " er slettet · " + (window.__KA_SLETTET === 1 ? "1 login" : window.__KA_SLETTET + " logins") + " slettet."); } catch (e) {}   /* kvitteringen siger, hvor mange logins (Ida 11/10) */
-  renderForloebKunder();
+  let o = document.getElementById("kundeSletArk"); if (!o) { o = document.createElement("div"); o.id = "kundeSletArk"; document.body.appendChild(o); }
+  o.innerHTML = '<div class="ks-ark" role="dialog" aria-modal="true" aria-label="Slet kunden"><div class="ks-t">Slet ' + esc(navn) + ' og alle data?</div><div class="ks-s" id="ksIndhold">Tæller kundens data …</div>'
+    + '<div class="ks-kn"><button type="button" class="dbtn primary mq-tap bs3-lang" id="ksSlet" disabled>Slet kunden og alle data</button><button type="button" class="dbtn mq-tap bs3-lang" onclick="kundeSletLuk()">Annuller</button></div></div>';
+  o.style.display = "flex"; o.onclick = function (e) { if (e.target === o) kundeSletLuk(); };
+  const t = await kundeSletKald({ kode: kode, handling: "taelling" });
+  const ind = document.getElementById("ksIndhold"); if (!ind) return;
+  if (t.fejl) { ind.textContent = t.fejl === "ikke-klar" ? "Sletningen er ikke lagt op endnu." : t.fejl; return; }
+  const team = (t.team || []).map(function (m) { return '<div class="ks-rk"><span>' + esc(m.navn || m.email || "") + '</span><span>' + esc(m.navn ? (m.email || "") : "") + '</span></div>'; }).join("");
+  const rk = kundeSletKategorier(t.antal || {}).map(function (x) { return '<div class="ks-rk"><span>' + esc(x[0]) + '</span><span>' + x[1] + '</span></div>'; }).join("");
+  ind.innerHTML = (team ? '<div class="ks-e">Teamet (slettes med)</div><div class="ks-fl">' + team + '</div>' : '')
+    + '<div class="ks-e">Det, der slettes</div><div class="ks-fl">' + (rk || '<div class="ks-rk"><span>Kun selve kunden</span><span></span></div>') + '</div>'
+    + '<div class="ks-n">Det kan ikke fortrydes. Kundens kode lukkes og kan ikke bruges igen. Hvis kunden har afmeldt sig dine mails, står mailadressen stadig på stoplisten, så den aldrig får mails igen.</div>';
+  const kn = document.getElementById("ksSlet"); if (!kn) return;
+  kn.disabled = false;
+  kn.onclick = async function () {
+    kn.disabled = true; kn.textContent = "Sletter …";
+    const r = await kundeSletKald({ kode: kode, handling: "slet" });
+    if (r.fejl) { kn.disabled = false; kn.textContent = "Slet kunden og alle data"; husBesked(r.fejl); return; }
+    delete DYN_KODER[kode]; delete VIRKSOMHEDSKODER[kode];
+    try { await vaneGemRow("kunde_koder", DYN_KODER); } catch (e) {}
+    kundeSletLuk(); visDashSide("crm");
+    const a = r.antal || {}; const ialt = Object.keys(a).reduce(function (s0, k) { return s0 + (+a[k] || 0); }, 0);
+    try { husKvit(navn + " er slettet · " + ialt + (ialt === 1 ? " ting" : " ting") + " fjernet alle steder."); } catch (e) {}
+    try { renderForloebKunder(); } catch (e) {}
+  };
+}
+function kundeSletLuk() { const o = document.getElementById("kundeSletArk"); if (o) { o.style.display = "none"; o.innerHTML = ""; } }
+async function kundeSletKald(krop) {
+  if (!sb) return { fejl: "Ingen forbindelse." };
+  let token = ""; try { const { data } = await sb.auth.getSession(); token = data && data.session ? data.session.access_token : ""; } catch (e) {}
+  if (!token) return { fejl: "Du er ikke logget ind." };
+  try {
+    const r = await fetch(window.SUPABASE_URL + "/functions/v1/kunde-slet", { method: "POST", headers: { "Content-Type": "application/json", "Authorization": "Bearer " + token, "apikey": window.SUPABASE_ANON_KEY }, body: JSON.stringify(krop) });
+    if (r.status === 404) return { fejl: "ikke-klar" };
+    const sv = await r.json().catch(function () { return {}; });
+    if (!r.ok) return Object.assign({ fejl: sv.fejl || "Det gik galt. Prøv igen." }, sv);
+    return sv;
+  } catch (e) { return { fejl: "Kunne ikke nå frem. Tjek forbindelsen." }; }
+}
+/* databasens tabelnavne → Idas ord, samlet i de grupper, buddet viste */
+function kundeSletKategorier(a) {
+  const G = [["Logins", /^logins$/], ["Svar, stjerner, noter og opsætning", /^skema_svar$/], ["Idéer og inspiration", /^(content_ideer|inspiration)$/],
+    ["Aftaler, opgaver, mål, rapporter og strategi", /^kunde_/], ["Check-ins, træning og Instagram", /^(energi_checkins|ig_|workout_data)/],
+    ["Filer (billeder og briefs)", /^filer$/], ["Mails sendt til kunden og tilmeldinger", /^(mail_log|tilmeldinger)$/], ["Kontaktkort i CRM", /^contacts$/],
+    ["Kopier i gamle sikkerhedskopier", /^(kopi_|backup_)/], ["Kunden på dine lister og nåle", /^idas lister$/]];
+  const sum = {}; const andet = [];
+  Object.keys(a).forEach(function (k) { const n = +a[k] || 0; if (!n) return; const g = G.find(function (x) { return x[1].test(k); }); if (g) sum[g[0]] = (sum[g[0]] || 0) + n; else andet.push(n); });
+  const ud = G.filter(function (x) { return sum[x[0]]; }).map(function (x) { return [x[0], sum[x[0]]]; });
+  const an = andet.reduce(function (s0, n) { return s0 + n; }, 0); if (an) ud.push(["Koden, virksomheden og andet", an]);
+  return ud;
 }
 
 /* ---------- ØVELSESBIBLIOTEKET (Ida 21/7): alle øvelser fra Notion-kartoteket ----------
@@ -92215,13 +92253,13 @@ async function kundeSideTegn() {
          Idas tre spørgsmål, i den rækkefølge hun stiller dem: Er kunden kommet i gang? (Status + Ring/Mail/Besked) · Hvor er de i forløbet? (Forløbet) · Hvem er de, og hvad købte de? (Købet · Kontakt · Teamet).
          Ingen møder, noter eller aftaler — Ida har aldrig møder med YOU GOT THIS-kunder. Alt hentes i ét hug (ksYgtHent) og tegnes på én gang. */
       const seK = '<button type="button" class="dbtn primary mq-tap bs3-lang bf3-se-kunden" onclick="aabnKundensSide(\'' + kEsc + '\')">Se kundens version</button>';
-      el.innerHTML = '<div class="bs-hero bs-hero-streg">' + esc(navn) + '</div><div class="bs3 ks-forside">' + (bf3Tlf() ? seK : '')   /* computeren: knappen står i handlingsrækken (bud 1, 27/10) */
+      el.innerHTML = '<div class="bs-hero bs-hero-streg">' + esc(navn) + '</div><div class="bs3 ks-forside">'   /* KUNDENS SIDE I IDAS DESIGN (15/11): »Se kundens version« står grå nederst på telefonen, aldrig rød øverst */
         + '<div id="ksYgt" class="ksy" data-kode="' + esc(k) + '">' + bf3Tom("Henter kunden …") + '</div>'
         + '<div id="bf3KkHost" class="bs3-afsnit" hidden></div><div class="ksy-ud">' + tilbage + '</div></div>';   /* Tilbage i sin egen boks: ellers lignede »Næste modul« + knapperne en guide, og coverets Tilbage forsvandt */
       try { bf3KundeNaalVis(k, pin); } catch (e) {}
       try { await ksYgtTegn(k, { venterHtml: venter.length ? venterHtml : "", ops: ops }); } catch (e) { const y = document.getElementById("ksYgt"); if (y) y.innerHTML = bf3Tom("Kunne ikke hentes. Prøv igen."); }
       try { await bf3KundekortInd(k); } catch (e) {}
-      try { bf3BaandKnapVis("kunder"); const kb = document.querySelector("#bf3RumKnap button"); if (kb) { delete document.getElementById("bf3RumKnap").dataset.auto; kb.title = "Tilføj"; kb.setAttribute("aria-label", "Tilføj"); kb.onclick = function () { valgFliseArk("Tilføj", [["Besked", "bf3BeskedArk('" + kEsc + "')", "tekst"]]); }; kb.dataset.ks = "ygt"; } } catch (e) {}
+      try { bf3BaandKnapVis("kunder"); const kb = document.querySelector("#bf3RumKnap button"); if (kb) { delete document.getElementById("bf3RumKnap").dataset.auto; kb.title = "Tilføj"; kb.setAttribute("aria-label", "Tilføj"); kb.onclick = function () { valgFliseArk("Tilføj", [["Besked", "bf3BeskedArk('" + kEsc + "')", "tekst"], ["Kalenderen", "kundeStudioAabn('" + kEsc + "')", "liste"], ["Kundeoplysninger", "ksKortVis('overblik')", "liste"], ["Indstillinger", "ksKortVis('adgang')", "liste"]]); }; kb.dataset.ks = "ygt"; }   /* genvejene bor bag plusset (Idas klik 15/11) */ } catch (e) {}
       try { bsBaandPlanlaeg(); } catch (e) {}
       return;
     }
@@ -92230,13 +92268,13 @@ async function kundeSideTegn() {
        Den gamle forside nedenfor står urørt bag KS_FORLOEB_NY = false. */
     if (KS_FORLOEB_NY) {
       const seK = '<button type="button" class="dbtn primary mq-tap bs3-lang bf3-se-kunden" onclick="aabnKundensSide(\'' + kEsc + '\')">Se kundens version</button>';
-      el.innerHTML = '<div class="bs-hero bs-hero-streg">' + esc(navn) + '</div><div class="bs3 ks-forside">' + (bf3Tlf() ? seK : '')
+      el.innerHTML = '<div class="bs-hero bs-hero-streg">' + esc(navn) + '</div><div class="bs3 ks-forside">'
         + '<div id="ksYgt" class="ksy" data-kode="' + esc(k) + '">' + bf3Tom("Henter kunden …") + '</div>'
         + '<div id="bf3KkHost" class="bs3-afsnit" hidden></div><div class="ksy-ud">' + tilbage + '</div></div>';
       try { bf3KundeNaalVis(k, pin); } catch (e) {}
       try { await ksYgtTegn(k, { venterHtml: venter.length ? venterHtml : "", ops: ops, forloeb: true, moede: moede, moedeHtml: moedeHtml, noterHtml: noterHtml }); } catch (e) { const y = document.getElementById("ksYgt"); if (y) y.innerHTML = bf3Tom("Kunne ikke hentes. Prøv igen."); }
       try { await bf3KundekortInd(k); } catch (e) {}
-      try { bf3BaandKnapVis("kunder"); const kb = document.querySelector("#bf3RumKnap button"); if (kb) { delete document.getElementById("bf3RumKnap").dataset.auto; kb.title = "Tilføj"; kb.setAttribute("aria-label", "Tilføj"); kb.onclick = function () { const v = [["Contentmøde", "ksMoedeArk('" + kEsc + "')", "tekst"], ["Aftale", "kkNyArk('aft')", "tekst"], ["Besked", "bf3BeskedArk('" + kEsc + "')", "tekst"]]; if ((VIRKSOMHEDSKODER[k] || {}).type === "forloeb") v.push(["Forløb", "kkNyArk('fs')", "liste"]); valgFliseArk("Tilføj", v); }; kb.dataset.ks = "contentmoede"; } } catch (e) {}
+      try { bf3BaandKnapVis("kunder"); const kb = document.querySelector("#bf3RumKnap button"); if (kb) { delete document.getElementById("bf3RumKnap").dataset.auto; kb.title = "Tilføj"; kb.setAttribute("aria-label", "Tilføj"); kb.onclick = function () { const v = [["Contentmøde", "ksMoedeArk('" + kEsc + "')", "tekst"], ["Aftale", "kkNyArk('aft')", "tekst"], ["Besked", "bf3BeskedArk('" + kEsc + "')", "tekst"]]; if ((VIRKSOMHEDSKODER[k] || {}).type === "forloeb") v.push(["Forløb", "kkNyArk('fs')", "liste"]); v.push(["Kalenderen", "kundeStudioAabn('" + kEsc + "')", "liste"], ["Aftaler", "ksKortVis('aftaler')", "liste"], ["Kundeoplysninger", "ksKortVis('overblik')", "liste"], ["Indstillinger", "ksKortVis('adgang')", "liste"]); valgFliseArk("Tilføj", v); }; kb.dataset.ks = "contentmoede"; } } catch (e) {}   /* genvejene bor bag plusset (Idas klik 15/11) */
       try { bsBaandPlanlaeg(); } catch (e) {}
       return;
     }
@@ -92262,7 +92300,7 @@ async function kundeSideTegn() {
    Alt hentes i ét hug (ksYgtHent) og tegnes på én gang; Svar og feedback åbner hver sin side bag Tilbage (KS_VIS = "ygt-skema" | "ygt-feedback" | "ygt-opgaver"). */
 async function ksYgtHent(k) {
   const K = String(k).toUpperCase();
-  const [kr, sr, lr, pr, st, fr, or, tr, ir] = await Promise.all([
+  const [kr, sr, lr, pr, st, fr, or, tr, ir, lg] = await Promise.all([
     sb.from("contacts").select("kommentar,source,created_at").like("kommentar", "%Kode: " + K + "%").order("created_at", { ascending: false }).limit(1),
     sb.from("skema_svar").select("navn,skema,svar,created_at").eq("kode", K).in("skema", ["adgangskode_valgt", "login", "app_brug", "inden_start", "inden_workshoppen", "profil_svar", "profil_person"]),
     sb.from("skema_svar").select("skema,created_at").eq("kode", K).like("skema", "lektion_set_%"),
@@ -92271,7 +92309,8 @@ async function ksYgtHent(k) {
     sb.from("skema_svar").select("navn,skema,svar,created_at").eq("kode", K).like("skema", "lektion_feedback_%"),
     sb.from("skema_svar").select("navn,skema,svar,created_at").eq("kode", K).like("skema", "lektion_svar_%"),
     sb.from("lektioner").select("id,titel"),
-    sb.from("skema_svar").select("svar").eq("kode", K).eq("navn", "config").eq("skema", "kunde_info").limit(1)   /* kundeoplysningerne (31/10: forløbskunden har ingen køb at hente kontakten fra) */
+    sb.from("skema_svar").select("svar").eq("kode", K).eq("navn", "config").eq("skema", "kunde_info").limit(1),   /* kundeoplysningerne (31/10: forløbskunden har ingen køb at hente kontakten fra) */
+    sb.rpc("kunde_team", { p_kode: K })   /* TEAMET FRA DE RIGTIGE LOGINS (15/11, målt: aktivitetsloggen talte »Rene« og »René« som to personer) */
   ]);
   if (sr.error || lr.error) throw new Error("hent");
   const rk = sr.data || [];
@@ -92302,10 +92341,12 @@ async function ksYgtHent(k) {
     login: rk.some(function (r) { return r.skema === "adgangskode_valgt" || r.skema === "login" || r.skema === "app_brug"; }),
     skema: skemaRk, set: Object.keys(sete).filter(function (id) { return !skjult[id]; }).length, ialt: publ.filter(function (id) { return !skjult[id]; }).length, sidst: sidst,
     team: Object.keys(pers).sort(function (a, b) { return a.localeCompare(b, "da"); }).map(function (n) { return pers[n]; }),
-    start: (st && !st.fejl && st.dato) || "", feedback: feedback, opgaver: opgaver, titler: titler, sete: sete, foersteLogin: foersteLogin
+    start: (st && !st.fejl && st.dato) || "", feedback: feedback, opgaver: opgaver, titler: titler, sete: sete, foersteLogin: foersteLogin,
+    logins: (lg && !lg.error && Array.isArray(lg.data)) ? lg.data : null
   };
 }
 /* DANSK DAG AF ET TIDSSTEMPEL (Hans/Mette 29/10: et skema sendt kl. 00.40 dansk tid stod som »Sendt 28. oktober« — created_at er UTC) */
+function dagTxtKs(iso, tid) { const U = ["søndag", "mandag", "tirsdag", "onsdag", "torsdag", "fredag", "lørdag"]; return U[new Date(String(iso).slice(0, 10) + "T12:00:00").getDay()] + " " + String(dkDatoKort(String(iso).slice(0, 10))).replace(/^[a-zæøå]+\.\s*/i, "") + (tid ? " kl. " + String(tid).slice(0, 5).replace(":", ".") : ""); }
 function ksyDag(iso) { const t = String(iso || ""); return /T\d/.test(t) ? datoDK(t) : t.slice(0, 10); }
 function ksyDageSiden(iso) { if (!iso) return null; return Math.round((new Date(datoDK() + "T12:00:00") - new Date(ksyDag(iso) + "T12:00:00")) / 864e5); }
 function ksySidenOrd(iso) { const n = ksyDageSiden(iso); if (n == null) return ""; return n <= 0 ? "i dag" : n === 1 ? "i går" : "for " + n + " dage siden"; }
@@ -92325,6 +92366,8 @@ function ksyNoegle(lab, v, rod) { return '<div class="ksy-fl ksy-n"><div class="
 async function ksYgtTegn(k, o) {
   const el = document.getElementById("ksYgt"); if (!el) return;
   const D = await ksYgtHent(k); KSY_DATA = { k: k, D: D };
+  /* LOGINS TÆLLER MED I STATUS (15/11): et login i login-systemet er også aktivitet — den nyeste af app-loggen og login-systemet vinder */
+  try { (D.logins || []).forEach(function (u) { if (!u.sidst) return; D.login = true; const dg = datoDK(new Date(u.sidst)); if (!D.sidst || dg > D.sidst) D.sidst = dg; }); } catch (e) {}
   if (!el.isConnected || el.getAttribute("data-kode") !== k) return;
   const d = VIRKSOMHEDSKODER[k] || {}; const kEsc = esc(k).replace(/'/g, "\\'");
   const tlf = bf3Tlf();
@@ -92406,12 +92449,68 @@ async function ksYgtTegn(k, o) {
   const genveje = ksyGruppe("Genveje", [["Kalenderen", "kundeStudioAabn('" + kEsc + "')"]].concat(FL ? [["Aftaler", "ksKortVis('aftaler')"]] : [], [["Kundeoplysninger", "ksKortVis('overblik')"], ["Indstillinger", "ksKortVis('adgang')"]]).map(function (x) { return ksyFelt(x[0], "", { klik: x[1], knap: pil }); }).join(''));
   const UGE = ["Søndag", "Mandag", "Tirsdag", "Onsdag", "Torsdag", "Fredag", "Lørdag"];
   const opsHtml = (o.ops || []).map(function (x) { return bf3Rk(bf3Datob(x.dato), esc(storStart(x.titel || "Uden titel")), esc(UGE[new Date(String(x.dato).slice(0, 10) + "T12:00:00").getDay()] + (x.status ? " · " + statusVisNavn(x.status) : "")), "godkKoeAabn('" + kEsc + "','" + esc(String(x.id)) + "')"); }).join('');
-  const ekstra = (o.venterHtml ? '<div class="ksy-ekstra">' + bf3Ver("Venter på dig") + o.venterHtml + '</div>' : '') + (FL ? '<div class="ksy-ekstra">' + bf3Ver("Næste møde") + (o.moedeHtml || '') + (o.noterHtml || '') + '</div>' : '') + (opsHtml ? '<div class="ksy-ekstra">' + bf3Ver("Næste opslag") + opsHtml + '</div>' : '');
-  const harSvar = D.skema.length || D.feedback.length || D.opgaver.length;
-  if (FL && !harSvar) svar = "";   /* forløbskunden uden skema/feedback/opgaver: ingen tom flise */
-  el.innerHTML = tlf
-    ? top + noegle + handl + ekstra + svar + koeb + kontakt + butik + personer + team + aktivitet + genveje
-    : top + noegle + ekstra + '<div class="ksy-to"><div class="ksy-sp">' + kontakt + butik + personer + koeb + team + genveje + '</div><div class="ksy-sp">' + svar + aktivitet + '</div></div>';
+  /* ===== KUNDENS SIDE I IDAS DESIGN (Idas klik 15/11 »Ja, byg det«, artifact TEfjcr6TTMi14EPUm7P8ih; Ida: »siderne på en kunde er totalt uoverskuelige« · »alt smelter sammen« · »kig på et professionelt crm«) =====
+     Rækkefølgen fra HubSpot/Pipedrive/Folk: det, der venter på dig · oplysningerne · forløbet og historikken · team og køb. Formen er Idas: coveret, knapper med ord, ÉN lyseblå flise med det, der venter,
+     hvide fliser med overskriften OVER, 15 px tekst, intet to gange. Tomme fliser siger det med én grå linje. Genvejene bor bag plusset. */
+  const blok = function (et, ind, kl) { return '<div class="ks2-blok' + (kl ? ' ' + kl : '') + '"><div class="ks2-e">' + et + '</div><div class="ks2-fl">' + ind + '</div></div>'; };
+  const rk2 = function (l, v, kl) { return '<div class="ks2-rk"' + (kl ? ' role="button" tabindex="0" onclick="' + kl + '"' : '') + '><span class="ks2-l">' + l + '</span><span class="ks2-v">' + v + (kl ? ' ›' : '') + '</span></div>'; };
+  const tom2 = function (t) { return '<div class="ks2-tom">' + t + '</div>'; };
+  const knapH = function (t, href, klik, kl) { return href ? '<a class="ks2-kn' + (kl ? ' ' + kl : '') + '" href="' + esc(href) + '">' + t + '</a>' : '<button type="button" class="ks2-kn' + (kl ? ' ' + kl : '') + '" onclick="' + klik + '">' + t + '</button>'; };
+  const ialt = D.ialt || (function () { try { return (KURSUS_MODULER || []).reduce(function (n, m) { return n + ((m.lektioner || []).length); }, 0); } catch (e) { return 0; } })();
+  /* RABATKODEN KOMMER FRA KØBET (15/11, målt: »true« og »Gamle kunder« stod som rabatkode) — kilden står for sig som »Kom fra« */
+  const rabat = (D.koeb && D.koeb.rabat) ? D.koeb.rabat : ((typeof d.forening === "string" && d.forening.trim()) ? d.forening : (d.forening ? k : "Ingen"));
+  const komFra = (typeof D.kilde === "string" && D.kilde.trim() && !/^(Uden kode|true)$/i.test(D.kilde)) ? D.kilde : "";
+  /* det, der venter på dig */
+  let venterH = "", venterS = "", venterK = "", sendIVenter = false;
+  if (FL) {
+    const m0 = o.moede;
+    if (m0) { venterH = "Næste contentmøde " + esc(storStart(dagTxtKs(m0.dato, m0.tid))); venterS = (moedeSted(m0).online ? "Online" : esc(moedeSted(m0).sted || "Fysisk")); venterK = knapH("Flyt mødet", "", "ksMoedeArk('" + kEsc + "','" + esc(String(m0.id)) + "')"); }
+    else { venterH = "Næste contentmøde er ikke sat"; venterS = ""; venterK = knapH("Sæt contentmødet", "", "ksMoedeArk('" + kEsc + "')", "r"); }
+  } else if (!D.login) { venterH = "Kunden er ikke logget ind endnu"; venterS = koebt ? "Købt " + esc(ksyDato(koebt)) + "." : ""; venterK = knapH("Send besked", "", "bf3BeskedArk('" + kEsc + "')", (ksyDageSiden(koebt) || 0) >= 2 ? "r" : ""); sendIVenter = true; }
+  else if (staa) { venterH = "Kunden er gået i stå"; venterS = "Sidst aktiv " + esc(ksySidenOrd(D.sidst || koebt)) + "."; venterK = knapH("Send besked", "", "bf3BeskedArk('" + kEsc + "')", "r"); sendIVenter = true; }
+  else { venterH = "Kunden er på sporet"; venterS = "Sidst aktiv " + esc(ksySidenOrd(D.sidst)) + (naeste ? " · " + esc(naeste) : "") + "."; }
+  const venter2 = '<div class="ks2-venter' + ((staa || (!D.login && (ksyDageSiden(koebt) || 0) >= 2)) && !FL ? ' ks2-stod' : '') + '"><div><div class="ks2-vh">' + venterH + '</div>' + (venterS ? '<div class="ks2-vs">' + venterS + '</div>' : '') + '</div>' + venterK + '</div>';
+  /* toppen: type · produkt · start + knapper med ord */
+  const typeOrd = FL ? "Forløbskunde" : (/^Gratis/i.test(String(d.forloeb || "")) ? "Kursusadgang" : "YOU GOT THIS");
+  const topL = '<div class="ks2-type">' + typeOrd + ' <span>· ' + esc(d.forloeb || "YOU GOT THIS") + (start ? " · start " + esc(kortDato(start)) : "") + '</span></div>';
+  const knapper = '<div class="ks2-knr">' + (tlfNr ? knapH("Ring op", "tel:" + tlfNr.replace(/\s/g, "")) : '') + (mail ? knapH("Skriv en mail", "mailto:" + mail) : '') + (sendIVenter ? '' : knapH("Send besked", "", "bf3BeskedArk('" + kEsc + "')")) + (tlf ? '' : knapH("Se kundens version", "", "aabnKundensSide('" + kEsc + "')")) + '</div>';
+  /* oplysningerne */
+  const kontakt2 = blok("Kontakt", kRk ? kRk.replace(/ksy-felt/g, "ks2-rk").replace(/ksy-l/g, "ks2-l").replace(/ksy-v/g, "ks2-v") : tom2("Ingen kontaktoplysninger endnu"));
+  const bRk = (P.butik_navn ? rk2("Navn", esc(P.butik_navn)) : '') + (adr ? rk2("Adresse", esc(adr)) : '') + (P.cvr ? rk2("CVR", esc(P.cvr)) : '') + (P.branche ? rk2("Sælger", esc(P.branche === "Andet" && P.branche_andet ? P.branche_andet : P.branche)) : '') + (P.forretningstype ? rk2("Kunderne køber", esc(koebOrd[P.forretningstype] || P.forretningstype)) : '');
+  const butik2 = blok("Butikken", bRk || tom2("Butikken er ikke udfyldt endnu"));
+  const personer2 = (D.personer || []).length ? blok("Personerne", D.personer.map(function (x) { return rk2(esc(x.navn || x.email || "Ukendt"), esc([x.ejer === true ? "Ejer" : (x.rolle || ""), fDato(x.foedselsdag) ? "Fødselsdag " + fDato(x.foedselsdag) : ""].filter(Boolean).join(" · ") || "")); }).join("")) : '';
+  /* forløbet */
+  let forl2;
+  if (FL) {
+    const noter = (typeof MOEDE_NOTER !== "undefined" && MOEDE_NOTER[k]) ? String(MOEDE_NOTER[k]) : "";
+    forl2 = blok("Forløbet", (nu ? rk2("Lige nu", esc(nu)) : '') + rk2("Næste opslag", esc(opsKort)) + rk2("Sidst aktiv", esc(sidstOrd)))
+      + blok("Noter til næste møde", '<textarea id="ksNoter" class="ks2-ta" rows="3" placeholder="Skriv det, du vil tage op …" oninput="ksNoterVent(\'' + kEsc + '\')" onblur="ksNoterGem(\'' + kEsc + '\')">' + esc(noter) + '</textarea><div class="ks-noter-kvit" id="ksNoterKvit" aria-live="polite"></div>');
+  } else {
+    const pct = ialt ? Math.min(100, Math.round(D.set / ialt * 100)) : 0;
+    forl2 = blok("Lektionerne", '<div class="ks2-prog"><div class="ks2-progt"><span>' + D.set + ' af ' + ialt + ' set</span></div><div class="ks2-bar"><i style="width:' + pct + '%"></i></div></div>' + rk2("Næste modul", esc(naeste || "Alle moduler er åbne")) + rk2("Startdato", (start ? esc(ksyDato(start)) : "Ikke sat") + flyt.replace("ksy-mini", "ks2-mini")));
+  }
+  const nKom2 = D.feedback.filter(function (x) { return x.kommentar; }).length;
+  const svar2 = (D.skema.length || D.feedback.length || D.opgaver.length) ? blok("Svar og feedback",
+      (D.skema.length ? rk2("Spørgeskema", "Sendt " + esc(kortDato(ksyDag(D.skema[0].created_at))), "ksYgtVis('ygt-skema')") : '')
+    + (D.feedback.length ? rk2("Feedback", D.feedback.length + (D.feedback.length === 1 ? " lektion" : " lektioner") + (nKom2 ? " · " + nKom2 + (nKom2 === 1 ? " kommentar" : " kommentarer") : ""), "ksYgtVis('ygt-feedback')") : '')
+    + (D.opgaver.length ? rk2("Opgaver", D.opgaver.length + " besvaret", "ksYgtVis('ygt-opgaver')") : '')) : '';
+  const UGE2 = ["Søndag", "Mandag", "Tirsdag", "Onsdag", "Torsdag", "Fredag", "Lørdag"];
+  const opsRk = (o.ops || []).map(function (x) { return rk2(esc(storStart(x.titel || "Uden titel")), esc(UGE2[new Date(String(x.dato).slice(0, 10) + "T12:00:00").getDay()] + " " + kortDato(x.dato)), "godkKoeAabn('" + kEsc + "','" + esc(String(x.id)) + "')"); }).join('');
+  const ops2 = (FL && opsRk) ? blok("Næste opslag", opsRk) : '';
+  const hist2 = blok("Historik", akt.length ? akt.slice(0, 8).map(function (a) { return rk2(esc(a.s), esc(kortDato(a.t))); }).join("") : tom2("Intet endnu"));
+  /* team og køb */
+  const LG = D.logins;
+  const team2 = LG
+    ? blok("Team · " + LG.length + (LG.length === 1 ? " login" : " logins"), LG.length ? LG.map(function (u) { const n = String(u.navn || "").trim() || String(u.email || "").split("@")[0]; return rk2(esc(n) + (u.navn && u.email ? '<span class="ks2-mail">' + esc(u.email) + '</span>' : ''), u.sidst ? "Logget ind " + esc(ksySidenOrd(u.sidst)) : "Inviteret"); }).join("") : tom2("Ingen logins på koden endnu"))
+    : blok("Team" + (D.team.length ? " · " + D.team.length : ""), D.team.length ? D.team.map(function (p) { return rk2(esc(p.n), p.sidst ? esc(storStart(ksySidenOrd(p.sidst))) : "Ikke i appen endnu"); }).join("") : tom2("Ingen har logget ind endnu"));
+  const koeb2 = blok("Køb", rk2("Produkt", esc(d.forloeb || "YOU GOT THIS")) + (koebt ? rk2("Købt", esc(ksyDato(koebt))) : '') + ((D.koeb && D.koeb.kr != null) ? rk2("Beløb", esc(D.koeb.kr.toLocaleString("da-DK")) + " kr.") : '') + rk2("Rabatkode", esc(rabat)) + (komFra ? rk2("Kom fra", esc(komFra)) : ''));
+  const seK2 = tlf ? '<button type="button" class="ks2-kn ks2-bred" onclick="aabnKundensSide(\'' + kEsc + '\')">Se kundens version</button>' : '';
+  el.innerHTML = '<div class="ks2' + (tlf ? ' ks2-tlf' : '') + '">'
+    + '<div class="ks2-top">' + topL + knapper + '</div>' + venter2
+    + (tlf
+      ? forl2 + ops2 + svar2 + kontakt2 + butik2 + personer2 + team2 + koeb2 + hist2 + seK2
+      : '<div class="ks2-grid"><div class="ks2-kol">' + kontakt2 + butik2 + personer2 + '</div><div class="ks2-kol">' + forl2 + ops2 + svar2 + hist2 + '</div><div class="ks2-kol">' + team2 + koeb2 + '</div></div>')
+    + '</div>';
   try { bsBaandPlanlaeg(); } catch (e) {}
 }
 /* SVAR OG FEEDBACK HVER PÅ SIN SIDE — ét spørgsmål/én lektion pr. flise; Tilbage fører til kundens side */
@@ -96754,6 +96853,58 @@ html body .mails-ny-ark .ark-chips::before, html body .mails-ny-ark .ark-chips::
 .valg-fliser.mails-valg .valg-ik { background:#F0F5F8 !important; color:#6F6B66 !important; }
 .valg-fliser.mails-valg .valg-ik svg, .valg-fliser.mails-valg .valg-ik svg * { stroke:#6F6B66 !important; color:#6F6B66 !important; }
 .mails-egen { border:0; background:none; padding:0 4px; min-height:36px; font-family:Poppins,sans-serif; font-size:13px; color:#1A1A1A; text-decoration:underline; cursor:pointer; }
+/* SLET KUNDEN OG ALLE DATA (Idas klik 15/11): arket i CRM — overskrifterne over fliserne, rød knap = det, der sletter */
+#kundeSletArk { position:fixed; inset:0; z-index:1200; background:rgba(26,26,26,.35); display:none; align-items:center; justify-content:center; padding:16px; }
+#kundeSletArk .ks-ark { background:#fff; border-radius:24px; width:100%; max-width:480px; max-height:calc(100vh - 32px); overflow:auto; padding:24px; display:flex; flex-direction:column; gap:16px; box-shadow:0 20px 60px rgba(26,26,26,.25); }
+#kundeSletArk .ks-t { font-size:20px; line-height:28px; color:#1A1A1A; text-align:center; text-wrap:balance; }
+#kundeSletArk .ks-s { display:flex; flex-direction:column; gap:8px; font-size:14px; color:#6F6B66; }
+#kundeSletArk .ks-e { font-size:12px; line-height:18px; letter-spacing:1.5px; text-transform:uppercase; color:#6F6B66; margin-top:8px; }
+#kundeSletArk .ks-fl { border:1px solid #DCE8F0; border-radius:16px; padding:4px 16px; }
+#kundeSletArk .ks-rk { display:flex; justify-content:space-between; gap:12px; padding:10px 0; font-size:14px; line-height:21px; color:#1A1A1A; border-top:1px solid #EEF3F7; }
+#kundeSletArk .ks-rk:first-child { border-top:0; }
+#kundeSletArk .ks-rk span:last-child { color:#6F6B66; text-align:right; overflow-wrap:anywhere; }
+#kundeSletArk .ks-n { font-size:13px; line-height:20px; color:#6F6B66; margin-top:4px; }
+#kundeSletArk .ks-kn { display:flex; flex-direction:column; gap:8px; }
+#kundeSletArk .ks-kn .bs3-lang { margin:0 !important; width:100%; }
+@media (max-width:899px) { #kundeSletArk { align-items:flex-end; padding:0; } #kundeSletArk .ks-ark { border-radius:24px 24px 0 0; max-height:92vh; padding:20px 16px calc(20px + env(safe-area-inset-bottom,0px)); } #kundeSletArk .ks-kn .bs3-lang { min-height:56px; } }
+/* KUNDENS SIDE I IDAS DESIGN (Idas klik 15/11, artifact TEfjcr6TTMi14EPUm7P8ih): knapper med ord · ÉN lyseblå flise · hvide fliser med overskriften OVER · 15 px · tre spalter på computeren */
+.ks2 { display:flex; flex-direction:column; gap:32px; }
+.ks2-top { display:flex; justify-content:space-between; align-items:center; gap:16px; flex-wrap:wrap; }
+.ks2-type { font-size:16px; line-height:24px; color:#1A1A1A; }
+.ks2-type span { color:#6F6B66; }
+.ks2-knr { display:flex; gap:8px; flex-wrap:wrap; }
+html body .ks2-kn { height:44px; min-height:44px; padding:0 20px; border-radius:22px; border:1px solid #DCE8F0; background:#fff; color:#1A1A1A; font-family:Poppins,sans-serif; font-size:14px; font-weight:400; display:inline-flex; align-items:center; justify-content:center; white-space:nowrap; cursor:pointer; text-decoration:none; }
+html body .ks2-kn.r { background:#FC2404; border-color:#FC2404; color:#fff; }
+.ks2-venter { background:#F0F5F8; border:1px solid #DCE8F0; border-radius:24px; padding:24px 28px; display:flex; justify-content:space-between; align-items:center; gap:24px; }
+.ks2-vh { font-size:22px; line-height:30px; color:#1A1A1A; }
+.ks2-stod .ks2-vh { color:#FC2404; }
+.ks2-vs { font-size:15px; line-height:22px; color:#6F6B66; margin-top:4px; }
+.ks2-grid { display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:24px; align-items:start; }
+.ks2-kol { display:flex; flex-direction:column; gap:32px; min-width:0; }
+.ks2-blok { display:flex; flex-direction:column; gap:8px; min-width:0; }
+.ks2-e { font-family:Poppins,sans-serif; font-size:12px; line-height:18px; letter-spacing:1.5px; text-transform:uppercase; color:#6F6B66; }
+.ks2-fl { background:#fff; border-radius:20px; box-shadow:0 0 0 1px #DCE8F0, 0 6px 30px rgba(46,44,41,.08); padding:6px 22px; }
+.ks2-rk { display:flex; justify-content:space-between; align-items:center; gap:16px; padding:14px 0; font-size:15px; line-height:22px; border-top:1px solid #EEF3F7; }
+.ks2-rk:first-child { border-top:0; }
+.ks2-rk[role=button] { cursor:pointer; }
+.ks2-l { color:#6F6B66; min-width:0; }
+.ks2-v { color:#1A1A1A; text-align:right; overflow-wrap:anywhere; flex:0 0 auto; max-width:62%; display:inline-flex; align-items:center; gap:8px; justify-content:flex-end; }
+.ks2-tom { padding:16px 0; font-size:15px; color:#6F6B66; }
+.ks2-l .ks2-mail { display:block; font-size:13px; line-height:19px; color:#9A9590; overflow-wrap:anywhere; }
+.ks2-prog { padding:14px 0 8px; }
+.ks2-progt { font-size:15px; color:#1A1A1A; }
+.ks2-bar { height:8px; border-radius:4px; background:#EEEEEE; overflow:hidden; margin-top:10px; }
+.ks2-bar i { display:block; height:100%; background:#FC2404; }
+html body .ks2-mini { height:32px; padding:0 12px; border-radius:16px; border:1px solid #DCE8F0; background:#fff; font-family:Poppins,sans-serif; font-size:13px; cursor:pointer; }
+.ks2-ta { width:100%; box-sizing:border-box; min-height:96px; border:1px solid #DCE8F0; border-radius:14px; padding:12px 14px; margin:14px 0; font-family:Poppins,sans-serif; font-size:15px; line-height:22px; resize:vertical; }
+@media (max-width:1180px) and (min-width:900px) { .ks2-grid { grid-template-columns:repeat(2, minmax(0,1fr)); } }
+@media (max-width:899px) {
+  .ks2 { gap:28px; }
+  .ks2-knr { flex-direction:column; width:100%; }
+  html body .ks2-kn { height:56px; min-height:56px; width:100%; font-size:15px; border-radius:28px; }
+  .ks2-venter { flex-direction:column; align-items:stretch; padding:20px; }
+  .ks2-fl { padding:6px 18px; }
+}
 .mails-egen-tlf { display:none !important; }
 @media (max-width:899px) {
   .mails-ret .mails-egen { display:none !important; }
