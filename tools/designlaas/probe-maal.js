@@ -26,13 +26,13 @@ function maalSide(){
     er("FLISE afstand", e, px(cs.marginBottom)===12, "afstand under "+px(cs.marginBottom)+" (skal 12)");
     er("FLISE flade", e, rgb(cs.backgroundColor)==="rgb(255,255,255)"||/story|cap-q/.test(kl(e))||(e.parentElement&&e.parentElement.classList.contains("kk-laast")&&rgb(cs.backgroundColor)==="rgb(240,245,248)"), "flade "+cs.backgroundColor);
   });
-  /* FLISETITEL: Poppins 18 (telefon 16) / 400 / #1A1A1A; 16 til første indhold */
+  /* FLISETITEL: Poppins 18 (telefon 16) / 400 / #1A1A1A; 8 til første indhold */
   rod.querySelectorAll(".sk-q:not([data-par=cover]) > .sk-label, .kk-hook-spm").forEach(function(e){
     if(!synlig(e)) return; var cs=getComputedStyle(e);
     var t=e.querySelector(".sk-spm, .sk-titel")||e; var ts=getComputedStyle(t);
     er("FLISETITEL skrift", t, px(ts.fontSize)===(TLF?16:18)&&ts.fontWeight==="400"&&/Poppins/.test(ts.fontFamily)&&rgb(ts.color)===SORT, ts.fontSize+"/"+ts.fontWeight+" "+ts.color+" (skal "+(TLF?16:18)+"/400 #1A1A1A Poppins)");
     var nxt=e.nextElementSibling; while(nxt&&getComputedStyle(nxt).display==="none") nxt=nxt.nextElementSibling;
-    if(nxt&&nxt.getBoundingClientRect().height>0){ var d=Math.round(nxt.getBoundingClientRect().top-e.getBoundingClientRect().bottom); er("FLISETITEL afstand", e, Math.abs(d-16)<=1, "til indholdet "+d+" (skal 16)"); }
+    if(nxt&&nxt.getBoundingClientRect().height>0){ var d=Math.round(nxt.getBoundingClientRect().top-e.getBoundingClientRect().bottom); er("FLISETITEL afstand", e, Math.abs(d-8)<=1, "til indholdet "+d+" (skal 8)"); }
   });
   
   rod.querySelectorAll(".klip-hoved .kk-titel").forEach(function(e){

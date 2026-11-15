@@ -1,3 +1,10 @@
+## 15. november · BRIEFEN: SKRIVEFELTER LYSEGRÅ · SPØRGSMÅLET TÆT PÅ FELTET · HJÆLPEFLISEN LYSEBLÅ (Ida 15/11, v3314)
+Idas ord: »felterne man skal skrive i får den lyse grå farve vi har låst – lige nu er det hele lidt for hvidt i hvidt« (ja til buddet, artifact RgQaRDMAABNcSeza31njf5) · »der er for meget luft mellem spørgsmålet og flisen eller spørgsmålet og chips« · »og den flise til højre skal altid være den lyseblå«.
+- **Skrivefelterne i briefen** (alle felter, man skriver i) står på lysegrå #EEEEEE uden kant. Fliserne er hvide. Et forslag, der ikke er valgt, kendes på den grå tekst.
+- **Spørgsmål → felt eller chips: 8** (var 16). Porten måler 8 (`probe-maal.js`, FLISETITEL afstand).
+- **Hjælpeflisen (tips) er altid lyseblå #F0F5F8 uden kant**; pærens runde felt er hvidt. Vælter klik 2 fra 14/11 (»hjælpefliser er hvide«).
+- Koden: blokken »IDAS RUNDE 15/11« sidst i stilarket, efter markeringsfarverne.
+
 ## **POPUPPEN RETTES, SOM KUNDEN SER DEN (Ida 15/11, v3311)**
 I Energida Studio står »Popup efter lektionen« og »Feedback« som kundens eget kort på undersiden (samme klasser, samme mål — målt mod kundens popup på 390 og 1440). Overskrift, tekst og den røde knaps ord rettes ved at trykke på dem; rettelsen gemmes i kladden, når feltet forlades. Et tomt felt får husets tekst igen. Der er ingen »Se som kunden«-knap — siden ER visningen. Stilreglerne er tvillinger: »body .kbu-wys« følger »body.lek-mb« på popuppens regler; ændres den ene, ændres den anden.
 ## 15. november · BILLEDEOPSLAG HAR SIT BILLEDE PÅ BRIEFOVERSIGTEN · CAPTIONENS FELT ER LYSEBLÅT (Ida 15/11, v3312)
@@ -4036,7 +4043,7 @@ Ida 14/11: »jeg HADER denne farve!« (den sandfarvede markering #FAF9F5 / #F1EF
 - Aldrig sort eller mørk flade (Ida 14/11: »ALDRIG SORT!!!«).
 - **AFGJORT 14/11 (Idas fire klik efter ekspertgennemgangen):**
   1. **Sidens baggrund er hvid #FFFFFF overalt**, også Forløbet, lektionerne og log ind. Fliserne skilles fra siden med kant #DCE8F0 og den bløde skygge.
-  2. **Hjælpefliser (briefens hjælp, tips) er hvide** med kant #DEDAD4 (grå, 15/11) og et lille rundt symbolfelt med en pære. Lyseblå FLADE betyder kun »venter/låst«.
+  2. ~~Hjælpefliser er hvide~~ VÆLTET 15/11: hjælpeflisen er altid lyseblå #F0F5F8 uden kant (se øverst). Før: **Hjælpefliser (briefens hjælp, tips) er hvide** med kant #DEDAD4 (grå, 15/11) og et lille rundt symbolfelt med en pære. Lyseblå FLADE betyder kun »venter/låst«.
   3. **Chips, der ikke er valgt: HVID flade, grå kant #DEDAD4, grå tekst #6F6B66** (Ida 15/11: »jeg har udtrykt mig meget tydeligt til designlåsen omkring at alle chips i briefen når de ikke er valgt skal have neutral baggrund og grå streg og grå tekst« — den grå flade #EEEEEE uden kant fra 14/11 er VÆLTET). Valgt chip er rød.
   4. **Symbolfelter** (pære, lås, info): rundt felt #F0F5F8 og symbol i grå #6F6B66. Den lyseblå bruges til symbolfelter, aldrig som symbolets streg.
 - Én opgave pr. farve: **rød** = det aktive, man trykker på · **grå #EEEEEE** = valgt menupunkt/ikke valgt · **lyseblå flade #F0F5F8** = venter/låst og symbolfelter · **#DEDAD4 (grå)** = tynde kanter · **hvid** = side og fliser.
