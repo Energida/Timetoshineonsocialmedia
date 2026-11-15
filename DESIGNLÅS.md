@@ -1,3 +1,17 @@
+## 15. november · HEALTH COACH: OBSERVATIONSTESTS OG CORETESTS I SAMME TESTSKÆRM (Ida: »nu skal observationstests og coretests have samme design«) · v3315
+
+Alle tests uden for spørgeskema, screening og »Analyse af tests« bruger nu testskærmen med trafiklys (`hcErT2`): Holdning, Scientific Core Condition, Infant development, Basisbevægelser og de biomekaniske tests uden H/V i grader.
+- **Ét tal i grader** (Nakkefleksion, Storetå, »Grader målt«): samme flise som H/V, feltets eget navn foran, trafiklys mod optimal; 3 grader fra ét optimal-tal tæller som inden for.
+- **H/V som ord** (Thomas test, Trendelenburg): to neutrale fliser H: og V:, ingen enhed, ingen farve.
+- **»Kig efter« / »Kig på«** står som overskrift over ÉN flise med punkter, før felterne (også på telefonen).
+- **Cirklen foran navnet** er fuld, når testen har et svar (H/V-tests: når begge sider er tastet).
+- **Opsummering**: dele uden H/V-par får én opsummering efter delens sidste test, med Negativ/Positiv og tal som bokse og de skrevne svar under navnet.
+- **Toplinjen klippes aldrig med prikker**; et langt testnavn står på to linjer.
+- **RO OG HIERARKI (Ida: »totalt uoverskueligt … mere roligt med hierarki, tydelige opdelinger«; tre eksperters bud):** skygge = læs, kant = skriv, aldrig begge på samme kasse · det, testen tester, står som én grå linje under navnet (ingen flise) · valg (Negativ/Positiv, Nej/Ja) er to lige brede halvdele · 32 luft før »Smerte under testen« · »1.« står i prikkens plads, aldrig både prik og tal · »Kilde« ses kun i »Ret testen« · »Ret testen« er en grå tekstknap, ikke en pille.
+- **TEGNINGEN (Ida: »vær kritisk og se på tegningen hvad det er jeg reelt har brug for«):** på tests uden H/V står første billede stort i »Sådan udføres testen«, resten som miniaturer; et tryk åbner billedet i fuld størrelse (lyst ark, krydset i cirkel). Coretestene viser KUN selve tegningen fra kompendiet — aldrig hele siden med tekst og tomme tabeller. De hele sider ligger i lagerets arkivmappe.
+- »Grader nået« hedder »Grader målt« (Idas ord).
+- Gemte nøgler er urørte. Spørgeskema, Screening og »Analyse af tests« har stadig deres egne skærme.
+
 ## 15. november · BRIEFEN: SKRIVEFELTER LYSEGRÅ · SPØRGSMÅLET TÆT PÅ FELTET · HJÆLPEFLISEN LYSEBLÅ (Ida 15/11, v3314)
 Idas ord: »felterne man skal skrive i får den lyse grå farve vi har låst – lige nu er det hele lidt for hvidt i hvidt« (ja til buddet, artifact RgQaRDMAABNcSeza31njf5) · »der er for meget luft mellem spørgsmålet og flisen eller spørgsmålet og chips« · »og den flise til højre skal altid være den lyseblå«.
 - **Skrivefelterne i briefen** (alle felter, man skriver i) står på lysegrå #EEEEEE uden kant. Fliserne er hvide. Et forslag, der ikke er valgt, kendes på den grå tekst.
