@@ -1,3 +1,15 @@
+## 15. november · HASHTAGS: BANKENS FORSLAG KOMMER, MENS MAN SKRIVER (Idas ord 15/11 — bud 4 af fem, artifact DEysqKZaKrv5YtQiJGQs7T, v3323)
+Idas ord: »kunne man gøre noget så når man begynder at skrive et hashtag kommer den op med det man har i banken??«
+- Når der står mindst ét bogstav i et #-felt i briefen, vises bankens hashtags, der passer, som chips lige under feltet: først dem, der begynder med det skrevne, så dem, der indeholder det; højst seks; aldrig dem, der allerede er valgt.
+- Et tryk sætter hashtagget i feltet, gemmer og åbner den næste tomme række. Feltet beholder fokus, så tastaturet bliver stående på telefonen.
+- Chips i bankens form: 32 høj · hvid · grå kant #DEDAD4 · grå tekst, ombrudt, flugter med feltets venstre kant. Begge flader.
+- »Vælg fra hashtagbanken« står stadig under felterne. De fire andre bud (appen foreslår de fem · gemte sæt · ark fra bunden · fem pladser) er ikke bygget.
+
+## 15. november · HASHTAGBANKEN I BRIEFEN VISER ALLE HASHTAGS PÅ ÉN GANG (Ida 15/11, v3323)
+Idas ord: »jeg synes også det er mobilversionen der ikke er optimal at arbejde med i briefen« → »det var ift hashtagbanken«.
+- I briefens hashtagbank ombrydes både kategorierne og hashtaggene, på telefon og computer. Før stod de 12 hashtags på én linje, der skulle swipes sidelæns; på telefonen så man halvandet ad gangen.
+- Vælter »chips altid på én linje« (2/11) for hashtagbanken i briefen. »Se flere« og »Skjul banken« står under som før.
+
 ## 15. november · HASHTAGS I BRIEFEN: TRE FEJL RETTET (Ida 15/11: »jeg synes ikke at hashtagfunktionen fungere«, v3320)
 - Et tryk på et VALGT (rødt) hashtag i banken fjerner det igen. Før blev det tilføjet én gang til, når stort og lille bogstav var forskelligt (#menneskenebag + #Menneskenebag).
 - En tømt række forsvinder, og listen rykker sammen: der står kun én tom række, nederst.
