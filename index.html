@@ -67460,7 +67460,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "3318";
+const APP_VERSION = "3319";
 const APP_BYGGET = "3. november";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_VERSION;   /* ingen dato (Ida 7/11: »hvorfor står der version 3. november?«) — datoen blev ikke rettet med, nummeret er sandheden */ } catch (e) {} });
 let NY_VERSION_KLAR = false;
@@ -94162,6 +94162,31 @@ function hcFundListe() {
   }); });
   return ud;
 }
+/* DET SAMLEDE OVERBLIK (Idas klik 15/11 »Samlet overblik pr. klient«): fundene i Gennemgang staar som opsummeringens raekker —
+   samlet pr. omraade, de roede oeverst, H:/V: i samme trafiklys, Positiv og Smerte som bokse. Et tryk aabner testen.
+   Hvad der ER et fund, afgoeres stadig af samme regler som foer (smerte · positiv · under optimal · over 10 % forskel eller uden for optimal). */
+function hcFundGaa(di, i) { try { hcGemNu(); } catch (e) {} HC.del = di; HC.trin = i; HC.ret = ""; HC.opsum = null; HC.retTest = false; HC.vis = "del"; hcTegn(); try { window.scrollTo(0, 0); const dm = document.getElementById("dashMain"); if (dm) dm.scrollTop = 0; } catch (e) {} }
+function hcFundGrupper() {
+  const gr = [], v = (HC.data && HC.data.v) || {};
+  HC_DELE.forEach(function (d, di) { d.trin.forEach(function (x, i) { if (x.rk || x.scr) return; const s = v[x.id]; if (!s || Array.isArray(s)) return;
+    const o = hcTestDele(x), a = hcTal(s.h), b = hcTal(s.v), harV = x.f.some(function (f) { return f.k === "v"; }), grader = x.f.some(function (f) { return f.k === "h" && f.t === "g"; });
+    let fund = false, vaegt = 0, under = "", tal = "";
+    const boks = function (k, bog, en) { const har = String(s[k] == null ? "" : s[k]).trim() !== ""; const kl = (en ? hcT2TilstEn : hcT2Tilst)(o, s[k]); if (kl === " hc-tr") vaegt = Math.max(vaegt, 3); else if (kl === " hc-ty") vaegt = Math.max(vaegt, 2); return '<span class="hc-t2-opv' + kl + '">' + (bog ? bog + ': ' : '') + (har ? esc(s[k]) : '') + '</span>'; };
+    if (grader && !harV && a !== null && o.lo != null) { const lav = o.hi != null ? a < o.lo : (a < o.lo && Math.abs(a - o.lo) > 3); if (lav) { fund = true; tal = boks("h", "", true); under = "Optimal " + o.opt; } }
+    else if (grader && harV && a !== null && b !== null) { const f = hcT2ForskelData(s.h, s.v), st = Math.max(Math.abs(a), Math.abs(b));
+      const dd = Math.round(Math.abs(a - b) * 10) / 10, over = !!st && dd > 3 && dd / st * 100 > 10;
+      const ude = function (k) { if (o.lo == null) return false; if (o.hi != null) return k < o.lo || k > o.hi; return Math.abs(k - o.lo) > 3; };
+      if (over || ude(a) || ude(b)) { fund = true; tal = boks("h", "H") + boks("v", "V"); under = (over && f ? f.tal + (f.side ? " · " + f.side : "") : "") ; if (o.opt) under += (under ? " · " : "") + "Optimal " + o.opt; if (over) vaegt = Math.max(vaegt, 2); } }
+    if (s.res === "Positiv") { fund = true; vaegt = Math.max(vaegt, 2); tal += '<span class="hc-t2-opv">Positiv</span>'; }
+    if (s.sm === "j") { fund = true; vaegt += 1; tal += '<span class="hc-t2-opv">Smerte' + (s.sms ? ' ' + esc(String(s.sms).toLowerCase()) : '') + '</span>'; const fo = String(s.f || "").trim(); if (fo) under += (under ? " · " : "") + "“" + fo + "”"; }
+    if (!fund) return;
+    const gn = d.id === "bio" ? String(x.g || d.navn).split(" · ")[0] : d.navn; let g = gr.find(function (y) { return y.n === gn; }); if (!g) { g = { n: gn, r: [] }; gr.push(g); }
+    const navn = d.id === "bio" ? (x.g && x.g.indexOf(" · ") > 0 ? x.g.split(" · ")[1] + " · " + x.n : (x.n || x.g)) : (x.g && x.n && x.g !== x.n && x.g !== d.navn ? x.g : (x.n || x.g));
+    g.r.push({ w: vaegt, h: '<div class="hc-flise hc-t2-ops" role="button" tabindex="0" onclick="hcFundGaa(' + di + ',' + i + ')" onkeydown="if(event.key===\'Enter\')hcFundGaa(' + di + ',' + i + ')"><span class="hc-t2-opn">' + esc(navn) + (under ? '<span>' + esc(under) + '</span>' : '') + '</span>' + tal + '</div>' });
+  }); });
+  gr.forEach(function (g) { g.r.sort(function (p, q) { return q.w - p.w; }); });
+  return gr;
+}
 /* PROGRAM (14/11, »byg det hele ind«): forslag ud fra fundene. Reglerne er Idas egne ark »Restriktioner« og »Anbefalet ved restriktioner« (Træner Akademiet),
    ikke AI: et forslag vises kun, naar testen har et fund (under optimal, over 10 % forskel eller positiv coretest). Ida skriver selv programmet i feltet. */
 const HC_PROGRAM = {
@@ -94248,11 +94273,11 @@ function hcKlientTegn(el) {
       + '</div><div class="hc-ny-goer">' + felt("program", "Program") + '</div></div></div>';
     hcHoejde(); return;
   }
-  const fund = hcFundListe();
-  el.innerHTML = '<div class="hc hc-ny">' + faner
+  const fund = hcFundGrupper();
+  el.innerHTML = '<div class="hc hc-ny hc-t2 hc-fundside">' + faner
     + (mgl.length ? '<div class="hc-sted hc-forelobig"><span>Foreløbig · ' + faerdige + ' af ' + fire.length + ' runder færdige</span></div><div class="hc-hj">Mangler: ' + esc(mgl.join(", ")) + '</div>' : '')
     + '<div class="hc-gemt" id="hcGemt" aria-live="polite"></div>'
-    + '<div class="hc-ny-flade"><div class="hc-ny-laes">' + hcOversk("Fund") + (fund.length ? fund.map(function (x) { return hcNyFlise(x[0], x[1]); }).join("") : hcNyFlise("Ingen fund"))
+    + '<div class="hc-ny-flade"><div class="hc-ny-laes">' + (fund.length ? fund.map(function (g) { return hcOversk(g.n) + g.r.map(function (r) { return r.h; }).join(""); }).join("") : hcOversk("Fund") + hcNyFlise("Ingen fund"))
     + '</div><div class="hc-ny-goer">' + felt("prioritet", "Prioritet") + felt("anbefaling", "Anbefaling") + felt("spoerg", "Spørg klienten om") + '</div></div></div>';
   hcHoejde();
 }
@@ -97880,6 +97905,13 @@ body.hc-t2-side #bf3RumKnap { display:none !important; }   /* plusset bor i raek
 /* toplinjen klippes aldrig med prikker: et langt testnavn faar lov at staa paa to linjer */
 #hcHost .hc-t2 .hc-sted > span:first-child { white-space:normal; overflow:visible; text-overflow:clip; }
 #hcHost .hc-t2-par.hc-een { grid-template-columns:minmax(0, 1fr); }
+/* det samlede overblik i Gennemgang: opsummeringens raekker, flere bokse maa ombrydes under navnet paa telefonen */
+#hcHost .hc-fundside .hc-faner { margin-bottom:20px; }
+#hcHost .hc-fundside .hc-ny-flade { margin-top:20px; }
+#hcHost .hc-fundside .hc-ny-laes > .hc-oversk:first-child { margin-top:0; }
+#hcHost .hc-fundside .hc-t2-ops { flex-wrap:wrap; justify-content:flex-end; }
+#hcHost .hc-fundside .hc-t2-opn { flex:1 1 180px; }
+#hcHost .hc-fundside .hc-t2-ops .hc-t2-opv { max-width:none; }
 /* RO OG HIERARKI (eksperternes bud 15/11): skygge = laes · kant = skriv (aldrig begge) · valg er to lige brede halvdele · tre zoner med 32 imellem */
 #hcHost .hc-t2 .hc-t2-felt { box-shadow:none; }
 #hcHost .hc-t2 .hc-tekst { align-items:center; }
@@ -98408,7 +98440,7 @@ html body .pf-info::after { box-sizing:border-box !important; }
 }
 </style>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-hvid.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 15. november · 3315</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 15. november · 3319</div>
 <script>
 /* DROPDOWNEN RULLER SELV (Ida 4/10) — maal den aabne liste og klip den ved skaermens bund */
 (function () {

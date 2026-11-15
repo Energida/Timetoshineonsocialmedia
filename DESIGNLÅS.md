@@ -1,3 +1,7 @@
+## 15. november · HEALTH COACH: DET SAMLEDE OVERBLIK I GENNEMGANG (Idas klik »Samlet overblik pr. klient«) · v3319
+
+Fundene i fanen Gennemgang står som opsummeringens rækker i stedet for tekstfliser: samlet pr. område (Scientific Core Condition, Cervikalt, Skulder og torso, Hofte, Fod …) med områdets navn som overskrift OVER fliserne, de røde øverst, H: og V: i samme trafiklys som testen, »Positiv« og »Smerte« som bokse, forskellen og optimal i gråt under navnet. Et tryk på en række åbner testen. Reglerne for, hvad der ER et fund, er de samme som før. Prioritet · Anbefaling · Spørg klienten om står uændret til højre (under på telefonen).
+
 ## **PRODUKTSIDEN I ENERGIDA STUDIO = LUMANT-LISTEN (Idas klik 15/11, bud 1, v3317)**
 Kun tre chips: Indhold · Deltagere · Sådan går det. Hvert modul er én flise i fuld bredde (navn · antal lektioner · status · pil ned) med tynd grå ramme. Et tryk folder lektionerne ud under modulet, indrykket, hver i sin egen flise (navn · tid · status · pil). »Åbn modulet« sidst i rækken fører til modulets egen side. Idéer til manus, Kildehenvisninger, B-rolls, Grafik, Overlays og Se som kunden ligger i ⋯. De fire modulkort side om side er døde. Bud: BLmf9HXK3kNmN9TJxBNsuR.
 
