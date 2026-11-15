@@ -26137,18 +26137,21 @@ function cvTegn(cx, W, H, design, noegle, foto, valgt) {
   return bokse;
 }
 /* ---- flisen paa briefoversigten (reel: Coverbillede · karrusel: Slides) — efter Indholdsopbygning, foer captionen: det, der skal postes ---- */
+/* ET BILLEDEOPSLAG HAR OGSAA SIT BILLEDE PAA BRIEFOVERSIGTEN (Ida 15/11: »på et billedeopslag skal man i briefoversigten også se en placeholder som en karrussel med teksten over hvor man kan oploade billede«):
+   billedet er eet slide (noegle "0", 4:5) med hookets tekst over — samme motor, samme upload og samme download som karrusellens slides. Foer stod der ingenting. */
+function cvForsideNogler() { const B = BRIEF_STATE || {}; return B.format === "Karrusel" ? cvSlideIdx().map(String) : (B.format === "Billede" ? ["0"] : ["cover"]); }
 function cvForsideHtml() {
   const B = BRIEF_STATE || {};
-  if (B.format === "Billede") return "";
+  const bil = B.format === "Billede";
   const kar = B.format === "Karrusel";
-  const nogler = kar ? cvSlideIdx().map(String) : ["cover"];
+  const nogler = cvForsideNogler();
   /* MANGLER KUN, NAAR BILLEDET INGEN TEKST HAR (Ida saa »Mangler« over et cover med tekst, 24/9) — det, der tegnes, er facit */
-  const harTekst = nogler.some(function (k) { return (cvDesign(k, false).lag || []).some(function (l) { return cvTekst(l, k).trim(); }); }) || (kar && nogler.some(cvEgetFoto));   /* karrusel: et slide med eget billede er faerdigt nok til at staa paa briefoversigten (Ida 14/11) */
+  const harTekst = nogler.some(function (k) { return (cvDesign(k, false).lag || []).some(function (l) { return cvTekst(l, k).trim(); }); }) || ((kar || bil) && nogler.some(cvEgetFoto));   /* karrusel: et slide med eget billede er faerdigt nok til at staa paa briefoversigten (Ida 14/11) */
   const alleFoto = nogler.every(function (k) { return !!cvFotoUrl(k); });
   const ned = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>';
-  return '<div class="pf-flise pf-cv"><div class="pf-eye"><span>' + (kar ? "Slides" : "Coverbillede") + '</span>' + (harTekst ? '' : '<b class="pf-mangler">Mangler</b>') + '</div>'
-    + '<div class="pf-cv-rk">' + nogler.map(function (k, n) { return '<button type="button" class="pf-cv-b' + (k === "cover" ? ' pf-cv-916' : '') + '" onclick="cvAabn(\'' + k + '\')" aria-label="' + (kar ? "Ret slide " + (n + 1) : "Ret coverbilledet") + '"><canvas data-cv="' + k + '"></canvas>' + (kar ? '<span class="pf-cv-nr">' + (n + 1) + '</span>' : '') + '</button>'; }).join("")
-    + (alleFoto ? '' : '<button type="button" class="mq-tap cv-upload" onclick="cvUploadFraForside()"><svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 7H7a3 3 0 0 0-3 3v14a3 3 0 0 0 3 3h14a3 3 0 0 0 3-3V15"/><circle cx="10.5" cy="13.5" r="2"/><path d="M4.5 24.5l6-6.5 3.5 3.5 3-3 6.5 6.5"/><circle cx="24" cy="8" r="5"/><path d="M24 10.5v-5M21.8 7.6L24 5.4l2.2 2.2"/></svg><span>' + (kar ? 'Upload billeder' : 'Upload coverbillede') + '</span></button>')
+  return '<div class="pf-flise pf-cv"><div class="pf-eye"><span>' + (kar ? "Slides" : (bil ? "Billede" : "Coverbillede")) + '</span>' + (harTekst ? '' : '<b class="pf-mangler">Mangler</b>') + '</div>'
+    + '<div class="pf-cv-rk' + (bil ? ' pf-cv-45' : '') + '">' + nogler.map(function (k, n) { return '<button type="button" class="pf-cv-b' + (k === "cover" ? ' pf-cv-916' : '') + '" onclick="cvAabn(\'' + k + '\')" aria-label="' + (kar ? "Ret slide " + (n + 1) : (bil ? "Ret billedet" : "Ret coverbilledet")) + '"><canvas data-cv="' + k + '"></canvas>' + (kar ? '<span class="pf-cv-nr">' + (n + 1) + '</span>' : '') + '</button>'; }).join("")
+    + (alleFoto ? '' : '<button type="button" class="mq-tap cv-upload" onclick="cvUploadFraForside()"><svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17 7H7a3 3 0 0 0-3 3v14a3 3 0 0 0 3 3h14a3 3 0 0 0 3-3V15"/><circle cx="10.5" cy="13.5" r="2"/><path d="M4.5 24.5l6-6.5 3.5 3.5 3-3 6.5 6.5"/><circle cx="24" cy="8" r="5"/><path d="M24 10.5v-5M21.8 7.6L24 5.4l2.2 2.2"/></svg><span>' + (kar ? 'Upload billeder' : (bil ? 'Upload billede' : 'Upload coverbillede')) + '</span></button>')
     + '</div>'
     + '<button type="button" class="dbtn mq-tap pf-cv-gem" onclick="cvGemFraForside()">' + ned + '<span>' + (kar ? "Download alle billeder" : "Download billede") + '</span></button></div>';   /* »Download«, ikke »Gem« (Ida 9/10): knappen henter filen, den gemmer ikke briefen */
 }
@@ -26168,13 +26171,13 @@ function cvForsideTegn() {
 }
 function briefCoverFraSkriv() { try { briefKlipLaes(); } catch (e) {} try { saveBrief(true); } catch (e) {} cvAabn("cover"); if (!cvFotoUrl("cover")) { try { cvFotoVaelg(); } catch (e) {} } }   /* fra skrivesiden (26/9): uden foto aabner fotovaelgeren med det samme */
 function cvUploadFraForside() {   /* fotovaelgeren for det foerste manglende billede; coveret og skrivesiden laeser samme cvFotos */
-  const nogler = (BRIEF_STATE && BRIEF_STATE.format === "Karrusel") ? cvSlideIdx().map(String) : ["cover"];
+  const nogler = cvForsideNogler();
   const mangler = nogler.filter(function (k) { return !cvFotoUrl(k); });
   cvAabn(mangler[0] || nogler[0]); cvFotoVaelg();
 }
 function cvGemFraForside() {
   const B = BRIEF_STATE || {};
-  const nogler = B.format === "Karrusel" ? cvSlideIdx().map(String) : ["cover"];
+  const nogler = cvForsideNogler();
   const mangler = nogler.filter(function (k) { return !cvFotoUrl(k); });
   if (!mangler.length) { cvGemAlle(nogler); return; }
   cvAabn(mangler[0]); cvFotoVaelg();
@@ -26183,7 +26186,7 @@ function cvGemFraForside() {
 function cvAabn(noegle) {
   const B = BRIEF_STATE || {};
   const kar = B.format === "Karrusel";
-  CV = { noegle: String(noegle), kar: kar, nogler: kar ? cvSlideIdx().map(String) : ["cover"], valgt: 0, ramme: false, traek: null, bokse: [] };
+  CV = { noegle: String(noegle), kar: kar, nogler: cvForsideNogler(), valgt: 0, ramme: false, traek: null, bokse: [] };
   cvFontHent();
   let ov = document.getElementById("cvEd");
   if (!ov) {
@@ -26192,9 +26195,9 @@ function cvAabn(noegle) {
     document.body.appendChild(ov);
   }
   CV.rod = ov;   /* vaerktoejets elementer slaas op i arket (cvEl) — karrusellens vaerktoej paa siden bruger samme id'er (14/11) */
-  ov.innerHTML = '<div class="cv-ark" role="dialog" aria-modal="true" aria-label="' + (kar ? "Slides" : "Coverbillede") + '">'
+  ov.innerHTML = '<div class="cv-ark" role="dialog" aria-modal="true" aria-label="' + (kar ? "Slides" : (B.format === "Billede" ? "Billede" : "Coverbillede")) + '">'
     + '<button type="button" class="cv-luk" aria-label="Luk" onclick="cvLuk()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>'
-    + '<div class="cv-titel">' + (kar ? "Slides" : "Coverbillede") + '</div>'
+    + '<div class="cv-titel">' + (kar ? "Slides" : (B.format === "Billede" ? "Billede" : "Coverbillede")) + '</div>'
     + '<div class="cv-gitter"><div class="cv-venstre"><div class="cv-faner" id="cvFaner"></div><div class="cv-laerred"><canvas id="cvC" aria-label="Billedet"></canvas><div class="cv-str" id="cvStr" role="slider" tabindex="0" aria-label="Tekstens størrelse" aria-orientation="vertical"><span class="cv-str-spor"></span><span class="cv-str-knap" id="cvStrKnap"></span></div></div>'
     + '<div class="cv-medier" id="cvMedier"></div>'
     + '<button type="button" class="dbtn mq-tap cv-foto" onclick="cvFotoVaelg()"><span id="cvFotoOrd">Vælg foto</span></button>'
@@ -67422,7 +67425,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "3311";
+const APP_VERSION = "3312";
 const APP_BYGGET = "3. november";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_VERSION;   /* ingen dato (Ida 7/11: »hvorfor står der version 3. november?«) — datoen blev ikke rettet med, nummeret er sandheden */ } catch (e) {} });
 let NY_VERSION_KLAR = false;
@@ -98077,6 +98080,14 @@ html body:not(.dash-mode) #briefForside#briefForside#briefForside#briefForside .
 html body:not(.dash-mode) #briefWrap#briefWrap#briefWrap#briefWrap .klip-kort > .klip-hoved { min-height:20px !important; margin-bottom:8px !important; }
 /* STATUS PAA BRIEFOVERSIGTEN ER LIGE SAA BRED SOM INDE I BRIEFEN (Ida 15/11: »vil du placere teksten i status drop down bedre?«): 296 paa computeren (var 150, saa »Materiale uploadet« ikke kunne staa der) */
 @media (min-width:900px) { html body:not(.dash-mode) .fb-ik-host .bt-ik-baand.i-forside .bt-status-baand:not(#o1):not(#o2):not(#o3):not(#o4):not(#o5):not(#o6):not(#o7):not(#o8):not(#o9) { width:296px !important; } html body:not(.dash-mode) .fb-ik-host .bt-ik-baand.i-forside .bt-status-baand button.bs3-drop:not(#o1):not(#o2):not(#o3):not(#o4):not(#o5):not(#o6):not(#o7):not(#o8):not(#o9) { width:296px !important; min-width:296px !important; max-width:none !important; } html body:not(.dash-mode) .fb-ik-host .bt-ik-baand.i-forside .bt-status-baand .bs3-liste:not(#o1):not(#o2):not(#o3):not(#o4):not(#o5):not(#o6):not(#o7):not(#o8):not(#o9) { left:0 !important; right:0 !important; min-width:0 !important; } }
+/* CAPTIONENS FELT ER LYSEBLAAT (Ida 15/11: »vil du lave baggrundsfarven i captionflisen der hvor man kan/skal kopiere teksten den lyseblå«) — det, man kopierer, staar paa #F0F5F8 uden kant. Idas eget valg; vinder her over »lyseblå flade = venter/låst« (14/11). */
+html body:not(.dash-mode):not(#fv1):not(#fv2):not(#fv3):not(#fv4):not(#fv5):not(#fv6):not(#fv7):not(#fv8):not(#fv9):not(#fv10):not(#fv11) #briefForside .pf-cap:not(.pf-hook) .pf-cap-tekst { background:#F0F5F8 !important; box-shadow:none !important; border:0 !important; }
+/* »i« i info-cirklen er et lille i — overskriftens versaler maa ikke goere det til et stort I */
+html body:not(.dash-mode) #briefForside#briefForside#briefForside#briefForside .pf-flise > .pf-eye:not(.pf-eye-titel) .pf-info:not(#e1):not(#e2):not(#e3):not(#e4) { text-transform:none !important; letter-spacing:0 !important; }
+/* billedeopslagets billede er 4:5 — upload-feltet har samme form og staar ved siden af */
+html body:not(.dash-mode) #briefForside#briefForside#briefForside#briefForside .pf-cv-rk.pf-cv-45 { align-items:flex-start !important; }
+html body:not(.dash-mode) #briefForside#briefForside#briefForside#briefForside .pf-cv-rk.pf-cv-45 > .cv-upload { flex:0 0 132px !important; width:132px !important; height:auto !important; min-height:0 !important; aspect-ratio:4/5 !important; }
+@media (min-width:900px) { html body:not(.dash-mode) #briefForside#briefForside#briefForside#briefForside .pf-cv-rk.pf-cv-45 > .cv-upload { flex-basis:168px !important; width:168px !important; } }
 /* ===== MARKERINGSFARVER 1+7 (LÅST 14/11, Idas klik »vi låser variationen ja«, DESIGNLÅS › Markeringsfarver) — KUNDEAPPEN =====
    Én opgave pr. farve: rød #FC2404 = det aktive, man trykker på · grå #EEEEEE = valgt menupunkt og ting, der ikke er valgt (chips, forslag uden flueben), ingen kant ·
    lyseblå flade #F0F5F8 = venter/låst og symbolfelter (symbolet grå #6F6B66) · #DEDAD4 = tynde kanter (fliser, felter) · hvid = siden og fliserne.

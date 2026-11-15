@@ -1,5 +1,11 @@
 ## **POPUPPEN RETTES, SOM KUNDEN SER DEN (Ida 15/11, v3311)**
 I Energida Studio står »Popup efter lektionen« og »Feedback« som kundens eget kort på undersiden (samme klasser, samme mål — målt mod kundens popup på 390 og 1440). Overskrift, tekst og den røde knaps ord rettes ved at trykke på dem; rettelsen gemmes i kladden, når feltet forlades. Et tomt felt får husets tekst igen. Der er ingen »Se som kunden«-knap — siden ER visningen. Stilreglerne er tvillinger: »body .kbu-wys« følger »body.lek-mb« på popuppens regler; ændres den ene, ændres den anden.
+## 15. november · BILLEDEOPSLAG HAR SIT BILLEDE PÅ BRIEFOVERSIGTEN · CAPTIONENS FELT ER LYSEBLÅT (Ida 15/11, v3312)
+Idas ord: »på et billedeopslag skal man i briefoversigten også se en placeholder som en karrussel med teksten over hvor man kan oploade billede« · »vil du lave baggrundsfarven i captionflisen der hvor man kan/skal kopiere teksten den lyseblå«.
+- **Billedeopslag:** flisen »Billede« står på briefoversigten mellem hooket og captionen — ét billede i 4:5 med hookets tekst over (grå flade, til der er uploadet), »Upload billede« ved siden af og »Download billede« under. Samme motor som karrusellens slides (nøgle `"0"`, `cvForsideNogler()`); før stod der ingenting på et billedeopslag.
+- **Captionens felt** (det, man kopierer) står på lyseblå #F0F5F8 uden kant. Idas eget valg; vinder her over »lyseblå flade = kun venter/låst« (14/11).
+- »i« i info-cirklen er et lille i, også når overskriften står i versaler.
+- Ikke set på en rigtig brief (kun testudgaven); upload og download er ikke prøvet med en rigtig fil.
 
 ## 15. november · HEALTH COACH: TESTSKÆRMEN MED TRAFIKLYS (Idas klik »Ja, byg det« på buddet XjHjwCsDjq9WQz1hw5Q2uP, v3308)
 - Gælder tests med Højre + Venstre i grader. **Én test pr. side** som »Find dit udgangspunkt«: »Biomekanik · Hofte« + »N af M udfyldt« (tæller udfyldte) og den røde streg øverst; Tilbage/Næste i bunden.
