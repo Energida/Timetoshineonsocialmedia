@@ -1,3 +1,10 @@
+## 15. november · »OVERSIGT« STÅR FØRST I BRIEFENS PROCESBAR (Idas klik 15/11 på buddet, artifact DZjs4oJCpGXZc9yuGDEJdX, v3316)
+Idas ord: »jeg vil gerne have et felt i processbaren der er overblikket så man også kan klikke via processbaren og komme direkte til oversigten« · »Sæt det først i baren, kan vi give det et symbol eller gøre noget for at vise at det er oversigten?«
+- Første punkt i procesbaren, før Fakta: husets symbol af fire felter (20 px, grå #6F6B66) med ordet »Oversigt« under. Et tryk gemmer og åbner briefoversigten (`briefProcesOversigt()`).
+- Det er en genvej, ikke et trin: broen efter symbolet er grå, og symbolet bliver aldrig rødt.
+- **Telefonen:** kun symbolet (trykfelt 44), intet ord — der er ikke plads til endnu et ord i baren. Broerne er 14 og prikkerne 46 brede, så »Fang dem · Fasthold · Handle« ikke støder sammen.
+- En story har ingen briefoversigt og får ikke punktet.
+
 ## 15. november · HEALTH COACH: OBSERVATIONSTESTS OG CORETESTS I SAMME TESTSKÆRM (Ida: »nu skal observationstests og coretests have samme design«) · v3315
 
 Alle tests uden for spørgeskema, screening og »Analyse af tests« bruger nu testskærmen med trafiklys (`hcErT2`): Holdning, Scientific Core Condition, Infant development, Basisbevægelser og de biomekaniske tests uden H/V i grader.
