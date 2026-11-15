@@ -1,3 +1,6 @@
+## **POPUPPEN RETTES, SOM KUNDEN SER DEN (Ida 15/11, v3311)**
+I Energida Studio står »Popup efter lektionen« og »Feedback« som kundens eget kort på undersiden (samme klasser, samme mål — målt mod kundens popup på 390 og 1440). Overskrift, tekst og den røde knaps ord rettes ved at trykke på dem; rettelsen gemmes i kladden, når feltet forlades. Et tomt felt får husets tekst igen. Der er ingen »Se som kunden«-knap — siden ER visningen. Stilreglerne er tvillinger: »body .kbu-wys« følger »body.lek-mb« på popuppens regler; ændres den ene, ændres den anden.
+
 ## 15. november · HEALTH COACH: TESTSKÆRMEN MED TRAFIKLYS (Idas klik »Ja, byg det« på buddet XjHjwCsDjq9WQz1hw5Q2uP, v3308)
 - Gælder tests med Højre + Venstre i grader. **Én test pr. side** som »Find dit udgangspunkt«: »Biomekanik · Hofte« + »N af M udfyldt« (tæller udfyldte) og den røde streg øverst; Tilbage/Næste i bunden.
 - **Intet cover på testsiden** (Ida: »skal vi fjerne coverbilledet?«). Undtagelse fra »heroen står fast« — KUN Health Coach-testsiden; forsiden og klientens side har cover.
