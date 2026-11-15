@@ -1,3 +1,9 @@
+## 15. november · ALDRIG VERSAL-OVERSKRIFTER INDE I FLISER, I HELE SYSTEMET (HÅRD, Ida 15/11: »jeg vil aldrig nogensinde se de her versaler overskrifter stå inde i fliser!!«)
+- En versal-overskrift (etiket, fx »EMNE«, »SENDES«, »KØB I DAG«) står ALTID over flisen, aldrig inde i den. Det gælder kundeappen OG Backstage, alle sider. Før stod reglen kun under Health Coach (14/11) som »også her«; nu gælder den overalt.
+- Formen er Profilens godkendte: blok = overskrift (Poppins 12, versal, bogstavafstand 1,5, #6F6B66, ingen streg) + 8 px + flisen.
+- Inde i en flise står et felts navn som almindelig grå tekst (13 px, ingen versaler).
+- Bygget først i Backstage › Mails (`mailsBlok`, `.mails-blok > .mails-e`). Resten af Backstage (bl.a. Hjem: »Køb i dag«, CRM, Health Coach) har stadig etiketten inde i flisen og står i køen.
+
 ## 14. november · PORTEN RYDDER TEST-CHROMES MELLEMLAGER EFTER SIG (Ida 14/11: »lad porten rydde test-chromes mellemlager efter sig«)
 - `tools/designlaas/koer.sh` sletter selv test-Chromes mapper (`scoped_dir…` i `~/Library/Caches/Google/Chrome-headless`), når den starter og når den slutter. Før blev de liggende: 23 GB på en dag, disken løb fuld, og porten faldt med »ingen måling fra browseren«.
 - Kun mapper over 15 minutter gamle slettes, så en anden tråds port, der kører samtidig, ikke mister sin. Idas egen Chrome røres ikke.
