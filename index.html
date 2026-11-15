@@ -13724,6 +13724,11 @@ window.__ENERGIDA_INVITATION = /(^|[#&])type=(invite|signup)/.test(location.hash
 /* ET UDLOEBET ELLER BRUGT INVITATIONSLINK (sundhedstjekket 28/9): Supabase sender #error=access_denied&error_code=otp_expired.
    Foer landede kunden paa loginet uden kodeord og uden forklaring — nu aabner »Glemt adgangskode« med en linje om, hvad der skete. */
 window.__ENERGIDA_LINK_UDLOEBET = /(^|[#&])error_code=otp_expired|(^|[#&])error=access_denied/.test(location.hash || "");
+/* LINKET KAN KLIKKES FLERE GANGE (Ida 15/11, testperson: linket snurrede, og andet klik var »allerede brugt»):
+   Velkomstmailens link peger nu på vores egen side (#opret=<engangsnøgle>&m=<mail>). Nøglen bruges FØRST, når kunden trykker
+   »Opret profil« — mailprogrammer, der tjekker links på forhånd, kan ikke bruge den op. Er den brugt, står mailen klar til et nyt link.
+   Hashen læses og ryddes her, før Supabase-klienten ser den. */
+window.__ENERGIDA_OPRET = (function () { try { var h = location.hash || "", m = /(^|[#&])opret=([A-Za-z0-9_-]{10,200})/.exec(h); if (!m) return null; var e = /(^|[#&])m=([^&]*)/.exec(h), r = { t: m[2], m: "" }; try { r.m = e ? decodeURIComponent(e[2]) : ""; } catch (x) {} try { history.replaceState(null, "", location.pathname + location.search); } catch (x) {} return r; } catch (x) { return null; } })();
 /* Spoegelsessiden erstattet (Ida 28/7): blaa taenke-side m. hjernehjertet, til kundens version er klar */
 /* IDAS EGET CONTENT STUDIO (8/9): b2b.energida.dk/#studio er den korte adresse til hjemmeskaermen.
    Den oversaettes til husets egen vej (#somkunde=ENERGIDA) FOER noget andet laeser hash'et, saa alle
@@ -13851,6 +13856,13 @@ window.somkundeLoaderSluk = function () {
       <button class="auth-btn" onclick="custSignup()">Opret bruger</button>
       <button class="auth-back" onclick="authGaaTilLogin()">Har du allerede en bruger? Log ind</button>
       <button class="auth-back" onclick="authShow('code')">Tilbage</button>
+    </div>
+
+    <div id="auth_opret" style="display:none;">
+      <div class="auth-h">Opret din profil</div>
+      <div class="auth-sub">Tryk på knappen. Bagefter vælger du din egen adgangskode.</div>
+      <button class="auth-btn" id="opKnap" onclick="opretMedLink()">Opret profil</button>
+      <button class="auth-back" onclick="authShow('login')">Jeg har allerede en profil</button>
     </div>
 
     <div id="auth_forgot" style="display:none;">
@@ -67523,7 +67535,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "3325";
+const APP_VERSION = "3326";
 const APP_BYGGET = "3. november";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_VERSION;   /* ingen dato (Ida 7/11: »hvorfor står der version 3. november?«) — datoen blev ikke rettet med, nummeret er sandheden */ } catch (e) {} });
 let NY_VERSION_KLAR = false;
@@ -73339,7 +73351,7 @@ async function loadForloebStrategi(j, kode) {
 
 function authShow(view) {
   if (view === "choose") view = "login";   /* FINAL 29/7: login vises direkte — valg-skaermen er udgaaet */
-  ["choose","login","code","signup","forgot"].forEach(v => {
+  ["choose","login","code","signup","forgot","opret"].forEach(v => {
     const el = document.getElementById("auth_"+v);
     if (el) el.style.display = (v===view) ? "block" : "none";
   });
@@ -73357,6 +73369,37 @@ function authMsgEl() {
 function authMsgFrem(e) { try { setTimeout(function () { e.scrollIntoView({ block: "nearest", behavior: "smooth" }); }, 30); } catch (er) {} }
 function authErr(msg) { const e=authMsgEl(); e.textContent=msg; e.className="auth-msg err"; e.style.display="block"; authMsgFrem(e); }
 function authInfo(msg) { const e=authMsgEl(); e.textContent=msg; e.className="auth-msg ok"; e.style.display="block"; authMsgFrem(e); }
+/* OPRET PROFIL FRA MAILEN (Ida 15/11): se __ENERGIDA_OPRET først i dokumentet */
+function opretLinkBrugt(o) {
+  authShow("forgot");
+  const f = document.getElementById("fpEmail"); if (f && o && o.m) f.value = o.m;
+  authInfo(o && o.m ? "Linket er allerede brugt. Tryk på knappen, så sender vi et nyt til " + o.m + "." : "Linket er allerede brugt. Skriv din mail, så sender vi et nyt.");
+}
+async function opretMedLink() {
+  const o = window.__ENERGIDA_OPRET, k = document.getElementById("opKnap");
+  if (!o) { opretLinkBrugt(null); return; }
+  if (k) { k.disabled = true; k.textContent = "Opretter …"; }
+  window.__ENERGIDA_INVITATION = true;   /* SIGNED_IN fra verifyOtp sender kunden videre til at vælge adgangskode (kodeEfterProfil) */
+  try {
+    const { data, error } = await sb.auth.verifyOtp({ token_hash: o.t, type: "invite" });
+    if (error || !data || !data.session) throw (error || new Error("ingen session"));
+    window.__ENERGIDA_OPRET = null;
+  } catch (e) {
+    window.__ENERGIDA_INVITATION = false;
+    if (k) { k.disabled = false; k.textContent = "Opret profil"; }
+    opretLinkBrugt(o);
+  }
+}
+window.addEventListener("load", function () {
+  if (!window.__ENERGIDA_OPRET) return;
+  setTimeout(function () {
+    try {
+      const g = document.getElementById("authGate"); if (!g || getComputedStyle(g).display === "none") return;   /* allerede logget ind i denne browser: det huskede flag fører videre */
+      authShow("opret");
+      const f = document.getElementById("fpEmail"); if (f && window.__ENERGIDA_OPRET.m) f.value = window.__ENERGIDA_OPRET.m;
+    } catch (e) {}
+  }, 600);
+});
 window.addEventListener("load", function () {
   if (!window.__ENERGIDA_LINK_UDLOEBET) return;
   setTimeout(function () {

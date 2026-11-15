@@ -571,7 +571,11 @@ Deno.serve(async (req) => {
     return svar({ fejl: "Kunden er oprettet, men invitationen blev ikke lavet: " + invFejl.message, kode }, 500);
   }
   const nyBruger = { user: lnk?.user };
-  let loginmail = await sendLoginmail(admin, { email, navn: navn || "", kode, link: String(lnk?.properties?.action_link || "") }) ? "mails" : "";
+  /* LINKET KAN KLIKKES FLERE GANGE (Ida 15/11): mailen peger på vores egen side med engangsnøglen i #-delen. Nøglen bruges først,
+     når kunden trykker »Opret profil« — mailprogrammers forhåndstjek kan ikke bruge den op, og #-delen når aldrig en server. */
+  const th = String(lnk?.properties?.hashed_token || "");
+  const opretLink = th ? "https://b2b.energida.dk/#opret=" + encodeURIComponent(th) + "&m=" + encodeURIComponent(email) : String(lnk?.properties?.action_link || "");
+  let loginmail = await sendLoginmail(admin, { email, navn: navn || "", kode, link: opretLink }) ? "mails" : "";
   if (!loginmail) {
     /* RESERVE: Supabase' egen mail med link til at vælge adgangskode — kunden står aldrig uden mail */
     try { const { error: rf } = await admin.auth.resetPasswordForEmail(email, { redirectTo: "https://b2b.energida.dk" }); loginmail = rf ? "fejlede" : "reserve"; } catch (_e) { loginmail = "fejlede"; }
