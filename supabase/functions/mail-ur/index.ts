@@ -12,8 +12,8 @@
 //   1. Verify JWT: TIL.
 //   2. Hvem må kalde den: kun databasens ur (pg_cron via pg_net). Kaldet bærer service-role-nøglen fra Supabase Vault
 //      (hemmeligheden »mail_ur_noegle«, som Ida selv lægger ind). Ingen bruger, kunde eller admin kan kalde den med sit eget login.
-//   3. Egen authorization: ja — Authorization-headeren skal være præcis funktionens egen SUPABASE_SERVICE_ROLE_KEY
-//      (sammenlignet i konstant tid), ellers 401. Kaldet tager INTET input: indholdet og modtagerne kommer kun fra mail_planlagt,
+//   3. Egen authorization: ja — Authorization-headeren skal være funktionens egen SUPABASE_SERVICE_ROLE_KEY (konstant tid)
+//      ELLER et JWT med rollen service_role for dette projekt (underskriften er tjekket af porten, fordi Verify JWT er TIL), ellers 401. Kaldet tager INTET input: indholdet og modtagerne kommer kun fra mail_planlagt,
 //      som kun en admin kan skrive i (RLS: er_admin()).
 //   4. Service-role: JA — nødvendig, fordi der ikke er en indlogget kalder. Snæver adgangskontrol foran (linje 3), og nøglen
 //      forlader aldrig funktionen. Bruges også som HMAC-hemmelighed til afmeldingslinket, som i mail-udsend.
@@ -54,7 +54,10 @@ Deno.serve(async (req) => {
   if (req.method !== "POST") return svar({ fejl: "Brug POST." }, 405);
   const noegleSR = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
   const kaldt = String(req.headers.get("Authorization") ?? "").replace(/^Bearer\s+/i, "");
-  if (!ens(kaldt, noegleSR)) return svar({ fejl: "Ingen adgang." }, 401);
+  /* 15/11 (målt: uret fik 401): nøglen i Vault er projektets service_role-nøgle (legacy JWT), men funktionens egen kopi kan være den nye slags nøgle.
+     Verify JWT er TIL, så porten foran funktionen har allerede tjekket underskriften. Derfor godtages også et JWT med rollen service_role for netop dette projekt. */
+  const rolleSR = (function () { try { const d = JSON.parse(atob(kaldt.split(".")[1].replace(/-/g, "+").replace(/_/g, "/"))); return d && d.role === "service_role" && d.ref === "eikcvvppuphnananxcvp"; } catch (_e) { return false; } })();
+  if (!ens(kaldt, noegleSR) && !rolleSR) return svar({ fejl: "Ingen adgang." }, 401);
 
   const db = createClient(Deno.env.get("SUPABASE_URL")!, noegleSR);
   const { data: rk, error: rkFejl } = await db.from("mail_planlagt").select("id").eq("status", "venter").lte("send_kl", new Date().toISOString()).order("send_kl").limit(MAKS_PR_KALD);
