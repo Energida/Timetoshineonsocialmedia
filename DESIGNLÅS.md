@@ -1,3 +1,8 @@
+## 15. november · OPGAVEARKET: »NÆSTE SPØRGSMÅL« I HØJRE HJØRNE · LEKTION 1.3 MED FIRE SPØRGSMÅL (Idas klik »Ja, byg den« + »Ja, læg den ud«, artifact BWRKyhoNqjQf5ZP9n39Cts, v3345)
+- Opgavearket (`.ova-bund`): den røde »Næste spørgsmål« / »Gem og afslut« fylder ikke længere bredden. Den står i højre hjørne som en almindelig knap (luft 28 i siderne); »Forrige« står til venstre med samme luft. Telefon og computer (Ida: »som ved de andre spørgsmål skal næste knappen ikke fylde det hele bare i højre hjørne som almindelig knap«).
+- Lektion 1.3 har fire spørgsmål, ét ad gangen: »Jeg ved, jeg er i overskud, når jeg har denne adfærd:« (Idas ord) · »… overskud, når jeg tænker:« · »… underskud, når jeg har denne adfærd:« · »… underskud, når jeg tænker:«. Svarene skal senere fylde kundens Shinebarometer.
+- Set, ikke rettet: på computeren er opgavearkets knapper 44 høje (låsen siger 56).
+
 ## 15. november · HEALTH COACH: INTROSIDEN FØR HVER TESTAFDELING (Ida: »en introslide før hver test afdeling hvor vi forklarer i øjenhøjde hvad klienten skal igennem og hvorfor«) · v3324
 
 Før afdelingens første test (Holdning, Scientific Core Condition, Biomekanik, Infant development, Basisbevægelser) står en introside til at vise klienten: afdelingens navn, »Det skal du igennem«, »Hvorfor« og nederst »Øvelser vi skal igennem« med billeder. Ingen cover, ingen felter, én spalte, knapperne Tilbage og Start.
