@@ -399,7 +399,12 @@ Deno.serve(async (req) => {
   // det et Content Studio-køb som før. forening + pakke kommer fra samme mærke.
   const md: Record<string, string> = (s.metadata && typeof s.metadata === "object") ? s.metadata : {};
   const erYGT = String(md.produkt ?? "").toLowerCase() === "yougotthis";
-  const forening = String(md.forening ?? "").trim();
+  // RABATKODEN VINDER OVER LINKET (Ida 15/11: »hende her brugte rabatkoden Ringkobing2026 og kommer ind som gamle kunder???« → »ja, begge dele«):
+  // fem køb med RINGKOBING2026 kom ind via Gamle kunder-linket og blev mærket »Gamle kunder«. En kendt kode bestemmer nu foreningen;
+  // en ukendt kode eller ingen kode lader linkets mærke stå som før. Rabatkoden hentes én gang og bruges alle steder nedenfor.
+  const rabatInfo = await hentRabatkode(String(s.id ?? ""));
+  const KODE_FORENING: Record<string, string> = { "RINGKOBING2026": "Ringkøbing Handelsforening", "JEGERVIGTIGFORIDA": "Gamle kunder" };
+  const forening = (erYGT && KODE_FORENING[String(rabatInfo.kode || "").trim().toUpperCase()]) || String(md.forening ?? "").trim();
   const pakke = String(md.pakke ?? "detaildrift").trim() || "detaildrift";
   // 0 kr. = testadgang — MEN ikke for YOU GOT THIS: foreningens 140 butikker køber til
   // 0 kr. med deres kode og er rigtige kunder. Et YGT-testkøb mærkes med test=ja på linket.
@@ -420,7 +425,7 @@ Deno.serve(async (req) => {
       // KOEBSMAIL (6/11): et gennemfoert koeb fra en kendt e-mail faar Ida stadig besked om.
       const mailSendt = await sendKoebsmail({
         produkt: erYGT ? "You Got This" : "Content Studio", belob: koebBelob(s), tidspunkt: dkTid(Number(s.created)),
-        rabat: await hentRabatkode(String(s.id ?? "")), navn, virksomhed, email, telefon, kode: "", test: erTest, eksisterende: true,
+        rabat: rabatInfo, navn, virksomhed, email, telefon, kode: "", test: erTest, eksisterende: true,
       });
       return svar({ ok: true, allerede: email, oprettet: false, koebsmail: mailSendt }, 200);
     }
@@ -541,7 +546,7 @@ Deno.serve(async (req) => {
   // "FUNDET UNDERVEJS": databasen svarer 400 column contacts.navn does not exist).
   // Kontaktpersonens navn ligger derfor i kommentaren sammen med mail og telefon.
   let kontaktOk = true;
-  const rabatInfo = await hentRabatkode(String(s.id ?? ""));   // hentes én gang: gemmes på kontakten (Live-overblikket: Køb pr. rabatkode) og står i købsmailen
+  // rabatInfo er hentet øverst (rabatkoden vinder over linket, 15/11) —: gemmes på kontakten (Live-overblikket: Køb pr. rabatkode) og står i købsmailen
   try {
     const { data, error } = await admin.from("contacts").insert({
       kunde: virksomhed,
