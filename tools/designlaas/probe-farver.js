@@ -1,5 +1,5 @@
 /* FARVE-PORTEN (LÅST 14/11, Idas klik »variation 1 + 7«, DESIGNLÅS › Markeringsfarver): den sandfarvede markering er død i kundeappen.
-   Siden er hvid · fliser hvide m. kant #DCE8F0 · venter/låst = #F0F5F8 · valgt menupunkt/ikke valgt = #EEEEEE · rød = det aktive.
+   Siden er hvid · fliser hvide m. kant #DEDAD4 · venter/låst = #F0F5F8 · valgt menupunkt/ikke valgt = #EEEEEE · rød = det aktive.
    Proben åbner kundeappens sider én for én (Hjem · Forløbet m. låst modul · en lektion · Værktøjskassen · Dine noter · Profil ·
    briefen: forsiden, Idéen og Fang dem på en karrusel · log ind) og FEJLER, hvis et synligt element har en af de fem sandfarver
    som flade, eller hvis siden (body og den aktive skærm) ikke er hvid. Kører på den bredde, vinduet har (390 og 1440).
@@ -20,7 +20,7 @@ function scan(){
     if(FORBUDT[bg]) fejl("SANDFLADE "+FORBUDT[bg], e);
     ["::before","::after"].forEach(function(p){ var ps=getComputedStyle(e,p); if(ps.content&&ps.content!=="none"&&FORBUDT[rgb(ps.backgroundColor)]&&parseFloat(ps.width)>2&&parseFloat(ps.height)>2) fejl("SANDFLADE "+FORBUDT[rgb(ps.backgroundColor)]+" i "+p, e); });
     if(window.FARVE_ALLE&&bg!=="rgba(0,0,0,0)"&&bg!=="rgb(255,255,255)"){ var k=bg+" "+kl(e); ALLE[k]=(ALLE[k]||0)+1; }
-    if(window.FARVE_ALLE&&bg==="rgb(255,255,255)"&&parseFloat(cs.borderTopLeftRadius)>=14&&cs.boxShadow!=="none"&&cs.boxShadow.indexOf("220, 232, 240")<0&&!(parseFloat(cs.borderTopWidth)>0&&/220,232,240/.test(rgb(cs.borderTopColor)))){ var r0=e.getBoundingClientRect(); if(r0.height>=40&&r0.width>=120&&!e.matches("button, a, input, textarea")){ var k3="UDEN KANT "+kl(e)+" | "+cs.boxShadow.slice(0,60); ALLE[k3]=(ALLE[k3]||0)+1; } }
+    if(window.FARVE_ALLE&&bg==="rgb(255,255,255)"&&parseFloat(cs.borderTopLeftRadius)>=14&&cs.boxShadow!=="none"&&cs.boxShadow.indexOf("222, 218, 212")<0&&!(parseFloat(cs.borderTopWidth)>0&&/222,218,212/.test(rgb(cs.borderTopColor)))){ var r0=e.getBoundingClientRect(); if(r0.height>=40&&r0.width>=120&&!e.matches("button, a, input, textarea")){ var k3="UDEN KANT "+kl(e)+" | "+cs.boxShadow.slice(0,60); ALLE[k3]=(ALLE[k3]||0)+1; } }
     if(window.FARVE_ALLE&&parseFloat(cs.borderTopWidth)>0&&/rgb\((227,226,222|222,218,212)\)/.test(rgb(cs.borderTopColor))&&!/BUTTON|A/.test(e.tagName)){ var k2="KANT "+rgb(cs.borderTopColor)+" "+kl(e); ALLE[k2]=(ALLE[k2]||0)+1; }
   });
 }

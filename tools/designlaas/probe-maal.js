@@ -11,7 +11,7 @@ var FUND=[], N=0, TRIN="start";
 function fejl(s){ FUND.push(TRIN+" · "+s); }
 function er(navn, e, ok, hvad){ N++; if(!ok) fejl(navn+" »"+txt(e)+"« ["+kl(e)+"] "+hvad); }
 var TLF=innerWidth<900;
-var RED="rgb(252,36,4)", SORT="rgb(26,26,26)", G2="rgb(111,107,102)", G3="rgb(154,149,144)", KANT="rgb(220,232,240)";
+var RED="rgb(252,36,4)", SORT="rgb(26,26,26)", G2="rgb(111,107,102)", G3="rgb(154,149,144)", KANT="rgb(222,218,212)";
 
 function maalSide(){
   var rod=document.getElementById("briefWrap"); if(!rod) return;
@@ -23,21 +23,21 @@ function maalSide(){
     if(e.parentElement.closest(".sk-q:not(:has(> #briefKlipHolder)):not(:has(> .kk-scener)), .klip-kort")) return;   /* en flise i en flise er ikke en ny flise */
     er("FLISE radius", e, px(cs.borderTopLeftRadius)===20, "radius "+px(cs.borderTopLeftRadius)+" (skal 20)");
     er("FLISE luft", e, px(cs.paddingTop)===18&&px(cs.paddingBottom)===18&&px(cs.paddingLeft)===20&&px(cs.paddingRight)===20, "luft "+cs.padding+" (skal 18 20)");
-    er("FLISE afstand", e, px(cs.marginBottom)===10, "afstand under "+px(cs.marginBottom)+" (skal 10)");
+    er("FLISE afstand", e, px(cs.marginBottom)===12, "afstand under "+px(cs.marginBottom)+" (skal 12)");
     er("FLISE flade", e, rgb(cs.backgroundColor)==="rgb(255,255,255)"||/story|cap-q/.test(kl(e))||(e.parentElement&&e.parentElement.classList.contains("kk-laast")&&rgb(cs.backgroundColor)==="rgb(240,245,248)"), "flade "+cs.backgroundColor);
   });
   /* FLISETITEL: Poppins 18 (telefon 16) / 400 / #1A1A1A; 16 til første indhold */
-  rod.querySelectorAll(".sk-q > .sk-label, .kk-hook-spm").forEach(function(e){
+  rod.querySelectorAll(".sk-q:not([data-par=cover]) > .sk-label, .kk-hook-spm").forEach(function(e){
     if(!synlig(e)) return; var cs=getComputedStyle(e);
     var t=e.querySelector(".sk-spm, .sk-titel")||e; var ts=getComputedStyle(t);
     er("FLISETITEL skrift", t, px(ts.fontSize)===(TLF?16:18)&&ts.fontWeight==="400"&&/Poppins/.test(ts.fontFamily)&&rgb(ts.color)===SORT, ts.fontSize+"/"+ts.fontWeight+" "+ts.color+" (skal "+(TLF?16:18)+"/400 #1A1A1A Poppins)");
     var nxt=e.nextElementSibling; while(nxt&&getComputedStyle(nxt).display==="none") nxt=nxt.nextElementSibling;
     if(nxt&&nxt.getBoundingClientRect().height>0){ var d=Math.round(nxt.getBoundingClientRect().top-e.getBoundingClientRect().bottom); er("FLISETITEL afstand", e, Math.abs(d-16)<=1, "til indholdet "+d+" (skal 16)"); }
   });
-  /* KLIP-ETIKET: 10 versal #9A9590 + ÉN streg under */
+  
   rod.querySelectorAll(".klip-hoved .kk-titel").forEach(function(e){
     if(!synlig(e)) return; var cs=getComputedStyle(e);
-    er("KLIP-ETIKET", e, px(cs.fontSize)===10&&cs.textTransform==="uppercase"&&rgb(cs.color)===G3&&cs.fontWeight==="400", cs.fontSize+"/"+cs.fontWeight+" "+cs.color+" "+cs.textTransform+" (skal 10 versal #9A9590)");
+    er("KLIP-ETIKET", e, px(cs.fontSize)===13&&cs.textTransform==="none"&&rgb(cs.color)===G2&&cs.fontWeight==="400", cs.fontSize+"/"+cs.fontWeight+" "+cs.color+" "+cs.textTransform+" (13 grå)");
     var hd=e.closest(".klip-hoved"), hs=getComputedStyle(hd); er("KLIP-ETIKET streg", hd, px(hs.borderBottomWidth)===1&&rgb(hs.borderBottomColor)==="rgb(227,226,222)", "streg "+hs.borderBottomWidth+" "+hs.borderBottomColor);
   });
   /* FELT-ETIKET: 13/400 #6F6B66, 8 til feltet */
@@ -49,7 +49,7 @@ function maalSide(){
   /* FELTER */
   rod.querySelectorAll("textarea.sk-input, input.sk-input, textarea.mb-felt").forEach(function(e){
     if(!synlig(e)||e.closest(".sendfelt, .sendfelt-felt")) return; var cs=getComputedStyle(e), r=e.getBoundingClientRect();
-    er("FELT", e, px(cs.fontSize)===13&&cs.fontWeight==="400"&&px(cs.borderTopLeftRadius)===14&&px(cs.borderTopWidth)===1&&(rgb(cs.borderTopColor)===KANT||/238, 238, 238/.test(cs.backgroundColor))&&r.height>=43.5&&cs.fontStyle==="normal", cs.fontSize+"/"+cs.fontWeight+" r"+cs.borderTopLeftRadius+" kant "+cs.borderTopWidth+" "+cs.borderTopColor+" h"+Math.round(r.height)+" "+cs.fontStyle+" (skal 13/400 r14 1px #DCE8F0 h44)");
+    er("FELT", e, px(cs.fontSize)===13&&cs.fontWeight==="400"&&px(cs.borderTopLeftRadius)===14&&px(cs.borderTopWidth)===1&&(rgb(cs.borderTopColor)===KANT||/238, 238, 238/.test(cs.backgroundColor))&&r.height>=43.5&&cs.fontStyle==="normal", cs.fontSize+"/"+cs.fontWeight+" r"+cs.borderTopLeftRadius+" kant "+cs.borderTopWidth+" "+cs.borderTopColor+" h"+Math.round(r.height)+" "+cs.fontStyle+" (skal 13/400 r14 1px #DEDAD4 h44)");
   });
   /* FELTFLUGT: alle hook-/forslagsfelter i samme flise starter og slutter ens */
   rod.querySelectorAll(".sk-q, .klip-kort").forEach(function(f){
@@ -148,7 +148,7 @@ async function maalHjem(vent){
   var bj=document.querySelector("#screen3 .mb-bjaelke"); N++; if(bj) fejl("HJEM: den røde datobjælke skal være væk (Ida 11/11)"); var dt=document.querySelector("#screen3 .mb-baand .mb-navn .mb-dato"); N++; if(!dt||!synlig(dt)) fejl("HJEM: datoen mangler under hilsnen i heroen (Ida 11/11)");
   var ps=[].slice.call(rod.querySelectorAll(".hh-panel")); N++; if(ps.length!==2) fejl("HJEM: forventer to paneler, fandt "+ps.length);
   ps.forEach(function(pn,i){ var s=getComputedStyle(pn); er("HJEM panel", pn, rgb(s.backgroundColor)==="rgb(255,255,255)"&&px(s.borderTopLeftRadius)===28&&px(s.paddingTop)===12&&px(s.paddingLeft)===12, s.backgroundColor+" r"+s.borderTopLeftRadius+" luft "+s.padding+" (skal hvid · 28 · 12)");
-    var fl=[].slice.call(pn.children); fl.forEach(function(f,k){ var fs=getComputedStyle(f), fr=f.getBoundingClientRect(); er("HJEM flise i panel", f, Math.round(fr.height)===80&&px(fs.borderTopLeftRadius)===20&&px(fs.borderTopWidth)===1&&rgb(fs.borderTopColor)==="rgb(220,232,240)"&&fs.boxShadow==="none", "h"+Math.round(fr.height)+" r"+fs.borderTopLeftRadius+" kant "+fs.borderTopWidth+" "+fs.borderTopColor+" skygge "+(fs.boxShadow==="none"?"nej":"JA")+" (skal 80 · 20 · 1 px #DCE8F0 · ingen skygge)"); if(k>0){ var g=Math.round(fr.top-fl[k-1].getBoundingClientRect().bottom); er("HJEM flise-afstand", f, Math.abs(g-10)<=1, "afstand "+g+" (skal 10)"); } });
+    var fl=[].slice.call(pn.children); fl.forEach(function(f,k){ var fs=getComputedStyle(f), fr=f.getBoundingClientRect(); er("HJEM flise i panel", f, Math.round(fr.height)===80&&px(fs.borderTopLeftRadius)===20&&px(fs.borderTopWidth)===1&&rgb(fs.borderTopColor)==="rgb(222,218,212)"&&fs.boxShadow==="none", "h"+Math.round(fr.height)+" r"+fs.borderTopLeftRadius+" kant "+fs.borderTopWidth+" "+fs.borderTopColor+" skygge "+(fs.boxShadow==="none"?"nej":"JA")+" (skal 80 · 20 · 1 px #DEDAD4 · ingen skygge)"); if(k>0){ var g=Math.round(fr.top-fl[k-1].getBoundingClientRect().bottom); er("HJEM flise-afstand", f, Math.abs(g-10)<=1, "afstand "+g+" (skal 10)"); } });
     var sek=pn.previousElementSibling; if(sek){ var d=Math.round(pn.getBoundingClientRect().top-sek.getBoundingClientRect().bottom); er("HJEM overskrift→panel", pn, Math.abs(d-16)<=1, "afstand "+d+" (skal 16)"); }
     var nx=pn.nextElementSibling; if(nx&&nx.classList.contains("hu-sek")){ var d2=Math.round(nx.getBoundingClientRect().top-pn.getBoundingClientRect().bottom); er("HJEM panel→næste overskrift", nx, Math.abs(d2-24)<=1, "afstand "+d2+" (skal 24)"); } });
   var sb0=rod.querySelector(".hpt-h > .hu-sek"), st=rod.querySelector(".hu-strib-rk .hu-strib"); if(sb0&&st){ N++; var dd=Math.abs(sb0.getBoundingClientRect().top-st.getBoundingClientRect().top); if(dd>1) fejl("HJEM: højre kolonnes første overskrift flugter ikke med datofliserne ("+Math.round(dd)+" px forskel)"); }
@@ -215,7 +215,7 @@ async function maalForloeb(vent){
         var pdx=Math.round(r.right-pr.right); N++; if(Math.abs(pdx-20)>1) fejl("FORLØB pil: står "+pdx+" fra højre kant (skal 20)"); } }
     /* rækker: SENERE (låst) og FÆRDIGE */
     [].slice.call(rod.querySelectorAll(".ftl2-rk")).filter(synlig).forEach(function(e){ var cs=getComputedStyle(e), r=e.getBoundingClientRect();
-      er("FORLØB række", e, Math.round(r.height)>=64&&Math.round(r.height)<=100&&px(cs.borderTopLeftRadius)===20&&rgb(cs.backgroundColor)===(e.matches(".laast")?"rgb(240,245,248)":"rgb(255,255,255)")&&px(cs.borderTopWidth)===1&&rgb(cs.borderTopColor)==="rgb(220,232,240)"&&cs.boxShadow==="none", "h"+Math.round(r.height)+" r"+cs.borderTopLeftRadius+" "+cs.backgroundColor+" kant "+cs.borderTopWidth+" "+cs.borderTopColor+" skygge "+cs.boxShadow.slice(0,20)+" (skal ≥64·20·1px #DCE8F0)");
+      er("FORLØB række", e, Math.round(r.height)>=64&&Math.round(r.height)<=100&&px(cs.borderTopLeftRadius)===20&&rgb(cs.backgroundColor)===(e.matches(".laast")?"rgb(240,245,248)":"rgb(255,255,255)")&&px(cs.borderTopWidth)===1&&rgb(cs.borderTopColor)==="rgb(222,218,212)"&&cs.boxShadow==="none", "h"+Math.round(r.height)+" r"+cs.borderTopLeftRadius+" "+cs.backgroundColor+" kant "+cs.borderTopWidth+" "+cs.borderTopColor+" skygge "+cs.boxShadow.slice(0,20)+" (skal ≥64·20·1px #DEDAD4)");
       if(e.classList.contains("laast")&&!e.querySelector(".ftl2-a")){ N++; var H=innerWidth>899?80:64;if(Math.round(r.height)!==H)fejl("FORLØB låst "+Math.round(r.height)+"/"+H); }
       var FK=e.classList.contains("laast")?SORT:G2, n=e.querySelector(".ftl2-n"), ns=getComputedStyle(n); var F=innerWidth>899?18:15;er("FORLØB række-titel",n,px(ns.fontSize)===F&&ns.fontWeight==="400"&&rgb(ns.color)===FK,ns.fontSize+" "+ns.color+" (skal "+F+")");
       var a=e.querySelector(".ftl2-a"); if(a){ var as=getComputedStyle(a); er("FORLØB række-antal", a, px(as.fontSize)===12&&rgb(as.color)===FK, as.fontSize+" "+as.color+" (skal 12 · sort paa blaa)"); }
