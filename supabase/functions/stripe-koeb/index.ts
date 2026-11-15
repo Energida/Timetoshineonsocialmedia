@@ -218,41 +218,77 @@ async function sendKoebsmail(o: {
 function esc(s: any) { return (s || "").toString().replace(/[&<>"]/g, (c: string) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "\"": "&quot;" } as any)[c]); }
 const MAILS_STD_FOTO = "https://b2b.energida.dk/mail/hero.jpg";
 function mailsHarIndhold(m) { return (m.fliser || []).some(function (f) { return String(f.tekst || "").trim() || String(f.forslag || "").trim() || f.src || (f.t === "knap" && String(f.tekst || "").trim()); }); }
-function mailsTekstHtml(t, midt) {
-  const al = midt ? "center" : "left";
+function mailsTekstHtml(t, midt, ekstra) {
+  /* PLACERING (Idas klik 15/11, artifact K41jEYGPbRSJY2fYPys9dx): true/"center" = midt, "right" = højre, ellers venstre. ekstra = afsnittets egen stil (skrift, størrelse, fed, kursiv, farve) */
+  const al = (midt === true || midt === "center") ? "center" : midt === "right" ? "right" : "left";
+  ekstra = ekstra || "";
+  /* KURSIV · LINK · PUNKTER (Idas klik 15/11): *ord* = kursiv, [ord](https://…) = link (kun https), en blok, hvor hver linje starter med »- « = punkter. Alt andet er tekst. */
+  const fmt = function (x) { return esc(x).replace(/\[([^\]\n]+)\]\((https:\/\/[^\s)<>"]+)\)/g, '<a href="$2" style="color:inherit;text-decoration:underline;">$1</a>').replace(/(^|[\s(>])\*([^*\n]+)\*(?=[\s.,;:!?)<]|$)/g, '$1<em>$2</em>'); };
   return String(t || "").split(/\n\s*\n/).map(function (p) { return p.trim(); }).filter(Boolean).map(function (p) {
-    return '<p style="margin:0 0 12px;font-size:15px;line-height:1.6;color:#1A1A1A;text-align:' + al + ';">' + esc(p).replace(/\n/g, "<br>") + '</p>';
+    const l = p.split("\n"); if (l.every(function (x) { return /^\s*[-•]\s+/.test(x); })) return '<ul style="margin:0 0 12px;padding-left:22px;font-size:15px;line-height:1.6;color:#1A1A1A;text-align:left;' + ekstra + '">' + l.map(function (x) { return '<li style="margin:0 0 4px;">' + fmt(x.replace(/^\s*[-•]\s+/, "")) + '</li>'; }).join("") + '</ul>';
+    return '<p style="margin:0 0 12px;font-size:15px;line-height:1.6;color:#1A1A1A;text-align:' + al + ';' + ekstra + '">' + fmt(p).replace(/\n/g, "<br>") + '</p>';
   }).join("");
 }
+/* STIL PR. AFSNIT (Idas klik 15/11): f.s = { font: "serif", str: S|M|L|XL, fed: true|false, kursiv, farve: sort|graa|roed, just: ""|center|right,
+   og på knapper og skillestreger kf (farve), lg (kort|halv|hel), form (""|kant|streg), tk (tykkelse) }. Kun skrifter, der findes i alle mailprogrammer. */
+const MAILS_FARVER = { sort: "#1A1A1A", graa: "#6F6B66", roed: "#FC2404", lys: "#DEDAD4" };
+function mailsStilCss(s, art) {
+  s = s || {}; const c = [];
+  if (s.font === "serif") c.push("font-family:Georgia,'Times New Roman',serif");
+  const str = ({ tekst: { S: 13, M: 15, L: 18, XL: 22 }, ov: { S: 16, M: 20, L: 26, XL: 32 }, knap: { S: 14, M: 17, L: 20, XL: 24 } }[art] || {})[s.str || ""];
+  if (str) c.push("font-size:" + str + "px");
+  if (s.fed === true) c.push("font-weight:600"); else if (s.fed === false) c.push("font-weight:400");
+  if (s.kursiv) c.push("font-style:italic");
+  if (art !== "knap" && MAILS_FARVER[s.farve] && s.farve !== "lys") c.push("color:" + MAILS_FARVER[s.farve]);
+  return c.length ? c.join(";") + ";" : "";
+}
+function mailsPlacering(f) { const j = f && f.s && f.s.just; return j === "center" || j === "right" ? j : (f && f.midt ? "center" : "left"); }
 function mailsHtml(m, o) {
   o = o || {};
   const navn = o.navn || "{navn}";
-  /* {kollegakode}: forhaandsvisningen faar en eksempelkode. TRIN 2 (IKKE BYGGET): serveren (mail-udsend/den planlagte funktion) erstatter {kollegakode} med kundens egen kode fra virksomhedskoder/app_metadata.kode pr. modtager — foer da staar flettekoden ubehandlet i en rigtig mail. */
+  /* {kollegakode}: forhaandsvisningen faar en eksempelkode; serveren skriver kundens egen kode ind pr. modtager. */
   const sub = function (t) { return String(t || "").replace(/\{navn\}/g, navn).replace(/\{kollegakode\}/g, o.kollegakode || "{kollegakode}"); };
-  const fl = (m.fliser || []).map(function (f) {
-    if (f.t === "billede") return f.src ? '<tr><td class="ind" style="padding:16px 16px 0;"><img src="' + esc(f.src) + '" width="568" alt="" style="display:block;width:100%;max-width:568px;height:auto;border:0;"></td></tr>' : '';
-    if (f.t === "knap") return String(f.tekst || "").trim() ? '<tr><td class="ind" style="padding:16px 16px 0;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td align="center" bgcolor="#FC2404" style="border-radius:999px;"><a href="' + esc(String(f.link || "").trim() || "https://energida.dk/") + '" style="display:block;padding:15px 20px;font-family:Poppins,Arial,sans-serif;font-size:17px;color:#ffffff;text-decoration:none;border-radius:999px;">' + esc(f.tekst) + '</a></td></tr></table></td></tr>' : '';
+  const heroRk = function (foerst) { const u = esc(m.foto && m.foto !== "ingen" ? m.foto : MAILS_STD_FOTO); return '<tr><td class="ind" style="padding:' + (foerst ? '0 16px' : '16px 16px 0') + ';"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td class="hero" background="' + u + '" bgcolor="#3A3936" height="380" style="background:#3A3936 url(\'' + u + '\') center/cover no-repeat;height:380px;"></td></tr></table></td></tr>'; };
+  const harHero = (m.fliser || []).some(function (f) { return f && f.t === "hero"; });
+  const knapHtml = function (tekst, link, s, al) {
+    /* KNAPPEN (Idas klik 15/11): farve, længde (kort = efter teksten · halv · hele bredden), form (rund · firkantet · kun kant), skrift og placering */
+    s = s || {}; const farve = MAILS_FARVER[s.kf] || "#FC2404", kant = s.form === "streg", rad = s.form === "kant" ? "8px" : "999px";
+    const tfarve = kant ? farve : (s.kf === "lys" ? "#1A1A1A" : "#ffffff");
+    const bred = s.lg === "kort" ? "" : s.lg === "halv" ? "50%" : "100%";
+    return '<table role="presentation"' + (bred ? ' width="' + bred + '"' : '') + ' align="' + al + '" cellpadding="0" cellspacing="0" border="0"' + (bred ? ' style="width:' + bred + ';"' : '') + '><tr><td align="center" bgcolor="' + (kant ? "#ffffff" : farve) + '" style="border-radius:' + rad + ';' + (kant ? 'border:2px solid ' + farve + ';' : '') + '"><a href="' + esc(link) + '" style="display:block;padding:15px ' + (bred ? '20px' : '32px') + ';font-family:Poppins,Arial,sans-serif;font-size:17px;color:' + tfarve + ';text-decoration:none;border-radius:' + rad + ';' + mailsStilCss(s, "knap") + '">' + esc(tekst) + '</a></td></tr></table>';
+  };
+  const fl = (m.fliser || []).map(function (f, fi) {
+    if (f.t === "hero") return m.foto === "ingen" ? '' : heroRk(fi === 0);   /* det store foto står, hvor Ida har flyttet det (15/11) */
+    if (f.t === "streg") { const s = f.s || {}, al = mailsPlacering(f), b = s.lg === "kort" ? "30%" : s.lg === "halv" ? "50%" : "100%", tk = Math.max(1, Math.min(6, parseInt(s.tk, 10) || 1)), fv = MAILS_FARVER[s.kf] || "#DEDAD4";
+      return '<tr><td class="ind" align="' + al + '" style="padding:20px 16px 4px;"><table role="presentation" width="' + b + '" align="' + al + '" cellpadding="0" cellspacing="0" border="0" style="width:' + b + ';"><tr><td height="' + tk + '" bgcolor="' + fv + '" style="height:' + tk + 'px;line-height:' + tk + 'px;font-size:0;background:' + fv + ';">&nbsp;</td></tr></table></td></tr>'; }   /* SKILLESTREG (Idas klik 15/11) */
+    if (f.t === "overskrift") return String(f.tekst || "").trim() ? '<tr><td class="ind" style="padding:16px 16px 0;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#ffffff;border:1px solid #EDEAE5;border-radius:16px;"><tr><td style="padding:20px 22px;font-family:Poppins,Arial,sans-serif;"><div style="font-size:20px;font-weight:600;line-height:1.3;color:#1A1A1A;text-align:' + mailsPlacering(f) + ';' + mailsStilCss(f.s, "ov") + '">' + esc(sub(f.tekst)) + '</div></td></tr></table></td></tr>' : '';
+    if (f.t === "billede") { if (!f.src) return ''; const halv = f.bredde === "halv", lk = String(f.link || "").trim();   /* bredde og link (Idas klik 15/11) */
+      const img = '<img src="' + esc(f.src) + '" width="' + (halv ? 284 : 568) + '" alt="" style="display:block;' + (halv ? 'margin:0 auto;width:50%;max-width:284px;' : 'width:100%;max-width:568px;') + 'height:auto;border:0;">';
+      return '<tr><td class="ind"' + (halv ? ' align="center"' : '') + ' style="padding:16px 16px 0;">' + (/^https:\/\/[^\s"<>]+$/.test(lk) ? '<a href="' + esc(lk) + '" style="display:block;">' + img + '</a>' : img) + '</td></tr>'; }
+    if (f.t === "knap") return String(f.tekst || "").trim() ? '<tr><td class="ind" align="' + mailsPlacering(f) + '" style="padding:16px 16px 0;">' + knapHtml(f.tekst, String(f.link || "").trim() || "https://energida.dk/", f.s, mailsPlacering(f)) + '</td></tr>' : '';
+    const al = mailsPlacering(f), st = mailsStilCss(f.s, "tekst");
     let ind = "";
-    if (f.et) ind += '<div style="font-size:20px;font-weight:600;line-height:1.3;color:#1A1A1A;text-align:' + (f.midt ? "center" : "left") + ';margin:0 0 12px;">' + esc(f.et) + '</div>';   /* FED OVERSKRIFT (Ida 11/11): 20 px, 600, sort, ingen streg under */
-    ind += mailsTekstHtml(sub(f.tekst), f.midt);
+    if (f.et) ind += '<div style="font-size:20px;font-weight:600;line-height:1.3;color:#1A1A1A;text-align:' + al + ';margin:0 0 12px;">' + esc(f.et) + '</div>';   /* FED OVERSKRIFT (Ida 11/11): 20 px, 600, sort, ingen streg under */
+    ind += mailsTekstHtml(sub(f.tekst), al, st);
     if (String(f.forslag || "").trim()) {
       ind += o.marker
         ? '<div style="margin:2px 0 12px;padding-left:12px;border-left:2px solid #DEDAD4;"><div style="font-size:10px;letter-spacing:1.4px;text-transform:uppercase;color:#9A9590;margin-bottom:4px;">Ikke dine ord</div><div style="color:#6F6B66;">' + mailsTekstHtml(sub(f.forslag)).replace(/color:#1A1A1A/g, "color:#6F6B66") + '</div></div>'
-        : mailsTekstHtml(sub(f.forslag), f.midt);
+        : mailsTekstHtml(sub(f.forslag), al, st);
     }
     if (f.harKode) ind += '<div style="border:1px solid #DEDAD4;border-radius:14px;padding:12px 14px;margin:4px 0 0;"><div style="font-size:10px;letter-spacing:1.4px;text-transform:uppercase;color:#9A9590;">Din kode</div><div style="font-size:16px;letter-spacing:1px;color:#FC2404;margin-top:4px;">' + (String(f.kode || "").trim() ? esc(sub(f.kode)) : (o.marker ? "Koden mangler" : "")) + '</div></div>';
-    if (f.knap) ind += '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td align="center" bgcolor="#FC2404" style="border-radius:999px;"><a href="' + esc(o.knapUrl || "https://b2b.energida.dk/") + '" style="display:block;padding:15px 20px;font-family:Poppins,Arial,sans-serif;font-size:17px;color:#ffffff;text-decoration:none;border-radius:999px;">' + esc(f.knap) + '</a></td></tr></table>';
+    if (f.knap) ind += knapHtml(f.knap, o.knapUrl || "https://b2b.energida.dk/", f.ks, "center");
     if (f.lille) ind += '<p style="margin:14px 0 0;font-size:12px;line-height:1.6;color:#6F6B66;text-align:center;">' + esc(f.lille) + '</p>';
     { const k = ind.lastIndexOf("margin:0 0 12px;"); if (k >= 0 && ind.slice(k).indexOf("<div") < 0 && ind.slice(k).indexOf("<table") < 0) ind = ind.slice(0, k) + "margin:0;" + ind.slice(k + 16); }
     return '<tr><td class="ind" style="padding:16px 16px 0;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#ffffff;border:1px solid #EDEAE5;border-radius:16px;"><tr><td style="padding:20px 22px;font-family:Poppins,Arial,sans-serif;">' + ind + '</td></tr></table></td></tr>';
   }).join("");
+
   const tom = !mailsHarIndhold(m) ? '<tr><td class="ind" style="padding:16px 16px 0;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#ffffff;border:1px solid #EDEAE5;border-radius:16px;"><tr><td style="padding:20px 22px;font-family:Poppins,Arial,sans-serif;font-size:15px;color:#FC2404;">Dine ord mangler</td></tr></table></td></tr>' : "";
   return '<!doctype html><html lang="da"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><meta name="supported-color-schemes" content="light">'
-    + '<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400&display=swap" rel="stylesheet">'
+    + '<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">'
     + '<style>body{margin:0;padding:0;background:#F2F0ED} @media (max-width:520px){.ind{padding-left:12px!important;padding-right:12px!important} .firma{white-space:normal!important} .fsep{display:block;height:0;overflow:hidden;font-size:0} .hero{height:240px!important}}</style></head>'
     + '<body style="margin:0;padding:0;background:#F2F0ED;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#F2F0ED;"><tr><td align="center" style="padding:16px 0 32px;">'
     + '<table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:600px;">'
-    + '<tr><td class="ind" style="padding:0 16px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td class="hero" background="' + esc(m.foto || MAILS_STD_FOTO) + '" bgcolor="#3A3936" height="380" style="background:#3A3936 url(\'' + esc(m.foto || MAILS_STD_FOTO) + '\') center/cover no-repeat;height:380px;"></td></tr></table></td></tr>'
+    + (m.foto === "ingen" || harHero ? '' : heroRk(true))   /* »Fjern« (Idas klik 15/11): foto = "ingen"; ligger fotoet i listen, står det dér */
     + fl + tom
     + '<tr><td align="center" style="padding:28px 16px 0;font-family:Poppins,Arial,sans-serif;"><p style="margin:0 0 24px;font-size:14px;color:#1A1A1A;">Er der noget, der driller? Så svar på denne mail.</p>'
     + '<img src="https://b2b.energida.dk/mail/logo.png" width="60" alt="Energida" style="display:block;margin:0 auto 14px;width:60px;height:auto;border:0;">'

@@ -67466,7 +67466,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "3320";
+const APP_VERSION = "3321";
 const APP_BYGGET = "3. november";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_VERSION;   /* ingen dato (Ida 7/11: »hvorfor står der version 3. november?«) — datoen blev ikke rettet med, nummeret er sandheden */ } catch (e) {} });
 let NY_VERSION_KLAR = false;
@@ -96138,46 +96138,73 @@ function mailsStatus(m) {
 }
 
 /* MAILEN SOM HTML — samme form som mail/invitation.html (tabeller, inline-stil, så Outlook og Gmail tegner den ens) */
-function mailsTekstHtml(t, midt) {
-  const al = midt ? "center" : "left";
+function mailsTekstHtml(t, midt, ekstra) {
+  /* PLACERING (Idas klik 15/11, artifact K41jEYGPbRSJY2fYPys9dx): true/"center" = midt, "right" = højre, ellers venstre. ekstra = afsnittets egen stil (skrift, størrelse, fed, kursiv, farve) */
+  const al = (midt === true || midt === "center") ? "center" : midt === "right" ? "right" : "left";
+  ekstra = ekstra || "";
   /* KURSIV · LINK · PUNKTER (Idas klik 15/11): *ord* = kursiv, [ord](https://…) = link (kun https), en blok, hvor hver linje starter med »- « = punkter. Alt andet er tekst. */
-  const fmt = function (x) { return esc(x).replace(/\[([^\]\n]+)\]\((https:\/\/[^\s)<>"]+)\)/g, '<a href="$2" style="color:#1A1A1A;text-decoration:underline;">$1</a>').replace(/(^|[\s(>])\*([^*\n]+)\*(?=[\s.,;:!?)<]|$)/g, '$1<em>$2</em>'); };
+  const fmt = function (x) { return esc(x).replace(/\[([^\]\n]+)\]\((https:\/\/[^\s)<>"]+)\)/g, '<a href="$2" style="color:inherit;text-decoration:underline;">$1</a>').replace(/(^|[\s(>])\*([^*\n]+)\*(?=[\s.,;:!?)<]|$)/g, '$1<em>$2</em>'); };
   return String(t || "").split(/\n\s*\n/).map(function (p) { return p.trim(); }).filter(Boolean).map(function (p) {
-    const l = p.split("\n"); if (l.every(function (x) { return /^\s*[-•]\s+/.test(x); })) return '<ul style="margin:0 0 12px;padding-left:22px;font-size:15px;line-height:1.6;color:#1A1A1A;">' + l.map(function (x) { return '<li style="margin:0 0 4px;">' + fmt(x.replace(/^\s*[-•]\s+/, "")) + '</li>'; }).join("") + '</ul>';
-    return '<p style="margin:0 0 12px;font-size:15px;line-height:1.6;color:#1A1A1A;text-align:' + al + ';">' + fmt(p).replace(/\n/g, "<br>") + '</p>';
+    const l = p.split("\n"); if (l.every(function (x) { return /^\s*[-•]\s+/.test(x); })) return '<ul style="margin:0 0 12px;padding-left:22px;font-size:15px;line-height:1.6;color:#1A1A1A;text-align:left;' + ekstra + '">' + l.map(function (x) { return '<li style="margin:0 0 4px;">' + fmt(x.replace(/^\s*[-•]\s+/, "")) + '</li>'; }).join("") + '</ul>';
+    return '<p style="margin:0 0 12px;font-size:15px;line-height:1.6;color:#1A1A1A;text-align:' + al + ';' + ekstra + '">' + fmt(p).replace(/\n/g, "<br>") + '</p>';
   }).join("");
 }
+/* STIL PR. AFSNIT (Idas klik 15/11): f.s = { font: "serif", str: S|M|L|XL, fed: true|false, kursiv, farve: sort|graa|roed, just: ""|center|right,
+   og på knapper og skillestreger kf (farve), lg (kort|halv|hel), form (""|kant|streg), tk (tykkelse) }. Kun skrifter, der findes i alle mailprogrammer. */
+const MAILS_FARVER = { sort: "#1A1A1A", graa: "#6F6B66", roed: "#FC2404", lys: "#DEDAD4" };
+function mailsStilCss(s, art) {
+  s = s || {}; const c = [];
+  if (s.font === "serif") c.push("font-family:Georgia,'Times New Roman',serif");
+  const str = ({ tekst: { S: 13, M: 15, L: 18, XL: 22 }, ov: { S: 16, M: 20, L: 26, XL: 32 }, knap: { S: 14, M: 17, L: 20, XL: 24 } }[art] || {})[s.str || ""];
+  if (str) c.push("font-size:" + str + "px");
+  if (s.fed === true) c.push("font-weight:600"); else if (s.fed === false) c.push("font-weight:400");
+  if (s.kursiv) c.push("font-style:italic");
+  if (art !== "knap" && MAILS_FARVER[s.farve] && s.farve !== "lys") c.push("color:" + MAILS_FARVER[s.farve]);
+  return c.length ? c.join(";") + ";" : "";
+}
+function mailsPlacering(f) { const j = f && f.s && f.s.just; return j === "center" || j === "right" ? j : (f && f.midt ? "center" : "left"); }
 function mailsHtml(m, o) {
   o = o || {};
   const navn = o.navn || "{navn}";
-  /* {kollegakode}: forhaandsvisningen faar en eksempelkode. TRIN 2 (IKKE BYGGET): serveren (mail-udsend/den planlagte funktion) erstatter {kollegakode} med kundens egen kode fra virksomhedskoder/app_metadata.kode pr. modtager — foer da staar flettekoden ubehandlet i en rigtig mail. */
+  /* {kollegakode}: forhaandsvisningen faar en eksempelkode; serveren skriver kundens egen kode ind pr. modtager. */
   const sub = function (t) { return String(t || "").replace(/\{navn\}/g, navn).replace(/\{kollegakode\}/g, o.kollegakode || "{kollegakode}"); };
   const heroRk = function (foerst) { const u = esc(m.foto && m.foto !== "ingen" ? m.foto : MAILS_STD_FOTO); return '<tr><td class="ind" style="padding:' + (foerst ? '0 16px' : '16px 16px 0') + ';"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td class="hero" background="' + u + '" bgcolor="#3A3936" height="380" style="background:#3A3936 url(\'' + u + '\') center/cover no-repeat;height:380px;"></td></tr></table></td></tr>'; };
   const harHero = (m.fliser || []).some(function (f) { return f && f.t === "hero"; });
+  const knapHtml = function (tekst, link, s, al) {
+    /* KNAPPEN (Idas klik 15/11): farve, længde (kort = efter teksten · halv · hele bredden), form (rund · firkantet · kun kant), skrift og placering */
+    s = s || {}; const farve = MAILS_FARVER[s.kf] || "#FC2404", kant = s.form === "streg", rad = s.form === "kant" ? "8px" : "999px";
+    const tfarve = kant ? farve : (s.kf === "lys" ? "#1A1A1A" : "#ffffff");
+    const bred = s.lg === "kort" ? "" : s.lg === "halv" ? "50%" : "100%";
+    return '<table role="presentation"' + (bred ? ' width="' + bred + '"' : '') + ' align="' + al + '" cellpadding="0" cellspacing="0" border="0"' + (bred ? ' style="width:' + bred + ';"' : '') + '><tr><td align="center" bgcolor="' + (kant ? "#ffffff" : farve) + '" style="border-radius:' + rad + ';' + (kant ? 'border:2px solid ' + farve + ';' : '') + '"><a href="' + esc(link) + '" style="display:block;padding:15px ' + (bred ? '20px' : '32px') + ';font-family:Poppins,Arial,sans-serif;font-size:17px;color:' + tfarve + ';text-decoration:none;border-radius:' + rad + ';' + mailsStilCss(s, "knap") + '">' + esc(tekst) + '</a></td></tr></table>';
+  };
   const fl = (m.fliser || []).map(function (f, fi) {
     if (f.t === "hero") return m.foto === "ingen" ? '' : heroRk(fi === 0);   /* det store foto står, hvor Ida har flyttet det (15/11) */
-    if (f.t === "overskrift") return String(f.tekst || "").trim() ? '<tr><td class="ind" style="padding:16px 16px 0;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#ffffff;border:1px solid #EDEAE5;border-radius:16px;"><tr><td style="padding:20px 22px;font-family:Poppins,Arial,sans-serif;"><div style="font-size:20px;font-weight:600;line-height:1.3;color:#1A1A1A;text-align:' + (f.midt ? "center" : "left") + ';">' + esc(sub(f.tekst)) + '</div></td></tr></table></td></tr>' : '';
+    if (f.t === "streg") { const s = f.s || {}, al = mailsPlacering(f), b = s.lg === "kort" ? "30%" : s.lg === "halv" ? "50%" : "100%", tk = Math.max(1, Math.min(6, parseInt(s.tk, 10) || 1)), fv = MAILS_FARVER[s.kf] || "#DEDAD4";
+      return '<tr><td class="ind" align="' + al + '" style="padding:20px 16px 4px;"><table role="presentation" width="' + b + '" align="' + al + '" cellpadding="0" cellspacing="0" border="0" style="width:' + b + ';"><tr><td height="' + tk + '" bgcolor="' + fv + '" style="height:' + tk + 'px;line-height:' + tk + 'px;font-size:0;background:' + fv + ';">&nbsp;</td></tr></table></td></tr>'; }   /* SKILLESTREG (Idas klik 15/11) */
+    if (f.t === "overskrift") return String(f.tekst || "").trim() ? '<tr><td class="ind" style="padding:16px 16px 0;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#ffffff;border:1px solid #EDEAE5;border-radius:16px;"><tr><td style="padding:20px 22px;font-family:Poppins,Arial,sans-serif;"><div style="font-size:20px;font-weight:600;line-height:1.3;color:#1A1A1A;text-align:' + mailsPlacering(f) + ';' + mailsStilCss(f.s, "ov") + '">' + esc(sub(f.tekst)) + '</div></td></tr></table></td></tr>' : '';
     if (f.t === "billede") { if (!f.src) return ''; const halv = f.bredde === "halv", lk = String(f.link || "").trim();   /* bredde og link (Idas klik 15/11) */
       const img = '<img src="' + esc(f.src) + '" width="' + (halv ? 284 : 568) + '" alt="" style="display:block;' + (halv ? 'margin:0 auto;width:50%;max-width:284px;' : 'width:100%;max-width:568px;') + 'height:auto;border:0;">';
       return '<tr><td class="ind"' + (halv ? ' align="center"' : '') + ' style="padding:16px 16px 0;">' + (/^https:\/\/[^\s"<>]+$/.test(lk) ? '<a href="' + esc(lk) + '" style="display:block;">' + img + '</a>' : img) + '</td></tr>'; }
-    if (f.t === "knap") return String(f.tekst || "").trim() ? '<tr><td class="ind" style="padding:16px 16px 0;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td align="center" bgcolor="#FC2404" style="border-radius:999px;"><a href="' + esc(String(f.link || "").trim() || "https://energida.dk/") + '" style="display:block;padding:15px 20px;font-family:Poppins,Arial,sans-serif;font-size:17px;color:#ffffff;text-decoration:none;border-radius:999px;">' + esc(f.tekst) + '</a></td></tr></table></td></tr>' : '';
+    if (f.t === "knap") return String(f.tekst || "").trim() ? '<tr><td class="ind" align="' + mailsPlacering(f) + '" style="padding:16px 16px 0;">' + knapHtml(f.tekst, String(f.link || "").trim() || "https://energida.dk/", f.s, mailsPlacering(f)) + '</td></tr>' : '';
+    const al = mailsPlacering(f), st = mailsStilCss(f.s, "tekst");
     let ind = "";
-    if (f.et) ind += '<div style="font-size:20px;font-weight:600;line-height:1.3;color:#1A1A1A;text-align:' + (f.midt ? "center" : "left") + ';margin:0 0 12px;">' + esc(f.et) + '</div>';   /* FED OVERSKRIFT (Ida 11/11): 20 px, 600, sort, ingen streg under */
-    ind += mailsTekstHtml(sub(f.tekst), f.midt);
+    if (f.et) ind += '<div style="font-size:20px;font-weight:600;line-height:1.3;color:#1A1A1A;text-align:' + al + ';margin:0 0 12px;">' + esc(f.et) + '</div>';   /* FED OVERSKRIFT (Ida 11/11): 20 px, 600, sort, ingen streg under */
+    ind += mailsTekstHtml(sub(f.tekst), al, st);
     if (String(f.forslag || "").trim()) {
       ind += o.marker
         ? '<div style="margin:2px 0 12px;padding-left:12px;border-left:2px solid #DEDAD4;"><div style="font-size:10px;letter-spacing:1.4px;text-transform:uppercase;color:#9A9590;margin-bottom:4px;">Ikke dine ord</div><div style="color:#6F6B66;">' + mailsTekstHtml(sub(f.forslag)).replace(/color:#1A1A1A/g, "color:#6F6B66") + '</div></div>'
-        : mailsTekstHtml(sub(f.forslag), f.midt);
+        : mailsTekstHtml(sub(f.forslag), al, st);
     }
     if (f.harKode) ind += '<div style="border:1px solid #DEDAD4;border-radius:14px;padding:12px 14px;margin:4px 0 0;"><div style="font-size:10px;letter-spacing:1.4px;text-transform:uppercase;color:#9A9590;">Din kode</div><div style="font-size:16px;letter-spacing:1px;color:#FC2404;margin-top:4px;">' + (String(f.kode || "").trim() ? esc(sub(f.kode)) : (o.marker ? "Koden mangler" : "")) + '</div></div>';
-    if (f.knap) ind += '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td align="center" bgcolor="#FC2404" style="border-radius:999px;"><a href="' + esc(o.knapUrl || "https://b2b.energida.dk/") + '" style="display:block;padding:15px 20px;font-family:Poppins,Arial,sans-serif;font-size:17px;color:#ffffff;text-decoration:none;border-radius:999px;">' + esc(f.knap) + '</a></td></tr></table>';
+    if (f.knap) ind += knapHtml(f.knap, o.knapUrl || "https://b2b.energida.dk/", f.ks, "center");
     if (f.lille) ind += '<p style="margin:14px 0 0;font-size:12px;line-height:1.6;color:#6F6B66;text-align:center;">' + esc(f.lille) + '</p>';
     { const k = ind.lastIndexOf("margin:0 0 12px;"); if (k >= 0 && ind.slice(k).indexOf("<div") < 0 && ind.slice(k).indexOf("<table") < 0) ind = ind.slice(0, k) + "margin:0;" + ind.slice(k + 16); }
     return '<tr><td class="ind" style="padding:16px 16px 0;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#ffffff;border:1px solid #EDEAE5;border-radius:16px;"><tr><td style="padding:20px 22px;font-family:Poppins,Arial,sans-serif;">' + ind + '</td></tr></table></td></tr>';
   }).join("");
+
   const tom = !mailsHarIndhold(m) ? '<tr><td class="ind" style="padding:16px 16px 0;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#ffffff;border:1px solid #EDEAE5;border-radius:16px;"><tr><td style="padding:20px 22px;font-family:Poppins,Arial,sans-serif;font-size:15px;color:#FC2404;">Dine ord mangler</td></tr></table></td></tr>' : "";
   return '<!doctype html><html lang="da"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><meta name="supported-color-schemes" content="light">'
-    + '<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400&display=swap" rel="stylesheet">'
+    + '<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">'
     + '<style>body{margin:0;padding:0;background:#F2F0ED} @media (max-width:520px){.ind{padding-left:12px!important;padding-right:12px!important} .firma{white-space:normal!important} .fsep{display:block;height:0;overflow:hidden;font-size:0} .hero{height:240px!important}}</style></head>'
     + '<body style="margin:0;padding:0;background:#F2F0ED;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#F2F0ED;"><tr><td align="center" style="padding:16px 0 32px;">'
     + '<table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:600px;">'
@@ -96581,56 +96608,6 @@ async function mailsSendtVis(id) {
    Computer: afsnittene til venstre, mailen live til højre. Telefon: chips »Ret« / »Se mailen«.
    Billeder lægges i storage-bucketten mail-billeder (kun admin kan lægge ind; mailprogrammer kan hente via den præcise adresse). */
 let MAILS_SE = false;
-function mailsRetFlise(f, i, skrald) {
-  /* MAILBYGGEREN (Idas klik 15/11 »Ja, også uret nu«, artifact 8UVw3Hg73NHmyER7PnJEUS): pile op og ned ved hvert afsnit — træk virker stadig */
-  const n = (MAILS_RET && MAILS_RET.fliser || []).length;
-  const pil = function (d, op) { const af = op ? i === 0 : i >= n - 1; return '<button type="button" class="mails-pil" aria-label="' + (op ? 'Flyt afsnittet op' : 'Flyt afsnittet ned') + '"' + (af ? ' disabled' : ' onclick="mailsRetFlyt(' + i + ',' + d + ')"') + '><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="' + (op ? 'M6 15l6-6 6 6' : 'M6 9l6 6 6-6') + '"/></svg></button>'; };
-  const hoved = function (navn) { return '<div class="mails-e mails-greb" data-greb="' + i + '"><span>' + navn + '</span><span class="mails-ehk">' + pil(-1, true) + pil(1, false) + '<button type="button" class="mails-slet" aria-label="Slet afsnittet" title="Slet afsnittet" onclick="mailsRetSlet(' + i + ')">' + skrald + '</button></span></div>'; };
-  /* OVERSKRIFT PÅ SIN EGEN FLISE OG DET STORE FOTO SOM ET AFSNIT (Ida 15/11: »kan du ikke gøre sådan at overskriften fx din profil er klar står på sin egen flise som jeg så kan flytte rundt på? også over billedet hvis ønsker det?«) */
-  if (f.t === "hero") { const R0 = MAILS_RET || {}; const fu = R0.foto && R0.foto !== "ingen" ? R0.foto : MAILS_STD_FOTO;
-    return '<div class="mails-blok mails-retfl" data-i="' + i + '">' + hoved("Stort foto") + '<div class="bs3-fl"><img class="mails-billede mails-hero" src="' + esc(fu) + '" alt="">'
-      + '<div class="mails-knaprk"><button type="button" class="dbtn mq-tap bs3-lang" onclick="mailsBilledeVaelg(\'foto\')">Skift foto</button><button type="button" class="dbtn mq-tap bs3-lang" onclick="mailsBeskaer(\'foto\')">Beskær</button></div>'
-      + (R0.foto ? '<button type="button" class="dbtn mq-tap bs3-lang mails-std-foto" onclick="MAILS_RET.foto=\'\';mailsRetVis(MAILS_RET.id)">Brug husets foto</button>' : '') + '</div></div>'; }
-  if (f.t === "overskrift") return '<div class="mails-blok mails-retfl" data-i="' + i + '">' + hoved("Overskrift") + '<div class="bs3-fl"><div class="mails-felter">'
-    + '<label class="mails-lbl" for="mailsOv' + i + '">Overskrift</label><input type="text" class="bs3-felt mails-input" id="mailsOv' + i + '" value="' + esc(f.tekst || "") + '" placeholder="Skriv overskriften" oninput="MAILS_RET.fliser[' + i + '].tekst=this.value;mailsRetForh()">'
-    + '<div class="mails-lbl">Placering</div><div class="ark-chips i-fladen mails-wrap">' + [["", "Venstre"], ["1", "Midte"]].map(function (x) { const on = (f.midt ? "1" : "") === x[0]; return '<button type="button" class="ark-chip' + (on ? ' on' : '') + '" onclick="MAILS_RET.fliser[' + i + '].midt=' + (x[0] ? 'true' : 'false') + ';mailsRetVis(MAILS_RET.id)">' + x[1] + '</button>'; }).join("") + '</div>'
-    + '</div></div></div>';
-  if (f.t === "billede") return '<div class="mails-blok mails-retfl" data-i="' + i + '">' + hoved("Billede") + '<div class="bs3-fl"><div class="mails-felter">'
-    + (f.src ? '<img class="mails-billede' + (f.bredde === "halv" ? ' mails-halv' : '') + '" src="' + esc(f.src) + '" alt="">' : '<div class="mails-billede mails-billede-tom">Intet billede endnu</div>')
-    + '<div class="mails-knaprk"><button type="button" class="dbtn mq-tap bs3-lang" onclick="mailsBilledeVaelg(' + i + ')">' + (f.src ? 'Skift billede' : 'Vælg billede') + '</button>'
-    + (f.src ? '<button type="button" class="dbtn mq-tap bs3-lang" onclick="mailsBeskaer(' + i + ')">Beskær</button>' : '') + '</div>'
-    + (f.src ? '<div class="mails-lbl">Bredde</div><div class="ark-chips i-fladen mails-wrap">' + [["hel", "Hele bredden"], ["halv", "Halv"]].map(function (x) { const on = (f.bredde === "halv" ? "halv" : "hel") === x[0]; return '<button type="button" class="ark-chip' + (on ? ' on' : '') + '" onclick="MAILS_RET.fliser[' + i + '].bredde=\'' + x[0] + '\';mailsRetVis(MAILS_RET.id)">' + x[1] + '</button>'; }).join("") + '</div>'
-      + (function () {
-          const link = String(f.link || "").trim(), fast = MAILS_KNAP_MAAL.find(function (x) { return x.l && x.l === link; }), egen = !!f.egenLink || (!!link && !fast);
-          return '<div class="mails-lbl">Link på billedet (kan stå tomt)</div><div class="ark-chips i-fladen mails-wrap"><button type="button" class="ark-chip' + (!link && !egen ? ' on' : '') + '" onclick="mailsBilledeLink(' + i + ',\'\')">Intet</button>' + MAILS_KNAP_MAAL.map(function (x) { const on = x.l ? (!egen && fast === x) : egen; return '<button type="button" class="ark-chip' + (on ? ' on' : '') + '" onclick="mailsBilledeLink(' + i + ',\'' + x.k + '\')">' + esc(x.n) + '</button>'; }).join("") + '</div>'
-            + (egen ? '<label class="mails-lbl" for="mailsKl' + i + '">Adresse</label><input type="url" class="bs3-felt mails-input" id="mailsKl' + i + '" value="' + esc(link) + '" placeholder="https://…" oninput="MAILS_RET.fliser[' + i + '].link=this.value;mailsRetForh();mailsLinkVis(' + i + ')"><div class="mails-linkst" id="mailsLs' + i + '">' + mailsLinkStHtml(link).replace("Vælg, hvor knappen fører hen.", "Skriv adressen.").replace("Knappen fører", "Billedet fører") + '</div>' : '');
-        })() : '')
-    + '</div></div></div>';
-  if (f.t === "knap") return '<div class="mails-blok mails-retfl" data-i="' + i + '">' + hoved("Knap") + '<div class="bs3-fl"><div class="mails-felter">'
-    + '<label class="mails-lbl" for="mailsKt' + i + '">Tekst på knappen</label><input type="text" class="bs3-felt mails-input" id="mailsKt' + i + '" value="' + esc(f.tekst || "") + '" placeholder="Skriv teksten på knappen" oninput="MAILS_RET.fliser[' + i + '].tekst=this.value;mailsRetForh()">'
-    + (function () {
-        /* KNAPPEN SENDER DET RIGTIGE STED HEN (Ida 12/11: »hvordan sikrer jeg at knapper virker og sender rigtige sted hen«): målet vælges fra en liste; en egen adresse tjekkes, og »Åbn linket« viser, hvor knappen fører hen. Gem spærres, hvis en knap mangler et gyldigt link. */
-        const link = String(f.link || "").trim(), fast = MAILS_KNAP_MAAL.find(function (x) { return x.l && x.l === link; }), egen = !!f.egenLink || (!!link && !fast), ok = mailsLinkOk(link);
-        return '<div class="mails-lbl">Hvor fører knappen hen?</div><div class="ark-chips i-fladen mails-maal">' + MAILS_KNAP_MAAL.map(function (x) { const on = x.l ? (!egen && fast === x) : egen; return '<button type="button" class="ark-chip' + (on ? ' on' : '') + '" onclick="mailsKnapMaal(' + i + ',\'' + x.k + '\')">' + esc(x.n) + '</button>'; }).join("") + '</div>'
-          + (egen ? '<label class="mails-lbl" for="mailsKl' + i + '">Adresse</label><input type="url" class="bs3-felt mails-input" id="mailsKl' + i + '" value="' + esc(link) + '" placeholder="https://…" oninput="MAILS_RET.fliser[' + i + '].link=this.value;mailsRetForh();mailsLinkVis(' + i + ')">' : '')
-          + '<div class="mails-linkst" id="mailsLs' + i + '">' + mailsLinkStHtml(link) + '</div>';
-      })()
-    + '</div></div></div>';
-  return '<div class="mails-blok mails-retfl" data-i="' + i + '">' + hoved("Tekst") + '<div class="bs3-fl"><div class="mails-felter">'
-    + '<div class="mails-lblrk"><label class="mails-lbl" for="mailsEt' + i + '">Overskrift</label>' + (String(f.et || "").trim() ? '<span class="mails-ehk"><button type="button" class="mails-egen" onclick="mailsOverskriftUd(' + i + ')">Egen flise</button><button type="button" class="mails-slet" aria-label="Fjern overskriften" title="Fjern overskriften" onclick="mailsFeltSlet(' + i + ',\'et\')">' + skrald + '</button></span>' : '') + '</div><input type="text" class="bs3-felt mails-input" id="mailsEt' + i + '" value="' + esc(f.et || "") + '" placeholder="Uden overskrift" oninput="MAILS_RET.fliser[' + i + '].et=this.value;mailsRetForh()">' + (String(f.et || "").trim() ? '<button type="button" class="dbtn mq-tap bs3-lang mails-egen-tlf" onclick="mailsOverskriftUd(' + i + ')">Flyt overskriften til egen flise</button>' : '')
-    + '<div class="mails-lblrk"><label class="mails-lbl" for="mailsTx' + i + '">Tekst</label><span class="mails-vaerk">'
-      + '<button type="button" class="mails-vk" aria-label="Kursiv" title="Kursiv" onmousedown="event.preventDefault()" onclick="mailsFormat(' + i + ',\'kursiv\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M10 5h8M6 19h8M14 5l-4 14"/></svg></button>'
-      + '<button type="button" class="mails-vk" aria-label="Link" title="Link" onmousedown="event.preventDefault()" onclick="mailsFormat(' + i + ',\'link\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg></button>'
-      + '<button type="button" class="mails-vk" aria-label="Punkter" title="Punkter" onmousedown="event.preventDefault()" onclick="mailsFormat(' + i + ',\'punkter\')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4.5" cy="6" r="1"/><circle cx="4.5" cy="12" r="1"/><circle cx="4.5" cy="18" r="1"/></svg></button>'
-      + '</span></div><textarea class="mails-tekst" id="mailsTx' + i + '" placeholder="Skriv teksten" oninput="MAILS_RET.fliser[' + i + '].tekst=this.value;mailsRetForh()">' + esc(f.tekst || "") + '</textarea>'
-    + '<div class="mails-hjlp">Kursiv: *ord* · Link: [ord](https://…) · Punkter: linjer, der starter med -</div>'
-    + (MAILS_RET && MAILS_RET.egen ? '' : '<div class="ark-chips i-fladen mails-kodechip"><button type="button" class="mails-kodeknap" onclick="mailsRetKode(' + i + ')">Indsæt kollegakode</button></div>')
-    + (String(f.forslag || "").trim() ? '<div class="mails-forslag"><label class="mails-lbl" for="mailsFs' + i + '">Ikke dine ord</label><textarea class="mails-tekst" id="mailsFs' + i + '" oninput="MAILS_RET.fliser[' + i + '].forslag=this.value;mailsRetForh()">' + esc(f.forslag) + '</textarea><button type="button" class="dbtn mq-tap bs3-lang" onclick="mailsRetMine(' + i + ')">Det er mine ord</button></div>' : '')
-    + (f.harKode ? '<div class="mails-lblrk"><label class="mails-lbl" for="mailsKd' + i + '">Rabatkode</label><button type="button" class="mails-slet" aria-label="Fjern rabatkoden" title="Fjern rabatkoden" onclick="mailsFeltSlet(' + i + ',\'kode\')">' + skrald + '</button></div><input type="text" class="bs3-felt mails-input" id="mailsKd' + i + '" value="' + esc(f.kode || "") + '" placeholder="Koden mangler" oninput="MAILS_RET.fliser[' + i + '].kode=this.value;mailsRetForh()">' : '')
-    + (f.knap ? '<div class="mails-lblrk"><label class="mails-lbl" for="mailsKn' + i + '">Tekst på knappen</label><button type="button" class="mails-slet" aria-label="Fjern knappen" title="Fjern knappen" onclick="mailsFeltSlet(' + i + ',\'knap\')">' + skrald + '</button></div><input type="text" class="bs3-felt mails-input" id="mailsKn' + i + '" value="' + esc(f.knap || "") + '" oninput="MAILS_RET.fliser[' + i + '].knap=this.value;mailsRetForh()">' : '')
-    + (f.lille != null ? '<div class="mails-lblrk"><label class="mails-lbl" for="mailsLi' + i + '">Lille tekst under knappen</label><button type="button" class="mails-slet" aria-label="Fjern den lille tekst" title="Fjern den lille tekst" onclick="mailsFeltSlet(' + i + ',\'lille\')">' + skrald + '</button></div><textarea class="mails-tekst" id="mailsLi' + i + '" oninput="MAILS_RET.fliser[' + i + '].lille=this.value;mailsRetForh()">' + esc(f.lille || "") + '</textarea>' : '')
-    + '</div></div></div>';
-}
 const MAILS_KNAP_MAAL = [{ k: "app", n: "Forløbet", l: "https://b2b.energida.dk" }, { k: "web", n: "Hjemmesiden", l: "https://energida.dk" }, { k: "egen", n: "Egen adresse", l: "" }];
 function mailsLinkOk(l) { try { const u = new URL(String(l || "").trim()); return u.protocol === "https:" && u.hostname.indexOf(".") > 0; } catch (e) { return false; } }
 function mailsLinkStHtml(l) { l = String(l || "").trim(); if (!l) return 'Vælg, hvor knappen fører hen.'; if (!mailsLinkOk(l)) return 'Adressen skal starte med https:// og være en hel adresse.'; return 'Knappen fører til ' + esc(l.replace(/^https:\/\//, "")) + ' · <a href="' + esc(l) + '" target="_blank" rel="noopener">Åbn linket</a>'; }
@@ -96645,36 +96622,188 @@ function mailsRetKode(i) {
   MAILS_RET.fliser[i].tekst = ny; if (t) { t.value = ny; try { t.focus(); t.setSelectionRange(a + 13, a + 13); mailsVoks(t); } catch (e) {} }
   mailsRetForh();
 }
+/* RET DIREKTE I MAILEN (Idas klik 15/11 »Ja, byg det«, artifact K41jEYGPbRSJY2fYPys9dx): mailen ER redigeringen. Klik på et afsnit for at skrive i det;
+   håndtaget flytter det; »+« mellem afsnittene sætter noget nyt ind lige dér; værktøjerne står under det valgte afsnit (skrift, størrelse, fed, kursiv,
+   farve, placering · knapper: farve, længde, form · skillestreger: farve, længde, tykkelse). Ved siden af står kun modtagere, emne, afsender og Gem.
+   Gem bliver: de automatiske mails er tændt, så en halvskrevet rettelse må aldrig gå ud af sig selv. */
+let MAILS_VALGT = -1, MAILS_IND = -1;
+const MAILS_SC = function (on, klik, txt, ekstra) { return '<button type="button" class="ark-chip mrd-sc' + (on ? ' on' : '') + '" onmousedown="event.preventDefault()" onclick="' + klik + '"' + (ekstra || '') + '>' + txt + '</button>'; };
+function mailsRedHtml(t) {
+  /* husets lette tegn → det, man ser og retter i: *ord* = kursiv, [ord](https://…) = link, linjer med »- « = punkter */
+  const fmt = function (x) { return esc(x).replace(/\[([^\]\n]+)\]\((https:\/\/[^\s)<>"]+)\)/g, '<a href="$2">$1</a>').replace(/(^|[\s(>])\*([^*\n]+)\*(?=[\s.,;:!?)<]|$)/g, '$1<em>$2</em>'); };
+  return String(t || "").split(/\n\s*\n/).map(function (p) { return p.trim(); }).filter(Boolean).map(function (p) {
+    const l = p.split("\n"); if (l.every(function (x) { return /^\s*[-•]\s+/.test(x); })) return '<ul>' + l.map(function (x) { return '<li>' + fmt(x.replace(/^\s*[-•]\s+/, "")) + '</li>'; }).join("") + '</ul>';
+    return '<p>' + fmt(p).replace(/\n/g, "<br>") + '</p>';
+  }).join("");
+}
+function mailsFraRed(el) {
+  /* tilbage til husets lette tegn — samme tegn, som mailen tegner (mailsTekstHtml) */
+  const inl = function (n) { let s = ""; [].forEach.call(n.childNodes, function (c) {
+    if (c.nodeType === 3) s += c.nodeValue.replace(/ /g, " ");
+    else if (c.nodeType === 1) { const t = c.tagName;
+      if (t === "BR") s += "\n";
+      else if (t === "EM" || t === "I") { const x = inl(c); s += x.trim() ? "*" + x.trim() + "*" + (/\s$/.test(x) ? " " : "") : x; }
+      else if (t === "A") { const h = String(c.getAttribute("href") || ""), x = inl(c); s += /^https:\/\/[^\s)<>"]+$/.test(h) && x.trim() ? "[" + x.trim() + "](" + h + ")" : x; }
+      else if (t === "DIV" || t === "P") s += (s && !/\n$/.test(s) ? "\n" : "") + inl(c);
+      else s += inl(c); } }); return s; };
+  const ud = []; let buf = "";
+  const tom = function () { if (buf.trim()) ud.push(buf.replace(/^\n+|\n+$/g, "")); buf = ""; };
+  [].forEach.call(el.childNodes, function (c) {
+    if (c.nodeType === 1 && (c.tagName === "UL" || c.tagName === "OL")) { tom(); ud.push([].map.call(c.querySelectorAll("li"), function (li) { return "- " + inl(li).replace(/\n/g, " ").trim(); }).filter(function (x) { return x.length > 2; }).join("\n")); }
+    else if (c.nodeType === 1 && (c.tagName === "P" || c.tagName === "DIV")) { tom(); const x = inl(c); if (x.trim()) ud.push(x.replace(/^\n+|\n+$/g, "")); }
+    else if (c.nodeType === 1 && c.tagName === "BR") buf += "\n";
+    else buf += c.nodeType === 3 ? c.nodeValue.replace(/ /g, " ") : inl({ childNodes: [c] });
+  });
+  tom();
+  return ud.filter(function (x) { return x.trim(); }).join("\n\n");
+}
+function mailsRedInput(el) {
+  /* det, der skrives, gemmes i mailen med det samme (uden at tegne siden om, så markøren bliver stående) */
+  if (!MAILS_RET) return; const i = +el.dataset.i, felt = el.dataset.felt, f = MAILS_RET.fliser[i]; if (!f) return;
+  if (felt === "tekst" && f.t !== "knap" && f.t !== "overskrift") f.tekst = mailsFraRed(el);
+  else if (felt === "forslag") f.forslag = mailsFraRed(el);
+  else f[felt] = String(el.innerText || "").replace(/ /g, " ").replace(/\n+/g, " ").trim();
+}
+function mailsRedPaste(e) {
+  /* indsat tekst kommer ind som ren tekst — aldrig fremmed formatering fra Word eller en hjemmeside */
+  e.preventDefault(); const t = (e.clipboardData || window.clipboardData).getData("text/plain"); try { document.execCommand("insertText", false, t); } catch (x) {}
+}
+function mailsRedFelt(i, felt, html, kl, ph, stil) {
+  return '<div class="mrd-red ' + kl + '" contenteditable="true" spellcheck="true" data-i="' + i + '" data-felt="' + felt + '" data-ph="' + esc(ph) + '"' + (stil ? ' style="' + stil + '"' : '') + ' oninput="mailsRedInput(this)" onpaste="mailsRedPaste(event)" onfocus="mailsVaelg(' + i + ', true)">' + html + '</div>';
+}
+function mailsVaelg(i, fraFokus) {
+  if (MAILS_VALGT === i) return;
+  MAILS_VALGT = i;
+  if (fraFokus) {   /* klik i teksten: kun rammen og værktøjerne skifter — teksten tegnes ikke om, så markøren bliver */
+    document.querySelectorAll("#mailsAfsnit .mrd-afs").forEach(function (a) { const on = +a.dataset.i === i; a.classList.toggle("valgt", on); const p = a.querySelector(".mrd-panel"); if (p) p.hidden = !on; });
+    return;
+  }
+  mailsRetVis(MAILS_RET.id);
+}
+function mailsStil(i, k, v) {
+  if (!MAILS_RET || !MAILS_RET.fliser[i]) return; const f = MAILS_RET.fliser[i]; const s = f.s || (f.s = {});
+  if (k === "fed") { const std = f.t === "overskrift"; const nu = s.fed == null ? std : s.fed; s.fed = !nu; }
+  else if (k === "kursiv") s.kursiv = !s.kursiv;
+  else if (v === "") delete s[k]; else s[k] = v;
+  if (k === "just") f.midt = v === "center";   /* den gamle placering følger med, så ældre mails tegnes ens */
+  mailsRetVis(MAILS_RET.id);
+}
+function mailsFormatRed(i, art) {
+  /* KURSIV · LINK · PUNKTER i den markerede tekst */
+  const el = document.querySelector('.mrd-red[data-i="' + i + '"][data-felt="tekst"]'); if (!el) return;
+  el.focus();
+  try {
+    if (art === "kursiv") document.execCommand("italic");
+    else if (art === "punkter") document.execCommand("insertUnorderedList");
+    else if (art === "kode") document.execCommand("insertText", false, "{kollegakode}");
+  } catch (e) {}
+  mailsRedInput(el);
+}
+let MAILS_LINK_SEL = null;
+function mailsLinkStart(i) {
+  /* LINK: husk det markerede, åbn feltet i værktøjerne */
+  const sel = window.getSelection(); MAILS_LINK_SEL = sel && sel.rangeCount && !sel.isCollapsed ? sel.getRangeAt(0).cloneRange() : null;
+  const r = document.getElementById("mrdLink" + i); if (!r) return;
+  if (!MAILS_LINK_SEL) { husBesked("Markér først de ord i teksten, der skal blive til et link."); return; }
+  r.hidden = false; const inp = r.querySelector("input"); if (inp) { inp.value = "https://"; inp.focus(); }
+}
+function mailsLinkBrug(i) {
+  const r = document.getElementById("mrdLink" + i), inp = r && r.querySelector("input"), url = String(inp && inp.value || "").trim();
+  if (!mailsLinkOk(url)) { husBesked("Adressen skal starte med https:// og være en hel adresse."); return; }
+  const el = document.querySelector('.mrd-red[data-i="' + i + '"][data-felt="tekst"]'); if (!el || !MAILS_LINK_SEL) return;
+  el.focus(); const sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(MAILS_LINK_SEL);
+  try { document.execCommand("createLink", false, url); } catch (e) {}
+  MAILS_LINK_SEL = null; r.hidden = true; mailsRedInput(el);
+}
+function mailsPanel(f, i) {
+  const s = f.s || {}, R = MAILS_RET;
+  const rk = function (lb, ind) { return '<div class="mrd-rk"><span class="mrd-lb">' + lb + '</span><div class="ark-chips i-fladen mrd-chips">' + ind + '</div></div>'; };
+  const sc = function (k, v, txt, on) { return MAILS_SC(on, "mailsStil(" + i + ",'" + k + "','" + v + "')", txt); };
+  const prik = function (k, def, liste) { return rk("Farve", liste.map(function (x) { return '<button type="button" class="mrd-prik' + ((s[k] || def) === x[0] ? ' on' : '') + '" style="background:' + MAILS_FARVER[x[0]] + '" aria-label="' + x[1] + '" title="' + x[1] + '" onmousedown="event.preventDefault()" onclick="mailsStil(' + i + ',\'' + k + '\',\'' + x[0] + '\')"></button>'; }).join("")); };
+  const FV = [["sort", "Sort"], ["graa", "Grå"], ["roed", "Rød"]], KF = [["roed", "Rød"], ["sort", "Sort"], ["graa", "Grå"], ["lys", "Lys"]];
+  const skrift = rk("Skrift", sc("font", "", "Poppins", !s.font) + sc("font", "serif", '<span style="font-family:Georgia,serif">Med fødder</span>', s.font === "serif"));
+  const str = rk("Størrelse", ["S", "M", "L", "XL"].map(function (z) { return sc("str", z === "M" ? "" : z, z, (s.str || "M") === z); }).join(""));
+  const fedNu = s.fed == null ? f.t === "overskrift" : s.fed;
+  const udseende = rk("Udseende", MAILS_SC(fedNu, "mailsStil(" + i + ",'fed')", "<b>Fed</b>") + MAILS_SC(!!s.kursiv, "mailsStil(" + i + ",'kursiv')", "<i>Kursiv</i>"));
+  const j = mailsPlacering(f);
+  const placering = rk("Placering", sc("just", "", "Venstre", j === "left") + sc("just", "center", "Midt", j === "center") + sc("just", "right", "Højre", j === "right"));
+  const lng = function (k) { return rk("Længde", sc("lg", "kort", "Kort", s.lg === "kort") + sc("lg", "halv", "Halv", s.lg === "halv") + sc("lg", "", "Hele bredden", !s.lg || s.lg === "hel")); };
+  const maal = function (billede) {
+    const link = String(f.link || "").trim(), fast = MAILS_KNAP_MAAL.find(function (x) { return x.l && x.l === link; }), egen = !!f.egenLink || (!!link && !fast);
+    return rk(billede ? "Link" : "Fører til", (billede ? MAILS_SC(!link && !egen, "mailsBilledeLink(" + i + ",'')", "Intet") : '') + MAILS_KNAP_MAAL.map(function (x) { const on = x.l ? (!egen && fast === x) : egen; return MAILS_SC(on, (billede ? "mailsBilledeLink(" : "mailsKnapMaal(") + i + ",'" + x.k + "')", esc(x.n)); }).join(""))
+      + (egen ? '<input type="url" class="bs3-felt mails-input" id="mailsKl' + i + '" value="' + esc(link) + '" placeholder="https://…" aria-label="Adresse" oninput="MAILS_RET.fliser[' + i + '].link=this.value;mailsLinkVis(' + i + ')">' : '')
+      + '<div class="mails-linkst" id="mailsLs' + i + '">' + mailsLinkStHtml(link).replace("Vælg, hvor knappen fører hen.", billede ? "Billedet fører ingen steder hen." : "Vælg, hvor knappen fører hen.") + '</div>';
+  };
+  let h = "";
+  if (f.t === "hero") h = '<div class="ark-chips i-fladen mrd-chips">' + MAILS_SC(false, "mailsBilledeVaelg('foto')", "Skift foto") + MAILS_SC(false, "mailsBeskaer('foto')", "Beskær") + (R.foto ? MAILS_SC(false, "MAILS_RET.foto='';mailsRetVis(MAILS_RET.id)", "Brug husets foto") : '') + '</div>';
+  else if (f.t === "billede") h = '<div class="ark-chips i-fladen mrd-chips">' + MAILS_SC(false, "mailsBilledeVaelg(" + i + ")", f.src ? "Skift billede" : "Vælg billede") + (f.src ? MAILS_SC(false, "mailsBeskaer(" + i + ")", "Beskær") : '') + '</div>'
+    + (f.src ? rk("Bredde", MAILS_SC(f.bredde !== "halv", "MAILS_RET.fliser[" + i + "].bredde='hel';mailsRetVis(MAILS_RET.id)", "Hele bredden") + MAILS_SC(f.bredde === "halv", "MAILS_RET.fliser[" + i + "].bredde='halv';mailsRetVis(MAILS_RET.id)", "Halv")) + maal(true) : '');
+  else if (f.t === "streg") h = prik("kf", "lys", KF) + lng("lg") + rk("Tykkelse", sc("tk", "", "Tynd", !s.tk) + sc("tk", "2", "Mellem", s.tk === "2") + sc("tk", "4", "Tyk", s.tk === "4")) + placering;
+  else if (f.t === "knap") h = maal(false) + prik("kf", "roed", KF) + lng("lg") + rk("Form", sc("form", "", "Rund", !s.form) + sc("form", "kant", "Firkantet", s.form === "kant") + sc("form", "streg", "Kun kant", s.form === "streg")) + skrift + str + udseende + placering;
+  else if (f.t === "overskrift") h = skrift + str + udseende + prik("farve", "sort", FV) + placering;
+  else {
+    h = rk("I teksten", MAILS_SC(false, "mailsFormatRed(" + i + ",'kursiv')", "<i>Kursiv</i>") + MAILS_SC(false, "mailsLinkStart(" + i + ")", "Link") + MAILS_SC(false, "mailsFormatRed(" + i + ",'punkter')", "Punkter") + (R.egen ? '' : MAILS_SC(false, "mailsFormatRed(" + i + ",'kode')", "Kollegakode")))
+      + '<div class="mrd-linkrk" id="mrdLink' + i + '" hidden><input type="url" class="bs3-felt mails-input" placeholder="https://…" aria-label="Linkets adresse"><div class="ark-chips i-fladen mrd-chips">' + MAILS_SC(true, "mailsLinkBrug(" + i + ")", "Brug linket") + '</div></div>'
+      + skrift + str + udseende + prik("farve", "sort", FV) + placering;
+    const dele = (String(f.et || "").trim() ? MAILS_SC(false, "mailsOverskriftUd(" + i + ")", "Overskriften på egen flise") + MAILS_SC(false, "mailsFeltSlet(" + i + ",'et')", "Fjern overskriften") : '')
+      + (f.harKode ? MAILS_SC(false, "mailsFeltSlet(" + i + ",'kode')", "Fjern rabatkoden") : '') + (f.knap ? MAILS_SC(false, "mailsFeltSlet(" + i + ",'knap')", "Fjern knappen") : '') + (f.lille != null ? MAILS_SC(false, "mailsFeltSlet(" + i + ",'lille')", "Fjern den lille tekst") : '');
+    if (dele) h += rk("Dele", dele);
+  }
+  return '<div class="mrd-panel"' + (MAILS_VALGT === i ? '' : ' hidden') + '>' + h + '</div>';
+}
+function mailsAfsnitHtml(f, i, n, skrald) {
+  const s = f.s || {}, R = MAILS_RET, j = mailsPlacering(f);
+  let ind = "";
+  if (f.t === "hero") ind = '<img class="mrd-hero" src="' + esc(R.foto && R.foto !== "ingen" ? R.foto : MAILS_STD_FOTO) + '" alt="" onclick="mailsVaelg(' + i + ')">';
+  else if (f.t === "billede") ind = f.src ? '<img class="mrd-bill' + (f.bredde === "halv" ? ' halv' : '') + '" src="' + esc(f.src) + '" alt="" onclick="mailsVaelg(' + i + ')">' : '<button type="button" class="mrd-tombill" onclick="mailsVaelg(' + i + ');mailsBilledeVaelg(' + i + ')">Vælg billede</button>';
+  else if (f.t === "streg") { const tk = Math.max(1, parseInt(s.tk, 10) || 1); ind = '<div class="mrd-streg" onclick="mailsVaelg(' + i + ')" style="justify-content:' + (j === "center" ? "center" : j === "right" ? "flex-end" : "flex-start") + '"><i style="width:' + (s.lg === "kort" ? "30%" : s.lg === "halv" ? "50%" : "100%") + ';height:' + tk + 'px;background:' + (MAILS_FARVER[s.kf] || "#DEDAD4") + '"></i></div>'; }
+  else if (f.t === "knap") { const farve = MAILS_FARVER[s.kf] || "#FC2404", kant = s.form === "streg";
+    const st = 'background:' + (kant ? '#fff' : farve) + ';color:' + (kant ? farve : (s.kf === "lys" ? "#1A1A1A" : "#fff")) + ';' + (kant ? 'box-shadow:inset 0 0 0 2px ' + farve + ';' : '') + 'border-radius:' + (s.form === "kant" ? "8px" : "999px") + ';' + (s.lg === "kort" ? 'width:auto;padding-left:32px;padding-right:32px;' : s.lg === "halv" ? 'width:50%;' : 'width:100%;') + mailsStilCss(s, "knap");
+    ind = '<div class="mrd-knaprk" style="justify-content:' + (j === "center" ? "center" : j === "right" ? "flex-end" : "flex-start") + '">' + mailsRedFelt(i, "tekst", esc(f.tekst || ""), "mrd-knap", "Tekst på knappen", st) + '</div>'; }
+  else if (f.t === "overskrift") ind = '<div class="mrd-kort">' + mailsRedFelt(i, "tekst", esc(f.tekst || ""), "mrd-ov", "Skriv overskriften", "text-align:" + j + ";" + mailsStilCss(s, "ov")) + '</div>';
+  else {
+    ind = '<div class="mrd-kort">'
+      + (String(f.et || "").trim() ? mailsRedFelt(i, "et", esc(f.et), "mrd-ov", "Overskrift", "text-align:" + j + ";") : '')
+      + mailsRedFelt(i, "tekst", mailsRedHtml(f.tekst), "mrd-tx", "Skriv teksten", "text-align:" + j + ";" + mailsStilCss(s, "tekst"))
+      + (String(f.forslag || "").trim() ? '<div class="mrd-forslag"><div class="mrd-fet">Ikke dine ord</div>' + mailsRedFelt(i, "forslag", mailsRedHtml(f.forslag), "mrd-tx", "") + '<button type="button" class="dbtn mq-tap bs3-lang mrd-mine" onclick="mailsRetMine(' + i + ')">Det er mine ord</button></div>' : '')
+      + (f.harKode ? '<div class="mrd-kode"><div class="mrd-fet">Din kode</div>' + mailsRedFelt(i, "kode", esc(f.kode || ""), "mrd-kodetx", "Koden mangler") + '</div>' : '')
+      + (f.knap ? '<div class="mrd-knaprk" style="justify-content:center">' + mailsRedFelt(i, "knap", esc(f.knap), "mrd-knap", "Tekst på knappen", "width:100%;") + '</div>' : '')
+      + (f.lille != null ? mailsRedFelt(i, "lille", esc(f.lille || ""), "mrd-lille", "Lille tekst under knappen") : '')
+      + '</div>';
+  }
+  const pil = function (d, op) { const af = op ? i === 0 : i >= n - 1; return '<button type="button" class="ark-chip mrd-vk" aria-label="' + (op ? 'Flyt op' : 'Flyt ned') + '" title="' + (op ? 'Flyt op' : 'Flyt ned') + '"' + (af ? ' disabled' : ' onclick="mailsRetFlyt(' + i + ',' + d + ')"') + '><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="' + (op ? 'M6 15l6-6 6 6' : 'M6 9l6 6 6-6') + '"/></svg></button>'; };
+  const vaerk = '<div class="ark-chips i-fladen mrd-vaerk">' + pil(-1, true) + pil(1, false) + '<button type="button" class="ark-chip mrd-vk" aria-label="Slet afsnittet" title="Slet afsnittet" onclick="mailsRetSlet(' + i + ')">' + skrald + '</button></div>';
+  return '<div class="mrd-afs mails-retfl' + (MAILS_VALGT === i ? ' valgt' : '') + '" data-i="' + i + '" onclick="if(!event.target.closest(\'.mrd-red,button,input\'))mailsVaelg(' + i + ')">'
+    + '<span class="mrd-greb" data-greb="' + i + '" title="Træk for at flytte" aria-hidden="true"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></svg></span>'
+    + vaerk + ind + mailsPanel(f, i) + '</div>';
+}
+function mailsPlusRk(i) { return '<div class="mrd-plus"><button type="button" class="mrd-plusk" aria-label="Sæt et afsnit ind her" title="Sæt et afsnit ind her" onclick="MAILS_IND=' + i + ';mailsRetTilfoej()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button></div>'; }
 function mailsRetVis(id) {
   const m = mailsFind(id); const el = mailsHost(); if (!m || !el) return;
-  if (!MAILS_RET || MAILS_RET.id !== id) MAILS_RET = { id: id, egen: !!m.egen, navn: m.navn || "", kilde: m.kilde || "", til: m.til || "", udv: (m.udv || []).slice(), emne: m.emne || "", fra: m.fra || "Energida", foto: m.foto || "", fliser: mailsKopi(m.fliser || []) };
-  /* det store foto står i listen som afsnittet »Stort foto« (øverst, til det flyttes); intet foto = intet afsnit */
+  if (!MAILS_RET || MAILS_RET.id !== id) { MAILS_RET = { id: id, egen: !!m.egen, navn: m.navn || "", kilde: m.kilde || "", til: m.til || "", udv: (m.udv || []).slice(), emne: m.emne || "", fra: m.fra || "Energida", foto: m.foto || "", fliser: mailsKopi(m.fliser || []) }; MAILS_VALGT = -1; }
+  /* det store foto står i mailen som et afsnit (øverst, til det flyttes); intet foto = intet afsnit */
   if (MAILS_RET.foto === "ingen") MAILS_RET.fliser = MAILS_RET.fliser.filter(function (f) { return f.t !== "hero"; });
   else if (!MAILS_RET.fliser.some(function (f) { return f.t === "hero"; })) MAILS_RET.fliser.unshift({ t: "hero" });
   mailsPlus(false);
-  const R = MAILS_RET;
-  const skrald = (typeof BS_SKRALD_SVG !== "undefined") ? BS_SKRALD_SVG : "";
-  const fotoUrl = R.foto || MAILS_STD_FOTO;
-  const ret = '<div class="mails-ret-side">'
+  const R = MAILS_RET, n = R.fliser.length;
+  if (MAILS_VALGT >= n) MAILS_VALGT = -1;
+  const skrald = (typeof BS_SKRALD_SVG !== "undefined") ? BS_SKRALD_SVG : "Slet";
+  const side = '<div class="mrd-side">'
     + (R.egen ? '<div class="mails-blok"><div class="mails-e">Hvem skal have den?</div><div class="bs3-fl"><div class="ark-chips i-fladen mails-til">' + MAILS_TIL.map(function (t) { return '<button type="button" class="ark-chip' + (R.til === t.k ? ' on' : '') + '" onclick="MAILS_RET.til=\'' + t.k + '\';mailsRetVis(MAILS_RET.id)">' + esc(t.n) + '</button>'; }).join("") + '</div>' + (R.til === "udvalgte" ? '<div class="udv-valgt">' + ((R.udv || []).length ? (R.udv.length === 1 ? '1 kunde valgt' : R.udv.length + ' kunder valgt') : 'Ingen valgt endnu') + '</div><button type="button" class="dbtn mq-tap bs3-lang" onclick="mailsUdvAabn()">Vælg kunder</button>' : '') + '</div></div>' : '')
     + (R.egen ? '' : '<div class="mails-blok"><div class="mails-e">Mailens navn</div><div class="bs3-fl"><input type="text" class="bs3-felt mails-input" id="mailsNavn" value="' + esc(R.navn) + '" placeholder="Giv mailen et navn" oninput="MAILS_RET.navn=this.value" aria-label="Mailens navn"></div></div>')
     + '<div class="mails-blok"><div class="mails-e">Emne</div><div class="bs3-fl"><input type="text" class="bs3-felt mails-input" id="mailsEmne" value="' + esc(R.emne) + '" placeholder="Skriv emnet" oninput="MAILS_RET.emne=this.value" aria-label="Emne"></div></div>'
-    + '<div class="mails-blok"><div class="mails-e">Fra</div><div class="bs3-fl"><div class="mails-felter"><label class="mails-lbl" for="mailsFra">Navn</label><input type="text" class="bs3-felt mails-input" id="mailsFra" value="Energida" disabled><label class="mails-lbl" for="mailsFraMail">Mail</label><input type="text" class="bs3-felt mails-input" id="mailsFraMail" value="Kontakt@energida.dk" disabled></div></div></div>'
-    + '<div class="mails-afsnit" id="mailsAfsnit">' + R.fliser.map(function (f, i) { return mailsRetFlise(f, i, skrald); }).join("") + '</div>'
-    + '<button type="button" class="dbtn mq-tap bs3-lang mails-tilfoej" onclick="mailsRetTilfoej()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Tilføj afsnit</button>'
-    + (R.kilde === "supabase" ? '<div class="mails-kvit">Login-mailen sendes efter hvert køb med præcis denne tekst, når den nye købsfunktion er lagt ind (Teknik › SQL-kort). Knappen er kundens eget link til at vælge adgangskode.</div>' : '')
+    + '<div class="mails-blok"><div class="mails-e">Fra</div><div class="bs3-fl"><div class="mrd-fra">Energida · Kontakt@energida.dk</div></div></div>'
+    + (R.kilde === "supabase" ? '<div class="mails-kvit">Login-mailen sendes efter hvert køb med præcis denne tekst. Knappen er kundens eget link til at vælge adgangskode.</div>' : '')
     + '<div class="mails-bund"><button type="button" class="dbtn primary mq-tap bs3-lang" onclick="mailsRetGem()">Gem</button><button type="button" class="dbtn mq-tap bs3-lang" onclick="mailsAabn(\'' + id + '\')">Annuller</button></div>'
+    + '<div class="mrd-hj">Klik på et afsnit for at rette i det. Træk i håndtaget for at flytte det, eller brug pilene. »+« sætter noget nyt ind lige dér.</div>'
     + '</div>';
-  el.innerHTML = '<div class="bs3 mails mails-ret' + (MAILS_SE ? ' se-mail' : '') + '">'
-    + '<div class="ark-chips i-fladen mails-tlf-valg"><button type="button" class="ark-chip' + (MAILS_SE ? '' : ' on') + '" onclick="MAILS_SE=false;mailsRetVis(MAILS_RET.id)">Ret</button><button type="button" class="ark-chip' + (MAILS_SE ? ' on' : '') + '" onclick="MAILS_SE=true;mailsRetVis(MAILS_RET.id)">Se mailen</button></div>'
-    + '<div class="mails-to">' + ret + '<div class="mails-forh mails-ret-forh"><iframe class="mails-ramme" id="mailsRamme" title="Mailen" scrolling="no"></iframe></div></div></div>';
+  const mail = '<div class="mrd-mail"><div class="mrd-ml" id="mailsAfsnit">' + mailsPlusRk(0) + R.fliser.map(function (f, i) { return mailsAfsnitHtml(f, i, n, skrald) + mailsPlusRk(i + 1); }).join("") + '</div>'
+    + '<div class="mrd-fod">Er der noget, der driller? Så svar på denne mail.</div></div>';
+  el.innerHTML = '<div class="bs3 mails mails-ret mrd"><div class="mrd-to">' + mail + side + '</div></div>';
   const m2 = mailsFind(id);
   mailsSti([{ navn: "Hjem", klik: "visDashSide('overblik')" }, { navn: "Mails", klik: "mailsTegn()" }, { navn: (m2 && m2.navn) || "Mailen", klik: "mailsAabn('" + id + "')" }, { navn: "Ret mailen" }], function () { mailsAabn(id); });
-  /* INTET KLIPPES (22/7): felterne vokser med teksten */
-  el.querySelectorAll(".mails-tekst").forEach(function (t) { mailsVoks(t); t.addEventListener("input", function () { mailsVoks(t); }); });
+  try { document.execCommand("defaultParagraphSeparator", false, "p"); } catch (e) {}
   mailsGrebLyt();
-  const f = document.getElementById("mailsRamme"); if (f) f.addEventListener("load", function () { mailsRammePas(f); setTimeout(function () { mailsRammePas(f); }, 400); setTimeout(function () { mailsRammePas(f); }, 1500); });
-  mailsRetForh(true);
 }
 function mailsVoks(t) { try { t.style.height = "auto"; t.style.height = Math.max(120, t.scrollHeight + 2) + "px"; } catch (e) {} }
 let MAILS_FORH_T = null;
@@ -96687,7 +96816,7 @@ function mailsRetForh(nu) {
 }
 function mailsRetTilfoej() {
   const harFoto = MAILS_RET && MAILS_RET.fliser.some(function (f) { return f.t === "hero"; });
-  valgFliseArk("Tilføj afsnit", [["Overskrift", "mailsRetNy('overskrift')", "tekst"], ["Tekst", "mailsRetNy('tekst')", "tekst"], ["Billede", "mailsRetNy('billede')", "scene"]].concat(harFoto ? [] : [["Stort foto", "mailsRetNy('hero')", "scene"]]).concat([["Knap", "mailsRetNy('knap')", "cta"]]));
+  valgFliseArk("Tilføj afsnit", [["Overskrift", "mailsRetNy('overskrift')", "tekst"], ["Tekst", "mailsRetNy('tekst')", "tekst"], ["Billede", "mailsRetNy('billede')", "scene"]].concat(harFoto ? [] : [["Stort foto", "mailsRetNy('hero')", "scene"]]).concat([["Knap", "mailsRetNy('knap')", "cta"], ["Skillestreg", "mailsRetNy('streg')", "tekst"]]));
   try { const a = document.querySelector("#bsFlytMenu .valg-fliser"); if (a) a.classList.add("mails-valg"); } catch (e) {}   /* symbolfelterne i husets lyseblå (låst 14/11) */
 }
 /* EGEN FLISE (Ida 15/11): tekstafsnittets overskrift bliver sit eget afsnit lige over teksten — derefter kan den flyttes frit */
@@ -96699,7 +96828,7 @@ function mailsOverskriftUd(i) {
 /* PILENE (Idas klik 15/11): flytter afsnittet én plads op eller ned */
 function mailsRetFlyt(i, d) {
   if (!MAILS_RET) return; const a = MAILS_RET.fliser, j = i + d; if (j < 0 || j >= a.length) return;
-  const x = a[i]; a[i] = a[j]; a[j] = x; mailsRetVis(MAILS_RET.id);
+  const x = a[i]; a[i] = a[j]; a[j] = x; if (MAILS_VALGT === i) MAILS_VALGT = j; mailsRetVis(MAILS_RET.id);
   setTimeout(function () { try { const e = document.querySelector('.mails-retfl[data-i="' + j + '"]'); if (e) e.scrollIntoView({ block: "nearest", behavior: "smooth" }); } catch (x2) {} }, 30);
 }
 /* LINK PÅ BILLEDET (Idas klik 15/11): samme mål som knapperne, eller intet */
@@ -96726,17 +96855,19 @@ function mailsFormat(i, art) {
   mailsRetForh();
 }
 function mailsRetNy(t) {
+  /* »+« MELLEM AFSNITTENE (Idas klik 15/11): det nye afsnit kommer lige dér, hvor der blev trykket — ellers nederst */
   if (!MAILS_RET) return;
-  if (t === "hero") { MAILS_RET.foto = ""; MAILS_RET.fliser.unshift({ t: "hero" }); mailsRetVis(MAILS_RET.id); return; }   /* det store foto kommer øverst; pilene flytter det */
-  MAILS_RET.fliser.push(t === "billede" ? { t: "billede", src: "" } : t === "knap" ? { t: "knap", tekst: "", link: "" } : t === "overskrift" ? { t: "overskrift", tekst: "" } : { et: "", tekst: "" });
-  const n = MAILS_RET.fliser.length - 1;
+  const at = MAILS_IND >= 0 && MAILS_IND <= MAILS_RET.fliser.length ? MAILS_IND : MAILS_RET.fliser.length; MAILS_IND = -1;
+  if (t === "hero") MAILS_RET.foto = "";
+  MAILS_RET.fliser.splice(at, 0, t === "hero" ? { t: "hero" } : t === "billede" ? { t: "billede", src: "" } : t === "knap" ? { t: "knap", tekst: "", link: "" } : t === "overskrift" ? { t: "overskrift", tekst: "" } : t === "streg" ? { t: "streg" } : { et: "", tekst: "" });
+  MAILS_VALGT = at;
   mailsRetVis(MAILS_RET.id);
-  setTimeout(function () { const e = document.querySelector('.mails-retfl[data-i="' + n + '"]'); if (e) e.scrollIntoView({ behavior: "smooth", block: "center" }); if (t === "billede") mailsBilledeVaelg(n); else { const x = e && e.querySelector("input,textarea"); if (x) x.focus(); } }, 60);
+  setTimeout(function () { const e = document.querySelector('.mrd-afs[data-i="' + at + '"]'); if (e) e.scrollIntoView({ behavior: "smooth", block: "center" }); if (t === "billede") mailsBilledeVaelg(at); else { const x = e && e.querySelector(".mrd-red"); if (x) x.focus(); } }, 60);
 }
 function mailsRetSlet(i) {
   if (!MAILS_RET) return;
   const erFoto = MAILS_RET.fliser[i] && MAILS_RET.fliser[i].t === "hero";
-  arkSpoerg({ titel: erFoto ? "Fjern det store foto?" : "Slet afsnittet?", tekst: (erFoto ? "Mailen får intet stort foto" : "Afsnittet forsvinder fra mailen") + ", når du trykker Gem.", jaTekst: erFoto ? "Fjern" : "Slet", nejTekst: "Annuller", ja: function () { MAILS_RET.fliser.splice(i, 1); if (erFoto) MAILS_RET.foto = "ingen"; mailsRetVis(MAILS_RET.id); } });
+  arkSpoerg({ titel: erFoto ? "Fjern det store foto?" : "Slet afsnittet?", tekst: (erFoto ? "Mailen får intet stort foto" : "Afsnittet forsvinder fra mailen") + ", når du trykker Gem.", jaTekst: erFoto ? "Fjern" : "Slet", nejTekst: "Annuller", ja: function () { MAILS_RET.fliser.splice(i, 1); if (erFoto) MAILS_RET.foto = "ingen"; MAILS_VALGT = -1; mailsRetVis(MAILS_RET.id); } });
 }
 /* DU KAN SELV SLETTE DE ENKELTE DELE (Ida 11/11: »kan du gøre sådan at jeg også selv kan slette de forskellige elementer?«): overskrift, knap og lille tekst fjernes fra mailen, naar du trykker Gem — indtil da kan du fortryde ved at annullere */
 function mailsFeltSlet(i, felt) {
@@ -96896,7 +97027,7 @@ async function mailsRetGem() {
   const daarlig = R.fliser.find(function (f) { return f.t === "knap" && String(f.tekst || "").trim() && !mailsLinkOk(f.link); });
   if (daarlig) { husBesked("Knappen »" + String(daarlig.tekst).trim() + "« mangler et gyldigt link. Vælg, hvor den fører hen, før du gemmer."); return; }
   const fliser = R.fliser.map(function (f) { const x = Object.assign({}, f); delete x.egenLink; if (x.t === "knap" && x.link != null) x.link = String(x.link || "").trim(); if (x.et != null) x.et = String(x.et || "").trim(); if (x.tekst != null) x.tekst = String(x.tekst || "").replace(/\s+$/, ""); return x; })
-    .filter(function (f) { if (f.t === "hero") return R.foto !== "ingen"; if (f.t === "overskrift") return !!String(f.tekst || "").trim(); if (f.t === "billede") return !!f.src; if (f.t === "knap") return String(f.tekst || "").trim() || String(f.link || "").trim(); return f.et || String(f.tekst || "").trim() || String(f.forslag || "").trim() || f.harKode || f.knap; });
+    .filter(function (f) { if (f.t === "hero") return R.foto !== "ingen"; if (f.t === "streg") return true; if (f.t === "overskrift") return !!String(f.tekst || "").trim(); if (f.t === "billede") return !!f.src; if (f.t === "knap") return String(f.tekst || "").trim() || String(f.link || "").trim(); return f.et || String(f.tekst || "").trim() || String(f.forslag || "").trim() || f.harKode || f.knap; });
   await mailsHent();
   const felles = { emne: String(R.emne || "").trim(), fra: String(R.fra || "").trim() || "Energida", foto: R.foto || "", fliser: fliser, rettet: new Date().toISOString() };
   const ny = Object.assign({}, MAILS_GEMT || {});
@@ -96987,6 +97118,77 @@ html body.has-nav #sideNav .sn-item.on, html body.has-nav #sideNav .sn-item:hove
 html body.dash-nav .dash-sidebar .dsb-item.on, html body.bs-forfra.dash-nav .dash-sidebar .dsb-item.on:not(.dsb-under), html body.dash-nav .dash-sidebar .dsb-item:hover { color:#1A1A1A; background:#F1EFEA; }
 
 .mails-liste > .bs3-fl { margin:0; }
+/* RET DIREKTE I MAILEN (Idas klik 15/11, artifact K41jEYGPbRSJY2fYPys9dx): mailen er redigeringen · grå kanter #DEDAD4 · chips hvide med grå kant · ingen versaler i fliser */
+.mrd-to { display:grid; grid-template-columns:minmax(0,1fr) 320px; gap:32px; align-items:start; }
+.mrd-side { display:flex; flex-direction:column; gap:var(--luft-3, 24px); position:sticky; top:16px; }
+.mrd-side .mails-bund { margin-top:0; }
+.mrd-hj { font-size:13px; line-height:20px; color:#6F6B66; }
+.mrd-fra { font-size:14px; color:#6F6B66; }
+.mrd-mail { background:#F2F0ED; border-radius:24px; padding:20px 20px 28px; display:flex; flex-direction:column; align-items:center; gap:12px; min-width:0; }
+.mrd-ml { width:100%; max-width:600px; display:flex; flex-direction:column; }
+.mrd-fod { font-size:14px; color:#1A1A1A; text-align:center; padding-top:16px; }
+.mrd-afs { position:relative; border-radius:18px; outline:2px solid transparent; outline-offset:4px; transition:outline-color .12s; }
+.mrd-afs:hover { outline-color:#DEDAD4; }
+.mrd-afs.valgt { outline-color:#FC2404; }
+.mrd-afs.mails-loeftet { opacity:.5; }
+.mrd-greb { position:absolute; left:-44px; top:8px; width:32px; height:32px; border-radius:50%; background:#fff; box-shadow:0 0 0 1px #DEDAD4; display:flex; align-items:center; justify-content:center; color:#6F6B66; cursor:grab; opacity:0; transition:opacity .12s; touch-action:none; }
+.mrd-greb svg { width:14px; height:14px; }
+.mrd-afs:hover .mrd-greb, .mrd-afs.valgt .mrd-greb { opacity:1; }
+.mrd-vaerk { position:absolute !important; right:8px; top:-18px; z-index:3; display:none !important; gap:6px !important; flex-wrap:nowrap !important; }
+.mrd-afs.valgt .mrd-vaerk { display:flex !important; }
+html body .mrd-vk { width:36px !important; height:36px !important; min-width:36px !important; padding:0 !important; border-radius:50% !important; background:#fff !important; box-shadow:0 0 0 1px #DEDAD4 !important; border:0 !important; display:inline-flex !important; align-items:center !important; justify-content:center !important; color:#6F6B66 !important; }
+.mrd-vk svg { width:16px; height:16px; }
+.mrd-vk[disabled] { opacity:.35; }
+.mrd-hero { display:block; width:100%; height:300px; object-fit:cover; border-radius:12px; cursor:pointer; }
+.mrd-bill { display:block; width:100%; height:auto; border-radius:12px; cursor:pointer; }
+.mrd-bill.halv { width:50%; margin:0 auto; }
+html body .mrd-tombill { width:100%; height:120px; border-radius:16px; border:1.5px dashed #CFCAC3; background:#fff; color:#6F6B66; font:400 14px Poppins,sans-serif; cursor:pointer; }
+.mrd-kort { background:#fff; border:1px solid #EDEAE5; border-radius:16px; padding:20px 22px; display:flex; flex-direction:column; gap:12px; }
+.mrd-red { outline:none; min-height:1.4em; font-family:Poppins,Arial,sans-serif; color:#1A1A1A; cursor:text; overflow-wrap:anywhere; }
+.mrd-red:empty::before { content:attr(data-ph); color:#9A9590; }
+.mrd-ov { font-size:20px; font-weight:600; line-height:1.3; }
+.mrd-tx { font-size:15px; line-height:1.6; }
+.mrd-tx p { margin:0 0 12px; } .mrd-tx p:last-child { margin-bottom:0; }
+.mrd-tx ul { margin:0 0 12px; padding-left:22px; text-align:left; } .mrd-tx li { margin:0 0 4px; }
+.mrd-tx a { color:inherit; text-decoration:underline; }
+.mrd-forslag { padding-left:12px; border-left:2px solid #DEDAD4; display:flex; flex-direction:column; gap:6px; }
+.mrd-forslag .mrd-red { color:#6F6B66; }
+.mrd-fet { font-size:12px; color:#9A9590; }
+.mrd-kode { border:1px solid #DEDAD4; border-radius:14px; padding:12px 14px; display:flex; flex-direction:column; gap:4px; }
+.mrd-kodetx { font-size:16px; letter-spacing:1px; color:#FC2404; }
+.mrd-knaprk { display:flex; }
+.mrd-knap { background:#FC2404; color:#fff; border-radius:999px; text-align:center; padding:15px 20px; font-size:17px; box-sizing:border-box; max-width:100%; }
+.mrd-knap:empty::before { color:rgba(255,255,255,.75); }
+.mrd-lille { font-size:12px; line-height:1.6; color:#6F6B66; text-align:center; }
+.mrd-streg { display:flex; padding:14px 0; cursor:pointer; }
+.mrd-streg i { display:block; }
+.mrd-plus { height:48px; display:flex; align-items:center; justify-content:center; }
+html body .mrd-plusk { width:32px; height:32px; min-width:32px; padding:0; border-radius:50%; border:0; background:#fff; box-shadow:0 0 0 1px #DEDAD4; color:#6F6B66; display:inline-flex; align-items:center; justify-content:center; cursor:pointer; opacity:0; transition:opacity .12s; }
+.mrd-plusk svg { width:16px; height:16px; }
+.mrd-ml:hover .mrd-plusk, .mrd-plusk:focus-visible { opacity:1; }
+.mrd-panel { margin-top:12px; background:#fff; border-radius:16px; box-shadow:0 0 0 1px #DEDAD4; padding:14px 16px; display:flex; flex-direction:column; gap:10px; }
+.mrd-panel[hidden] { display:none !important; }
+.mrd-rk { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+.mrd-lb { font-size:13px; color:#6F6B66; width:84px; flex:none; }
+.mrd-chips { display:flex !important; flex-wrap:wrap !important; gap:8px !important; flex:1; min-width:0; }
+html body .mrd-sc { height:32px; display:inline-flex; align-items:center; justify-content:center; line-height:1; }
+html body .mrd-prik { width:32px; height:32px; min-width:32px; padding:0; border-radius:50%; border:0; box-shadow:0 0 0 1px #DEDAD4; cursor:pointer; }
+html body .mrd-prik.on { box-shadow:0 0 0 2px #fff, 0 0 0 4px #1A1A1A; }
+.mrd-linkrk { display:flex; flex-direction:column; gap:8px; }
+.mrd-linkrk[hidden] { display:none !important; }
+@media (max-width:1100px) { .mrd-to { grid-template-columns:1fr; } .mrd-side { position:static; } }
+@media (max-width:760px) {
+  .mrd-mail { padding:14px 12px 20px; border-radius:20px; }
+  .mrd-greb { left:-6px; top:-24px; opacity:1; width:44px; height:44px; z-index:3; }
+  .mrd-afs { outline-offset:2px; }
+  .mrd-afs.valgt { padding-top:30px; }   /* pilene og skraldespanden står over afsnittet, aldrig oven i teksten */
+  .mrd-vaerk { right:-4px; top:-22px; }
+  html body .mrd-vk, html body .mrd-plusk, html body .mrd-prik { width:44px !important; height:44px !important; min-width:44px !important; opacity:1; }
+  html body .mails .mrd-sc, html body .mails .ark-chips .mrd-sc { height:44px !important; min-height:44px !important; max-height:none !important; }
+  .mrd-lb { width:100%; }
+  .mrd-hero { height:200px; }
+  .mrd-plus { height:56px; }
+}
 /* MAILBYGGEREN (Idas klik 15/11, artifact 8UVw3Hg73NHmyER7PnJEUS): pile ved afsnittene, knaprækker, chips der ombrydes, værktøjer i teksten, lyseblå symbolfelter, beskæringsarket */
 .mails-ehk { display:inline-flex; align-items:center; gap:6px; }
 .mails-pil { width:36px; height:36px; min-width:36px; min-height:36px; border-radius:50%; border:1px solid #DEDAD4; background:#fff; color:#6F6B66; display:inline-flex; align-items:center; justify-content:center; padding:0; cursor:pointer; }
