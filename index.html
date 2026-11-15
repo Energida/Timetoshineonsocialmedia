@@ -45256,7 +45256,7 @@ function lekMbSide(l, modul, aktive, setAntal, tilstand) {
       + '<div class="lk-rk"><span>' + storStart(oevOrd(l.id, true)) + '</span><span>' + (harOv ? (l.ovelse.length + ' spørgsmål · ' + (ovTaget ? 'taget' : (KURSUS_UDSAT[l.id] ? 'venter' : 'ikke begyndt'))) : 'Ingen') + '</span></div>'
       + '<div class="lk-rk"><span>Noter</span><span>' + (noter ? noter + (noter === 1 ? ' note' : ' noter') : 'Ingen endnu') + '</span></div>';
     return lekMbRingBoks(setAntal, "af " + aktive.length + " lektioner", pct, rk,
-      lekMbPil("Alle noter", "lekNoterVis()") + lekMbPil("Til " + lekSideNavn().toLowerCase(), "lekForloebVis()"));
+      lekMbPil("Til " + lekSideNavn().toLowerCase(), "lekForloebVis()"));
   }
   if (tilstand === "oevelse") {
     const o = OVELSE, bl = KURSUS_LEKTIONER.find(x => x.id === mgBasisId(o.id));
@@ -45332,7 +45332,7 @@ function lekMbRender() {
     + '<div class="lk-flise' + (noteAaben ? '' : ' luk') + '" id="lekNotePanel">'
     + '<div class="lk-note-krop"><div class="lk-vaerktoej">' + vk + '</div>'
     + '<div class="lk-felt-ramme"><div class="lk-note-felt" id="lekNoteFelt" contenteditable="true" data-ph="Tilføj det, du vil huske …" oninput="lekNoteSnart()" onkeyup="lekNoteVaerktoejOpdater()" onmouseup="lekNoteVaerktoejOpdater()" onfocus="lekNoteFokus()">' + (gemt ? lekNoteRen(gemt.html) : '') + '</div></div>'
-    + '<div class="lk-note-fod"><span class="lk-note-gemt">Gemmes af sig selv</span><button type="button" class="lk-note-alle" onclick="lekNoterVis()">Alle noter</button></div>'   /* husets graa knap, ikke et roedt ord i etiketten (Idas kommentar 24/9) */
+    + '<div class="lk-note-fod"><span class="lk-note-gemt">Gemmes af sig selv</span></div>'   /* »ALLE NOTER« ER FJERNET FRA NOTEFELTET (Ida 15/11, testperson) — noterne findes i notesbogen i Værktøjskassen */   /* husets graa knap, ikke et roedt ord i etiketten (Idas kommentar 24/9) */
     + '<div class="lek-note-liste" id="lekNoteListe"></div>'
     + '</div></div>'
     + (l.ovelse && mgErGentagelig(id) ? lekGjortHtml(id) : '')   /* den gentagelige målgruppe-øvelse beholder sin cirkel */
@@ -45691,7 +45691,9 @@ function lekSkemaIntroStart() { window.__SKEMA_INTRO_SET = true; const pl = docu
   try { const lv = document.getElementById("lekVis"); const bd = lv && lv.querySelector(":scope > .mb-baand"); if (bd && typeof coverKnapperUd === "function") [60, 400].forEach(function (ms) { setTimeout(function () { try { coverKnapperUd(bd, [], 16, null, lv); } catch (e) {} }, ms); }); } catch (e) {}
 }
 function lekSkemaGjortHtml() {
-  return '<div class="lk-skema-gjort"><div class="lsg-t">Tusind tak! Dine svar er sendt til <span style="white-space:nowrap">Energida. ' + energidaFlueben(13) + '</span></div><button type="button" class="lsg-knap" onclick="lekSkemaVidere()">Videre til næste lektion</button></div>';
+  /* Idas ord 15/11 (testperson): »Dit spørgeskema er modtaget! Modul 1 venter på dig.« · »Gå til modul 1« — nummeret er modulet efter skemaets */
+  let mn = "1"; try { const mf = Number(modulNrFor(LEK_AABEN)); if (!isNaN(mf)) mn = String(modulVisNr(mf + 1)); } catch (e) {}
+  return '<div class="lk-skema-gjort"><div class="lsg-t">Dit spørgeskema er modtaget! <span style="white-space:nowrap">Modul ' + esc(mn) + ' venter på dig. ' + energidaFlueben(13) + '</span></div><button type="button" class="lsg-knap" onclick="lekSkemaVidere()">Gå til modul ' + esc(mn) + '</button></div>';
 }
 function lekSkemaUd() {
   if (!LEK_SKEMA) return;
@@ -45702,7 +45704,9 @@ function lekSkemaUd() {
 /* EFTER SEND: videre til den første lektion, der ikke er set — ellers bliver man på lektionen, man kom fra */
 function lekSkemaVidere() {
   const fra = LEK_AABEN; lekSkemaUd();
-  let naeste = null; try { naeste = kursusLektionerAktive().find(function (x) { return !KURSUS_SET[x.id] && !ygtModulLaast(modulNrFor(x.id)); }); } catch (e) {}
+  /* VIDERE = NÆSTE MODUL (Ida 15/11, testperson: »jeg lander igen på modul 0 — her skal jeg lande på modul 1«): første lektion i modulet efter skemaets */
+  let naeste = null; try { const mf = modulNrFor(fra); naeste = kursusLektionerAktive().find(function (x) { return Number(modulNrFor(x.id)) > Number(mf) && !ygtModulLaast(modulNrFor(x.id)); }); } catch (e) {}
+  if (!naeste) { try { naeste = kursusLektionerAktive().find(function (x) { return !KURSUS_SET[x.id] && !ygtModulLaast(modulNrFor(x.id)); }); } catch (e) {} }
   if (naeste && naeste.id !== fra) visLektion(naeste.id); else renderLektionVis();
 }
 /* SPØRGESKEMAET ER 0.6 (Ida 1/11: »spørgeskemaet skal være 0.6«): sidst i modulet med nummeret efter den sidste lektion — vælter 26/10's »lige under Velkommen« */
@@ -58560,13 +58564,13 @@ const SKEMAER = {
       { t:"choice", q:"Hvor mange timer bruger du på at arbejde med sociale medier om ugen?", o:["Over 10 timer","6–10 timer","3–5 timer","1–2 timer","Under 1 time"] },
       { t:"scale",  q:"Hvor tryg er du ved at lave content?", lo:"Det gør jeg helst ikke", hi:"Det er det letteste, jeg ved" },
       { t:"scale",  q:"Hvordan er din energi for tiden?", lo:"Fladmast", hi:"Duracell" },
-      { t:"choice", q:"Er du stolt af det indtryk, man får, når man besøger din profil?", o:["Ja","Delvist","Nej"] },
-      { t:"open",   q:"Hvad er det sværeste ved SoMe for dig lige nu?" },
-      { t:"open",   q:"Hvad skal være anderledes om et halvt år, for at du kalder det en succes?" },
+      { t:"choice", q:"Er du tilfreds med det indtryk, man får, når man besøger jeres sociale medier i dag?", o:["Ja","Delvist","Nej"] },
+      { t:"open",   q:"Hvad oplever du er den største udfordring med sociale medier for dig/jer i dag?" },
+      { t:"open",   q:"Hvad skal være anderledes om et halvt år, for at det er en succes?", skjult:true },   /* SLETTET (Ida 15/11) — skjult, så pladsen og gamle svar består */
       { t:"open",   q:"Hvad giver dig energi i dit arbejde?" },
       { t:"choice", q:"Bruger du penge på annoncer i dag, og får du noget ud af det?", o:["Nej","Ja, og det virker","Ja, men jeg ved det ikke"] },
-      { t:"open",   q:"Hvorfor sagde du ja til forløbet?" },
-      { t:"open",   q:"Nævn en forretning på de sociale medier, du synes gør det godt", frivillig:true }
+      { t:"open",   q:"Hvad ønsker du at opnå med forløbet, og hvordan skal det kunne mærkes i din hverdag?" },
+      { t:"open",   q:"Nævn en forretning på de sociale medier, du synes gør det godt", frivillig:true, skjult:true }   /* SLETTET (Ida 15/11) */
     ]
   },
   inden_workshoppen: {
@@ -58623,7 +58627,7 @@ const SKEMAER = {
       { t:"choice", q:"Hvor mange timer bruger du på at arbejde med sociale medier om ugen?", o:["Over 10 timer","6–10 timer","3–5 timer","1–2 timer","Under 1 time"] },
       { t:"scale",  q:"Hvor tryg er du ved at lave content?", lo:"Det gør jeg helst ikke", hi:"Det er det letteste, jeg ved" },
       { t:"scale",  q:"Hvordan er din energi for tiden?", lo:"Fladmast", hi:"Duracell" },
-      { t:"choice", q:"Er du stolt af det indtryk, man får, når man besøger din profil?", o:["Ja","Delvist","Nej"] },
+      { t:"choice", q:"Er du tilfreds med det indtryk, man får, når man besøger jeres sociale medier i dag?", o:["Ja","Delvist","Nej"] },
       { t:"spejl",  ref:6,  refGl:5,  sec:"Det, du skrev i starten", q:"Er det stadig det sværeste?" },
       { t:"spejl",  ref:7,  refGl:15, q:"Er du der?" },
       { t:"spejl",  ref:10, q:"Fik du det?" },
@@ -58937,8 +58941,8 @@ function skemaWizTegn() {
   const t = document.getElementById("swTilbage"); if (t) { t.disabled = (i === 0); t.style.visibility = (i === 0) ? "hidden" : ""; }   /* ingen død Tilbage paa foerste spoergsmaal (4/10) */
   const nk = document.getElementById("swNaeste");
   if (nk) {
-    const sidst = (i === def.sp.length - 1);
-    nk.textContent = sidst ? "Send skemaet" : "Næste";
+    const synS = skemaSynlige(def), sidst = (i === (synS.length ? synS[synS.length - 1] : def.sp.length - 1));   /* sidste SYNLIGE spørgsmål (skjulte springes over, Ida 15/11) */
+    nk.textContent = sidst ? "Send til Ida" : "Næste";   /* Ida 15/11 */
     nk.className = "sw-knap" + (sidst ? " send" : "");
   }
   /* MAN KOMMER IKKE VIDERE UDEN AT SVARE (Ida 2/9: "jeg vil gerne at de skal svare paa
@@ -67569,7 +67573,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "3337";
+const APP_VERSION = "3340";
 const APP_BYGGET = "3. november";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_VERSION;   /* ingen dato (Ida 7/11: »hvorfor står der version 3. november?«) — datoen blev ikke rettet med, nummeret er sandheden */ } catch (e) {} });
 let NY_VERSION_KLAR = false;
