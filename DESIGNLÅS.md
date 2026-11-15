@@ -4,6 +4,16 @@
 - Uberørt: den hårfine streg INDE I en flise, der skiller to slags indhold (27/10), og procesbarer.
 - Koden: blokken »ALDRIG EN STREG UD FRA EN OVERSKRIFT« sidst i stilarket skjuler alle tvillinger (`.cf-sek`, `.section-divider`, `.bsd-sek`, `.bsd-doere-eye`, `.pb-eye`, `.bs-sekl`, `.ftl2-sek i`, `.lks-sek i`, `.laes-sek i`, `.lk-sek`, `.kfs-streg`, `.hjem-dag-streg`, `.is3-afh`, `.cv-sek`, `.bb-sek`, `.bb-sekh`, `.hu-dagsek`, briefens `.brief-raketkort::after`). En ny overskrift må aldrig få en streg igen.
 
+## 15. november · MAILBYGGEREN (Idas klik »Ja, også uret nu« + »Ja, læg den ud«, artifacts 8UVw3Hg73NHmyER7PnJEUS og DaMtrw1R1Wp18aKrnAERGc, v3300)
+- Backstage › Mails › **Ret mailen** (hed »Ret teksten«). Hvert afsnit har overskriften OVER flisen med pile op/ned og skraldespand; træk virker stadig.
+- **»Tilføj afsnit« står synligt** under afsnittene, ikke bag plusset. Vælter 5/10 (»tilføj skal slettes fra alle rum«) KUN i Mails. Menuen: Overskrift · Tekst · Billede · Stort foto · Knap, lyseblå symbolfelter.
+- **Overskrift er sin egen slags afsnit** (Ida 15/11: »overskriften … på sin egen flise som jeg så kan flytte rundt på? også over billedet«). Et tekstafsnits overskrift flyttes ud med »Egen flise« (telefon: »Flyt overskriften til egen flise«).
+- **Det store foto er et afsnit** (»Stort foto«), der kan flyttes, skiftes, beskæres og fjernes. Billeder: Skift · Beskær · Bredde (hele/halv) · link (kan stå tomt).
+- **Tekst:** kursiv (*ord*), link ([ord](https://…)) og punkter (linjer med »- «). Ingen fed i brødtekst.
+- **Egne mails:** »Send mailen nu« eller »Vælg tidspunkt« (dag + klokkeslæt, dansk tid). Uret sender inden for 5 minutter, først når Ida har lagt nøglen `mail_ur_noegle` i Supabase › Vault.
+- Chips i Mails ombrydes (vælter »chip-rækker ombrydes aldrig« kun her). »Indsæt kollegakode« kun i de automatiske mails.
+- Telefon: tekstknapper i fuld bredde, ikonknapper 44.
+
 ## 15. november · ALDRIG VERSAL-OVERSKRIFTER INDE I FLISER, I HELE SYSTEMET (HÅRD, Ida 15/11: »jeg vil aldrig nogensinde se de her versaler overskrifter stå inde i fliser!!«)
 - En versal-overskrift (etiket, fx »EMNE«, »SENDES«, »KØB I DAG«) står ALTID over flisen, aldrig inde i den. Det gælder kundeappen OG Backstage, alle sider. Før stod reglen kun under Health Coach (14/11) som »også her«; nu gælder den overalt.
 - Formen er Profilens godkendte: blok = overskrift (Poppins 12, versal, bogstavafstand 1,5, #6F6B66, ingen streg) + 8 px + flisen.
