@@ -1,3 +1,9 @@
+## 15. november · HASHTAGS I BRIEFEN: TRE FEJL RETTET (Ida 15/11: »jeg synes ikke at hashtagfunktionen fungere«, v3320)
+- Et tryk på et VALGT (rødt) hashtag i banken fjerner det igen. Før blev det tilføjet én gang til, når stort og lille bogstav var forskelligt (#menneskenebag + #Menneskenebag).
+- En tømt række forsvinder, og listen rykker sammen: der står kun én tom række, nederst.
+- Hashtag-felterne er lysegrå uden kant som briefens andre skrivefelter.
+- Ikke rørt: højst fem hashtags, stort begyndelsesbogstav på det, man selv skriver, tallet på bankens chips, felternes bredde (340).
+
 ## 15. november · HEALTH COACH: DET SAMLEDE OVERBLIK I GENNEMGANG (Idas klik »Samlet overblik pr. klient«) · v3319
 
 Fundene i fanen Gennemgang står som opsummeringens rækker i stedet for tekstfliser: samlet pr. område (Scientific Core Condition, Cervikalt, Skulder og torso, Hofte, Fod …) med områdets navn som overskrift OVER fliserne, de røde øverst, H: og V: i samme trafiklys som testen, »Positiv« og »Smerte« som bokse, forskellen og optimal i gråt under navnet. Et tryk på en række åbner testen. Reglerne for, hvad der ER et fund, er de samme som før. Prioritet · Anbefaling · Spørg klienten om står uændret til højre (under på telefonen).
