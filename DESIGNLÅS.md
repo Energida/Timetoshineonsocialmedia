@@ -1,5 +1,12 @@
 ## **PRODUKTSIDEN I ENERGIDA STUDIO = LUMANT-LISTEN (Idas klik 15/11, bud 1, v3317)**
 Kun tre chips: Indhold · Deltagere · Sådan går det. Hvert modul er én flise i fuld bredde (navn · antal lektioner · status · pil ned) med tynd grå ramme. Et tryk folder lektionerne ud under modulet, indrykket, hver i sin egen flise (navn · tid · status · pil). »Åbn modulet« sidst i rækken fører til modulets egen side. Idéer til manus, Kildehenvisninger, B-rolls, Grafik, Overlays og Se som kunden ligger i ⋯. De fire modulkort side om side er døde. Bud: BLmf9HXK3kNmN9TJxBNsuR.
+
+## 15. november · BRIEFOVERSIGTEN PÅ TELEFONEN: ALLE FAKTA-CHIPS PÅ ÉN GANG · INFOEN FØLGER FORMATET (Ida 15/11, v3318)
+Idas ord: »Infoen her er ikke tilpasset et billede og karrussel og jeg vil gerne at man kan se alle chips på en gang på oversigten«.
+- **Fakta-chipsene øverst på briefoversigten** (indholdssøjle · målgruppe · dato · format) ombrydes på telefonen, så alle ses uden at swipe. Vælter »chips altid på én linje« (2/11) KUN her.
+- **Info ved hooket følger formatet** (Idas klik på ordlyden): Billede: »Hooket er teksten på billedet. Rammer den ikke, scroller [navn] videre.« · Karrusel: »Hooket er teksten på første slide. Rammer den ikke, scroller [navn] videre.« · Reel uændret (»de første 1–2 sekunder«).
+- **Info-boksen** er 260 bred MED luften og holder sig 16 px inden for skærmen (stak 8 px ud på telefonen).
+
 ## 15. november · »OVERSIGT« STÅR FØRST I BRIEFENS PROCESBAR (Idas klik 15/11 på buddet, artifact DZjs4oJCpGXZc9yuGDEJdX, v3316)
 Idas ord: »jeg vil gerne have et felt i processbaren der er overblikket så man også kan klikke via processbaren og komme direkte til oversigten« · »Sæt det først i baren, kan vi give det et symbol eller gøre noget for at vise at det er oversigten?«
 - Første punkt i procesbaren, før Fakta: husets symbol af fire felter (20 px, grå #6F6B66) med ordet »Oversigt« under. Et tryk gemmer og åbner briefoversigten (`briefProcesOversigt()`).
