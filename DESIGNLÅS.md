@@ -1,3 +1,11 @@
+## 16. november · INGEN GODKENDELSESKORT PÅ BRIEFEN (Ida: »alt dette med godkendelse skulle fjernes? så det bare er status der ændres og den går fra stiplet til fast ramme?« → »Ja, fjern det«) · v3349
+- Kortet »Forslag 1 af 3« · Forrige/Næste · »Fra … · for N dage siden« · Send retur / Godkend er væk, og det samme gælder »Godkendt af …« / »Sendt retur af …«. VÆLTER »Godkend ét sted« (30/10).
+- Status skiftes kun i statuspillen. »Forslag« står stiplet i kalenderen, alt andet har fast ramme. Kommentarerne under briefen bliver. Der kommer ingen automatisk Indbakke-besked om godkendt eller retur. Flisen »Godkendt · Ida · i dag« på briefens forside er også ude (Ida: »fix dette hurtigst«).
+
+## 16. november · STORY: NUMMERET TÆLLER KUN DAGEN · »HVILKET OPSLAG HØRER DEN TIL?« ER TILBAGE (Ida: »hvorfor kalder den story her story 2??« · »tidligere ved opbygning til deling kunne jeg vælge hvilket opslag det var?« → »Ja, byg det« · »story 1 relaterer sig altid pr. storyserie og ikke af noget på andre dage«) · v3349
+- En ny story hedder »Story N«, hvor N kun tæller stories på samme dag. Dagens første story er Story 1.
+- Ny story med »Opbygning til deling« og opslag samme dag: andet trin er »Hvilket opslag hører den til?« (chips med dagens opslag + Nyt navn). Storyen får opslagets navn og bindes til opslaget (forOpslag), så den står under »Opbygning til deling« på opslaget. Vælges intet, beholder den »Story N«. Daglig check-in springer trinnet over.
+
 ## 15. november · OPGAVEARKET: »NÆSTE SPØRGSMÅL« I HØJRE HJØRNE · LEKTION 1.3 MED FIRE SPØRGSMÅL (Idas klik »Ja, byg den« + »Ja, læg den ud«, artifact BWRKyhoNqjQf5ZP9n39Cts, v3345)
 - Opgavearket (`.ova-bund`): den røde »Næste spørgsmål« / »Gem og afslut« fylder ikke længere bredden. Den står i højre hjørne som en almindelig knap (luft 28 i siderne); »Forrige« står til venstre med samme luft. Telefon og computer (Ida: »som ved de andre spørgsmål skal næste knappen ikke fylde det hele bare i højre hjørne som almindelig knap«).
 - Lektion 1.3 har fire spørgsmål, ét ad gangen: »Jeg ved, jeg er i overskud, når jeg har denne adfærd:« (Idas ord) · »… overskud, når jeg tænker:« · »… underskud, når jeg har denne adfærd:« · »… underskud, når jeg tænker:«. Svarene skal senere fylde kundens Shinebarometer.

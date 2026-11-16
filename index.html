@@ -9217,15 +9217,15 @@ body.ov-ark-aaben { overflow:hidden; }
 .tfl-x b { display:block; font-weight:400; font-size:24px; margin-bottom:8px; }
 .tfl-kn { margin-top:auto; padding-top:14px; display:flex; align-items:center; gap:18px; width:100%; }
 .tfl-hk { height:48px; padding:0 26px; border:0; border-radius:99px; background:#fff; color:#000; font:400 15px Poppins,sans-serif; cursor:pointer; white-space:nowrap; }
-.tfl-tl { background:none; border:0; color:#fff; font:400 14px Poppins,sans-serif; cursor:pointer; padding:0; }
+.tfl-tl { background:transparent; border:1px solid #fff; border-radius:99px; height:48px; padding:0 26px; color:#fff; font:400 15px Poppins,sans-serif; cursor:pointer; white-space:nowrap; }   /* hvid chip om Tilbage (Ida 16/11) */
 .tfl-hvid { background:#fff; color:var(--black); border:1px solid var(--border); }   /* Ida 15/11: rundvisningens flise er hvid, knappen rød; grå kant, aldrig lyseblå */
 .tfl-hvid .tfl-hk { background:var(--red); color:#fff; }
-.tfl-hvid .tfl-tl { color:var(--gray3); }
+.tfl-hvid .tfl-tl { color:var(--gray3); border-color:var(--border); }
 .tfl-slut .tfl-x { font-size:20px; } .tfl-slut .tfl-x b { font-size:38px; line-height:1.15; margin-bottom:12px; }   /* SIDSTE SIDE FYLDER (Ida 15/11: »virker meget tom … gerne lave teksten større«) */
 .lek-videre-lille.laast { opacity:.4; cursor:default; }   /* Ida 15/11: aktiv først, når lektionen er set til ende */
 @media (min-width:900px) { .lek-knapper .lek-videre-lille { height:40px; padding:0 20px; font-size:13px; flex:0 0 auto; } }
 .tfl-bar { width:100%; margin:0 0 18px; }
-.tfl-bar-l { font-size:13px; color:rgba(255,255,255,.85); margin-bottom:8px; }
+.tfl-bar-l { font-size:13px; color:rgba(255,255,255,.85); margin-bottom:8px; text-align:right; }   /* højre hjørne (Ida 16/11) */
 .tfl-bar-s { height:4px; border-radius:99px; background:rgba(255,255,255,.3); overflow:hidden; }
 .tfl-bar-s i { display:block; height:100%; background:#fff; border-radius:99px; }
 .tfl-dots { margin-left:auto; display:flex; gap:6px; }
@@ -25932,6 +25932,8 @@ function briefFtfTrin(it) {
   /* STORY: TYPEN FOERST, SAA HVILKET OPSLAG DEN HOERER TIL (Idas klik 2/11) — typen gemmes i briefen (storytype); navnet er opslagets eller et nyt */
   if (/^story$/i.test(String((it && it.type) || b.format || "")) && !String(b.storytype || "").trim()) trin.push("storytype");
   if (it && !String(it.titel || "").trim()) trin.push("titel");
+  /* HVILKET OPSLAG HØRER DEN TIL — IGEN (Ida 16/11: »tidligere ved opbygning til deling kunne jeg vælge hvilket opslag det var?« → »Ja, byg det«): en NY story med typen Opbygning til deling får spørgsmålet, når der ligger opslag den dag. Navnet »Story N« (3/11) havde sprunget det over. Daglig check-in og dage uden opslag beholder »Story N«. */
+  else if (it && trin.indexOf("storytype") > -1 && /^story$/i.test(String(it.type || "")) && storyTypeNoegle(FTF_STORYTYPE) === "Opbygning til deling" && /^Story \d+$/.test(String(it.titel || "")) && briefFtfStoryOpslagListe(it).length) trin.push("titel");
   /* MAALGRUPPEN VAELGES IKKE HER LAENGERE (Ida 7/10): den bor paa idésiden under »Hvad er idéen?« */
   if (it && !it.soejle && alle.length) trin.push("soejle");
   if (!harFormat) trin.push("format");
@@ -26061,7 +26063,8 @@ function briefFtfNaeste() {
   F.i++; briefSoejleArkDropTegn();
 }
 const STORY_TYPER = ["Opbygning til deling", "Check-in"];
-function briefFtfStorytypeVaelg(v) { FTF_STORYTYPE = v; briefSoejleArkDropTegn(); }
+function briefFtfStorytypeVaelg(v) { FTF_STORYTYPE = v; try { const F = window.__FTF, it0 = window.__SOEJLE_ARK_IT; if (F && it0 && !F.kunEn && F.trin[F.i] === "storytype") { const ny = briefFtfTrin(it0); if (ny.indexOf("storytype") > -1) F.trin = ny; } } catch (e) {} briefSoejleArkDropTegn(); }   /* trinene følger typen: Opbygning til deling spørger om opslaget (16/11) */
+function briefFtfStoryOpslagId(it, titel) { if (!it || !it.dato) return ""; const t = String(titel || "").trim().toLowerCase(); const x = (IDEER || []).find(function (x) { return x && String(x.id) !== String(it.id) && x.dato === it.dato && x.status !== "Arkiveret" && String(x.type || "") !== "Story" && String(x.titel || "").trim().toLowerCase() === t; }); return x ? String(x.id) : ""; }
 function briefFtfStoryOpslag(titel) { FTF_TITEL = String(titel || ""); FTF_NYTNAVN = false; briefSoejleArkDropTegn(); }
 function briefFtfStoryNyt() { FTF_NYTNAVN = true; FTF_TITEL = ""; briefSoejleArkDropTegn(); setTimeout(function () { const f = document.getElementById("ftfTitel"); if (f) f.focus(); }, 60); }
 function briefFtfStoryOpslagListe(it) {   /* opslagene paa storyens dag (ikke storyer) — tilbydes som chips */
@@ -26242,6 +26245,8 @@ async function briefFtfSkriv(it, F) {
   else if (F.trin.indexOf("hvem") < 0) { try { const folk = briefPersonerListe(); if (folk.length === 1 && !String(it.brief.hvemPerson || it.brief.hvemLaver || "").trim() && !(S && String(S.hvemPerson || S.hvemLaver || "").trim())) { it.brief.hvemPerson = folk[0]; opd.brief = it.brief; if (S) S.hvemPerson = folk[0]; } } catch (e) {} }
   if (F.trin.indexOf("lyd") > -1 && FTF_LYD.length) { it.brief.lyd = FTF_LYD.slice(); opd.brief = it.brief; if (S) S.lyd = FTF_LYD.slice(); }
   if (F.trin.indexOf("titel") > -1 && String(FTF_TITEL).trim() && String(FTF_TITEL).trim() !== String(it.titel || "").trim()) { it.titel = storStart(String(FTF_TITEL).trim().slice(0, 90)); opd.titel = it.titel; try { if (BRIEF_ID === id) setTimeout(briefHovedOpdater, 50); } catch (e) {} }
+  /* STORYEN BINDES TIL OPSLAGET (16/11): valgt opslag → brief.forOpslag, så den står nederst på opslaget under »Opbygning til deling« (delingStory). Kun storyen skrives; opslagets egne data røres ikke. */
+  if (F.trin.indexOf("titel") > -1 && /^story$/i.test(String(it.type || "")) && !FTF_NYTNAVN) { const oid = briefFtfStoryOpslagId(it, FTF_TITEL); if (oid && String(it.brief.forOpslag || "") !== oid) { it.brief.forOpslag = oid; opd.brief = it.brief; if (BRIEF_ID === id && BRIEF_STATE) BRIEF_STATE.forOpslag = oid; } }
   /* hele brief-objektet sendes med (gem-maa-ikke-slette): kolonnen skrives samlet — ogsaa naar kun soejle/format er svaret */
   if (!opd.brief && Object.keys(opd).length && S) { opd.brief = Object.assign({}, it.brief, S); }
   let ok = true;
@@ -34485,6 +34490,8 @@ function godkVenterPaaMig() {
 }
 function briefGodkBarVis() {
   const bar = document.getElementById("briefGodkBar"); if (!bar) return;
+  /* GODKENDELSESKORTET ER UDE (Ida 16/11: »alt dette med godkendelse skulle fjernes? så det bare er status der ændres og den går fra stiplet til fast ramme?« → »Ja, fjern det«): ingen »Forslag 1 af 3«, Godkend eller Send retur på briefen. Status skiftes i statuspillen; Forslag = stiplet, alt andet fast ramme. Kommentarerne bliver. */
+  bar.innerHTML = ""; bar.style.display = "none"; return;
   const it = IDEER.find(x => x.id === BRIEF_ID) || {};
   const g = BRIEF_STATE.godk, sv = BRIEF_STATE.svar, mig = godkMig();
   /* GODKENDELSEN = HUSETS FLISE (Idas klik 4/10, bud 1): hvid m. skygge, etiket · én graa streg · indhold — aldrig en roed ramme */
@@ -34762,7 +34769,8 @@ function briefGodkFliseHtml() {
         + '<div class="pf-godk-knapper"><button type="button" class="pf-godk-ja" onclick="briefGodkFraForside(\'godkendt\', this)">Godkend</button><button type="button" class="pf-godk-nej" onclick="briefGodkFraForside(\'retur\', this)">Send retur</button></div></div>';
     return "";   /* »SENDT TIL GODKENDELSE«-FLISEN ER UDE (Ida 9/11) — statuspillen siger »Forslag« */
   }
-  if (sv && sv.valg) return '<div class="pf-flise pf-godk-svar"><div class="pf-eye"><span>' + (sv.valg === "godkendt" ? "Godkendt" : "Sendt retur") + '</span></div><p>' + esc(sv.af || "") + (sv.dato ? ' · ' + esc(naar(sv.dato)) : '') + '</p></div>';
+  if (sv && sv.valg) return "";   /* »GODKENDT · IDA · I DAG« ER OGSÅ UDE (Ida 16/11: »fix dette hurtigst«) — statuspillen siger det */
+  if (false) return '<div class="pf-flise pf-godk-svar"><div class="pf-eye"><span>' + (sv.valg === "godkendt" ? "Godkendt" : "Sendt retur") + '</span></div><p>' + esc(sv.af || "") + (sv.dato ? ' · ' + esc(naar(sv.dato)) : '') + '</p></div>';
   return "";
 }
 /* KOMMENTARER = BUD 1 (Idas klik 30/10 »Bud 1 · Rød Indtal-knap«, Artifact 5kpoXJ1VS15TDdcUSjHdf4): flisen står ALTID øverst i briefoversigten, også før noget er sendt
@@ -64790,7 +64798,8 @@ async function opretOpslag(dato, soejle, type) {
   /* showTab(2) rykker først, når der IKKE er en First thing first foran (Ida 9/11) — se nedenfor */
   /* datoen reserverer dagen — status forbliver Idé (2C: status fortæller modenheden) */
   /* STORY ER HELT SIMPEL (Ida 3/11, artifact MatkJo1GYBRNkZwD4FeLvT): en ny story hedder »Story N« (tæller selv op), har ingen indholdssøjle og ingen First thing first — man designer den bare */
-  let storyNavn = ""; if (type === "Story") { soejle = "Story"; try { const n = (IDEER || []).filter(function (x) { return x && String(x.type || "") === "Story" && /^Story \d+$/.test(String(x.titel || "")); }).map(function (x) { return parseInt(String(x.titel).slice(6), 10) || 0; }); storyNavn = "Story " + ((n.length ? Math.max.apply(null, n) : 0) + 1); } catch (e) { storyNavn = "Story 1"; } }
+  /* NUMMERET TÆLLER PR. DAG (Ida 16/11: »hvorfor kalder den story her story 2??« → »Ja, byg det«): dagens første story er Story 1 — en story fra en anden dag tæller ikke med */
+  let storyNavn = ""; if (type === "Story") { soejle = "Story"; try { const n = (IDEER || []).filter(function (x) { return x && String(x.type || "") === "Story" && x.status !== "Arkiveret" && String(x.dato || "") === String(dato || "") && /^Story \d+$/.test(String(x.titel || "")); }).map(function (x) { return parseInt(String(x.titel).slice(6), 10) || 0; }); storyNavn = "Story " + ((n.length ? Math.max.apply(null, n) : 0) + 1); } catch (e) { storyNavn = "Story 1"; } }
   /* MAN BLIVER UDE PAA KALENDEREN, TIL DE TRE TRIN I POPUPPEN ER UDFYLDT (Ida 9/11: »jeg vil gerne at man bliver ude på kalenderen indtil man har udfyldt disse 3 trin i pop-uppen«) — kun et nyt opslag uden søjle (og en story) møder arket; briefen åbnes først, når sidste trin er gemt (briefSoejleArkStart → openBriefSide), Annullér fjerner det tomme opslag og man står stadig, hvor plusset blev trykket */
   const skalArk = (!soejle || String(type || "") === "Story");
   if (!skalArk) showTab(2);
@@ -68382,7 +68391,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "3347";
+const APP_VERSION = "3349";
 const APP_BYGGET = "3. november";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_VERSION;   /* ingen dato (Ida 7/11: »hvorfor står der version 3. november?«) — datoen blev ikke rettet med, nummeret er sandheden */ } catch (e) {} });
 let NY_VERSION_KLAR = false;
@@ -99460,6 +99469,7 @@ html body #briefWrap#briefWrap#briefWrap #kvHook#kvHook .kvh-liste .fs-rk > .row
 html body #briefWrap#briefWrap#briefWrap #kvHook#kvHook .kvh-liste .fs-enter, html body #kvHook .kvh-liste .fs-enter, #kvHook .kort-plus { display:none !important; }
 #kvHook .kvh-liste .fs-vaelg-over { margin:0 0 8px 0; }
 /* »START RUNDVISNING« ER EN KNAP, IKKE EN CHIP (Ida 14/11 efter testkøbet: »synes start rundvisning knappen bør være større«): hver knap med tekst er 56 — gælder også Næste og »Se din første lektion« i rundvisningens røde flise */
+html body:not(#l1):not(#l2):not(#l3):not(#l4):not(#l5):not(#l6):not(#l7):not(#l8):not(#l9) .tfl-tl,
 html body:not(#l1):not(#l2):not(#l3):not(#l4):not(#l5):not(#l6):not(#l7):not(#l8):not(#l9) .tfl-hk { height:56px !important; min-height:56px !important; max-height:56px !important; padding:0 32px !important; border-radius:28px !important; font-size:16px !important; line-height:24px !important; display:inline-flex !important; align-items:center; justify-content:center; }
 /* PROFILENS TILBAGE (Idas klik 14/11): grå sekundær knap 56 under den røde Næste — samme form som briefens Tilbage */
 html body:not(#l1):not(#l2):not(#l3):not(#l4):not(#l5):not(#l6):not(#l7):not(#l8):not(#l9) .pf-knap-tb { display:flex; align-items:center; justify-content:center; width:100%; height:56px; min-height:56px; margin-top:10px; border:1px solid #DEDAD4; border-radius:28px; background:#fff; color:#6F6B66; font:400 16px/24px Poppins,sans-serif; cursor:pointer; }
@@ -99523,6 +99533,7 @@ html body:not(#kx1):not(#kx2):not(#kx3):not(#kx4):not(#kx5):not(#kx6):not(#kx7):
 html body:not(#kx1):not(#kx2):not(#kx3):not(#kx4):not(#kx5):not(#kx6):not(#kx7):not(#kx8):not(#kx9):not(#kx10):not(#l1):not(#l2):not(#l3):not(#l4):not(#l5):not(#l6):not(#l7):not(#l8) .ark-send-pille,
 html body:not(#kx1):not(#kx2):not(#kx3):not(#kx4):not(#kx5):not(#kx6):not(#kx7):not(#kx8):not(#kx9):not(#kx10):not(#l1):not(#l2):not(#l3):not(#l4):not(#l5):not(#l6):not(#l7):not(#l8) .sw-knap,
 html body:not(#kx1):not(#kx2):not(#kx3):not(#kx4):not(#kx5):not(#kx6):not(#kx7):not(#kx8):not(#kx9):not(#kx10):not(#l1):not(#l2):not(#l3):not(#l4):not(#l5):not(#l6):not(#l7):not(#l8) .modal-back.spmpop .sw-knap,
+html body:not(#kx1):not(#kx2):not(#kx3):not(#kx4):not(#kx5):not(#kx6):not(#kx7):not(#kx8):not(#kx9):not(#kx10):not(#l1):not(#l2):not(#l3):not(#l4):not(#l5):not(#l6):not(#l7):not(#l8):not(#l9) .tfl-tl,
 html body:not(#kx1):not(#kx2):not(#kx3):not(#kx4):not(#kx5):not(#kx6):not(#kx7):not(#kx8):not(#kx9):not(#kx10):not(#l1):not(#l2):not(#l3):not(#l4):not(#l5):not(#l6):not(#l7):not(#l8):not(#l9) .tfl-hk,
 html body:not(#kx1):not(#kx2):not(#kx3):not(#kx4):not(#kx5):not(#kx6):not(#kx7):not(#kx8):not(#kx9):not(#kx10):not(#l1):not(#l2):not(#l3):not(#l4):not(#l5):not(#l6):not(#l7):not(#l8):not(#l9) .pf-knap-tb { height:44px !important; min-height:44px !important; max-height:44px !important; border-radius:22px !important; }
 }
