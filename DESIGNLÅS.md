@@ -1,3 +1,7 @@
+## 16. november · CRM LÆSER ØVELSERNES STATUS FRA BASEN (v3360, Ida »Ja, læg det ud«)
+- YGT-kundesiden henter status pr. øvelse med `kunde_oevelse_status(p_kode)` (kun lektion_id · status · dato, aldrig svar; kun admin). Den gamle udregning er reserve, hvis funktionen ikke svarer. Intet ændres på siden.
+- MÅLT mod live 16/11: HINGES2026 6=6, CCCCCCCN5CM 1=1, 0 afvigelser.
+
 ## 16. november · ARKET RULLER, DET PRESSES ALDRIG (Ida: »designet her i tøm hovedet i min admin spiller heller ikke«, skærmbillede med tastaturet oppe)
 - Med tastaturet oppe blev arket lavt, og dets rækker krympede: Link/Billede skåret over, »Gem i« væk. Nu beholder hver række i et ark sin højde (`.ark > *`, `.ark-ekstra > *` krymper ikke); arket ruller i stedet.
 - MÅLT i selen 390 med 420 px tastatur: Link/Billede 36 px hele, »Gem i« synlig, rul ned = Gem.
