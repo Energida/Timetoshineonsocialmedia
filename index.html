@@ -9192,7 +9192,11 @@ body.ov-ark-aaben { overflow:hidden; }
 .ova-fl { background:#fff; border-radius:20px; box-shadow:0 0 4px rgba(46,44,41,.10),0 0 28px rgba(46,44,41,.10); padding:22px 20px; }
 .ova-spm { font-size:20px; line-height:1.35; color:#1A1A1A; }
 .ova-besk { font-size:13.5px; line-height:1.6; color:#6F6B66; margin-top:8px; }
-.ova-felt-ramme { margin-top:16px; }
+.ova-hvem { font-size:12.5px; line-height:1.5; color:#6F6B66; margin-top:8px; }   /* HVEM SER SVARET (Ida 16/11): fast linje under feltet, Idas valg pr. opgave */
+.ova-felt-ramme { margin-top:16px; position:relative; }
+html body .ova-felt-ramme .tale-knap { position:absolute; right:6px; bottom:6px; margin:0; z-index:1; }   /* MIKROFONEN ALTID INDE I FELTET (DESIGNLÅS, Ida 16/11): også når arket står uden for lektionssiden */
+html body .ova-felt-ramme > div { margin:0 !important; }
+html body .ova-felt-ramme textarea { padding-right:48px !important; }
 .ova-felt { min-height:150px; font-size:16px; line-height:1.55; }
 .ova-bund { position:sticky; bottom:0; display:flex; gap:10px; padding:16px 0 calc(16px + env(safe-area-inset-bottom,0px)); margin-top:0; background:linear-gradient(rgba(250,249,245,0),#FAF9F5 30%); }   /* KNAPPEN STÅR LIGE UNDER FLISEN (Ida 15/11, testperson) — ikke nederst på skærmen; den bliver stående synlig, hvis svaret bliver langt */
 .ova-knap { flex:0 0 auto; min-height:48px; border-radius:999px; font:400 15px Poppins,sans-serif; cursor:pointer; padding:0 18px; }
@@ -43908,7 +43912,8 @@ async function kursusHentLektioner() {
   try {
     /* video_link foerst; findes feltet ikke endnu (SQL-kortet ikke koert), hentes uden — listen maa aldrig falde bort */
     /* SKJULT-FELTET (Ida 3/11: »skjul skal selvfølgelig sikre, at lektionen bliver skjult«): lektioner.skjult kan alle logins læse; findes feltet ikke endnu (SQL-kortet »Skjul en lektion« ikke kørt), hentes uden */
-    let r = await sb.from("lektioner").select("id,modul,titel,sortering,video_link,skjult,beskrivelse,oevelse_art,popup").order("sortering");   /* popup: SQL-kortet 14/11 */
+    let r = await sb.from("lektioner").select("id,modul,titel,sortering,video_link,skjult,beskrivelse,oevelse_art,popup,ida_ser").order("sortering");   /* ida_ser: Idas valg pr. opgave 16/11 */
+    if (r.error) r = await sb.from("lektioner").select("id,modul,titel,sortering,video_link,skjult,beskrivelse,oevelse_art,popup").order("sortering");   /* popup: SQL-kortet 14/11 */
     if (r.error) r = await sb.from("lektioner").select("id,modul,titel,sortering,video_link,skjult,beskrivelse,oevelse_art").order("sortering");
     if (r.error) r = await sb.from("lektioner").select("id,modul,titel,sortering,video_link,skjult,beskrivelse").order("sortering");
     if (r.error) r = await sb.from("lektioner").select("id,modul,titel,sortering,video_link,skjult").order("sortering");
@@ -43933,6 +43938,7 @@ async function kursusHentLektioner() {
     if (gl.tid) ny.tid = gl.tid;
     if (String(r.beskrivelse || "").trim()) ny.beskrivelse = String(r.beskrivelse).trim();
     if (r.oevelse_art === "opgave" || r.oevelse_art === "refleksion") ny.oevelse_art = r.oevelse_art;
+    if (typeof r.ida_ser === "boolean") ny.ida_ser = r.ida_ser;   /* HVEM SER SVARET (Ida 16/11): valgt pr. opgave i Studio */
     if (r.popup && typeof r.popup === "object") ny.popup = r.popup;   /* popupperne pr. lektion (Ida 14/11) */   /* lektionsbeskrivelsen fra Studio (Ida 11/11, bud A) */
     if (!grupper.has(modul)) grupper.set(modul, []);
     grupper.get(modul).push(ny);
@@ -45054,6 +45060,15 @@ async function kursusHent() {
         if (r.skema === "lektion_sidst_vist" && r.svar) KURSUS_VIS_TID = r.svar;
         if (r.skema === "modul_forsider" && r.svar) MODUL_SET = Object.assign({}, MODUL_SET, r.svar);
       });
+      /* PRIVATE SVAR (Ida 16/11): kundens egne private svar læses her og vinder over en gammel række i skema_svar */
+      try {
+        const pr = await sb.from("lektion_svar_privat").select("lektion_id,svar");
+        if (!pr.error && pr.data) pr.data.forEach(function (r) {
+          const sid = String(r.lektion_id), usendtNu = ovelseLsHent("usendt"), lokalSv = KURSUS_SVAR[sid];
+          const basen = svarFlet(KURSUS_SVAR[sid] && !usendtNu[sid] ? KURSUS_SVAR[sid] : {}, r.svar || {}, null);
+          KURSUS_SVAR[sid] = (usendtNu[sid] && lokalSv) ? svarFlet(lokalSv, basen, ovelseLsHent("beroert")[sid] || {}) : basen;
+        });
+      } catch (e) {}
       if (!error && data) {
         let noteMangler = false;
         Object.keys(lokalNoter).forEach(function (lek) {
@@ -45435,7 +45450,32 @@ function skemaSvarSkriv(skema, svar, beroert) {
   SVAR_KOE[n] = nu;
   return nu;
 }
+/* PRIVATE SVAR (Ida 16/11): en opgave, hvor Ida har valgt »Kun kunden« (oevIdaSer = false), gemmes i lektion_svar_privat, ejet af auth.uid() — kun kunden selv kan læse den (MÅLT 16/11: anon afvist, kunde B 0 rækker, admin 0 rækker).
+   En gammel række i skema_svar for samme opgave flettes ind og tømmes bagefter (svar = {}); rækken bliver stående, så »udført før 12/11« og CRM's »besvaret« ikke forsvinder. */
+async function privatSvarSkriv(id, svar, beroert) {
+  try {
+    const s0 = await sb.auth.getSession(); const uid = s0 && s0.data && s0.data.session && s0.data.session.user && s0.data.session.user.id;
+    if (!uid) return false;
+    const [rr, gl] = await Promise.all([
+      sb.from("lektion_svar_privat").select("svar").eq("lektion_id", id),
+      sb.from("skema_svar").select("svar").eq("kode", currentKode).eq("navn", CURRENT_NAVN || "").eq("skema", "lektion_svar_" + id)
+    ]);
+    if (rr.error) return false;   /* kan basen ikke læses, skrives intet — det lokale bevares og sendes igen */
+    let remote = {};
+    ((gl && gl.data) || []).forEach(function (r) { remote = svarFlet(r.svar || {}, remote, null); });
+    (rr.data || []).forEach(function (r) { remote = svarFlet(r.svar || {}, remote, null); });
+    const m = svarFlet(svar, remote, beroert);
+    Object.keys(m).forEach(function (k) { svar[k] = m[k]; });
+    const u = await sb.from("lektion_svar_privat").upsert({ bruger_id: uid, lektion_id: id, svar: svar, opdateret: new Date().toISOString() }, { onConflict: "bruger_id,lektion_id" }).select("id");
+    if (u.error || !(u.data && u.data.length)) return false;
+    if (gl && !gl.error && (gl.data || []).some(function (r) { return r.svar && Object.keys(r.svar).length; })) {
+      try { await sb.from("skema_svar").update({ svar: {} }).eq("kode", currentKode).eq("navn", CURRENT_NAVN || "").eq("skema", "lektion_svar_" + id).select("id"); } catch (e) {}
+    }
+    return true;
+  } catch (e) { return false; }
+}
 async function skemaSvarSkrivEn(skema, svar, beroert) {
+  if (skema.indexOf("lektion_svar_") === 0 && !oevIdaSer(skema.slice(13))) return await privatSvarSkriv(skema.slice(13), svar, beroert);
   try {
     if (skema.indexOf("lektion_svar_") === 0 || skema === "maalgrupper") {
       const rr = await sb.from("skema_svar").select("svar").eq("kode", currentKode).eq("navn", CURRENT_NAVN || "").eq("skema", skema).order("created_at", { ascending: true });
@@ -46343,6 +46383,14 @@ function lekNoterVis() {
   try { document.getElementById("lekVis").scrollTop = 0; } catch (e) {}
 }
 /* ---- 3 · oevelsen som tilstand paa siden (ikke som popup), naar lektionen staar i det nye design ---- */
+/* HVEM SER SVARET (Ida 16/11): »jeg skal kunne vælge på hver opgave om jeg skal kunne se den eller ej, og mit valg skal fremgå på kundens version«.
+   lektioner.ida_ser vinder; er der ikke valgt, gælder Idas klik »Energi skjult, strategi synlig«: kun strategimodulet (studio 6-x = kundens Modul 5) kan Ida se. */
+function oevIdaSer(id) {
+  const b = mgBasisId(String(id || ""));
+  try { const l = (KURSUS_LEKTIONER || []).find(function (x) { return x.id === b; }); if (l && typeof l.ida_ser === "boolean") return l.ida_ser; } catch (e) {}
+  return /^6-/.test(b);
+}
+function oevHvemSerTekst(id) { return oevIdaSer(id) ? "Ida kan se dit svar, så hun kan bruge det i dit forløb." : "Dit svar bliver kun hos dig. Ida kan ikke se det."; }
 function lekMbOvelseRender() {
   /* ARKET »ÉN TING AD GANGEN« (Idas klik 11/11, bud 1): helskærm over lektionen, etiket + kryds, trinviser (1 af N), ét spørgsmål med Idas uddybning, felt med grå mikrofon, »Næste spørgsmål« / »Markér som udført« nederst. Computeren: samme ark i én kolonne på 680 px. */
   const o = OVELSE, l = KURSUS_LEKTIONER.find(x => x.id === mgBasisId(o.id)); if (!l) return;
@@ -46362,6 +46410,7 @@ function lekMbOvelseRender() {
     + '<div class="ova-spm">' + esc(spm) + '</div>'
     + (besk ? '<div class="ova-besk">' + esc(besk) + '</div>' : '')
     + (erEjerOevelse(l.id) ? '<div class="ova-besk">Ejerens øvelse: ét fælles svar for forretningen.</div>' : '')
+    + '<div class="ova-hvem">' + esc(oevHvemSerTekst(l.id)) + '</div>'   /* under spørgsmålet, over feltet (Ida 16/11) */
     + (erDage
         ? '<div id="ovelseDage">' + ovelseDageHtml(ovSvarFor(o, l, o.i) || "") + '</div>'
         : '<div class="lk-felt-ramme ova-felt-ramme"><textarea id="ovelseSvar" class="lk-ov-felt ova-felt" placeholder="Skriv dit svar …" oninput="ovelseKladdeInput(this)">' + esc(ovSvarFor(o, l, o.i) || "") + '</textarea>' + (typeof taleKnapHtml === "function" ? taleKnapHtml("ovelseSvar") : '') + '</div>')
@@ -50916,7 +50965,8 @@ async function kbuTegn() {
   kbuStatusTegn();
   if (!lekId || typeof sb === "undefined" || !sb) { KBU.hentet = true; kbuStatusTegn(); kbuFilerTegn(); return; }
   try {
-    let r = await sb.from("lektioner").select("id,titel,beskrivelse,video_link,oevelse_art,popup").eq("id", lekId).maybeSingle();
+    let r = await sb.from("lektioner").select("id,titel,beskrivelse,video_link,oevelse_art,popup,ida_ser").eq("id", lekId).maybeSingle();
+    if (r.error) r = await sb.from("lektioner").select("id,titel,beskrivelse,video_link,oevelse_art,popup").eq("id", lekId).maybeSingle();
     if (r.error) { KBU.udenPopup = true; r = await sb.from("lektioner").select("id,titel,beskrivelse,video_link,oevelse_art").eq("id", lekId).maybeSingle(); }
     if (r.error) { KBU.udenArt = true; r = await sb.from("lektioner").select("id,titel,beskrivelse,video_link").eq("id", lekId).maybeSingle(); }
     if (r.error) KBU.fejl = true; else KBU.pub = r.data || null;
@@ -51095,7 +51145,10 @@ async function kbuUdgiv() {
     if (KBU.oev.art !== kbuOpgPubArt()) {
       try { const ra = await sb.from("lektioner").update({ oevelse_art: KBU.oev.art }).eq("id", KBU.lekId).select("id"); if (ra.error || !(ra.data && ra.data.length)) mangler.push("typen"); else { const l = (KURSUS_LEKTIONER || []).find(function (x) { return x.id === KBU.lekId; }); if (l) l.oevelse_art = KBU.oev.art; } } catch (e) { mangler.push("typen"); }
     }
-    if (mangler.indexOf("spørgsmålene") < 0 && mangler.indexOf("typen") < 0) KBU.oev = null;
+    if (kbuOpgIda() !== kbuOpgPubIda()) {
+      try { const ri = await sb.from("lektioner").update({ ida_ser: kbuOpgIda() }).eq("id", KBU.lekId).select("id"); if (ri.error || !(ri.data && ri.data.length)) mangler.push("hvem der ser svarene"); else { const nyI = kbuOpgIda(); if (KBU.pub) KBU.pub.ida_ser = nyI; const l = (KURSUS_LEKTIONER || []).find(function (x) { return x.id === KBU.lekId; }); if (l) l.ida_ser = nyI; } } catch (e) { mangler.push("hvem der ser svarene"); }
+    }
+    if (mangler.indexOf("spørgsmålene") < 0 && mangler.indexOf("typen") < 0 && mangler.indexOf("hvem der ser svarene") < 0) KBU.oev = null;
   }
   if (kbuSkAendret()) {
     try {
@@ -51132,13 +51185,16 @@ async function kbuUdgiv() {
    (ovNoegle) og røres aldrig: et nyt spørgsmål får et nyt id (ovNytId, genbruges aldrig), et slettet lægges i KBU.arkiv med sit id,
    og mangler bare ét spørgsmål et id, spærres slet og flyt (svar på pladsen må ikke skifte spørgsmål). */
 function kbuOpgPubListe() { try { const l = (KURSUS_LEKTIONER || []).find(function (x) { return x.id === KBU.lekId; }); return (l && Array.isArray(l.ovelse)) ? l.ovelse : []; } catch (e) { return []; } }
+function kbuOpgPubIda() { const a = KBU.pub && KBU.pub.ida_ser; return typeof a === "boolean" ? a : oevIdaSer(KBU.lekId); }
+function kbuOpgIda() { return KBU.oev && typeof KBU.oev.ida === "boolean" ? KBU.oev.ida : kbuOpgPubIda(); }
+function kbuOpgIdaSaet(v) { kbuOpgSikr(); KBU.oev.ida = !!v; kbuOpgGemKladde(); kbuOpgAabn(); }
 function kbuOpgPubArt() { const a = KBU.pub && KBU.pub.oevelse_art; return (a === "opgave" || a === "refleksion") ? a : oevArt(KBU.lekId); }
 function kbuOpgListe() { return KBU.oev ? KBU.oev.spm : kbuOpgPubListe(); }
 function kbuOpgArt() { return KBU.oev ? KBU.oev.art : kbuOpgPubArt(); }
 function kbuOpgOrd() { return kbuOpgArt() === "opgave" ? "Opgave" : "Refleksionsøvelse"; }
 function kbuOpgNorm(liste) { return JSON.stringify((liste || []).map(ovNorm).filter(Boolean)); }
-function kbuOpgAendret() { return !!(KBU.oev && (kbuOpgNorm(KBU.oev.spm) !== kbuOpgNorm(kbuOpgPubListe()) || KBU.oev.art !== kbuOpgPubArt())); }
-function kbuOpgSikr() { if (!KBU.oev) KBU.oev = { art: kbuOpgPubArt(), spm: kbuOpgPubListe().map(function (x) { return (x && typeof x === "object") ? Object.assign({}, x) : x; }) }; }
+function kbuOpgAendret() { return !!(KBU.oev && (kbuOpgNorm(KBU.oev.spm) !== kbuOpgNorm(kbuOpgPubListe()) || KBU.oev.art !== kbuOpgPubArt() || kbuOpgIda() !== kbuOpgPubIda())); }
+function kbuOpgSikr() { if (!KBU.oev) KBU.oev = { art: kbuOpgPubArt(), ida: kbuOpgPubIda(), spm: kbuOpgPubListe().map(function (x) { return (x && typeof x === "object") ? Object.assign({}, x) : x; }) }; }
 function kbuOpgAlleHarId() { return kbuOpgListe().every(function (x) { return !!ovId(x); }); }
 async function kbuOpgGemKladde() {
   kbuStatusTegn(); kbuOpgTegn();
@@ -51168,6 +51224,8 @@ function kbuOpgAabn() {
     + '<div class="kbs-krop"><div class="kbu"><div class="kbu-h">'
     + '<div class="kbu-ovr kbu-foerst kbu-type">Type</div><div class="kbu-chips kbu-type">'
     + ['opgave', 'refleksion'].map(function (a) { return '<button type="button" class="kbu-chip' + (a === art ? ' on' : '') + '" onclick="kbuOpgArtSaet(\'' + a + '\')">' + (a === "opgave" ? "Opgave" : "Refleksionsøvelse") + '</button>'; }).join("") + '</div>'
+    + '<div class="kbu-ovr kbu-type">Svarene</div><div class="kbu-chips kbu-type">'
+    + [true, false].map(function (v) { return '<button type="button" class="kbu-chip' + (v === kbuOpgIda() ? ' on' : '') + '" onclick="kbuOpgIdaSaet(' + v + ')">' + (v ? "Du kan se dem" : "Kun kunden") + '</button>'; }).join("") + '</div>'
     + '<div class="kbu-kn"><button type="button" class="kbu-knap" onclick="kbuSpmArk(-1)">' + plus + 'Tilføj</button>'
     + (liste.length ? '<button type="button" class="kbu-knap" onclick="kbuOpgSletSpoerg()">' + ((typeof BS_SKRALD_SVG !== "undefined") ? BS_SKRALD_SVG : "") + '<span>Slet</span></button>' : '') + '</div>'
     + '<div class="kbu-kvit" id="kbuOpgKvit"></div></div>'
