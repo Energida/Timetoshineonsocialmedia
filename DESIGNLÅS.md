@@ -1,3 +1,9 @@
+## 16. november · MIT SHINEBAROMETER I VÆRKTØJSKASSEN · OPGAVEARKET UDEN LEKTIONSNUMMER OG MED MINDRE KNAPPER (Idas »Ja, læg den ud«, artifact VAJWEfNsrdfLYZ6CBREcLH, v3359)
+- Ida: »byg Mit Shinebarometer ud fra svarene i 1.3«. Værktøjskassen (YOU GOT THIS): ikonflisen »Mit Shinebarometer« står på den første tomme plads efter Mine noter.
+- Siden (screen 32): overskrift over flisen »Når jeg er i overskud« og »Når jeg er i underskud«. I hver flise står Idas spørgsmål (grå) over kundens svar (sort). De deles efter ordet »underskud« i spørgsmålet. Nederst står »Ret dine svar«, som åbner opgaven. Uden svar: »Dit Shinebarometer bygges af dine svar fra opgaven efter lektion 1.3.« og »Tag opgaven«. Siden læser kun kundens egne svar.
+- Opgavearket: etiketten er kun »Refleksionsøvelse« / »Opgave« uden »· Lektion N« (Ida: »er det vigtigt der står lektionsnummeret efter reflektionsøvelse?«).
+- **UNDTAGELSE FRA 56 (Ida 16/11: »krydset og næste spørgsmål knapper virker begge for store«):** I opgavearket er krydset 36, og »Næste spørgsmål«/»Forrige« er 44 høje med 14 px tekst. Husets 56 gælder alle andre steder.
+
 ## 16. november · ARKET RULLER, DET PRESSES ALDRIG (Ida: »designet her i tøm hovedet i min admin spiller heller ikke«, skærmbillede med tastaturet oppe)
 - Med tastaturet oppe blev arket lavt, og dets rækker krympede: Link/Billede skåret over, »Gem i« væk. Nu beholder hver række i et ark sin højde (`.ark > *`, `.ark-ekstra > *` krymper ikke); arket ruller i stedet.
 - MÅLT i selen 390 med 420 px tastatur: Link/Billede 36 px hele, »Gem i« synlig, rul ned = Gem.
