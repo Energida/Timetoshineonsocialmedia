@@ -1,3 +1,21 @@
+## 16. november · INDHOLDET STARTER OPPE, INGEN KNAPPER I COVERET UD OVER TILBAGE (Ida: »flyt indholdet op på siden - ingen sider må starte længere nede pga plus og de 3 prikker og ingen knapper udover tilbage må være i coveret!«)
+- Backstage, computer og telefon: ingen egen knaprække under coveret. ⋯ og plus står til højre ud for sidens FØRSTE række (chips, etiket, fliser). Det, der står i knappernes højde, giver plads i højre side (margin), så ingen knap står oven i en flise.
+- Telefonen: ⋯ er ude af coverets hjørne og står nu på hvid bund med grå ring ud for første række; plusset bliver i bundmenuen. Coveret har kun Tilbage (og nålen ved navnet).
+- MÅLT i selen 1440: produktsiden før chips y371, efter y299 (72 px op). Set på Energida Studio, Indbakken, Get shit done, Økonomi, CRM og produktsiden på 1440 og 390.
+- Vælter: »⋯ øverst til højre i coveret som kundens klokke« på telefonen (25/9) og rækken under coveret på computeren (bud 0, 25/9).
+- Ikke rørt: CRM's egen værktøjslinje (filter · sortér · søg · Ny) og Økonomis måneds-vælger er sidens egne rækker.
+
+## 16. november · ⋯ OG PLUSSET STÅR FAST PÅ PRODUKTSIDEN (Ida: »jeg bliver seriøst sindssyg af at prikkerne og plusset hopper rundt når jeg klikker rundt på siden«)
+- På computeren holder ⋯ samme plads på alle produktets faner (Indhold · Deltagere · Sådan går det m.fl.). Har fanen intet plus, står plussets plads tom; ⋯ rykker aldrig ud i hjørnet.
+- MÅLT i selen 1440 før: Indhold ⋯ x1292 + plus x1348, Deltagere ⋯ x1348 (hop på 56 px). Efter: ⋯ x1292 på alle faner, plus x1348 når det er der. Telefonen er urørt (⋯ i coverets hjørne, plus i bundmenuen).
+- Regel: knapmotoren må aldrig lade ⋯ glide over på plussets plads inden for samme side.
+
+## 16. november · JUSTER BILLEDE PÅ SLIDET (Ida: »byg juster billede«; Fang dem-buddet 14/11: »Billedets redigering åbner først ved ›Juster billede‹«)
+- Chippen »Juster billede« med skyder-symbol står ved »+ Tekst«, kun når slidet har et foto. Den gælder Fang dem, Fasthold dem og coverets ark. Valgt = rød chip.
+- Åben: »Zoom« 100–300 % (skyder i husets rød, procent i gråt), grå linje »Træk i billedet for at flytte det.« og chips »Nulstil« · »Færdig«. Mens den er åben, flytter fingeren/musen billedet, ikke teksten.
+- Gemmes på slidets design (`bil`). Fotoet selv røres aldrig, og det hentede billede ser ud som på skærmen. Lukker, når et andet slide vælges.
+
+
 ## **TEKST RETTES DIREKTE I FELTET — ALDRIG EN POPUP (HÅRD, Ida 16/11, v3355)**
 Ida: »der skal heller ikke åbne en pop up når jeg skal rette i teksten - jeg skal bare kunne rette den direkte og gemme ændringer«. Et tryk på et tekstfelt i Energida Studio gør feltet selv til skrivefeltet. Teksten gemmes, når feltet forlades; Esc fortryder. Gælder modulets felter, spørgeskemaets felter og spørgsmålene i opgaven/refleksionsøvelsen (spørgsmål og beskrivelse rettes begge i flisen; »Slet« står ud for overskriften »Spørgsmål N«; »Tilføj« giver en tom flise sidst). Motor: `kbuRetDirekte` (via `kbuTekstArk`) og `kbuSpmDirekte`. Det lille ark til tekst bruges kun, hvor der ikke findes et felt at skrive i. Et nyt tekstfelt bygges aldrig med en popup.
 

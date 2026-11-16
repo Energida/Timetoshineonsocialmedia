@@ -26878,8 +26878,10 @@ function cvTegn(cx, W, H, design, noegle, foto, valgt) {
   const graa = foto === "graa";
   if (graa) { cx.fillStyle = "#EEEEEE"; cx.fillRect(0, 0, W, H); }
   else if (foto && foto.naturalWidth > 0) {
-    const s = Math.max(W / foto.naturalWidth, H / foto.naturalHeight), w = foto.naturalWidth * s, h = foto.naturalHeight * s;
-    cx.drawImage(foto, (W - w) / 2, (H - h) / 2, w, h);
+    /* JUSTER BILLEDE (Ida 16/11 »byg juster billede«, Fang dem-buddet 14/11): design.bil = { z: zoom 1–3, x/y: -1…1 = hvor i billedet man står } — tegnes ens på skærmen og i det hentede billede */
+    const bj = (design && design.bil) || {}, bz = Math.max(1, Math.min(3, +bj.z || 1)), bx = Math.max(-1, Math.min(1, +bj.x || 0)), by = Math.max(-1, Math.min(1, +bj.y || 0));
+    const s = Math.max(W / foto.naturalWidth, H / foto.naturalHeight) * bz, w = foto.naturalWidth * s, h = foto.naturalHeight * s;
+    cx.drawImage(foto, (W - w) / 2 + bx * (w - W) / 2, (H - h) / 2 + by * (h - H) / 2, w, h);
   } else if (foto !== false) {   /* foto === false: gennemsigtig flade (storyens tekst oven på en fil) */
     const g = cx.createLinearGradient(0, 0, W * 0.4, H); g.addColorStop(0, "#A89C8E"); g.addColorStop(1, "#4F4740"); cx.fillStyle = g; cx.fillRect(0, 0, W, H);
   }
@@ -27083,7 +27085,7 @@ function cvUI() {
   const p = cvEl("cvPanel"); if (!p) return;
   p.innerHTML = '<div class="cv-sek">Tekster</div><div class="cv-chips">'
     + d.lag.map(function (x, i) { return chip(i === CV.valgt, 'onclick="cvVaelgLag(' + i + ')"', "Tekst " + (i + 1)); }).join("")
-    + '<button type="button" class="ark-chip cv-plus" onclick="cvNytLag()">+ Tekst</button></div>'
+    + '<button type="button" class="ark-chip cv-plus" onclick="cvNytLag()">+ Tekst</button>' + (cvFotoUrl(CV.noegle) ? '<button type="button" class="ark-chip kv-just' + (CV.juster ? ' on' : '') + '" aria-pressed="' + !!CV.juster + '" onclick="kvJusterSkift()">' + KV_JUST_IK + 'Juster billede</button>' : '') + '</div>' + (CV.juster && cvFotoUrl(CV.noegle) ? kvJusterPanel() : '')
     + (l ? '<div class="cv-felt"><textarea id="cvTekst" rows="2" aria-label="Teksten" oninput="cvTekstInd(this)">' + esc(cvTekst(l, CV.noegle)) + '</textarea>'
       + '<button type="button" class="cv-slet" aria-label="Slet teksten" title="Slet teksten" onclick="cvSletLag()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg></button></div>'
       + '<div class="cv-sek">Skrift</div><div class="cv-chips">' + skr.map(function (n) { return chip(l.s === n, 'onclick="cvSaet(\'s\',\'' + n + '\')"', esc(n), "font-family:'" + cvFam(n) + "';font-weight:" + cvVaegt(n)); }).join("") + (visAlle ? '' : '<button type="button" class="ark-chip cv-plus" onclick="CV.alleSkrifter=true;cvUI()">Alle skrifter</button>') + '</div>'
@@ -27185,6 +27187,8 @@ function cvPunkt(e) { const c = cvEl("cvC"), r = c.getBoundingClientRect(); retu
 /* TRÆK OG KNIB (Ida 29/10 på sin iPhone: »funktionen med at tilpasse størrelsen på teksten og placerer den fungerer heller ikke … man kan kunne knibe teksten sammen så den får den rette størrelse«):
    ét fingertryk flytter den valgte tekst, også når fingeren ikke rammer præcis på bogstaverne; to fingre kniber teksten større/mindre (samme z som skyderen). */
 function cvNed(e) {
+  /* JUSTER BILLEDE ÅBEN: fingeren flytter billedet, ikke teksten (16/11) */
+  if (CV && CV.juster && cvFotoUrl(CV.noegle)) { const pj = cvPunkt(e), bj = cvD().bil || {}; CV.bTraek = { x0: pj.x, y0: pj.y, W: pj.W, H: pj.H, bx: +bj.x || 0, by: +bj.y || 0 }; try { e.target.setPointerCapture(e.pointerId); } catch (x) {} e.preventDefault(); return; }
   if (CV && CV.inline && !kvNedOk(e)) return;   /* paa siden: foerste tryk vaelger teksten, foerst derefter flyttes den (14/11) */
   if (CV) { const gl = CV.ramme === false; CV.ramme = true; if (gl) cvTegnNu(); }
   if (!CV) return; const p = cvPunkt(e), m = p.W * 0.03;
@@ -27201,6 +27205,13 @@ function cvNed(e) {
   CV.traek = { dx: p.x - (l.x / 100) * p.W, dy: p.y - (l.y / 100) * p.H };
 }
 function cvFlyt(e) {
+  if (CV && CV.bTraek) { const pf = cvPunkt(e), d = cvD(), z = Math.max(1, +((d.bil || {}).z) || 1), t = CV.bTraek;
+    /* billedet følger fingeren: overskuddet er (z-1)·bredden — ved zoom 1 kan der kun flyttes den vej, fotoet er større end slidet */
+    const fo = cvBillede(cvFotoUrl(CV.noegle)); let ox = (z - 1) * t.W, oy = (z - 1) * t.H;
+    try { if (fo && fo.naturalWidth) { const s0 = Math.max(t.W / fo.naturalWidth, t.H / fo.naturalHeight) * z; ox = fo.naturalWidth * s0 - t.W; oy = fo.naturalHeight * s0 - t.H; } } catch (x) {}
+    const nx = ox > 1 ? t.bx + 2 * (pf.x - t.x0) / ox : 0, ny = oy > 1 ? t.by + 2 * (pf.y - t.y0) / oy : 0;
+    d.bil = Object.assign({ z: z }, d.bil || {}, { x: Math.max(-1, Math.min(1, nx)), y: Math.max(-1, Math.min(1, ny)) });
+    cvTegnNu(); e.preventDefault(); return; }
   if (CV && CV.ptr && CV.ptr[e.pointerId]) CV.ptr[e.pointerId] = { x: e.clientX, y: e.clientY };
   if (CV && CV.knib) { const ids = Object.keys(CV.ptr || {}); if (ids.length < 2) return; const a = CV.ptr[ids[0]], b = CV.ptr[ids[1]]; const lk = cvLag(); if (lk) { lk.k = Math.max(0.2, Math.min(6, CV.knib.k0 * Math.hypot(a.x - b.x, a.y - b.y) / CV.knib.d0)); cvTegnNu(); } e.preventDefault(); return; }   /* knib aendrer kun størrelsen som helhed (l.k), aldrig layoutet (Ida 2/11) */
   if (CV && CV.hjoerne) { const ph = cvPunkt(e), lh = cvLag(); if (lh) { const hx = (lh.x / 100) * ph.W, hy = (lh.y / 100) * ph.H; lh.k = Math.max(0.2, Math.min(6, CV.hjoerne.k0 * Math.hypot(ph.x - hx, ph.y - hy) / CV.hjoerne.d0)); cvTegnNu(); } e.preventDefault(); return; }
@@ -27227,6 +27238,7 @@ function cvHjaelp(v, h) {
   } catch (e) {}
 }
 function cvOp(e) {
+  if (CV && CV.bTraek) { CV.bTraek = null; cvGemSnart(); try { if (CV.inline) kvMiniTegn(CV.noegle); } catch (x) {} return; }
   if (CV && CV.ptr && e && e.pointerId !== undefined) delete CV.ptr[e.pointerId];
   if (CV && CV.knib) { if (Object.keys(CV.ptr || {}).length < 2) { CV.knib = null; CV.traek = null; cvGemSnart(); } return; }   /* efter et knib flytter den sidste finger ikke teksten */
   if (CV && CV.hjoerne) { CV.hjoerne = null; cvGemSnart(); return; }
@@ -31243,7 +31255,7 @@ function kvInit(rod0) {
   const samme = CV && CV.inline && CV.rod === rod && CV.noegle === noegle;
   if (CV && CV.inline && !samme) kvNyLagRyd();   /* et tomt, nyt lag fjernes, naar vaerktoejet skifter (Idas klik 14/11) */
   CV = { inline: true, rod: rod, kar: true, hook: hook, tlf: rod.getAttribute("data-tlf") === "1", noegle: noegle, nogler: sl.map(function (t, i) { return String(i); }),
-    valgt: samme ? CV.valgt : 0, ramme: samme ? CV.ramme : false, traek: null, bokse: [], nyLag: samme ? CV.nyLag : null, nyNoegle: samme ? CV.nyNoegle : null };
+    valgt: samme ? CV.valgt : 0, ramme: samme ? CV.ramme : false, traek: null, bokse: [], nyLag: samme ? CV.nyLag : null, nyNoegle: samme ? CV.nyNoegle : null, juster: samme ? !!CV.juster : false };   /* Juster billede bliver åben, når værktøjet bindes igen til samme slide (16/11) */
   if (!rod.__kvKlar) {
     rod.__kvKlar = true;
     rod.querySelectorAll("canvas.kv-c").forEach(function (c) { c.addEventListener("pointerdown", kvCNed); c.addEventListener("pointermove", cvFlyt); c.addEventListener("pointerup", cvOp); c.addEventListener("pointercancel", cvOp); });
@@ -31278,7 +31290,7 @@ function kvSporScroll() {
 }
 function kvVaelg(i, fraSwipe) {
   if (!CV || !CV.inline || CV.hook) kvInit(document.getElementById("kvRod")); if (!CV || !CV.inline || CV.hook) return;   /* slide-skift hoerer til Fasthold dems vaerktoej (trin B) */
-  KV_AKTIV = i;
+  KV_AKTIV = i; if (String(i) !== CV.noegle) { CV.juster = false; CV.bTraek = null; }   /* Juster billede lukker, når et andet slide vælges (16/11) */
   if (!CV.tlf) { kvGenTegn(); return; }   /* computeren: det store billede skifter */
   CV.noegle = String(i); CV.valgt = 0; CV.ramme = false; CV.traek = null;
   const rod = CV.rod;
@@ -31328,8 +31340,22 @@ function kvChips(k, aktiv) {
   const d = aktiv ? cvD() : cvDesign(String(k), false), n = (d.lag || []).length;
   const v = aktiv ? CV.valgt : -1;
   return '<div class="cv-chips kv-chips">' + (n > 1 ? d.lag.map(function (x, j) { return '<button type="button" class="ark-chip' + (j === v ? ' on' : '') + '" onclick="' + (aktiv ? '' : 'kvVaelg(' + k + ');') + 'cvVaelgLag(' + j + ')">Tekst ' + (j + 1) + '</button>'; }).join("") : '')
-    + '<button type="button" class="ark-chip cv-plus" onclick="' + (aktiv ? '' : 'kvVaelg(' + k + ');') + 'cvNytLag()">+ Tekst</button></div>';
+    + '<button type="button" class="ark-chip cv-plus" onclick="' + (aktiv ? '' : 'kvVaelg(' + k + ');') + 'cvNytLag()">+ Tekst</button>'
+    + (cvFotoUrl(String(k)) ? '<button type="button" class="ark-chip kv-just' + (aktiv && CV.juster ? ' on' : '') + '" aria-pressed="' + !!(aktiv && CV.juster) + '" onclick="' + (aktiv ? '' : 'kvVaelg(' + k + ');') + 'kvJusterSkift()">' + KV_JUST_IK + 'Juster billede</button>' : '')
+    + '</div>' + (aktiv && CV.juster && cvFotoUrl(String(k)) ? kvJusterPanel() : '');
 }
+/* JUSTER BILLEDE (Ida 16/11 »byg juster billede«; Fang dem-buddet 14/11: »Billedets redigering åbner først ved ›Juster billede‹«): chippen står ved »+ Tekst«, kun når slidet har et foto.
+   Åben: zoom-skyderen og »Nulstil« under chipsene, og fingeren flytter billedet i stedet for teksten. Gemmes på slidets design (bil) — fotoet selv røres aldrig. */
+const KV_JUST_IK = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true" style="margin-right:6px;flex:none"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg>';
+function kvJusterPanel() {
+  const b = (cvD().bil) || {}, z = Math.round((+b.z || 1) * 100);
+  return '<div class="kv-just-panel"><div class="cv-sek">Zoom</div><div class="kv-just-rk"><input type="range" class="kv-just-zoom" min="100" max="300" step="5" value="' + z + '" aria-label="Zoom" oninput="kvJusterZoom(this.value)"><span class="kv-just-pct">' + z + ' %</span></div>'
+    + '<div class="kv-just-hj">Træk i billedet for at flytte det.</div>'
+    + '<div class="cv-chips"><button type="button" class="ark-chip" onclick="kvJusterNulstil()">Nulstil</button><button type="button" class="ark-chip" onclick="kvJusterSkift()">Færdig</button></div></div>';
+}
+function kvJusterSkift() { if (!CV) return; CV.juster = !CV.juster; CV.bTraek = null; if (CV.juster) CV.ramme = false; cvUI(); }
+function kvJusterZoom(v) { if (!CV) return; const d = cvD(); d.bil = Object.assign({ x: 0, y: 0 }, d.bil || {}, { z: Math.max(1, Math.min(3, (+v || 100) / 100)) }); try { const e = document.querySelector(".kv-just-pct"); if (e) e.textContent = Math.round(d.bil.z * 100) + " %"; } catch (x) {} cvTegnNu(); try { if (CV.inline) kvMiniTegn(CV.noegle); } catch (x) {} cvGemSnart(); }
+function kvJusterNulstil() { if (!CV) return; const d = cvD(); delete d.bil; cvTegnNu(); try { if (CV.inline) kvMiniTegn(CV.noegle); } catch (x) {} cvGemSnart(); cvUI(); }
 function kvFeltHtml(k, aktiv) {
   const d = aktiv ? cvD() : cvDesign(String(k), false), l = aktiv ? cvLag() : (d.lag || [])[0];
   const felt = l ? '<div class="cv-felt"><textarea' + (aktiv ? ' id="cvTekst" oninput="cvTekstInd(this)"' : ' onfocus="kvFokus(' + k + ')"') + ' rows="2" aria-label="Teksten på billedet" placeholder="Skriv teksten på sliden">' + esc(cvTekst(l, String(k))) + '</textarea>'
@@ -68492,7 +68518,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "3355";
+const APP_VERSION = "3356";
 const APP_BYGGET = "3. november";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_VERSION;   /* ingen dato (Ida 7/11: »hvorfor står der version 3. november?«) — datoen blev ikke rettet med, nummeret er sandheden */ } catch (e) {} });
 let NY_VERSION_KLAR = false;
@@ -75678,7 +75704,41 @@ function coverKnapperUd(b, kand, inset, alignEl, rod) {
   else if (BUD === 7) { topVp = br.top + coverSikkerTop() + 12; reserver = false; }
   try { document.body.dataset.knapBud = String(BUD === 7 ? 6 : BUD); } catch (e) {}   /* bud 7 har bud 6's udseende: gennemsigtig m. hvid ring */
   if (alignEl && syn(alignEl) && !harTilbage && BUD !== 6 && BUD !== 7) { const ar = alignEl.getBoundingClientRect(); if (ar.top - br.bottom < 140) { topVp = ar.top + (ar.height - 44) / 2; reserver = false; } }
+  /* INDHOLDET STARTER OPPE, KNAPPERNE PAA LINJE MED DET (Ida 16/11: »flyt indholdet op på siden - ingen sider må starte længere nede pga plus og de 3 prikker
+     og ingen knapper udover tilbage må være i coveret!«). Backstage paa computeren: ingen egen knapraekke under coveret. ⋯ og plus staar til hoejre ud for
+     sidens foerste raekke (chips, fliser …), og den raekke giver plads til dem i hoejre side. Coveret har kun Tilbage. */
+  [].forEach.call(document.querySelectorAll("[data-knap-ret]"), function (e) { e.style.removeProperty("margin-right"); e.removeAttribute("data-knap-ret"); });
+  if (((BUD === 0 && reserver && desk) || BUD === 7) && document.body.classList.contains("dash-mode") && rod) {
+    try {
+      if (BUD === 7) { inset = 16; try { document.body.dataset.knapBud = "0"; } catch (e) {} }   /* telefonen: ⋯ ud af coverets hjoerne, ned paa hvid bund (graa ring som paa computeren) */
+      const gl = b.__knapper || 0;   /* det, indholdet i dag er skubbet ned — det forsvinder, naar vi ikke reserverer */
+      const bund = br.bottom + gl;
+      const maler = function (e) { const c = getComputedStyle(e); if (c.boxShadow !== "none" || (c.backgroundColor !== "rgba(0, 0, 0, 0)" && c.backgroundColor !== "transparent") || parseFloat(c.borderTopWidth) > 0) return true; return [].some.call(e.childNodes, function (n) { return n.nodeType === 3 && n.textContent.trim(); }); };
+      let first = null, ft = Infinity;
+      [].forEach.call(rod.querySelectorAll("*"), function (e) { if (e.closest(".bs-baand") || liste.some(function (k) { return k.contains(e); }) || /^(svg|path|circle|line)$/i.test(e.tagName)) return; const q = e.getBoundingClientRect(); if (!(q.height > 6 && q.width > 20)) return; if (q.top >= bund - 1 && q.top < ft && maler(e)) { ft = q.top; first = e; } });
+      if (first) {
+        const fq = first.getBoundingClientRect();
+        let raekke = first; while (raekke.parentElement && raekke.parentElement !== rod) { const pq = raekke.parentElement.getBoundingClientRect(); if (Math.abs(pq.top - fq.top) > 2 || pq.bottom > fq.bottom + 2) break; raekke = raekke.parentElement; }
+        const rq = raekke.getBoundingClientRect();
+        const h = Math.min(rq.height, 44);
+        topVp = rq.top - gl + (h - 44) / 2;   /* midt ud for en lav raekke (chips), flugter med toppen af en hoej (flise) */
+        let bredde = 0; liste.forEach(function (e) { bredde += (Math.round(e.getBoundingClientRect().width) || 44) + 12; });
+        if (!liste.some(function (e) { return e.id === "bf3RumKnap"; }) && liste.some(function (e) { return e.id === "klipHeadTgl"; }) && typeof BF3_PROD_VALGT !== "undefined" && BF3_PROD_VALGT) bredde += 44 + 12;
+        const venstreKant = br.right - inset - bredde;
+        /* alt, der staar i knappernes hoejde (en lav etiket + flisen lige under den), giver plads i hoejre side — ingen knap oven i en flise */
+        const b0 = topVp + gl - 8, b1 = topVp + gl + 44 + 8;
+        const ret = function (e) { const q = e.getBoundingClientRect(); if (q.right > venstreKant - 12 && !e.hasAttribute("data-knap-ret")) { e.setAttribute("data-knap-ret", "1"); e.style.setProperty("margin-right", Math.ceil(q.right - venstreKant + 12) + "px", "important"); } };
+        ret(raekke);
+        [].forEach.call(rod.querySelectorAll("*"), function (e) { if (e.closest(".bs-baand") || e.closest("[data-knap-ret]") || liste.some(function (k) { return k.contains(e); }) || /^(svg|path|circle|line)$/i.test(e.tagName)) return; const q = e.getBoundingClientRect(); if (!(q.height > 6 && q.width > 20) || q.bottom <= b0 || q.top >= b1 || q.right <= venstreKant - 12 || !maler(e)) return; let r = e; while (r.parentElement && r.parentElement !== rod) { const pq = r.parentElement.getBoundingClientRect(); if (Math.abs(pq.top - q.top) > 2 || pq.bottom > q.bottom + 2) break; r = r.parentElement; } ret(r); });
+        reserver = false;
+        if (gl) setTimeout(function () { try { bsCoverKnapperStil(b); } catch (e) {} }, 60);   /* een gang til, naar indholdet er rykket op */
+      }
+    } catch (e) {}
+  }
   let hoejre = inset;
+  /* ⋯ STAAR FAST PAA PRODUKTSIDEN (Ida 16/11: »jeg bliver seriøst sindssyg af at prikkerne og plusset hopper rundt når jeg klikker rundt på siden«).
+     MAALT 1440: Indhold/Sådan går det = ⋯ x1292 + plus x1348; Deltagere (intet plus) = ⋯ x1348. Plussets plads holdes nu tom, naar fanen intet plus har. */
+  try { if (desk && rod && rod.id === "dside-klip" && typeof BF3_PROD_VALGT !== "undefined" && BF3_PROD_VALGT && !liste.some(function (e) { return e.id === "bf3RumKnap" || erPlus(e); })) hoejre += 44 + 12; } catch (e) {}
   liste.forEach(function (e) {
     /* ens form paa alle knapper i raekken */
     const knapper = (e.tagName === "BUTTON" || e.getAttribute("role") === "button") ? [e] : [].slice.call(e.querySelectorAll("button, [role=button]"));
@@ -99760,6 +99820,13 @@ html body:not(#l1):not(#l2):not(#l3):not(#l4):not(#l5):not(#l6):not(#l7):not(#l8
 :is(#kvRod,#kvHook) .kv-note-boks { margin-top:14px; }
 :is(#kvRod,#kvHook) .kv-note-boks[hidden] { display:none !important; }
 :is(#kvRod,#kvHook) textarea.kv-note { width:100%; min-height:48px; box-sizing:border-box; }
+/* JUSTER BILLEDE (Ida 16/11): chippen med skyder-symbol ved »+ Tekst«, panelet under chipsene — zoom-skyder i husets rød, grå hjælpelinje, Nulstil/Færdig som hvide chips */
+:is(#kvRod,#kvHook,#cvEd) .kv-just { display:inline-flex; align-items:center; }
+:is(#kvRod,#kvHook,#cvEd) .kv-just-panel { margin-top:12px; display:flex; flex-direction:column; gap:8px; }
+:is(#kvRod,#kvHook,#cvEd) .kv-just-rk { display:flex; align-items:center; gap:12px; min-height:44px; }
+:is(#kvRod,#kvHook,#cvEd) .kv-just-zoom { flex:1; min-width:0; accent-color:#FC2404; height:44px; margin:0; }
+:is(#kvRod,#kvHook,#cvEd) .kv-just-pct { font:400 13px Poppins,sans-serif; color:#6F6B66; min-width:48px; text-align:right; }
+:is(#kvRod,#kvHook,#cvEd) .kv-just-hj { font:400 13px/1.45 Poppins,sans-serif; color:#6F6B66; }
 :is(#kvRod,#kvHook) .kv-gammel { margin-top:10px; background:#F1EFEA; border-radius:14px; padding:10px 14px; font-size:13px; line-height:1.45; color:#6F6B66; }
 :is(#kvRod,#kvHook) .kv-gl:empty { display:none; }
 /* TELEFON: swipe-listen */
