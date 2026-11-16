@@ -1,3 +1,5 @@
+## **MODULET ÅBNER: PÅ EN DATO ELLER NÅR FORRIGE MODUL ER GENNEMFØRT (Ida 15/11 »Byg det«, v3353)**
+På »Ret modulet« står under ÅBNER to chips: »På en dato« og »Når Modul N er gennemført« (valgt = rød). Datoflisen står kun, når »På en dato« er valgt. Reglen gælder pr. modul og gemmes i »ygt:dage« (nøglen »efter«). Kunden ser »Åbner når Modul N er gennemført« i stedet for nedtællingen. Modul 0 og 1 er altid åbne. Et modul, hvor kunden har set en lektion, låses aldrig. Mail-uret springer moduler med reglen over.
 ## 16. november · BRIEFOVERSIGTEN PÅ TELEFONEN: CHIPS MED SYMBOL · ÉN MÅLGRUPPE = INGEN CHIP · COVERBILLEDET ÉN GANG (Ida 16/11) · v3350
 - Fakta-chipsene over statuslisten har rækkens eget symbol foran teksten (»jeg mangler symboler i chips som vi havde tidligere«).
 - Har kunden kun én målgruppe, står den ikke som chip (»så skal den ikke fremgå som chips«).

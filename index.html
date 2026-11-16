@@ -10177,6 +10177,7 @@ html body #bsKunder .bs3-chips .ark-chip.on { background:var(--red) !important; 
 .bs3-folddoer .bs3-n { color:var(--gray2); }
 @media (max-width:899px) { .bs3-foldmod .bs3-rk { flex-wrap:wrap; gap:4px 12px; } .bs3-foldmod .bs3-t { flex-basis:100%; } .bs3-foldmod .bs3-lekord { margin-left:0; } .bs3-foldmod .bs3-foldpil { margin-left:auto; } .bs3-foldind { padding-left:16px; } .bs3-foldind .kv-flise .bs3-rk { flex-wrap:nowrap; } .bs3-foldind .bs3-lekord { font-size:12px; margin-left:0; white-space:nowrap; } .bs3-foldtal, .bs3-foldmod .bs3-lekord { font-size:12px; } }
 @media (prefers-reduced-motion:reduce) { .bs3-foldpil { transition:none; } }
+.bs3-modregel { margin-top:10px; }
 .bs3-modsek { margin-top:var(--luft-4,32px); }
 .bs3-fl.bs3-oevfl { margin-left:28px; } @media (max-width:899px) { .bs3-fl.bs3-oevfl { margin-left:20px; } }
 .bs3-modret { max-width:760px; } .bs3-modret .kbu-ovr.kbu-foerst { margin-top:0; } .bs3-modret .kbu-chips { margin:0; } .bs3-modret .kbu-kvit { margin-top:12px; font-size:13px; color:#6F6B66; } .bs3-modret .kbu-kvit.fejl { color:var(--red); }
@@ -32488,7 +32489,7 @@ document.addEventListener("click", function (e) { if (Date.now() < BRIEF_KLIKVAG
 function openBriefSide(id) {
   if (!erIdeId(id)) { try { fejlTilIda("uden_id", "openBriefSide uden id (" + String(id) + ") på " + ((document.querySelector(".screen.active") || {}).id || "")); } catch (e) {} return; }   /* aldrig en brief uden id (19/10) */
   window.__FS_AABEN = {};   /* skrivefelterne lukker igen, naar en brief aabnes (18/10) */
-  if (ygtBriefLaast()) { ygtLaasArk("Briefen åbner med modul 7 " + ygtDatoOrd(ygtModulAabner("8"))); return; }   /* ti uger (Idas klik 30/9) */
+  if (ygtBriefLaast()) { ygtLaasArk("Briefen åbner med modul 7 " + ygtAabnerOrd("8")); return; }   /* ti uger (Idas klik 30/9) */
   if (window.__MO_VAELG && typeof current !== "undefined" && current === 2) { moedeIdeSkift(id).then(function () { try { moedeVaelgLinje(); } catch (e) {} }); return; }   /* valg til moedet fra Idébanken (29/9) */
   setTimeout(function () { try { briefHookIKlip(); } catch (e) {} }, 400);   /* hook-forslagene i klip 1 (26/9) */
   setTimeout(function () { try { briefThumbFold(); } catch (e) {} }, 400);
@@ -44364,8 +44365,23 @@ const YGT_DAG_STD = Object.assign({}, YGT_DAG);
 let YGT_DAGE_HENTET = false;
 /* DATO PR. MODUL (Ida 15/11: »lige nu har jeg brug for at kunne sætte datoer på de forskellige moduler hvornår de åbner« — indtil alle lektioner er optaget). Gælder alle kunder; en kunde, der starter efter datoen, har modulet åbent fra start. Uden dato gælder dagene. Samme række (»ygt:dage«, nøglen »dato«). */
 const YGT_DATO = {};
+/* ÅBNER, NÅR FORRIGE MODUL ER GENNEMFØRT (Ida 15/11: »derfra skal det så være at kunden bare skal genenmføre lektionen inden for at næste modul åbner« · »Byg det«): vælges pr. modul i Studio
+   (»Ret modulet« · Åbner). Samme række (»ygt:dage«, nøglen »efter«). Uden valget gælder datoen eller dagene som før. Et modul, hvor kunden har set en lektion, låses aldrig (22/10). */
+const YGT_EFTER = {};
+function ygtForrigeNr(nr) { return String(parseInt(nr, 10) - 1); }
+function ygtForrigeMed(nr) { const f = ygtForrigeNr(nr); const lek = kursusLektionerAktive().filter(function (l) { return modulNrFor(l.id) === f; }); return lek.length > 0 && lek.every(function (l) { return !!KURSUS_SET[l.id]; }); }   /* et forrige modul uden udgivne lektioner åbner intet */
+function ygtEfterOrd(nr) { return "når Modul " + modulVisNr(ygtForrigeNr(nr)) + " er gennemført"; }
+function ygtAabnerOrd(nr) { return YGT_EFTER[String(nr)] ? ygtEfterOrd(nr) : ygtDatoOrd(ygtModulAabner(nr)); }   /* én dør til ordene efter »åbner« */
+async function ygtEfterGem(nr, til) {
+  if (typeof sb === "undefined" || !sb) return false;
+  await ygtDageHent(true);
+  const ud = {}; Object.keys(YGT_DAG_STD).forEach(function (k) { if (YGT_DAG_STD[k] > 0 && YGT_DAG[k] !== YGT_DAG_STD[k]) ud[k] = YGT_DAG[k]; });
+  const ef = Object.assign({}, YGT_EFTER); if (til) ef[String(nr)] = true; else delete ef[String(nr)];
+  if (Object.keys(ef).length) ud.efter = ef; else ud.__udenEfter = true;
+  return ygtDageSkriv(ud);
+}
 function ygtAabnerFra(start, nr) { const k = String(nr), d = YGT_DATO[k], n = YGT_DAG[k]; if (n == null) return null; if (d && YGT_DAG_STD[k] > 0) return (start && d < start) ? start : d; if (!start) return n === 0 ? "0000-01-01" : "9999-12-31"; return ygtPlusDage(start, n); }
-function ygtDageAnvend(spm) { Object.keys(YGT_DATO).forEach(function (k) { delete YGT_DATO[k]; }); if (spm && spm.dato && typeof spm.dato === "object") Object.keys(spm.dato).forEach(function (k) { const d = String(spm.dato[k] || ""); if (YGT_DAG_STD[k] > 0 && /^\d{4}-\d{2}-\d{2}$/.test(d)) YGT_DATO[k] = d; }); Object.keys(YGT_DAG_STD).forEach(function (k) { YGT_DAG[k] = YGT_DAG_STD[k]; }); if (spm && typeof spm === "object") Object.keys(spm).forEach(function (k) { const n = parseInt(spm[k], 10); if (Object.prototype.hasOwnProperty.call(YGT_DAG_STD, k) && YGT_DAG_STD[k] > 0 && !isNaN(n) && n >= 0 && n <= 400) YGT_DAG[k] = n; }); }
+function ygtDageAnvend(spm) { Object.keys(YGT_EFTER).forEach(function (k) { delete YGT_EFTER[k]; }); if (spm && spm.efter && typeof spm.efter === "object") Object.keys(spm.efter).forEach(function (k) { if (YGT_DAG_STD[k] > 0 && spm.efter[k] === true) YGT_EFTER[k] = true; }); Object.keys(YGT_DATO).forEach(function (k) { delete YGT_DATO[k]; }); if (spm && spm.dato && typeof spm.dato === "object") Object.keys(spm.dato).forEach(function (k) { const d = String(spm.dato[k] || ""); if (YGT_DAG_STD[k] > 0 && /^\d{4}-\d{2}-\d{2}$/.test(d)) YGT_DATO[k] = d; }); Object.keys(YGT_DAG_STD).forEach(function (k) { YGT_DAG[k] = YGT_DAG_STD[k]; }); if (spm && typeof spm === "object") Object.keys(spm).forEach(function (k) { const n = parseInt(spm[k], 10); if (Object.prototype.hasOwnProperty.call(YGT_DAG_STD, k) && YGT_DAG_STD[k] > 0 && !isNaN(n) && n >= 0 && n <= 400) YGT_DAG[k] = n; }); }
 async function ygtDageHent(frisk) {
   if ((YGT_DAGE_HENTET && !frisk) || typeof sb === "undefined" || !sb) return false;
   try { const r = await sb.from("lektion_oevelser").select("spm").eq("lektion_id", "ygt:dage").limit(1); if (r.error) return false; YGT_DAGE_HENTET = true; ygtDageAnvend(r.data && r.data[0] ? r.data[0].spm : null); return true; } catch (e) { return false; }
@@ -44387,6 +44403,7 @@ async function ygtDatoGem(nr, iso) {
 }
 async function ygtDageSkriv(ud) {
   if (ud.__udenDato) delete ud.__udenDato; else if (!ud.dato && Object.keys(YGT_DATO).length) ud.dato = Object.assign({}, YGT_DATO);   /* ygtDageGem bevarer datoerne */
+  if (ud.__udenEfter) delete ud.__udenEfter; else if (!ud.efter && Object.keys(YGT_EFTER).length) ud.efter = Object.assign({}, YGT_EFTER);   /* … og reglen »når forrige er gennemført« */
   const nu = new Date().toISOString();
   let u = await sb.from("lektion_oevelser").update({ spm: ud, opdateret: nu }).eq("lektion_id", "ygt:dage").select("lektion_id");
   if (!u.error && !(u.data && u.data.length)) u = await sb.from("lektion_oevelser").insert({ lektion_id: "ygt:dage", spm: ud, opdateret: nu }).select("lektion_id");
@@ -44416,7 +44433,7 @@ function ygtModulHold(def) {
   } catch (e) { return false; }
 }
 function ygtPlusDage(iso, n) { const p = String(iso).split("-").map(Number); const d = new Date(p[0], p[1] - 1, p[2] + n); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); }
-function ygtModulAabner(nr) { return ygtAabnerFra(YGT_START, nr); }   /* datoen fra Studio, ellers dagene efter start (15/11) */
+function ygtModulAabner(nr) { if (YGT_EFTER[String(nr)] && YGT_DAG_STD[String(nr)] > 0) { try { return ygtForrigeMed(nr) ? "0000-01-01" : "9999-12-31"; } catch (e) { return "9999-12-31"; } } return ygtAabnerFra(YGT_START, nr); }   /* datoen fra Studio, ellers dagene efter start (15/11) */
 /* NEDTAELLING I STEDET FOR DATO (Ida 23/10: »i stedet for specifikke datoer vil jeg gerne have at der er nedtælling af dage. så åbner om 7 dage. åbner om 14 dage osv«) — een doer, saa alle laase siger det samme */
 function ygtDatoOrd(iso) { try { if (!iso || iso > "9000") return "senere i forløbet"; const n = Math.round((new Date(iso + "T12:00:00") - new Date(datoDK() + "T12:00:00")) / 86400000); if (n <= 0) return "i dag"; if (n === 1) return "i morgen"; return "om " + n + " dage"; } catch (e) { return iso; } }
 function ygtModulLaast(nr) { if (!ygtModulHold()) return false; const d = ygtModulAabner(nr); if (!(!!d && datoDK() < d)) return false; try { if (typeof KURSUS_SET !== "undefined" && Object.keys(KURSUS_SET || {}).some(function (id) { return KURSUS_SET[id] && modulNrFor(id) === String(nr); })) return false; } catch (e) {} return true; }
@@ -44425,7 +44442,7 @@ function ygtBriefLaast() { return ygtHold() && ygtModulLaast("8"); }
 /* PLUSSET OG OPGAVERNE PÅ HJEM ÅBNER GRADVIST (Ida 9/10: »funktionerne åbner gradvist … når de kommer til lektionen omkring planlægning«): i YOU GOT THIS er de skjult til Modul 8 åbner (dag 42), samme dør som Idébanken, Tøm hovedet og briefen. Ida som kunde (SOM_KUNDE) og alle andre pakker ser dem som før. */
 function hjemFunktionerLaast() { try { return ygtBriefLaast(); } catch (e) { return false; } }
 /* Ti uger (del A 1/10): Idébanken, en ny idé og planlægningen aabner med modul 8 — ogsaa naar vejen ind er Hjems knapper */
-function ygtContentLaasVis(hvad) { if (!ygtBriefLaast()) return false; ygtLaasArk((hvad || "Idébanken") + " åbner med modul 7 " + ygtDatoOrd(ygtModulAabner("8"))); return true; }
+function ygtContentLaasVis(hvad) { if (!ygtBriefLaast()) return false; ygtLaasArk((hvad || "Idébanken") + " åbner med modul 7 " + ygtAabnerOrd("8")); return true; }
 async function ygtStartHent() {
   if (!ygtModulHold() || typeof sb === "undefined" || !sb || !currentKode) return YGT_START;
   try { await ygtDageHent(); } catch (e) {}   /* Studios dage pr. modul, før låsene regnes */
@@ -44525,7 +44542,7 @@ function lekLaastAfForrige(id) {
   } catch (e) { return null; }
 }
 function kursusFoersteLaaste() { return kursusLektionerAktive().find(l => lekModulLaastFor(l.id)) || null; }
-function kursusLaasTekst(l) { const nr = modulNrFor(l.id); return "Modul " + modulVisNr(nr) + " åbner " + ygtDatoOrd(ygtModulAabner(nr)); }
+function kursusLaasTekst(l) { const nr = modulNrFor(l.id); return "Modul " + modulVisNr(nr) + " åbner " + ygtAabnerOrd(nr); }
 /* ÉT NAVN PÅ FORLØBSSIDEN (Idas klik 6/11: »Dit forløb«): menu = hero = knap = sti for YOU GOT THIS; andre kursuspakker beholder »Lektionerne« */
 function ygtMenuNavn(def) { try { def = def || CURRENT_DEF; return (def && /^YOU GOT THIS/i.test(String(def.forloeb || ""))) ? "Forløbet" : "Lektionerne"; } catch (e) { return "Lektionerne"; } }
 function lekSideNavn() { try { return (CURRENT_DEF && CURRENT_DEF.type === "kursus") ? ygtMenuNavn() : "Forløbet"; } catch (e) { return "Forløbet"; } }
@@ -45512,7 +45529,7 @@ function kursusLaasOverlay() {
   ov.innerHTML = '<div style="background:#fff;border:1px solid var(--border);border-radius:20px;padding:28px 30px;max-width:380px;text-align:center;box-shadow:0 20px 50px rgba(22,32,42,0.14);">'
     + '<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="2" stroke-linecap="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>'
     + '<div class="kort-titel" style="margin:10px 0 6px;">Låst endnu</div>'
-    + '<div style="font-size:12.5px;color:var(--gray3);line-height:1.6;margin-bottom:16px;">' + ((typeof ygtHold === "function" && ygtHold()) ? 'Content Studio åbner med modul 7 ' + esc(ygtDatoOrd(ygtModulAabner("8"))) + '. Lige nu er lektionerne vejen frem.' : 'Denne del af dit Content Studio låser op, efterhånden som du kommer gennem forløbet. Lige nu er lektionerne vejen frem.') + '</div>'   /* YGT: laasen er dage, ikke fremdrift (del C 1/10) */
+    + '<div style="font-size:12.5px;color:var(--gray3);line-height:1.6;margin-bottom:16px;">' + ((typeof ygtHold === "function" && ygtHold()) ? 'Content Studio åbner med modul 7 ' + esc(ygtAabnerOrd("8")) + '. Lige nu er lektionerne vejen frem.' : 'Denne del af dit Content Studio låser op, efterhånden som du kommer gennem forløbet. Lige nu er lektionerne vejen frem.') + '</div>'   /* YGT: laasen er dage, ikke fremdrift (del C 1/10) */
     + '<button class="dbtn primary" style="padding:11px 22px;" onclick="showTab(12)">Til ' + lekSideNavn().toLowerCase() + '</button>'   /* eet navn: Forloebet (13/9) */
     + '</div>';
   scr.appendChild(ov);
@@ -45555,7 +45572,7 @@ function visLektion(id) {
   if (String(id).indexOf("w-") === 0) { ttsLektionAaben(id); return; }
   if (lekLaastAfSkema(id)) { lekSkemaLaasArk(); return; }
   { const lfF = lekLaastAfForrige(id); if (lfF) { ygtLaasArk(lfF.tekst); return; } }   /* én ad gangen (Ida 11/11) */
-  { const mnrL = modulNrFor(id); if (ygtModulLaast(mnrL)) { ygtLaasArk("Modul " + modulVisNr(mnrL) + " åbner " + ygtDatoOrd(ygtModulAabner(mnrL))); return; } }   /* ti uger (30/9) */
+  { const mnrL = modulNrFor(id); if (ygtModulLaast(mnrL)) { ygtLaasArk("Modul " + modulVisNr(mnrL) + " åbner " + ygtAabnerOrd(mnrL)); return; } }   /* ti uger (30/9) */
   const adg = kursusAdgang();
   if (adg && !adg.has(id)) return;                       // uden for kodens adgang
   if (!KURSUS_LEKTIONER.some(x => x.id === id)) return;
@@ -46440,7 +46457,7 @@ function lksModul(m, aktivId, oversigt) {
   const ids = m.lektioner || []; if (!ids.length) return '';
   const nr = modulNrFor(ids[0].id);
   const laast = lekModulLaastFor(ids[0].id);
-  if (laast) return '<div class="lks-fl lks-modul laast"><div><div>' + esc(m.titel) + '</div><div class="lks-aab">' + esc(storStart("Åbner " + ygtDatoOrd(ygtModulAabner(nr)))) + '</div></div>' + LKS_LAAS + '</div>';
+  if (laast) return '<div class="lks-fl lks-modul laast"><div><div>' + esc(m.titel) + '</div><div class="lks-aab">' + esc(storStart("Åbner " + ygtAabnerOrd(nr))) + '</div></div>' + LKS_LAAS + '</div>';
   /* SPØRGESKEMAET ER EN FLISE I MODUL 0 (Idas klik 26/10 »Som lektion i Modul 0«: »kan simpelthen ikke finde ud af hvordan jeg kommer til spørgeskemaet«) — lige under Velkommen; tom cirkel til det er sendt, så flueben */
   const skemaHer = lksSkemaHer(nr), skemaGjort = OB_SKEMA === true;
   const alleSet = ids.every(function (x) { return KURSUS_SET[x.id]; }) && (!skemaHer || skemaGjort);
@@ -47559,7 +47576,7 @@ function forloebTidslinjeHtml() {
         const ids = a.lektioner;
         if (lekModulLaastFor(ids[0].id)) {   /* låst: titel, antal, »Åbner om N dage« og hængelås — kan foldes ud, så man ser lektionerne (Ida 11/11) */
           const nrL = esc(String(nr)), opL = aaben(nr);
-          senere.push('<div class="ftl2-rk laast fold' + (opL ? ' op' : '') + '"><div class="ftl2-rh" role="button" tabindex="0" aria-expanded="' + (opL ? 'true' : 'false') + '" onclick="forloebModulFold(\'' + nrL + '\')"><div class="ftl2-t ftl2-t-rk"><div class="ftl2-n">' + esc(a.titel) + '</div><div class="ftl2-a">' + ftlAntal(ids.length) + '</div><div class="ftl2-aab">' + esc(storStart("Åbner " + ygtDatoOrd(ygtModulAabner(nr)))) + '</div></div><div class="ftl2-h"><span>' + esc(storStart("Åbner " + ygtDatoOrd(ygtModulAabner(nr)))) + '</span>' + FTL_LAAS + lksPil(opL) + '</div></div>'
+          senere.push('<div class="ftl2-rk laast fold' + (opL ? ' op' : '') + '"><div class="ftl2-rh" role="button" tabindex="0" aria-expanded="' + (opL ? 'true' : 'false') + '" onclick="forloebModulFold(\'' + nrL + '\')"><div class="ftl2-t ftl2-t-rk"><div class="ftl2-n">' + esc(a.titel) + '</div><div class="ftl2-a">' + ftlAntal(ids.length) + '</div><div class="ftl2-aab">' + esc(storStart("Åbner " + ygtAabnerOrd(nr))) + '</div></div><div class="ftl2-h"><span>' + esc(storStart("Åbner " + ygtAabnerOrd(nr))) + '</span>' + FTL_LAAS + lksPil(opL) + '</div></div>'
             + (opL ? ftlModBes(nr).replace('class="ftl2-bes"', 'class="ftl2-bes ftl2-bes-laast"') + '<div class="ftl2-lbs">' + ids.map(function (x) { return '<div class="ftl2-ll"><span class="ftl2-lt"><span class="lks-n2">' + esc(lekVisNr(x.id)) + '</span> ' + esc(typeof lekVisTitel === "function" ? lekVisTitel(x) : x.titel) + '</span>' + FTL_LAAS + '</div>'; }).join("") + '</div>' : '') + '</div>');
           return;
         }
@@ -47590,7 +47607,7 @@ function forloebTidslinjeHtml() {
       }
       const info = modulInfoFor(nr), titel = "Modul " + modulVisNr(nr) + " · " + modulVisNavn(nr, (info && info.titel) || m.titel);
       /* HÆNGELÅS OG NEDTÆLLING I STEDET FOR »PÅ VEJ« (Ida 3/11): et modul, der ikke er åbent, viser hængelåsen og hvornår det åbner — regnet fra dagen, kunden aktiverede linket OG oprettede profilen (ygt_start) */
-      let aab = ""; try { if (ygtModulHold() && ygtModulAabner(nr) != null && ygtModulAabner(nr) > datoDK()) aab = storStart("Åbner " + ygtDatoOrd(ygtModulAabner(nr))); } catch (e) {}   /* datoen er nået, men lektionerne er ikke ude endnu = »På vej« uden lås — aldrig »Åbner i dag« på et låst modul (MÅLT 14/11 på TESTKUNDEA2026) */
+      let aab = ""; try { if (ygtModulHold() && ygtModulAabner(nr) != null && ygtModulAabner(nr) > datoDK()) aab = storStart("Åbner " + ygtAabnerOrd(nr)); } catch (e) {}   /* datoen er nået, men lektionerne er ikke ude endnu = »På vej« uden lås — aldrig »Åbner i dag« på et låst modul (MÅLT 14/11 på TESTKUNDEA2026) */
       /* LAASTE MODULER KAN FOLDES UD OGSAA NAAR LEKTIONERNE ENDNU IKKE ER KLIPPET (Ida 11/11: »så man kan se hvilke lektioner der er«): titlerne kommer fra modulets lektionsliste */
       const alleL = (m.lektioner || []).filter(function (x) { return x && x.id; });
       if (alleL.length) {
@@ -47619,8 +47636,8 @@ function forloebTidslinjeGammel() {
     const info = modulInfoFor(nr), navn = modulVisNavn(nr, (info && info.titel) || m.titel), titel = "Modul " + modulVisNr(nr) + " · " + navn;
     const a = aktive[nr]; let laast = false; try { laast = ygtModulLaast(nr); } catch (e) {}
     if (laast) {
-      const tekst = "Åbner " + ygtDatoOrd(ygtModulAabner(nr));
-      rk.push('<button type="button" class="ftl-rk laast mq-tap" onclick="ygtLaasArk(' + esc(JSON.stringify(titel + " åbner " + ygtDatoOrd(ygtModulAabner(nr)))) + ')"><span class="ftl-mk">' + laas + '</span><span class="ftl-t"><span class="ftl-n">' + esc(titel) + '</span><span class="ftl-u">' + esc(tekst) + '</span></span></button>');
+      const tekst = "Åbner " + ygtAabnerOrd(nr);
+      rk.push('<button type="button" class="ftl-rk laast mq-tap" onclick="ygtLaasArk(' + esc(JSON.stringify(titel + " åbner " + ygtAabnerOrd(nr))) + ')"><span class="ftl-mk">' + laas + '</span><span class="ftl-t"><span class="ftl-n">' + esc(titel) + '</span><span class="ftl-u">' + esc(tekst) + '</span></span></button>');
     } else if (a && a.lektioner.length) {
       const naeste = a.lektioner.find(function (l) { return !set[l.id]; });
       /* SPØRGESKEMAET STÅR SOM ET SKRIDT I MODULET (Ida 28/10): efter Velkommen er »Find dit udgangspunkt« det næste — modulet er ikke »Set«, før det er sendt */
@@ -51266,7 +51283,12 @@ function kbuAabnerHtml(o) {
     return '<div class="kbu-video" id="kbuAabner"><div class="kbu-ovr">Åbner med ' + esc(modulEtiket(klipModulGruppe(o.modul))) + '</div><button type="button" class="kbu-fl kbu-dor" onclick="kbuAabnerRet(\'' + n + '\')">' + esc(bf3ModAabnerOrd(n)) + '</button></div>';
   } catch (e) { return ''; }
 }
-function kbuAabnerRet(n) { bf3ModDato(n, function (ok) { const el = document.getElementById("kbuAabner"); const o = kbuO(); if (el && o) el.outerHTML = kbuAabnerHtml(o); if (!ok) kbuKvit("Datoen blev ikke gemt. Prøv igen.", true); }); }
+function kbuAabnerRet(n) {
+  if (YGT_EFTER[String(n)]) {   /* reglen »når forrige er gennemført« er valgt — en dato kræver, at reglen slås fra først */
+    arkSpoerg({ titel: "Skift til en dato?", tekst: "Modulet åbner i dag, " + ygtEfterOrd(n) + ".", jaTekst: "Ja, vælg en dato", nejTekst: "Nej", ja: function () { ygtEfterGem(String(n), false).then(function (ok) { const el = document.getElementById("kbuAabner"); const o = kbuO(); if (el && o) el.outerHTML = kbuAabnerHtml(o); if (ok) kbuAabnerRet(n); else kbuKvit("Det blev ikke gemt. Prøv igen.", true); }); } });
+    return;
+  }
+  bf3ModDato(n, function (ok) { const el = document.getElementById("kbuAabner"); const o = kbuO(); if (el && o) el.outerHTML = kbuAabnerHtml(o); if (!ok) kbuKvit("Datoen blev ikke gemt. Prøv igen.", true); }); }
 function kbuPopTil(k) { kbuPopSaet(function (p) { if (k === "fb") p.fb.fra = !p.fb.fra; else p.fra = !p.fra; }); }
 function kbuUnderSide(titel, venstre, hoejre) {
   kbuUnderLuk();
@@ -68399,7 +68421,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "3351";
+const APP_VERSION = "3353";
 const APP_BYGGET = "3. november";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_VERSION;   /* ingen dato (Ida 7/11: »hvorfor står der version 3. november?«) — datoen blev ikke rettet med, nummeret er sandheden */ } catch (e) {} });
 let NY_VERSION_KLAR = false;
@@ -83790,7 +83812,7 @@ async function kundeArkGem(tekst, k) {
   }
   return false;
 }
-function dagensKortToemHovedet() { if (ygtBriefLaast()) { ygtLaasArk("Idébanken åbner med modul 7 " + ygtDatoOrd(ygtModulAabner("8"))); return; }   /* ti uger (30/9): Toem hovedet og nye idéer aabner med modul 8 */
+function dagensKortToemHovedet() { if (ygtBriefLaast()) { ygtLaasArk("Idébanken åbner med modul 7 " + ygtAabnerOrd("8")); return; }   /* ti uger (30/9): Toem hovedet og nye idéer aabner med modul 8 */
   /* KORTET BLIVER STAAENDE (Ida 24/9 kl. 09.43: »Når man swiper op, så skal baggrunden ikke ændre sig … blive på den første side«) — arket lægger sig over fotoet */ try { if (window.matchMedia && window.matchMedia("(max-width: 760px)").matches) toemFotoAabn("swipe"); else toemHovedetTrin1(); } catch (e) { try { kundeArkAabn("ide", true); } catch (e2) {} } }   /* SWIPE OP = FOERST »Hvad skal der ske, makker?« (chipsene), saa arket (Ida 22/9 kl. 08.17: »først når man har valgt den første chip, skal de andre relevante ting komme op«) — samme trin som bundmenuens plus */
 /* FOERSTE GANG SIGER STARTKORTET »SWIPE FOR AT KOMME I GANG« (Ida 1/10: »det skal være content studio - men swipe for at komme igang den første gang!«) —
    bagefter »Swipe for Content Studio«. Huskes pr. enhed og kode; kan browseren ikke huske, er det altid Content Studio. */
@@ -93251,7 +93273,7 @@ async function ksForloebTegn(k) {
   const kEsc = esc(k).replace(/'/g, "\\'");
   if (S.fejl) { el.innerHTML = '<div class="bs3-fl"><div class="bs3-et">Startdato</div><div class="bs3-n">Kunne ikke hentes</div></div>'; return; }
   let naeste = "";
-  if (S.dato) { try { const idag = datoDK(); const nr = Object.keys(YGT_DAG).map(Number).sort(function (a, b) { return a - b; }).find(function (n) { return ygtAabnerFra(S.dato, n) > idag; }); if (nr) naeste = "Modul " + modulVisNr(nr) + " åbner " + ygtDatoOrd(ygtAabnerFra(S.dato, nr)); else naeste = "Alle moduler er åbne"; } catch (e) {} }
+  if (S.dato) { try { const idag = datoDK(); const nr = Object.keys(YGT_DAG).map(Number).sort(function (a, b) { return a - b; }).find(function (n) { return !YGT_EFTER[String(n)] && ygtAabnerFra(S.dato, n) > idag; }); if (nr) naeste = "Modul " + modulVisNr(nr) + " åbner " + ygtDatoOrd(ygtAabnerFra(S.dato, nr)); else naeste = "Alle moduler er åbne"; } catch (e) {} }
   el.innerHTML = '<div class="bs3-fl"><div class="bs3-et">Startdato</div><div class="bs3-n">' + (S.dato ? esc((function (d) { return d.charAt(0).toUpperCase() + d.slice(1); })(String(dkDatoKort(S.dato)))) : "Ikke startet endnu") + '</div>'
     + (naeste ? '<div class="bs3-s">' + esc(naeste) + '</div>' : '')
     + '<input type="hidden" id="ksForloebDato" value="' + esc(S.dato || datoDK()) + '" onchange="ksForloebSaet(\'' + kEsc + '\', this.value)">'
@@ -93457,7 +93479,7 @@ async function ksYgtTegn(k, o) {
   else staa = (ksyDageSiden(D.sidst || koebt) || 0) >= (D.set ? 7 : 3);
   const statusOrd = !D.login ? "Ikke logget ind" : (staa ? "Gået i stå" : "På sporet");
   let naeste = "", naesteKort = "";
-  try { const idag = datoDK(); const nr = Object.keys(YGT_DAG).map(Number).sort(function (a, b) { return a - b; }).find(function (n) { return ygtAabnerFra(start, n) > idag; }); naeste = nr ? "Modul " + modulVisNr(nr) + " åbner " + ygtDatoOrd(ygtAabnerFra(start, nr)) : "Alle moduler er åbne"; naesteKort = nr ? storStart(ygtDatoOrd(ygtAabnerFra(start, nr))) : "Alle er åbne"; } catch (e) {}
+  try { const idag = datoDK(); const nr = Object.keys(YGT_DAG).map(Number).sort(function (a, b) { return a - b; }).find(function (n) { return !YGT_EFTER[String(n)] && ygtAabnerFra(start, n) > idag; }); naeste = nr ? "Modul " + modulVisNr(nr) + " åbner " + ygtDatoOrd(ygtAabnerFra(start, nr)) : "Alle moduler er åbne"; naesteKort = nr ? storStart(ygtDatoOrd(ygtAabnerFra(start, nr))) : "Alle er åbne"; } catch (e) {}
   const sidstOrd = D.sidst ? storStart(ksySidenOrd(D.sidst)) : "Aldrig";
   const FL = !!o.forloeb;   /* forløbskunden (31/10): møde og noter i stedet for moduler og startdato */
   const nu = FL ? ((d.forloeb_plan || []).find(function (x) { return x.s === "now"; }) || {}).t || "" : "";
@@ -93767,7 +93789,9 @@ function bf3ModRetHtml(nr) {
     + ov("Hvor i metoden") + '<div class="kbu-chips">' + (typeof MODUL_FASER !== "undefined" ? MODUL_FASER : []).map(function (f) { return '<button type="button" class="kbu-chip' + (info.fase === f.n ? ' on' : '') + '" onclick="bf3ModFase(\'' + n + '\',\'' + f.n + '\')">' + esc(f.t) + '</button>'; }).join("") + '</div>'
     + ov("Når du er igennem modulet, kan du") + u.map(function (t, i) { return fl(t, "bf3ModPunkt('" + n + "'," + i + ")"); }).join("")
     ;   /* nyt punkt = plusset (»Plusset er vejen i Backstage«, 5/10) */
-  if (YGT_DAG_STD[n] > 0) h += ov("Åbner") + fl(bf3ModAabnerOrd(n), "bf3ModDato('" + n + "')");   /* datoen sættes i husets kalender (Ida 15/11) */
+  if (YGT_DAG_STD[n] > 0) { const ef = !!YGT_EFTER[n];   /* to veje: en dato — eller når forrige modul er gennemført (Ida 15/11) */
+    h += ov("Åbner") + '<div class="kbu-chips"><button type="button" class="kbu-chip' + (ef ? '' : ' on') + '" onclick="bf3ModRegel(\'' + n + '\',false)">På en dato</button><button type="button" class="kbu-chip' + (ef ? ' on' : '') + '" onclick="bf3ModRegel(\'' + n + '\',true)">' + esc(storStart(ygtEfterOrd(n))) + '</button></div>'
+      + (ef ? '' : '<div class="bs3-modregel">' + fl(bf3ModAabnerOrd(n), "bf3ModDato('" + n + "')") + '</div>'); }   /* datoen sættes i husets kalender (Ida 15/11) */
   return '<div class="bs3-modret">' + h + '<div id="bf3ModKvit" class="kbu-kvit"></div></div>';
 }
 async function bf3ModGem(n, patch) {
@@ -93791,7 +93815,11 @@ function bf3ModPunkt(n, i) {
   const u = ((modulInfoFor(n) || {}).udbytte || []).filter(Boolean).slice();
   kbuTekstArk(i < 0 ? "Nyt punkt" : "Punkt " + (i + 1), "Punkt", i < 0 ? "" : u[i], "", function (v) { if (i < 0) { if (!v) return; u.push(v); } else if (v) u[i] = v; else u.splice(i, 1); bf3ModGem(n, { udbytte: u.slice(0, 4) }); });
 }
-function bf3ModAabnerOrd(n) { const d = YGT_DATO[String(n)]; return d ? dkDatoLangUge(d) : "Ingen dato · " + YGT_DAG[String(n)] + " dage efter start"; }
+function bf3ModRegel(n, til) {
+  if (!!YGT_EFTER[String(n)] === !!til) return;
+  ygtEfterGem(String(n), !!til).then(function (ok) { renderKlipperum(); setTimeout(function () { const k = document.getElementById("bf3ModKvit"); if (k) { k.textContent = ok ? (til ? "Gemt. Modulet åbner, " + ygtEfterOrd(n) + "." : "Gemt. Modulet åbner på en dato.") : "Det blev ikke gemt. Prøv igen."; k.classList.toggle("fejl", !ok); } }, 0); });
+}
+function bf3ModAabnerOrd(n) { if (YGT_EFTER[String(n)]) return storStart(ygtEfterOrd(n)); const d = YGT_DATO[String(n)]; return d ? dkDatoLangUge(d) : "Ingen dato · " + YGT_DAG[String(n)] + " dage efter start"; }
 function dkDatoLangUge(iso) { try { const d = new Date(iso + "T12:00:00"); const U = ["søndag", "mandag", "tirsdag", "onsdag", "torsdag", "fredag", "lørdag"], M = ["januar", "februar", "marts", "april", "maj", "juni", "juli", "august", "september", "oktober", "november", "december"]; return storStart(U[d.getDay()]) + " " + d.getDate() + ". " + M[d.getMonth()] + " " + d.getFullYear(); } catch (e) { return iso; } }
 /* Modulets dato i husets kalender — ét sted, brugt fra »Ret modulet« og fra lektionens højre side */
 function bf3ModDato(n, efter) {

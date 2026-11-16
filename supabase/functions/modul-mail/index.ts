@@ -32,6 +32,7 @@ function svar(x: unknown, status: number) { return new Response(JSON.stringify(x
 const YGT_DAG: Record<string, number> = { "1": 0, "2": 0, "3": 7, "4": 14, "5": 21, "6": 28, "7": 35, "8": 42, "9": 49, "10": 56, "11": 63 };
 const YGT_DAG_STD: Record<string, number> = { ...YGT_DAG };
 const MAKS_KALD = 200, MAKS_DOEGN = 280;
+const EFTER: Record<string, boolean> = {};   /* modul → åbner, når forrige modul er gennemført (»ygt:dage«.efter, Ida 15/11): ingen mail, kunden står selv i appen, når det åbner */
 const DATO: Record<string, string> = {};   /* modul → dato fra Studio (lektion_oevelser »ygt:dage«.dato) */
 
 function plusDage(iso: string, n: number) { const p = iso.split("-").map(Number); const d = new Date(Date.UTC(p[0], p[1] - 1, p[2] + n)); return d.toISOString().slice(0, 10); }
@@ -152,12 +153,14 @@ Deno.serve(async (req) => {
 
   /* Dage pr. modul fra Studio (lektion_oevelser »ygt:dage«, Ida 15/11) — samme tal, som kundens låse bruger */
   for (const k of Object.keys(DATO)) delete DATO[k];
+  for (const k of Object.keys(EFTER)) delete EFTER[k];
   Object.assign(YGT_DAG, YGT_DAG_STD);   /* en varm funktion husker ikke sidste kalds tal */
   try {
     const { data: dg } = await db.from("lektion_oevelser").select("spm").eq("lektion_id", "ygt:dage").limit(1);
     const o: any = dg && dg.length ? dg[0].spm : null;
     if (o && typeof o === "object") for (const k of Object.keys(o)) { const n = parseInt(o[k], 10); if (YGT_DAG[k] > 0 && !isNaN(n) && n >= 0 && n <= 400) YGT_DAG[k] = n; }
     if (o && o.dato && typeof o.dato === "object") for (const k of Object.keys(o.dato)) { const d = String(o.dato[k] || ""); if (YGT_DAG[k] > 0 && /^\d{4}-\d{2}-\d{2}$/.test(d)) DATO[k] = d; }   /* modulets dato fra Studio (15/11) */
+    if (o && o.efter && typeof o.efter === "object") for (const k of Object.keys(o.efter)) { if (YGT_DAG[k] > 0 && o.efter[k] === true) EFTER[k] = true; }
   } catch (_e) { /* standarden gælder */ }
 
   /* Idas mail (Backstage › Mails). Slukket eller uden tekst = intet sendes. */
@@ -197,6 +200,7 @@ Deno.serve(async (req) => {
     if (!kursus[k] || !start[k]) continue;
     for (const nr of Object.keys(YGT_DAG)) {
       if (YGT_DAG[nr] === 0) continue;   /* modul 0 og 1 er åbne fra start — dem siger velkomstmailen */
+      if (EFTER[nr]) continue;   /* åbner ved gennemførelse, ikke på en dag */
       const aab = DATO[nr] ? (DATO[nr] < start[k] ? start[k] : DATO[nr]) : plusDage(start[k], YGT_DAG[nr]);   /* samme regel som kundens lås (ygtAabnerFra) */
       const dag = plusDage(aab, dage);
       if (dag === nu.dato || dag === igaar) aabner[k] = nr;
