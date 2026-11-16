@@ -1,3 +1,18 @@
+## **TEKST RETTES DIREKTE I FELTET — ALDRIG EN POPUP (HÅRD, Ida 16/11, v3355)**
+Ida: »der skal heller ikke åbne en pop up når jeg skal rette i teksten - jeg skal bare kunne rette den direkte og gemme ændringer«. Et tryk på et tekstfelt i Energida Studio gør feltet selv til skrivefeltet. Teksten gemmes, når feltet forlades; Esc fortryder. Gælder modulets felter, spørgeskemaets felter og spørgsmålene i opgaven/refleksionsøvelsen (spørgsmål og beskrivelse rettes begge i flisen; »Slet« står ud for overskriften »Spørgsmål N«; »Tilføj« giver en tom flise sidst). Motor: `kbuRetDirekte` (via `kbuTekstArk`) og `kbuSpmDirekte`. Det lille ark til tekst bruges kun, hvor der ikke findes et felt at skrive i. Et nyt tekstfelt bygges aldrig med en popup.
+
+## **MODULSIDEN: MODULET I ÉN FLISE MED EGNE FELTER (HÅRD, Ida 16/11, v3355)**
+Ida: »saml alt omkring modulets navn og beskrivelse og sådan noget i en flise med deres egne felter i flisen så der er tydeligt hierarki og opdeling«. Øverst på modulsiden står overskriften »MODULET« og ÉN flise (tynd grå ramme). I flisen har hvert felt sit navn i gråt (12,5) og sin egen kasse (ramme 1 px #E3E2DE, hjørner 14, mindst 44 høj): Navn · Beskrivelse · Hvor i metoden (chips) · Åbner (chips + dato) · Når du er igennem modulet, kan du (ét felt pr. punkt + »Tilføj punkt«). Computer: to spalter i flisen; telefon: én. Siden »Ret modulet« og menupunktet findes ikke længere. Under flisen: »LEKTIONER«.
+
+## **INDHOLDET STARTER 32 PX UNDER COVERET — KNAPPERNE ⋯ OG + FÅR IKKE DERES EGEN RÆKKE (HÅRD, Ida 16/11, v3355)**
+Ida: »hvorfor er det at indholdet på siden kommer så langt nede?«. Målt: knapperækken skubbede indholdet til 108 px under coveret. På computeren står sidens første linje (overskrift eller chips) nu på samme linje som ⋯ og + (`.bs3-loeft`), på produktets forside og på modulsiden.
+
+## **LEKTIONENS NUMMER VISES ENS OVERALT I STUDIO (HÅRD, Ida 16/11, v3355)**
+Ida: »hvordan kan det lade sig gøre at der under hero i cover kan stå 2.1 som var det gamle lektionsnummer?«. Basens titel bærer det gamle nummer (»2.1 · …«); det, der vises, regnes altid om med `studieTitelVis(o)` / `studieNrVis(o, nr)`. `titelVis(o.titel)` må aldrig bruges om en lektion. Rettet på undersiderne (Refleksionsøvelse/Opgave, Feedback, Popup, Spørgeskema, Materiale), i manus i fuld skærm, i »Lagt på …« og i flyt-/status-arkene.
+
+## **PRODUKTSIDEN: ET TRYK PÅ MODULET ÅBNER MODULSIDEN — INTET FOLDER UD (HÅRD, Ida 16/11, v3355)**
+Ida: »jeg skal ikke klikke på en knap under alle lektionerne for at åbne modulet. modulet skal åbne når jeg klikker på den på forsiden og lektionerne skal ikke folde sig ud der«. På produktets forside i Energida Studio er hvert modul én flise (navn · antal lektioner · status · pil mod højre). Et tryk åbner modulets egen side, og lektionerne står dér. Der foldes ingenting ud på forsiden, og flisen »Åbn modulet« findes ikke. VÆLTER foldningen i Lumant-listen (v3317); resten af v3317 (tre faner, værktøjerne i ⋯) består.
+
 ## **MODULET ÅBNER: PÅ EN DATO ELLER NÅR FORRIGE MODUL ER GENNEMFØRT (Ida 15/11 »Byg det«, v3353)**
 På »Ret modulet« står under ÅBNER to chips: »På en dato« og »Når Modul N er gennemført« (valgt = rød). Datoflisen står kun, når »På en dato« er valgt. Reglen gælder pr. modul og gemmes i »ygt:dage« (nøglen »efter«). Kunden ser »Åbner når Modul N er gennemført« i stedet for nedtællingen. Modul 0 og 1 er altid åbne. Et modul, hvor kunden har set en lektion, låses aldrig. Mail-uret springer moduler med reglen over.
 ## 16. november · BRIEFOVERSIGTEN PÅ TELEFONEN: CHIPS MED SYMBOL · ÉN MÅLGRUPPE = INGEN CHIP · COVERBILLEDET ÉN GANG (Ida 16/11) · v3350
