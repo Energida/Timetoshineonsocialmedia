@@ -1,9 +1,14 @@
+## 16. november · ARKET RULLER, DET PRESSES ALDRIG (Ida: »designet her i tøm hovedet i min admin spiller heller ikke«, skærmbillede med tastaturet oppe)
+- Med tastaturet oppe blev arket lavt, og dets rækker krympede: Link/Billede skåret over, »Gem i« væk. Nu beholder hver række i et ark sin højde (`.ark > *`, `.ark-ekstra > *` krymper ikke); arket ruller i stedet.
+- MÅLT i selen 390 med 420 px tastatur: Link/Billede 36 px hele, »Gem i« synlig, rul ned = Gem.
+
 ## 16. november · HVEM SER SVARET: VALGT PR. OPGAVE I STUDIO, LINJEN UNDER SPØRGSMÅLET HOS KUNDEN · MIKROFONEN INDE I OPGAVEFELTET (Idas »Ja, byg den«, artifact WXwjaF7MrF4J9FPu52io8C, v3357)
 - Ida: »jeg skal kunne vælge på hver opgave om jeg skal kunne se den eller ej og mit valg skal fremgå på kundens version«.
 - Studio › opgavens side: under »Type« står »Svarene« med chipsene »Du kan se dem« · »Kun kunden«. Ikke valgt = energimodulerne »Kun kunden«, strategien (Modul 5) »Du kan se dem« (Idas klik).
 - Kundens opgaveark: én grå linje lige under spørgsmålet, over feltet (Ida: »teksten med dit svar skal stå under spørgsmålet«): »Dit svar bliver kun hos dig. Ida kan ikke se det.« / »Ida kan se dit svar, så hun kan bruge det i dit forløb.« (Idas klik »Kort og roligt«).
 - Mikrofonen står altid inde i opgavefeltet nederst til højre (Ida: »mikrofonen skal altid placeres i tekstfeltet jf. designlåsen«). Målt i selen på 390 og 1440.
 - Svar på »Kun kunden«-opgaver gemmes i lektion_svar_privat (kun kunden selv; rolletest MÅLT, se hændelsesloggen 16/11).
+
 ## 16. november · INDHOLDET STARTER OPPE, INGEN KNAPPER I COVERET UD OVER TILBAGE (Ida: »flyt indholdet op på siden - ingen sider må starte længere nede pga plus og de 3 prikker og ingen knapper udover tilbage må være i coveret!«)
 - Backstage, computer og telefon: ingen egen knaprække under coveret. ⋯ og plus står til højre ud for sidens FØRSTE række (chips, etiket, fliser). Det, der står i knappernes højde, giver plads i højre side (margin), så ingen knap står oven i en flise.
 - Telefonen: ⋯ er ude af coverets hjørne og står nu på hvid bund med grå ring ud for første række; plusset bliver i bundmenuen. Coveret har kun Tilbage (og nålen ved navnet).
