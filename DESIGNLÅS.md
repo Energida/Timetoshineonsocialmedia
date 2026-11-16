@@ -1,3 +1,10 @@
+## 16. november · BRIEFOVERSIGTEN PÅ TELEFONEN: CHIPS MED SYMBOL · ÉN MÅLGRUPPE = INGEN CHIP · COVERBILLEDET ÉN GANG (Ida 16/11) · v3350
+- Fakta-chipsene over statuslisten har rækkens eget symbol foran teksten (»jeg mangler symboler i chips som vi havde tidligere«).
+- Har kunden kun én målgruppe, står den ikke som chip (»så skal den ikke fremgå som chips«).
+- Rækkefølgen er Hook · Video · Coverbillede · Caption · Opbygning til deling (»Video skal komme først, så cover så caption«). Begge flader.
+- Video- og coverbilleder-fliserne: Skift og Download står under hinanden i fuld bredde på telefonen (»disse knapper sejler fuldstændig ud«). Download er coverets knap: download-pil + »Download video« / »Download billede«.
+- Coverbilledet står én gang: pladsholderen »Coverbilleder« (upload), indtil coveret har tekst; derefter kun flisen »Coverbillede« med sin egen upload (»Coverbillede fremgår 2 gange på briefoversigten«).
+
 ## 16. november · INGEN GODKENDELSESKORT PÅ BRIEFEN (Ida: »alt dette med godkendelse skulle fjernes? så det bare er status der ændres og den går fra stiplet til fast ramme?« → »Ja, fjern det«) · v3349
 - Kortet »Forslag 1 af 3« · Forrige/Næste · »Fra … · for N dage siden« · Send retur / Godkend er væk, og det samme gælder »Godkendt af …« / »Sendt retur af …«. VÆLTER »Godkend ét sted« (30/10).
 - Status skiftes kun i statuspillen. »Forslag« står stiplet i kalenderen, alt andet har fast ramme. Kommentarerne under briefen bliver. Der kommer ingen automatisk Indbakke-besked om godkendt eller retur. Flisen »Godkendt · Ida · i dag« på briefens forside er også ude (Ida: »fix dette hurtigst«).
