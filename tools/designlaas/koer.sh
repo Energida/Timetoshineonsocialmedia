@@ -105,6 +105,15 @@ for RL in "390 1200" "1440 940"; do
   RAARL=$($TO "$C" $HL --no-sandbox --disable-gpu --window-size=$(($1+40)),$(($2+60)) --virtual-time-budget=90000 --enable-logging=stderr --v=0 --screenshot="$MAAL/rapport-laas-$1.png" "http://127.0.0.1:$PORT/sele.html?vis=kunde&fil=index-sele.html%3Fselekode%3DHINGES2026&bred=$1&hoej=$2&kode=$KRL" 2>&1)
   echo "$RAARL" | grep -a 'CONSOLE' | sed -E 's/^.*CONSOLE[:(][0-9]+\)?\] //; s/", source:.*$//; s/^"//' | grep -a 'SELE RAPPORT' | sed "s/^/[$1] /" | head -18
 done
+# DE SYNLIGE REGLER (fase 2, Ida 17/11): probe-synlig.js måler på det, man SER — knapper i coveret, versaler i fliser, lyseblå rammer, mørke flader,
+# chips (hvid · grå kant · 32), knapper med tekst (56/44), ord (»Indholdssøjle«, »skriv«, stort begyndelsesbogstav) og chips på én linje. RAPPORT: stopper ikke porten endnu.
+for SY in "kunde 390 1200" "kunde 1440 940" "dash 390 1200" "dash 1440 940"; do
+  set -- $SY
+  [ "$1" = "dash" ] && VSY="vis=dash&side=overblik&fil=index-sele.html" || VSY="vis=kunde&fil=index-sele.html%3Fselekode%3DHINGES2026"
+  KSYQ=$(python3 -c "import urllib.parse,sys;print(urllib.parse.quote('var SYNLIG_FLADE=\''+sys.argv[2]+'\';'+open(sys.argv[1]).read()))" "$ROD/tools/designlaas/probe-synlig.js" "$1")
+  RAASY=$($TO "$C" $HL --no-sandbox --disable-gpu --window-size=$(($2+40)),$(($3+60)) --virtual-time-budget=120000 --enable-logging=stderr --v=0 --screenshot="$MAAL/synlig-$1-$2.png" "http://127.0.0.1:$PORT/sele.html?${VSY}&bred=$2&hoej=$3&kode=$KSYQ" 2>&1)
+  echo "$RAASY" | grep -a 'CONSOLE' | sed -E 's/^.*CONSOLE[:(][0-9]+\)?\] //; s/", source:.*$//; s/^"//' | grep -a 'SELE SYNLIG' | sed "s/^/[$1 $2] /" | cut -c1-400
+done
 # BACKSTAGE (20/9, Idas ord: »hver eneste side i loop«): probe-backstage.js paa 390 og 1440 — markbaandet som hero, 32 px luft, hvid side, trykfelter, streger, kryds, emoji.
 K9=$(python3 -c "import urllib.parse,sys;print(urllib.parse.quote(open(sys.argv[1]).read()))" "$ROD/tools/designlaas/probe-backstage.js")
 K10=$(python3 -c "import urllib.parse,sys;print(urllib.parse.quote(sys.argv[2] + open(sys.argv[1]).read()))" "$ROD/tools/designlaas/probe-backstage.js" "document.body.classList.add('dash-nav');")

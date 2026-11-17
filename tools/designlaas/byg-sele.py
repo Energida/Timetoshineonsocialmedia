@@ -23,7 +23,10 @@ def byg(rod, maal):
     if tag not in s: raise SystemExit("Supabase-scriptet blev ikke fundet i index.html — selen kan ikke bygges")
     # INGEN SERVICE WORKER I SELEN (MAALT 15/9): appens sw.js cachede index-sele.html paa port 4633, saa hver
     # ny bygning blev maalt paa en GAMMEL kopi, indtil SW'en blev afregistreret med haanden. Selen maa aldrig cache.
-    ude = s.replace(tag, '<script src="sb-stub.js"></script>' + VAGT, 1).replace('navigator.serviceWorker.register("sw.js").catch(function(){});', '/* SELE: ingen service worker */ try { navigator.serviceWorker.getRegistrations().then(function (rs) { rs.forEach(function (r) { r.unregister(); }); }); } catch (e) {}', 1)
+    # RULLEBJÆLKER SOM I SKYEN (Ida 17/11: »hvorfor fejler et konstant? hvad er det du ikke får tjekket«): Macens test-Chrome viser ingen rullebjælke,
+    # skyens Linux-Chromium viser en på 15 px — en måling kunne derfor være grøn her og rød i skyen. Nu har selen altid en 15 px bjælke, også på Macen.
+    BJAELKE = '<style>::-webkit-scrollbar{width:15px;height:15px;background:#f1f1f1}::-webkit-scrollbar-thumb{background:#c1c1c1}</style>'
+    ude = s.replace(tag, '<script src="sb-stub.js"></script>' + VAGT + BJAELKE, 1).replace('navigator.serviceWorker.register("sw.js").catch(function(){});', '/* SELE: ingen service worker */ try { navigator.serviceWorker.getRegistrations().then(function (rs) { rs.forEach(function (r) { r.unregister(); }); }); } catch (e) {}', 1)
     open(os.path.join(maal, "index-sele.html"), "w", encoding="utf-8").write(ude)
     open(os.path.join(maal, "sb-stub.js"), "w", encoding="utf-8").write(STUB)
     open(os.path.join(maal, "sele.html"), "w", encoding="utf-8").write(SELE)
