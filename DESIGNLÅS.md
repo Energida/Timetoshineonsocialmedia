@@ -1,3 +1,8 @@
+## 17. november · TEMA: KONTAKTERNE GÆLDER OVERALT (Ida 17/11, ikke lagt ud)
+- Ida: »hvordan kan det lade sig gøre at jeg kan se tema når det er slået fra???? sørg nu for at alt synkroniseres«. Live hos Acorns: begge kontakter fra, men kalenderen viste uge 48's tema under »Ugens tema · Uge 47«.
+- »Slå månedens tema til« og »Slå ugens tema til« styrer nu hvert sted, temaet vises: kalenderens temakort og overlinje, Hjem, Planlægning, mødesiden og mødeforløbet (temaMndTil / temaUgeTil). Fra = temaet vises ingen steder. Temaet slettes ikke — slås kontakten til igen, står det der.
+- Næste uges tema står under sit eget ugenummer (»Uge 48«), uden »uge 48:« foran teksten.
+
 ## 17. november · BRIEFEN: PROCESBAREN = OVERSKRIFTEN · INTET COVER · FANG DEM, NY FORM (Idas klik 17/11 »Ja, byg den«) · v3367
 - **Procesbaren** (tegning claude.ai/artifact/T65tqLBUhRFHAYmErDQ8GV): rød flise (#FC2404, hjørner 20). Til venstre »Trin N af M« (12/16) og trinnets navn (telefon 20/28, computer 22/28). Til højre en streg pr. trin med navnet under (telefon 11/16, computer 12/16): fyldt hvid 6 = gjort · fyldt hvid 10 = her · tom ramme 1,5 = mangler. Kun hvidt på rødt, Poppins 400. Telefon 120 høj, computer 74. Et tryk på en streg hopper til trinnet.
 - **»Oversigt« er UDE af baren** (Ida 17/11: »jeg tror vi skal have overblikket ud af den«) — vælter 15/11. **Ordet Succesraketten og raketten er ude** (Ida 17/11: »vil du fjerne succesrakket igen«). Telefon: Tilbage fører til briefoversigten. Computer: vejen til oversigten er ÅBEN hos Ida.

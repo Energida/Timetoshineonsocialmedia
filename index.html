@@ -41946,7 +41946,8 @@ async function hjemTemaHent(){
   try {
     if (!sb || !currentKode) return;
     const { data } = await sb.from("skema_svar").select("svar").eq("kode", currentKode).eq("navn", "config").eq("skema", "maanedens_tema").maybeSingle();
-    if (data && data.svar && data.svar.tema && data.svar.maaned === maanedDK()) window.__HJEM_TEMA = data.svar.tema;
+    try { if (!MAALS && typeof maalsHent === "function") await maalsHent(); } catch (e) {}
+    if (data && data.svar && data.svar.tema && data.svar.maaned === maanedDK() && temaMndTil()) window.__HJEM_TEMA = data.svar.tema;
   } catch (e) {}
   try { hjemFacitTegn(); } catch (e) {}
 }
@@ -42272,7 +42273,7 @@ function planDashTegn() {
   /* UGENS TEMA paa Planlaegning (Ida 21/9 kl. 22.10): denne uges tema som flise under Denne uge; naeste uges, naar den er sat (fra moedet) */
   let temaHtml = ""; try {
     if (typeof MAALS === "undefined" || !MAALS) { if (!window.__PD_MAALS_HENT && typeof maalsHent === "function") { window.__PD_MAALS_HENT = 1; maalsHent().then(function () { try { planDashTegn(); } catch (e) {} }); } }
-    else { const ut = (MAALS.ugetemaer || {}); const nu = ut[planRitUgeKey(man0)] || ""; const nk = planRitUgeKey(naesteUge); const nt = ut[nk] || "";
+    else { const ut = (MAALS.ugetemaer || {}); const til = temaUgeTil(); const nu = til ? (ut[planRitUgeKey(man0)] || "") : ""; const nk = planRitUgeKey(naesteUge); const nt = til ? (ut[nk] || "") : "";
       if (nu) temaHtml += '<div class="idag-flise pd-tema" onclick="tilpasAaben(\'tema\')"><span class="idag-tekst"><span class="idag-titel">Ugens tema: <i class="fokus-navn">' + esc(nu) + '</i></span></span></div>';
       if (nt) temaHtml += '<div class="idag-flise pd-tema" onclick="tilpasAaben(\'tema\')"><span class="idag-tekst"><span class="idag-titel">Uge ' + esc(String(nk).split("-")[1]) + ': <i class="fokus-navn">' + esc(nt) + '</i></span><span class="idag-sub">Ugens tema, sat på planlægningen</span></span></div>'; }
   } catch (e) {}
@@ -42374,7 +42375,7 @@ function planKommendeHtml() {
 }
 function planOverblikHtml(man0) {
   const fl = function (eti, indhold, klik) { return '<button type="button" class="pdr-fl pdr-ov mq-tap" onclick="' + klik + '"><span class="pdr-eti"><span class="pdr-ov-e">' + esc(eti) + '</span></span>' + indhold + '</button>'; };
-  let tema = ""; try { tema = ((MAALS && MAALS.ugetemaer) || {})[planRitUgeKey(man0)] || ""; } catch (e) {}
+  let tema = ""; try { tema = temaUgeTil() ? (((MAALS && MAALS.ugetemaer) || {})[planRitUgeKey(man0)] || "") : ""; } catch (e) {}
   let maal = 0; try { maal = maalUge(); } catch (e) {}
   let ah = ""; try {
     const nu = new Date(); const MD = ["jan.", "feb.", "mar.", "apr.", "maj", "jun.", "jul.", "aug.", "sep.", "okt.", "nov.", "dec."]; const d = ahData();
@@ -68742,7 +68743,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "3368";
+const APP_VERSION = "3369";
 const APP_BYGGET = "3. november";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_VERSION;   /* ingen dato (Ida 7/11: »hvorfor står der version 3. november?«) — datoen blev ikke rettet med, nummeret er sandheden */ } catch (e) {} });
 let NY_VERSION_KLAR = false;
@@ -73171,6 +73172,10 @@ let MAALS = null, MAALS_VIS_UGER = 4, MAALS_KODE = null;
    Har man en god idé uden at vide hvornaar, er der ingen steder at goere af den — og saa
    bliver den i hovedet. Listen her er den skuffe. Samme princip som Rodebutikken:
    ingen spoergsmaal, foer man maa lægge noget fra sig. */
+/* KONTAKTERNE FOR TEMA GÆLDER OVERALT (Ida 17/11: »hvordan kan det lade sig gøre at jeg kan se tema når det er slået fra???? sørg nu for at alt synkroniseres«).
+   Kalenderen, Hjem, Planlægning og mødet viste temaet uden at se på »Slå månedens tema til« / »Slå ugens tema til«. Nu spørger hvert sted her. */
+function temaMndTil(m) { m = m || MAALS; return !(m && m.temaMaaned === false); }
+function temaUgeTil(m) { m = m || MAALS; return !!(m && m.temaUge); }
 function maalsStandard() { return { temaMaaned: true, temaUge: false, ugetemaer: {}, temaideer: [], storyDage: [], storyCheck: {} }; }
 let MAALS_HENTER = null;
 async function maalsHent() {
@@ -74239,8 +74244,10 @@ async function mtemaContentVis() {
   let ugeKey = "", ugeTema = "", ugeNr = "";
   try { ugeKey = maalsUgeKey(0); ugeNr = String(ugeKey).split("-")[1] || ""; } catch(e) {}
   try { ugeTema = ((M && M.ugetemaer) || {})[ugeKey] || ""; } catch(e) {}
+  let ugeFraNaeste = false;
   /* INTET TEMA I DENNE UGE → NAESTE UGES TEMA MED UGENUMMER FORAN (maalt 21/9: moedet saetter temaet for NAESTE uge, og overlinjen viste ingenting) */
-  if (!ugeTema) { try { const nk = maalsUgeKey(1); const nt = ((M && M.ugetemaer) || {})[nk] || ""; if (nt) ugeTema = "uge " + String(nk).split("-")[1] + ": " + nt; } catch (e) {} }
+  if (!ugeTema) { try { const nk = maalsUgeKey(1); const nt = ((M && M.ugetemaer) || {})[nk] || ""; if (nt) { ugeTema = "uge " + String(nk).split("-")[1] + ": " + nt; ugeFraNaeste = String(nk).split("-")[1] || true; } } catch (e) {} }
+  if (!temaUgeTil(M)) { ugeTema = ""; ugeFraNaeste = false; }   /* kontakten slået fra = intet ugetema nogen steder (17/11) */
   /* OVERLINJEN LAANER TEMAET HERFRA (4/9) \u2014 een kilde, to steder. */
   UGE_TEMA_NU = ugeTema || "";
   try { kalLabelTegn(); } catch(e) {}
@@ -74295,13 +74302,14 @@ async function mtemaContentVis() {
   /* BEGGE KASSER REDIGERES PAA STEDET. Foer foerte de til Maalsaetninger; nu er kassen
      baade visning og skrivefelt. To kasser ved siden af hinanden maa ikke opfoere sig
      forskelligt (knap-reglen 22/8) — derfor gaelder det ogsaa maanedens. */
-  const mndVaerdi = aktuel ? tema : "";
-  const ugeLabel = ugeNr ? "Uge " + ugeNr : "Denne uge";
+  const mndVaerdi = (aktuel && temaMndTil(M)) ? tema : "";
+  const ugeLabel = ugeFraNaeste ? "Uge " + ugeFraNaeste : (ugeNr ? "Uge " + ugeNr : "Denne uge");   /* næste uges tema står under sit eget ugenummer — før stod uge 48 under »Uge 47« (17/11) */
+  if (ugeFraNaeste) ugeTema = String(ugeTema).replace(/^uge \d+:\s*/i, "");
   const visMnd = !!String(mndVaerdi || "").trim();
   const visUge = !!String(ugeTema || "").trim();
   /* NAESTE UGES TEMA I EN KASSE VED SIDEN AF (Ida 7/10): staar naar denne uges tema er sat; trykket aabner Maalsaetninger, hvor temaet saettes */
   let nesteNr = "", nesteTema = ""; try { const nk = maalsUgeKey(1); nesteNr = String(nk).split("-")[1] || ""; nesteTema = ((M && M.ugetemaer) || {})[nk] || ""; } catch (e) {}
-  const nesteKasse = (visUge && !/^uge \d+:/i.test(String(ugeTema))) ? '<div class="ws-card mr-kpi-klik" style="padding:18px 20px;margin:0;cursor:pointer;" onclick="tilPlanlaegning()"><div style="font-family:Poppins,sans-serif;font-size:10px;font-weight:400;text-transform:uppercase;letter-spacing:1.8px;color:var(--gray3);border-bottom:1px solid var(--border);padding-bottom:10px;margin-bottom:12px;">Næste uges tema' + (nesteNr ? ' &middot; Uge ' + esc(nesteNr) : '') + '</div>' + rum("naeste", nesteTema, 22) + '</div>' : '';
+  const nesteKasse = (visUge && !ugeFraNaeste) ? '<div class="ws-card mr-kpi-klik" style="padding:18px 20px;margin:0;cursor:pointer;" onclick="tilPlanlaegning()"><div style="font-family:Poppins,sans-serif;font-size:10px;font-weight:400;text-transform:uppercase;letter-spacing:1.8px;color:var(--gray3);border-bottom:1px solid var(--border);padding-bottom:10px;margin-bottom:12px;">Næste uges tema' + (nesteNr ? ' &middot; Uge ' + esc(nesteNr) : '') + '</div>' + rum("naeste", nesteTema, 22) + '</div>' : '';
   if (!visMnd && !visUge) { el.style.display = "none"; el.innerHTML = ""; return; }
 
   el.style.display = "block";
@@ -74314,7 +74322,7 @@ async function mtemaContentVis() {
     let raekker = "";
     if (visMnd) raekker += raekke("maaned", "Månedens tema", mndNavn, mndVaerdi, true);
     if (visUge) raekker += raekke("uge", "Ugens tema", ugeLabel, ugeTema, !visMnd);
-    if (visUge && !/^uge \d+:/i.test(String(ugeTema))) raekker += raekke("naeste", "Næste uges tema", nesteNr ? "Uge " + nesteNr : "", nesteTema, false);   /* NAESTE UGES TEMA (Ida 7/10) */
+    if (visUge && !ugeFraNaeste) raekker += raekke("naeste", "Næste uges tema", nesteNr ? "Uge " + nesteNr : "", nesteTema, false);   /* NAESTE UGES TEMA (Ida 7/10) */
     el.innerHTML = '<div class="ws-card" style="padding:0;margin:0;">' + raekker + '</div>';
   } else {
     let kasser = "";
@@ -91059,7 +91067,7 @@ function moedeSideTegn() {
   if (document.activeElement && rum.contains(document.activeElement) && /^(INPUT|TEXTAREA)$/.test(document.activeElement.tagName)) return;   /* tegn aldrig om, mens der skrives */
   const M = moedeAgendaHent(); window.__MOEDE = M;
   const man = planRitUge(); const uge = energidaUgeNr(man); const key = planRitUgeKey(man);
-  const tema = (MAALS && MAALS.ugetemaer && MAALS.ugetemaer[key]) ? String(MAALS.ugetemaer[key]) : "";
+  const tema = (temaUgeTil() && MAALS && MAALS.ugetemaer && MAALS.ugetemaer[key]) ? String(MAALS.ugetemaer[key]) : "";
   let ugemaal = 0; try { ugemaal = maalUge() || 0; } catch (e) {}
   const opslag = moedeOpslagListe();
   const fra = perfMoedeFra();
@@ -91352,7 +91360,7 @@ async function prTemaHent() {
   if (!PR || !sb || !currentKode) return;
   try {
     const { data } = await sb.from("skema_svar").select("svar").eq("kode", currentKode).eq("navn", "config").eq("skema", "maanedens_tema").maybeSingle();
-    if (PR && data && data.svar && data.svar.tema && data.svar.maaned === PR.mkey) { PR.tema = String(data.svar.tema); planRitTegn(); }
+    if (PR && data && data.svar && data.svar.tema && data.svar.maaned === PR.mkey && temaMndTil()) { PR.tema = String(data.svar.tema); planRitTegn(); }
   } catch (e) {}
 }
 /* HUSETS HERO (Idas klik 20/9 kl. 22.45): markbaandet med sti og Didot-navn — som lektionssiden. Den graa topbjaelke er ude. EET skal for begge doere (planRitStart + drejebogSpoergAabn). */
