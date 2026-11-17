@@ -27175,7 +27175,7 @@ function cvTegnNu() {
   CV.skala = c.width / w;
   try { cvFontTjek(cvD()); } catch (x) {}
   try { const ed = CV.inline ? CV.rod : document.getElementById("cvEd"); if (ed) ed.classList.toggle("cv-ingen", CV.ramme === false); } catch (x) {}
-  CV.bokse = cvTegn(c.getContext("2d"), c.width, c.height, cvD(), CV.noegle, (CV.inline && !cvFotoUrl(CV.noegle)) ? "graa" : cvBillede(cvFotoUrl(CV.noegle)), CV.ramme === false ? -1 : CV.valgt);   /* den stiplede ramme kun mens en tekst er valgt (Ida 4/11) */
+  CV.bokse = cvTegn(c.getContext("2d"), c.width, c.height, cvD(), CV.noegle, cvBillede(cvFotoUrl(CV.noegle)), CV.ramme === false ? -1 : CV.valgt);   /* den stiplede ramme kun mens en tekst er valgt (Ida 4/11) */
   cvStrVis();
 }
 function cvSlide(k) { if (CV && CV.inline) { kvVaelg(+k); return; } CV.noegle = String(k); CV.valgt = 0; CV.ramme = true; cvUI(); }
@@ -30676,7 +30676,16 @@ function delingForsideHtml() {
   }).join("");
   const felt = window.__DELING_NY ? '<div class="dl-fl dl-ny"><input type="text" id="delingNyFelt" class="dl-felt" placeholder="Din idé" aria-label="Din idé" maxlength="200" onkeydown="if(event.key===\'Enter\'){event.preventDefault();this.blur();}else if(event.key===\'Escape\'){this.value=\'\';this.blur();}" onblur="delingIdeGem(this.value)"></div>' : '';
   const chip = window.__DELING_NY ? '' : '<div class="dl-plus-rk"><button type="button" class="ark-chip dl-plus" onclick="delingIdeNy()">' + CHIP_PLUS + 'Tilføj idé</button></div>';
-  return '<div id="delingSek"><div class="dl-sek">Opbygning til deling</div>' + storyFl.replace('<div class="dl-sek">Idéer til story’en</div>', '') + ideer + felt + chip + '</div>';
+  /* KUN NÅR NOGET ER UDFYLDT (Ida 17/11: »opbygnig til deling skal kun komme frem på oversigten hvis noget er udfyldt!«) — idéer tilføjes under faktaboksen (Tilføj › Idé til opbygning til deling) */
+  if (!st && !valgt.length) return '<div id="delingSek" hidden></div>';
+  return '<div id="delingSek"><div class="dl-sek">Opbygning til deling</div>' + storyFl.replace('<div class="dl-sek">Idéer til story’en</div>', '') + ideer + '</div>';
+}
+async function briefDelingTilfoej() {
+  const f = document.getElementById("tilfDeling"); const tx = String((f && f.value) || "").replace(/\s+/g, " ").trim();
+  if (!tx) { if (f) f.focus(); return; }
+  try { bsFlytLuk(); } catch (e) {}
+  window.__DELING_NY = true; await delingIdeGem(tx);
+  try { husKvit("Idéen er tilføjet under Opbygning til deling."); } catch (e) {}
 }
 function delingTegnOm() { try { const g = document.getElementById("delingSek"); if (g) g.outerHTML = delingForsideHtml(); } catch (e) {} }
 function delingIdeNy() { window.__DELING_NY = true; delingTegnOm(); setTimeout(function () { try { const f = document.getElementById("delingNyFelt"); if (f) f.focus(); } catch (e) {} }, 40); }
@@ -31223,7 +31232,7 @@ function kvHookHtml() {
     ? hoved + '<div class="kv-flise kvh-flise">' + kvLaerred(0, true) + '<div class="kv-felt kv-ark" data-i="0"></div>' + note + '<div class="kv-gl" data-i="0"></div></div>'
       + '<div class="kv-panel kv-ark" id="cvPanel"></div>' + forslag
     : hoved + '<div class="kv-flise kv-stor"><div class="kv-v">' + kvLaerred(0, true) + note + '<div class="kv-gl" data-i="0"></div></div>'
-      + '<div class="kv-h kv-ark"><div class="kv-et">Teksten på billedet</div><div class="kv-felt" data-i="0"></div><div id="cvPanel"></div></div></div>' + forslag;
+      + '<div class="kv-h kv-ark"><div class="kv-felt" data-i="0"></div><div id="cvPanel"></div></div></div>' + forslag;
   setTimeout(function () { kvInit(); }, 0);
   return '<div class="sk-q kv-rod kvh-rod ' + (tlf ? 'kv-tlf' : 'kv-comp') + '" id="kvHook" data-tlf="' + (tlf ? 1 : 0) + '"><textarea id="bf_slide_0" hidden>' + esc(sl[0] || "") + '</textarea>' + krop
     + '<input type="file" id="cvFil" accept="image/*,.heic,.heif" multiple hidden onchange="cvFotoValgt(this)"></div>';
@@ -31293,7 +31302,7 @@ function kvHtml() {
       + '<div class="kv-flise kv-stor"><div class="kv-v">' + laerred(a, true)
       + sl.map(function (t, i) { return i > 0 ? note(i, i !== a) : ''; }).join("")
       + '<div class="kv-gl" data-i="' + a + '"></div></div>'
-      + '<div class="kv-h kv-ark"><div class="kv-et">Teksten på billedet</div><div class="kv-felt" data-i="' + a + '"></div><div id="cvPanel"></div></div></div>';
+      + '<div class="kv-h kv-ark"><div class="kv-felt" data-i="' + a + '"></div><div id="cvPanel"></div></div></div>';
   }
   setTimeout(kvInit, 0);
   return '<div class="sk-q kv-rod ' + (tlf ? 'kv-tlf' : 'kv-comp') + '" id="kvRod" data-tlf="' + (tlf ? 1 : 0) + '"><div id="briefSlides" hidden>' + spejl + '</div>' + krop
@@ -31413,7 +31422,7 @@ function kvNoteInd(i, ta) {
 function kvChips(k, aktiv) {
   const d = aktiv ? cvD() : cvDesign(String(k), false), n = (d.lag || []).length;
   const v = aktiv ? CV.valgt : -1;
-  return '<div class="cv-chips kv-chips">' + (n > 1 ? d.lag.map(function (x, j) { return '<button type="button" class="ark-chip' + (j === v ? ' on' : '') + '" onclick="' + (aktiv ? '' : 'kvVaelg(' + k + ');') + 'cvVaelgLag(' + j + ')">Tekst ' + (j + 1) + '</button>'; }).join("") : '')
+  return '<div class="cv-chips kv-chips">' + (n >= 1 ? d.lag.map(function (x, j) { return '<button type="button" class="ark-chip' + (j === v ? ' on' : '') + '" onclick="' + (aktiv ? '' : 'kvVaelg(' + k + ');') + 'cvVaelgLag(' + j + ')">Tekst ' + (j + 1) + '</button>'; }).join("") : '')
     + '<button type="button" class="ark-chip cv-plus" onclick="' + (aktiv ? '' : 'kvVaelg(' + k + ');') + 'cvNytLag()">+ Tekst</button>'
     + (cvFotoUrl(String(k)) ? '<button type="button" class="ark-chip kv-just' + (aktiv && CV.juster ? ' on' : '') + '" aria-pressed="' + !!(aktiv && CV.juster) + '" onclick="' + (aktiv ? '' : 'kvVaelg(' + k + ');') + 'kvJusterSkift()">' + KV_JUST_IK + 'Juster billede</button>' : '')
     + '</div>' + (aktiv && CV.juster && cvFotoUrl(String(k)) ? kvJusterPanel() : '');
@@ -31432,9 +31441,10 @@ function kvJusterZoom(v) { if (!CV) return; const d = cvD(); d.bil = Object.assi
 function kvJusterNulstil() { if (!CV) return; const d = cvD(); delete d.bil; cvTegnNu(); try { if (CV.inline) kvMiniTegn(CV.noegle); } catch (x) {} cvGemSnart(); cvUI(); }
 function kvFeltHtml(k, aktiv) {
   const d = aktiv ? cvD() : cvDesign(String(k), false), l = aktiv ? cvLag() : (d.lag || [])[0];
-  const felt = l ? '<div class="cv-felt"><textarea' + (aktiv ? ' id="cvTekst" oninput="cvTekstInd(this)"' : ' onfocus="kvFokus(' + k + ')"') + ' rows="2" aria-label="Teksten på billedet" placeholder="Skriv teksten på sliden">' + esc(cvTekst(l, String(k))) + '</textarea>'
+  const felt = l ? '<div class="cv-felt"><textarea' + (aktiv ? ' id="cvTekst" oninput="cvTekstInd(this)"' : ' onfocus="kvFokus(' + k + ')"') + ' rows="2" aria-label="Teksten på billedet">' + esc(cvTekst(l, String(k))) + '</textarea>'
     + '<button type="button" class="cv-slet" aria-label="Slet teksten" onclick="' + (aktiv ? 'cvSletLag()' : 'kvVaelg(' + k + ')') + '">' + KV_IK.slet + '</button></div>' : '';
-  return felt + (CV.tlf ? kvChips(k, aktiv) : '');
+  /* SOM COVERBILLEDET (Ida 17/11: »her skal designet selvfølgelig være præcis som de andre steder - inkl placeholderen«): »Tekster« · Tekst-chips · feltet — samme rækkefølge, samme felt, ingen pladsholder */
+  return '<div class="cv-sek">Tekster</div>' + kvChips(k, aktiv) + felt;
 }
 function kvFokus(k) { kvVaelg(k); setTimeout(function () { try { const ta = cvEl("cvTekst"); if (ta) ta.focus(); } catch (e) {} }, 0); }
 function kvUI() {
@@ -31452,8 +31462,7 @@ function kvUI() {
   if (p) p.innerHTML = (l ? '<div class="cv-sek">Skrift</div><div class="cv-chips">' + skr.map(function (n) { return chip(l.s === n, 'onclick="cvSaet(\'s\',\'' + n + '\')"', esc(n), "font-family:'" + cvFam(n) + "';font-weight:" + cvVaegt(n)); }).join("") + (visAlle ? '' : '<button type="button" class="ark-chip cv-plus" onclick="CV.alleSkrifter=true;cvUI()">Alle skrifter</button>') + '</div>'
       + '<div class="cv-sek">Effekt</div><div class="cv-chips">' + CV_EFFEKTER.map(function (e) { return chip((l.e || "") === e[1], 'onclick="cvSaet(\'e\',\'' + e[1] + '\')"', e[0]); }).join("") + '</div>'
       + '<div class="cv-sek">' + (l.e === "boks" ? "Farve bag teksten" : "Farve") + '</div><div class="cv-farver">' + CV_FARVER.map(function (f) { return '<button type="button" class="cv-fv' + (l.f === f ? ' on' : '') + '" style="background:' + f + '" aria-label="Farve" onclick="cvSaet(\'f\',\'' + f + '\')"></button>'; }).join("") + '</div>'
-      + (cvFotoUrl(CV.noegle) ? '' : '<div class="kv-fv-hj">Teksten står mørk på den grå flade. Farven ses, når du har valgt et foto.</div>') : '')   /* Hans og Mette 14/11, fund 5 */
-    + (CV.tlf ? '' : kvChips(+CV.noegle, true));
+      : '');   /* som coverbilledet: ingen hjælpelinje, chipsene står øverst over feltet (17/11) */
   kvChipsMere();
   kvGammelTegn();
   kvTegnAlle();
@@ -31480,7 +31489,7 @@ function kvStatisk(c, k) {
   if (c.width !== Math.round(w * r) || c.height !== Math.round(h * r)) { c.width = Math.round(w * r); c.height = Math.round(h * r); }
   const d = cvDesign(k, false); try { cvFontTjek(d); } catch (e) {}
   const u = cvFotoUrl(k);
-  cvTegn(c.getContext("2d"), c.width, c.height, d, k, u ? cvBillede(u) : "graa", -1);
+  cvTegn(c.getContext("2d"), c.width, c.height, d, k, cvBillede(u), -1);   /* samme flade som coverbilledet, når der ikke er et foto (17/11) */
 }
 function kvMiniTegn(k) {
   if (!CV || !CV.inline) return;
@@ -31497,8 +31506,7 @@ function kvFotoKnapper() {
   CV.rod.querySelectorAll(".kv-foto").forEach(function (h) {
     const k = h.getAttribute("data-i"), har = !!cvFotoUrl(k) ? "1" : "0";
     if (h.getAttribute("data-har") === har) return; h.setAttribute("data-har", har);
-    h.innerHTML = har === "1" ? '<button type="button" class="kv-ik kv-fotoknap" onclick="kvFoto(' + k + ')" aria-label="Skift foto">' + KV_IK.foto + '</button>'
-      : '<button type="button" class="ark-chip kv-vaelg" onclick="kvFoto(' + k + ')">Vælg foto</button>';
+    h.innerHTML = '<button type="button" class="dbtn mq-tap cv-foto" onclick="kvFoto(' + k + ')">' + (har === "1" ? "Skift foto" : "Vælg foto") + '</button>';   /* som coverbilledet: én bred knap under billedet (17/11) */
   });
 }
 function kvFoto(k) { if (String(k) !== CV.noegle) kvVaelg(+k, true); cvFotoVaelg(); }
@@ -39130,7 +39138,7 @@ function briefTilfoejLinkArk(ret) {
      husets dropdown (bud 3-listen) vaelger, hvad man tilfoejer — Link til indholdet · Link til musik · Link til inspiration · Produkter — feltet under,
      og den roede pille »Tilfoej« gemmer og lukker. Escape og klik udenfor lukker uden at gemme. Retter man noget, der er sat, staar valget og teksten klar. */
   const B = BRIEF_STATE || {};
-  const ALLE = [{ k: "linkIndhold", n: "Link til indholdet", ph: "https://… (Google Drive)" }, { k: "musikLink", n: "Link til musik", ph: "https://…" }, { k: "inspiration", n: "Link til inspiration", ph: "https://…" }, { k: "medIIndhold", n: "Produkt", ph: "Produkt, person eller rekvisit …" }, { k: "tags", n: "Tags", ph: "" }, { k: "kommentar", n: "Kommentar", ph: "" }, { k: "opgave", n: "Opgave", ph: "" }];   /* TAGS I FAKTA (Ida 29/9: »i fakta skal man også kunne tilføje tags. som kommer op som chips i fakta«) */
+  const ALLE = [{ k: "linkIndhold", n: "Link til indholdet", ph: "https://… (Google Drive)" }, { k: "musikLink", n: "Link til musik", ph: "https://…" }, { k: "inspiration", n: "Link til inspiration", ph: "https://…" }, { k: "medIIndhold", n: "Produkt", ph: "Produkt, person eller rekvisit …" }, { k: "tags", n: "Tags", ph: "" }, { k: "kommentar", n: "Kommentar", ph: "" }, { k: "opgave", n: "Opgave", ph: "" }].concat((function () { try { const it0 = (IDEER || []).find(x => String(x.id) === String(BRIEF_ID)); return (it0 && !ssEr(it0)) ? [{ k: "deling", n: "Idé til opbygning til deling", ph: "Din idé" }] : []; } catch (e) { return []; } })());   /* IDÉ TIL OPBYGNING TIL DELING TILFØJES UNDER FAKTABOKSEN (Ida 17/11), som de andre ting under Tilføj */   /* TAGS I FAKTA (Ida 29/9: »i fakta skal man også kunne tilføje tags. som kommer op som chips i fakta«) */
   window.__TILF = { valg: ret || "", ret: !!ret };
   let m = document.getElementById("bsFlytMenu"); if (!m) { m = document.createElement("div"); m.id = "bsFlytMenu"; document.body.appendChild(m); }
   m.innerHTML = "";   /* ARKET AABNER TOMT (Ida 21/9 kl. 19.25: »når jeg prøver at tilføje et produkt mere, så er det tidligere produkt allerede der«) — bsFlytLuk skjuler kun, saa det gamle felt stod stadig i DOM'en og blev laest som »det, der allerede er skrevet« */
@@ -39140,15 +39148,25 @@ function briefTilfoejLinkArk(ret) {
     /* FLISER I STEDET FOR DROPDOWN (Ida 29/9: »når de klikker tilføj her skal der komme en kasse op med fliser de kan vælge evt. inkl. symbol foran. rektangulære kasser«) —
        husets valg-fliser (samme som Del og klippets plus); et tryk aabner det valgte */
     if (!v && !window.__TILF.ret) {
-      const IK = { linkIndhold: "link", musikLink: "lyd", inspiration: "insp", medIIndhold: "produkter", tags: "tags", kommentar: "kom", opgave: "opg" };
-      const SVG = { link: FB_IK.link, lyd: FB_IK.lyd, insp: FB_IK.insp, produkter: FB_IK.produkter, tags: '<path d="M3 12V4h8l10 10-8 8L3 12z"/><circle cx="7.5" cy="8.5" r="1.3"/>', kom: BRIEF_KOM_IK, opg: '<path d="M5 12.5l4.5 4.5L19 7"/>' };
+      const IK = { linkIndhold: "link", musikLink: "lyd", inspiration: "insp", medIIndhold: "produkter", tags: "tags", kommentar: "kom", opgave: "opg", deling: "deling" };
+      const SVG = { link: FB_IK.link, lyd: FB_IK.lyd, insp: FB_IK.insp, produkter: FB_IK.produkter, tags: '<path d="M3 12V4h8l10 10-8 8L3 12z"/><circle cx="7.5" cy="8.5" r="1.3"/>', kom: BRIEF_KOM_IK, opg: '<path d="M5 12.5l4.5 4.5L19 7"/>', deling: '<rect x="6" y="3" width="12" height="18" rx="2.5"/><path d="M10 7h4"/>' };
       m.innerHTML = '<div class="bs-flyt-ark bs-valg-ark valg-fliser brief-tilf-valg"><div class="ark-t">Hvad vil du tilføje?</div>'
         + ALLE.map(x => '<button type="button" class="valg-flise" onclick="window.__TILF.valg=\'' + x.k + '\';window.__TILF.flise=true;window.__TILF.tegn()"><span class="valg-ik"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' + (SVG[IK[x.k]] || FB_IK.link) + '</svg></span><span class="valg-ord">' + esc(x.n) + '</span></button>').join("")
         + '<button type="button" class="ark-luk" onclick="bsFlytLuk()">Annullér</button></div>';
       m.style.display = "flex"; m.onclick = function (e) { if (e.target === m) bsFlytLuk(); };
       return;
     }
-    if (v && v.k === "opgave") { briefOpgaveArk(""); return; }   /* Tilføj › Opgave = »Giv en opgave« (Ida 29/9) — lander hos personen i Indbakken */   /* Tilføj › Kommentar = kommentar-arket (29/9) */
+    if (v && v.k === "opgave") { briefOpgaveArk(""); return; }
+    /* IDÉ TIL OPBYGNING TIL DELING (Ida 17/11): samme lille ark som de andre — titlen, ét felt »Din idé«, den røde »Tilføj«, Annullér. Gemmes som før på storyen, der er bundet til opslaget (delingIdeGem). */
+    if (v && v.k === "deling") {
+      m.innerHTML = '<div class="bs-flyt-ark brief-soejle-ark brief-tilf-ark"><div class="ark-t">Opbygning til deling</div>'
+        + '<div id="tilfResten"><input type="text" id="tilfDeling" class="tilf-felt" placeholder="Din idé" aria-label="Din idé" maxlength="200" onkeydown="if(event.key===\'Enter\'){event.preventDefault();briefDelingTilfoej();}">'
+        + '<button type="button" class="ark-knap ark-knap-roed" onclick="briefDelingTilfoej()">Tilføj</button></div>'
+        + '<button type="button" class="ark-luk" onclick="bsFlytLuk()">Annullér</button></div>';
+      m.style.display = "flex"; m.onclick = function (e) { if (e.target === m) bsFlytLuk(); };
+      setTimeout(function () { const f = document.getElementById("tilfDeling"); if (f) f.focus(); }, 60);
+      return;
+    }   /* Tilføj › Opgave = »Giv en opgave« (Ida 29/9) — lander hos personen i Indbakken */   /* Tilføj › Kommentar = kommentar-arket (29/9) */
     if (v && v.k === "tags" && !window.__TILF.tagsLaest) { window.__TILF.tagsLaest = true; KUNDE_ARK_TAGS = (Array.isArray(B.tags) ? B.tags : []).map(t => String(t || "").trim().toLowerCase()).filter(Boolean); }
     const nu = (function () { const f = document.getElementById("tilfTekst"); return f ? f.value : null; })();   /* det, der allerede er skrevet, bliver */
     const vaerdi = nu !== null ? nu : (v && v.k !== "medIIndhold" && v.k !== "musikLink" ? String(B[v.k] || "") : "");   /* musik: listen staar for sig, feltet er til det naeste (27/10) */
@@ -68743,7 +68761,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "3369";
+const APP_VERSION = "3370";
 const APP_BYGGET = "3. november";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_VERSION;   /* ingen dato (Ida 7/11: »hvorfor står der version 3. november?«) — datoen blev ikke rettet med, nummeret er sandheden */ } catch (e) {} });
 let NY_VERSION_KLAR = false;
@@ -100663,6 +100681,11 @@ html body.dash-mode:has(.bs-baand > .cover-tilbage.i-toppen) #dashMain .bs-tilba
    1) SKRIVEFELTERNE I BRIEFEN ER LYSEGRAA #EEEEEE UDEN KANT (Ida 15/11: »felterne man skal skrive i får den lyse grå farve vi har låst – lige nu er det hele lidt for hvidt i hvidt«; ja til buddet RgQaRDMAABNcSeza31njf5).
       Fliserne er stadig hvide. Et forslag, der ikke er valgt, kendes paa den graa TEKST (feltet er lige saa graat). */
 html body:not(.dash-mode):not(#fv1):not(#fv2):not(#fv3):not(#fv4):not(#fv5):not(#fv6):not(#fv7):not(#fv8):not(#fv9):not(#fv10):not(#fv11) #briefWrap .htg-rk input, html body:not(.dash-mode):not(#fv1):not(#fv2):not(#fv3):not(#fv4):not(#fv5):not(#fv6):not(#fv7):not(#fv8):not(#fv9):not(#fv10):not(#fv11) #briefWrap textarea.sk-input, html body:not(.dash-mode):not(#fv1):not(#fv2):not(#fv3):not(#fv4):not(#fv5):not(#fv6):not(#fv7):not(#fv8):not(#fv9):not(#fv10):not(#fv11) #briefWrap input.sk-input, html body:not(.dash-mode):not(#fv1):not(#fv2):not(#fv3):not(#fv4):not(#fv5):not(#fv6):not(#fv7):not(#fv8):not(#fv9):not(#fv10):not(#fv11) #briefWrap textarea.mb-felt, html body:not(.dash-mode):not(#fv1):not(#fv2):not(#fv3):not(#fv4):not(#fv5):not(#fv6):not(#fv7):not(#fv8):not(#fv9):not(#fv10):not(#fv11) #briefWrap input.mb-felt { background:#F8F8F8 !important; border:1px solid #DEDAD4 !important; box-shadow:none !important; }
+/* SLIDE-REDIGERINGEN ER COVERBILLEDETS (Ida 17/11: »her skal designet selvfølgelig være præcis som de andre steder - inkl placeholderen«): tekstfeltet som coverbilledets (hvidt, grå kant, 14 px hjørner),
+   »Vælg foto« som én bred knap under billedet, »Tekster« med chipsene over feltet. Vælter »skrivefelterne er grå« (15/11) KUN i billedets tekstfelt, og den grå flade uden foto (14/11). */
+html body:not(.dash-mode):not(#fv1):not(#fv2):not(#fv3):not(#fv4):not(#fv5):not(#fv6):not(#fv7):not(#fv8):not(#fv9):not(#fv10):not(#fv11):not(#fv12) :is(#kvRod,#kvHook) .cv-felt textarea { background:#fff !important; border:1px solid var(--border) !important; border-radius:14px !important; box-shadow:none !important; min-height:48px !important; padding:12px 14px !important; font-size:14px !important; line-height:1.4 !important; color:var(--black) !important; }
+html body:not(.dash-mode):not(#fv1):not(#fv2):not(#fv3):not(#fv4):not(#fv5):not(#fv6):not(#fv7):not(#fv8):not(#fv9):not(#fv10):not(#fv11):not(#fv12) :is(#kvRod,#kvHook) .kv-foto { position:static !important; inset:auto !important; display:block !important; padding:0 !important; margin:12px 0 0 !important; pointer-events:auto !important; }
+html body:not(.dash-mode):not(#fv1):not(#fv2):not(#fv3):not(#fv4):not(#fv5):not(#fv6):not(#fv7):not(#fv8):not(#fv9):not(#fv10):not(#fv11):not(#fv12) :is(#kvRod,#kvHook) .kv-foto .cv-foto { width:100% !important; }
 /* 2) SPOERGSMAALET STAAR TAET PAA SIT FELT ELLER SINE CHIPS (Ida 15/11: »der er for meget luft mellem spørgsmålet og flisen eller spørgsmålet og chips«): 8 (var 16) */
 html body:not(.dash-mode):not(#fv1):not(#fv2):not(#fv3):not(#fv4):not(#fv5):not(#fv6):not(#fv7):not(#fv8):not(#fv9):not(#fv10):not(#fv11) #briefWrap .sk-q > .sk-label { margin-bottom:8px !important; padding-bottom:0 !important; }
 /* 3) HJAELPEFLISEN TIL HOEJRE ER ALTID LYSEBLAA (Ida 15/11: »og den flise til højre skal altid være den lyseblå«) — #F0F5F8 uden kant; paerens runde felt er hvidt, saa det kan ses. Vaelter klik 2 fra 14/11 (hvide hjaelpefliser). */
