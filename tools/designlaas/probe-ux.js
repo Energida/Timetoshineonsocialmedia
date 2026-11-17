@@ -29,6 +29,7 @@ setTimeout(async function () {
       ["forloebsoversigt", function () { openForloeb(); }],
       ["to-do", function () { haengSideAabn(); }],
       ["profil", function () { minProfilAaben(); }],
+      ["moedesiden", function () { try { planRitLuk(); } catch (e) {} moedeSideAaben(); }],   /* mødesiden (Det ugentlige contentmøde) var ikke med (17/11) */
       ["planlaegningsdagen", function () { planRitStart(); }]
     ];
     var rod = function () { var pr = document.getElementById("planRit"); if (pr && pr.classList.contains("on")) return pr; var lv = document.getElementById("lekVis"); if (lv && lv.classList.contains("on")) return lv; return document.querySelector(".screen.active") || document.body; };
@@ -78,6 +79,21 @@ setTimeout(async function () {
       if (skriv.length) fund(navn, "pladsholder med »skriv« (" + skriv.length + "): " + uniq(skriv).slice(0, 3).join(" | "));
       if (streger) fund(navn, "lange streger i teksten: " + streger);
       if (selects.length) fund(navn, "native vaelger paa computeren: " + uniq(selects).slice(0, 3).join(", "));
+      /* STI I COVERET (Ida 17/11: »hvordan det kan være muligt at jeg kan finde en sti øverst live på min b2b kundeside efter utallige gennemgange af uxpolitiet?«).
+         Låst 7/10 (b2b computer: kun den hvide Tilbage-chip) og 25/9 (telefon: ingen sti i coveret). Måles på det, man SER — enhver synlig »/« eller navsti-led/-nu
+         i et cover, uanset klassenavn — så en håndbygget kopi af stien (mødeforløbet: mb-skil, #prSti) ikke kan slippe igennem igen. */
+      try {
+        var stiFund = [];
+        [].forEach.call(document.querySelectorAll(".mb-baand, .hf-hero, .lek-top, .bs-baand, #planRit .mb-baand"), function (b) {
+          if (!synlig(b)) return;
+          [].forEach.call(b.querySelectorAll("*"), function (e) {
+            if (!synlig(e)) return; var q = e.getBoundingClientRect(); if (q.bottom < 0 || q.top > innerHeight) return;
+            var et = egenTekst(e);
+            if (et === "/" || et === "›" || /(^|\s)navsti-(led|nu)(\s|$)/.test(String(e.className))) stiFund.push((String(e.className).split(" ")[0] || e.tagName) + "»" + (et || (e.textContent || "").trim().slice(0, 24)) + "«");
+          });
+        });
+        if (stiFund.length) fund(navn, "STI I COVERET (" + stiFund.length + "): " + uniq(stiFund).slice(0, 3).join(" | "));
+      } catch (e) {}
       if (klip.length) fund(navn, "klippet" + (SMAL ? " (frigjort menu)" : "") + " (" + klip.length + "): " + uniq(klip).slice(0, 3).join(" | "));
       if (luk.length) fund(navn, "knap hedder Luk (skal hedde Annuller)");
       if (kanter.length) fund(navn, "fliser med kant paa computeren (" + kanter.length + "): " + uniq(kanter).slice(0, 4).join(", "));
