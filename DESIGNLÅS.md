@@ -1,3 +1,17 @@
+## 17. november · IDÉBANKEN BUD 5: ÉT COVER PR. SØJLE · TEMAER OG SERIER MED TAGS (Idas »Bud 5« og »Ja, læg det ud«, artifact 5ZEYtQNRxJRHsqeGVbGj2v + M6mfJZeVauZnkxq48HQ6gs v4, v3372)
+- Ida: »det giver ikke mening at idébanken en til en bliver lavet som inspiration, fordi der jo ikke er billeder på idéerne«. Hun bad om fem bud ud fra Notions gallerivisning og valgte bud 5. Hun skrev også: »i stedet for seneste kunne der være mapper til temaer og serier, hvor man kunne tagge elementer og filtrere på tags«.
+- Indholdssøjler: hver søjle er en mappeflise med ÉT cover øverst, som en Notion-sides cover. Under coveret står navnet og »N idéer«. Har søjlen intet cover, står den lyse flade med knappen »Vælg cover«. Coveret vælges blandt kundens egne billeder i Inspiration. Når en søjle er åben, står der Tilbage, navnet og »Skift cover«/»Vælg cover«.
+- »Seneste« er ude. I stedet står »Temaer og serier«:
+  - en række tag-chips: Alle + hvert tema. Den valgte er fyldt rød.
+  - temaerne som mappefliser med cover og »Tema · N idéer« / »Serie · N afsnit«.
+  - »+ Nyt tema eller serie« (stiplet, som Inspirationens »+ Ny mappe«).
+- Et valgt tag viser temaets idéer. I en serie står de som »Afsnit 1, 2 …« efter oprettelse. »Ret« giver Skift cover, Omdøb og Slet (idéerne bliver liggende).
+- Kortet viser idéens eget billede, ellers en lav stribe (56 px) med søjlens cover. Under det står titlen med skraldespanden, »Tilføjet af X · dato« og to knapper: søjlen og tag (temaernes navne, ellers »Tag«). Tag-knappen åbner temaerne med ✓ og »+ Nyt tema eller serie«.
+- Gemmes i det, der findes:
+  - skema_svar (skema ide_bank, navn opsaetning) med covers og temaer.
+  - idéens tags i content_ideer.brief.temaer.
+  - Ingen nye tabeller, kolonner, policies eller storage.
+
 ## 17. november · SLIDE-REDIGERINGEN = COVERBILLEDETS · OPBYGNING TIL DELING KUN NÅR UDFYLDT (Ida 17/11, ikke lagt ud)
 - Ida: »her skal designet selvfølgelig være præcis som de andre steder - inkl placeholderen« (slide i Fang dem/Fasthold dem vs. Coverbillede). Slide-redigeringen er nu bygget som coverbilledets: »Tekster« + chips (Tekst 1 · + Tekst · Juster billede) øverst, så tekstfeltet (hvidt, grå kant, ingen pladsholder — »Skriv teksten på sliden« er ude), Skrift · Effekt · Farve. Uden foto står samme brune flade som coverbilledet (vælter den grå flade 14/11 i redigeringen), og »Vælg foto«/»Skift foto« er én bred knap under billedet. Hjælpelinjen om den grå flade er ude. Briefoversigtens små slides er uændrede.
 - Ida: »opbygnig til deling skal kun komme frem på oversigten hvis noget er udfyldt!« · »ideer til opbygning til deling skal man kunne tilføje under faktaboksen«. Afsnittet står kun, når der er en story eller en idé. Idéen tilføjes i briefen under faktaboksen: Tilføj › »Idé til opbygning til deling« (samme fliser og samme lille ark som de andre; titel »Opbygning til deling«, felt »Din idé«, rød »Tilføj«). Chippen »+ Tilføj idé« på oversigten er ude (oversigten tilføjer ikke, 21/9).
