@@ -1,3 +1,8 @@
+## 17. november · STORYENS TYPE ER EN CHIP PÅ KALENDERFLISEN (Idas klik »Ja, gør klar« 17/11, billeder 2EB9jFEpU4ndACLY1mmXCD) · v3376, ikke lagt ud
+- Ida: »om det er opbygning til deling eller check-in skal være chips på kalender flisen ligesom indholdssøjlerne er ved opslag«.
+- Typen (»Daglig check-in« / »Opbygning til deling«) står som chip under titlen, på samme plads og i samme form som opslagets indholdssøjle. Etiketten over titlen siger kun »Story« (+ klokkeslæt). Vælter 4/11's »STORY · OPBYGNING TIL DELING« i etiketten på fliserne.
+- Gælder dagens fliser (telefon og Hjem), Kommende opslag og ugen på computeren. »Story« står stadig kun én gang. Chippen viser kun; typen skiftes inde på storyen.
+
 ## 17. november · STORY-BYGGEREN: SKABELONER · FLERE BILLEDER · FJERN BAGGRUND (Idas klik »Byg den med alle 11«, bud 4iX24RoBtzfELWd9RMyb9P) · v3375, ikke lagt ud
 - Ida: »lave en story med den faste lyserøde baggrund som skabelon og skulle kunne indsætte packs … ligesom man kan i canva og så kan jeg på billedet klikke på "fjern baggrund" … tilføje lige så mange billeder jeg vil … faste skabeloner«. Og 17/11: midterlinjer som på coverbilledet, Delete på computeren, »tænk alt igennem«.
 - Chippen »Billede« i storyens tilføj-række (Tekst · Billede · Afstemning · Musik · Link) åbner fotovælgeren. Flere billeder kan vælges på én gang; de lander fordelt ned over storyen.
