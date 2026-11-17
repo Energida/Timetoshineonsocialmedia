@@ -1,3 +1,7 @@
+## 17. november · BRIEFEN: BLYANTEN STÅR VED TITLEN · INTET TITELFELT UNDER IDÉEN (Ida 17/11) · v3373
+- **Blyanten står lige efter titlen øverst i briefen** (Ida: »jeg vil gerne at blyanten kommer tilbage op i overskriften her så man kan redigere titlen direkte«): rund ikonknap 36, grå #6F6B66, telefon og computer, på oversigten og alle trin. Et tryk gør titlens egne ord skrivbare; Enter eller et tryk udenfor gemmer. VÆLTER 14/11 (»ingen blyant på computeren«) for titlen.
+- **Titelfeltet under Idéen er ude** (Ida: »kan vi så fjerne titlen i ideen?!«). Titlen rettes kun ved titlen (og under de tre prikker).
+
 ## 17. november · IDÉBANKEN BUD 5: ÉT COVER PR. SØJLE · TEMAER OG SERIER MED TAGS (Idas »Bud 5« og »Ja, læg det ud«, artifact 5ZEYtQNRxJRHsqeGVbGj2v + M6mfJZeVauZnkxq48HQ6gs v4, v3372)
 - Ida: »det giver ikke mening at idébanken en til en bliver lavet som inspiration, fordi der jo ikke er billeder på idéerne«. Hun bad om fem bud ud fra Notions gallerivisning og valgte bud 5. Hun skrev også: »i stedet for seneste kunne der være mapper til temaer og serier, hvor man kunne tagge elementer og filtrere på tags«.
 - Indholdssøjler: hver søjle er en mappeflise med ÉT cover øverst, som en Notion-sides cover. Under coveret står navnet og »N idéer«. Har søjlen intet cover, står den lyse flade med knappen »Vælg cover«. Coveret vælges blandt kundens egne billeder i Inspiration. Når en søjle er åben, står der Tilbage, navnet og »Skift cover«/»Vælg cover«.
