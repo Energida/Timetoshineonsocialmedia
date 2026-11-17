@@ -1,3 +1,16 @@
+## 17. november · IDÉBANKEN ER BYGGET SOM INSPIRATION (Idas »Ja, læg den ud«, artifact M6mfJZeVauZnkxq48HQ6gs v3, v3364)
+- Ida 16/11: »idebanken er allerede tegnet som pinterst?? det skal bare lægges ud! præcis som inspiration«, og senere: »kan du ikke bare være sød at lave det som inspiration!!« og »alle mapper skal se ud som kreative præsentationer af tøj«.
+- I kundens design (body.mb) er Idébanken Inspirationens side. Øverst står »Indholdssøjler« med søjlerne som Inspirationens mappefliser: hvid flise, mosaik med fire felter og navnet under. Rækkefølgen er »Mangler en søjle« (kun når der er idéer uden søjle), så 1A · 1B · 2A · 2B, så Story. Et tryk åbner søjlen som en mappe med »Tilbage«.
+- Under »Seneste« står Inspirationens kort 1:1:
+  - billedet, eller Inspirationens tomme hvide kort med en tynd pære;
+  - titlen med skraldespanden;
+  - »Tilføjet af X · dato«;
+  - ÉN knap med søjlens navn og en lille pil, der står på Inspirationens »Gem i mappe«s plads. Er der ingen søjle, står der »Vælg søjle«.
+- Et tryk på kortet eller knappen åbner idéen. Skraldespanden spørger, før den arkiverer.
+- Ingen chip-rækker, ingen søgning og ingen filter/sortér/Idé-hjælp på siden. Kun plusset står, som på Inspiration.
+- Søjle-knappen er undtaget husets chip-motor (to linjer ved lange søjlenavne, aldrig »…«).
+- Ingen nye skrivninger i databasen. Egne mapper til idéer og »+ Ny mappe« kommer i næste trin.
+
 ## 16. november · HJEM: KUN SKREVET FEEDBACK · VISNINGER = DAGE (Ida: »Dette skal ikke vises på mit dashboard. Det er kun hvis en kunde har skrevet feedback. Og jeg tror ikke på den statestik!«)
 - Feedback på Hjem viser kun feedback med skrevet tekst. Stjerner uden tekst vises ikke, og uden skrevet feedback er flisen væk. Chippen »Kun med kommentar« er ude (det er nu reglen). Live 16/11: 6 feedback, 0 med tekst → flisen vises ikke.
 - Visninger tælles som DAGE: én pr. lektion pr. dag pr. person, aldrig når Ida kigger med som kunden. Nyt felt `lektion_visdage` i skema_svar ({ lektion: [datoer] }), kun datoer, intet indhold.
