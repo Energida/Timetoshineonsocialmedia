@@ -10,6 +10,16 @@
 - Ingen chip-rækker, ingen søgning og ingen filter/sortér/Idé-hjælp på siden. Kun plusset står, som på Inspiration.
 - Søjle-knappen er undtaget husets chip-motor (to linjer ved lange søjlenavne, aldrig »…«).
 - Ingen nye skrivninger i databasen. Egne mapper til idéer og »+ Ny mappe« kommer i næste trin.
+## 17. november · CONTENTMØDET › SIDEN SIDST: INDBLIKKETS FELTER (Idas »Ja, byg det« på forslaget 17/11, ikke lagt ud)
+- **Hvilket opslag:** øverst på kortet »Link til opslaget på Instagram« (indblikLink, »Åbn opslaget« når linket er fra instagram.com) og »Postet den« (indblikPostet). Under titlen står »postet X · planlagt Y« eller »planlagt Y«. Intet opslag rettes af sig selv.
+- **Nødvendige tal:** Visninger · Konti nået · Interaktioner · Gemninger · Delinger; ved video også Gns. visningstid · Videoens længde · Overspringsfrekvens. Én linje grå hjælp under hvert felt. »Konti nået« er samme nøgle som »Antal unikke seere« (indblikNaaet) — navnet er sat tilbage til det, tallene blev tastet som.
+- **Ikke tilgængelig:** lille understreget knap under hvert tal gemmer "na". Tomt = ikke udfyldt, "na" = ikke tilgængelig, "0" = nul. Beregninger springer tomt og "na" over. Briefens Fakta viser "na" som tomt felt med »Ikke tilgængelig« og sletter det ikke.
+- **Gemt + delt** (gammelt samlet tal) vises kun, hvor det findes, og deles aldrig ud.
+- **Aflæst den** sættes til i dag, når det første tal tastes, og kan rettes. »Aflæst N dage efter opslaget«. Chips »Tallene gælder« (Kun Instagram · Instagram + Facebook · Ved ikke) og »Boostet« (Ja · Nej · Ved ikke); et tryk mere fjerner valget.
+- **Flere tal (frivilligt)** er foldet sammen (åbent, hvis noget er udfyldt): Likes · Kommentarer · Ikke-følgere % · Profilbesøg · Nye følgere · »Henvendelser eller køb«.
+- **Beregninger** kun med begge tal og grundlaget i parentes: visningstid i forhold til længden (ikke en fuldførelsesrate, kan gå over 100 %) · gemninger, delinger og interaktioner pr. nået konto. Rød linje, hvis likes + kommentarer + gemninger + delinger er flere end Interaktioner. Delene lægges aldrig sammen til Interaktioner.
+- Feltnavne inde i kortet er grå 13 px uden versaler (aldrig versaler i fliser, 15/11). Kortet har `contain:inline-size` — målt 421 px på 390 uden; 358 med.
+- Ikke bekræftet: Instagrams præcise danske ord i appen. Rettes til, når Ida sender et skærmbillede af Indblik.
 
 ## 16. november · HJEM: KUN SKREVET FEEDBACK · VISNINGER = DAGE (Ida: »Dette skal ikke vises på mit dashboard. Det er kun hvis en kunde har skrevet feedback. Og jeg tror ikke på den statestik!«)
 - Feedback på Hjem viser kun feedback med skrevet tekst. Stjerner uden tekst vises ikke, og uden skrevet feedback er flisen væk. Chippen »Kun med kommentar« er ude (det er nu reglen). Live 16/11: 6 feedback, 0 med tekst → flisen vises ikke.
