@@ -93,6 +93,18 @@ for UXK in "390 1200 $K7" "1440 940 $K7" "1440 940 $K8"; do
   echo "$UDX" | grep -q "SELE UX SUM 0 " || UX_OK=0
 done
 [ "$UX_OK" = "1" ] && echo "SELE UX OK: nul fund paa 390, 1440 og 1440 frigjort" || echo "SELE UX FEJL: fund staar ovenfor"
+# DÆKNINGSPORTEN (fase 1, Ida 17/11): hver HÅRD regel i DESIGNLÅS.md skal have en linje i tools/designlaas/regler.json, der siger,
+# hvilken måling håndhæver den — eller at den er planlagt. En ny HÅRD regel uden linje stopper porten (python3 tools/designlaas/daekning.py --opret).
+UDDK=$(python3 "$ROD/tools/designlaas/daekning.py" 2>&1); echo "$UDDK"
+echo "$UDDK" | grep -q "SELE DAEKNING OK" && DAEK_OK=1 || DAEK_OK=0
+# RAPPORT, IKKE PORT (fase 1): probe-laas.js (låsens former på hver b2b-side) blev aldrig kørt. Nu kører den på 390 og 1440 og skriver
+# »SELE RAPPORT LAAS …«. Fundene gennemgås i fase 2; de stopper ikke porten.
+KRL=$(python3 -c "import urllib.parse,sys;print(urllib.parse.quote(open(sys.argv[1]).read()+'\n'+open(sys.argv[2]).read()))" "$ROD/tools/designlaas/probe-laas.js" "$ROD/tools/designlaas/rapport-laas.js")
+for RL in "390 1200" "1440 940"; do
+  set -- $RL
+  RAARL=$($TO "$C" $HL --no-sandbox --disable-gpu --window-size=$(($1+40)),$(($2+60)) --virtual-time-budget=90000 --enable-logging=stderr --v=0 --screenshot="$MAAL/rapport-laas-$1.png" "http://127.0.0.1:$PORT/sele.html?vis=kunde&fil=index-sele.html%3Fselekode%3DHINGES2026&bred=$1&hoej=$2&kode=$KRL" 2>&1)
+  echo "$RAARL" | grep -a 'CONSOLE' | sed -E 's/^.*CONSOLE[:(][0-9]+\)?\] //; s/", source:.*$//; s/^"//' | grep -a 'SELE RAPPORT' | sed "s/^/[$1] /" | head -18
+done
 # BACKSTAGE (20/9, Idas ord: »hver eneste side i loop«): probe-backstage.js paa 390 og 1440 — markbaandet som hero, 32 px luft, hvid side, trykfelter, streger, kryds, emoji.
 K9=$(python3 -c "import urllib.parse,sys;print(urllib.parse.quote(open(sys.argv[1]).read()))" "$ROD/tools/designlaas/probe-backstage.js")
 K10=$(python3 -c "import urllib.parse,sys;print(urllib.parse.quote(sys.argv[2] + open(sys.argv[1]).read()))" "$ROD/tools/designlaas/probe-backstage.js" "document.body.classList.add('dash-nav');")
@@ -196,5 +208,5 @@ print('SELE SPOEGELSE OK: alle sideskift er rene paa 390 og 1440' if not fejl el
 " "$ROD" 2>&1)
 echo "$UDJ"
 echo "$UDJ" | grep -q "SELE SPOEGELSE OK" || HERO_OK=0
-[ "$HERO_OK" = "1" ] && [ "$MAAL_OK" = "1" ] && [ "$REGLER_OK" = "1" ] && echo "$UDG" | grep -q "SELE GENSTART OK" && echo "$UD0" | grep -q "SELE POPUP-KILDE OK" && echo "$UD" | grep -q "SELE LAAS OK" && echo "$UD2" | grep -q "SELE SIDER OK" && echo "$UD4" | grep -q "SELE SIDER OK" && echo "$UD5" | grep -q "SELE BUD OK" && echo "$UD6" | grep -q "SELE BUD OK" && [ "$UX_OK" = "1" ] && [ "$BS_OK" = "1" ] && echo "$UD3" | grep -q "SELE BRIEF OK" && exit 0
+[ "$DAEK_OK" = "1" ] && [ "$HERO_OK" = "1" ] && [ "$MAAL_OK" = "1" ] && [ "$REGLER_OK" = "1" ] && echo "$UDG" | grep -q "SELE GENSTART OK" && echo "$UD0" | grep -q "SELE POPUP-KILDE OK" && echo "$UD" | grep -q "SELE LAAS OK" && echo "$UD2" | grep -q "SELE SIDER OK" && echo "$UD4" | grep -q "SELE SIDER OK" && echo "$UD5" | grep -q "SELE BUD OK" && echo "$UD6" | grep -q "SELE BUD OK" && [ "$UX_OK" = "1" ] && [ "$BS_OK" = "1" ] && echo "$UD3" | grep -q "SELE BRIEF OK" && exit 0
 echo "SELE LAAS FEJL: maalingen sagde ikke OK"; exit 1

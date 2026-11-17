@@ -50,7 +50,9 @@ function siderStreger(r) {
        sin ene streg under sig — det er reglen, ikke fejlen. 12/9-forbuddet gjaldt dobbeltlinjer og doere. */
     /* 15/9: ringflisens etiket staar UNDER ringen med stregen OVER sig (FLISEN: »ringe under m. etiket 14 px under«) — den ene streg maa vende begge veje, men aldrig begge. */
     var erEtiket = cs.textTransform === "uppercase" && parseFloat(cs.fontSize) <= 11.5 && ((bb && !bt) || (bt && !bb));
-    if (erEtiket) { var etiketter = (taelt.get(fl) || 0) + 1; taelt.set(fl, etiketter); if (etiketter === 1) return; }
+    /* 15/11 VÆLTER 15/9 (fase 1, 17/11): »aldrig versal-overskrifter inde i fliser« og »aldrig en streg ud fra en overskrift«. Etiketten med sin streg
+       er derfor ikke længere »reglen« — den skrives som RAPPORT (stopper ikke porten endnu), så bruddene kan rettes i fase 2, før målingen bliver en bremse. */
+    if (erEtiket) { var etiketter = (taelt.get(fl) || 0) + 1; taelt.set(fl, etiketter); if (etiketter === 1) { try { var nk = (fl.id || fl.className.toString().split(" ")[0]) + " »" + (e.textContent || "").trim().slice(0, 30) + "«"; window.__SIDER_RAPPORT = window.__SIDER_RAPPORT || {}; if (!window.__SIDER_RAPPORT[nk]) { window.__SIDER_RAPPORT[nk] = 1; console.log("SELE SIDER RAPPORT versal-etiket med streg inde i flisen (15/11): " + nk); } } catch (x) {} return; } }
     ud.push((fl.id || fl.className.toString().split(" ")[0]) + ">" + (e.id || e.className.toString().split(" ")[0] || e.tagName));
   });
   return ud;

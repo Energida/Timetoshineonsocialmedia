@@ -1,7 +1,7 @@
 /* UX-POLITIET PAA HELE B2B (Ida 20/9 kl. 22.28: »vaer soed at koer hele ux politiet paa b2b tak saa jeg ikke skal bruge mere tid paa dette rod«).
    Aabner hver side gennem den rigtige doer og MAALER designlaasen paa fladen — i den bredde og menutilstand, koer.sh giver
    (390 · 1440 fast · 1440 frigjort med window.SELE_SMAL). Skriver EN linje pr. fund: "SELE UX <side> <hvad>", og til sidst
-   "SELE UX SUM <antal>". Fund er rapport, ikke port: koer.sh laeser dem, men falder ikke paa dem — rene fejl rettes, valg gaar til Ida. */
+   "SELE UX SUM <antal>". Hvert fund STOPPER porten (koer.sh kræver »SELE UX SUM 0«) — rettet 17/11, den gamle linje sagde »rapport, ikke port«. */
 setTimeout(async function () {
   var vent = function (ms) { return new Promise(function (r) { setTimeout(r, ms); }); };
   var UD = [], fund = function (side, hvad) { UD.push(side + " · " + hvad); };
@@ -95,7 +95,7 @@ setTimeout(async function () {
         if (stiFund.length) fund(navn, "STI I COVERET (" + stiFund.length + "): " + uniq(stiFund).slice(0, 3).join(" | "));
       } catch (e) {}
       if (klip.length) fund(navn, "klippet" + (SMAL ? " (frigjort menu)" : "") + " (" + klip.length + "): " + uniq(klip).slice(0, 3).join(" | "));
-      if (luk.length) fund(navn, "knap hedder Luk (skal hedde Annuller)");
+      if (luk.length) fund(navn, "knap hedder Luk (popups lukkes med krydset — ingen Luk og ingen Annuller, låst 7/10)");
       if (kanter.length) fund(navn, "fliser med kant paa computeren (" + kanter.length + "): " + uniq(kanter).slice(0, 4).join(", "));
       if (lysSmaa.length) fund(navn, "lys graa paa laeselinjer (" + lysSmaa.length + "): " + uniq(lysSmaa).slice(0, 8).join(" | "));
       var c2 = document.querySelector(".content"); if (document.documentElement.scrollWidth > innerWidth + 1 || (c2 && c2.scrollWidth > c2.clientWidth + 1)) fund(navn, "vandret sejlads");

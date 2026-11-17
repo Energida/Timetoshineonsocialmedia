@@ -31,7 +31,10 @@ function lag(){ var u=[]; [].forEach.call(document.querySelectorAll("#bsFlytMenu
 function lukAlt(){ try{bsFlytLuk()}catch(e){} try{arkLuk(true)}catch(e){} try{closeModal()}catch(e){} [].forEach.call(document.querySelectorAll(".modal-back.open,.modal-back.show,.modal-back.vis"),function(e){e.classList.remove("open","show","vis")}); lag().forEach(function(e){ if(e.id==="bsFlytMenu"){e.style.display="none";e.innerHTML="";} else if(/ark-slor/.test(e.className)||e.id==="arkSlor") e.remove(); else e.style.display="none"; }); }
 var vent=function(ms){return new Promise(function(r){setTimeout(r,ms)})};
 var AABNET=0, LUKKET=[];
-async function proev(navn,kald){ var foer=lag(); try{ kald(); }catch(e){} await vent(450); var nu=lag().filter(function(e){return foer.indexOf(e)<0}); if(!nu.length) return false; AABNET++; TRIN="arket "+navn; nu.forEach(function(r){ maal(r,true); }); lukAlt(); await vent(450); return true; }
+/* VENT TIL ARKET ER ÅBENT — IKKE ET FAST TAL (fase 1, Ida 17/11: »popups nåede ikke at åbne« gav røde porte uden fejl i designet).
+   Før ventede proben 450 ms og kaldte et langsomt ark »lukket«. Nu kigges der hver 100. ms, til et nyt lag står, i højst MAKS ms
+   (2000 ved første forsøg, 700 ved de næste), og efter lukningen ventes der, til lagene er væk. Et ark, der åbner, tælles altid. */
+async function proev(navn,kald,maks){ maks=maks||2000; var foer=lag(); try{ kald(); }catch(e){} var nu=[]; for(var t=0;t<maks;t+=100){ await vent(100); nu=lag().filter(function(e){return foer.indexOf(e)<0}); if(nu.length) break; } if(!nu.length) return false; await vent(250); nu=lag().filter(function(e){return foer.indexOf(e)<0}); if(!nu.length) return false; AABNET++; TRIN="arket "+navn; nu.forEach(function(r){ maal(r,true); }); lukAlt(); for(var u=0;u<1500;u+=100){ await vent(100); if(!lag().length) break; } return true; }
 var VAGT=setTimeout(function(){ console.log("SELE REGLER2 FEJL: proben nåede ikke i mål — sidste trin: "+TRIN); },280000);
 setTimeout(async function(){ try {
   for(var v=0;v<40&&!document.body.classList.contains("app-klar");v++) await vent(150);
@@ -48,10 +51,10 @@ setTimeout(async function(){ try {
   lukAlt(); await vent(600);
   for(var i=0;i<SKABELON.length;i++){ if(!(await proev(SKABELON[i][0],SKABELON[i][1]))) LUKKET.push(SKABELON[i][0]); }
   for(var j=0;j<LISTE.length;j++){ var n=LISTE[j], fn=window[n]; if(typeof fn!=="function"){ LUKKET.push(n); continue; } TRIN="arket "+n;
-    var ok=await proev(n,function(){fn()}); if(!ok) ok=await proev(n,function(){fn(ARG1)}); if(!ok) ok=await proev(n,function(){fn(0)}); if(!ok) LUKKET.push(n); }
+    var ok=await proev(n,function(){fn()}); if(!ok) ok=await proev(n,function(){fn(ARG1)},700); if(!ok) ok=await proev(n,function(){fn(0)},700); if(!ok) LUKKET.push(n); }
   /* anden runde: et ark, der ikke nåede at åbne, mens det forrige lukkede, får et forsøg til */
   var igen=LUKKET.slice(); LUKKET=[]; lukAlt(); await vent(600);
-  for(var q=0;q<igen.length;q++){ var n2=igen[q], f2=window[n2], sk=SKABELON.filter(function(x){return x[0]===n2})[0]; var ok2=false; if(sk) ok2=await proev(n2,sk[1]); else if(typeof f2==="function"){ ok2=await proev(n2,function(){f2()}); if(!ok2) ok2=await proev(n2,function(){f2(ARG1)}); if(!ok2) ok2=await proev(n2,function(){f2(0)}); } if(!ok2) LUKKET.push(n2); }
+  for(var q=0;q<igen.length;q++){ var n2=igen[q], f2=window[n2], sk=SKABELON.filter(function(x){return x[0]===n2})[0]; var ok2=false; if(sk) ok2=await proev(n2,sk[1]); else if(typeof f2==="function"){ ok2=await proev(n2,function(){f2()},3000); if(!ok2) ok2=await proev(n2,function(){f2(ARG1)},700); if(!ok2) ok2=await proev(n2,function(){f2(0)},700); } if(!ok2) LUKKET.push(n2); }
   var MINDST=Math.floor((LISTE.length+SKABELON.length)*0.7);
   N++; if(AABNET<MINDST) FUND.push("ARK: kun "+AABNET+" ark åbnede (skal mindst "+MINDST+") — åbnede ikke: "+LUKKET.join(", "));
   clearTimeout(VAGT);

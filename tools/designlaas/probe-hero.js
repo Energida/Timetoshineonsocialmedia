@@ -14,10 +14,10 @@
   ] : ["overblik", "indbakke", "crm", "gsd", "energida", "klip", "opgbib", "vaner", "maskinrum"].map(function (s) { return [s, function () { visDashSide(s); }]; });
   var smal = window.innerWidth < 900, vForv = smal ? 20 : 48, fejl = [], n = 0;
   for (var s of SIDER) {
-    try { s[1](); } catch (e) { continue; }
+    try { s[1](); } catch (e) { fejl.push(s[0] + " kunne ikke aabnes: " + (e && e.message)); continue; }   /* OVERSPRUNGET = FEJL (fase 1, 17/11): før sprang en side, der ikke kunne åbnes, stille over — og proben sagde OK */
     await v(900); window.scrollTo(0, 0);
     var t = Array.prototype.find.call(document.querySelectorAll(".mb-navn,.hf-hero-tekst"), function (e) { var r = e.getBoundingClientRect(); return r.width > 0 && r.height > 0 && getComputedStyle(e).visibility !== "hidden" && (e.textContent || "").trim(); });
-    if (!t) continue;
+    if (!t) { fejl.push(s[0] + " har ingen synlig hero-titel"); continue; }   /* OVERSPRUNGET = FEJL (fase 1, 17/11) */
     var bd = t.closest(".mb-baand,.hf-hero") || t.parentElement; var br = bd.getBoundingClientRect(), tr = t.getBoundingClientRect();
     var bundRef = br.bottom; try { var bj = bd.querySelector(".mb-bjaelke"); if (bj && bj.getBoundingClientRect().height > 0 && getComputedStyle(bj).display !== "none") { var fo = bd.querySelector(".mb-foto"); if (fo) bundRef = fo.getBoundingClientRect().bottom; } } catch (e) {}   /* HJEM PAA COMPUTER (bud 4B, 4/11): den røde datobjælke (44) ligger over coverets nederste kant — coverets bund er fotoets bund (288), ikke bjælkens */
     var bund = Math.round(bundRef - tr.bottom), venstre = Math.round(tr.left - br.left); n++;

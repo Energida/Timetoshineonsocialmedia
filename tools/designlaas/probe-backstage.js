@@ -59,7 +59,7 @@ function bsStreger(r) {
 setTimeout(async function () {
   try {
     var vent = function (ms) { return new Promise(function (r) { setTimeout(r, ms); }); };
-    var fejl = 0, telefon = innerWidth <= 760;
+    var fejl = 0, rapport = 0, telefon = innerWidth <= 760;
     ["appLoader", "turOverlay", "dagensKort", "somkundeLoader"].forEach(function (id) { var e = document.getElementById(id); if (e) e.remove(); });
     try { if (typeof studieVaelgerLuk === "function") studieVaelgerLuk(); } catch (e) {}
     for (var i = 0; i < SIDER.length; i++) {
@@ -88,7 +88,10 @@ setTimeout(async function () {
          den gamle hero og stien skjult, 32 px luft under baandet, siden ren hvid. */
       var baand = document.querySelector("#dashMain > .bs-baand");
       var bq = baand ? baand.getBoundingClientRect() : null;
-      if (!window.BS_FORFRA) { /* Backstage i b2b-designet er slaaet fra, til »Backstage forfra« er bygget (21/9) — baandet maales foerst da */ }
+      /* COVERET MÅLES IGEN — FØRST SOM RAPPORT (fase 1, Ida 17/11): blokken var død, fordi BS_FORFRA er en let-variabel og aldrig står på window.
+         Nu læses den rigtigt. Første kørsel 17/11: 0 fund på 18 sider, 390 og 1440 — derfor stopper de porten med det samme. */
+      var BSF = (typeof BS_FORFRA !== "undefined") ? BS_FORFRA : window.BS_FORFRA;
+      if (!BSF) { }
       else if (!baand || !bq || bq.height < 100 || getComputedStyle(baand).display === "none") { console.log("SELE BACKSTAGE FEJL " + navn + " intet markbaand oeverst"); fejl++; }
       else {
         var mn = baand.querySelector(".mb-navn"); var mfs = mn ? Math.round(parseFloat(getComputedStyle(mn).fontSize)) : 0; var mt = mn ? (mn.textContent || "").trim() : "";
@@ -97,7 +100,7 @@ setTimeout(async function () {
         if (!/Didot|Bodoni/.test(getComputedStyle(mn || baand).fontFamily)) { console.log("SELE BACKSTAGE FEJL " + navn + " baandets navn er ikke Didot"); fejl++; }
         var gamle = [].filter.call(r.querySelectorAll(".bs-hero, .ch-titel, .ov-h1, .ws-welcome h2"), function (h) { var q = h.getBoundingClientRect(); return q.height > 0 && q.width > 0 && parseFloat(getComputedStyle(h).fontSize) >= 30; });
         if (gamle.length) { console.log("SELE BACKSTAGE FEJL " + navn + " den gamle hero staar stadig under baandet (" + gamle[0].className.toString().split(" ")[0] + ")"); fejl++; }
-        var sti = document.querySelector("#dashMain > .navsti"); if (sti && sti.getBoundingClientRect().height > 0) { console.log("SELE BACKSTAGE FEJL " + navn + " den gamle sti-bjaelke er synlig"); fejl++; }
+        var sti = [].find.call(document.querySelectorAll("#dashMain > .navsti, .bs-baand .mb-sti .navsti-led, .bs-baand .mb-sti .navsti-nu, .bs-baand .mb-sti .mb-skil"), function (x) { var q = x.getBoundingClientRect(); return q.height > 0 && q.width > 0 && getComputedStyle(x).visibility !== "hidden"; }); if (sti) { console.log("SELE BACKSTAGE FEJL " + navn + " den gamle sti-bjaelke er synlig"); fejl++; }
         if (Math.abs(bq.left - (telefon ? 0 : (document.querySelector(".dash-sidebar") ? document.querySelector(".dash-sidebar").getBoundingClientRect().right : 0))) > 1 || Math.abs(bq.right - innerWidth) > 1) { console.log("SELE BACKSTAGE FEJL " + navn + " baandet gaar ikke kant til kant (" + Math.round(bq.left) + "-" + Math.round(bq.right) + ")"); fejl++; }
         /* 32 px luft under baandet: naermeste synlige blok under det */
         var naermest = null, nEl = null;
@@ -157,6 +160,6 @@ setTimeout(async function () {
       try { if (typeof closeModal === "function") closeModal(); } catch (e) {}
       document.querySelectorAll(".modal-back.on").forEach(function (m) { m.classList.remove("on"); });
     }
-    console.log(fejl ? "SELE BACKSTAGE FEJL i alt: " + fejl : "SELE BACKSTAGE OK: " + SIDER.length + " sider holder designlaasen");
+    console.log(fejl ? "SELE BACKSTAGE FEJL i alt: " + fejl : "SELE BACKSTAGE OK: " + SIDER.length + " sider holder designlaasen" + (rapport ? " (" + rapport + " rapport-fund om coveret, se RAPPORT-linjerne)" : ""));
   } catch (e) { console.log("SELE BACKSTAGE FEJL probe: " + e.message); }
 }, 1500);
