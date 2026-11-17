@@ -1,3 +1,7 @@
+## 17. november · CONTENTMØDET: NOTER TIL MØDET STÅR HELE (Ida 17/11, ikke lagt ud)
+- Ida: »kan du gøre sådan at man kan se alt hvad der står i feltet uden man skal scrolle?«. Feltet »Noter til mødet« vokser med teksten, mens man skriver og når siden tegnes igen. Ingen rullebjælke og intet trækhjørne i feltet (resize:none, overflow:hidden). Mindst 96 px som før.
+- Målt i testkopien med 7 linjer noter: 390 → 360 px høj, 1440 → 213 px høj, intet skjult (scrollHeight = clientHeight).
+
 ## 17. november · IDÉBANKEN ER BYGGET SOM INSPIRATION (Idas »Ja, læg den ud«, artifact M6mfJZeVauZnkxq48HQ6gs v3, v3364)
 - Ida 16/11: »idebanken er allerede tegnet som pinterst?? det skal bare lægges ud! præcis som inspiration«, og senere: »kan du ikke bare være sød at lave det som inspiration!!« og »alle mapper skal se ud som kreative præsentationer af tøj«.
 - I kundens design (body.mb) er Idébanken Inspirationens side. Øverst står »Indholdssøjler« med søjlerne som Inspirationens mappefliser: hvid flise, mosaik med fire felter og navnet under. Rækkefølgen er »Mangler en søjle« (kun når der er idéer uden søjle), så 1A · 1B · 2A · 2B, så Story. Et tryk åbner søjlen som en mappe med »Tilbage«.
