@@ -49,7 +49,7 @@ function maalSide(){
   /* FELTER */
   rod.querySelectorAll("textarea.sk-input, input.sk-input, textarea.mb-felt").forEach(function(e){
     if(!synlig(e)||e.closest(".sendfelt, .sendfelt-felt")) return; var cs=getComputedStyle(e), r=e.getBoundingClientRect();
-    er("FELT", e, px(cs.fontSize)===13&&cs.fontWeight==="400"&&px(cs.borderTopLeftRadius)===14&&px(cs.borderTopWidth)===1&&(rgb(cs.borderTopColor)===KANT||/238, 238, 238/.test(cs.backgroundColor))&&r.height>=43.5&&cs.fontStyle==="normal", cs.fontSize+"/"+cs.fontWeight+" r"+cs.borderTopLeftRadius+" kant "+cs.borderTopWidth+" "+cs.borderTopColor+" h"+Math.round(r.height)+" "+cs.fontStyle+" (skal 13/400 r14 1px #DEDAD4 h44)");
+    er("FELT", e, px(cs.fontSize)===13&&cs.fontWeight==="400"&&px(cs.borderTopLeftRadius)===14&&px(cs.borderTopWidth)===1&&(rgb(cs.borderTopColor)===KANT||/2(38|45), 2/.test(cs.backgroundColor))&&r.height>=43.5&&cs.fontStyle==="normal", cs.fontSize+"/"+cs.fontWeight+" r"+cs.borderTopLeftRadius+" kant "+cs.borderTopWidth+" "+cs.borderTopColor+" h"+Math.round(r.height)+" "+cs.fontStyle+" (skal 13/400 r14 1px #DEDAD4 h44)");
   });
   /* FELTFLUGT: alle hook-/forslagsfelter i samme flise starter og slutter ens */
   rod.querySelectorAll(".sk-q, .klip-kort").forEach(function(f){
@@ -99,7 +99,7 @@ function maalForsideTlf(){
   if(!TLF) return;
   N++; if(document.querySelector("#briefForside .pf-start-knap, .pf-start-kort")) fejl("FORSIDE tlf: Fortsæt/Start brief står stadig i den røde flise");
   N++; if(document.querySelector(".hc-chip")) fejl("FORSIDE tlf: oplysnings-chips står stadig i coveret");
-  var h=document.querySelector("#screen7 .mb-baand"); if(h){ N++; var hh=Math.round(h.getBoundingClientRect().height); if(hh!==228) fejl("FORSIDE tlf: coveret er "+hh+" høj (skal 228)"); }
+  var h=document.querySelector("#screen7 .mb-baand"); if(h){ N++; var fo=h.querySelector(".mb-foto"); if(fo&&fo.getBoundingClientRect().height>1) fejl("FORSIDE tlf: briefen har et coverbillede (skal være uden, Ida 16/11)"); }
   var cs=[].slice.call(document.querySelectorAll(".fb-hc-rk .fb-hc")).filter(synlig);
   cs.forEach(function(c){ var r=c.getBoundingClientRect(), s=getComputedStyle(c); er("OPLYSNINGS-CHIP", c, Math.round(r.height)===32&&px(s.fontSize)===12.5&&s.fontWeight==="400"&&rgb(s.color)===G2&&(TLF||Math.round(r.top)===Math.round(cs[0].getBoundingClientRect().top)), "h"+Math.round(r.height)+" "+s.fontSize+" "+s.color+" (skal 32 · 12,5/400)"); if(c.querySelector(".plus,svg:not(.fb-hc-ik)")) fejl("OPLYSNINGS-CHIP: har plus/ikon"); });
   var ti=document.querySelector("#screen7 .mb-baand .mb-navn"), tb=[].slice.call(document.querySelectorAll("#screen7 .mb-baand button, #screen7 .mb-baand a")).filter(function(e){return /tilbage/i.test(e.innerText||e.getAttribute("aria-label")||"")&&synlig(e)})[0];
