@@ -1,3 +1,9 @@
+## 16. november · HJEM: KUN SKREVET FEEDBACK · VISNINGER = DAGE (Ida: »Dette skal ikke vises på mit dashboard. Det er kun hvis en kunde har skrevet feedback. Og jeg tror ikke på den statestik!«)
+- Feedback på Hjem viser kun feedback med skrevet tekst. Stjerner uden tekst vises ikke, og uden skrevet feedback er flisen væk. Chippen »Kun med kommentar« er ude (det er nu reglen). Live 16/11: 6 feedback, 0 med tekst → flisen vises ikke.
+- Visninger tælles som DAGE: én pr. lektion pr. dag pr. person, aldrig når Ida kigger med som kunden. Nyt felt `lektion_visdage` i skema_svar ({ lektion: [datoer] }), kun datoer, intet indhold.
+- FEJLEN: hver åbning talte (også »Ret dine svar«, Forrige-pilen, noterne), og tallene blev ikke nulstillet, når appen skiftede kunde — næste kunde arvede tallene.
+- Hjem, CRM-kundesiden, kundeloggen og Sådan går det læser dagene. Set før 16/11 = 1. Teksterne: »set på 2 dage«.
+
 ## 16. november · MIT SHINEBAROMETER I VÆRKTØJSKASSEN · OPGAVEARKET UDEN LEKTIONSNUMMER OG MED MINDRE KNAPPER (Idas »Ja, læg den ud«, artifact VAJWEfNsrdfLYZ6CBREcLH, v3361)
 - Ida: »byg Mit Shinebarometer ud fra svarene i 1.3«. Værktøjskassen (YOU GOT THIS): ikonflisen »Mit Shinebarometer« står på den første tomme plads efter Mine noter.
 - Siden (screen 32): overskrift over flisen »Når jeg er i overskud« og »Når jeg er i underskud«. I hver flise står Idas spørgsmål (grå) over kundens svar (sort). De deles efter ordet »underskud« i spørgsmålet. Nederst står »Ret dine svar«, som åbner opgaven. Uden svar: »Dit Shinebarometer bygges af dine svar fra opgaven efter lektion 1.3.« og »Tag opgaven«. Siden læser kun kundens egne svar.

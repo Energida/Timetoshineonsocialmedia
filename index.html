@@ -45119,10 +45119,12 @@ function modulSaetSet(nr) {
 
 function kursusLocalKey() { return "kursus_" + (currentKode || "X") + "_" + (CURRENT_NAVN || "X"); }
 let KURSUS_VIS = {};   // antal gange hver lektion er åbnet — så Ida kan se, hvad der ses igen
+let KURSUS_VISDAGE = {};   // { lektion-id: ["2026-11-16", …] } — DE DAGE, lektionen er åbnet (Ida 16/11): højst én visning pr. dag, aldrig når Ida kigger med
 let KURSUS_VIS_TID = {};   // HVORNÅR lektionen sidst blev åbnet (Ida 15/11: »kan jeg der få klokkeslet på«) — kun tidspunktet, intet indhold
 function kursusGemLocal() { if (!currentKode) return; try { localStorage.setItem(kursusLocalKey(), JSON.stringify({ set: KURSUS_SET, svar: KURSUS_SVAR, noter: KURSUS_NOTER, pref: KURSUS_PREF, udsat: KURSUS_UDSAT, gjort: KURSUS_GJORT, svarGl: KURSUS_SVAR_GL })); } catch(e) {} }
 async function kursusHent() {
-  KURSUS_SET = {}; KURSUS_SVAR = {}; KURSUS_NOTER = {}; KURSUS_PREF = {}; KURSUS_UDSAT = {}; KURSUS_GJORT = {}; KURSUS_SVAR_GL = {}; MODUL_SET = {};   /* frisk start pr. kunde — ingen arv fra cachen (Ida 27/7 nat) */
+  KURSUS_SET = {}; KURSUS_SVAR = {}; KURSUS_NOTER = {}; KURSUS_PREF = {}; KURSUS_UDSAT = {}; KURSUS_GJORT = {}; KURSUS_SVAR_GL = {}; MODUL_SET = {};
+  KURSUS_VIS = {}; KURSUS_VIS_TID = {}; KURSUS_VISDAGE = {};   /* VISNINGERNE NULSTILLES OGSÅ (Ida 16/11: »jeg tror ikke på den statistik«) — før arvede næste kunde tallene, når appen skiftede kode */   /* frisk start pr. kunde — ingen arv fra cachen (Ida 27/7 nat) */
   if (currentKode) try { const v = JSON.parse(localStorage.getItem(kursusLocalKey())); if (v) { KURSUS_SET = v.set || {}; KURSUS_SVAR = v.svar || {}; KURSUS_NOTER = v.noter || {}; KURSUS_PREF = v.pref || {}; KURSUS_UDSAT = v.udsat || {}; KURSUS_GJORT = v.gjort || {}; KURSUS_SVAR_GL = v.svarGl || {}; } } catch(e) {}
   if (currentKode) try { const mv = JSON.parse(localStorage.getItem(modulSetKey())); if (mv) MODUL_SET = mv; } catch(e) {}
   try { if (ygtModulHold()) { await ygtStartHent(); try { buildSideNav(CURRENT_DEF); buildBottomNav(CURRENT_DEF); } catch (e) {} if (ygtHold() && /^YOU GOT THIS/i.test(String((CURRENT_DEF || {}).forloeb || ""))) { try { ygtMailchimpMeld(); } catch (e) {} }   /* 9/11: Ringkøbing-kunder meldes IKKE til Mailchimp-forløbet af sig selv */ } } catch (e) {}   /* ti uger: kundens egen start + modul-mailene (30/9) */
@@ -45148,6 +45150,7 @@ async function kursusHent() {
         if (r.skema === "kursus_pref" && r.svar) KURSUS_PREF = r.svar;
         if (r.skema === "lektion_visninger" && r.svar) KURSUS_VIS = r.svar;
         if (r.skema === "lektion_sidst_vist" && r.svar) KURSUS_VIS_TID = r.svar;
+        if (r.skema === "lektion_visdage" && r.svar && typeof r.svar === "object") KURSUS_VISDAGE = r.svar;
         if (r.skema === "modul_forsider" && r.svar) MODUL_SET = Object.assign({}, MODUL_SET, r.svar);
       });
       /* PRIVATE SVAR (Ida 16/11): kundens egne private svar læses her og vinder over en gammel række i skema_svar */
@@ -45716,8 +45719,9 @@ function visLektion(id) {
   const mnr = modulNrFor(id);
   /* MODULETS FORSIDE VISES ALDRIG (Ida 11/11: »denne side er en fejl?? den må aldrig komme frem for NOGEN«). Modulbeskrivelsen står under modulnavnet i Forløbet. */
   LEK_AABEN = id;
-  KURSUS_VIS[id] = (KURSUS_VIS[id] || 0) + 1;   // tæl visningen — også genbesøg
-  try { kursusBlobGem("lektion_visninger", KURSUS_VIS); } catch(e) {}
+  /* VISNINGER = DAGE (Ida 16/11: »jeg tror ikke på den statistik«): før talte hver åbning (også »Ret dine svar«, Forrige-pilen og Ida, der kiggede med).
+     Nu: én pr. lektion pr. dag, og aldrig når Ida kigger med som kunden. */
+  try { if (!somKundeKigger()) { const dag = new Date().toLocaleDateString("sv-SE"); const dg = Array.isArray(KURSUS_VISDAGE[id]) ? KURSUS_VISDAGE[id] : (KURSUS_VISDAGE[id] = []); if (dg.indexOf(dag) < 0) { dg.push(dag); KURSUS_VIS[id] = (KURSUS_VIS[id] || 0) + 1; kursusBlobGem("lektion_visdage", KURSUS_VISDAGE); kursusBlobGem("lektion_visninger", KURSUS_VIS); } } } catch(e) {}
   try { if (!somKundeKigger()) { KURSUS_VIS_TID[id] = new Date().toISOString(); kursusBlobGem("lektion_sidst_vist", KURSUS_VIS_TID); } } catch(e) {}
   const lv = document.getElementById("lekVis");
   lv.classList.add("on");
@@ -68611,7 +68615,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "3361";
+const APP_VERSION = "3362";
 const APP_BYGGET = "3. november";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_VERSION;   /* ingen dato (Ida 7/11: »hvorfor står der version 3. november?«) — datoen blev ikke rettet med, nummeret er sandheden */ } catch (e) {} });
 let NY_VERSION_KLAR = false;
@@ -86128,7 +86132,7 @@ async function kkAktivitetHent() {
        De hentes HER, i den log der allerede findes — ikke i et nyt kort ved siden af. */
     const [setRes, visRes, brugRes, stjRes, notRes] = await Promise.all([
       sb.from("skema_svar").select("navn,skema,created_at").eq("kode", kode).like("skema", "lektion_set_%"),
-      sb.from("skema_svar").select("navn,svar").eq("kode", kode).eq("skema", "lektion_visninger"),
+      sb.from("skema_svar").select("navn,svar").eq("kode", kode).eq("skema", "lektion_visdage"),   /* dage, ikke åbninger (16/11) */
       sb.from("skema_svar").select("navn,svar").eq("kode", kode).eq("skema", "app_brug"),
       sb.from("skema_svar").select("navn,skema,svar").eq("kode", kode).like("skema", "lektion_feedback_%"),
       sb.from("skema_svar").select("navn,skema,svar").eq("kode", kode).like("skema", "refleksion_lektion_%")
@@ -86156,7 +86160,7 @@ async function kkAktivitetHent() {
     });
     (visRes.data || []).forEach(r => {
       const b = brugere[r.navn || ""] = brugere[r.navn || ""] || { set: {}, seneste: "", vis: {} };
-      b.vis = r.svar || {};
+      const sv = r.svar || {}, tal = {}; Object.keys(sv).forEach(function (id) { tal[id] = Array.isArray(sv[id]) ? sv[id].length : 0; }); b.vis = tal;
     });
     (brugRes.data || []).forEach(r => {
       const b = brugere[r.navn || ""] = brugere[r.navn || ""] || { set: {}, seneste: "", vis: {} };
@@ -86198,7 +86202,7 @@ async function kkAktivitetHent() {
                (reflStjerneSvg), saa de to flader ikke kan drive fra hinanden. */
             + (b.stjerner && b.stjerner[l.id] ? '<span title="' + b.stjerner[l.id] + ' af 5" style="display:inline-flex;gap:1px;flex-shrink:0;">'
                 + [1,2,3,4,5].map(function (n) { return kkStjerne(n <= b.stjerner[l.id]); }).join("") + '</span>' : '')
-            + ((b.vis[l.id] || 0) > 1 ? '<span style="background:#fff;border:1.5px solid var(--red);color:var(--red);border-radius:12px;padding:1px 8px;font-size:9.5px;white-space:nowrap;">set ' + b.vis[l.id] + ' gange</span>' : '')
+            + ((b.vis[l.id] || 0) > 1 ? '<span style="background:#fff;border:1.5px solid var(--red);color:var(--red);border-radius:12px;padding:1px 8px;font-size:9.5px;white-space:nowrap;">set på ' + b.vis[l.id] + ' dage</span>' : '')
             + '</div>'
             /* NOTEN staar UNDER lektionen, i kundens egne ord. Didot kursiv, fordi det er
                et citat (27/7) — og det er praecis den slags saetning, Ida skal kunne
@@ -93623,7 +93627,7 @@ async function ksYgtHent(k) {
     sb.from("lektioner").select("id,titel"),
     sb.from("skema_svar").select("svar").eq("kode", K).eq("navn", "config").eq("skema", "kunde_info").limit(1),   /* kundeoplysningerne (31/10: forløbskunden har ingen køb at hente kontakten fra) */
     sb.rpc("kunde_team", { p_kode: K }),   /* TEAMET FRA DE RIGTIGE LOGINS (15/11, målt: aktivitetsloggen talte »Rene« og »René« som to personer) */
-    sb.from("skema_svar").select("navn,skema,svar").eq("kode", K).in("skema", ["lektion_visninger", "lektion_sidst_vist"]),
+    sb.from("skema_svar").select("navn,skema,svar").eq("kode", K).in("skema", ["lektion_visdage", "lektion_sidst_vist"]),
     sb.from("skema_svar").select("navn,skema,svar,created_at").eq("kode", K).or("skema.like.lektion_gjort_%,skema.like.lektion_udsat_%").order("created_at", { ascending: true }),
     /* OEVELSERNES STATUS FRA BASEN (16/11, »Mine redskaber«): kunde_oevelse_status giver KUN lektion_id · status · dato, aldrig indhold; kun til admin (MÅLT: anon afvist, kunde 0 rækker) */
     Promise.resolve(sb.rpc("kunde_oevelse_status", { p_kode: K })).catch(function () { return { error: true }; })
@@ -93649,7 +93653,7 @@ async function ksYgtHent(k) {
   /* LEKTIONERNE PR. LEKTION (Idas klik 15/11, bud 2 i artifact 4K4XivLRAqejiTeYkxiz9c): antal visninger, seneste visning og om øvelsen er lavet — status og dato, aldrig indhold.
      Reglerne er kundeappens: nyeste lektion_gjort_ vinder · svar fra før OEV_UDFOERT_SKEL tæller som udført · lektion_udsat_ = Senere, medmindre den er udført. */
   const vis = {}, visTid = {};
-  ((vr && vr.data) || []).forEach(function (r) { const sv = r.svar || {}; Object.keys(sv).forEach(function (id) { if (r.skema === "lektion_visninger") vis[id] = (vis[id] || 0) + (Number(sv[id]) || 0); else if (String(sv[id]) > String(visTid[id] || "")) visTid[id] = String(sv[id]); }); });
+  ((vr && vr.data) || []).forEach(function (r) { const sv = r.svar || {}; Object.keys(sv).forEach(function (id) { if (r.skema === "lektion_visdage") vis[id] = (vis[id] || 0) + (Array.isArray(sv[id]) ? sv[id].length : 0); else if (String(sv[id]) > String(visTid[id] || "")) visTid[id] = String(sv[id]); }); });
   const gjortPP = {}, oev = {};
   ((mr && mr.data) || []).forEach(function (r) { const sk = String(r.skema); if (sk.indexOf("lektion_gjort_") === 0) { const id = sk.slice(14); gjortPP[id + "|" + (r.navn || "")] = { gjort: !(r.svar && r.svar.gjort === false), t: String(r.created_at || "") }; } });
   Object.keys(gjortPP).forEach(function (n) { const g = gjortPP[n], id = n.split("|")[0]; if (g.gjort && (!oev[id] || oev[id].s !== "udfoert" || g.t < oev[id].t)) oev[id] = { s: "udfoert", t: g.t }; });
@@ -93889,7 +93893,7 @@ async function ksYgtVis(v) {
     html = Object.keys(mods).sort(function (a, b) { return a - b; }).map(function (m) {
       return '<div class="ks-lek-mod">Modul ' + esc(modulVisNr(m)) + '</div>' + mods[m].map(function (id) {
         const n = D.vis[id] || 0, set = !!D.sete[id], tid = D.visTid[id] || (set ? D.sete[id] : "");
-        const linje = (n || set) ? "Set " + (n || 1) + (n === 1 || (!n && set) ? " gang" : " gange") + (tid ? " · senest " + esc(kortDato(ksyDag(tid))) + ksKl(tid, true) : "") : "Ikke set endnu";
+        const linje = (n || set) ? "Set " + ((n || 1) === 1 ? "på 1 dag" : "på " + n + " dage") + (tid ? " · senest " + esc(kortDato(ksyDag(tid))) + ksKl(tid, true) : "") : "Ikke set endnu";
         const fb = (fbAf[id] || []).map(function (f) { return '<div class="ks-lek-fb">' + (f.stjerner ? '<span class="ks-stj">' + "★".repeat(f.stjerner) + '<b>' + "★".repeat(5 - f.stjerner) + '</b></span>' : '') + (f.kommentar ? '<div class="ks-lek-kom">\u201c' + esc(f.kommentar) + '\u201d</div>' : '') + '</div>'; }).join("");
         let chip = "";
         try { const l = (KURSUS_LEKTIONER || []).find(function (x) { return String(x.id) === String(id); }); const o = D.oev[id];
@@ -95162,10 +95166,13 @@ async function liveLekHent() {
   if (!sb) return;
   const [sr, vr, pr] = await Promise.all([
     sb.from("skema_svar").select("kode,skema").like("skema", "lektion_set_%"),
-    sb.from("skema_svar").select("kode,svar").eq("skema", "lektion_visninger"),
+    sb.from("skema_svar").select("kode,svar").eq("skema", "lektion_visdage"),   /* DAGE, ikke åbninger (Ida 16/11) — de gamle lektion_visninger talte hver åbning og arvede tal mellem kunder */
     sb.from("skema_svar").select("svar").eq("kode", "ENERGIDA").eq("navn", "config").eq("skema", "publicering").limit(1)
   ]);
   if (sr.error) { LIVE_LEK = { fejl: true }; return; }
+  /* antal = forskellige dage, lektionen er åbnet hos kunden (alle personer samlet); er den set før dagene blev talt, står der 1 */
+  (function () { const d = {}; (vr.data || []).forEach(function (x) { const k = String(x.kode || "").toUpperCase(); if (!x.svar || typeof x.svar !== "object") return; const kk = d[k] = d[k] || {}; Object.keys(x.svar).forEach(function (id) { const s = kk[id] = kk[id] || {}; (Array.isArray(x.svar[id]) ? x.svar[id] : []).forEach(function (dg) { s[dg] = 1; }); }); });
+    vr.data = Object.keys(d).map(function (k) { const sv = {}; Object.keys(d[k]).forEach(function (id) { sv[id] = Object.keys(d[k][id]).length; }); return { kode: k, svar: sv }; }); })();
   const rigtig = function (k) { try { return erRigtigKunde(k); } catch (e) { return true; } };
   const set = {}, vis = {};
   (sr.data || []).forEach(function (x) { const k = String(x.kode || "").toUpperCase(); if (!rigtig(k)) return; (set[k] = set[k] || {})[String(x.skema).slice(12)] = true; });
@@ -95204,7 +95211,7 @@ function liveLekFlise() {
       + lek.map(function (id) { return '<td>' + (s[id] ? '<span class="lv-dot set">' + Math.max(1, v[id] || 0) + '</span>' : '<span class="lv-dot"></span>') + '</td>'; }).join("") + '<td class="lv-lek-ialt">' + x.n + ' af ' + lek.length + '</td></tr>'; }).join("");
     const fod = '<tr class="lv-lek-fod"><td>Antal kunder</td>' + lek.map(function (id) { return '<td>' + kunder.filter(function (x) { return (L.set[x.k] || {})[id]; }).length + '</td>'; }).join("") + '<td></td></tr>';
     return '<div id="lvLek" class="lv-blok"><div class="lv-et">Hvem har set hvad · ' + kunder.length + (kunder.length === 1 ? ' kunde' : ' kunder') + '</div>' + chips
-      + (kunder.length && lek.length ? '<div class="lv-lek-tab"><table>' + hoved + rk + fod + '</table></div><div class="lv-lek-fork"><span><span class="lv-dot set">2</span>set, 2 gange</span><span><span class="lv-dot"></span>ikke set</span></div>' : '<div class="bs3-fl"><div class="bs3-s">Ingen kunder endnu.</div></div>')
+      + (kunder.length && lek.length ? '<div class="lv-lek-tab"><table>' + hoved + rk + fod + '</table></div><div class="lv-lek-fork"><span><span class="lv-dot set">2</span>set på 2 dage</span><span><span class="lv-dot"></span>ikke set</span></div>' : '<div class="bs3-fl"><div class="bs3-s">Ingen kunder endnu.</div></div>')
       + '</div><!--/lvLek-->';
   } catch (e) { return ''; }
 }
@@ -95218,10 +95225,15 @@ function liveFbAlleFlise() {
     if (!KLIP_LEKFB_HENTET) return '';
     let alle = []; Object.keys(KLIP_LEKFB || {}).forEach(function (id) { (KLIP_LEKFB[id] || []).forEach(function (r) { const k = String(r.kode || "").toUpperCase(); try { if (!erRigtigKunde(k)) return; } catch (e) {} alle.push(Object.assign({ id: id }, r)); }); });
     alle.sort(function (a, b) { return String(b.tid || b.dato).localeCompare(String(a.tid || a.dato)); });
+    const medStj = alle.filter(function (r) { return r.stjerner > 0; });   /* snittet regnes stadig af alle stjerner */
+    alle = alle.filter(function (r) { return !!String(r.kommentar || "").trim(); });
+    if (!alle.length) return '<div id="lvFbA" hidden></div><!--/lvFbA-->';
     const mods = []; alle.forEach(function (r) { const m = (String(r.id).match(/^(\d+)-/) || [])[1]; if (m && mods.indexOf(m) < 0) mods.push(m); }); mods.sort(function (a, b) { return a - b; });
-    const med = alle.filter(function (r) { return r.stjerner > 0; }), snit = med.length ? (med.reduce(function (a, r) { return a + r.stjerner; }, 0) / med.length) : 0;
-    const vist = alle.filter(function (r) { return LIVE_FB_FILT === "alle" ? true : LIVE_FB_FILT === "kom" ? !!r.kommentar : String(r.id).indexOf(LIVE_FB_FILT + "-") === 0; });
-    const chips = '<div class="ark-chips i-fladen lv-lek-chips">' + liveChip(LIVE_FB_FILT === "alle", "liveFbValg('alle')", "Alle") + liveChip(LIVE_FB_FILT === "kom", "liveFbValg('kom')", "Kun med kommentar")
+    const med = medStj, snit = med.length ? (med.reduce(function (a, r) { return a + r.stjerner; }, 0) / med.length) : 0;
+    /* KUN SKREVET FEEDBACK (Ida 16/11: »Dette skal ikke vises på mit dashboard. Det er kun hvis en kunde har skrevet feedback«): stjerner uden tekst vises ikke, og uden skrevet feedback er flisen væk */
+    if (LIVE_FB_FILT === "kom") LIVE_FB_FILT = "alle";
+    const vist = alle.filter(function (r) { return LIVE_FB_FILT === "alle" ? true : String(r.id).indexOf(LIVE_FB_FILT + "-") === 0; });
+    const chips = '<div class="ark-chips i-fladen lv-lek-chips">' + liveChip(LIVE_FB_FILT === "alle", "liveFbValg('alle')", "Alle")
       + mods.map(function (m) { return liveChip(LIVE_FB_FILT === m, "liveFbValg('" + m + "')", "Modul " + esc(modulVisNr(m))); }).join("") + '</div>';
     const rk = (LIVE_FB_ALLE ? vist : vist.slice(0, 8)).map(function (r) { const k = String(r.kode || "").toUpperCase(), navn = (VIRKSOMHEDSKODER[k] || {}).virksomhed || k;
       return '<div class="lv-fb-rk" role="button" tabindex="0" onclick="kundeSideVis(\'' + esc(k).replace(/'/g, "") + '\')"><div class="lv-fb-top">' + (r.stjerner ? '<span class="ks-stj">' + "★".repeat(r.stjerner) + '<b>' + "★".repeat(5 - r.stjerner) + '</b></span>' : '<span></span>')
@@ -95290,13 +95302,13 @@ async function bf3DataHent() {
     if (!sb) { BF3_DATA = d; return; }
     const [sr, vr, er, ir] = await Promise.all([
       sb.from("skema_svar").select("kode,navn,skema,created_at").like("skema", "lektion_set_%"),
-      sb.from("skema_svar").select("kode,navn,svar").eq("skema", "lektion_visninger"),
+      sb.from("skema_svar").select("kode,navn,svar").eq("skema", "lektion_visdage"),   /* dage, ikke åbninger (16/11) */
       sb.from("skema_svar").select("kode,navn,svar,created_at").eq("skema", "efter_forloebet").order("created_at", { ascending: false }),
       sb.from("skema_svar").select("kode,navn,svar,created_at").eq("skema", "inden_start").order("created_at", { ascending: false })
     ]);
     const rigtig = function (k) { try { return erRigtigKunde(String(k || "").toUpperCase()); } catch (e) { return true; } };
     (sr.data || []).forEach(function (r) { if (!rigtig(r.kode)) return; const id = String(r.skema || "").slice(12); (d.set[id] = d.set[id] || {})[r.kode] = r.created_at; });
-    (vr.data || []).forEach(function (r) { if (!rigtig(r.kode) || !r.svar) return; Object.keys(r.svar).forEach(function (id) { const n = Number(r.svar[id]) || 0; d.vis[id] = (d.vis[id] || 0) + Math.max(0, n - 1); }); });
+    (vr.data || []).forEach(function (r) { if (!rigtig(r.kode) || !r.svar) return; Object.keys(r.svar).forEach(function (id) { const n = Array.isArray(r.svar[id]) ? r.svar[id].length : 0; d.vis[id] = (d.vis[id] || 0) + Math.max(0, n - 1); }); });
     const set = {}; (er.data || []).forEach(function (r) { if (!rigtig(r.kode) || !r.svar || set[r.kode]) return; set[r.kode] = 1; d.efter.push({ kode: r.kode, navn: r.navn || "", svar: r.svar, dato: String(r.created_at || "").slice(0, 10) }); });
     (ir.data || []).forEach(function (r) { if (!rigtig(r.kode) || !r.svar || d.start[r.kode]) return; d.start[r.kode] = r.svar; });
     d.kunder = Object.keys(VIRKSOMHEDSKODER).filter(function (k) { return rigtig(k) && VIRKSOMHEDSKODER[k].aktiv !== false; });

@@ -32,7 +32,7 @@
           nSvar++; await ovelseNaeste(); await V(120);
         }
         await V(300);
-        var rk0 = dbRaekker("lektion_svar_" + lk.id).pop();
+        /* PRIVATE SVAR (16/11): en »Kun kunden«-opgave gemmes i lektion_svar_privat — testen kigger dér */ var rk0 = (function () { var db = JSON.parse(localStorage.getItem("SELE_DB") || "{}"); try { if (typeof oevIdaSer === "function" && !oevIdaSer(lk.id)) return ((db.lektion_svar_privat) || []).filter(function (x) { return String(x.lektion_id) === String(lk.id); }).pop(); } catch (e) {} return null; })() || dbRaekker("lektion_svar_" + lk.id).pop();
         Object.keys(forv[lk.id]).forEach(function (k) { if (!rk0 || JSON.stringify((rk0.svar || {})[k]) !== JSON.stringify(forv[lk.id][k])) mangler.push(lk.id + " · " + k); });
       }
       try { closeIdeaWizard(); } catch (e) {}

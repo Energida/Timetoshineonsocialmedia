@@ -63,7 +63,7 @@
       for (var ki = 0; ki < keys.length; ki++) {
         var key = keys[ki]; var u = await svarAlle(key); nAlle += u.n;
         var rk = raekker(key).pop(); var mangelSvar = [];
-        for (var q = 1; q <= u.n; q++) { var sv = rk && rk.svar ? rk.svar["q" + q] : undefined; if ((sv === undefined || sv === "") && !(SKEMAER[key].sp[q - 1] || {}).frivillig) mangelSvar.push("q" + q); }
+        for (var q = 1; q <= u.n; q++) { var sv = rk && rk.svar ? rk.svar["q" + q] : undefined; if ((sv === undefined || sv === "") && !(SKEMAER[key].sp[q - 1] || {}).frivillig && !(SKEMAER[key].sp[q - 1] || {}).skjult)   /* et slettet (skjult) spørgsmål stilles ikke (Ida 15/11) */ mangelSvar.push("q" + q); }
         if (u.mangler.length) fejl54.push(key + ": " + u.mangler.join(", "));
         else if (!rk) fejl54.push(key + ": ingen række i basen");
         else if (mangelSvar.length) fejl54.push(key + ": mangler " + mangelSvar.join(","));
@@ -72,12 +72,14 @@
       tjek(54, "Alle " + keys.length + " spørgeskemaer (" + nAlle + " spørgsmål) lander i basen med hvert svar", !fejl54.length, fejl54.join(" · "));
       /* basen afviser: svarene skal ligge på enheden — og sendes af sig selv, når basen svarer igen */
       localStorage.setItem("SELE_AFVIS", "fejl");
-      var foerAfv = raekker("inden_start").length; var u2 = await svarAlle("inden_start"); await V(300);
-      var lokal = !!localStorage.getItem("skema_inden_start_" + currentKode);
+      var foerAfv = raekker("inden_start").length; var u2 = { mangler: [] };
+      /* SEND DIREKTE (16/11): et udfyldt skema åbner med svarene i (kladden), og klik-løkken kom ud af takt med de slettede spørgsmål — den nåede aldrig Send. Løftet er: et AFVIST Send ligger på enheden og sendes igen. Det måles her direkte. */
+      openSkema("inden_start"); await V(300); try { var forrige = raekker("inden_start").slice(-1)[0]; if (forrige && forrige.svar) SKEMA_ANSWERS = JSON.parse(JSON.stringify(forrige.svar)); } catch (e) {} await saveSkemaInd(); await V(300);
+      var lokal = !!localStorage.getItem("skema_inden_start_" + currentKode); var afvMsg = ((document.getElementById("swMsg") || document.getElementById("skemaMsg") || {}).textContent || "").slice(0, 120);
       localStorage.removeItem("SELE_AFVIS"); try { skemaWizLuk(); } catch (e) {}
       await skemaGensend(); await V(300);
       var efterGen = raekker("inden_start").length;
-      tjek(54, "Afvist Send ligger på enheden og sendes af sig selv bagefter", lokal && efterGen === foerAfv + 1 && !localStorage.getItem("skema_inden_start_" + currentKode), "på enheden: " + lokal + " · rækker " + foerAfv + " → " + efterGen);
+      tjek(54, "Afvist Send ligger på enheden og sendes af sig selv bagefter", lokal && efterGen === foerAfv + 1 && !localStorage.getItem("skema_inden_start_" + currentKode), "på enheden: " + lokal + " · rækker " + foerAfv + " → " + efterGen + " · beskeden: »" + afvMsg + "« · udfyld: " + (u2.mangler || []).join(",") + " · skærm: " + ((document.getElementById("skemaBack") || {}).innerText || "").replace(/\s+/g, " ").slice(0, 160));
       localStorage.setItem("ST_R", JSON.stringify(r)); localStorage.setItem("ST_FASE", "laes");
       Object.keys(localStorage).forEach(function (k) { if (/^skema_|tur_set|kladde|kursus_/i.test(k)) localStorage.removeItem(k); });   /* som en anden enhed: kun basen og kontoen følger med */
       await V(500); top.location.reload(); return;
