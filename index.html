@@ -45034,6 +45034,9 @@ function ygtHold(def) {
 /* MODULERNE ÅBNER FOR ALLE YOU GOT THIS-KODER (Ida 22/10: »alle kunder skal kun få modul 0 og modul 1 åbent når de kommer ind. derfra åbner næste modul
    med 7 dages mellemrum« · klik »Alle YOU GOT THIS-koder«): før kun koden »YOU GOT THIS« — nu også »YOU GOT THIS — DETAIL«. KUN modul-låsene og startdatoen;
    resten af ygtHold (Idébanken til modul 8, team, Mailchimp) er uændret. Ingen mister noget: et modul, hvor kunden har set en lektion, låses aldrig. */
+/* MENUEN SOM KUNDENS (Ida 17/11: »hvorfor kan jeg se performance og content studio! Jeg vil kun kunne se det aktuelle nu«): når Ida kigger på en YOU GOT THIS-kode,
+   står Content Studio og Performance ikke i menuen — præcis som hos kunden før modul 8. Lektionerne er stadig alle åbne for hende (se lekLaastAfForrige). */
+function ygtMenuSomKunde() { try { if (ygtHold()) return true; const d = typeof CURRENT_DEF !== "undefined" ? CURRENT_DEF : null; return typeof SOM_KUNDE !== "undefined" && !!SOM_KUNDE && !!d && d.type === "kursus" && /^(YOU GOT THIS|Gratis kursusadgang)/i.test(String(d.forloeb || "")); } catch (e) { return false; } }
 function ygtModulHold(def) {
   try {
     def = def || (typeof CURRENT_DEF !== "undefined" ? CURRENT_DEF : null);
@@ -45050,7 +45053,7 @@ function ygtModulLaast(nr) { if (!ygtModulHold()) return false; const d = ygtMod
 function ygtIdebankAaben() { return ygtHold() && !ygtModulLaast("8"); }
 function ygtBriefLaast() { return ygtHold() && ygtModulLaast("8"); }
 /* PLUSSET OG OPGAVERNE PÅ HJEM ÅBNER GRADVIST (Ida 9/10: »funktionerne åbner gradvist … når de kommer til lektionen omkring planlægning«): i YOU GOT THIS er de skjult til Modul 8 åbner (dag 42), samme dør som Idébanken, Tøm hovedet og briefen. Ida som kunde (SOM_KUNDE) og alle andre pakker ser dem som før. */
-function hjemFunktionerLaast() { try { return ygtBriefLaast(); } catch (e) { return false; } }
+function hjemFunktionerLaast() { try { return ygtBriefLaast() || (!ygtHold() && ygtMenuSomKunde()); } catch (e) { return false; } }   /* Ida som kunde på en YOU GOT THIS-kode ser Hjem som kunden før modul 8: intet plus i coveret (Ida 18/11: »plusset på forsiden?«) */
 /* Ti uger (del A 1/10): Idébanken, en ny idé og planlægningen aabner med modul 8 — ogsaa naar vejen ind er Hjems knapper */
 function ygtContentLaasVis(hvad) { if (!ygtBriefLaast()) return false; ygtLaasArk((hvad || "Idébanken") + " åbner med modul 7 " + ygtAabnerOrd("8")); return true; }
 async function ygtStartHent() {
@@ -45132,6 +45135,7 @@ function lekLaastAfForrige(id) {
     const d = typeof CURRENT_DEF !== "undefined" ? CURRENT_DEF : null;
     if (!d || d.type !== "kursus") return null;
     if (typeof KLIP_ER_IDA !== "undefined" && KLIP_ER_IDA && !SOM_KUNDE) return null;
+    if (typeof SOM_KUNDE !== "undefined" && SOM_KUNDE) return null;   /* IDA KIGGER = INTET LÅST (Ida 17/11) — alle lektioner, opgaver og refleksioner kan ses */
     if ((parseInt(modulNrFor(id), 10) || 0) <= 1) return null;   /* Modul 0 er åbent */
     if (KURSUS_SET[id]) return null;                              /* allerede set: forbliver åben */
     const liste = kursusLektionerAktive();
@@ -47210,7 +47214,7 @@ function lksSkemaNr(ids) { try { const m = lekVisNr(ids[ids.length - 1].id).matc
 function lksSkemaHtml(nrTekst, forrigeSet) {
   const g = OB_SKEMA === true;
   /* 0.6 ER LÅST, TIL 0.1–0.5 ER SET (Ida 15/11, testperson: »det er en fejl, at jeg kunne tilgå spørgeskemaet, inden jeg havde gennemført 0.1–0.5«) — hængelås som de andre låste lektioner */
-  const laast = !g && forrigeSet === false;
+  const laast = !g && forrigeSet === false && !somKundeKigger();   /* IDA KIGGER = INTET LÅST (Ida 17/11: »hele ideen var jo netop at intet skulle være låst så jeg kunne se alt inkl opbygning af opgaverne og reflektionsøvelserne«) */
   if (laast) return '<div class="lks-fl lks-lek sekv" role="button" tabindex="0" onclick="lekLaastSkemaArk()"><span class="lks-laas">' + FTL_LAAS + '</span><div class="lks-lt"><div class="lks-ln"><span class="lks-n2">' + esc(nrTekst || "") + '</span> ' + esc(NAVN_SKEMA) + '</div></div></div>';
   return '<div class="lks-fl lks-lek' + (LEK_SKEMA ? ' nu' : '') + (g ? ' set' : '') + '" role="button" tabindex="0" onclick="lekSkemaVis()">' + (g ? LKS_FB : '<span class="lks-tom"></span>') + '<div class="lks-lt"><div class="lks-ln"><span class="lks-n2">' + esc(nrTekst || "") + '</span> ' + esc(NAVN_SKEMA) + '</div></div></div>';   /* 0.6 SOM DE ANDRE (Ida 15/11, testperson): nummer og navn på én linje, intet »Spørgeskema« */
 }
@@ -61365,7 +61369,7 @@ function buildSideNav(def) {
        den samme doer en gang til — dublet-reglen. De to flader er UROERTE og naas
        praecis som foer, saa ingen mister en vej ind.
        Idébanken bliver i menuen: Ida bad kun om de to. */
-    + ((rejseLaas || kursusLaas) ? (ygtHold() ? '' : laastPunkt("d8", "Content Studio", IK.kal)) +   /* YOU GOT THIS: laaste sider staar ikke i menuen, som i bundmenuen (del A 1/10) */ (ygtIdebankAaben() ? ikon("d2", "Idébanken", "showTab(2);ibVis('ideer')", IK.paere) : '')   /* Idébanken med modul 8 i YOU GOT THIS (30/9) */
+    + ((rejseLaas || kursusLaas) ? (ygtMenuSomKunde() ? '' : laastPunkt("d8", "Content Studio", IK.kal)) +   /* YOU GOT THIS: laaste sider staar ikke i menuen, som i bundmenuen (del A 1/10) */ (ygtIdebankAaben() ? ikon("d2", "Idébanken", "showTab(2);ibVis('ideer')", IK.paere) : '')   /* Idébanken med modul 8 i YOU GOT THIS (30/9) */
        : !F("content") ? '' : ikon("d8", "Content kalenderen", "showTab(8)", IK.kal) + ikon("d2", "Idébanken", "showTab(2);ibVis('ideer')", IK.paere) + (   /* IDÉBANKEN ER SIT EGET PUNKT (Ida 29/9: »idebanken skal ligge som selvstændigt punkt«) — Content kalender har ingen underpunkter */   /* CONTENT KALENDER ER HOVEDPUNKTET (Ida 29/9: »Content skal være content kalender … en funktion man bruger for meget til at det skal være et underpunkt«) — punktet selv aabner kalenderen */   /* kalenderen, ikke paeren (Ida 17/9 kl. 14.20: »paere-symbolet stemmer ikke overens med at det er Content Studio«) — samme ikon som bundmenuens Content */   /* showTab aabner gruppen — snFold bagefter lukkede den igen (maalt 16/9 kl. 21.10) */
         ''   /* »Kalenderen« som underpunkt er ude — hovedpunktet ER kalenderen (29/9) */
       /* PLANLÆGNING = EGEN GRUPPE UNDER CONTENT (Ida 21/9 kl. 15.05: »under planlægning skal der være Årshjulet« + »målsætninger skal flyttes under planlægning«) — for alle pakker */   /* PLANLÆGNING = ÉT MENUPUNKT, ÉN INDGANG (Idas klik 20/9 kl. ~16.50, Hans-testen runde 3): punktet aabner Planlaegningsdagen direkte — samme sted som Hjems raekke og kalenderens kort */
@@ -61405,7 +61409,7 @@ function buildSideNav(def) {
        Hjem, Indbakke og Content Studio — eet klik i stedet for to.
        BEMAERK: Vaerktoejskassen har samme moenster (eet barn, Lektioner). Den er MED
        VILJE ikke roert — Ida traf kun beslutning om denne. */
-    + ((rejseLaas || kursusLaas) ? (ygtHold() ? '' : laastPunkt("d9", "Performance", IK.graf))
+    + ((rejseLaas || kursusLaas) ? (ygtMenuSomKunde() ? '' : laastPunkt("d9", "Performance", IK.graf))
        : !F("resultat") ? '' : ikon("d9", "Performance", "openMaal()", IK.graf, " sn-mellemrum"))
     /* Uden lektioner staar Vaerktoejskassen som et almindeligt punkt — ingen fold, og
        intet "Lektioner" indeni (Ida 17/8). Guides og skabeloner er der stadig. */
@@ -69147,7 +69151,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "3378";
+const APP_VERSION = "3379";
 const APP_BYGGET = "3. november";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_VERSION;   /* ingen dato (Ida 7/11: »hvorfor står der version 3. november?«) — datoen blev ikke rettet med, nummeret er sandheden */ } catch (e) {} });
 let NY_VERSION_KLAR = false;
@@ -76635,7 +76639,10 @@ function coverKnapperUd(b, kand, inset, alignEl, rod) {
         let raekke = first; while (raekke.parentElement && raekke.parentElement !== rod) { const pq = raekke.parentElement.getBoundingClientRect(); if (Math.abs(pq.top - fq.top) > 2 || pq.bottom > fq.bottom + 2) break; raekke = raekke.parentElement; }
         const rq = raekke.getBoundingClientRect();
         const h = Math.min(rq.height, 44);
-        topVp = rq.top - gl + (h - 44) / 2;   /* midt ud for en lav raekke (chips), flugter med toppen af en hoej (flise) */
+        /* KNAPPERNE STÅR SAMME STED PÅ HVER SIDE (Ida 17/11: »knapper hopper stadig her når jeg navigerer rundt på siden!!!!«): før fulgte de sidens første række —
+           en side med en etiket over fliserne (»MODULER«) gav en anden højde end en side uden, så ⋯ og plus hoppede ved hvert sideskift. Nu står de altid
+           dér, hvor indholdet begynder (32 px fra coverets bue, som indholdet selv), og det, der står i deres højde, giver plads i højre side som før. */
+        topVp = br.bottom - 28 + 32;   /* coverets bund flytter sig ikke, når reserven (gl) fjernes */
         let bredde = 0; liste.forEach(function (e) { bredde += (Math.round(e.getBoundingClientRect().width) || 44) + 12; });
         if (!liste.some(function (e) { return e.id === "bf3RumKnap"; }) && liste.some(function (e) { return e.id === "klipHeadTgl"; }) && typeof BF3_PROD_VALGT !== "undefined" && BF3_PROD_VALGT) bredde += 44 + 12;
         const venstreKant = br.right - inset - bredde;
@@ -83009,7 +83016,9 @@ function taleTastatur(feltId, senere) {   /* senere = uden for trykket: iOS aabn
   const felt = document.getElementById(feltId); if (!felt) return;
   try { felt.focus(); const n = String(felt.value || "").length; felt.setSelectionRange(n, n); } catch (e) {}
   const k = document.getElementById("taleKnap_" + feltId);
-  const vaert = (k && k.parentElement) || felt.parentElement; if (!vaert) return;
+  /* I EN POPUP STÅR BESKEDEN UNDER FELTET (Ida 17/11: »Mikrofonen virker ikke i pop ups!«): mikrofonen sidder INDE i popuppens felt, og beskeden blev lagt
+     efter dens række — inde i feltet, hvor den var skjult. Så skete der bare ingenting efter 6 sekunder. Nu lægges den efter selve feltet. */
+  const vaert = felt.closest(".ark-felt, .ark-mik-vaert, .fb-mik-vaert") || (k && k.parentElement) || felt.parentElement; if (!vaert) return;
   let h = document.getElementById("taleTast_" + feltId);
   if (!h) { h = document.createElement("div"); h.id = "taleTast_" + feltId; h.className = "tale-tast-hint"; vaert.insertAdjacentElement("afterend", h); }
   h.textContent = senere ? "Tryk i feltet, og tryk så på mikrofonen på tastaturet." : "Tryk på mikrofonen på tastaturet, og tal.";

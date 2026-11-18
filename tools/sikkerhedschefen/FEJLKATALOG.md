@@ -311,3 +311,8 @@ Ordforklaring til testkolonnen: **selen** = testversionen af appen med opdigtede
 | K3 | Næste aftale viser ingenting, når man står på en anden fane | Computer: ruller til aftaleboksen, men skifter ikke fane | Ja · løfte 29 | Stå på Adgang, tryk Næste aftale → aftaleboksen er synlig med aftalen |
 | K4 | Tilbage mangler på kundesiden mellem 761 og 899 px | Set i koden (CSS 5409) — testen på 800 px fandt dog en synlig Tilbage | Ja · løfte 29 | Synlig Tilbage på 1440, 800 og 390 |
 | K5 | Ida kan ikke sætte kundens ugentlige contentmøde fra CRM'et | Acorns 19/10: vejen findes kun via »Se kundens version« → kundens plus | Ja · løfte 29 | Kundesiden eller dens plus skal kunne åbne contentmødet |
+
+## Mikrofonen (Ida 17/11: »Mikrofonen virker ikke i pop ups! Tjek nu ALLE funktioner« → »Det skal med i sikkerhedschefen«) — løfte 56, kritisk
+- **Fejlen:** på iPhonen (hjemmeskærmen) leverer iOS' talegenkendelse ingen tekst. Efter 6 sek. skal appen sige »Tryk i feltet, og tryk så på mikrofonen på tastaturet«. I popups lå beskeden INDE i feltet, skjult — så skete der bare ingenting. Rettet 17/11: beskeden lægges efter selve feltet.
+- **Måles nu (tjek_mik.py + lag2/mik-driver.js):** hvert ark/popup, porten kender (probe-regler2.js' liste), og hvert af briefens skrivetrin, i kundeappen og Backstage, 390 og 1440. Hver mikrofon trykkes med en opdigtet talegenkendelse: (1) »prøve tale punktum« skal lande som »Prøve tale.« i netop dens felt; (2) uden svar på en iPhone skal beskeden kunne SES efter 6 sek. Færre end 5 målte mikrofoner = IKKE TESTET.
+- **Kan ikke måles her:** om iOS selv leverer tekst på en rigtig iPhone (kræver telefonen). Det, appen gør, når den ikke gør, måles.
