@@ -1,3 +1,11 @@
+## 18. november · MIN ENERGIBANK I VÆRKTØJSKASSEN · KONTOUDTOGET SOM OPGAVE (Idas »Ja, læg den ud« 18/11 på det byggede, set på 390 og 1440) · v3380
+- Ida: »kan vi lave energibanken i værktøjskassen også - men sørge for at den er lukket indtil modul 2 åbner og også opgaven kontoudtoget?«
+- **Flisen »Min Energibank«** står i Værktøjskassen efter Mit Shinebarometer. Låst indtil Modul 2 åbner: grå ikon og navn, lås og »Åbner om …« under navnet. Et tryk på den låste giver låsearket »Min Energibank åbner med modul 2 …«.
+- Åben side viser tre fliser bygget af kundens egne svar: »Indbetalinger« og »Udgifter« (opgaven efter lektion 2.2, »Ret dine svar«) og »Dit kontoudtog« (opgaven efter lektion 2.3), grupperet »Kostede meget / noget / lidt« med farveprik, »Ret dit kontoudtog«. Tomme fliser peger på opgaven med »Tag opgaven«.
+- **Kontoudtoget** (lektion 2.3): dagschips man.–søn. med farveprikker, poster med farvecirkel (tryk skifter) og slet, feltet »Hvad brugte du tid på?« og »Hvad kostede det?« med Lidt (grøn) · Noget (gul) · Meget (rød). Låst med modulet. Lægger Ida spørgsmål på lektionen i Studio, vinder hendes.
+- Svarene er private som andre energimoduler (Ida ser dem ikke).
+- NYE ORD, der venter på Idas godkendelse: opgavens beskrivelse · »Hvad brugte du tid på?« · »Hvad kostede det?« · Lidt / Noget / Meget · Indbetalinger · Udgifter · Dit kontoudtog · Kostede meget / noget / lidt · »Dit kontoudtog bygges i opgaven efter lektion 2.3.« · »Din Energibank bygges af dine svar fra opgaven efter lektion 2.2.«
+
 ## 18. november · IDÉBANKEN: EGET BILLEDE SOM COVER · TILBAGE = ÉT SKRIDT · »MANGLER EN SØJLE« UDEN MAPPE (Idas »Ja, læg det ud« 18/11, artifact M6mfJZeVauZnkxq48HQ6gs v7) · v3378
 - **Cover = kun eget billede** (Ida: »Byg så man kan lægge et billede op som cover« og »ikke vælg fra inspiration«). Arket har knappen »Læg et billede op« (rød), »Fjern cover« når der er et cover, og »Annullér«. Ingen galleri-valg fra Inspiration.
 - **Tilbage går ét skridt** (Ida: »den kun går 1 skridt tilbage når man klikker på tilbageknappen«). Inde i en søjle- eller temamappe i Idébanken fører Tilbage til Idébanken, på telefon og computer. Mellem sider husker appen, hvor man kom fra, og Tilbage går dertil.
