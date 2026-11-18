@@ -42735,15 +42735,17 @@ async function rytmeUdrul(kunK) {
 }
 /* skifter kunden dag eller tid, flyttes de KOMMENDE moeder af samme slags med (i deres egen uge/maaned) — aldrig de afholdte */
 async function rytmeFlyt(def, r) {
-  if (!sb || !currentKode || !r || !r.d) return;
+  if (!sb || !currentKode || !r || !r.d) return 0;
+  let fejl = 0;   /* TAVSE FEJL ER FORBUDT (sikkerhedschefen R7): hvert møde, der ikke flyttede, tælles og siges */
   const idag = datoDK(); const aft = (window.__kundeAftalerAlle || window.__kundeAftaler || []).filter(function (x) { return x && x.id && x.dato && x.dato >= idag && def.rx.test(String(x.titel || "")); });
   for (const x of aft) {
     let ny;
     if (def.md) { const d = new Date(String(x.dato).slice(0, 7) + "-01T12:00:00"); const js = (+r.d) % 7; while (d.getDay() !== js) d.setDate(d.getDate() + 1); ny = rytmeIso(d); }
     else { const m = energidaUgeMandag(new Date(x.dato + "T12:00:00")); const d = new Date(m); d.setDate(m.getDate() + ((+r.d) - 1)); ny = rytmeIso(d); }
     if (ny < idag) continue;
-    try { await sb.from("kunde_aftaler").update({ dato: ny, tid: r.t || "09:00", tid_slut: rytmeTidPlus(r.t || "09:00", def.min) }).eq("id", x.id).eq("kode", currentKode).select(); } catch (e) {}
+    try { const u = await sb.from("kunde_aftaler").update({ dato: ny, tid: r.t || "09:00", tid_slut: rytmeTidPlus(r.t || "09:00", def.min) }).eq("id", x.id).eq("kode", currentKode).select(); if (u.error || !u.data || !u.data.length) fejl++; } catch (e) { fejl++; }
   }
+  return fejl;
 }
 function rytmeArk(k) {
   const def = RYTME_DEF.filter(function (x) { return x.k === k; })[0]; if (!def) return;
@@ -42771,12 +42773,14 @@ async function rytmeGem(k, valgt, tid) {
       if (!ok) { MAALS.rytme = foer; throw new Error("!Det blev ikke gemt. Prøv igen."); }
       const skift = foer[k] && foer[k].d && (foer[k].d !== ny.d || foer[k].t !== ny.t);
       window.__RYT_DAG = datoDK();   /* den automatiske udrulning i renderAftaler maa ikke koere oven i denne */
-      if (skift) await rytmeFlyt(def, ny);
-      if (skift && k === "uge") await rytmeFlyt(Object.assign({}, RYTME_DEF[1], { md: false }), ny);   /* maanedens moeder ligger paa ugens dag og flytter med */
+      let ikkeFlyttet = 0;
+      if (skift) ikkeFlyttet += (await rytmeFlyt(def, ny)) || 0;
+      if (skift && k === "uge") ikkeFlyttet += (await rytmeFlyt(Object.assign({}, RYTME_DEF[1], { md: false }), ny)) || 0;   /* maanedens moeder ligger paa ugens dag og flytter med */
       try { await renderAftaler(); } catch (e) {}
       await rytmeUdrul(k);
       try { planDashTegn(); } catch (e) {} try { renderHome(); } catch (e) {}
-      return RYTME_AUTO ? "Står i kalenderen." : "Gemt.";   /* intet nyt møde i kalenderen (19/10) — kvitteringen lover ikke et */
+      if (ikkeFlyttet) return "Din faste tid er gemt, men " + ikkeFlyttet + (ikkeFlyttet === 1 ? " møde blev ikke flyttet" : " møder blev ikke flyttet") + ". Prøv igen.";
+      return RYTME_AUTO ? "Står i kalenderen." : (skift ? "Din faste tid er gemt, og dine møder er flyttet med." : "Din faste tid er gemt.");   /* intet nyt møde i kalenderen (19/10) — kvitteringen lover ikke et */
     }
   }
 }
@@ -42796,7 +42800,7 @@ async function pkGem(knap) {
   if (!PK_DAG || !PK_TID) { pkKnapOpdater(); return; }
   if (knap) { knap.disabled = true; knap.textContent = "Gemmer …"; }
   let svar = false; try { svar = await rytmeGem("uge", PK_DAG, PK_TID); } catch (e) { svar = false; }
-  if (!svar) { if (knap) { knap.disabled = false; knap.textContent = "Sæt mødet i kalenderen"; } try { husKvit("Det blev ikke gemt. Prøv igen."); } catch (e) {} return; }
+  if (!svar) { if (knap) { knap.disabled = false; knap.textContent = "Gem din faste tid"; } try { husKvit("Det blev ikke gemt. Prøv igen."); } catch (e) {} return; }
   try { husKvit(String(svar)); } catch (e) {}
 }
 /* SKIFT DET ENKELTE MOEDE (Ida 6/10: »og kunden så selv kan ændre til skift til ugentlig hvis det er«) */
@@ -42870,7 +42874,7 @@ function planDashTegn() {
   /* HELE BREDDEN PAA COMPUTEREN (Ida 21/9 kl. 19.15: »hvorfor cutter du desktop-siderne … og ikke udnytter hele bredden?«): to spalter som Hjem — venstre: maaneden · naeste skridt · denne uge; hoejre: Struktur. Telefonen: eén spalte. */
   /* PLANLAEGNING = ET KORT, DER SKIFTER (Idas klik 6/10 »1 · Ét kort, der skifter« + »Ja, byg det«, Artifact 23SBS3mxpQhAjisfLW6gmS; spec docs/superpowers/specs/2026-10-06-planlaegning-et-kort-design.md).
      Kunden (65, travl, hader sociale medier) ser kun det, der passer lige nu: foerste gang EET spoergsmaal · foer timen Næste skridt + timens fem skridt · efter timen flueben + de naeste dage. */
-  w.innerHTML = '<div class="pk">' + planKortHtml(man0, gjorte) + planRedskaberHtml() + '</div>';
+  w.innerHTML = planKortHtml(man0, gjorte);
   try { bsBaandPlanlaeg(); } catch (e) {}
   try { if (Object.keys(rytme()).length && window.__RYT_DAG !== datoDK()) { window.__RYT_DAG = datoDK(); rytmeUdrul().then(function (n) { if (n) { try { planDashTegn(); } catch (e) {} } }); } } catch (e) {}
 }
@@ -42893,52 +42897,52 @@ function planRedskaberHtml() {
   return '<div class="pk-doere">' + r("Ugens tema", "tilpasAaben('tema')") + r("Målsætninger", "tilpasAaben('maal')") + r("Årshjulet", "aarshjulAabn()") + '</div>';
 }
 function planKortHtml(man0, gjorte) {
+  /* PLANLÆGNING = KUN MØDERNE (Ida 18/11 »MEGET MERE overskueligt« + »Ja, byg den« på bud 2; designkritikken 18/11 efter »er du sikker på det er 10 af 10?«):
+     én rød handling ad gangen · ny kunde: KUN »Vælg din faste tid« · fast tid uden møde: »Opret mødet« på den næste faste dag · ellers Næste møde med »Start mødet«.
+     Typen (ugens/månedens) skiftes i mødets Ret-ark, ikke her. Tiden står ét sted pr. møde. */
   const r = rytme(); const idag = datoDK();
   const UGED = ["søndag", "mandag", "tirsdag", "onsdag", "torsdag", "fredag", "lørdag"], MDR = ["januar", "februar", "marts", "april", "maj", "juni", "juli", "august", "september", "oktober", "november", "december"];
-  const lang = function (iso, tid) { const d = new Date(iso + "T12:00:00"); const u = UGED[d.getDay()]; return u.charAt(0).toUpperCase() + u.slice(1) + " " + d.getDate() + ". " + MDR[d.getMonth()] + (tid ? " kl. " + String(tid).slice(0, 5).replace(":", ".").replace(/^0/, "") : ""); };
-  const link = '<button type="button" class="pk-link mq-tap" onclick="planRetTid()">Ret din faste tid</button>';
-  /* 1 · FOERSTE GANG */
-  if (!(r.uge && r.uge.d)) {
-    const dage = ["Mandag", "Tirsdag", "Onsdag", "Torsdag", "Fredag", "Lørdag", "Søndag"].map(function (n, i) { return '<button type="button" class="ark-chip mq-tap' + (String(i + 1) === PK_DAG ? ' on' : '') + '" onclick="pkVaelg(\'d\',\'' + (i + 1) + '\',this)">' + n + '</button>'; }).join("");
-    const kendt = ["08:00", "09:00", "10:00", "13:00", "16:00"];
-    const tider = kendt.map(function (t) { return '<button type="button" class="ark-chip mq-tap' + (t === PK_TID ? ' on' : '') + '" onclick="pkVaelg(\'t\',\'' + t + '\',this)">kl. ' + t.replace(/^0/, "").replace(":", ".") + '</button>'; }).join("")
-      + '<button type="button" class="ark-chip mq-tap' + (PK_TID && kendt.indexOf(PK_TID) < 0 ? ' on' : '') + '" onclick="pkVaelg(\'t\',\'__anden\',this)">Anden tid</button>';
-    const anden = PK_TID && kendt.indexOf(PK_TID) < 0;
-    return '<div class="pk-fl pk-stor"><div class="pk-eti">Det ugentlige contentmøde</div><div class="pk-sp">Hvornår vil du holde dit ugentlige contentmøde?</div><div class="pk-ul">Én time hver uge, hvor du planlægger næste uges opslag. Vi lægger møderne i din kalender.</div>'
-      + '<div class="pk-chips">' + dage + '</div><div class="pk-chips">' + tider + '</div>'
-      + '<div id="pkAndenTid" onchange="pkAndenLaes()" oninput="pkAndenLaes()" style="margin-top:12px;' + (anden ? '' : 'display:none;') + '">' + husDatoTidHtml("", "pkTid", "", anden ? PK_TID : "", false, true) + '</div>'
-      + '<button type="button" id="pkGemKnap" class="pk-roedk mq-tap" onclick="pkGem(this)"' + (PK_DAG && PK_TID ? '' : ' disabled') + '>Sæt mødet i kalenderen</button></div>';
-  }
-  const naesteUge = new Date(man0); naesteUge.setDate(man0.getDate() + 7);
-  const planlagt = gjorte.indexOf(planRitUgeKey(naesteUge)) > -1;
+  const kl = function (tid) { return tid ? " kl. " + String(tid).slice(0, 5).replace(":", ".").replace(/^0/, "") : ""; };
+  const iso = function (d) { return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); };
+  const imorgen = (function () { const d = new Date(idag + "T12:00:00"); d.setDate(d.getDate() + 1); return iso(d); })();
+  const naar = function (dIso, tid) { if (dIso === idag) return "I dag" + kl(tid); if (dIso === imorgen) return "I morgen" + kl(tid); const d = new Date(dIso + "T12:00:00"); const u = UGED[d.getDay()]; return u.charAt(0).toUpperCase() + u.slice(1) + " " + d.getDate() + ". " + MDR[d.getMonth()] + kl(tid); };
   const aft = (window.__kundeAftalerAlle || window.__kundeAftaler || []);
-  const moeder = aft.filter(function (x) { return x && x.dato && x.dato >= idag && erMoedeTitel(x.titel); }).sort(function (p, q) { return (p.dato + (p.tid || "")) < (q.dato + (q.tid || "")) ? -1 : 1; });
-  const m0 = moeder[0] || null; const erMd = !!(m0 && /månedsplan|maanedsplan/i.test(String(m0.titel || "")));
-  /* 3 · EFTER TIMEN */
-  if (planlagt) {
-    const fra = new Date(idag + "T12:00:00"); const til = new Date(fra); til.setDate(fra.getDate() + 7); const tilIso = rytmeIso(til);
-    const rk = []; (IDEER || []).forEach(function (x) { if (!x) return; const b = x.brief || {}; const t = storStart(titelVis(x.titel || "Uden titel"));
-      if (b.briefDag && b.briefDag >= idag && b.briefDag < tilIso) rk.push([b.briefDag, "Skriv briefen til " + t, x.id]);
-      const od = b.optagedag || b.optageDato; if (od && od >= idag && od < tilIso) rk.push([od, "Optag: " + t, x.id]);
-      if (x.dato && x.dato >= idag && x.dato < tilIso && x.status !== "Postet") rk.push([x.dato, "Post: " + t, x.id]); });
-    rk.sort(function (p, q) { return p[0] < q[0] ? -1 : 1; });
-    const dag = function (iso) { if (iso === idag) return "I dag"; const d = new Date(iso + "T12:00:00"); const u = UGED[d.getDay()]; return u.charAt(0).toUpperCase() + u.slice(1); };
-    return '<div class="pk-to"><div class="pk-v"><div class="pk-fl pk-stor"><div class="pk-hov"><span class="pk-ok" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span><div class="pk-sp">Næste uge er planlagt</div></div>'
-      + '<div class="pk-ul">Godt gået.' + (m0 ? ' Næste gang er ' + esc(lang(m0.dato, m0.tid).charAt(0).toLowerCase() + lang(m0.dato, m0.tid).slice(1)) + '.' : '') + '</div></div>' + planRateHtml() + '</div>'
-      + '<div class="pk-fl"><div class="pk-eti">Din uge</div>' + (rk.length ? rk.map(function (x) { return '<button type="button" class="pk-dag mq-tap" onclick="openBriefSide(\'' + esc(String(x[2])) + '\')"><span class="pk-d">' + esc(dag(x[0])) + '</span><span class="pk-h">' + esc(x[1]) + '</span></button>'; }).join("") : '<div class="pk-ul" style="margin-top:0">Ingen opslag de næste dage.</div>') + '</div></div>' + link;
+  const moeder = aft.filter(function (x) { return x && x.id && x.dato && String(x.dato).slice(0, 10) >= idag && erMoedeTitel(x.titel); }).sort(function (p, q) { return (p.dato + (p.tid || "")) < (q.dato + (q.tid || "")) ? -1 : 1; });
+  const erMdT = function (x) { return /månedsplan|maanedsplan/i.test(String(x && x.titel || "")); };
+  const hvad = function (x) { const d = new Date(String(x.dato).slice(0, 10) + "T12:00:00");
+    const n = new Date(d); n.setDate(d.getDate() + 7);   /* mødet planlægger ugen (eller måneden) efter */
+    if (erMdT(x)) { const m = MDR[n.getMonth()]; return "Planlæg " + m; }
+    return "Planlæg uge " + energidaUgeNr(energidaUgeMandag(n)); };
+  const et = function (t, plus) { return '<div class="pl3-rk"><div class="pl3-et">' + t + '</div>' + (plus ? '<button type="button" class="hus-plus-rk pl3-plus mq-tap" aria-label="Opret møde" title="Opret møde" onclick="planMoedeNyArk()"></button>' : '') + '</div>'; };
+  const harFast = !!(r.uge && r.uge.d);
+  /* NY KUNDE: ét kort, én rød knap */
+  if (!harFast && !moeder.length) {
+    return '<div class="pl3"><div class="pl3-kol"><div class="pl3-sek">' + et("Din faste tid") + '<div class="pl3-fl"><div class="pl3-titel">Vælg din faste mødetid</div><div class="pl3-gr">Én time hver uge. Hvert 4. møde er månedens på 2 timer.</div><button type="button" class="pl3-roedk mq-tap" onclick="planRetTid()">Vælg din faste tid</button></div></div></div><div class="pl3-kol"></div></div>';
   }
-  /* 2 · FOER TIMEN */
-  const trin = erMd
-    ? [["30 min", "Kig på måneden", "Hvad sker der i butikken, og hvad står i dit årshjul?"], ["10 min", "Se, hvad der virkede", "Kig på sidste uges opslag. Hvad fik folk til at reagere?"], ["10 min", "Vælg ugens tema", "Hvad sker der i butikken næste uge?"], ["40 min", "Vælg ugens opslag", "Tag idéerne fra din idébank."], ["20 min", "Sæt dage på", "Hvornår skrives, optages og postes hvert opslag?"], ["10 min", "Fordel opgaverne", "Hvem gør hvad?"]]
-    : [["10 min", "Se, hvad der virkede", "Kig på sidste uges opslag. Hvad fik folk til at reagere?"], ["5 min", "Vælg ugens tema", "Hvad sker der i butikken næste uge?"], ["20 min", "Vælg ugens opslag", "Tag idéerne fra din idébank."], ["15 min", "Sæt dage på", "Hvornår skrives, optages og postes hvert opslag?"], ["10 min", "Fordel opgaverne", "Hvem gør hvad?"]];
-  const hvornaar = m0 ? lang(m0.dato, m0.tid) : rytmeTekst(RYTME_DEF[0], r.uge).replace(/ · .*$/, "");
-  const skift = m0 && m0.id ? '<button type="button" class="pk-skift mq-tap" onclick="planMoedeSkiftType(\'' + esc(String(m0.id)) + '\',' + (erMd ? 'false' : 'true') + ')">' + (erMd ? 'Gør det til ugens planlægning' : 'Gør det til månedens planlægning') + '</button>' : '';
-  let moN = 0; try { moN = moedeAgendaHent().ideer.length; } catch (e) {}   /* revision fund 8 (natten 7/10): det, kunden har samlet til moedet, staar under Næste skridt */
-  return '<div class="pk-roed"><div class="pk-eti">Næste skridt</div><div class="pk-sp">' + (erMd ? 'Planlæg næste måned' : 'Planlæg næste uge') + '</div><div class="pk-ul">' + esc(hvornaar) + ' · cirka ' + (erMd ? '2 timer' : '1 time') + '</div>' + (moN ? '<div class="pk-ul">' + moN + (moN === 1 ? ' idé venter på mødet' : ' idéer venter på mødet') + '</div>' : '')
-    + '<button type="button" class="pk-roedk mq-tap" onclick="planRitStart(\'' + (erMd ? 'maaned' : 'uge') + '\')">Start nu</button>' + skift + '</div>'
-    + planRateHtml()
-    + '<div class="cf-sek">' + (erMd ? 'Sådan går de 2 timer' : 'Sådan går timen') + '</div><div class="pk-trin' + (erMd ? ' seks' : '') + '">' + trin.map(function (t) { return '<div class="pk-t"><div class="pk-min">' + t[0] + '</div><div class="pk-tt">' + t[1] + '</div><div class="pk-ts">' + t[2] + '</div></div>'; }).join("") + '</div>' + link;
+  /* 1 · NÆSTE MØDE */
+  const m0 = moeder[0] || null; let blok1;
+  if (m0) {
+    const erMd = erMdT(m0);
+    blok1 = '<div class="pl3-fl"><button type="button" class="pl3-aabn mq-tap" onclick="moedeSideAaben(\'' + esc(String(m0.id)) + '\')"><span class="pl3-titel">' + esc(hvad(m0)) + '</span><span class="pl3-tid">' + esc(naar(String(m0.dato).slice(0, 10), m0.tid) + ' · ' + (erMd ? 'Månedens møde · 2 timer' : '1 time')) + '</span></button>'
+      + '<button type="button" class="pl3-roedk mq-tap" onclick="planRitStart(\'' + (erMd ? 'maaned' : 'uge') + '\')">Start mødet</button></div>';
+  } else {
+    /* fast tid, men intet møde: forslaget er den næste faste dag (møder oprettes kun manuelt, 19/10) */
+    let fDato = ""; if (harFast) { const d = new Date(idag + "T12:00:00"); const js = (+r.uge.d) % 7; for (let i = 0; i < 8; i++) { if (d.getDay() === js && (i > 0 || !r.uge.t || String(r.uge.t).slice(0, 5) > new Date().toTimeString().slice(0, 5))) break; d.setDate(d.getDate() + 1); } fDato = iso(d); }
+    blok1 = '<div class="pl3-fl"><div class="pl3-titel">Intet møde i kalenderen</div>' + (fDato ? '<div class="pl3-tid">' + esc("Din næste faste tid: " + naar(fDato, r.uge.t || "09:00").charAt(0).toLowerCase() + naar(fDato, r.uge.t || "09:00").slice(1)) + '</div>' : '')
+      + '<button type="button" class="pl3-roedk mq-tap" onclick="planMoedeNyArk(' + (fDato ? '\'' + fDato + '\',\'' + esc(String(r.uge.t || "09:00").slice(0, 5)) + '\'' : '') + ')">Opret mødet</button></div>';
+  }
+  /* 2 · KOMMENDE MØDER — et tryk åbner NETOP det møde (sikkerhedschefen R2); tiden står ikke igen */
+  const kom = moeder.slice(1, 5);
+  const blok2 = kom.length ? '<div class="pl3-liste">' + kom.map(function (x) { const d = new Date(String(x.dato).slice(0, 10) + "T12:00:00");
+      return '<button type="button" class="pl3-fl pl3-moede mq-tap" onclick="moedeSideAaben(\'' + esc(String(x.id)) + '\')"><span class="pl3-dato"><b>' + d.getDate() + '</b><span>' + MDR[d.getMonth()].slice(0, 3) + '</span></span><span class="pl3-mx"><span class="pl3-mt">' + esc(hvad(x)) + '</span><span class="pl3-ms">' + (erMdT(x) ? 'Månedens møde · 2 timer' : '1 time') + '</span></span></button>'; }).join("") + '</div>'
+    : '<div class="pl3-fl"><div class="pl3-ms" style="margin-top:0">Ingen flere møder i kalenderen.</div></div>';
+  /* 3 · DIN FASTE TID */
+  const blok3 = '<div class="pl3-fl"><div class="pl3-mt">' + esc(harFast ? "Hver " + RYTME_DAGE[(+r.uge.d) - 1] + kl(r.uge.t || "09:00") : "Ingen fast tid endnu") + '</div><div class="pl3-ms">' + (harFast ? 'Hvert 4. møde er månedens på 2 timer' : 'Én time hver uge') + '</div><button type="button" class="dbtn tom-knap pl3-sekk mq-tap" onclick="planRetTid()">' + (harFast ? 'Ret tiden' : 'Vælg din faste tid') + '</button></div>';
+  return '<div class="pl3"><div class="pl3-kol"><div class="pl3-sek">' + et("Næste møde") + blok1 + '</div><div class="pl3-sek">' + et("Din faste tid") + blok3 + '</div></div>'
+    + '<div class="pl3-kol">' + (m0 ? '<div class="pl3-sek">' + et("Kommende møder", true) + blok2 + '</div>' : '') + '</div></div>';
 }
+/* OPRET MØDE = ALTID ET NYT MØDE (sikkerhedschefen R3): aldrig »ret det næste« */
+function planMoedeNyArk(dato, tid) { window.__PM_FORSLAG = dato ? { dato: dato, tid: tid || "" } : null; planMoedeTidArk("__ny"); }
 function planKommendeHtml() {
   const idag = datoDK(); const aft = (window.__kundeAftalerAlle || window.__kundeAftaler || []);
   const rx = /contentplanl|planlægningsdag|månedsplan|maanedsplan/i; const mdRx = /månedsplan|maanedsplan/i;
@@ -43056,10 +43060,13 @@ function planMoedeSlutJuster() {
 }
 function planMoedeTidArk(aftaleId, ude) {
   /* ude = { kode, aftale, efter } — Backstage sætter kundens contentmøde fra kundesiden (19/10); kundeappens egne kald er uændrede */
-  let ma = ude ? (ude.aftale || null) : planMoedeAftale();
-  if (aftaleId && !ude) { try { const x = (window.__kundeAftaler || []).find(function (a) { return a && String(a.id) === String(aftaleId); }); if (x) ma = x; } catch (e) {} }   /* en bestemt uges moede (25/9) */
-  const dato0 = (ma && ma.dato) || (planDato() && planDato() >= datoDK() ? planDato() : datoDK());
-  const tid0 = (ma && ma.tid) ? String(ma.tid).slice(0, 5) : "09:00";
+  const erNy = aftaleId === "__ny";
+  let ma = ude ? (ude.aftale || null) : (erNy ? null : planMoedeAftale());
+  if (aftaleId && !ude && !erNy) { try { const x = (window.__kundeAftaler || []).find(function (a) { return a && String(a.id) === String(aftaleId); }); if (x) ma = x; } catch (e) {} }   /* en bestemt uges moede (25/9) */
+  const fsl = (erNy && window.__PM_FORSLAG) ? window.__PM_FORSLAG : null; window.__PM_FORSLAG = null;
+  let fastT = ""; try { const ru = rytme().uge; if (ru && ru.t) fastT = String(ru.t).slice(0, 5); } catch (e) {}
+  const dato0 = (ma && ma.dato) || (fsl && fsl.dato) || (planDato() && planDato() >= datoDK() ? planDato() : datoDK());
+  const tid0 = (ma && ma.tid) ? String(ma.tid).slice(0, 5) : ((fsl && fsl.tid) || fastT || "09:00");
   /* FYSISK / ONLINE · SLUTTID · LINK TIL MOEDET (Ida 21/9 kl. 22.12): chips vaelger formen; Online viser linkfeltet; sluttiden gemmes i tid_slut, linket i link */
   const slut0 = (ma && ma.tid_slut) ? String(ma.tid_slut).slice(0, 5) : planMoedeTidPlus(tid0, 60);   /* sluttiden foreslaas som start + 1 time (Ida 21/9 kl. 19.30) */
   /* STEDET VED ET FYSISK MOEDE (Ida 6/10: »kan vi tilføje placeringer ift. fysisk? … Energida Studio som mulighed«): gemmes i link som tekst
@@ -43068,10 +43075,14 @@ function planMoedeTidArk(aftaleId, ude) {
   const link0 = ms0.online ? String(ma.link || "") : "";
   window.__PM_FORM = ms0.online ? "online" : "fysisk";
   window.__PM_STED = ms0.sted;
-  arkAabn({ titel: ma ? "Ret det ugentlige contentmøde" : "Tilføj næste ugentlige contentmøde", ph: "", tekst: "", send: "Gem", chips: [], ingenTekst: true,   /* Idas ord 25/9 kl. 09.20 */
+  arkAabn({ titel: ma ? "Ret det ugentlige contentmøde" : "Opret møde", ph: "", tekst: "", send: "Gem", chips: [], ingenTekst: true,   /* Idas ord 25/9 kl. 09.20 */
     ekstraAf: function () {
       const chip = function (k, navn) { return '<button type="button" class="ark-chip' + (window.__PM_FORM === k ? ' on' : '') + '" onclick="window.__PM_FORM=\'' + k + '\';document.querySelectorAll(\'.pm-form .ark-chip\').forEach(function(x){x.classList.toggle(\'on\',x.dataset.k===\'' + k + '\')});var l=document.getElementById(\'pmLinkRk\');if(l)l.style.display=(\'' + k + '\'===\'online\')?\'\':\'none\';var s=document.getElementById(\'pmStedRk\');if(s)s.style.display=(\'' + k + '\'===\'online\')?\'none\':\'\';" data-k="' + k + '">' + navn + '</button>'; };
-      return '<div class="ark-chips pm-form" style="margin:0 0 12px;">' + chip("fysisk", "Fysisk") + chip("online", "Online") + '</div>'
+      /* UGENS / MÅNEDENS MØDE BOR I RET-ARKET (designkritikken 18/11): siden har kun tid og Start mødet */
+      window.__PM_TYPE = (ma && /månedsplan|maanedsplan/i.test(String(ma.titel || ""))) ? "md" : "uge";
+      const tChip = function (k, navn) { return '<button type="button" class="ark-chip' + (window.__PM_TYPE === k ? ' on' : '') + '" data-k="' + k + '" onclick="window.__PM_TYPE=\'' + k + '\';document.querySelectorAll(\'.pm-type .ark-chip\').forEach(function(x){x.classList.toggle(\'on\',x.dataset.k===\'' + k + '\')});">' + navn + '</button>'; };
+      return (!ude && ma ? '<div class="ark-chips pm-type" style="margin:0 0 12px;">' + tChip("uge", "Ugens møde") + tChip("md", "Månedens møde") + '</div>' : '')
+        + '<div class="ark-chips pm-form" style="margin:0 0 12px;">' + chip("fysisk", "Fysisk") + chip("online", "Online") + '</div>'
         /* DAG · FRA · TIL med etiketter (Ida 21/9 kl. 19.30: »tidspunktet og måden man vælger det på lige være lidt mere ux venligt«); Til viser aldrig tider foer Fra */
         + '<div class="ark-et pm-et">Dag</div>' + husDatoTidHtml("pmDato", "", dato0, "", true)
         + '<div class="pm-tider"><div><div class="ark-et pm-et">Fra</div>' + husDatoTidHtml("", "pmTid", "", tid0, false, true) + '</div><div><div class="ark-et pm-et">Til</div>' + husDatoTidHtml("", "pmTidSlut", "", slut0, false, true) + '</div></div>'
@@ -43088,13 +43099,25 @@ function planMoedeTidArk(aftaleId, ude) {
       if (!sb || !mKode) return false;
       const rec = { dato: dato, tid: tid || null, tid_slut: slut || null, link: link || null, sted: window.__PM_FORM === "online" ? "online" : "fysisk" };
       try {
-        if (ma && ma.id) { const u = await sb.from("kunde_aftaler").update(rec).eq("id", ma.id).select(); if (u.error || !u.data || !u.data.length) return false; }
-        else { const i = await sb.from("kunde_aftaler").insert(Object.assign({ kode: mKode, titel: "Ugentlig contentplanlægning" }, rec)).select(); if (i.error || !i.data || !i.data.length) return false; }
-      } catch (e) { return false; }
+        if (ma && ma.id && !ude) { const tilMd = window.__PM_TYPE === "md"; const varMd = /månedsplan|maanedsplan/i.test(String(ma.titel || "")); if (tilMd !== varMd) { const d2 = tilMd ? RYTME_DEF[1] : RYTME_DEF[0]; rec.titel = d2.titel; if (tid) rec.tid_slut = planMoedeTidPlus(tid, d2.min); } }
+        if (ma && ma.id) { const u = await sb.from("kunde_aftaler").update(rec).eq("id", ma.id).eq("kode", mKode).select(); if (u.error || !u.data || !u.data.length) return false; }
+        else {
+          /* ALDRIG TO ENS MØDER (sikkerhedschefen R3): står der allerede et contentmøde samme dag og tid, laves intet nyt */
+          const fin = await sb.from("kunde_aftaler").select("id,titel,tid").eq("kode", mKode).eq("dato", dato).limit(20);
+          if (fin.error) return false;
+          if ((fin.data || []).some(function (x) { return erMoedeTitel(x.titel) && String(x.tid || "").slice(0, 5) === String(tid || "").slice(0, 5); })) throw new Error("!Der står allerede et contentmøde den dag og det klokkeslæt.");
+          /* HVERT 4. MØDE ER MÅNEDENS (Din faste tid): efter tre ugentlige møder i træk bliver det nye månedens planlægning på 2 timer — kunden kan skifte det med chippen */
+          let tilMd = false; try { if (!ude) { const foer = (window.__kundeAftalerAlle || window.__kundeAftaler || []).filter(function (a) { return a && a.dato && String(a.dato).slice(0, 10) < dato && erMoedeTitel(a.titel); }).sort(function (p, q) { return p.dato < q.dato ? 1 : -1; }); let n = 0; for (const a of foer) { if (/månedsplan|maanedsplan/i.test(String(a.titel || ""))) break; n++; } tilMd = n >= 3; } } catch (e) {}
+          const def = tilMd ? RYTME_DEF[1] : RYTME_DEF[0];
+          const rec2 = Object.assign({ kode: mKode, titel: def.titel }, rec); if (tilMd && tid) rec2.tid_slut = planMoedeTidPlus(tid, 120);
+          const i = await sb.from("kunde_aftaler").insert(rec2).select(); if (i.error || !i.data || !i.data.length) return false;
+        }
+      } catch (e) { if (e && String(e.message || "").charAt(0) === "!") throw e; return false; }
       if (ude) { try { if (ude.efter) await ude.efter(); } catch (e) {} return "Mødet står i kalenderen " + dkDatoKort(dato) + (tid ? " kl. " + tid.replace(":", ".") : "") + "."; }
       try { await renderAftaler(); } catch (e) {}
       try { await setPlanDato(dato); } catch (e) {}
       try { renderHome(); } catch (e) {}
+      try { planDashTegn(); } catch (e) {}
       try { if (document.querySelector(".mo-top-chips")) moedeSideTegn(); } catch (e) {}   /* MØDESIDEN VISER DEN NYE DAG MED DET SAMME (Ida 19/10: »nu har jeg rettet datoen inde i mødet men den rettes ikke med det samme ude på selve mødet«) */
       return "Mødet står i kalenderen " + dkDatoKort(dato) + (tid ? " kl. " + tid.replace(":", ".") : "") + ".";
     } });
@@ -57828,11 +57851,7 @@ async function storyKortVing(knap) {
   if (!MAALS.storyCheck) MAALS.storyCheck = {};
   MAALS.storyCheck[datoDK()] = true;
   let ok = false;
-  try {
-    const eks = await sb.from("skema_svar").update({ svar: MAALS }).eq("kode", currentKode).eq("navn", "config").eq("skema", "maalsaetninger").select();
-    ok = !!(eks.data && eks.data.length);
-    if (!ok) { const ny = await sb.from("skema_svar").insert({ kode: currentKode, navn: "config", skema: "maalsaetninger", svar: MAALS }).select(); ok = !!(ny.data && ny.data.length); }
-  } catch(e) { ok = false; }
+  try { ok = await maalsGem(); } catch(e) { ok = false; }   /* samme fletning som alle andre gem (R4) */
   if (!ok) {
     delete MAALS.storyCheck[datoDK()];
     const m = document.getElementById("storyKortMsg"); if (m) m.textContent = "Det blev ikke gemt — prøv igen.";
@@ -65722,6 +65741,8 @@ function togglePlus() {
       try { if (typeof current !== "undefined" && current === 2 && (typeof IB_VISNING === "undefined" || IB_VISNING === "ideer")) { IDE_FORVALGT_SOEJLE = ibSynligSoejle(); addIdea("idebank"); return; } } catch (e) {}
       /* PAA INSPIRATION = »JEG HAR SET NOGET FEDT« MED DET SAMME (Idas klik 20/10 »Kun plusset, intet felt«) */
       try { if (typeof current !== "undefined" && current === 2 && typeof IB_VISNING !== "undefined" && IB_VISNING === "insp") { inspAaben(); return; } } catch (e) {}
+      /* PAA PLANLÆGNING = OPRET MØDE (bud 2, Ida 18/11 »Ja, byg den«): siden har kun møderne */
+      try { if (typeof current !== "undefined" && current === 31) { planMoedeNyArk(); return; } } catch (e) {}
       if (window.matchMedia && window.matchMedia("(max-width: 760px)").matches) toemFotoAabn(); else toemHovedetTrin1(); return;   /* telefonen: fliserne paa marken (Ida 9/10) */
     }
   } catch (e) {}
@@ -69351,7 +69372,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "3382";
+const APP_VERSION = "3384";
 const APP_BYGGET = "3. november";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_VERSION;   /* ingen dato (Ida 7/11: »hvorfor står der version 3. november?«) — datoen blev ikke rettet med, nummeret er sandheden */ } catch (e) {} });
 let NY_VERSION_KLAR = false;
@@ -73981,16 +74002,30 @@ async function maalsHent() {
     /* EN FEJLET HENTNING ER IKKE »INTET GEMT« (gem-gennemgangen 29/9): svarede basen med en fejl, blev standardvaerdien lagt frem, og naeste gem skrev den oven paa kundens rigtige data. Nu: fejl = intet hentet = intet gemmes, og der hentes igen naeste gang. */
     try {
       if (sb && currentKode) {
-        const { data, error } = await sb.from("skema_svar").select("svar").eq("kode", currentKode).eq("navn", "config").eq("skema", "maalsaetninger").maybeSingle();
+        const { data: rk, error } = await sb.from("skema_svar").select("svar").eq("kode", currentKode).eq("navn", "config").eq("skema", "maalsaetninger").limit(2);   /* to rækker låser aldrig gemningen (R5) */
         if (error) throw error;
+        const data = rk && rk[0];
         if (data && data.svar) ud = Object.assign(maalsStandard(), data.svar);
       }
     } catch(e) { MAALS = ud; MAALS_HENTER = null; MAALS_KODE = ""; window.__MAALS_UHENTET = true; return MAALS; }   /* vises som standard, men maa ALDRIG gemmes — og hentes igen naeste gang */
-    MAALS = ud; window.__MAALS_UHENTET = false;
+    MAALS = ud; window.__MAALS_UHENTET = false; try { window.__MAALS_BASE = JSON.parse(JSON.stringify(ud)); } catch (e) { window.__MAALS_BASE = null; }
     MAALS_HENTER = null;
     return MAALS;
   })();
   return MAALS_HENTER;
+}
+/* TRE-VEJS-FLETNING (sikkerhedschefen R4): frisk = rækken i basen nu · base = det, vi sidst hentede · mit = vores version. Kun nøgler, VI har ændret siden base, vinder; et niveau ned for objekter (fx moede, ugetemaer, rytme). */
+function flet3(frisk, base, mit) {
+  const J = function (v) { try { return JSON.stringify(v); } catch (e) { return String(v); } };
+  const obj = function (v) { return v && typeof v === "object" && !Array.isArray(v); };
+  const ud = Object.assign({}, frisk || {}); base = base || {}; mit = mit || {};
+  Object.keys(Object.assign({}, base, mit)).forEach(function (k) {
+    if (J(mit[k]) === J(base[k])) return;   /* ikke ændret her: den friske vinder */
+    if (!(k in mit)) { delete ud[k]; return; }
+    if (obj(mit[k]) && obj(base[k]) && obj(ud[k])) { const o = Object.assign({}, ud[k]); Object.keys(Object.assign({}, base[k], mit[k])).forEach(function (k2) { if (J(mit[k][k2]) === J(base[k][k2])) return; if (!(k2 in mit[k])) delete o[k2]; else o[k2] = mit[k][k2]; }); ud[k] = o; }
+    else ud[k] = mit[k];
+  });
+  return ud;
 }
 async function maalsGem(besked) {
   const m = document.getElementById("maalsMsg");
@@ -74002,10 +74037,13 @@ async function maalsGem(besked) {
   }
   let ok = false;
   try {
+    /* ALDRIG OVEN PÅ EN ANDENS ÆNDRING (sikkerhedschefen R4, 18/11): hent rækken lige før og læg kun det ind, der er ændret her siden sidste hentning */
+    try { if (window.__MAALS_BASE) { const fr = await sb.from("skema_svar").select("svar").eq("kode", currentKode).eq("navn", "config").eq("skema", "maalsaetninger").limit(2); if (!fr.error && fr.data && fr.data[0] && fr.data[0].svar) { const flettet = flet3(Object.assign(maalsStandard(), fr.data[0].svar), window.__MAALS_BASE, MAALS); Object.keys(MAALS).forEach(function (k) { if (!(k in flettet)) delete MAALS[k]; }); Object.assign(MAALS, flettet); } } } catch (e) {}
     const eks = await sb.from("skema_svar").update({ svar: MAALS }).eq("kode", currentKode).eq("navn", "config").eq("skema", "maalsaetninger").select();
     ok = !!(eks.data && eks.data.length);
     if (!ok) { const ny = await sb.from("skema_svar").insert({ kode: currentKode, navn: "config", skema: "maalsaetninger", svar: MAALS }).select(); ok = !!(ny.data && ny.data.length); }
   } catch(e) { ok = false; }
+  if (ok) { try { window.__MAALS_BASE = JSON.parse(JSON.stringify(MAALS)); } catch (e) {} }
   if (m) { m.style.color = ok ? "var(--gray3)" : "var(--red)"; m.textContent = ok ? (besked || "Gemt.") : "Det blev ikke gemt — prøv igen."; }
   return ok;
 }
@@ -85474,7 +85512,8 @@ function nulstilBrugerCache() {
   try { MR_RUM_AABEN = null; } catch (e) {}
   try { IDEER = []; } catch (e) {}
   try { CUSTOMERS = []; } catch (e) {}
-  try { MAALS = null; MAALS_KODE = null; } catch (e) {}
+  try { MAALS = null; MAALS_KODE = null; window.__MAALS_BASE = null; } catch (e) {}
+  try { PR_STATUS = null; PR_STATUS_HENTET = false; window.__PR_HENTET_OK = ""; } catch (e) {}   /* den forriges møde-noter og uger (sikkerhedschefen R6, 18/11) */
   try { DELT_INDEX = null; DELT_ITEMS = []; DELT_AKTIV = null; } catch (e) {}
   try { RODEBUTIK = []; HAENG = []; APP_FUNK = []; } catch (e) {}
   try { KUNDE_BESKEDER = null; APP_OENSKER = null; } catch (e) {}   /* Idas beskeder + oensker er kundens egne (21/9) */
@@ -91501,12 +91540,14 @@ function planRitUgeKey(man) { return man.getFullYear() + "-" + energidaUgeNr(man
 function planRitUgeDage(man) { const ud = []; for (let i = 0; i < 7; i++) { const d = new Date(man); d.setDate(man.getDate() + i); ud.push(prIso(d)); } return ud; }
 function planRitMaanedKey(man) { const t = new Date(man); t.setDate(man.getDate() + 3); return prIso(t).slice(0, 7); }   /* ugens torsdag afgoer maaneden (ISO) */
 async function planRitStatusHent() {
-  if (PR_STATUS_HENTET || !sb || !currentKode) return PR_STATUS;
+  if ((PR_STATUS_HENTET && window.__PR_HENTET_OK === currentKode) || !sb || !currentKode) return PR_STATUS;   /* BUNDET TIL KODEN (sikkerhedschefen R6): en ny bruger på samme enhed henter sit eget */
+  if (window.__PR_HENTET_OK !== currentKode) PR_STATUS = null;
   PR_STATUS_HENTET = true;
   /* EN FEJLET HENTNING ER IKKE »INTET GEMT« (gem-gennemgangen 29/9): svarede basen med en fejl, blev standardvaerdien lagt frem, og naeste gem skrev den oven paa kundens rigtige data. Nu: fejl = intet hentet = intet gemmes, og der hentes igen naeste gang. */
   try {
-    const { data, error } = await sb.from("skema_svar").select("svar").eq("kode", currentKode).eq("navn", "config").eq("skema", "plan_ritual").maybeSingle();
+    const { data: rk, error } = await sb.from("skema_svar").select("svar").eq("kode", currentKode).eq("navn", "config").eq("skema", "plan_ritual").limit(2);   /* to rækker låser aldrig gemningen (R5) */
     if (error) throw error;
+    const data = rk && rk[0];
     if (data && data.svar) PR_STATUS = data.svar;
     window.__PR_HENTET_OK = currentKode;
   } catch (e) { PR_STATUS_HENTET = false; }
@@ -91973,16 +92014,17 @@ async function moedeSlet(id) {
   window.__MO_SLET_ID = null;
   if (!sb || !currentKode) { try { husBesked("Kunne ikke annullere. Prøv at logge ind igen."); } catch (e) {} return; }
   const ma = (window.__kundeAftalerAlle || window.__kundeAftaler || []).find(function (x) { return x && String(x.id) === String(id); }) || null;
-  try { if (ma && ma.dato) { if (!MAALS) await maalsHent(); if (MAALS) { MAALS.rytmeSprunget = (Array.isArray(MAALS.rytmeSprunget) ? MAALS.rytmeSprunget : []).concat([String(ma.dato).slice(0, 10)]); await maalsGem(); } } } catch (e) {}   /* huskes, saa den automatiske udrulning ikke laver det om igen */
   try {
     const d = await sb.from("kunde_aftaler").delete().eq("id", id).eq("kode", currentKode).select();
     if (d.error || !d.data || !d.data.length) { try { husBesked("Kunne ikke annullere mødet. Prøv igen."); } catch (e) {} return; }
   } catch (e) { try { husBesked("Kunne ikke annullere mødet. Prøv igen."); } catch (e2) {} return; }
+  /* efter en BEKRÆFTET sletning (sikkerhedschefen R1) */
+  try { if (ma && ma.dato) { if (!MAALS) await maalsHent(); if (MAALS) { MAALS.rytmeSprunget = (Array.isArray(MAALS.rytmeSprunget) ? MAALS.rytmeSprunget : []).concat([String(ma.dato).slice(0, 10)]); await maalsGem(); } } } catch (e) {}   /* huskes, saa den automatiske udrulning ikke laver det om igen */
   /* DUBLETTER SLETTES MED (Ida 10/10: »mødet d. 12. oktober, jeg har slettet 100 gange, kommer tilbage«; MAALT af sikkerhedschefens lag 2: v2710-rettelsen sad i en overskygget moedeSlet og virkede aldrig): samme dag + samme kunde + mødetitel = én aftale */
   let dubletter = 0;
-  try { if (ma && ma.dato) { const sosk = (window.__kundeAftalerAlle || window.__kundeAftaler || []).filter(function (a) { return a && a.id && String(a.id) !== String(id) && String(a.dato || "").slice(0, 10) === String(ma.dato).slice(0, 10) && erMoedeTitel(a.titel); });
+  try { if (ma && ma.dato) { const sosk = (window.__kundeAftalerAlle || window.__kundeAftaler || []).filter(function (a) { return a && a.id && String(a.id) !== String(id) && String(a.dato || "").slice(0, 10) === String(ma.dato).slice(0, 10) && String(a.tid || "").slice(0, 5) === String(ma.tid || "").slice(0, 5) && String(a.titel || "") === String(ma.titel || ""); });   /* KUN EKSAKTE DUBLETTER (sikkerhedschefen R1, 18/11): samme dag, tid og titel — et andet møde samme dag bliver stående */
     for (const a of sosk) { const r2 = await sb.from("kunde_aftaler").delete().eq("id", a.id).eq("kode", currentKode).select(); if (!r2.error && r2.data && r2.data.length) dubletter++; } } } catch (e) {}
-  ["__kundeAftalerAlle", "__kundeAftaler"].forEach(function (n) { try { if (Array.isArray(window[n])) window[n] = window[n].filter(function (x) { return !x || (String(x.id) !== String(id) && !(ma && ma.dato && String(x.dato || "").slice(0, 10) === String(ma.dato).slice(0, 10) && erMoedeTitel(x.titel))); }); } catch (e) {} });
+  ["__kundeAftalerAlle", "__kundeAftaler"].forEach(function (n) { try { if (Array.isArray(window[n])) window[n] = window[n].filter(function (x) { return !x || (String(x.id) !== String(id) && !(ma && ma.dato && String(x.dato || "").slice(0, 10) === String(ma.dato).slice(0, 10) && String(x.tid || "").slice(0, 5) === String(ma.tid || "").slice(0, 5) && String(x.titel || "") === String(ma.titel || ""))); }); } catch (e) {} });
   window.__MOEDE_VALGT = "";
   const sendt = await moedeBeskedTilDeltagere(ma);
   try { husKvit((sendt ? "Mødet er annulleret. De andre har fået besked." : "Mødet er annulleret") + (dubletter ? " (" + dubletter + " dublet" + (dubletter === 1 ? "" : "ter") + " fjernet)" : "")); } catch (e) {}
@@ -92092,9 +92134,12 @@ async function moedeNoterGem(v) {
 }
 async function planRitStatusGem(patch) {
   if (sb && currentKode && window.__PR_HENTET_OK !== currentKode) { PR_STATUS_HENTET = false; PR_STATUS = null; try { await planRitStatusHent(); } catch (e) {} if (window.__PR_HENTET_OK !== currentKode) { try { husBesked("Det blev ikke gemt — prøv igen om et øjeblik."); } catch (e) {} return false; } }   /* aldrig et gem oven paa en fejlet hentning (29/9) */
-  PR_STATUS = Object.assign({}, PR_STATUS || {}, patch || {});
+  const base = PR_STATUS || {};
+  PR_STATUS = Object.assign({}, base, patch || {});
   if (!sb || !currentKode) return false;
   try {
+    /* ALDRIG OVEN PÅ EN ANDENS ÆNDRING (sikkerhedschefen R4, 18/11): rækken hentes lige før, og kun de nøgler, DENNE skrivning ændrer, lægges ind — to logins på samme kode overskriver ikke hinandens noter, uger eller møder */
+    try { const fr = await sb.from("skema_svar").select("svar").eq("kode", currentKode).eq("navn", "config").eq("skema", "plan_ritual").limit(2); if (!fr.error && fr.data && fr.data[0] && fr.data[0].svar) PR_STATUS = flet3(fr.data[0].svar, base, PR_STATUS); } catch (e) {}
     const eks = await sb.from("skema_svar").update({ svar: PR_STATUS }).eq("kode", currentKode).eq("navn", "config").eq("skema", "plan_ritual").select();
     if (eks.data && eks.data.length) return true;
     const ny = await sb.from("skema_svar").insert({ kode: currentKode, navn: "config", skema: "plan_ritual", svar: PR_STATUS }).select();
@@ -101823,6 +101868,48 @@ html body.mb #ibPlusSide .vt-primaer:not(#ep1):not(#ep2):not(#ep3):hover,
 html body .insp-plus:not(#ep1):not(#ep2):not(#ep3):hover,
 html body #inspSektion .insp-plus:not(#ep1):not(#ep2):not(#ep3):hover,
 html body .hus-plus-rk:not(#ep1):not(#ep2):not(#ep3):hover { background-color:#E31F02 !important; }
+</style>
+<style>
+/* É:not(#es1):not(#es2):not(#es3) STREG (HÅRD, Ida 18/11: »skillestregen skal have en funktion og ofte kun bruges mellem 2 stykker tekst! Aldrig over en tekstboks eller flise uden formål« · DESIG:not(#es1):not(#es2):not(#es3)LÅS »É:not(#es1):not(#es2):not(#es3) STREG«).
+   Stregerne her havde et felt, en flise eller tom luft på den ene side (målt af probe-streg.js 18/11). Står sidst i filen og vinder over de gamle regler. */
+html body .pf-sek-s:not(#es1):not(#es2):not(#es3), html body .pb-rg-l:not(#es1):not(#es2):not(#es3), html body .mo-ig-pkt:not(#es1):not(#es2):not(#es3) { border-top:0 !important; }
+html body .mo-hoved:not(#es1):not(#es2):not(#es3), html body .mb1-et:not(#es1):not(#es2):not(#es3), html body .maals-kh:not(#es1):not(#es2):not(#es3), html body .htb-eye:not(#es1):not(#es2):not(#es3), html body .uge-top:not(#es1):not(#es2):not(#es3), html body .navsti:not(#es1):not(#es2):not(#es3) { border-bottom:0 !important; }
+html body .crm2-r:not(#es1):not(#es2):not(#es3):last-child, html body tr:last-child > td:not(#es1):not(#es2):not(#es3) { border-bottom:0 !important; }
+</style>
+<style>
+/* PLANLÆGNING = KUN MØDERNE, TRE DELE (Ida 18/11, bud 2 »Ja, byg den») — kun husets dele: etiket 12/400 versaler 1,5 grå over flisen, 8 ned · hvid flise radius 20, luft 20, kundens skygge · 12 mellem fliser, 32 mellem sektioner · én rød knap · chips 32 · ÉT PLUS · ingen streger */
+#planDashWrap .pl3 { font-family:Poppins,sans-serif; color:#1A1A1A; display:flex; flex-direction:column; gap:32px; }
+#planDashWrap .pl3-kol { display:flex; flex-direction:column; gap:32px; min-width:0; }
+#planDashWrap .pl3-rk { display:flex; align-items:center; justify-content:space-between; min-height:20px; margin:0 0 8px; }
+#planDashWrap .pl3-et { font-size:12px; font-weight:400; letter-spacing:1.5px; text-transform:uppercase; color:#6F6B66; border:0 !important; padding:0 !important; margin:0 !important; }
+#planDashWrap .pl3-fl { display:block; width:100%; box-sizing:border-box; background:#fff; border:0; border-radius:20px; box-shadow:0 0 0 1px #DEDAD4, 0 0 4px rgba(46,44,41,.10), 0 0 36px rgba(46,44,41,.20); padding:20px; text-align:left; font:inherit; color:inherit; }
+#planDashWrap .pl3-aabn { display:flex; flex-direction:column; width:100%; background:none; border:0; padding:0; text-align:left; font:inherit; color:inherit; cursor:pointer; }
+#planDashWrap .pl3-titel { font-size:22px; font-weight:400; line-height:1.3; }
+#planDashWrap .pl3-tid { font-size:16px; font-weight:300; margin-top:4px; }
+#planDashWrap .pl3-gr { font-size:14px; font-weight:300; color:#6F6B66; margin-top:4px; line-height:1.5; }
+#planDashWrap .pk-chips { margin-top:20px; flex-wrap:nowrap; overflow-x:auto; }
+#planDashWrap .pl3-roedk { display:flex; align-items:center; justify-content:center; width:100%; height:56px; border:0; border-radius:28px; background:#FC2404; color:#fff; font:400 16px Poppins,sans-serif; margin-top:20px; cursor:pointer; }
+#planDashWrap .pl3-roedk:disabled { background:#fff; box-shadow:inset 0 0 0 1px #DEDAD4; color:#6F6B66; cursor:default; }
+#planDashWrap .pl3-sekk { margin-top:20px; }   /* husets grå knap (tomKortHtml) — størrelsen er husets */
+@media (max-width:760px) { #planDashWrap .pl3-sekk { width:100%; } }
+html body #planDashWrap .pl3-roedk:not(#ep1):not(#ep2):not(#ep3) { height:56px !important; min-height:56px !important; border-radius:28px !important; }
+@media (min-width:761px) { html body #planDashWrap .pl3-roedk:not(#ep1):not(#ep2):not(#ep3) { height:44px !important; min-height:44px !important; border-radius:22px !important; } }
+#planDashWrap .pl3-liste { display:flex; flex-direction:column; gap:12px; }
+#planDashWrap .pl3-moede { display:flex; align-items:center; gap:16px; cursor:pointer; }
+#planDashWrap .pl3-dato { width:56px; height:56px; flex:none; box-sizing:border-box; border:1px solid #DEDAD4; border-radius:14px; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+#planDashWrap .pl3-dato b { font-size:20px; font-weight:400; line-height:1; }
+#planDashWrap .pl3-dato span { font-size:11px; color:#6F6B66; margin-top:2px; }
+#planDashWrap .pl3-mx { display:flex; flex-direction:column; min-width:0; }
+#planDashWrap .pl3-mt { font-size:15px; font-weight:400; }
+#planDashWrap .pl3-ms { font-size:13px; font-weight:300; color:#6F6B66; margin-top:2px; line-height:1.5; }
+#planDashWrap .pl3-rk .hus-plus-rk { margin:0; }
+@media (max-width:760px) { html body #planDashWrap .pl3-rk .pl3-plus:not(#ep1):not(#ep2):not(#ep3) { display:none !important; } }   /* telefonen: plusset bor i bundmenuen (16/11) og åbner Opret møde her */
+@media (min-width:761px) {
+  #planDashWrap .pl3 { display:grid; grid-template-columns:minmax(0,1.4fr) minmax(0,1fr); gap:32px; align-items:start; }
+  #planDashWrap .pl3-kol > .pl3-sek:first-child > .pl3-rk { min-height:44px; align-items:flex-end; }   /* plusset står ud for etiketten, og de to spalters første etiketter flugter */
+  #planDashWrap .pl3-roedk { height:44px; border-radius:22px; }
+  #planDashWrap .pl3-titel { font-size:24px; }
+}
 </style>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-hvid.png" alt=""><span>Henter…</span></div>
 <div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 18. november · 3380</div>

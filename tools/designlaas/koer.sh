@@ -127,6 +127,19 @@ for PY in "kunde 390 1200" "kunde 1440 940" "dash 390 1200" "dash 1440 940"; do
   echo "$UDP" | grep -q "SELE PLUS OK:" || PLUS_OK=0
 done
 [ "$PLUS_OK" = "1" ] && echo "SELE PLUS OK: alle plusser er ÉT PLUS paa 390 og 1440" || { echo "SELE PLUS FEJL: et plus har en anden form (se ovenfor) — porten stopper"; }
+# ÉN STREG (HÅRD, Ida 18/11: »skillestregen skal have en funktion og ofte kun bruges mellem 2 stykker tekst! Aldrig over en tekstboks eller flise uden formål«):
+# probe-streg.js finder hver synlig vandret streg paa 390 og 1440 (kunde, briefen med de valgfrie felter aabne, Backstage). Et felt, en flise eller tom luft paa en side STOPPER porten.
+STREG_OK=1
+for SG in "kunde 390 1200" "kunde 1440 940" "brief 390 1200" "brief 1440 940" "dash 390 1200" "dash 1440 940"; do
+  set -- $SG
+  case $1 in dash) VSG="vis=dash&side=overblik&fil=index-sele.html";; brief) VSG="vis=kunde&fil=index-sele.html%3Fselekode%3DACORNS2026";; *) VSG="vis=kunde&fil=index-sele.html%3Fselekode%3DHINGES2026";; esac
+  KSG=$(python3 -c "import urllib.parse,sys;print(urllib.parse.quote('var STREG_FLADE=\''+sys.argv[2]+'\';'+open(sys.argv[1]).read()))" "$ROD/tools/designlaas/probe-streg.js" "$1")
+  RAASG=$($TO "$C" $HL --no-sandbox --disable-gpu --window-size=$(($2+40)),$(($3+60)) --virtual-time-budget=150000 --enable-logging=stderr --v=0 --screenshot="$MAAL/streg-$1-$2.png" "http://127.0.0.1:$PORT/sele.html?${VSG}&bred=$2&hoej=$3&kode=$KSG" 2>&1)
+  UDSG=$(echo "$RAASG" | grep -a 'CONSOLE' | sed -E 's/^.*CONSOLE[:(][0-9]+\)?\] //; s/", source:.*$//; s/^"//' | grep -a 'SELE STREG')
+  echo "$UDSG" | grep -v '^SELE STREG OK ' | sed "s/^/[$1 $2] /" | cut -c1-300
+  echo "$UDSG" | grep -q "SELE STREG OK:" || STREG_OK=0
+done
+[ "$STREG_OK" = "1" ] && echo "SELE STREG OK: alle streger staar mellem tekst paa 390 og 1440" || echo "SELE STREG FEJL: en streg staar ved et felt, en flise eller tom luft (se ovenfor) — porten stopper"
 # BACKSTAGE (20/9, Idas ord: »hver eneste side i loop«): probe-backstage.js paa 390 og 1440 — markbaandet som hero, 32 px luft, hvid side, trykfelter, streger, kryds, emoji.
 K9=$(python3 -c "import urllib.parse,sys;print(urllib.parse.quote(open(sys.argv[1]).read()))" "$ROD/tools/designlaas/probe-backstage.js")
 K10=$(python3 -c "import urllib.parse,sys;print(urllib.parse.quote(sys.argv[2] + open(sys.argv[1]).read()))" "$ROD/tools/designlaas/probe-backstage.js" "document.body.classList.add('dash-nav');")
@@ -230,5 +243,5 @@ print('SELE SPOEGELSE OK: alle sideskift er rene paa 390 og 1440' if not fejl el
 " "$ROD" 2>&1)
 echo "$UDJ"
 echo "$UDJ" | grep -q "SELE SPOEGELSE OK" || HERO_OK=0
-[ "$PLUS_OK" = "1" ] && [ "$DAEK_OK" = "1" ] && [ "$HERO_OK" = "1" ] && [ "$MAAL_OK" = "1" ] && [ "$REGLER_OK" = "1" ] && echo "$UDG" | grep -q "SELE GENSTART OK" && echo "$UD0" | grep -q "SELE POPUP-KILDE OK" && echo "$UD" | grep -q "SELE LAAS OK" && echo "$UD2" | grep -q "SELE SIDER OK" && echo "$UD4" | grep -q "SELE SIDER OK" && echo "$UD5" | grep -q "SELE BUD OK" && echo "$UD6" | grep -q "SELE BUD OK" && [ "$UX_OK" = "1" ] && [ "$BS_OK" = "1" ] && echo "$UD3" | grep -q "SELE BRIEF OK" && exit 0
+[ "$STREG_OK" = "1" ] && [ "$PLUS_OK" = "1" ] && [ "$DAEK_OK" = "1" ] && [ "$HERO_OK" = "1" ] && [ "$MAAL_OK" = "1" ] && [ "$REGLER_OK" = "1" ] && echo "$UDG" | grep -q "SELE GENSTART OK" && echo "$UD0" | grep -q "SELE POPUP-KILDE OK" && echo "$UD" | grep -q "SELE LAAS OK" && echo "$UD2" | grep -q "SELE SIDER OK" && echo "$UD4" | grep -q "SELE SIDER OK" && echo "$UD5" | grep -q "SELE BUD OK" && echo "$UD6" | grep -q "SELE BUD OK" && [ "$UX_OK" = "1" ] && [ "$BS_OK" = "1" ] && echo "$UD3" | grep -q "SELE BRIEF OK" && exit 0
 echo "SELE LAAS FEJL: maalingen sagde ikke OK"; exit 1

@@ -3705,7 +3705,7 @@ Filen er kort med vilje. Hver regel kan måles. Målingen står i `tools/designl
 
 Alt, der ikke står her, er ikke låst. Det betyder ikke frit valg: det betyder mockup først og Idas klik, før der bygges.
 
-**Flisen = etiket · ÉN skillelinje · indhold (15/9 kl. 08.27, Idas ord — RETTER 12/9-noten).** En flise med etiket har altid én hårfin streg i fuld bredde under etiketten (grå på hvidt, hvid/35 % på rødt). Aldrig to streger i samme flise; en dør er kun navnet. **Didot kun i heroen — Poppins i alt andet** (fliseoverskrifter, felter, tal, ringe, knapper).
+~~Flisen = etiket · ÉN skillelinje · indhold (15/9)~~ — VÆLTET 18/11 af »ÉN STREG« sidst i låsen: en streg står kun mellem to stykker tekst, aldrig over et felt eller en flise.
 
 **FLISEN — LÅST 15/9 kl. 08.35 (bud A »Ét skridt fylder skærmen«, Idas ord: »sådan skal alle fliser se ud fremadrettet … i alle mine apps, både admin, Succesfuld Detaildrift og Time to Shine«).** Hvid flise (1 px #DEDAD4, hjørner 20, polstring 18/20) = etiket (10 px versal, grå) · ÉN hårfin skillelinje · overskrift Poppins 18 normal · én sætning Poppins 12,5 grå · rød pilleknap i fuld bredde (48 px). Didot kun i heroen. Flere trin = ét spor, det aktive kort fylder bredden, swipe til de næste (dæmpede med lås / grønt flueben), prikker under; computeren tre kort pr. række. Fremgang = husets ringe i små hvide fliser under sporet, etiketten 14 px under ringen. Ingen tal i knapper (»Start her« · »Fortsæt« · »Åbn«). Motor: `dashBentoHtml` — tegner Hjem (rejsen: Spørgeskema · Forløbet · Drejebogen · Planlægningsdagen · Den første brief) og Forløbet-siden. Rundvisningen tilpasses kortene. Manualen: afsnittet »Flisen« (15/9). Alle knapper i huset er piller (999).
 
@@ -4323,3 +4323,12 @@ Tilføj er ALTID den samme knap på alle sider og begge flader: **rød cirkel #F
 - En plus/minus-tæller (Flere/Færre i Målsætninger) er ikke et Tilføj og hører ikke under reglen. Bundmenuens store plus på telefonen er sin egen knap og røres ikke.
 - **PORTEN STOPPER:** `tools/designlaas/probe-plus.js` finder hvert rundt plus på 390 og 1440 (kunde + Backstage). Et plus med en anden form = SELE PLUS FEJL = intet lægges ud.
 - Målt i selen 18/11: 13 plusser (Hjem, Idébanken, Inspiration, Hashtagbanken, Drejebogen, Tema, Indbakken, Energida, Opgavebiblioteket, Vaner, Maskinrum, Budget) har samme form.
+
+
+## ÉN STREG: SKILLESTREGEN SKAL HAVE EN FUNKTION (HÅRD, Ida 18/11: »skillestregen skal have en funktion og ofte kun bruges mellem 2 stykker tekst! Aldrig over en tekstboks eller flise uden formål«)
+En skillestreg (1 px hårfin linje, kant eller `<hr>`) må KUN stå mellem to stykker tekst, hvor den adskiller noget, fx rækkerne i en dropdown-liste eller en etiket og teksten under den.
+- **Aldrig** over eller under et tekstfelt, en dropdown-knap eller en anden boks, man skriver i (vælter 15/9's »etiket · ÉN skillelinje · indhold«, når indholdet er et felt).
+- **Aldrig** over, under eller mellem fliser. Fliser adskilles af luft (12 px) og husets skygge, ikke af streger.
+- **Aldrig** en streg uden noget på begge sider (først eller sidst i en flise, eller ved siden af tom luft).
+- Gældende undtagelser, fordi de står mellem tekst: rækkerne i dropdown-listen (16/9) og stregen under arkets titel, når der står chips under (5/10).
+- **PORTEN STOPPER:** `tools/designlaas/probe-streg.js` finder hver synlig vandret streg på 390 og 1440 (kunde, briefen og Backstage) og ser, hvad der står lige over og lige under den. Et felt, en flise eller tom luft på en af siderne = SELE STREG FEJL = intet lægges ud.
