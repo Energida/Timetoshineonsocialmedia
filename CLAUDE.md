@@ -4,6 +4,8 @@
 > **Rører din ændring noget, kunden ser (en side, en popup, en knap)?
 > Læs `DESIGNLÅS.md` i denne mappe FØRST. Den seneste lås vinder, og låsning er fejning.**
 
+> **INTET BYGGES UDEN OM DESIGNLÅSEN OG SIKKERHEDSCHEFEN (Ida 18/11).** Før der bygges noget nyt: buddet siger, hvilke af husets dele hvert element er, og sikkerhedschefen har set, hvilke data det rører. Porten STOPPER afvigelser. Se regel 5 i `../CLAUDE.md` afsnit 0a.
+
 # DEPLOY: DEN AKTIVE CODE-TRÅD DEPLOYER (Ida 27. september 2026)
 
 **Låsen fra 7. august (»kun sikkerhedstråden må committe og pushe«) er ophævet af Ida 27/9:** »Der er altid kun 1 aktiv code tråd og det er den der skal kunne gøre det.« RLS-oprydningen, som låsen beskyttede, er afsluttet; siden august har den aktive tråd deployet hver dag efter overleveringerne.

@@ -3542,7 +3542,7 @@ Filen er kort med vilje. Hver regel kan måles. Målingen står i `tools/designl
 
 **BACKSTAGE HJEM: GENVEJENE UDE, DIG = ÉN DØR (Idas klik 16/9 kl. 10.39, nattens punkt 7, v2021).** Genvejsrækken (Ny kunde · Ny video · Byggekøen · SQL-kort · Mit eget studio) er arkiveret — én dør pr. ting: Ny kunde på Kunder, Byggekøen og SQL-kort under Teknik, Ny video i Energida Studio. DIG har én dør »Mit eget studio« (åbner b2b.energida.dk); de to fliser (næste opslag · planlægningsdag) er ude.
 
-**PLUS-KNAPPERNE I KALENDEREN OG IDÉBANKEN: GRÅ RING, RØDT PLUS (Ida 16/9 kl. 10.45, v2020).** `.uge-opret` har kanten i #DEDAD4, plusset rødt.
+~~Plus-knapperne med grå ring (16/9)~~ — SLETTET 18/11, se »ÉT PLUS« sidst i låsen.
 
 **HJEM PÅ COMPUTEREN (Ida 16/9 kl. 10.40, v2018–v2019):** »Ida, Energida« under citatet er ude; hilsen og citat står lavere i båndet (40 px fra kanten). **»Kommende indhold« er helt ude af Hjem** — forvarslerne bor i kalenderen.
 
@@ -3916,7 +3916,7 @@ Vejen fra en skriveside til forsiden er ØJET ved titlen (v2089, Idas klik 17/9 
 - **Banken på computeren viser altid søjlerne — også tom.** Før stod der »Ingen idéer endnu. Tryk på + Ny idé …« som løs linje i stedet for banken, når intet var uden dato; nu står de fire kolonner, kundens egne og »+ Tilføj søjle«.
 
 ## v2111 — B2B-GENNEMGANGENS FUND 3: KALENDERENS PLUS ER DEN GRÅ KNAP (18/9 kl. 14.25, målt 390 + 1440)
-- `.uge-opret` (plusset i hver dag på computeren) var hvid med grå ring og RØDT plus (Ida 16/9 kl. 10.45). 18/9-reglen »kun to knapper: rød og grå — rød tekst i hvid knap findes ikke mere« vinder: grå kant `--knap-graa-kant`, gråt plus `--knap-graa-tekst`. Telefonen viser ikke plusset i månedscellerne (uændret).
+- ~~`.uge-opret` grå plus (18/9)~~ — SLETTET 18/11, se »ÉT PLUS« sidst i låsen.
 
 ## v2112 — FUND 4 + 5: »RET« · »SKRIV TEMAET« · »SKRIV« ER DEN GRÅ CHIP, OG DE 4 BYGGESTEN HEDDER DET SAMME I NAVSTI OG BÅND (18/9 kl. 14.40, målt 390 + 1440)
 - Målsætninger og De 4 byggesten på computeren: de røde ord-knapper (`#screen24 .rkn`, `.bygg-ret`) er den grå chip (36 px, grå kant, grå tekst); telefonen havde dem allerede grå og lange. Ét knapsprog på begge flader.
@@ -4314,3 +4314,12 @@ Navstien (HJEM / … ) står ikke i coveret på nogen admin-side (`.bs-baand .mb
 
 ## CRM-kundesiden efter revisionen (Ida 16/11)
 Ida: »gennemgå hele crm grundigt og ret alle fejl«. Det gamle kundekort kan ikke nås længere (`openKundeKort` → den nye kundeside). Indstillinger og Aftaler er undersider i sidens form, og alt fra kortet kan rettes dér. Butikken hedder Forretningen, og kontaktens rolle står dér. Personerne står lige under Kontakt og kun dem, der ikke er kontakten. Ring op og Skriv en mail er ude. Aktivitet for YOU GOT THIS-kunder viser hvor langt de er i hvert modul. Under Aktivitet står knapperne Se lektionerne (karakter og visninger pr. lektion), Send besked og Se kundens version, 12 under flisen og i fuld bredde. Rabatkode-rækken står kun, når der er en kode. Personnavne vises altid med stort (`personNavn`). Målt i selen på 1440 + 390.
+
+
+## ÉT PLUS (HÅRD, Ida 18/11: »jeg vil have den røde! men sku da ikke så skævt«)
+Tilføj er ALTID den samme knap på alle sider og begge flader: **rød cirkel #FC2404 · 44 px · ingen kant · hvidt plus TEGNET (svg, 18 px, streg 2, runde ender) præcis i midten**. Aldrig et skrifttegn »+« (Poppins' plus sad skævt i cirklen), aldrig hvid med grå kant, aldrig 36 eller 40 px.
+- Vælter alle ældre plus-regler (grå ring 16/9, gråt plus 18/9 og de hvide plusser, der var bygget på Hjem, Hashtagbanken, Drejebogen og Backstage). 21/9-reglen »Tilføj = det røde plus« står ved magt.
+- Bygget som ÉN CSS-regel sidst i `index.html` (»ÉT PLUS«), der rammer `#hjemTilfoejBaand`, `#bf3RumKnap` (ikke Mails' pille), `#ibPlusSide`, `.insp-plus` og `.hus-plus-rk`. Et nyt plus skal have én af de klasser — ingen egne plusser.
+- En plus/minus-tæller (Flere/Færre i Målsætninger) er ikke et Tilføj og hører ikke under reglen. Bundmenuens store plus på telefonen er sin egen knap og røres ikke.
+- **PORTEN STOPPER:** `tools/designlaas/probe-plus.js` finder hvert rundt plus på 390 og 1440 (kunde + Backstage). Et plus med en anden form = SELE PLUS FEJL = intet lægges ud.
+- Målt i selen 18/11: 13 plusser (Hjem, Idébanken, Inspiration, Hashtagbanken, Drejebogen, Tema, Indbakken, Energida, Opgavebiblioteket, Vaner, Maskinrum, Budget) har samme form.
