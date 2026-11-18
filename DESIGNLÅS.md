@@ -1,3 +1,8 @@
+## 18. november · IDÉBANKEN: EGET BILLEDE SOM COVER · TILBAGE = ÉT SKRIDT · »MANGLER EN SØJLE« UDEN MAPPE (Idas »Ja, læg det ud« 18/11, artifact M6mfJZeVauZnkxq48HQ6gs v7) · v3378
+- **Cover = kun eget billede** (Ida: »Byg så man kan lægge et billede op som cover« og »ikke vælg fra inspiration«). Arket har knappen »Læg et billede op« (rød), »Fjern cover« når der er et cover, og »Annullér«. Ingen galleri-valg fra Inspiration.
+- **Tilbage går ét skridt** (Ida: »den kun går 1 skridt tilbage når man klikker på tilbageknappen«). Inde i en søjle- eller temamappe i Idébanken fører Tilbage til Idébanken, på telefon og computer. Mellem sider husker appen, hvor man kom fra, og Tilbage går dertil.
+- **»Mangler en søjle« er ingen mappe** (Ida: »mangler søjle skal være der hvor seneste var før og ikke have en mappe«). Idéerne uden søjle står som kort lige under søjlerne med »Vælg søjle«. Afsnittet vises kun, når der er sådanne idéer.
+
 ## 17. november · STORYENS TYPE ER EN CHIP PÅ KALENDERFLISEN (Idas klik »Ja, gør klar« 17/11, billeder 2EB9jFEpU4ndACLY1mmXCD) · v3376, ikke lagt ud
 - Ida: »om det er opbygning til deling eller check-in skal være chips på kalender flisen ligesom indholdssøjlerne er ved opslag«.
 - Typen (»Daglig check-in« / »Opbygning til deling«) står som chip under titlen, på samme plads og i samme form som opslagets indholdssøjle. Etiketten over titlen siger kun »Story« (+ klokkeslæt). Vælter 4/11's »STORY · OPBYGNING TIL DELING« i etiketten på fliserne.
