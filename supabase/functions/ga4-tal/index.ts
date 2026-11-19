@@ -1,7 +1,7 @@
 // GA4-TAL · Edge Function "ga4-tal"
 //
 // Ida 19/10: »jeg drømmer jo virkelig om at kunne følge med i … hvor mange besøger hjemmesiden«. Live-overblikket i Backstage
-// spørger her: besøg i dag · i går · 7 dage · 30 dage, lige nu, de mest besøgte sider og besøg pr. mail (utm_medium=email).
+// (19/11: kun energida.dk og www.energida.dk tæller) spørger her: besøg i dag · i går · 7 dage · 30 dage, lige nu, de mest besøgte sider og besøg pr. mail (utm_medium=email).
 // Ida gav selv adgang 19/10: servicekontoen energida-overblik@ninth-bonito-460108-f1 er Viewer på GA4-ejendommen 544320089;
 // nøglen ligger kun i hemmeligheden GA4_SA_JSON (Claude har aldrig set den).
 //
@@ -40,7 +40,17 @@ async function googleToken(sa: { client_email: string; private_key: string }) {
   const j = await r.json(); if (!j.access_token) throw new Error("Google afviste nøglen: " + (j.error_description || j.error || r.status));
   return j.access_token as string;
 }
+/* KUN DEN LIVE HJEMMESIDE (Ida 19/11: »sikre at det kun er min live hjemmeside jeg får tal fra!!!«): hver rapport tæller kun besøg på energida.dk og www.energida.dk —
+   testudgaver (pages.dev, localhost) og andre adresser tælles ikke. Realtime-rapporten kan ikke filtreres på adresse og står uændret. Google sorterer selv kendte robotter fra. */
+const LIVE_VAERTER = ["energida.dk", "www.energida.dk"];
+function kunLive(krop: any) {
+  const vaert = { filter: { fieldName: "hostName", inListFilter: { values: LIVE_VAERTER, caseSensitive: false } } };
+  const k = Object.assign({}, krop);
+  k.dimensionFilter = krop && krop.dimensionFilter ? { andGroup: { expressions: [vaert, krop.dimensionFilter] } } : vaert;
+  return k;
+}
 async function rapport(tok: string, sti: string, krop: unknown) {
+  if (sti === "runReport") krop = kunLive(krop);
   const r = await fetch("https://analyticsdata.googleapis.com/v1beta/properties/" + EJENDOM + ":" + sti, { method: "POST", headers: { Authorization: "Bearer " + tok, "Content-Type": "application/json" }, body: JSON.stringify(krop) });
   const j = await r.json(); if (!r.ok) throw new Error("Analytics svarede " + r.status + ": " + (j.error?.message || ""));
   return j;

@@ -1,3 +1,41 @@
+## 19. november · MØDETYPEN GÆTTES ALDRIG (HÅRD, Ida 19/11: »jeg har oprettet ugentlig contentmøde og på kundens dashboard står der nu månedlig????????? WTF sker der lige??«) · v3389, ikke lagt ud
+- Et nyt møde er altid Ugens møde, til man selv vælger Månedens møde. Valget »Ugens møde · Månedens møde« står altid i arket — ved Opret og Ret, også fra CRM. Appen gør aldrig selv et møde til månedens ud fra tælleren (»hvert 4. møde«); rytmen er en anbefaling, ikke en automatik.
+
+## 19. november · Ekspertgennemgangen, del A (Idas »Ja, ret A«) — 3389
+- Content kalenderen: i dag har ingen rød ramme. Den røde dato-cirkel siger det.
+- Kalenderen: »Sådan fordeler indholdet sig« og afsnittene (Indholdssøjler, Formater, Målgrupper) står OVER deres flise. Værktøjslinjen på computeren er 44 høj hele vejen (pile, ikoner, Arkiv, Uge, + Ny). På telefonen er der 32 fra »I dag« til »Kommende opslag«.
+- De fire indholdssøjler: ingen etiket inde i søjle-slidesne og ingen gentagelse af coverets titel.
+- Uden startdato er modul 8 ikke åbent: en ny kunde ser hverken Idébanken eller plusset før modul 8.
+- Dit forløb: det åbne moduls hoved bliver som før (titel øverst, beskrivelsen 4 under). Et hoved på 80 med centreret titel skubbede beskrivelsen 22 ned, og det bryder 4-reglen.
+- Startkortet giver kunden samme hilsen som Forsiden.
+- Øvelsen har én vej ind: den gamle flise under videoen vises kun, når øvelsen er udført (»Se dine svar«). Forsiden viser »Venter på dig« som den lyseblå flise med grå ramme og rød »Fortsæt øvelsen«.
+- Tilbage på telefonen er bygget efter 18/11-låsen: pil + »Tilbage«, ingen kant, flade eller pille, 44 trykfelt, hvid i coveret.
+
+## Dit forløb: åbne moduler er hvide, ingen »Forløbet er på vej«-kasse (Ida 19/11)
+
+- Et modul, der er foldet ud, er hvidt med grå ramme (#DEDAD4), og det samme er lektionerne i det. Lukkede låste moduler er lyseblå.
+- Kassen »Næste skridt · Forløbet er på vej« står aldrig øverst i Dit forløb. Modulerne siger selv »På vej«. Kun slutskemaet må stå der.
+
+## 19. november · PRISEN OG BETALINGSLINKET STÅR PÅ PRODUKTSIDEN (Ida 19/11: »På produktsiden«) · v3389, ikke lagt ud
+- Under produktets døre: overskriften »Pris og betalingslink« over en flise med Pris · Betalingslink · rød Gem · »Åbn betalingslinket«. Vælter 25/9 (»pris skal også helt væk her fra forsiden«) — prisen kunne ikke ses eller rettes noget sted.
+
+## 19. november · DEN FLISE, MAN STÅR PÅ, FÅR ALDRIG EN RØD RAMME (HÅRD, Ida 19/11: »jeg vil aldrig se den røde ramme om en flise som den man står på«)
+- Den aktuelle lektion, den aktuelle uge, det valgte punkt i en liste: aldrig rød ramme (heller ikke 2 px rød skygge). Også i bud og mockups.
+
+## 19. november · ØVELSEN EFTER VIDEOEN STÅR I VIDEOENS FLISE · BÅDE REFLEKSION OG OPGAVE KAN VENTE (Idas »ja - super design!« på bud 3bu5hqVVW2hd3fizZuAVNr v1 og »Ja, begge kan vente« på v2) · ikke bygget
+- Har en lektion en refleksionsøvelse eller opgave, viser »Næste« øvelsen i videoens flise, præcis som spørgeskemaet i 0.6: etiket · titel i Didot · tekst · rød »Start …« · hvid »Jeg gør det senere«. Ét spørgsmål ad gangen (spørgsmålet som titel, beskrivelsen under, svarfeltet), rød videre, pil tilbage, hvid »Gem og fortsæt senere«. Kvitteringen »Godt gået« bliver stående; næste lektion åbner.
+- **Flugt og knapper (Ida 19/11):** øvelsens flise starter i samme højde som »1 af 8 lektioner« — linjen »Lektion N · titel · set« står ikke over øvelsen (etiketten siger det). Computer: de to knapper side om side, hvid til venstre, rød til højre. Telefon: under hinanden, rød øverst.
+- **Begge kan vente** (vælter 12/11 »Refleksionsøvelser låser stadig«): udskudt = næste lektion åbner, og øverst i den og på Forsiden står en lyseblå flise med grå ramme »Venter på dig« + rød »Fortsæt øvelsen«. Modulet tæller først som gennemført, når øvelserne er lavet. Det skrevne gemmes altid.
+
+## 19. november · LYSEBLÅ FLISER HAR ALTID EN GRÅ RAMME (HÅRD, Ida 19/11: »vil du sørge for der kommer grå rammer om alle lyseblå fliser og skriver det i designlåsen!«) · v3389, ikke lagt ud
+- Hver lyseblå flade #F0F5F8 — låste moduler, hjælpefliser, captionfelt, venter/låst, felter — har 1 px grå ramme #DEDAD4. Aldrig uden ramme, aldrig lyseblå ramme (#DCE8F0/#D9E2E9 er døde). Små lyseblå symbolcirkler er ikke fliser og har ingen ramme. Bygger låsen fra 18/11 (punkt 4), som ikke var bygget.
+
+## 19. november · DIT FORLØB: LIGE STORE MODULFLISER · PILEN · FAVORITTER · ÉN LEKTION AD GANGEN (Ida 19/11) · v3389, ikke lagt ud
+- **Modulfliserne er lige store** (»den korrekte er som de låste moduler«): det åbne modul har de låste rækkers mål — telefon mindst 64 høj, luft 10/20 · computer mindst 80 høj, luft 18/20.
+- **Pilen:** lukket = peger mod højre, åbent = peger ned (»denne pil skal ved neutral pege mod højre og når modulet er åbent skal det pege ned«). Vælter 6/11 (ned/op).
+- **Favoritter · 0 = gråt hjerte uden fyld**; rødt hjerte først, når der er en favorit.
+- **Én lektion ad gangen — også i Modul 0** (»næste lektion skal først åbnes når man har set den foregående!«): kun den allerførste lektion er åben fra start. Vælter »Modul 0 er åbent« (11/11).
+
 ## 19. november · INTET MARKCOVER PÅ B2B UNDTAGEN FORSIDEN (HÅRD, Ida 19/11: »alle sider på b2b pånær forsiden skal have slettet marken som coveret så vi kan udnytte hele siden visuelt til overblik mm«) · besluttet, ikke bygget
 - Alle kundesider undtagen Forsiden mister markbilledet som cover. Sidens navn står øverst i Didot på sidens egen baggrund (#FAF9F5), datolinjen over det, og overblikket begynder lige under. Forsiden beholder sit cover. Planlægnings-budene (artifact RCPJ5YdE6eDeQNqY1WX42h) er tegnet sådan.
 - Vælter de ældre låse, der kræver markbåndet som hero på kundesiderne. Tilbage-chippen i coveret skal have ny plads, når den bygges.
@@ -66,7 +104,7 @@ Ida: »det synes jeg faktisk er genialt!« om opbygningen. Dette afsnit samler a
 - Hver lyseblå flade #F0F5F8 (hjælpeflisen/tips, captionens felt, venter/låst, info-noter) har ALTID en tynd ramme: 1 px #DEDAD4, husets grå. Aldrig lyseblå uden kant, og aldrig en lyseblå kant.
 - Symbolfelterne (de små runde felter med symbol) er ikke fliser og er uændrede.
 - VÆLTER »hjælpeflisen er lyseblå uden kant« (15/11) og »captionens felt uden kant« (15/11). De er strøget, hvor de stod.
-- Gælder app, bud og mockups, kundeapp og Backstage. Ikke bygget i appen pr. 18/11; porten skal måle det, når det bygges.
+- Gælder app, bud og mockups, kundeapp og Backstage. Bygget 19/11 (cover-tilbage og mb-tilbage); porten skal måle det.
 
 ## 18. november · TILBAGE PÅ TELEFONEN = PIL OG ORD, INGEN KASSE — ÉN REGEL (Idas klik »Bud 3« 18/11, fem bud på 4iX24RoBtzfELWd9RMyb9P) · ikke bygget
 - Ida: »jeg synes tilbageknappen er for stor … jeg tror vi skal have særskilt regel for tilbage på mobil … så vi kan låse det«.
