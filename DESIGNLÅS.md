@@ -1,3 +1,64 @@
+## 19. november · STORYSERIEN: OVERSKRIFTEN OVER FLISEN · LIGE STORE FLISER · TYPE-CHIPS OVER SERIEN (Ida 19/11) · v3386, ikke lagt ud
+- Ida: »story 1 overskrift skal være over flisen - de skal være lige store og chips ud af flisen det gælder for hele storyserien og ikke pr story (flise)«.
+- »Story 1«, »Story 2« … står OVER hver flise som husets overskrift (12 versal, #6F6B66), aldrig inde i flisen. Skraldespanden til at slette en story står på samme linje til højre, uden for flisen.
+- Story-flisen og den tomme »Story N« ved siden af er lige høje.
+- Flisen har storyens eget format (Ida 19/11: »mærkeligt placeholderen ikke har samme format som flisen«): upload-feltet (9:16) fylder flisens bredde, og på computeren er flisen 280 bred, så den er smal og høj som storyen. Gælder ikke, når storyen er åbnet med tekst eller billeder (den brede arbejdsflise).
+- Chipsene »Opbygning til deling« / »Daglig check-in« står over hele storyserien, ikke i Story 1. De gælder hele serien (samme gemte felt som før, brief.storytype).
+- Tilføj-chipsene (Tekst · Billede · Afstemning · Musik · Link) hører til den enkelte story og bliver i flisen.
+
+## 18. november · DEN NYE BRIEF: SKRIV · OPTAG · POST — SAMLET BESLUTNING (Idas klik og ord 18/11, billeder 4iX24RoBtzfELWd9RMyb9P) · IKKE BYGGET
+Ida: »det synes jeg faktisk er genialt!« om opbygningen. Dette afsnit samler alle dagens valg; de enkelte regler står i afsnittene lige under.
+- **Opbygning:** briefen har tre visninger: **Skriv · Optag · Post**. Skriv = Overblikket (med Idéens spørgsmål) · Fang dem · Fasthold dem · Få dem til at handle. Optag = kun idéen og scenerne. Post = kun video, coverbillede, caption og »Sæt til Postet«. Intet slettes; alt skrevet ligger under Skriv.
+- **Briefen åbner selv efter status** (klik »Følg status«): Skriv ved Idé, Planlagt, Brief i gang og Klar til godkendelse · Optag ved Godkendt · Post ved Materiale uploadet, Klar til post, Postet og Målt. Man skifter altid med ét tryk. (Kunder uden godkendelse har ikke status Godkendt; hos dem åbner Optag kun ved tryk — afklares ved bygning.)
+- **Ordene er godkendt** (klik »Ja, alle syv«): Skriv · Optag · Post · Hent video · Hent coverbillede · Kopiér caption · Sæt til Postet. Dertil Idas egne: »Upload video«, »Upload coverbillede«, »Overblikket«, »Hvad ser man?«.
+- **Toppen = ét hvidt kort** (bud 4): titel i Didot + blyant uden cirkel · fakta-chips med symbol og uden baggrund (telefon) · vælgeren. Computer: vælgeren står på titlens linje før status (se afsnittet under), og faktaboksen står til venstre på alle sider med »Upload video« og »Upload coverbillede« under; video og cover vises først, når noget er lagt op.
+- **Fakta som trin: KUN på telefonen** (Ida: »Fakta skal stadig være som trin på telefonen - men ej computeren«). Computeren har faktaboksen til venstre og intet Fakta-trin. Telefonens streger får derfor fem punkter; rækkefølgen (min antagelse, ikke bekræftet): Overblikket · Fakta · Fang dem · Fasthold · Handle.
+- **Felterne = bud 3, ens alle steder:** overskriften over flisen i versaler · lille symbol foran feltets navn (øje · taleboble · T), også under Optag (klik »Ja, små symboler«) · ingen skillestreger · tilvalgs-chips til højre uden baggrund · »Tekst på skærmen« står ikke som standard (kommer med »+ Tekst«) · pladsholder midt i feltet · felter ca. 76 høje med tekst 14 · Idéen og hver scene i hver sin flise.
+- **Fasthold dem og Få dem til at handle** bygges i samme form som Fang dem uden nyt bud (klik) og vises i testudgaven før udrulning.
+- **Karrusel:** Optag viser teksten på ALLE slides, slide for slide (Ida: »Man skal jo stadig tage billederne til karrusellen - så derfor skal man kunne se teksten på alle slidesene i optage«). Billede og story er ikke afklaret; story beholder story-byggeren.
+- **Udtryk:** siden #FAF9F5 · fliser hvide med kant #DEDAD4 og tydelig skygge · 20 mellem alle blokke · lyseblå fliser med ramme · ingen grå baggrundsflise · aldrig mørkt på andet end tekst · Tilbage på telefonen = pil og ord.
+- **Før udrulning:** ses på en rigtig kundes brief i selen (CLAUDE.md §3), billeder på 390 og 1440, porten grøn, Idas klik.
+
+## 18. november · SKRIV · OPTAG · POST PÅ COMPUTEREN = LILLE VÆLGER PÅ TITLENS LINJE, HVID BAGGRUND (Ida 18/11: »version 1 men med hvid baggrund«, billeder 4iX24RoBtzfELWd9RMyb9P) · ikke bygget
+- Computeren: vælgeren Skriv · Optag · Post står på titlens linje i det hvide kort, til højre lige før status-vælgeren og de tre prikker.
+- Form: én samlet pille, 44 høj, ca. 330 bred, HVID baggrund med kant #DEDAD4; tre lige store felter; det valgte er rødt #FC2404 med hvid tekst; skrift 14. Ingen symboler.
+- Kortet har derfor kun én linje (titel + blyant · vælger · status · tre prikker), og trin-rækken står lige under.
+- Telefonen: samme vælger, 56 høj i fuld bredde under titlen og chipsene i kortet (valgt 18/11).
+- Afvist undervejs: ord med rød streg under kortet, mappefaner, tre store fliser, bjælke i fuld bredde, rejsen 1 · 2 · 3.
+
+## 18. november · BRIEFENS TRIN: COMPUTER = FIRE FLISER (OVERBLIKKET BREDEST, RAKETTEN OVER NAVNET) · TELEFON = STREGERNE — LÅST (Ida 18/11: »der var den - lås det«, billeder 4iX24RoBtzfELWd9RMyb9P) · ikke bygget
+- Rækken under Skriv har fire fliser i én række: **Overblikket** · **Fang dem** · **Fasthold dem** · **Få dem til at handle**.
+- **Overblikket er den brede flise** (ca. 1,25 gange de tre andres samlede tredjedel; kun navnet, intet symbol, større skrift: 19 på computer, 14 på telefon).
+- **De tre andre har rakettens symbol OVER navnet** (tegnet streg-raket, 20 px på computer, 16 på telefon), navnet under (14 på computer — Ida 18/11: »lav teksten i fliserne en my mindre så den sidste ikke rammer kanterne«; mindst 10 luft til flisens kant).
+- **TELEFONEN HAR STREGERNE, IKKE FLISERNE** (Idas klik 18/11 »Ja, streger på telefonen«, efter »dette fungerer ikke på mobilen, der skal det være stregerne«): én hvid flise (kant #DEDAD4, skygge, hjørner 20, luft 16) med stedets navn stort (Poppins 22) og under det fire streger med navnene Overblikket · Fang dem · Fasthold · Handle (11,5). Den røde streg (tyk, 10) viser stedet, gjorte er lysegrå #DEDAD4 fyldt, resten tomme med grå kant. Aldrig mørke streger. Ingen »Trin N af 4«. Fliserne nedenfor gælder KUN computeren.
+- **Computeren: alle fire fliser har samme højde, 76.** Hjørner 16 (Overblikket 20 på computer), 8 imellem (6 på telefon).
+- **Den røde flise viser, hvor man er** (#FC2404, hvid tekst og hvidt symbol). De andre er hvide med kant #DEDAD4 og blød skygge; Overblikkets tekst er sort, de tre andres grå #6F6B66.
+- På telefonen er navnene forkortet til »Fasthold« og »Handle«, fordi de fulde navne ikke kan stå på én linje. Computeren viser de fulde navne.
+- Ingen »Trin N af 4«, ingen streger, ingen overskrift over rækken, ordet »Succesraketten« står ikke.
+- VÆLTER og erstatter som den ene regel for briefens trin: procesbaren = rød flise med streger (17/11, v3367), den hvide procesbar med streger (18/11 formiddag) og »Oversigt ude af baren« (17/11). De gælder ikke længere, når dette er bygget.
+- Hører til den nye opbygning Skriv · Optag · Post (18/11). Porten skal måle højde, bredde og rød markering, når det bygges.
+
+## 18. november · LYSEBLÅ FLISER HAR ALTID RAMME — ÉN REGEL (HÅRD, Ida 18/11: »skriv ind i designlåsen at lyseblå fliser altid skal have ramme omkring«)
+- Hver lyseblå flade #F0F5F8 (hjælpeflisen/tips, captionens felt, venter/låst, info-noter) har ALTID en tynd ramme: 1 px #DEDAD4, husets grå. Aldrig lyseblå uden kant, og aldrig en lyseblå kant.
+- Symbolfelterne (de små runde felter med symbol) er ikke fliser og er uændrede.
+- VÆLTER »hjælpeflisen er lyseblå uden kant« (15/11) og »captionens felt uden kant« (15/11). De er strøget, hvor de stod.
+- Gælder app, bud og mockups, kundeapp og Backstage. Ikke bygget i appen pr. 18/11; porten skal måle det, når det bygges.
+
+## 18. november · TILBAGE PÅ TELEFONEN = PIL OG ORD, INGEN KASSE — ÉN REGEL (Idas klik »Bud 3« 18/11, fem bud på 4iX24RoBtzfELWd9RMyb9P) · ikke bygget
+- Ida: »jeg synes tilbageknappen er for stor … jeg tror vi skal have særskilt regel for tilbage på mobil … så vi kan låse det«.
+- **Telefonen (under 900 px), hele appen, kundeapp og Backstage:** en pil mod venstre (tegnet, 18 px, streg 2) + ordet »Tilbage« i Poppins 15 / 400 / #1A1A1A. Ingen kant, ingen flade, ingen pille. Trykfeltet er mindst 44 højt. Står øverst til venstre.
+- På sider med coverbillede står den samme form i coverets øverste venstre hjørne i hvid.
+- Ordet »Tilbage« står der altid (reglen fra manualen består).
+- VÆLTER for telefonen: Tilbage som knap på 56 (12/11 + 14/11 »Ja, 56 også i coveret«), 48 i briefen (16/11) og den gennemsigtige pille med hvid ring i coveret (25/9). De er strøget.
+- Computeren er uændret: Tilbage er en knap på 44.
+- Den lange grå »Tilbage« nederst ved siden af »Næste« i trin-forløb er en anden knap (forrige trin) og er stadig 56.
+- Porten skal måle formen på 390, når den bygges.
+
+## 18. november · SIDENS BAGGRUND ER DEN VARME HVIDE #FAF9F5 — ÉN REGEL (Idas klik 18/11, billeder 4iX24RoBtzfELWd9RMyb9P) · ikke bygget
+- Der stod to regler: #FAF9F5 (låst 29/10) og »hvid #FFFFFF overalt« (14/11). Appen var hvid, målt 18/11 på Hjem, Content kalenderen, briefoversigten og Fang dem på 390 og 1440. Ida så begge side om side og valgte den varme hvide.
+- Siden er #FAF9F5 i hele appen, telefon og computer, kundeapp og Backstage. Fliser, felter og chips er hvide #FFFFFF med kant #DEDAD4.
+- Reglen fra 14/11 er slettet. Porten skal måle #FAF9F5 som sidens baggrund, når det bygges.
+
 ## 18. november · MIN ENERGIBANK I VÆRKTØJSKASSEN · KONTOUDTOGET SOM OPGAVE (Idas »Ja, læg den ud« 18/11 på det byggede, set på 390 og 1440) · v3380
 - Ida: »kan vi lave energibanken i værktøjskassen også - men sørge for at den er lukket indtil modul 2 åbner og også opgaven kontoudtoget?«
 - **Flisen »Min Energibank«** står i Værktøjskassen efter Mit Shinebarometer. Låst indtil Modul 2 åbner: grå ikon og navn, lås og »Åbner om …« under navnet. Et tryk på den låste giver låsearket »Min Energibank åbner med modul 2 …«.
@@ -61,7 +122,7 @@
 ## 17. november · BRIEFEN: PROCESBAREN = OVERSKRIFTEN · INTET COVER · FANG DEM, NY FORM (Idas klik 17/11 »Ja, byg den«) · v3367
 - **Procesbaren** (tegning claude.ai/artifact/T65tqLBUhRFHAYmErDQ8GV): rød flise (#FC2404, hjørner 20). Til venstre »Trin N af M« (12/16) og trinnets navn (telefon 20/28, computer 22/28). Til højre en streg pr. trin med navnet under (telefon 11/16, computer 12/16): fyldt hvid 6 = gjort · fyldt hvid 10 = her · tom ramme 1,5 = mangler. Kun hvidt på rødt, Poppins 400. Telefon 120 høj, computer 74. Et tryk på en streg hopper til trinnet.
 - **»Oversigt« er UDE af baren** (Ida 17/11: »jeg tror vi skal have overblikket ud af den«) — vælter 15/11. **Ordet Succesraketten og raketten er ude** (Ida 17/11: »vil du fjerne succesrakket igen«). Telefon: Tilbage fører til briefoversigten. Computer: vejen til oversigten er ÅBEN hos Ida.
-- **Intet coverbillede i briefen** (Ida 16/11): Tilbage (telefon 48) og titlen i sort Didot, én venstrekant. Gælder kun, når en brief står åben (`body.brief-aaben`).
+- **Intet coverbillede i briefen** (Ida 16/11): Tilbage (telefon: se »TILBAGE PÅ TELEFONEN« 18/11 — de 48 er slettet) og titlen i sort Didot, én venstrekant. Gælder kun, når en brief står åben (`body.brief-aaben`).
 - **Hjælpeflisen** (#F0F5F8, hjørner 20, luft 20): pære i hvid cirkel (32) + trinnets linje (15/24), ingen overskrift. Telefon: 12 under baren (`#briefTipTlf`). Computer: højre spalte, flugter med den hvide flise på Fang dem.
 - **Fang dem:** »Scene 1 · Hooket« 17/24 sort over flisen (32 over, 8 under) · ingen »Klip 1«-række · etiketten hedder **»Det, man ser«** (vælter 16/11 »Hvad ser man?«) · ét felt på 64 med pladsholderen »Hvad skal få [målgruppen] til at stoppe op?« · et tomt tilføj-felt har ingen cirkel foran.
 
@@ -254,7 +315,7 @@ Alle tests uden for spørgeskema, screening og »Analyse af tests« bruger nu te
 Idas ord: »felterne man skal skrive i får den lyse grå farve vi har låst – lige nu er det hele lidt for hvidt i hvidt« (ja til buddet, artifact RgQaRDMAABNcSeza31njf5) · »der er for meget luft mellem spørgsmålet og flisen eller spørgsmålet og chips« · »og den flise til højre skal altid være den lyseblå«.
 - **Skrivefelterne i briefen** (alle felter, man skriver i) står på lysegrå uden kant (#F5F5F5 fra 16/11, v3355; før #EEEEEE). Fliserne er hvide. Et forslag, der ikke er valgt, kendes på den grå tekst.
 - **Spørgsmål → felt eller chips: 8** (var 16). Porten måler 8 (`probe-maal.js`, FLISETITEL afstand).
-- **Hjælpeflisen (tips) er altid lyseblå #F0F5F8 uden kant**; pærens runde felt er hvidt. Vælter klik 2 fra 14/11 (»hjælpefliser er hvide«).
+- **Hjælpeflisen (tips) er altid lyseblå #F0F5F8 MED kant #DEDAD4** (»uden kant« er strøget 18/11, se »LYSEBLÅ FLISER HAR ALTID RAMME«); pærens runde felt er hvidt. Vælter klik 2 fra 14/11 (»hjælpefliser er hvide«).
 - Koden: blokken »IDAS RUNDE 15/11« sidst i stilarket, efter markeringsfarverne.
 
 ## **POPUPPEN RETTES, SOM KUNDEN SER DEN (Ida 15/11, v3311)**
@@ -262,7 +323,7 @@ I Energida Studio står »Popup efter lektionen« og »Feedback« som kundens eg
 ## 15. november · BILLEDEOPSLAG HAR SIT BILLEDE PÅ BRIEFOVERSIGTEN · CAPTIONENS FELT ER LYSEBLÅT (Ida 15/11, v3312)
 Idas ord: »på et billedeopslag skal man i briefoversigten også se en placeholder som en karrussel med teksten over hvor man kan oploade billede« · »vil du lave baggrundsfarven i captionflisen der hvor man kan/skal kopiere teksten den lyseblå«.
 - **Billedeopslag:** flisen »Billede« står på briefoversigten mellem hooket og captionen — ét billede i 4:5 med hookets tekst over (grå flade, til der er uploadet), »Upload billede« ved siden af og »Download billede« under. Samme motor som karrusellens slides (nøgle `"0"`, `cvForsideNogler()`); før stod der ingenting på et billedeopslag.
-- **Captionens felt** (det, man kopierer) står på lyseblå #F0F5F8 uden kant. Idas eget valg; vinder her over »lyseblå flade = kun venter/låst« (14/11).
+- **Captionens felt** (det, man kopierer) står på lyseblå #F0F5F8 med kant #DEDAD4 (»uden kant« er strøget 18/11). Idas eget valg; vinder her over »lyseblå flade = kun venter/låst« (14/11).
 - »i« i info-cirklen er et lille i, også når overskriften står i versaler.
 - Ikke set på en rigtig brief (kun testudgaven); upload og download er ikke prøvet med en rigtig fil.
 
@@ -418,7 +479,7 @@ Idas ord: »disse forslag skal slettes - men jeg skal kunne tilføje ide til opb
 Kilden i koden er blokken »LÅS 14/11« sidst i det sidste `<style>` i `index.html`. Porten måler dem (`probe-maal.js`: `maalLaas1411`, `maalKalender1411`).
 1. **En valgt chip er rød med hvid tekst overalt** (Ida 14/11: »ja rød overalt - pånær de øverste chips i briefoversigten der viser de pågældende valg i fakta« · »ingen chips må have disse flueben - der skal de i stedet blive røde som alt andet«). Flade #FC2404, hvid tekst, intet flueben, ingen grå eller lysegrå »valgt«. Gælder b2b og admin: story-siden, story-arket, slide-værktøjet, cover-editoren, Profilen, mødenoterne og alle ark. Ikke valgt er stadig hvid med grå kant og grå tekst. Undtaget: fakta-chipsene øverst på briefoversigten (`.fb-hc`, kun visning) og de lange valgfliser (`.sa-lang`, som er fliser med husets flueben). Vælter 9/10 »valgt = lysegrå, aldrig rød«, 4/11 »grå flueben i cover-editoren« og 9/11 »valgt vises med mørkere kant«.
 2. **Alle dropdowns ser ud som Content kalenderens** (Ida 14/11: »alle drop downs i hele mit system skal låses som den i contentkalenderen«): 44 høj · hjørner 14 · 1 px kant #DEDAD4 · hvid · indre luft 14 · teksten til venstre i sort · pilen til højre i grå #6F6B66. Pillen med centreret tekst er død, og der findes ingen dropdown på 32, 36 eller 40. Bredden følger stedet; formen er låst. Listen, der åbner, er uændret. Vælter 9/11-statuspillen og 13/11 »dropdown i chipsform«. Bygget i v3269 for briefens status; resten af systemet rulles ud med UX-politiet.
-3. **Hver knap med tekst er 56 høj** (Ida 12/11 + 14/11: »og det er ALLE knapper. også rediger er en navigationsknap der skal have 56px« · klik »Ja, 56 også i coveret«). Også coverets »Tilbage« og briefoversigtens »Rediger«. Kun chips (32) og runde ikonknapper (36) er undtaget. En tekstknap i en anden højde er en fejl, ikke et valg.
+3. **Hver knap med tekst er 56 høj** (Ida 12/11 + 14/11: »og det er ALLE knapper. også rediger er en navigationsknap der skal have 56px« · klik »Ja, 56 også i coveret«). Også briefoversigtens »Rediger« (coverets og sidens »Tilbage« på TELEFONEN er undtaget siden 18/11, se »TILBAGE PÅ TELEFONEN«; på computeren er Tilbage stadig en knap). Kun chips (32) og runde ikonknapper (36) er undtaget. En tekstknap i en anden højde er en fejl, ikke et valg.
 4. **Content kalenderen og briefen:** Drive-mappen står ikke som symbol i kalenderens værktøjslinje, og den røde knap hedder »+ Ny«. I briefen på computeren står kun de tre prikker ved status; blyanten er væk, og »Ret titlen« ligger under prikkerne. Porten forbyder løse ikoner dér.
 
 ## 13. november · HEALTH COACH — NOTERNE TIL DEN ENKELTE TEST (Idas klik 13/11, v3265)
@@ -4294,11 +4355,11 @@ Ida 14/11: »jeg HADER denne farve!« (den sandfarvede markering #FAF9F5 / #F1EF
 - Rød #FC2404 er stadig kun det aktive/valgte, man trykker på (Næste, valgt chip, valgt cirkel). Fliser er hvide.
 - Aldrig sort eller mørk flade (Ida 14/11: »ALDRIG SORT!!!«).
 - **AFGJORT 14/11 (Idas fire klik efter ekspertgennemgangen):**
-  1. **Sidens baggrund er hvid #FFFFFF overalt**, også Forløbet, lektionerne og log ind. Fliserne skilles fra siden med kant #DCE8F0 og den bløde skygge.
-  2. ~~Hjælpefliser er hvide~~ VÆLTET 15/11: hjælpeflisen er altid lyseblå #F0F5F8 uden kant (se øverst). Før: **Hjælpefliser (briefens hjælp, tips) er hvide** med kant #DEDAD4 (grå, 15/11) og et lille rundt symbolfelt med en pære. Lyseblå FLADE betyder kun »venter/låst«.
+  1. ~~Sidens baggrund er hvid #FFFFFF overalt~~ SLETTET 18/11: Ida valgte den varme hvide #FAF9F5 (se øverst). Fliserne er hvide med kant #DEDAD4 og den bløde skygge.
+  2. ~~Hjælpefliser er hvide~~ VÆLTET 15/11: hjælpeflisen er altid lyseblå #F0F5F8, og siden 18/11 MED kant #DEDAD4 (se øverst). Før: **Hjælpefliser (briefens hjælp, tips) er hvide** med kant #DEDAD4 (grå, 15/11) og et lille rundt symbolfelt med en pære. Lyseblå FLADE betyder kun »venter/låst«.
   3. **Chips, der ikke er valgt: HVID flade, grå kant #DEDAD4, grå tekst #6F6B66** (Ida 15/11: »jeg har udtrykt mig meget tydeligt til designlåsen omkring at alle chips i briefen når de ikke er valgt skal have neutral baggrund og grå streg og grå tekst« — den grå flade #EEEEEE uden kant fra 14/11 er VÆLTET). Valgt chip er rød.
   4. **Symbolfelter** (pære, lås, info): rundt felt #F0F5F8 og symbol i grå #6F6B66. Den lyseblå bruges til symbolfelter, aldrig som symbolets streg.
-- Én opgave pr. farve: **rød** = det aktive, man trykker på · **grå #EEEEEE** = valgt menupunkt/ikke valgt · **lyseblå flade #F0F5F8** = venter/låst og symbolfelter · **#DEDAD4 (grå)** = tynde kanter · **hvid** = side og fliser.
+- Én opgave pr. farve: **rød** = det aktive, man trykker på · **grå #EEEEEE** = valgt menupunkt/ikke valgt · **lyseblå flade #F0F5F8** = venter/låst og symbolfelter · **#DEDAD4 (grå)** = tynde kanter · **hvid** = fliser · **#FAF9F5** = siden (18/11).
 
 ## Overskriften over flisen — hele admin (Ida 15/11, klik på UX-politiets rettelse 1: »Ja, byg den«)
 Etiketten, der stod INDE i admin-fliserne med en streg under (`.bs3-et` i `.bs3-fl`, `.ksy-eti` i `.ksy-fl`, Økonomis `.kpi-label` og `.ws-head` i fliserne øverst), står nu UDEN FOR flisen lige over den efter 12/11-reglen: Poppins 12/400, versaler, spredning 1,5, #6F6B66, venstrekant = flisens ydre kant, 8 px ned. Tekst til højre (»Sidste 30 dage«, »Opdateret kl.«, »2 lektioner«, »set af«) står i samme linje over flisen i almindelige bogstaver. Ingen streg. `.bs3-ver` har fået de samme mål (var 10/1,4/#9A9590, 10 px). Står flisen lige under en overskrift, er etiketten flisens titel (sort, 14) — aldrig to overskrifter oven på hinanden. Økonomis røde ikoner i tal-fliserne er ude. Biblioteket (`.bib2`) er urørt (egne låste fliser 8/10). Én CSS-blok sidst i stilarket (»OVERSKRIFTEN STÅR OVER FLISEN«), begge flader. Målt i selen på 1440 + 390: Hjem, Indbakken, CRM-kundesiden, Økonomi, Mails, Energida Studio. IKKE i denne rettelse: de gamle `.ws-card`-kort i Maskinrummet (rettelse 2), Mails' »Ret mailen« (pile i overskriftens linje, 17 px), Klipperummets kort.
