@@ -246,14 +246,18 @@ setTimeout(async function(){ try {
   try{ STRATEGI_TEMAER.push({navn:"Menneskene bag", formaal:"kunderne skal lære os at kende", foelelse:"Dem kan jeg lide", eksempler:[]}); }catch(e){}
   var H1="Vi er aldrig enige om farver — og det er derfor, butikken virker";
   IDEER.push({id:"mk1",titel:"To om ét indkøb",soejle:"Menneskene bag",type:"Reel",status:"Brief i gang",dato:"2026-11-10",brief:{format:"Reel",platform:["Instagram"],beskrivelse:"Vi viser, hvordan vi to vælger forskelligt.",maal:"Flere kommentarer",hookTekst:H1,hookTekstListe:[H1,"Min kollega vælger altid det modsatte af mig"],hookTekstValgt:0,thumb:"To mennesker.",thumbListe:["To mennesker."],thumbValgt:0,klip:[{ser:"Vi står med hver vores favorit",tekst:H1,siger:"Vi er aldrig enige"},{ser:"Klip mellem de to valg",tekst:"Hvem har ret?",siger:"Hvem har ret?"},{ser:"Vi griner",tekst:"Skriv i kommentarerne",siger:"Hvad ville du vælge?"}],ctaVideo:"Skriv i kommentarerne",caption:"Vi køber ind sammen — og vi er sjældent enige.\n\nHvem er du mest enig med?",ctaCaption:"Kommentér opslaget",cta:"Kommentér opslaget",hashtags:"#menneskenebag #butiksliv",linkIndhold:"https://drive.google.com/x"}});
-  /* DÆKFLADEN VED SIDESKIFT (Ida 4/11: »jeg vil ikke se den gamle side, hop eller ændringer efter et klik«): fra kalenderen ind i briefen — så længe sideskiftet holdes, må det, fingeren rammer midt i indholdsfladen, være dækfladen; aldrig den gamle side */
+  /* SIDESKIFTET (Ida 19/11 — afløser 4/11: »den skal blive på siden indtil den nye er loadet«): fra kalenderen ind i briefen står den GAMLE side stille (frosset), til den nye er klar —
+     intet tredje, ingen halvbygget ny side, intet tomt. Loaderen (#skDaek, markbilledet) må først komme efter 900 ms (kun rigtig langsomt net). Hakjægeren (SELE HAK) måler blinket i rigtig tid. */
   TRIN="dækflade"; showTab(8); await vent(900);
-  var uden=[], prøver=0, holdt=false;
+  var uden=[], prøver=0, holdt=false, tidligLoader=null, t0=performance.now();
   var pt=function(){ var ref=document.querySelector(".content"); var r=ref?ref.getBoundingClientRect():{left:0,width:innerWidth}; return [Math.round(r.left+r.width/2), Math.round(innerHeight/2)]; };
-  var tikker=true; (function frame(){ if(!tikker) return; if(document.body.classList.contains("sk-holder")){ holdt=true; prøver++; var p=pt(), el=document.elementFromPoint(p[0],p[1]); if(!el||!el.closest("#skDaek")) uden.push((el&&kl(el))||"intet"); } requestAnimationFrame(frame); })();
+  var tikker=true; (function frame(){ if(!tikker) return; if(document.body.classList.contains("sk-holder")){ holdt=true; prøver++; var p=pt(), el=document.elementFromPoint(p[0],p[1]), ms=Math.round(performance.now()-t0);
+    if(el&&el.closest("#skDaek")){ if(ms<850&&!tidligLoader) tidligLoader=ms; }
+    else if(!el||!el.closest("#screen8")) uden.push((el&&kl(el))||"intet"); } requestAnimationFrame(frame); })();
   openBriefSide("mk1"); await vent(2600); tikker=false;
-  N++; if(holdt&&uden.length) fejl("DÆKFLADE: den gamle side var synlig under sideskiftet ("+uden.length+" af "+prøver+" billeder, fx "+uden[0]+")");
-  N++; if(document.getElementById("skDaek")&&getComputedStyle(document.getElementById("skDaek")).display!=="none") fejl("DÆKFLADE: dækfladen står stadig, efter briefen er klar");
+  N++; if(holdt&&uden.length) fejl("SIDESKIFT: under skiftet sås andet end den gamle side ("+uden.length+" af "+prøver+" billeder, fx "+uden[0]+")");
+  N++; if(tidligLoader!==null) fejl("SIDESKIFT: loaderen kom allerede efter "+tidligLoader+" ms — den må først komme efter 900 ms");
+  N++; if(document.getElementById("skDaek")&&getComputedStyle(document.getElementById("skDaek")).display!=="none") fejl("SIDESKIFT: loaderen står stadig, efter briefen er klar");
   try{ document.querySelectorAll("#turOverlay,.tur-slor,#turKort,#nyVersion,#dagensKort").forEach(function(e){e.remove()}); }catch(e){}
   if(!document.body.classList.contains("mb")){ console.log("SELE MAAL FEJL: body.mb er ikke aktiv paa "+innerWidth); return; }
   TRIN="forside"; await vent(400); maalSide(); maalHero(); maalForsideTlf(); TRIN="upload"; try{ await maalUpload(vent); }catch(e){ fejl("upload-trin: "+(e&&e.message)); } TRIN="forside";

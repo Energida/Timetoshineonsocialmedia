@@ -38,6 +38,8 @@ if [ -z "$C" ]; then for k in "$(ls -d "$HOME"/.cache/ms-playwright/chromium-*/c
 echo "SELE chromium: $C"
 HL="--headless=new"; case "$C" in *headless_shell*) HL="--headless";; esac
 TO=""; command -v timeout >/dev/null 2>&1 && TO="timeout 90"; command -v gtimeout >/dev/null 2>&1 && [ -z "$TO" ] && TO="gtimeout 90"
+# GITHUB FAAR 180 SEK (Ida 19/11: »jeg bliver ved med at få fails?!!!«): GitHubs maskine er langsommere; brief-maalingen blev stoppet efter 90 sek. i begge forsoeg (e32e29f, a334aa1) — »ingen maaling fra chromium«, ikke et fund i appen. Lokalt stadig 90.
+[ "${GITHUB_ACTIONS:-}" = "true" ] && [ -n "$TO" ] && TO="${TO% *} 180"
 PORT=$(python3 -c "import socket;s=socket.socket();s.bind(('127.0.0.1',0));print(s.getsockname()[1]);s.close()")
 cd "$MAAL" || exit 1
 python3 -m http.server "$PORT" --bind 127.0.0.1 >/dev/null 2>&1 &
@@ -165,11 +167,11 @@ echo "$UD3"
 [ -z "$UD3" ] && { echo "SELE BRIEF FEJL: ingen maaling fra chromium — de SIDSTE 30 konsollinjer (18/9: de foerste 20 var kun opstartsstoej):"; echo "$RAA3" | grep -a 'CONSOLE' | tail -30 | cut -c1-400; echo "--- og de foerste 5 raa linjer:"; echo "$RAA3" | head -5; }
 # MAALPORTEN (Ida 4/11: »kontrol af ALT … hoejder, farver, fonte og stoerrelser paa alt, ogsaa knapper«): probe-maal.js maaler briefens sider mod MAALKORT.md paa 390 og 1440 —
 # fliser, titler, etiketter, felter, chips (plus 6 px), knapper (tekst i midten), skillelinjer, feltflugt, ikonraekken, musen over heroen og daekfladen ved sideskift. Een afvigelse = FEJL.
-KM=$(python3 -c "import urllib.parse,sys;print(urllib.parse.quote(open(sys.argv[1]).read()))" "$ROD/tools/designlaas/probe-maal.js")
+cp "$ROD/tools/designlaas/probe-maal.js" "$MAAL/probe-maal.js"
 MAAL_OK=1
 for MK in "390 1200" "1440 940"; do
   set -- $MK
-  RAAM=$($TO "$C" $HL --no-sandbox --disable-gpu --window-size=$(($1+40)),$(($2+60)) --virtual-time-budget=90000 --enable-logging=stderr --v=0 --screenshot="$MAAL/maal-$1.png" "http://127.0.0.1:$PORT/sele.html?vis=kunde&fil=index-sele.html%3Fselekode%3DHINGES2026&bred=$1&hoej=$2&kode=$KM" 2>&1)
+  RAAM=$($TO "$C" $HL --no-sandbox --disable-gpu --window-size=$(($1+40)),$(($2+60)) --virtual-time-budget=90000 --enable-logging=stderr --v=0 --screenshot="$MAAL/maal-$1.png" "http://127.0.0.1:$PORT/sele.html?vis=kunde&fil=index-sele.html%3Fselekode%3DHINGES2026&bred=$1&hoej=$2&kodefil=probe-maal.js" 2>&1)   # kodefil (19/11): probe-maal.js er over 64 KB — for lang til en adresse
   UDM=$(echo "$RAAM" | grep -a 'CONSOLE' | sed -E 's/^.*CONSOLE[:(][0-9]+\)?\] //; s/", source:.*$//; s/^"//' | grep -a 'SELE MAAL')
   echo "[$1] ${UDM:-SELE MAAL FEJL: ingen maaling fra chromium}"
   echo "$UDM" | grep -q "SELE MAAL OK" || MAAL_OK=0
@@ -243,5 +245,32 @@ print('SELE SPOEGELSE OK: alle sideskift er rene paa 390 og 1440' if not fejl el
 " "$ROD" 2>&1)
 echo "$UDJ"
 echo "$UDJ" | grep -q "SELE SPOEGELSE OK" || HERO_OK=0
+# HAKJAEGEREN I PORTEN (Ida 19/11: »jeg oplever en masse hak i b2b siden når man vil navigere frem og tilbage - spøgelsessider mm. - specielt ved coveret i briefen«):
+# i RIGTIG tid (realtid.mjs) filmes kalender → brief → Tilbage, brief → brief, browserens Tilbage/Frem og menuskift paa 390 og 1440 — loaderen maa ikke blinke,
+# en brief maa ikke vise den forrige, coveret maa ikke blinke eller springe, intet maa hoppe, og siden maa ikke fryse over 300 ms. Modproevet paa v3385: 16 fund.
+# GITHUB HAR NODE 20 UDEN WEBSOCKET (19/11: nøglen, der lægger ud, må ikke rette .github/workflows): dér siges det højt, og hakjægeren springes over — lokalt (Node 22+) er den altid med, og den køres før hver udrulning.
+if ! node -e "if(typeof WebSocket==='undefined')process.exit(1)" 2>/dev/null; then UDK="SELE HAK IKKE MAALT: Node $(node -v 2>/dev/null) har ingen WebSocket — hakjaegeren koeres lokalt foer udrulning"; [ -n "${GITHUB_ACTIONS:-}" ] && echo "::notice title=Hakjægeren ikke målt::Node uden WebSocket"; else
+UDK=$(CHROME="$C" python3 -c "
+import sys; sys.path.insert(0, sys.argv[1] + '/tools/sikkerhedschefen')
+import tjek_hak as t
+fejl = 0
+for b in (390, 1440):
+    for r in t.jaeger(sys.argv[1], b):
+        if r.tilstand != 'BESTÅET': fejl += 1; print('SELE HAK FEJL: ' + r.navn + ' · ' + r.tilstand + ((' · ' + r.detalje) if r.detalje else ''))
+print('SELE HAK OK: ingen hak i sideskiftene paa 390 og 1440' if not fejl else 'SELE HAK FEJL: %d fund' % fejl)
+" "$ROD" 2>&1); fi
+echo "$UDK"
+echo "$UDK" | grep -q "SELE HAK OK\|SELE HAK IKKE MAALT" || HERO_OK=0
+# STIEN I MELLEMBREDDEN (Ida 19/11: »hvordan er det MULIGT at jeg kan finde denne sti???«): mellem 761 og 899 px (iPad paa hoejkant, smalt vindue) gjaldt hverken telefonens
+# eller computerens sti-regel. Her maales kalenderen og briefen som kunde paa 768 og 834 px: intet synligt led i stien (Hjem / Content kalenderen / …) og ingen »/«.
+KS=$(python3 -c "import urllib.parse;print(urllib.parse.quote('setTimeout(function(){try{dagensKortLuk()}catch(e){} [8,7].forEach(function(t){});var n=[].filter.call(document.querySelectorAll(\".navsti-led,.navsti-nu,.navsti-skil\"),function(e){var r=e.getBoundingClientRect(),c=getComputedStyle(e);return r.width>0&&r.height>0&&c.display!==\"none\"&&c.visibility!==\"hidden\"&&parseFloat(c.opacity)>0.05});console.log(n.length?\"SELE STI FEJL: \"+innerWidth+\" px viser stien: \"+n.map(function(e){return e.innerText.trim()}).join(\" \"):\"SELE STI OK \"+innerWidth)},2500)'))")
+STI_OK=1
+for SB in 768 834; do
+  RAAS=$($TO "$C" $HL --no-sandbox --disable-gpu --window-size=$((SB+40)),1000 --virtual-time-budget=20000 --enable-logging=stderr --v=0 --screenshot="$MAAL/sti-$SB.png" "http://127.0.0.1:$PORT/sele.html?vis=kunde&fil=index-sele.html%3Fselekode%3DHINGES2026&tab=8&bred=$SB&hoej=940&kode=$KS" 2>&1)
+  UDS=$(echo "$RAAS" | grep -a 'CONSOLE' | sed -E 's/^.*CONSOLE[:(][0-9]+\)?\] //; s/", source:.*$//; s/^"//' | grep -a 'SELE STI')
+  echo "${UDS:-SELE STI FEJL: ingen maaling paa $SB}"
+  echo "$UDS" | grep -q "SELE STI OK" || STI_OK=0
+done
+[ "$STI_OK" = "1" ] || HERO_OK=0
 [ "$STREG_OK" = "1" ] && [ "$PLUS_OK" = "1" ] && [ "$DAEK_OK" = "1" ] && [ "$HERO_OK" = "1" ] && [ "$MAAL_OK" = "1" ] && [ "$REGLER_OK" = "1" ] && echo "$UDG" | grep -q "SELE GENSTART OK" && echo "$UD0" | grep -q "SELE POPUP-KILDE OK" && echo "$UD" | grep -q "SELE LAAS OK" && echo "$UD2" | grep -q "SELE SIDER OK" && echo "$UD4" | grep -q "SELE SIDER OK" && echo "$UD5" | grep -q "SELE BUD OK" && echo "$UD6" | grep -q "SELE BUD OK" && [ "$UX_OK" = "1" ] && [ "$BS_OK" = "1" ] && echo "$UD3" | grep -q "SELE BRIEF OK" && exit 0
 echo "SELE LAAS FEJL: maalingen sagde ikke OK"; exit 1
