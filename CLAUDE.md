@@ -1,3 +1,5 @@
+> **SKRIV DANSK — ALTID (Ida 19/11: »SKRIV DANSK! Lås det alle steder. Vil ikke se engelsk igen!!!!«).** Hvert ord Ida kan se er dansk: svar, statuslinjer undervejs, billedtekster, spørgsmål, knapper og kommandobeskrivelser. Kun kode og filnavne må stå som de er.
+
 > **Rører din ændring database, auth, storage eller Edge Functions?
 > Læs `ENERGIDA SECURITY CONTRACT.md` i denne mappe FØRST. Den er bindende.**
 
