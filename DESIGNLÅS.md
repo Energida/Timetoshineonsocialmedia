@@ -1,3 +1,10 @@
+## 19. november · SPØRGSMÅLSBOBLEN I VÆRKTØJSKASSEN, KUN HOS ACORNS (Ida 19/11: »fucking genialt - skal vi lægge den i værktøjskassen« · klik »Kun Acorns« · »byg den ind i værktøjskassen nu«) · bygget, ikke lagt ud
+- **Døren »Spørgsmålsboblen«** (husets dør, kun navnet) står i Værktøjskassen efter Indholdsmappen — kun når koden er ACORNS2026 (`SBB_KODER`). Andre kunder ser den ikke.
+- **Siden (screen 34):** fire fliser med overskriften over flisen: »Afsender« (tekstfelt), »Initialer i cirklen« (højst to tegn; tomt = afsenderens forbogstav, Ida 19/11: »man skal også kunne ændre initialerne i cirklen«), »Spørgsmål« (tekstfelt) og »Sådan ser den ud« (chips Reel · Rosa slide · Uden baggrund, valgt = rød; boblen vist i telefonstørrelse; »Blød skygge under boblen«; husets grå knap »Hent som PNG«).
+- **Boblen = bud 12.3** (claude.ai/artifact/HE77uJWW6AgNStMBko4ryh): hvid boble, hjørner 4 cqw, hale nede til venstre; rundt symbol i lys rosa #FCE7E6 med kant #F0D1CE og sort Didot-forbogstav; afsender Poppins 2,9 cqw, spørgsmål Poppins 4,4 cqw. PNG'en har gennemsigtig baggrund og tegnes på canvas, så den er præcis det, man ser. På telefonen åbner delingsarket (»Gem billede«), på computeren hentes filen.
+- Ingen data: intet gemmes, intet sendes.
+- NYE ORD, der venter på Idas godkendelse: Spørgsmålsboblen · Afsender · Initialer i cirklen · Spørgsmål · Sådan ser den ud · Reel · Rosa slide · Uden baggrund · Blød skygge under boblen · Hent som PNG · »Kundens navn eller brugernavn« · »Skriv kundens spørgsmål«
+
 ## 19. november · MØDETYPEN GÆTTES ALDRIG (HÅRD, Ida 19/11: »jeg har oprettet ugentlig contentmøde og på kundens dashboard står der nu månedlig????????? WTF sker der lige??«) · v3389, ikke lagt ud
 - Et nyt møde er altid Ugens møde, til man selv vælger Månedens møde. Valget »Ugens møde · Månedens møde« står altid i arket — ved Opret og Ret, også fra CRM. Appen gør aldrig selv et møde til månedens ud fra tælleren (»hvert 4. møde«); rytmen er en anbefaling, ikke en automatik.
 

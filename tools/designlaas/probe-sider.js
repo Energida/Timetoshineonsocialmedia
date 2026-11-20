@@ -24,7 +24,8 @@ const SIDER = [
   ["tilpas", function () { tilpasAaben("drejebog"); }],
   ["forloeb", function () { openForloeb(); }],
   ["profil", function () { minProfilAaben(); }],
-  ["lektion", function () { OB_SKEMA = true; showTab(12); visLektion(KURSUS_LEKTIONER[0].id); }]   /* skemaet sendt, ellers maales laasens ark (28/9) */
+  ["lektion", function () { OB_SKEMA = true; showTab(12); visLektion(KURSUS_LEKTIONER[0].id); }],   /* skemaet sendt, ellers maales laasens ark (28/9) */
+  ["spoergsmaalsboblen", function () { var k = currentKode; currentKode = "ACORNS2026"; SBB.afs = "karina_p"; SBB.q = "Hvordan vasker jeg uldtrøjen, så den holder formen?"; sbbAabn(); currentKode = k; }]   /* kun hos Acorns (Ida 19/11) — sidst, saa koden ikke smitter af paa de andre sider */
 ];
 const FLISER = ".ws-card,.kort,.card,.hf-kort,.bsam-flise,.idea-kort,.post-card,.bs-doer,.kv-flise,.ib-kol,.lek-kort,[class$=-flise],[class$=-kort]";
 function siderRod() { var lv = document.getElementById("lekVis"); if (lv && lv.classList.contains("on")) return lv; return document.querySelector(".screen.active") || document.body; }
