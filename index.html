@@ -45845,7 +45845,7 @@ function lekOpgFliseHtml(id, l, aktive, ix) {
      cirkel og sort overskrift øverst, svag streg, spørgsmålene/opgavens punkter som rolig liste, og knapperne i flisen.
      Refleksionsøvelse: »Tag refleksionsøvelsen« / »Senere«. Opgave: »Tag opgaven« / »Jeg gør den senere« (næste lektion åbner imens). */
   const opg = oevArt(id) === "opgave", idS = esc(String(id)).replace(/'/g, ""), udsat = !!KURSUS_UDSAT[id];
-  const tit = g ? storStart(oevOrd(id)) : (udsat ? 'Venter på dig' : storStart(oevOrd(id)));
+  const tit = g ? lekOevNavn(l) : (udsat ? 'Venter på dig' : storStart(oevOrd(id)));
   let under = 'Lektion ' + lekVisNr(id) + ' · ' + n + ' spørgsmål';
   if (g) under = '';
   else if (udsat) under = opg ? (naeste ? 'Lektion ' + lekVisNr(naeste.id) + ' er åben. ' : '') + 'Opgaven står også på Forsiden.' : (laasLinje || under);
@@ -45940,7 +45940,7 @@ function ovNorm(x) {
   /* Uden id, uden beskrivelse og uden type er en opgave stadig bare sit spoergsmaal — saa
      fyldes basen ikke med tomme felter. Har den et id, ER den et objekt, og id'et maa
      ALDRIG falde af her: saa ville normaliseringen selv rive svaret loes fra spoergsmaalet. */
-  if (!b && !id && !(erObj && x.type)) return q;
+  if (!b && !id && !(erObj && (x.type || x.eks || x.side))) return q;
   return Object.assign({}, erObj ? x : {}, { spm: q, besk: b });
 }
 /* ET OPGAVE-ID UDREGNES ALDRIG (HÅRD, Ida 6/8).
@@ -47297,34 +47297,51 @@ function lekMbRender() {
    Samme flise som spørgeskemaet i 0.6 (lk-skema-intro): etiket · titel i Didot · tekst · to knapper (computer side om side, hvid til venstre; telefon under hinanden, rød øverst).
    Trin: intro → ét spørgsmål ad gangen (samme motor, kladde og gem som før: OVELSE, ovelseNaeste) → »Godt gået«. »Jeg gør det senere« / »Gem og fortsæt senere« = udskudt (KURSUS_UDSAT), næste lektion åbner. */
 let LEK_OEV = null;
+/* v3408 · OPGAVEN KAN HAVE SIT EGET NAVN, FLERE FELTER PÅ SAMME SIDE OG ET EKSEMPEL I SKRIVEFELTET (Idas klik 20/11 »Ja, byg opgave-fanen«, artifact VvaeVkZ6HsqVESG3Z3srVZ;
+   Ida: »opgave tydeligt hed Byg dit Shinebarometer og Overskud havde begge tekstfelter … på samme side og det samme med underskud«).
+   Spørgsmål med samme sidenavn (spm.side) lige efter hinanden vises sammen. Uden sidenavn: ét spørgsmål ad gangen som før. */
+function ovSideNavn(l, k) { try { const it = l.ovelse[k]; return (it && typeof it === "object") ? String(it.side || "").trim() : ""; } catch (e) { return ""; } }
+function ovSideIdx(l, i) { try { const navn = ovSideNavn(l, i); if (!navn) return [i]; let f = i, t = i; while (f > 0 && ovSideNavn(l, f - 1) === navn) f--; while (t < l.ovelse.length - 1 && ovSideNavn(l, t + 1) === navn) t++; const ud = []; for (let k = f; k <= t; k++) ud.push(k); return ud; } catch (e) { return [i]; } }
+function ovSider(l) { const ud = []; try { let i = 0; while (i < l.ovelse.length) { const sd = ovSideIdx(l, i); ud.push(sd); i = sd[sd.length - 1] + 1; } } catch (e) {} return ud; }
+function lekOevNavn(l) { try { const n = String((((l && l.popup) || {}).oev || {}).navn || "").trim(); if (n) return n; } catch (e) {} return storStart(oevOrd(l.id)); }
+function lekOevEfter(l) { try { return String((((l && l.popup) || {}).oev || {}).efter || "").trim(); } catch (e) { return ""; } }
 function lekOevPar(hvid, roed) { return '<div class="lsi-par">' + hvid + roed + '</div>'; }   /* ved siden af hinanden — også på telefonen (Ida 19/11) */
 function lekOevTegn() {
   const main = document.getElementById("lekMain"); if (!main || !LEK_OEV) return;
   const id = LEK_OEV.id, l = (KURSUS_LEKTIONER || []).find(function (x) { return x.id === mgBasisId(id); });
   if (!l || !l.ovelse || !l.ovelse.length) { LEK_OEV = null; return; }
   const tlfListe = document.getElementById("lksTlf");
-  const ord = oevOrd(l.id), n = l.ovelse.length;
+  const ord = oevOrd(l.id), n = l.ovelse.length, navn = lekOevNavn(l), sider = ovSider(l);
   let ind = "";
   /* KNAPPERNE STÅR UNDER FLISEN, IKKE I DEN (Ida 20/11: »flyt knapperne ud af flisen her!«) — samme knaprække som under videoen: hvid til venstre, rød til højre */
   let kn = ""; const par = function (hvid, roed) { kn = String(hvid).replace('class="lsi-knap lsi-hvid"', 'class="lk-pil"') + String(roed).replace('class="lsi-knap"', 'class="lk-pil roed"'); return ''; };
   if (LEK_OEV.trin === "gjort") {
     const aktive = kursusLektionerAktive(), ix = aktive.findIndex(function (x) { return x.id === l.id; }), nx = aktive[ix + 1];
-    ind = '<div class="lsi-e">' + esc(storStart(ord)) + ' · gennemført</div><div class="lsi-t">Godt gået</div>'
-      + '<p>Dine svar er gemt.' + (String(l.id) === SBM_LEK ? ' Dit Shinebarometer ligger nu i Værktøjskassen.' : (nx && !lekModulLaastFor(nx.id) && !lekLaastAfForrige(nx.id) ? ' Lektion ' + esc(lekVisNr(nx.id)) + ' er åben.' : '')) + '</p>'
+    ind = '<div class="lsi-e">' + esc(navn) + ' · gennemført</div><div class="lsi-t">Godt gået</div>'
+      + '<p>Dine svar er gemt.' + (lekOevEfter(l) ? ' ' + esc(lekOevEfter(l)) : String(l.id) === SBM_LEK ? ' Dit Shinebarometer ligger nu i Værktøjskassen.' : (nx && !lekModulLaastFor(nx.id) && !lekLaastAfForrige(nx.id) ? ' Lektion ' + esc(lekVisNr(nx.id)) + ' er åben.' : '')) + '</p>'
       /* v3407 (Ida 20/11: »når man tager shinebarometeropgaven får man ikke at vide nogle steder at man også kan finde det i værktøjskassen«): efter opgaven til 1.3 siger fladen det og har knappen derhen */
       + par(String(l.id) === SBM_LEK ? '<button type="button" class="lsi-knap lsi-hvid" onclick="sbmAabn()">Åbn Mit Shinebarometer</button>' : '<button type="button" class="lsi-knap lsi-hvid" onclick="vkSvarAabn()">Se dine svar</button>', '<button type="button" class="lsi-knap" onclick="lekNaesteGaa()">Videre</button>');
   } else if (LEK_OEV.trin === "spm" && OVELSE && String(mgBasisId(OVELSE.id)) === String(l.id)) {
-    const o = OVELSE, item = l.ovelse[o.i], spm = ovSpm(item), besk = ovBesk(item);
-    const erDage = typeof item === "object" && item.type === "dage", erKonto = ovErKonto(item), sidst = o.i === n - 1;
-    /* MAN KAN ALTID GÅ TILBAGE (Ida 20/11: »og her kan man ikke gå tilbage!«): på første spørgsmål fører pilen tilbage til lektionens video — svaret gemmes som kladde først */
-    ind = '<div class="lsi-e lsi-e-rk">' + (o.i > 0 ? '<button type="button" class="lsi-tilb" aria-label="Forrige spørgsmål" onclick="ovelseGem();OVELSE.i--;renderOvelse()"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></button>' : '<button type="button" class="lsi-tilb" aria-label="Tilbage" onclick="try{ovelseGem()}catch(e){};LEK_OEV=null;renderLektionVis()"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></button>') + '<span>' + esc(storStart(ord)) + (n === 1 ? '' : ' ' + (o.i + 1) + ' af ' + n) + '</span>' + lekHvemSerMaerke(l.id) + '</div>'   /* ÉT SPØRGSMÅL = INGEN »1 AF 1« (Ida 20/11): etiketten siger, hvad det er — Refleksionsøvelse eller Opgave */
-      + '<div class="lsi-t lsi-spm">' + esc(spm) + '</div>'
-      + (besk ? '<p>' + esc(besk) + '</p>' : '')
-      + (erEjerOevelse(l.id) ? '<p class="lsi-g" style="margin:0 0 16px">Ejerens øvelse: ét fælles svar for forretningen.</p>' : '')
-      + '<div id="lekOvFlise">' + (erKonto ? '<div id="ovelseKonto">' + kontoHtml(ovSvarFor(o, l, o.i) || "") + '</div>' : erDage
-          ? '<div id="ovelseDage">' + ovelseDageHtml(ovSvarFor(o, l, o.i) || "") + '</div>'
-          : '<div class="lk-felt-ramme ova-felt-ramme"><textarea id="ovelseSvar" class="lk-ov-felt ova-felt" placeholder="Skriv dit svar her …" oninput="this.dataset.roert=1;ovelseKladdeInput(this)">' + esc(ovSvarFor(o, l, o.i) || "") + '</textarea>' + (typeof taleKnapHtml === "function" ? taleKnapHtml("ovelseSvar") : '') + '</div>') + '</div>'
-      + par('<button type="button" class="lsi-knap lsi-hvid" onclick="lekOevSenere()">Gem og fortsæt senere</button>', '<button type="button" class="lsi-knap" onclick="ovelseNaeste()">' + (sidst ? (lekOevHarNaeste(l.id) ? 'Videre' : 'Gem mine svar') : 'Videre') + '</button>');   /* KNAPPEN HEDDER »NÆSTE LEKTION« (Ida 20/11): den gemmer svarene og går videre; kun når der ingen næste lektion er, hedder den »Gem mine svar« */
+    const o = OVELSE; const sd = ovSideIdx(l, o.i); o.i = sd[0];
+    const sideNr = Math.max(0, sider.findIndex(function (x) { return x[0] === sd[0]; })), sidst = sideNr === sider.length - 1, flere = sd.length > 1;
+    const item = l.ovelse[o.i], spm = ovSpm(item), besk = ovBesk(item);
+    const pilV = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>';
+    /* MAN KAN ALTID GÅ TILBAGE (Ida 20/11): fra første side fører pilen tilbage til lektionens video — svaret gemmes som kladde først */
+    const tilb = sd[0] > 0 ? '<button type="button" class="lsi-tilb" aria-label="Forrige" onclick="ovelseGem();OVELSE.i=' + (sd[0] - 1) + ';renderOvelse()">' + pilV + '</button>'
+      : '<button type="button" class="lsi-tilb" aria-label="Tilbage" onclick="try{ovelseGem()}catch(e){};LEK_OEV=null;renderLektionVis()">' + pilV + '</button>';
+    const felt = function (k) {
+      const it = l.ovelse[k], erD = typeof it === "object" && it.type === "dage", erK = ovErKonto(it), fid = k === sd[0] ? "ovelseSvar" : "ovelseSvar_" + k;
+      const ph = (it && typeof it === "object" && String(it.eks || "").trim()) || "Skriv dit svar her …";   /* EKSEMPLET står som lys tekst i feltet og forsvinder, når kunden skriver (Ida 20/11) */
+      return erK ? '<div id="ovelseKonto">' + kontoHtml(ovSvarFor(o, l, k) || "") + '</div>' : erD ? '<div id="ovelseDage">' + ovelseDageHtml(ovSvarFor(o, l, k) || "") + '</div>'
+        : '<div class="lk-felt-ramme ova-felt-ramme"><textarea id="' + fid + '" data-ovi="' + k + '" class="lk-ov-felt ova-felt' + (flere ? ' ova-flere' : '') + '" placeholder="' + esc(ph) + '" oninput="this.dataset.roert=1;ovelseKladdeInput(this)">' + esc(ovSvarFor(o, l, k) || "") + '</textarea>' + (typeof taleKnapHtml === "function" ? taleKnapHtml(fid) : '') + '</div>';
+    };
+    ind = '<div class="lsi-e lsi-e-rk">' + tilb + '<span>' + esc(navn) + (sider.length === 1 ? '' : ' ' + (sideNr + 1) + ' af ' + sider.length) + '</span>' + lekHvemSerMaerke(l.id) + '</div>'   /* ÉN SIDE = INGEN »1 AF 1« (Ida 20/11) */
+      + (flere
+        ? '<div class="lsi-t lsi-spm">' + esc(ovSideNavn(l, sd[0])) + '</div><div id="lekOvFlise">' + sd.map(function (k) { const b2 = ovBesk(l.ovelse[k]); return '<div class="lsi-q2">' + esc(ovSpm(l.ovelse[k])) + '</div>' + (b2 ? '<p class="lsi-b2">' + esc(b2) + '</p>' : '') + felt(k); }).join("") + '</div>'
+        : '<div class="lsi-t lsi-spm">' + esc(spm) + '</div>' + (besk ? '<p>' + esc(besk) + '</p>' : '')
+          + (erEjerOevelse(l.id) ? '<p class="lsi-g" style="margin:0 0 16px">Ejerens øvelse: ét fælles svar for forretningen.</p>' : '')
+          + '<div id="lekOvFlise">' + felt(o.i) + '</div>')
+      + par('<button type="button" class="lsi-knap lsi-hvid" onclick="lekOevSenere()">Gem og fortsæt senere</button>', '<button type="button" class="lsi-knap" onclick="ovelseNaeste()">' + (sidst ? (lekOevHarNaeste(l.id) ? 'Videre' : 'Gem mine svar') : 'Videre') + '</button>');
   } else {
     /* INGEN STARTFLADE FØR SPØRGSMÅLENE (Ida 20/11: »det skal være denne side der kommer når lektionen er gennemført! slet siden der kommer inden!«): øvelsen åbner direkte på første ubesvarede spørgsmål */
     if (!LEK_OEV.startet) { LEK_OEV.startet = true; LEK_OEV.trin = "spm"; try { startOvelse(LEK_OEV.id); } catch (e) {} if (LEK_OEV && LEK_OEV.trin === "spm" && OVELSE && String(mgBasisId(OVELSE.id)) === String(l.id)) return; }
@@ -47684,7 +47701,7 @@ function lksOevHtml(x, laast, laasIkon) {
   const id = String(x.id), gjort = oevKlaret(id), n = (x.ovelse || []).length, idS = esc(id).replace(/'/g, "");
   return '<div class="lks-fl lks-lek lks-oev' + (gjort ? ' set' : '') + (laast ? ' sekv' : '') + '" role="button" tabindex="0" onclick="lksOevAabn(\'' + idS + '\')">'
     + (laast ? laasIkon : (gjort ? LKS_FB : '<span class="lks-tom lks-tom-nu"></span>'))
-    + '<div class="lks-lt"><div class="lks-ln">' + esc(storStart(oevOrd(id))) + '</div></div></div>';   /* kun navnet — intet antal spørgsmål (Ida 15/11) */
+    + '<div class="lks-lt"><div class="lks-ln">' + esc(lekOevNavn(x)) + '</div></div></div>';   /* kun navnet — intet antal spørgsmål (Ida 15/11) */
 }
 /* ØVELSEN FOLDES UD FRA LEKTIONEN (Ida 15/11: »jeg tror den bedste løsning er at de kommer frem med dropdownfunktion af lektionen«): pilen på lektionen folder øvelsen ud under den. Den lektion, man står på, er foldet ud fra start; ellers husker listen kundens valg. Foldet ind står »Refleksionsøvelse · Gjort« med småt under navnet, så status ses uden at folde ud. */
 const LKS_OEV_FOLD = {};
@@ -47992,7 +48009,8 @@ function lekPopFlet(p) {
   p = (p && typeof p === "object") ? p : {}; const fb = (p.fb && typeof p.fb === "object") ? p.fb : {};
   const t = function (v, std) { v = String(v == null ? "" : v).trim(); return v || std; };
   return { titel: t(p.titel, LEK_POP_STD.titel), tekst: String(p.tekst || "").trim(), knap: t(p.knap, LEK_POP_STD.knap),
-    fb: { spm: t(fb.spm, LEK_POP_STD.fb.spm), ph: t(fb.ph, LEK_POP_STD.fb.ph), fra: fb.fra === true }, fra: p.fra === true };   /* fra = heppe-popuppen er slået fra (Ida 15/11) */
+    fb: { spm: t(fb.spm, LEK_POP_STD.fb.spm), ph: t(fb.ph, LEK_POP_STD.fb.ph), fra: fb.fra === true }, fra: p.fra === true,
+    oev: { navn: String((p.oev && p.oev.navn) || "").trim(), efter: String((p.oev && p.oev.efter) || "").trim() } };   /* v3408: opgavens/refleksionsøvelsens eget navn og linjen, når den er gennemført */   /* fra = heppe-popuppen er slået fra (Ida 15/11) */
 }
 function lekPopTekst(l) { return lekPopFlet(l && l.popup); }
 function lekMoment(id, art, svarId) {
@@ -48391,8 +48409,9 @@ try { window.addEventListener("online", function () { try { ovelseGensend(); } c
 function ovelseKladdeInput(ta) {
   const o = OVELSE; if (!o || !ta) return;
   const l = KURSUS_LEKTIONER.find(x => x.id === mgBasisId(o.id)); if (!l) return;
-  o.svar[ovNoegle(l, o.i)] = ta.value;
-  ovelseBeroert(o.id, ovNoegle(l, o.i));
+  const ix = (ta.dataset && ta.dataset.ovi != null && ta.dataset.ovi !== "") ? parseInt(ta.dataset.ovi, 10) : o.i;   /* feltets eget spørgsmål (v3408) */
+  o.svar[ovNoegle(l, ix)] = ta.value;
+  ovelseBeroert(o.id, ovNoegle(l, ix));
   ovelseKladdeGem();
   ovelseServerAuto(false);
 }
@@ -48488,6 +48507,8 @@ function ovelseDagToggle(dag) {
   if (el) el.innerHTML = ovelseDageHtml(o.svar[n]);
 }
 function ovelseGem() {
+  /* FLERE FELTER PÅ SAMME SIDE (v3408): hvert felt gemmes på sit eget spørgsmål */
+  try { const fl = document.querySelectorAll("#lekOvFlise textarea[data-ovi]"); if (OVELSE && fl.length > 1) { const l0 = KURSUS_LEKTIONER.find(x => x.id === mgBasisId(OVELSE.id)); if (l0) { [].forEach.call(fl, function (t) { OVELSE.svar[ovNoegle(l0, parseInt(t.dataset.ovi, 10))] = t.value.trim(); }); ovelseServerAuto(true); return; } } } catch (e) {}
   const ta = document.getElementById("ovelseSvar");
   if (!ta || !OVELSE) return;
   const l = KURSUS_LEKTIONER.find(x => x.id === mgBasisId(OVELSE.id)); if (!l) return;
@@ -48527,6 +48548,7 @@ async function ovelseNaeste() {
   ovelseGem();
   try { const gl = document.getElementById("ovelseFejl"); if (gl) gl.remove(); } catch(e) {}
   const l = KURSUS_LEKTIONER.find(x => x.id === mgBasisId(OVELSE.id));
+  try { const sd0 = ovSideIdx(l, OVELSE.i); OVELSE.i = sd0[sd0.length - 1]; } catch (e) {}   /* »Videre« går til næste SIDE (v3408) */
   if (OVELSE.i < l.ovelse.length - 1) { OVELSE.i++; renderOvelse(); return; }
   /* LEKTIONEN OG SVARET LAESES FOER ENHVER VENTETID (8/10, hul 4): skifter kunden lektion, mens dette gemmer, maa intet ramme den nye */
   const oId = OVELSE.id, oSvar = OVELSE.svar, oBasis = mgBasisId(OVELSE.id);
@@ -52481,12 +52503,23 @@ function kbuOpgTegn() {
   if (kbuIFlisen()) {   /* LEKTIONENS FLISE PÅ MODULSIDEN (Idas klik 17/11): spørgsmålene rettes direkte her */
     const ny = !!KBU.spmNy; KBU.spmNy = false;
     if (!n && !ny) { el.innerHTML = ''; return; }
-    const art = kbuOpgArt();
-    el.innerHTML = '<div class="bs3-mf-l">' + esc(kbuOpgOrd()) + '</div><div class="kbu-chips">'
+    const art = kbuOpgArt(); let meta = { navn: "", efter: "" }; try { meta = kbuPopNu().oev || meta; } catch (e) {}
+    const oid = (function () { try { return esc(String(BF3_LEK_AABEN)).replace(/'/g, ""); } catch (e) { return ""; } })();
+    const mf = function (felt, txt, ph) { return '<div class="kbu-ret kbu-ret2" contenteditable="true" spellcheck="true" role="textbox" aria-label="' + esc(ph) + '" data-ph="' + esc(ph) + '"'
+      + ' onpaste="event.preventDefault();try{document.execCommand(\'insertText\',false,(event.clipboardData||window.clipboardData).getData(\'text/plain\'))}catch(e){}"'
+      + ' onkeydown="if(event.key===\'Escape\'){this.dataset.fortryd=\'1\';this.blur()}if(event.key===\'Enter\'){event.preventDefault();this.blur()}" onblur="kbuOevMeta(this,\'' + felt + '\')">' + esc(txt) + '</div>'; };
+    /* v3408 · OPGAVE-FANEN (Idas klik 20/11 »Ja, byg opgave-fanen«; Ida: »det her er også uoverskueligt for mig - og jeg mangler en gem knap« · »mulighed for at se hvordan det ser ud for kunden«):
+       hvert felt har sit navn · »Gem« og »Udgiv« står altid nederst med tidspunktet for sidste gem · »Se som kunden« · navn hos kunden · linjen, når den er gennemført · eksempel og side pr. spørgsmål */
+    el.innerHTML = '<div class="bs3-mf-l">Hvad er det?</div><div class="kbu-chips">'
       + ['opgave', 'refleksion'].map(function (a) { return '<button type="button" class="kbu-chip' + (a === art ? ' on' : '') + '" onclick="kbuOpgArtSaet(\'' + a + '\')">' + (a === "opgave" ? "Opgave" : "Refleksionsøvelse") + '</button>'; }).join("") + '</div>'
+      + '<div class="kbu-lbl">Navn hos kunden</div>' + mf("navn", meta.navn, kbuOpgOrd())
+      + '<div class="kbu-lbl">Når den er gennemført</div>' + mf("efter", meta.efter, "Fx: Dit Shinebarometer ligger nu i Værktøjskassen.")
       + kbuSpmFliserHtml(liste, ny || !n)
       + (ny || !n ? '' : '<button type="button" class="bs3-mf-f tom bs3-mf-ny" onclick="kbuSpmNy()"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span>Tilføj spørgsmål</span></button>')
-      + '<div class="kbu-kvit" id="kbuOpgKvit"></div>';
+      + '<div class="kbu-opg-bar"><div class="kbu-kvit" id="kbuOpgKvit">' + esc(window.__KBU_OPG_KVIT || "") + '</div>'
+      + '<button type="button" class="kbu-knap mq-tap" onclick="kbSeSomKunde(\'' + oid + '\')">Se som kunden</button>'
+      + '<button type="button" class="kbu-knap mq-tap" onclick="kbuOpgGemNu()">Gem</button>'
+      + '<button type="button" class="bs3-udgiv mq-tap" onclick="kbuOpgUdgivNu()">Udgiv</button></div>';
     if (ny) { try { const alle = el.querySelectorAll(".kbu-spm .kbu-ret-spm"), f = alle[alle.length - 1]; if (f) f.focus(); } catch (e) {} }
     return;
   }
@@ -52499,8 +52532,12 @@ function kbuSpmFliserHtml(liste, ny) {
     + ' onpaste="event.preventDefault();try{document.execCommand(\'insertText\',false,(event.clipboardData||window.clipboardData).getData(\'text/plain\'))}catch(e){}"'
     + ' onkeydown="if(event.key===\'Escape\'){this.dataset.fortryd=\'1\';this.blur()}" onblur="kbuSpmDirekte(this,' + i + ',\'' + felt + '\')">' + esc(txt) + '</div>'; };
   const flise = function (x, i) {   /* spørgsmål · streg · beskrivelse, begge rettes direkte i flisen (Ida 16/11) */
-    return '<div class="kbu-fl kbu-spm" data-slet="kbuSpmSletSpoerg(' + i + ')">' + ret(i, "spm", x ? String((typeof x === "object" ? x.spm : x) || "") : "", "Skriv spørgsmålet her")
-      + '<span class="kbu-skl"></span>' + ret(i, "besk", x && typeof x === "object" ? String(x.besk || "") : "", "Beskrivelse (valgfri)") + '</div>';
+    const v = function (k) { return x && typeof x === "object" ? String(x[k] || "") : ""; };
+    return '<div class="kbu-fl kbu-spm kbu-spm2" data-slet="kbuSpmSletSpoerg(' + i + ')">'
+      + '<div class="kbu-lbl">Spørgsmålet</div>' + ret(i, "spm", x ? String((typeof x === "object" ? x.spm : x) || "") : "", "Skriv spørgsmålet her")
+      + '<div class="kbu-lbl">Hjælpetekst under spørgsmålet</div>' + ret(i, "besk", v("besk"), "Valgfri")
+      + '<div class="kbu-lbl">Eksempel i skrivefeltet</div>' + ret(i, "eks", v("eks"), "Valgfri. Fx: Jeg går i farver og laver aftaler.")
+      + '<div class="kbu-lbl">Vises på siden</div>' + ret(i, "side", v("side"), "Valgfri. Samme navn = samme side, fx Overskud") + '</div>';
   };
   const fl = liste.map(function (x, i) {
     return '<div class="kbu-ovr kbu-ovr-rk' + (i ? '' : ' kbu-foerst') + '"><span>Spørgsmål ' + (i + 1) + '</span><button type="button" class="kbu-lilleslet" onclick="kbuSpmSletSpoerg(' + i + ')">' + skr + '<span>Slet</span></button></div>' + flise(x, i);
@@ -52544,21 +52581,49 @@ function kbuSpmDirekte(el, i, felt) {
     setTimeout(function () {   /* først når hele flisen er forladt */
       if (fl && fl.contains(document.activeElement)) return;
       if (!q || fortryd) { if (KBU.oev.spm.length) kbuOpgAabn(); else if (el.isConnected && !q) el.textContent = felt === "spm" ? "" : el.textContent; return; }
-      KBU.oev.spm.push(b ? { id: ovNytId(), spm: q, besk: b } : { id: ovNytId(), spm: q });   /* et nyt spørgsmål fødes med sit id (6/8) */
+      const nyt = { id: ovNytId(), spm: q }; if (b) nyt.besk = b;   /* et nyt spørgsmål fødes med sit id (6/8) */
+      try { ["eks", "side"].forEach(function (k) { const e2 = fl.querySelector(".kbu-ret-" + k), v2 = e2 ? String(e2.innerText || "").trim() : ""; if (v2) nyt[k] = v2; }); } catch (e) {}
+      KBU.oev.spm.push(nyt);
       kbuOpgGemKladde(); kbuOpgAabn(); kbuOpgKvit("Gemt i kladden.");
     }, 0);
     return;
   }
   const x = KBU.oev.spm[i]; if (x == null) return;
-  const gSpm = String((typeof x === "object" ? x.spm : x) || ""), gBesk = typeof x === "object" ? String(x.besk || "") : "";
+  const gSpm = String((typeof x === "object" ? x.spm : x) || ""), gBesk = typeof x === "object" ? String(x[felt === "spm" ? "besk" : felt] || "") : "";   /* gBesk = feltets gamle værdi (besk · eks · side) */
   if (fortryd || (felt === "spm" && !v)) { el.textContent = felt === "spm" ? gSpm : gBesk; return; }
   if ((felt === "spm" ? gSpm : gBesk).trim() === v) { if (!v) el.textContent = ""; return; }
   if (felt === "spm") KBU.oev.spm[i] = (typeof x === "object") ? Object.assign({}, x, { spm: v }) : v;
-  else KBU.oev.spm[i] = (typeof x === "object") ? Object.assign({}, x, { besk: v }) : (v ? { spm: gSpm, besk: v } : x);
+  else { const ny2 = {}; ny2[felt] = v; KBU.oev.spm[i] = (typeof x === "object") ? Object.assign({}, x, ny2) : (v ? Object.assign({ spm: gSpm }, ny2) : x); }
   if (!v) el.textContent = "";
   kbuOpgGemKladde(); kbuOpgKvit("Gemt i kladden.");
 }
-function kbuOpgKvit(t, fejl) { const k = document.getElementById("kbuOpgKvit"); if (k) { k.textContent = t || ""; k.classList.toggle("fejl", !!fejl); } }
+function kbuOpgKvit(t, fejl) {
+  try { if (t === "Gemt i kladden.") { const d = new Date(), to = function (n) { return (n < 10 ? "0" : "") + n; }; t = "Gemt i kladden kl. " + to(d.getHours()) + "." + to(d.getMinutes()); } } catch (e) {}   /* tidspunktet for sidste gem (v3408) */
+  window.__KBU_OPG_KVIT = fejl ? "" : (t || "");
+  const k = document.getElementById("kbuOpgKvit"); if (k) { k.textContent = t || ""; k.classList.toggle("fejl", !!fejl); }
+}
+/* NAVN HOS KUNDEN og LINJEN, NÅR DEN ER GENNEMFØRT (v3408): står på lektionens popup-tekster (lektioner.popup.oev) og følger samme kladde og udgiv */
+function kbuOevMeta(el, felt) {
+  const fortryd = el.dataset.fortryd === "1"; el.dataset.fortryd = "";
+  let gl = ""; try { gl = String((kbuPopNu().oev || {})[felt] || ""); } catch (e) {}
+  const v = String(el.innerText || "").replace(/\s+/g, " ").trim();
+  if (fortryd) { el.textContent = gl; return; }
+  if (v === gl) { if (!v) el.textContent = ""; return; }
+  kbuPopSaet(function (p) { p.oev = p.oev || { navn: "", efter: "" }; p.oev[felt] = v; });
+  if (!v) el.textContent = "";
+  kbuOpgKvit("Gemt i kladden.");
+}
+async function kbuOpgGemNu() {
+  try { const ae = document.activeElement; if (ae && ae.blur) ae.blur(); } catch (e) {}
+  await new Promise(function (r) { setTimeout(r, 60); });
+  let ok = false; try { ok = !!(await kbuKladdeGem()); } catch (e) { ok = false; }
+  if (ok) { kbuOpgKvit("Gemt i kladden."); try { husKvit("Gemt i kladden."); } catch (e) {} } else kbuOpgKvit("Kladden blev ikke gemt. Prøv igen.", true);
+}
+async function kbuOpgUdgivNu() {
+  try { const ae = document.activeElement; if (ae && ae.blur) ae.blur(); } catch (e) {}
+  await new Promise(function (r) { setTimeout(r, 300); });
+  try { await bf3LekUdgiv(BF3_LEK_AABEN); } catch (e) {}
+}
 function kbuOpgArtSaet(a) { kbuOpgSikr(); KBU.oev.art = a === "opgave" ? "opgave" : "refleksion"; kbuOpgGemKladde(); kbuOpgAabn(); }
 function kbuSpmSletSpoerg(i) {
   if (!kbuOpgAlleHarId()) { kbuOpgKvit("Et spørgsmål her mangler sit id, så intet kan slettes, før det er rettet. Kundernes svar kunne ellers skifte spørgsmål.", true); setTimeout(kbuOpgAabn, 200); return; }
@@ -69876,7 +69941,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "3407";
+const APP_VERSION = "3408";
 const APP_BYGGET = "3. november";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_VERSION;   /* ingen dato (Ida 7/11: »hvorfor står der version 3. november?«) — datoen blev ikke rettet med, nummeret er sandheden */ } catch (e) {} });
 let NY_VERSION_KLAR = false;
@@ -103427,6 +103492,18 @@ html body .sbm-ramme .sbm-felt, html body .sbm-kt .sbm-felt { min-height:96px; }
 html body .sbm-ramme .sbm-kn, html body .sbm-kt .sbm-kn { margin-top:14px; }
 @media (max-width:899px) { html body .sbm-k2, html body .sbm-k3 { grid-template-columns:minmax(0,1fr); gap:14px; } html body .sbm-k3 { gap:18px; } html body .sbm-fl.sbm-stor { padding:20px; } html body .sbm-ramme { padding:16px; } }
 @media (max-width:899px) { html body .sbm-to { grid-template-columns:minmax(0,1fr); gap:22px; } html body .sbm-sek { margin-top:28px; } }
+/* v3408 · OPGAVE-FANEN I STUDIO: navngivne felter, fast bjælke med Gem og Udgiv */
+html body .kbu-lbl { font:400 13px/18px Poppins,sans-serif; color:#686868; margin:16px 0 6px; }
+html body .kbu-spm2 > .kbu-lbl:first-child { margin-top:0; }
+html body .kbu-ret.kbu-ret2, html body .kbu-spm2 > .kbu-ret { border:1px solid #DEDEDE; border-radius:14px; padding:11px 14px; min-height:46px; background:#FFFFFF; font:400 14px/22px Poppins,sans-serif; color:#1A1A1A; box-sizing:border-box; }
+html body .kbu-fl.kbu-spm2 { padding:18px 20px; }   /* ramme med grå kant som før — ingen skygge inde i lektionens flise */
+html body .kbu-opg-bar { display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-top:20px; }
+html body .kbu-opg-bar > .kbu-kvit { flex:1; min-width:160px; margin:0; }
+/* v3408 · kundens side med flere felter */
+html body #lekVis .lsi-q2 { font:400 15px/22px Poppins,sans-serif; color:#1A1A1A; margin:14px 0 8px; }
+html body #lekVis .lsi-q2:first-child { margin-top:0; }
+html body #lekVis .lsi-b2 { font:400 13px/19px Poppins,sans-serif; color:#686868; margin:-2px 0 8px; }
+html body #lekVis .lk-oev textarea.ova-flere { min-height:84px; height:84px; }
 /* v3395 (Ida 20/11) — MODULFLISERNE: cirkel som lektionerne (tom · rødt flueben · hængelås), ingen pil, ingen fold-ud */
 html body #forloebTidslinje .ftl2 .ftl2-hoved, html body #forloebTidslinje .ftl2 .ftl2-rk.laast { display:flex !important; align-items:center !important; justify-content:flex-start !important; gap:16px !important; cursor:pointer; }
 html body #forloebTidslinje .ftl2 .ftl2-rk.laast { cursor:default; }
@@ -103462,7 +103539,7 @@ html body.lek-mb #lekVis .lk-flise.lk-skema, html body #lekVis .lk-flise.lk-skem
 
 
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-hvid.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 20. november · 3407</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 20. november · 3408</div>
 <script>
 /* DROPDOWNEN RULLER SELV (Ida 4/10) — maal den aabne liste og klip den ved skaermens bund */
 (function () {

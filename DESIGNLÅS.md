@@ -1,3 +1,12 @@
+## 20. november · 3408: OPGAVE-FANEN I ENERGIDA STUDIO · NAVN, SIDER OG EKSEMPEL HOS KUNDEN
+- Idas klik 20/11 »Ja, byg opgave-fanen« (artifact VvaeVkZ6HsqVESG3Z3srVZ). Hendes ord: »det her er også uoverskueligt for mig - og jeg mangler en gem knap« · »mulighed for at se hvordan det ser ud for kunden« · »opgave tydeligt hed Byg dit Shinebarometer og Overskud havde begge tekstfelter … på samme side«.
+- Studio: hvert felt har sit navn over boksen: »Spørgsmålet«, »Hjælpetekst under spørgsmålet«, »Eksempel i skrivefeltet«, »Vises på siden«. Øverst »Navn hos kunden« og »Når den er gennemført«.
+- Nederst står altid: tidspunktet for sidste gem (»Gemt i kladden kl. 18.04«) · »Se som kunden« · »Gem« · rød »Udgiv«. »Gem« gemmer i kladden; »Udgiv« sender ud til kunderne.
+- Kunden: navnet står i stedet for ordet »Opgave«/»Refleksionsøvelse« (i øvelsen, i lektionslisten og i den smalle række). Er feltet tomt, står ordet som før.
+- Kunden: spørgsmål med samme sidenavn lige efter hinanden vises på samme side med sidens navn som overskrift; tælleren tæller sider (»Byg dit Shinebarometer 1 af 2«). Uden sidenavn: ét spørgsmål ad gangen som før.
+- Kunden: eksemplet står som lys tekst i skrivefeltet og forsvinder, når hun skriver. Uden eksempel: »Skriv dit svar her …«.
+- Kunden: linjen fra »Når den er gennemført« står efter »Dine svar er gemt.«
+
 ## 20. november · 3407: MIT SHINEBAROMETER = »DIN ADFÆRD« OG »DIN KROP«
 - Idas klik 20/11 »Ja, byg det« (artifact Q9QP9ivWaw5MDe9wqGg6ff). Vælter 3405's opbygning med spørgsmålet over hver flise.
 - To fliser. »Din adfærd« rammer Overskud og Underskud ind; »Din krop« rammer Rykker 1, Rykker 2 og Inkasso ind (Ida: »det er mere Din adfærd …« · »de 3 sidste dele rammes ind med Din krop«).
