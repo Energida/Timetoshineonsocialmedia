@@ -37736,7 +37736,7 @@ function velkomstSkalVises() {
 }
 /* PROFILEN EFTER KOEBET (Idas klik 17/10 »Ja, byg prøveudgaven«): koeb → adgangskode → fire spoergsmaal → dashboardet med modul 0 aabent.
    Spoergeskemaet kommer EFTER modul 0 og laaser modul 1. Kun ?velkomst=1, til Ida har set den paa telefon og computer. */
-const VK_BRANCHER = [{ k: "Tøj, sko og mode", n: "Tøj, sko og mode" }, { k: "Bolig, blomster og gaver", n: "Bolig, blomster og gaver" }, { k: "Café, restaurant og hotel", n: "Café, restaurant og hotel" }, { k: "Frisør, skønhed og klinik", n: "Frisør, skønhed og klinik" }, { k: "Bank, forsikring, revisor og advokat", n: "Bank, forsikring, revisor og advokat" }, { k: "Ejendomsmægler, bil og håndværk", n: "Ejendomsmægler, bil og håndværk" }, { k: "Forening, sport og museum", n: "Forening, sport og museum" }, { k: "Medier og kommunikation", n: "Medier og kommunikation" }, { k: "Andet", n: "Anden" }];   /* »ANDET« HEDDER »ANDEN« PÅ SKÆRMEN (Ida 15/11) — værdien gemmes stadig som »Andet«, så gamle svar og CRM læser som før. FAG I STEDET FOR VARER (Ida 15/11 før Ringkøbing-udsendelsen: kun halvdelen af de 126 er butikker — »hvilket fag passer bedst på dig … andet og udfylde«). Gamle svar (fx »Tøj og mode«) bliver stående som tekst på kundekortet. */
+const VK_BRANCHER = [{ k: "Tøj, sko og mode", n: "Tøj, sko og mode" }, { k: "Bolig, blomster og gaver", n: "Bolig, blomster og gaver" }, { k: "Café, restaurant og hotel", n: "Café, restaurant og hotel" }, { k: "Frisør, skønhed og klinik", n: "Frisør, skønhed og klinik" }, { k: "Bank, ejendomsmægler og bilforhandler", n: "Bank, ejendomsmægler og bilforhandler" }, { k: "Forening, sport og museum", n: "Forening, sport og museum" }, { k: "Medier og kommunikation", n: "Medier og kommunikation" }, { k: "Andet", n: "Anden" }];   /* »ANDET« HEDDER »ANDEN« PÅ SKÆRMEN (Ida 15/11) — værdien gemmes stadig som »Andet«, så gamle svar og CRM læser som før. FAG I STEDET FOR VARER (Ida 15/11 før Ringkøbing-udsendelsen: kun halvdelen af de 126 er butikker — »hvilket fag passer bedst på dig … andet og udfylde«). Gamle svar (fx »Tøj og mode«) bliver stående som tekst på kundekortet. */
 const VK_KOEB = [{ k: "butik", n: "Fysisk" }, { k: "butik_webshop", n: "Fysisk og online" }, { k: "webshop", n: "Kun online" }];   /* SPØRGSMÅL 6 (Ida 15/11, testperson): tre valg i Idas ord. »raadgiver« er taget ud af valget; et gammelt svar vises stadig i CRM. Før: const VK_KOEB = [{ k: "butik", n: "I butikken" }, { k: "butik_webshop", n: "I butikken og på webshop" }, { k: "webshop", n: "Kun på webshop" }, { k: "raadgiver", n: "Ydelser, rådgivning eller behandli */
 const VK_TEAM = [{ k: "du", n: "Kun mig" }, { k: "vi", n: "Vi er flere" }];
 async function velkomstStart() {
@@ -37883,7 +37883,8 @@ function pfSkaermKlar(sk) {
     case "branche": return !pfTom(f.branche) && (f.branche !== "Andet" || !pfTom(f.branche_andet));
     case "koeb": return !pfTom(f.forretningstype);
     case "afd": return f.afd_valg === "en" || (f.afd_valg === "flere" && parseInt(f.afd_antal, 10) >= 2);
-    case "ansatte": return f.ans_valg === "en" || (f.ans_valg === "flere" && parseInt(f.ans_antal, 10) >= 2);
+    case "ansatte": if (f.afd_valg === "flere") { const na = parseInt(f.ans_antal, 10); if (!(na >= 1)) return false; f.ans_valg = na >= 2 ? "flere" : "en"; return true; }   /* direkte antal (v3410) */
+      return f.ans_valg === "en" || (f.ans_valg === "flere" && parseInt(f.ans_antal, 10) >= 2);
     default: return true;
   }
 }
@@ -37896,7 +37897,7 @@ function pfSkaermFejl(sk) {
   if (sk === "branche") return f.branche === "Andet" ? "Skriv jeres branche for at komme videre." : "Vælg den branche, der passer på dig/jer.";
   if (sk === "koeb") return "Vælg, hvordan kunderne handler hos dig/jer i dag.";
   if (sk === "afd") return f.afd_valg === "flere" ? "Skriv, hvor mange afdelinger I har (mindst 2)." : "Vælg Én eller Flere.";
-  if (sk === "ansatte") return f.ans_valg === "flere" ? "Skriv, hvor mange medarbejdere I er (mindst 2)." : "Vælg Én eller Flere.";
+  if (sk === "ansatte") return f.afd_valg === "flere" ? "Skriv, hvor mange medarbejdere I er." : (f.ans_valg === "flere" ? "Skriv, hvor mange medarbejdere I er (mindst 2)." : "Vælg Én eller Flere.");
   if (sk === "pw" || sk === "pw0") return "Mindst 6 tegn.";
   return "Udfyld feltet for at gå videre.";
 }
@@ -38045,7 +38046,10 @@ function pfTegn() {
     krop = '<div class="pf-t">Har du/I én eller flere afdelinger/forretninger?</div>' + pfChips("afd_valg", PF_EN_FLERE, f.afd_valg)
       + (f.afd_valg === "flere" ? pfFelt("afd_antal", "Hvor mange?", f.afd_antal, { num: true, max: 3, ph: "Antal" }) : '');
   } else if (sk === "ansatte") {
-    krop = '<div class="pf-t">Hvor mange medarbejdere er I?</div>' + pfChips("ans_valg", PF_EN_FLERE, f.ans_valg)
+    /* v3410 (Ida 20/11: »man har lige svaret at man har flere butikker og så spørger vi om der er en eller flere medarbejdere - kan man gøre sådan at den med det samme spørger hvor mange«):
+       har kunden flere afdelinger/forretninger, springes Én/Flere over, og der spørges direkte om antallet. Med én forretning er trinnet som før. */
+    if (f.afd_valg === "flere") krop = '<div class="pf-t">Hvor mange medarbejdere er I?</div>' + pfFelt("ans_antal", "Antal", f.ans_antal, { num: true, max: 4, ph: "Antal" });
+    else krop = '<div class="pf-t">Hvor mange medarbejdere er I?</div>' + pfChips("ans_valg", PF_EN_FLERE, f.ans_valg)
       + (f.ans_valg === "flere" ? pfFelt("ans_antal", "Hvor mange?", f.ans_antal, { num: true, max: 4, ph: "Antal" }) : '');
   } else if (sk === "koeb") {
     krop = '<div class="pf-t">Hvordan handler kunderne hos dig/jer i dag?</div>' + pfChips("forretningstype", VK_KOEB, f.forretningstype);
@@ -38309,7 +38313,11 @@ function turFl(i) {
   TUR_FL_I = i; window.__TUR_FL_NU = i;
   const S = turFlStops(); if (i >= S.length) { turFlSlut(); return; }
   const s = S[i];
-  turFlOverlayFjern();
+  /* v3410 (Ida 20/11: »når man klikker næste forsvinder den mørke baggrund mellem klippene! man får altså et lyst blink indimellem«): det mørke lag blev fjernet straks og først tegnet igen 60–380 ms senere.
+     Har næste trin en markering, bliver det gamle lag stående, til det nye er klar (turFlOverlay skifter dem i samme øjeblik). Knapperne i det gamle lag slås fra, så man ikke kan trykke to gange. */
+  const gl = document.getElementById("turFlOverlay");
+  if (s.m && gl) { try { gl.querySelectorAll("button").forEach(function (b) { b.disabled = true; b.style.pointerEvents = "none"; }); } catch (e) {} }
+  else turFlOverlayFjern();
   try { const tlf = window.matchMedia("(max-width: 899px)").matches; const bm = document.getElementById("burgerMenu"); const aab = !!(bm && bm.classList.contains("open")); if (tlf && s.burger && !aab) toggleBurger(); else if (aab && !(tlf && s.burger)) toggleBurger(); } catch (e) {}
   turStartKortTegn();
   const t0 = turFlSynlig();
@@ -38322,7 +38330,7 @@ function turFlOverlay(i, forsoeg) {
   const tile = turFlSynlig(); if (!tile) return;
   let maal = null;
   for (let k = 0; k < s.m.length && !maal; k++) { const e = Array.prototype.find.call(document.querySelectorAll(s.m[k]), function (x) { const b = x.getBoundingClientRect(); return b.height > 0 && b.width > 0 && (x.offsetParent !== null || getComputedStyle(x).position === "fixed"); }); if (e) maal = e; }
-  if (!maal) { if (forsoeg < 8) setTimeout(function () { turFlOverlay(i, forsoeg + 1); }, 300); return; }
+  if (!maal) { if (forsoeg < 8) setTimeout(function () { turFlOverlay(i, forsoeg + 1); }, 300); else turFlOverlayFjern(); return; }
   turFlOverlayFjern();
   const r = maal.getBoundingClientRect(), pad = 6, L = Math.max(4, r.left - pad), T = r.top - pad, W = r.width + pad * 2, H = r.height + pad * 2;
   const m = { L: L, T: T, W: W, H: H };
@@ -46981,15 +46989,13 @@ window.addEventListener("message", function (e) {
     /* SLUTNINGEN FØRST og i sin egen try: en fejl andre steder må aldrig holde knappen låst. Sikring: de sidste 2 sekunder tæller som set til ende. */
     try {
       if (d && d.event === "ready") lekVimeoLyt(document.getElementById("lekVideoIfr"));
-      /* v3403 (Ida 20/11: »jeg må ikke kunne markere videoen som færdig før videoen er set til ende« · »Ja, luk hullet«): SPOLING TÆLLER IKKE.
-         Videoen deles i stykker på 5 sekunder; et stykke tæller kun, når det er AFSPILLET (to tidsmeldinger højst 3 sekunder fra hinanden). Knappen låses op,
-         når videoen er nået til ende OG mindst 90 % af stykkerne er afspillet. Kom der aldrig en tidsmelding (Vimeo svarer ikke), gælder slut-signalet alene, så ingen låses ude. */
-      if (d && (d.event === "playProgress" || d.event === "timeupdate") && d.data) {
+      /* v3410 (Ida 20/11: »Vil du ændre det med at man ikke kan spole frem i videoerne - det skal man kunne igen - så slet reglen med 90%«): vælter 3403.
+         Knappen låses op, når videoen er nået til ende — også hvis kunden har spolet. De sidste 2 sekunder tæller som slut, hvis slut-signalet udebliver. */
+      if (d && (d.event === "ended" || d.event === "finish")) lekVideoSlut();
+      else if (d && (d.event === "playProgress" || d.event === "timeupdate") && d.data) {
         const sek = Number(d.data.seconds), lgd = Number(d.data.duration);
-        const andel = lekDelMaerk(LEK_AABEN, sek, lgd);
-        if (lgd > 0 && sek >= lgd - 2 && andel >= 0.9) lekVideoSlut();
+        if (lgd > 0 && sek >= lgd - 2) lekVideoSlut();
       }
-      else if (d && (d.event === "ended" || d.event === "finish")) { if (!LEK_DEL.faaet || lekDelAndel(LEK_AABEN) >= 0.9) lekVideoSlut(); }
     } catch (er) {}
     if (d && d.event === "play") { lekPlayVis(false); try { const f = document.getElementById("lekVideoIfr"); if (f && f.contentWindow && !f.__lydSat) { f.__lydSat = true; f.contentWindow.postMessage(JSON.stringify({ method: "setMuted", value: false }), "*"); f.contentWindow.postMessage(JSON.stringify({ method: "setVolume", value: 1 }), "*"); } } catch (er) {} }   /* ALLE VIDEOER MED LYD (Ida 15/11, testperson) */
     if (d && (d.event === "pause" || d.event === "ended" || d.event === "finish")) lekPlayVis(true);
@@ -46997,24 +47003,6 @@ window.addEventListener("message", function (e) {
 });
 /* VIDEOEN SKAL VÆRE SET TIL ENDE, FØR LEKTIONEN KAN MARKERES SOM FÆRDIG (Ida 20/11: »det er vigtigt at kunden har set lektionen til ende inden de kan markere den som færdig!«).
    Slutningen huskes på enheden (lek_slut_<kode>), og den røde knap »Markér som færdig« låses op. Popuppen kommer først, når kunden trykker — aldrig af sig selv (vælter 13/9). */
-/* AFSPILLEDE STYKKER (v3403): husket på enheden pr. lektion (lek_dele_<kode>), så kunden kan se videoen over flere gange */
-const LEK_DEL = { id: null, sidst: null, lgd: 0, faaet: false, gemt: 0 };
-function lekDelAlle() { try { return JSON.parse(localStorage.getItem("lek_dele_" + (currentKode || "X")) || "{}") || {}; } catch (e) { return {}; } }
-function lekDelAndel(id) { try { const a = lekDelAlle()[String(id)]; if (!a || !(a.n > 0)) return 0; return Object.keys(a.s || {}).length / a.n; } catch (e) { return 0; } }
-function lekDelMaerk(id, sek, lgd) {
-  try {
-    if (!id || !(lgd > 0) || !(sek >= 0)) return 0;
-    if (LEK_DEL.id !== String(id)) { LEK_DEL.id = String(id); LEK_DEL.sidst = null; }
-    LEK_DEL.faaet = true; LEK_DEL.lgd = lgd;
-    const forrige = LEK_DEL.sidst; LEK_DEL.sidst = sek;
-    const n = Math.max(1, Math.ceil(lgd / 5));
-    if (forrige === null || !(sek - forrige > 0 && sek - forrige <= 3)) return lekDelAndel(id);   /* første melding, pause eller et spring: tæller ikke */
-    const alle = lekDelAlle(), a = (alle[String(id)] && alle[String(id)].n === n) ? alle[String(id)] : { n: n, s: {} };
-    const st = Math.min(n - 1, Math.floor(sek / 5));
-    if (!a.s[st]) { a.s[st] = 1; alle[String(id)] = a; try { localStorage.setItem("lek_dele_" + (currentKode || "X"), JSON.stringify(alle)); } catch (e) {} }
-    return Object.keys(a.s).length / n;
-  } catch (e) { return 0; }
-}
 function lekSlutHent() { try { return JSON.parse(localStorage.getItem("lek_slut_" + (currentKode || "X")) || "{}") || {}; } catch (e) { return {}; } }
 function lekErSetTilEnde(id) { try { return !!(KURSUS_SET[id] || lekSlutHent()[String(id)] || (typeof ygtAltAabent === "function" && ygtAltAabent()) || somKundeKigger()); } catch (e) { return false; } }
 function lekVideoSlut() {
@@ -69941,7 +69929,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "3409";
+const APP_VERSION = "3410";
 const APP_BYGGET = "3. november";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_VERSION;   /* ingen dato (Ida 7/11: »hvorfor står der version 3. november?«) — datoen blev ikke rettet med, nummeret er sandheden */ } catch (e) {} });
 let NY_VERSION_KLAR = false;
@@ -103541,7 +103529,7 @@ html body.lek-mb #lekVis .lk-flise.lk-skema, html body #lekVis .lk-flise.lk-skem
 
 
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-hvid.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 20. november · 3409</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 20. november · 3410</div>
 <script>
 /* DROPDOWNEN RULLER SELV (Ida 4/10) — maal den aabne liste og klip den ved skaermens bund */
 (function () {
