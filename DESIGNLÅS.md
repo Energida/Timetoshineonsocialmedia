@@ -1,3 +1,35 @@
+## 20. november · LEKTIONSSIDEN: KNAPPERNE UNDER VIDEOEN, NOTERNE UNDER DEM · POPUPPEN KOMMER PÅ DEN SIDE, MAN STÅR PÅ (Ida 20/11: »knapperne skal flyttes op under videoen og noterne under« · »så baggrunden ikke skifter før man har udfyldt denne pop up«) · 3394
+- »Forrige lektion« og »Videre til næste« står lige under videoen. »Dine noter« kommer under knapperne.
+- Der er ingen fremdriftsbjælke over lektionen. Den står kun i listen til venstre (Ida 20/11: »den er allerede i venstre side og der skal den bare blive«).
+- I popuppen »Hvordan var videoen?« er »Næste lektion« låst, til der er klikket på stjernerne. Kommentaren er frivillig (Ida 20/11: »men det er ok de ikke udfylder feedback«). Lukkes popuppen uden stjerner, kommer den igen ved »Næste lektion«.
+- Efter modul 0's sidste lektion åbner »Næste lektion« 0.6 (Find dit udgangspunkt) direkte. Arket »Modul 1 åbner, når du har fundet dit udgangspunkt« kommer ikke dér (Ida 20/11).
+- Når videoen er slut, kommer popuppen frem oven på siden, præcis som den står. Siden bagved tegnes først om, når popuppen lukkes.
+
+## 20. november · ÅBNE MODULER FOLDER IKKE UD — KLIK FØRER TIL MODULSIDEN (Ida 20/11: »jeg vil gerne at vi dropper drop down muligheden ved modulerne - men at man ved klik på modul flisen kommer ind på modulsiden«) · 3394
+- På Forløbet fører klik på et åbent modul direkte til modulsiden (modulets næste lektion). Ingen liste folder ud under flisen. Vælter fold-ud fra 11/11 for åbne moduler.
+- Låste moduler er urørte, til Ida har sagt, hvad de skal.
+
+## 20. november · MAILS: DIDOT-OVERSKRIFTER, GRÅ FLISEKANT, ALT I FLISER (Ida 20/11: »sørg for at alle mails bruger mine fonte« · »lav det nu grundigt og ens« · »kollegakoden skal centreres«) · 3394
+- Overskrifter i mails er Didot 26 (Georgia, hvor mailprogrammet ikke har Didot). Brødtekst er Poppins. Flisens kant er #DEDEDE, luften 32 (24 på telefon).
+- Koden står midt i et lyseblåt felt med etiketten »Din kollegakode«. Links i teksten er røde.
+- Knappen kan stå inde i tekstflisen med sit eget link (»Tilføj knap« under Dele). Fed tekst kan sættes på markerede ord.
+- App-guiden er én flise: iPhone og Android side om side med lyseblå symbolfelter, ingen røde tal og ingen skillestreger. På telefon står de under hinanden.
+- Tegningen er den samme kode i appen (mailsHtml) og i mail-send, modul-mail og stripe-koeb. Rettes den ét sted, rettes den alle fire.
+
+## 20. november · HVER RÆKKE ER SIN EGEN FLISE — OGSÅ I DAGENS TJEK (HÅRD, Ida 20/11: »du VED at det er her ulovligt at de skal have individuelle fliser!!«)
+- En liste af ting, man kan handle på (Dagens tjek, Nye køb, Godt nyt), er individuelle hvide fliser med 12 imellem. Aldrig flere rækker i én flise med streger imellem.
+- »Besøg på hjemmesiden« (tragtens første trin) og »Klik i dine mails« står på Backstage › Hjem (Ida 20/11: »du har fjernet oversigt over hjemmeside aktivitet og klik i mails på min forside!«). De må ikke fjernes igen.
+
+## 20. november · KOLLEGAEN MED KOLLEGAKODEN LANDER I »OPRET DIN PROFIL« (Ida 20/11: »det er jo HER kunden skal lande efter de har indtastet kollegakoden« · »koden skal kun markeres som brugt når profilen er helt oprettet« · »alle logins er personlige«) · 3394
+- Efter kollegakoden kommer det samme hvide kort som hos køberen: Dit login (e-mail + adgangskode, virksomhedens navn står over) · Om dig · Fødselsdag · Rolle. Fire skærme, »1 af 4«.
+- Loginet oprettes først på den sidste skærm. Stopper kollegaen undervejs, er ingen af de 3 adgange brugt.
+- En kollega får kun sit eget trin, aldrig køberens spørgsmål om butikken, og bliver aldrig spurgt om sit navn to gange.
+- »Hvem skal bruge appen?« (vi/vores) findes ikke længere ved oprettelse: alle logins er personlige. Virksomheden kommer fra koden.
+- Hvor den gamle oprettelse stadig bruges (andre koder), skal alle felter udfyldes, også køn og fødselsdag.
+
+## 20. november · SHINEBAROMETERET OG ENERGIBANKEN SES FØRST EFTER OPGAVEN (Ida 20/11: »det er virkelig vigtigt at kunden ikke kan se mit shinebarometer og min energibank før de har udfyldt den opgave«)
+- Fliserne »Mit Shinebarometer« og »Min Energibank« står ikke i Værktøjskassen, før kunden har lavet den opgave, de bygger på (1.3 og 2.2). Ingen låst flise, ingen tom side: de findes bare ikke endnu.
+
 ## 20. november · HANDLING ER RØD · OPMÆRKSOM HAR ET TYDELIGT MÆRKE (HÅRD, Ida 20/11: »gået i stå skal ikke være blå! alt hvor jeg skal handle skal være rød!« · »hvis der er noget jeg skal være opmærksom på skal det have en tydelig markering«)
 - **Alt, hvor Ida skal handle, er rødt:** rød flade med hvid tekst. Status »Gået i stå« og »Ikke logget ind«, tal-fliserne for dem (når tallet er over 0) og knappen »Skub«. Aldrig lyseblå.
 - **Det, Ida skal være opmærksom på, har et tydeligt mærke:** en rød cirkel med hvidt udråbstegn foran teksten (fejlmeldinger, feedback, øvelser der venter).

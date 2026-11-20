@@ -57,11 +57,11 @@ Deno.serve(async (req) => {
   const hvad = String(v.hvad || "").slice(0, 4000);
   const billeder = (Array.isArray(v.billeder) ? v.billeder : []).map(String).filter((u: string) => /^https:\/\/[a-z0-9]+\.supabase\.co\/storage\/v1\/object\/public\//i.test(u)).slice(0, 6);
   const tid = new Date(v.tid || r.created_at).toLocaleString("da-DK", { timeZone: "Europe/Copenhagen", dateStyle: "long", timeStyle: "short" });
-  const linje = (et: string, vaerdi: string) => vaerdi ? '<tr><td style="padding:4px 12px 4px 0;color:#6F6B66;font-size:13px;white-space:nowrap;vertical-align:top;">' + et + '</td><td style="padding:4px 0;font-size:13px;color:#1A1A1A;">' + vaerdi + '</td></tr>' : '';
+  const linje = (et: string, vaerdi: string) => vaerdi ? '<tr><td style="padding:4px 12px 4px 0;color:#686868;font-size:13px;white-space:nowrap;vertical-align:top;">' + et + '</td><td style="padding:4px 0;font-size:13px;color:#1A1A1A;">' + vaerdi + '</td></tr>' : '';
   const html = '<div style="font-family:Poppins,Arial,sans-serif;color:#1A1A1A;max-width:560px;">'
-    + '<p style="font-size:12px;letter-spacing:1.5px;text-transform:uppercase;color:#6F6B66;margin:0 0 6px;">Fejl fra en kunde</p>'
+    + '<p style="font-size:12px;letter-spacing:1.5px;text-transform:uppercase;color:#686868;margin:0 0 6px;">Fejl fra en kunde</p>'
     + '<p style="font-size:18px;margin:0 0 16px;">' + rens(virk) + '</p>'
-    + '<div style="background:#F4F2EE;border-radius:16px;padding:16px 18px;font-size:15px;line-height:1.6;white-space:pre-wrap;margin:0 0 16px;">' + (hvad ? rens(hvad) : '<span style="color:#6F6B66;">Kunden skrev ingen tekst.</span>') + '</div>'
+    + '<div style="background:#F8F8F8;border-radius:16px;padding:16px 18px;font-size:15px;line-height:1.6;white-space:pre-wrap;margin:0 0 16px;">' + (hvad ? rens(hvad) : '<span style="color:#686868;">Kunden skrev ingen tekst.</span>') + '</div>'
     + (billeder.length ? '<p style="margin:0 0 16px;">' + billeder.map((u: string, i: number) => '<a href="' + rens(u) + '" style="color:#FC2404;">Skærmbillede' + (billeder.length > 1 ? " " + (i + 1) : "") + '</a>').join(" &nbsp; ") + '</p>' : '')
     + '<table style="border-collapse:collapse;">'
     + linje("Fra", rens((v.af ? v.af + " · " : "") + email))
@@ -71,7 +71,7 @@ Deno.serve(async (req) => {
     + linje("Version", rens(v.v || ""))
     + linje("Tid", rens(tid))
     + '</table>'
-    + '<p style="font-size:12px;color:#6F6B66;margin:18px 0 0;">Svar på mailen for at skrive direkte til kunden. Rapporten står også i Backstage · Teknik · Fejl fra kunderne.</p>'
+    + '<p style="font-size:12px;color:#686868;margin:18px 0 0;">Svar på mailen for at skrive direkte til kunden. Rapporten står også i Backstage · Teknik · Fejl fra kunderne.</p>'
     + '</div>';
 
   const noegle = Deno.env.get("BREVO_API_KEY"); if (!noegle) return svar({ fejl: "ikke-klar" }, 503);

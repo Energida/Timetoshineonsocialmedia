@@ -85,9 +85,9 @@ setTimeout(async function(){ try {
     var hd=function(sel){ return document.querySelector("#forloebTidslinje "+sel); };
     var SCR=document.getElementById("forloebTidslinje"); while(SCR&&!/auto|scroll/.test(getComputedStyle(SCR).overflowY)) SCR=SCR.parentElement; SCR=SCR||document.scrollingElement;
     var foldTjek=async function(sel, navn, rul){ var h=hd(sel); if(!h){ N++; fejl("FORLØB: fandt intet "+navn+" at folde ud"); return; } if(rul) { SCR.scrollTop=SCR.scrollHeight; await vent(150); } var t0=chT(); h.click(); await vent(500); var t1=chT(); N++; if(t0===null||Math.abs(t1-t0)>0.5) fejl("CHIPS FLYTTER SIG: "+navn+" foldet "+(rul?"(rullet ned) ":"")+Math.round(t0)+" → "+Math.round(t1)+" (skal stå stille)"); };
-    TRIN="forløbet, åbent modul udfoldet"; await foldTjek(".ftl2-stor .ftl2-hoved","åbent modul",false); alt();
+    TRIN="forløbet, åbent modul"; (function(){ var h=hd(".ftl2-stor .ftl2-hoved"); N++; if(!h) fejl("FORLØB: fandt intet åbent modul"); else if(!/visLektion\(/.test(h.getAttribute("onclick")||"")) fejl("FORLØB: åbent modul fører ikke til modulsiden (Ida 20/11: ingen fold-ud)"); })(); alt();
     TRIN="forløbet, låst modul udfoldet"; await foldTjek(".ftl2-rk.laast.fold .ftl2-rh","låst modul",false); alt();
-    TRIN="forløbet, lukket igen"; await foldTjek(".ftl2-rk.laast.fold.op .ftl2-rh","låst modul (luk)",true); await foldTjek(".ftl2-stor.op .ftl2-hoved","åbent modul (luk)",true); alt();
+    TRIN="forløbet, lukket igen"; await foldTjek(".ftl2-rk.laast.fold.op .ftl2-rh","låst modul (luk)",true); alt();
   }catch(e){ fejl("forløbet: "+(e&&e.message)); }
   clearTimeout(VAGT);
   if(FUND.length){ FUND.forEach(function(f){ console.log("SELE FLISER FEJL: "+f); }); console.log("SELE FLISER IKKE OK: "+FUND.length+" afvigelser af "+N+" målinger paa "+innerWidth); }

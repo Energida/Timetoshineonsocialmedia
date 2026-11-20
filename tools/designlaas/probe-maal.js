@@ -180,7 +180,7 @@ async function maalForloeb(vent){
       var kt=rod.querySelector(".ftl2-stor .ftl2-kort"); N++; if(!kt) fejl("FORLØB tlf: det åbne modul har ingen flise (.ftl2-kort)");
       if(kt){ var kc=getComputedStyle(kt), kr=kt.getBoundingClientRect(); er("FORLØB tlf modulflise", kt, px(kc.borderTopLeftRadius)===20&&rgb(kc.backgroundColor)==="rgb(255,255,255)"&&px(kc.borderTopWidth)===0&&kc.boxShadow!=="none", "r"+kc.borderTopLeftRadius+" "+kc.backgroundColor+" kant "+kc.borderTopWidth+" (skal 20 · hvid · skygge · ingen kant)");
         var tn=kt.querySelector(".ftl2-n"), tns=getComputedStyle(tn); er("FORLØB tlf modultitel", tn, px(tns.fontSize)===17&&tns.fontWeight==="400"&&rgb(tns.color)===SORT, tns.fontSize+"/"+tns.fontWeight+" "+tns.color+" (skal 17/400 sort)");
-        var lf=[].slice.call(rod.querySelectorAll(".ftl2-stor .ftl2-lek .lks-lek")).filter(synlig); N++; if(!lf.length) fejl("FORLØB tlf: det åbne modul viser ingen lektioner");
+        var lf=[].slice.call(rod.querySelectorAll(".ftl2-stor .ftl2-lek .lks-lek")).filter(synlig); N++; if(lf.length) fejl("FORLØB tlf: det åbne modul folder lektionerne ud (Ida 20/11: klik fører til modulsiden, ingen fold-ud)");
         lf.forEach(function(e,i){ var c=getComputedStyle(e), r=e.getBoundingClientRect();
           er("FORLØB tlf lektionsflise", e, px(c.borderTopLeftRadius)===20&&rgb(c.backgroundColor)==="rgb(255,255,255)"&&c.boxShadow!=="none"&&Math.round(r.height)>=64&&Math.abs(Math.round(r.left-kr.left)-14)<=1, "r"+c.borderTopLeftRadius+" h"+Math.round(r.height)+" ind "+Math.round(r.left-kr.left)+" (skal 20 · hvid · skygge · ≥64 · 14 inde)");
           var f0=i===0?kt:lf[i-1], d=Math.round(r.top-f0.getBoundingClientRect().bottom); er("FORLØB tlf flise→lektion", e, Math.abs(d-12)<=1, "afstand "+d+" (skal 12 — afstandsskalaen 14/11)"); });
@@ -231,7 +231,8 @@ async function maalForloeb(vent){
     N++; if(rod.querySelector(".ftl2-stor")&&/rgb\(252, ?36, ?4\)/.test(getComputedStyle(rod.querySelector(".ftl2-stor")).boxShadow)) fejl("FORLØB: den store flise har rød skygge/kant");
   }
   /* FOLD: trykket på den store flise åbner lektionslisten, og knappen går ind i den første ikke-sete lektion */
-  TRIN="forløb fold"; var h0=document.querySelector("#forloebTidslinje .ftl2-hoved"); if(h0){ h0.click(); await vent(300); N++; if(!document.querySelector("#forloebTidslinje .ftl2-stor .lks-lek")) fejl("FORLØB: tryk på den store flise åbner ikke lektionslisten"); h0=document.querySelector("#forloebTidslinje .ftl2-hoved"); h0.click(); await vent(200); N++; if(document.querySelector("#forloebTidslinje .ftl2-stor .lks-lek")) fejl("FORLØB: andet tryk lukker ikke lektionslisten"); }
+  /* INGEN FOLD-UD PÅ ÅBNE MODULER (Ida 20/11: »vi dropper drop down muligheden ved modulerne - men at man ved klik på modul flisen kommer ind på modulsiden«): trykket åbner modulets næste lektion */
+  TRIN="forløb klik"; var h0=document.querySelector("#forloebTidslinje .ftl2-hoved"); if(h0){ N++; if(!/visLektion\(/.test(h0.getAttribute("onclick")||"")) fejl("FORLØB: den store flise fører ikke til modulsiden (onclick: "+h0.getAttribute("onclick")+")"); h0.click(); await vent(400); N++; if(document.querySelector("#forloebTidslinje .ftl2-stor .lks-lek")) fejl("FORLØB: tryk på den store flise folder lektionslisten ud (skal føre til modulsiden)"); N++; if(!LEK_AABEN) fejl("FORLØB: tryk på den store flise åbner ikke modulsiden"); try{ lukLektion(); }catch(e){} await vent(200); }
 }
 function maalHero(){
   if(TLF) return; var mn=document.querySelector("#screen7 .mb-baand .mb-navn"); if(!mn) return;
