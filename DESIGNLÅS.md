@@ -1,3 +1,11 @@
+## 20. november · TRYGHEDSKONTROLLEN FØR LANCERINGEN AF YOU GOT THIS (Ida 20/11) · 3392
+- »Videre til næste« i en lektion med øvelse åbner øvelsen i videoens flise (som »Næste«). Aldrig en lektion uden vej videre.
+- »Venter på dig« er den samme flise overalt (lektionen, Forsiden på telefon og computer): #F0F5F8, kant #DEDAD4, rød »Fortsæt øvelsen« med hvid tekst, 44 på computeren og 56 i fuld bredde på telefonen.
+- Backstage › Hjem › »Køb pr. rabatkode« viser KUN rigtige rabatkoder (Ida 20/11: »jeg vil kun se de rigtige rabatkoder«). Betalingslinkets navn (»Gamle kunder«, »Ringkøbing Handelsforening«) tælles ikke.
+- Hjems tal tæller aldrig testkøb: rabatkoder med TEST, Idas egne mails og kunder med »Det er en tester« på kundekortet. Tallene hentes i sider, så intet skæres af ved 1.000 rækker.
+- Står et tal ikke rigtigt endnu, siger siden det (Brevo-klik ikke koblet på, GA4-filteret ikke lagt op). Aldrig et falsk nul.
+- »Se som kunden« skriver aldrig i kundens lektioner, øvelser eller ugemål.
+
 ## 20. november · NYT LEAD (Backstage-CRM) EFTER EKSPERTGENNEMGANGEN (Ida 19/11: »vælg på mine vegne med mig og behovet for øje« · »Ja, byg det«) · bygget, ikke lagt ud
 - Felter, produktvælgeren og tag-chips er hvide med 1 px #DEDAD4 og ingen skygge. Valgt tag er rødt.
 - Etiketten står over feltet: Poppins 12, versal, bogstavafstand 1,5, #6F6B66, 8 px ned til feltet. »(valgfri)« står ved Mail, Telefon, Produkt og Tags. Kun Butik (eller Navn, når Person er valgt) skal udfyldes.

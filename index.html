@@ -43378,7 +43378,9 @@ function hjemYgtTlfHtml() {
   let venter = []; try { venter = kursusLektionerAktive().filter(function (l) { return l.ovelse && KURSUS_UDSAT[l.id] && !oevKlaret(l.id); }); } catch (e) { venter = []; }
   if (venter.length) ud += sek("Venter på dig") + venter.map(function (l) {
     const idS = esc(String(l.id)).replace(/'/g, "");
-    return '<div class="yf-fl yf-rk" role="button" tabindex="0" onclick="visLektion(\'' + idS + '\');setTimeout(function(){startOvelse(\'' + idS + '\')},600)"><span class="yf-ring"></span><span class="yf-t">' + esc(storStart(oevOrd(l.id, true))) + ' til ' + esc(lekVisNr(l.id)) + '</span></div>';
+    /* SAMME FLISE SOM I LEKTIONEN OG PÅ COMPUTEREN (20/11, tryghedskontrollen): lyseblå med grå ramme og rød »Fortsæt øvelsen«, der åbner øvelsen i videoens flise */
+    return '<div class="lk-vent udsat-vent"><div class="lk-vent-t"><div class="lk-vent-n">' + esc(storStart(oevOrd(l.id, true))) + ' fra ' + esc(lekVisNr(l.id)) + '</div><div class="lk-vent-u">' + esc(lekVisTitel(l)) + '</div></div>'
+      + '<button type="button" class="lk-vent-k mq-tap" onclick="lekOevFortsaet(\'' + idS + '\')">Fortsæt øvelsen</button></div>';
   }).join("");
   let akt = []; try { akt = kursusLektionerAktive(); } catch (e) {}
   const moduler = [], paa = {};
@@ -46418,6 +46420,7 @@ function svarFlet(lokal, remote, beroert) {
 }
 const SVAR_KOE = {};   /* skrivninger til samme raekke koeres een ad gangen, saa to hurtige gem aldrig laver dobbelte raekker eller overskriver hinanden */
 function skemaSvarSkriv(skema, svar, beroert) {
+  if (/^lektion_/.test(String(skema || "")) && somKundeKigger()) return Promise.resolve(true);   /* »SE SOM KUNDEN« SKRIVER ALDRIG I KUNDENS LEKTIONER OG ØVELSER (tryghedskontrollen 20/11) */
   const n = skema + "|" + (typeof currentKode !== "undefined" ? currentKode : "") + "|" + (typeof CURRENT_NAVN !== "undefined" ? CURRENT_NAVN : "");
   const foer = SVAR_KOE[n] || Promise.resolve();
   const nu = foer.catch(function () {}).then(function () { return skemaSvarSkrivEn(skema, svar, beroert); });
@@ -47781,7 +47784,8 @@ function lekVidere(id) {
   lektionSet(id);   /* videoen er set — sat FOER kortet, saa listen og tallet er rykket */
   const tilbydOv = !!(l && l.ovelse && String(id) !== "0-1" && !oevKlaret(id) && !KURSUS_UDSAT[id] && !mgErGentagelig(id));   /* LEKTION 0.1 (VELKOMMEN) HAR INGEN REFLEKSIONSØVELSE (Ida 9/11) */
   /* BUD 1 »ÉN TING AD GANGEN« (Idas klik 11/11): har lektionen en opgave, bliver kunden på lektionssiden; opgaven står som flise under videoen, og »Næste« åbner arket */
-  if (tilbydOv && lekMb()) { renderLektionVis(); setTimeout(function () { try { const f = document.getElementById("lekOpgFlise"); if (f) f.scrollIntoView({ block: "center", behavior: "smooth" }); } catch (e) {} }, 80); return; }
+  /* VIDERE ÅBNER ØVELSEN I VIDEOENS FLISE — som »Næste« (20/11, tryghedskontrollen): v3389 fjernede den gamle opgaveflise, og »Videre« ventede stadig på den = blindgyde */
+  if (tilbydOv && lekMb()) { LEK_OEV = { id: id, trin: "intro" }; renderLektionVis(); return; }
   lekMoment(id, tilbydOv ? "oevelse" : "faerdig");
 }
 /* ===== FAERDIG-OEJEBLIKKET (Idas klik 13/9 paa mockup-laerredet) =====
@@ -48167,7 +48171,7 @@ function ovelseServerAuto(straks) {
 let OVELSE_FAERDIG_SENDER = false;
 async function ovelseGensend() {
   /* ET USENDT SVAR SENDES IGEN (hul 2): ved start og naar nettet kommer tilbage. Lektionens »set« sendes foerst bagefter (kursusHent). */
-  if (!sb || !currentKode) return;
+  if (!sb || !currentKode || somKundeKigger()) return;   /* »se som kunden« sender intet (20/11) */
   const u = ovelseLsHent("usendt"), ids = Object.keys(u); if (!ids.length) return;
   const beroert = ovelseLsHent("beroert"), kl = ovelseKladdeHent();
   for (const id of ids) {
@@ -48343,7 +48347,7 @@ async function ovelseNaeste() {
     if (antalDage) {
       MAAL_UGE = antalDage;
       try { localStorage.setItem("maal_" + currentKode, antalDage); } catch(e) {}
-      if (sb && currentKode) { try { await sb.from("kunde_maal").upsert({ kode: currentKode, opslag_uge: antalDage }, { onConflict: "kode" }); } catch(e) {} }
+      if (sb && currentKode && !somKundeKigger()) { try { await sb.from("kunde_maal").upsert({ kode: currentKode, opslag_uge: antalDage }, { onConflict: "kode" }); } catch(e) {} }   /* »se som kunden« overskriver ikke kundens ugemål (20/11) */
     }
   }
   if (sb && currentKode) {
@@ -69619,7 +69623,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "3391";
+const APP_VERSION = "3392";
 const APP_BYGGET = "3. november";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_VERSION;   /* ingen dato (Ida 7/11: »hvorfor står der version 3. november?«) — datoen blev ikke rettet med, nummeret er sandheden */ } catch (e) {} });
 let NY_VERSION_KLAR = false;
@@ -96594,20 +96598,24 @@ function liveKoebFra(c) {
   const bm = String(c.kommentar || "").match(/Beløb:\s*(\d+)/);   /* stripe-koeb skriver »Beløb: X kr.« fra 19/10 (Idas klik »Kroner pr. køb«) */
   return { id: String(c.id || c.created_at), navn: dele[0] || c.kunde || "", butik: c.kunde || "", mail: mail, tlf: tlf, kode: overblikKode(c.kommentar), rabat: ((String(c.kommentar || "").match(/Rabatkode:\s*([A-Z0-9ÆØÅ_-]+)/i) || [])[1] || "").toUpperCase(), kilde: overblikKilde(c.source), tid: new Date(c.created_at).getTime(), kr: bm ? Number(bm[1]) : null };
 }
+/* ALLE RÆKKER, IKKE KUN DE FØRSTE 1.000 (tryghedskontrollen 20/11): Supabase giver højst 1.000 rækker pr. kald — tallene på Hjem hentes i sider */
+async function liveAlle(byg) { let ud = [], fra = 0; for (let n = 0; n < 50; n++) { const r = await byg().range(fra, fra + 999); if (r.error) return { data: ud.length ? ud : null, error: r.error }; const d = r.data || []; ud = ud.concat(d); if (d.length < 1000) break; fra += 1000; } return { data: ud, error: null }; }
+/* IDAS EGNE TESTMAILS tæller aldrig som køb */
+const LIVE_TESTMAILS = ["info.energida@gmail.com"];
 async function liveOverblikHent() {
   if (!sb || LIVE_HENTER) return LIVE_DATA; LIVE_HENTER = true;
   try {
     const [kr, ar, sr, mk] = await Promise.all([
       sb.from("contacts").select("id,kunde,source,kommentar,created_at").like("source", "YOU GOT THIS%").order("created_at", { ascending: false }).limit(500),
-      sb.from("skema_svar").select("kode,navn,svar,created_at").eq("skema", "adgangskode_valgt"),
-      sb.from("skema_svar").select("kode,skema,created_at").like("skema", "lektion_set_%"),
-      sb.from("skema_svar").select("kode,svar").eq("skema", "mail_klik")
+      liveAlle(function () { return sb.from("skema_svar").select("kode,navn,svar,created_at").eq("skema", "adgangskode_valgt").order("created_at"); }),
+      liveAlle(function () { return sb.from("skema_svar").select("kode,skema,created_at").like("skema", "lektion_set_%").order("created_at"); }),
+      liveAlle(function () { return sb.from("skema_svar").select("kode,svar").eq("skema", "mail_klik").order("kode"); })
     ]);
     if (kr.error) return LIVE_DATA;
     const appKlik = {}; try { const graense = Date.now() - 30 * 864e5; ((mk && mk.data) || []).forEach(function (r) { if (erEgenKode(String(r.kode || "").toUpperCase())) return; ((r.svar && r.svar.klik) || []).forEach(function (x) { if (x && x.k && new Date(x.t).getTime() > graense) appKlik[x.k] = (appKlik[x.k] || 0) + 1; }); }); } catch (e) {}
     const koeb = (kr.data || []).map(liveKoebFra).filter(function (k) {
-      if (!k.kilde || /test/i.test(k.kilde) || /@energida\.dk$/i.test(k.mail)) return false;
-      try { if (k.kode && erEgenKode(k.kode)) return false; } catch (e) {}
+      if (!k.kilde || /test/i.test(k.kilde) || /test/i.test(k.rabat || "") || /@energida\.dk$/i.test(k.mail) || LIVE_TESTMAILS.indexOf(String(k.mail || "").toLowerCase()) > -1) return false;
+      try { if (k.kode && (erEgenKode(k.kode) || ((VIRKSOMHEDSKODER || {})[k.kode] || {}).test)) return false; } catch (e) {}   /* »Det er en tester« på kundekortet = ude af tallene (20/11) */
       return true;
     });
     const akt = {}; (ar.data || []).forEach(function (r) { const k = String(r.kode || "").toUpperCase(); const t = new Date((r.svar && r.svar.tid) || r.created_at).getTime(); if (!akt[k] || t < akt[k]) akt[k] = t; });
@@ -96645,7 +96653,7 @@ function liveDetalje(hvad, i) {
         + (g.lige_nu != null ? liveRk("På siden lige nu", "", (g.lige_nu && g.lige_nu.besoeg != null) ? g.lige_nu.besoeg : g.lige_nu) : "")
         + '<div class="lv-d-et">Mest besøgte sider · 30 dage</div>' + (((g.sider || []).length) ? g.sider.slice(0, 12).map(function (x) { return liveRk(x.sti || "/", "", x.besoeg); }).join("") : tom("Ingen sider endnu."))
         + (((g.mails || []).length) ? '<div class="lv-d-et">Besøg fra mails · 30 dage</div>' + g.mails.map(function (x) { return liveRk(x.kampagne, "", x.besoeg); }).join("") : "");
-      html += '<div class="lv-d-tom" style="padding-top:12px">Kun besøg på energida.dk tæller. Google sorterer selv kendte robotter fra. »Lige nu« tæller alle adresser.</div>';
+      html += '<div class="lv-d-tom" style="padding-top:12px">Google sorterer selv kendte robotter fra. Tallene tæller alle adresser, også testudgaver, indtil filteret »kun energida.dk« er lagt op.</div>';
     }
   } else if (hvad === "trin" && i === 1) { titel = "Køb"; html = '<div class="lv-d-et">Sidste 30 dage</div>' + kunder(maaned, function (k) { return liveDato(k.tid); }); }
   else if (hvad === "trin" && i === 2) { titel = "Valgt adgangskode"; html = '<div class="lv-d-et">Sidste 30 dage</div>' + kunder(maaned.filter(function (k) { return D.akt[KK(k)]; }), function (k) { return liveDato(D.akt[KK(k)]); }) + ((maaned.filter(function (k) { return !D.akt[KK(k)]; }).length) ? '<div class="lv-d-et">Har købt, men ikke valgt adgangskode</div>' + kunder(maaned.filter(function (k) { return !D.akt[KK(k)]; }), function (k) { return liveDato(k.tid); }) : ""); }
@@ -96686,7 +96694,7 @@ function liveOverblikHtml(D) {
     const kl = new Date(k.tid).toTimeString().slice(0, 5).replace(":", ".");
     const kode = String(k.kode || "").toUpperCase(); const kanAabne = !!(kode && typeof VIRKSOMHEDSKODER !== "undefined" && VIRKSOMHEDSKODER[kode]);
     const firma = k.butik ? navnHvisSmaat(k.butik) : (k.navn ? personNavn(k.navn) : "Ny kunde"), person = (k.navn && k.navn !== k.butik) ? personNavn(k.navn) : "";   /* personnavne med stort (Ida 16/11) */
-    const rabat = k.rabat || k.kilde || "";
+    const rabat = k.rabat || "";
     const kr = (k.kr != null && !isNaN(k.kr)) ? Number(k.kr).toLocaleString("da-DK") + " kr." : "";
     return '<div class="bs3-fl lv-kb' + (kanAabne ? ' bs3-klik" role="button" tabindex="0" title="Åbn kundekortet" onclick="kundeSideVis(\'' + esc(kode) + '\')"' : '"') + '>'
       + '<span class="lv-kb-kl">' + kl + '</span><span class="lv-kb-firma">' + esc(firma) + '</span><span class="lv-kb-person">' + esc(person) + '</span>'
@@ -96695,7 +96703,7 @@ function liveOverblikHtml(D) {
   const belobHtml = '<div class="bs3-ver">Købene i dag</div>'
     + (iDag.length ? '<div class="lv-kb-hoved"><span>Kl.</span><span>Virksomhed</span><span>Person</span><span>Rabatkode</span><span>Beløb</span></div>' + koebRk : '<div class="bs3-fl lv-kb-tom"><div class="bs3-n">Ingen køb i dag endnu.</div></div>');
   /* KØB PR. RABATKODE (30 dage) */
-  const pr = {}; maaned.forEach(function (k) { const n = k.rabat || k.kilde; pr[n] = (pr[n] || 0) + 1; });   /* RABATKODEN, ikke foreningens navn (Ida 8/11); ældre køb uden gemt kode viser foreningen */
+  const pr = {}; maaned.forEach(function (k) { const n = k.rabat; if (!n) return; pr[n] = (pr[n] || 0) + 1; });   /* KUN RIGTIGE RABATKODER (Ida 20/11: »slet gamle kunder og ringkøbing handelsforening her«) — linkets navn tælles ikke */   /* RABATKODEN, ikke foreningens navn (Ida 8/11); ældre køb uden gemt kode viser foreningen */
   const prL = Object.keys(pr).sort(function (a, b) { return pr[b] - pr[a]; }); const maks = Math.max.apply(null, prL.map(function (x) { return pr[x]; }).concat([1]));
   const koder = '<div class="bs3-fl"><div class="bs3-et"><span>Køb pr. rabatkode</span><span class="lv-tid">Sidste 30 dage</span></div>'
     + (prL.length ? '<div class="lv-bar">' + prL.map(function (x) { return '<div class="lv-r"><span>' + esc(x) + '</span><span class="lv-spor"><i style="width:' + Math.round(pr[x] / maks * 100) + '%"></i></span><b>' + pr[x] + '</b></div>'; }).join("") + '</div>' : '<div class="bs3-s">Ingen køb endnu.</div>') + '</div>';
@@ -96726,7 +96734,7 @@ function liveOverblikHtml(D) {
       .map(function (k) { const x = pr[k]; return '<button type="button" class="lv-trin-knap" data-k="' + esc(k) + '" onclick="liveDetalje(\'kampagne\',this.dataset.k)"><b>' + (x.web + x.app) + ' klik</b><span class="lv-mail-n">' + esc(k) + '</span><span>' + [x.web ? x.web + " på hjemmesiden" : "", x.app ? x.app + " i appen" : ""].filter(Boolean).join(" · ") + '</span></button>'; });
     const alle = ml.concat(jl);
     mailFl = '<div class="bs3-fl lv-tragt"><div class="bs3-et"><span>Klik i dine mails</span><span class="lv-tid">Sidste 30 dage</span></div>'
-      + (alle.length ? '<div class="lv-trin lv-mails">' + alle.join("") + '</div>' : '<div class="bs3-s">Ingen klik fra mails endnu.</div>') + '</div>';
+      + (alle.length ? '<div class="lv-trin lv-mails">' + alle.join("") + '</div>' : '<div class="bs3-s">Ingen klik fra mails endnu.</div>') + (D.bv ? '' : '<div class="bs3-s">Brevo-tallene er ikke koblet på endnu, så klik i mails sendt fra Brevo er ikke med.</div>') + '</div>';
   }
   return '<div class="lv"><div class="lv-top">' + stor + '<div class="lv-kol">' + belobHtml + '</div></div>'
     + '<div class="lv-tre-fl">' + koder + akt24 + lek7 + '</div>' + liveFbAlleFlise() + tragt + mailFl + '</div>';   /* AL FEEDBACK + HVEM HAR SET HVAD (Idas klik 15/11, bud 3 og 4) — erstatter »Nyt fra kunderne« (kun de tre nyeste kommentarer) */   /* »HVEM HAR SET HVAD« ER VÆK FRA HJEM (Ida 19/11: »hvorfor er dette ikke slettet fra mit dashboard endnu!!?« — taget af 18/11 i en kopi, der aldrig blev lagt ud). Hvem der har set hvad står for hver kunde i CRM › Aktivitet. */
@@ -102349,9 +102357,17 @@ html body:not(#n1):not(#n2):not(#n3):not(#n4):not(#n5):not(#n6):not(#n7):not(#n8
 html body:not(#n1):not(#n2):not(#n3):not(#n4):not(#n5):not(#n6):not(#n7):not(#n8) #bsFlytMenu .htb-ark.nl-ark .nl-vaelg > button { flex:1 1 0; border:0; border-radius:999px; background:transparent; font:400 14px Poppins,sans-serif; color:#1A1A1A; cursor:pointer; box-shadow:none; }
 html body:not(#n1):not(#n2):not(#n3):not(#n4):not(#n5):not(#n6):not(#n7):not(#n8) #bsFlytMenu .htb-ark.nl-ark .nl-vaelg > button.on { background:#FC2404; color:#fff; }
 </style>
+<style id="venterFliseStil">
+/* »VENTER PÅ DIG« ER ENS OVERALT (20/11, tryghedskontrollen): lyseblå #F0F5F8 med grå ramme, rød knap med hvid tekst — 44 på computeren, 56 på telefonen.
+   På Forsiden vandt ældre regler: hvid flise, grå tekst på rød, knappen 32 høj (1440) og 0×0 (390) */
+html body:not(#vd1):not(#vd2):not(#vd3):not(#vd4):not(#vd5):not(#vd6):not(#vd7):not(#vd8):not(#vd9):not(#vd10):not(#vd11):not(#vd12):not(#vd13):not(#vd14):not(#vd15):not(#vd16):not(#vd17):not(#vd18):not(#vd19):not(#vd20):not(#vd21):not(#vd22):not(#vd23):not(#vd24) .lk-vent { background:#F0F5F8 !important; border:1px solid #DEDAD4 !important; box-shadow:none !important; border-radius:20px !important; padding:18px 20px !important; display:flex !important; justify-content:space-between; align-items:center; gap:16px; }
+html body:not(#vd1):not(#vd2):not(#vd3):not(#vd4):not(#vd5):not(#vd6):not(#vd7):not(#vd8):not(#vd9):not(#vd10):not(#vd11):not(#vd12):not(#vd13):not(#vd14):not(#vd15):not(#vd16):not(#vd17):not(#vd18):not(#vd19):not(#vd20):not(#vd21):not(#vd22):not(#vd23):not(#vd24) .lk-vent .lk-vent-k { display:inline-flex !important; align-items:center; justify-content:center; flex:none; width:auto !important; min-width:0 !important; height:44px !important; min-height:44px !important; padding:0 22px !important; border:0 !important; border-radius:999px !important; background:#FC2404 !important; color:#FFFFFF !important; font:400 14px Poppins,sans-serif !important; box-shadow:none !important; opacity:1 !important; visibility:visible !important; position:static !important; }
+@media (max-width:899px) { html body:not(#vd1):not(#vd2):not(#vd3):not(#vd4):not(#vd5):not(#vd6):not(#vd7):not(#vd8):not(#vd9):not(#vd10):not(#vd11):not(#vd12):not(#vd13):not(#vd14):not(#vd15):not(#vd16):not(#vd17):not(#vd18):not(#vd19):not(#vd20):not(#vd21):not(#vd22):not(#vd23):not(#vd24) .lk-vent { flex-direction:column !important; align-items:stretch !important; } html body:not(#vd1):not(#vd2):not(#vd3):not(#vd4):not(#vd5):not(#vd6):not(#vd7):not(#vd8):not(#vd9):not(#vd10):not(#vd11):not(#vd12):not(#vd13):not(#vd14):not(#vd15):not(#vd16):not(#vd17):not(#vd18):not(#vd19):not(#vd20):not(#vd21):not(#vd22):not(#vd23):not(#vd24) .lk-vent .lk-vent-k { width:100% !important; height:56px !important; min-height:56px !important; } }
+</style>
+
 
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-hvid.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 20. november · 3391</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 20. november · 3392</div>
 <script>
 /* DROPDOWNEN RULLER SELV (Ida 4/10) — maal den aabne liste og klip den ved skaermens bund */
 (function () {
