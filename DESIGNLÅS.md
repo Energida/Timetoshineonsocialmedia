@@ -1,3 +1,12 @@
+## 20. november · 3407: MIT SHINEBAROMETER = »DIN ADFÆRD« OG »DIN KROP«
+- Idas klik 20/11 »Ja, byg det« (artifact Q9QP9ivWaw5MDe9wqGg6ff). Vælter 3405's opbygning med spørgsmålet over hver flise.
+- To fliser. »Din adfærd« rammer Overskud og Underskud ind; »Din krop« rammer Rykker 1, Rykker 2 og Inkasso ind (Ida: »det er mere Din adfærd …« · »de 3 sidste dele rammes ind med Din krop«).
+- UNDTAGELSE fra »aldrig flise i flise«, givet af Ida 20/11 (»sæt overskud og underskud i rammer hver for sig«): Overskud og Underskud står i hver sin ramme med 1 px grå kant #DEDEDE og uden skygge inde i flisen »Din adfærd«. Gælder kun her.
+- I rammen: navnet, »Ret«, og under de små overskrifter »Adfærd« og »Tanker« kundens egne linjer med rød prik. Ingen talcirkler (Ida: »fjern de røde cirkler med numre«).
+- »Ret« åbner rammens felter samme sted med mikrofon, »Fortryd« og »Gem«. Et tomt svar har knappen »Skriv dit svar«.
+- »Din krop«: uden svar står trinnet med hængelås og INGEN tekst om, hvornår det åbner (Ida: »fjern disse«). Med svar (fra lektionen om Rykker 1, Rykker 2 og Inkasso) står linjerne dér.
+- Efter opgaven til 1.3 står der »Dit Shinebarometer ligger nu i Værktøjskassen.« med knappen »Åbn Mit Shinebarometer«.
+
 ## 20. november · 3405: MIT SHINEBAROMETER EFTER BUD 1
 - Idas klik 20/11 »Ja, byg bud 1« (artifact XxYPKn2ePsqpadZ9CosFpA) efter hendes ord: »spørgsmålet og kundens svar er tydeligere delt op«.
 - 3406: »Hvor er du i dag?« er FJERNET (Ida 20/11: »denne med hvor kunden er i dag skal fjernes«). Overskud står altid først, underskud under.
