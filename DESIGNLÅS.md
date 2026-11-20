@@ -1,3 +1,26 @@
+## 20. november · 3402: FOLD UD UNDER LEKTIONEN (kundens lektionsliste)
+- Idas valg 20/11: »1. kør med fold ud« (bud 6, artifact 8XyPcYMCq1PhbQhLQ7U4Rg). Vælter 15/11 »lektionsfliserne siger intet om øvelser«.
+- En lektion med refleksionsøvelse eller opgave har en pil. Øvelsen står som sin egen hvide flise, rykket ind under lektionen, med ordet »Refleksionsøvelse« eller »Opgave«.
+- Den folder sig selv ud, mens øvelsen venter (rød ring), og ind igen, når den er gjort (rødt flueben). Kundens eget tryk på pilen vinder.
+- Før lektionen er gennemført, står øvelsen med hængelås, og et tryk gør intet.
+- Et tryk på øvelsen åbner den i videoens flise, aldrig på den gamle helside.
+- Ingen tekst under lektionens navn (»venter«, »· Gjort«). Øvelsens flise er hvid, ikke lyseblå.
+
+## 20. november · 3402: STUDIOS MODULSIDE SOM KUNDENS (Energida Studio, computer)
+- Idas valg 20/11: »ja gå med bud 1 men lav tydelige skygger« (artifact MLkYH2rTcqsTeAyQpHn7Md). Hendes idé: »når jeg klikker på et modul skal layoutet blive ligesom når jeg står på modulet på kundens version … hele midtersiden … alt om lektionen med fanerne«.
+- Fra 1000 px: to kolonner. Til venstre »X af N udgivet«, modulets dato med »Bekræft«, »Om modulet« og lektionerne som fliser. I midten den valgte lektion: »Lektion 1.2« + navnet øverst, derunder de syv faner.
+- Tegnene til venstre er status: rødt flueben = udgivet · tom cirkel = ikke udgivet · hængelås = skjult for kunderne.
+- Hver flise er hvid med tydelig skygge (0 1px 3px .14 + 0 10px 28px .16). Den valgte er lyseblå #F4F7FA med grå ramme og uden skygge.
+- Første lektion står valgt, når modulet åbnes. »Om modulet« viser modulets egne felter i midten.
+- Felter, faner, gem og »Udgiv« er de samme som før. Telefonen (under 1000 px) er urørt.
+
+## 20. november · 3402: »VIDERE« · KNAPPERNE UNDER ØVELSENS FLISE · VENTER PÅ DIG PÅ FORSIDEN
+- Vejen frem hedder »Videre« alle steder: under videoen, i feedback-popuppen og i øvelsen (Ida 20/11: »vi skal vælge videre« · »og næste laves om til videre«). »Markér som færdig« er uændret; uden en næste lektion hedder øvelsens knap »Gem mine svar«.
+- Øvelsens knapper står under flisen, ikke i den, i samme knaprække som under videoen (Ida 20/11: »flyt knapperne ud af flisen her!«).
+- Øverst i flisen står »Refleksionsøvelse 1 af 3« eller »Opgave 1 af 3«, aldrig »Spørgsmål 1 af 3« (Ida 20/11).
+- »Gemt« under svarfeltet vises først, når der er skrevet noget (Ida 20/11: »misvisende der står gemt fra start«).
+- »Venter på dig« står på forsiden, ikke øverst i den næste lektion: versal-overskrift, og derunder én flise pr. ting med cirklen til venstre og ingen rød knap. Hele flisen åbner den. Cirklen markerer en opgave som færdig; en refleksionsøvelse kræver et svar, så dér åbner cirklen øvelsen (Ida 20/11).
+
 ## 20. november · 3400: YOU GOT THIS-FORSIDEN ER ENS I ALLE BREDDER
 - Rækkefølgen er altid: Fortsæt hvor du slap · overskriften »Lektionerne« · ringene. Også mellem 760 og 899 px, hvor overskriften før stod alene til højre (Ida 20/11, målt live på 3397).
 
