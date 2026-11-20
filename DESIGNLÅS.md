@@ -1,3 +1,10 @@
+## 20. november · »MARKÉR SOM FÆRDIG« → FEEDBACK → ØVELSEN (Ida 20/11: »fejl opdaget! … så kommer feedback pop-uppen ikke« · »det er vigtigt at kunden har set lektionen til ende inden de kan markere den som færdig!«) · 3397
+- En lektion er først færdig, når dens opgave eller refleksionsøvelse også er. Forsidens »Fortsæt hvor du slap« og klik på modulflisen fører til den lektion, kunden er nået til, aldrig ind i en låst lektion (Ida 20/11: »jeg kan slet ikke gå ind på modul 1 nu«).
+- Den røde knap under videoen hedder »Markér som færdig«. Den er låst, til videoen er set til ende.
+- Trykket markerer lektionen som gennemført og viser feedback-popuppen med stjernerne. Popuppen kommer aldrig af sig selv, når videoen slutter (vælter 13/9).
+- Popuppens knap siger, hvad der kommer: »Videre til refleksionsøvelsen« / »Videre til opgaven« / »Næste lektion«. Derefter kommer øvelsen eller opgaven.
+- Vælter »Videre til refleksionsøvelsen« som navn på knappen under videoen (3395); det navn står nu i popuppen og på en gennemført lektion, hvor øvelsen venter.
+
 ## 20. november · 3396: »UDGIV« I STUDIO · MÆRKET PÅ 0.6 · TO RINGE PÅ FORSIDEN · »KØBER« / »KOLLEGA« I CRM
 - Forsiden har to ringe i stedet for »Opgaver«: »Opgaver« og »Refleksionsøvelser« hver for sig (Ida 20/11: »opgaver og reflektionsøvelser adskilles ikke! det skal de!«). En ring vises kun, når der er noget at tælle.
 - 0.6 har mærket »Ida kan se« i flisens højre hjørne (Ida 20/11: »ja jeg ser 0.6 svar«).

@@ -46619,7 +46619,13 @@ function kursusModul0Set() {   /* alle modul 0-lektioner er set (17/10) */
   let m0 = []; try { m0 = (kursusLektionerAktive() || []).filter(function (l) { return (parseInt(modulNrFor(l.id), 10) || 0) <= 1; }); } catch (e) {}
   return m0.length > 0 && m0.every(function (l) { return KURSUS_SET[l.id]; });
 }
-function kursusNaesteLektion() { return kursusLektionerAabne().find(l => !KURSUS_SET[l.id]) || null; }
+/* EN LEKTION ER FØRST FÆRDIG, NÅR DENS OPGAVE ELLER REFLEKSIONSØVELSE OGSÅ ER (Ida 20/11: »nu er der slet ingen fortsæt hvor du slap på forsiden??« · »jeg kan slet ikke gå ind på modul 1 nu«).
+   Målt live på 3394: videoen i 1.2 var set, opgaven ventede, og næste lektion (1.3) var låst — så fandt forsiden intet at fortsætte med, og modulflisen sendte kunden ind i låsen. */
+function lekOevMangler(l) { try { return !!(l && KURSUS_SET[l.id] && l.ovelse && l.ovelse.length && String(l.id) !== "0-1" && !oevKlaret(l.id) && !KURSUS_UDSAT[l.id] && !mgErGentagelig(l.id)); } catch (e) { return false; } }
+function kursusNaesteLektion() {
+  try { const v = kursusLektionerAktive().find(function (l) { return lekOevMangler(l) && !lekModulLaastFor(l.id); }); if (v) return v; } catch (e) {}
+  return kursusLektionerAabne().find(l => !KURSUS_SET[l.id]) || null;
+}
 function kursusNaeste() {
   const l = kursusNaesteLektion();
   if (l) visLektion(l.id);
@@ -46927,7 +46933,16 @@ window.addEventListener("message", function (e) {
     if (d && d.event === "ended") lekVideoSlut();
   } catch (err) {}
 });
-function lekVideoSlut() { try { const k = document.getElementById("lekVidereKnap"); if (k) { k.classList.remove("laast"); k.setAttribute("aria-disabled", "false"); k.removeAttribute("title"); } } catch (e) {} const id = LEK_AABEN; if (!id || KURSUS_SET[id]) return; lekVidere(id); }
+/* VIDEOEN SKAL VÆRE SET TIL ENDE, FØR LEKTIONEN KAN MARKERES SOM FÆRDIG (Ida 20/11: »det er vigtigt at kunden har set lektionen til ende inden de kan markere den som færdig!«).
+   Slutningen huskes på enheden (lek_slut_<kode>), og den røde knap »Markér som færdig« låses op. Popuppen kommer først, når kunden trykker — aldrig af sig selv (vælter 13/9). */
+function lekSlutHent() { try { return JSON.parse(localStorage.getItem("lek_slut_" + (currentKode || "X")) || "{}") || {}; } catch (e) { return {}; } }
+function lekErSetTilEnde(id) { try { return !!(KURSUS_SET[id] || lekSlutHent()[String(id)] || (typeof ygtAltAabent === "function" && ygtAltAabent()) || somKundeKigger()); } catch (e) { return false; } }
+function lekVideoSlut() {
+  const id = LEK_AABEN; if (!id) return;
+  try { const s = lekSlutHent(); s[String(id)] = 1; localStorage.setItem("lek_slut_" + (currentKode || "X"), JSON.stringify(s)); } catch (e) {}
+  try { document.querySelectorAll("#lekVidereKnap, #lekVis .lk-pil.lk-faerdig").forEach(function (k) { k.classList.remove("laast"); k.setAttribute("aria-disabled", "false"); k.removeAttribute("title"); k.style.opacity = ""; k.style.cursor = ""; }); } catch (e) {}
+}
+function lekFaerdigKlik(id) { if (!lekErSetTilEnde(id)) return; lekVidere(id); }
 /* ANDROID: gaar videoen i fuld skaerm, laases telefonen til liggende, saa den fylder det
    hele. iPhone kender ikke laasen (kaldet fejler stille) og foelger i stedet rotationen. */
 document.addEventListener("fullscreenchange", function () {
@@ -47124,7 +47139,8 @@ function lekMbRender() {
   /* KNAPPEN SIGER, HVAD DER SKER (Hans-testen 24/9: »Færdig · Næste lektion« foerte til oevelsen). Oevelsen naevnes ikke, foer videoen er set (Ida 24/9). */
   /* KNAPPEN PASSER TIL DET, DER KOMMER (Ida 20/11: »når man har gennemført en lektion hvor der tilhører en reflektionsopgave eller en opgave skal næste knappen passe til«) — vælter 24/9 */
   const kommerOev = harOv && !oevKlaret(id) && !KURSUS_UDSAT[id] && String(id) !== "0-1" && !mgErGentagelig(id);
-  if (!set) roed = lekMbPil(kommerOev ? 'Videre til ' + oevOrd(id, true) : 'Videre til næste', "lekVidere('" + id + "')", true, "pilH", true);   /* Idas ord 26/10: »rød knap skal hedde videre til næste« */
+  /* »MARKÉR SOM FÆRDIG« (Ida 20/11): låst, til videoen er set til ende; trykket viser feedback-popuppen, og derefter kommer øvelsen/opgaven eller næste lektion */
+  if (!set) { const klar = lekErSetTilEnde(id) || !l.video; roed = '<button type="button" class="lk-pil roed lk-faerdig' + (klar ? '' : ' laast') + '" aria-disabled="' + (klar ? 'false' : 'true') + '"' + (klar ? '' : ' style="opacity:.4;cursor:default;"') + ' onclick="lekFaerdigKlik(\'' + id + '\')">Markér som færdig</button>'; }   /* Idas ord 26/10: »rød knap skal hedde videre til næste« */
   else if (harOv && !oevKlaret(id)) {   /* KNAPPERNE STÅR I FLISEN (ekspertholdet 12/11: »Næste« lignede næste video). Er en OPGAVE sat til senere, er næste lektion åben, og den røde knap fører videre. */
     const nx = aktive[ix + 1];
     /* gik kunden tilbage fra øvelsen til videoen, fører den røde knap ind i øvelsen igen (20/11) — aldrig en lektion uden vej frem */
@@ -47867,7 +47883,12 @@ function lekVidere(id) {
   const tilbydOv = !!(l && l.ovelse && String(id) !== "0-1" && !oevKlaret(id) && !KURSUS_UDSAT[id] && !mgErGentagelig(id));   /* LEKTION 0.1 (VELKOMMEN) HAR INGEN REFLEKSIONSØVELSE (Ida 9/11) */
   /* BUD 1 »ÉN TING AD GANGEN« (Idas klik 11/11): har lektionen en opgave, bliver kunden på lektionssiden; opgaven står som flise under videoen, og »Næste« åbner arket */
   /* VIDERE ÅBNER ØVELSEN I VIDEOENS FLISE — som »Næste« (20/11, tryghedskontrollen): v3389 fjernede den gamle opgaveflise, og »Videre« ventede stadig på den = blindgyde */
-  if (tilbydOv && lekMb()) { LEK_TEGN_VENTER = ""; LEK_OEV = { id: id, trin: "intro" }; renderLektionVis(); return; }
+  /* FEEDBACKEN KOMMER FØR ØVELSEN (Ida 20/11: »så på en eller anden måde kommer feedback pop-uppen ikke«): før sprang appen direkte til øvelsen, når lektionen havde én */
+  if (tilbydOv && lekMb()) {
+    let visFb = false; try { visFb = !!(typeof CUSTOMER_NAV !== "undefined" && CUSTOMER_NAV && l && !reflSet()["lektion_" + id] && !lekPopTekst(l).fb.fra); } catch (e) {}
+    if (visFb) { lekMoment(id, "faerdig"); if (document.querySelector("#lekPop.on #lekFbKnap")) return; try { lukLekPop(); } catch (e) {} }
+    LEK_TEGN_VENTER = ""; LEK_OEV = { id: id, trin: "intro" }; renderLektionVis(); return;
+  }
   lekMoment(id, tilbydOv ? "oevelse" : "faerdig");
   { const pp = document.getElementById("lekPop"); if (!(pp && pp.classList.contains("on")) && LEK_TEGN_VENTER) { LEK_TEGN_VENTER = ""; if (LEK_AABEN) renderLektionVis(); } }   /* ingen popup kom frem: tegn som før */
 }
@@ -47913,7 +47934,7 @@ function lekMoment(id, art, svarId) {
       + '<div class="lek-moment-stj"><div id="reflStjerner">' + reflStjerneHtml() + '</div>'
       + '<textarea id="lekMomentKom" class="sk-input" style="display:none;width:100%;min-height:84px;background:#fff;font-size:16px;line-height:1.5;margin-top:12px;text-align:center;" placeholder="' + esc(lekPopTekst(l).fb.ph) + '"></textarea></div>'
       /* STJERNERNE SKAL KLIKKES, FØR MAN KAN GÅ VIDERE (Ida 20/11: »jeg skal ikke kunne gå videre til næste lektion før jeg har klikket på stjernerne« · »men det er ok de ikke udfylder feedback«): knappen er låst, til der er valgt stjerner; kommentaren er frivillig */
-      + '<button type="button" class="dbtn primary lek-moment-knap lek-fb-knap" id="lekFbKnap" aria-disabled="true" style="opacity:.4;cursor:default;" onclick="if(!REFL_STJERNER)return;lekMomentVidere(\'' + id + '\',\'' + art + '\')">' + (((sidste || naesteLaast) && !lekSkemaErNaeste()) ? 'Tilbage til ' + esc(lekSideNavn().toLowerCase()) : 'Næste lektion') + '</button>'
+      + '<button type="button" class="dbtn primary lek-moment-knap lek-fb-knap" id="lekFbKnap" aria-disabled="true" style="opacity:.4;cursor:default;" onclick="if(!REFL_STJERNER)return;lekMomentVidere(\'' + id + '\',\'' + art + '\')">' + (lekOevVenter(id) ? 'Videre til ' + esc(oevOrd(id, true)) : ((sidste || naesteLaast) && !lekSkemaErNaeste()) ? 'Tilbage til ' + esc(lekSideNavn().toLowerCase()) : 'Næste lektion') + '</button>'
       + '</div>');
     if (LEK_MOMENT_TIMER) clearTimeout(LEK_MOMENT_TIMER); LEK_MOMENT_TIMER = null;
     return;
@@ -47983,8 +48004,10 @@ function lekMomentSlutskema(id) {
   try { lukLektion(); } catch (e) {}
   setTimeout(function () { try { openSkema("efter_forloebet"); } catch (e) {} }, 250);
 }
+function lekOevVenter(id) { try { const l = (KURSUS_LEKTIONER || []).find(function (x) { return x.id === id; }); return !!(l && l.ovelse && l.ovelse.length && String(id) !== "0-1" && !oevKlaret(id) && !KURSUS_UDSAT[id] && !mgErGentagelig(id) && lekMb()); } catch (e) { return false; } }
 function lekMomentVidere(id, art) {
   lukLekPop();
+  if (lekOevVenter(id) && String(LEK_AABEN) === String(id)) { LEK_OEV = { id: id, trin: "intro" }; renderLektionVis(); return; }   /* efter stjernerne kommer øvelsen eller opgaven (Ida 20/11) */
   if (art === "oevelse") { startOvelse(id); return; }
   const aktive = kursusLektionerAktive();
   const ix = aktive.findIndex(x => x.id === id);
@@ -48036,7 +48059,7 @@ function lekNaeste(fraPop) {
   const aktive = kursusLektionerAktive();
   const ix = aktive.findIndex(x => x.id === LEK_AABEN);
   /* LUKKEDE KUNDEN POPUPPEN UDEN STJERNER, KOMMER DEN IGEN, NÅR DER TRYKKES »NÆSTE LEKTION« PÅ SIDEN (Ida 20/11) */
-  try { const c0 = aktive[ix]; if (!fraPop && c0 && KURSUS_SET[c0.id] && typeof CUSTOMER_NAV !== "undefined" && CUSTOMER_NAV && !reflSet()["lektion_" + c0.id] && !lekPopTekst(c0).fb.fra && !(c0.ovelse && c0.ovelse.length)) { lekMoment(c0.id, "faerdig"); if (document.querySelector("#lekPop.on #lekFbKnap")) return; lukLekPop(); } } catch (e) {}
+  try { const c0 = aktive[ix]; if (!fraPop && c0 && KURSUS_SET[c0.id] && typeof CUSTOMER_NAV !== "undefined" && CUSTOMER_NAV && !reflSet()["lektion_" + c0.id] && !lekPopTekst(c0).fb.fra) { lekMoment(c0.id, "faerdig"); if (document.querySelector("#lekPop.on #lekFbKnap")) return; lukLekPop(); } } catch (e) {}
   /* NÆSTE VISER FØRST ØVELSEN I VIDEOENS FLISE (Idas »ja - super design!« 19/11, bud 3bu5hqVVW2hd3fizZuAVNr): en lektion med en refleksionsøvelse eller opgave, der hverken er udført eller udskudt */
   const cur = aktive[ix];
   try { if (cur && cur.ovelse && cur.ovelse.length && !mgErGentagelig(cur.id) && !oevKlaret(cur.id) && !KURSUS_UDSAT[cur.id] && !(LEK_OEV && String(LEK_OEV.id) === String(cur.id)) && lekMb()) { LEK_OEV = { id: cur.id, trin: "intro" }; renderLektionVis(); return; } } catch (e) {}
@@ -48778,7 +48801,12 @@ function forloebTidslinjeHtml() {
         const skemaHer = lksSkemaHer(nr), skemaGjort = OB_SKEMA === true;
         const alleSet = ids.every(function (x) { return KURSUS_SET[x.id]; }) && (!skemaHer || skemaGjort);
         /* INGEN FOLD-UD PÅ ÅBNE MODULER (Ida 20/11: »jeg vil gerne at vi dropper drop down muligheden ved modulerne - men at man ved klik på modul flisen kommer ind på modulsiden«): klik fører til modulets næste lektion, og dermed modulsiden */
-        const nr_ = esc(String(nr)), op = false, gaaTil = "visLektion('" + esc(String((ids.find(function (x) { return !KURSUS_SET[x.id]; }) || ids[0]).id)).replace(/'/g, "") + "')";
+        const nr_ = esc(String(nr)), op = false, gaaTil = "visLektion('" + esc(String((function () {
+          /* klik på modulet åbner den lektion, kunden er nået til: en set lektion, hvis opgave venter — ellers den første, der ikke er gennemført og ikke er låst (20/11) */
+          const v = ids.find(function (x) { return lekOevMangler(x); }); if (v) return v;
+          const n = ids.find(function (x) { return !KURSUS_SET[x.id]; }); if (n && !lekLaastAfForrige(n.id)) return n;
+          if (n) { const ix = ids.indexOf(n); return ids[Math.max(0, ix - 1)]; }
+          return ids[0]; })().id)).replace(/'/g, "") + "')";
         if (!alleSet && !stor) {
           /* DET MODUL, KUNDEN ARBEJDER I NU: første åbne modul med lektioner tilbage */
           stor = '<div class="ftl2-stor' + (op ? ' op' : '') + '"><div class="ftl2-kort"><div class="ftl2-hoved" role="button" tabindex="0" onclick="' + gaaTil + '">'
@@ -69745,7 +69773,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "3396";
+const APP_VERSION = "3397";
 const APP_BYGGET = "3. november";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_VERSION;   /* ingen dato (Ida 7/11: »hvorfor står der version 3. november?«) — datoen blev ikke rettet med, nummeret er sandheden */ } catch (e) {} });
 let NY_VERSION_KLAR = false;
@@ -103164,7 +103192,7 @@ html body.lek-mb #lekVis .lk-flise.lk-skema, html body #lekVis .lk-flise.lk-skem
 
 
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-hvid.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 20. november · 3396</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 20. november · 3397</div>
 <script>
 /* DROPDOWNEN RULLER SELV (Ida 4/10) — maal den aabne liste og klip den ved skaermens bund */
 (function () {
