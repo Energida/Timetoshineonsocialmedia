@@ -1,3 +1,9 @@
+## 20. november · 3403: »MARKÉR SOM FÆRDIG« KRÆVER, AT VIDEOEN ER AFSPILLET
+- Ida 20/11: »jeg må ikke kunne markere videoen som færdig før videoen er set til ende« · »Ja, luk hullet«.
+- Spoling tæller ikke. Videoen deles i stykker på 5 sekunder, og et stykke tæller kun, når det er afspillet. Knappen låses op, når videoen er nået til ende, og mindst 90 % er afspillet.
+- Det afspillede huskes på enheden, så videoen kan ses over flere gange. Svarer Vimeo ikke med tid, gælder slut-signalet alene, så ingen låses ude.
+- Studios forhåndsvisning af feedback-popuppen viser knappen »Videre«, som kunden ser den.
+
 ## 20. november · 3402: FOLD UD UNDER LEKTIONEN (kundens lektionsliste)
 - Idas valg 20/11: »1. kør med fold ud« (bud 6, artifact 8XyPcYMCq1PhbQhLQ7U4Rg). Vælter 15/11 »lektionsfliserne siger intet om øvelser«.
 - En lektion med refleksionsøvelse eller opgave har en pil. Øvelsen står som sin egen hvide flise, rykket ind under lektionen, med ordet »Refleksionsøvelse« eller »Opgave«.

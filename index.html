@@ -46941,11 +46941,15 @@ window.addEventListener("message", function (e) {
     /* SLUTNINGEN FØRST og i sin egen try: en fejl andre steder må aldrig holde knappen låst. Sikring: de sidste 2 sekunder tæller som set til ende. */
     try {
       if (d && d.event === "ready") lekVimeoLyt(document.getElementById("lekVideoIfr"));
-      if (d && (d.event === "ended" || d.event === "finish")) lekVideoSlut();
-      else if (d && (d.event === "playProgress" || d.event === "timeupdate") && d.data) {
-        const sek = Number(d.data.seconds), lgd = Number(d.data.duration), pct = Number(d.data.percent);
-        if ((lgd > 0 && sek >= lgd - 2) || pct >= 0.99) lekVideoSlut();
+      /* v3403 (Ida 20/11: »jeg må ikke kunne markere videoen som færdig før videoen er set til ende« · »Ja, luk hullet«): SPOLING TÆLLER IKKE.
+         Videoen deles i stykker på 5 sekunder; et stykke tæller kun, når det er AFSPILLET (to tidsmeldinger højst 3 sekunder fra hinanden). Knappen låses op,
+         når videoen er nået til ende OG mindst 90 % af stykkerne er afspillet. Kom der aldrig en tidsmelding (Vimeo svarer ikke), gælder slut-signalet alene, så ingen låses ude. */
+      if (d && (d.event === "playProgress" || d.event === "timeupdate") && d.data) {
+        const sek = Number(d.data.seconds), lgd = Number(d.data.duration);
+        const andel = lekDelMaerk(LEK_AABEN, sek, lgd);
+        if (lgd > 0 && sek >= lgd - 2 && andel >= 0.9) lekVideoSlut();
       }
+      else if (d && (d.event === "ended" || d.event === "finish")) { if (!LEK_DEL.faaet || lekDelAndel(LEK_AABEN) >= 0.9) lekVideoSlut(); }
     } catch (er) {}
     if (d && d.event === "play") { lekPlayVis(false); try { const f = document.getElementById("lekVideoIfr"); if (f && f.contentWindow && !f.__lydSat) { f.__lydSat = true; f.contentWindow.postMessage(JSON.stringify({ method: "setMuted", value: false }), "*"); f.contentWindow.postMessage(JSON.stringify({ method: "setVolume", value: 1 }), "*"); } } catch (er) {} }   /* ALLE VIDEOER MED LYD (Ida 15/11, testperson) */
     if (d && (d.event === "pause" || d.event === "ended" || d.event === "finish")) lekPlayVis(true);
@@ -46953,6 +46957,24 @@ window.addEventListener("message", function (e) {
 });
 /* VIDEOEN SKAL VÆRE SET TIL ENDE, FØR LEKTIONEN KAN MARKERES SOM FÆRDIG (Ida 20/11: »det er vigtigt at kunden har set lektionen til ende inden de kan markere den som færdig!«).
    Slutningen huskes på enheden (lek_slut_<kode>), og den røde knap »Markér som færdig« låses op. Popuppen kommer først, når kunden trykker — aldrig af sig selv (vælter 13/9). */
+/* AFSPILLEDE STYKKER (v3403): husket på enheden pr. lektion (lek_dele_<kode>), så kunden kan se videoen over flere gange */
+const LEK_DEL = { id: null, sidst: null, lgd: 0, faaet: false, gemt: 0 };
+function lekDelAlle() { try { return JSON.parse(localStorage.getItem("lek_dele_" + (currentKode || "X")) || "{}") || {}; } catch (e) { return {}; } }
+function lekDelAndel(id) { try { const a = lekDelAlle()[String(id)]; if (!a || !(a.n > 0)) return 0; return Object.keys(a.s || {}).length / a.n; } catch (e) { return 0; } }
+function lekDelMaerk(id, sek, lgd) {
+  try {
+    if (!id || !(lgd > 0) || !(sek >= 0)) return 0;
+    if (LEK_DEL.id !== String(id)) { LEK_DEL.id = String(id); LEK_DEL.sidst = null; }
+    LEK_DEL.faaet = true; LEK_DEL.lgd = lgd;
+    const forrige = LEK_DEL.sidst; LEK_DEL.sidst = sek;
+    const n = Math.max(1, Math.ceil(lgd / 5));
+    if (forrige === null || !(sek - forrige > 0 && sek - forrige <= 3)) return lekDelAndel(id);   /* første melding, pause eller et spring: tæller ikke */
+    const alle = lekDelAlle(), a = (alle[String(id)] && alle[String(id)].n === n) ? alle[String(id)] : { n: n, s: {} };
+    const st = Math.min(n - 1, Math.floor(sek / 5));
+    if (!a.s[st]) { a.s[st] = 1; alle[String(id)] = a; try { localStorage.setItem("lek_dele_" + (currentKode || "X"), JSON.stringify(alle)); } catch (e) {} }
+    return Object.keys(a.s).length / n;
+  } catch (e) { return 0; }
+}
 function lekSlutHent() { try { return JSON.parse(localStorage.getItem("lek_slut_" + (currentKode || "X")) || "{}") || {}; } catch (e) { return {}; } }
 function lekErSetTilEnde(id) { try { return !!(KURSUS_SET[id] || lekSlutHent()[String(id)] || (typeof ygtAltAabent === "function" && ygtAltAabent()) || somKundeKigger()); } catch (e) { return false; } }
 function lekVideoSlut() {
@@ -52675,7 +52697,7 @@ function kbuFbAabn() {
       + '<div class="lek-moment-lbl">Lektion ' + esc(lekVisNr(KBU.lekId)) + ' er gennemført</div>'
       + kbuWysFelt("fb.spm", p.fb.spm, "lek-moment-titel", "div", "Spørgsmål")
       + '<div class="lek-moment-stj"><div>' + stj + '</div></div>'
-      + '<div class="dbtn primary lek-moment-knap">Næste lektion</div>'
+      + '<div class="dbtn primary lek-moment-knap">Videre</div>'
       + '</div>').replace('<div class="kbu-ovr kbu-foerst">Tryk på en tekst for at rette den</div>', '')
     + '</div><div><div class="kbu-ovr kbu-foerst">2 · Efter første stjerne kommer feltet</div>'
     + kbuWysScene('<div class="lek-moment lek-fb">'
@@ -52683,7 +52705,7 @@ function kbuFbAabn() {
       + '<div class="lek-moment-titel">' + esc(p.fb.spm) + '</div>'
       + '<div class="lek-moment-stj"><div>' + stjFyldt + '</div>'
       + kbuWysFelt("fb.ph", p.fb.ph, "sk-input kbu-wys-kom", "div", "Tekst i kommentarfeltet") + '</div>'
-      + '<div class="dbtn primary lek-moment-knap">Næste lektion</div>'
+      + '<div class="dbtn primary lek-moment-knap">Videre</div>'
       + '</div>').replace('<div class="kbu-ovr kbu-foerst">Tryk på en tekst for at rette den</div>', '')
     + '</div></div><div class="kbu-ovr">Tryk på en tekst for at rette den</div>',
     '<div class="kbu-ovr kbu-foerst kbu-sidst">Kundernes feedback</div>' + snit
@@ -69814,7 +69836,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "3402";
+const APP_VERSION = "3403";
 const APP_BYGGET = "3. november";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_VERSION;   /* ingen dato (Ida 7/11: »hvorfor står der version 3. november?«) — datoen blev ikke rettet med, nummeret er sandheden */ } catch (e) {} });
 let NY_VERSION_KLAR = false;
@@ -103349,7 +103371,7 @@ html body.lek-mb #lekVis .lk-flise.lk-skema, html body #lekVis .lk-flise.lk-skem
 
 
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-hvid.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 20. november · 3402</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 20. november · 3403</div>
 <script>
 /* DROPDOWNEN RULLER SELV (Ida 4/10) — maal den aabne liste og klip den ved skaermens bund */
 (function () {
