@@ -1,3 +1,8 @@
+## 20. november · 3409: »VÆLG DIN NYE ADGANGSKODE« HAR HELT DÆKKENDE BAGGRUND
+- Ida 20/11 (testperson Ole): »når han klikkede på glemt adgangskode så man først i baggrunden en FRYGTELIG spøgelsesside« · »et gammelt dashboard med en stor rød flise der sagde velkommen til dit contentstudio«.
+- Linket i nulstillingsmailen logger kunden ind, så forsiden med første besøgs »Velkommen«-flise blev tegnet bag arket og kunne ses gennem det mørke, halvgennemsigtige slør.
+- Baggrunden bag arket er nu loginets eget billede, helt dækkende. Appen ses aldrig, før koden er valgt. Sløret rgba(22,32,42,.45) var heller ikke en af husets farver.
+
 ## 20. november · 3408: OPGAVE-FANEN I ENERGIDA STUDIO · NAVN, SIDER OG EKSEMPEL HOS KUNDEN
 - Idas klik 20/11 »Ja, byg opgave-fanen« (artifact VvaeVkZ6HsqVESG3Z3srVZ). Hendes ord: »det her er også uoverskueligt for mig - og jeg mangler en gem knap« · »mulighed for at se hvordan det ser ud for kunden« · »opgave tydeligt hed Byg dit Shinebarometer og Overskud havde begge tekstfelter … på samme side«.
 - Studio: hvert felt har sit navn over boksen: »Spørgsmålet«, »Hjælpetekst under spørgsmålet«, »Eksempel i skrivefeltet«, »Vises på siden«. Øverst »Navn hos kunden« og »Når den er gennemført«.
