@@ -1,3 +1,9 @@
+## 20. november · 3412: »VELKOMMEN« ER EN HVID FLISE ØVERST PÅ FORSIDEN
+- Idas klik 20/11 »Bud 1« (artifact De4PBGsjkqGUFM7YceqLV3) efter hendes ord om »en stor rød flise … placeret helt forkert«.
+- Første besøgs velkomst: hvid flise med tydelig skygge, øverst på forsiden, højst 720 bred. »Velkommen« i Didot, ét kort afsnit, rød knap med hvid tekst »Start rundvisningen«. Ingen streg under overskriften.
+- Flisen står før ugestrimlen/lektionerne i siden.
+- Rundvisningens trin (1 og frem) er stadig røde (Ida 15/11: »behold rundvisningen RØD«). Kun velkomsten er hvid.
+
 ## 20. november · 3411: LEKTIONERNE STARTER MED LYD
 - Ida 20/11: »kan vi gøre så alle lektioner starter med lyd?«. Lyden slås til (ikke lydløs, fuld styrke), så snart afspilleren er klar, og igen ved første afspilning. Kunden kan stadig selv skrue ned eller slå lyden fra undervejs.
 
