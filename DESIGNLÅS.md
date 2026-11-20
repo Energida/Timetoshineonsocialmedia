@@ -1,3 +1,12 @@
+## 20. november · 3413: STUDIOS LEKTIONSSIDE RYDDET OP — HVER TING ÉT STED
+- Idas klik 20/11 »Ja, byg det« (artifact TTEJyU2dB9XW9LE8MR5Gzb) efter hendes ord om modulsiden fra 3402: »det her er fandme en gang rod«.
+- Ét plus: plusset i lektionens flise. De to runde knapper ude til højre (prikkerne og sidens plus) er skjult, mens en lektion står åben, og kommer igen på »Om modulet«.
+- Fanerne står på én linje (lidt smallere knapper); venstre kolonne er 280 bred.
+- »Lektionens valg« er én stille linje (Video · Opgave/Refleksionsøvelse · Feedback · Popup · Manus) i stedet for seks kasser. Et tryk på et ord åbner fanen.
+- Status står ét sted: ved lektionens navn, sammen med »Se som kunden«. Den røde »Udgiv« i hovedet er væk.
+- »Gem« og rød »Udgiv« står nederst i lektionens flise på alle faner, med tidspunktet for sidste gem. Knapperne har naturlig bredde.
+- Telefonen (under 1000 px) er urørt.
+
 ## 20. november · 3412: »VELKOMMEN« ER EN HVID FLISE ØVERST PÅ FORSIDEN
 - Idas klik 20/11 »Bud 1« (artifact De4PBGsjkqGUFM7YceqLV3) efter hendes ord om »en stor rød flise … placeret helt forkert«.
 - Første besøgs velkomst: hvid flise med tydelig skygge, øverst på forsiden, højst 720 bred. »Velkommen« i Didot, ét kort afsnit, rød knap med hvid tekst »Start rundvisningen«. Ingen streg under overskriften.
