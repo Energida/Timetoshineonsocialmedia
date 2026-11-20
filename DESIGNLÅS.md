@@ -1,3 +1,8 @@
+## 20. november · 3396: »UDGIV« I STUDIO · MÆRKET PÅ 0.6 · TO RINGE PÅ FORSIDEN · »KØBER« / »KOLLEGA« I CRM
+- Forsiden har to ringe i stedet for »Opgaver«: »Opgaver« og »Refleksionsøvelser« hver for sig (Ida 20/11: »opgaver og reflektionsøvelser adskilles ikke! det skal de!«). En ring vises kun, når der er noget at tælle.
+- 0.6 har mærket »Ida kan se« i flisens højre hjørne (Ida 20/11: »ja jeg ser 0.6 svar«).
+- CRM › Brugere viser »Logins på koden · N af 3 adgange« med »Køber« ud for det første login og »Kollega« ud for de andre (Idas ja 20/11).
+
 ## 20. november · KUN HVID TEKST PÅ RØD — MÅLT LIVE PÅ »FORTSÆT« (Ida 20/11: »jeg vil ALDRIG se mørk tekst på rød baggrund«) · 3395
 - »Fortsæt« på forsiden stod med grå tekst på rød i 3394: chip-reglen (grå tekst) slog knappens hvide. Rettet med en regel, der altid vinder for røde knapper.
 - »Hvad driller?« har ingen hjælpelinje under skrivefeltet (Ida 20/11 om »Vi sender selv siden og din enhed med«: »det ved kunden ikke hvad betyder!«).
@@ -8,7 +13,7 @@
 - Den grå linje under svarfeltet (»Dit svar bliver kun hos dig …«) findes ikke længere på spørgsmålet. Mærket siger det.
 
 ## 20. november · DET, IDA SKRIVER I STUDIO, MÅ ALDRIG FORSVINDE (Ida 20/11: »mangler der en gem knap? det må ikke ske! Så spilder jeg jo min tid!!«) · 3395
-- Hvert skrivefelt i Studio (modulets og lektionens felter) har en rød »Gem ændringer« under sig, mens der skrives (Idas ord 20/11).
+- Hvert skrivefelt i Studio (modulets og lektionens felter) har en rød »Udgiv« under sig, mens der skrives. Den gemmer og sender til kunden i ét tryk (Idas ord 20/11: »ja så skal gem ændringer hedde udgiv i stedet«). Klik uden for feltet gemmer kun kladden.
 - Teksten gemmes også, når der klikkes uden for feltet, når siden tegnes om, når fanen skjules, og når siden forlades.
 - Modulets felter kvitterer synligt: »Gemt.« eller »Det blev ikke gemt. Prøv igen.«
 

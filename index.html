@@ -47497,8 +47497,8 @@ function oevIdaSer(id) {
 }
 /* HVEM SER SVARET — MÆRKET I FLISENS HØJRE HJØRNE (Idas valg 20/11: »lås bud 2«, artifact Lq1pNnUFB6ZwHRW15cudQe): lyseblå pille med grå kant, rødt symbol.
    »Kun dig« (hængelås) eller »Ida kan se« (øje). Det er Idas valg i Studio (oevIdaSer); kunden kan ikke trykke på det. Den grå linje under svarfeltet er væk — mærket siger det. */
-function lekHvemSerMaerke(id) {
-  const ser = oevIdaSer(id);
+function lekHvemSerMaerke(id, tving) {
+  const ser = tving === true ? true : oevIdaSer(id);   /* 0.6 (Find dit udgangspunkt): Ida ser svarene (Idas ord 20/11: »ja jeg ser 0.6 svar«) */
   const ik = ser ? '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 12s3.5-6.5 9.5-6.5 9.5 6.5 9.5 6.5-3.5 6.5-9.5 6.5S2.500 12 2.500 12z"/><circle cx="12" cy="12" r="2.800"/></svg>'
     : '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>';
   return '<span class="lsi-hvem" role="note" aria-label="' + (ser ? 'Ida kan se dit svar' : 'Kun du ser dit svar') + '">' + ik + '<span>' + (ser ? 'Ida kan se' : 'Kun dig') + '</span></span>';
@@ -47680,7 +47680,7 @@ function lekSkemaTegn() {
       if (!SKEMA_DEF_HENTET) { try { skemaDefsHent().then(function (ok) { const p2 = document.getElementById("lekSkemaPlads"); if (ok && LEK_SKEMA && p2 && p2.classList.contains("lk-skema-intro")) lekSkemaTegn(); }); } catch (e) {} }   /* Studios tekst, ikke standarden */
       const fs = skemaForside("inden_start");
       pl.classList.add("lk-oev");   /* SAMME LAYOUT SOM REFLEKSIONSØVELSEN (Ida 20/11: »spørgeskemaet ved 0.6 skal have samme layout som fx reflektionsøvelserne her!«): etiket · streg · Didot-titel · tekst · knap */
-      pl.innerHTML = '<div class="lsi-e">' + esc(fs.eye || ("Spørgeskema · Lektion " + (skNr || "0.6"))) + '</div>'
+      pl.innerHTML = '<div class="lsi-e lsi-e-rk"><span>' + esc(fs.eye || ("Spørgeskema · Lektion " + (skNr || "0.6"))) + '</span>' + lekHvemSerMaerke(null, true) + '</div>'
         + '<div class="lsi-t">' + esc(fs.titel) + '</div>'
         + String(fs.tekst || "").split(/\n\s*\n/).map(function (a) { return a.trim() ? '<p>' + esc(a.trim()).replace(/\n/g, "<br>") + '</p>' : ''; }).join("")
         + (String(fs.note || "").trim() ? '<p class="lsi-g">' + esc(fs.note.trim()).replace(/\n/g, "<br>") + '</p>' : '')
@@ -52543,20 +52543,23 @@ function kbuRetDirekte(el, vaerdi, ph, gem) {
   let faerdig = false;
   /* DET, IDA SKRIVER, MÅ ALDRIG FORSVINDE (Ida 20/11: »jeg havde lige rettet beskrivelsen før?? mangler der en gem knap? det må ikke ske! Så spilder jeg jo min tid!!« — målt: rettelsen nåede aldrig basen).
      Før gemte feltet KUN, når man klikkede uden for det. Nu: en rød »Gem« under feltet, og teksten gemmes også, hvis siden tegnes om, fanen skjules eller siden forlades, mens der skrives. */
-  const knap = document.createElement("button"); knap.type = "button"; knap.className = "kbu-knap kbu-roed kbu-ret-gem"; knap.textContent = "Gem ændringer";   /* Idas ord 20/11: »jeg har brug for en knap der hedder gem ændringer når jeg foretager ændringer!« */
+  const knap = document.createElement("button"); knap.type = "button"; let iLek = false; try { iLek = !!(el.closest && el.closest(".bs3-lekkort")); } catch (e) {}
+  knap.className = "kbu-knap kbu-roed kbu-ret-gem"; knap.textContent = "Udgiv";   /* Idas ord 20/11: »jeg har brug for en knap der hedder gem ændringer når jeg foretager ændringer!« */
   let obs = null;
   const ryd = function () { try { if (obs) obs.disconnect(); } catch (e) {} try { document.removeEventListener("visibilitychange", vedSkjul); window.removeEventListener("pagehide", vedSkjul); window.removeEventListener("beforeunload", vedSkjul); } catch (e) {} try { if (knap.parentNode) knap.remove(); } catch (e) {} };
-  const slut = function (gemDet) {
+  /* »UDGIV« GEMMER OG SENDER TIL KUNDEN I ÉT TRYK (Idas ord 20/11: »ja så skal gem ændringer hedde udgiv i stedet«). Klik uden for feltet gemmer stadig kun kladden — så står lektionen som »Ikke udgivet«. */
+  const udgivNu = function () { try { if (iLek && typeof BF3_LEK_AABEN !== "undefined" && BF3_LEK_AABEN != null && typeof bf3LekUdgiv === "function") { const oid = BF3_LEK_AABEN; setTimeout(function () { try { bf3LekUdgiv(oid); } catch (e) {} }, 1200); } } catch (e) {} };
+  const slut = function (gemDet, udgiv) {
     if (faerdig) return; faerdig = true; ryd();
     const v = String(ta.value || "").trim();
-    if (!gemDet || v === gl.trim()) { if (ta.parentNode) ta.replaceWith(el); return; }
-    try { gem(v); } catch (e) { try { husBesked("Det blev ikke gemt. Prøv igen."); } catch (e2) {} }
+    if (!gemDet || v === gl.trim()) { if (ta.parentNode) ta.replaceWith(el); if (gemDet && udgiv) udgivNu(); return; }
+    try { gem(v); if (udgiv) udgivNu(); } catch (e) { try { husBesked("Det blev ikke gemt. Prøv igen."); } catch (e2) {} }
     setTimeout(function () { if (ta.isConnected) ta.replaceWith(el); }, 0);   /* gem tegnede ikke siden om (fx tomt navn): det gamle felt tilbage */
   };
   const vedSkjul = function (ev) { if (ev && ev.type === "visibilitychange" && document.visibilityState !== "hidden") return; slut(true); };
   ta.addEventListener("input", hoejde);
   ta.addEventListener("blur", function () { setTimeout(function () { slut(true); }, 0); });
-  knap.addEventListener("mousedown", function (e) { e.preventDefault(); }); knap.addEventListener("click", function () { slut(true); });
+  knap.addEventListener("mousedown", function (e) { e.preventDefault(); }); knap.addEventListener("click", function () { slut(true, true); });
   document.addEventListener("visibilitychange", vedSkjul); window.addEventListener("pagehide", vedSkjul); window.addEventListener("beforeunload", vedSkjul);
   setTimeout(function () { try { obs = new MutationObserver(function () { if (!faerdig && !ta.isConnected) slut(true); }); obs.observe(document.body, { childList: true, subtree: true }); } catch (e) {} }, 0);   /* siden blev tegnet om under skrivningen: gem alligevel */
   ta.addEventListener("keydown", function (e) { if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); slut(false); } else if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); ta.blur(); } });
@@ -58974,7 +58977,10 @@ function huRinge(tlf) {
     /* INGEN RING UDEN NOGET AT TÆLLE (regel v2146; Idas skærmbillede 22/10: »0 af 0 Lektioner set« og intet andet): er ingen lektion klar, siger Hjem det samme som Lektionerne */
     if (!aab.length) return ring("", "", 0, "", "Forløbet er på vej");
     return ring(String(set), "af " + ialtL, ialtL ? set / ialtL : 0, "Lektioner gennemført")   /* HJEM VISER ANTAL (Idas klik 26/10 »Kun Hjem«) — Lektionerne og lektionssiden viser procent */   /* stort begyndelsesbogstav (Ida/natten 7/10, fund 92) */
-      + (ov.length ? ring(String(ovS), "af " + ov.length, ovS / ov.length, "Opgaver") : "");
+      /* OPGAVER OG REFLEKSIONSØVELSER HVER FOR SIG (Ida 20/11: »opgaver og reflektionsøvelser adskilles ikke! det skal de!«) */
+      + (function () { const opg = ov.filter(function (l) { return oevArt(l.id) === "opgave"; }), refl = ov.filter(function (l) { return oevArt(l.id) !== "opgave"; });
+          const en = function (a, ord) { if (!a.length) return ""; const g = a.filter(function (l) { return oevKlaret(l.id); }).length; return ring(String(g), "af " + a.length, g / a.length, ord); };
+          return en(opg, "Opgaver") + en(refl, "Refleksionsøvelser"); })();
   }
   let maal = 3; try { maal = Number(maalUge() || 3); } catch (e) {}
   const man = energidaUgeMandag(new Date()), son = new Date(man); son.setDate(son.getDate() + 6);
@@ -69739,7 +69745,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "3395";
+const APP_VERSION = "3396";
 const APP_BYGGET = "3. november";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_VERSION;   /* ingen dato (Ida 7/11: »hvorfor står der version 3. november?«) — datoen blev ikke rettet med, nummeret er sandheden */ } catch (e) {} });
 let NY_VERSION_KLAR = false;
@@ -87349,6 +87355,7 @@ function renderKundeKort() {
     /* Brugere-kortet (Ida 28/7): alle logins på koden m. app-brug — bor på Info-fanen sammen med kundeoplysningerne */
     const personerSek = etiket("Brugere", "(alle logins på koden)")
       + '<div id="kkPersonerListe" style="font-size:12px;color:var(--gray3);">Henter personerne…</div>'
+      + '<div id="kkLoginsListe" style="margin-top:12px;"></div>'
       + '<div style="font-size:10.5px;color:var(--gray3);line-height:1.5;margin-top:10px;">Nye personer kommer til via delelinket på Adgang-fanen — hver person opretter sit eget login.</div>';
     const pane = {
       /* OVERBLIK = det to-spaltede dashboard (designpakken 1d, Ida 31/7): Status oeverst i
@@ -88138,6 +88145,7 @@ async function kkPersonSlet(kode, navn) {
 }
 async function kkPersonerHent(kode) {
   const el = document.getElementById("kkPersonerListe"); if (!el || !sb || !kode) return;
+  try { kkLoginsTegn(kode); } catch (e) {}
   try {
     const K = String(kode).toUpperCase();
     const [alleRes, brugRes, infoRes, logRes] = await Promise.all([
@@ -89092,6 +89100,19 @@ async function kkTilfoejOpgave() {
 
 /* KUNDENS LOGINS STYRES FRA CRM'ET (Ida 11/10: »jeg vil ikke have at jeg skal ind i supabase og arbejde. det samme gælder sletningen og andre ændringer af kunder«).
    Edge Function kunde-admin (supabase/functions/kunde-admin): kun administratorer, kun kunde-logins, aldrig en adgangskode (sikkerhedskontrakten §3–§6). */
+/* LOGINS PÅ KODEN MED »KØBER« OG »KOLLEGA« (Idas ja 20/11: »er vi sikre på … at jeg kan se at de er kommet ind via kollegakode?«): det første login på koden er køberen; resten er kollegaer
+   (kollegaflowet i 3394 mærker dem også selv). YOU GOT THIS har 3 adgange — tallet står over listen. Kun læsning, via kunde-admin (kun administratorer). */
+async function kkLoginsTegn(kode) {
+  const el = document.getElementById("kkLoginsListe"); if (!el) return;
+  const r = await kundeAdminKald({ handling: "logins", kode: kode });
+  const el2 = document.getElementById("kkLoginsListe"); if (!el2 || !r || r.fejl || !Array.isArray(r.logins) || !r.logins.length) return;
+  const l = r.logins.slice().sort(function (a, b) { return String(a.oprettet || "").localeCompare(String(b.oprettet || "")); });
+  const koeber = (l.find(function (x) { return !x.kollega; }) || l[0]).id;
+  const ygt = /^YOU GOT THIS$/i.test(String((VIRKSOMHEDSKODER[kode] || {}).forloeb || ""));
+  const maerke = function (t, roed) { return '<span style="display:inline-block;border-radius:999px;padding:3px 11px;font-size:11px;white-space:nowrap;' + (roed ? 'background:#FC2404;color:#FFFFFF;border:1px solid #FC2404;' : 'background:#F4F7FA;color:#1A1A1A;border:1px solid #DEDEDE;') + '">' + t + '</span>'; };
+  el2.innerHTML = '<div style="font-size:11px;letter-spacing:1.4px;text-transform:uppercase;color:#686868;margin:0 0 8px;">Logins på koden' + (ygt ? ' · ' + l.length + ' af 3 adgange' : ' · ' + l.length) + '</div>'
+    + l.map(function (x) { const erK = x.id !== koeber; return '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:#FFFFFF;border:1px solid #DEDEDE;border-radius:12px;padding:10px 12px;margin:0 0 8px;"><span style="flex:1;min-width:140px;font-size:12.5px;color:#1A1A1A;overflow-wrap:anywhere;">' + esc(x.navn || x.email || "") + (x.navn && x.email ? ' <span style="color:#686868;">· ' + esc(x.email) + '</span>' : '') + '</span>' + maerke(erK ? "Kollega" : "Køber", false) + '</div>'; }).join("");
+}
 async function kundeAdminKald(krop) {
   if (!sb) return { fejl: "Ingen forbindelse." };
   let token = ""; try { const { data } = await sb.auth.getSession(); token = data && data.session ? data.session.access_token : ""; } catch (e) {}
@@ -103143,7 +103164,7 @@ html body.lek-mb #lekVis .lk-flise.lk-skema, html body #lekVis .lk-flise.lk-skem
 
 
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-hvid.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 20. november · 3395</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 20. november · 3396</div>
 <script>
 /* DROPDOWNEN RULLER SELV (Ida 4/10) — maal den aabne liste og klip den ved skaermens bund */
 (function () {

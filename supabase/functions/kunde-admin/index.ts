@@ -70,7 +70,8 @@ Deno.serve(async (req) => {
   }
   const kodeAf = (u: Record<string, any>) => String((u.app_metadata ?? {}).kode ?? "").toUpperCase();
   const kundens = alle.filter((u) => kodeAf(u) === kode && u.id !== kalder.user.id);
-  const vis = (u: Record<string, any>) => ({ id: u.id, email: u.email ?? "", navn: (u.user_metadata ?? {}).navn ?? "", sidst_inde: u.last_sign_in_at ?? null });
+  // kollega + oprettet (20/11): Backstage viser »Køber« / »Kollega« ud for hvert login. Kun læsning, ingen nye felter udover de to.
+  const vis = (u: Record<string, any>) => ({ id: u.id, email: u.email ?? "", navn: (u.user_metadata ?? {}).navn ?? "", sidst_inde: u.last_sign_in_at ?? null, kollega: (u.user_metadata ?? {}).kollega === true, oprettet: u.created_at ?? null });
 
   if (handling === "logins") return svar({ ok: true, logins: kundens.map(vis) }, 200);
 
