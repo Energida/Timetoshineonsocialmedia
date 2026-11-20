@@ -1,3 +1,33 @@
+## 20. november · KUN HVID TEKST PÅ RØD — MÅLT LIVE PÅ »FORTSÆT« (Ida 20/11: »jeg vil ALDRIG se mørk tekst på rød baggrund«) · 3395
+- »Fortsæt« på forsiden stod med grå tekst på rød i 3394: chip-reglen (grå tekst) slog knappens hvide. Rettet med en regel, der altid vinder for røde knapper.
+- »Hvad driller?« har ingen hjælpelinje under skrivefeltet (Ida 20/11 om »Vi sender selv siden og din enhed med«: »det ved kunden ikke hvad betyder!«).
+
+## 20. november · HVEM SER SVARET: MÆRKET I FLISENS HØJRE HJØRNE (Idas valg 20/11: »lås bud 2«, artifact Lq1pNnUFB6ZwHRW15cudQe) · 3395
+- Øverst til højre i øvelsens flise står en lyseblå pille med grå kant og rødt symbol: hængelås + »Kun dig« eller øje + »Ida kan se«.
+- Det er Idas valg i Studio, ikke kundens: mærket er kun til orientering og kan ikke trykkes (Ida 20/11: »det skal ikke være et felt kunden klikker af det er mig der har valgt det«).
+- Den grå linje under svarfeltet (»Dit svar bliver kun hos dig …«) findes ikke længere på spørgsmålet. Mærket siger det.
+
+## 20. november · DET, IDA SKRIVER I STUDIO, MÅ ALDRIG FORSVINDE (Ida 20/11: »mangler der en gem knap? det må ikke ske! Så spilder jeg jo min tid!!«) · 3395
+- Hvert skrivefelt i Studio (modulets og lektionens felter) har en rød »Gem ændringer« under sig, mens der skrives (Idas ord 20/11).
+- Teksten gemmes også, når der klikkes uden for feltet, når siden tegnes om, når fanen skjules, og når siden forlades.
+- Modulets felter kvitterer synligt: »Gemt.« eller »Det blev ikke gemt. Prøv igen.«
+
+## 20. november · FORLØBET: MODULFLISERNE HAR CIRKEL SOM LEKTIONERNE, INGEN PIL OG INGEN FOLD-UD · 0.6 SOM EN LEKTION · »GENNEMFØRT«, IKKE »SET« · 3395
+- Hver modulflise har en cirkel til venstre: tom (åbent), rødt flueben (gennemført), hængelås (låst). Ordet »Færdig« findes ikke (Ida 20/11: »alle moduler skal have cirkler som lektionerne og der skal rød flueben i når den er gennemført«).
+- Et gennemført modul er hvidt som de åbne (Ida 20/11: »farven på modulet når den er færdig må aldrig ændres fra hvid«).
+- Låste moduler er hvide med grå kant og går i ét med baggrunden. Ikke lyseblå (vælter 14/11). De kan ikke klikkes og folder ikke ud (vælter 11/11).
+- Ingen pil på modulfliserne (Ida 20/11: »denne skal så fjernes fra modulfliserne fordi man nu klikker ind«).
+- 0.6 (spørgeskemaet) har titel over flisen som 0.1–0.5 (»Lektion 0.6 · Find dit udgangspunkt · Spørgeskema«) og samme layout som refleksionsøvelsen: hvid flise, etiket med streg, Didot-titel, tekst, knap (Ida 20/11).
+- Spørgeskemaet, refleksionsøvelsen og opgaven har videoens format og bredde på computer (16:9), grå kant og videoens skygge.
+- Flisen skifter aldrig størrelse undervejs: startfladen, hvert spørgsmål og »Godt gået« har samme 16:9 som videoen. Svarfeltet tager den plads, der er (Ida 20/11: »flisen må ikke ændre størresle undervejs!«).
+- Har øvelsen kun ét spørgsmål, står der »Refleksionsøvelse« eller »Opgave« øverst i flisen, aldrig »Spørgsmål 1 af 1« (Ida 20/11).
+- På sidste spørgsmål hedder den røde knap »Næste lektion«: den gemmer svarene og åbner næste lektion (Ida 20/11). Kun uden en næste lektion hedder den »Gem mine svar«.
+- Øvelsen har ingen startflade: når lektionen er gennemført, kommer første spørgsmål med det samme (Ida 20/11: »slet siden der kommer inden!«).
+- Der er altid en tilbage-pil i øvelsen. På første spørgsmål fører den tilbage til lektionens video (Ida 20/11: »og her kan man ikke gå tilbage!«).
+- Knappen under videoen siger, hvad der kommer: »Videre til refleksionsøvelsen« / »Videre til opgaven«, når lektionen har en, ellers »Videre til næste« (Ida 20/11 — vælter 24/9).
+- Forsidens ring tæller 0.6 med som en lektion.
+- Kunden læser »gennemført«, aldrig »set«, om lektioner (Ida 20/11: »set skal ændres alle steder til gennemført«). Backstage-statistikken (»Har set den«) er urørt.
+
 ## 20. november · LEKTIONSSIDEN: KNAPPERNE UNDER VIDEOEN, NOTERNE UNDER DEM · POPUPPEN KOMMER PÅ DEN SIDE, MAN STÅR PÅ (Ida 20/11: »knapperne skal flyttes op under videoen og noterne under« · »så baggrunden ikke skifter før man har udfyldt denne pop up«) · 3394
 - »Forrige lektion« og »Videre til næste« står lige under videoen. »Dine noter« kommer under knapperne.
 - Der er ingen fremdriftsbjælke over lektionen. Den står kun i listen til venstre (Ida 20/11: »den er allerede i venstre side og der skal den bare blive«).
