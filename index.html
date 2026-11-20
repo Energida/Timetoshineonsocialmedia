@@ -36083,27 +36083,49 @@ function vkOpgaveLavet(lek) {
 }
 function sbmFliseHtml() { return '<div class="vkd-flise" role="button" tabindex="0" onclick="sbmAabn()" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();sbmAabn();}"><span class="vkd-ik">' + SBM_IK + '</span><span class="vkd-navn">Mit Shinebarometer</span></div>'; }
 function sbmAabn() { try { showTab(32); } catch (e) {} sbmTegn(); }
+/* v3405 · MIT SHINEBAROMETER EFTER BUD 1 (Idas klik 20/11 »Ja, byg bud 1«, artifact XxYPKn2ePsqpadZ9CosFpA; Ida: »spørgsmålet og kundens svar er tydeligere delt op«):
+   »Hvor er du i dag?« øverst (Overskud · Underskud) — den valgte side står først. Spørgsmålet står med gråt OVER flisen, og flisen indeholder kun kundens eget svar, linje for linje med rød prik.
+   »Ret« sidder i flisen, og svaret rettes dér (ét skridt i samme boks); et tomt svar er en lyseblå flise med »Skriv dit svar«. Dagens valg huskes på enheden (sbm_dag_<kode>) — intet nyt i basen.
+   Svaret gemmes med samme skrivning som opgaven (skemaSvarSkriv »lektion_svar_2-3«). */
+let SBM_RET = null;
+function sbmDagHent() { try { const d = JSON.parse(localStorage.getItem("sbm_dag_" + (currentKode || "X")) || "null"); return d && d.d === datoDK() ? d.v : ""; } catch (e) { return ""; } }
+function sbmDagSaet(v) { try { localStorage.setItem("sbm_dag_" + (currentKode || "X"), JSON.stringify({ d: datoDK(), v: v })); } catch (e) {} SBM_RET = null; sbmTegn(); }
+function sbmRetAabn(i) { SBM_RET = i; sbmTegn(); try { const t = document.getElementById("sbmFelt"); if (t) { t.focus(); t.setSelectionRange(t.value.length, t.value.length); } } catch (e) {} }
+function sbmRetLuk() { SBM_RET = null; sbmTegn(); }
+async function sbmRetGem(i) {
+  const t = document.getElementById("sbmFelt"); if (!t) return;
+  const l = (KURSUS_LEKTIONER || []).find(function (x) { return x.id === SBM_LEK; }); if (!l) return;
+  const v = String(t.value || "").trim(), n = ovNoegle(l, i);
+  const svar = Object.assign({}, (KURSUS_SVAR || {})[SBM_LEK] || {}); svar[n] = v;
+  try { if (somKundeKigger()) { husKvit("Du kigger som kunden. Intet er gemt."); return; } } catch (e) {}
+  const kn = document.getElementById("sbmGemKn"); if (kn) { kn.disabled = true; kn.textContent = "Gemmer …"; }
+  let ok = false; try { const b = {}; b[n] = true; ok = !!(await skemaSvarSkriv("lektion_svar_" + SBM_LEK, svar, b)); } catch (e) { ok = false; }
+  if (!ok) { if (kn) { kn.disabled = false; kn.textContent = "Gem"; } try { husBesked("Svaret blev ikke gemt. Prøv igen."); } catch (e) {} return; }
+  KURSUS_SVAR[SBM_LEK] = svar; try { kursusGemLocal(); } catch (e) {}
+  SBM_RET = null; sbmTegn(); try { husKvit("Gemt."); } catch (e) {}
+}
 function sbmTegn() {
   const w = document.getElementById("sbmWrap"); if (!w) return;
   const l = (KURSUS_LEKTIONER || []).find(function (x) { return x.id === SBM_LEK; });
   const sv = (KURSUS_SVAR || {})[SBM_LEK] || null;
-  const par = function (q, a) { return '<div class="vks-q">' + esc(q) + '</div><div class="vks-a">' + esc(String(a)) + '</div>'; };
+  if (!l || !Array.isArray(l.ovelse) || !l.ovelse.length) { w.innerHTML = ''; return; }
+  const linjer = function (a) { const r = String(a).split(/\n+/).map(function (x) { return x.trim(); }).filter(Boolean); return '<ul class="sbm-l">' + r.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join("") + '</ul>'; };
+  const par = function (it, i) {
+    const a = sv ? ovSvarFor({ svar: sv }, l, i) : "", q = '<div class="sbm-q">' + esc(ovSpm(it)) + '</div>';
+    if (SBM_RET === i) return '<div class="sbm-par">' + q + '<div class="sbm-fl sbm-ret"><div class="lk-felt-ramme sbm-felt-ramme"><textarea id="sbmFelt" class="sbm-felt" rows="4" placeholder="Skriv dit svar her …">' + esc(svarTom(a) ? "" : String(a)) + '</textarea>' + (typeof taleKnapHtml === "function" ? taleKnapHtml("sbmFelt") : '') + '</div>'
+      + '<div class="sbm-kn"><button type="button" class="sbm-knap mq-tap" onclick="sbmRetLuk()">Fortryd</button><button type="button" class="sbm-knap sbm-roed mq-tap" id="sbmGemKn" onclick="sbmRetGem(' + i + ')">Gem</button></div></div></div>';
+    if (svarTom(a)) return '<div class="sbm-par">' + q + '<div class="sbm-fl sbm-tom"><button type="button" class="sbm-knap mq-tap" onclick="sbmRetAabn(' + i + ')">Skriv dit svar</button></div></div>';
+    return '<div class="sbm-par">' + q + '<div class="sbm-fl">' + linjer(a) + '<button type="button" class="sbm-knap sbm-lille mq-tap" onclick="sbmRetAabn(' + i + ')">Ret</button></div></div>';
+  };
   const over = [], under = [];
-  if (l && Array.isArray(l.ovelse) && sv) l.ovelse.forEach(function (it, i) {
-    const a = ovSvarFor({ svar: sv }, l, i); if (svarTom(a)) return;
-    (/underskud/i.test(ovSpm(it)) ? under : over).push(par(ovSpm(it), a));
-  });
-  const ret = '<div class="vks-knapper"><button type="button" class="dbtn mq-tap vks-knap" onclick="sbmRet()">Ret dine svar</button></div>';
-  let html;
-  if (!over.length && !under.length) {
-    html = vkFlise("Mit Shinebarometer", '<div class="vks-tom">Dit Shinebarometer bygges af dine svar fra opgaven efter lektion 1.3.</div>'
-      + (l ? '<div class="vks-knapper"><button type="button" class="dbtn mq-tap vks-knap" onclick="sbmRet()">Tag opgaven</button></div>' : ''));
-  } else {
-    html = (over.length ? vkFlise("Når jeg er i overskud", over.join("")) : '')
-      + (under.length ? vkFlise("Når jeg er i underskud", under.join("")) : '')
-      + ret;
-  }
-  w.innerHTML = '<div class="vks-side">' + html + '</div>';
+  l.ovelse.forEach(function (it, i) { (/underskud/i.test(ovSpm(it)) ? under : over).push(par(it, i)); });
+  const dag = sbmDagHent();
+  const sek = function (navn, liste) { return liste.length ? '<div class="sbm-sek">' + navn + '</div><div class="sbm-to">' + liste.join("") + '</div>' : ''; };
+  const o = sek("Når jeg er i overskud", over), u = sek("Når jeg er i underskud", under);
+  const top = '<div class="sbm-fl sbm-dag"><div class="sbm-dag-t">Hvor er du i dag?</div><div class="sbm-chips" role="group" aria-label="Hvor er du i dag?">'
+    + '<button type="button" class="sbm-chip' + (dag === "over" ? ' on' : '') + ' mq-tap" aria-pressed="' + (dag === "over" ? 'true' : 'false') + '" onclick="sbmDagSaet(\'over\')">Overskud</button>'
+    + '<button type="button" class="sbm-chip' + (dag === "under" ? ' on' : '') + ' mq-tap" aria-pressed="' + (dag === "under" ? 'true' : 'false') + '" onclick="sbmDagSaet(\'under\')">Underskud</button></div></div>';
+  w.innerHTML = '<div class="vks-side sbm-side">' + top + (dag === "under" ? u + o : o + u) + '</div>';
   try { if (typeof markbaandTegn === "function") markbaandTegn(32); } catch (e) {}
 }
 function sbmRet() { try { visLektion(SBM_LEK); } catch (e) {} setTimeout(function () { try { startOvelse(SBM_LEK); } catch (e) {} }, 600); }
@@ -45582,7 +45604,7 @@ function lekLaastAfForrige(id) {
     const harOpg = !!(prev.ovelse && prev.ovelse.length);
     /* EN OPGAVE KAN SÆTTES TIL SENERE (Idas klik 12/11 »Ja, ved opgaver«): så åbner næste lektion, og opgaven står som »Venter på dig«. Refleksionsøvelser låser stadig. */
     const prevOpg = oevArt(prev.id) === "opgave";
-    if (harOpg && !mgErGentagelig(prev.id) && !oevKlaret(prev.id) && !KURSUS_UDSAT[prev.id]) return { fra: lekVisNr(prev.id), tekst: "Lektion " + lekVisNr(id) + " åbner, når " + oevOrd(prev.id, true) + " til lektion " + lekVisNr(prev.id) + " er udført" + (prevOpg ? " eller sat til senere." : ".") };
+    if (harOpg && !mgErGentagelig(prev.id) && !oevKlaret(prev.id) && !KURSUS_UDSAT[prev.id]) return { fra: lekVisNr(prev.id), tekst: "Lektion " + lekVisNr(id) + " åbner, når " + oevOrd(prev.id, true) + " til lektion " + lekVisNr(prev.id) + " er gennemført." };
     return null;
   } catch (e) { return null; }
 }
@@ -45803,20 +45825,23 @@ function lekOpgFliseHtml(id, l, aktive, ix) {
   const fb = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>';
   const naeste = (aktive && ix > -1) ? aktive[ix + 1] : null;
   let laasLinje = '';
-  try { if (!g && naeste && lekLaastAfForrige(naeste.id)) laasLinje = 'Lektion ' + lekVisNr(naeste.id) + ' åbner, når ' + oevOrd(id, true) + ' er udført'; } catch (e) {}
+  try { if (!g && naeste && lekLaastAfForrige(naeste.id)) laasLinje = 'Lektion ' + lekVisNr(naeste.id) + ' åbner, når ' + oevOrd(id, true) + ' er gennemført'; } catch (e) {}
   /* FLISEN ER DØREN (Idas klik 12/11: refleksionsflisen bud A, artifact ExyFV9S2i4SitnZLJbDAVW + ekspertholdets bud NSNnEvHLhsfwU5beJKdjwM):
      cirkel og sort overskrift øverst, svag streg, spørgsmålene/opgavens punkter som rolig liste, og knapperne i flisen.
      Refleksionsøvelse: »Tag refleksionsøvelsen« / »Senere«. Opgave: »Tag opgaven« / »Jeg gør den senere« (næste lektion åbner imens). */
   const opg = oevArt(id) === "opgave", idS = esc(String(id)).replace(/'/g, ""), udsat = !!KURSUS_UDSAT[id];
-  const tit = g ? storStart(oevOrd(id, true)) + ' er udført' : (udsat ? 'Venter på dig' : storStart(oevOrd(id)));
+  const tit = g ? storStart(oevOrd(id)) : (udsat ? 'Venter på dig' : storStart(oevOrd(id)));
   let under = 'Lektion ' + lekVisNr(id) + ' · ' + n + ' spørgsmål';
-  if (g) under = (naeste && !lekLaastAfForrige(naeste.id)) ? 'Lektion ' + lekVisNr(naeste.id) + ' er åben' : '';
+  if (g) under = '';
   else if (udsat) under = opg ? (naeste ? 'Lektion ' + lekVisNr(naeste.id) + ' er åben. ' : '') + 'Opgaven står også på Forsiden.' : (laasLinje || under);
   const liste = g ? '' : '<div class="lopg-skl"></div><div class="lopg-ql">' + l.ovelse.map(function (q, i) { return '<div class="lopg-qr">' + (n > 1 ? '<span class="lopg-nr">' + (i + 1) + '</span>' : '') + '<span>' + esc(ovSpm(q)) + '</span></div>'; }).join("") + '</div>';
   let knapper = '';
   /* EN OPGAVE SKRIVES SOM EN REFLEKSIONSØVELSE (Idas klik 12/11 »Skriv svar som i dag«: Modul 1's opgaver har spørgsmål, der skal svares på) — forskellen er, at en opgave kan sættes til senere, så næste lektion åbner imens */
   if (!g) knapper = '<button type="button" class="lopg-kn lopg-roed mq-tap" onclick="startOvelse(\'' + idS + '\')">Tag ' + esc(oevOrd(id, true)) + '</button>' + (udsat ? '' : '<button type="button" class="lopg-kn lopg-graa mq-tap" onclick="lekOpgSenereBliv(\'' + idS + '\')">' + (opg ? 'Jeg gør den senere' : 'Senere') + '</button>');
-  else knapper = '<button type="button" class="lopg-kn lopg-graa mq-tap" onclick="vkSvarAabn()">Se dine svar</button>';
+  else knapper = '';
+  /* v3404 (Idas klik 20/11: flisen »begge – de må gerne komme under lektionen også« · »gennemført« · bud V9sVMQy7nKnwhzdvkni11Z): den gennemførte opgave/refleksionsøvelse er ÉN SMAL RÆKKE under videoen —
+     rødt flueben · ordet »Opgave« eller »Refleksionsøvelse« · hvid knap »Se dine svar« i naturlig bredde. Knappen åbner den i videoens flise med svarene, og de kan rettes dér. Ingen »Lektion 1.4 er åben«, ingen »Ret dine svar« ved siden af. */
+  if (g) return '<div class="lk-flise lopg-fl lopg-smal" id="lekOpgFlise"><div class="lopg-rk"><span class="lgjort-c ok">' + fb + '</span><span class="lopg-tt"><span class="lopg-t1">' + esc(tit) + '</span></span><button type="button" class="lopg-se mq-tap" onclick="lekOevFortsaet(\'' + idS + '\')">Se dine svar</button></div></div>';
   return '<div class="lk-flise lopg-fl' + (!g && !udsat ? ' lopg-ren' : '') + '" id="lekOpgFlise">'
     + '<div class="lopg-rk"><span class="lgjort-c' + (g ? ' ok' : '') + '">' + (g ? fb : '') + '</span><span class="lopg-tt"><span class="lopg-t1">' + esc(tit) + '</span>' + (under ? '<span class="lopg-t2">' + esc(under) + '</span>' : '') + '</span></div>'
     + liste + '<div class="lopg-kns">' + knapper + '</div></div>';
@@ -45867,7 +45892,7 @@ async function lekGjortSkift(id) {
   try { if (sb && currentKode) { const r = await sb.from("skema_svar").insert({ kode: currentKode, navn: CURRENT_NAVN || "", skema: "lektion_gjort_" + id, svar: { gjort: ny } }).select("id"); ok = !r.error && !!(r.data && r.data.length); } } catch (e) { ok = false; }
   if (!ok) { KURSUS_GJORT[id] = foer; lekTegnUdenHop(id); try { husBesked("Det blev ikke gemt. Prøv igen."); } catch (e) {} return; }
   try { renderKursusHjem(); } catch (e) {}
-  if (ny) { try { husKvit(storStart(oevOrd(id, true)) + " er gjort."); } catch (e) {} }
+  if (ny) { try { husKvit(storStart(oevOrd(id, true)) + " er gennemført."); } catch (e) {} }
 }
 function oevArt(id) {
   const b = String(id || "").split("__")[0];
@@ -47184,11 +47209,10 @@ function lekMbRender() {
   else if (harOv && !oevKlaret(id)) {   /* KNAPPERNE STÅR I FLISEN (ekspertholdet 12/11: »Næste« lignede næste video). Er en OPGAVE sat til senere, er næste lektion åben, og den røde knap fører videre. */
     const nx = aktive[ix + 1];
     /* gik kunden tilbage fra øvelsen til videoen, fører den røde knap ind i øvelsen igen (20/11) — aldrig en lektion uden vej frem */
-    roed = (oevArt(id) === "opgave" && KURSUS_UDSAT[id] && nx && !lekLaastAfForrige(nx.id) && !sidsteAabne) ? lekMbPil('Videre', "lekNaeste()", true, "pilH", true) : lekMbPil('Videre', KURSUS_UDSAT[id] ? "lekOevFortsaet('" + id + "')" : "lekNaeste()", true, "pilH", true);   /* ÉT ORD FOR VEJEN FREM: »VIDERE« (Ida 20/11: »for at gøre det lettere ift diff mellem reflektionsøvelser og opgaver tror jeg vi skal vælge videre« · »og næste laves om til videre«) */
+    roed = (KURSUS_UDSAT[id] && nx && !lekLaastAfForrige(nx.id) && !sidsteAabne) ? lekMbPil('Videre', "lekNaeste()", true, "pilH", true) : lekMbPil('Videre', KURSUS_UDSAT[id] ? "lekOevFortsaet('" + id + "')" : "lekNaeste()", true, "pilH", true);   /* ÉT ORD FOR VEJEN FREM: »VIDERE« (Ida 20/11: »for at gøre det lettere ift diff mellem reflektionsøvelser og opgaver tror jeg vi skal vælge videre« · »og næste laves om til videre«) */
   }
   else roed = sidsteAabne ? lekMbPil('Tilbage til forløbet', "lukLektion()", true) : lekMbPil('Videre', "lekNaeste()", true, "pilH", true);
-  const hvid = (harOv && ovTaget && oevKlaret(id) ? lekMbPil('Ret dine svar', "startOvelse('" + id + "')") : '')
-    + (forrige ? lekMbPil('Forrige lektion', "visLektion('" + forrige.id + "')", false, "pilV") : '')
+  const hvid = (forrige ? lekMbPil('Forrige lektion', "visLektion('" + forrige.id + "')", false, "pilV") : '')
     + (tlf && !ucov ? lekMbPil('Tilbage', "lukLektion()") : '');
   /* OVERBLIKKET ER EEN LINJE (Idas klik 24/9, lektions-bud 1): modulets lektioner, ikke alle 48 — og en tynd bjaelke */
   const modAkt = aktive.filter(x => { const m2 = lekModulFor(x.id); return m2 && modul && m2.titel === modul.titel; });
@@ -47270,7 +47294,7 @@ function lekOevTegn() {
   let kn = ""; const par = function (hvid, roed) { kn = String(hvid).replace('class="lsi-knap lsi-hvid"', 'class="lk-pil"') + String(roed).replace('class="lsi-knap"', 'class="lk-pil roed"'); return ''; };
   if (LEK_OEV.trin === "gjort") {
     const aktive = kursusLektionerAktive(), ix = aktive.findIndex(function (x) { return x.id === l.id; }), nx = aktive[ix + 1];
-    ind = '<div class="lsi-e">' + esc(storStart(ord)) + ' · udført</div><div class="lsi-t">Godt gået</div>'
+    ind = '<div class="lsi-e">' + esc(storStart(ord)) + ' · gennemført</div><div class="lsi-t">Godt gået</div>'
       + '<p>Dine svar er gemt.' + (nx && !lekModulLaastFor(nx.id) && !lekLaastAfForrige(nx.id) ? ' Lektion ' + esc(lekVisNr(nx.id)) + ' er åben.' : '') + '</p>'
       + par('<button type="button" class="lsi-knap lsi-hvid" onclick="vkSvarAabn()">Se dine svar</button>', '<button type="button" class="lsi-knap" onclick="lekNaesteGaa()">Videre</button>');
   } else if (LEK_OEV.trin === "spm" && OVELSE && String(mgBasisId(OVELSE.id)) === String(l.id)) {
@@ -47292,7 +47316,7 @@ function lekOevTegn() {
     ind = '<div class="lsi-e">' + esc(storStart(ord)) + ' · Lektion ' + esc(lekVisNr(l.id)) + '</div><div class="lsi-t">' + esc(typeof lekVisTitel === "function" ? lekVisTitel(l) : l.titel) + '</div>'
       + '<p>' + n + ' spørgsmål. Svar med dine egne ord — der er ingen forkerte svar.</p>'
       + '<p class="lsi-g">' + esc(oevHvemSerTekst(l.id)) + ' Du kan altid finde dine svar igen under lektionen.</p>'
-      + par('<button type="button" class="lsi-knap lsi-hvid" onclick="lekOevSenere()">Jeg gør det senere</button>', '<button type="button" class="lsi-knap" onclick="lekOevStart()">Start ' + esc(oevOrd(l.id, true)) + '</button>');
+      + par('<button type="button" class="lsi-knap lsi-hvid" onclick="lekOevSenere()">Gem og fortsæt senere</button>', '<button type="button" class="lsi-knap" onclick="lekOevStart()">Start ' + esc(oevOrd(l.id, true)) + '</button>');
   }
   main.innerHTML = '<div class="lk-flise lk-skema lk-skema-intro lk-oev" id="lekOevPlads">' + ind + '</div>' + (kn ? '<div class="lk-knapper lek-bar lk-oev-kn">' + kn + '</div>' : '');
   if (tlfListe) main.appendChild(tlfListe);
@@ -47590,7 +47614,7 @@ function lekMbOvelseRender() {
     + '</div>'
     + '<div class="ova-bund">'
     + (o.i > 0 ? '<button type="button" class="ova-knap ova-graa" onclick="ovelseGem();OVELSE.i--;renderOvelse()">Forrige</button>' : '')
-    + '<button type="button" class="ova-knap ova-roed" onclick="ovelseNaeste()">' + (sidst ? 'Gem og afslut' : 'Næste spørgsmål') + '</button>'
+    + '<button type="button" class="ova-knap ova-roed" onclick="ovelseNaeste()">' + (sidst ? 'Gem mine svar' : 'Videre') + '</button>'
     + '</div></div>';
   try { a.scrollTop = 0; } catch (e) {}
   let tlf = false; try { tlf = window.matchMedia("(max-width:899px)").matches; } catch (e) {}
@@ -47672,7 +47696,7 @@ function lksLek(x, aktivId, mod) {
   /* OPGAVEN SYNES UNDER MODULET (Ida 11/11: »hvorfor kan jeg slet ikke se opgaverne under modulerne?«): chip paa de lektioner, der har en opgave — hvid pille med graa kant */
   const lfL = lekLaastAfForrige(x.id);
   const harOpg = lksHarOev(x);
-  const opgChip = harOpg ? '<span class="lks-opg">' + esc(storStart(oevOrd(x.id))) + (oevKlaret(x.id) ? ' taget' : '') + '</span>' : '';   /* OPGAVE ELLER REFLEKSIONSØVELSE (Idas klik 15/11, lektionstråden): chippen siger, hvad det er (oevelse_art) */
+  const opgChip = harOpg ? '<span class="lks-opg">' + esc(storStart(oevOrd(x.id))) + (oevKlaret(x.id) ? ' gennemført' : '') + '</span>' : '';   /* OPGAVE ELLER REFLEKSIONSØVELSE (Idas klik 15/11, lektionstråden): chippen siger, hvad det er (oevelse_art) */
   let erNaeste = false; try { const nl0 = kursusNaesteLektion(); erNaeste = !!(nl0 && String(nl0.id) === String(x.id)) && !mod; } catch (e) {}
   const fort = erNaeste ? '<div role="button" tabindex="0" class="lks-fort dbtn primary" onclick="event.stopPropagation();visLektion(\'' + idS + '\')">' + (Object.keys(KURSUS_SET || {}).some(function (k) { return KURSUS_SET[k]; }) ? 'Fortsæt' : 'Se lektionen') + '</div>' : '';
   return '<div class="lks-fl lks-lek' + (nu ? ' nu' : '') + (s ? ' set' : '') + (lfL ? ' sekv' : '') + (erNaeste ? ' naeste' : '') + '" role="button" tabindex="0" onclick="visLektion(\'' + idS + '\')">' + (lfL ? stL : st) + '<div class="lks-lt"><div class="lks-ln"><span class="lks-n2">' + esc(lekVisNr(x.id)) + '</span> ' + esc(typeof lekVisTitel === "function" ? lekVisTitel(x) : x.titel) + (lekTidTekst(x.id) ? ' <span class="lks-d">' + esc(lekTidTekst(x.id)) + '</span>' : '') + '</div>' + ((x.beskrivelse && !lfL) ? '<div class="lks-bes">' + esc(x.beskrivelse) + '</div>' : '') + ven + (mod ? '<div class="lks-mod">' + esc(mod) + '</div>' : '') + fort + '</div>' + (lfL ? '' : lekFavMaerke(x.id)) + (harOpg ? '<button type="button" class="lks-oev-pil' + (lksOevAaben(x.id, nu) ? ' op' : '') + '" aria-label="' + (lksOevAaben(x.id, nu) ? 'Fold ' + oevOrd(x.id, true) + ' ind' : 'Vis ' + oevOrd(x.id, true)) + '" onclick="event.stopPropagation();lksOevFold(\'' + idS + '\',' + (nu ? 'true' : 'false') + ')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>' : '') + '</div>'   /* FLUEBENET TIL VENSTRE (Ida 28/10) · STJERNEN TIL HOEJRE (Ida 11/11) · PILEN FOLDER ØVELSEN UD (Ida 15/11) */
@@ -48538,7 +48562,7 @@ async function ovelseNaeste() {
   if (LEK_OEV && String(LEK_OEV.id) === String(oBasis)) { LEK_OEV.trin = "gjort"; renderKursusHjem(); if (LEK_AABEN) renderLektionVis(); return; }   /* »Godt gået« bliver stående i flisen (19/11) */
   renderKursusHjem();
   if (LEK_AABEN) renderLektionVis();
-  if (varArk) { try { husKvit(oOpg ? "Notatet er gemt." : storStart(oevOrd(oBasis, true)) + " er udført."); } catch (e) {} return; }
+  if (varArk) { try { husKvit(oOpg ? "Notatet er gemt." : storStart(oevOrd(oBasis, true)) + " er gennemført."); } catch (e) {} return; }
   /* Oevelsen er gjort: faerdig-kortet med tallet, der rykker (13/9). */
   try { if (LEK_AABEN && LEK_AABEN === oBasis) lekMoment(LEK_AABEN, "faerdig", oId); } catch (e) {}   /* svarId: kundens egne ord vises paa kortet (23/10) */
 }
@@ -48949,7 +48973,7 @@ async function ventMarker(id) {
   try { if (sb && currentKode) { const r = await sb.from("skema_svar").insert({ kode: currentKode, navn: CURRENT_NAVN || "", skema: "lektion_gjort_" + id, svar: { gjort: true } }).select("id"); ok = !r.error && !!(r.data && r.data.length); } } catch (e) { ok = false; }
   if (!ok) { KURSUS_GJORT[id] = foer; try { husBesked("Det blev ikke gemt. Prøv igen."); } catch (e) {} return; }
   try { delete KURSUS_UDSAT[id]; kursusGemLocal(); } catch (e) {}
-  try { renderKursusHjem(); } catch (e) {} try { husKvit(storStart(oevOrd(id, true)) + " er gjort."); } catch (e) {}
+  try { renderKursusHjem(); } catch (e) {} try { husKvit(storStart(oevOrd(id, true)) + " er gennemført."); } catch (e) {}
 }
 function renderUdsat() { const kort = document.getElementById("udsatKort"); if (kort) kort.style.display = "none"; }
 
@@ -69836,7 +69860,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "3403";
+const APP_VERSION = "3405";
 const APP_BYGGET = "3. november";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_VERSION;   /* ingen dato (Ida 7/11: »hvorfor står der version 3. november?«) — datoen blev ikke rettet med, nummeret er sandheden */ } catch (e) {} });
 let NY_VERSION_KLAR = false;
@@ -96087,7 +96111,7 @@ function bf3LekFaneFyld() {
       v.innerHTML = '<div class="bs3-mf-l">Lektionens valg</div><div class="bs3-valg-gitter">'
         + rk("Status", skj ? "Skjult for kunderne" : (udg && !aendr ? "Udgivet" : "Ikke udgivet"), !skj && !(udg && !aendr), "indhold")
         + rk("Video", video ? "Lagt ind" : "Mangler", !video, "indhold")
-        + rk("Øvelse", spm.length ? ord + " · " + spm.length + (spm.length === 1 ? " spørgsmål" : " spørgsmål") : "Ingen", false, spm.length ? (ord === "Opgave" ? "opgave" : "refleksion") : "opgave")
+        + rk("Opgave eller refleksionsøvelse", spm.length ? ord + " · " + spm.length + (spm.length === 1 ? " spørgsmål" : " spørgsmål") : "Ingen", false, spm.length ? (ord === "Opgave" ? "opgave" : "refleksion") : "opgave")
         + rk("Feedback efter lektionen", pop && !pop.fb.fra ? "Til" : "Fra", false, "efter")
         + rk("Popup efter lektionen", pop && !pop.fra ? "Til" : "Fra", false, "efter")
         + rk("Manus", manus ? "Skrevet" : "Mangler", !manus, "manus")
@@ -103336,6 +103360,38 @@ html body .ms2-tt { flex:1; min-width:220px; display:flex; flex-direction:column
 html body .ms2-ov { font:400 13px/18px Poppins,sans-serif; color:#686868; }
 html body .ms2-ti { font:400 26px/32px Didot,'Bodoni Moda',Georgia,serif; color:#1A1A1A; }
 html body .bs3-modside.ms2 .bs3-modregel { display:none; }   /* datoen står ét sted: i flisen til venstre */
+/* v3404 · DEN GENNEMFØRTE OPGAVE/REFLEKSIONSØVELSE SOM ÉN SMAL RÆKKE UNDER VIDEOEN (Idas klik 20/11) */
+html body #lekVis .lk-flise.lopg-fl.lopg-smal { padding:12px 18px; gap:0; }
+html body #lekVis .lopg-smal > .lopg-rk { gap:14px; flex-wrap:wrap; }
+html body #lekVis .lopg-smal .lopg-tt { flex:1; min-width:0; }
+html body #lekVis .lopg-smal .lopg-t1 { font:400 15px/22px Poppins,sans-serif; color:#1A1A1A; }
+html body #lekVis .lopg-smal .lopg-se { flex:none; height:44px; min-height:44px; padding:0 22px; border-radius:999px; border:1px solid #DEDEDE; background:#FFFFFF; color:#1A1A1A; font:400 14px/20px Poppins,sans-serif; cursor:pointer; width:auto; }
+/* v3405 · MIT SHINEBAROMETER EFTER BUD 1: spørgsmålet over flisen, svaret i flisen */
+html body .sbm-side { gap:0; max-width:980px; }
+html body .sbm-fl { background:#FFFFFF; border-radius:18px; box-shadow:0 1px 3px rgba(26,26,26,.14), 0 10px 28px rgba(26,26,26,.16); padding:18px 20px; display:flex; gap:16px; align-items:flex-start; min-width:0; box-sizing:border-box; }
+html body .sbm-fl.sbm-dag { align-items:center; flex-wrap:wrap; gap:12px 24px; }
+html body .sbm-dag-t { flex:1; min-width:180px; font:400 22px/28px Didot,'Bodoni Moda',Georgia,serif; color:#1A1A1A; }
+html body .sbm-chips { display:flex; gap:8px; flex:none; }
+html body .sbm-chip { height:44px; min-height:44px; padding:0 22px; border-radius:999px; border:1px solid #DEDEDE; background:#FFFFFF; color:#1A1A1A; font:400 14px/20px Poppins,sans-serif; cursor:pointer; }
+html body .sbm-chip.on { background:#FC2404; border-color:#FC2404; color:#FFFFFF; font-weight:500; }
+html body .sbm-sek { font:400 22px/28px Didot,'Bodoni Moda',Georgia,serif; color:#1A1A1A; margin:32px 0 14px; }
+html body .sbm-to { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:20px; }
+html body .sbm-par { display:flex; flex-direction:column; min-width:0; }
+html body .sbm-q { font:400 13px/19px Poppins,sans-serif; color:#686868; margin:0 0 8px; padding:0 4px; }
+html body .sbm-par > .sbm-fl { flex:1; }
+html body .sbm-l { flex:1; min-width:0; margin:0; padding:0; list-style:none; display:grid; gap:10px; }
+html body .sbm-l li { font:400 17px/24px Poppins,sans-serif; color:#1A1A1A; padding-left:18px; position:relative; overflow-wrap:anywhere; }
+html body .sbm-l li::before { content:""; position:absolute; left:0; top:9px; width:7px; height:7px; border-radius:50%; background:#FC2404; }
+html body .sbm-fl.sbm-tom { background:#F4F7FA; border:1px solid #DEDEDE; box-shadow:none; align-items:center; }
+html body .sbm-fl.sbm-ret { flex-direction:column; align-items:stretch; gap:12px; }
+html body .sbm-felt-ramme { position:relative; }
+html body .sbm-felt { width:100%; min-height:120px; border:1px solid #DEDEDE; border-radius:14px; padding:14px 48px 14px 16px; font:400 16px/24px Poppins,sans-serif; color:#1A1A1A; background:#FFFFFF; resize:vertical; box-sizing:border-box; outline:none; }
+html body .sbm-kn { display:flex; justify-content:flex-end; gap:8px; }
+html body .sbm-knap { flex:none; height:44px; min-height:44px; padding:0 22px; border-radius:999px; border:1px solid #DEDEDE; background:#FFFFFF; color:#1A1A1A; font:400 14px/20px Poppins,sans-serif; cursor:pointer; white-space:nowrap; }
+html body .sbm-knap.sbm-roed { background:#FC2404; border-color:#FC2404; color:#FFFFFF; font-weight:500; }
+html body #sbmWrap#sbmWrap .sbm-knap, html body #sbmWrap#sbmWrap .sbm-chip { height:44px !important; min-height:44px !important; padding:0 22px !important; font-size:14px !important; width:auto !important; }
+html body #sbmWrap .sbm-felt-ramme > div { position:absolute; right:10px; bottom:10px; margin:0 !important; }
+@media (max-width:899px) { html body .sbm-to { grid-template-columns:minmax(0,1fr); gap:22px; } html body .sbm-sek { margin-top:28px; } }
 /* v3395 (Ida 20/11) — MODULFLISERNE: cirkel som lektionerne (tom · rødt flueben · hængelås), ingen pil, ingen fold-ud */
 html body #forloebTidslinje .ftl2 .ftl2-hoved, html body #forloebTidslinje .ftl2 .ftl2-rk.laast { display:flex !important; align-items:center !important; justify-content:flex-start !important; gap:16px !important; cursor:pointer; }
 html body #forloebTidslinje .ftl2 .ftl2-rk.laast { cursor:default; }
@@ -103371,7 +103427,7 @@ html body.lek-mb #lekVis .lk-flise.lk-skema, html body #lekVis .lk-flise.lk-skem
 
 
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-hvid.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 20. november · 3403</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 20. november · 3405</div>
 <script>
 /* DROPDOWNEN RULLER SELV (Ida 4/10) — maal den aabne liste og klip den ved skaermens bund */
 (function () {

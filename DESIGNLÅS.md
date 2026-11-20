@@ -1,3 +1,20 @@
+## 20. november · 3405: MIT SHINEBAROMETER EFTER BUD 1
+- Idas klik 20/11 »Ja, byg bud 1« (artifact XxYPKn2ePsqpadZ9CosFpA) efter hendes ord: »spørgsmålet og kundens svar er tydeligere delt op«.
+- Øverst »Hvor er du i dag?« med Overskud og Underskud. Den valgte side står først. Valget huskes på enheden for dagen.
+- Spørgsmålet står med gråt OVER flisen. Flisen indeholder kun kundens eget svar, linje for linje med rød prik, og knappen »Ret«.
+- Svaret rettes i samme flise: skrivefelt med mikrofon, »Fortryd« og »Gem«. Den fælles knap »Ret dine svar« er væk.
+- Et tomt svar er en lyseblå flise med grå ramme og »Skriv dit svar«.
+- Computer: to fliser side om side pr. side (adfærd · tanker). Telefon: under hinanden.
+
+## 20. november · 3404: OPGAVE OG REFLEKSIONSØVELSE ER ENS HELE VEJEN
+- Idas klik 20/11 på buddet V9sVMQy7nKnwhzdvkni11Z: flisen »begge – de må gerne komme under lektionen også« · »Ja, gennemført« · »Ja, begge kan vente« · »Ja, de to ord«.
+- Kun ordet er forskelligt: »Opgave« eller »Refleksionsøvelse«. Aldrig bare »øvelsen«, aldrig »spørgsmål« som navn.
+- Ordet for færdig er »gennemført«, som på lektionerne. »udført«, »gjort« og »taget« bruges ikke som statusord over for kunden.
+- Vejen frem hedder »Videre«. Udsæt hedder »Gem og fortsæt senere« og findes på begge slags; næste lektion åbner imens, og den ventende står under »Venter på dig« på forsiden.
+- Under videoen står den gennemførte opgave/refleksionsøvelse som ÉN SMAL RÆKKE: rødt flueben · ordet · hvid knap »Se dine svar« i naturlig bredde. Knappen åbner den i videoens flise med svarene, og de kan rettes dér. Ingen linje under ordet, og »Ret dine svar« står ikke ved siden af.
+- Den står også i lektionslisten (fold ud, 3402).
+- Energida Studio: feltet i »Lektionens valg« hedder »Opgave eller refleksionsøvelse«.
+
 ## 20. november · 3403: »MARKÉR SOM FÆRDIG« KRÆVER, AT VIDEOEN ER AFSPILLET
 - Ida 20/11: »jeg må ikke kunne markere videoen som færdig før videoen er set til ende« · »Ja, luk hullet«.
 - Spoling tæller ikke. Videoen deles i stykker på 5 sekunder, og et stykke tæller kun, når det er afspillet. Knappen låses op, når videoen er nået til ende, og mindst 90 % er afspillet.
