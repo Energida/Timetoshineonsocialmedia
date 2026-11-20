@@ -35927,9 +35927,18 @@ async function renderVaerktoej() {
       + (laast ? '' : noterKort) + vkDriveFlise();
     return;
   }
-  list.innerHTML =
-    ((CURRENT_DEF && (CURRENT_DEF.type === "kursus" || CURRENT_DEF.type === "medarbejder")) ? '' : driveDoerHtml())   /* bud 1 (16/9): Indholdsmappen som doer */
-    + gennemgangDoer + sbbDoer + byggeDoer + soejleDoer + hashtagsKort + noterKort + vkDriveFlise();
+  /* VÆRKTØJSKASSEN HAR SAMME FLISE-LAYOUT SOM YOU GOT THIS (Ida 20/11: »vi skal have layoutet i Acorns værktøjskasse magen til you got this værktøjskassen«): store fliser med symbol og navn i et gitter.
+     »SKABELONER« ER EN FLISE, OG SPØRGSMÅLSBOBLEN LIGGER DERUNDER (Ida 20/11: »jeg vil gerne have at dette hedder skabeloner og spørgsmålsboblen så ligger derunder!«). Noterne og linket til mappen står under gitteret som hos You got this. */
+  const vkIk = function (d) { return '<svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + d + '</svg>'; };
+  const vkStor = function (navn, klik, ik) { return '<div class="vkd-flise" role="button" tabindex="0" onclick="' + klik + '" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();this.click();}"><span class="vkd-ik">' + ik + '</span><span class="vkd-navn">' + esc(navn) + '</span></div>'; };
+  let fliser = '';
+  try { if (!(CURRENT_DEF && CURRENT_DEF.type === "medarbejder") && driveLink()) fliser += vkStor("Indholdsmappen", "driveAabn()", vkIk('<path d="M3.5 7.5a2 2 0 0 1 2-2h4l2 2.5h7a2 2 0 0 1 2 2v7.500a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z"/>')); } catch (e) {}
+  if (gennemgangDoer) fliser += vkStor("Gennemgang af studiet", "window.open('https://claude.ai/artifact/Q139M9NYvxiPV9rSfwvHge','_blank','noopener')", vkIk('<rect x="3.5" y="5" width="17" height="12" rx="2"/><path d="M10.5 9l4 2-4 2zM8 20h8"/>'));
+  if (sbbDoer) fliser += vkStor("Skabeloner", "vkSkabelonerAabn()", vkIk('<rect x="4" y="4" width="16" height="16" rx="2.5"/><path d="M4 9.5h16M9.500 9.500V20"/>'));
+  if (byggeDoer) fliser += vkStor("De 4 byggesten", "tilpasAaben('drejebog')", vkIk('<rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/>'));
+  if (soejleDoer) fliser += vkStor("Indholdssøjlerne", "isAabn()", vkIk('<path d="M6 20V8M12 20V4M18 20v-9M4 20h16"/>'));
+  fliser += vkStor(htbNavn(), "htbAabn()", vkIk('<path d="M9 4 7 20M17 4l-2 16M4.500 9h16M3.500 15h16"/>'));
+  list.innerHTML = '<div class="vkd-grid">' + fliser + '</div>' + noterKort + vkDriveFlise();
 }
 
 /* ---------- DINE NOTER + DINE SVAR (Idas klik 23/10: »Tror også lidt jeg mangler at forstå hvor kundens besvarelser og noter mm ligger?
@@ -36213,6 +36222,7 @@ function ebRet(lek) { try { visLektion(lek); } catch (e) {} setTimeout(function 
 const SBB_KODER = ["ACORNS2026"];
 let SBB = { afs: "", ini: "", q: "", bg: "reel", skygge: true };
 function sbbVises() { try { return SBB_KODER.indexOf(String(currentKode || "").toUpperCase()) > -1; } catch (e) { return false; } }
+function vkSkabelonerAabn() { try { valgFliseArk("Skabeloner", sbbVises() ? [["Spørgsmålsboblen", "sbbAabn()", "tekst"]] : []); } catch (e) { try { sbbAabn(); } catch (e2) {} } }
 function sbbAabn() { if (!sbbVises()) return; try { showTab(34); } catch (e) {} sbbTegn(); }
 function sbbTegn() {
   const w = document.getElementById("sbbWrap"); if (!w) return;
@@ -42458,7 +42468,8 @@ function renderFokus(planFrem, target, idag) {
     if (hs) {
       /* Linjen hoerer KUN til onboardingen (Ida 30/7) — naar kunden er igennem,
          staar der kun citatet under heroen. */
-      if (!onboardingAktiv(CURRENT_DEF)) { hs.textContent = ""; hs.style.display = "none"; }
+      /* INGEN NY INFO, NÅR SKÆRMEN BLIVER SMAL (Ida 20/11: »vil du sørge for at der ikke kommer ny info uanset skærmens størrelse!!!«): You got this-kunden har ingen »ting i dag«, så linjen vises aldrig dér */
+      if (!onboardingAktiv(CURRENT_DEF) || (CURRENT_DEF && CURRENT_DEF.type === "kursus")) { hs.textContent = ""; hs.style.display = "none"; }
       else {
         const tal = ["", "Én ting", "To ting", "Tre ting", "Fire ting", "Fem ting", "Seks ting", "Syv ting", "Otte ting", "Ni ting", "Ti ting"];
         hs.style.display = "";
@@ -47770,7 +47781,9 @@ function lekSideFold(nr) {
 
 /* ---------- pop-ups på lektionssiden (notevalg, opgave-valg, "Lover du det?") ---------- */
 function lekPop(html) { const p = document.getElementById("lekPop"); document.getElementById("lekPopKort").innerHTML ='<button type="button" class="modal-close" onclick="lukLekPop()" title="Luk" aria-label="Luk">&times;</button>' + html; p.classList.add("on"); }   // krydset følger ALLE popups (Idas regel 16/7)
+const LEK_FB_MANGLER = {};
 function lukLekPop() {
+  try { if (LEK_MOMENT_ID && document.querySelector("#lekPop.on #lekFbKnap")) { if (REFL_STJERNER) delete LEK_FB_MANGLER[LEK_MOMENT_ID]; else LEK_FB_MANGLER[LEK_MOMENT_ID] = true; } } catch (e) {}
   try { if (LEK_MOMENT_ID) { const mid = LEK_MOMENT_ID; LEK_MOMENT_ID = null; lekMomentFeedbackGem(mid); } } catch (e) {}   /* feedbacken foelger med ud (13/9) */
   const p = document.getElementById("lekPop"); if (p) p.classList.remove("on");
   try { if (LEK_MOMENT_TIMER) { clearTimeout(LEK_MOMENT_TIMER); LEK_MOMENT_TIMER = null; } } catch (e) {}
@@ -47901,7 +47914,7 @@ function lekVidere(id) {
 let LEK_MOMENT_TIMER = null;
 /* POPUPPERNE PR. LEKTION (Idas klik 14/11, trin c): teksterne står på lektionen (lektioner.popup, SQL-kortet 14/11). Mangler et felt, bruges husets
    standard — de ord, popupperne havde før. Kunden ser kun det udgivne (Studio skriver i kladden, til Status sættes til Udgivet). */
-const LEK_POP_STD = { titel: "Godt gået", tekst: "", knap: "Videre til næste", fb: { spm: "Hvordan var videoen?", ph: "Kom meget gerne med feedback. Hvad var godt, og hvad kunne være bedre?", fra: false } };
+const LEK_POP_STD = { titel: "Godt gået", tekst: "", knap: "Videre til næste", fb: { spm: "Hvordan var lektionen?", ph: "Kom meget gerne med feedback. Hvad var godt, og hvad kunne være bedre?", fra: false } };
 function lekPopFlet(p) {
   p = (p && typeof p === "object") ? p : {}; const fb = (p.fb && typeof p.fb === "object") ? p.fb : {};
   const t = function (v, std) { v = String(v == null ? "" : v).trim(); return v || std; };
@@ -47964,7 +47977,7 @@ function lekMoment(id, art, svarId) {
        fem og ... tilfoeje kommentar ... at den feedback saa lander inde i studio paa hver
        lektion"). Kommentarfeltet ligger foldet bag eet link, saa kortet ikke tynger; det
        foldes ud med eet tryk. Begge gemmes, naar kortet forlades — uanset hvilken vej. */
-    + (visStjerner ? '<div class="lek-moment-stj"><div class="lek-moment-lbl">Hvordan var videoen?</div><div id="reflStjerner">' + reflStjerneHtml() + '</div>'
+    + (visStjerner ? '<div class="lek-moment-stj"><div class="lek-moment-lbl">Hvordan var lektionen?</div><div id="reflStjerner">' + reflStjerneHtml() + '</div>'
         + '<button type="button" class="lek-moment-link" id="lekMomentKomLink" style="min-height:36px;font-size:12.5px;" onclick="lekMomentKomAabn()">Tilføj en kommentar til videoen</button>'
         + '<textarea id="lekMomentKom" class="sk-input" style="display:none;width:100%;min-height:84px;background:#fff;font-size:16px;line-height:1.5;margin-top:4px;" placeholder="Kom meget gerne med feedback. Hvad var godt, og hvad kunne være bedre?"></textarea>'
         + '</div>' : '')
@@ -48059,7 +48072,8 @@ function lekNaeste(fraPop) {
   const aktive = kursusLektionerAktive();
   const ix = aktive.findIndex(x => x.id === LEK_AABEN);
   /* LUKKEDE KUNDEN POPUPPEN UDEN STJERNER, KOMMER DEN IGEN, NÅR DER TRYKKES »NÆSTE LEKTION« PÅ SIDEN (Ida 20/11) */
-  try { const c0 = aktive[ix]; if (!fraPop && c0 && KURSUS_SET[c0.id] && typeof CUSTOMER_NAV !== "undefined" && CUSTOMER_NAV && !reflSet()["lektion_" + c0.id] && !lekPopTekst(c0).fb.fra) { lekMoment(c0.id, "faerdig"); if (document.querySelector("#lekPop.on #lekFbKnap")) return; lukLekPop(); } } catch (e) {}
+  /* FEEDBACK KUN ÉN GANG PR. LEKTION (Ida 20/11: »så hvis kunden ser lektionen igen - så skal denne ikke komme op«): stjernerne kommer kun igen, hvis kunden lige har lukket popuppen uden at vælge (LEK_FB_MANGLER, kun i samme besøg) — aldrig når en gennemført lektion ses igen */
+  try { const c0 = aktive[ix]; if (!fraPop && c0 && KURSUS_SET[c0.id] && LEK_FB_MANGLER[c0.id] && typeof CUSTOMER_NAV !== "undefined" && CUSTOMER_NAV && !reflSet()["lektion_" + c0.id] && !lekPopTekst(c0).fb.fra) { lekMoment(c0.id, "faerdig"); if (document.querySelector("#lekPop.on #lekFbKnap")) return; lukLekPop(); } } catch (e) {}
   /* NÆSTE VISER FØRST ØVELSEN I VIDEOENS FLISE (Idas »ja - super design!« 19/11, bud 3bu5hqVVW2hd3fizZuAVNr): en lektion med en refleksionsøvelse eller opgave, der hverken er udført eller udskudt */
   const cur = aktive[ix];
   try { if (cur && cur.ovelse && cur.ovelse.length && !mgErGentagelig(cur.id) && !oevKlaret(cur.id) && !KURSUS_UDSAT[cur.id] && !(LEK_OEV && String(LEK_OEV.id) === String(cur.id)) && lekMb()) { LEK_OEV = { id: cur.id, trin: "intro" }; renderLektionVis(); return; } } catch (e) {}
@@ -69773,7 +69787,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "3397";
+const APP_VERSION = "3398";
 const APP_BYGGET = "3. november";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_VERSION;   /* ingen dato (Ida 7/11: »hvorfor står der version 3. november?«) — datoen blev ikke rettet med, nummeret er sandheden */ } catch (e) {} });
 let NY_VERSION_KLAR = false;
@@ -103154,9 +103168,19 @@ html body:not(#lf1):not(#lf2):not(#lf3):not(#lf4):not(#lf5):not(#lf6):not(#lf7):
 <style id="v3395Stil">
 html body .lk-oev .lsi-e-rk .lsi-hvem { margin-left:auto; flex:none; display:inline-flex; align-items:center; gap:8px; padding:8px 14px 8px 11px; border-radius:999px; border:1px solid #DEDEDE; background:#F4F7FA; color:#1A1A1A; font:400 13px/1.2 Poppins,sans-serif; letter-spacing:0; text-transform:none; white-space:nowrap; cursor:default; }
 html body .lk-oev .lsi-e-rk .lsi-hvem svg { color:#FC2404; flex:none; }
+/* KNAPPERNE UNDER VIDEOEN FYLDER IKKE HELE BREDDEN (Ida 20/11: »denne knap skal ikke fylde hele bredden«): hver knap er så bred som sin tekst (mindst 220); den hvide står til venstre, den røde til højre */
+@media (min-width:900px) {
+  html body.lek-mb #lekVis .lk-knapper.lek-bar { display:flex !important; justify-content:space-between !important; flex-wrap:wrap; }
+  html body.lek-mb #lekVis .lk-knapper.lek-bar .lk-pil { flex:0 0 auto !important; width:auto !important; min-width:220px; padding-left:32px !important; padding-right:32px !important; }
+  html body.lek-mb #lekVis .lk-knapper.lek-bar .lk-pil.roed:only-child { margin-left:auto; }
+}
 html body .kbu-ret-gem { display:flex; align-items:center; justify-content:center; margin:8px 0 0; min-height:44px; padding:0 28px; border-radius:999px; background:#FC2404; color:#FFFFFF; border:0; font:400 14px Poppins,sans-serif; cursor:pointer; }
 /* KUN HVID TEKST PÅ RØD — OGSÅ PÅ »FORTSÆT« PÅ FORSIDEN (Ida 20/11: »jeg vil ALDRIG se mørk tekst på rød baggrund«). Målt live på 3394: knappen fik klasserne mb-roed mb-chip, og chip-reglen (grå tekst #686868, 6 id'er) slog den hvide tekst. Denne regel har 7 id'er og vinder altid. */
 html body:not(#cx1):not(#cx2):not(#cx3):not(#cx4):not(#cx5):not(#cx6):not(#cx7) .mb-roed, html body:not(#cx1):not(#cx2):not(#cx3):not(#cx4):not(#cx5):not(#cx6):not(#cx7) .mb-chip.mb-roed, html body:not(#cx1):not(#cx2):not(#cx3):not(#cx4):not(#cx5):not(#cx6):not(#cx7) .mb-chip.primary, html body:not(#cx1):not(#cx2):not(#cx3):not(#cx4):not(#cx5):not(#cx6):not(#cx7) .mb-chip.aktiv, html body:not(#cx1):not(#cx2):not(#cx3):not(#cx4):not(#cx5):not(#cx6):not(#cx7) .hfs-knap, html body:not(#cx1):not(#cx2):not(#cx3):not(#cx4):not(#cx5):not(#cx6):not(#cx7) .hfs-knap svg { color:#FFFFFF !important; }
+/* MODULFLISERNE FYLDER IKKE HELE BREDDEN (Idas valg 20/11: bud 1 »Smal kolonne til venstre«, artifact WYf1KxHbyWXFT3VjVkB6VD): på computer er listen højst 720 bred og flugter med overskriften og chipsene. Telefonen er urørt. */
+@media (min-width:900px) { html body #forloebTidslinje .ftl2 > .ftl2-stor, html body #forloebTidslinje .ftl2 > .ftl2-rk, html body #forloebTidslinje .ftl2 > .ftl2-sek, html body #forloebTidslinje .ftl2 > .lek-favliste { max-width:720px; } }
+/* VÆRKTØJSKASSENS FLISER: 12 mellem fliserne som i resten af huset (afstandsskalaen 14/11; porten 20/11) */
+html body .vkd-grid { gap:12px !important; margin-bottom:12px !important; }
 /* v3395 (Ida 20/11) — MODULFLISERNE: cirkel som lektionerne (tom · rødt flueben · hængelås), ingen pil, ingen fold-ud */
 html body #forloebTidslinje .ftl2 .ftl2-hoved, html body #forloebTidslinje .ftl2 .ftl2-rk.laast { display:flex !important; align-items:center !important; justify-content:flex-start !important; gap:16px !important; cursor:pointer; }
 html body #forloebTidslinje .ftl2 .ftl2-rk.laast { cursor:default; }
@@ -103192,7 +103216,7 @@ html body.lek-mb #lekVis .lk-flise.lk-skema, html body #lekVis .lk-flise.lk-skem
 
 
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-hvid.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 20. november · 3397</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 20. november · 3398</div>
 <script>
 /* DROPDOWNEN RULLER SELV (Ida 4/10) — maal den aabne liste og klip den ved skaermens bund */
 (function () {

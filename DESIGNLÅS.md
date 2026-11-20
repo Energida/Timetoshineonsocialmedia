@@ -1,3 +1,12 @@
+## 20. november · 3398: SMALLE MODULFLISER · VÆRKTØJSKASSEN I FLISER MED »SKABELONER« · FEEDBACK KUN ÉN GANG · KNAPPER I NATURLIG BREDDE
+- »Dit forløb« på computer: modulfliserne er højst 720 brede og står til venstre, i flugt med overskriften (Idas valg 20/11: bud 1). Telefonen er urørt.
+- Værktøjskassen har samme flise-gitter for alle kunder som hos You got this: store fliser med symbol og navn (Ida 20/11). Noterne og linket til mappen står under gitteret.
+- »Skabeloner« er en flise i Værktøjskassen; Spørgsmålsboblen ligger derunder (Ida 20/11).
+- Popuppen efter en lektion spørger »Hvordan var lektionen?« (Idas ja 20/11 — før »Hvordan var videoen?«). Teksten kan stadig rettes pr. lektion i Studio.
+- Forsiden viser det samme, uanset skærmens bredde. Linjen »To ting i dag — så er ugen hjemme« vises aldrig hos You got this-kunder (Ida 20/11).
+- Feedback gives kun én gang pr. lektion. Ses en gennemført lektion igen, kommer stjernerne ikke (Ida 20/11).
+- Knapperne under videoen fylder ikke hele bredden på computer: hvid til venstre, rød til højre (Ida 20/11).
+
 ## 20. november · »MARKÉR SOM FÆRDIG« → FEEDBACK → ØVELSEN (Ida 20/11: »fejl opdaget! … så kommer feedback pop-uppen ikke« · »det er vigtigt at kunden har set lektionen til ende inden de kan markere den som færdig!«) · 3397
 - En lektion er først færdig, når dens opgave eller refleksionsøvelse også er. Forsidens »Fortsæt hvor du slap« og klik på modulflisen fører til den lektion, kunden er nået til, aldrig ind i en låst lektion (Ida 20/11: »jeg kan slet ikke gå ind på modul 1 nu«).
 - Den røde knap under videoen hedder »Markér som færdig«. Den er låst, til videoen er set til ende.
