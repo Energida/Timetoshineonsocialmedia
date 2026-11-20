@@ -1,8 +1,11 @@
+## 20. november · 3411: LEKTIONERNE STARTER MED LYD
+- Ida 20/11: »kan vi gøre så alle lektioner starter med lyd?«. Lyden slås til (ikke lydløs, fuld styrke), så snart afspilleren er klar, og igen ved første afspilning. Kunden kan stadig selv skrue ned eller slå lyden fra undervejs.
+
 ## 20. november · 3410: RUNDVISNING UDEN BLINK · SPOLING TILLADT · PROFILENS MEDARBEJDERE · BRANCHER
 - Rundvisningen: det mørke lag bliver stående mellem trinene; det gamle lag fjernes først, når det nye er klar (Ida 20/11: »man får altså et lyst blink indimellem! det er super forvirrende«).
 - Videoer: 90 %-reglen fra 3403 er SLETTET (Ida 20/11: »det skal man kunne igen - så slet reglen med 90%«). Man kan spole, og »Markér som færdig« låses op, når videoen er nået til ende.
 - Profiloprettelsen: har kunden svaret »Flere« forretninger, spørges der direkte »Hvor mange medarbejdere er I?« med et talfelt, uden »Én/Flere« (Ida 20/11). Med én forretning er trinnet som før.
-- Brancherne: »Bank, forsikring, revisor og advokat« og »Ejendomsmægler, bil og håndværk« er flettet til »Bank, ejendomsmægler og bilforhandler« (Ida 20/11: »fjern håndværk og advokat«).
+- Brancherne: »Bank, forsikring, revisor og advokat« og »Ejendomsmægler, bil og håndværk« er flettet til »Bank, forsikring, revisor, ejendomsmægler og bilforhandler« (Ida 20/11: »fjern håndværk og advokat« · 3411: forsikring og revisor med igen, Idas klik »Ja, tag dem med«).
 
 ## 20. november · 3409: »VÆLG DIN NYE ADGANGSKODE« HAR HELT DÆKKENDE BAGGRUND
 - Ida 20/11 (testperson Ole): »når han klikkede på glemt adgangskode så man først i baggrunden en FRYGTELIG spøgelsesside« · »et gammelt dashboard med en stor rød flise der sagde velkommen til dit contentstudio«.
