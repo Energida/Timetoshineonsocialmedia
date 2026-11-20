@@ -4,7 +4,7 @@
    · CHIP: 32 høj · 12,5/400 · luft 14 · hvid, når den ikke er valgt (låst 9/11 + 12/11).
    · OVERSKRIFT (versal-etiket): én størrelse og én grå.
    · FLISE: hvid flise med skygge har radius 20.
-   · SKRIFT: aldrig fed Poppins; grå tekst kun #6F6B66 eller #9A9590.
+   · SKRIFT: aldrig fed Poppins; grå tekst kun #686868 eller #686868.
    Rapport, ikke port: window.LAAS_KOER(sider) returnerer { sider: {...}, sum: {...} }. Kør i selen på 390 og 1440. */
 window.LAAS_KOER = async function (SIDER) {
   var vent = function (ms) { return new Promise(function (r) { setTimeout(r, ms); }); };
@@ -13,7 +13,7 @@ window.LAAS_KOER = async function (SIDER) {
   var px = function (v) { return Math.round(parseFloat(v) * 10) / 10; };
   var rgb = function (v) { return String(v).replace(/\s/g, ""); };
   var egenTekst = function (e) { return [].filter.call(e.childNodes, function (n) { return n.nodeType === 3 && n.textContent.trim(); }).map(function (n) { return n.textContent.trim(); }).join(" "); };
-  var GRAA_OK = { "rgb(111,107,102)": 1, "rgb(154,149,144)": 1 };
+  var GRAA_OK = { "rgb(104,104,104)": 1, "rgb(104,104,104)": 1 };
   var UD = { sider: {}, sum: { knap: {}, chip: {}, overskrift: {}, flise: {}, fed: {}, graa: {} } };
   var tael = function (gr, noegle, side) { var o = UD.sum[gr][noegle] = UD.sum[gr][noegle] || { n: 0, sider: [] }; o.n++; if (o.sider.indexOf(side) < 0 && o.sider.length < 8) o.sider.push(side); };
   for (var i = 0; i < SIDER.length; i++) {
@@ -54,7 +54,7 @@ window.LAAS_KOER = async function (SIDER) {
       /* OVERSKRIFT som versal-etiket */
       if (cs.textTransform === "uppercase" && t.length <= 40 && r.height < 40) {
         var o = px(cs.fontSize) + " · " + rgb(cs.color) + " · afstand " + px(cs.letterSpacing);
-        if (!(px(cs.fontSize) === 10 && rgb(cs.color) === "rgb(154,149,144)" && px(cs.letterSpacing) === 1.5)) { f.overskrift++; tael("overskrift", k + " → " + o, navn); }
+        if (!(px(cs.fontSize) === 10 && rgb(cs.color) === "rgb(104,104,104)" && px(cs.letterSpacing) === 1.5)) { f.overskrift++; tael("overskrift", k + " → " + o, navn); }
       }
       if (/Poppins/i.test(cs.fontFamily) && parseInt(cs.fontWeight, 10) >= 600) { f.fed++; tael("fed", k + " → " + cs.fontWeight, navn); }
       var c = rgb(cs.color), m = c.match(/^rgb\((\d+),(\d+),(\d+)\)$/);

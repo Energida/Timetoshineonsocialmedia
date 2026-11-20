@@ -80,7 +80,7 @@ setTimeout(async function () {
       /* 7) UX-POLITIET: ingen lange streger, aldrig fed, fliserne uden kant (skyggeflisen) */
       if (/—/.test(tekst)) F(tilstand + ": en lang streg (—) staar i Hjems tekst");
       [].forEach.call(r.querySelectorAll("*"), function (e) { if (e.children.length || !synlig(e)) return; var fw = parseInt(getComputedStyle(e).fontWeight, 10); if (fw >= 600) F(tilstand + ": fed Poppins i " + (e.textContent || "").trim().slice(0, 30)); });
-      [].forEach.call(r.querySelectorAll(".hu-ring, .hu-dag, .hu-fokus, .hu-td"), function (e) { if (e.closest(".hh-panel")) return; /* fliser i bud 4B-panelerne har ramme 1 px #E3E2DE og ingen skygge (4/11) */ var c = getComputedStyle(e); if (synlig(e) && parseFloat(c.borderTopWidth) > 0 && c.borderTopStyle !== "none") F(tilstand + ": en flise har kant i stedet for skygge"); });
+      [].forEach.call(r.querySelectorAll(".hu-ring, .hu-dag, .hu-fokus, .hu-td"), function (e) { if (e.closest(".hh-panel")) return; /* fliser i bud 4B-panelerne har ramme 1 px #DEDEDE og ingen skygge (4/11) */ var c = getComputedStyle(e); if (synlig(e) && parseFloat(c.borderTopWidth) > 0 && c.borderTopStyle !== "none") F(tilstand + ": en flise har kant i stedet for skygge"); });
       /* 8) 32 PX FRA BUEN til det foerste under heroen (buen = 28 px af baandet) */
       var heroEl = tlf ? document.querySelector(".hf-hero") : document.querySelector("#screen3 .mb-baand");
       var foerste = somTlf ? L : R;

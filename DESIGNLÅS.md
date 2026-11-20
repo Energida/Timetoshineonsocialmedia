@@ -1,3 +1,39 @@
+## 20. november · HANDLING ER RØD · OPMÆRKSOM HAR ET TYDELIGT MÆRKE (HÅRD, Ida 20/11: »gået i stå skal ikke være blå! alt hvor jeg skal handle skal være rød!« · »hvis der er noget jeg skal være opmærksom på skal det have en tydelig markering«)
+- **Alt, hvor Ida skal handle, er rødt:** rød flade med hvid tekst. Status »Gået i stå« og »Ikke logget ind«, tal-fliserne for dem (når tallet er over 0) og knappen »Skub«. Aldrig lyseblå.
+- **Det, Ida skal være opmærksom på, har et tydeligt mærke:** en rød cirkel med hvidt udråbstegn foran teksten (fejlmeldinger, feedback, øvelser der venter).
+- Lyseblå bruges til ro: venter hos kunden, låst, hjælp og »Du er færdig for i dag«.
+
+## 20. november · SORT ER KUN TIL TEKST (HÅRD, Ida 20/11: »sort udelukkende må bruges til tekst. jeg vil ALDRig se sort som andet! heller ikke i forslag!!«)
+- **SORT (#1A1A1A) BRUGES KUN TIL TEKST.** Aldrig som flade, bånd, knap, ramme, cirkel, telefonramme, streg eller skygge-flade. Det gælder appen, admin og hvert bud, tegning og mockup.
+- Symboler og ikoner er røde #FC2404 eller mørkegrå #686868, ikke sorte flader.
+- Porten måler det: ingen synlig flade eller kant i #1A1A1A eller #000000 (probe-farver).
+
+## 20. november · FARVEMANUALEN: KUN DISSE FARVER, ALLE STEDER (HÅRD, Ida 20/11: »Det er disse og kun disse farver vi skal bruge ALLE steder. hele b2b og admin … jeg vil aldrig se forslag eller byggede elementer uden for dette«)
+- Energida-rød **#FC2404**: eneste røde. Knapper, links, ikoner og fremhævelser.
+- Lys blå **#F4F7FA**: venter, låst, hjælp (før #F0F5F8).
+- Blå kant **#C9DBE7**.
+- Lys neutralgrå **#F8F8F8**: afsnitsbaggrund og rolige flader (før de varme grå og #EEEEEE).
+- Hvid **#FFFFFF**: afsnit, fliser og chips.
+- Lys grå **#DEDEDE**: flisekanter og streger (før #DEDAD4).
+- Mørkegrå **#686868**: sekundær tekst (før #6F6B66 og #9A9590).
+- Tekst **#1A1A1A** (Idas klik 20/11). Grøn og gul bliver, hvor de findes i dag (Idas klik 20/11: »Behold grøn og gul«).
+- Gælder også bud, tegninger og mockups. Alle ældre farvekoder i denne fil er erstattet af disse: hvor en ældre lås siger #DEDAD4, #F0F5F8, #6F6B66, #FAF9F5 eller #EEEEEE, gælder manualens farve.
+
+## 20. november · KUN HVID TEKST PÅ RØD (HÅRD, Ida 20/11: »vil du være sød at TYDELIGT skrive at det KUN må være hvid tekst på rød!!!«)
+- **PÅ EN RØD FLADE ER TEKSTEN ALTID HVID #FFFFFF. ALDRIG GRÅ, ALDRIG SORT.** Det gælder knapper, chips, tal-fliser og piller, i appen og i hvert bud.
+- Porten måler det: hver synlig tekst, hvis nærmeste flade er #FC2404, skal være hvid (probe-farver).
+
+## 20. november · LYSEBLÅ FLISER HAR GRÅ KANT #DEDEDE (HÅRD, Idas klik 20/11 på buddet 2HBZhxFooEb95TMPQ3T7jz: »lås grå kant«)
+- Lyseblå fliser (#F4F7FA) har 1 px grå kant #DEDEDE, ikke blå. Låsen fra 19/11 står ved magt i manualens grå.
+
+## 20. november · DAGENS TJEK OG KUNDETABELLEN PÅ BACKSTAGE › HJEM (Ida 20/11 »Ja, byg Mail 1, A + C«, bud GePcSymrSwf4XFCawKCcpi) · 3393, ikke lagt ud
+- Øverst: Dagens tjek (skub · fejl og feedback). Et skub er en rød »Skub«, der åbner arket med en færdig mail (tre tekster efter grunden, kan rettes, sendes via Brevo). »Set« fjerner punktet. Alt klaret = »Du er færdig for i dag« (lyseblå).
+- En kunde, der er skubbet inden for 5 dage, står ikke i Dagens tjek igen.
+- »You got this lige nu«: tre tal (På sporet · Gået i stå · Ikke logget ind), et tryk filtrerer tabellen. Så Nye køb siden i går og Godt nyt.
+- Kundetabellen står under tallene: overskrifter over kolonnerne (Købt · Uge · Virksomhed · Person · Telefon · Status · Rabatkode · Adgangskode · Nået til · Set af åbne · Sidst aktiv · Øvelser venter · Skubbet), sortér på overskriften, filtrér på status. Telefonen: Kunde · Status · Købt, et tryk åbner kunden.
+- Status er en pille: rød prik for »Ikke logget ind«, aldrig en rød flade. Rødt er kun knapper.
+- Væk fra Hjem: »Aktiveret inden 24 timer«, »Første lektion inden 7 dage«, feedback-flisen, »Klik i dine mails« og »Besøg på hjemmesiden«.
+
 ## 20. november · TRYGHEDSKONTROLLEN FØR LANCERINGEN AF YOU GOT THIS (Ida 20/11) · 3392
 - »Videre til næste« i en lektion med øvelse åbner øvelsen i videoens flise (som »Næste«). Aldrig en lektion uden vej videre.
 - »Venter på dig« er den samme flise overalt (lektionen, Forsiden på telefon og computer): #F0F5F8, kant #DEDAD4, rød »Fortsæt øvelsen« med hvid tekst, 44 på computeren og 56 i fuld bredde på telefonen.

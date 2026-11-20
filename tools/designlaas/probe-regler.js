@@ -11,7 +11,7 @@ var FUND=[], N=0, TRIN="start";
 function fejl(s){ FUND.push(TRIN+" · "+s); }
 function er(navn, e, ok, hvad){ N++; if(!ok) fejl(navn+" »"+txt(e)+"« ["+kl(e)+"] "+hvad); }
 var TLF=innerWidth<900;
-var RED="rgb(252,36,4)", SORT="rgb(26,26,26)", G2="rgb(111,107,102)", KANT="rgb(222,218,212)";   /* kundeappens kanter er husets grå #DEDAD4 (Ida 15/11: den blå #DCE8F0 fra 14/11 er væltet) */
+var RED="rgb(252,36,4)", SORT="rgb(26,26,26)", G2="rgb(104,104,104)", KANT="rgb(222,222,222)";   /* kundeappens kanter er husets grå #DEDEDE (Ida 15/11: den blå #DCE8F0 fra 14/11 er væltet) */
 function maalLaas1411(){
   document.querySelectorAll(".ark-chip.on, .ss-chip.on, .cm-chip.on, .chip-btn.on, .ark-vchip.on, .kk-chip.on, .lek-favchip.valgt").forEach(function(e){
     if(!synlig(e)||/dbtn|sa-lang|kk-ini|sa-ved-ik|bs3-drop|cv-plus|bdrop|fb-hc/.test(e.className)) return; var cs=getComputedStyle(e), af=getComputedStyle(e,"::after");
@@ -21,13 +21,13 @@ function maalLaas1411(){
   /* IKKE VALGT CHIP = HVID · GRAA KANT · GRAA TEKST (Ida 15/11: »neutral baggrund og grå streg og grå tekst«) */
   document.querySelectorAll(".ark-chip, .ss-chip, .cm-chip, .mb-chip, .chip-btn:not(.bdrop-rk), .ark-vchip, .kk-chip, .lek-favchip, .ibb-chip, .kop-chip, .pr-chip, .fb-chip").forEach(function(e){
     if(!synlig(e)||/dbtn|sa-lang|kk-ini|sa-ved-ik|bs3-drop|cv-plus|bdrop|fb-hc|kv-vaelg|dl-plus|mb-roed|roed/.test(e.className)||e.matches(".on, .valgt, [aria-pressed='true'], [aria-checked='true']")||e.closest(".hero, .mb-baand, .cover")) return; var cs=getComputedStyle(e);
-    er("IKKE VALGT CHIP", e, rgb(cs.backgroundColor)==="rgb(255,255,255)"&&px(cs.borderTopWidth)>=1&&rgb(cs.borderTopColor)===KANT&&rgb(cs.color)===G2, "flade "+cs.backgroundColor+" kant "+cs.borderTopWidth+" "+cs.borderTopColor+" tekst "+cs.color+" (skal hvid · 1 px #DEDAD4 · grå #6F6B66)");
+    er("IKKE VALGT CHIP", e, rgb(cs.backgroundColor)==="rgb(255,255,255)"&&px(cs.borderTopWidth)>=1&&rgb(cs.borderTopColor)===KANT&&rgb(cs.color)===G2, "flade "+cs.backgroundColor+" kant "+cs.borderTopWidth+" "+cs.borderTopColor+" tekst "+cs.color+" (skal hvid · 1 px #DEDEDE · grå #686868)");
   });
   document.querySelectorAll(".bs3-drop, .bdrop-knap, select:not([multiple]):not([size])").forEach(function(e){   /* ALLE dropdowns (v3271), ikke kun briefens status */
     if(!synlig(e)||e.closest(".ark-hvid, .ark-bue")) return; var cs=getComputedStyle(e), r=e.getBoundingClientRect(), sp=e.matches(".bs3-drop:not([data-etiket])")?e.querySelector("span"):null, sv=e.matches(".bs3-drop")?e.querySelector("svg"):null;
-    er("DROPDOWN form", e, Math.round(r.height)===44&&px(cs.borderTopLeftRadius)===14&&px(cs.borderTopWidth)===1&&rgb(cs.borderTopColor)===KANT&&rgb(cs.backgroundColor)==="rgb(255,255,255)"&&px(cs.paddingLeft)===14, "h"+Math.round(r.height)+" r"+cs.borderTopLeftRadius+" kant "+cs.borderTopColor+" flade "+cs.backgroundColor+" luft "+cs.paddingLeft+" (skal 44 · r14 · 1 px #DEDAD4 · hvid · luft 14)");
+    er("DROPDOWN form", e, Math.round(r.height)===44&&px(cs.borderTopLeftRadius)===14&&px(cs.borderTopWidth)===1&&rgb(cs.borderTopColor)===KANT&&rgb(cs.backgroundColor)==="rgb(255,255,255)"&&px(cs.paddingLeft)===14, "h"+Math.round(r.height)+" r"+cs.borderTopLeftRadius+" kant "+cs.borderTopColor+" flade "+cs.backgroundColor+" luft "+cs.paddingLeft+" (skal 44 · r14 · 1 px #DEDEDE · hvid · luft 14)");
     if(sp){ var ss=getComputedStyle(sp), rg=document.createRange(); rg.selectNodeContents(sp); var tr=rg.getBoundingClientRect(); er("DROPDOWN tekst", e, rgb(ss.color)===SORT&&Math.abs(tr.left-r.left-15)<=2, "tekst "+ss.color+", "+Math.round(tr.left-r.left)+" px fra venstre kant (skal sort #1A1A1A, 15 fra kanten)"); }
-    if(sv){ var vr=sv.getBoundingClientRect(); er("DROPDOWN pil", e, Math.abs(r.right-vr.right-15)<=2&&rgb(getComputedStyle(sv).color)===G2, "pilen står "+Math.round(r.right-vr.right)+" px fra højre kant i "+getComputedStyle(sv).color+" (skal 15, grå #6F6B66)"); }
+    if(sv){ var vr=sv.getBoundingClientRect(); er("DROPDOWN pil", e, Math.abs(r.right-vr.right-15)<=2&&rgb(getComputedStyle(sv).color)===G2, "pilen står "+Math.round(r.right-vr.right)+" px fra højre kant i "+getComputedStyle(sv).color+" (skal 15, grå #686868)"); }
   });
   /* TILBAGE PÅ TELEFONEN = PIL OG ORD, INGEN KASSE (18/11, bygget 19/11): mindst 44 trykfelt, ingen flade, ingen kant */
   if (innerWidth < 900) document.querySelectorAll(".cover-tilbage, .mb-sti .mb-tilbage").forEach(function(e){ if(!synlig(e)||!(e.innerText||"").trim()) return; var r=e.getBoundingClientRect(), cs=getComputedStyle(e); var flad=(cs.backgroundColor==="transparent"||/rgba\(0, 0, 0, 0\)/.test(cs.backgroundColor)) && parseFloat(cs.borderTopWidth||0)===0; er("TILBAGE TLF", e, Math.round(r.height)>=44 && flad, "h"+Math.round(r.height)+" bg "+cs.backgroundColor+" kant "+cs.borderTopWidth+" (skal ≥44, ingen flade/kant)"); });

@@ -11,7 +11,7 @@ var FUND=[], N=0, TRIN="start";
 function fejl(s){ FUND.push(TRIN+" · "+s); }
 function er(navn, e, ok, hvad){ N++; if(!ok) fejl(navn+" »"+txt(e)+"« ["+kl(e)+"] "+hvad); }
 var TLF=innerWidth<900;
-var RED="rgb(252,36,4)", SORT="rgb(26,26,26)", G2="rgb(111,107,102)", G3="rgb(154,149,144)", KANT="rgb(222,218,212)";
+var RED="rgb(252,36,4)", SORT="rgb(26,26,26)", G2="rgb(104,104,104)", G3="rgb(104,104,104)", KANT="rgb(222,222,222)";
 
 function maalSide(){
   var rod=document.getElementById("briefWrap"); if(!rod) return;
@@ -24,7 +24,7 @@ function maalSide(){
     er("FLISE radius", e, px(cs.borderTopLeftRadius)===20, "radius "+px(cs.borderTopLeftRadius)+" (skal 20)");
     er("FLISE luft", e, px(cs.paddingTop)===18&&px(cs.paddingBottom)===18&&px(cs.paddingLeft)===20&&px(cs.paddingRight)===20, "luft "+cs.padding+" (skal 18 20)");
     er("FLISE afstand", e, px(cs.marginBottom)===12, "afstand under "+px(cs.marginBottom)+" (skal 12)");
-    er("FLISE flade", e, rgb(cs.backgroundColor)==="rgb(255,255,255)"||/story|cap-q/.test(kl(e))||(e.parentElement&&e.parentElement.classList.contains("kk-laast")&&rgb(cs.backgroundColor)==="rgb(240,245,248)"), "flade "+cs.backgroundColor);
+    er("FLISE flade", e, rgb(cs.backgroundColor)==="rgb(255,255,255)"||/story|cap-q/.test(kl(e))||(e.parentElement&&e.parentElement.classList.contains("kk-laast")&&rgb(cs.backgroundColor)==="rgb(244,247,250)"), "flade "+cs.backgroundColor);
   });
   /* FLISETITEL: Poppins 18 (telefon 16) / 400 / #1A1A1A; 8 til første indhold */
   rod.querySelectorAll(".sk-q:not([data-par=cover]) > .sk-label, .kk-hook-spm").forEach(function(e){
@@ -38,29 +38,29 @@ function maalSide(){
   rod.querySelectorAll(".klip-hoved .kk-titel").forEach(function(e){
     if(!synlig(e)) return; var cs=getComputedStyle(e);
     er("KLIP-ETIKET", e, px(cs.fontSize)===13&&cs.textTransform==="none"&&rgb(cs.color)===G2&&cs.fontWeight==="400", cs.fontSize+"/"+cs.fontWeight+" "+cs.color+" "+cs.textTransform+" (13 grå)");
-    var hd=e.closest(".klip-hoved"), hs=getComputedStyle(hd); er("KLIP-ETIKET streg", hd, px(hs.borderBottomWidth)===1&&rgb(hs.borderBottomColor)==="rgb(227,226,222)", "streg "+hs.borderBottomWidth+" "+hs.borderBottomColor);
+    var hd=e.closest(".klip-hoved"), hs=getComputedStyle(hd); er("KLIP-ETIKET streg", hd, px(hs.borderBottomWidth)===1&&rgb(hs.borderBottomColor)==="rgb(222,222,222)", "streg "+hs.borderBottomWidth+" "+hs.borderBottomColor);
   });
-  /* FELT-ETIKET: 13/400 #6F6B66, 8 til feltet */
+  /* FELT-ETIKET: 13/400 #686868, 8 til feltet */
   rod.querySelectorAll(".klip-kort .kk-et").forEach(function(e){
     if(!synlig(e)) return; var cs=getComputedStyle(e);
-    er("FELT-ETIKET", e, px(cs.fontSize)===13&&cs.fontWeight==="400"&&rgb(cs.color)===G2&&cs.textTransform==="none", cs.fontSize+"/"+cs.fontWeight+" "+cs.color+" (skal 13/400 #6F6B66)");
+    er("FELT-ETIKET", e, px(cs.fontSize)===13&&cs.fontWeight==="400"&&rgb(cs.color)===G2&&cs.textTransform==="none", cs.fontSize+"/"+cs.fontWeight+" "+cs.color+" (skal 13/400 #686868)");
     var nx=e.nextElementSibling; if(nx&&nx.getBoundingClientRect().height>0){ var d=Math.round(nx.getBoundingClientRect().top-e.getBoundingClientRect().bottom); er("FELT-ETIKET afstand", e, Math.abs(d-8)<=1, "til feltet "+d+" (skal 8)"); }
   });
   /* FELTER */
   rod.querySelectorAll("textarea.sk-input, input.sk-input, textarea.mb-felt").forEach(function(e){
     if(!synlig(e)||e.closest(".sendfelt, .sendfelt-felt")) return; var cs=getComputedStyle(e), r=e.getBoundingClientRect();
-    er("FELT", e, px(cs.fontSize)===13&&cs.fontWeight==="400"&&px(cs.borderTopLeftRadius)===14&&px(cs.borderTopWidth)===1&&(rgb(cs.borderTopColor)===KANT||/2(38|45), 2/.test(cs.backgroundColor))&&r.height>=43.5&&cs.fontStyle==="normal", cs.fontSize+"/"+cs.fontWeight+" r"+cs.borderTopLeftRadius+" kant "+cs.borderTopWidth+" "+cs.borderTopColor+" h"+Math.round(r.height)+" "+cs.fontStyle+" (skal 13/400 r14 1px #DEDAD4 h44)");
+    er("FELT", e, px(cs.fontSize)===13&&cs.fontWeight==="400"&&px(cs.borderTopLeftRadius)===14&&px(cs.borderTopWidth)===1&&(rgb(cs.borderTopColor)===KANT||/2(38|45), 2/.test(cs.backgroundColor))&&r.height>=43.5&&cs.fontStyle==="normal", cs.fontSize+"/"+cs.fontWeight+" r"+cs.borderTopLeftRadius+" kant "+cs.borderTopWidth+" "+cs.borderTopColor+" h"+Math.round(r.height)+" "+cs.fontStyle+" (skal 13/400 r14 1px #DEDEDE h44)");
   });
   /* FELTFLUGT: alle hook-/forslagsfelter i samme flise starter og slutter ens */
   rod.querySelectorAll(".sk-q, .klip-kort").forEach(function(f){
     var ls=[].slice.call(f.querySelectorAll(".fs-ta-vaert")).filter(synlig).map(function(e){ var r=e.getBoundingClientRect(); return [Math.round(r.left),Math.round(r.right)]; });
     if(ls.length>1){ N++; var l0=ls[0][0], r0=ls[0][1]; if(ls.some(function(x){ return Math.abs(x[0]-l0)>1||Math.abs(x[1]-r0)>1; })) fejl("FELTFLUGT i "+kl(f)+": felterne står ikke ens ("+ls.map(function(x){return x.join("-")}).join(" · ")+")"); }
   });
-  /* CHIPS: 32 · 12,5/400 · #6F6B66 (Ida 9/11, bud 2 — afløser 40 · 15 fra 7/11) · radius 999 · luft 14 · plus 14 grå, 6 til teksten */
+  /* CHIPS: 32 · 12,5/400 · #686868 (Ida 9/11, bud 2 — afløser 40 · 15 fra 7/11) · radius 999 · luft 14 · plus 14 grå, 6 til teksten */
   rod.querySelectorAll(".ark-chip:not(.kk-ini):not(.on)").forEach(function(e){
     if(!synlig(e)) return; var cs=getComputedStyle(e), r=e.getBoundingClientRect();
     if(e.closest("#briefSideNav")) return;
-    er("CHIP", e, Math.round(r.height)===32&&px(cs.fontSize)===12.5&&cs.fontWeight==="400"&&rgb(cs.color)===G2&&px(cs.borderTopLeftRadius)>=14&&px(cs.paddingLeft)===14&&px(cs.paddingRight)===14&&/Poppins/.test(cs.fontFamily), "h"+Math.round(r.height)+" "+cs.fontSize+"/"+cs.fontWeight+" "+cs.color+" luft "+cs.paddingLeft+"/"+cs.paddingRight+" (skal 32 · 12,5/400 · #6F6B66 · luft 14)");
+    er("CHIP", e, Math.round(r.height)===32&&px(cs.fontSize)===12.5&&cs.fontWeight==="400"&&rgb(cs.color)===G2&&px(cs.borderTopLeftRadius)>=14&&px(cs.paddingLeft)===14&&px(cs.paddingRight)===14&&/Poppins/.test(cs.fontFamily), "h"+Math.round(r.height)+" "+cs.fontSize+"/"+cs.fontWeight+" "+cs.color+" luft "+cs.paddingLeft+"/"+cs.paddingRight+" (skal 32 · 12,5/400 · #686868 · luft 14)");
     var pl=e.querySelector("svg.chip-plus"); if(pl&&(e.innerText||"").trim()){
       var sr=pl.getBoundingClientRect(); var rg=document.createRange(), tn=[].find.call(e.childNodes,function(n){return n.nodeType===3&&n.textContent.trim();}); if(tn){ rg.selectNodeContents(tn); var tr=rg.getBoundingClientRect(); var gap=Math.round(tr.left-sr.right);
         er("PLUS-CHIP mellemrum", e, Math.abs(gap-6)<=1&&Math.round(sr.width)===14, "plus→tekst "+gap+" px, plus "+Math.round(sr.width)+" (skal 6 og 14)");
@@ -138,7 +138,7 @@ async function maalUpload(vent){
   } finally { sb.storage.from=gl.sb; bsVirksomhedId=gl.vid; UP.op={akt:false,pct:null,fejl:""}; try{opVideoRerend();}catch(e){} }
 }
 async function maalHjem(vent){
-  /* HJEM (Ida valgte bud 4B, 4/11): computer = to paneler #F6F4F1 (radius 28, luft 12) med hvide fliser 80 høje, radius 20, ramme 1 px #E3E2DE, ingen skygge, 10 imellem, overskrift→flise 16, panel→overskrift 24, rød datobjælke 44, ingen Dag/Uge; ingen rød flise på hverken computer eller telefon */
+  /* HJEM (Ida valgte bud 4B, 4/11): computer = to paneler #F8F8F8 (radius 28, luft 12) med hvide fliser 80 høje, radius 20, ramme 1 px #DEDEDE, ingen skygge, 10 imellem, overskrift→flise 16, panel→overskrift 24, rød datobjælke 44, ingen Dag/Uge; ingen rød flise på hverken computer eller telefon */
   try{ window.__kundeAftaler=[{id:1,titel:"Contentgennemgang",dato:huIso(new Date()),tid:"10:00",tid_slut:"11:00"},{id:2,titel:"Fotografering",dato:huIso(new Date(Date.now()+86400000)),tid:"09:00",tid_slut:"11:00"}]; OPGAVER.push({id:"mko1",titel:"Bestil nye poser",deadline:"2026-10-30",done:false,aktiv:true},{id:"mko2",titel:"Ring til leverandøren",deadline:"2026-11-05",done:false,aktiv:true}); }catch(e){}
   showTab(3); try{ hjemUgeTegn(); }catch(e){} await vent(1500);
   var rod=document.getElementById("hjemUge"); if(!rod){ fejl("HJEM: #hjemUge findes ikke"); return; }
@@ -148,7 +148,7 @@ async function maalHjem(vent){
   var bj=document.querySelector("#screen3 .mb-bjaelke"); N++; if(bj) fejl("HJEM: den røde datobjælke skal være væk (Ida 11/11)"); var dt=document.querySelector("#screen3 .mb-baand .mb-navn .mb-dato"); N++; if(!dt||!synlig(dt)) fejl("HJEM: datoen mangler under hilsnen i heroen (Ida 11/11)");
   var ps=[].slice.call(rod.querySelectorAll(".hh-panel")); N++; if(ps.length!==2) fejl("HJEM: forventer to paneler, fandt "+ps.length);
   ps.forEach(function(pn,i){ var s=getComputedStyle(pn); er("HJEM panel", pn, rgb(s.backgroundColor)==="rgb(255,255,255)"&&px(s.borderTopLeftRadius)===28&&px(s.paddingTop)===12&&px(s.paddingLeft)===12, s.backgroundColor+" r"+s.borderTopLeftRadius+" luft "+s.padding+" (skal hvid · 28 · 12)");
-    var fl=[].slice.call(pn.children); fl.forEach(function(f,k){ var fs=getComputedStyle(f), fr=f.getBoundingClientRect(); er("HJEM flise i panel", f, Math.round(fr.height)===80&&px(fs.borderTopLeftRadius)===20&&px(fs.borderTopWidth)===1&&rgb(fs.borderTopColor)==="rgb(222,218,212)"&&fs.boxShadow==="none", "h"+Math.round(fr.height)+" r"+fs.borderTopLeftRadius+" kant "+fs.borderTopWidth+" "+fs.borderTopColor+" skygge "+(fs.boxShadow==="none"?"nej":"JA")+" (skal 80 · 20 · 1 px #DEDAD4 · ingen skygge)"); if(k>0){ var g=Math.round(fr.top-fl[k-1].getBoundingClientRect().bottom); er("HJEM flise-afstand", f, Math.abs(g-10)<=1, "afstand "+g+" (skal 10)"); } });
+    var fl=[].slice.call(pn.children); fl.forEach(function(f,k){ var fs=getComputedStyle(f), fr=f.getBoundingClientRect(); er("HJEM flise i panel", f, Math.round(fr.height)===80&&px(fs.borderTopLeftRadius)===20&&px(fs.borderTopWidth)===1&&rgb(fs.borderTopColor)==="rgb(222,222,222)"&&fs.boxShadow==="none", "h"+Math.round(fr.height)+" r"+fs.borderTopLeftRadius+" kant "+fs.borderTopWidth+" "+fs.borderTopColor+" skygge "+(fs.boxShadow==="none"?"nej":"JA")+" (skal 80 · 20 · 1 px #DEDEDE · ingen skygge)"); if(k>0){ var g=Math.round(fr.top-fl[k-1].getBoundingClientRect().bottom); er("HJEM flise-afstand", f, Math.abs(g-10)<=1, "afstand "+g+" (skal 10)"); } });
     var sek=pn.previousElementSibling; if(sek){ var d=Math.round(pn.getBoundingClientRect().top-sek.getBoundingClientRect().bottom); er("HJEM overskrift→panel", pn, Math.abs(d-16)<=1, "afstand "+d+" (skal 16)"); }
     var nx=pn.nextElementSibling; if(nx&&nx.classList.contains("hu-sek")){ var d2=Math.round(nx.getBoundingClientRect().top-pn.getBoundingClientRect().bottom); er("HJEM panel→næste overskrift", nx, Math.abs(d2-24)<=1, "afstand "+d2+" (skal 24)"); } });
   var sb0=rod.querySelector(".hpt-h > .hu-sek"), st=rod.querySelector(".hu-strib-rk .hu-strib"); if(sb0&&st){ N++; var dd=Math.abs(sb0.getBoundingClientRect().top-st.getBoundingClientRect().top); if(dd>1) fejl("HJEM: højre kolonnes første overskrift flugter ikke med datofliserne ("+Math.round(dd)+" px forskel)"); }
@@ -156,7 +156,7 @@ async function maalHjem(vent){
 }
 async function maalForloeb(vent){
   /* TELEFONEN HAR SIN EGEN FORM FRA 12/11 (måles i TLF-grenen nedenfor); bud 1 gælder computeren. */
-  /* FORLØBSSIDEN = BUD 1 (Ida 4/11 »implementer bud 1«): én stor flise for det åbne modul (sort titel 18/telefon 16, antal 12, rød knap 44), SENERE-rækker 64 (dæmpede, 1 px #E3E2DE, ingen skygge), FÆRDIGE-rækker, sektionsetiket 10 versal, 32 under heroen, 24 mellem sektioner, 10 mellem fliser; ingen rød titel/kant/stribe; NÆSTE SKRIDT/Lektioner set/Opgaver er væk */
+  /* FORLØBSSIDEN = BUD 1 (Ida 4/11 »implementer bud 1«): én stor flise for det åbne modul (sort titel 18/telefon 16, antal 12, rød knap 44), SENERE-rækker 64 (dæmpede, 1 px #DEDEDE, ingen skygge), FÆRDIGE-rækker, sektionsetiket 10 versal, 32 under heroen, 24 mellem sektioner, 10 mellem fliser; ingen rød titel/kant/stribe; NÆSTE SKRIDT/Lektioner set/Opgaver er væk */
   var idag=datoDK(); var L=function(m,n,v){var a=[];for(var i=1;i<=n;i++)a.push({id:m+"-"+i,titel:"Lektion "+m+"."+i,video:v===false?"":"x.mp4"});return a;};
   CURRENT_DEF=Object.assign({},CURRENT_DEF||{},{type:"kursus",forloeb:"YOU GOT THIS"});
   var scen=[["åben",[["Modul 0 · Introduktion til forløbet",L(1,5)],["Modul 1 · Mennesket",L(2,6,false)],["Modul 2 · Energibanken",L(3,4,false)],["Modul 3 · Hvorfor er du, som du er",L(4,4)]],{"1":0,"2":0,"3":6,"4":14},[]],
@@ -170,11 +170,11 @@ async function maalForloeb(vent){
     var skr=document.getElementById("screen12").innerText;
     N++; if(/Næste skridt|NÆSTE SKRIDT|Opgaver\s*\d|OPGAVER\s*\d/.test(skr) || /^\s*(Lektioner set|LEKTIONER SET)\s*$/m.test(skr)) fejl("FORLØB: Næste skridt / Lektioner set / Opgaver står stadig på siden");
     if(TLF){
-      /* FORLØBET PÅ TELEFONEN (Idas ja 12/11, Artifact Y6aQibKkUGRDRQFiAZTPuh): overskrift over fliser 12 versal · 1,5 · #6F6B66, 8 ned til flisen og 32 fra forrige · modulet = hvid flise (20 · skygge · ingen kant), titel 17 sort ·
+      /* FORLØBET PÅ TELEFONEN (Idas ja 12/11, Artifact Y6aQibKkUGRDRQFiAZTPuh): overskrift over fliser 12 versal · 1,5 · #686868, 8 ned til flisen og 32 fra forrige · modulet = hvid flise (20 · skygge · ingen kant), titel 17 sort ·
          hver lektion sin egen flise som søskende, 14 px inde, 10 imellem · rækker (færdige og låste) = hvide fliser ≥64 med 10 imellem. Computeren måles som før (bud 1, 4/11). */
       var h1=document.querySelector("#forloebTidslinje .ftl2-hoved"); if(h1&&!rod.querySelector(".ftl2-stor .lks-lek")){ h1.click(); await vent(300); rod=document.getElementById("forloebTidslinje"); }
       [].slice.call(rod.querySelectorAll(".ftl2-sek")).filter(synlig).forEach(function(e,i){ var t=e.querySelector("span"), ts=getComputedStyle(t), r=e.getBoundingClientRect();
-        er("FORLØB tlf overskrift", t, px(ts.fontSize)===12&&ts.textTransform==="uppercase"&&rgb(ts.color)===G2&&ts.fontWeight==="400"&&px(ts.letterSpacing)===1.5, ts.fontSize+" "+ts.color+" ls"+ts.letterSpacing+" (skal 12 versal · #6F6B66 · 1,5)");
+        er("FORLØB tlf overskrift", t, px(ts.fontSize)===12&&ts.textTransform==="uppercase"&&rgb(ts.color)===G2&&ts.fontWeight==="400"&&px(ts.letterSpacing)===1.5, ts.fontSize+" "+ts.color+" ls"+ts.letterSpacing+" (skal 12 versal · #686868 · 1,5)");
         var nx=e.nextElementSibling; if(nx){ var d=Math.round(nx.getBoundingClientRect().top-r.bottom); er("FORLØB tlf overskrift→flise", e, Math.abs(d-8)<=1, "afstand "+d+" (skal 8)"); }
         var pv=e.previousElementSibling; if(pv&&synlig(pv)&&(pv.classList.contains("ftl2-rk")||pv.classList.contains("ftl2-stor"))){ var d2=Math.round(r.top-pv.getBoundingClientRect().bottom); er("FORLØB tlf flise→overskrift", e, Math.abs(d2-32)<=1, "afstand "+d2+" (skal 32)"); } });
       var kt=rod.querySelector(".ftl2-stor .ftl2-kort"); N++; if(!kt) fejl("FORLØB tlf: det åbne modul har ingen flise (.ftl2-kort)");
@@ -186,7 +186,7 @@ async function maalForloeb(vent){
           var f0=i===0?kt:lf[i-1], d=Math.round(r.top-f0.getBoundingClientRect().bottom); er("FORLØB tlf flise→lektion", e, Math.abs(d-12)<=1, "afstand "+d+" (skal 12 — afstandsskalaen 14/11)"); });
         N++; if(kt.querySelector(".lks-lek")) fejl("FORLØB tlf: en lektion ligger inde i modulets flise (hver lektion skal være sin egen flise)"); }
       [].slice.call(rod.querySelectorAll(".ftl2 > .ftl2-rk")).filter(synlig).forEach(function(e){ var c=getComputedStyle(e), r=e.getBoundingClientRect();
-        er("FORLØB tlf række", e, Math.round(r.height)>=64&&px(c.borderTopLeftRadius)===20&&(e.matches(".laast")?rgb(c.backgroundColor)==="rgb(240,245,248)":rgb(c.backgroundColor)==="rgb(255,255,255)"&&c.boxShadow!=="none")&&(e.matches(".laast")?(px(c.borderTopWidth)===1&&rgb(c.borderTopColor)==="rgb(222,218,212)"):px(c.borderTopWidth)===0), "h"+Math.round(r.height)+" r"+c.borderTopLeftRadius+" "+c.backgroundColor+" (skal ≥64·20)");
+        er("FORLØB tlf række", e, Math.round(r.height)>=64&&px(c.borderTopLeftRadius)===20&&(e.matches(".laast")?rgb(c.backgroundColor)==="rgb(244,247,250)":rgb(c.backgroundColor)==="rgb(255,255,255)"&&c.boxShadow!=="none")&&(e.matches(".laast")?(px(c.borderTopWidth)===1&&rgb(c.borderTopColor)==="rgb(222,222,222)"):px(c.borderTopWidth)===0), "h"+Math.round(r.height)+" r"+c.borderTopLeftRadius+" "+c.backgroundColor+" (skal ≥64·20)");
         var nx=e.nextElementSibling; if(nx&&nx.classList.contains("ftl2-rk")){ var d=Math.round(nx.getBoundingClientRect().top-r.bottom); er("FORLØB tlf række→række", nx, Math.abs(d-12)<=1, "afstand "+d+" (skal 12 — afstandsskalaen 14/11)"); } });
       [].slice.call(rod.querySelectorAll("*")).filter(synlig).forEach(function(e){ if(e.closest(".ftl2-pil, .lks-fort, .lks-fb, .lks-num, svg, .lek-favchips")||e.tagName==="svg") return; var cs=getComputedStyle(e); var tekst=[].some.call(e.childNodes,function(n){return n.nodeType===3&&n.textContent.trim();}); N++; if(tekst&&rgb(cs.color)===RED) fejl("FORLØB tlf: rød tekst »"+txt(e)+"« ["+kl(e)+"] — rød er aldrig titel"); });
       var h2=document.querySelector("#forloebTidslinje .ftl2-hoved"); if(h2&&document.querySelector("#forloebTidslinje .ftl2-stor .lks-lek")){ h2.click(); await vent(250); }
@@ -195,7 +195,7 @@ async function maalForloeb(vent){
     /* sektionsetiketter */
     var seks=[].slice.call(rod.querySelectorAll(".ftl2-sek")).filter(synlig);
     seks.forEach(function(e,i){ var cs=getComputedStyle(e), t=e.querySelector("span"), ts=getComputedStyle(t), r=e.getBoundingClientRect();
-      er("FORLØB sektionsetiket", t, Math.round(r.height)===16&&px(ts.fontSize)===12&&ts.textTransform==="uppercase"&&rgb(ts.color)==="rgb(111,107,102)"&&ts.fontWeight==="400"&&px(ts.letterSpacing)===1.5, "h"+Math.round(r.height)+" "+ts.fontSize+" "+ts.color+" ls"+ts.letterSpacing+" (skal 16 · 12 versal · #6F6B66 · 1,5 — overskrift over fliser, LÅST 12/11)");
+      er("FORLØB sektionsetiket", t, Math.round(r.height)===16&&px(ts.fontSize)===12&&ts.textTransform==="uppercase"&&rgb(ts.color)==="rgb(104,104,104)"&&ts.fontWeight==="400"&&px(ts.letterSpacing)===1.5, "h"+Math.round(r.height)+" "+ts.fontSize+" "+ts.color+" ls"+ts.letterSpacing+" (skal 16 · 12 versal · #686868 · 1,5 — overskrift over fliser, LÅST 12/11)");
       var nx=e.nextElementSibling; if(nx){ var d=Math.round(nx.getBoundingClientRect().top-r.bottom); er("FORLØB etiket→flise", e, Math.abs(d-8)<=1, "afstand "+d+" (skal 8 — afstandsskalaen 14/11)"); }
       if(i>0){ var pv=e.previousElementSibling, d2=Math.round(r.top-pv.getBoundingClientRect().bottom); er("FORLØB sektion→sektion", e, Math.abs(d2-32)<=1, "afstand "+d2+" (skal 32 — afstandsskalaen 14/11)"); } });
     /* 32 under heroen */
@@ -207,7 +207,7 @@ async function maalForloeb(vent){
       er("FORLØB stor flise", st, px(cs.borderTopLeftRadius)===20&&rgb(cs.backgroundColor)==="rgb(255,255,255)"&&px(cs.borderTopWidth)===0&&cs.boxShadow!=="none"&&px(hs.paddingTop)===18&&px(hs.paddingLeft)===20&&px(hs.paddingRight)===20, "r"+cs.borderTopLeftRadius+" luft "+hs.padding+" kant "+cs.borderTopWidth+" skygge "+(cs.boxShadow==="none"?"ingen":"ja")+" (skal 20 · 18/20 · hvid · skygge · ingen kant)");
       N++; if(st.querySelector(".ftl2-tag")) fejl("FORLØB: ÅBEN-etiketten skal være væk (Ida 6/11)"); N++; if(rod.querySelector(".ftl2-sek") && /dit forløb/i.test(rod.querySelector(".ftl2-sek").textContent)) fejl("FORLØB: overskriften DIT FORLØB under coveret skal være væk (Ida 6/11)");
       var ti=st.querySelector(".ftl2-n"), tis=getComputedStyle(ti); er("FORLØB modultitel", ti, px(tis.fontSize)===(TLF?16:18)&&tis.fontWeight==="400"&&rgb(tis.color)===SORT&&/Poppins/.test(tis.fontFamily), tis.fontSize+"/"+tis.fontWeight+" "+tis.color+" (skal "+(TLF?16:18)+"/400 #1A1A1A — aldrig rød)");
-      var an=st.querySelector(".ftl2-a"), ans=getComputedStyle(an); er("FORLØB antal lektioner", an, px(ans.fontSize)===12&&rgb(ans.color)===G3&&/lektion/.test(an.textContent), ans.fontSize+" "+ans.color+" (skal 12 · #9A9590)");
+      var an=st.querySelector(".ftl2-a"), ans=getComputedStyle(an); er("FORLØB antal lektioner", an, px(ans.fontSize)===12&&rgb(ans.color)===G3&&/lektion/.test(an.textContent), ans.fontSize+" "+ans.color+" (skal 12 · #686868)");
       var pl=st.querySelector(".ftl2-pil"); N++; if(!pl||st.querySelector(".ftl2-knap")) fejl("FORLØB: den store flise skal have en rød pil, ikke en knap med tekst (Ida 6/11)");
       else { var pr=pl.getBoundingClientRect(), pv=pl.querySelector("svg"), pcs=pv?getComputedStyle(pv):null, hr=hv.getBoundingClientRect();
         er("FORLØB rød pil", pl, Math.round(pr.width)===44&&Math.round(pr.height)===44&&!!pcs&&rgb(pcs.color)===RED&&!/\S/.test(pl.textContent), "b"+Math.round(pr.width)+" h"+Math.round(pr.height)+" "+(pcs?pcs.color:"ingen pil")+" (skal 44×44 · rød pil uden tekst)");
@@ -215,7 +215,7 @@ async function maalForloeb(vent){
         var pdx=Math.round(r.right-pr.right); N++; if(Math.abs(pdx-20)>1) fejl("FORLØB pil: står "+pdx+" fra højre kant (skal 20)"); } }
     /* rækker: SENERE (låst) og FÆRDIGE */
     [].slice.call(rod.querySelectorAll(".ftl2-rk")).filter(synlig).forEach(function(e){ var cs=getComputedStyle(e), r=e.getBoundingClientRect();
-      er("FORLØB række", e, Math.round(r.height)>=64&&Math.round(r.height)<=100&&px(cs.borderTopLeftRadius)===20&&rgb(cs.backgroundColor)===(e.matches(".laast")?"rgb(240,245,248)":"rgb(255,255,255)")&&px(cs.borderTopWidth)===1&&rgb(cs.borderTopColor)==="rgb(222,218,212)"&&cs.boxShadow==="none", "h"+Math.round(r.height)+" r"+cs.borderTopLeftRadius+" "+cs.backgroundColor+" kant "+cs.borderTopWidth+" "+cs.borderTopColor+" skygge "+cs.boxShadow.slice(0,20)+" (skal ≥64·20·1px #DEDAD4)");
+      er("FORLØB række", e, Math.round(r.height)>=64&&Math.round(r.height)<=100&&px(cs.borderTopLeftRadius)===20&&rgb(cs.backgroundColor)===(e.matches(".laast")?"rgb(244,247,250)":"rgb(255,255,255)")&&px(cs.borderTopWidth)===1&&rgb(cs.borderTopColor)==="rgb(222,222,222)"&&cs.boxShadow==="none", "h"+Math.round(r.height)+" r"+cs.borderTopLeftRadius+" "+cs.backgroundColor+" kant "+cs.borderTopWidth+" "+cs.borderTopColor+" skygge "+cs.boxShadow.slice(0,20)+" (skal ≥64·20·1px #DEDEDE)");
       if(e.classList.contains("laast")&&!e.querySelector(".ftl2-a")){ N++; var H=innerWidth>899?80:64;if(Math.round(r.height)!==H)fejl("FORLØB låst "+Math.round(r.height)+"/"+H); }
       var FK=e.classList.contains("laast")?SORT:G2, n=e.querySelector(".ftl2-n"), ns=getComputedStyle(n); var F=innerWidth>899?18:15;er("FORLØB række-titel",n,px(ns.fontSize)===F&&ns.fontWeight==="400"&&rgb(ns.color)===FK,ns.fontSize+" "+ns.color+" (skal "+F+")");
       var a=e.querySelector(".ftl2-a"); if(a){ var as=getComputedStyle(a); er("FORLØB række-antal", a, px(as.fontSize)===12&&rgb(as.color)===FK, as.fontSize+" "+as.color+" (skal 12 · sort paa blaa)"); }

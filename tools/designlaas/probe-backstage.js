@@ -139,7 +139,7 @@ setTimeout(async function () {
           smaa.push((b.textContent.trim().slice(0, 20) || b.className.toString().split(" ")[0] || b.tagName) + "(" + Math.round(q.width) + "x" + Math.round(q.height) + ")");
         });
         if (smaa.length) { console.log("SELE BACKSTAGE FEJL " + navn + " trykfelt under 44 px (" + smaa.length + "): " + smaa.slice(0, 6).join(", ")); fejl++; }
-        var UNDT = ".chip-btn,.chip,.ark-chip,.bs-chip,.cf-chip,.bs-rumpil,.mq-tap.ark-chip,#dashBundnav,.bs-doer,.bs-kf,.mr-flise,.bs-rk,.kv-flise,.sendfelt,.ark-send,.ark-rund,.bs-tjek,.bs-naal,.vt-knap,.modal-close,.bdrop-knap,.dsb-item,.dsb-under,table,.kv-menuknap,.bs-pin,.crm-fane,.ark-chips,.crm2-faner,.crm2-pins,.crm2-fl,.lv-trin-knap";   /* .lv-trin-knap (19/11): Hjems talfliser (Vejen fra besøg til gennemført · Klik i dine mails), som Ida vil kunne trykke på for at se kilden — en flise, ikke en knap, som .kv-flise */
+        var UNDT = ".chip-btn,.chip,.ark-chip,.bs-chip,.cf-chip,.bs-rumpil,.mq-tap.ark-chip,#dashBundnav,.bs-doer,.bs-kf,.mr-flise,.bs-rk,.kv-flise,.sendfelt,.ark-send,.ark-rund,.bs-tjek,.bs-naal,.vt-knap,.modal-close,.bdrop-knap,.dsb-item,.dsb-under,table,.kv-menuknap,.bs-pin,.crm-fane,.ark-chips,.crm2-faner,.crm2-pins,.crm2-fl,.lv-trin-knap,.dt-tal,.dt-f,.dt-k,.dt-navn,.dt-th,.dt-tlf-rk";   /* .lv-trin-knap (19/11): Hjems talfliser (Vejen fra besøg til gennemført · Klik i dine mails), som Ida vil kunne trykke på for at se kilden — en flise, ikke en knap, som .kv-flise */
         var lange = [].filter.call(r.querySelectorAll("button, label.dbtn, a.dbtn"), function (b) {
           var q = b.getBoundingClientRect(); if (!(q.height > 0 && q.width > 0)) return false;
           if (b.closest(UNDT)) return false;

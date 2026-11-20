@@ -1,10 +1,11 @@
 /* FARVE-PORTEN (LÅST 14/11, Idas klik »variation 1 + 7«, DESIGNLÅS › Markeringsfarver): den sandfarvede markering er død i kundeappen.
-   Siden er hvid · fliser hvide m. kant #DEDAD4 · venter/låst = #F0F5F8 · valgt menupunkt/ikke valgt = #EEEEEE · rød = det aktive.
+   Siden er hvid · fliser hvide m. kant #DEDEDE · venter/låst = #F4F7FA · valgt menupunkt/ikke valgt = #F8F8F8 · rød = det aktive.
    Proben åbner kundeappens sider én for én (Hjem · Forløbet m. låst modul · en lektion · Værktøjskassen · Dine noter · Profil ·
    briefen: forsiden, Idéen og Fang dem på en karrusel · log ind) og FEJLER, hvis et synligt element har en af de fem sandfarver
    som flade, eller hvis siden (body og den aktive skærm) ikke er hvid. Kører på den bredde, vinduet har (390 og 1440).
    Uden for: CRM, Health Coach, mails, print og Backstage (andre tråde). window.FARVE_ALLE=1 lister alle flader til fejlsøgning. */
 var FORBUDT={"rgb(250,249,245)":"#FAF9F5","rgb(241,239,234)":"#F1EFEA","rgb(243,240,234)":"#F3F0EA","rgb(244,242,238)":"#F4F2EE","rgb(242,240,237)":"#F2F0ED"};
+var GAMLE={"rgb(222,218,212)":"#DEDAD4","rgb(240,245,248)":"#F0F5F8","rgb(111,107,102)":"#6F6B66","rgb(227,226,222)":"#E3E2DE","rgb(247,249,251)":"#F7F9FB","rgb(238,238,238)":"#EEEEEE"};
 var UDENFOR="#dashMain, #dashboard, #hcHost, .hc-host, [class^='crm'], [class*=' crm'], #woGate, #printcss";
 function rgb(c){ return (c||"").replace(/\s/g,""); }
 function synlig(e){ var r=e.getBoundingClientRect(); if(r.width<2||r.height<2) return false; var cs=getComputedStyle(e); if(cs.display==="none"||cs.visibility==="hidden"||parseFloat(cs.opacity)===0) return false; return !e.closest("[hidden]"); }
@@ -18,10 +19,18 @@ function scan(){
     if(!synlig(e)) return;
     var cs=getComputedStyle(e), bg=rgb(cs.backgroundColor); N++;
     if(FORBUDT[bg]) fejl("SANDFLADE "+FORBUDT[bg], e);
+    /* KUN HVID TEKST PÅ RØD (HÅRD, Ida 20/11: »det KUN må være hvid tekst på rød!!!«): hver synlig tekst, hvis nærmeste flade er Energida-rød, skal være hvid */
+    if([].some.call(e.childNodes,function(n){return n.nodeType===3&&n.textContent.trim();})){ var f=e, fb=""; while(f&&f!==document.documentElement){ fb=rgb(getComputedStyle(f).backgroundColor); if(fb!=="rgba(0,0,0,0)"&&fb!=="transparent") break; f=f.parentElement; } N++; if(fb==="rgb(252,36,4)"&&rgb(cs.color)!=="rgb(255,255,255)"&&rgb(cs.color)!=="rgba(0,0,0,0)"&&parseFloat(cs.fontSize)>0) fejl("TEKST PÅ RØD ER IKKE HVID ("+rgb(cs.color)+")", e); }
+    /* FARVEMANUALEN (HÅRD, Ida 20/11): de gamle varme grå og den gamle lyseblå må ikke findes som flade eller kant */
+    /* SORT ER KUN TIL TEKST (HÅRD, Ida 20/11): ingen flade og ingen kant i sort */
+    if((bg==="rgb(26,26,26)"||bg==="rgb(0,0,0)")&&!e.matches("video, iframe, canvas, .cv-fv")) fejl("SORT FLADE", e);   /* .cv-fv = farveprøverne i coverværktøjet: kundens egen tekstfarve på sit cover, ikke appens flade */
+    if(parseFloat(cs.borderTopWidth)>0&&/^rgb\((26,26,26|0,0,0)\)$/.test(rgb(cs.borderTopColor))&&!e.matches("input, textarea, select, button, a")) fejl("SORT KANT", e);
+    if(GAMLE[bg]) fejl("GAMMEL FARVE "+GAMLE[bg]+" som flade", e);
+    if(parseFloat(cs.borderTopWidth)>0&&GAMLE[rgb(cs.borderTopColor)]) fejl("GAMMEL FARVE "+GAMLE[rgb(cs.borderTopColor)]+" som kant", e);
     ["::before","::after"].forEach(function(p){ var ps=getComputedStyle(e,p); if(ps.content&&ps.content!=="none"&&FORBUDT[rgb(ps.backgroundColor)]&&parseFloat(ps.width)>2&&parseFloat(ps.height)>2) fejl("SANDFLADE "+FORBUDT[rgb(ps.backgroundColor)]+" i "+p, e); });
     if(window.FARVE_ALLE&&bg!=="rgba(0,0,0,0)"&&bg!=="rgb(255,255,255)"){ var k=bg+" "+kl(e); ALLE[k]=(ALLE[k]||0)+1; }
-    if(window.FARVE_ALLE&&bg==="rgb(255,255,255)"&&parseFloat(cs.borderTopLeftRadius)>=14&&cs.boxShadow!=="none"&&cs.boxShadow.indexOf("222, 218, 212")<0&&!(parseFloat(cs.borderTopWidth)>0&&/222,218,212/.test(rgb(cs.borderTopColor)))){ var r0=e.getBoundingClientRect(); if(r0.height>=40&&r0.width>=120&&!e.matches("button, a, input, textarea")){ var k3="UDEN KANT "+kl(e)+" | "+cs.boxShadow.slice(0,60); ALLE[k3]=(ALLE[k3]||0)+1; } }
-    if(window.FARVE_ALLE&&parseFloat(cs.borderTopWidth)>0&&/rgb\((227,226,222|222,218,212)\)/.test(rgb(cs.borderTopColor))&&!/BUTTON|A/.test(e.tagName)){ var k2="KANT "+rgb(cs.borderTopColor)+" "+kl(e); ALLE[k2]=(ALLE[k2]||0)+1; }
+    if(window.FARVE_ALLE&&bg==="rgb(255,255,255)"&&parseFloat(cs.borderTopLeftRadius)>=14&&cs.boxShadow!=="none"&&cs.boxShadow.indexOf("222, 222, 222")<0&&!(parseFloat(cs.borderTopWidth)>0&&/222,222,222/.test(rgb(cs.borderTopColor)))){ var r0=e.getBoundingClientRect(); if(r0.height>=40&&r0.width>=120&&!e.matches("button, a, input, textarea")){ var k3="UDEN KANT "+kl(e)+" | "+cs.boxShadow.slice(0,60); ALLE[k3]=(ALLE[k3]||0)+1; } }
+    if(window.FARVE_ALLE&&parseFloat(cs.borderTopWidth)>0&&/rgb\((222,222,222|222,222,222)\)/.test(rgb(cs.borderTopColor))&&!/BUTTON|A/.test(e.tagName)){ var k2="KANT "+rgb(cs.borderTopColor)+" "+kl(e); ALLE[k2]=(ALLE[k2]||0)+1; }
   });
 }
 function hvidSide(){

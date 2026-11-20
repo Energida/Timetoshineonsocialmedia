@@ -39,14 +39,14 @@ setTimeout(async function () {
       /* 4 · ALDRIG EN MØRK FLADE (HÅRD 8/10 + 17/11) — fotos, video, lærreder, farveprikker og coveret er undtaget */
       var bg = rgb(c.backgroundColor);
       if (bg && bg.a > 0.85 && lys(bg) < 0.3 && q.width >= 120 && q.height >= 40 && !iCover && !e.closest("img, video, canvas, .cv-laerred, .kv-laerred, .cv-farver, .ss-farver, .lek-video, .lk-video, iframe, .mb-foto") && !(bg.r > 200 && bg.g < 80)) fund("MØRK FLADE", side, navn(e) + " " + c.backgroundColor);
-      /* 5 · CHIPS, DER IKKE ER VALGT: hvid · 1 px #DEDAD4 · grå tekst · 32 høje (HÅRD 14/11 + 15/11) — en chip = afrundet pille under 44 høj med kort tekst */
+      /* 5 · CHIPS, DER IKKE ER VALGT: hvid · 1 px #DEDEDE · grå tekst · 32 høje (HÅRD 14/11 + 15/11) — en chip = afrundet pille under 44 høj med kort tekst */
       var erChip = e.matches("button") && q.height >= 24 && q.height < 40 && (parseFloat(c.borderTopLeftRadius) >= q.height / 2 - 1);   /* en chip er en pille under 40 — knapper med tekst er 44/56 */
       if (erChip && t && t.length <= 40 && !iCover) {
         var cbg = rgb(c.backgroundColor), rod2 = cbg && cbg.r > 240 && cbg.g < 60;
         if (!rod2 && cbg && cbg.a > 0.1) {
           var kant = rgb(c.borderTopColor);
           if (lys(cbg) < 0.97) fund("CHIP IKKE VALGT: flade ikke hvid", side, t.slice(0, 20) + " " + c.backgroundColor);
-          else if (!(parseFloat(c.borderTopWidth) >= 1 && kant && Math.abs(kant.r - 222) < 8 && Math.abs(kant.g - 218) < 8 && Math.abs(kant.b - 212) < 8)) fund("CHIP IKKE VALGT: kant ikke grå #DEDAD4", side, t.slice(0, 20) + " " + c.borderTopWidth + " " + c.borderTopColor);
+          else if (!(parseFloat(c.borderTopWidth) >= 1 && kant && Math.abs(kant.r - 222) < 8 && Math.abs(kant.g - 218) < 8 && Math.abs(kant.b - 212) < 8)) fund("CHIP IKKE VALGT: kant ikke grå #DEDEDE", side, t.slice(0, 20) + " " + c.borderTopWidth + " " + c.borderTopColor);
           if (Math.round(q.height) !== 32) fund("CHIP: højde ikke 32", side, t.slice(0, 20) + " h" + Math.round(q.height));
         }
       }

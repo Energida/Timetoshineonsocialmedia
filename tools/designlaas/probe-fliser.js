@@ -53,7 +53,7 @@ function maalForloeb(){
 }
 function maalOverskrifter(){   /* .prof-blok og .vks-blok: overskrift → flise 8 */
   rodNu().forEach(function(rod){ rod.querySelectorAll(".prof-blok > .prof-e, .vks-blok > .vks-eti").forEach(function(e){ if(!synlig(e)) return; var f=e.nextElementSibling; if(!f||!synlig(f)) return; N++; var d=afstand(e,f); if(Math.abs(d-8)>1) fejl("OVERSKRIFT → FLISE "+d+" px under »"+txt(e)+"« (skal 8)");
-    var cs=getComputedStyle(e); N++; if(Math.round(parseFloat(cs.fontSize))!==12||cs.color.replace(/\s/g,"")!=="rgb(111,107,102)"||Math.abs(parseFloat(cs.letterSpacing)-1.5)>0.05||cs.textTransform!=="uppercase") fejl("OVERSKRIFT »"+txt(e)+"« "+cs.fontSize+" "+cs.color+" ls "+cs.letterSpacing+" (skal 12 · #6F6B66 · 1,5 · versal)"); }); });
+    var cs=getComputedStyle(e); N++; if(Math.round(parseFloat(cs.fontSize))!==12||cs.color.replace(/\s/g,"")!=="rgb(104,104,104)"||Math.abs(parseFloat(cs.letterSpacing)-1.5)>0.05||cs.textTransform!=="uppercase") fejl("OVERSKRIFT »"+txt(e)+"« "+cs.fontSize+" "+cs.color+" ls "+cs.letterSpacing+" (skal 12 · #686868 · 1,5 · versal)"); }); });
 }
 function alt(){ maalEtiketter(); maalAfstande(); maalOverskrifter(); maalForloeb(); }
 
