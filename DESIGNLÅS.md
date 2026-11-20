@@ -1,3 +1,7 @@
+## 20. november · 3399: ALLE KUNDENS POPUPS HAR FEEDBACK-POPUPPENS BREDDE · UDGIVELSESDATO PÅ MODULOVERSIGTEN
+- Alle popups, kunden møder (ark, små ark, valgark, lektionens popups, skemaer), er 520 brede på computer med 24 i hjørnerne, som feedback-popuppen (Ida 20/11). Telefonen fylder bredden. Backstage er urørt.
+- Studio › produktsiden: hvert modul, der åbner på en dato, har et datofelt »Åbner« i sin række. Den røde »Bekræft« kommer frem, når datoen er ændret, og gemmer den (Ida 20/11).
+
 ## 20. november · 3398: SMALLE MODULFLISER · VÆRKTØJSKASSEN I FLISER MED »SKABELONER« · FEEDBACK KUN ÉN GANG · KNAPPER I NATURLIG BREDDE
 - »Dit forløb« på computer: modulfliserne er højst 720 brede og står til venstre, i flugt med overskriften (Idas valg 20/11: bud 1). Telefonen er urørt.
 - Værktøjskassen har samme flise-gitter for alle kunder som hos You got this: store fliser med symbol og navn (Ida 20/11). Noterne og linket til mappen står under gitteret.

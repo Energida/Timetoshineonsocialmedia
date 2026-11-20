@@ -69787,7 +69787,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "3398";
+const APP_VERSION = "3399";
 const APP_BYGGET = "3. november";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_VERSION;   /* ingen dato (Ida 7/11: »hvorfor står der version 3. november?«) — datoen blev ikke rettet med, nummeret er sandheden */ } catch (e) {} });
 let NY_VERSION_KLAR = false;
@@ -96178,6 +96178,25 @@ function bf3ModRegel(n, til) {
 function bf3ModAabnerOrd(n) { if (YGT_EFTER[String(n)]) return storStart(ygtEfterOrd(n)); const d = YGT_DATO[String(n)]; return d ? dkDatoLangUge(d) : "Ingen dato · " + YGT_DAG[String(n)] + " dage efter start"; }
 function dkDatoLangUge(iso) { try { const d = new Date(iso + "T12:00:00"); const U = ["søndag", "mandag", "tirsdag", "onsdag", "torsdag", "fredag", "lørdag"], M = ["januar", "februar", "marts", "april", "maj", "juni", "juli", "august", "september", "oktober", "november", "december"]; return storStart(U[d.getDay()]) + " " + d.getDate() + ". " + M[d.getMonth()] + " " + d.getFullYear(); } catch (e) { return iso; } }
 /* Modulets dato i husets kalender — ét sted, brugt fra »Ret modulet« og fra lektionens højre side */
+/* UDGIVELSESDATOEN SÆTTES PÅ MODULOVERSIGTEN OG BEKRÆFTES (Ida 20/11: »på moduloversigten i energida studio skal jeg kunne sætte udgivelsesdatoen på hvert modul og så skal jeg klikke på bekræft bagefter«).
+   Datofeltet står i modulets række. Den røde »Bekræft« kommer frem, når datoen er ændret, og gemmer samme sted som datoen inde på modulet (ygtDatoGem). Moduler, der er åbne fra købet, har ingen dato. */
+function bf3ModDatoRkHtml(nr) {
+  try {
+    const n = String(parseInt(nr, 10)); if (!(YGT_DAG_STD[n] > 0)) return '';
+    const v = YGT_DATO[n] || "";
+    return '<span class="bs3-moddato" onclick="event.stopPropagation()" onkeydown="event.stopPropagation()"><span class="bs3-moddato-l">Åbner</span><input type="date" class="bs3-felt bs3-moddato-f" id="bf3Md' + n + '" value="' + esc(v) + '" data-foer="' + esc(v) + '" aria-label="Udgivelsesdato for modulet" oninput="bf3ModDatoAendret(\'' + n + '\')" onchange="bf3ModDatoAendret(\'' + n + '\')"><button type="button" class="bs3-udgiv mq-tap" id="bf3MdB' + n + '" hidden onclick="event.stopPropagation();bf3ModDatoBekraeft(\'' + n + '\')">Bekræft</button></span>';
+  } catch (e) { return ''; }
+}
+function bf3ModDatoAendret(n) { const f = document.getElementById("bf3Md" + n), b = document.getElementById("bf3MdB" + n); if (f && b) b.hidden = String(f.value || "") === String(f.dataset.foer || ""); }
+async function bf3ModDatoBekraeft(n) {
+  const f = document.getElementById("bf3Md" + n), b = document.getElementById("bf3MdB" + n); if (!f) return;
+  const v = String(f.value || ""); if (v && !/^\d{4}-\d{2}-\d{2}$/.test(v)) { try { husBesked("Vælg en hel dato."); } catch (e) {} return; }
+  if (b) { b.disabled = true; b.textContent = "Gemmer …"; }
+  let ok = false;
+  try { if (v && YGT_EFTER[String(n)]) await ygtEfterGem(String(n), false); ok = await ygtDatoGem(String(n), v || null); } catch (e) { ok = false; }
+  if (ok) { f.dataset.foer = v; if (b) { b.hidden = true; b.disabled = false; b.textContent = "Bekræft"; } try { husKvit(v ? "Gemt. Modulet åbner " + dkDatoLangUge(v).toLowerCase() + "." : "Datoen er fjernet."); } catch (e) {} }
+  else { if (b) { b.disabled = false; b.textContent = "Bekræft"; } try { husBesked("Datoen blev ikke gemt. Prøv igen."); } catch (e) {} }
+}
 function bf3ModDato(n, efter) {
   let inp = document.getElementById("bf3ModDatoInp");
   if (!inp) { inp = document.createElement("input"); inp.type = "hidden"; inp.id = "bf3ModDatoInp"; document.body.appendChild(inp); }
@@ -96699,7 +96718,7 @@ function klipBud6Tegn(el) {
       const lek = grupper[k].slice().sort(klipSortCmp), nL = lek.length, kq = esc(k).replace(/'/g, "\\'"), nr = nrAf(k);
       const etiket = /^[A-ZÆØÅ0-9_-]+ · Modul/.test(String(k)) ? modulVisKort(k) : (nr ? "Modul " + modulVisNr(nr) : "");
       const navn = navnAf(k), fuldt = etiket && navn && navn.indexOf(etiket) !== 0 ? etiket + " · " + navn : (navn || etiket);
-      return '<div class="bs3-fl bs3-klik bs3-foldmod" role="button" tabindex="0" onclick="bf3ModulAabn(\'' + kq + '\')"><div class="bs3-rk"><div class="bs3-t"><div class="bs3-n">' + esc(fuldt) + '</div></div><span class="bs3-foldtal">' + (nL === 1 ? "1 lektion" : nL + " lektioner") + '</span><span class="bs3-lekord">' + esc(modStatus(lek)) + '</span>' + pilH + '</div></div>';
+      return '<div class="bs3-fl bs3-klik bs3-foldmod" role="button" tabindex="0" onclick="bf3ModulAabn(\'' + kq + '\')"><div class="bs3-rk"><div class="bs3-t"><div class="bs3-n">' + esc(fuldt) + '</div></div>' + bf3ModDatoRkHtml(nr) + '<span class="bs3-foldtal">' + (nL === 1 ? "1 lektion" : nL + " lektioner") + '</span><span class="bs3-lekord">' + esc(modStatus(lek)) + '</span>' + pilH + '</div></div>';
     };
     const modSide = BF3_MODUL_AABEN && KLIP_MODUL_CHIP;
     let modTop = "";
@@ -103181,6 +103200,19 @@ html body:not(#cx1):not(#cx2):not(#cx3):not(#cx4):not(#cx5):not(#cx6):not(#cx7) 
 @media (min-width:900px) { html body #forloebTidslinje .ftl2 > .ftl2-stor, html body #forloebTidslinje .ftl2 > .ftl2-rk, html body #forloebTidslinje .ftl2 > .ftl2-sek, html body #forloebTidslinje .ftl2 > .lek-favliste { max-width:720px; } }
 /* VÆRKTØJSKASSENS FLISER: 12 mellem fliserne som i resten af huset (afstandsskalaen 14/11; porten 20/11) */
 html body .vkd-grid { gap:12px !important; margin-bottom:12px !important; }
+/* ALLE POPUPS, KUNDEN MØDER, HAR SAMME BREDDE SOM FEEDBACK-POPUPPEN (Ida 20/11: »jeg vil gerne at alle pop ups en kunde møder har samme størrelse og størrelsen skal være ligesom feedback popuppen!«): 520 på computer, 24 i hjørnerne. Telefonen fylder bredden som før. Backstage er urørt. */
+@media (min-width:900px) {
+  html body:not(.dash-mode):not(#pp1):not(#pp2):not(#pp3) .ark-slor .ark,
+  html body:not(.dash-mode):not(#pp1):not(#pp2):not(#pp3) #bsFlytMenu .bs-flyt-ark:not(.dato-ark),
+  html body:not(.dash-mode):not(#pp1):not(#pp2):not(#pp3) .lek-pop .lek-pop-kort,
+  html body:not(.dash-mode):not(#pp1):not(#pp2):not(#pp3) #ideBack .modal,
+  html body:not(.dash-mode):not(#pp1):not(#pp2):not(#pp3) #rateBack .modal { width:520px !important; max-width:calc(100vw - 48px) !important; border-radius:24px !important; box-sizing:border-box !important; margin-left:auto !important; margin-right:auto !important; }
+}
+/* Studio: udgivelsesdatoen i modulets række */
+html body .bs3-moddato { display:inline-flex; align-items:center; gap:8px; flex:none; margin-left:auto; }
+html body .bs3-moddato-l { font-size:13px; color:#686868; }
+html body .bs3-moddato .bs3-moddato-f { width:170px; min-height:44px; height:44px; padding:0 12px; margin:0; font-size:13px; }
+html body .bs3-foldmod .bs3-rk { flex-wrap:wrap; }
 /* v3395 (Ida 20/11) — MODULFLISERNE: cirkel som lektionerne (tom · rødt flueben · hængelås), ingen pil, ingen fold-ud */
 html body #forloebTidslinje .ftl2 .ftl2-hoved, html body #forloebTidslinje .ftl2 .ftl2-rk.laast { display:flex !important; align-items:center !important; justify-content:flex-start !important; gap:16px !important; cursor:pointer; }
 html body #forloebTidslinje .ftl2 .ftl2-rk.laast { cursor:default; }
@@ -103216,7 +103248,7 @@ html body.lek-mb #lekVis .lk-flise.lk-skema, html body #lekVis .lk-flise.lk-skem
 
 
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-hvid.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 20. november · 3398</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 20. november · 3399</div>
 <script>
 /* DROPDOWNEN RULLER SELV (Ida 4/10) — maal den aabne liste og klip den ved skaermens bund */
 (function () {
