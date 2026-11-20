@@ -1,3 +1,6 @@
+## 20. november · 3400: YOU GOT THIS-FORSIDEN ER ENS I ALLE BREDDER
+- Rækkefølgen er altid: Fortsæt hvor du slap · overskriften »Lektionerne« · ringene. Også mellem 760 og 899 px, hvor overskriften før stod alene til højre (Ida 20/11, målt live på 3397).
+
 ## 20. november · 3399: ALLE KUNDENS POPUPS HAR FEEDBACK-POPUPPENS BREDDE · UDGIVELSESDATO PÅ MODULOVERSIGTEN
 - Alle popups, kunden møder (ark, små ark, valgark, lektionens popups, skemaer), er 520 brede på computer med 24 i hjørnerne, som feedback-popuppen (Ida 20/11). Telefonen fylder bredden. Backstage er urørt.
 - Studio › produktsiden: hvert modul, der åbner på en dato, har et datofelt »Åbner« i sin række. Den røde »Bekræft« kommer frem, når datoen er ændret, og gemmer den (Ida 20/11).
