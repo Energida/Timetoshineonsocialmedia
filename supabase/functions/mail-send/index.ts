@@ -16,10 +16,11 @@
 //
 // SIKKERHEDSKONTRAKTENS SEKS LINJER (§3):
 //   1. Verify JWT: TIL.
-//   2. Hvem må kalde den: kun administratorer (er_admin() spurgt SOM kalderen, §4).
+//   2. Hvem må kalde den: prøver kun administratorer (er_admin() spurgt SOM kalderen, §4); velkomst enhver indlogget, men kun til sig selv.
 //   3. Egen authorization: ja — kalderens token → getUser (mailadressen) + er_admin() skal svare true, ellers 403.
-//   4. Service-role: NEJ. Funktionen rører ingen tabel; den kalder kun auth.getUser og er_admin() som kalderen.
-//   5. Når: ingen data i Supabase. Sender én mail via Brevo-API'et (BREVO_API_KEY, Idas nøgle »Energida mails«) til kalderens egen adresse.
+//   4. Service-role: KUN i tilstanden {art:"velkomst"}, efter at kalderens eget token er slået op. Prøve-tilstanden bruger den ikke.
+//   5. Når: velkomst læser skema_svar (mail_tekster), læser/skriver mail_log og LÆSER login-listen (auth.admin.listUsers, 20/11) for at se,
+//      om kalderen er kollega (et ældre login på samme kode). Intet om andre logins sendes tilbage. Sender én mail via Brevo til kalderens egen adresse.
 //   6. Direkte omkostning: nej — Brevo Free (300 mails/dag delt). Én mail pr. tryk; loft på 20 prøver pr. kald-instans pr. time.
 // ============================================================================
 
@@ -144,6 +145,22 @@ const MAIL_STD: Record<string, { emne: string; fliser: any[] }> = {"login":{"emn
 
 const sendt: number[] = [];
 
+/* Er der et ÆLDRE login på samme kode? Så er modtageren en kollega. Læser kun (auth.admin.listUsers); skriver intet. */
+async function erKollega(db: any, bruger: any, kode: string) {
+  try {
+    const mig = Date.parse(String(bruger?.created_at || "")); const k = String(kode || "").trim().toUpperCase();
+    if (!k || !mig) return false;
+    for (let side = 1; side <= 20; side++) {
+      const { data, error } = await db.auth.admin.listUsers({ page: side, perPage: 200 });
+      if (error) return false;
+      const b = (data && data.users) || [];
+      if (b.some((u: any) => u.id !== bruger.id && String((u.app_metadata || {}).kode || "").trim().toUpperCase() === k && Date.parse(String(u.created_at || "")) < mig)) return true;
+      if (b.length < 200) break;
+    }
+  } catch (_e) { return false; }
+  return false;
+}
+
 /* VELKOMSTMAILEN (11/11) — se toppen. Svarer altid 200 med en grund, så kundens app aldrig viser en fejl. */
 async function sendVelkomst(bruger: any) {
   const mail = String(bruger?.email || "").trim();
@@ -160,7 +177,10 @@ async function sendVelkomst(bruger: any) {
   const md = bruger.user_metadata || {}, am = bruger.app_metadata || {};
   const fornavn = String(md.hilsen || md.navn || "").trim().split(/\s+/)[0] || "";
   const kode = String(am.kode || "").trim();
-  if (!kode) m.fliser = m.fliser.filter((f: any) => !(f && f.harKode));   /* ingen kode at vise: kodekortet springes over, aldrig en rå flettekode */
+  /* KOLLEGAEN FÅR IKKE KOLLEGAKODEN (Idas klik 20/11 »Ja, uden koden« + »Ja, gør dem aktive«): flisen med koden (»Dine 3 adgange«) er til køberen.
+     En kollega er den, der har oprettet sig på en kode, som et ældre login allerede står på. Kan det ikke slås op, regnes modtageren som køber. */
+  const kollega = kode ? await erKollega(db, bruger, kode) : false;
+  if (!kode || kollega) m.fliser = m.fliser.filter((f: any) => !(f && f.harKode));   /* ingen kode at vise: kodekortet springes over, aldrig en rå flettekode */
   const html = maerk(mailsHtml(m, { navn: fornavn, kollegakode: kode, knapUrl: "https://b2b.energida.dk/" }), "velkomst");
   const noegle = Deno.env.get("BREVO_API_KEY"); if (!noegle) return svar({ ok: false, grund: "ikke-klar" }, 200);
   const r = await fetch("https://api.brevo.com/v3/smtp/email", {

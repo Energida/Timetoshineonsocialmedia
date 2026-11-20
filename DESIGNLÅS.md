@@ -1,3 +1,20 @@
+## 20. november · 3414: RETTELSER EFTER IDAS FUND OG GENNEMGANGEN AF DAGENS ÆNDRINGER
+
+Idas ord: »det er jo hjernedødt ulogisk« (de seks kasser) · »er det en joke at du har tilføjet plusset igen og flyttet alt indhold ned???« · »gennemgå hele systemet om du har lavet andre fejl«.
+
+- Energida Studio: de seks kasser »Lektionens valg« er væk i ALLE bredder. Overblikket er én stille linje overalt.
+- »Alt åbent« på en testprofil åbner LEKTIONERNE, ikke forsidens funktioner. Plusset, ugestrimlen og Idébanken følger modul 8.
+- Notefeltet under lektionen: »Hvad fik lektionen dig til at tænke over?«
+- Linjen over videoen (lektionsnummer · titel) er fed (600) og sort.
+- En udsat opgave eller refleksionsøvelse står som smal række under videoen med knappen »Fortsæt«.
+- Har øvelsen en besked, når den er gennemført (fx »Dit Shinebarometer ligger nu i Værktøjskassen.«), vises »gennemført«-fladen før næste lektion.
+- Mit Shinebarometer sorterer efter sidens navn (Overskud/Underskud), ellers efter ordet i spørgsmålet.
+- En opgave eller refleksionsøvelse åbner altid på første side med kundens svar udfyldt (vælter 11/11 »fortsæt ved første ubesvarede«).
+- Ida som kunde ser øvelsens navn, art og besked som kunden (lektioner bygget fra tavlen tabte dem).
+- Videolåsen gælder kun Vimeo og videofiler. En lektion uden video kan markeres som færdig.
+- Rundvisningens mørke lag fjernes, hvis der ikke er et trin at pege på.
+- Studio: manus og optagelse flytter ikke længere gem over på modulets første lektion · »Gem« virker først, når lektionen er hentet · »Udgiv« i bjælken gør ikke en skjult lektion synlig · beskeden ved »Gem« hører til én lektion · plusset skjules ikke på andre sider.
+
 ## 20. november · 3413: STUDIOS LEKTIONSSIDE RYDDET OP — HVER TING ÉT STED
 - Idas klik 20/11 »Ja, byg det« (artifact TTEJyU2dB9XW9LE8MR5Gzb) efter hendes ord om modulsiden fra 3402: »det her er fandme en gang rod«.
 - Ét plus: plusset i lektionens flise. De to runde knapper ude til højre (prikkerne og sidens plus) er skjult, mens en lektion står åben, og kommer igen på »Om modulet«.
