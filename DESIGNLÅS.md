@@ -1,6 +1,6 @@
 ## 20. november · 3405: MIT SHINEBAROMETER EFTER BUD 1
 - Idas klik 20/11 »Ja, byg bud 1« (artifact XxYPKn2ePsqpadZ9CosFpA) efter hendes ord: »spørgsmålet og kundens svar er tydeligere delt op«.
-- Øverst »Hvor er du i dag?« med Overskud og Underskud. Den valgte side står først. Valget huskes på enheden for dagen.
+- 3406: »Hvor er du i dag?« er FJERNET (Ida 20/11: »denne med hvor kunden er i dag skal fjernes«). Overskud står altid først, underskud under.
 - Spørgsmålet står med gråt OVER flisen. Flisen indeholder kun kundens eget svar, linje for linje med rød prik, og knappen »Ret«.
 - Svaret rettes i samme flise: skrivefelt med mikrofon, »Fortryd« og »Gem«. Den fælles knap »Ret dine svar« er væk.
 - Et tomt svar er en lyseblå flise med grå ramme og »Skriv dit svar«.
