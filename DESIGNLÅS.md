@@ -1,3 +1,12 @@
+## 20. november · NYT LEAD (Backstage-CRM) EFTER EKSPERTGENNEMGANGEN (Ida 19/11: »vælg på mine vegne med mig og behovet for øje« · »Ja, byg det«) · bygget, ikke lagt ud
+- Felter, produktvælgeren og tag-chips er hvide med 1 px #DEDAD4 og ingen skygge. Valgt tag er rødt.
+- Etiketten står over feltet: Poppins 12, versal, bogstavafstand 1,5, #6F6B66, 8 px ned til feltet. »(valgfri)« står ved Mail, Telefon, Produkt og Tags. Kun Butik (eller Navn, når Person er valgt) skal udfyldes.
+- Butik · Person er én vælger: hvid pille, 44 høj, kant #DEDAD4, to lige store felter, det valgte rødt.
+- Fejlen står med sort tekst lige under sit eget felt. Aldrig rød ramme.
+- Telefonen: ingen automatisk markør (alle felter ens, til man trykker). Returtasten går videre til næste felt. Butik og Navn får stort begyndelsesbogstav. Telefonfeltets eksempel er »12 34 56 78«.
+- Tilføj tag: trykfelt 44. Enter-tegnet på computeren og pilen på telefonen står ved magt (låsen 21/9).
+- Ordene »Nyt lead« og »Tags« bliver (Idas egne ord). Rækkefølgen bliver (Butik øverst, 7/11).
+
 ## 19. november · SPØRGSMÅLSBOBLEN I VÆRKTØJSKASSEN, KUN HOS ACORNS (Ida 19/11: »fucking genialt - skal vi lægge den i værktøjskassen« · klik »Kun Acorns« · »byg den ind i værktøjskassen nu«) · bygget, ikke lagt ud
 - **Døren »Spørgsmålsboblen«** (husets dør, kun navnet) står i Værktøjskassen efter Indholdsmappen — kun når koden er ACORNS2026 (`SBB_KODER`). Andre kunder ser den ikke.
 - **Siden (screen 34):** fire fliser med overskriften over flisen: »Afsender« (tekstfelt), »Initialer i cirklen« (højst to tegn; tomt = afsenderens forbogstav, Ida 19/11: »man skal også kunne ændre initialerne i cirklen«), »Spørgsmål« (tekstfelt) og »Sådan ser den ud« (chips Reel · Rosa slide · Uden baggrund, valgt = rød; boblen vist i telefonstørrelse; »Blød skygge under boblen«; husets grå knap »Hent som PNG«).
