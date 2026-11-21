@@ -16,6 +16,11 @@ setTimeout(async function () {
     return c.boxShadow !== "none" || parseFloat(c.borderTopWidth) > 0;
   };
   var fliseAf = function (e) { for (var a = e; a && a !== document.body; a = a.parentElement) if (erFlise(a)) return a; return null; };
+  /* SYMBOLFELTET ER PYNT FORAN EN TEKST, IKKE EN FLISE (DESIGNLÅS 19/11 »SYMBOLFELTER ER LYSEBLÅ ALLE STEDER«: »det runde felt med et symbol foran en tekst«, og 19/11 om faktaboksen:
+     »rundt lyseblåt symbolfelt 44 … navn 13 grå · værdi 15 · hårfin streg mellem rækkerne«). Rammer målingen et symbolfelt (rundt · 36–44 · #F4F7FA · med et symbol · uden ord), tæller teksten, det står foran i samme række.
+     Står der ingen tekst ved siden af det, tæller det ikke som tekst, og målingen leder videre. */
+  var symbolfelt = function (e) { for (var a = e; a && a !== document.body; a = a.parentElement) { var q = a.getBoundingClientRect(); if (q.width > 45 || q.height > 45) return null; if (a.tagName.toLowerCase() === "svg" || a.closest("svg")) continue; var c = getComputedStyle(a), k = rgb(c.backgroundColor);
+    if (q.width >= 35 && Math.abs(q.width - q.height) <= 1 && (parseFloat(c.borderTopLeftRadius) || 0) >= q.width / 2 - 1 && k && k.a > 0.9 && k.r === 244 && k.g === 247 && k.b === 250 && a.querySelector("svg") && !(a.innerText || "").trim()) return a; } return null; };
   var egenTekst = function (e) { return [].some.call(e.childNodes, function (n) { return n.nodeType === 3 && n.textContent.trim().length > 0; }); };
   /* hvad står i retning dir (-1 op, +1 ned) fra stregen? */
   var nabo = function (linje, y, x, dir) {
@@ -24,6 +29,7 @@ setTimeout(async function () {
       var yy = y + dir * d; if (yy < 1 || yy > innerHeight - 1) return "kant";
       var el = document.elementFromPoint(x, yy); if (!el || el === linje || el.contains(linje)) continue;
       if (el.closest(FELT)) return "felt";
+      var sf = symbolfelt(el); if (sf) { if (sf.parentElement && (sf.parentElement.innerText || "").trim()) return "tekst"; continue; }
       if (egenTekst(el) || (el.tagName === "IMG") || (el.closest("button, .ark-chip, a") && (el.closest("button, .ark-chip, a").innerText || "").trim())) return "tekst";
       var f = fliseAf(el); if (f && f !== lf && !f.contains(linje)) return "flise";
     }

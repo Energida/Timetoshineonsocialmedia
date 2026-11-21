@@ -15,41 +15,115 @@ var RED="rgb(252,36,4)", SORT="rgb(26,26,26)", G2="rgb(104,104,104)", G3="rgb(10
 
 function maalSide(){
   var rod=document.getElementById("briefWrap"); if(!rod) return;
-  /* FLISER: radius 20 · luft 18/20 · afstand 10 · hvid */
+  /* ===== DEN NYE BRIEF: SKRIV · OPTAG · POST (DESIGNLÅS 18/11 »DEN NYE BRIEF« + rettelserne 19/11) =====
+     Fliser, overskrifter, feltnavne og felter måles her efter den nye låste form. Før (4/11): hvert spørgsmål sin egen flise · flisetitel 18/16 sort · felt 13 px, mindst 44. */
+  N++; if(!document.body.classList.contains("b3-paa")) fejl("BRIEF: den nye brief (body.b3-paa) er ikke slået til på briefens side");
+  var HVID="rgb(255,255,255)", SEG=".b3-idq, .b3-cap", FELTFLISE=".klip-kort.kk-cta, .sk-q[data-par=cover], .cap-q.b3-htg";
+  var nav0=document.getElementById("briefSideNav"), navR=(nav0&&synlig(nav0))?nav0.getBoundingClientRect():null;
+  /* FLISE (»Udtryk«, 18/11: »fliser hvide med kant #DEDEDE og tydelig skygge«; MÅLKORT: radius 20 · luft 18/20 · 12 til næste flise) */
   rod.querySelectorAll(".sk-q, .klip-kort").forEach(function(e){
     if(!synlig(e)) return; var cs=getComputedStyle(e), r=e.getBoundingClientRect();
     if(r.width<200) return;
     if(e.classList.contains("klip1-vaert")||e.querySelector(":scope > #briefKlipHolder, :scope > .kk-scener")) return;   /* holderen er ingen flise */
-    if(e.parentElement.closest(".sk-q:not(:has(> #briefKlipHolder)):not(:has(> .kk-scener)), .klip-kort")) return;   /* en flise i en flise er ikke en ny flise */
-    er("FLISE radius", e, px(cs.borderTopLeftRadius)===20, "radius "+px(cs.borderTopLeftRadius)+" (skal 20)");
+    if(e.matches(SEG)||e.matches(FELTFLISE)) return;   /* den samlede flise og »feltet er selv flisen« måles for sig nedenfor */
+    if(e.parentElement.closest(".sk-q:not(:has(> #briefKlipHolder)):not(:has(> .kk-scener)):not(.klip1-vaert), .klip-kort")) return;   /* en flise i en flise er ikke en ny flise */
+    er("FLISE radius", e, px(cs.borderTopLeftRadius)===20&&px(cs.borderTopRightRadius)===20&&px(cs.borderBottomLeftRadius)===20&&px(cs.borderBottomRightRadius)===20, "radius "+cs.borderRadius+" (skal 20)");
     er("FLISE luft", e, px(cs.paddingTop)===18&&px(cs.paddingBottom)===18&&px(cs.paddingLeft)===20&&px(cs.paddingRight)===20, "luft "+cs.padding+" (skal 18 20)");
     er("FLISE afstand", e, px(cs.marginBottom)===12, "afstand under "+px(cs.marginBottom)+" (skal 12)");
-    er("FLISE flade", e, rgb(cs.backgroundColor)==="rgb(255,255,255)"||/story|cap-q/.test(kl(e))||(e.parentElement&&e.parentElement.classList.contains("kk-laast")&&rgb(cs.backgroundColor)==="rgb(244,247,250)"), "flade "+cs.backgroundColor);
+    er("FLISE flade", e, rgb(cs.backgroundColor)===HVID||/story/.test(kl(e))||(e.parentElement&&e.parentElement.classList.contains("kk-laast")&&rgb(cs.backgroundColor)==="rgb(244,247,250)"), "flade "+cs.backgroundColor);
+    er("FLISE kant og skygge", e, px(cs.borderTopWidth)===1&&px(cs.borderLeftWidth)===1&&rgb(cs.borderTopColor)===KANT&&rgb(cs.borderLeftColor)===KANT&&cs.boxShadow!=="none", "kant "+cs.borderTopWidth+" "+cs.borderTopColor+" skygge "+(cs.boxShadow==="none"?"ingen":"ja")+" (skal 1 px #DEDEDE og skygge)");
   });
-  /* FLISETITEL: Poppins 18 (telefon 16) / 400 / #1A1A1A; 8 til første indhold */
-  rod.querySelectorAll(".sk-q:not([data-par=cover]) > .sk-label, .kk-hook-spm").forEach(function(e){
-    if(!synlig(e)) return; var cs=getComputedStyle(e);
-    var t=e.querySelector(".sk-spm, .sk-titel")||e; var ts=getComputedStyle(t);
+  /* DEN SAMLEDE FLISE (19/11: »captionens fire spørgsmål står i ÉN flise under »Caption« (som Idéen i tegningen)«): spørgsmålene er dele af ÉN flise —
+     første del har de runde hjørner øverst, sidste nederst, delene står helt sammen, og luften er flisens 18/20. Et spørgsmål, der står som sin egen flise, er en fejl. */
+  rod.querySelectorAll(":scope > .cap-q").forEach(function(e){ if(!synlig(e)) return; N++; if(!e.matches(".b3-cap, .b3-htg")) fejl("CAPTION: »"+txt(e)+"« står som sin egen flise (skal være en del af den samlede flise under »Caption«)"); });
+  [[".basis-kort.b3-ide .sk-q.b3-idq","Idéen"],[":scope > .cap-q.b3-cap","Caption"]].forEach(function(g){
+    var sg=[].slice.call(rod.querySelectorAll(g[0])).filter(synlig); if(!sg.length) return;
+    sg.forEach(function(e,i){ var cs=getComputedStyle(e), r=e.getBoundingClientRect(), f=i===0, l=i===sg.length-1;
+      er("SAMLET FLISE "+g[1]+" hjørner", e, px(cs.borderTopLeftRadius)===(f?20:0)&&px(cs.borderTopRightRadius)===(f?20:0)&&px(cs.borderBottomLeftRadius)===(l?20:0)&&px(cs.borderBottomRightRadius)===(l?20:0), "hjørner "+cs.borderRadius+" (skal 20 øverst på første del og nederst på sidste, 0 imellem)");
+      er("SAMLET FLISE "+g[1]+" luft", e, px(cs.paddingLeft)===20&&px(cs.paddingRight)===20&&(!f||px(cs.paddingTop)===18)&&(!l||px(cs.paddingBottom)===18), "luft "+cs.padding+" (skal 20 i siderne, 18 øverst på første del og nederst på sidste)");
+      er("SAMLET FLISE "+g[1]+" flade", e, rgb(cs.backgroundColor)===HVID&&px(cs.borderLeftWidth)===1&&px(cs.borderRightWidth)===1&&rgb(cs.borderLeftColor)===KANT&&cs.boxShadow!=="none"&&px(cs.borderTopWidth)===(f?1:0)&&px(cs.borderBottomWidth)===(l?1:0)&&(!f||rgb(cs.borderTopColor)===KANT)&&(!l||rgb(cs.borderBottomColor)===KANT), "flade "+cs.backgroundColor+" kant "+cs.borderWidth+" skygge "+(cs.boxShadow==="none"?"ingen":"ja")+" (skal hvid · 1 px #DEDEDE rundt om hele flisen, ingen kant mellem delene · skygge)");
+      if(i>0){ var d=r.top-sg[i-1].getBoundingClientRect().bottom; er("SAMLET FLISE "+g[1]+" samlet", e, Math.abs(d)<=0.5, "står "+Math.round(d*10)/10+" px fra delen over (skal 0: det er ÉN flise)"); }
+      if(navR) er("SAMLET FLISE "+g[1]+" kanter", e, Math.abs(r.left-navR.left)<=1&&Math.abs(r.right-navR.right)<=1, Math.round(r.left)+"–"+Math.round(r.right)+" (skal følge spalten "+Math.round(navR.left)+"–"+Math.round(navR.right)+")");
+    });
+  });
+  var ideK=rod.querySelector(".basis-kort.b3-ide"); if(ideK&&synlig(ideK)){ var ib=getComputedStyle(ideK,"::before"), f1=[].slice.call(ideK.querySelectorAll(".sk-q.b3-idq")).filter(synlig)[0];
+    er("OVERSKRIFT skrift", ideK, /Idéen/.test(ib.content)&&px(ib.fontSize)===12&&ib.textTransform==="uppercase"&&px(ib.letterSpacing)===1.5&&ib.fontWeight==="400"&&rgb(ib.color)===G2, "»Idéen« "+ib.fontSize+" "+ib.color+" ls"+ib.letterSpacing+" (skal 12 versal · 1,5 · #686868)");
+    if(f1){ var di=Math.round(f1.getBoundingClientRect().top-ideK.getBoundingClientRect().top); er("OVERSKRIFT→flise", ideK, Math.abs(di-24)<=1, "»Idéen« + luft fylder "+di+" (skal 16 + 8)"); } }
+  /* FELTET ER SELV FLISEN (HÅRD 19/11 »Aldrig flise i flise«: »står der kun ÉT felt under en overskrift, er feltet selv flisen og går ud til spaltens kant« — »CTA i videoen«, »Tekst på coverbilledet«; og »Hashtagfeltet er selv flisen (ingen ydre flise)«) */
+  rod.querySelectorAll(FELTFLISE).forEach(function(c){ if(!synlig(c)) return; var cs=getComputedStyle(c), r=c.getBoundingClientRect();
+    er("FLISE I FLISE", c, /rgba\(0,0,0,0\)|transparent/.test(rgb(cs.backgroundColor))&&px(cs.borderTopWidth)===0&&px(cs.borderLeftWidth)===0&&cs.boxShadow==="none"&&px(cs.paddingLeft)===0&&px(cs.paddingRight)===0&&px(cs.paddingTop)===0, "flade "+cs.backgroundColor+" kant "+cs.borderTopWidth+" luft "+cs.padding+" skygge "+(cs.boxShadow==="none"?"ingen":"ja")+" (der må ingen ydre flise være om et enligt felt)");
+    var fs=[].slice.call(c.querySelectorAll("textarea.sk-input, .htg-rk input[type=text]")).filter(synlig); N++; if(!fs.length) fejl("FLISE I FLISE: intet felt under »"+txt(c)+"«");
+    fs.forEach(function(f){ var fr=f.getBoundingClientRect(), fc=getComputedStyle(f);
+      er("FELTET ER FLISEN kanter", f, Math.abs(fr.left-r.left)<=1&&Math.abs(fr.right-r.right)<=1&&(!navR||(Math.abs(fr.left-navR.left)<=1&&Math.abs(fr.right-navR.right)<=1)), Math.round(fr.left)+"–"+Math.round(fr.right)+" (skal gå ud til spaltens kant "+Math.round(navR?navR.left:r.left)+"–"+Math.round(navR?navR.right:r.right)+")");
+      er("FELTET ER FLISEN flade", f, rgb(fc.backgroundColor)===HVID&&px(fc.borderTopWidth)===1&&rgb(fc.borderTopColor)===KANT&&fc.boxShadow!=="none", "flade "+fc.backgroundColor+" kant "+fc.borderTopWidth+" "+fc.borderTopColor+" skygge "+(fc.boxShadow==="none"?"ingen":"ja")+" (skal hvid · 1 px #DEDEDE · skygge)"); });
+  });
+  /* OVERSKRIFT OVER FLISEN (18/11 »Felterne = bud 3«: »overskriften over flisen i versaler«; MÅLKORT 12/11: 12 versal · 1,5 · #686868 · 8 ned til flisen · venstrekant = flisens ydre kant).
+     Før: flisetitel inde i flisen, Poppins 18 (telefon 16) sort. */
+  rod.querySelectorAll(".pf-sc, .cap-sek > span, .sk-q[data-par=cover] > .sk-label .sk-titel, .klip-kort.kk-cta .kk-et, .cap-q.b3-htg > .sk-label .sk-titel").forEach(function(t){
+    if(!synlig(t)) return; var ts=getComputedStyle(t), r=t.getBoundingClientRect();
+    er("OVERSKRIFT skrift", t, px(ts.fontSize)===12&&ts.textTransform==="uppercase"&&px(ts.letterSpacing)===1.5&&ts.fontWeight==="400"&&rgb(ts.color)===G2&&/Poppins/.test(ts.fontFamily), ts.fontSize+"/"+ts.fontWeight+" "+ts.color+" ls"+ts.letterSpacing+" "+ts.textTransform+" (skal 12/400 versal · 1,5 · #686868 Poppins)");
+    var maalE=null;
+    if(t.matches(".pf-sc")){ maalE=t.nextElementSibling; while(maalE&&!synlig(maalE)) maalE=maalE.nextElementSibling; }
+    else if(t.closest(".cap-sek")) maalE=[].slice.call(rod.querySelectorAll(":scope > .cap-q.b3-cap")).filter(synlig)[0];
+    else maalE=[].slice.call(t.closest(FELTFLISE).querySelectorAll("textarea.sk-input, .htg-rk input[type=text]")).filter(synlig)[0];
+    N++; if(!maalE){ fejl("OVERSKRIFT »"+txt(t)+"«: der står ingen flise under den"); return; }
+    var mr=maalE.getBoundingClientRect(), d=Math.round(mr.top-r.bottom); er("OVERSKRIFT→flise", t, Math.abs(d-8)<=1, "afstand "+d+" (skal 8)");
+    er("OVERSKRIFT venstrekant", t, Math.abs(r.left-mr.left)<=1, "står "+Math.round(r.left-mr.left)+" px fra flisens venstre kant (skal 0)");
+  });
+  /* SCENEN: rækken »Klip 1« med streg er væk (19/11: »rækken »Klip 1« med streg er væk (skraldespanden står i flisens øverste højre hjørne på computeren)«) — hver scene har sin overskrift OVER flisen.
+     Før: klip-etiket 13 grå inde i flisen med én streg under. */
+  rod.querySelectorAll(".klip-kort:not(.kk-cta)").forEach(function(k){ if(!synlig(k)) return;
+    var hd=k.querySelector(":scope > .klip-hoved"); if(hd&&synlig(hd)){ var t=hd.querySelector(".kk-titel"); N++; if(t&&synlig(t)&&(t.innerText||"").trim()) fejl("SCENE: rækken »"+txt(t)+"« står stadig inde i flisen (skal være væk)"); var hs=getComputedStyle(hd); er("SCENE hoved uden streg", hd, px(hs.borderBottomWidth)===0&&px(hs.borderTopWidth)===0, "streg "+hs.borderBottomWidth+" (skal ingen)"); }
+    var fo=(k.parentElement.classList.contains("kk-laast")?k.parentElement:k).previousElementSibling; while(fo&&!synlig(fo)) fo=fo.previousElementSibling;
+    N++; if(!fo||!fo.matches(".pf-sc, .klip-kort:not(.kk-cta), .kk-laast")) fejl("SCENE: flisen »"+txt(k)+"« har ingen overskrift over sig (»Scene N«)");   /* flere klip i samme scene deler scenens overskrift: kun scenens første flise har den lige over sig */
+  });
+  /* FELTETS NAVN (18/11: »lille symbol foran feltets navn (øje · taleboble · T)«; MÅLKORT »Felt-etiket«: Poppins 13 / 400 / #686868 · 8 til feltet). Idéens og Captions spørgsmål er feltnavne i den samlede flise.
+     Før: spørgsmålene var flisetitler, Poppins 18 (telefon 16) sort. */
+  rod.querySelectorAll(".klip-kort:not(.kk-cta) .kk-et, .b3-idq > .sk-label, .b3-cap > .sk-label").forEach(function(e){
+    if(!synlig(e)) return; var t=e.matches(".sk-label")?(e.querySelector(".sk-spm, .sk-titel")||e):e; var cs=getComputedStyle(t), navn=(t.innerText||"").replace(/\s+/g," ").trim();
+    er("FELTNAVN", t, px(cs.fontSize)===13&&cs.fontWeight==="400"&&rgb(cs.color)===G2&&cs.textTransform==="none"&&/Poppins/.test(cs.fontFamily), cs.fontSize+"/"+cs.fontWeight+" "+cs.color+" (skal 13/400 #686868)");
+    var nx=e.nextElementSibling; while(nx&&!synlig(nx)) nx=nx.nextElementSibling; if(nx){ var d=Math.round(nx.getBoundingClientRect().top-e.getBoundingClientRect().bottom); er("FELTNAVN afstand", e, Math.abs(d-8)<=1, "til feltet "+d+" (skal 8)"); }
+    if(e.matches(".kk-et")&&/^(Hvad ser man\?|Manus|Tekst på skærmen)$/.test(navn)){ var sv=e.querySelector("svg"), sr=sv?sv.getBoundingClientRect():null, sp=e.querySelector("span"), pr=sp?sp.getBoundingClientRect():null;
+      er("FELTNAVN symbol", e, !!sv&&Math.round(sr.width)===16&&Math.round(sr.height)===16&&!!pr&&sr.right<=pr.left+0.5&&rgb(getComputedStyle(sv).color)===G2, sv?("symbol "+Math.round(sr.width)+"x"+Math.round(sr.height)+" "+getComputedStyle(sv).color+" (skal 16 · gråt · foran navnet)"):"intet symbol foran navnet"); }
+  });
+  /* FELTER (19/11 »Felternes højde og fluebenet«: »Kun »Hvad ser man?« er højt (76); forslag og øvrige felter er 48 og vokser med teksten«; 18/11: »tekst 14«). Før: 13 px, mindst 44 høj. */
+  rod.querySelectorAll("textarea.sk-input, input.sk-input, textarea.mb-felt, .htg-rk input[type=text]").forEach(function(e){
+    if(!synlig(e)||e.closest(".sendfelt, .sendfelt-felt")) return; var cs=getComputedStyle(e), r=e.getBoundingClientRect();
+    er("FELT", e, px(cs.fontSize)===14&&cs.fontWeight==="400"&&px(cs.borderTopLeftRadius)===14&&px(cs.borderTopWidth)===1&&(rgb(cs.borderTopColor)===KANT||/2(38|45), 2/.test(cs.backgroundColor))&&cs.fontStyle==="normal", cs.fontSize+"/"+cs.fontWeight+" r"+cs.borderTopLeftRadius+" kant "+cs.borderTopWidth+" "+cs.borderTopColor+" "+cs.fontStyle+" (skal 14/400 r14 1px #DEDEDE, aldrig kursiv)");
+    var mind=/(_ser|hookSer_f\d+)$/.test(e.id||"")?76:48, skal=Math.max(mind, e.tagName==="TEXTAREA"?e.scrollHeight+2:mind);
+    er("FELT højde", e, Math.abs(r.height-skal)<=1, "h"+Math.round(r.height)+" (skal "+skal+": "+mind+" og derfra med teksten)");
+  });
+  /* SYMBOLFELTER (HÅRD 19/11 »SYMBOLFELTER ER LYSEBLÅ ALLE STEDER«: »rundt, lyseblåt #F4F7FA, MED grå ramme 1 px #DEDEDE, med symbolet tegnet i grå #686868« · »44 i faktaboksen … Symbolet er 20 i et felt på 44«).
+     Måles i den nye briefs faktaboks, hvor reglen er bygget (resten af appen: når det er bygget). */
+  document.querySelectorAll("#screen7 #briefRail .fb-rk > .fb-ik").forEach(function(e){ if(!synlig(e)) return; var cs=getComputedStyle(e), r=e.getBoundingClientRect(), sv=e.querySelector("svg"), sr=sv?sv.getBoundingClientRect():null, ss=sv?getComputedStyle(sv):null;
+    var rund=/%$/.test(cs.borderTopLeftRadius)?parseFloat(cs.borderTopLeftRadius)>=50:px(cs.borderTopLeftRadius)>=r.width/2-0.5;
+    er("SYMBOLFELT", e, Math.round(r.width)===44&&Math.round(r.height)===44&&rund&&rgb(cs.backgroundColor)==="rgb(244,247,250)"&&px(cs.borderTopWidth)===1&&px(cs.borderLeftWidth)===1&&rgb(cs.borderTopColor)===KANT&&!!sv&&Math.round(sr.width)===20&&Math.round(sr.height)===20&&rgb(ss.stroke)===G2,
+      Math.round(r.width)+"x"+Math.round(r.height)+" r"+cs.borderTopLeftRadius+" "+cs.backgroundColor+" kant "+cs.borderTopWidth+" "+cs.borderTopColor+" symbol "+(sv?Math.round(sr.width)+" "+ss.stroke:"mangler")+" (skal 44 rund · #F4F7FA · 1 px #DEDEDE · symbol 20 i #686868)"); });
+  /* TILVALGS-CHIPS TIL HØJRE (HÅRD 19/11: »Briefens tilvalgs-chips står til højre under flisen eller feltet over dem … »+ Tekst«, »+ Manus«, »+ Klip«, »+ Scene« og »Vælg fra hashtagbanken«. Aldrig til venstre«) */
+  [].slice.call(rod.querySelectorAll(".ark-chip")).filter(synlig).forEach(function(c){ var t=(c.innerText||"").replace(/\s+/g," ").trim(); if(!/^\+?\s?(Tekst|Manus|Klip|Scene)$|^Vælg fra hashtagbanken$/.test(t)) return;
+    var r=c.getBoundingClientRect(), rk=[].slice.call(c.parentElement.children).filter(synlig).filter(function(x){ return Math.abs(x.getBoundingClientRect().top-r.top)<4; });
+    var hoejre=Math.max.apply(null,rk.map(function(x){return x.getBoundingClientRect().right})), venstre=Math.min.apply(null,rk.map(function(x){return x.getBoundingClientRect().left}));
+    var fl=c.closest(".klip-kort:not(.kk-cta)"), k0, k1; if(fl){ var fc=getComputedStyle(fl), fr=fl.getBoundingClientRect(); k0=fr.left+px(fc.borderLeftWidth)+px(fc.paddingLeft); k1=fr.right-px(fc.borderRightWidth)-px(fc.paddingRight); } else if(navR){ k0=navR.left; k1=navR.right; } else return;
+    er("TILVALGS-CHIP til højre", c, Math.abs(hoejre-k1)<=1.5&&venstre-k0>=20, "rækken står "+Math.round(venstre-k0)+" fra venstre kant og "+Math.round(k1-hoejre)+" fra højre (skal 0 fra højre kant, aldrig til venstre)");
+    if(fl){ var bund=Math.max.apply(null,[0].concat([].slice.call(fl.querySelectorAll("textarea.sk-input")).filter(synlig).map(function(x){return x.getBoundingClientRect().bottom}))); er("TILVALGS-CHIP under felterne", c, r.top>=bund-1, "chippen står over et felt i flisen (skal stå under)"); }
+  });
+  /* KNAPPERNE NEDERST STÅR I SIDEN (HÅRD 19/11: »på alle trin i den nye brief, også Fakta på telefonen, står »Næste« (kun ordet, aldrig »Næste: …«) og »Gem ændringer« i selve siden under indholdet«) */
+  N++; if(!navR) fejl("BUNDKNAPPER: knapperne nederst (#briefSideNav) står ikke på trinnet");
+  else { for(var a=nav0;a&&a.id!=="screen7"&&a!==document.body;a=a.parentElement){ var ps=getComputedStyle(a).position; N++; if(ps==="fixed"||ps==="sticky") fejl("BUNDKNAPPER: står fast på skærmen (["+kl(a)+"] er "+ps+")"); }
+    var kn=[].slice.call(nav0.querySelectorAll("button")).filter(synlig); kn.forEach(function(b){ var ps=getComputedStyle(b).position, t=(b.innerText||"").replace(/\s+/g," ").trim(); N++; if(ps==="fixed"||ps==="sticky") fejl("BUNDKNAPPER: »"+t+"« står fast på skærmen ("+ps+")"); N++; if(/^Næste/.test(t)&&t!=="Næste") fejl("BUNDKNAPPER: knappen hedder »"+t+"« (skal kun »Næste«)"); });
+    N++; if(!kn.some(function(b){ return (b.innerText||"").replace(/\s+/g," ").trim()==="Gem ændringer"; })) fejl("BUNDKNAPPER: »Gem ændringer« mangler på trinnet");
+    var ind=[].slice.call(document.querySelectorAll("#briefWrap .klip-kort, #briefWrap .sk-q, #briefWrap textarea.sk-input, #briefWrap .htg-rk, #briefWrap #briefRail .fb-rk")).filter(synlig), ib=ind.length?Math.max.apply(null,ind.map(function(x){return x.getBoundingClientRect().bottom})):0;
+    N++; if(ind.length&&navR.top<ib-1) fejl("BUNDKNAPPER: står ikke under indholdet (knapper y"+Math.round(navR.top)+", indhold slutter y"+Math.round(ib)+")");
+    /* rulles siden, følger knapperne indholdet — en fast bjælke ville blive stående */
+    if(ind.length){ var ref=ind[0], sc=[document.scrollingElement].concat([].slice.call(document.querySelectorAll(".content"))).filter(Boolean), gl=sc.map(function(x){return x.scrollTop}), y0=ref.getBoundingClientRect().top, n0=nav0.getBoundingClientRect().top;
+      sc.forEach(function(x){ x.scrollTop=x.scrollTop+90; }); var dy=ref.getBoundingClientRect().top-y0, dn=nav0.getBoundingClientRect().top-n0; sc.forEach(function(x,i){ x.scrollTop=gl[i]; });
+      N++; if(Math.abs(dy-dn)>1) fejl("BUNDKNAPPER: følger ikke siden, når der rulles (indholdet flyttede "+Math.round(dy)+", knapperne "+Math.round(dn)+")"); } }
+  /* FLISETITEL (MÅLKORT 4/11, uændret): en titel, der stadig står INDE i en flise uden for den nye briefs samlede fliser, måles som før — Poppins 18 (telefon 16) / 400 / #1A1A1A; 8 til første indhold */
+  rod.querySelectorAll(".sk-q:not([data-par=cover]):not(.b3-idq):not(.b3-cap):not(.b3-htg) > .sk-label, .kk-hook-spm").forEach(function(e){
+    if(!synlig(e)) return; var t=e.querySelector(".sk-spm, .sk-titel")||e; var ts=getComputedStyle(t);
     er("FLISETITEL skrift", t, px(ts.fontSize)===(TLF?16:18)&&ts.fontWeight==="400"&&/Poppins/.test(ts.fontFamily)&&rgb(ts.color)===SORT, ts.fontSize+"/"+ts.fontWeight+" "+ts.color+" (skal "+(TLF?16:18)+"/400 #1A1A1A Poppins)");
     var nxt=e.nextElementSibling; while(nxt&&getComputedStyle(nxt).display==="none") nxt=nxt.nextElementSibling;
     if(nxt&&nxt.getBoundingClientRect().height>0){ var d=Math.round(nxt.getBoundingClientRect().top-e.getBoundingClientRect().bottom); er("FLISETITEL afstand", e, Math.abs(d-8)<=1, "til indholdet "+d+" (skal 8)"); }
-  });
-  
-  rod.querySelectorAll(".klip-hoved .kk-titel").forEach(function(e){
-    if(!synlig(e)) return; var cs=getComputedStyle(e);
-    er("KLIP-ETIKET", e, px(cs.fontSize)===13&&cs.textTransform==="none"&&rgb(cs.color)===G2&&cs.fontWeight==="400", cs.fontSize+"/"+cs.fontWeight+" "+cs.color+" "+cs.textTransform+" (13 grå)");
-    var hd=e.closest(".klip-hoved"), hs=getComputedStyle(hd); er("KLIP-ETIKET streg", hd, px(hs.borderBottomWidth)===1&&rgb(hs.borderBottomColor)==="rgb(222,222,222)", "streg "+hs.borderBottomWidth+" "+hs.borderBottomColor);
-  });
-  /* FELT-ETIKET: 13/400 #686868, 8 til feltet */
-  rod.querySelectorAll(".klip-kort .kk-et").forEach(function(e){
-    if(!synlig(e)) return; var cs=getComputedStyle(e);
-    er("FELT-ETIKET", e, px(cs.fontSize)===13&&cs.fontWeight==="400"&&rgb(cs.color)===G2&&cs.textTransform==="none", cs.fontSize+"/"+cs.fontWeight+" "+cs.color+" (skal 13/400 #686868)");
-    var nx=e.nextElementSibling; if(nx&&nx.getBoundingClientRect().height>0){ var d=Math.round(nx.getBoundingClientRect().top-e.getBoundingClientRect().bottom); er("FELT-ETIKET afstand", e, Math.abs(d-8)<=1, "til feltet "+d+" (skal 8)"); }
-  });
-  /* FELTER */
-  rod.querySelectorAll("textarea.sk-input, input.sk-input, textarea.mb-felt").forEach(function(e){
-    if(!synlig(e)||e.closest(".sendfelt, .sendfelt-felt")) return; var cs=getComputedStyle(e), r=e.getBoundingClientRect();
-    er("FELT", e, px(cs.fontSize)===13&&cs.fontWeight==="400"&&px(cs.borderTopLeftRadius)===14&&px(cs.borderTopWidth)===1&&(rgb(cs.borderTopColor)===KANT||/2(38|45), 2/.test(cs.backgroundColor))&&r.height>=43.5&&cs.fontStyle==="normal", cs.fontSize+"/"+cs.fontWeight+" r"+cs.borderTopLeftRadius+" kant "+cs.borderTopWidth+" "+cs.borderTopColor+" h"+Math.round(r.height)+" "+cs.fontStyle+" (skal 13/400 r14 1px #DEDEDE h44)");
   });
   /* FELTFLUGT: alle hook-/forslagsfelter i samme flise starter og slutter ens */
   rod.querySelectorAll(".sk-q, .klip-kort").forEach(function(f){
@@ -186,7 +260,7 @@ async function maalForloeb(vent){
           var f0=i===0?kt:lf[i-1], d=Math.round(r.top-f0.getBoundingClientRect().bottom); er("FORLØB tlf flise→lektion", e, Math.abs(d-12)<=1, "afstand "+d+" (skal 12 — afstandsskalaen 14/11)"); });
         N++; if(kt.querySelector(".lks-lek")) fejl("FORLØB tlf: en lektion ligger inde i modulets flise (hver lektion skal være sin egen flise)"); }
       [].slice.call(rod.querySelectorAll(".ftl2 > .ftl2-rk")).filter(synlig).forEach(function(e){ var c=getComputedStyle(e), r=e.getBoundingClientRect();
-        er("FORLØB tlf række", e, Math.round(r.height)>=64&&px(c.borderTopLeftRadius)===20&&(e.matches(".laast")?rgb(c.backgroundColor)==="rgb(255,255,255)":rgb(c.backgroundColor)==="rgb(255,255,255)"&&c.boxShadow!=="none")&&(e.matches(".laast")?(px(c.borderTopWidth)===1&&rgb(c.borderTopColor)==="rgb(222,222,222)"):px(c.borderTopWidth)===0), "h"+Math.round(r.height)+" r"+c.borderTopLeftRadius+" "+c.backgroundColor+" (skal ≥64·20)");
+        er("FORLØB tlf række", e, Math.round(r.height)>=64&&px(c.borderTopLeftRadius)===20&&(e.matches(".laast")?(rgb(c.backgroundColor)==="rgb(255,255,255)"&&px(c.borderTopWidth)===1&&px(c.borderLeftWidth)===1&&rgb(c.borderTopColor)==="rgb(222,222,222)"&&rgb(c.borderLeftColor)==="rgb(222,222,222)"):(rgb(c.backgroundColor)==="rgb(255,255,255)"&&c.boxShadow!=="none"&&px(c.borderTopWidth)===0)), "h"+Math.round(r.height)+" r"+c.borderTopLeftRadius+" "+c.backgroundColor+" kant "+c.borderTopWidth+" "+c.borderTopColor+" (skal ≥64·20 · hvid række: skygge uden kant · låst række: hvid med ramme 1 px #DEDEDE på alle sider — v3395)");
         var nx=e.nextElementSibling; if(nx&&nx.classList.contains("ftl2-rk")){ var d=Math.round(nx.getBoundingClientRect().top-r.bottom); er("FORLØB tlf række→række", nx, Math.abs(d-12)<=1, "afstand "+d+" (skal 12 — afstandsskalaen 14/11)"); } });
       [].slice.call(rod.querySelectorAll("*")).filter(synlig).forEach(function(e){ if(e.closest(".ftl2-pil, .lks-fort, .lks-fb, .lks-num, svg, .lek-favchips")||e.tagName==="svg") return; var cs=getComputedStyle(e); var tekst=[].some.call(e.childNodes,function(n){return n.nodeType===3&&n.textContent.trim();}); N++; if(tekst&&rgb(cs.color)===RED) fejl("FORLØB tlf: rød tekst »"+txt(e)+"« ["+kl(e)+"] — rød er aldrig titel"); });
       var h2=document.querySelector("#forloebTidslinje .ftl2-hoved"); if(h2&&document.querySelector("#forloebTidslinje .ftl2-stor .lks-lek")){ h2.click(); await vent(250); }
@@ -262,7 +336,9 @@ setTimeout(async function(){ try {
   try{ document.querySelectorAll("#turOverlay,.tur-slor,#turKort,#nyVersion,#dagensKort").forEach(function(e){e.remove()}); }catch(e){}
   if(!document.body.classList.contains("mb")){ console.log("SELE MAAL FEJL: body.mb er ikke aktiv paa "+innerWidth); return; }
   TRIN="forside"; await vent(400); maalSide(); maalHero(); maalForsideTlf(); TRIN="upload"; try{ await maalUpload(vent); }catch(e){ fejl("upload-trin: "+(e&&e.message)); } TRIN="forside";
-  for(var side=0; side<4; side++){ BRIEF_SIDE_AKTIV=side; BRIEF_TRIN_AKTIV=0; briefMbVis("skriv"); await vent(250); TRIN="side"+side; document.querySelectorAll("#briefWrap textarea").forEach(function(x){x.classList.add("mb-felt")}); maalSide(); maalHero(); }
+  for(var side=0; side<4; side++){ BRIEF_SIDE_AKTIV=side; BRIEF_TRIN_AKTIV=0; briefMbVis("skriv"); await vent(250); TRIN="side"+side; document.querySelectorAll("#briefWrap textarea").forEach(function(x){x.classList.add("mb-felt")}); maalSide(); maalHero();
+    /* TELEFONEN: første side har to trin (Fakta · Overblikket, 19/11 »Fakta som trin: KUN på telefonen«) — begge måles */
+    if(side===0&&BRIEF_TRIN_INFO&&BRIEF_TRIN_INFO.n>1){ for(var tt=1; tt<BRIEF_TRIN_INFO.n; tt++){ BRIEF_SIDE_AKTIV=0; BRIEF_TRIN_AKTIV=tt; briefMbVis("skriv"); await vent(250); TRIN="side0 trin"+(tt+1); document.querySelectorAll("#briefWrap textarea").forEach(function(x){x.classList.add("mb-felt")}); maalSide(); maalHero(); } } }
   TRIN="hjem"; try{ await maalHjem(vent); }catch(e){ fejl("hjem-trin: "+(e&&e.message)); }
   TRIN="story"; try{ IDEER.push({id:"mk2",titel:"Story uden type",soejle:"Story",type:"Story",status:"Planlagt",dato:"2026-11-12",brief:{format:"Story",storyserie:[{t:"",q:"",s:["",""],m:""}]}}); openBriefSide("mk2"); await vent(1500); maalStory(); showTab(8); await vent(900); maalStory.kalender&&0; N++; if(document.querySelector(".ss-stknap")) fejl("kalender: story-flisen har stadig statuspil"); }catch(e){ fejl("story-trin: "+(e&&e.message)); }
   TRIN="forløb"; try{ await maalForloeb(vent); }catch(e){ fejl("forløb-trin: "+(e&&e.message)); }
