@@ -1,3 +1,15 @@
+## 20. november · 3415: ALT ER »OPGAVE« · OPGAVEFLISER · RET I KUNDENS DESIGN
+
+Idas ord: »vi dropper alt der hedder reflektionsøverlser og kalder alt opgaver« · »også energida studio« · »alle separate spørgsmål skal ligge individuelt under lektionen … med Versaler OPGAVE og så titlen« · »flisen måske skal være blå med opgave - aldrig rød ramme omkring og ikke pil ved forrige knap« · »jeg tror det er meget lettere hvis jeg kan rette i det design kunden ser og så udgive det!« (klik »Ja, byg den« og »Ja, byg resten«).
+
+- Ordet »refleksionsøvelse« bruges ikke længere, hverken hos kunden eller i Energida Studio. Alt hedder »opgave«.
+- Under lektionen står én lyseblå flise (#F4F7FA) pr. side i opgaven: »OPGAVE« i versaler over titlen. Den side, kunden er nået til, er mørkere blå (#C9DBE7). Aldrig rød ramme om flisen. Et tryk åbner opgaven på den side.
+- I opgaven: hvid knap »Forrige« uden pil (første side: »Tilbage« til videoen). Den runde pil i hovedet er væk.
+- På Dit forløb står en opgave, der venter, som blå flise lige under sit modul — altid synlig. »Venter på dig« øverst på Dit forløb er væk; Forsiden har den stadig.
+- »Fortsæt hvor du slap« fører til opgaven, når den seneste sete lektions opgave ikke er gennemført.
+- Cirklen i »Venter på dig« åbner opgaven; intet markeres som færdigt uden svar.
+- Energida Studio › Opgave: fanen viser opgaven, som kunden ser den, én side ad gangen. Hver tekst rettes ved at klikke på den (stiplet lyseblå kant og rød blyant; lyseblå flade, mens der skrives). »Spørgsmål på samme side«, »Ny side«, »Slet spørgsmålet«, og sidste side er kundens »Godt gået«. Fanen »Refleksionsøvelse« og valget »Hvad er det?« er væk.
+
 ## 20. november · 3414: RETTELSER EFTER IDAS FUND OG GENNEMGANGEN AF DAGENS ÆNDRINGER
 
 Idas ord: »det er jo hjernedødt ulogisk« (de seks kasser) · »er det en joke at du har tilføjet plusset igen og flyttet alt indhold ned???« · »gennemgå hele systemet om du har lavet andre fejl«.
