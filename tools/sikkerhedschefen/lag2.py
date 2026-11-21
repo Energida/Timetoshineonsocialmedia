@@ -16,6 +16,10 @@ def chromium():
     for m in ("~/Library/Caches/ms-playwright/chromium-*/chrome-mac/Chromium.app/Contents/MacOS/Chromium", "~/.cache/ms-playwright/chromium-*/chrome-linux/chrome", "/opt/pw-browsers/chromium-*/chrome-linux/chrome"):
         c = sorted(glob.glob(os.path.expanduser(m)))
         if c: return c[-1]
+    # v3416 (21/11): Chrome paa Idas Mac. MAALT 19/11: 47 af 85 tjek sagde »Chromium findes ikke«, fordi playwright-mappen var vaek og
+    # /Applications aldrig blev proevet — morgentjekket var blindt uden at sige det hoejt.
+    for m in ("/Applications/Google Chrome.app/Contents/MacOS/Google Chrome", "/Applications/Chromium.app/Contents/MacOS/Chromium"):
+        if os.access(m, os.X_OK): return m
     for n in ("chromium", "chromium-browser", "google-chrome"):
         c = shutil.which(n)
         if c: return c

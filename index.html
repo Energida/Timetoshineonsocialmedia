@@ -28491,6 +28491,7 @@ function skHoldSlip(tvang) {
   const h = SK_HOLD; if (!h) return;
   if (tvang !== true && (window.__NET || 0) > 0) { clearTimeout(h.ro); h.ro = setTimeout(function () { skHoldSlip(); }, 150); return; }
   SK_HOLD = null; holdFrysTjek(); clearTimeout(h.ro); clearTimeout(h.loft); try { h.mo.disconnect(); } catch (e) {}
+  try { if (window.__SK_EFTER_HOLD) { const f0 = window.__SK_EFTER_HOLD; window.__SK_EFTER_HOLD = null; f0(); } } catch (e) {}   /* v3417: den gamle sides body-klasser tages først af, når den skjules (spøgelset ved »Tilbage« fra briefen) */
   skToe();   /* den gamle side faar sine egne regler igen, i samme oejeblik den skjules (22/10) */
   const n = h.ny; if (n) { n.removeAttribute("data-bs-hold"); ["position", "visibility", "left", "top", "width", "pointer-events"].forEach(function (k) { n.style.removeProperty(k); }); }
   if (h.gammel && h.gammel !== n) h.gammel.style.display = "";
@@ -33073,10 +33074,10 @@ async function briefTilbage() {
   /* FRYS FOER KLASSERNE TAGES AF (22/10, jaegeren paa 390): klasserne herunder forsvandt, mens saveBrief ventede paa basen — briefen gled 10 px og skiftede form,
      foer siden overhovedet skiftede. Holdet i showTab loesner frysningen; gaar gemningen galt, loesnes den her, og man bliver paa briefen. */
   try { if (!document.body.classList.contains("dash-mode")) skFrys(document.querySelector(".screen.active")); } catch (e) {}
-  try { document.body.classList.remove("brief-overblik"); } catch (e) {}
-  try { document.body.classList.remove("brief-aaben"); } catch (e) {}
-  /* Telefonens brief-klasser maa ikke haenge ved paa Hjem (overflow-x, flex paa wrap) — 5/9. */
-  try { document.body.classList.remove("brief-etspm"); document.body.classList.remove("brief-sektioner"); } catch (e) {}
+  /* v3417 · SPØGELSET VED »TILBAGE« OG VED STATUSSKIFT (Ida 21/11, filmet: »det er når jeg klikker på tilbage - så kommer dette skift« · »det samme der også sker når jeg skifter status«).
+     MÅLT i selen 1440: briefens klasser (brief-aaben m.fl.) blev taget af HER, før saveBrief havde svaret — i hele ventetiden (målt 715 ms) stod briefens titel i hvidt på et gråt bånd.
+     Nu bliver klasserne siddende, til siden faktisk skifter: i kundeappen i det øjeblik holdet slipper (skHoldSlip), i Backstage under tæppet. Går gemningen galt, er briefen urørt. */
+  const brUd = function () { try { ["brief-overblik", "brief-aaben", "brief-etspm", "brief-sektioner"].forEach(function (k) { document.body.classList.remove(k); }); } catch (e) {} };   /* telefonens brief-klasser maa ikke haenge ved paa Hjem (5/9) */
   /* KNAPPEN SKIFTER IKKE LAENGERE TIL "GEMT" (Ida 4/8). Den hedder det, den GOER, hele
      vejen — og kvitteringen for et gem bor nu paa Gem-knappen i Fakta-hovedet, hvor man
      selv har bedt om den. Der gemmes stadig, foer man forlader siden.
@@ -33092,9 +33093,9 @@ async function briefTilbage() {
     /* SPØGELSESJÆGEREN (Ida 19/10: »jeg ser det rigtig mange steder!«, MÅLT live i Acorns): i kundeappen holder sideskiftet (SK_HOLD, 9/10)
        briefen fremme, til siden bag den er bygget — så tæppet her blinkede i 80 ms og løftede sig over den SAMME brief: brief → tæppe → brief → kalender.
        Tæppet bruges kun dér, hvor intet holder den gamle side: i Backstage (dash-mode). */
-    if (!document.body.classList.contains("dash-mode")) { document.body.classList.remove("brief-igang"); showTab((BRIEF_FRA != null && BRIEF_FRA !== 7) ? BRIEF_FRA : 2); if (window.__PR_RETUR) { window.__PR_RETUR = false; setTimeout(function () { try { planRitStart(); } catch (e) {} }, 120); } return; }
+    if (!document.body.classList.contains("dash-mode")) { window.__SK_EFTER_HOLD = function () { document.body.classList.remove("brief-igang"); brUd(); }; showTab((BRIEF_FRA != null && BRIEF_FRA !== 7) ? BRIEF_FRA : 2); if (!SK_HOLD && window.__SK_EFTER_HOLD) { const f0 = window.__SK_EFTER_HOLD; window.__SK_EFTER_HOLD = null; f0(); } if (window.__PR_RETUR) { window.__PR_RETUR = false; setTimeout(function () { try { planRitStart(); } catch (e) {} }, 120); } return; }
     try { privCoverVis(true); } catch (e) {}
-    document.body.classList.remove("brief-igang");
+    document.body.classList.remove("brief-igang"); brUd();
     showTab((BRIEF_FRA != null && BRIEF_FRA !== 7) ? BRIEF_FRA : 2);
     try {
       requestAnimationFrame(function () { requestAnimationFrame(function () {
@@ -47025,6 +47026,7 @@ window.addEventListener("message", function (e) {
     /* SLUTNINGEN FØRST og i sin egen try: en fejl andre steder må aldrig holde knappen låst. Sikring: de sidste 2 sekunder tæller som set til ende. */
     try {
       if (d && d.event === "ready") { lekVimeoLyt(document.getElementById("lekVideoIfr")); lekLydTil(); }
+      if (d && d.event === "play") window.__LEK_SPILLER = true; else if (d && (d.event === "pause" || d.event === "ended" || d.event === "finish")) window.__LEK_SPILLER = false;   /* v3417: bruges af mikrofonen */
       /* v3410 (Ida 20/11: »Vil du ændre det med at man ikke kan spole frem i videoerne - det skal man kunne igen - så slet reglen med 90%«): vælter 3403.
          Knappen låses op, når videoen er nået til ende — også hvis kunden har spolet. De sidste 2 sekunder tæller som slut, hvis slut-signalet udebliver. */
       if (d && (d.event === "ended" || d.event === "finish")) lekVideoSlut();
@@ -47045,10 +47047,11 @@ function lekVideoSlut() {
   const id = LEK_AABEN; if (!id) return;
   try { const s = lekSlutHent(); s[String(id)] = 1; localStorage.setItem("lek_slut_" + (currentKode || "X"), JSON.stringify(s)); } catch (e) {}
   try { document.querySelectorAll("#lekVidereKnap, #lekVis .lk-pil.lk-faerdig").forEach(function (k) { k.classList.remove("laast"); k.setAttribute("aria-disabled", "false"); k.removeAttribute("title"); k.style.opacity = ""; k.style.cursor = ""; }); } catch (e) {}
+  try { const b = document.getElementById("lk4Bund"); if (b) b.hidden = false; } catch (e) {}   /* v3417: »Markér som færdig« kommer frem under noterne, når videoen er slut */
 }
 /* v3414 (gennemgang 20/11): låsen gælder kun videoer, appen kan følge til ende (Vimeo og videofiler). En lektion uden video, eller med et andet link, kan markeres færdig — før var knappen død dér. */
 function lekVideoLaaser(l) { try { const v = String((l && l.video) || "").trim(); return !!v && (/vimeo\.com/i.test(v) || /\.(mp4|mov|webm|m4v)(\?|#|$)/i.test(v)); } catch (e) { return true; } }
-function lekFaerdigKlik(id) { let l = null; try { l = KURSUS_LEKTIONER.find(function (x) { return x.id === id; }); } catch (e) {} if (!lekErSetTilEnde(id) && lekVideoLaaser(l)) return; lekVidere(id); }
+function lekFaerdigKlik(id) { let l = null; try { l = KURSUS_LEKTIONER.find(function (x) { return x.id === id; }); } catch (e) {} if (!lekErSetTilEnde(id) && lekVideoLaaser(l)) { try { husBesked("Se videoen færdig først."); } catch (e) {} return; }   /* v3417: den låste knap svarer (ekspertholdet 21/11: før skete der ingenting) */ lekVidere(id); }
 /* ANDROID: gaar videoen i fuld skaerm, laases telefonen til liggende, saa den fylder det
    hele. iPhone kender ikke laasen (kaldet fejler stille) og foelger i stedet rotationen. */
 document.addEventListener("fullscreenchange", function () {
@@ -47253,7 +47256,7 @@ function lekMbRender() {
     roed = (KURSUS_UDSAT[id] && nx && !lekLaastAfForrige(nx.id) && !sidsteAabne) ? lekMbPil('Videre', "lekNaeste()", true, "pilH", true) : lekMbPil('Videre', KURSUS_UDSAT[id] ? "lekOevFortsaet('" + id + "')" : "lekNaeste()", true, "pilH", true);   /* ÉT ORD FOR VEJEN FREM: »VIDERE« (Ida 20/11: »for at gøre det lettere ift diff mellem reflektionsøvelser og opgaver tror jeg vi skal vælge videre« · »og næste laves om til videre«) */
   }
   else roed = sidsteAabne ? lekMbPil('Tilbage til forløbet', "lukLektion()", true) : lekMbPil('Videre', "lekNaeste()", true, "pilH", true);
-  const hvid = (forrige ? lekMbPil('Forrige lektion', "visLektion('" + forrige.id + "')", false, "pilV") : '')
+  const hvid = (forrige ? lekMbPil('Forrige', "visLektion('" + forrige.id + "')", false, "pilV") : '')
     + (tlf && !ucov ? lekMbPil('Tilbage', "lukLektion()") : '');
   /* OVERBLIKKET ER EEN LINJE (Idas klik 24/9, lektions-bud 1): modulets lektioner, ikke alle 48 — og en tynd bjaelke */
   const modAkt = aktive.filter(x => { const m2 = lekModulFor(x.id); return m2 && modul && m2.titel === modul.titel; });
@@ -47282,34 +47285,41 @@ function lekMbRender() {
     + '<span class="lkw-pop">' + vkKn("farve", "lekNoteFarvePanel('farve',this)", "Skriftfarve", '<span class="lkw-ik"><span class="lkw-b" style="font-size:16px;line-height:1">A</span><i class="lkw-streg" id="lkwFarveStreg" style="background:#FC2404"></i></span>') + '</span>'
     + vkKn("ryd", "lekNoteFormat('ryd')", "Ryd formatering", '<span class="lkw-ik"><svg viewBox="0 0 24 24"><path d="M6 5h12M12 5l-3 14"/><path d="M15 15l5 5M20 15l-5 5"/></svg></span>')
     + '<span class="lkw-sk"></span>'
-    + [["H", "lekNoteFormat('H')", "Overskrift"], ["ul", "lekNoteFormat('ul')", "Punkter"], ["ol", "lekNoteFormat('ol')", "Nummereret"], ["tjek", "lekNoteFormat('tjek')", "Tjekliste"]].map(k => vkKn(k[0], k[1], k[2], LK_SVG[k[0]])).join("");
+    + [["H", "lekNoteFormat('H')", "Overskrift"], ["ul", "lekNoteFormat('ul')", "Punkter"], ["ol", "lekNoteFormat('ol')", "Nummereret"], ["tjek", "lekNoteFormat('tjek')", "Tjekliste"]].map(k => vkKn(k[0], k[1], k[2], LK_SVG[k[0]])).join("")
+    + vkKn("mere", "lk4VaerkMere(this)", "Flere værktøjer", '<span class="lkw-b" style="font-weight:400">Aa</span>');
   const gemt = (KURSUS_NOTER[id] || []).find(n => n.html);
   const lkuTop = ucov ? '<div class="lku-top"><div role="button" tabindex="0" class="lku-tilb dbtn" onclick="lekTilForloebet()"><svg width="8" height="14" viewBox="0 0 8 14" fill="none" aria-hidden="true"><path d="M7 1L1 7l6 6" stroke="#686868" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>' + esc(lekSideNavn()) + '</div>' + lekFavKnap(id) + '</div>' : '';
   const lkuTid = ucov ? lekTidTekst(id) : '';
   const lkuTitel = ucov ? '<div class="lku-titel">' + esc(lekVisNr(id) + " " + lekVisTitel(l)) + '</div><div class="lku-meta">' + esc(lekHeroModul(l.id, "")) + '<span id="lkuTid">' + (lkuTid ? ' · ' + lkuTid : '') + '</span></div>' : '';
   const lkuOpg = (l.ovelse && !mgErGentagelig(id)) ? lekOpgFliseHtml(id, l, aktive, ix) : '';
+  const lk4Kn = '<div class="lk-knapper lek-bar lk-knapper-top lk4-top">' + hvid + roed + '</div>';
+  const lk4Klar = set || lekErSetTilEnde(id) || !lekVideoLaaser(l);   /* den røde knap gentages under noterne, når videoen er set (ekspertholdet 21/11: man kigger nedad, når videoen slutter) */
   document.getElementById("lekMain").innerHTML =
-      (ucov ? lkuTop : overblik)   /* titlen staar i heroen — ikke en gang til (Hans-testen 24/9: titlen stod tre gange) */
+      (ucov ? lkuTop + lk4Kn : '<div class="lk4-hoved">' + overblik + lk4Kn + '</div>')   /* v3417 BUD 4 (Idas forslag 21/11: »mindre knapper og knapperne over videoen«, »Ja, lad os gøre det«): knapperne står småt OVER videoen, noterne lige under — vælter 20/11 (knapperne under videoen) */   /* titlen staar i heroen — ikke en gang til (Hans-testen 24/9: titlen stod tre gange) */
     + (l.ovelse && erEjerOevelse(id) ? '<div class="lk-versal" style="margin:-8px 0 14px;">Ejerens øvelse</div>' : '')
     + video + lkuTitel
     + (ucov && lkuOpg ? '<div class="lku-sek">' + esc(storStart(oevOrd(id))) + '</div>' : '') + lkuOpg   /* opgaven under videoen (bud 1, 11/11) */
-    + '<div class="lk-knapper lek-bar lk-knapper-top">' + (tlf ? roed + hvid : hvid + roed) + '</div>'   /* KNAPPERNE STÅR LIGE UNDER VIDEOEN, NOTERNE UNDER DEM (Ida 20/11: »knapperne skal flyttes op under videoen og noterne under«) */
+    /* (v3417: knaprækken er flyttet op over videoen — se lk4Kn) */   /* KNAPPERNE STÅR LIGE UNDER VIDEOEN, NOTERNE UNDER DEM (Ida 20/11: »knapperne skal flyttes op under videoen og noterne under«) */
     + '<div id="lekFiler"></div>'   /* MATERIALER (Idas klik 23/10): filerne paa lektionen — tegnes, naar listen er hentet */
     /* MODULETS LEKTIONER UNDER VIDEOEN PAA TELEFONEN (bud 1): hvor er jeg, og hvad kommer — ét tryk til en anden lektion */
-    + ((tlf && !ucov && modul && (modAkt.length > 1 || lksSkemaHer(modulNrFor(id)))) ? '<div class="lks lks-tlf" id="lksTlf">' + lksModul(modul, id) + '</div>' : '')   /* telefonen: modulets lektioner som fliser, den røde er lektionen du står i (Idas klik 26/10, bud 1 + B) */
     + (ucov ? '<div class="lku-sek">Mine noter</div>' : '<div class="lk-oversk">Dine noter</div>')   /* OVERSKRIFTEN STÅR OVER FLISEN — ALDRIG INDE I DEN (Ida 15/11: »hvordan er det fucking muligt at jeg ser en overskrift inde i en flise på b2b siden????!«) */
     + '<div class="lk-flise' + (noteAaben ? '' : ' luk') + '" id="lekNotePanel">'
     + '<div class="lk-note-krop"><div class="lk-vaerktoej lk-word">' + vk + '</div>'
-    + '<div class="lk-felt-ramme"><div class="lk-note-felt" id="lekNoteFelt" contenteditable="true" data-ph="Hvad fik lektionen dig til at tænke over?" oninput="lekNoteSnart()" onkeyup="lekNoteVaerktoejOpdater()" onmouseup="lekNoteVaerktoejOpdater()" onfocus="lekNoteFokus()">' + (gemt ? lekNoteRen(gemt.html) : '') + '</div></div>'
-    + '<div class="lk-note-fod"><span class="lk-note-gemt">Gemmes af sig selv</span></div>'   /* »ALLE NOTER« ER FJERNET FRA NOTEFELTET (Ida 15/11, testperson) — noterne findes i notesbogen i Værktøjskassen */   /* husets graa knap, ikke et roedt ord i etiketten (Idas kommentar 24/9) */
+    + '<div class="lk-felt-ramme"><div class="lk-note-felt" id="lekNoteFelt" contenteditable="true" data-ph="Hvad fik lektionen dig til at tænke over?" oninput="lekNoteSnart()" onkeyup="lekNoteVaerktoejOpdater()" onmouseup="lekNoteVaerktoejOpdater()" onfocus="lekNoteFokus();lk4Skriver()">' + (gemt ? lekNoteRen(gemt.html) : '') + '</div></div>'
+    + '<div class="lk-note-fod"><span class="lk-note-gemt">' + (gemt ? 'Gemt' : '') + '</span></div>'   /* »ALLE NOTER« ER FJERNET FRA NOTEFELTET (Ida 15/11, testperson) — noterne findes i notesbogen i Værktøjskassen */   /* husets graa knap, ikke et roedt ord i etiketten (Idas kommentar 24/9) */
     + '<div class="lek-note-liste" id="lekNoteListe"></div>'
     + '</div></div>'
+    + '<div class="lk-knapper lk4-bund" id="lk4Bund"' + (lk4Klar ? '' : ' hidden') + '>' + roed + '</div>'
+    + ((tlf && !ucov && modul && (modAkt.length > 1 || lksSkemaHer(modulNrFor(id)))) ? '<div class="lks lks-tlf" id="lksTlf">' + lksModul(modul, id) + '</div>' : '')   /* v3417: listen står UNDER noterne · telefonen: modulets lektioner som fliser, den røde er lektionen du står i (Idas klik 26/10, bud 1 + B) */
     + (l.ovelse && mgErGentagelig(id) ? lekGjortHtml(id) : '')   /* den gentagelige målgruppe-øvelse beholder sin cirkel */
     + (l.ovelse && mgErGentagelig(id) ? mgKortHtml() : '');
   const side = document.getElementById("lekSide");
   /* VENSTRE KOLONNE ER VAEK PAA BEGGE FLADER (Idas klik 24/9): stien/buen er vejen tilbage, »Alle noter« staar i noteflisen */
   /* LISTEN ER TILBAGE (Ida 8/10, lektionssiden bud 1 — vælter 24/9): computer = hele forløbet i venstre kolonne; telefon = modulets lektioner under videoen */
-  if (!tlf) { side.innerHTML = lekSideHtml(id, aktive, setAntal); side.style.display = ""; document.body.classList.remove("lek-enspalte"); setTimeout(function () { try { const a = side.querySelector(".lks-lek.nu"); if (a) side.scrollTop = Math.max(0, a.offsetTop - side.clientHeight / 2); } catch (e) {} }, 60); }   /* listen ruller selv til lektionen, man står i */
+  if (!tlf) { side.innerHTML = '<div class="lk4-liste">' + lekSideHtml(id, aktive, setAntal) + '</div><div class="lk4-noter" id="lk4Noter"></div>'; side.style.display = ""; document.body.classList.remove("lek-enspalte");
+    /* v3417 BUD 4: på computeren står noterne i venstre spalte under lektionslisten, så de ses ved siden af videoen. Kun notefeltet flyttes — videoens ramme røres aldrig (den ville starte forfra). */
+    try { const nb = document.getElementById("lk4Noter"), np = document.getElementById("lekNotePanel"), no = np && np.previousElementSibling; if (nb && np) { if (no && (no.classList.contains("lk-oversk") || no.classList.contains("lku-sek"))) nb.appendChild(no); nb.appendChild(np); } } catch (e) {}
+    setTimeout(function () { try { const li = side.querySelector(".lk4-liste"), a = side.querySelector(".lks-lek.nu"); if (a && li) li.scrollTop = Math.max(0, a.offsetTop - li.clientHeight / 2); } catch (e) {} }, 60); }   /* listen ruller selv til lektionen, man står i */
   else { side.innerHTML = ''; side.style.display = "none"; document.body.classList.add("lek-enspalte"); }
   try { if (tlf) { const lv = document.getElementById("lekVis"); const bd = lv && lv.querySelector(":scope > .mb-baand"); if (bd && typeof coverKnapperUd === "function") setTimeout(function () { try { coverKnapperUd(bd, [], 16, null, lv); } catch (e) {} }, 60); } } catch (e) {}
   renderLekNoteListe();
@@ -47488,7 +47498,17 @@ function lekNoteGemRig() {
   kursusGemLocal();
   noteGemSikker(typeof LEK_AABEN !== "undefined" ? LEK_AABEN : null);
 }
-function lekNoteFokus() { if (KURSUS_PREF.videoNote !== "koer" && !LEK_PAUSET) { lekVideoPause(); LEK_PAUSET = true; } }
+/* v3417 (Idas ord 21/11: »så folk let kan skrive noter mens de ser lektionen«): videoen KØRER VIDERE, mens man skriver — vælter »pause er standard« (13/9 og 28/9).
+   Pausen var gemt som standard hos alle uden at de havde valgt den; derfor tæller »pause« kun, når kunden selv har valgt det under Indstillinger (videoNoteValgt). */
+function lk4PauseVedSkriv() { return KURSUS_PREF.videoNote === "pause" && KURSUS_PREF.videoNoteValgt === true; }
+function lekNoteFokus() { if (lk4PauseVedSkriv() && !LEK_PAUSET) { lekVideoPause(); LEK_PAUSET = true; } }
+function lk4Skriver() {
+  try { const p = document.getElementById("lekNotePanel"); if (p) p.classList.add("skriver"); } catch (e) {}
+  /* telefonen: videoen rulles til toppen, så den kan ses over tastaturet, og bliver lavere, mens man skriver (ingen sticky — den hopper på iPhone) */
+  try { if (window.matchMedia("(max-width:899px)").matches) { document.body.classList.add("lk4-skriv"); const lv = document.getElementById("lekVis"), v = lv && lv.querySelector(".lek-video"); if (lv && v) setTimeout(function () { try { lv.scrollTop += v.getBoundingClientRect().top - lv.getBoundingClientRect().top - 8; } catch (e) {} }, 320); } } catch (e) {}
+}
+function lk4VaerkMere(kn) { try { const v = kn.closest(".lk-vaerktoej"); if (v) { v.classList.toggle("alle"); kn.classList.toggle("on", v.classList.contains("alle")); } } catch (e) {} }
+document.addEventListener("focusout", function (e) { try { if (e.target && e.target.id === "lekNoteFelt") setTimeout(function () { const a = document.activeElement; if (!(a && a.closest && a.closest("#lekNotePanel"))) document.body.classList.remove("lk4-skriv"); }, 250); } catch (er) {} });
 function lekNoteFold(kn) {
   const f = kn.closest(".lk-flise"); if (!f) return;
   f.classList.toggle("luk");
@@ -47948,7 +47968,7 @@ function visNotePrefValg() {
     + '<button class="dbtn" style="width:100%;background:#fff;border:1px solid var(--border);" onclick="vaelgVideoPref(\'koer\', true)">Lad videoen k&oslash;re videre</button>');
 }
 async function vaelgVideoPref(v, aabnEfter) {
-  KURSUS_PREF.videoNote = v;
+  KURSUS_PREF.videoNote = v; KURSUS_PREF.videoNoteValgt = true;   /* v3417: nu er det kundens eget valg */
   kursusGemLocal();
   kursusBlobGem("kursus_pref", KURSUS_PREF);
   lukLekPop();
@@ -48002,7 +48022,7 @@ function renderLekNoteListe() {
 
 /* ---------- indstillinger (kursist): note-valget kan altid ændres her ---------- */
 function openKursusIndstillinger() {
-  const v = KURSUS_PREF.videoNote || "pause";   /* pause er standard (28/9) */
+  const v = (typeof lk4PauseVedSkriv === "function" && lk4PauseVedSkriv()) ? "pause" : "koer";   /* v3417: videoen kører videre som standard */
   const valg = (val, titel, sub) =>
     '<div onclick="vaelgVideoPref(\'' + val + '\');openKursusIndstillinger()" style="border:2px solid ' + (v === val ? 'var(--red)' : 'var(--border)') + ';border-radius:20px;padding:13px 15px;margin-bottom:8px;cursor:pointer;background:#fff;">'
     + '<div style="font-size:13px;font-weight:400;' + (v === val ? 'color:var(--red);' : '') + '">' + titel + (v === val ? ' &#10003;' : '') + '</div>'
@@ -49576,6 +49596,8 @@ async function sqlAlleKoert() {
 
 async function sqlKortNulstil() {
   /* Fortryd: fjernede Supabase-kort vises igen — lokal liste + sky-listen tømmes (Ida 28/7) */
+  /* v3416 (sikkerhedsgennemgang 21/11): spoerger foerst — eet tryk hentede alle kort tilbage uden at spoerge */
+  if (!arkOk("sqlKortNulstil", arguments, { titel: "Vis alle kort igen?", tekst: "Alle kort, du har markeret som kørt, kommer tilbage.", jaTekst: "Ja, vis dem" })) return;
   try { localStorage.removeItem("energida_sql_koert"); } catch(e) {}
   if (sb) { try { await sb.from("skema_svar").delete().eq("kode", "ENERGIDA").eq("navn", "config").eq("skema", "sql_koert"); } catch(e) {} }
   location.reload();
@@ -50265,8 +50287,9 @@ const SYSTEMTJEK = [
    Rækkerne bærer kode ZZ_SYSTEMTJEK, så de aldrig kan forveksles med rigtige data. */
 const SYSTEMTJEK_SKRIV = [
   ["skema_svar", "Kundeadgange, fremdrift og delte lister", () => ({ kode: "ZZ_SYSTEMTJEK", navn: "systemtjek", skema: "skrivetest", svar: { proeve: true } })],
-  ["virksomhedskoder", "Oprettelse af nye kunder", () => ({ kode: "ZZ_SYSTEMTJEK", virksomhed: "Systemtjek", forloeb: "Prøve", aktiv: false })],
-  ["moduler", "Modul-forsiderne", () => ({ nr: -999, titel: "Systemtjek", beskrivelse: "" })]
+  ["virksomhedskoder", "Oprettelse af nye kunder", () => ({ kode: "ZZ_SYSTEMTJEK", virksomhed: "Systemtjek", forloeb: "Prøve", aktiv: false })]
+  /* v3416 (sikkerhedsgennemgang 21/11): proeveraekken i »moduler« er ude — tabellen kan laeses af alle uden login, saa en proeveraekke,
+     der ikke blev ryddet, ville staa som et modul »Systemtjek« hos kunderne */
 ];
 async function systemtjekSkriv() {
   const ud = [];
@@ -70066,7 +70089,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "3415";
+const APP_VERSION = "3417";
 const APP_BYGGET = "3. november";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_VERSION;   /* ingen dato (Ida 7/11: »hvorfor står der version 3. november?«) — datoen blev ikke rettet med, nummeret er sandheden */ } catch (e) {} });
 let NY_VERSION_KLAR = false;
@@ -76733,6 +76756,9 @@ async function enterApp() {
       try { await dashCitaterHent(); } catch(e) {}   /* Idas citater til dashboardet (12/9) */
       try { await dashHilsnerHent(); } catch(e) {}   /* Idas velkomsthilsner (13/9) */
       try { await bsSoejlerHent(); } catch(e) {}     /* soejlernes ord fra Beskrivelser (18/9) */
+      /* v3416 (sikkerhedsgennemgang 21/11): »Se som kunden« er KUN for admin. En kunde, der selv skriver #somkunde=ANDENKODE, faar sin egen kode
+         (databasen afviste allerede laesningen — MAALT 21/11: kunde A ser 0 af kunde B's raekker — men appen maa ikke engang proeve). */
+      if (SOM_KUNDE && am.rolle !== "admin" && SOM_KUNDE !== String(md.kode || "").toUpperCase()) { SOM_KUNDE = ""; try { history.replaceState(null, "", location.pathname + location.search); } catch (e) {} }
       if (SOM_KUNDE) md.kode = SOM_KUNDE;   // admin åbner en forløbskundes side
       currentKode = md.kode ? String(md.kode).toUpperCase() : "";
       CURRENT_NAVN = md.navn || "";                    // medarbejderens eget navn → bruges på skemasvar
@@ -84026,6 +84052,8 @@ function taleToggle(feltId) {
      starte, ruller onend farven tilbage OG siger hvorfor. */
   taleKnapVis(feltId, true);
   try { taleNiveauStart(felt); } catch (e) {}
+  /* v3417: mens mikrofonen optager en note, holder lektionsvideoen pause og starter selv igen (Hans vil se videre, Mette kan ikke høre sig selv) */
+  try { if (typeof LEK_AABEN !== "undefined" && LEK_AABEN && window.__LEK_SPILLER) { lekVideoPause(); const o4 = rec.onend; rec.onend = function () { try { if (o4) o4.apply(this, arguments); } catch (e4) {} try { lekVideoAfspil(); } catch (e5) {} }; } } catch (e3) {}
   try { rec.start(); TALE_REC = rec; } catch(e) { TALE_REC = null; taleKnapVis(feltId, false); if (taleErIos()) { taleTastatur(feltId); return; } window.__TALE_FEJL = "start"; taleFejlVis(feltId); }
 }
 /* Kan mikrofonen ikke bruges, skal det SIGES — en hvid knap, der ikke svarer, ligner
@@ -89248,10 +89276,13 @@ async function kkOpretLogin() {
 }
 
 async function delStandard(id) {
+  /* v3416 (sikkerhedsgennemgang 21/11): spoerger foerst; listen rettes foerst, naar basen har slettet raekken */
+  if (!arkOk("delStandard", arguments, { titel: "Slet standardopgaven?", tekst: "Det kan ikke fortrydes.", jaTekst: "Ja, slet" })) return;
+  if (sb && String(id).indexOf("s") !== 0) { try { const { data, error } = await sb.from("standard_opgaver").delete().eq("id", id).select("id"); if (error || !data || !data.length) { husBesked("Standardopgaven blev ikke slettet. Prøv igen."); return; } } catch(e) { try { husBesked("Standardopgaven blev ikke slettet. Prøv igen."); } catch (e2) {} return; } }
   STANDARD_OPGAVER = STANDARD_OPGAVER.filter(x => String(x.id) !== String(id));
-  if (sb && String(id).indexOf("s") !== 0) { try { await sb.from("standard_opgaver").delete().eq("id", id); } catch(e) {} }
-  else { try { localStorage.setItem("standard_opgaver", JSON.stringify(STANDARD_OPGAVER)); } catch(e) {} }
+  if (!(sb && String(id).indexOf("s") !== 0)) { try { localStorage.setItem("standard_opgaver", JSON.stringify(STANDARD_OPGAVER)); } catch(e) {} }
   if (KUNDEKORT) renderKundeKort();
+  try { renderMaskinrum(); } catch (e) {}
 }
 
 
@@ -90106,7 +90137,9 @@ async function aktiverKundeOpgave(id) {
 }
 async function delKundeOpgave(id) {
   if (!sb) return;
-  try { await sb.from("kunde_opgaver").delete().eq("id", id); } catch(e) {}
+  /* v3416 (sikkerhedsgennemgang 21/11): spoerger foerst og taeller raekken — foer blev kundens opgave slettet med eet tryk, og en fejl var tavs */
+  if (!arkOk("delKundeOpgave", arguments, { titel: "Slet opgaven?", tekst: "Det kan ikke fortrydes.", jaTekst: "Ja, slet" })) return;
+  try { const { data, error } = await sb.from("kunde_opgaver").delete().eq("id", id).select("id"); if (error || !data || !data.length) { husBesked("Opgaven blev ikke slettet. Prøv igen."); return; } husKvit("Slettet."); } catch(e) { try { husBesked("Opgaven blev ikke slettet. Prøv igen."); } catch (e2) {} return; }
   refreshKundeOpgaver();
 }
 
@@ -90140,7 +90173,9 @@ async function refreshKundeAftaler() {
 
 async function delKundeAftale(id) {
   if (!sb) return;
-  try { await sb.from("kunde_aftaler").delete().eq("id", id); } catch(e) {}
+  /* v3416 (sikkerhedsgennemgang 21/11): spoerger foerst og taeller raekken */
+  if (!arkOk("delKundeAftale", arguments, { titel: "Slet aftalen?", tekst: "Det kan ikke fortrydes.", jaTekst: "Ja, slet" })) return;
+  try { const { data, error } = await sb.from("kunde_aftaler").delete().eq("id", id).select("id"); if (error || !data || !data.length) { husBesked("Aftalen blev ikke slettet. Prøv igen."); return; } husKvit("Slettet."); } catch(e) { try { husBesked("Aftalen blev ikke slettet. Prøv igen."); } catch (e2) {} return; }
   refreshKundeAftaler();
 }
 
@@ -91927,9 +91962,12 @@ function saveNote(id, val) {
 function exportCsv() {
   const list = CUSTOMERS;
   if (!list.length) { husBesked("Ingen kontakter at eksportere endnu."); return; }
+  /* v3416 (sikkerhedsgennemgang 21/11): spoerger foerst (filen har alle kontakters mail og telefon), og et felt, der begynder med = + - @,
+     faar en apostrof foran, saa Excel ikke koerer det som en formel */
+  if (!arkOk("exportCsv", arguments, { titel: "Hent alle kontakter som fil?", tekst: list.length + (list.length === 1 ? " kontakt" : " kontakter") + " med mail og telefon gemmes på din computer.", jaTekst: "Ja, hent filen" })) return;
   const head = ["Virksomhed/navn","Kontaktperson","Email","Telefon","Status","Produkt","Kategori","Kommentar","Kilde","Oprettet"];
   const rows = list.map(c => [c.kunde,c.kontaktperson,c.email,c.telefon,c.status,c.produkt,c.vaelg,c.kommentar,c.source,fmtDate(c.created)]
-    .map(v => '"' + (v || "").toString().replace(/"/g, '""') + '"').join(","));
+    .map(v => { let t = (v || "").toString(); if (/^[=+\-@\t\r]/.test(t)) t = "'" + t; return '"' + t.replace(/"/g, '""') + '"'; }).join(","));
   const csv = [head.join(","), ...rows].join("\n");
   const blob = new Blob(["﻿" + csv], {type: "text/csv;charset=utf-8;"});
   const a = document.createElement("a");
@@ -103712,6 +103750,43 @@ html body .lks-fl.lks-oev.lks-opg .lks-tom:not(.lks-tom-nu) { border:2px solid #
 html body .ftl2-vent { margin:-2px 0 10px 28px; max-width:692px; display:flex; flex-direction:column; gap:8px; }
 html body .ftl2-vent .lks-fl.lks-oev { margin-left:0; display:flex; gap:12px; cursor:pointer; }
 @media (max-width:899px) { html body .ftl2-vent { margin-left:20px; max-width:none; } }
+/* v3417 · BUD 4: SMÅ KNAPPER OVER VIDEOEN, NOTERNE LIGE UNDER (Idas forslag 21/11 + ekspertholdet; Idas »Ja, lad os gøre det«) */
+html body.lek-mb #lekVis .lk4-hoved { display:flex; align-items:flex-start; gap:16px; margin:0 0 12px; }
+html body.lek-mb #lekVis .lk4-hoved > .lk-overblik { flex:1 1 auto; min-width:0; margin-bottom:0; }
+html body.lek-mb #lekVis .lk-knapper.lek-bar.lk4-top { display:flex !important; flex:0 0 auto; flex-wrap:nowrap !important; justify-content:flex-end !important; gap:12px !important; margin:0 !important; }
+html body.lek-mb #lekVis#lekVis .lk-knapper.lek-bar.lk4-top .lk-pil { height:44px !important; min-height:44px !important; font-size:13px !important; min-width:0 !important; width:auto !important; flex:0 0 auto !important; padding:0 18px !important; font-size:13px; }
+html body.lek-mb #lekVis .lk-knapper.lek-bar.lk4-top .lk-pil.roed:only-child { margin-left:auto; }
+html body.lek-mb #lekVis .lk-knapper.lk4-bund { display:flex; justify-content:flex-end; margin:16px 0 24px; }
+html body.lek-mb #lekVis .lk-knapper.lk4-bund[hidden] { display:none !important; }
+html body.lek-mb #lekVis .lk-knapper.lk4-bund .lk-pil { height:48px; }
+html body.lek-mb #lekNotePanel .lk-vaerktoej { display:none; }
+html body.lek-mb #lekNotePanel.skriver .lk-vaerktoej { display:flex; flex-wrap:wrap; gap:6px; margin:12px 0 0; }
+html body.lek-mb #lekNotePanel .lk-vaerktoej > * { display:none; }
+html body.lek-mb #lekNotePanel .lk-vaerktoej > [data-f="ul"], html body.lek-mb #lekNotePanel .lk-vaerktoej > [data-f="tjek"], html body.lek-mb #lekNotePanel .lk-vaerktoej > [data-f="ol"], html body.lek-mb #lekNotePanel .lk-vaerktoej > [data-f="B"], html body.lek-mb #lekNotePanel .lk-vaerktoej > [data-f="mere"] { display:inline-flex; }
+html body.lek-mb #lekNotePanel .lk-vaerktoej > [data-f="ul"] { order:-5; } html body.lek-mb #lekNotePanel .lk-vaerktoej > [data-f="tjek"] { order:-4; } html body.lek-mb #lekNotePanel .lk-vaerktoej > [data-f="ol"] { order:-3; } html body.lek-mb #lekNotePanel .lk-vaerktoej > [data-f="B"] { order:-2; } html body.lek-mb #lekNotePanel .lk-vaerktoej > [data-f="mere"] { order:-1; }
+html body.lek-mb #lekNotePanel .lk-vaerktoej.alle > * { display:inline-flex; }
+html body.lek-mb #lekNotePanel .lk-vaerktoej button { width:44px; height:44px; }
+html body.lek-mb #lekNotePanel .lk-note-krop { display:flex; flex-direction:column; }
+html body.lek-mb #lekNotePanel .lk-note-krop > .lk-felt-ramme { order:-1; }
+html body.lek-mb #lekNotePanel .lk-note-fod { margin:10px 0 0; min-height:0; }
+html body.lek-mb #lekNotePanel .lk-note-gemt { font-size:14px; color:#1A1A1A; }
+html body.lek-mb #lekNotePanel .lk-note-gemt:empty { display:none; }
+@media (min-width:900px) {
+  html body.lek-mb #lekVis .lek-side { display:flex !important; flex-direction:column; overflow:hidden; }
+  html body.lek-mb #lekVis .lk-knapper.lk4-bund { display:none !important; }   /* computeren: knappen øverst er i syne sammen med videoen — ingen dobbelt rød knap */
+  html body.lek-mb #lekVis .lek-side > .lk4-liste { flex:0 1 auto; min-height:120px; overflow-y:auto; padding:20px; margin:-20px -20px 0; }
+  html body.lek-mb #lekVis .lek-side > .lk4-noter { flex:0 0 auto; }
+  html body.lek-mb #lekVis .lek-side > .lk4-noter .lk-oversk, html body.lek-mb #lekVis .lek-side > .lk4-noter .lku-sek { margin-top:20px; }
+  html body.lek-mb #lekVis .lek-side > .lk4-noter .lk-note-felt { min-height:110px; max-height:34vh; overflow-y:auto; }
+}
+@media (max-width:899px) {
+  html body.lek-mb #lekVis .lk-knapper.lek-bar.lk4-top { justify-content:space-between !important; margin:0 0 12px !important; }
+  html body.lek-mb #lekVis .lk4-hoved { display:block; }
+  html body.lek-mb #lekVis .lk4-hoved > .lk-overblik { margin-bottom:12px; }
+  html body.lek-mb #lekVis .lk-oversk { margin-top:16px; }
+  html body.lek-mb #lekVis .lk-knapper.lk4-bund .lk-pil { width:100%; }
+  html body.lek-mb.lk4-skriv #lekVis .lek-video { width:min(100%, 284px); margin-left:auto; margin-right:auto; }
+}
 /* v3395 (Ida 20/11) — MODULFLISERNE: cirkel som lektionerne (tom · rødt flueben · hængelås), ingen pil, ingen fold-ud */
 html body #forloebTidslinje .ftl2 .ftl2-hoved, html body #forloebTidslinje .ftl2 .ftl2-rk.laast { display:flex !important; align-items:center !important; justify-content:flex-start !important; gap:16px !important; cursor:pointer; }
 html body #forloebTidslinje .ftl2 .ftl2-rk.laast { cursor:default; }
@@ -103747,7 +103822,7 @@ html body.lek-mb #lekVis .lk-flise.lk-skema, html body #lekVis .lk-flise.lk-skem
 
 
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-hvid.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 20. november · 3415</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 20. november · 3417</div>
 <script>
 /* DROPDOWNEN RULLER SELV (Ida 4/10) — maal den aabne liste og klip den ved skaermens bund */
 (function () {

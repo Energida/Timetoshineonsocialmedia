@@ -175,7 +175,10 @@ setTimeout(async function () {
         /* HJEM = UGESTRIMLEN (25/9): datofliserne er fliser som .uge-dag (trykfelt 44+), og »I dag« er linjens pille som stiens Tilbage */
         /* »SE ALLE« FOR ENDEN AF SEKTIONSLINJEN (Idas klik 29/9, bud 1, K4x3Ln4DduuT16Bq6Euizx): en tekstknap i linjens hoejre ende paa Hjem (Opgaver, Kommende aktiviteter) — trykfeltet er 44 via ::before (revision 6/10) */
         + ".cf-se,"
-        + ".hu-dag,.hu-idag";   /* 15/9: tilfoej-knappen er 44 px i egen bredde paa telefonen (Idas klik). Lektionssiden (Idas klik 19.45, mockup v3): note-folden og »Alle noter« er tekstknapper i flisens hoved (44 px hoeje), vaerktoejslinjen er 44 px-cirkler. */
+        + ".hu-dag,.hu-idag"
+        /* LEKTIONENS TO KNAPPER OVER VIDEOEN ER SMÅ (Ida 21/11: »mindre knapper og knapperne over videoen« · »Ja, lad os gøre det« · »Ja, små knapper«, v3417 bud 4):
+           »Forrige« og »Markér som færdig«/»Videre« står side om side over videoen, 44 px høje, så notefeltet kan stå lige under videoen. KUN .lk4-top — alle andre knapper på telefonen er stadig lange. */
+        + ",.lk4-top";   /* 15/9: tilfoej-knappen er 44 px i egen bredde paa telefonen (Idas klik). Lektionssiden (Idas klik 19.45, mockup v3): note-folden og »Alle noter« er tekstknapper i flisens hoved (44 px hoeje), vaerktoejslinjen er 44 px-cirkler. */
       var lange = [].filter.call(r.querySelectorAll("button, label.ark-knap, label.dbtn, a.dbtn"), function (b) {
         var q = b.getBoundingClientRect(); if (!(q.height > 0 && q.width > 0)) return false;
         if (b.closest(UNDT)) return false;

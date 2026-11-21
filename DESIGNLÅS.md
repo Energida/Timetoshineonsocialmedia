@@ -10,6 +10,39 @@ Idas ord: »vi dropper alt der hedder reflektionsøverlser og kalder alt opgaver
 - Cirklen i »Venter på dig« åbner opgaven; intet markeres som færdigt uden svar.
 - Energida Studio › Opgave: fanen viser opgaven, som kunden ser den, én side ad gangen. Hver tekst rettes ved at klikke på den (stiplet lyseblå kant og rød blyant; lyseblå flade, mens der skrives). »Spørgsmål på samme side«, »Ny side«, »Slet spørgsmålet«, og sidste side er kundens »Godt gået«. Fanen »Refleksionsøvelse« og valget »Hvad er det?« er væk.
 
+
+
+## v3417 · Lektionssiden: små knapper over videoen, noterne lige under (bud 4) — bygget, afventer Idas »Ja, læg 3417 ud«
+
+Idas ord 21/11: »Værktøjslinjen fylder for meget ift notefeltet ikke er tilgængeligt« · »Knapperne fylder jo også lidt mellem« · »Så folk let kan skrive noter mens de ser lektionen« · »Der er ingen der har forslået mindre knapper og knapperne over videoen?« · »Ja, lad os gøre det« · »Ja, små knapper«. Hans og Mette-test + ekspertholdet 21/11 (bud i `Energida-app/bud/noter-ved-video/`).
+
+**Vælter:** 20/11 »knapperne skal flyttes op under videoen og noterne under« · 14/9 »kun lange knapper på telefonen« for NETOP de to knapper over videoen (`.lk4-top`, undtagelse i `probe-sider.js`) · 13/9 og 28/9 »pause er standard, når man skriver en note«.
+
+- **Knapperne står over videoen**, 44 px høje, kun så brede som teksten: »Forrige« (hvid, venstre) og »Markér som færdig«/»Videre« (rød, højre). Computer: på samme linje som lektionens titel.
+- **Telefon:** notefeltet står lige under videoen; modulets lektionsliste står under noterne. Når man skriver, rulles videoen til toppen og bliver lav (284 px bred), så den ses over tastaturet. Ingen sticky.
+- **Computer:** »Dine noter« står i venstre spalte under lektionslisten, ved siden af videoen. Kun notefeltet flyttes — videoens ramme røres aldrig.
+- **Værktøjslinjen** vises først, når man trykker i feltet, under feltet: Punkter · Tjekliste · Nummereret · Fed · »Aa« (folder resten af Word-linjen ud). Alle 44 px.
+- **»Markér som færdig« gentages under noterne på telefonen**, når videoen er set. Den låste knap svarer »Se videoen færdig først.«
+- **Videoen kører videre, mens man skriver.** Pause kun, hvis kunden selv har valgt det under Indstillinger (`videoNoteValgt`). Mens mikrofonen optager en note, holder videoen pause og starter selv igen.
+- **»Gemt«** står i #1A1A1A, 14 px. »Gemmes af sig selv« er ude.
+- Ikke set: rigtig iPhone med tastatur, rigtig Vimeo-video, mikrofonen.
+
+**Samme version · spøgelset ved »Tilbage« fra briefen og ved statusskift (Ida 21/11, filmet: »det er når jeg klikker på tilbage - så kommer dette skift« · »det samme der også sker når jeg skifter status«).**
+MÅLT i selen 1440 før rettelsen: `briefTilbage` tog `brief-aaben` af, FØR `saveBrief` havde svaret — i hele ventetiden (715 ms i målingen) stod briefens titel i hvidt på et gråt bånd. Gik gemningen galt, blev man stående på en brief med forkert udseende.
+Nu sidder briefens klasser, til siden faktisk skifter: i kundeappen når holdet slipper (`skHoldSlip` kører `__SK_EFTER_HOLD`), i Backstage under tæppet. MÅLT efter: brief → kalender i ét skift (1440), og klassen sidder til holdet slipper (390). Statusskift går samme vej (`briefTilbage`, linje 28193).
+
+## v3416 · Sikkerhedsgennemgang af admin (21/11) — bygget, afventer Idas »Ja, læg 3416 ud«
+
+Idas ord 21/11: »Sikkerheden først«. Ingen ny flade: bekræftelserne bruger husets eksisterende ark (`arkOk`).
+
+- **»Se som kunden« kun for admin:** `#somkunde=KODE` ignoreres, når `app_metadata.rolle` ikke er `admin` og koden ikke er ens egen. MÅLT i selen: kunden beholder sin egen kode, og adressen ryddes.
+- **Sletninger spørger først og tæller rækken:** `delKundeOpgave`, `delKundeAftale`, `delStandard`. Rammer sletningen 0 rækker, siger appen »… blev ikke slettet. Prøv igen.« MÅLT i selen.
+- **»Vis alle kort igen« (`sqlKortNulstil`) spørger først.**
+- **»Eksportér CSV« spørger først**, og felter, der begynder med `= + - @`, får en apostrof foran. MÅLT i selen.
+- **Systemtjekket skriver ikke længere i `moduler`** (tabellen kan læses uden login).
+- **`tools/sikkerhedschefen/lag2.py`:** `chromium()` finder nu Chrome i `/Applications` (morgentjekket sagde »Chromium findes ikke« på 47 af 85 tjek 19/11).
+- Porten: EXIT 0.
+
 ## 20. november · 3414: RETTELSER EFTER IDAS FUND OG GENNEMGANGEN AF DAGENS ÆNDRINGER
 
 Idas ord: »det er jo hjernedødt ulogisk« (de seks kasser) · »er det en joke at du har tilføjet plusset igen og flyttet alt indhold ned???« · »gennemgå hele systemet om du har lavet andre fejl«.
