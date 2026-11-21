@@ -4,7 +4,8 @@
 setTimeout(async function () {
   var vent = function (ms) { return new Promise(function (r) { setTimeout(r, ms); }); };
   var FLADE = (typeof STREG_FLADE === "string") ? STREG_FLADE : "kunde";
-  var MENU = "#sideNav, #burgerMenu, .bottom-nav, #versionsFod, .dash-sidebar, #dashSidebar, #virkMenu, #dashMenu, #bundNav, .bund-nav, .mb-baand, .bs-baand, .hf-hero, .lek-top, #turOverlay, .tur-slor, #dashFooter, #dashBundnav, #briefSideNav";
+  /* KALENDERENS GITTER ER IKKE SKILLESTREGER (Ida 21/11: »mangler lodrette linjer mellem dagene (svagt grå) og jeg mangler linje under datoerne«): linjerne i ugegitteret (.uge-grid) måles ikke som streger */
+  var MENU = ".uge-grid, #sideNav, #burgerMenu, .bottom-nav, #versionsFod, .dash-sidebar, #dashSidebar, #virkMenu, #dashMenu, #bundNav, .bund-nav, .mb-baand, .bs-baand, .hf-hero, .lek-top, #turOverlay, .tur-slor, #dashFooter, #dashBundnav, #briefSideNav";
   var FELT = "input, textarea, select, [contenteditable=''], [contenteditable='true'], .bdrop-knap, .ark-felt, .bs3-felt, .bs3-drop";
   var rgb = function (s) { var m = String(s).match(/rgba?\(([\d.]+),\s*([\d.]+),\s*([\d.]+)(?:,\s*([\d.]+))?/); return m ? { r: +m[1], g: +m[2], b: +m[3], a: m[4] == null ? 1 : +m[4] } : null; };
   var lys = function (c) { return (0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b) / 255; };
@@ -90,6 +91,14 @@ setTimeout(async function () {
       await vent(FLADE === "brief" ? 500 : 1000);
       ["turOverlay"].forEach(function (id) { var e = document.getElementById(id); if (e) e.remove(); });
       try { maal(SIDER[i][0]); } catch (e) { console.log("SELE STREG FEJL maalingen: " + SIDER[i][0] + " " + (e && e.message)); FEJL++; }
+      /* KALENDERENS GITTER ER LÅST (Ida 21/11: »kan du ikke sørge for det ikke kan ske igen?« — linjerne forsvandt, da en farve blev lysere, og en fejning tog linjen under datoerne):
+         ugekalenderen på computeren har ÉN ramme, en SYNLIG linje foran hver dag efter den første og en SYNLIG linje under hver dato. Synlig = mindst 1 px og mørkere end 92 % lys (#DEDEDE er 87 %, #F8F8F8 er 97 %). */
+      if (FLADE === "kunde" && SIDER[i][0] === "kalenderen" && innerWidth >= 900) { try { var ug = document.querySelector("#screen8 .uge-grid:not(.kal-endag)"); if (!ug) { console.log("SELE STREG FEJL KALENDERENS GITTER: ugegitteret findes ikke"); FEJL++; } else { var lysK = function (c) { var k = rgb(c); return k ? lys(k) : 1; }, kf = [];
+        [].slice.call(ug.querySelectorAll(".uge-dag")).forEach(function (d, n) { var c = getComputedStyle(d); if (n > 0 && !(parseFloat(c.borderLeftWidth) >= 1 && c.borderLeftStyle !== "none" && lysK(c.borderLeftColor) < 0.92)) kf.push("ingen synlig linje foran dag " + (n + 1));
+          var t = d.querySelector(".uge-top"); if (t) { var ct = getComputedStyle(t); if (!(parseFloat(ct.borderBottomWidth) >= 1 && ct.borderBottomStyle !== "none" && lysK(ct.borderBottomColor) < 0.92)) kf.push("ingen synlig linje under datoen, dag " + (n + 1)); } });
+        var cg = document.getElementById("calGrid"); if (cg && parseFloat(getComputedStyle(cg).borderTopWidth) > 0 && parseFloat(getComputedStyle(ug).borderTopWidth) > 0) kf.push("to rammer om ugen");
+        if (parseFloat(getComputedStyle(ug).borderTopWidth) < 1) kf.push("ugen har ingen ramme");
+        if (kf.length) { console.log("SELE STREG FEJL KALENDERENS GITTER: " + kf.slice(0, 4).join(" · ")); FEJL++; } else console.log("SELE STREG KALENDERENS GITTER OK (" + innerWidth + ")"); } } catch (e) { console.log("SELE STREG FEJL KALENDERENS GITTER: " + (e && e.message)); FEJL++; } }
     }
     Object.keys(FUND).sort().forEach(function (k) { console.log("SELE STREG " + k); });
     console.log(FEJL ? "SELE STREG FEJL: " + FEJL + " streger uden tekst på begge sider, " + OK + " i orden (" + FLADE + " " + innerWidth + ")" : "SELE STREG OK: " + OK + " streger står mellem tekst (" + FLADE + " " + innerWidth + ")");
