@@ -1,3 +1,25 @@
+## 21. november · TO HÅRDE REGLER: STREGEN SKILLER KUN TEKST · FLISER UNDER HINANDEN ER LIGE BREDE (Ida 21/11 aften, ordret: »ALDRIG skillestreger over fliser!!! Det burde du vide bedre. Lås i designlåsen at skillestreger kun må være til at skille tekst!!! Og ALDRIG fliser over hinanden der ikke har samme bredde!!! Layout og design skal spille max!!!«)
+- **EN SKILLESTREG STÅR KUN MELLEM TO STYKKER TEKST.** Aldrig over, under eller mellem fliser, felter, chips, valg eller knapper. Gælder hele systemet: sider, ark, popups, kundeapp og Backstage. (Skærper reglen 18/11 »én streg«: nu uden undtagelser.)
+- **FLISER OG FELTER, DER STÅR UNDER HINANDEN, HAR SAMME BREDDE** (samme venstre- og højrekant). En knap, en skraldespand eller et symbol må aldrig gøre én række smallere end den næste: den står INDE i feltet. Valg i et ark er lige så brede som arkets knap.
+- Bygget i v3420: stregen under arkets titel er væk, når der følger valg, chips, felter eller knapper (alle ark i kundeappen; titlen har fået luften) · formatvalgets fliser er præcis så brede som »Næste« (MÅLT 492–948 på 1440, 30–360 på 390) · skraldespanden står inde i forslagsfeltet på computeren, så rækkerne er lige brede (MÅLT på billede-opslag).
+- Fejet: alle briefens visninger (Fakta · Overblikket · Fang dem · Fasthold dem · Få dem til at handle · Optag · Post) i Reel, Karrusel og Billede på 390 og 1440: ingen fliser med forskellig bredde lige under hinanden i samme beholder (MÅLT). Ikke fejet: resten af kundeappen og Backstage.
+- Porten: probe-brief.js måler lige brede fliser i briefens Post; probe-streg.js måler stregerne på siderne. Arkene måles ikke af porten endnu.
+
+## 21. november · v3420 · BESLUTNINGERNE OM DE SIDSTE FUND (Ida 21/11: »Jamen du ved jo hvem jeg er og hvad jeg vil have. Du har ansvaret for at lave et 10 af 10 system for mine kunder. Ud fra dette kan du så ikke træffe nødvendige beslutninger?«)
+Truffet af Claude ud fra Idas regler: den seneste lås vinder; hvor ingen lås findes, det enkleste for kunden. Ida kan vælte hver af dem.
+**Bygget:**
+- **Formatvalget har ingen grå linjer** (»Video«, »Flere billeder, man swiper igennem«, »4-6 sekunder« …). Reglen 20/11 (ingen forklaringslinjer) VÆLTER ekspertholdets linjer 2/11.
+- **Plusset på en dag i kalenderen åbner »Hvad vil du lave?« med dagen sat**, på telefon og computer. VÆLTER »dagens plus går direkte til nyt opslag« (19/11): ét tryk mere, men en aftale kan nu oprettes fra kalenderen på computeren. »Opret opslag på <dag>« i pladsarket går stadig direkte.
+- **Aldrig flise i flise:** karrusellens slide på telefonen står som ÉN flise med »HOOKET · SLIDE 1 AF 3« over; et billede-opslags felter under Fang dem står direkte på siden med overskriften over.
+- **Mikrofon i titelfeltet** under en uploadet video eller et cover.
+- De små valg i plusset er lige brede, når de står på række. (En større trykflade på chips blev prøvet og taget ud igen: den ødelagde valgcirklerne i arkene.)
+**Besluttet at beholde, som det er:**
+- Blyant, kryds og mikrofon er 36 (låst 17/11 og 19/11). · »Skift« og »Hent video« under hinanden ved siden af miniaturen (Ida 16/11). · »Sæt til Postet« og statusskift fører til kalenderen med kvittering (Ida 18/10). · En idé med dato er Planlagt (Ida 4/8).
+- Pladsholdertekst står øverst til venstre (19/11 vinder over 18/11). · Flisekant #DEDEDE og hvid bund (farvemanualen 20/11 vinder over briefens #DEDAD4/#FAF9F5). · Fakta er et trin på telefonen (19/11).
+- En tom brief åbner i Skriv, også ved Godkendt og senere: der er intet at optage eller poste endnu.
+- Titler er højst 90 tegn (felterne stopper selv ved 90). · Arkenes titler er Idas egne ord (»Jeg har set noget fedt«, »Det ugentlige contentmøde«). · Karrusellens slides og arkenes chips bladrer vandret (29/9).
+**Ikke bygget endnu (kræver mere end en rettelse):** Aftale-chippen i møde-arket · optagedag og sted i Optag (felterne findes ikke) · »Nyt opslag« på computeren spørger ikke om dato · skraldespanden uden for feltet på billede-opslag.
+
 ## 21. november · v3419 · RETTELSER EFTER GENNEMGANGEN AF DEN NYE BRIEF (Idas »Ret alt« 21/11; listen: Energida-app/bud/3418/gennemgang/liste.md)
 - **Skriv + den gamle briefoversigt findes ikke.** Står vælgeren på Skriv, vises altid et trin: også når samme brief åbnes igen, efter »Gem ændringer« (man bliver på trinnet og får kvitteringen »Gemt.«) og fra de tre prikker (»Briefoversigten« er ude af menuen i den nye brief; »Ret titlen« gør det samme som blyanten).
 - **Briefen åbner efter status HVER gang, man kommer ind i den udefra** (ikke kun første gang): Godkendt → Optag, Materiale uploadet m.fl. → Post.
