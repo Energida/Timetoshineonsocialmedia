@@ -261,6 +261,14 @@ print('SELE HAK OK: ingen hak i sideskiftene paa 390 og 1440' if not fejl else '
 " "$ROD" 2>&1); fi
 echo "$UDK"
 echo "$UDK" | grep -q "SELE HAK OK\|SELE HAK IKKE MAALT" || HERO_OK=0
+# BRIEFEN I RIGTIG TID (v3430, Idas fund 22/11: »bjælken og tilbageknappen i briefen må ikke gå ud over faktaboksen« · »ved skift fra overblikket til fang dem ser jeg ikke mindre end 2 spøgelsesider«):
+# brief-rt.py maaler paa 1280 og 1440 i RIGTIG tid, at Tilbage, bjaelken og faktaboksen flugter med aaben OG sammenklappet menu (body.nav-smal), at »Tilføj« ses under faktaboksen,
+# og at hvert trinskift (trinnet, Næste, Skriv · Optag · Post) er ÉT skift. Samme Node-krav som hakjaegeren; paa GitHub (Node 20) siges det hoejt og springes over.
+if ! node -e "if(typeof WebSocket==='undefined')process.exit(1)" 2>/dev/null; then UDRT="SELE BRIEFRT IKKE MAALT: Node $(node -v 2>/dev/null) har ingen WebSocket — maales lokalt foer udrulning"; else
+UDRT=$(CHROME="$C" python3 "$ROD/tools/designlaas/brief-rt.py" "$ROD" 2>&1); fi
+echo "$UDRT"
+if echo "$UDRT" | grep -q "SELE BRIEFRT FEJL"; then HERO_OK=0; fi
+echo "$UDRT" | grep -q "SELE BRIEFRT OK 1280" && echo "$UDRT" | grep -q "SELE BRIEFRT OK 1440" || echo "$UDRT" | grep -q "SELE BRIEFRT IKKE MAALT" || HERO_OK=0
 # STIEN I MELLEMBREDDEN (Ida 19/11: »hvordan er det MULIGT at jeg kan finde denne sti???«): mellem 761 og 899 px (iPad paa hoejkant, smalt vindue) gjaldt hverken telefonens
 # eller computerens sti-regel. Her maales kalenderen og briefen som kunde paa 768 og 834 px: intet synligt led i stien (Hjem / Content kalenderen / …) og ingen »/«.
 KS=$(python3 -c "import urllib.parse;print(urllib.parse.quote('setTimeout(function(){try{dagensKortLuk()}catch(e){} [8,7].forEach(function(t){});var n=[].filter.call(document.querySelectorAll(\".navsti-led,.navsti-nu,.navsti-skil\"),function(e){var r=e.getBoundingClientRect(),c=getComputedStyle(e);return r.width>0&&r.height>0&&c.display!==\"none\"&&c.visibility!==\"hidden\"&&parseFloat(c.opacity)>0.05});console.log(n.length?\"SELE STI FEJL: \"+innerWidth+\" px viser stien: \"+n.map(function(e){return e.innerText.trim()}).join(\" \"):\"SELE STI OK \"+innerWidth)},2500)'))")

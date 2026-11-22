@@ -27,6 +27,9 @@ def byg(rod, maal):
     # skyens Linux-Chromium viser en på 15 px — en måling kunne derfor være grøn her og rød i skyen. Nu har selen altid en 15 px bjælke, også på Macen.
     BJAELKE = '<style>::-webkit-scrollbar{width:15px;height:15px;background:#f1f1f1}::-webkit-scrollbar-thumb{background:#c1c1c1}</style>'
     ude = s.replace(tag, '<script src="sb-stub.js"></script>' + VAGT + BJAELKE, 1).replace('navigator.serviceWorker.register("sw.js").catch(function(){});', '/* SELE: ingen service worker */ try { navigator.serviceWorker.getRegistrations().then(function (rs) { rs.forEach(function (r) { r.unregister(); }); }); } catch (e) {}', 1)
+    # RESERVELISTEN I SELEN (v3430): appen viser aldrig kodens reserveliste med lektioner for en kunde (KURSUS_FRA_BASEN). Selens prøvebase har som regel ingen tabel »lektioner«,
+    # og portens målinger af forløbssiden bruger reservelisten som prøvedata. Derfor sættes mærket i selen — undtagen når en test beder om det modsatte med localStorage SELE_RESERVE_SKJULT=1.
+    ude += '\n<script>/* SELE: reservelisten er proevedata her */ try { if (localStorage.getItem("SELE_RESERVE_SKJULT") !== "1") KURSUS_FRA_BASEN = true; } catch (e) {}</script>\n'
     open(os.path.join(maal, "index-sele.html"), "w", encoding="utf-8").write(ude)
     open(os.path.join(maal, "sb-stub.js"), "w", encoding="utf-8").write(STUB)
     open(os.path.join(maal, "sele.html"), "w", encoding="utf-8").write(SELE)
