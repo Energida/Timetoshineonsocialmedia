@@ -14,6 +14,8 @@
 //   4. Service-role: NEJ. Funktionen rører ingen tabel; den kalder kun er_admin() som kalderen og Google.
 //   5. Når: ingen data i Supabase. Læser kun GA4-rapporter (Viewer-rolle, kan ikke ændre noget i Analytics).
 //   6. Direkte omkostning: nej (GA4 Data API er gratis inden for Googles kvote; ét kald pr. åbning af overblikket).
+//   ÆNDRING 22/11 (ikke lagt op af den tråd, der skrev den): tallet »rigtige« (engagedSessions) og listen »kilder« er kommet til. De seks linjer er uændrede:
+//   samme adgang, samme kald, ingen ny tabel, ingen ny hemmelighed; ét rapportkald mere til Google pr. åbning.
 // ============================================================================
 
 import { createClient } from "npm:@supabase/supabase-js@2";
@@ -70,17 +72,24 @@ Deno.serve(async (req) => {
   const raa = Deno.env.get("GA4_SA_JSON"); if (!raa) return svar({ fejl: "ikke-klar" }, 503);
   try {
     const tok = await googleToken(JSON.parse(raa));
-    const M = [{ name: "sessions" }, { name: "activeUsers" }];
-    const [samlet, nu, sider, mails] = await Promise.all([
+    /* KUN RIGTIGE MENNESKER (Ida 22/11: »Jeg vil kun kunne se rigtige mennesker og ikke ai besøg«): engagedSessions = besøg med reel aktivitet
+       (mindst 10 sekunder, to sidevisninger eller en handling). Robotter og AI-crawlere, der henter én side og går, falder fra. Det er ikke et bevis for et menneske:
+       Analytics kan ikke skelne en AI, der opfører sig som et menneske. »besoeg« (alle besøg) sendes stadig med, så appen kan vise begge. */
+    const M = [{ name: "sessions" }, { name: "activeUsers" }, { name: "engagedSessions" }];
+    const M2 = [{ name: "sessions" }, { name: "engagedSessions" }];
+    const [samlet, nu, sider, mails, kilder] = await Promise.all([
       rapport(tok, "runReport", { dateRanges: [{ startDate: "today", endDate: "today", name: "idag" }, { startDate: "yesterday", endDate: "yesterday", name: "igaar" }, { startDate: "6daysAgo", endDate: "today", name: "uge" }, { startDate: "29daysAgo", endDate: "today", name: "maaned" }], metrics: M }),
       rapport(tok, "runRealtimeReport", { metrics: [{ name: "activeUsers" }] }),
-      rapport(tok, "runReport", { dateRanges: [{ startDate: "29daysAgo", endDate: "today" }], dimensions: [{ name: "pagePath" }], metrics: [{ name: "sessions" }], orderBys: [{ metric: { metricName: "sessions" }, desc: true }], limit: 15 }),
+      rapport(tok, "runReport", { dateRanges: [{ startDate: "29daysAgo", endDate: "today" }], dimensions: [{ name: "pagePath" }], metrics: M2, orderBys: [{ metric: { metricName: "engagedSessions" }, desc: true }], limit: 15 }),
       /* KLIK FRA MAILS (Idas klik 19/10 »Ja, begge veje«): Mailchimps »Google Analytics link tracking« mærker linkene (utm_medium=email, utm_campaign=mailens navn) — også i journeys */
       rapport(tok, "runReport", { dateRanges: [{ startDate: "29daysAgo", endDate: "today" }], dimensions: [{ name: "sessionCampaignName" }], metrics: [{ name: "sessions" }], dimensionFilter: { filter: { fieldName: "sessionMedium", stringFilter: { value: "email", matchType: "EXACT", caseSensitive: false } } }, orderBys: [{ metric: { metricName: "sessions" }, desc: true }], limit: 20 }),
+      /* HVOR KOMMER DE FRA (22/11): kilde pr. besøg, så Ida selv kan se fx chatgpt.com eller perplexity.ai i listen */
+      rapport(tok, "runReport", { dateRanges: [{ startDate: "29daysAgo", endDate: "today" }], dimensions: [{ name: "sessionSource" }], metrics: M2, orderBys: [{ metric: { metricName: "engagedSessions" }, desc: true }], limit: 12 }),
     ]);
-    const periode: Record<string, { besoeg: number; personer: number }> = {};
-    (samlet.rows || []).forEach((r: any) => { const n = r.dimensionValues?.[0]?.value || ""; periode[n] = { besoeg: Number(r.metricValues[0].value), personer: Number(r.metricValues[1].value) }; });
-    return svar({ ok: true, periode, lige_nu: tal(nu), sider: (sider.rows || []).map((r: any) => ({ sti: r.dimensionValues[0].value, besoeg: Number(r.metricValues[0].value) })), mails: (mails.rows || []).map((r: any) => ({ kampagne: r.dimensionValues[0].value, besoeg: Number(r.metricValues[0].value) })).filter((x: any) => x.kampagne && x.kampagne !== "(not set)") }, 200);
+    const periode: Record<string, { besoeg: number; personer: number; rigtige: number }> = {};
+    (samlet.rows || []).forEach((r: any) => { const n = r.dimensionValues?.[0]?.value || ""; periode[n] = { besoeg: Number(r.metricValues[0].value), personer: Number(r.metricValues[1].value), rigtige: Number(r.metricValues[2]?.value || 0) }; });
+    return svar({ ok: true, periode, lige_nu: tal(nu), sider: (sider.rows || []).map((r: any) => ({ sti: r.dimensionValues[0].value, besoeg: Number(r.metricValues[0].value), rigtige: Number(r.metricValues[1]?.value || 0) })),
+      kilder: (kilder.rows || []).map((r: any) => ({ kilde: r.dimensionValues[0].value, besoeg: Number(r.metricValues[0].value), rigtige: Number(r.metricValues[1]?.value || 0) })).filter((x: any) => x.kilde && x.kilde !== "(not set)"), mails: (mails.rows || []).map((r: any) => ({ kampagne: r.dimensionValues[0].value, besoeg: Number(r.metricValues[0].value) })).filter((x: any) => x.kampagne && x.kampagne !== "(not set)") }, 200);
   } catch (e) {
     return svar({ fejl: String((e as Error).message || e).slice(0, 300) }, 502);
   }
