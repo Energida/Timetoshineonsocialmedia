@@ -32585,6 +32585,36 @@ async function briefDelingTilfoej() {
   window.__DELING_NY = true; await delingIdeGem(tx);
   try { husKvit("Idéen er tilføjet under Opbygning til deling."); } catch (e) {}
 }
+/* ÉN OPRETTELSE AF OPSLAGETS DELINGSSTORY (22/11): både idéen (delingIdeGem) og det automatiske skift Forslag → Planlagt (delingAutoVedPlanlagt) opretter storyen HER, med de samme felter:
+   opslagets titel · bundet til opslaget (brief.forOpslag) · fire timer før opslagets klokkeslæt (delingTid; før kl. 04 eller uden klokkeslæt = samme dag uden klokkeslæt) · Planlagt når opslaget har dato, ellers Idé uden dato.
+   Opslagets klokkeslæt læses fra den åbne brief, KUN når det er dette opslag, der står åbent; ellers fra det gemte. */
+async function delingStoryOpret(it, serie) {
+  const S = (typeof BRIEF_STATE !== "undefined" && BRIEF_STATE && String(BRIEF_ID) === String(it.id)) ? BRIEF_STATE : null;
+  const tid0 = (S && S.tid) || (it.brief && it.brief.tid) || "";
+  return await ideAdd({ titel: it.titel, type: "Story", soejle: "Story", status: it.dato ? "Planlagt" : "Idé", dato: it.dato || null, brief: { format: "Story", storytype: "Opbygning til deling", tid: delingTid(tid0), forOpslag: String(it.id), storyserie: Array.isArray(serie) ? serie : [] } });
+}
+/* STORYEN KOMMER AF SIG SELV, NÅR ET FORSLAG BLIVER PLANLAGT (Ida 22/11: »kan vi gøre sådan - at når et opslag ændres fra forslag til planlagt, så oprettes automatisk en opbygning til deling story?
+   og ideer til opbygning til deling kommer så automatisk derind også?« · klik »Ja, med tre sikringer«):
+   (1) ÉN gang pr. opslag, fire timer før opslaget · (2) sletter kunden storyen, kommer den ikke igen · (3) aldrig for et opslag, der selv er en story.
+   Kaldes KUN fra ideaStatusSet, når statussen ER gemt, og kun ved skiftet »Klar til godkendelse« (vises som Forslag) → »Planlagt«. Findes der allerede en story til opslaget (en idé er lagt ind før), oprettes ingen.
+   MÆRKET: opslagets brief får delingAuto = true, når storyen er oprettet af sig selv (nyt felt i briefens JSON i samme række, ingen ny kolonne). Mærket er det, der holder sikring 1 og 2.
+   INTET SLETTES AF SIG SELV: går opslaget tilbage til Forslag eller Idé, bliver storyen stående. Fejler oprettelsen, rulles statusskiftet IKKE tilbage; husets fejlbesked vises, og mærket sættes ikke, så næste skift prøver igen. */
+async function delingAutoVedPlanlagt(id, fra, til) {
+  if (fra !== "Klar til godkendelse" || til !== "Planlagt") return false;
+  const it = (IDEER || []).find(function (x) { return String(x.id) === String(id); }); if (!it || ssEr(it)) return false;
+  const S = (typeof BRIEF_STATE !== "undefined" && BRIEF_STATE && String(BRIEF_ID) === String(it.id)) ? BRIEF_STATE : null;
+  if ((it.brief && it.brief.delingAuto) || (S && S.delingAuto)) return false;
+  if (delingStory(it) || window.__DELING_I_GANG) return false;
+  window.__DELING_I_GANG = true;
+  try {
+    const st = await delingStoryOpret(it, []);
+    if (!st) { try { visSyncFejl(); } catch (e) {} return false; }
+    it.brief = it.brief || {}; it.brief.delingAuto = true; if (S) S.delingAuto = true;
+    const ok = await ideUpdate(it.id, { brief: S ? Object.assign({}, it.brief, S) : it.brief });   /* hele brief-objektet sendes med (gem-må-ikke-slette), som i briefFtfSkriv */
+    if (ok === false) { try { visSyncFejl(); } catch (e) {} }
+    return true;
+  } finally { window.__DELING_I_GANG = false; delingTegnOm(); }
+}
 function delingTegnOm() { try { const g = document.getElementById("delingSek"); if (g) g.outerHTML = delingForsideHtml(); } catch (e) {} }
 function delingIdeNy() { window.__DELING_NY = true; delingTegnOm(); setTimeout(function () { try { const f = document.getElementById("delingNyFelt"); if (f) f.focus(); } catch (e) {} }, 40); }
 async function delingIdeGem(tekst) {
@@ -32604,8 +32634,7 @@ async function delingIdeGem(tekst) {
         const ok = await ideUpdate(st.id, { brief: b }); if (ok === false) { try { visSyncFejl(); } catch (e) {} }
       }
     } else {
-      const tid0 = (BRIEF_STATE && BRIEF_STATE.tid) || (it.brief && it.brief.tid) || "";
-      st = await ideAdd({ titel: it.titel, type: "Story", soejle: "Story", status: it.dato ? "Planlagt" : "Idé", dato: it.dato || null, brief: { format: "Story", storytype: "Opbygning til deling", tid: delingTid(tid0), forOpslag: String(it.id), storyserie: [el] } });
+      st = await delingStoryOpret(it, [el]);
       if (!st) { try { visSyncFejl(); } catch (e) {} return; }
     }
     try { husKvit("Lagt i story’en"); } catch (e) {}
@@ -72144,7 +72173,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "3434";
+const APP_VERSION = "3435";
 const APP_BYGGET = "3. november";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_VERSION;   /* ingen dato (Ida 7/11: »hvorfor står der version 3. november?«) — datoen blev ikke rettet med, nummeret er sandheden */ } catch (e) {} });
 let NY_VERSION_KLAR = false;
@@ -73325,6 +73354,8 @@ async function ideaStatusSet(id, st) {
   }
   /* Planlagt kraever ansvarlig (A4, Ida 19/8) — vagten spoerger, hvis ingen er valgt */
   if (st === "Planlagt") { try { ansvarligVagt(id); } catch(e) {} }
+  /* FORSLAG → PLANLAGT: opslagets story til »Opbygning til deling« oprettes af sig selv, én gang (Ida 22/11) — efter at statussen ER gemt; se delingAutoVedPlanlagt */
+  if (gammel && gammel.status === "Klar til godkendelse" && st === "Planlagt") { try { await delingAutoVedPlanlagt(id, gammel.status, st); } catch (e) {} }
   return true;
 }
 function godkendIdea(id) { ideUpdate(id, { status: "Godkendt" }); }
@@ -107036,9 +107067,11 @@ html body:not(.dash-mode):not(#i1):not(#i2):not(#i3):not(#i4):not(#i5):not(#i6):
 html body:not(.dash-mode):not(#i1):not(#i2):not(#i3):not(#i4):not(#i5):not(#i6):not(#i7):not(#i8):not(#i9):not(#i10):not(#i11):not(#i12):not(#i13) .ibn-rod .ibn-gitter { display:grid !important; margin:0 !important; padding:0 !important; column-count:auto !important; }
 html body:not(.dash-mode):not(#i1):not(#i2):not(#i3):not(#i4):not(#i5):not(#i6):not(#i7):not(#i8):not(#i9):not(#i10):not(#i11):not(#i12):not(#i13) .ibn-rod .ibn-plads { display:flex !important; align-items:center !important; justify-content:center !important; text-align:center !important; min-height:56px !important; margin:0 !important; padding:18px 20px !important; border:1px dashed #DEDEDE !important; border-radius:20px !important; background:transparent !important; box-shadow:none !important; color:#686868 !important; font-family:Poppins,system-ui,sans-serif !important; font-size:14px !important; font-weight:400 !important; line-height:1.4 !important; cursor:pointer !important; outline:none !important; }
 html body:not(.dash-mode):not(#i1):not(#i2):not(#i3):not(#i4):not(#i5):not(#i6):not(#i7):not(#i8):not(#i9):not(#i10):not(#i11):not(#i12):not(#i13) .ibn-rod .ibn-tom { margin:0 !important; padding:0 !important; }
-html body:not(.dash-mode):not(#i1):not(#i2):not(#i3):not(#i4):not(#i5):not(#i6):not(#i7):not(#i8):not(#i9):not(#i10):not(#i11):not(#i12):not(#i13) .ibn-rod .ibn-chips { display:flex !important; align-items:center !important; gap:8px !important; margin:0 0 16px !important; padding:0 !important; flex-wrap:nowrap !important; overflow-x:auto !important; scrollbar-width:none !important; }
+html body:not(.dash-mode):not(#i1):not(#i2):not(#i3):not(#i4):not(#i5):not(#i6):not(#i7):not(#i8):not(#i9):not(#i10):not(#i11):not(#i12):not(#i13) .ibn-rod .ibn-chips { display:flex !important; align-items:center !important; gap:8px !important; margin:-7px 0 9px !important; padding:7px 0 !important; flex-wrap:nowrap !important; overflow-x:auto !important; scrollbar-width:none !important; }
 html body:not(.dash-mode):not(#i1):not(#i2):not(#i3):not(#i4):not(#i5):not(#i6):not(#i7):not(#i8):not(#i9):not(#i10):not(#i11):not(#i12):not(#i13) .ibn-rod .ibn-chips::-webkit-scrollbar { display:none !important; }
-html body:not(.dash-mode):not(#i1):not(#i2):not(#i3):not(#i4):not(#i5):not(#i6):not(#i7):not(#i8):not(#i9):not(#i10):not(#i11):not(#i12):not(#i13) .ibn-rod .ibn-chip { position:relative !important; flex:none !important; display:inline-flex !important; align-items:center !important; justify-content:center !important; width:auto !important; min-width:0 !important; height:36px !important; min-height:36px !important; margin:0 !important; padding:0 16px !important; border-radius:999px !important; border:1px solid #DEDEDE !important; background:#FFFFFF !important; color:#1A1A1A !important; font-family:Poppins,system-ui,sans-serif !important; font-size:13px !important; font-weight:400 !important; line-height:1 !important; letter-spacing:0 !important; text-transform:none !important; white-space:nowrap !important; cursor:pointer !important; box-shadow:none !important; }
+html body:not(.dash-mode):not(#i1):not(#i2):not(#i3):not(#i4):not(#i5):not(#i6):not(#i7):not(#i8):not(#i9):not(#i10):not(#i11):not(#i12):not(#i13) .ibn-rod .ibn-chip { position:relative !important; flex:none !important; display:inline-flex !important; align-items:center !important; justify-content:center !important; width:auto !important; min-width:0 !important; height:32px !important; min-height:32px !important; margin:0 !important; padding:0 16px !important; border-radius:999px !important; border:1px solid #DEDEDE !important; background:#FFFFFF !important; color:#1A1A1A !important; font-family:Poppins,system-ui,sans-serif !important; font-size:12.5px !important; font-weight:400 !important; line-height:1 !important; letter-spacing:0 !important; text-transform:none !important; white-space:nowrap !important; cursor:pointer !important; box-shadow:none !important; }
+/* chippen er husets mellemstore (32 høj · 12,5 px, Ida 9/11); trykfeltet er 44 via ::before, og rækken har 6 px luft over og under, så feltet ikke klippes */
+html body:not(.dash-mode):not(#i1):not(#i2):not(#i3):not(#i4):not(#i5):not(#i6):not(#i7):not(#i8):not(#i9):not(#i10):not(#i11):not(#i12):not(#i13) .ibn-rod .ibn-chip::before { content:"" !important; position:absolute !important; left:0 !important; right:0 !important; top:-7px !important; bottom:-7px !important; }   /* -7 fra feltets inderkant = 6 uden for den 1 px kant: trykfeltet er 44 (porten måler 21 over og under midten) */
 html body:not(.dash-mode):not(#i1):not(#i2):not(#i3):not(#i4):not(#i5):not(#i6):not(#i7):not(#i8):not(#i9):not(#i10):not(#i11):not(#i12):not(#i13) .ibn-rod .ibn-chip.on { background:#FC2404 !important; border-color:#FC2404 !important; color:#FFFFFF !important; }
 html body:not(.dash-mode):not(#i1):not(#i2):not(#i3):not(#i4):not(#i5):not(#i6):not(#i7):not(#i8):not(#i9):not(#i10):not(#i11):not(#i12):not(#i13) .ibn-rod .ibn-arkivlinje { flex-direction:row !important; align-items:center !important; justify-content:space-between !important; width:100% !important; height:56px !important; margin:24px 0 0 !important; padding:0 20px !important; font-size:14px !important; line-height:1.4 !important; color:#686868 !important; }
 html body:not(.dash-mode):not(#i1):not(#i2):not(#i3):not(#i4):not(#i5):not(#i6):not(#i7):not(#i8):not(#i9):not(#i10):not(#i11):not(#i12):not(#i13) .ibn-rod .ibn-arkivlinje span { color:#686868 !important; font-size:14px !important; }
@@ -107181,7 +107214,6 @@ html body:not(.dash-mode):not(#i1):not(#i2):not(#i3):not(#i4):not(#i5):not(#i6):
 html body:not(.dash-mode):not(#i1):not(#i2):not(#i3):not(#i4):not(#i5):not(#i6):not(#i7):not(#i8):not(#i9):not(#i10):not(#i11):not(#i12):not(#i13) .ibn-rod .ibn-gitter.ibn-mapper.ibn-ulige > :last-child { grid-column:1 / -1 !important; }
 html body:not(.dash-mode):not(#i1):not(#i2):not(#i3):not(#i4):not(#i5):not(#i6):not(#i7):not(#i8):not(#i9):not(#i10):not(#i11):not(#i12):not(#i13) .ibn-rod .ibn-navn { font-size:16px !important; }
 html body:not(.dash-mode):not(#i1):not(#i2):not(#i3):not(#i4):not(#i5):not(#i6):not(#i7):not(#i8):not(#i9):not(#i10):not(#i11):not(#i12):not(#i13) .ibn-rod .ibn-mp .ibn-navn { font-size:15px !important; }
-html body:not(.dash-mode):not(#i1):not(#i2):not(#i3):not(#i4):not(#i5):not(#i6):not(#i7):not(#i8):not(#i9):not(#i10):not(#i11):not(#i12):not(#i13) .ibn-rod .ibn-chip { height:44px !important; min-height:44px !important; }
 html body:not(.dash-mode):not(#i1):not(#i2):not(#i3):not(#i4):not(#i5):not(#i6):not(#i7):not(#i8):not(#i9):not(#i10):not(#i11):not(#i12):not(#i13) .ibn-rod .ibn-arkivlinje { margin-top:16px !important; }
 html body:not(.dash-mode):not(#i1):not(#i2):not(#i3):not(#i4):not(#i5):not(#i6):not(#i7):not(#i8):not(#i9):not(#i10):not(#i11):not(#i12):not(#i13) .ibn-rod .ibn-arkivlinje + .ibn-gitter { margin-top:16px !important; }
 html body:not(.dash-mode):not(#i1):not(#i2):not(#i3):not(#i4):not(#i5):not(#i6):not(#i7):not(#i8):not(#i9):not(#i10):not(#i11):not(#i12):not(#i13) #bsFlytMenu:has(> .ibn-skrivark) { align-items:flex-end !important; justify-content:center !important; padding:52px 0 0 !important; }
@@ -107938,7 +107970,7 @@ html body.b3-paa:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):
 }
 </style>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-hvid.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 22. november · 3434</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 22. november · 3435</div>
 <script>
 /* DROPDOWNEN RULLER SELV (Ida 4/10) — maal den aabne liste og klip den ved skaermens bund */
 (function () {
