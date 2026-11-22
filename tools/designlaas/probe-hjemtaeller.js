@@ -1,0 +1,24 @@
+/* v3439 · HVEM TÆLLER PÅ BACKSTAGES HJEM, OG HVEM HAR EN KUNDESIDE (Ida 22/11: »men INGEN you got this kunder skal kunne have sæt contentmøde på deres crm« · »og hvorfor synkroniseres køb ikke?!?!«).
+   1) En YOU GOT THIS-kunde åbnet som kundeside har 0 forekomster af »contentmøde«. 2) En kode uden opsætning åbner aldrig kundesiden. 3) En slettet kode og et testkøb tæller ikke i hjemTaeller() og står ikke i dtYgtKoder(). Køres af koer.sh i Backstage-selen. */
+setTimeout(async function () {
+  var V = function (ms) { return new Promise(function (x) { setTimeout(x, ms); }); }; var fejl = [];
+  try {
+    VIRKSOMHEDSKODER["PROEVEYGT1"] = { virksomhed: "Prøvebutikken", forloeb: "YOU GOT THIS — DETAIL", type: "kursus", aktiv: true };
+    VIRKSOMHEDSKODER["PROEVETEST1"] = { virksomhed: "Prøvetesten", forloeb: "YOU GOT THIS — DETAIL", type: "kursus", aktiv: true };
+    LIVE_TESTKODER["PROEVETEST1"] = 1;
+    if (hjemTaeller("PROEVEYGT1") !== true) fejl.push("en rigtig YOU GOT THIS-kunde tæller ikke");
+    if (hjemTaeller("SLETTETKODE9") !== false) fejl.push("en kode, der ikke findes, tæller");
+    if (hjemTaeller("PROEVETEST1") !== false) fejl.push("en kode fra et testkøb tæller");
+    var koder = dtYgtKoder(); if (koder.indexOf("PROEVEYGT1") < 0) fejl.push("kunden mangler i Hjems kundeliste"); if (koder.indexOf("PROEVETEST1") > -1 || koder.indexOf("SLETTETKODE9") > -1) fejl.push("testkøb eller slettet kode står i Hjems kundeliste");
+    kundeSideVis("PROEVEYGT1"); await V(2500);
+    var el = document.getElementById("bsKundeside"), tx = el ? (el.innerText || "") : ""; var n = (tx.match(/contentmøde/gi) || []).length;
+    if (!el || !tx.trim()) fejl.push("kundesiden for YOU GOT THIS-kunden blev ikke tegnet"); if (n) fejl.push("YOU GOT THIS-kundens side har " + n + " × »contentmøde«");
+    if (/Sæt contentmødet|Ny aftale/.test(tx)) fejl.push("YOU GOT THIS-kundens side har »Sæt contentmødet« eller »Ny aftale«");
+    visDashSide("overblik"); await V(800); var foer = window.BS_KUNDE;
+    kundeSideVis("SLETTETKODE9"); await V(1500);
+    if (window.BS_KUNDE === "SLETTETKODE9" || (typeof BS_KUNDE !== "undefined" && BS_KUNDE === "SLETTETKODE9")) fejl.push("en kode uden opsætning åbnede kundesiden");
+    var t2 = (document.getElementById("bsKundeside") || {}).innerText || ""; if (/SLETTETKODE9/.test(t2)) fejl.push("den rå kode står som kundeside");
+  } catch (e) { fejl.push("proben fejlede: " + (e && e.message)); }
+  fejl.forEach(function (f) { console.log("SELE HJEMTAELLER FEJL: " + f); });
+  console.log(fejl.length ? "SELE HJEMTAELLER FEJL: " + fejl.length + " fund" : "SELE HJEMTAELLER OK: YOU GOT THIS-kundens side har intet contentmøde, en ukendt kode har ingen kundeside, og slettede koder og testkøb tæller ikke paa Hjem");
+}, 2500);

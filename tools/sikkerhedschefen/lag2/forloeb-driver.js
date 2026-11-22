@@ -14,7 +14,7 @@
     if (!m && f) { try {
       var vist = [].filter.call(document.querySelectorAll("#screen3 .yf-fl .yf-bar b"), function (e) { return e.getClientRects().length; }).map(function (e) { return parseInt(e.textContent, 10); });
       var grp = {}; (kursusLektionerAktive() || []).forEach(function (l) { var nr = modulNrFor(l.id); if (!nr) return; var laast = false; try { laast = !!lekModulLaastFor(l.id); } catch (e) {} if (laast) return; (grp[nr] = grp[nr] || []).push(l); });
-      var forv = Object.keys(grp).map(function (k) { var a = grp[k]; return Math.round(a.filter(function (l) { return KURSUS_SET[l.id]; }).length / a.length * 100); });
+      var forv = Object.keys(grp).map(function (k) { var a = grp[k], sete = a.filter(function (l) { return KURSUS_SET[l.id]; }).length, n = a.length; try { if (lksSkemaHer(k)) { n++; if (OB_SKEMA === true) sete++; } } catch (e) {}   /* v3439 (kunderejsen punkt 3): spørgeskemaet tæller med i det modul, det står i — samme regnestykke som forsiden */ return Math.round(sete / n * 100); });
       if (vist.length && vist.length === forv.length && vist.slice().sort().join() === forv.slice().sort().join()) m = [0, f[1], f[2]];
     } catch (e) {} }
     return { skaerm: m ? m[1] + "/" + m[2] : "", funktion: f ? f[1] + "/" + f[2] : "" }; };
