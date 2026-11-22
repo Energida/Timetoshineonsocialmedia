@@ -28320,6 +28320,10 @@ function sohSkift(kn) {
   const f = document.getElementById("briefHjaelpFold"); if (f) f.classList.toggle("aaben", SOH_AABEN);
   if (kn) kn.setAttribute("aria-expanded", SOH_AABEN ? "true" : "false");
 }
+function b3Samlet() {
+  try { if (!(typeof b3Aktiv === "function" && b3Aktiv()) || !document.body.classList.contains("brief-aaben")) return; } catch (e) { return; }
+  try { briefProcesTegn(); } catch (e) {} try { b3Tegn(); } catch (e) {} try { soejleHjaelpTegn(); } catch (e) {}   /* b3Tegn først: den afgør, om hjælpen står åben på det nye trin; derefter tippet (eller hjælpen) i samme hug */
+}
 function soejleHjaelpTegn() {
   const fjern = function () { ["briefHjaelp", "briefHjaelpFold"].forEach(function (id) { const e = document.getElementById(id); if (e) e.remove(); }); };
   const wrap = document.getElementById("briefWrap"), grid = document.getElementById("briefGrid");
@@ -28336,10 +28340,13 @@ function soejleHjaelpTegn() {
       if (linje) ud += '<div class="soh-fl soh-trin soh-tip' + (foer2 ? ' b3h-med' : '') + '"><span class="soh-paere" aria-hidden="true"></span><div>' + foer2 + '<div class="soh-p">' + esc(linje2) + '</div></div></div>';   /* symbol + Idas linje, ingen overskrift (Ida 16/11) */ } } catch (e) {}
     return ud;
   } catch (e) { return ""; } })(); void kode; void sohFliserHtml;
-  if (!html) { fjern(); return; }
+  /* v3429 (Ida 22/11: »ved skift fra overblikket til fang dem ser jeg ikke mindre end 2 spøgelsesider«): står b3's hjælp åben på computeren, skrives tippet ikke oven i den (og spalten fjernes ikke) for så at blive skiftet ud 110 ms senere */
+  const b3H = (function () { try { return typeof B3_HJ_AABEN !== "undefined" && !!B3_HJ_AABEN && typeof b3Pc === "function" && b3Pc(); } catch (e) { return false; } })();
+  if (!html) { if (b3H) { try { b3HjaelpTegn(); } catch (e) {} return; } fjern(); return; }
   let kol = document.getElementById("briefHjaelp");
   if (!kol) { kol = document.createElement("aside"); kol.id = "briefHjaelp"; kol.className = "soh-kol"; kol.setAttribute("aria-label", "Hjælp til dette trin"); grid.appendChild(kol); }
-  kol.innerHTML = html;
+  if (!(b3H && kol.querySelector(".b3h-fl"))) { if (kol.__h !== html || !kol.firstElementChild || kol.querySelector(".b3h-fl")) { kol.innerHTML = html; kol.__h = html; } }
+  if (b3H) { try { b3HjaelpTegn(); } catch (e) {} }
   let fold = document.getElementById("briefHjaelpFold");
   if (BRIEF_SIDE_AKTIV > 0) { if (fold) fold.remove(); return; }   /* telefonens »Om indholdssøjlen«-chip: kun under Idéen (22/10) */
   if (!fold) { fold = document.createElement("div"); fold.id = "briefHjaelpFold"; fold.className = "soh-fold" + (SOH_AABEN ? " aaben" : ""); }
@@ -28351,6 +28358,9 @@ function soejleHjaelpTegn() {
   const sen = function () { clearTimeout(window.__sohT); window.__sohT = setTimeout(function () { try { soejleHjaelpTegn(); } catch (e) {} }, 70); };
   const o1 = briefMbVis; briefMbVis = function () { const r = o1.apply(this, arguments); sen(); return r; };
   const o2 = briefSideVis; briefSideVis = function () { const r = o2.apply(this, arguments); sen(); return r; };
+  /* v3429 · ÉT SKIFT, IKKE FIRE (MÅLT 22/11 i rigtig tid på 1280, Overblikket → Fang dem: indholdet skiftede ved 121 ms, den røde markering ved 158, tippet stod i rammen i sin gamle form til 309, og knapperne nederst hoppede tre gange).
+     Alt det, der før kom dryppende på hver sin timer (trin-rækken, tippet, hjælpen), tegnes nu i samme hug som indholdet. Timerne står tilbage som sikkerhedsnet og finder intet at ændre. */
+  const o3 = briefMbVis; briefMbVis = function () { const r = o3.apply(this, arguments); try { b3Samlet(); } catch (e) {} return r; };
 })();
 function briefMbVis(vis, n, behold) {
   setTimeout(function () { try { briefHookIKlip(); } catch (e) {} }, 0);   /* hook-forslagene i klip 1 (26/9) */
@@ -71921,7 +71931,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "3428";
+const APP_VERSION = "3429";
 const APP_BYGGET = "3. november";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_VERSION;   /* ingen dato (Ida 7/11: »hvorfor står der version 3. november?«) — datoen blev ikke rettet med, nummeret er sandheden */ } catch (e) {} });
 let NY_VERSION_KLAR = false;
@@ -106615,6 +106625,37 @@ html body #modalBack.kt-side .kt-tilbage { height:56px !important; min-height:56
    Fejet 22/11 på 390 og 1440 (kundeappen 12 sider, Backstage 12 sider): disse stod med kant og uden skygge direkte på den hvide side. VÆLTER 15/11 »de kasser, farverunden gav en tynd kant, er IKKE skyggefliser« for .hu-tom og .tom-kort. */
 html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .tom-kort, html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .hu-tom, html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .hu-kort, html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) #hjemUge .hh-panel > *, html body.dash-mode .kpi, html body .wo-card, html body.dash-mode #dashMain .uge-grid, html body .kal-ringkort, html body #kalTvivl { box-shadow:0 0 4px rgba(26,26,26,.10), 0 0 36px rgba(26,26,26,.20) !important; }
 @media (max-width:899px) { html body.dash-mode .crm2-r.crm2-ra { box-shadow:0 0 4px rgba(26,26,26,.10), 0 0 36px rgba(26,26,26,.20) !important; } }
+/* v3429 · BRIEFEN MED SAMMENKLAPPET MENU: FAKTABOKSEN ER BREDERE (Ida 22/11: »bjælken og tilbageknappen i briefen må ikke gå ud over faktaboksen« · »det er faktisk ikke bjælken og tilbage der skal flyttes men faktaboksen der skal være bredere. du kan se tidspunktet også bliver presset!«).
+   MÅLT på 1440 med menuen klappet sammen: bjælken og Tilbage begyndte ved 94, faktaboksen ved 118. Nu går faktaboksen 24 længere ud til venstre så venstrekanten er fælles.
+   Og faktaboksen er 336 bred i stedet for 312 i begge tilstande af menuen (under 1000: 288 i stedet for 264), så tidspunktet ikke bliver presset mod pilen. */
+@media (min-width:900px) {
+html body.mb.nav-smal.b3-paa:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) #screen7 #briefGrid#briefGrid { margin-left:-24px !important; }
+}
+@media (min-width:1400px) {
+html body.mb.b3-paa:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) #screen7 #briefGrid#briefGrid { grid-template-columns:336px minmax(0,1fr) 196px !important; }
+html body.mb.b3-paa:not(.b3-optag):not(.b3-post):not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) #screen7 #briefGrid#briefGrid::before { left:352px !important; }
+}
+@media (min-width:1000px) and (max-width:1399px) {
+html body.mb.b3-paa:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) #screen7 #briefGrid#briefGrid { grid-template-columns:336px minmax(0,1fr) !important; }
+html body.mb.b3-paa:not(.b3-optag):not(.b3-post):not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) #screen7 #briefGrid#briefGrid::before { left:352px !important; }
+}
+@media (min-width:900px) and (max-width:999px) {
+html body.mb.b3-paa:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) #screen7 #briefGrid#briefGrid { grid-template-columns:288px minmax(0,1fr) !important; }
+html body.mb.b3-paa:not(.b3-optag):not(.b3-post):not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) #screen7 #briefGrid#briefGrid::before { left:304px !important; }
+}
+/* v3429 · LISTEN UNDER »HVAD ER KUNDENS NATURLIGE NÆSTE SKRIDT?« KAN SES (Ida 22/11: »jeg kan ikke se drop down her«). MÅLT på 1440: listen åbner opad (288–608), men kun den nederste stribe sås.
+   ÅRSAG: spørgsmålene i den samlede flise er klippet (clip-path fra 19/11, så skyggen ikke ses mellem delene), og klipningen skar også listen af ved spørgsmålets overkant.
+   På computeren er der ingen flise om spørgsmålene (bud 9), så dér klippes intet. På telefonen løftes klipningen, mens en liste står åben. */
+@media (min-width:900px) { html body.b3-paa:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) #screen7 #briefWrap .sk-q.b3-idq.b3-idq, html body.b3-paa:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) #screen7 #briefWrap .cap-q.b3-cap.b3-cap { clip-path:none !important; } }
+html body.b3-paa:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) #screen7 #briefWrap .sk-q.b3-idq.b3-idq:has(.bdrop-kort), html body.b3-paa:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) #screen7 #briefWrap .cap-q.b3-cap.b3-cap:has(.bdrop-kort) { clip-path:none !important; }
+/* v3429 · »TILFØJ« UNDER FAKTABOKSEN ER TILBAGE (Ida 22/11: »jeg mangler alle de funktioner vi havde før under fakteboksen!! Alle tilføj er væk! Altså fx produkter, link til musik, link til indhold«).
+   MÅLT: knappen lå i siden, men var skjult (reglen fra de gamle to spalter, hvor fakta havde sit eget trin, skjulte knaprækken, og den nye brief viste kun selve boksen). Skjult siden 3419 (21/11). */
+@media (min-width:900px) {
+html body.b3-paa:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) #screen7 #briefGrid #fbBoks > .fb-piller { display:flex !important; margin:12px 0 0 !important; padding:0 !important; }
+html body.b3-paa:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) #screen7 #briefGrid #fbBoks > .fb-piller .fb-pil { display:flex !important; box-shadow:none !important; color:#1A1A1A !important; font-size:13px !important; border:1px solid #DEDEDE !important; background:#fff !important; border-radius:999px !important; flex:1 1 auto !important; width:100% !important; height:44px !important; min-height:44px !important; align-items:center !important; justify-content:center !important; margin:0 !important; box-sizing:border-box !important; }
+}
+/* v3429 · telefonens tip (#briefTipTlf) vises aldrig på computeren: dér står tippet i den røde flise (#briefHjaelp). Før blinkede det lyse tip frem inde i rammen ved hvert trinskift. */
+@media (min-width:900px) { html body.b3-paa:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) #screen7 #briefWrap #briefTipTlf { display:none !important; } }
 /* v3395 (Ida 20/11) — MODULFLISERNE: cirkel som lektionerne (tom · rødt flueben · hængelås), ingen pil, ingen fold-ud */
 html body #forloebTidslinje .ftl2 .ftl2-hoved, html body #forloebTidslinje .ftl2 .ftl2-rk.laast { display:flex !important; align-items:center !important; justify-content:flex-start !important; gap:16px !important; cursor:pointer; }
 html body #forloebTidslinje .ftl2 .ftl2-rk.laast { cursor:default; }
@@ -106644,7 +106685,7 @@ html body.lek-mb #lekVis .lk-flise.lk-skema, html body #lekVis .lk-flise.lk-skem
 }
 </style>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-hvid.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 22. november · 3428</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 22. november · 3429</div>
 <script>
 /* DROPDOWNEN RULLER SELV (Ida 4/10) — maal den aabne liste og klip den ved skaermens bund */
 (function () {

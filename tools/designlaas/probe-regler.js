@@ -75,7 +75,7 @@ setTimeout(async function(){ try {
         var bk=rl?[].slice.call(rl.querySelectorAll(".fb-boks")).filter(synlig)[0]:null, fl=hj?[].slice.call(hj.querySelectorAll(".soh-fl")).filter(synlig)[0]:null;
         N++; if(!bk) fejl("TRE SPALTER: faktaboksen står ikke til venstre på briefens side");
         else if(!nv||!synlig(nv)) fejl("TRE SPALTER: knapperne nederst står ikke på briefens side");
-        else { if(!(Math.abs(q(bk).width-312)<=1&&Math.abs(q(nv).left-q(bk).right-16)<=1&&q(bk).left<q(nv).left)) fejl("TRE SPALTER: faktaboksen er "+Math.round(q(bk).width)+" bred med "+Math.round(q(nv).left-q(bk).right)+" til midten (skal 312 til venstre og 16 imellem)");
+        else { if(!(Math.abs(q(bk).width-336)<=1/* v3429: 336 (før 312), Ida 22/11 »faktaboksen der skal være bredere« */&&Math.abs(q(nv).left-q(bk).right-16)<=1&&q(bk).left<q(nv).left)) fejl("TRE SPALTER: faktaboksen er "+Math.round(q(bk).width)+" bred med "+Math.round(q(nv).left-q(bk).right)+" til midten (skal 336 til venstre og 16 imellem)");
           N++; if(Math.abs(q(nv).left-(q(tr).left-16))>1||Math.abs(q(nv).right-(q(tr).right+16))>1) fejl("MIDTEN: knapperne står "+Math.round(q(nv).left)+"–"+Math.round(q(nv).right)+", trin-vælgeren "+Math.round(q(tr).left)+"–"+Math.round(q(tr).right)+" (knapperne skal være lige så brede som rammen: 16 uden for trinene i hver side)");
           N++; if(q(nv).top<q(tr).bottom) fejl("MIDTEN: knapperne står ikke under trinene og felterne");
           var kn=[].slice.call(nv.children).filter(synlig); N++; if(kn.length<2||kn.some(function(x){return Math.abs(q(x).width-q(kn[0]).width)>1})) fejl("KNAPPERNE NEDERST er ikke lige brede: "+kn.map(function(x){return Math.round(q(x).width)}).join(" · "));

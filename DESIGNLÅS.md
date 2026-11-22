@@ -1,3 +1,11 @@
+## 22. november · v3429 · BRIEFEN EFTER IDAS GENNEMGANG AF 3427 — BYGGET I TESTUDGAVEN, IKKE UDE (Idas »Ja, læg 3429 ud« gjaldt venstrekanten; resten er kommet til bagefter)
+
+- **Faktaboksen er bredere** (Ida: »bjælken og tilbageknappen i briefen må ikke gå ud over faktaboksen« · »det er faktisk ikke bjælken og tilbage der skal flyttes men faktaboksen der skal være bredere. du kan se tidspunktet også bliver presset!«): 336 i stedet for 312 (under 1000: 288 i stedet for 264). Med sammenklappet menu går den ud til bjælkens venstrekant. MÅLT på 950, 1000, 1280 og 1440 i begge menutilstande: Tilbage, bjælken og faktaboksen har samme venstrekant. VÆLTER 312 fra bud 9.
+- **»Tilføj« under faktaboksen er tilbage på computeren** (Ida: »jeg mangler alle de funktioner vi havde før under fakteboksen!! Alle tilføj er væk!«): knappen var skjult siden 3419. Den står over »Upload video« i samme form og åbner arket med Link til indholdet · Link til musik · Link til inspiration · Produkt · Tags · Kommentar · Opgave. PRØVET på 1440.
+- **Listen under »Hvad er kundens naturlige næste skridt?« kan ses** (Ida: »jeg kan ikke se drop down her«): spørgsmålenes klipning (fra 19/11) skar listen af. SET på 1440.
+- **Trinskift er ét skift** (Ida: »ved skift fra overblikket til fang dem ser jeg ikke mindre end 2 spøgelsesider« · »GRUNDIGT gennemgår at alle klik på siden går naturligt«). MÅLT i rigtig tid på 1280 og 1440, før: fire tilstande over 300 ms (indhold · rød markering · tippet inde i rammen · på plads). Efter: én. Gælder klik på trinnet, Næste og Skriv · Optag · Post.
+- IKKE GENNEMGÅET ENDNU: de øvrige klik i briefen (faktarækkerne, det røde i, arkene, forslagene) og siderne uden for briefen ud over det, hakjægeren måler. Kendt: skiftet kommer ca. 120 ms efter klikket (tegningen tager den tid), og på Overblikket rykker knapperne 4 px efter 400 ms på 1280.
+
 ## 22. november · FLISEN »GUIDES« SKAL TILBAGE I VÆRKTØJSKASSEN — BESLUTTET, IKKE BYGGET (Ida 22/11: »1. ja« til spørgsmålet »Skal flisen Guides tilbage i Værktøjskassen?«)
 
 - VÆLTER Idas »Slet guides fra energida« (21/9). Låsen 5/10 gælder stadig: en guide til kunden er en model, aldrig kasser med tekst.
