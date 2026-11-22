@@ -38269,9 +38269,12 @@ function fremModulLinje(id) {
     const ids = m.lektioner || [], nr = modulNrFor(id);
     let set = ids.filter(function (l) { return KURSUS_SET[l.id]; }).length, ialt = ids.length;
     try { if (lksSkemaHer(nr)) { ialt++; if (OB_SKEMA === true) set++; } } catch (e) {}   /* spørgeskemaet tæller med i det modul, det står i — ellers stod modul 0 på 100 % uden svar */
-    return fremLinje(set + " af " + ialt + " lektioner", fremPct(set, ialt), ialt ? set / ialt : 0);   /* modulet står i heroen — her kun fremgangen (Idas klik 15/11, bud 1 »Kun fremgangen«) */
+    let skemaM = false; try { skemaM = lksSkemaHer(nr); } catch (e) {}   /* v3439 tillæg 2 (Ida 22/11): i modulet med spørgeskemaet kaldes skemaet ikke en lektion — samme tre former som på oversigten */
+    return fremLinje(skemaM ? (set === 0 ? ftlAntal(ids.length, nr) : set === ialt ? "Alle " + ialt + " gennemført" : set + " af " + ialt + " gennemført") : set + " af " + ialt + " lektioner", fremPct(set, ialt), ialt ? set / ialt : 0);   /* modulet står i heroen — her kun fremgangen (Idas klik 15/11, bud 1 »Kun fremgangen«) */
   } catch (e) { return ""; }
 }
+/* v3439 tillæg 2 (Ida 22/11): HELE FORLØBET TÆLLER DET SAMME ALLE STEDER — spørgeskemaet tælles med (som forsidens ring, 20/11), og når tallet indeholder skemaet, hedder det »gennemført« uden »lektioner«. Kun tallet og ordet; intet om, hvad der låser hvad. */
+function kursusHeleTael(set, ialt) { let skema = false; try { if (ialt > 0 && lksSkemaHer("1")) { skema = true; ialt++; if (OB_SKEMA === true) set++; } } catch (e) {} return { set: set, ialt: ialt, skema: skema, ord: skema ? "gennemført" : "lektioner gennemført" }; }
 function fremLinje(venstre, hoejre, pct) {
   const p = Math.max(0, Math.min(100, Math.round((pct || 0) * 100)));
   return '<div class="frl"><div class="frl-top"><span class="frl-v">' + esc(venstre) + '</span><span class="frl-h">' + esc(hoejre) + '</span></div><div class="frl-spor"><i style="width:' + p + '%;' + (p > 0 ? 'min-width:6px;' : '') + '"></i></div></div>';
@@ -45381,6 +45384,9 @@ function hjemYgtTlfHtml() {
   akt.forEach(function (l) { const nr = modulNrFor(l.id); if (!nr) return; let laast = false; try { laast = !!lekModulLaastFor(l.id); } catch (e) {} if (laast) return; if (!paa[nr]) { paa[nr] = { nr: nr, l: [] }; moduler.push(paa[nr]); } paa[nr].l.push(l); });
   if (moduler.length) ud += sek("Dit forløb") + moduler.map(function (m) {
     let navn = ""; try { const info = modulInfoFor(m.nr), mm = lekModulFor(m.l[0].id); navn = "Modul " + modulVisNr(m.nr) + " · " + modulVisNavn(m.nr, (info && info.titel) || (mm && mm.titel) || ""); } catch (e) { navn = "Modul " + modulVisNr(m.nr); }
+    /* v3439 tillæg 2 (Ida 22/11): et modul, der venter på introduktionen og spørgeskemaet (ftlKravLaast), står med hængelås og sætningen — ingen tom bar, kan ikke trykkes */
+    let krav = false; try { krav = ftlKravLaast(m.l); } catch (e) {}
+    if (krav) return '<div class="yf-fl yf-laast"><span class="lks-laas yf-ck">' + FTL_LAAS + '</span><div class="yf-lt"><div class="yf-t">' + esc(navn) + '</div><div class="yf-u">' + esc(FTL_KRAV_ORD) + '</div></div></div>';
     let set = m.l.filter(function (l) { return KURSUS_SET[l.id]; }).length, n = m.l.length, skema = false;
     try { if (lksSkemaHer(m.nr)) { skema = true; n++; if (OB_SKEMA === true) set++; } } catch (e) {}   /* v3439 (kunderejsen punkt 3, Ida 22/11): spørgeskemaet tæller med i det modul, det står i — samme seks dele som lektionssiden (fremModulLinje) */
     const pct = n ? Math.round(set / n * 100) : 0;
@@ -46958,8 +46964,9 @@ function lekTid(l) { return l.tid && l.tid !== "00:00" ? l.tid : ""; }   /* uken
 /* lineær processbar — forløbet er en rejse fra lektion 1 til sidste (Idas valg 16/7, i ring-sprogets farver).
    Bevidst REN bar uden hjerte-markør (Ida 16/7) — hjerne-hjertet som vandrende markør bruges på milepæls-processer (Gameplan, kundeforløb, Shinebarometer) */
 function forloebBarHtml(done, total) {
+  const hele = kursusHeleTael(done, total); done = hele.set; total = hele.ialt;   /* v3439 tillæg 2 (Ida 22/11) */
   const pct = total ? Math.round(done / total * 100) : 0;
-  return '<div style="font-size:13px;margin-bottom:7px;"><span class="num" style="font-weight:300;font-size:21px;">' + done + '</span> <span style="color:var(--gray3);">af ' + total + ' lektioner gennemført</span></div>'
+  return '<div style="font-size:13px;margin-bottom:7px;"><span class="num" style="font-weight:300;font-size:21px;">' + done + '</span> <span style="color:var(--gray3);">af ' + total + ' ' + hele.ord + '</span></div>'
     + '<div style="height:6px;border-radius:12px;background:rgba(201,219,231,0.55);overflow:hidden;">'
     + '<div style="height:100%;width:' + pct + '%;min-width:' + (done ? 6 : 0) + 'px;background:var(--red);border-radius:12px;transition:width .4s ease;"></div>'
     + '</div>';
@@ -49592,7 +49599,7 @@ function lekForloebVis() {
       }).join("")).join("");
   document.getElementById("lekMain").innerHTML =
       (tlf ? '<div class="lek-side-tlf">' + lekMbRingBoks(setAntal, "af " + aktive.length + " lektioner", aktive.length ? setAntal / aktive.length : 0, "", "") + '</div>'
-           : '<div class="lk-versal">Forløbet</div><div class="lk-titel">' + setAntal + ' af ' + aktive.length + ' lektioner gennemført</div>')
+           : '<div class="lk-versal">Forløbet</div><div class="lk-titel">' + (function () { const h = kursusHeleTael(setAntal, aktive.length); return h.set + ' af ' + h.ialt + ' ' + h.ord; })() + '</div>')   /* v3439 tillæg 2 (Ida 22/11) */
     + mod
     + (tlf ? '<div class="lk-knapper">' + lekMbPil('Til lektionen', "lekTilLektionen()") + lekMbPil('Tilbage', "lukLektion()") + '</div>' : '');
   const side = document.getElementById("lekSide");
@@ -50068,7 +50075,8 @@ function lekMoment(id, art, svarId) {
   const naeste = ix > -1 ? (aktive[ix + 1] || null) : null;
   const naesteLaast = !!(naeste && lekModulLaastFor(naeste.id));   /* 30/9: naeste modul er ikke aabent endnu */
   const sidste = ix > -1 && ix === aktive.length - 1 && kursusAlleModulerMed();   /* sidste i HELE forløbet, ikke sidste åbne lektion (vurderingen 8/11, Ida 10/11: »Forløbet er i mål« efter lektion 0.5 — tvillingen til lekSide-rettelsen) */
-  const pct = n => aktive.length ? Math.round(n / aktive.length * 100) : 0;
+  const heleM = kursusHeleTael(setAntal, aktive.length), heleEkstra = heleM.set - setAntal;   /* v3439 tillæg 2 (Ida 22/11): samme tal som forsidens ring */
+  const pct = n => heleM.ialt ? Math.round((n + heleEkstra) / heleM.ialt * 100) : 0;
   const antalOv = (l.ovelse || []).length;
   REFL_STJERNER = 0;
   /* STJERNERNE KOMMER ÉN GANG — LIGE NÅR VIDEOEN ER SLUT (Ida 23/10: »det skal jo komme når lektionen lige er slut — 1-5 stjerner og mulighed for at tilføje kommentar«;
@@ -50106,7 +50114,7 @@ function lekMoment(id, art, svarId) {
     + (art === "oevelse"
         ? '<div class="lek-moment-txt">' + antalOv + ' spørgsmål, ét ad gangen. Svarene samler appen til din Drejebog.</div>'
         : '<div class="lek-moment-frem">'
-          + ('<div style="font-size:13px;margin-bottom:7px;"><span style="font-size:24px;font-variant-numeric:tabular-nums;">' + setAntal + '</span> <span style="color:var(--gray3);">af ' + aktive.length + ' lektioner gennemført</span></div>')
+          + ('<div style="font-size:13px;margin-bottom:7px;"><span style="font-size:24px;font-variant-numeric:tabular-nums;">' + heleM.set + '</span> <span style="color:var(--gray3);">af ' + heleM.ialt + ' ' + heleM.ord + '</span></div>')
           + '<div style="height:6px;border-radius:12px;background:#DEDEDE;overflow:hidden;"><div id="lekMomentBar" style="height:100%;width:' + pct(foer) + '%;min-width:' + (foer ? 6 : 0) + 'px;background:var(--red);border-radius:12px;transition:width .6s ease;"></div></div>'
           + '</div>'
           + (naeste ? '<div class="lek-moment-txt">' + (naesteLaast ? esc(kursusLaasTekst(naeste)) : 'Næste: ' + esc(naeste.titel) + (naeste.tid ? ' &middot; ' + esc(naeste.tid) : '')) + '</div>' : ''))
@@ -61356,7 +61364,7 @@ function huRinge(tlf) {
     const ov = aab.filter(function (l) { return l.ovelse && l.ovelse.length; }), ovS = ov.filter(function (l) { return oevKlaret(l.id); }).length;
     /* INGEN RING UDEN NOGET AT TÆLLE (regel v2146; Idas skærmbillede 22/10: »0 af 0 Lektioner set« og intet andet): er ingen lektion klar, siger Hjem det samme som Lektionerne */
     if (!aab.length) return ring("", "", 0, "", "Forløbet er på vej");
-    return ring(String(set), "af " + ialtL, ialtL ? set / ialtL : 0, "Lektioner gennemført")   /* HJEM VISER ANTAL (Idas klik 26/10 »Kun Hjem«) — Lektionerne og lektionssiden viser procent */   /* stort begyndelsesbogstav (Ida/natten 7/10, fund 92) */
+    return ring(String(set), "af " + ialtL, ialtL ? set / ialtL : 0, ialtL > aab.length ? "Gennemført" : "Lektioner gennemført")   /* v3439 tillæg 2 (Ida 22/11): tallet indeholder spørgeskemaet → »Gennemført« uden »lektioner« */   /* HJEM VISER ANTAL (Idas klik 26/10 »Kun Hjem«) — Lektionerne og lektionssiden viser procent */   /* stort begyndelsesbogstav (Ida/natten 7/10, fund 92) */
       /* OPGAVER OG REFLEKSIONSØVELSER HVER FOR SIG (Ida 20/11: »opgaver og reflektionsøvelser adskilles ikke! det skal de!«) */
       + (function () { const opg = ov.filter(function (l) { return oevArt(l.id) === "opgave"; }), refl = ov.filter(function (l) { return oevArt(l.id) !== "opgave"; });
           const en = function (a, ord) { if (!a.length) return ""; const g = a.filter(function (l) { return oevKlaret(l.id); }).length; return ring(String(g), "af " + a.length, g / a.length, ord); };
@@ -72297,7 +72305,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "3443";
+const APP_VERSION = "3444";
 const APP_BYGGET = "3. november";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_VERSION;   /* ingen dato (Ida 7/11: »hvorfor står der version 3. november?«) — datoen blev ikke rettet med, nummeret er sandheden */ } catch (e) {} });
 let NY_VERSION_KLAR = false;
@@ -100321,6 +100329,15 @@ const LIVE_TESTMAILS = ["info.energida@gmail.com"];
    ÅRSAG: »Køb i dag« sorterede tests fra; de andre fliser brugte erRigtigKunde(), som svarer JA for en kode, der slet ikke findes. Nu spørger alle Hjems tal og lister hjemTaeller(kode):
    koden skal findes i kartoteket · den skal være en rigtig kunde (ikke egen, tester, lukket) · og den må ikke komme fra et testkøb (samme regel som »Køb i dag«: »test« i kilde eller rabatkode, @energida.dk, testmails). */
 const LIVE_TESTKODER = {};
+/* v3444 · »KLIK I DINE MAILS« ER KUN MAILS TIL KUNDER (Ida 22/11 med billede af flisen: »det her må KUN være mails til kunder som jeg ser på«).
+   mailKlikTael: klik ind i appen (mail_klik pr. kode) tælles kun for koder, der tæller på Hjem (hjemTaeller: rigtig kunde, ikke testkøb, ikke slettet) — før kun »ikke egen kode«.
+   mailErProeve: en udsendelse eller kampagne, der hedder »Prøve · …« eller »Test …«, står ikke i flisen (samme regel som serverfunktionen brevo-tal).
+   Google Analytics kender kun kampagnens navn: besøg, Ida selv laver ved at klikke i en kundemail, kan ikke skilles fra kundernes. */
+function mailKlikTael(raekker) {
+  const ud = {}; try { const graense = Date.now() - 30 * 864e5; (raekker || []).forEach(function (r) { if (!hjemTaeller(r.kode)) return; ((r.svar && r.svar.klik) || []).forEach(function (x) { if (x && x.k && !mailErProeve(x.k) && new Date(x.t).getTime() > graense) ud[x.k] = (ud[x.k] || 0) + 1; }); }); } catch (e) {}
+  return ud;
+}
+function mailErProeve(navn) { return /^\s*(prøve|proeve|test)(\b|[\s·:_-])/i.test(String(navn || "")); }
 function hjemTaeller(k) {
   try { const K = String(k || "").toUpperCase(); const VK = VIRKSOMHEDSKODER || {}; const key = VK[K] ? K : (VK[k] ? k : ""); if (!key) return false;
     return erRigtigKunde(key) && !LIVE_TESTKODER[K]; } catch (e) { return false; }
@@ -100347,7 +100364,7 @@ async function liveOverblikHent() {
       liveAlle(function () { return sb.from("skema_svar").select("kode,svar").eq("skema", "mail_klik").order("kode"); })
     ]);
     if (kr.error) return LIVE_DATA;
-    const appKlik = {}; try { const graense = Date.now() - 30 * 864e5; ((mk && mk.data) || []).forEach(function (r) { if (erEgenKode(String(r.kode || "").toUpperCase())) return; ((r.svar && r.svar.klik) || []).forEach(function (x) { if (x && x.k && new Date(x.t).getTime() > graense) appKlik[x.k] = (appKlik[x.k] || 0) + 1; }); }); } catch (e) {}
+    const appKlik = mailKlikTael((mk && mk.data) || []);   /* v3444: kun kunders klik (Ida 22/11) */
     Object.keys(LIVE_TESTKODER).forEach(function (x) { delete LIVE_TESTKODER[x]; });
     const koeb = (kr.data || []).map(liveKoebFra).filter(function (k) {
       if (!k.kilde || /test/i.test(k.kilde) || /test/i.test(k.rabat || "") || /@energida\.dk$/i.test(k.mail) || LIVE_TESTMAILS.indexOf(String(k.mail || "").toLowerCase()) > -1) { try { if (k.kode) LIVE_TESTKODER[String(k.kode).toUpperCase()] = 1; } catch (e) {} return false; }   /* v3439: testkøbets kode huskes, så kunden også er ude af de andre fliser */
@@ -100465,11 +100482,11 @@ function liveOverblikHtml(D) {
   let mailFl = "";
   if (D.mc || D.ga || D.bv || Object.keys(D.appKlik || {}).length) {
     /* BREVO FØRST (19/11): hver udsendelse fra Mails — klikkere ud af modtagere; et tryk viser, hvem der klikkede */
-    const bl = ((D.bv && D.bv.mails) || []).slice(0, 6).map(function (x, i) { return '<button type="button" class="lv-trin-knap" onclick="liveDetalje(\'brevo\',' + i + ')"><b>' + x.klik + ' klik</b><span class="lv-mail-n">' + esc(x.navn) + '</span><span>' + x.klik + ' af ' + x.sendt + ' har klikket</span></button>'; });
-    const ml = bl.concat(((D.mc && D.mc.mails) || []).concat((D.mc && D.mc.automatiseringer) || []).filter(function (x) { return x.sendt > 0; }).slice(0, 6)
+    const bl = ((D.bv && D.bv.mails) || []).filter(function (x) { return !mailErProeve(x.navn); }).slice(0, 6).map(function (x, i) { return '<button type="button" class="lv-trin-knap" onclick="liveDetalje(\'brevo\',' + i + ')"><b>' + x.klik + ' klik</b><span class="lv-mail-n">' + esc(x.navn) + '</span><span>' + x.klik + ' af ' + x.sendt + ' har klikket</span></button>'; });
+    const ml = bl.concat(((D.mc && D.mc.mails) || []).concat((D.mc && D.mc.automatiseringer) || []).filter(function (x) { return x.sendt > 0 && !mailErProeve(x.navn); }).slice(0, 6)
       .map(function (x) { return '<div><b>' + Math.round((x.klikrate || 0) * 100) + ' %</b><span class="lv-mail-n">' + esc(x.navn) + '</span><span>' + x.klik + ' klik af ' + x.sendt + '</span></div>'; }));
     /* JOURNEYENS MAILS (19/10): besøg på hjemmesiden fra mailen (Google Analytics) + klik ind i appen (mail_klik), samlet pr. mailnavn */
-    const pr = {}; ((D.ga && D.ga.mails) || []).forEach(function (x) { (pr[x.kampagne] = pr[x.kampagne] || { web: 0, app: 0 }).web += x.besoeg; });
+    const pr = {}; ((D.ga && D.ga.mails) || []).forEach(function (x) { if (mailErProeve(x.kampagne)) return; (pr[x.kampagne] = pr[x.kampagne] || { web: 0, app: 0 }).web += x.besoeg; });
     Object.keys(D.appKlik || {}).forEach(function (k) { (pr[k] = pr[k] || { web: 0, app: 0 }).app += D.appKlik[k]; });
     const jl = Object.keys(pr).sort(function (a, b) { return (pr[b].web + pr[b].app) - (pr[a].web + pr[a].app); }).slice(0, 6)
       .map(function (k) { const x = pr[k]; return '<button type="button" class="lv-trin-knap" data-k="' + esc(k) + '" onclick="liveDetalje(\'kampagne\',this.dataset.k)"><b>' + (x.web + x.app) + ' klik</b><span class="lv-mail-n">' + esc(k) + '</span><span>' + [x.web ? x.web + " på hjemmesiden" : "", x.app ? x.app + " i appen" : ""].filter(Boolean).join(" · ") + '</span></button>'; });
@@ -108265,6 +108282,11 @@ html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7
   html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3).lek-mb.lek-ucov #lekVis .lku-bes { display:block; font:400 16px/1.6 Poppins,sans-serif; color:#686868; margin:12px 0 0; overflow-wrap:anywhere; }
   html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3).lek-mb.lek-ucov #lekVis .lku-bes + .lku-sek, html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3).lek-mb.lek-ucov #lekVis .lku-bes + #lekFiler .lfil-sek > .lk-versal { margin-top:24px !important; }
 }
+/* v3439 tillæg 2 (kunderejsen punkt 3, Ida 22/11): FORSIDENS FLISE FOR ET LÅST MODUL (telefonen) — samme låste form som på »Dit forløb«: hvid, grå kant, ingen skygge, hængelås til venstre, sort tekst; ingen hånd-markør. */
+html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .hu-ygt.yf .yf-fl.yf-laast { display:flex !important; align-items:center; gap:16px; padding:17px 19px !important; border:1px solid #DEDEDE !important; box-shadow:none !important; cursor:default !important; box-sizing:border-box; }
+html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .hu-ygt.yf .yf-fl.yf-laast > .yf-ck { flex:none; width:22px; height:22px; display:grid; place-items:center; margin:0; }
+html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .hu-ygt.yf .yf-fl.yf-laast > .yf-lt { flex:1 1 auto; min-width:0; }
+html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .hu-ygt.yf .yf-fl.yf-laast .yf-u { color:#1A1A1A !important; }
 /* v3395 (Ida 20/11) — MODULFLISERNE: cirkel som lektionerne (tom · rødt flueben · hængelås), ingen pil, ingen fold-ud */
 html body #forloebTidslinje .ftl2 .ftl2-hoved, html body #forloebTidslinje .ftl2 .ftl2-rk.laast { display:flex !important; align-items:center !important; justify-content:flex-start !important; gap:16px !important; cursor:pointer; }
 html body #forloebTidslinje .ftl2 .ftl2-rk.laast { cursor:default; }
@@ -108348,7 +108370,7 @@ html body:not(#bl0):not(#bl1):not(#bl2):not(#bl3):not(#bl4):not(#bl5):not(#bl6):
 @media (min-width:900px) { html body:not(#bl0):not(#bl1):not(#bl2):not(#bl3):not(#bl4):not(#bl5):not(#bl6):not(#bl7):not(#bl8):not(#bl9):not(#bl10):not(#bl11):not(#bl12):not(#bl13):not(#bl14):not(#bl15):not(#bl16):not(#bl17):not(#bl18):not(#bl19):not(#bl20):not(#bl21):not(#bl22):not(#bl23):not(#bl24):not(#bl25):not(#bl26):not(#bl27):not(#bl28):not(#bl29):not(#bm0):not(#bm1):not(#bm2):not(#bm3):not(#bm4):not(#bm5):not(#bm6):not(#bm7):not(#bm8):not(#bm9):not(#bm10):not(#bm11):not(#bm12):not(#bm13):not(#bm14):not(#bm15):not(#bm16):not(#bm17):not(#bm18):not(#bm19):not(#bm20):not(#bm21):not(#bm22):not(#bm23):not(#bm24):not(#bm25):not(#bm26):not(#bm27):not(#bm28):not(#bm29):not(#bm30):not(#bm31):not(#bm32):not(#bm33):not(#bm34):not(#bm35):not(#bm36):not(#bm37):not(#bm38):not(#bm39) #screen7#screen7 #briefHjaelp#briefHjaelp#briefHjaelp .b3h-soejle { margin-left:-8px !important; margin-right:-8px !important; padding-right:0 !important; } html body:not(#bl0):not(#bl1):not(#bl2):not(#bl3):not(#bl4):not(#bl5):not(#bl6):not(#bl7):not(#bl8):not(#bl9):not(#bl10):not(#bl11):not(#bl12):not(#bl13):not(#bl14):not(#bl15):not(#bl16):not(#bl17):not(#bl18):not(#bl19):not(#bl20):not(#bl21):not(#bl22):not(#bl23):not(#bl24):not(#bl25):not(#bl26):not(#bl27):not(#bl28):not(#bl29):not(#bm0):not(#bm1):not(#bm2):not(#bm3):not(#bm4):not(#bm5):not(#bm6):not(#bm7):not(#bm8):not(#bm9):not(#bm10):not(#bm11):not(#bm12):not(#bm13):not(#bm14):not(#bm15):not(#bm16):not(#bm17):not(#bm18):not(#bm19):not(#bm20):not(#bm21):not(#bm22):not(#bm23):not(#bm24):not(#bm25):not(#bm26):not(#bm27):not(#bm28):not(#bm29):not(#bm30):not(#bm31):not(#bm32):not(#bm33):not(#bm34):not(#bm35):not(#bm36):not(#bm37):not(#bm38):not(#bm39) #screen7#screen7 #briefHjaelp#briefHjaelp#briefHjaelp .b3h-soejle .b3h-chip { font-size:11px !important; padding:0 8px !important; max-width:100%; } }
 </style>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-hvid.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 22. november · 3443</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 22. november · 3444</div>
 <script>
 /* DROPDOWNEN RULLER SELV (Ida 4/10) — maal den aabne liste og klip den ved skaermens bund */
 (function () {

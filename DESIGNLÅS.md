@@ -1,3 +1,11 @@
+## 22. november · v3444 · SPØRGESKEMAET ER IKKE EN LEKTION · LÅST MODUL PÅ TELEFONENS FORSIDE · »KLIK I DINE MAILS« ER KUN MAILS TIL KUNDER — BYGGET I TESTUDGAVEN, IKKE UDE
+
+- **Spørgeskemaet kaldes ikke en lektion** (resterne fra kunderejsens punkt 3; Idas »Ja, send dem« hos »Ny chef«): modulet med skemaet siger »5 videoer og 1 spørgeskema« · »n af 6 gennemført« · »Alle 6 gennemført«; hele forløbets tal tæller skemaet med og siger »gennemført« uden »lektioner« (`kursusHeleTael`), og computerens ring hedder »Gennemført«. Låselogikken er urørt.
+- **Telefonens forside:** et modul, der er låst af introduktionen og skemaet, er en låst flise (hængelås, sætningen, ingen bar, intet klik; hvid med grå kant, `yf-laast`).
+- **»Klik i dine mails« er kun mails til kunder** (Ida 22/11 med billede af flisen: »det her må KUN være mails til kunder som jeg ser på«): klik ind i appen tælles kun for koder, der tæller på Hjem (`mailKlikTael` bruger `hjemTaeller`: testkøb og slettede koder er ude; før kun »ikke egen kode«), og en udsendelse eller kampagne, der hedder »Prøve · …« eller »Test …«, står ikke i flisen (`mailErProeve`). Rækkefølge og antal er uændret. MÅLT I PORTEN (probe-hjemtaeller.js): en testkode, en slettet kode og en prøvemail står ikke i flisen. **KAN IKKE SKILLES AD:** Google Analytics kender kun kampagnens navn, så besøg, Ida selv laver ved at klikke i en kundemail, tæller med.
+- Forløbs-driveren (`tools/sikkerhedschefen/lag2/forloeb-driver.js`) følger med: ringen findes på »gennemført«, og et modul uden bar springes over. `tjek_forloeb.py`: alle tjek bestået på 390 og 1440.
+- **IKKE MÅLT:** afslutningsboksen (`lekMoment`) og »Forløbet«-titlen på computer er kun ændret i koden; onboardingens »X af N lektioner gennemført« er ikke ændret; mailflisen er set med prøvedata, ikke med de rigtige tal.
+
 ## 22. november · v3443 · TILLÆG TIL KUNDEREJSENS PUNKT 4: OPGAVEFLISENS GRÅ KANT · BESKRIVELSEN PÅ TELEFONEN — BYGGET I TESTUDGAVEN, IKKE UDE
 
 - **Opgaveflisen i lektionslisten og på »Forløbet« har den grå kant** (låsen 20/11: lyseblå fliser har 1 px grå kant #DEDEDE), også den mørkere blå for den aktuelle side. Tegnet som indvendig streg, så flisens mål og tekstens plads er uændrede. Målt: 338 × 76 på 390 og 692 × 56 på 1440, som før.
