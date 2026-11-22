@@ -1,3 +1,15 @@
+## 22. november · v3431 · NOTERNE (FIRE FORBEDRINGER, BUD) · FLISEN »MANGLER« PÅ BACKSTAGES HJEM · ROLIG RULNING — BYGGET I TESTUDGAVEN, IKKE GODKENDT, IKKE UDE
+
+- **NOTERNE, FIRE FORBEDRINGER (BUD — Idas »ja« 22/11 til at se dem, efter UX-ekspertens »en passiv kasse«):**
+  1. Flueben kan sættes: et tryk på boksen i notefeltet eller på linjen i »Mine noter« skifter fluebenet (rød boks, hvidt flueben; teksten bliver stående) og gemmes i noten. Øverst i »Mine noter«: overskriften »Det vil jeg prøve« over én flise med alle åbne punkter på tværs af lektioner.
+  2. Tre startknapper i det tomme felt: »Det tog jeg med« (punkter) · »Det vil jeg prøve« (tjekliste) · »Spørgsmål til mig selv« (spørgsmål og svar). Et tryk sætter overskriften og listen ind og stiller markøren i første linje; knapperne forsvinder, når der står tekst. Ingen hjælpetekst.
+  3. Mikrofonen står i notefeltet (husets grå mikrofon nederst til højre; det sagte lægges efter det, der står). IKKE PRØVET med rigtig tale (testbrowseren har ingen mikrofon).
+  4. Svaret er dækket i »Mine noter« (»Se svaret«), til man trykker på det.
+  PRØVET i testudgaven på 390 og 1440: startknap → tekst → gemt; flueben i »Mine noter« → gemt i noten, og punktet forlader flisen øverst; svaret vises og dækkes. IKKE bygget: søgning og nyeste først, vej fra lektionen til »Mine noter«, rammen i noteflisen på telefonen.
+- **»DINE NOTER« STÅR UNDER VIDEOEN OGSÅ PÅ COMPUTEREN** (Ida 22/11: »men?? ligger noter tekstfeltet ikke under videoen mere??« · »ja under«): notefeltet står i højre spalte lige under videoen i videoens bredde; venstre spalte har kun fremdrift og lektionsliste. VÆLTER v3417 bud 4 (»i venstre spalte under lektionslisten«). Telefonen er uændret. SET på 1440, 1000 og 390 med tomt felt (pladsholderen over startknapperne).
+- **ET KORT, DER MANGLER, STÅR TYDELIGT PÅ BACKSTAGES HJEM (Ida 22/11: »på mit dashboard skal der tydeligt stå hvis jeg mangler at køre SQL eller EDGE kort!!«):** rød flise »Mangler« i live-overblikket med én linje pr. ting og knappen »Åbn Maskinrummet«. Vises kun, når noget mangler. Læser svaret fra de tre tal-funktioner, Hjem selv kalder (ga4-tal, mailchimp-tal, brevo-tal): 404 = »Edge-kortet … er ikke lagt op« · 503 = »Nøglen til … mangler i Secrets« · anden fejl = »… svarer ikke«. Den grå sætning »Brevo-tallene er ikke koblet på endnu« er væk. PRØVET i testudgaven med opdigtede svar (404 og 503) på 1440 og 390. IKKE BYGGET: SQL-kort og de Edge-kort, Hjem ikke kalder (mail-send, mail-udsend m.fl.); appen kan ikke se, om et SQL-kort er kørt, uden at Maskinrummets kort får en status.
+- **Den gamle side ruller ikke, mens den holdes ved et sideskift i kundeappen** (rettelse C fra samtalen »b2b-design«; Idas ord dér: »så kommer jeg lige først op i toppen af siden - ROD«). Flettet ind uændret; målt af dem (spøgelsesjægeren 22/22, hakjægeren grøn i anden kørsel).
+
 ## 22. november · v3430 · BRIEFENS TILVALG, NOTERNES TYPOGRAFI OG RESERVELISTEN — BYGGET I TESTUDGAVEN, IKKE GODKENDT, IKKE UDE
 
 - **Tilvalgsfelterne i en scene kan fjernes igen på computeren** (Ida 22/11: »jeg kan ikke fjerne tekst på skærm - altså slette dette felt. det skal aldrig være standard men som mulighed for tilføjelse under ligesom tilføj manus og tilføj klip«): »Tekst på skærmen« og »Hvad siger du?« har skraldespanden inde i feltet før mikrofonen (formen fra 19/11). Et skrevet felt spørger først. Telefonen sletter stadig med swipe (16/11). VÆLTER 16/9 »feltet tømmes i stedet« på computeren. ÅRSAG (MÅLT): en regel fra 16/9 skjulte netop knappen »Fjern feltet«.
@@ -220,7 +232,7 @@ Idas ord 21/11: »Værktøjslinjen fylder for meget ift notefeltet ikke er tilg�
 
 - **Knapperne står over videoen**, 44 px høje, kun så brede som teksten: »Forrige« (hvid, venstre) og »Markér som færdig«/»Videre« (rød, højre). Computer: på samme linje som lektionens titel.
 - **Telefon:** notefeltet står lige under videoen; modulets lektionsliste står under noterne. Når man skriver, rulles videoen til toppen og bliver lav (284 px bred), så den ses over tastaturet. Ingen sticky.
-- **Computer:** »Dine noter« står i venstre spalte under lektionslisten, ved siden af videoen. Kun notefeltet flyttes — videoens ramme røres aldrig.
+- **Computer:** ~~»Dine noter« står i venstre spalte under lektionslisten, ved siden af videoen.~~ VÆLTET 22/11 i v3431 (Ida: »ja under«): »Dine noter« står under videoen også på computeren. Videoens ramme røres aldrig.
 - **Værktøjslinjen** vises først, når man trykker i feltet, under feltet: Punkter · Tjekliste · Nummereret · Fed · »Aa« (folder resten af Word-linjen ud). Alle 44 px.
 - **»Markér som færdig« gentages under noterne på telefonen**, når videoen er set. Den låste knap svarer »Se videoen færdig først.«
 - **Videoen kører videre, mens man skriver.** Pause kun, hvis kunden selv har valgt det under Indstillinger (`videoNoteValgt`). Mens mikrofonen optager en note, holder videoen pause og starter selv igen.
