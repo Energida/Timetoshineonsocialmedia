@@ -1,3 +1,9 @@
+## 22. november · v3443 · TILLÆG TIL KUNDEREJSENS PUNKT 4: OPGAVEFLISENS GRÅ KANT · BESKRIVELSEN PÅ TELEFONEN — BYGGET I TESTUDGAVEN, IKKE UDE
+
+- **Opgaveflisen i lektionslisten og på »Forløbet« har den grå kant** (låsen 20/11: lyseblå fliser har 1 px grå kant #DEDEDE), også den mørkere blå for den aktuelle side. Tegnet som indvendig streg, så flisens mål og tekstens plads er uændrede. Målt: 338 × 76 på 390 og 692 × 56 på 1440, som før.
+- **En ny kursuskunde på telefon (uden cover) ser lektionens beskrivelse** under navn og modullinje: Poppins 16/25,6, #686868, fuld bredde, 12 under modullinjen. Uden beskrivelse tegnes intet. Med en lang beskrivelse (395 tegn, 10 linjer) står »Mine noter« ikke i første skærmbillede; Ida har set det (»Ja, send tillægget« hos »Ny chef«).
+- **IKKE MÅLT:** rigtig video og rigtige beskrivelser fra basen · beskrivelsen sammen med en opgaveflise eller materialer lige under.
+
 ## 22. november · v3442 · BRIEFENS H–K (afsnittene herunder) LAGT I TESTUDGAVEN · LUFTEN UNDER STATUSFLISEN ER 12
 
 - **Luften under statusflisen på telefonen er 12 på alle tre visninger (én regel):** på Skriv giver trin-flisen de 12; på Optag og Post får indholdet 12 over sig. VÆLTER 24 fra v3440. Målt på 390: statusflisens bund 306, første indhold 318 på Skriv, Optag og Post.

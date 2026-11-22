@@ -16,6 +16,8 @@
 //      (sat af Ida til mail-udsend; Claude har aldrig set den). Sender, ændrer og sletter intet i Brevo. Svarer med e-mailadresser på dem, der fik og
 //      klikkede på mailen — kun til admin.
 //   6. Direkte omkostning: nej (læsning er gratis i Brevo Free; højst 6 kald pr. åbning af Hjem).
+//   ÆNDRING 22/11 (Ida: »det her må KUN være mails til kunder som jeg ser på«): mails til Idas egne adresser og prøver tælles ikke. De seks linjer er uændrede:
+//   samme adgang (kun administratorer), samme kald til Brevo, ingen tabel, ingen ny hemmelighed.
 // ============================================================================
 
 import { createClient } from "npm:@supabase/supabase-js@2";
@@ -52,8 +54,15 @@ Deno.serve(async (req) => {
     // én mail = ét emne (mail-udsend sender samme emne til alle modtagere af en udsendelse)
     const pr: Record<string, { navn: string; sendt: Set<string>; klikkere: Record<string, { klik: number; sidst: string; links: string[] }>; tid: string }> = {};
     const hent = (emne: string) => (pr[emne] = pr[emne] || { navn: emne || "Uden emne", sendt: new Set(), klikkere: {}, tid: "" });
-    for (const e of sendt) { const m = hent(String(e.subject || "")); if (e.email) m.sendt.add(String(e.email).toLowerCase()); if (!m.tid || String(e.date) > m.tid) m.tid = String(e.date || ""); }
+    /* KUN MAILS TIL KUNDER (Ida 22/11: »det her må KUN være mails til kunder som jeg ser på«): prøver, statusmails, »Nyt køb« og alt andet, der går til Ida selv,
+       tælles ikke — hverken som sendt eller som klik. En mail, der kun er gået til Idas egne adresser, forsvinder dermed helt fra listen.
+       Egne adresser: alt på energida.dk, husets testadresser, og adresser med »test« før @ (testprofilerne, fx navn+test@…). */
+    const EGNE = ["info.energida@gmail.com"];
+    const erEgen = (mail: string) => { const m = String(mail || "").trim().toLowerCase(); if (!m) return true; const [navn, dom] = m.split("@"); return dom === "energida.dk" || EGNE.indexOf(m) > -1 || /test/.test(navn || "") || /^idatjessen(\+|$)/.test(navn || ""); };
+    const internt = (emne: string) => /^\s*Prøve\s*·/i.test(emne);   /* en prøve er altid til Ida selv, også hvis den sendes til en anden af hendes adresser */
+    for (const e of sendt) { if (erEgen(e.email) || internt(String(e.subject || ""))) continue; const m = hent(String(e.subject || "")); if (e.email) m.sendt.add(String(e.email).toLowerCase()); if (!m.tid || String(e.date) > m.tid) m.tid = String(e.date || ""); }
     for (const e of klik) {
+      if (erEgen(e.email) || internt(String(e.subject || ""))) continue;
       const m = hent(String(e.subject || "")); const em = String(e.email || "").toLowerCase(); if (!em) continue;
       if (String(e.link || "").indexOf("mail-afmeld") > -1) continue;   // et klik på »Afmeld« er ikke et klik på indholdet
       const k = (m.klikkere[em] = m.klikkere[em] || { klik: 0, sidst: "", links: [] }); k.klik++;
