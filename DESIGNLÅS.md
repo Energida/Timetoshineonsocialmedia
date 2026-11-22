@@ -1,3 +1,18 @@
+## 22. november · »FORSLAG TIL HOOKET« (KARRUSEL): RÆKKERNE LIGE BREDE, CIRKLEN RUND — BYGGET I PRØVEKOPIEN, IKKE UDE (Ida 22/11, skærmbillede: »husk at fliser ALTID skal være samme bredde og aldrig dette og cirkler runde«)
+
+- ÅRSAG (MÅLT på 3435, 1440 og 390): vælg-cirklen var 26 × 18 (oval), fordi briefens regel om flueben på 18 også ramte karrusellens cirkel. Feltet i en række med cirkel var 508 bredt, den tomme række 544 (telefon: 246 mod 328).
+- Nu: cirklen er 26 × 26, og den tomme række har samme indryk (36 til venstre; på telefonen også 46 til højre, hvor skraldespanden står), så alle felter begynder og slutter samme sted. MÅLT efter: 508 · 508 · 508 på 1440 og 246 · 246 · 246 på 390.
+- Kun CSS (blokken kvhEnsCss sidst i filen). IKKE SET: »Tekst på coverbilledet« og andre lister uden for karrusellens hook.
+
+## 22. november · ET KLIK GIVER ÉT SKIFT — MELLEMTILSTANDE MÅLES I HELE APPEN (sikkerhedschefens løfte 57) — BYGGET SOM RETTELSE, IKKE UDE
+
+Ida 22/11: »jeg vil have at du GRUNDIGT gennemgår at alle klik på siden går naturligt og der ike kommer alle de forstyrrende elementer når man navigerer rundt« (og samme dag: »ved skift fra overblikket til fang dem ser jeg ikke mindre end 2 spøgelsesider«).
+
+- **ET KLIK GIVER ÉT SKIFT (HÅRD, Ida 22/11):** fra det første nye billede efter et klik må intet synligt ændre plads, størrelse, farve eller synlighed mere end 40 ms senere. Gælder hele appen, kunde og Backstage, telefon og computer: sideskift i menuen, browserens Tilbage og Frem, hver popup og hvert ark (åbn, luk, skift fra én til en anden), briefen, mødesiden, lektionssiden og Hjem.
+- Tre slags brud, og hvert fund siger, hvilken det er: **forskydning** (noget, der allerede er vist, flytter sig eller skifter størrelse 2 px eller mere) · **blink** (noget er synligt, væk og synligt igen inden for 400 ms, også en popups slør) · **ufærdigt indhold** (en popup eller side vises og skifter derefter flade, knapper eller højde, eller får indhold bagefter).
+- Måles af `tools/sikkerhedschefen/tjek_mellemtilstande.py` med `lag2/mt-driver.js` i RIGTIG tid (`realtid.mjs`), på 390 og 1440, efter hakjægeren i porten. Metoden er briefens fra 3430: et aftryk af siden for hvert tegnet billede.
+- Et fund tæller først, når det er set i to kørsler. De fund, der fandtes, da måleren blev bygget, står i `tools/sikkerhedschefen/mt-grundlinje.json` som kendte: de vises i porten, men vælter den ikke, før Ida har valgt, hvad der rettes. Et NYT fund vælter porten. Når et kendt fund er rettet, fjernes linjen, så porten vogter det.
+- En scene, der ikke kunne køres (knappen fandtes ikke, Node er for gammel), står som IKKE TESTET og aldrig som bestået.
 ## 22. november · v3435 · »OPBYGNING TIL DELING«-STORY AF SIG SELV VED FORSLAG → PLANLAGT (del F fra »b2b-design«) · IDÉBANKENS CHIPS I HUSETS MÅL — BYGGET I TESTUDGAVEN, IKKE UDE
 
 - **Idébankens chips »Alle · Tema · Serie« er husets mellemstore chip** (32 høj · 12,5 px · trykfelt 44) på både telefon og computer. Før: 44 på telefonen og 36 på computeren, som ikke var et bevidst valg (idébank-samtalen 22/11).

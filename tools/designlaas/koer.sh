@@ -261,6 +261,23 @@ print('SELE HAK OK: ingen hak i sideskiftene paa 390 og 1440' if not fejl else '
 " "$ROD" 2>&1); fi
 echo "$UDK"
 echo "$UDK" | grep -q "SELE HAK OK\|SELE HAK IKKE MAALT" || HERO_OK=0
+# MELLEMTILSTANDE I PORTEN (Ida 22/11: »GRUNDIGT gennemgår at alle klik på siden går naturligt og der ikke kommer alle de forstyrrende elementer«, sikkerhedschefens loefte 57):
+# et klik giver ÉT skift. tjek_mellemtilstande.py filmer i RIGTIG tid (realtid.mjs) menuen, Forsiden, hver popup, briefen, moedesiden, lektionen og Backstage paa 390 og 1440
+# og navngiver tre slags brud: forskydning · blink · ufaerdigt indhold. Et fund taeller foerst, naar det er set i to koersler. Kendte fund (mt-grundlinje.json) vises, men vaelter ikke porten;
+# et NYT fund vaelter den. Samme Node-krav som hakjaegeren: er Node for gammel, siges det hoejt, og tjekket springes over — det staar ALDRIG som bestaaet uden at vaere koert.
+if ! node -e "if(typeof WebSocket==='undefined')process.exit(1)" 2>/dev/null; then UDMT="SELE MELLEMTILSTANDE IKKE MAALT: Node $(node -v 2>/dev/null) har ingen WebSocket — maales lokalt foer udrulning"; [ -n "${GITHUB_ACTIONS:-}" ] && echo "::notice title=Mellemtilstande ikke målt::Node uden WebSocket"; else
+UDMT=$(CHROME="$C" python3 -c "
+import sys; sys.path.insert(0, sys.argv[1] + '/tools/sikkerhedschefen')
+import tjek_mellemtilstande as t
+fejl = ikke = kendte = 0
+for r in t.koer(sys.argv[1]):
+    if r.tilstand == 'FEJLET': fejl += 1; print('SELE MELLEMTILSTANDE FEJL: ' + r.navn + ' · ' + r.detalje)
+    elif r.tilstand != 'BESTÅET': ikke += 1; print('SELE MELLEMTILSTANDE IKKE TESTET: ' + r.navn + ((' · ' + r.detalje) if r.detalje else ''))
+    elif r.detalje: kendte += 1
+print(('SELE MELLEMTILSTANDE OK: ingen nye mellemtilstande paa 390 og 1440 (scener med kendte fund: %d · scener ikke testet: %d)' % (kendte, ikke)) if not fejl else 'SELE MELLEMTILSTANDE FEJL: %d scener med nye fund' % fejl)
+" "$ROD" 2>&1); fi
+echo "$UDMT"
+echo "$UDMT" | grep -q "SELE MELLEMTILSTANDE OK\|SELE MELLEMTILSTANDE IKKE MAALT" || HERO_OK=0
 # BRIEFEN I RIGTIG TID (v3430, Idas fund 22/11: »bjælken og tilbageknappen i briefen må ikke gå ud over faktaboksen« · »ved skift fra overblikket til fang dem ser jeg ikke mindre end 2 spøgelsesider«):
 # brief-rt.py maaler paa 1280 og 1440 i RIGTIG tid, at Tilbage, bjaelken og faktaboksen flugter med aaben OG sammenklappet menu (body.nav-smal), at »Tilføj« ses under faktaboksen,
 # og at hvert trinskift (trinnet, Næste, Skriv · Optag · Post) er ÉT skift. Samme Node-krav som hakjaegeren; paa GitHub (Node 20) siges det hoejt og springes over.
