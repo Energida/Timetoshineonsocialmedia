@@ -97,7 +97,8 @@ setTimeout(async function () {
         [].slice.call(ug.querySelectorAll(".uge-dag")).forEach(function (d, n) { var c = getComputedStyle(d); if (n > 0 && !(parseFloat(c.borderLeftWidth) >= 1 && c.borderLeftStyle !== "none" && lysK(c.borderLeftColor) < 0.92)) kf.push("ingen synlig linje foran dag " + (n + 1));
           var t = d.querySelector(".uge-top"); if (t) { var ct = getComputedStyle(t); if (!(parseFloat(ct.borderBottomWidth) >= 1 && ct.borderBottomStyle !== "none" && lysK(ct.borderBottomColor) < 0.92)) kf.push("ingen synlig linje under datoen, dag " + (n + 1)); } });
         var cg = document.getElementById("calGrid"); if (cg && parseFloat(getComputedStyle(cg).borderTopWidth) > 0 && parseFloat(getComputedStyle(ug).borderTopWidth) > 0) kf.push("to rammer om ugen");
-        if (parseFloat(getComputedStyle(ug).borderTopWidth) < 1) kf.push("ugen har ingen ramme");
+        /* v3428: rammen kan være en kant ELLER husets flise-skygge med 1 px ring (»0px 0px 0px 1px«), som før farvemanualen 20/11 — begge er én synlig ramme */
+        if (parseFloat(getComputedStyle(ug).borderTopWidth) < 1 && !/0px 0px 0px 1px/.test(getComputedStyle(ug).boxShadow || "")) kf.push("ugen har ingen ramme");
         if (kf.length) { console.log("SELE STREG FEJL KALENDERENS GITTER: " + kf.slice(0, 4).join(" · ")); FEJL++; } else console.log("SELE STREG KALENDERENS GITTER OK (" + innerWidth + ")"); } } catch (e) { console.log("SELE STREG FEJL KALENDERENS GITTER: " + (e && e.message)); FEJL++; } }
     }
     Object.keys(FUND).sort().forEach(function (k) { console.log("SELE STREG " + k); });

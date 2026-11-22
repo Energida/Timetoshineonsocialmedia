@@ -1,3 +1,31 @@
+## 22. november · FLISEN »GUIDES« SKAL TILBAGE I VÆRKTØJSKASSEN — BESLUTTET, IKKE BYGGET (Ida 22/11: »1. ja« til spørgsmålet »Skal flisen Guides tilbage i Værktøjskassen?«)
+
+- VÆLTER Idas »Slet guides fra energida« (21/9). Låsen 5/10 gælder stadig: en guide til kunden er en model, aldrig kasser med tekst.
+- Formen er forslaget i `Energida-app/bud/guides/note-guide.md` afsnit 4: overskriften »Guides« over én flise som Din hashtagbank; flisen åbner siden »Guides« med videoen øverst.
+- Bygges, når den første video (»Sådan skriver du gode noter«) findes. Uafklaret: hvordan videoen laves (program til at samle billede og lyd, eller Keynote).
+
+## 22. november · HVIDE FLISER PÅ HVID BAGGRUND HAR ALTID EN SYNLIG SKYGGE (HÅRD) (Ida 22/11: »vil du tilføje i designlåsen at hvide fliser på hvid baggrund altid skal have synlige skygger«)
+
+- **HVID FLISE PÅ HVID BAGGRUND = SYNLIG SKYGGE (HÅRD):** en hvid flise, der står på en hvid side, har altid husets skygge, så den kan ses som en flise. En kant alene er ikke nok. Gælder kundeappen og Backstage, telefon og computer.
+- Anledning: Content kalenderen stod uden skygge fra 20/11 til 22/11, fordi farvemanualen skiftede kantens farve, og fliserne ikke længere blev genkendt (rettet i 3428).
+- **Fejet og rettet 22/11 (3428, Idas »og implementere det alle steder«):** kundeappen (12 sider) og Backstage (12 sider) på 390 og 1440. Fik skygge: de tomme kort og ugekortet på Hjem (.tom-kort · .hu-tom · .hu-kort; VÆLTER 15/11 »IKKE skyggefliser«), nøgletallene i Budget, træningskortet, kalenderen og ringkortene i Backstages Content Studio og kunderækkerne i CRM på telefonen. MÅLT efter: ingen hvid flise med kant uden skygge på de 24 sider. SET: Hjem 390 og 1440.
+- Ikke fejet: ark og popups, lektionssiderne, kundesiderne i CRM og de tilstande, prøvedata ikke viser (fx fyldte lister). Porten måler det ikke endnu (står som plan i regler.json).
+- Ikke afgjort: kortene INDE i kalenderens ramme (opslagene og plus-knapperne) har kant og ingen skygge, som de også havde før 20/11. De står i en flise, ikke direkte på siden.
+
+## 22. november · v3428 · CRM: INGEN POPUP, RET I LISTEN, EGNE KOLONNER, TAGS UNDER EGENSKABER — BYGGET I TESTUDGAVEN, IKKE GODKENDT, IKKE UDE
+
+Idas ord 22/11: »når jeg klikker i mit crm, så skal der ikke komme pop up - her klikkede jeg på navnet, så skal jeg kunne tilføje hendes efternavn fx bare ude fra forsiden« · »jeg vil gerne kunne rykke rundt på rækkefølgen i kolonnerne her og ændre navnet øverst hvis jeg har lyst - fx produkt« · »Jeg vil også gerne kunne tilføje en kolonne« · »efter kunden er oprettet - så skal jeg aldrig se den der pop up - så skal kunden bare åbne på en kundeside« · »jeg skal her kunne ændre i alt også tags fx«.
+- **Kontakten åbner som en side, aldrig som popup (Backstage):** samme felter og samme gemmeveje som kortet, »Tilbage« øverst (gemmer og går tilbage), navnet som sidens titel i Didot. Nyt felt øverst: »Navn«. Gælder alle steder, der før åbnede kortet (CRM-listen, Hjem, søgning, salg). VÆLTER kontaktkortet som popup.
+- **Navnet rettes direkte i listen på computeren** (klik på navnet = skrivefelt i rækken; Enter gemmer, Esc fortryder; et navn kan ikke gemmes tomt). På telefonen åbner navnet siden. Kunder med kode åbner stadig deres kundeside.
+- **Overskriften i listen åbner en menu:** Sortér · Omdøb · Flyt til venstre · Flyt til højre · Skjul · Ny kolonne (egne kolonner også: Slet kolonnen). Overskriften kan også trækkes hen på en anden. VÆLTER »klik på overskriften sorterer« (sortering står stadig under pil-symbolet).
+- **Egne kolonner** er tekst, rettes i rækken og gemmes i Idas egne rækker »crm_kolonner« (rækkefølge, navne, egne kolonner) og »crm_felter« (indholdet). Ingen ny tabel. Rækkefølge og navne gælder alle visninger; en ny kolonne tændes i den visning, man står i.
+- **Tags står under Rediger egenskaber** ved siden af Status og Produkt: omdøb, slet, tilføj. Et omdøbt eller slettet tag følger med på alle kontakter.
+- **Genvejene øverst i CRM åbner kundens egen side** (som genvejene på Hjem, 30/9); rækken i listen åbner stadig CRM-siden (Ida: »hvis jeg vil ændre noget bagom går jeg i crm«). IKKE BYGGET: at alt, Ida retter på kundens side, står som teammedlem Ida (skal undersøges felt for felt; flere steder skriver allerede »Ida«).
+- **Aktivitet på CRM-kundesiden viser kun det, der er sandt for kunden** (Ida om ACORNS: »det der står under aktivitet er hvertfald ikke korrekt … Jeg skal virkelig kunne stole på det der står«). MÅLT i basen 22/11: fem svar fra 14/8 uden personnavn stod som »Lavede opgaven i lektion 5.x« hos en Content Studio-kunde uden lektioner, mens Annettes dage i appen (16.–21/11) ikke stod der. Nu: lektionslinjer kun hos kunder med lektionsadgang · »Annette var i appen« pr. dag · »Postet: titel« for postede opslag. Team-linjen siger »I appen i går«, når det er nyere end sidste login. IKKE SET med rigtige data (kan først ses live).
+- **Kalenderens skygge er tilbage** (Ida: »det er som om der mangler skygger«). ÅRSAG (MÅLT mod 3383): fliser uden egen klasse får deres skygge ved at blive genkendt på kantfarven, og farvemanualen 20/11 skiftede kanten til #DEDEDE, så de ikke blev genkendt. Begge grå tæller nu. Gælder alle sådanne fliser, ikke kun kalenderen. SET på 1440.
+- PRØVET i selen på 1440: menuen, omdøb, flyt, træk, ny kolonne, skriv i den, tags (omdøb, nyt, slet), siden i stedet for popup. SET: 1440 og 390 (siden). Billeder: `Energida-app/bud/3427/` (crm-*.png, kt-*.png).
+- IKKE PRØVET: mod den rigtige base (selen gemmer i en prøvebase) · træk med musen (kun funktionen bag) · egne kolonner på telefonens fliser (vises ikke dér) · omdøbte navne i filterreglerne (dér står standardnavnet).
+
 ## 22. november · v3427 · DEN NYE BRIEF LAGT UD SAMLET (3422–3427) (Ida 22/11: »Jeg tror bare vi skal lægge det live og så teste det«)
 
 Idas ord er taget som ja til alt fra 3422 til 3427 (afsnittene nedenfor står med deres oprindelige overskrifter). Rettet og målt samme dag, før udrulningen:
