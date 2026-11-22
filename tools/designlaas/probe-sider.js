@@ -157,7 +157,7 @@ setTimeout(async function () {
          chips (egen laast form), ikon-knapper uden tekst (klokke, mappe, mikrofon, send, naal, kryds),
          bundnavet og fanerne, fliser der er trykfelter (en flise er ikke en knap), sendefeltets
          cirkler, dagbogstaver og alt inde i en tabel. Alt andet SKAL vaere langt. */
-      var UNDT = ".chip-btn,.chip,.ark-chip,.bs-chip,.cf-chip,.mood-chip,.hilsen-pill,.pr-chip,.dept-btn,.scale-btn,.esr-pill,.ib-chip,.ib-forslag,"
+      var UNDT = ".chip-btn,.chip,.ark-chip,.bs-chip,.cf-chip,.mood-chip,.hilsen-pill,.pr-chip,.dept-btn,.scale-btn,.esr-pill,.ib-chip,.ibn-chip,.ib-forslag,"   /* v3434: .ibn-chip = den nye Idébanks chips (Alle · Tema · Serie) — chips i egen bredde som de øvrige på listen */
         + ".bottom-nav,#dashBundnav,#woNavHost,.mobile-tabs,.ch-faner,.bs-spor,.cf-prikker,.bs-prik,.ib-faner,"
         + ".bs-doer,.bsm-flise,.bsam-flise,.hf-kort,.bs-kf,.gv,.mr-prog-r,.idea-kort,.lek-kort,.kv-flise,.post-card,.uge-dag,.cal-dag,.mr-flise,.bs-rk,"
         + ".sendfelt,.ark-send,.ark-rund,.bs-tjek,.hf-done,.hf-klokke,.vt-knap,.modal-close,.bdrop-knap,.cal-periode,.dsb-item,.dsb-under,table,"
