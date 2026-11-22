@@ -34,7 +34,11 @@ var AABNET=0, LUKKET=[];
 /* VENT TIL ARKET ER ÅBENT — IKKE ET FAST TAL (fase 1, Ida 17/11: »popups nåede ikke at åbne« gav røde porte uden fejl i designet).
    Før ventede proben 450 ms og kaldte et langsomt ark »lukket«. Nu kigges der hver 100. ms, til et nyt lag står, i højst MAKS ms
    (2000 ved første forsøg, 700 ved de næste), og efter lukningen ventes der, til lagene er væk. Et ark, der åbner, tælles altid. */
-async function proev(navn,kald,maks){ maks=maks||2000; var foer=lag(); try{ kald(); }catch(e){} var nu=[]; for(var t=0;t<maks;t+=100){ await vent(100); nu=lag().filter(function(e){return foer.indexOf(e)<0}); if(nu.length) break; } if(!nu.length) return false; await vent(250); nu=lag().filter(function(e){return foer.indexOf(e)<0}); if(!nu.length) return false; AABNET++; TRIN="arket "+navn; nu.forEach(function(r){ maal(r,true); }); lukAlt(); for(var u=0;u<1500;u+=100){ await vent(100); if(!lag().length) break; } return true; }
+async function proev(navn,kald,maks){ maks=maks||2000; var foer=lag(); try{ kald(); }catch(e){} var nu=[]; for(var t=0;t<maks;t+=100){ await vent(100); nu=lag().filter(function(e){return foer.indexOf(e)<0}); if(nu.length) break; } if(!nu.length) return false; await vent(250); nu=lag().filter(function(e){return foer.indexOf(e)<0}); if(!nu.length) return false;
+  /* VENT TIL ARKET STÅR STILLE (22/11): arket åbner med scale(.98) i 220 ms. Blev der målt midt i bevægelsen, var en knap på 44 kun 43,1 høj
+     (GitHubs kørsel af v3438: »KNAP 44 [ark-knap.ark-knap-roed] h43« i fejlArkAaben — knappen ER 44,000). Der ventes, til ingen overgang kører i laget, i højst 1500 ms. */
+  for(var ro=0;ro<1500;ro+=50){ var koerer=false; try{ nu.forEach(function(r){ if(r.getAnimations({subtree:true}).some(function(x){ var uendelig=false; try{ uendelig=x.effect.getComputedTiming().iterations===Infinity; }catch(e){} return x.playState==="running"&&!uendelig; })) koerer=true; }); }catch(e){} if(!koerer) break; await vent(50); }
+  AABNET++; TRIN="arket "+navn; nu.forEach(function(r){ maal(r,true); }); lukAlt(); for(var u=0;u<1500;u+=100){ await vent(100); if(!lag().length) break; } return true; }
 var VAGT=setTimeout(function(){ console.log("SELE REGLER2 FEJL: proben nåede ikke i mål — sidste trin: "+TRIN); },280000);
 setTimeout(async function(){ try {
   for(var v=0;v<40&&!document.body.classList.contains("app-klar");v++) await vent(150);

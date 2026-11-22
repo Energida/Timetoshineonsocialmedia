@@ -22,6 +22,8 @@
 //   5. Når: velkomst læser skema_svar (mail_tekster), læser/skriver mail_log og LÆSER login-listen (auth.admin.listUsers, 20/11) for at se,
 //      om kalderen er kollega (et ældre login på samme kode). Intet om andre logins sendes tilbage. Sender én mail via Brevo til kalderens egen adresse.
 //   6. Direkte omkostning: nej — Brevo Free (300 mails/dag delt). Én mail pr. tryk; loft på 20 prøver pr. kald-instans pr. time.
+//   ÆNDRING 22/11 (forhåndsteksten under emnet, Idas »Ja, byg den« og »kør på makker«): mailens felt »forhaandstekst« lægges som en skjult linje først i mailen.
+//   De seks linjer er uændrede: samme adgang, samme tabeller, ingen ny hemmelighed, ingen ny omkostning.
 // ============================================================================
 
 import { createClient } from "npm:@supabase/supabase-js@2";
@@ -71,6 +73,15 @@ function mailsStilCss(s, art) {
   return c.length ? c.join(";") + ";" : "";
 }
 function mailsPlacering(f) { const j = f && f.s && f.s.just; return j === "center" || j === "right" ? j : (f && f.midt ? "center" : "left"); }
+/* FORHÅNDSTEKSTEN UNDER EMNET I INDBAKKEN (Ida 22/11: »Tilføj en særskilt previewtekst til velkomstmailen … uden at blive et synligt afsnit i mailen«).
+   Mailens felt »forhaandstekst« (Idas egen tekst i mail_tekster) lægges som en skjult linje først i mailen. Indbakken viser den under emnet; i den åbnede mail ses den ikke.
+   Fyldet efter teksten holder mailens første synlige ord ude af indbakkens linje. Uden tekst skrives intet. Samme funktion i appens forhåndsvisning (index.html). */
+function mailsForhaandstekst(m) {
+  const t = String((m && m.forhaandstekst) || "").replace(/\s+/g, " ").trim().slice(0, 200);
+  if (!t) return "";
+  const sikker = t.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  return '<div style="display:none;max-height:0;max-width:0;overflow:hidden;opacity:0;color:transparent;mso-hide:all;font-size:1px;line-height:1px;">' + sikker + "&#847;&zwnj;&nbsp;".repeat(60) + "</div>";
+}
 function mailsHtml(m, o) {
   o = o || {};
   const navn = o.navn || "{navn}";
@@ -130,7 +141,7 @@ function mailsHtml(m, o) {
   return '<!doctype html><html lang="da"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><meta name="supported-color-schemes" content="light">'
     + '<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">'
     + '<style>body{margin:0;padding:0;background:#F8F8F8} @media (max-width:520px){.ind{padding-left:12px!important;padding-right:12px!important} .firma{white-space:normal!important} .fsep{display:block;height:0;overflow:hidden;font-size:0} .hero{height:240px!important} .fl{padding:24px!important} .kol{display:block!important;width:100%!important;padding-left:0!important;padding-right:0!important} .kol2{padding-top:24px!important}}</style></head>'
-    + '<body style="margin:0;padding:0;background:#F8F8F8;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#F8F8F8;"><tr><td align="center" style="padding:16px 0 32px;">'
+    + '<body style="margin:0;padding:0;background:#F8F8F8;">' + mailsForhaandstekst(m) + '<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#F8F8F8;"><tr><td align="center" style="padding:16px 0 32px;">'
     + '<table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:600px;">'
     + (m.foto === "ingen" || harHero ? '' : heroRk(true))   /* »Fjern« (Idas klik 15/11): foto = "ingen"; ligger fotoet i listen, står det dér */
     + fl + tom
@@ -172,7 +183,7 @@ async function sendVelkomst(bruger: any) {
   const { data: tidl } = await db.from("mail_log").select("id").eq("mail_id", "velkomst").eq("email", mail).eq("status", "sendt").limit(1);
   if (tidl && tidl.length) return svar({ ok: true, allerede: true }, 200);
   const std = MAIL_STD.velkomst;
-  const m: any = { emne: String(g.emne || "").trim() || std.emne, foto: g.foto || "", fliser: Array.isArray(g.fliser) && g.fliser.length ? g.fliser : std.fliser, fod: (g && typeof g.fod === "string") ? g.fod : undefined };
+  const m: any = { emne: String(g.emne || "").trim() || std.emne, foto: g.foto || "", fliser: Array.isArray(g.fliser) && g.fliser.length ? g.fliser : std.fliser, fod: (g && typeof g.fod === "string") ? g.fod : undefined, forhaandstekst: typeof g.forhaandstekst === "string" ? g.forhaandstekst : "" };
   if (!mailsHarIndhold(m)) m.fliser = std.fliser;
   const md = bruger.user_metadata || {}, am = bruger.app_metadata || {};
   const fornavn = String(md.hilsen || md.navn || "").trim().split(/\s+/)[0] || "";

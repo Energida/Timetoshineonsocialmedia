@@ -19,6 +19,13 @@
     var t = Array.prototype.find.call(document.querySelectorAll(".mb-navn,.hf-hero-tekst"), function (e) { var r = e.getBoundingClientRect(); return r.width > 0 && r.height > 0 && getComputedStyle(e).visibility !== "hidden" && (e.textContent || "").trim(); });
     if (!t) { fejl.push(s[0] + " har ingen synlig hero-titel"); continue; }   /* OVERSPRUNGET = FEJL (fase 1, 17/11) */
     var bd = t.closest(".mb-baand,.hf-hero") || t.parentElement; var br = bd.getBoundingClientRect(), tr = t.getBoundingClientRect();
+    /* IDÉBANKEN STÅR UDEN COVERBILLEDE (Ida 22/11, v3441: »vi havde aftalt designet uden coverbilledet«). Dér måles i stedet: intet synligt foto i båndet, navnet synligt i tekstfarven (ikke hvidt) og inden for skærmen. */
+    if (document.body.classList.contains("ibn-uden-mark") && bd.closest("#screen2")) {   /* klassen bliver stående på body; reglerne gælder kun #screen2 */
+      var fo0 = bd.querySelector(".mb-foto"), foSes = false; if (fo0) { var fr = fo0.getBoundingClientRect(), fc = getComputedStyle(fo0); foSes = fr.width > 2 && fr.height > 2 && fc.display !== "none" && fc.visibility !== "hidden" && fc.opacity !== "0"; }
+      var farve = getComputedStyle(t).color.replace(/\s/g, ""); n++;
+      if (foSes || farve === "rgb(255,255,255)" || tr.left < 0 || tr.right > window.innerWidth + 1) fejl.push(s[0] + " uden cover: foto=" + foSes + " navn " + farve + " " + Math.round(tr.left) + "-" + Math.round(tr.right));
+      continue;
+    }
     var bundRef = br.bottom; try { var bj = bd.querySelector(".mb-bjaelke"); if (bj && bj.getBoundingClientRect().height > 0 && getComputedStyle(bj).display !== "none") { var fo = bd.querySelector(".mb-foto"); if (fo) bundRef = fo.getBoundingClientRect().bottom; } } catch (e) {}   /* HJEM PAA COMPUTER (bud 4B, 4/11): den røde datobjælke (44) ligger over coverets nederste kant — coverets bund er fotoets bund (288), ikke bjælkens */
     var bund = Math.round(bundRef - tr.bottom), venstre = Math.round(tr.left - br.left); n++;
     if (Math.abs(bund - 40) > 1 || Math.abs(venstre - vForv) > 1) fejl.push(s[0] + " bund=" + bund + " venstre=" + venstre + " (skal 40/" + vForv + ")");
