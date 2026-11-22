@@ -34,10 +34,10 @@
       else if (l[l.length - 1][0] - l[0][0] > 40) F(navn + ": " + l.length + " skift i stedet for ét — " + l.map(function (x) { return x[0] + " ms " + x[1]; }).join(" ¦ "));
     };
     var trin = function (i) { return function () { document.querySelectorAll("#b3Trin .b3-tf")[i].click(); }; };
-    await film("Overblikket → Fang dem", trin(1));
+    await film("Idéen → Fang dem", trin(1));
     await film("Fang dem → Fasthold dem (Næste)", function () { [].filter.call(document.querySelectorAll("#briefSideNav button"), function (x) { return /Næste/.test(x.innerText); })[0].click(); });
     await film("Fasthold dem → Få dem til at handle", trin(3));
-    await film("Få dem til at handle → Overblikket", trin(0));
+    await film("Få dem til at handle → Idéen", trin(0));
     await film("Skriv → Optag", function () { b3Vaelg("optag"); });
     await film("Optag → Post", function () { b3Vaelg("post"); });
     await film("Post → Skriv", function () { b3Vaelg("skriv"); });

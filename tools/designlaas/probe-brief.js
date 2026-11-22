@@ -65,7 +65,7 @@ function maalTrin(trin){
   var tr=document.getElementById("b3Trin"); if(!tr||!synlig(tr)){ FUND.push("TRIN "+trin+": trin-rækken (#b3Trin) står ikke på skrivesiden"); return; }
   var f=[].slice.call(tr.querySelectorAll(".b3-tf")).filter(synlig), R="rgb(252,36,4)", HV="rgb(255,255,255)", K="rgb(222,222,222)", SO="rgb(26,26,26)";
   var navne=f.map(function(b){return (b.innerText||"").replace(/\s+/g," ").trim()}).join("|");
-  if(navne!=="Overblikket|Fang dem|Fasthold dem|Få dem til at handle"&&navne!=="Overblikket|Fang dem|Få dem til at handle"){ FUND.push("TRIN "+trin+": vælgeren skal have Overblikket · Fang dem · (Fasthold dem) · Få dem til at handle — fandt: "+f.map(txt).join(" · ")); return; }
+  if(navne!=="Idéen|Fang dem|Fasthold dem|Få dem til at handle"&&navne!=="Idéen|Fang dem|Få dem til at handle"){ FUND.push("TRIN "+trin+": vælgeren skal have Idéen · Fang dem · (Fasthold dem) · Få dem til at handle — fandt: "+f.map(txt).join(" · ")); return; }
   if(/Trin\s+\d+\s+af|Succesraketten/i.test(tr.innerText||"")) FUND.push("TRIN "+trin+": »Trin N af …« eller »Succesraketten« står i rækken");
   var tc=getComputedStyle(tr); if(rgb(tc.backgroundColor)!==HV||px(tc.borderTopWidth)!==1||rgb(tc.borderTopColor)!==K||px(tc.borderTopLeftRadius)<22) FUND.push("TRIN "+trin+": vælgeren er "+tc.backgroundColor+" kant "+tc.borderTopWidth+" "+tc.borderTopColor+" hjørner "+tc.borderTopLeftRadius+" (skal én hvid pille · 1 px #DEDEDE · runde ender)");
   var q=f.map(function(b){return b.getBoundingClientRect()}), c=f.map(function(b){return getComputedStyle(b)});
@@ -127,7 +127,7 @@ setTimeout(async function(){ try {
     var JSFEJL=[]; window.addEventListener("error", function(ev){ JSFEJL.push(String(ev&&ev.message||ev)); });
     for(var fi=0;fi<FORMER.length;fi++){ IDEER.push(FORMER[fi]); var jf0=JSFEJL.length; openBriefSide(FORMER[fi].id); await vent(900); var FN="»"+FORMER[fi].titel+"«";
       var trN=document.querySelector("#b3Trin .b3-tf.nu"), ideF=[].slice.call(document.querySelectorAll("#briefWrap .sk-q.b3-idq")).filter(synlig), vlg=document.getElementById("b3Vaelger");
-      var okS=B3_VIS==="skriv"&&BRIEF_MB_VIS==="skriv"&&!!trN&&/Overblikket/.test(trN.innerText||"")&&ideF.length>0&&!!vlg&&synlig(vlg)&&vlg.querySelectorAll(".b3-fane").length===3&&!!vlg.querySelector(".b3-fane.on")&&/Skriv/.test(vlg.querySelector(".b3-fane.on").innerText);
+      var okS=B3_VIS==="skriv"&&BRIEF_MB_VIS==="skriv"&&!!trN&&/Idéen/.test(trN.innerText||"")&&ideF.length>0&&!!vlg&&synlig(vlg)&&vlg.querySelectorAll(".b3-fane").length===3&&!!vlg.querySelector(".b3-fane.on")&&/Skriv/.test(vlg.querySelector(".b3-fane.on").innerText);
       if(!okS) FUND.push("BRIEFEN ÅBNER IKKE PÅ SKRIV › OVERBLIKKET paa briefen "+FN+" (status Idé) — visning "+B3_VIS+"/"+BRIEF_MB_VIS+", Idéens flise: "+ideF.length+" dele");
       if(okS&&/\bfalse\b|\bundefined\b/.test(ideF.map(function(x){return x.innerText}).join(" "))) FUND.push("OVERBLIKKET viser ordet »false« eller »undefined« paa "+FN);
       b3Vaelg("optag"); await vent(500); var op=document.getElementById("b3Optag"); var okO=B3_VIS==="optag"&&!!op&&synlig(op)&&op.children.length>0&&document.body.classList.contains("b3-optag");
