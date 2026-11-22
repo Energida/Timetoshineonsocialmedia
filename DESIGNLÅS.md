@@ -1,3 +1,7 @@
+## 22. november · v3437 · TO-DO UNDER »DAGENS TJEK« PÅ BACKSTAGES HJEM — BYGGET I TESTUDGAVEN, IKKE UDE (fra samtalen »dashboard-hjem«; Idas »Ja send« dér efter billederne på 1440 og 390)
+
+- **To-do står i højre spalte under »Dagens tjek«** (Ida 22/11: »vil gerne have to-do på mit admin dashboard over under dagens tjek«): hvid flise med husets skygge, samme bredde som fliserne i Dagens tjek, felt med mikrofon til en ny to-do, cirkel med flueben pr. række (overstreges og forsvinder efter 700 ms). Samme liste og gemmevej som Indbakken (ingen ny tabel). Den gamle »To-do« nederst i Hjems venstre spalte er ude, så de samme to-dos ikke står to steder; den nye viser alle, også dem uden dato. Under 1100 px: Dagens tjek · To-do · resten. Det ikke målte: `Energida-app/bud/hjem-todo/NOTE.md`.
+
 ## 22. november · »FORSLAG TIL HOOKET« (KARRUSEL): RÆKKERNE LIGE BREDE, CIRKLEN RUND — BYGGET I PRØVEKOPIEN, IKKE UDE (Ida 22/11, skærmbillede: »husk at fliser ALTID skal være samme bredde og aldrig dette og cirkler runde«)
 
 - ÅRSAG (MÅLT på 3435, 1440 og 390): vælg-cirklen var 26 × 18 (oval), fordi briefens regel om flueben på 18 også ramte karrusellens cirkel. Feltet i en række med cirkel var 508 bredt, den tomme række 544 (telefon: 246 mod 328).
