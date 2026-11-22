@@ -1,3 +1,80 @@
+## 22. november · v3427 · DEN NYE BRIEF LAGT UD SAMLET (3422–3427) (Ida 22/11: »Jeg tror bare vi skal lægge det live og så teste det«)
+
+Idas ord er taget som ja til alt fra 3422 til 3427 (afsnittene nedenfor står med deres oprindelige overskrifter). Rettet og målt samme dag, før udrulningen:
+- **Knapperne nederst er lige brede på computeren** (MÅLT på 1440: 192 · 192 · 192; før 144 · 210 · 210). Under 1100 deler Tilbage og Gem ændringer første linje, og Næste står under i fuld bredde; rammen slutter over begge linjer (SET på 1000).
+- **Spørgsmålet står 8 over sit felt alle steder:** »Hashtags« stod 0 over og »Tekst på coverbilledet« 1 over (MÅLT og SET på 390 og 1440).
+- **Kalender → brief med coverbillede blinkede på computeren** (hakjægeren: markbilledet kom frem efter 930 ms). Tre årsager rettet: forhåndsvisningen af coveret ventede på, at billedet var hentet; trin-rækken og felterne fik de samme klasser skrevet igen ved hver tegning; hjælpen blev først tegnet 110 ms efter resten. MÅLT: sideskiftet tager det samme som i 3421.
+- **Porten måler nu den nye brief** (probe-brief.js »TRIN« og fliser, probe-maal.js, probe-regler.js): trinene som vælger, intet i en flise i rammen, spørgsmål 16 halvfed, fakta 312 · midten · flisen til højre 196, knapperne lige brede. De gamle mål (trin-fliser 76 høje, samlet hvid flise, fakta 340) er væltet af bud 9.
+- **PORTEN: EXIT 0** efter rettelserne (alle målinger på 390 og 1440, hakjægeren med).
+- »Tilbage« nederst på Overblikket fører tilbage til kalenderen, som i 3421 (PRØVET på 1440).
+
+## 21. november · v3427 · SMALLE COMPUTERSKÆRME (Idas »Ja, ret dem«)
+
+- **ÉN GRÆNSE VED 1400** (højre spalte tænder ved 1400 i forvejen): fra 1400 tre spalter med statusflisen over den røde flise. Under 1400 to spalter (fakta og midten), den røde flise står øverst i midten, rammen begynder under den (højden måles), og status står i bjælken.
+- Under 1240 har titlen sin egen linje i bjælken. Under 1000 er fakta 264 bred (rettet efter genstarten: før under 1100, og datoen brød ved 1000).
+- Under 1400 har felterne på Overblikket ingen ekstra luft over sig (MÅLT: 32 px for meget ved 1000). Under 1100 deler de to knapper på Post bredden (MÅLT ved 1000: »Kopiér caption« lå ind over fakta). Under 1000 har datoen luft til pilen.
+- Trinnenes navne må stå på to linjer på alle bredder (før lå de oven i hinanden under ca. 1430).
+- MÅLT 21/11 på Fang dem ved 900, 1000, 1100, 1280, 1399 og 1400: ingen vandret rulning, trinnene inde i pillerne, rød flise og ramme flugter. SET: 1000 og 1280.
+- MÅLT OG SET 21/11 efter genstarten: Overblikket med åben og lukket hjælp (900, 1000, 1280), Optag (1000, 1280) og Post (900, 1000, 1099, 1100, 1239, 1280): ingen vandret rulning, intet rager ud af sin spalte. IKKE KØRT: porten (`koer.sh`). IKKE SET: 390 og 1440 efter rettelserne (reglerne gælder kun 900–1399).
+- Måleværktøjet ligger varigt i `Energida-app/bud/3427/maal/` (skud.py + sm.js); scratchpad-mappen slettes ved genstart.
+- **MÅLINGER ÆDER HUKOMMELSE (21/11):** disken blev fuld, fordi maskinens swap voksede til 13 GB, og 25 gamle testservere stod tilbage. Luk testservere efter brug, og mål få bredder ad gangen.
+
+## 21. november · v3426 · STATUS HAR SIN EGEN FLISE OVER DEN RØDE — BYGGET I TESTUDGAVEN, IKKE GODKENDT, IKKE UDE (Ida 21/11: »skal vi ikke dele baren op øverst - så status får sin egen med prikkerne??? så den statusflise står over den røde flise?«)
+
+- **Computeren:** bjælken med titel og Skriv · Optag · Post stopper efter midten. Status og de tre prikker står i deres egen hvide flise til højre, præcis så bred som den røde flise under (MÅLT: begge 1212–1408 på 1440) og lige så høj som bjælken. Gælder Skriv, Optag og Post.
+- **Telefonen:** uændret.
+- **KENDT FEJL (MÅLT 21/11 på 1000 bred, stammer fra bud 9 i 3423):** mellem 900 og ca. 1180 bliver midten for smal, og trinnene ligger oven i hinanden. Skal rettes, før noget lægges ud.
+
+## 21. november · v3425 · BRIEFEN BYGGET FÆRDIG I TESTUDGAVEN — IKKE GODKENDT SAMLET, IKKE UDE (Ida 21/11: »Ja, byg resten« · »skulle tipsflisen i højre side ikke være helt rød? Krydset sådan der duer absolut ikke«)
+
+Bygget oven på 3422, 3423 (bud 9) og 3424. Billeder: `Energida-app/bud/3425/`. Porten er IKKE kørt (rød fra bud 9; proberne rettes først efter Idas samlede ja).
+
+- **FLISEN TIL HØJRE ER HELT RØD (HÅRD, vælter låsen 9/10 om den røde trin-flise):** computerens tip- og hjælpeflise er #FC2404 med kun hvid tekst, hvid pære og et rent hvidt kryds uden ring. Telefonens tip er uændret lyseblåt (Ida pegede på flisen i højre side).
+- **Telefonen har ingen Fakta-streg:** fire trin med de samme hele navne som computeren (Overblikket · Fang dem · Fasthold dem · Få dem til at handle). Fakta står under idé-flisen på Overblikket, 24 luft imellem.
+- **Kort reel og Billede har ingen Fasthold dem:** tre lige brede trin. Næste, Tilbage, swipe og trinvælgeren springer siden over. Intet svar slettes.
+  - Kort reel: »Hvad ser man?« (med det røde i) står først under Fang dem, derefter Hook og Tekst på coverbilledet. Hookets kopi i klippet vises ikke (læses og gemmes som før). Den grå hjælpelinje og stregen ved feltet er væk. Pointen fra Overblikket (»Kunden skal sidde tilbage med«) står i flisen til højre under Fang dem.
+  - Billede: ét spørgsmål, »Hvad skal billedet vise?«. »Detaljerne i billedet« vises kun, når en ældre brief allerede har et svar dér.
+- **Karrusel:** var allerede delt (slide 1 under Fang dem, resten under Fasthold dem med slide 1 i rækken og »Note til billedet«). Kun målt og set.
+- **Målgruppe er en række i fakta i den nye brief** (»Målgruppe«, aldrig »Taler til«; vælter 17/9 og 7/10 for den nye brief). Trykket åbner samme ark som før, og man bliver i briefen efter Gem.
+- **Hjælpen til 1A · Produkt:** kundens USP står der af sig selv under »Jeres USP« (hentes fra kundens strategi), og »Åbn EFU« er en knap, der åbner EFU-hjælperen.
+- **Coveret:** er der uploadet et coverbillede, vises det under »Tekst på coverbilledet« med teksten på (132 bred, 9:16).
+- **Tryksvar:** trin, Skriv · Optag · Post og knapperne under rammen giver efter ved tryk (scale .97, 160 ms; slået fra ved reduceret bevægelse).
+- **Telefonen:** de to chips under klippet stak 4 px ud over flisen (MÅLT) og holder sig nu inde.
+
+MÅLT 21/11 på 390 og 1440: frem og tilbage gennem alle trin for Reel, Kort reel, Karrusel og Billede; ingen vandret rulning; det røde i åbner og lukker (flise på computer, ark på telefon); captionens fire navngivne felter og den samlede caption; »Jeg har postet det«. USP og coverbillede er målt med indsatte prøvedata (testkunden har ingen USP og intet cover). IKKE MÅLT: en rigtig kunde med flere målgrupper; et rigtigt uploadet cover; swipe med finger.
+
+IKKE BYGGET: ét fælles system for luft, hjørner og højder i hele appen (kun briefens tryksvar er med).
+
+## 21. november · v3424 · BRIEFENS SPØRGSMÅL OG HJÆLP PR. INDHOLDSSØJLE — BYGGET I TESTUDGAVEN, IKKE GODKENDT SAMLET, IKKE UDE (Idas forslag 21/11 i elleve udgaver: claude.ai/artifact/PbDERcyGreHUL2uPkyDyS5 · »Ja, byg det i testkopien«)
+Grundprincip (Ida): indholdssøjlen styrer spørgsmålene og hjælpen; formatet styrer felterne. Ingen nye obligatoriske felter. INTET NYT GEMMES: alle felter og nøgler er de samme.
+**Bygget og MÅLT i selen på 390 og 1440:**
+- Overblikket: »Hvad skal kunden sidde tilbage med?« (før »Hvad vil vi gerne have, at kunden får ud af opslaget?«) og »Hvad er kundens naturlige næste skridt?« (før »Hvad vil vi have dem til, når de har set det?«).
+- ÉN adgang til hjælpen: det røde i (24, fed ring). Ved »Hvad er idéen?« viser den to spørgsmål for opslagets indholdssøjle; ved »Hvad ser man først?« viser den »Hvorfor vil målgruppen se videre?«. Computer: hjælpen erstatter tippet i flisen til højre og lukkes med det røde kryds; tip og hjælp vises aldrig samtidig. Telefon: et ark med »Luk«. På Overblikket står hjælpen fremme fra start på computeren (Claudes afgørelse, ikke bekræftet).
+- Fang dem: »Hvad ser man først?« (VÆLTER Idas »Hvad ser man?« 18/11 for første scene) med pladsholderen »Beskriv det første billede eller den første handling.« · »Manus« hedder »Hvad siger du?« (også i Optag og på tilvalget).
+- Fasthold dem: tippet følger indholdssøjlen, og »Kunden skal sidde tilbage med« vises som reference, når svaret findes.
+- Caption: felterne hedder Åbningen · Gør det relevant · Vis værdien · Vis vejen, hver med ét spørgsmål pr. indholdssøjle (VÆLTER de fælles spørgsmål og den grå linje fra den gamle lås). »Den samlede caption« står under felterne. »0 af 125« vejleder stadig kun.
+- Post: »Jeg har postet det« (VÆLTER det godkendte ord »Sæt til Postet« 18/11).
+- Udseende (computer): midterflisen er lys blå #F4F7FA med grå kant #DEDEDE (Ida: »midterflisen skal være lyseblå men med grå kant!«) · flisen til højre er hvid med grå kant og begynder i højde med midterflisen · bjælken går hele vejen over (VÆLTER bud 9's bjælke; Idas kommentar »den må ikke starte over den lyseblå flise«, bredden ikke bekræftet) · spørgsmål 16 halvfed, tydeligt over svaret.
+**IKKE bygget (står kun i prøve-udgaven):** målgruppen som reference med »Skift« · USP og EFU i hjælpen til 1A · Kort reel og Billede uden Fasthold dem · Billede med ét felt · karrusel delt på Fang dem og Fasthold dem · telefonen uden Fakta-trin og med hele navne · coveret som billede og tekst · systemet for luft, hjørner og højder · tryksvar og arkets bevægelse.
+**Porten er ikke kørt på 3424** og er rød fra bud 9 (trin-fliserne og de hvide fliser). Proberne rettes først efter Idas samlede ja.
+
+## 21. november · v3423 · BRIEFEN PÅ COMPUTEREN, BUD 9 — BYGGET I TESTUDGAVEN, IKKE GODKENDT, IKKE UDE (Idas ord 21/11: »jeg er ikke så vild med når fliserne bliver så lange« · »baggrundsfliser der rammer tingene ind« · »skulle vi ikke flytte det lyseblå tips ud i højre kolonne?« · »ikke flere kolonner i midten - og kan godt lide den grå ramme faktisk om midten!« · bjælken »over fakta men så stoppe efter midterstykket« · »arbejde kun videre med bud 9«)
+- Computeren, Skriv: fakta til venstre (312) · midten i ÉN lysegrå ramme (#F8F8F8, kant #DEDEDE, radius 20) med trinene som vælger (fire lige brede dele, den røde viser stedet), felterne direkte i rammen under deres overskrift, og Tilbage · Gem ændringer · Næste nederst i tre lige brede knapper · det lyseblå tip som sin egen flise til højre (196), i højde med bjælken · bjælken (titel · Skriv · Optag · Post · status) dækker fakta og midten og stopper dér.
+- Optag og Post har samme spalter og samme bjælke, så vælgeren ikke flytter sig, når man skifter. Telefonen er uændret.
+- I rammen står intet i en flise (aldrig flise i flise): fliserne om Idéen, scenen, captionen, slidet og forslagene er væk på computeren; rammen er flisen.
+- VÆLTER, hvis Ida godkender det byggede: trin-fliserne 18/11 (76 høje, raketten over navnet, Overblikket bredest) · »samlet flise« om Idéen · den lyseblå hjælpeflise over felterne. **Porten er RØD på netop de tre ting (probe-brief.js TRIN og UENS flise, probe-maal.js SAMLET FLISE) og rettes først, når Ida har sagt ja til det byggede.**
+- **Knapperne står UNDER den grå flise, ikke i den (Ida 21/11: »husk at flytte knapperne ud af den grå flise«),** og er lige så brede som flisen. Rammen slutter ved indholdet, så der er ingen tom plads på korte trin.
+- Kendt: Karrusel: billedet er 300 bredt i rammen. Ikke set: Backstage, en rigtig kundes brief, bredder mellem 900 og 1440.
+- Billeder af det byggede: Energida-app/bud/3423 og claude.ai/artifact (»Bud 9 bygget«). Tegningerne: Energida-app/bud/brief-kompakt.
+
+## 21. november · v3422 · DET, DER MANGLEDE I BRIEFEN (Ida 21/11: »Byg det der mangler, før den er 10 af 10«)
+- **Møde-arket har Aftale-chippen**, når man kom fra plussets Aftale: Aftale · Ugens møde · Månedens møde står øverst, og »Aftale« fører tilbage med dagen sat (MÅLT 390 og 1440).
+- **Billede-opslagets overskrifter** over felterne (»HOOK«, »BILLEDET«) står som husets overskrifter: 12 versal grå, som »SCENE 1 · HOOKET«.
+- **Fejet for »fliser under hinanden er lige brede«:** Forsiden · Content kalenderen · Idébanken · Planlægning · Performance · Hashtagbanken · Indbakken · Profil på 390 og 1440: ingen fund (MÅLT; ser kun på fliser i samme beholder). Ikke fejet: Værktøjskassen, Backstage og arkene.
+- **PRØVET OG RULLET TILBAGE:** »Nyt opslag« på computeren med telefonens trin (Hvornår først). Trinnet »Hvornår« er kun tegnet til telefonen og stod som en lang, ustylet datoliste på 1440. Kræver en datovælger til computeren; indtil da er computeren som før (en idé uden dato, dato sættes i faktaboksen).
+- **Ikke bygget:** optagedag og sted i Optag (nye felter i briefen: skal vises som bud først) · porten måler stadig ikke arkene for de to hårde regler.
+- **Idas ønske 21/11 (ikke bygget, bud følger):** »Annette mangler også altid et overblik på forsiden over hvad hun skal lave til ugens content. jeg gad super godt at hun aldrig var i tvivl om hvad hun skulle lave«.
+
 ## 21. november · SET OG SAGT I DAG, SOM IKKE STOD HER (Ida 21/11: »er der andet vi har observeret idag som ikke er i designlåsen?«)
 - **Mine streaks i Workout Studio (Idas klik 21/11, undertråden »Find det gamle streak-design«):** design 4, de organiske ringe, UDEN flueben · sporet er #C9DBE7 · ringene tæller både vanerne og træningen · kun Ida ser dem (Backstage). Bygget af undertråden i en kopi af 3420 (fem vane-ringe og én træningsring), IKKE flettet ind, IKKE lagt ud, porten ikke kørt. Billeder: Energida-app/bud/streaks.
 - **Guides i Værktøjskassen (Idas ønske 21/11, ikke bygget):** »at det inde i værktøjskassen var en flise med guides. Så for eksempel, sådan skriver du gode noter, og vigtigheden i det, at der lå en video derinde … en grundig, hvor vi også viser eksempler på, hvordan man kan bygge noter op … og måske finde noget forskning på det«. Manus og research: Energida-app/bud/guides/note-guide.md. Vender Idas sletning af Guides 21/9 og skal følge låsen 5/10 (en guide er en model, ikke tekstkasser). Venter på, at Ida ser et bud.

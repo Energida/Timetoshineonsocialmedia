@@ -20,6 +20,11 @@ function maalSide(){
   N++; if(!document.body.classList.contains("b3-paa")) fejl("BRIEF: den nye brief (body.b3-paa) er ikke slået til på briefens side");
   var HVID="rgb(255,255,255)", SEG=".b3-idq, .b3-cap", FELTFLISE=".klip-kort.kk-cta, .sk-q[data-par=cover], .cap-q.b3-htg";
   var nav0=document.getElementById("briefSideNav"), navR=(nav0&&synlig(nav0))?nav0.getBoundingClientRect():null;
+  /* v3423 (bud 9, computeren): »midten i ÉN ramme … felterne direkte i rammen under deres overskrift« · »I rammen står intet i en flise (aldrig flise i flise) … rammen er flisen« · »Knapperne står UNDER den grå flise, ikke i den, og er lige så brede som flisen«.
+     På computeren er spalten derfor rammens indre kant = trin-vælgerens kanter (MÅLT 22/11 på 1440: 612–1180, knapperne 596–1196). Telefonen er uændret: spalten er knappernes kanter. */
+  var PCR=!TLF&&document.body.classList.contains("b3-paa"), trE=document.getElementById("b3Trin"), kolR=(PCR&&trE&&synlig(trE))?trE.getBoundingClientRect():navR;
+  var UDEN=function(c){ return /rgba\(0,0,0,0\)|transparent/.test(rgb(c.backgroundColor))&&px(c.borderTopWidth)===0&&px(c.borderLeftWidth)===0&&c.boxShadow==="none"; };
+  if(PCR&&navR&&kolR!==navR){ N++; if(Math.abs(navR.left-(kolR.left-16))>1||Math.abs(navR.right-(kolR.right+16))>1) fejl("RAMMEN: knapperne står "+Math.round(navR.left)+"–"+Math.round(navR.right)+", felterne "+Math.round(kolR.left)+"–"+Math.round(kolR.right)+" (knapperne skal være lige så brede som rammen: 16 uden for felterne i hver side)"); }
   /* FLISE (»Udtryk«, 18/11: »fliser hvide med kant #DEDEDE og tydelig skygge«; MÅLKORT: radius 20 · luft 18/20 · 12 til næste flise) */
   rod.querySelectorAll(".sk-q, .klip-kort").forEach(function(e){
     if(!synlig(e)) return; var cs=getComputedStyle(e), r=e.getBoundingClientRect();
@@ -27,6 +32,7 @@ function maalSide(){
     if(e.classList.contains("klip1-vaert")||e.querySelector(":scope > #briefKlipHolder, :scope > .kk-scener")) return;   /* holderen er ingen flise */
     if(e.matches(SEG)||e.matches(FELTFLISE)) return;   /* den samlede flise og »feltet er selv flisen« måles for sig nedenfor */
     if(e.parentElement.closest(".sk-q:not(:has(> #briefKlipHolder)):not(:has(> .kk-scener)):not(.klip1-vaert), .klip-kort")) return;   /* en flise i en flise er ikke en ny flise */
+    if(PCR){ er("INTET I EN FLISE I RAMMEN", e, UDEN(cs), "flade "+cs.backgroundColor+" kant "+cs.borderTopWidth+" skygge "+(cs.boxShadow==="none"?"ingen":"ja")+" (på computeren er rammen flisen: ingen flade, kant eller skygge)"); er("I RAMMEN kanter", e, !kolR||(Math.abs(r.left-kolR.left)<=1&&Math.abs(r.right-kolR.right)<=1), Math.round(r.left)+"–"+Math.round(r.right)+" (skal følge spalten "+(kolR?Math.round(kolR.left)+"–"+Math.round(kolR.right):"?")+")"); return; }
     er("FLISE radius", e, px(cs.borderTopLeftRadius)===20&&px(cs.borderTopRightRadius)===20&&px(cs.borderBottomLeftRadius)===20&&px(cs.borderBottomRightRadius)===20, "radius "+cs.borderRadius+" (skal 20)");
     er("FLISE luft", e, px(cs.paddingTop)===18&&px(cs.paddingBottom)===18&&px(cs.paddingLeft)===20&&px(cs.paddingRight)===20, "luft "+cs.padding+" (skal 18 20)");
     er("FLISE afstand", e, px(cs.marginBottom)===12, "afstand under "+px(cs.marginBottom)+" (skal 12)");
@@ -39,6 +45,7 @@ function maalSide(){
   [[".basis-kort.b3-ide .sk-q.b3-idq","Idéen"],[":scope > .cap-q.b3-cap","Caption"]].forEach(function(g){
     var sg=[].slice.call(rod.querySelectorAll(g[0])).filter(synlig); if(!sg.length) return;
     sg.forEach(function(e,i){ var cs=getComputedStyle(e), r=e.getBoundingClientRect(), f=i===0, l=i===sg.length-1;
+      if(PCR){ er("INTET I EN FLISE I RAMMEN "+g[1], e, UDEN(cs), "flade "+cs.backgroundColor+" kant "+cs.borderWidth+" skygge "+(cs.boxShadow==="none"?"ingen":"ja")+" (på computeren er rammen flisen: ingen flade, kant eller skygge)"); if(kolR) er("I RAMMEN "+g[1]+" kanter", e, Math.abs(r.left-kolR.left)<=1&&Math.abs(r.right-kolR.right)<=1, Math.round(r.left)+"–"+Math.round(r.right)+" (skal følge spalten "+Math.round(kolR.left)+"–"+Math.round(kolR.right)+")"); return; }
       er("SAMLET FLISE "+g[1]+" hjørner", e, px(cs.borderTopLeftRadius)===(f?20:0)&&px(cs.borderTopRightRadius)===(f?20:0)&&px(cs.borderBottomLeftRadius)===(l?20:0)&&px(cs.borderBottomRightRadius)===(l?20:0), "hjørner "+cs.borderRadius+" (skal 20 øverst på første del og nederst på sidste, 0 imellem)");
       er("SAMLET FLISE "+g[1]+" luft", e, px(cs.paddingLeft)===20&&px(cs.paddingRight)===20&&(!f||px(cs.paddingTop)===18)&&(!l||px(cs.paddingBottom)===18), "luft "+cs.padding+" (skal 20 i siderne, 18 øverst på første del og nederst på sidste)");
       er("SAMLET FLISE "+g[1]+" flade", e, rgb(cs.backgroundColor)===HVID&&px(cs.borderLeftWidth)===1&&px(cs.borderRightWidth)===1&&rgb(cs.borderLeftColor)===KANT&&cs.boxShadow!=="none"&&px(cs.borderTopWidth)===(f?1:0)&&px(cs.borderBottomWidth)===(l?1:0)&&(!f||rgb(cs.borderTopColor)===KANT)&&(!l||rgb(cs.borderBottomColor)===KANT), "flade "+cs.backgroundColor+" kant "+cs.borderWidth+" skygge "+(cs.boxShadow==="none"?"ingen":"ja")+" (skal hvid · 1 px #DEDEDE rundt om hele flisen, ingen kant mellem delene · skygge)");
@@ -54,12 +61,12 @@ function maalSide(){
     er("FLISE I FLISE", c, /rgba\(0,0,0,0\)|transparent/.test(rgb(cs.backgroundColor))&&px(cs.borderTopWidth)===0&&px(cs.borderLeftWidth)===0&&cs.boxShadow==="none"&&px(cs.paddingLeft)===0&&px(cs.paddingRight)===0&&px(cs.paddingTop)===0, "flade "+cs.backgroundColor+" kant "+cs.borderTopWidth+" luft "+cs.padding+" skygge "+(cs.boxShadow==="none"?"ingen":"ja")+" (der må ingen ydre flise være om et enligt felt)");
     var fs=[].slice.call(c.querySelectorAll("textarea.sk-input, .htg-rk input[type=text]")).filter(synlig); N++; if(!fs.length) fejl("FLISE I FLISE: intet felt under »"+txt(c)+"«");
     fs.forEach(function(f){ var fr=f.getBoundingClientRect(), fc=getComputedStyle(f);
-      er("FELTET ER FLISEN kanter", f, Math.abs(fr.left-r.left)<=1&&Math.abs(fr.right-r.right)<=1&&(!navR||(Math.abs(fr.left-navR.left)<=1&&Math.abs(fr.right-navR.right)<=1)), Math.round(fr.left)+"–"+Math.round(fr.right)+" (skal gå ud til spaltens kant "+Math.round(navR?navR.left:r.left)+"–"+Math.round(navR?navR.right:r.right)+")");
+      er("FELTET ER FLISEN kanter", f, Math.abs(fr.left-r.left)<=1&&Math.abs(fr.right-r.right)<=1&&(!kolR||(Math.abs(fr.left-kolR.left)<=1&&Math.abs(fr.right-kolR.right)<=1)), Math.round(fr.left)+"–"+Math.round(fr.right)+" (skal gå ud til spaltens kant "+Math.round(kolR?kolR.left:r.left)+"–"+Math.round(kolR?kolR.right:r.right)+")");
       er("FELTET ER FLISEN flade", f, rgb(fc.backgroundColor)===HVID&&px(fc.borderTopWidth)===1&&rgb(fc.borderTopColor)===KANT&&fc.boxShadow!=="none", "flade "+fc.backgroundColor+" kant "+fc.borderTopWidth+" "+fc.borderTopColor+" skygge "+(fc.boxShadow==="none"?"ingen":"ja")+" (skal hvid · 1 px #DEDEDE · skygge)"); });
   });
   /* OVERSKRIFT OVER FLISEN (18/11 »Felterne = bud 3«: »overskriften over flisen i versaler«; MÅLKORT 12/11: 12 versal · 1,5 · #686868 · 8 ned til flisen · venstrekant = flisens ydre kant).
      Før: flisetitel inde i flisen, Poppins 18 (telefon 16) sort. */
-  rod.querySelectorAll(".pf-sc, .cap-sek > span, .sk-q[data-par=cover] > .sk-label .sk-titel, .klip-kort.kk-cta .kk-et, .cap-q.b3-htg > .sk-label .sk-titel").forEach(function(t){
+  rod.querySelectorAll(".pf-sc, .cap-sek > span, .klip-kort.kk-cta .kk-et").forEach(function(t){   /* v3424: »Tekst på coverbilledet« og »Hashtags« er spørgsmål (16 halvfed) og måles som feltnavne nedenfor */
     if(!synlig(t)) return; var ts=getComputedStyle(t), r=t.getBoundingClientRect();
     er("OVERSKRIFT skrift", t, px(ts.fontSize)===12&&ts.textTransform==="uppercase"&&px(ts.letterSpacing)===1.5&&ts.fontWeight==="400"&&rgb(ts.color)===G2&&/Poppins/.test(ts.fontFamily), ts.fontSize+"/"+ts.fontWeight+" "+ts.color+" ls"+ts.letterSpacing+" "+ts.textTransform+" (skal 12/400 versal · 1,5 · #686868 Poppins)");
     var maalE=null;
@@ -79,9 +86,12 @@ function maalSide(){
   });
   /* FELTETS NAVN (18/11: »lille symbol foran feltets navn (øje · taleboble · T)«; MÅLKORT »Felt-etiket«: Poppins 13 / 400 / #686868 · 8 til feltet). Idéens og Captions spørgsmål er feltnavne i den samlede flise.
      Før: spørgsmålene var flisetitler, Poppins 18 (telefon 16) sort. */
-  rod.querySelectorAll(".klip-kort:not(.kk-cta) .kk-et, .b3-idq > .sk-label, .b3-cap > .sk-label").forEach(function(e){
+  /* v3424 (21/11): »spørgsmål 16 halvfed, tydeligt over svaret« — Idéens og Captions spørgsmål, »Tekst på coverbilledet« og »Hashtags« er 16/500 sort, 8 over feltet (VÆLTER 13/400 grå for spørgsmålene; MÅLT 22/11 på 390 og 1440).
+     Scenens feltnavne med symbol (»Hvad ser man?« · »Hvad siger du?« · »Tekst på skærmen«) er stadig 13/400 grå. */
+  rod.querySelectorAll(".klip-kort:not(.kk-cta) .kk-et, .b3-idq > .sk-label, .b3-cap > .sk-label, .sk-q[data-par=cover] > .sk-label, .cap-q.b3-htg > .sk-label").forEach(function(e){
     if(!synlig(e)) return; var t=e.matches(".sk-label")?(e.querySelector(".sk-spm, .sk-titel")||e):e; var cs=getComputedStyle(t), navn=(t.innerText||"").replace(/\s+/g," ").trim();
-    er("FELTNAVN", t, px(cs.fontSize)===13&&cs.fontWeight==="400"&&rgb(cs.color)===G2&&cs.textTransform==="none"&&/Poppins/.test(cs.fontFamily), cs.fontSize+"/"+cs.fontWeight+" "+cs.color+" (skal 13/400 #686868)");
+    if(e.matches(".sk-label")) er("SPØRGSMÅL", t, px(cs.fontSize)===16&&cs.fontWeight==="500"&&rgb(cs.color)===SORT&&cs.textTransform==="none"&&/Poppins/.test(cs.fontFamily), cs.fontSize+"/"+cs.fontWeight+" "+cs.color+" (skal 16/500 sort #1A1A1A)");
+    else er("FELTNAVN", t, px(cs.fontSize)===13&&cs.fontWeight==="400"&&rgb(cs.color)===G2&&cs.textTransform==="none"&&/Poppins/.test(cs.fontFamily), cs.fontSize+"/"+cs.fontWeight+" "+cs.color+" (skal 13/400 #686868)");
     var nx=e.nextElementSibling; while(nx&&!synlig(nx)) nx=nx.nextElementSibling; if(nx){ var d=Math.round(nx.getBoundingClientRect().top-e.getBoundingClientRect().bottom); er("FELTNAVN afstand", e, Math.abs(d-8)<=1, "til feltet "+d+" (skal 8)"); }
     if(e.matches(".kk-et")&&/^(Hvad ser man\?|Manus|Tekst på skærmen)$/.test(navn)){ var sv=e.querySelector("svg"), sr=sv?sv.getBoundingClientRect():null, sp=e.querySelector("span"), pr=sp?sp.getBoundingClientRect():null;
       er("FELTNAVN symbol", e, !!sv&&Math.round(sr.width)===16&&Math.round(sr.height)===16&&!!pr&&sr.right<=pr.left+0.5&&rgb(getComputedStyle(sv).color)===G2, sv?("symbol "+Math.round(sr.width)+"x"+Math.round(sr.height)+" "+getComputedStyle(sv).color+" (skal 16 · gråt · foran navnet)"):"intet symbol foran navnet"); }
@@ -103,7 +113,7 @@ function maalSide(){
   [].slice.call(rod.querySelectorAll(".ark-chip")).filter(synlig).forEach(function(c){ var t=(c.innerText||"").replace(/\s+/g," ").trim(); if(!/^\+?\s?(Tekst|Manus|Klip|Scene)$|^Vælg fra hashtagbanken$/.test(t)) return;
     var r=c.getBoundingClientRect(), rk=[].slice.call(c.parentElement.children).filter(synlig).filter(function(x){ return Math.abs(x.getBoundingClientRect().top-r.top)<4; });
     var hoejre=Math.max.apply(null,rk.map(function(x){return x.getBoundingClientRect().right})), venstre=Math.min.apply(null,rk.map(function(x){return x.getBoundingClientRect().left}));
-    var fl=c.closest(".klip-kort:not(.kk-cta)"), k0, k1; if(fl){ var fc=getComputedStyle(fl), fr=fl.getBoundingClientRect(); k0=fr.left+px(fc.borderLeftWidth)+px(fc.paddingLeft); k1=fr.right-px(fc.borderRightWidth)-px(fc.paddingRight); } else if(navR){ k0=navR.left; k1=navR.right; } else return;
+    var fl=c.closest(".klip-kort:not(.kk-cta)"), k0, k1; if(fl){ var fc=getComputedStyle(fl), fr=fl.getBoundingClientRect(); k0=fr.left+px(fc.borderLeftWidth)+px(fc.paddingLeft); k1=fr.right-px(fc.borderRightWidth)-px(fc.paddingRight); } else if(kolR){ k0=kolR.left; k1=kolR.right; } else return;
     er("TILVALGS-CHIP til højre", c, Math.abs(hoejre-k1)<=1.5&&venstre-k0>=20, "rækken står "+Math.round(venstre-k0)+" fra venstre kant og "+Math.round(k1-hoejre)+" fra højre (skal 0 fra højre kant, aldrig til venstre)");
     if(fl){ var bund=Math.max.apply(null,[0].concat([].slice.call(fl.querySelectorAll("textarea.sk-input")).filter(synlig).map(function(x){return x.getBoundingClientRect().bottom}))); er("TILVALGS-CHIP under felterne", c, r.top>=bund-1, "chippen står over et felt i flisen (skal stå under)"); }
   });

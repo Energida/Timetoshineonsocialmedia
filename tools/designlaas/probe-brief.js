@@ -33,7 +33,7 @@ function maal(trin){
       if(rad>=99||rad>=h/2-1){ if(e.closest("#briefSideNav")) laeg("navknap","h"+h2(h)+" fs"+Math.round(parseFloat(cs.fontSize))+" rad999",e,trin);   /* navigationsknapper = 56, deres egen form (låst 12/11) */ else if(h>=44) laeg("pille","h"+h2(h)+" fs"+Math.round(parseFloat(cs.fontSize))+" rad999 bd"+px(cs.borderTopWidth),e,trin); else laeg("chip","h"+h2(h)+" fs"+Math.round(parseFloat(cs.fontSize))+" bd"+px(cs.borderTopWidth),e,trin); }
       else laeg("knap-uden-pille","rad"+rad+" h"+h,e,trin);
     }
-    if(cs.textTransform==="uppercase"&&parseFloat(cs.fontSize)<=12.5&&tag!=="BUTTON"&&e.children.length<=2&&txt(e)&&!e.closest("button,.brief-raketkort,.brief-dbog-hoved,.bss-top,.pf-kort")&&!/mangler/i.test(txt(e))) laeg("versal","fs"+Math.round(parseFloat(cs.fontSize)*10)/10+" ls"+Math.round(parseFloat(cs.letterSpacing)*10)/10+" col"+rgb(cs.color),e,trin);
+    if(cs.textTransform==="uppercase"&&parseFloat(cs.fontSize)<=12.5&&tag!=="BUTTON"&&e.children.length<=2&&txt(e)&&!e.closest("button,.brief-raketkort,.brief-dbog-hoved,.bss-top,.pf-kort")&&!e.closest("#briefHjaelp .soh-fl")/* v3425 (HÅRD): flisen til højre er helt rød med kun hvid tekst */&&!/mangler/i.test(txt(e))) laeg("versal","fs"+Math.round(parseFloat(cs.fontSize)*10)/10+" ls"+Math.round(parseFloat(cs.letterSpacing)*10)/10+" col"+rgb(cs.color),e,trin);
     var faktaSide=document.body.getAttribute("data-bfakta")==="ja"&&document.body.hasAttribute("data-bto")&&!document.body.hasAttribute("data-bforside");   /* Fakta-siden: hvert felt er sin egen flise (Ida 12/11) — boksen er kun beholder */
     if(faktaSide&&/(^|\s)fb-rk(\s|$)/.test(cl)&&e.closest("#briefRail")) laeg("flise","rad"+rad+" bd"+px(cs.borderTopWidth)+" sk"+(cs.boxShadow==="none"?"0":"1")+" bg"+rgb(cs.backgroundColor),e,trin);
     /* DEN NYE BRIEFS FLISER (DESIGNLÅS 18/11 + 19/11). To ting måles anderledes end før — alt andet er uændret:
@@ -43,8 +43,12 @@ function maal(trin){
           Har den alligevel flade, kant eller skygge, tælles den med som flise — og falder som uens. */
     if(!(faktaSide&&/(^|\s)fb-boks(\s|$)/.test(cl))&&/(^|\s)(sk-q|pf-flise|pf-kf|fb-boks|brief-dbog-flise|klip-kort)(\s|$)/.test(cl)&&!/\bpf-kort\b/.test(cl)&&r.width>300&&!e.parentElement.closest(".sk-q:not(:has(#briefKlipHolder))")&&!(e.parentElement&&e.parentElement.classList.contains("kk-laast"))   /* den laaste scene 1 er sand med vilje (Ida 7/11) */&&!e.querySelector("#briefKlipHolder, #briefKlip1")){
       var b3Seg=e.matches(".b3-idq, .b3-cap"), b3Felt=e.matches(".klip-kort.kk-cta, .sk-q[data-par=cover], .cap-q.b3-htg");
-      if(b3Seg){ var gs=[].slice.call(e.matches(".b3-cap")?e.parentElement.querySelectorAll(":scope > .cap-q.b3-cap"):e.closest(".basis-kort").querySelectorAll(".sk-q.b3-idq")).filter(synlig);
-        if(gs[0]===e){ var cN=getComputedStyle(gs[gs.length-1]); var hel=gs.every(function(g,i){ var c=getComputedStyle(g); return px(c.borderLeftWidth)===1&&px(c.borderRightWidth)===1&&(i===0||Math.abs(g.getBoundingClientRect().top-gs[i-1].getBoundingClientRect().bottom)<=0.5)&&(i===0?px(c.borderTopWidth)===1:(px(c.borderTopLeftRadius)===0&&px(c.borderTopWidth)===0))&&(i===gs.length-1?px(c.borderBottomWidth)===1:(px(c.borderBottomLeftRadius)===0&&px(c.borderBottomWidth)===0))&&c.boxShadow!=="none"&&rgb(c.backgroundColor)===rgb(cs.backgroundColor); });
+      /* v3423 (bud 9): »I rammen står intet i en flise (aldrig flise i flise) … rammen er flisen«. Et spørgsmål eller en scene uden flade, kant og skygge er derfor ingen flise og tælles ikke. */
+      var b3Uden=function(c){ return /rgba\(0,0,0,0\)|transparent/.test(rgb(c.backgroundColor))&&px(c.borderTopWidth)===0&&px(c.borderLeftWidth)===0&&c.boxShadow==="none"; }, b3Ramme=document.body.classList.contains("b3-paa")&&!!e.closest("#briefWrap");
+      if(b3Ramme&&!b3Seg&&!b3Felt&&b3Uden(cs)){ /* ingen flise: rammen er flisen */ }
+      else if(b3Seg){ var gs=[].slice.call(e.matches(".b3-cap")?e.parentElement.querySelectorAll(":scope > .cap-q.b3-cap"):e.closest(".basis-kort").querySelectorAll(".sk-q.b3-idq")).filter(synlig);
+        if(b3Ramme&&gs.every(function(g){return b3Uden(getComputedStyle(g))})){ /* ingen flise: rammen er flisen */ }
+        else if(gs[0]===e){ var cN=getComputedStyle(gs[gs.length-1]); var hel=gs.every(function(g,i){ var c=getComputedStyle(g); return px(c.borderLeftWidth)===1&&px(c.borderRightWidth)===1&&(i===0||Math.abs(g.getBoundingClientRect().top-gs[i-1].getBoundingClientRect().bottom)<=0.5)&&(i===0?px(c.borderTopWidth)===1:(px(c.borderTopLeftRadius)===0&&px(c.borderTopWidth)===0))&&(i===gs.length-1?px(c.borderBottomWidth)===1:(px(c.borderBottomLeftRadius)===0&&px(c.borderBottomWidth)===0))&&c.boxShadow!=="none"&&rgb(c.backgroundColor)===rgb(cs.backgroundColor); });
           laeg("flise", hel?("rad"+Math.min(rad,px(cN.borderBottomLeftRadius))+" bd"+px(cs.borderTopWidth)+" sk1 bg"+rgb(cs.backgroundColor)):("samlet flise i stykker ("+gs.length+" dele)"), e, trin); } }
       else if(b3Felt&&/rgba\(0,0,0,0\)|transparent/.test(rgb(cs.backgroundColor))&&px(cs.borderTopWidth)===0&&cs.boxShadow==="none"){ /* ingen flise: feltet er selv flisen */ }
       else laeg("flise","rad"+rad+" bd"+px(cs.borderTopWidth)+" sk"+(cs.boxShadow==="none"?"0":"1")+" bg"+rgb(cs.backgroundColor),e,trin);
@@ -53,36 +57,32 @@ function maal(trin){
     if(/\b(brief-raketkort|brief-dbog-hoved)\b/.test(cl)&&!/\bbrief-ide-hoved-titel\b/.test(cl)) laeg("bjaelke","rad"+rad+" h"+h2(h)+" bg"+rgb(cs.backgroundColor),e,trin);   /* Kort fortalt-flisen vokser med teksten (22/9) og er ikke en bjaelke */
   });
 }
-/* BRIEFENS TRIN PÅ COMPUTEREN (LÅST 18/11 »BRIEFENS TRIN: COMPUTER = FIRE FLISER (OVERBLIKKET BREDEST, RAKETTEN OVER NAVNET)«: »Porten skal måle højde, bredde og rød markering, når det bygges«).
-   Før talte trin-fliserne med som »knap uden pille« og skulle være helt ens; låsen siger: »alle fire fliser har samme højde, 76. Hjørner 16 (Overblikket 20 på computer), 8 imellem« ·
-   »Overblikket er den brede flise (ca. 1,25 gange …; kun navnet, intet symbol, større skrift: 19 på computer« · »De tre andre har rakettens symbol OVER navnet (… 20 px på computer …), navnet under (14 på computer …; mindst 10 luft til flisens kant)« ·
-   »Raketten peger skråt op mod højre hjørne« · »Den røde flise viser, hvor man er (#FC2404, hvid tekst og hvidt symbol). De andre er hvide med kant #DEDEDE og blød skygge; Overblikkets tekst er sort, de tre andres grå #686868« ·
-   »Ingen »Trin N af 4«, ingen streger, ingen overskrift over rækken, ordet »Succesraketten« står ikke«. */
+/* BRIEFENS TRIN PÅ COMPUTEREN ER EN VÆLGER (DESIGNLÅS 21/11 v3423, bud 9: »trinene som vælger (fire lige brede dele, den røde viser stedet)« · v3425: »Kort reel og Billede har ingen Fasthold dem: tre lige brede trin« ·
+   v3427: »trinnenes navne må stå på to linjer«. VÆLTER trin-fliserne fra 18/11 (76 høje, raketten over navnet, Overblikket bredest), som denne måling holdt før; lagt ud med Idas »Jeg tror bare vi skal lægge det live og så teste det« 22/11.
+   MÅLT 22/11 på 1440: én hvid pille med kant #DEDEDE; delene 44 høje, lige brede, helt sammen, runde ender; skrift 12,5; den valgte rød #FC2404 med hvid tekst; de andre uden flade og kant med sort tekst; ingen raket.
+   »Ingen »Trin N af 4«, ingen overskrift over rækken, ordet »Succesraketten« står ikke« (18/11) gælder stadig. */
 function maalTrin(trin){
   var tr=document.getElementById("b3Trin"); if(!tr||!synlig(tr)){ FUND.push("TRIN "+trin+": trin-rækken (#b3Trin) står ikke på skrivesiden"); return; }
-  var f=[].slice.call(tr.querySelectorAll(".b3-tf")).filter(synlig), R="rgb(252,36,4)", HV="rgb(255,255,255)", K="rgb(222,222,222)";
-  if(f.length!==4||f.map(function(b){return (b.innerText||"").replace(/\s+/g," ").trim()}).join("|")!=="Overblikket|Fang dem|Fasthold dem|Få dem til at handle"){ FUND.push("TRIN "+trin+": rækken skal have fire fliser Overblikket · Fang dem · Fasthold dem · Få dem til at handle — fandt: "+f.map(txt).join(" · ")); return; }
+  var f=[].slice.call(tr.querySelectorAll(".b3-tf")).filter(synlig), R="rgb(252,36,4)", HV="rgb(255,255,255)", K="rgb(222,222,222)", SO="rgb(26,26,26)";
+  var navne=f.map(function(b){return (b.innerText||"").replace(/\s+/g," ").trim()}).join("|");
+  if(navne!=="Overblikket|Fang dem|Fasthold dem|Få dem til at handle"&&navne!=="Overblikket|Fang dem|Få dem til at handle"){ FUND.push("TRIN "+trin+": vælgeren skal have Overblikket · Fang dem · (Fasthold dem) · Få dem til at handle — fandt: "+f.map(txt).join(" · ")); return; }
   if(/Trin\s+\d+\s+af|Succesraketten/i.test(tr.innerText||"")) FUND.push("TRIN "+trin+": »Trin N af …« eller »Succesraketten« står i rækken");
+  var tc=getComputedStyle(tr); if(rgb(tc.backgroundColor)!==HV||px(tc.borderTopWidth)!==1||rgb(tc.borderTopColor)!==K||px(tc.borderTopLeftRadius)<22) FUND.push("TRIN "+trin+": vælgeren er "+tc.backgroundColor+" kant "+tc.borderTopWidth+" "+tc.borderTopColor+" hjørner "+tc.borderTopLeftRadius+" (skal én hvid pille · 1 px #DEDEDE · runde ender)");
   var q=f.map(function(b){return b.getBoundingClientRect()}), c=f.map(function(b){return getComputedStyle(b)});
   f.forEach(function(b,i){ var nu=b.classList.contains("nu"), sp=b.querySelector("span"), ss=sp?getComputedStyle(sp):null, sr=sp?sp.getBoundingClientRect():null, sv=b.querySelector("svg"), afv=[];
-    if(Math.round(q[i].height)!==76) afv.push("højde "+Math.round(q[i].height)+" (skal 76)");
+    if(Math.round(q[i].height)!==44) afv.push("højde "+Math.round(q[i].height)+" (skal 44)");
     if(Math.abs(q[i].top-q[0].top)>0.5) afv.push("står ikke på samme linje");
-    if(px(c[i].borderTopLeftRadius)!==(i===0?20:16)) afv.push("hjørner "+px(c[i].borderTopLeftRadius)+" (skal "+(i===0?20:16)+")");
-    if(i>0&&Math.abs(q[i].left-q[i-1].right-8)>1) afv.push(Math.round(q[i].left-q[i-1].right)+" til flisen før (skal 8)");
-    if(nu){ if(rgb(c[i].backgroundColor)!==R||!ss||rgb(ss.color)!==HV) afv.push("den valgte er "+c[i].backgroundColor+" med tekst "+(ss?ss.color:"?")+" (skal #FC2404 med hvid tekst)"); if(sv&&rgb(getComputedStyle(sv).color)!==HV) afv.push("symbolet på den røde er ikke hvidt"); }
-    else { if(rgb(c[i].backgroundColor)!==HV||px(c[i].borderTopWidth)!==1||rgb(c[i].borderTopColor)!==K||c[i].boxShadow==="none") afv.push("flade "+c[i].backgroundColor+" kant "+c[i].borderTopWidth+" "+c[i].borderTopColor+" (skal hvid · 1 px #DEDEDE · skygge)"); if(!ss||rgb(ss.color)!==(i===0?"rgb(26,26,26)":"rgb(104,104,104)")) afv.push("tekst "+(ss?ss.color:"?")+" (skal "+(i===0?"sort #1A1A1A":"grå #686868")+")"); }
-    if(ss&&Math.round(parseFloat(ss.fontSize))!==(i===0?19:14)) afv.push("skrift "+ss.fontSize+" (skal "+(i===0?19:14)+")");
-    if(i===0){ if(sv&&synlig(sv)) afv.push("Overblikket har et symbol (skal kun navnet)"); }
-    else { if(!sv||!synlig(sv)) afv.push("raketten mangler over navnet"); else { var vr=sv.getBoundingClientRect(), m=/matrix\(([-\d.]+), ([-\d.]+)/.exec(getComputedStyle(sv).transform||"");
-        if(Math.round(parseFloat(getComputedStyle(sv).width))!==20) afv.push("raketten er "+getComputedStyle(sv).width+" (skal 20)");
-        if(sr&&(vr.top+vr.bottom)/2>sr.top) afv.push("raketten står ikke over navnet");
-        if(!m||Math.abs(+m[1]-0.7071)>0.01||Math.abs(+m[2]-0.7071)>0.01) afv.push("raketten peger ikke skråt op mod højre hjørne (drejning "+(getComputedStyle(sv).transform||"ingen")+")"); }
-      if(sr&&(sr.left-q[i].left<10||q[i].right-sr.right<10)) afv.push("navnet står "+Math.round(Math.min(sr.left-q[i].left,q[i].right-sr.right))+" fra flisens kant (skal mindst 10)"); }
+    if(px(c[i].borderTopLeftRadius)<22) afv.push("hjørner "+px(c[i].borderTopLeftRadius)+" (skal runde ender, mindst 22)");
+    if(i>0&&Math.abs(q[i].left-q[i-1].right)>1) afv.push(Math.round(q[i].left-q[i-1].right)+" til delen før (skal 0: det er ÉN vælger)");
+    if(Math.abs(q[i].width-q[0].width)>1) afv.push("bredde "+Math.round(q[i].width)+" (de andre "+Math.round(q[0].width)+": delene skal være lige brede)");
+    if(nu){ if(rgb(c[i].backgroundColor)!==R||!ss||rgb(ss.color)!==HV) afv.push("den valgte er "+c[i].backgroundColor+" med tekst "+(ss?ss.color:"?")+" (skal #FC2404 med hvid tekst)"); }
+    else { if(!/rgba\(0,0,0,0\)|transparent/.test(rgb(c[i].backgroundColor))||px(c[i].borderTopWidth)!==0||c[i].boxShadow!=="none") afv.push("flade "+c[i].backgroundColor+" kant "+c[i].borderTopWidth+" (skal uden flade, kant og skygge: kun den røde viser stedet)"); if(!ss||rgb(ss.color)!==SO) afv.push("tekst "+(ss?ss.color:"?")+" (skal sort #1A1A1A)"); }
+    if(ss&&Math.round(parseFloat(ss.fontSize)*10)!==125) afv.push("skrift "+ss.fontSize+" (skal 12,5)");
+    if(sv&&synlig(sv)) afv.push("der står et symbol i delen (skal kun navnet)");
+    if(sr&&(sr.left<q[i].left-0.5||sr.right>q[i].right+0.5||sr.top<q[i].top-0.5||sr.bottom>q[i].bottom+0.5)) afv.push("navnet rager ud af delen");
     if(afv.length) FUND.push("TRIN "+trin+" · »"+txt(b)+"«: "+afv.join(" · "));
   });
-  if(Math.abs(q[1].width-q[2].width)>1||Math.abs(q[2].width-q[3].width)>1) FUND.push("TRIN "+trin+": de tre fliser med raket er ikke lige brede ("+q.slice(1).map(function(x){return Math.round(x.width)}).join(" · ")+")");
-  var forhold=q[0].width/q[1].width; if(forhold<1.2||forhold>1.3) FUND.push("TRIN "+trin+": Overblikket er "+Math.round(forhold*100)/100+" gange de andres bredde (skal ca. 1,25)");
-  var nuF=f.filter(function(b){return b.classList.contains("nu")}); if(nuF.length!==1||f.indexOf(nuF[0])!==BRIEF_SIDE_AKTIV) FUND.push("TRIN "+trin+": den røde flise viser ikke, hvor man er (side "+(BRIEF_SIDE_AKTIV+1)+", rød: "+nuF.map(txt).join(", ")+")");
+  var nuF=f.filter(function(b){return b.classList.contains("nu")}); if(nuF.length!==1||(f.length===4&&f.indexOf(nuF[0])!==BRIEF_SIDE_AKTIV)) FUND.push("TRIN "+trin+": den røde del viser ikke, hvor man er (side "+(BRIEF_SIDE_AKTIV+1)+", rød: "+nuF.map(txt).join(", ")+")");
 }
 var SIDSTE="start";   /* vagten (18/9): naar proben aldrig naar i maal, skal loggen sige HVOR den stod — ikke bare »ingen maaling« */
 setTimeout(function(){ console.log("SELE BRIEF FEJL: proben naaede ikke i maal paa 70 s — sidste trin: "+SIDSTE); },70000);
