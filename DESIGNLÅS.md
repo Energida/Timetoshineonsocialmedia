@@ -1,3 +1,12 @@
+## 23. november · v3448 · GENNEMTJEKKET AF KUNDENS PROFIL: NAVNE PÅ OPSLAG · ÉN KOMMENTAR-RÆKKE · STORY · »GIV EN OPGAVE« — BYGGET I TESTUDGAVEN, IKKE UDE (fra »Planlægning«; Idas »Ja, byg buddet« og »Ja, send videre« dér)
+
+- **Navnene fra briefens »Hvem laver indholdet?« står på opslaget:** sidst i overteksten på Hjem (»Opslag · Planlagt · René og Freja«) og i kalenderkortets statuslinje (`huHvemListe`, `huHvemTekst`). SET af byggetråden på 390 og 1440 med prøvedata.
+- **»I morgen skal du poste« vises kun for den, der står på opslaget** (`huErMit`; ingen valgt eller »Alle« = alle). MÅLT: en anden person end René/Freja får `false`. IKKE SET som personen på opslaget.
+- **Samme kommentar står én gang i Indbakken**, og et tryk åbner briefen og kommentar-arket (`ibAabnKommentar`). Målt af »Planlægning«; ikke set igen af byggetråden.
+- **Story:** den valgte dato står på knappen med det samme · »+ Tekst« sætter markøren i feltet og ruller det ind · »Upload« står nederst, når der er tekst. IKKE SET på 1440; »Upload« nederst er kun læst som beregnet stil.
+- **»Giv en opgave«:** navnene bryder til ny linje.
+- Ingen lås væltes. Bevidst IKKE bygget (Idas »Ja, fjern det« 16/11): ingen Godkend-knap, og status »Forslag« sender med det samme. Ingen nye tabeller, kolonner eller kald.
+
 ## 23. november · v3447 · BRIEFENS TOP PÅ TELEFON REAGERER PÅ TRYK IGEN · ET TRYK RAMMER KNAPPEN (MÅLT I PORTEN) — BYGGET I TESTUDGAVEN, IKKE UDE
 
 - **Fejl i live, fundet i gennemtjekket af kundens profil (»Planlægning«, Idas »Ja, ret den«):** på telefon ramte tryk i briefens top ikke knapperne (Skriv/Optag/Post, statusvælgeren, de tre prikker, blyanten). ÅRSAG: »Tilbage«s usynlige trykfelt (`.cover-tilbage::after`, inset −4px 0) forudsætter, at knappen er ankeret; i en brief er knappen `position:static`, så feltet ankrede i hele båndet og lå hen over alt. Rettet med én regel: feltet er slået fra på `.cover-tilbage` og `.navsti-tilbage` i briefens bånd (knappen er 44 høj i sig selv). Ingen synlig ændring.
