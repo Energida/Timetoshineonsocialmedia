@@ -45479,17 +45479,17 @@ function hjemYgtTlfHtml() {
   let akt = []; try { akt = kursusLektionerAktive(); } catch (e) {}
   const moduler = [], paa = {};
   akt.forEach(function (l) { const nr = modulNrFor(l.id); if (!nr) return; let laast = false; try { laast = !!lekModulLaastFor(l.id); } catch (e) {} if (laast) return; if (!paa[nr]) { paa[nr] = { nr: nr, l: [] }; moduler.push(paa[nr]); } paa[nr].l.push(l); });
-  if (moduler.length) ud += sek("Dit forløb") + moduler.map(function (m) {
+  const yfEt = function (m) {
     let navn = ""; try { const info = modulInfoFor(m.nr), mm = lekModulFor(m.l[0].id); navn = "Modul " + modulVisNr(m.nr) + " · " + modulVisNavn(m.nr, (info && info.titel) || (mm && mm.titel) || ""); } catch (e) { navn = "Modul " + modulVisNr(m.nr); }
-    /* v3439 tillæg 2 (Ida 22/11): et modul, der venter på introduktionen og spørgeskemaet (ftlKravLaast), står med hængelås og sætningen — ingen tom bar, kan ikke trykkes */
-    let krav = false; try { krav = ftlKravLaast(m.l); } catch (e) {}
-    if (krav) return '<div class="yf-fl yf-laast"><span class="lks-laas yf-ck">' + FTL_LAAS + '</span><div class="yf-lt"><div class="yf-t">' + esc(navn) + '</div><div class="yf-u">' + esc(FTL_KRAV_ORD) + '</div></div></div>';
+    /* v3451 (Ida 23/11): modulet, der venter på introduktionen og spørgeskemaet, står åbent som de andre (den låste flise fra v3439 er væk) */
     let set = m.l.filter(function (l) { return KURSUS_SET[l.id]; }).length, n = m.l.length, skema = false;
     try { if (lksSkemaHer(m.nr)) { skema = true; n++; if (OB_SKEMA === true) set++; } } catch (e) {}   /* v3439 (kunderejsen punkt 3, Ida 22/11): spørgeskemaet tæller med i det modul, det står i — samme seks dele som lektionssiden (fremModulLinje) */
     const pct = n ? Math.round(set / n * 100) : 0;
     const ord = skema ? (set === 0 ? ftlAntal(n - 1, m.nr) : set === n ? "Alle " + n + " gennemført" : set + " af " + n + " gennemført") : set === n ? ("Alle " + n + " lektioner gennemført") : (set + " af " + n + " lektioner set");   /* v3439, tillæg (Ida 22/11): i modulet med spørgeskemaet kaldes skemaet ikke en lektion */
     return '<div class="yf-fl" role="button" tabindex="0" onclick="showTab(12)"><div class="yf-t">' + esc(navn) + '</div><div class="yf-u">' + esc(ord) + '</div><div class="yf-bar"><span><i style="width:' + pct + '%"></i></span><b>' + pct + ' %</b></div></div>';
-  }).join("");
+  };
+  /* v3451: »Dit forløb« på telefonens forside følger samme tre afsnit som Forløbet (Energi · Strategi · Resultat) */
+  if (moduler.length) { const g3 = forloebFaseOpdel(moduler); ud += sek("Dit forløb") + (g3 ? g3.map(function (g) { return (g.t ? '<div class="yf-fase">' + esc(g.t) + '</div>' : '') + g.l.map(yfEt).join(""); }).join("") : moduler.map(yfEt).join("")); }
   if (!d && !moduler.length) ud += '<div class="hu-ringe">' + huRinge(true) + '</div>';   /* »Forløbet er på vej« — den ene tilstand uden noget at vise */
   return '<div class="hu hu-tlf hu-ygt yf">' + ud + huTodoHtml() + '</div>';
 }
@@ -51067,6 +51067,18 @@ function ftlVenterHtml(ids) {
       return '<div class="lks-fl lks-lek lks-oev lks-opg opg-nu" role="button" tabindex="0" onclick="lekOevFortsaet(\'' + idS + '\')" onkeydown="if(event.key===\'Enter\'){lekOevFortsaet(\'' + idS + '\');}"><span class="lks-tom lks-tom-nu"></span><div class="lks-lt"><div class="lks-oe">Opgave · lektion ' + esc(lekVisNr(l.id)) + '</div><div class="lks-ln">' + esc(egen ? lekOevNavn(l) : lekVisTitel(l)) + '</div></div></div>'; }).join("") + '</div>';
   } catch (e) { return ""; }
 }
+/* v3451: deler en liste af moduler ({nr, …}) i [uden afsnit øverst] · Energi · Strategi · Resultat · [uden afsnit sidst]. Giver null, når intet modul har en fase (så står listen som før). */
+function modulFaseAf(nr) { try { const f = String((modulInfoFor(nr) || {}).fase || ""); return MODUL_FASER.some(function (x) { return x.n === f; }) ? f : ""; } catch (e) { return ""; } }
+function forloebFaseOpdel(liste) {
+  try {
+    if (!liste || !liste.some(function (x) { return modulFaseAf(x.nr); })) return null;
+    const foerste = liste.findIndex(function (x) { return modulFaseAf(x.nr); });
+    const ud = [{ t: "", l: liste.filter(function (x, i) { return i < foerste && !modulFaseAf(x.nr); }) }];
+    MODUL_FASER.forEach(function (f) { ud.push({ t: f.t, l: liste.filter(function (x) { return modulFaseAf(x.nr) === f.n; }) }); });
+    ud.push({ t: "", l: liste.filter(function (x, i) { return i > foerste && !modulFaseAf(x.nr); }) });
+    return ud.filter(function (g) { return g.l.length; });
+  } catch (e) { return null; }
+}
 function forloebTidslinjeHtml() {
   if (kursusReserveSkjult()) return kursusIkkeHentetHtml();
   try {
@@ -51076,7 +51088,7 @@ function forloebTidslinjeHtml() {
     const senere = { push: function (h) { ud.push({ h: h, s: true }); } }, faerdige = { push: function (h) { ud.push({ h: h, s: false }); } };
     const aaben = function (nr) { return Object.prototype.hasOwnProperty.call(LEK_SIDE_AABEN, nr) && !!LEK_SIDE_AABEN[nr]; };
     const sek = function (ord) { return '<div class="ftl2-sek"><span>' + ord + '</span><i></i></div>'; };
-    (KURSUS_MODULER || []).forEach(function (m) {
+    const modulEt = function (m) {
       const nr = modulNrFor(((m.lektioner || [])[0] || {}).id); if (!nr || sete[nr]) return; sete[nr] = 1;
       const a = aktive[nr];
       if (a && a.lektioner && a.lektioner.length) {
@@ -51086,10 +51098,8 @@ function forloebTidslinjeHtml() {
           senere.push('<div class="ftl2-rk laast">' + '<span class="lks-laas ftl2-ck">' + FTL_LAAS + '</span>' + '<div class="ftl2-t ftl2-t-rk"><div class="ftl2-n">' + esc(a.titel) + '</div><div class="ftl2-a">' + ftlAntalTid(ids, nr) + '</div><div class="ftl2-aab">' + esc(storStart("Åbner " + ygtAabnerOrd(nr))) + '</div></div><div class="ftl2-h"><span>' + esc(storStart("Åbner " + ygtAabnerOrd(nr))) + '</span></div></div>');
           return;
         }
-        if (ftlKravLaast(ids)) {   /* v3439 (kunderejsen punkt 3, Ida 22/11): samme låste række som de tidslåste — hængelås, ingen pil, ikke under »Åbne moduler« */
-          senere.push('<div class="ftl2-rk laast ftl2-krav">' + '<span class="lks-laas ftl2-ck">' + FTL_LAAS + '</span>' + '<div class="ftl2-t ftl2-t-rk"><div class="ftl2-n">' + esc(a.titel) + '</div><div class="ftl2-a">' + ftlAntalTid(ids, nr) + '</div><div class="ftl2-aab">' + esc(FTL_KRAV_ORD) + '</div></div><div class="ftl2-h"><span>' + esc(FTL_KRAV_ORD) + '</span></div></div>');
-          return;
-        }
+        /* v3451 (Ida 23/11: »vil du fjerne denne tekst og i stedet låse modul 1 op og læg den op under modul 0 i samme design så modulet er låst op men lektionerne er låst! (altså indtil foregående er gennemført)«):
+           modulet, der venter på introduktionen og spørgeskemaet, står ikke længere som låst række med sætningen (v3439), men åbent i samme flise som de andre åbne moduler. Lektionerne i det er låst af den kæde, der fandtes i forvejen (lekLaastAfForrige / lekLaastAfSkema). */
         const skemaHer = lksSkemaHer(nr), skemaGjort = OB_SKEMA === true;
         const alleSet = ids.every(function (x) { return KURSUS_SET[x.id]; }) && (!skemaHer || skemaGjort);
         /* INGEN FOLD-UD PÅ ÅBNE MODULER (Ida 20/11: »jeg vil gerne at vi dropper drop down muligheden ved modulerne - men at man ved klik på modul flisen kommer ind på modulsiden«): klik fører til modulets næste lektion, og dermed modulsiden */
@@ -51128,11 +51138,17 @@ function forloebTidslinjeHtml() {
       /* LAASTE MODULER KAN FOLDES UD OGSAA NAAR LEKTIONERNE ENDNU IKKE ER KLIPPET (Ida 11/11: »så man kan se hvilke lektioner der er«): titlerne kommer fra modulets lektionsliste */
       const alleL = (m.lektioner || []).filter(function (x) { return x && x.id; });
       senere.push('<div class="ftl2-rk laast">' + '<span class="lks-laas ftl2-ck">' + FTL_LAAS + '</span>' + '<div class="ftl2-t ftl2-t-rk"><div class="ftl2-n">' + esc(titel) + '</div>' + (alleL.length ? '<div class="ftl2-a">' + ftlAntal(alleL.length) + '</div>' : '') + '<div class="ftl2-aab">' + esc(aab || "På vej") + '</div></div><div class="ftl2-h"><span>' + esc(aab || "På vej") + '</span></div></div>');
-    });
+    };
+    (KURSUS_MODULER || []).forEach(function (m) { const fra = ud.length; modulEt(m); const nrM = modulNrFor(((m.lektioner || [])[0] || {}).id); for (let q = fra; q < ud.length; q++) ud[q].nr = nrM; });
     const dele = []; let senereEtiket = false;   /* INGEN OVERSKRIFT »DIT FORLØB« UNDER COVERET (Ida 6/11: heroen siger det) */
-    ud.forEach(function (x) { if (x.s && !senereEtiket) { dele.push(sek(String(x.h).indexOf("ftl2-rk laast") > -1 ? "Låste moduler" : "Senere")); senereEtiket = true; } dele.push(x.h); });
+    /* v3451 · MODULOVERSIGTEN I TRE AFSNIT: ENERGI · STRATEGI · RESULTAT (Ida 23/11: »Vi skal have delt moduloversigten op i 3 - Energi - Strategi - Resultat og så skal vi have markeret dem i systemet så de rigtigt kommer ind under det rette«).
+       Hvert modul står under det afsnit, dets »fase« siger (moduler.fase, sat i Backstage under »Hvor i metoden«). Modul 0 (uden fase, før det første afsnit) står for sig selv øverst; et senere modul uden fase står sidst for sig selv, så det aldrig forsvinder.
+       Låse, datoer og rækkefølgen inden for et afsnit er uændret. Med afsnittene falder etiketterne »Åbne moduler«, »Låste moduler« og »Senere« væk: låsen står på modulet selv. */
+    const faseOpdelt = forloebFaseOpdel(ud);
+    if (faseOpdelt) faseOpdelt.forEach(function (g) { if (g.t) dele.push(sek(g.t)); g.l.forEach(function (x) { dele.push(x.h); }); });
+    else ud.forEach(function (x) { if (x.s && !senereEtiket) { dele.push(sek(String(x.h).indexOf("ftl2-rk laast") > -1 ? "Låste moduler" : "Senere")); senereEtiket = true; } dele.push(x.h); });
     const tlfTop = '<div class="ftl2-sidetitel">' + esc((function () { try { return ygtMenuNavn(CURRENT_DEF) || "Forløbet"; } catch (e) { return "Forløbet"; } })()) + '</div>';   /* telefonen: siden har intet cover — navnet står som rolig sort overskrift (Idas ja 12/11) */
-    if (dele.length) { if (LEK_FAV_VIS) return '<div class="ftl2">' + tlfTop + lekFavChips() + lekFavListe() + '</div>'; return '<div class="ftl2">' + tlfTop + lekFavChips() + ((ud[0] && !ud[0].s) ? '<div class="ftl2-sek ftl2-sek-tlf"><span>Åbne moduler</span><i></i></div>' : '') + dele.join("") + '</div>'; }
+    if (dele.length) { if (LEK_FAV_VIS) return '<div class="ftl2">' + tlfTop + lekFavChips() + lekFavListe() + '</div>'; return '<div class="ftl2">' + tlfTop + lekFavChips() + ((!faseOpdelt && ud[0] && !ud[0].s) ? '<div class="ftl2-sek ftl2-sek-tlf"><span>Åbne moduler</span><i></i></div>' : '') + dele.join("") + '</div>'; }
   } catch (e) {}
   return forloebTidslinjeGammel();
 }
@@ -72408,7 +72424,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "3450";
+const APP_VERSION = "3451";
 const APP_BYGGET = "3. november";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_VERSION;   /* ingen dato (Ida 7/11: »hvorfor står der version 3. november?«) — datoen blev ikke rettet med, nummeret er sandheden */ } catch (e) {} });
 let NY_VERSION_KLAR = false;
@@ -108478,6 +108494,8 @@ html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7
 @media (max-width:899px) { html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .tfl:not(.tfl-velk) { padding:22px 20px !important; } }
 /* ALDRIG TO FLISER: mens det mørke lag har sin kopi af flisen, er flisen under usynlig (den fylder stadig sin plads) */
 html body.tur-lag:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) #turStartKort > .tfl, html body.tur-lag:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) #turStartKortTlf > .tfl { visibility:hidden !important; }
+/* v3451 · AFSNITTENE ENERGI · STRATEGI · RESULTAT på telefonens forside: husets lille versal over fliserne, 12 over og 8 under (ingen streg ved fliser) */
+html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .yf-fase { font:400 11px/16px Poppins,sans-serif; letter-spacing:1.5px; text-transform:uppercase; color:#686868; margin:12px 0 8px; }
 /* v3395 (Ida 20/11) — MODULFLISERNE: cirkel som lektionerne (tom · rødt flueben · hængelås), ingen pil, ingen fold-ud */
 html body #forloebTidslinje .ftl2 .ftl2-hoved, html body #forloebTidslinje .ftl2 .ftl2-rk.laast { display:flex !important; align-items:center !important; justify-content:flex-start !important; gap:16px !important; cursor:pointer; }
 html body #forloebTidslinje .ftl2 .ftl2-rk.laast { cursor:default; }
@@ -108561,7 +108579,7 @@ html body:not(#bl0):not(#bl1):not(#bl2):not(#bl3):not(#bl4):not(#bl5):not(#bl6):
 @media (min-width:900px) { html body:not(#bl0):not(#bl1):not(#bl2):not(#bl3):not(#bl4):not(#bl5):not(#bl6):not(#bl7):not(#bl8):not(#bl9):not(#bl10):not(#bl11):not(#bl12):not(#bl13):not(#bl14):not(#bl15):not(#bl16):not(#bl17):not(#bl18):not(#bl19):not(#bl20):not(#bl21):not(#bl22):not(#bl23):not(#bl24):not(#bl25):not(#bl26):not(#bl27):not(#bl28):not(#bl29):not(#bm0):not(#bm1):not(#bm2):not(#bm3):not(#bm4):not(#bm5):not(#bm6):not(#bm7):not(#bm8):not(#bm9):not(#bm10):not(#bm11):not(#bm12):not(#bm13):not(#bm14):not(#bm15):not(#bm16):not(#bm17):not(#bm18):not(#bm19):not(#bm20):not(#bm21):not(#bm22):not(#bm23):not(#bm24):not(#bm25):not(#bm26):not(#bm27):not(#bm28):not(#bm29):not(#bm30):not(#bm31):not(#bm32):not(#bm33):not(#bm34):not(#bm35):not(#bm36):not(#bm37):not(#bm38):not(#bm39) #screen7#screen7 #briefHjaelp#briefHjaelp#briefHjaelp .b3h-soejle { margin-left:-8px !important; margin-right:-8px !important; padding-right:0 !important; } html body:not(#bl0):not(#bl1):not(#bl2):not(#bl3):not(#bl4):not(#bl5):not(#bl6):not(#bl7):not(#bl8):not(#bl9):not(#bl10):not(#bl11):not(#bl12):not(#bl13):not(#bl14):not(#bl15):not(#bl16):not(#bl17):not(#bl18):not(#bl19):not(#bl20):not(#bl21):not(#bl22):not(#bl23):not(#bl24):not(#bl25):not(#bl26):not(#bl27):not(#bl28):not(#bl29):not(#bm0):not(#bm1):not(#bm2):not(#bm3):not(#bm4):not(#bm5):not(#bm6):not(#bm7):not(#bm8):not(#bm9):not(#bm10):not(#bm11):not(#bm12):not(#bm13):not(#bm14):not(#bm15):not(#bm16):not(#bm17):not(#bm18):not(#bm19):not(#bm20):not(#bm21):not(#bm22):not(#bm23):not(#bm24):not(#bm25):not(#bm26):not(#bm27):not(#bm28):not(#bm29):not(#bm30):not(#bm31):not(#bm32):not(#bm33):not(#bm34):not(#bm35):not(#bm36):not(#bm37):not(#bm38):not(#bm39) #screen7#screen7 #briefHjaelp#briefHjaelp#briefHjaelp .b3h-soejle .b3h-chip { font-size:11px !important; padding:0 8px !important; max-width:100%; } }
 </style>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-hvid.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 22. november · 3450</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 22. november · 3451</div>
 <script>
 /* DROPDOWNEN RULLER SELV (Ida 4/10) — maal den aabne liste og klip den ved skaermens bund */
 (function () {
