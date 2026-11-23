@@ -72305,7 +72305,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "3444";
+const APP_VERSION = "3445";
 const APP_BYGGET = "3. november";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_VERSION;   /* ingen dato (Ida 7/11: »hvorfor står der version 3. november?«) — datoen blev ikke rettet med, nummeret er sandheden */ } catch (e) {} });
 let NY_VERSION_KLAR = false;
@@ -96970,7 +96970,11 @@ async function dashForsideTegn() {
   const sidePin = (typeof SIDE_PINS !== "undefined" ? SIDE_PINS : []).filter(function (x) { return x && x.id && x.navn; });
   const doere = pin.map(function (k) { return bf3Doer(venterKundeNavn(k), "kundeStudioAabn('" + esc(k) + "')", { lav: true, naal: true, naalFn: "kundePinSkift('" + esc(k) + "')" }); })   /* genvej til kundens Content Studio (30/9) */
     .concat(sidePin.map(function (x) { return bf3Doer(x.navn, "visDashSide('" + esc(x.id) + "')", { lav: true, naal: true, naalFn: "sidePinSkift('" + esc(x.id) + "','" + esc(x.navn).replace(/'/g, "\'") + "').then(function(){ try { dashForsideTegn(); } catch (e) {} })" }); }));
-  const pinHtml = doere.length ? '<div class="bs3-blok">' + '<div class="bs3-grid' + (tlf ? '2' : '4') + '">' + doere.join('') + '</div></div>' : '';
+  /* v3445 · PÅ TELEFONEN ER GENVEJENE CHIPS (Ida 23/11 med billede fra telefonen: »Kan du gøre så mine genveje på mobilen bare er chips?«): husets chip (32 høj · 12,5 px · trykfelt 44), navnet helt ud, ombrudt på flere linjer.
+     Et tryk gør det samme som flisen. Ingen nål på chippen: en kunde fastgøres på kundelisten, en side i sidens bånd, som før. Computeren har fliserne som før. */
+  const gvChips = pin.map(function (k) { return [venterKundeNavn(k), "kundeStudioAabn('" + esc(k) + "')"]; }).concat(sidePin.map(function (x) { return [x.navn, "visDashSide('" + esc(x.id) + "')"]; }))
+    .map(function (x) { return '<button type="button" class="hj-gv-chip" onclick="' + String(x[1]).replace(/"/g, "&quot;") + '">' + esc(x[0]) + '</button>'; });
+  const pinHtml = doere.length ? (tlf ? '<div class="bs3-blok hj-gv" role="group" aria-label="Genveje">' + gvChips.join('') + '</div>' : '<div class="bs3-blok">' + '<div class="bs3-grid4">' + doere.join('') + '</div></div>') : '';
   /* venter paa dig: fliser m. kundens navn som etiket */
   const venterHtml = venter.length ? venter.map(function (v, i) {
       const h = []; if (v.ja) h.push([v.ja, "venterJa(" + i + ")"]); if (v.nej) h.push([v.nej, "venterNej(" + i + ")"]); if (v.id && v.kode && v.slags !== "oenske" && v.slags !== "todo") h.push(["Åbn", "godkKoeAabn('" + esc(String(v.kode)) + "','" + esc(String(v.id)) + "')"]);
@@ -98589,8 +98593,20 @@ async function ksYgtHent(k) {
   const opgaver = Object.keys(oev).filter(function (id) { return oev[id].s === "udfoert"; }).map(function (id) { return { id: id, dato: oev[id].t }; });
   const skemaRk = rk.filter(function (r) { return (r.skema === "inden_start" || r.skema === "inden_workshoppen") && r.svar && typeof r.svar === "object"; }).sort(function (a, b) { return String(b.created_at).localeCompare(String(a.created_at)); });
   const profilRk = rk.find(function (r) { return r.skema === "profil_svar"; });
+  /* v3445 · KUNDENS MAILS PÅ KORTET (Ida 23/11: »jeg vil også gerne kunne se på kunden hvilke mails de har fået - så jeg kan se fx om lene har fået login mailen«).
+     Læser mail_log (RLS: kun administrator) på kundens adresser: kontaktens (kunde_info og købet), de rigtige logins og personerne. Statusmails til Ida (mail_id »status-…«) vises aldrig.
+     Kun læsning; ingen ny tabel, kolonne eller regel. Kan loggen ikke læses, er mails null, og kortet siger det. */
+  const infoNu = (ir && ir.data && ir.data[0] && ir.data[0].svar) || {};
+  const adr = {}; [infoNu.mail, koeb && koeb.mail].concat(((lg && !lg.error && Array.isArray(lg.data)) ? lg.data : []).map(function (u) { return u && u.email; })).concat(rk.filter(function (r) { return r.skema === "profil_person"; }).map(function (r) { return r.svar && r.svar.email; }))
+    .forEach(function (m) { m = String(m || "").trim(); if (/^[^@\s,()]+@[^@\s,()]+$/.test(m)) { adr[m] = 1; adr[m.toLowerCase()] = 1; } });
+  let mails = [];
+  if (Object.keys(adr).length) { try {
+    const ml = await sb.from("mail_log").select("created_at,email,mail_id,emne,status").in("email", Object.keys(adr)).order("created_at", { ascending: false }).limit(40);
+    mails = ml.error ? null : (ml.data || []).filter(function (x) { return !/^status-/i.test(String(x.mail_id || "")); });
+  } catch (e) { mails = null; } }
   return {
-    info: (ir && ir.data && ir.data[0] && ir.data[0].svar) || {},
+    mails: mails,
+    info: infoNu,
     profil: profilRk ? (profilRk.svar || {}) : null,   /* butikkens svar efter login (Idas klik 28/10) */
     personer: rk.filter(function (r) { return r.skema === "profil_person"; }).map(function (r) { return r.svar || {}; }),   /* hver persons trin 1: navn, fødselsdag, ejer/rolle */
     koeb: koeb, kilde: koeb ? (overblikKilde(kr.data[0].source) || "Uden kode") : "",
@@ -98788,16 +98804,21 @@ async function ksYgtTegn(k, o) {
   const prNavn = (function () { try { return bsKundeProdukt(k); } catch (e) { return ""; } })() || d.forloeb || "YOU GOT THIS";   /* samme produktnavn som CRM-listen (CRM-revision 16/11: »Succesfuld Detail 2026« her, »I GOT YOU« i listen) */
   const koeb2 = blok("Køb", rk2("Produkt", esc(prNavn)) + (koebt ? rk2("Købt", esc(ksyDato(koebt))) : '') + ((D.koeb && D.koeb.kr != null) ? rk2("Beløb", esc(D.koeb.kr.toLocaleString("da-DK")) + " kr.") : '') + (((!FL || D.koeb) && rabat !== "Ingen") ? rk2("Rabatkode", esc(rabat)) : '')   /* uden rabatkode: ingen række (Ida 15/11 »uden rabatkode skal bare være tom«) */ + (komFra ? rk2("Kom fra", esc(komFra)) : ''));   /* rabatkoden kun på et køb — en forløbskunde uden køb har ingen at vise */
   /* DET GAMLE KUNDEKORT KAN IKKE NÅS FRA SIDEN (CRM-revision 16/11, Idas fund: »gammelt kort bag ny side«): Kundeoplysninger er væk (kontakten rettes på siden), Aftaler og Indstillinger er egne undersider i sidens form */
+  /* v3445 · MAILS: emnet i fuld bredde; under det dato · »Sendt« eller »Fejl« (og modtageren, når kunden har flere adresser) */
+  const mlNavn = function (x) { const e = String(x.emne || "").trim(); if (e) return e; const i = String(x.mail_id || ""); return /^login:/.test(i) ? "Adgangsmailen" : /^har-adgang:/.test(i) ? "Du har allerede adgang" : i === "velkomst" ? "Velkomstmailen" : "Mail"; };
+  const mlFlere = D.mails ? Object.keys(D.mails.reduce(function (a, x) { a[String(x.email || "").toLowerCase()] = 1; return a; }, {})).length > 1 : false;
+  const mails2 = blok("Mails", D.mails === null ? tom2("Mails kunne ikke hentes") : (D.mails.length ? D.mails.map(function (x) { const fejl = String(x.status || "") !== "sendt";
+    return '<div class="ks2-rk ks2-ml"><span class="ks2-l ks2-ml-n">' + esc(mlNavn(x)) + '<span class="ks2-mail' + (fejl ? ' ks2-ml-fejl' : '') + '">' + esc(ksyDato(x.created_at)) + ' · ' + (fejl ? "Fejl" : "Sendt") + (mlFlere ? ' · ' + esc(String(x.email || "")) : '') + '</span></span></div>'; }).join("") : tom2("Ingen mails endnu")));
   const genveje2 = blok("Genveje", (FL ? [["Ny aftale", "kkNyArk('aft')"]].concat((VIRKSOMHEDSKODER[k] || {}).type === "forloeb" ? [["Nyt forløb", "kkNyArk('fs')"]] : []) : []).concat(FL ? [["Kalenderen", "kundeStudioAabn('" + kEsc + "')"], ["Aftaler", "ksYgtVis('ks-aftaler')"]] : []).concat([["Indstillinger", "ksYgtVis('ks-indstillinger')"]]).map(function (x) { return rk2(x[0], "", x[1]); }).join(""));   /* genvejene fra plusset (Ida 15/11) · YOU GOT THIS-kunden har hverken Kalenderen eller Kundeoplysninger (Ida 16/11: »jeg fatter ikke du har sat kalenderen ind på en you got this kunde og kundeoplysninger skulle jo gerne allerede stå på siden«) */
   const seK2 = tlf ? '<button type="button" class="ks2-kn ks2-bred" onclick="aabnKundensSide(\'' + kEsc + '\')">Se kundens version</button>' : '';
   el.innerHTML = '<div class="ks2' + (tlf ? ' ks2-tlf' : '') + '">'
     + (knapper ? '<div class="ks2-top">' + knapper + '</div>' : '') + venter2   /* linjen »YOU GOT THIS · YOU GOT THIS · start …« er væk (Ida 15/11: »dette skal fjernes«) — produkt og start står i Køb og Forløbet */
     + (tlf
-      ? forl2 + ops2 + svar2 + hist2 + kontakt2 + personer2 + butik2 + team2 + koeb2 + genveje2
+      ? forl2 + ops2 + svar2 + hist2 + kontakt2 + personer2 + butik2 + team2 + mails2 + koeb2 + genveje2
       : (FL
-        ? '<div class="ks2-grid"><div class="ks2-kol">' + kontakt2 + personer2 + butik2 + team2 + koeb2 + '</div><div class="ks2-kol">' + forl2 + ops2 + svar2 + '</div><div class="ks2-kol">' + hist2 + genveje2 + '</div></div>'
+        ? '<div class="ks2-grid"><div class="ks2-kol">' + kontakt2 + personer2 + butik2 + team2 + mails2 + koeb2 + '</div><div class="ks2-kol">' + forl2 + ops2 + svar2 + '</div><div class="ks2-kol">' + hist2 + genveje2 + '</div></div>'
         /* YOU GOT THIS-KUNDEN (Ida 16/11: »lektionerne skal flyttes over under aktivitet og køb skal flyttes ind i midten på siden hvor lektionerne er nu«) */
-        : '<div class="ks2-grid"><div class="ks2-kol">' + kontakt2 + personer2 + butik2 + team2 + '</div><div class="ks2-kol">' + koeb2 + ops2 + svar2 + '</div><div class="ks2-kol">' + hist2 + forl2 + genveje2 + '</div></div>'))   /* Team og Køb i venstre side, Aktivitet (før Historik) i højre (Ida 15/11) */
+        : '<div class="ks2-grid"><div class="ks2-kol">' + kontakt2 + personer2 + butik2 + team2 + mails2 + '</div><div class="ks2-kol">' + koeb2 + ops2 + svar2 + '</div><div class="ks2-kol">' + hist2 + forl2 + genveje2 + '</div></div>'))   /* Team og Køb i venstre side, Aktivitet (før Historik) i højre (Ida 15/11) */
     + '</div>';
   try { bsBaandPlanlaeg(); } catch (e) {}
 }
@@ -103484,7 +103505,7 @@ function mailsTekstHtml(t, midt, ekstra) {
   /* KURSIV · LINK · PUNKTER (Idas klik 15/11): *ord* = kursiv, [ord](https://…) = link (kun https), en blok, hvor hver linje starter med »- « = punkter. Alt andet er tekst. */
   const fmt = function (x) { return esc(x).replace(/\[([^\]\n]+)\]\((https:\/\/[^\s)<>"]+)\)/g, '<a href="$2" style="color:#FC2404;text-decoration:underline;">$1</a>').replace(/\*\*([^*\n]+)\*\*/g, '<b style="font-weight:600;">$1</b>').replace(/(^|[\s(>])\*([^*\n]+)\*(?=[\s.,;:!?)<]|$)/g, '$1<em>$2</em>'); };
   return String(t || "").split(/\n\s*\n/).map(function (p) { return p.trim(); }).filter(Boolean).map(function (p) {
-    const l = p.split("\n"); if (l.every(function (x) { return /^\s*[-•]\s+/.test(x); })) return '<ul style=""margin:0 0 12px;padding-left:22px;font-size:15px;line-height:1.6;color:#1A1A1A;text-align:left;' + ekstra + '">' + l.map(function (x) { return '<li style="margin:0 0 4px;">' + fmt(x.replace(/^\s*[-•]\s+/, "")) + '</li>'; }).join("") + '</ul>';
+    const l = p.split("\n"); if (l.every(function (x) { return /^\s*[-•]\s+/.test(x); })) return '<ul style="margin:0 0 12px;padding-left:22px;font-size:15px;line-height:1.6;color:#1A1A1A;text-align:left;' + ekstra + '">' + l.map(function (x) { return '<li style="margin:0 0 4px;">' + fmt(x.replace(/^\s*[-•]\s+/, "")) + '</li>'; }).join("") + '</ul>';
     return '<p style="margin:0 0 12px;font-size:15px;line-height:1.6;color:#1A1A1A;text-align:' + al + ';' + ekstra + '">' + fmt(p).replace(/\n/g, "<br>") + '</p>';
   }).join("");
 }
@@ -108287,6 +108308,13 @@ html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7
 html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .hu-ygt.yf .yf-fl.yf-laast > .yf-ck { flex:none; width:22px; height:22px; display:grid; place-items:center; margin:0; }
 html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .hu-ygt.yf .yf-fl.yf-laast > .yf-lt { flex:1 1 auto; min-width:0; }
 html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .hu-ygt.yf .yf-fl.yf-laast .yf-u { color:#1A1A1A !important; }
+/* v3445 · BACKSTAGES GENVEJE SOM CHIPS PÅ TELEFONEN (Ida 23/11): husets chip, 8 imellem og 12 mellem linjerne (32 + 12 = trykfelt 44 uden overlap), ingen flise om rækken, ingen vandret rulning */
+html body.dash-mode:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .hj-gv { display:flex !important; flex-wrap:wrap !important; gap:12px 8px !important; align-items:center !important; }
+html body.dash-mode:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .hj-gv-chip { position:relative !important; flex:none !important; display:inline-flex !important; align-items:center !important; justify-content:center !important; max-width:100% !important; height:32px !important; min-height:32px !important; margin:0 !important; padding:0 16px !important; box-sizing:border-box !important; border-radius:999px !important; border:1px solid #DEDEDE !important; background:#FFFFFF !important; color:#1A1A1A !important; -webkit-text-fill-color:#1A1A1A !important; font:400 12.5px/1 Poppins,system-ui,sans-serif !important; letter-spacing:0 !important; text-transform:none !important; white-space:nowrap !important; cursor:pointer !important; box-shadow:none !important; }
+html body.dash-mode:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .hj-gv-chip::before { content:"" !important; position:absolute !important; left:0 !important; right:0 !important; top:-6px !important; bottom:-6px !important; }
+/* v3445 · MAILS PÅ KUNDENS KORT: emnet i tekstfarven (det er indholdet, ikke en etiket), »Fejl« i rødt */
+html body.dash-mode:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .ks2-rk > .ks2-ml-n { color:#1A1A1A !important; flex:1 1 auto !important; }
+html body.dash-mode:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .ks2-rk .ks2-ml-fejl { color:#FC2404 !important; }
 /* v3395 (Ida 20/11) — MODULFLISERNE: cirkel som lektionerne (tom · rødt flueben · hængelås), ingen pil, ingen fold-ud */
 html body #forloebTidslinje .ftl2 .ftl2-hoved, html body #forloebTidslinje .ftl2 .ftl2-rk.laast { display:flex !important; align-items:center !important; justify-content:flex-start !important; gap:16px !important; cursor:pointer; }
 html body #forloebTidslinje .ftl2 .ftl2-rk.laast { cursor:default; }
@@ -108370,7 +108398,7 @@ html body:not(#bl0):not(#bl1):not(#bl2):not(#bl3):not(#bl4):not(#bl5):not(#bl6):
 @media (min-width:900px) { html body:not(#bl0):not(#bl1):not(#bl2):not(#bl3):not(#bl4):not(#bl5):not(#bl6):not(#bl7):not(#bl8):not(#bl9):not(#bl10):not(#bl11):not(#bl12):not(#bl13):not(#bl14):not(#bl15):not(#bl16):not(#bl17):not(#bl18):not(#bl19):not(#bl20):not(#bl21):not(#bl22):not(#bl23):not(#bl24):not(#bl25):not(#bl26):not(#bl27):not(#bl28):not(#bl29):not(#bm0):not(#bm1):not(#bm2):not(#bm3):not(#bm4):not(#bm5):not(#bm6):not(#bm7):not(#bm8):not(#bm9):not(#bm10):not(#bm11):not(#bm12):not(#bm13):not(#bm14):not(#bm15):not(#bm16):not(#bm17):not(#bm18):not(#bm19):not(#bm20):not(#bm21):not(#bm22):not(#bm23):not(#bm24):not(#bm25):not(#bm26):not(#bm27):not(#bm28):not(#bm29):not(#bm30):not(#bm31):not(#bm32):not(#bm33):not(#bm34):not(#bm35):not(#bm36):not(#bm37):not(#bm38):not(#bm39) #screen7#screen7 #briefHjaelp#briefHjaelp#briefHjaelp .b3h-soejle { margin-left:-8px !important; margin-right:-8px !important; padding-right:0 !important; } html body:not(#bl0):not(#bl1):not(#bl2):not(#bl3):not(#bl4):not(#bl5):not(#bl6):not(#bl7):not(#bl8):not(#bl9):not(#bl10):not(#bl11):not(#bl12):not(#bl13):not(#bl14):not(#bl15):not(#bl16):not(#bl17):not(#bl18):not(#bl19):not(#bl20):not(#bl21):not(#bl22):not(#bl23):not(#bl24):not(#bl25):not(#bl26):not(#bl27):not(#bl28):not(#bl29):not(#bm0):not(#bm1):not(#bm2):not(#bm3):not(#bm4):not(#bm5):not(#bm6):not(#bm7):not(#bm8):not(#bm9):not(#bm10):not(#bm11):not(#bm12):not(#bm13):not(#bm14):not(#bm15):not(#bm16):not(#bm17):not(#bm18):not(#bm19):not(#bm20):not(#bm21):not(#bm22):not(#bm23):not(#bm24):not(#bm25):not(#bm26):not(#bm27):not(#bm28):not(#bm29):not(#bm30):not(#bm31):not(#bm32):not(#bm33):not(#bm34):not(#bm35):not(#bm36):not(#bm37):not(#bm38):not(#bm39) #screen7#screen7 #briefHjaelp#briefHjaelp#briefHjaelp .b3h-soejle .b3h-chip { font-size:11px !important; padding:0 8px !important; max-width:100%; } }
 </style>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-hvid.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 22. november · 3444</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 22. november · 3445</div>
 <script>
 /* DROPDOWNEN RULLER SELV (Ida 4/10) — maal den aabne liste og klip den ved skaermens bund */
 (function () {
