@@ -1,3 +1,14 @@
+## 23. november · v3455 · MODULAFSLUTNING: POPUP FRA IDA, NÅR ET MODUL ER GENNEMFØRT — BYGGET I TESTUDGAVEN, IKKE UDE (Idas »Ja, byg den« 23/11 i samtalen »Modulafslutning«)
+
+- Kommer én gang pr. modul pr. kursist, når alle lektioner og opgaver i modulet er gennemført. Aldrig ved login, aldrig oven på en anden popup; efter feedback-popuppen. Krydset, Escape og klik udenfor lukker.
+- Form: lektionspopuppens mål (520, hjørner 24, husets skygge, kryds 40 i hjørnet). Rødt hjerte 48 · etiket 11 versal grå (»Modul 1 gennemført«, det viste nummer) · overskrift Poppins 400 28/22 (undtagelse fra popuptitlens 20) · tekst Poppins 300 16/15 · afsluttende sætning Poppins 400 18/17 · én rød knap 44/56 (»Videre til næste modul«).
+- **Idas egne emoji i teksten er tilladt i denne popup** (undtagelse fra »Ingen emoji«).
+- Teksterne rettes i Studio › modulet › »Popup ved gennemført modul« (til/fra, overskrift, knap, tekst, afsluttende sætning, forhåndsvisning). Modul 1 har Idas tekst og er slået til; alle andre moduler er slået fra, til hun skriver teksten.
+- **Data, ingen databaseændring:** teksterne i `lektion_oevelser`, rækken `ygt:modulpopup` (som `ygt:dage`); status i kundens egen række i `skema_svar`, `modul_afslutning`. Moduler, der var færdige før funktionen kom, mærkes »foer« uden popup.
+- **Sikkerhedskontrakten §8:** ingen nye tabeller, kolonner, policies, Edge Functions eller storage; nye rækker i to eksisterende tabeller. **Rolletesten mod den rigtige base er DEFINERET (bud/modulafslutning/AFLEVERING.md: admin skriver · kunde A og B læser, men kan ikke skrive · anonym kan ikke skrive · 0 testdata tilbage), men IKKE KØRT. Den skal køres, før udgaven lægges ud.**
+- **MÅLT af byggetråden mod denne udgave (testudgaven, opdigtet kursuskunde, 390 og 1440):** byggerens scenarier 1–8 består alle (popuppen efter sidste opgave, feedback først, Escape/kryds/klik udenfor, ingen popup ved nyt login eller genåbnede lektioner, »foer«, rettet tekst ses af kunden, slået fra = ingen popup, næste modul låst/åbent). SET på 390 og 1440.
+- **IKKE MÅLT:** den rigtige base · Studios modulflise (kun målt af byggeren, 12 tjek) · en rigtig telefon · porten kender ikke `#modslutPop` (probe-popups finder kun `.ark`/`.modal`).
+
 ## 23. november · v3454 · EN BRIEF GEMMES IKKE, FORDI DEN ÅBNES — BYGGET I TESTUDGAVEN, IKKE UDE
 
 - **Fundet på live af »Briefen« (23/11, Hinges Hus, kun kigge):** `saveBrief` blev kaldt, da et opslag blev åbnet fra kalenderen. ÅRSAG, MÅLT: når personerne på koden er hentet, tegner `briefPersonerFyld` scenerne om (»Hvem er med«-chips), og gentegningen (`briefKlipRerender`) gemte hele briefen (brief, dato, titel, type) til kundens række, uden at noget var ændret. Nu gemmer gentegningen ved åbning ikke; de 14 andre kald, hvor kunden har ændret noget, gemmer som før. Ingen synlig ændring.
