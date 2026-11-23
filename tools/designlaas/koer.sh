@@ -298,7 +298,7 @@ for SB in 768 834; do
 done
 [ "$STI_OK" = "1" ] || HERO_OK=0
 # KUNDEREJSEN PUNKT 1 (v3438, Ida 22/11: »stod siden stadig på “Opretter …”«): »Opret profil« paa siden fra adgangsmailen skal aabne appen, sige fejlen efter 15 sek., og et ubrugt link til en ANDEN mail
-# maa aldrig aabne den konto, browseren i forvejen er logget ind paa (sikkerhedskontraktens §8, signup/invitation). probe-opret.js, 5 proever, login efterlignet.
+# maa aldrig aabne den konto, browseren i forvejen er logget ind paa (sikkerhedskontraktens §8, signup/invitation). probe-opret.js, 9 proever, login efterlignet. v3446: noeglen bruges ikke uden et menneske, og forsiden ses ikke foer profilen.
 KOP=$(python3 -c "import urllib.parse,sys;print(urllib.parse.quote(open(sys.argv[1]).read()))" "$ROD/tools/designlaas/probe-opret.js")
 RAAO=$($TO "$C" $HL --no-sandbox --disable-gpu --window-size=1480,1000 --virtual-time-budget=90000 --enable-logging=stderr --v=0 --screenshot="$MAAL/opret.png" "http://127.0.0.1:$PORT/sele.html?vis=kunde&fil=index-sele.html%3Fselekode%3DHINGES2026&bred=1440&hoej=940&kode=$KOP" 2>&1)
 UDO=$(echo "$RAAO" | grep -a 'CONSOLE' | sed -E 's/^.*CONSOLE[:(][0-9]+\)?\] //; s/", source:.*$//; s/^"//' | grep -a 'SELE OPRET')

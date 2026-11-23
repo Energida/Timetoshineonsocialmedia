@@ -14798,7 +14798,7 @@ html body #appLoader:not([data-fejl="1"]) > div, html body #energidaLoader > spa
     try {
       if (localStorage.getItem("energida_skal_ny_kode") !== "invitation") return false;
       if (document.getElementById("pfFlow") || document.getElementById("nyKodeBoks")) return false;
-      return Date.now() - T_START < 12000;
+      return Date.now() - (window.__PROFIL_VENT_FRA || T_START) < 12000;   /* v3446: de 12 sek. tælles fra »Opret profil« (opretAabnApp), ikke fra siden blev hentet — stod kunden længere end 12 sek. på siden fra mailen, lettede tæppet før profilen, og forsiden sås et øjeblik (Ida 23/11) */
     } catch (e) { return false; }
   };
   function sluk() {
@@ -39636,7 +39636,7 @@ async function velkomstStart() {
 let PF = null;
 const PF_MDR = ["januar","februar","marts","april","maj","juni","juli","august","september","oktober","november","december"];
 function pfKladdeNoegle() { try { return nsKey("profil_kladde"); } catch (e) { return "profil_kladde_X"; } }
-function pfKladdeGem() { try { if (PF && PF.team && !PF.team.oprettet) return; if (PF) { const fu = Object.assign({}, PF.f); delete fu.pw; localStorage.setItem(pfKladdeNoegle(), JSON.stringify({ trin: PF.trin, sp: PF.sp || 0, f: fu })); } } catch (e) {} }   /* adgangskoden gemmes ALDRIG i kladden */
+function pfKladdeGem() { try { if (PF && PF.team && !PF.team.oprettet) return; if (PF) { const fu = Object.assign({}, PF.f); delete fu.pw; localStorage.setItem(pfKladdeNoegle(), JSON.stringify({ trin: PF.trin, sp: PF.sp || 0, pwGemt: PF.pwGemt === true, f: fu })); } } catch (e) {} }   /* adgangskoden gemmes ALDRIG i kladden */
 function pfKladdeHent() { try { return JSON.parse(localStorage.getItem(pfKladdeNoegle()) || "null"); } catch (e) { return null; } }
 async function pfMail() { try { const r = await sb.auth.getUser(); return String((r && r.data && r.data.user && r.data.user.email) || "").toLowerCase(); } catch (e) { return ""; } }
 async function pfRaekkeGem(navn, skema, svar) {
@@ -39707,6 +39707,7 @@ async function teamKontoOpret() {
   return true;
 }
 async function profilFlowStart() {
+  if (PF && document.getElementById("pfFlow")) return;   /* v3446: guiden startes aldrig forfra, mens den står åben (en ny start midt i guiden satte kunden tilbage til en tidligere side) */
   const d = CURRENT_DEF || {};
   let butik = null;
   try { const r = await sb.from("skema_svar").select("svar").eq("kode", currentKode).eq("navn", "config").eq("skema", "profil_svar").maybeSingle(); butik = (r && r.data && r.data.svar) || null; } catch (e) {}
@@ -39726,6 +39727,7 @@ async function profilFlowStart() {
       inviter: "", kolleger: [{ navn: "", mail: "" }, { navn: "", mail: "" }] }, (k && k.f) || {}) };
   while (PF.f.kolleger.length < 2) PF.f.kolleger.push({ navn: "", mail: "" });
   if (md.kollega === true && mdNavn.length >= 2) { if (!String(PF.f.navn || "").trim()) PF.f.navn = mdNavn[0]; if (!String(PF.f.efternavn || "").trim()) PF.f.efternavn = mdNavn.slice(1).join(" "); PF.navnKendt = !!(String(PF.f.navn || "").trim() && String(PF.f.efternavn || "").trim()); }
+  PF.pwGemt = !!(k && k.pwGemt) && !pw;   /* v3446: tallet er det samme efter en genindlæsning midt i guiden */
   PF.butikKendt = !!String(PF.f.butik_navn || "").trim();   /* NAVNET ER KENDT FRA KØBET (Ida 15/11, testperson: »kan vi ikke fjerne denne, når det allerede er udfyldt i Stripe?«) — skærmen springes over; navnet rettes under Profil › Forretningen */
   PF.sp = 0;
   if (k && k.trin && !pw) { PF.trin = Math.min(k.trin, pfAntal()); PF.sp = Math.max(0, Math.min(parseInt(k.sp, 10) || 0, pfSkaerme().length - 1)); }
@@ -39768,7 +39770,7 @@ function pfSkaermFejl(sk) {
   if (sk === "foed") return "Vælg din fødselsdag med dag, måned og år.";
   if (sk === "rolle") return f.ejer === "nej" ? "Skriv din rolle." : "Vælg din rolle.";
   if (sk === "adr") return "Skriv adresse, postnr. med 4 cifre og by.";
-  if (sk === "branche") return f.branche === "Andet" ? "Skriv jeres branche for at komme videre." : "Vælg den branche, der passer på dig/jer.";
+  if (sk === "branche") return f.branche === "Andet" ? "Fortæl mig, hvad du arbejder med, for at komme videre." : "Vælg den branche, der passer på dig/jer.";
   if (sk === "koeb") return "Vælg, hvordan kunderne handler hos dig/jer i dag.";
   if (sk === "afd") return f.afd_valg === "flere" ? "Skriv, hvor mange afdelinger I har (mindst 2)." : "Vælg Én eller Flere.";
   if (sk === "ansatte") return f.afd_valg === "flere" ? "Skriv, hvor mange medarbejdere I er." : (f.ans_valg === "flere" ? "Skriv, hvor mange medarbejdere I er (mindst 2)." : "Vælg Én eller Flere.");
@@ -39871,7 +39873,7 @@ function pfTegn() {
   const forste = (t <= 1 && sp === 0);
   /* TOP (bud 1): Tilbage eller »Opret din profil« · Trin X af N · én streg pr. trin · Spørgsmål i af M */
   /* ÉN PROCESBAR MED PROCENT (Idas klik 12/11 »Bud A«, artifact JscL7UGHBtj39VSNQJ5Aqg: »forvirrende at man ser Trin 2 af 3 og … så kommer der bare flere trin«): alle skærme i hele profilen tælles under ét; baren og procenten står på samme linje */
-  let pfAlle = 0, pfFoer = 0; for (let k = (t === 0 ? 0 : 1); k <= n; k++) { const l = pfSkaerme(k).length; if (k < t) pfFoer += l; pfAlle += l; }
+  let pfAlle = 0, pfFoer = 0; for (let k = (t === 0 ? 0 : 1); k <= n; k++) { const l = pfSkaerme(k).length + ((k === 1 && PF.pwGemt) ? 1 : 0); if (k < t) pfFoer += l; pfAlle += l; }   /* v3446: den gemte adgangskode tæller med som overstået */
   const pct = Math.max(0, Math.min(100, Math.round(((pfFoer + sp + 1) / Math.max(1, pfAlle)) * 100)));
   /* »X AF Y« I STEDET FOR PROCENT, LINJEN BLIVER (Ida 14/11 under testkøbet: »i dette tilfælde synes jeg faktisk vi skal vælge 2 af 10 versionen ift processbaren i stedet for procent. men beholde linjen«) — vælter 12/11-procenten for profilen */
   const pfNr = Math.min(pfAlle, pfFoer + sp + 1);
@@ -39915,7 +39917,7 @@ function pfTegn() {
     krop = '<div class="pf-t">CVR <span class="pf-frv">(frivilligt)</span></div>' + pfFelt("cvr", "", f.cvr, { ph: "8 cifre", num: true, max: 8 });
   } else if (sk === "branche") {
     krop = '<div class="pf-t">Hvilken branche passer på dig/jer?</div>' + pfChips("branche", VK_BRANCHER, f.branche)   /* Idas ord 15/11 (testperson) */
-      + (f.branche === "Andet" ? pfFelt("branche_andet", "Skriv jeres branche", f.branche_andet) + '<div class="pf-gemt" id="pfAndetSt"></div>' : '');
+      + (f.branche === "Andet" ? pfFelt("branche_andet", "Fortæl mig, hvad du arbejder med", f.branche_andet)   /* Idas ord 23/11 */ + '<div class="pf-gemt" id="pfAndetSt"></div>' : '');
   } else if (sk === "afd") {
     krop = '<div class="pf-t">Har du/I én eller flere afdelinger/forretninger?</div>' + pfChips("afd_valg", PF_EN_FLERE, f.afd_valg)
       + (f.afd_valg === "flere" ? pfFelt("afd_antal", "Hvor mange?", f.afd_antal, { num: true, max: 3, ph: "Antal" }) : '');
@@ -39989,7 +39991,7 @@ async function pfNaeste() {
     if (!pfDato()) { pfFejl("Skriv din fødselsdag med dag, måned og år."); return; }
     if (f.ejer === "nej" && !String(f.rolle || "").trim()) { pfFejl("Skriv din rolle."); return; }
   }
-  if (t === 2 && f.branche === "Andet" && !String(f.branche_andet || "").trim()) { pfFejl("Skriv, hvilket fag I er i."); return; }
+  if (t === 2 && f.branche === "Andet" && !String(f.branche_andet || "").trim()) { pfFejl("Fortæl mig, hvad du arbejder med, for at komme videre."); return; }
   if (knap) { knap.disabled = true; knap.textContent = "Gemmer …"; }
   if (t === 1 && PF.pw) {
     /* ADGANGSKODEN GEMMES SAMMEN MED FØRSTE SIDE — samme kald og samme fejlsprog som arket (gemNyAdgangskodeInd) */
@@ -39999,6 +40001,10 @@ async function pfNaeste() {
     try { adgangskodeValgtNoter(); } catch (e) {}
     try { window.dispatchEvent(new Event("energida-kode-gemt")); } catch (e) {}
     PF.pw = false; PF.f.pw = "";
+    /* v3446 · TALLET SKIFTER IKKE UNDERVEJS (Ida 23/11: »når jeg har udfyldt vælg adgangskode, og går videre og jeg så klikker næste - så springes det trin over? så kommer jeg tilbage til side 3/8 med hvad er din rolle«).
+       Adgangskoden er gemt og vises ikke igen, men skærmen tæller stadig med som overstået (pwGemt), så »af 9« bliver »af 9«, og Tilbage fra virksomheden lander på rollen som 3 af 9.
+       Fejler gemningen af personen lige efter, står kunden stadig på trinnets sidste skærm (rollen), og Næste prøver igen. */
+    PF.pwGemt = true; PF.sp = pfSkaerme(1).length - 1; pfKladdeGem();
   }
   if (t === 1 && PF.team && !PF.team.oprettet) { const okT = await teamKontoOpret(); if (!okT) return; }
   try {
@@ -72305,7 +72311,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "3445";
+const APP_VERSION = "3446";
 const APP_BYGGET = "3. november";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_VERSION;   /* ingen dato (Ida 7/11: »hvorfor står der version 3. november?«) — datoen blev ikke rettet med, nummeret er sandheden */ } catch (e) {} });
 let NY_VERSION_KLAR = false;
@@ -78920,7 +78926,9 @@ function authMsgFrem(e) { try { setTimeout(function () { e.scrollIntoView({ bloc
 function authErr(msg) { const e=authMsgEl(); e.textContent=msg; e.className="auth-msg err"; e.style.display="block"; authMsgFrem(e); }
 function authInfo(msg) { const e=authMsgEl(); e.textContent=msg; e.className="auth-msg ok"; e.style.display="block"; authMsgFrem(e); }
 /* OPRET PROFIL FRA MAILEN (Ida 15/11): se __ENERGIDA_OPRET først i dokumentet */
+function opretTaeppeAf() { try { window.__LOGIN_TAEPPE = false; document.body.classList.add("app-klar"); } catch (e) {} try { const c = document.getElementById("privCover"); if (c && !window.__VERSION_DAEKKE) c.style.display = "none"; } catch (e) {} }
 function opretLinkBrugt(o) {
+  opretTaeppeAf();   /* v3446: gik det af sig selv under tæppet, skal beskeden kunne ses */
   authShow("forgot");
   const f = document.getElementById("fpEmail"); if (f && o && o.m) f.value = o.m;
   authInfo(o && o.m ? "Linket er allerede brugt. Tryk på knappen, så sender vi et nyt til " + o.m + "." : "Linket er allerede brugt. Skriv din mail, så sender vi et nyt.");
@@ -78931,6 +78939,7 @@ function opretLinkBrugt(o) {
    Åbner appen ikke inden for 15 sekunder, står der en besked, og knappen kan trykkes igen. Et nyt tryk genkender, at kunden allerede er logget ind, og åbner appen uden at bruge linket igen (ingen dobbelt oprettelse). */
 function opretAabnApp() {
   const k = document.getElementById("opKnap");
+  window.__PROFIL_VENT_FRA = Date.now();   /* v3446: tæppet bliver, til profilguiden (#pfFlow) eller kodearket står — regnet fra nu */
   try { privCoverVis(true); } catch (e) {} try { loginTaeppe(true); } catch (e) {}
   try { const r = enterApp(); if (r && r.catch) r.catch(function () {}); } catch (e) {}
   clearTimeout(window.__OPRET_VAGT);
@@ -78960,6 +78969,7 @@ async function opretMedLink() {
     const { data, error } = await sb.auth.verifyOtp({ token_hash: o.t, type: "invite" });
     if (error || !data || !data.session) throw (error || new Error("ingen session"));
     window.__ENERGIDA_OPRET = null;
+    try { localStorage.setItem("energida_skal_ny_kode", "invitation"); } catch (e2) {}   /* v3446: mærket står, FØR tæppet spørger efter det (SIGNED_IN sætter det også) */
     opretAabnApp();
   } catch (e) {
     window.__ENERGIDA_INVITATION = false;
@@ -78967,16 +78977,36 @@ async function opretMedLink() {
     opretLinkBrugt(o);
   }
 }
-window.addEventListener("load", function () {
-  if (!window.__ENERGIDA_OPRET) return;
-  setTimeout(function () {
+/* v3446 · DIREKTE IND FRA MAILEN (Ida 23/11: »når jeg klikker på opret din profil i mailen lander jeg først på siden med mig på billedet. Der kunne jeg godt tænke mig jeg kom direkte ind til billedet med den hvide pop-up så kunden ikke skal klikke opret profil igen«).
+   Siden med knappen blev lavet 15/11, fordi mailprogrammers forhåndstjek henter linket og brugte engangsnøglen op. DEN BESKYTTELSE BLIVER: nøglen bruges kun efter et tegn på et menneske.
+   · Telefon (grov pegeenhed + berøringsskærm), siden er synlig og har fokus: »Opret profil« trykkes af sig selv.
+   · Computer: ved første menneskelige tegn (mus, tast, berøring, hjul). Indtil da står tæppet; kommer der intet tegn i 4 sekunder, står siden med knappen som før, og tegnet virker stadig.
+   Knappen er reserve, og fejlvejen (»Linket er allerede brugt …«) er uændret. Reglen fra v3438 gælder i opretMedLink: et ubrugt link til en anden mail åbner aldrig den konto, browseren er logget ind på. */
+function opretAuto() {
+  if (window.__OPRET_AUTO_KOERT || !window.__ENERGIDA_OPRET) return;
+  window.__OPRET_AUTO_KOERT = true; opretAutoLyt(false); clearTimeout(window.__OPRET_AUTO_VENT);
+  try { privCoverVis(true); } catch (e) {} try { loginTaeppe(true); } catch (e) {}
+  opretMedLink();
+}
+function opretAutoLyt(paa) { ["pointermove", "pointerdown", "keydown", "touchstart", "wheel"].forEach(function (n) { try { if (paa) window.addEventListener(n, opretAutoTegn, { passive: true, capture: true }); else window.removeEventListener(n, opretAutoTegn, { capture: true }); } catch (e) {} }); }
+function opretAutoTegn(e) { if (e && e.isTrusted === false && !window.__OPRET_AUTO_PROEVE) return; opretAuto(); }   /* kun rigtige hændelser fra et menneske; portens måling sætter sit eget mærke */
+function opretMellemsideVis() {
+  try { const g = document.getElementById("authGate"); if (!g || getComputedStyle(g).display === "none" || !window.__ENERGIDA_OPRET) return;
+    authShow("opret"); const f = document.getElementById("fpEmail"); if (f && window.__ENERGIDA_OPRET.m) f.value = window.__ENERGIDA_OPRET.m; opretTaeppeAf(); } catch (e) {}
+}
+function opretVedIndgang() {
     try {
       const g = document.getElementById("authGate"); if (!g || getComputedStyle(g).display === "none") return;   /* allerede logget ind i denne browser: det huskede flag fører videre */
-      authShow("opret");
-      const f = document.getElementById("fpEmail"); if (f && window.__ENERGIDA_OPRET.m) f.value = window.__ENERGIDA_OPRET.m;
-    } catch (e) {}
-  }, 600);
-});
+      authShow("opret"); const f = document.getElementById("fpEmail"); if (f && window.__ENERGIDA_OPRET.m) f.value = window.__ENERGIDA_OPRET.m;   /* reserven står klar under tæppet */
+      let tlf = false; try { tlf = window.matchMedia("(pointer: coarse)").matches && navigator.maxTouchPoints > 0; } catch (e) {}
+      let synlig = false; try { synlig = document.visibilityState === "visible" && document.hasFocus(); } catch (e) {}
+      if (tlf && synlig) { opretAuto(); return; }
+      try { loginTaeppe(true); } catch (e) {}   /* tæppet står, mens der ventes på et menneske */
+      opretAutoLyt(true);
+      window.__OPRET_AUTO_VENT = setTimeout(function () { if (!window.__OPRET_AUTO_KOERT) opretMellemsideVis(); }, 4000);
+    } catch (e) { try { opretMellemsideVis(); } catch (e2) {} }
+}
+window.addEventListener("load", function () { if (!window.__ENERGIDA_OPRET) return; setTimeout(opretVedIndgang, 600); });
 window.addEventListener("load", function () {
   if (!window.__ENERGIDA_LINK_UDLOEBET) return;
   setTimeout(function () {
@@ -108315,6 +108345,8 @@ html body.dash-mode:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q
 /* v3445 · MAILS PÅ KUNDENS KORT: emnet i tekstfarven (det er indholdet, ikke en etiket), »Fejl« i rødt */
 html body.dash-mode:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .ks2-rk > .ks2-ml-n { color:#1A1A1A !important; flex:1 1 auto !important; }
 html body.dash-mode:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .ks2-rk .ks2-ml-fejl { color:#FC2404 !important; }
+/* v3446 · PROFILGUIDEN: »Næste« og »Tilbage« står 10 fra hinanden som husets andre ark (Ida 23/11: »rykke knapperne LIDT tættere sammen ? næste og tilbage? som normalt?«). Før 22: arkets 12 mellem alt + knappens egne 10. */
+html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) #pfFlow .pf-ark > .pf-knap-tb { margin-top:-2px !important; }
 /* v3395 (Ida 20/11) — MODULFLISERNE: cirkel som lektionerne (tom · rødt flueben · hængelås), ingen pil, ingen fold-ud */
 html body #forloebTidslinje .ftl2 .ftl2-hoved, html body #forloebTidslinje .ftl2 .ftl2-rk.laast { display:flex !important; align-items:center !important; justify-content:flex-start !important; gap:16px !important; cursor:pointer; }
 html body #forloebTidslinje .ftl2 .ftl2-rk.laast { cursor:default; }
@@ -108398,7 +108430,7 @@ html body:not(#bl0):not(#bl1):not(#bl2):not(#bl3):not(#bl4):not(#bl5):not(#bl6):
 @media (min-width:900px) { html body:not(#bl0):not(#bl1):not(#bl2):not(#bl3):not(#bl4):not(#bl5):not(#bl6):not(#bl7):not(#bl8):not(#bl9):not(#bl10):not(#bl11):not(#bl12):not(#bl13):not(#bl14):not(#bl15):not(#bl16):not(#bl17):not(#bl18):not(#bl19):not(#bl20):not(#bl21):not(#bl22):not(#bl23):not(#bl24):not(#bl25):not(#bl26):not(#bl27):not(#bl28):not(#bl29):not(#bm0):not(#bm1):not(#bm2):not(#bm3):not(#bm4):not(#bm5):not(#bm6):not(#bm7):not(#bm8):not(#bm9):not(#bm10):not(#bm11):not(#bm12):not(#bm13):not(#bm14):not(#bm15):not(#bm16):not(#bm17):not(#bm18):not(#bm19):not(#bm20):not(#bm21):not(#bm22):not(#bm23):not(#bm24):not(#bm25):not(#bm26):not(#bm27):not(#bm28):not(#bm29):not(#bm30):not(#bm31):not(#bm32):not(#bm33):not(#bm34):not(#bm35):not(#bm36):not(#bm37):not(#bm38):not(#bm39) #screen7#screen7 #briefHjaelp#briefHjaelp#briefHjaelp .b3h-soejle { margin-left:-8px !important; margin-right:-8px !important; padding-right:0 !important; } html body:not(#bl0):not(#bl1):not(#bl2):not(#bl3):not(#bl4):not(#bl5):not(#bl6):not(#bl7):not(#bl8):not(#bl9):not(#bl10):not(#bl11):not(#bl12):not(#bl13):not(#bl14):not(#bl15):not(#bl16):not(#bl17):not(#bl18):not(#bl19):not(#bl20):not(#bl21):not(#bl22):not(#bl23):not(#bl24):not(#bl25):not(#bl26):not(#bl27):not(#bl28):not(#bl29):not(#bm0):not(#bm1):not(#bm2):not(#bm3):not(#bm4):not(#bm5):not(#bm6):not(#bm7):not(#bm8):not(#bm9):not(#bm10):not(#bm11):not(#bm12):not(#bm13):not(#bm14):not(#bm15):not(#bm16):not(#bm17):not(#bm18):not(#bm19):not(#bm20):not(#bm21):not(#bm22):not(#bm23):not(#bm24):not(#bm25):not(#bm26):not(#bm27):not(#bm28):not(#bm29):not(#bm30):not(#bm31):not(#bm32):not(#bm33):not(#bm34):not(#bm35):not(#bm36):not(#bm37):not(#bm38):not(#bm39) #screen7#screen7 #briefHjaelp#briefHjaelp#briefHjaelp .b3h-soejle .b3h-chip { font-size:11px !important; padding:0 8px !important; max-width:100%; } }
 </style>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-hvid.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 22. november · 3445</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 22. november · 3446</div>
 <script>
 /* DROPDOWNEN RULLER SELV (Ida 4/10) — maal den aabne liste og klip den ved skaermens bund */
 (function () {
