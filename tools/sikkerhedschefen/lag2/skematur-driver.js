@@ -33,7 +33,7 @@
         var FS = turFlStops(), flUden = [], flTomme = [];
         for (var fi = 1; fi < FS.length; fi++) {
           turFl(fi); await V(FS[fi].burger ? 1400 : 900);
-          var fliseNu = turFlSynlig(); if (!fliseNu || !String(fliseNu.innerText || "").trim()) flTomme.push("trin " + fi);
+          var fliseNu = document.querySelector("#turFlOverlay .tfl") || turFlSynlig();   /* v3452: den flise, kunden SER — fra v3450 er flisen under det mørke lag usynlig, mens laget har sin kopi (aldrig to fliser), og en usynlig flises tekst læses som tom */ if (!fliseNu || !String(fliseNu.innerText || "").trim()) flTomme.push("trin " + fi);
           if (FS[fi].m && !document.getElementById("turFlOverlay")) flUden.push(fi + " " + (FS[fi].t || "") + " [" + FS[fi].m.join(" | ") + "]");
         }
         tjek(55, "Rundvisningen har " + (FS.length - 1) + " trin, hver med tekst", FS.length > 1 && !flTomme.length, flTomme.join(", "));

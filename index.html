@@ -40319,8 +40319,12 @@ function turFlSlut() {
   try { const bm = document.getElementById("burgerMenu"); if (bm && bm.classList.contains("open")) toggleBurger(); } catch (e) {}
   TUR_FL_FORCE = false; TUR_FL_I = 0;
   turMarker();
+  /* v3452 (»Ny chef«s måling på rolig maskine 23/11: #hjemUge blev tegnet om 66–79 ms efter klikket, mens den kunne ses): forsiden tegnes først om, når den ikke længere er den skærm, kunden ser (højst 3 sekunder).
+     Åbner ingen lektion (intet at gå til), ryddes rundvisningen op på forsiden efter de 3 sekunder som ét skift. */
   const ryd = function () { document.body.classList.remove("tur-lag"); turFlOverlayFjern(); window.__TUR_FL_BOKS = null; try { turStartKortTegn(); } catch (e) {} try { renderHome(); } catch (e) {} };
-  const forsiden = function () { try { const a = document.querySelector(".screen.active"); const lv = document.getElementById("lekVis"); return !!(a && a.id === "screen3") && !(lv && lv.getBoundingClientRect().height > 0 && getComputedStyle(lv).display !== "none"); } catch (e) { return false; } };
+  /* forsiden ses, så længe skærm 3 er den aktive og ikke er dækket: lektionen (#lekVis) skal dække hele skærm 3's flade, før der ryddes op bagved */
+  const forsiden = function () { try { const a = document.querySelector(".screen.active"); if (!(a && a.id === "screen3")) return false; const lv = document.getElementById("lekVis"); if (!lv || getComputedStyle(lv).display === "none") return true; const q = lv.getBoundingClientRect(), s3 = a.getBoundingClientRect(); const op = parseFloat(getComputedStyle(lv).opacity || "1");
+      return !(op >= 0.99 && q.height > 0 && q.left <= s3.left + 1 && q.right >= Math.min(s3.right, innerWidth) - 1 && q.top <= Math.max(0, s3.top) + 1 && q.bottom >= innerHeight - 1); } catch (e) { return false; } };
   try { kursusNaeste(); } catch (e) {}   /* også når sidste trin står uden mørkt lag: flisen bliver, til lektionen står */
   const t0 = Date.now(); const iv = setInterval(function () { if (!forsiden() || Date.now() - t0 > 3000) { clearInterval(iv); ryd(); } }, 30);
 }
@@ -49138,7 +49142,7 @@ function renderLektionVis() {
     + '<div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:8px;">'
     + '<div class="kort-titel" style="margin-bottom:0;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M17 3.5l3.5 3.5L8 19.5 3.5 20.5 4.5 16 17 3.5z"/></svg>Dine noter til lektionen</div>'
     + '<button class="lek-note-slet" style="font-size:20px;" onclick="lukNotePanel()" title="Luk noterne">&times;</button></div>'
-    + '<textarea id="lekNoteTekst" class="sk-input" style="min-height:74px;background:var(--gray);width:100%;" placeholder="Hvad fik lektionen dig til at tænke over?"></textarea>'
+    + '<textarea id="lekNoteTekst" class="sk-input" style="min-height:74px;background:var(--gray);width:100%;" placeholder="Skriv det, du tog med, med dine egne ord"></textarea>'
     + '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:8px;flex-wrap:wrap;">'
     + '<span style="font-size:10.5px;color:var(--gray3);">Videoen ' + (KURSUS_PREF.videoNote !== "koer" ? 'sættes på pause, mens du skriver' : 'kører videre, mens du skriver') + ' — ændr det under Indstillinger.</span>'
     + '<button class="dbtn primary" style="padding:9px 18px;" onclick="gemLekNote()">Gem note</button></div>'
@@ -49309,7 +49313,7 @@ function lekMbRender() {
     + (ucov ? '<div class="lku-sek">Mine noter</div>' : '<div class="lk-oversk">Dine noter</div>')   /* OVERSKRIFTEN STÅR OVER FLISEN — ALDRIG INDE I DEN (Ida 15/11: »hvordan er det fucking muligt at jeg ser en overskrift inde i en flise på b2b siden????!«) */
     + '<div class="lk-flise' + (noteAaben ? '' : ' luk') + '" id="lekNotePanel">'
     + '<div class="lk-note-krop"><div class="lk-vaerktoej lk-word">' + vk + '</div>'
-    + '<div class="lk-felt-ramme"><div class="lk-note-felt" id="lekNoteFelt" contenteditable="true" data-ph="Hvad fik lektionen dig til at tænke over?" oninput="lekNoteSnart()" onkeyup="lekNoteVaerktoejOpdater()" onmouseup="lekNoteVaerktoejOpdater()" onfocus="lekNoteFokus();lk4Skriver()">' + (gemt ? lekNoteRen(gemt.html) : '') + '</div>' + lekNoteStartHtml(!!gemt) + lekNoteMikHtml() + '</div>'
+    + '<div class="lk-felt-ramme"><div class="lk-note-felt" id="lekNoteFelt" contenteditable="true" data-ph="Skriv det, du tog med, med dine egne ord" oninput="lekNoteSnart()" onkeyup="lekNoteVaerktoejOpdater()" onmouseup="lekNoteVaerktoejOpdater()" onfocus="lekNoteFokus();lk4Skriver()">' + (gemt ? lekNoteRen(gemt.html) : '') + '</div>' + lekNoteMikHtml() + '</div>'
     + '<div class="lk-note-fod"><span class="lk-note-gemt">' + (gemt ? 'Gemt' : '') + '</span></div>'   /* »ALLE NOTER« ER FJERNET FRA NOTEFELTET (Ida 15/11, testperson) — noterne findes i notesbogen i Værktøjskassen */   /* husets graa knap, ikke et roedt ord i etiketten (Idas kommentar 24/9) */
     + '<div class="lek-note-liste" id="lekNoteListe"></div>'
     + '</div></div>'
@@ -49452,29 +49456,14 @@ function lekNoteRen(html) {
   })(d);
   return d.innerHTML;
 }
-function lekNoteSnart() { clearTimeout(LEK_NOTE_T); LEK_NOTE_T = setTimeout(lekNoteGemRig, 600); try { lekNoteStartVis(); } catch (e) {} }
+function lekNoteSnart() { clearTimeout(LEK_NOTE_T); LEK_NOTE_T = setTimeout(lekNoteGemRig, 600); }
 /* ===== v3431 · NOTERNE, FIRE FORBEDRINGER (BUD, Idas »ja« 22/11 til at se dem; UX-ekspertens gennemgang: »en passiv kasse«) =====
    1) FLUEBEN, DER KAN SÆTTES: et tryk på boksen (i feltet) eller på linjen (i »Mine noter«) skifter li.gjort og gemmes i notens html. Øverst i »Mine noter« står alle åbne punkter i én flise.
-   2) TRE STARTKNAPPER I DET TOMME FELT: sætter overskriften og den rigtige listetype ind og stiller markøren i første linje. Ingen hjælpetekst.
+   2) DE TRE STARTKNAPPER ER FJERNET IGEN (v3452, Ida 23/11: »er gør ikke forvirrende når der også er opgaver?? tror bare det skal være skriv der er en slags placeholder i feltet i stedet. keep it simple« · »Ja, byg det«): feltet har kun pladsholderen »Skriv det, du tog med, med dine egne ord«.
+      Noter, der allerede er gemt med en overskrift fra en knap, vises uændret (overskriften er en del af notens tekst).
    3) MIKROFONEN I NOTEFELTET (Idas faste regel): husets grå mikrofon; det sagte lægges efter det, der står.
    4) SVARET ER DÆKKET I »MINE NOTER«, til man trykker på det (testeffekten: prøv at huske, før du kigger). */
-const LEK_NOTE_SKAB = {
-  tog: '<h3>Det tog jeg med</h3><ul><li><br></li></ul>',
-  proev: '<h3>Det vil jeg prøve</h3><ul class="tjek"><li><br></li></ul>',
-  spm: '<h3>Spørgsmål til mig selv</h3><div class="spm"><br></div><div class="svar"><br></div>'
-};
 function lekNoteTom() { const f = document.getElementById("lekNoteFelt"); return !f || !(f.textContent || "").replace(/​/g, "").trim(); }
-function lekNoteStartHtml(harTekst) {
-  return '<div class="lk-note-start" id="lekNoteStart"' + (harTekst ? ' hidden' : '') + '>' + [["tog", "Det tog jeg med"], ["proev", "Det vil jeg prøve"], ["spm", "Spørgsmål til mig selv"]].map(function (k) { return '<button type="button" class="ark-chip lk-note-startkn" onmousedown="event.preventDefault()" onclick="lekNoteSkabelon(\'' + k[0] + '\')">' + k[1] + '</button>'; }).join("") + '</div>';
-}
-function lekNoteStartVis() { const e = document.getElementById("lekNoteStart"); if (e) e.hidden = !lekNoteTom(); }
-function lekNoteSkabelon(k) {
-  const f = document.getElementById("lekNoteFelt"); if (!f || !LEK_NOTE_SKAB[k]) return;
-  f.innerHTML = LEK_NOTE_SKAB[k]; f.focus();
-  try { const m = f.querySelector("li, .spm"), r = document.createRange(), sel = window.getSelection(); r.setStart(m, 0); r.collapse(true); sel.removeAllRanges(); sel.addRange(r); } catch (e) {}
-  const st = document.getElementById("lekNoteStart"); if (st) st.hidden = true;   /* overskriften står der nu — knapperne er brugt */
-  clearTimeout(LEK_NOTE_T); LEK_NOTE_T = setTimeout(lekNoteGemRig, 600); try { lekNoteVaerktoejOpdater(); } catch (e) {}
-}
 /* mikrofonen: samme ikon og samme sagte tegn (taleTegn) som husets øvrige felter; feltet er ikke et skrivefelt med .value, så det sagte står i sin egen tekstknude sidst i noten */
 let LEK_NOTE_REC = null;
 function lekNoteMikHtml() {
@@ -72424,7 +72413,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "3451";
+const APP_VERSION = "3452";
 const APP_BYGGET = "3. november";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_VERSION;   /* ingen dato (Ida 7/11: »hvorfor står der version 3. november?«) — datoen blev ikke rettet med, nummeret er sandheden */ } catch (e) {} });
 let NY_VERSION_KLAR = false;
@@ -108238,12 +108227,6 @@ html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7
 html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .lk-proev-o { display:block !important; margin:0 0 8px !important; }
 html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .lk-notekort.lk-proev { cursor:default !important; }
 html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .lk-notekort.lk-proev ul.tjek { margin:0 !important; }
-html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .lk-felt-ramme .lk-note-start { position:absolute !important; left:14px !important; right:44px !important; bottom:12px !important; top:auto !important; display:flex !important; flex-wrap:wrap !important; gap:16px 8px !important; margin:0 !important; }   /* 16 mellem rækkerne: hver knap har sit eget trykfelt på 44 */
-html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .lk-felt-ramme .lk-note-startkn { position:relative !important; }
-html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .lk-felt-ramme .lk-note-startkn::before { content:"" !important; position:absolute !important; left:0 !important; right:0 !important; top:-7px !important; bottom:-7px !important; }
-html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .lk-felt-ramme .lk-note-start[hidden] { display:none !important; }
-html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .lk-felt-ramme:has(.lk-note-start:not([hidden])) .lk-note-felt { min-height:150px !important; }
-@media (max-width:1279px) { html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .lk-felt-ramme:has(.lk-note-start:not([hidden])) .lk-note-felt { min-height:214px !important; } }   /* under 1280 er feltet smalt (telefon, og højre spalte på små computerskærme): pladsholderen fylder to linjer og knapperne tre rækker */
 html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .lk-felt-ramme .lk-note-mik { position:absolute !important; right:2px !important; bottom:2px !important; top:auto !important; left:auto !important; width:44px !important; height:44px !important; min-height:44px !important; margin:0 !important; }
 html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .lk-felt-ramme .lk-note-mik.optager svg { stroke:#FC2404 !important; }
 html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .lk-note-felt .spm, html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .lk-notekrop .spm, html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) #lekVis .lek-note .spm, html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .lk-note-felt .svar, html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .lk-notekrop .svar, html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) #lekVis .lek-note .svar { position:relative !important; padding-left:36px !important; min-height:24px !important; }
@@ -108579,7 +108562,7 @@ html body:not(#bl0):not(#bl1):not(#bl2):not(#bl3):not(#bl4):not(#bl5):not(#bl6):
 @media (min-width:900px) { html body:not(#bl0):not(#bl1):not(#bl2):not(#bl3):not(#bl4):not(#bl5):not(#bl6):not(#bl7):not(#bl8):not(#bl9):not(#bl10):not(#bl11):not(#bl12):not(#bl13):not(#bl14):not(#bl15):not(#bl16):not(#bl17):not(#bl18):not(#bl19):not(#bl20):not(#bl21):not(#bl22):not(#bl23):not(#bl24):not(#bl25):not(#bl26):not(#bl27):not(#bl28):not(#bl29):not(#bm0):not(#bm1):not(#bm2):not(#bm3):not(#bm4):not(#bm5):not(#bm6):not(#bm7):not(#bm8):not(#bm9):not(#bm10):not(#bm11):not(#bm12):not(#bm13):not(#bm14):not(#bm15):not(#bm16):not(#bm17):not(#bm18):not(#bm19):not(#bm20):not(#bm21):not(#bm22):not(#bm23):not(#bm24):not(#bm25):not(#bm26):not(#bm27):not(#bm28):not(#bm29):not(#bm30):not(#bm31):not(#bm32):not(#bm33):not(#bm34):not(#bm35):not(#bm36):not(#bm37):not(#bm38):not(#bm39) #screen7#screen7 #briefHjaelp#briefHjaelp#briefHjaelp .b3h-soejle { margin-left:-8px !important; margin-right:-8px !important; padding-right:0 !important; } html body:not(#bl0):not(#bl1):not(#bl2):not(#bl3):not(#bl4):not(#bl5):not(#bl6):not(#bl7):not(#bl8):not(#bl9):not(#bl10):not(#bl11):not(#bl12):not(#bl13):not(#bl14):not(#bl15):not(#bl16):not(#bl17):not(#bl18):not(#bl19):not(#bl20):not(#bl21):not(#bl22):not(#bl23):not(#bl24):not(#bl25):not(#bl26):not(#bl27):not(#bl28):not(#bl29):not(#bm0):not(#bm1):not(#bm2):not(#bm3):not(#bm4):not(#bm5):not(#bm6):not(#bm7):not(#bm8):not(#bm9):not(#bm10):not(#bm11):not(#bm12):not(#bm13):not(#bm14):not(#bm15):not(#bm16):not(#bm17):not(#bm18):not(#bm19):not(#bm20):not(#bm21):not(#bm22):not(#bm23):not(#bm24):not(#bm25):not(#bm26):not(#bm27):not(#bm28):not(#bm29):not(#bm30):not(#bm31):not(#bm32):not(#bm33):not(#bm34):not(#bm35):not(#bm36):not(#bm37):not(#bm38):not(#bm39) #screen7#screen7 #briefHjaelp#briefHjaelp#briefHjaelp .b3h-soejle .b3h-chip { font-size:11px !important; padding:0 8px !important; max-width:100%; } }
 </style>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-hvid.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 22. november · 3451</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 22. november · 3452</div>
 <script>
 /* DROPDOWNEN RULLER SELV (Ida 4/10) — maal den aabne liste og klip den ved skaermens bund */
 (function () {

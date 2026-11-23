@@ -1,3 +1,12 @@
+## 23. november · v3452 · NOTEFELTET HAR INGEN STARTKNAPPER — BYGGET I TESTUDGAVEN, IKKE UDE
+
+- **De tre startknapper i lektionens notefelt er fjernet** (»Det tog jeg med« · »Det vil jeg prøve« · »Spørgsmål til mig selv«, bygget i v3431). Ida 23/11: »er gør ikke forvirrende når der også er opgaver?? tror bare det skal være skriv der er en slags placeholder i feltet i stedet. keep it simple« · »Ja, byg det«. VÆLTER v3431 punkt 2.
+- **Pladsholderen er »Skriv det, du tog med, med dine egne ord«** (før »Hvad fik lektionen dig til at tænke over?«). Mikrofonen står, hvor den stod.
+- Noter, der allerede er gemt med en overskrift fra en knap, vises uændret; flisen »Det vil jeg prøve« i »Mine noter« samler stadig åbne punkter fra gamle noter. Ingen data ændres.
+- Fejet: funktionerne `lekNoteStartHtml`, `lekNoteStartVis`, `lekNoteSkabelon`, `LEK_NOTE_SKAB` og seks CSS-regler (`.lk-note-start…`) er slettet. Mellemtilstands-målerens scene »Notefeltet: startknap« (mt-driver.js) finder ikke længere knappen og står som »ikke testet«, til »Ny chef« har lagt scenen om.
+- **SET på 390 og 1440 som kursuskunde:** feltet 318 × 130 og 768 × 130, pladsholderen står, 0 startknapper, mikrofonen 44 × 44.
+- **Rundvisningen, to rettelser efter »Ny chef«s sikkerhedstjek af v3450 (23/11):** (1) »Gå til lektion«: forsiden tegnes først om, når lektionen dækker hele skærmen (før: så snart lektionen fandtes; `#hjemUge` blev tegnet om 66–79 ms efter klikket, målt på rolig maskine). (2) Sikkerhedstjekket løfte 55 »hvert trin har tekst« læste flisen under det mørke lag, som fra v3450 er usynlig med vilje; `skematur-driver.js` læser nu den flise, kunden ser. `tjek_skematur.py`: 36 bestået, 0 fejlet.
+
 ## 23. november · v3451 · MODUL 1 STÅR ÅBENT UNDER MODUL 0 · MODULOVERSIGTEN I TRE AFSNIT: ENERGI · STRATEGI · RESULTAT — BYGGET I TESTUDGAVEN, IKKE UDE
 
 - **Modul 1 står åbent under Modul 0 i samme design** (Ida 23/11: »vil du fjerne denne tekst og i stedet låse modul 1 op og læg den op under modul 0 i samme design så modulet er låst op men lektionerne er låst! (altså indtil foregående er gennemført)«). VÆLTER den låste flise med sætningen »Åbner, når du har gennemført introduktionen og besvaret Find dit udgangspunkt« fra kunderejsens punkt 3 (v3439) og den låste flise på telefonens forside (v3444). Lektionerne i modulet er låst af den kæde, der fandtes i forvejen. MÅLT som ny kunde: et tryk på Modul 1 åbner arket »Modul 1 åbner, når du har fundet dit udgangspunkt« med knappen »Find dit udgangspunkt« (uændret ark); sætningen fra v3439 står ingen steder.
