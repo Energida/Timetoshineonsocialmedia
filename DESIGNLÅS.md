@@ -1,3 +1,10 @@
+## 23. november · v3454 · EN BRIEF GEMMES IKKE, FORDI DEN ÅBNES — BYGGET I TESTUDGAVEN, IKKE UDE
+
+- **Fundet på live af »Briefen« (23/11, Hinges Hus, kun kigge):** `saveBrief` blev kaldt, da et opslag blev åbnet fra kalenderen. ÅRSAG, MÅLT: når personerne på koden er hentet, tegner `briefPersonerFyld` scenerne om (»Hvem er med«-chips), og gentegningen (`briefKlipRerender`) gemte hele briefen (brief, dato, titel, type) til kundens række, uden at noget var ændret. Nu gemmer gentegningen ved åbning ikke; de 14 andre kald, hvor kunden har ændret noget, gemmer som før. Ingen synlig ændring.
+- **MÅLT på 390 og 1440:** skrivninger ved åbning 1 → 0. Måles i porten (`probe-brieftop.js`: fra åbningen og 4 sekunder frem kaldes `ideUpdate` 0 gange).
+- Mellemtilstands-måleren har fået scenen »Kalenderen (rullet ned) → briefen« (fra »Ny chef«; bevist rød på v3452 og uden forskydning og blink på v3453).
+- **IKKE MÅLT:** live, og at et rigtigt skrevet ord stadig gemmes efter rettelsen (gemmevejene for ændringer er urørte; læst).
+
 ## 23. november · v3453 · PAKKEN FRA »BRIEFEN« (L · M · N, afsnittene herunder) + TO DATOER I BACKSTAGE — BYGGET I TESTUDGAVEN, IKKE UDE
 
 - **N · Kalenderens rulning flyttes ikke under sideskiftet til briefen** (Ida 23/11: »i øvrigt rykker hele skærmen sig stadig når man klikker på en contentflise i kalenderen - alt det hak skal fandmem stoppe«). ÅRSAG (byggerens måling): mens sideskiftet holdes, ligger den usynlige brief i samme rullebeholder som kalenderen, og browserens rulle-anker flyttede kalenderens rulning; `briefMbVis` skrev scrollTop = 0 oven i. Rettet: `overflow-anchor:none`, mens et sideskift holdes (`holdAnkerCss`), `briefMbVis` ruller ikke til toppen under holdet, og arket i »Nyt opslag« står, til briefen er fremme. Byggerens tal: før 8–12 flytninger pr. tryk (122–500 px), efter 0. **Byggerens forbehold: ikke bevist, at det er præcis det, Ida ser på computeren.** STÅR TILBAGE, IKKE RETTET: Forsiden → briefen 28 px frem og tilbage · siden fryser 100–165 ms lige efter trykket.

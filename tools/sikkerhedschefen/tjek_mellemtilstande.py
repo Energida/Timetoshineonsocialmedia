@@ -38,6 +38,8 @@ def _db(gruppe):
                            {"id": "ma1", "kode": KODE, "navn": "config", "skema": "maalsaetninger", "svar": {"rytme": {"uge": {"d": 3, "t": "10:00"}}}}],
             "kunde_aftaler": moeder,
             "content_ideer": [opslag(1, "Tre gryder til december", 0, "Brief i gang"), opslag(2, "Sådan sliber du kniven", 1, "Planlagt"), opslag(3, "Bag om disken en travl morgen", -3, "Postet"),
+                              # KALENDEREN SKAL KUNNE RULLES (Ida 23/11: »i øvrigt rykker hele skærmen sig stadig når man klikker på en contentflise i kalenderen«; målt på live af »Briefen«: rulle-ankeret flytter rulningen, når kalenderen er rullet ned): 10 opslag mere over 14 dage
+                              *[opslag(20 + n, "Opdigtet opslag nr. %d" % (n + 1), 2 + n, "Planlagt") for n in range(10)],
                               {"id": "mt-9", "kode": KODE, "titel": "En idé uden dato", "status": "Idé", "soejle": "2A", "brief": {}}]}
 
 def _koer_en(repo, bred, gruppe, driver=None, sek=150):
@@ -49,7 +51,7 @@ def _koer_en(repo, bred, gruppe, driver=None, sek=150):
         subprocess.run(["python3", os.path.join(repo, "tools/designlaas/byg-sele.py"), sele], capture_output=True)
         shutil.copy(os.path.join(HER, "lag2", "husk-stub.js"), os.path.join(sele, "sb-stub.js"))
         if gruppe != "backstage":
-            open(os.path.join(sele, "sele-db.json"), "w").write(json.dumps({"ls": {"SELE_DB": json.dumps(_db(gruppe)), "SELE_LATENS": "200"}}))
+            open(os.path.join(sele, "sele-db.json"), "w").write(json.dumps({"ls": dict({"SELE_DB": json.dumps(_db(gruppe)), "SELE_LATENS": "200"}, **({"cal_visning": "fjorten"} if gruppe == "kunde2" else {}))}))
         kode = "window.__MT_GRUPPE=%s;\n" % json.dumps(gruppe) + open(driver or os.path.join(HER, "lag2", "mt-driver.js"), encoding="utf-8").read()
         open(os.path.join(sele, "mt-probe.js"), "w", encoding="utf-8").write(kode)
         sk = socket.socket(); sk.bind(("127.0.0.1", 0)); port = sk.getsockname()[1]; sk.close()

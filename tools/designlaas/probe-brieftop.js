@@ -6,7 +6,10 @@
   try {
     await V(3500); try { dagensKortLuk(); } catch (e) {} try { turLuk(); } catch (e) {}
     IDEER.push({ id: "bt1", titel: "To om ét indkøb", soejle: "Menneskene bag", type: "Reel", status: "Brief i gang", dato: "2026-11-24", brief: { format: "Reel", platform: ["Instagram"], beskrivelse: "Vi viser, hvordan vi to vælger forskelligt.", hookTekst: "Vi er aldrig enige om farver", klip: [{ ser: "Vi står med hver vores favorit", tekst: "Hvem har ret?", siger: "Vi er aldrig enige" }], caption: "Vi køber ind sammen.", cta: "Kommentér opslaget" } });
-    openBriefSide("bt1"); await V(2500);
+    /* v3454 · AT ÅBNE EN BRIEF SKRIVER INTET (fundet på live 23/11: briefen blev gemt, når et opslag bare blev åbnet): fra åbningen og 4 sekunder frem må ideUpdate ikke kaldes */
+    var skrevet = [], glUpd = window.ideUpdate; window.ideUpdate = function (id, p) { skrevet.push(Object.keys(p || {}).join(",")); return Promise.resolve(true); };
+    openBriefSide("bt1"); await V(4000);
+    window.ideUpdate = glUpd; n++; if (skrevet.length) fejl.push("briefen blev gemt " + skrevet.length + " gang(e), da den blev åbnet (felter: " + skrevet.join(" · ") + ")");
     if (!document.body.classList.contains("brief-aaben")) fejl.push("briefen åbnede ikke"); else {
       var baand = document.querySelector("#screen7 > .mb-baand"); window.scrollTo(0, 0); await V(200);
       [].forEach.call(document.querySelectorAll("#screen7 > .mb-baand button, #screen7 > .mb-baand select, #screen7 #b3Trin button"), function (e) {
@@ -27,5 +30,5 @@
       if (!set) fejl.push("»Nyt opslag«: fandt ikke trinnet med »Tilbage« under den røde knap"); try { bsFlytLuk(); } catch (e) {} } }
   } catch (e) { fejl.push("proben fejlede: " + (e && e.message)); }
   fejl.forEach(function (f) { console.log("SELE BRIEFTOP FEJL " + innerWidth + ": " + f); });
-  console.log(fejl.length ? "SELE BRIEFTOP FEJL " + innerWidth + ": " + fejl.length + " fund" : "SELE BRIEFTOP OK " + innerWidth + ": " + n + " knapper i briefens top rammes af et tryk i midten" + (innerWidth >= 900 ? ", og »Tilbage« står 12 under den røde knap i »Nyt opslag«" : ""));
+  console.log(fejl.length ? "SELE BRIEFTOP FEJL " + innerWidth + ": " + fejl.length + " fund" : "SELE BRIEFTOP OK " + innerWidth + ": " + n + " knapper i briefens top rammes af et tryk i midten, og åbningen skriver intet" + (innerWidth >= 900 ? ", og »Tilbage« står 12 under den røde knap i »Nyt opslag«" : ""));
 })();

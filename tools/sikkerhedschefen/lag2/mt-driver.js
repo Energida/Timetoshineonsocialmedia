@@ -221,6 +221,28 @@
       await film("Gennemgangen: første fane igen", function () { var f = faner(); if (f.length < 2) return false; f[0].click(); });
       await film("Gennemgangen: luk", function () { var pr = document.getElementById("planRit"); var e = pr && pr.classList.contains("on") && (pr.querySelector(".mb-sti > button") || pr.querySelector(".ark-kryds, [onclick*='planRitLuk']")); if (!e) return false; e.click(); }, 2500);
     }
+    if (G === "kunde2") {
+      /* KALENDEREN RULLET NED → BRIEFEN (Ida 23/11: »i øvrigt rykker hele skærmen sig stadig når man klikker på en contentflise i kalenderen - alt det hak skal fandmem stoppe«).
+         Målt på live 3450 af »Briefen«: .content.scrollTop 300 → 467 → 300 → 0 → 300, mens kalenderen stadig var den synlige side. Scenen ruller 500 px ned, trykker med mus (pointerdown … click)
+         og måler rulningen i en requestAnimationFrame, der er sat op FØR trykket: fra trykket til briefen ses, må kalenderens rulning ikke flytte sig 1 px. */
+      try { ryd(); showTab(8); } catch (e) {} await V(2400);
+      var cnt = document.querySelector(".content"); if (cnt) cnt.scrollTop = 500; await V(700);
+      var s0 = cnt ? Math.round(cnt.scrollTop) : 0;
+      if (!cnt || s0 < 200) r.tjek.push({ navn: "Kalenderen (rullet ned) → briefen", tilstand: "ikke", fund: [], info: "kalenderen kan ikke rulles 200 px ned (nåede " + s0 + ")" });
+      else {
+        var prv = { on: true, max: 0, t: 0, t0: 0 };
+        var tik = function () { if (!prv.on) return; var s7 = document.getElementById("screen7"); if (s7 && s7.classList.contains("active") && synlig(s7)) { prv.on = false; return; } var d = Math.abs(cnt.scrollTop - s0); if (d > prv.max) { prv.max = d; prv.t = performance.now(); } requestAnimationFrame(tik); };
+        var recK = await film("Kalenderen (rullet ned) → briefen", function () {
+          var e = [].filter.call(document.querySelectorAll("#screen8 .uge-op, #screen8 [onclick*='openBrief']"), function (x) { if (!synlig(x)) return false; var b = x.getBoundingClientRect(); return b.top > 120 && b.bottom < innerHeight - 100; })[0]; if (!e) return false;
+          var b = e.getBoundingClientRect(), x0 = b.left + b.width / 2, y0 = b.top + b.height / 2, o = { bubbles: true, cancelable: true, clientX: x0, clientY: y0, button: 0, pointerId: 1, pointerType: "mouse", isPrimary: true, view: window };
+          prv.t0 = performance.now(); requestAnimationFrame(tik);
+          e.dispatchEvent(new PointerEvent("pointerdown", o)); e.dispatchEvent(new MouseEvent("mousedown", o)); e.dispatchEvent(new PointerEvent("pointerup", o)); e.dispatchEvent(new MouseEvent("mouseup", o)); e.dispatchEvent(new MouseEvent("click", o));
+        }, 4000);
+        prv.on = false;
+        if (recK && recK.tilstand !== "ikke" && prv.max >= 1) { recK.fund.push({ art: "forskydning", el: ".content", flere: 0, hvad: "kalenderens rulning flyttede sig " + Math.round(prv.max) + " px, før briefen stod (rullet " + s0 + " px ned)", ms: Math.max(0, Math.round(prv.t - prv.t0)), px: Math.round(prv.max) }); recK.tilstand = "fund"; }
+        try { history.back(); } catch (e) {} await V(1500);
+      }
+    }
     if (G === "kursus") {
       try { OB_SKEMA = true; } catch (e) {}
       await film("Menu: Dit forløb", K("showTab", 12), 3000);
