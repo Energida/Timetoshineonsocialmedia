@@ -1,3 +1,9 @@
+## 23. november · v3447 · BRIEFENS TOP PÅ TELEFON REAGERER PÅ TRYK IGEN · ET TRYK RAMMER KNAPPEN (MÅLT I PORTEN) — BYGGET I TESTUDGAVEN, IKKE UDE
+
+- **Fejl i live, fundet i gennemtjekket af kundens profil (»Planlægning«, Idas »Ja, ret den«):** på telefon ramte tryk i briefens top ikke knapperne (Skriv/Optag/Post, statusvælgeren, de tre prikker, blyanten). ÅRSAG: »Tilbage«s usynlige trykfelt (`.cover-tilbage::after`, inset −4px 0) forudsætter, at knappen er ankeret; i en brief er knappen `position:static`, så feltet ankrede i hele båndet og lå hen over alt. Rettet med én regel: feltet er slået fra på `.cover-tilbage` og `.navsti-tilbage` i briefens bånd (knappen er 44 høj i sig selv). Ingen synlig ændring.
+- **Ny måling i porten (`probe-brieftop.js`, 390 og 1440):** browseren spørges, hvad der ligger i midten af hver knap i briefens top (elementFromPoint); det skal være knappen selv. Portens andre målinger klikker med `.click()` og ser ikke en dækket knap. BEVIST VIRKSOM: med rettelsen fjernet melder den seks dækkede knapper på 390; med rettelsen rammes 12 af 12 (390) og 11 af 11 (1440).
+- **IKKE MÅLT:** en rigtig iPhone.
+
 ## 23. november · v3446 · DIREKTE IND FRA ADGANGSMAILEN · INTET GLIMT AF FORSIDEN FØR PROFILEN — BYGGET I TESTUDGAVEN, IKKE UDE
 
 - **»Opret din profil« i mailen fører direkte til profilguiden** (Ida 23/11: »lander jeg først på siden med mig på billedet. Der kunne jeg godt tænke mig jeg kom direkte ind til billedet med den hvide pop-up så kunden ikke skal klikke opret profil igen«). VÆLTER, at kunden altid skal trykke »Opret profil« på siden fra mailen (15/11). **Beskyttelsen fra 15/11 bliver:** engangsnøglen bruges kun efter et tegn på et menneske, så et mailprograms forhåndstjek ikke bruger den op.

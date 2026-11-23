@@ -311,5 +311,15 @@ RAAH=$($TO "$C" $HL --no-sandbox --disable-gpu --window-size=1480,1000 --virtual
 UDH=$(echo "$RAAH" | grep -a 'CONSOLE' | sed -E 's/^.*CONSOLE[:(][0-9]+\)?\] //; s/", source:.*$//; s/^"//' | grep -a 'SELE HJEMTAELLER')
 echo "${UDH:-SELE HJEMTAELLER FEJL: ingen maaling}"
 echo "$UDH" | grep -q "SELE HJEMTAELLER OK" || HERO_OK=0
+# ET TRYK RAMMER KNAPPEN (v3447, Ida 23/11: briefens top reagerede ikke paa telefon — »Tilbage«s usynlige trykfelt daekkede Skriv/Optag/Post, status, prikkerne og blyanten).
+# probe-brieftop.js spoerger browseren, hvad der ligger i hver knaps midte (elementFromPoint), paa 390 og 1440 i en aaben brief.
+KBT=$(python3 -c "import urllib.parse,sys;print(urllib.parse.quote(open(sys.argv[1]).read()))" "$ROD/tools/designlaas/probe-brieftop.js")
+for BTB in "390 844" "1440 940"; do
+  set -- $BTB
+  RAABT=$($TO "$C" $HL --no-sandbox --disable-gpu --window-size=$(($1+40)),1000 --virtual-time-budget=40000 --enable-logging=stderr --v=0 --screenshot="$MAAL/brieftop-$1.png" "http://127.0.0.1:$PORT/sele.html?vis=kunde&fil=index-sele.html%3Fselekode%3DHINGES2026&bred=$1&hoej=$2&kode=$KBT" 2>&1)
+  UDBT=$(echo "$RAABT" | grep -a 'CONSOLE' | sed -E 's/^.*CONSOLE[:(][0-9]+\)?\] //; s/", source:.*$//; s/^"//' | grep -a 'SELE BRIEFTOP')
+  echo "${UDBT:-SELE BRIEFTOP FEJL $1: ingen maaling}"
+  echo "$UDBT" | grep -q "SELE BRIEFTOP OK $1" || HERO_OK=0
+done
 [ "$STREG_OK" = "1" ] && [ "$PLUS_OK" = "1" ] && [ "$DAEK_OK" = "1" ] && [ "$HERO_OK" = "1" ] && [ "$MAAL_OK" = "1" ] && [ "$REGLER_OK" = "1" ] && echo "$UDG" | grep -q "SELE GENSTART OK" && echo "$UD0" | grep -q "SELE POPUP-KILDE OK" && echo "$UD" | grep -q "SELE LAAS OK" && echo "$UD2" | grep -q "SELE SIDER OK" && echo "$UD4" | grep -q "SELE SIDER OK" && echo "$UD5" | grep -q "SELE BUD OK" && echo "$UD6" | grep -q "SELE BUD OK" && [ "$UX_OK" = "1" ] && [ "$BS_OK" = "1" ] && echo "$UD3" | grep -q "SELE BRIEF OK" && exit 0
 echo "SELE LAAS FEJL: maalingen sagde ikke OK"; exit 1
