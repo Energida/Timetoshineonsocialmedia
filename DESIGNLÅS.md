@@ -1,3 +1,20 @@
+## 23. november · v3457 · PAKKE O FRA »BRIEFEN« (afsnittet herunder) — BYGGET I TESTUDGAVEN, IKKE UDE
+
+- Flettet oven på v3456. **Ikke bestilt af Ida, men beholdt:** på Kort reel er den grå forklaring »Det, der skal få kunden til at stoppe op« under feltet fjernet, fordi spørgsmålet over feltet nu siger det samme (og fordi huset ikke har grå forklaringslinjer); Ida får det at vide, før udgaven lægges ud.
+
+## 23. november · FANG DEM: »HVILKEN TEKST FÅR RIKKE TIL AT STOPPE OP?« — BYGGET I PRØVEKOPIEN, IKKE UDE
+
+Ida 23/11: »vil du overveje om i stedet for tekst på skærm at der kunne stå noget med? Hvilken tekst skal få Xmålgruppen til at stoppe op? og så placeholder: Teksten der står de første sekunder«. Klik samme dag på »Fang dem: skal overskriften »Tekst på skærmen« være et spørgsmål med målgruppens navn?«: »Teamets udgave (anbefalet)«.
+
+- **Overskriften over den første tekst på skærmen under Fang dem er spørgsmålet »Hvilken tekst får {navn} til at stoppe op?«** Kun den nye brief, Reel og Kort reel. På Reel står den, hvor der stod »Tekst på skærmen« (T-symbolet bliver); på Kort reel, hvor der stod »Hook« (samme felt; den grå forklaring under, som sagde det samme, er ude).
+- **Navnet:** præcis én valgt målgruppe → dens navn (»Rikke«) · »Begge« → begge navne (»Rikke og Per«) · ingen valgt eller flere end to → »kunden«. Overskriften skifter med det samme, når målgruppen vælges i fakta.
+- **Pladsholderen i det tomme felt:** »Teksten på skærmen de første sekunder« (før »Det, der skal få kunden til at stoppe op«).
+- **Urørt:** knappen »+ Tekst på skærmen«, de senere scener, den tomme række under forslagene, Optag, Karrusel, Billede, Story, Prøvereel og den gamle brief. Ingen datanøgler og ingen gemte data er rørt.
+- Porten: `tools/designlaas/probe-maal.js` kender spørgsmålet som feltnavn med symbol (linjen »FELTNAVN symbol«). Porten er IKKE kørt.
+- **MÅLT 23/11 i selen oven på 3455 (1440 og 390):** Reel med »Rikke« valgt: »Hvilken tekst får Rikke til at stoppe op?« på én linje på 1440 og to på 390, T-symbolet foran · »Begge«: »… Rikke og Per …« (én linje 1440, to på 390) · ingen valgt, »Alle« (tre målgrupper) og ingen målgrupper: »kunden« · navn på 25 tegn, alene og sammen med et andet: én linje på 1440, to på 390, intet uden for flisen · skift i fakta fra ingen → Per → Begge → Rikke: overskriften skifter hver gang uden genindlæsning (Reel på begge bredder, Kort reel på 390) · Kort reel: spørgsmålet står, hvor der stod »Hook« · tomt felt (Reel efter »+ Tekst på skærmen«, Kort reel direkte): pladsholderen »Teksten på skærmen de første sekunder« på én linje på 1440 og to på 390, ikke klippet · den tomme række under forslagene har stadig ingen pladsholder · knappen »+ Tekst på skærmen« står uændret · Fasthold dem og Optag har ikke spørgsmålet · Karrusel, Billede og Prøvereel er uændrede · ingen »undefined«, ingen vandret rulning. Syntaks: 14 scriptblokke og proben, 0 fejl.
+- **SET (billeder i notemappens `brief-O-arbejde/billeder/`):** hele Fang dem før og efter på 1440 og 390 (Reel), Kort reel efter på 390 og det tomme felt på 390.
+- **IKKE SET / IKKE MÅLT:** en rigtig kundes brief · en rigtig telefon · bredder mellem 390 og 1440 · porten.
+
 ## 23. november · v3456 · RUNDVISNINGEN PÅ TELEFONEN: MENU-TRINENE ER ÉT SKIFT · TRIN PEGER ALTID PÅ NOGET — BYGGET I TESTUDGAVEN, IKKE UDE
 
 - **Baggrund:** »Ny chef«s mellemtilstands-måler ser fra i dag også rundvisningens midterste trin og notefeltet (tekstskift i en uændret boks). På v3455, 390: flisen på siden fik ny tekst i første billede, og laget med kopien kom 385 ms senere (to skift); ét trin viste intet i 0,4 s.

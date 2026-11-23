@@ -28223,14 +28223,28 @@ const B3_RAKET = '<svg class="b3-rk" viewBox="0 0 24 24" fill="none" stroke="cur
 /* v3427 (hakjægeren 22/11): en klasse skrives kun, når den faktisk skifter. Før skrev b3FeltPynt og b3TrinTegn de samme klasser igen ved hver tegning; hver skrivning vækkede b3's egen vagt, der tegnede igen 60 ms senere,
    og sideskiftet kalender → brief blev holdt, til det hele faldt til ro (over 900 ms på 1440 med langsomt net, så markbilledet blinkede). */
 function b3Kl(e, k, til) { try { if (e && e.classList && e.classList.contains(k) !== !!til) e.classList.toggle(k, !!til); } catch (e2) {} }
+/* FANG DEM: OVERSKRIFTEN OVER DEN FØRSTE TEKST PÅ SKÆRMEN ER ET SPØRGSMÅL MED MÅLGRUPPENS NAVN (Ida 23/11: »vil du overveje om i stedet for tekst på skærm at der kunne stå noget med? Hvilken tekst skal få Xmålgruppen til at stoppe op?
+   og så placeholder: Teksten der står de første sekunder« + klik »Teamets udgave«): »Hvilken tekst får Rikke til at stoppe op?«, pladsholder »Teksten på skærmen de første sekunder«. Kun den nye brief, Reel og Kort reel.
+   NAVNET: præcis én valgt målgruppe → dens navn · »Begge« (to målgrupper) → »Rikke og Per« · ingen valgt eller flere end to → »kunden«. Overskriften følger valget i fakta (b3FeltPynt retter den ved hver tegning). */
+function b3HookSpmGaelder() { try { const f = String((BRIEF_STATE || {}).format || ""); return typeof b3Aktiv === "function" && b3Aktiv() && (f === "Reel" || f === "Kort-reel"); } catch (e) { return false; } }
+function b3HookSpmNavn() {
+  try { const mg = briefMaalgrupper(), n = mg.navne || []; const v = String((BRIEF_STATE && BRIEF_STATE.maalgruppe) || "").trim() || (n.length === 1 ? n[0] : "");
+    if (v && n.indexOf(v) > -1) return v;
+    if (v === "Begge" && n.length === 2) return n[0] + " og " + n[1]; } catch (e) {}
+  return "kunden";
+}
+function b3HookSpm() { return "Hvilken tekst får " + b3HookSpmNavn() + " til at stoppe op?"; }
+function b3HookSpmSync() { try { const paa = b3HookSpmGaelder(), spm = paa ? b3HookSpm() : ""; document.querySelectorAll("#briefWrap [data-b3-hookspm]").forEach(function (el) { const t = paa ? spm : (el.getAttribute("data-b3-std") || ""); if (el.textContent !== t) el.textContent = t; }); } catch (e) {} }
 function b3FeltPynt() {
   document.querySelectorAll("#briefWrap .kk-et:not(.b3-et)").forEach(function (e) {
     const s = String(e.textContent || "").trim(); let ik = "", navn = "";
     let foerst = false; try { foerst = !!e.closest("#briefKlip1Vaert"); } catch (e2) {}
     if (/^Det, man ser/.test(s)) { ik = "oje"; navn = foerst ? "Hvad ser man først?" : "Hvad ser man?"; } else if (/^(Manus|Det, jeg siger|Hvad siger du)/.test(s)) { ik = "tale"; navn = "Hvad siger du?"; } else if (/^Tekst på skærmen/.test(s)) { ik = "txt"; navn = "Tekst på skærmen"; }
     if (!ik || e.children.length) return;
-    b3Kl(e, "b3-et", true); e.innerHTML = b3Sv(B3_IK[ik]) + '<span>' + navn + '</span>' + ((ik === "oje" && foerst) ? b3IKnap("fang") : "");
+    let hookSpm = false; try { hookSpm = ik === "txt" && !!e.closest('.kk-hookdel[data-t="tekst"]'); } catch (e2) {}   /* klip 1's tekst på skærmen = hooket: overskriften er spørgsmålet (b3HookSpmSync skriver det) */
+    b3Kl(e, "b3-et", true); e.innerHTML = b3Sv(B3_IK[ik]) + '<span' + (hookSpm ? ' data-b3-hookspm="1" data-b3-std="' + navn + '"' : '') + '>' + navn + '</span>' + ((ik === "oje" && foerst) ? b3IKnap("fang") : "");
   });
+  b3HookSpmSync();
   /* FELTERNE ER 48 OG VOKSER MED TEKSTEN (DESIGNLÅS 19/11: »forslag og øvrige felter er 48 og vokser med teksten«; porten 19/11 målte tomme felter på 70): et felt uden rows står i to linjers højde.
      Her får de felter, der ikke selv siger andet, én linje, og højden følger teksten (autoGro). Kun højden røres; intet gemmes. */
   try { document.querySelectorAll("#briefWrap textarea.sk-input:not([rows])").forEach(function (t) { t.setAttribute("rows", "1"); try { if (t.offsetParent && typeof autoGro === "function") autoGro(t); } catch (e) {} }); } catch (e) {}
@@ -31746,7 +31760,7 @@ function briefForslagRaekker(key) {
   const ph = (key === "hookSer") ? "Beskriv det første billede eller den første handling." :   /* v3424 (Idas forslag 21/11) — før: »Hvad skal få <målgruppen> til at stoppe op?« (16/11) */   /* Ida 16/11: spoergsmaalet staar som pladsholder i feltet */   /* (før, Ida 8/11: »beskriv hvad charlotte ser i klip 1« — målgruppens navn som i spørgsmålet over */
      (key === "hookSiger") ? "Det, der siges i de første sekunder" : (key === "thumb")
     ? "Det, der skal gøre kunden nysgerrig, inden de har set indholdet"
-    : (b.format === "Karrusel" ? "Teksten på slide 1 + 2 der får kunden til at stoppe op" : (b.format === "Billede" ? "Teksten på billedet, der får kunden til at stoppe op" : "Det, der skal få kunden til at stoppe op"));
+    : (b.format === "Karrusel" ? "Teksten på slide 1 + 2 der får kunden til at stoppe op" : (b.format === "Billede" ? "Teksten på billedet, der får kunden til at stoppe op" : ((key === "hookTekst" && typeof b3HookSpmGaelder === "function" && b3HookSpmGaelder()) ? "Teksten på skærmen de første sekunder" /* Ida 23/11: spørgsmålet står som overskrift, pladsholderen siger hvad feltet er */ : "Det, der skal få kunden til at stoppe op")));
   /* INGEN TOM FLISE, FOER MAN HAR TRYKKET TILFOEJ (Ida 5/9 kl. 22.43: "Jeg synes ikke der skal
      vaere nogen flise foer man har klikket tilfoej" — en tom raekke med placeholder lignede en
      opgave, cirklen ville loese). Paa telefonen tegnes tomme raekker ikke; kun den, der lige er
@@ -35833,7 +35847,8 @@ function openBriefSide(id) {
        hooket paa læsefladen. Her vælger man; i klip 1 står den valgte. */
     /* KARRUSEL: HOOKET LAVES DIREKTE SOM BILLEDE (Idas klik 14/11, trin B) — slide 1 med vaerktoejet og »Forslag til hooket« under; afloeser fliserne »Tekst-hook« og »Det visuelle hook« */
     + (BRIEF_STATE.format === "Karrusel" ? kvHookHtml() : (
-      q((BRIEF_STATE.format === "Karrusel" ? 'Tekst-hook' : 'Hook') + ' <span class="sk-forkl">' + (BRIEF_STATE.format === "Karrusel" ? 'Teksten på slide 1 + 2 der får kunden til at stoppe op' : (BRIEF_STATE.format === "Billede" ? 'Teksten på billedet, der får kunden til at stoppe op' : 'Det, der skal få kunden til at stoppe op')) + '</span>',
+      q((BRIEF_STATE.format === "Kort-reel" && typeof b3HookSpmGaelder === "function" && b3HookSpmGaelder()) ? '<span data-b3-hookspm="1" data-b3-std="Hook">' + esc(b3HookSpm()) + '</span>'   /* Kort reel i den nye brief: samme felt som reelens første tekst på skærmen — spørgsmålet er overskriften, og forklaringen under (som sagde det samme) er ude (Ida 23/11) */
+        : (BRIEF_STATE.format === "Karrusel" ? 'Tekst-hook' : 'Hook') + ' <span class="sk-forkl">' + (BRIEF_STATE.format === "Karrusel" ? 'Teksten på slide 1 + 2 der får kunden til at stoppe op' : (BRIEF_STATE.format === "Billede" ? 'Teksten på billedet, der får kunden til at stoppe op' : 'Det, der skal få kunden til at stoppe op')) + '</span>',
       /* ?-ringen er UDE (Ida 31/8: mockuppens hjaelp staar skrevet ind paa fladen) */
       briefForslagHtml('hookTekst')
       /* 60%-LINJEN ER FJERNET (Idas valg 31/8 aften): den sagde det SAMME som raket-kassens
@@ -72621,7 +72636,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "3456";
+const APP_VERSION = "3457";
 const APP_BYGGET = "3. november";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_VERSION;   /* ingen dato (Ida 7/11: »hvorfor står der version 3. november?«) — datoen blev ikke rettet med, nummeret er sandheden */ } catch (e) {} });
 let NY_VERSION_KLAR = false;
@@ -108794,7 +108809,7 @@ html body:not(#bl0):not(#bl1):not(#bl2):not(#bl3):not(#bl4):not(#bl5):not(#bl6):
 body.sk-holder, body.sk-holder .content, body.sk-holder #dashMain, [data-bs-hold], [data-bs-hold] * { overflow-anchor:none !important; }
 </style>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-hvid.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 22. november · 3456</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 22. november · 3457</div>
 <script>
 /* DROPDOWNEN RULLER SELV (Ida 4/10) — maal den aabne liste og klip den ved skaermens bund */
 (function () {

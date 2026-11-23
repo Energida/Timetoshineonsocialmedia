@@ -93,7 +93,7 @@ function maalSide(){
     if(e.matches(".sk-label")) er("SPØRGSMÅL", t, px(cs.fontSize)===16&&cs.fontWeight==="500"&&rgb(cs.color)===SORT&&cs.textTransform==="none"&&/Poppins/.test(cs.fontFamily), cs.fontSize+"/"+cs.fontWeight+" "+cs.color+" (skal 16/500 sort #1A1A1A)");
     else er("FELTNAVN", t, px(cs.fontSize)===13&&cs.fontWeight==="400"&&rgb(cs.color)===G2&&cs.textTransform==="none"&&/Poppins/.test(cs.fontFamily), cs.fontSize+"/"+cs.fontWeight+" "+cs.color+" (skal 13/400 #686868)");
     var nx=e.nextElementSibling; while(nx&&!synlig(nx)) nx=nx.nextElementSibling; if(nx){ var d=Math.round(nx.getBoundingClientRect().top-e.getBoundingClientRect().bottom); er("FELTNAVN afstand", e, Math.abs(d-8)<=1, "til feltet "+d+" (skal 8)"); }
-    if(e.matches(".kk-et")&&/^(Hvad ser man\?|Manus|Hvad siger du\?|Tekst på skærmen)$/.test(navn)){ var sv=e.querySelector("svg"), sr=sv?sv.getBoundingClientRect():null, sp=e.querySelector("span"), pr=sp?sp.getBoundingClientRect():null;
+    if(e.matches(".kk-et")&&/^(Hvad ser man\?|Manus|Hvad siger du\?|Tekst på skærmen|Hvilken tekst får .+ til at stoppe op\?)$/.test(navn)){ var sv=e.querySelector("svg"), sr=sv?sv.getBoundingClientRect():null, sp=e.querySelector("span"), pr=sp?sp.getBoundingClientRect():null;
       er("FELTNAVN symbol", e, !!sv&&Math.round(sr.width)===16&&Math.round(sr.height)===16&&!!pr&&sr.right<=pr.left+0.5&&rgb(getComputedStyle(sv).color)===G2, sv?("symbol "+Math.round(sr.width)+"x"+Math.round(sr.height)+" "+getComputedStyle(sv).color+" (skal 16 · gråt · foran navnet)"):"intet symbol foran navnet"); }
   });
   /* FELTER (19/11 »Felternes højde og fluebenet«: »Kun »Hvad ser man?« er højt (76); forslag og øvrige felter er 48 og vokser med teksten«; 18/11: »tekst 14«). Før: 13 px, mindst 44 høj. */
