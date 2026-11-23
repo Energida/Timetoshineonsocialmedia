@@ -16,7 +16,7 @@ JS = r"""(async function(){ var V=function(ms){return new Promise(function(r){se
   var sider = BS ? [["overblik"],["crm"],["indbakke"],["energida"],["overblik"],["crm"]] : [[3],[8],[2],[31],[3],[8]];
   for (var i=0;i<sider.length;i++){ try{ if(BS) visDashSide(sider[i][0]); else showTab(sider[i][0]); }catch(e){} await V(1200); maal(String(sider[i][0])); }
   var f=r.maal[0]; r.maal.forEach(function(m){ ["menu","ark"].forEach(function(k){ if(f[k] && m[k] && (f[k][0]!==m[k][0] || f[k][2]!==m[k][2])) r.fejl.push(m.side+": "+k+" "+JSON.stringify(f[k])+"→"+JSON.stringify(m[k])); });
-    if(f.titel && m.titel && (f.titel[0]!==m.titel[0] || Math.abs(f.titel[1]-m.titel[1])>2)) r.fejl.push(m.side+": titel "+JSON.stringify(f.titel)+"→"+JSON.stringify(m.titel)); });
+    /* IDÉBANKEN (skærm 2) står med vilje uden coverbillede fra v3441 (Ida 22/11: »vi havde aftalt designet uden coverbilledet«): navnet står højere og 268 fra venstre — dens titel sammenlignes ikke med de andres */ if(!BS && m.side==="2") return; if(f.titel && m.titel && (f.titel[0]!==m.titel[0] || Math.abs(f.titel[1]-m.titel[1])>2)) r.fejl.push(m.side+": titel "+JSON.stringify(f.titel)+"→"+JSON.stringify(m.titel)); });
   r.gutter = getComputedStyle(document.documentElement).scrollbarGutter;
   var laas=0, ude=[]; [].slice.call(document.styleSheets).forEach(function(ss){ try{ [].slice.call(ss.cssRules).forEach(function walk(ru){ if(ru.cssRules && ru.media){ if(window.matchMedia(ru.media.mediaText).matches) [].slice.call(ru.cssRules).forEach(walk); return; } if(ru.selectorText && /:active/.test(ru.selectorText)){ if(/none/.test(ru.style.transform||"") && ru.style.getPropertyPriority("transform")==="important") laas+=ru.selectorText.split(",").length; } }); }catch(e){} });
   r.laas=laas;

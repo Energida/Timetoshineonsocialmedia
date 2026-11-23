@@ -10,6 +10,7 @@ from sikkerhedschefen import tjek_spor, tjek_adgang, tjek_crm, tjek_sw, tjek_fol
 from sikkerhedschefen.tjek_version import app_version
 from sikkerhedschefen import tjek_mik   # løfte 56 (Ida 17/11)
 from sikkerhedschefen import tjek_mellemtilstande   # løfte 57 (Ida 22/11): et klik giver ét skift
+from sikkerhedschefen import tjek_hak   # løfte 15 (Ida 23/11: »sende hakjægeren på tur i hele b2b og samtidig implmentere den som en fast del af sikkerhedstjekket«)
 KRITISKE = {1, 2, 3, 4, 5, 6, 14, 15, 17, 18, 19, 22, 23, 24, 32, 33, 34, 46, 52, 53, 54, 55, 56}   # 56 (Ida 17/11): mikrofonen i hvert felt   # 52+53 (Ida 22/10): opgavernes svar gemmes · forsidens tal følger lektionerne · 54+55 (Ida 22/10): spørgeskemaets svar lander · rundvisningen peger på det, den taler om
 NAVNE = {1: "Intet skrevet går tabt", 2: "Hver gemmevej har kvittering", 3: "Status frem og tilbage", 4: "Idéer flytter sig ikke", 5: "Møder opret/ret/slet, ingen dubletter",
          6: "Kalenderen: ét opslag, ét sted", 7: "Opgaver og Ja/Nej læses tilbage", 8: "Hver knap virker", 9: "Næste skridt over folden", 10: "Kvittering efter hvert Gem",
@@ -46,6 +47,7 @@ def main():
     if "--uden-design" not in sys.argv: res.append(lag1.tjek_design(repo))
     for b in (390, 1440): res += lag2.koer(b) + tjek_plus.koer(b) + tjek_knapper.koer(b) + tjek_ord.koer(b)
     for b in (390, 1440): res += tjek_mik.koer(b)   # MIKROFONEN (Ida 17/11: »Mikrofonen virker ikke i pop ups! … Det skal med i sikkerhedschefen«)
+    for b in (390, 1440): res += tjek_hak.jaeger(repo, b)   # HAKJÆGEREN FAST MED (Ida 23/11): kalender ↔ brief, brief → brief, browserens Tilbage/Frem og menuskift i rigtig tid; før kørte den kun i porten
     res += tjek_mellemtilstande.koer(repo)   # MELLEMTILSTANDE (Ida 22/11): forskydning · blink · ufærdigt indhold, i rigtig tid; kendte fund står i mt-grundlinje.json
     res += tjek_stille.koer() + tjek_tilbage.koer() + tjek_spor.koer() + tjek_adgang.koer() + tjek_crm.koer(bred=1440) + tjek_crm.koer(bred=800) + tjek_crm.koer(bred=390) + tjek_sw.koer() + tjek_fold.koer() + tjek_backup.koer() + tjek_popup.koer(390) + tjek_popup.koer(1440) + tjek_pakker.koer() + tjek_selvslet.koer() + tjek_gammel.koer() + tjek_dbregler.koer() + tjek_live.koer() + tjek_usynlig.koer(390) + tjek_usynlig.koer(1440) + tjek_navne.koer() + tjek_hjemtal.koer() + tjek_format.koer() + tjek_menuer.koer() + tjek_fejltekst.koer() + tjek_datoer.koer() + tjek_designregler.koer(390) + tjek_designregler.koer(1440) + tjek_guide.koer() + tjek_hop.koer() + tjek_hemmeligheder.koer() + tjek_tlfkopi.koer() + tjek_personer.koer() + tjek_teamet.koer(bred=390) + tjek_teamet.koer(bred=1440) + tjek_spoegelse.koer(bred=1440) + tjek_spoegelse.koer(bred=390) + tjek_spoegelse.jaeger(bred=1440) + tjek_spoegelse.jaeger(bred=390) + tjek_kalender.koer(bred=390) + tjek_kalender.koer(bred=1440) + tjek_udenid.koer(bred=390) + tjek_forloeb.koer(bred=390) + tjek_forloeb.koer(bred=1440) + [r for t in ("kursus", "forloeb") for b in (390, 1440) for r in tjek_skematur.koer(bred=b, typ=t)]   # 52+53 (Ida 22/10): opgaverne gemmes, forsidens tal følger lektionerne
     from sikkerhedschefen.resultat import Resultat

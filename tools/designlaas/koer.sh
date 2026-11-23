@@ -330,5 +330,9 @@ for TUB in "390 844" "1440 940"; do
   echo "${UDTU:-SELE TUR FEJL $1: ingen maaling}"
   echo "$UDTU" | grep -q "SELE TUR OK $1" || HERO_OK=0
 done
+# COMPUTEREN STAAR STILLE VED SIDESKIFT (v3453; Ida 10/10 + sikkerhedstjekket 23/11: Backstage rykkede 15 px mellem Hjem og de korte sider for den, der har faste rullebjaelker).
+# tools/sikkerhedschefen/tjek_stille.py (loefte 15) koeres nu ogsaa i porten: kundeappen og Backstage paa 1440, 6 sideskift hver.
+UDST=$(python3 "$ROD/tools/sikkerhedschefen/tjek_stille.py" 2>&1 | grep -a "· 15 ·")
+if echo "$UDST" | grep -q "FEJLET" || ! echo "$UDST" | grep -q "BESTÅET"; then echo "$UDST" | grep -a "FEJLET" | cut -c1-400; echo "SELE STILLE FEJL: computeren staar ikke stille ved sideskift"; HERO_OK=0; else echo "SELE STILLE OK: kundeappen og Backstage staar stille ved sideskift paa 1440 ($(echo "$UDST" | grep -c "BESTÅET") tjek)"; fi
 [ "$STREG_OK" = "1" ] && [ "$PLUS_OK" = "1" ] && [ "$DAEK_OK" = "1" ] && [ "$HERO_OK" = "1" ] && [ "$MAAL_OK" = "1" ] && [ "$REGLER_OK" = "1" ] && echo "$UDG" | grep -q "SELE GENSTART OK" && echo "$UD0" | grep -q "SELE POPUP-KILDE OK" && echo "$UD" | grep -q "SELE LAAS OK" && echo "$UD2" | grep -q "SELE SIDER OK" && echo "$UD4" | grep -q "SELE SIDER OK" && echo "$UD5" | grep -q "SELE BUD OK" && echo "$UD6" | grep -q "SELE BUD OK" && [ "$UX_OK" = "1" ] && [ "$BS_OK" = "1" ] && echo "$UD3" | grep -q "SELE BRIEF OK" && exit 0
 echo "SELE LAAS FEJL: maalingen sagde ikke OK"; exit 1

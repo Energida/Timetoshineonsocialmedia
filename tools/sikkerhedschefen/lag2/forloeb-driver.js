@@ -28,6 +28,8 @@
         for (var qi = 0; qi < lk.ovelse.length; qi++) {
           var q = lk.ovelse[qi], nk = ovNoegle(lk, qi);
           if (q && typeof q === "object" && q.type === "dage") { var db0 = document.querySelector("#ovelseDage [onclick*='ovelseDagToggle']"); if (db0) db0.click(); await V(50); forv[lk.id][nk] = OVELSE.svar[nk]; }
+          /* KONTOUDTOGET (opgavetypen »konto« fra v3380, lektion 2.3): intet skrivefelt #ovelseSvar, men en post pr. dag — måleren skriver én post med appens egen knap */
+          else if (q && typeof q === "object" && q.type === "konto") { var kn0 = document.getElementById("ktNy"); if (!kn0 || typeof kontoTilfoej !== "function") { mangler.push(lk.id + " spm " + (qi + 1) + ": intet kontofelt"); break; } kn0.value = "FT post " + lk.id; kontoTilfoej("g"); await V(60); if (!OVELSE.svar[nk]) { mangler.push(lk.id + " spm " + (qi + 1) + ": posten blev ikke skrevet"); break; } forv[lk.id][nk] = OVELSE.svar[nk]; }
           else { var ta0 = document.getElementById("ovelseSvar"); if (!ta0) { mangler.push(lk.id + " spm " + (qi + 1) + ": intet felt"); break; } ta0.value = "FT svar " + lk.id + " nr " + (qi + 1); ovelseKladdeInput(ta0); forv[lk.id][nk] = ta0.value; }
           nSvar++; await ovelseNaeste(); await V(120);
         }

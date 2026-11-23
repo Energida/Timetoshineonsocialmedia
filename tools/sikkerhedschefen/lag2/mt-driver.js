@@ -30,9 +30,13 @@
   function aftryk() {
     var pos = new Map(), fl = new Map(), W = innerWidth, H = innerHeight, antal = 0;
     var alle = document.querySelectorAll(SEL);
+    /* BAG ET DÆKKENDE LAG ER IKKE SYNLIGT (23/11, »Gå til lektion«): lektionen (#lekVis, fast, hele vinduet, uigennemsigtig) dækker forsiden, og forsiden tegnes om bagved.
+       Står et sådant lag fremme, tælles et element uden for laget kun, hvis det øverste element i dets midte IKKE ligger i laget. */
+    var daek = null; try { var lv = document.getElementById("lekVis"); if (lv && ses(lv)) { var lb = lv.getBoundingClientRect(), lc = getComputedStyle(lv); if (lb.width >= W * 0.8 /* på computeren står lektionen ved siden af menuen: 1204 af 1440 (v3453) — om et element er dækket, afgøres af punktet i dets midte nedenfor */ && lb.height >= H * 0.98 && parseFloat(lc.opacity || 1) >= 0.99 && !/rgba\([^)]*,\s*0(\.\d+)?\)$/.test(lc.backgroundColor) && lc.backgroundColor !== "transparent") daek = lv; } } catch (x) { daek = null; }
     for (var i = 0; i < alle.length && antal < 1600; i++) {
       var e = alle[i]; if (!ses(e)) continue;
       var b = e.getBoundingClientRect(); if (b.width < 2 || b.height < 2 || b.bottom < 0 || b.top > H || b.right < 0 || b.left > W) continue;
+      if (daek && !daek.contains(e)) { var mx = Math.min(W - 1, Math.max(0, b.left + b.width / 2)), my = Math.min(H - 1, Math.max(0, b.top + b.height / 2)), tp = document.elementFromPoint(mx, my); if (tp && daek.contains(tp)) continue; }
       var n = nr(e); pos.set(n, [Math.round(b.left), Math.round(b.top), Math.round(b.width), Math.round(b.height)]); antal++;
       var a = b.width * b.height; if (a > AREAL[n]) AREAL[n] = a;
     }
@@ -222,12 +226,46 @@
       await film("Menu: Dit forløb", K("showTab", 12), 3000);
       var lek = function () { return [].filter.call(document.querySelectorAll("#screen12 [onclick*='visLektion']"), synlig)[0]; };
       await film("Åbn en lektion", function () { var e = lek(); if (!e) return false; e.click(); }, 3500);
-      await film("Notefeltet: startknap", function () { var e = [].filter.call(document.querySelectorAll("#lekNoteStart button"), synlig)[0]; if (!e) return false; e.click(); });
+      /* NOTEFELTET UDEN STARTKNAPPER (Ida 23/11: »tror bare det skal være skriv der er en slags placeholder i feltet i stedet. keep it simple«): findes knapperne stadig (udgaver før de blev fjernet), trykkes den første; ellers skrives der i feltet */
+      await film("Notefeltet: første tegn", function () { var e = [].filter.call(document.querySelectorAll("#lekNoteStart button"), synlig)[0]; if (e) { e.click(); return; } var f = document.getElementById("lekNoteFelt"); if (!f) return false; f.focus(); f.textContent = "Det tog jeg med"; f.dispatchEvent(new Event("input", { bubbles: true })); });
       await film("Notefeltet: tømmes igen", function () { var f = document.getElementById("lekNoteFelt"); if (!f) return false; f.innerHTML = ""; f.dispatchEvent(new Event("input", { bubbles: true })); f.blur(); });
       await film("Lektionen lukkes (Tilbage)", function () { history.back(); }, 3000);
       /* »Mine noter« har ingen knap i lektionen længere (»Alle noter« blev fjernet fra notefeltet 15/11): siden åbnes fra Værktøjskassens flise, som kalder vkNoterAabn. Samme funktion kaldes her (Værktøjskassen er låst for den opdigtede kursuskunde, så flisen kan ikke trykkes). */
       await film("»Mine noter« åbnes", function () { if (typeof vkNoterAabn !== "function") return false; vkNoterAabn(); }, 3000);
       await film("Tilbage fra »Mine noter«", function () { var s = document.getElementById("screen27"); if (!s || !s.classList.contains("active")) return false; history.back(); }, 3000);
+      /* RUNDVISNINGEN (Ida 23/11: »når rundvisningen starter. - så bliver den røde flise større??? og når man klikker mellem rundvisningen, ser man den mørkerøde boks under???? alt det her hak skal væk!!!«):
+         velkomsten → Start rundvisningen → hvert Næste → Tilbage. Ud over de tre almindelige brud måles to ting pr. klik, 600 ms efter: flisens boks må ikke ændre sig fra velkomsten (≥ 2 px), og der må højst stå ÉN flise (.tfl) på skærmen. */
+      try { TUR_FL_FORCE = true; TUR_FL_I = 0; } catch (e) {}
+      await film("Rundvisningen: forsiden med velkomsten", K("showTab", 3), 3000);
+      try { turStartKortTegn(); } catch (e) {}
+      await V(300);
+      /* laget har sin egen kopi af flisen, og det gamle lags knapper er slået fra: tryk på den SIDSTE synlige knap, der ikke er slået fra */
+      var turKn = function (sel, rx) { return function () { var l = [].filter.call(document.querySelectorAll(sel), function (e) { return synlig(e) && !e.disabled && getComputedStyle(e).visibility !== "hidden" && getComputedStyle(e).pointerEvents !== "none" && rx.test((e.textContent || "").replace(/\s+/g, " ").trim()); }); if (!l.length) return false; l[l.length - 1].click(); }; };
+      var tfl = function () { return [].filter.call(document.querySelectorAll(".tfl"), synlig); };
+      var boks = function () { var l = tfl(); if (!l.length) return null; var b = l[l.length - 1].getBoundingClientRect(); return [Math.round(b.left), Math.round(b.top + scrollY), Math.round(b.width), Math.round(b.height)]; };
+      var b0 = boks();
+      var tur = async function (navn, handling) {
+        var rec = await film(navn, handling, 2500);
+        if (!rec || rec.tilstand === "ikke") return rec;
+        await V(600);
+        var b = boks(), n = tfl().length;
+        if (b0 && b && (Math.abs(b[2] - b0[2]) >= 2 || Math.abs(b[3] - b0[3]) >= 2 || Math.abs(b[0] - b0[0]) >= 2 || Math.abs(b[1] - b0[1]) >= 2)) { rec.fund.push({ art: "forskydning", el: ".tfl", flere: 0, hvad: "rundvisningens flise har ikke velkomstens boks: " + b0.join(",") + " → " + b.join(","), ms: 600, px: Math.max(Math.abs(b[2] - b0[2]), Math.abs(b[3] - b0[3]), Math.abs(b[0] - b0[0]), Math.abs(b[1] - b0[1])) }); rec.tilstand = "fund"; }
+        if (n > 1) { rec.fund.push({ art: "ufaerdigt", el: ".tfl", flere: 0, hvad: n + " fliser synlige på samme tid (den nedtonede under laget)", ms: 600, px: 0 }); rec.tilstand = "fund"; }
+        return rec;
+      };
+      if (!b0) r.tjek.push({ navn: "Rundvisningen: start", tilstand: "ikke", fund: [], info: "velkomstflisen står ikke på forsiden" });
+      else {
+        await tur("Rundvisningen: start", turKn(".tfl-hk", /Start rundvisningen/));
+        for (var tn = 1; tn <= 6; tn++) { if (!find(".tfl-hk", /^Næste$/)) break; await tur("Rundvisningen: Næste (" + tn + ")", turKn(".tfl-hk", /^Næste$/)); }
+        await tur("Rundvisningen: Tilbage", turKn(".tfl-tl", /^Tilbage$/));
+        /* »GÅ TIL LEKTION« (Ida 23/11: »når man afslutter rundvisningen - så ser man lige hurtigt dashboardet indtil man bliver sendt ind på forløbet?!«): frem til sidste stop uden at filme, og så ét klik, der skal være ét skift */
+        for (var tq = 0; tq < 12 && !find(".tfl-hk", /^Gå til lektion$/); tq++) { var nk = find(".tfl-hk", /^Næste$/); if (!nk) break; nk.click(); await V(700); }
+        await film("Rundvisningen: Gå til lektion", klik(".tfl-hk", /^Gå til lektion$/), 3500);
+        try { TUR_FL_FORCE = true; TUR_FL_I = 1; showTab(3); turStartKortTegn(); } catch (e) {}
+        await V(900);
+        if (find(".tfl button", /^Spring over$/)) await film("Rundvisningen: Spring over", klik(".tfl button", /^Spring over$/), 2500);
+      }
+      try { TUR_FL_FORCE = false; turFlOverlayFjern(); } catch (e) {}
     }
     if (G === "backstage") {
       var bsSider = [].filter.call(document.querySelectorAll("#dashNav [onclick], .dash-nav [onclick], nav [onclick*='dashGaa'], [onclick*='visDashSide'], [onclick*='dashSide(']"), synlig);

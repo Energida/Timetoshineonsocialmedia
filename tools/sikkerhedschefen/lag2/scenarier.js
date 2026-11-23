@@ -44,7 +44,8 @@
         var opsKnap = [].slice.call(document.querySelectorAll("button, [role=button]")).filter(function (b) { return b.getClientRects().length && /^\s*Opslag\s*$/.test(b.innerText || ""); })[0];
         if (opsKnap) opsKnap.click(); await V(2500);
         var ftfAaben = !!document.querySelector("#bsFlytMenu .ftf-ark") && (document.getElementById("bsFlytMenu") || {}).style.display !== "none";
-        tjek(8, "Kalenderens plus → Opslag åbner First thing first på et nyt opslag", !!opsKnap && ftfAaben && (IDEER || []).length === foerN + 1, (opsKnap ? "" : "ingen Opslag-knap · ") + "ark " + ftfAaben + " · opslag " + foerN + "→" + (IDEER || []).length);
+        /* 23/11 (Ida: dagens plus starter i »Vælg format«): arket med Opslag-knappen springes over på en konkret dag — knappen kræves ikke længere, kun at First thing first står åbent på ét nyt opslag med dagens dato */
+        tjek(8, "Kalenderens plus på en dag åbner First thing first på et nyt opslag med dagens dato", ftfAaben && String((window.__SOEJLE_ARK_IT || {}).dato || "") === d(iMorgen) && (IDEER || []).length === foerN + 1, (opsKnap ? "" : "ingen Opslag-knap · ") + "ark " + ftfAaben + " · opslag " + foerN + "→" + (IDEER || []).length);
         try { bsFlytLuk(); } catch (e) {} await V(1500);
       } catch (e) { tjek(8, "Kalenderens plus kunne testes", false, e.message); }
       /* L49 mødesiden viser ny dag (19/10) */
@@ -188,7 +189,9 @@
           for (var qi = 0; qi < lk.ovelse.length; qi++) {
             var q = lk.ovelse[qi], nk = ovNoegle(lk, qi);
             if (q && typeof q === "object" && q.type === "dage") { var db0 = document.querySelector("#ovelseDage [onclick*='ovelseDagToggle']"); if (db0) db0.click(); await V(50); forv[lk.id][nk] = OVELSE.svar[nk]; }
-            else { var ta0 = document.getElementById("ovelseSvar"); if (!ta0) { mangler.push(lk.id + " spm " + (qi + 1) + ": intet felt"); break; } ta0.value = "SC svar " + lk.id + " nr " + (qi + 1); ovelseKladdeInput(ta0); forv[lk.id][nk] = ta0.value; }
+            /* KONTOUDTOGET (opgavetypen »konto« fra v3380, lektion 2.3): intet skrivefelt #ovelseSvar, men en post pr. dag — måleren skriver én post med appens egen knap */
+          else if (q && typeof q === "object" && q.type === "konto") { var kn0 = document.getElementById("ktNy"); if (!kn0 || typeof kontoTilfoej !== "function") { mangler.push(lk.id + " spm " + (qi + 1) + ": intet kontofelt"); break; } kn0.value = "SC post " + lk.id; kontoTilfoej("g"); await V(60); if (!OVELSE.svar[nk]) { mangler.push(lk.id + " spm " + (qi + 1) + ": posten blev ikke skrevet"); break; } forv[lk.id][nk] = OVELSE.svar[nk]; }
+          else { var ta0 = document.getElementById("ovelseSvar"); if (!ta0) { mangler.push(lk.id + " spm " + (qi + 1) + ": intet felt"); break; } ta0.value = "SC svar " + lk.id + " nr " + (qi + 1); ovelseKladdeInput(ta0); forv[lk.id][nk] = ta0.value; }
             nSvar++; await ovelseNaeste(); await V(120);
           }
           await V(300);
