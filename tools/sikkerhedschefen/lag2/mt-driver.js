@@ -16,7 +16,7 @@
   var EFTER = 40, RYK = 2, BLINK = 400;
   var POP = "#bsFlytMenu .bs-flyt-ark, .ark-slor .ark, .modal-back .modal, #modalBack.kt-side, #nyKodeBoks .nyk-ark, #planRit.on, #toemFuld";
   var SLOR = "#bsFlytMenu, .ark-slor, .modal-back, #planRit";
-  var SEL = "button, a[href], [onclick], h1, h2, h3, h4, input, textarea, select, img, canvas, label, .screen, [role=dialog], [class*='flise'], [class*='kort'], [class*='card'], [class*='chip'], [class*='boks'], " + POP + ", " + SLOR;
+  var SEL = "button, a[href], [onclick], h1, h2, h3, h4, input, textarea, select, img, canvas, label, .screen, [role=dialog], [class*='flise'], [class*='kort'], [class*='card'], [class*='chip'], [class*='boks'], .tfl, .tfl-x, #lekNoteFelt, " + POP + ", " + SLOR;   /* .tfl · .tfl-x · #lekNoteFelt (23/11): rundvisningens flise og notefeltet var slet ikke med i aftrykket */
   var NR = new WeakMap(), NAVN = [], AREAL = [], naeste = 0;
   function nr(e) { var n = NR.get(e); if (n === undefined) { n = naeste++; NR.set(e, n); NAVN[n] = navn(e); AREAL[n] = 0; } return n; }
   function navn(e) {
@@ -37,7 +37,11 @@
       var e = alle[i]; if (!ses(e)) continue;
       var b = e.getBoundingClientRect(); if (b.width < 2 || b.height < 2 || b.bottom < 0 || b.top > H || b.right < 0 || b.left > W) continue;
       if (daek && !daek.contains(e)) { var mx = Math.min(W - 1, Math.max(0, b.left + b.width / 2)), my = Math.min(H - 1, Math.max(0, b.top + b.height / 2)), tp = document.elementFromPoint(mx, my); if (tp && daek.contains(tp)) continue; }
-      var n = nr(e); pos.set(n, [Math.round(b.left), Math.round(b.top), Math.round(b.width), Math.round(b.height)]); antal++;
+      /* TEKSTSKIFT I EN UÆNDRET BOKS (23/11): rundvisningens flise har samme boks på alle trin, og notefeltet vokser ikke af ét tegn — uden teksten med i aftrykket gav de klik »intet synligt skift«.
+         Kun dér tages tekstens længde og en lille sum med; alle andre steder er aftrykket som før. */
+      var n = nr(e), pv = [Math.round(b.left), Math.round(b.top), Math.round(b.width), Math.round(b.height)];
+      if (e.matches && e.matches(".tfl, .tfl-x, #lekNoteFelt")) { var tx = (e.textContent || ""), hs = 0; for (var ti = 0; ti < tx.length && ti < 400; ti++) hs = (hs * 31 + tx.charCodeAt(ti)) % 9973; pv.push(tx.length, hs); }
+      pos.set(n, pv); antal++;
       var a = b.width * b.height; if (a > AREAL[n]) AREAL[n] = a;
     }
     var flader = document.querySelectorAll(POP + ", " + SLOR + ", .screen");
@@ -267,7 +271,9 @@
       var boks = function () { var l = tfl(); if (!l.length) return null; var b = l[l.length - 1].getBoundingClientRect(); return [Math.round(b.left), Math.round(b.top + scrollY), Math.round(b.width), Math.round(b.height)]; };
       var b0 = boks();
       var tur = async function (navn, handling) {
+        var trF = window.__TUR_FL_NU;
         var rec = await film(navn, handling, 2500);
+        if (rec) rec.info = (rec.info || "") + " [trin " + trF + " → " + window.__TUR_FL_NU + "]";
         if (!rec || rec.tilstand === "ikke") return rec;
         await V(600);
         var b = boks(), n = tfl().length;

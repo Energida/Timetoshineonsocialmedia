@@ -40202,21 +40202,33 @@ async function kundeValgHent() {
 }
 /* RUNDVISNINGEN I DEN RØDE FLISE (Ida 12/11: »Ja, godkendt« på bud for computer og telefon): første besøg viser KUN den røde flise øverst på Forsiden; turen kører i flisen. Trin 1 uden mørke; fra trin 2 mørknes siden, flisen står lys, og en hvid streg peger fra flisen ud på menuen; sidste trin uden mørke og med knappen »Se din første lektion«. Bagefter er flisen væk. */
 let TUR_FL_I = 0, TUR_FL_FORCE = false;
+/* v3456 · RUNDVISNINGENS TRIN LIGGER FAST, MENS DEN KØRER: listen bygges, når velkomsten står (trin 0), og bruges uændret til rundvisningen er slut. Før blev den bygget forfra ved hvert kald; fordi et trin kun er med, når dets punkt findes,
+   kunne listen skifte midt i rundvisningen (målt på 390: »Værktøjskassen« var med ved velkomsten og væk ved trin 1, så alle trin rykkede en plads, og et hop tilbage til trin 1 viste sidste trin). */
 function turFlStops() {
+  try { if (TUR_FL_I > 0 && Array.isArray(window.__TUR_FL_LISTE) && window.__TUR_FL_LISTE.length) return window.__TUR_FL_LISTE; } catch (e) {}
+  const l = turFlStopsByg(); window.__TUR_FL_LISTE = l; return l;
+}
+function turFlStopsByg() {
   const fejl = (function () { try { return fejlKnapVises(); } catch (e) { return false; } })();
   const st = [{ v: true },
     /* FORSIDEN ER TAGET UD (Ida 15/11, testperson: »kunden forstår det godt«) */
     { t: "Forløbet", x: "Her finder du forløbets indhold. Alle lektioner og opgaver ligger her.", m: ['#sideNav [data-k="d12"]', "#bn-d12"] },
     /* VÆRKTØJSKASSEN (Idas tekst 15/11, testperson; sproget rettet: komma før »du finder« og »du opbygger«) */
-    { t: "Værktøjskassen", x: "Mens du ser lektionerne, kan du skrive noter undervejs. Alle dine gode noter bliver samlet i din notesbog, som du finder her i Værktøjskassen.<br><br>Her finder du også alle de redskaber og hjælpemidler, du opbygger gennem forløbet.", m: ['#sideNav [data-k="d6"]', "#burgerVaerktoej"], burger: true },
+    { t: "Værktøjskassen", x: "Mens du ser lektionerne, kan du skrive noter undervejs. Alle dine gode noter bliver samlet i din notesbog, som du finder her i Værktøjskassen.<br><br>Her finder du også alle de redskaber og hjælpemidler, du opbygger gennem forløbet.", m: ['#sideNav [data-k="d6"]', "#bn-d6", "#burgerVaerktoej"], burger: true },   /* v3456: på telefonen står Værktøjskassen i bundmenuen hos kursuskunden (ikke i Mere) — trinnet pegede på ingenting */
     /* FASTGØR MENUEN · INDBAKKEN · PROFIL (Idas tekster 15/11, testperson). Fold-knappen findes kun på computeren — på telefonen springes trinnet over. */
     { t: "Fastgør menuen", x: "Her kan du klikke for at folde menuen ind og ud.", m: ["#snPin"], kunPc: true },
-    { t: "Indbakken", x: "Her får du beskeder fra mig og besked, når nye funktioner åbner.", m: ["#snIndKnap", "#burgerIndbakke"], burger: true, kraever: "indbakke" },
+    { t: "Indbakken", x: "Her får du beskeder fra mig og besked, når nye funktioner åbner.", m: ["#snIndKnap", "#screen3 .hf-klokke", "#burgerIndbakke"], burger: true, kraever: "indbakke" },   /* v3456: på telefonen er Indbakken klokken øverst på Forsiden */
     { t: "Profil", x: "Her kan du ændre alle dine oplysninger og tilpasse din profil.", m: ["#sideNav .sn-virk-knap", '#burgerMenu [onclick*="minProfilAaben"]'], burger: true }];
   for (let q = st.length - 1; q >= 0; q--) {
     if (st[q].kunPc) { try { if (window.matchMedia("(max-width: 899px)").matches) { st.splice(q, 1); continue; } } catch (e) {} }
     if (st[q].kraever) { try { if (!funkTaendt(CURRENT_DEF, st[q].kraever)) st.splice(q, 1); } catch (e) {} }
   }   /* på telefonen åbner menuen, som ved Meld en fejl */
+  /* v3456 · ET TRIN, DER IKKE HAR NOGET AT PEGE PÅ, ER IKKE MED (målt 23/11 på 390: hos en kursuskunde med den gamle bundmenu står »Værktøjskassen« hverken i bundmenuen eller i Mere, så trinnet pegede på ingenting,
+     og det gamle tjek blev narret af et lag, der blev hængende). Et punkt tæller, når det findes og ikke er skjult (display:none hos sig selv eller en forælder); punkter i den lukkede menu »Mere« tæller, fordi menuen åbnes for dem. */
+  try { if (typeof burgerSpejl === "function") burgerSpejl(); } catch (e) {}   /* menuen »Mere« sættes, som den står, når den er åben — så et punkt, den skjuler, ikke tæller med */
+  for (let q = st.length - 1; q >= 1; q--) { const m = st[q].m; if (!m) continue; let findes = false;
+    try { findes = m.some(function (sel) { return Array.prototype.some.call(document.querySelectorAll(sel), function (x) { for (let e = x; e && e !== document.body; e = e.parentElement) { if (getComputedStyle(e).display === "none") return false; } return true; }); }); } catch (e) { findes = true; }
+    if (!findes) st.splice(q, 1); }
   if (fejl) st.push({ t: "Meld en fejl", x: "Skulle du mod forventning opleve, at noget ikke virker, så tryk her, så fikser jeg det hurtigst muligt.", m: ["#sideNav .sn-fejl", "#burgerFejl"], burger: true });
   st.push({ slut: true, t: "Rigtig god fornøjelse.", x: "Din første lektion venter." });
   return st;
@@ -40283,6 +40295,10 @@ function turFlSpring() {
   try { renderHome(); } catch (e) {}
 }
 document.addEventListener("keydown", function (e) { try { if (e.key === "Escape" && window.__TUR_FL_NU > 0 && document.getElementById("turFlOverlay")) { e.preventDefault(); turFlSpring(); } } catch (x) {} });
+/* v3456: findes trinnets punkt allerede på skærmen uden om menuen »Mere« (bundmenuen, klokken), åbnes menuen ikke */
+function turFlSesUdenMenu(s) {
+  try { return (s.m || []).some(function (sel) { if (/^#burger/.test(sel)) return false; return Array.prototype.some.call(document.querySelectorAll(sel), function (x) { const b = x.getBoundingClientRect(); return b.height > 0 && b.width > 0 && b.bottom > 0 && b.top < innerHeight && (x.offsetParent !== null || getComputedStyle(x).position === "fixed"); }); }); } catch (e) { return false; }
+}
 function turFl(i) {
   if (i >= 1 && !window.__TUR_FL_BOKS) { try { const v = turFlSynlig(); if (v) { const q = v.getBoundingClientRect(), c = getComputedStyle(v); window.__TUR_FL_BOKS = { w: Math.round(q.width * 100) / 100, h: Math.round(q.height * 100) / 100, m: c.marginTop + " " + c.marginRight + " " + c.marginBottom + " " + c.marginLeft }; } } catch (e) {} }
   TUR_FL_I = i; window.__TUR_FL_NU = i;
@@ -40293,13 +40309,19 @@ function turFl(i) {
   const gl = document.getElementById("turFlOverlay");
   if (s.m && gl) { try { gl.querySelectorAll("button").forEach(function (b) { b.disabled = true; b.style.pointerEvents = "none"; }); } catch (e) {} }
   else turFlOverlayFjern();
-  try { const tlf = window.matchMedia("(max-width: 899px)").matches; const bm = document.getElementById("burgerMenu"); const aab = !!(bm && bm.classList.contains("open")); if (tlf && s.burger && !aab) toggleBurger(); else if (aab && !(tlf && s.burger)) toggleBurger(); } catch (e) {}
-  turStartKortTegn(); turFlBoksSaet();
-  const t0 = turFlSynlig();
-  if (t0) { try { const r = t0.getBoundingClientRect(); if (r.top < 0 || r.bottom > innerHeight) t0.scrollIntoView({ block: "center", behavior: "auto" }); } catch (e) {} }
-  let tlfMenu = false; try { tlfMenu = !!(s.burger && window.matchMedia("(max-width: 899px)").matches); } catch (e) {}
-  if (s.m) { if (tlfMenu) setTimeout(function () { turFlOverlay(i, 0); }, 380); else turFlOverlay(i, 0); }   /* v3450: laget tegnes i samme øjeblik som trinnet (før 60 ms senere) */
-  else document.body.classList.remove("tur-lag");
+  /* v3456 · TELEFONENS MENU-TRIN ER ÉT SKIFT (»Ny chef«s måling i rigtig tid af v3455 på 390: flisen på siden fik ny tekst i første billede, og laget med kopien kom 385 ms senere; og fra ét menu-trin til det næste kom første billede først efter 0,4 s).
+     Første forsøg (vent 380 ms, til menuen står) gav stadig to skift fra sidste trin og tilbage: menuen i første billede, flisen 383 ms senere. Derfor: */
+  let skalAabne = false;
+  try { const tlf = window.matchMedia("(max-width: 899px)").matches; const bm = document.getElementById("burgerMenu"); const aab = !!(bm && bm.classList.contains("open")); const brugMenu = !!(tlf && s.burger && !turFlSesUdenMenu(s)); skalAabne = brugMenu && !aab; const skalLukke = aab && !brugMenu;
+    if (skalAabne || skalLukke) { document.body.classList.add("tur-straks"); toggleBurger(); try { void (bm && bm.offsetHeight); } catch (e2) {} clearTimeout(window.__TUR_STRAKS_T); window.__TUR_STRAKS_T = setTimeout(function () { document.body.classList.remove("tur-straks"); }, 600); } } catch (e) {}
+  const tegnNu = function () {
+    turStartKortTegn(); turFlBoksSaet();
+    const t0 = turFlSynlig();
+    if (t0) { try { const r = t0.getBoundingClientRect(); if (r.top < 0 || r.bottom > innerHeight) t0.scrollIntoView({ block: "center", behavior: "auto" }); } catch (e) {} }
+    if (s.m) turFlOverlay(i, 0); else document.body.classList.remove("tur-lag");
+  };
+  /* Menuen åbner uden bevægelse under rundvisningen (klassen tur-straks slår dens overgang fra et øjeblik), så punktet i menuen findes med det samme, og menuen, flisen og laget skifter i ét og samme billede. Findes punktet alligevel ikke straks, prøver turFlOverlay igen som før. */
+  tegnNu();
 }
 function turFlOverlay(i, forsoeg) {
   if (window.__TUR_FL_NU !== i) return;
@@ -40307,7 +40329,9 @@ function turFlOverlay(i, forsoeg) {
   const tile = turFlSynlig(); if (!tile) { document.body.classList.remove("tur-lag"); turFlOverlayFjern(); return; }   /* intet trin at pege på: det mørke lag må ikke blive hængende (gennemgang 20/11) */
   let maal = null;
   for (let k = 0; k < s.m.length && !maal; k++) { const e = Array.prototype.find.call(document.querySelectorAll(s.m[k]), function (x) { const b = x.getBoundingClientRect(); return b.height > 0 && b.width > 0 && (x.offsetParent !== null || getComputedStyle(x).position === "fixed"); }); if (e) maal = e; }
-  if (!maal) { if (forsoeg < 8) setTimeout(function () { turFlOverlay(i, forsoeg + 1); }, 300); else { document.body.classList.remove("tur-lag"); turFlOverlayFjern(); } return; }   /* v3450: findes punktet ikke, står flisen selv fremme igen */
+  /* v3456: findes punktet ikke, vises trinnets flise MED DET SAMME uden mørkt lag (før: det gamle trin blev stående i op til 2,4 sekunder, mens der blev ledt — målt i rigtig tid på 390, hvor »Værktøjskassen« ikke står i testkundens menu).
+     Der ledes videre i baggrunden i op til 2,4 sekunder; dukker punktet op, kommer laget til. */
+  if (!maal) { document.body.classList.remove("tur-lag"); turFlOverlayFjern(); if (forsoeg < 8) setTimeout(function () { turFlOverlay(i, forsoeg + 1); }, 300); return; }
   turFlOverlayFjern();
   const r = maal.getBoundingClientRect(), pad = 6, L = Math.max(4, r.left - pad), T = r.top - pad, W = r.width + pad * 2, H = r.height + pad * 2;
   const m = { L: L, T: T, W: W, H: H };
@@ -72597,7 +72621,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "3455";
+const APP_VERSION = "3456";
 const APP_BYGGET = "3. november";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_VERSION;   /* ingen dato (Ida 7/11: »hvorfor står der version 3. november?«) — datoen blev ikke rettet med, nummeret er sandheden */ } catch (e) {} });
 let NY_VERSION_KLAR = false;
@@ -108677,6 +108701,8 @@ html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7
 /* v3453 · BACKSTAGE STÅR STILLE VED SIDESKIFT, OGSÅ MED FASTE RULLEBJÆLKER (sikkerhedstjekkets løfte 15, »Ny chef« 23/11: fladen var 1425 bred på Hjem og 1440 på de korte sider, så alt rykkede 15 px for den, der har faste rullebjælker — almindelig mus, Windows).
    Reglen fra 10/10 (scrollbar-gutter:stable på html) reserverer ikke pladsen i Backstage, hvor det er selve vinduet, der ruller. Her står rullebjælkens spor derfor altid fremme på computeren. Med svævende rullebjælker (Idas Mac) ses ingen forskel. */
 @media (min-width:900px) { html:has(> body.dash-mode) { overflow-y:scroll !important; } }
+/* v3456 · RUNDVISNINGEN PÅ TELEFONEN: menuen åbner og lukker uden bevægelse, mens rundvisningen skifter trin (tur-straks sidder på body i 0,6 s), så menuen, flisen og det mørke lag skifter i ét billede */
+html body.tur-straks:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) #burgerMenu, html body.tur-straks:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) #burgerMenu *, html body.tur-straks:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .burger-menu, html body.tur-straks:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .burger-menu *, html body.tur-straks:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .burger-slor, html body.tur-straks:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) #burgerSlor { transition:none !important; animation:none !important; }
 /* v3395 (Ida 20/11) — MODULFLISERNE: cirkel som lektionerne (tom · rødt flueben · hængelås), ingen pil, ingen fold-ud */
 html body #forloebTidslinje .ftl2 .ftl2-hoved, html body #forloebTidslinje .ftl2 .ftl2-rk.laast { display:flex !important; align-items:center !important; justify-content:flex-start !important; gap:16px !important; cursor:pointer; }
 html body #forloebTidslinje .ftl2 .ftl2-rk.laast { cursor:default; }
@@ -108768,7 +108794,7 @@ html body:not(#bl0):not(#bl1):not(#bl2):not(#bl3):not(#bl4):not(#bl5):not(#bl6):
 body.sk-holder, body.sk-holder .content, body.sk-holder #dashMain, [data-bs-hold], [data-bs-hold] * { overflow-anchor:none !important; }
 </style>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-hvid.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 22. november · 3455</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 22. november · 3456</div>
 <script>
 /* DROPDOWNEN RULLER SELV (Ida 4/10) — maal den aabne liste og klip den ved skaermens bund */
 (function () {

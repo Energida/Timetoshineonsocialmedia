@@ -1,3 +1,13 @@
+## 23. november · v3456 · RUNDVISNINGEN PÅ TELEFONEN: MENU-TRINENE ER ÉT SKIFT · TRIN PEGER ALTID PÅ NOGET — BYGGET I TESTUDGAVEN, IKKE UDE
+
+- **Baggrund:** »Ny chef«s mellemtilstands-måler ser fra i dag også rundvisningens midterste trin og notefeltet (tekstskift i en uændret boks). På v3455, 390: flisen på siden fik ny tekst i første billede, og laget med kopien kom 385 ms senere (to skift); ét trin viste intet i 0,4 s.
+- **Menuen »Mere« åbner og lukker uden bevægelse, mens rundvisningen skifter trin** (klassen `tur-straks` i 0,6 s), så menuen, flisen og det mørke lag skifter i ét og samme billede. Uden for rundvisningen åbner menuen som før.
+- **Et trin peger altid på noget:** på telefonen står »Værktøjskassen« i bundmenuen hos den nye kursuskunde (`#bn-d6`) og »Indbakken« som klokken øverst på Forsiden (`#screen3 .hf-klokke`); står punktet på skærmen, åbnes »Mere« ikke. Et trin, hvis punkt slet ikke findes hos kunden (fx »Værktøjskassen« hos en kursuskunde med den gamle bundmenu), er ikke med i rundvisningen, og »Rundvisning x af n« tæller de trin, der er.
+- **Trinlisten ligger fast, mens rundvisningen kører:** den bygges, når velkomsten står, og bruges uændret til rundvisningen er slut. (Første port på v3456 var rød på netop det: listen blev bygget forfra ved hvert kald og skiftede midt i rundvisningen, så trinene rykkede en plads, og »Spring over« manglede efter et hop tilbage.)
+- **Findes punktet ikke i første forsøg, vises trinnets flise med det samme** uden mørkt lag (før blev det gamle trin stående i op til 2,4 sekunder). **Det gamle sikkerhedstjek blev narret af netop det hængende lag** og meldte »hvert trin peger på noget« grønt; nu er det grønt, fordi det er sandt: `tjek_skematur.py` 36 af 36.
+- **MÅLT I RIGTIG TID (mellemtilstands-måleren, kursus-gruppen):** 390: start, Næste (1)–(5), Tilbage, Gå til lektion, Spring over alle ok; 1440 (målt før de sidste to rettelser): alle ok. Notefeltet ok på begge.
+- **IKKE MÅLT:** en rigtig telefon · en rigtig ny kursuskunde på live (hvilke trin hun får) · at menuen uden bevægelse ikke ses som et hak af Ida.
+
 ## 23. november · v3455 · MODULAFSLUTNING: POPUP FRA IDA, NÅR ET MODUL ER GENNEMFØRT — BYGGET I TESTUDGAVEN, IKKE UDE (Idas »Ja, byg den« 23/11 i samtalen »Modulafslutning«)
 
 - Kommer én gang pr. modul pr. kursist, når alle lektioner og opgaver i modulet er gennemført. Aldrig ved login, aldrig oven på en anden popup; efter feedback-popuppen. Krydset, Escape og klik udenfor lukker.
