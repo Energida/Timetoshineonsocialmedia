@@ -53,7 +53,7 @@
     t("8 · første tegn bruger nøglen én gang, og forsiden ses ikke før profilen", kald === foer6 + 1 && !synlig() && glimt === 0 && nn > 100, "verifyOtp kaldt " + (kald - foer6) + " gang(e) (skal 1) · login-siden " + (synlig() ? "står" : "væk") + " · forsiden set i " + glimt + " af " + nn + " prøver (skal 0)");
     try { localStorage.removeItem("energida_skal_ny_kode"); } catch (e) {}
     /* v3446 · PROFILGUIDEN (Ida 23/11): 9) nævneren i »x af y« skifter aldrig undervejs, heller ikke når adgangskoden er gemt, og et Tilbage fra virksomheden lander på rollen med samme nævner;
-       »Næste« og »Tilbage« står 10 fra hinanden. Adgangskoden gemmes ikke rigtigt (updateUser er byttet ud). */
+       »Næste« og »Tilbage« står 12 fra hinanden (låsen 23/11, v3449). Adgangskoden gemmes ikke rigtigt (updateUser er byttet ud). */
     try { clearTimeout(window.__OPRET_VAGT); } catch (e) {}
     sb.auth.updateUser = function () { return Promise.resolve({ data: {}, error: null }); };
     try { localStorage.removeItem(pfKladdeNoegle()); } catch (e) {}
@@ -65,7 +65,7 @@
     for (var i9 = 0; i9 < 8 && PF && PF.trin === 1; i9++) { if (pfSkaerm() === "pw") { PF.f.pw = "hemmelig12"; var n9 = document.getElementById("pfNaeste"), t9 = document.querySelector("#pfFlow .pf-knap-tb"); if (n9 && t9) afst = Math.round(t9.getBoundingClientRect().top - n9.getBoundingClientRect().bottom); } await pfNaeste(); await V(700); if (PF) sti.push(pfTal()); }
     await pfTilbage(); await V(400); sti.push("Tilbage: " + pfTal()); var paaRolle = pfSkaerm() === "rolle";
     var naevn = sti.map(function (x) { return (x.match(/af (\d+)/) || [])[1]; });
-    t("9 · profilguiden: nævneren skifter ikke, Tilbage lander på rollen, knapperne står 10 fra hinanden", sti.length >= 5 && naevn.every(function (x) { return x && x === naevn[0]; }) && paaRolle && afst === 10, sti.join(" → ") + " · knapafstand " + afst + " (skal 10)");
+    t("9 · profilguiden: nævneren skifter ikke, Tilbage lander på rollen, knapperne står 12 fra hinanden", sti.length >= 5 && naevn.every(function (x) { return x && x === naevn[0]; }) && paaRolle && afst === 12, sti.join(" → ") + " · knapafstand " + afst + " (skal 12)");
     try { localStorage.removeItem("energida_skal_ny_kode"); localStorage.removeItem(pfKladdeNoegle()); } catch (e) {}
   } catch (e) { r.fejl = String(e && e.message || e); }
   var fejl = r.tjek.filter(function (x) { return !x.ok; }); fejl.forEach(function (x) { console.log("SELE OPRET FEJL: " + x.navn + " · " + x.detalje); }); if (r.fejl) console.log("SELE OPRET FEJL: proben fejlede: " + r.fejl); console.log(!fejl.length && !r.fejl && r.tjek.length === 9 ? "SELE OPRET OK: »Opret profil« åbner appen, fejlen siges, et ubrugt link til en anden mail bruges altid, nøglen bruges ikke uden et menneske, forsiden ses ikke før profilen, og profilguidens tal skifter ikke (9 prøver)" : "SELE OPRET FEJL: " + fejl.length + " af " + r.tjek.length + " prøver"); console.log("@@" + JSON.stringify(r) + "@@");

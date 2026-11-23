@@ -16,7 +16,14 @@
       });
       if (n < 5) fejl.push("kun " + n + " knapper fundet i briefens top (skal mindst 5)");
     }
+    /* v3449 · ARKET FRA IDAS BILLEDE (23/11): i »Nyt opslag« står »Tilbage« under »Næste«/»Gem« med 12 imellem (var 0 på computeren). Arkene i probe-regler2.js måles kun på deres første trin, så dette trin måles her. */
+    if (innerWidth >= 900) { try { closeBrief(); } catch (e) {} try { showTab(3); } catch (e) {} await V(900); plusArk(); await V(800); var po = document.querySelector('.plus-ark [data-k="opslag"]'); if (!po) fejl.push("plusset har intet »Opslag«"); else { po.click(); await V(1200);
+      var reel = [].filter.call(document.querySelectorAll("#bsFlytMenu button"), function (b) { return /^Reel$/.test((b.innerText || "").trim()); })[0]; if (reel) { reel.click(); await V(600); }
+      var set = false; for (var i2 = 0; i2 < 4 && !set; i2++) { var kn = [].filter.call(document.querySelectorAll("#bsFlytMenu .ark-knap"), function (b) { return b.getClientRects().length; }); var tb = kn.filter(function (b) { return /^Tilbage$/.test((b.innerText || "").trim()); })[0], over = tb && tb.previousElementSibling;
+        if (tb && over && over.matches(".ark-knap")) { set = true; n++; var g = Math.round((tb.getBoundingClientRect().top - over.getBoundingClientRect().bottom) * 10) / 10; if (Math.abs(g - 12) > 0.5) fejl.push("»Nyt opslag«: »" + (over.innerText || "").trim() + "« → »Tilbage« " + g + " px (skal 12)"); break; }
+        var nx = kn.filter(function (b) { return /^Næste$/.test((b.innerText || "").trim()); })[0]; if (!nx) break; nx.click(); await V(1200); }
+      if (!set) fejl.push("»Nyt opslag«: fandt ikke trinnet med »Tilbage« under den røde knap"); try { bsFlytLuk(); } catch (e) {} } }
   } catch (e) { fejl.push("proben fejlede: " + (e && e.message)); }
   fejl.forEach(function (f) { console.log("SELE BRIEFTOP FEJL " + innerWidth + ": " + f); });
-  console.log(fejl.length ? "SELE BRIEFTOP FEJL " + innerWidth + ": " + fejl.length + " fund" : "SELE BRIEFTOP OK " + innerWidth + ": " + n + " knapper i briefens top rammes af et tryk i midten");
+  console.log(fejl.length ? "SELE BRIEFTOP FEJL " + innerWidth + ": " + fejl.length + " fund" : "SELE BRIEFTOP OK " + innerWidth + ": " + n + " knapper i briefens top rammes af et tryk i midten" + (innerWidth >= 900 ? ", og »Tilbage« står 12 under den røde knap i »Nyt opslag«" : ""));
 })();
