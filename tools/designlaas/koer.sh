@@ -321,5 +321,14 @@ for BTB in "390 844" "1440 940"; do
   echo "${UDBT:-SELE BRIEFTOP FEJL $1: ingen maaling}"
   echo "$UDBT" | grep -q "SELE BRIEFTOP OK $1" || HERO_OK=0
 done
+# RUNDVISNINGEN (v3450, Ida 23/11: »man kan paa ingen maade afslutte rundvisningen!« · »alt det her hak skal vaek!!!«): samme boks paa velkomsten og alle trin, hoejst én flise, »Spring over« afslutter med ét klik. probe-tur.js, 390 og 1440.
+KTU=$(python3 -c "import urllib.parse,sys;print(urllib.parse.quote(open(sys.argv[1]).read()))" "$ROD/tools/designlaas/probe-tur.js")
+for TUB in "390 844" "1440 940"; do
+  set -- $TUB
+  RAATU=$($TO "$C" $HL --no-sandbox --disable-gpu --window-size=$(($1+40)),1000 --virtual-time-budget=60000 --enable-logging=stderr --v=0 --screenshot="$MAAL/tur-$1.png" "http://127.0.0.1:$PORT/sele.html?vis=kunde&fil=index-sele.html%3Fselekode%3DHINGES2026&bred=$1&hoej=$2&kode=$KTU" 2>&1)
+  UDTU=$(echo "$RAATU" | grep -a 'CONSOLE' | sed -E 's/^.*CONSOLE[:(][0-9]+\)?\] //; s/", source:.*$//; s/^"//' | grep -a 'SELE TUR')
+  echo "${UDTU:-SELE TUR FEJL $1: ingen maaling}"
+  echo "$UDTU" | grep -q "SELE TUR OK $1" || HERO_OK=0
+done
 [ "$STREG_OK" = "1" ] && [ "$PLUS_OK" = "1" ] && [ "$DAEK_OK" = "1" ] && [ "$HERO_OK" = "1" ] && [ "$MAAL_OK" = "1" ] && [ "$REGLER_OK" = "1" ] && echo "$UDG" | grep -q "SELE GENSTART OK" && echo "$UD0" | grep -q "SELE POPUP-KILDE OK" && echo "$UD" | grep -q "SELE LAAS OK" && echo "$UD2" | grep -q "SELE SIDER OK" && echo "$UD4" | grep -q "SELE SIDER OK" && echo "$UD5" | grep -q "SELE BUD OK" && echo "$UD6" | grep -q "SELE BUD OK" && [ "$UX_OK" = "1" ] && [ "$BS_OK" = "1" ] && echo "$UD3" | grep -q "SELE BRIEF OK" && exit 0
 echo "SELE LAAS FEJL: maalingen sagde ikke OK"; exit 1

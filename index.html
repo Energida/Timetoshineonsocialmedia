@@ -39912,7 +39912,12 @@ function pfTegn() {
       + '<button type="button" class="mq-tap" onclick="pfPwVis()" title="Vis adgangskoden" aria-label="Vis adgangskoden" style="position:absolute;right:4px;top:0;bottom:0;width:44px;background:none;border:0;padding:0;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--gray2);">' + (typeof authOejeSvg === "function" ? authOejeSvg(!!PF.pwVis) : "") + '</button></span></label>';
   } else if (sk === "klar") {
     /* SÅ ER DU KLAR (Ida 11/11): ingen kollegakode og ingen tekst om kolleger her — koden står i velkomstmailen */
-    krop = '<div class="pf-klar"><div class="pf-ok">' + energidaFlueben(26) + '</div><div class="pf-t">Så er du klar</div></div>';
+    /* v3450 · SÅ ER DU KLAR (Ida 23/11: »skal vi der ikke slette det med processbaren øverst? og Så tilføje under … Du har nu fået en e-mail jeg vil bede dig læse igennem og gemme« · »Dit content studio venter - start med rundvisningen så du lærer det at kende?« · »kunne vi lave konfettieffekt når så er du klar kommer frem?«).
+       Toppen og procesbaren er væk på denne skærm. Sætningen om mailen står KUN, når serveren har bekræftet, at velkomstmailen er sendt (pfVelkomstMail); sætningen om rundvisningen KUN, når kunden får rundvisningen bagefter. Sort brødtekst, ikke en grå hjælpelinje. */
+    let turKommer = false; try { turKommer = typeof ygtHold === "function" && ygtHold(CURRENT_DEF) && !turSet(); } catch (e) {}
+    krop = '<div class="pf-klar"><div class="pf-ok">' + energidaFlueben(26) + '</div><div class="pf-t">Så er du klar</div>'
+      + (PF.mailSendt ? '<p class="pf-klar-p">Jeg har sendt dig en mail med din adgang og din kollegakode. Læs den, og gem den.</p>' : '')
+      + (turKommer ? '<p class="pf-klar-p">Dit Content Studio venter. Start med rundvisningen, så du lærer det at kende.</p>' : '') + '</div>';
   } else if (sk === "navn") {
     krop = '<div class="pf-t">Om dig</div>' + pfFelt("navn", "Fornavn", f.navn) + pfFelt("efternavn", "Efternavn", f.efternavn);
   } else if (sk === "foed") {
@@ -39948,10 +39953,44 @@ function pfTegn() {
     krop = '<div class="pf-t">Kolleger</div>'
       + f.kolleger.map(function (c, i) { return pfFelt("kol" + i + "_navn", "Kollega " + (i + 1) + " · Navn", c.navn) + pfFelt("kol" + i + "_mail", "E-mail", c.mail, { mail: true }); }).join("");
   }
-  el.innerHTML = '<div class="pf-ark" role="dialog" aria-label="Din profil">' + top + krop + '<div class="pf-fejl" id="pfFejl"></div><button type="button" class="pf-knap mq-tap" id="pfNaeste" onclick="pfNaeste()">' + knap + '</button>' + (!forste ? '<button type="button" class="pf-knap-tb mq-tap" onclick="pfTilbage()">Tilbage</button>' : ((PF.team && !PF.team.oprettet) ? '<button type="button" class="pf-knap-tb mq-tap" onclick="teamProfilLuk()">Tilbage</button>' : '')) + '</div>';
+  el.innerHTML = '<div class="pf-ark' + (sk === "klar" ? ' pf-ark-klar' : '') + '" role="dialog" aria-label="Din profil">' + (sk === "klar" ? '' : top) + krop + '<div class="pf-fejl" id="pfFejl"></div><button type="button" class="pf-knap mq-tap" id="pfNaeste" onclick="pfNaeste()">' + knap + '</button>' + (!forste ? '<button type="button" class="pf-knap-tb mq-tap" onclick="pfTilbage()">Tilbage</button>' : ((PF.team && !PF.team.oprettet) ? '<button type="button" class="pf-knap-tb mq-tap" onclick="teamProfilLuk()">Tilbage</button>' : '')) + '</div>';
   try { el.scrollTop = 0; } catch (e) {}
   pfKnapOpdat();
   if (sk === "branche" && f.branche === "Andet" && String(f.branche_andet || "").trim()) pfAndetGem();
+  if (sk === "klar") pfKonfetti();
+}
+/* v3450 · VELKOMSTMAILEN SENDES, FØR »SÅ ER DU KLAR« KOMMER FREM (før: først ved »Start«), så sætningen »Jeg har sendt dig en mail« er sand. Serveren afgør alt som før (tændt i Mails, én gang pr. adresse, modtager = kundens egen mail);
+   appen sender intet indhold med. Svaret huskes, så skærmen kun lover en mail, når den er sendt. Højst 4 sekunders ventetid; svarer serveren ikke, står sætningen ikke. */
+async function pfVelkomstMail() {
+  try {
+    if (!PF || !(PF.ygt && !PF.kollega) || !sb || !sb.functions) return;
+    const vk = nsKey("velkomstmail_bedt"); const gl = localStorage.getItem(vk);
+    if (gl) { PF.mailSendt = gl === "ok"; return; }
+    localStorage.setItem(vk, "1");
+    const r = await Promise.race([sb.functions.invoke("mail-send", { body: { art: "velkomst" } }), new Promise(function (x) { setTimeout(function () { x(null); }, 4000); })]);
+    const ok = !!(r && !r.error && r.data && r.data.ok === true);
+    PF.mailSendt = ok; if (ok) localStorage.setItem(vk, "ok");
+  } catch (e) { if (PF) PF.mailSendt = false; }
+}
+/* v3450 · KONFETTI, NÅR »SÅ ER DU KLAR« KOMMER FREM (Ida 23/11: »en nice 3D effekt hvor det måske ligner det hopper ud gennem skærmen«): ét skud på ca. 2 sekunder, ud bag fluebenet og mod beskueren (perspective + translateZ).
+   Husets farver, ingen lyd, i sit eget lag uden tryk (pointer-events:none), så boksen ikke flytter sig. Kører én gang pr. guide og slet ikke, når kunden har bedt om mindre bevægelse. */
+function pfKonfetti() {
+  try {
+    if (!PF || PF.konfetti) return; PF.konfetti = true;
+    if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const ok = document.querySelector("#pfFlow .pf-ok"); if (!ok) return; const r = ok.getBoundingClientRect();
+    const lag = document.createElement("div"); lag.id = "pfKonfetti"; lag.setAttribute("aria-hidden", "true");
+    lag.style.cssText = "position:fixed;inset:0;z-index:2147483600;pointer-events:none;overflow:hidden;perspective:700px;perspective-origin:" + Math.round(r.left + r.width / 2) + "px " + Math.round(r.top + r.height / 2) + "px;";
+    const F = ["#FC2404", "#1A1A1A", "#FFFFFF", "#C9DBE7", "#FC2404", "#F4F7FA"]; let h = "";
+    for (let i = 0; i < 46; i++) {
+      const v = (i / 46) * Math.PI * 2 + (i % 3) * 0.21, lgd = 120 + ((i * 53) % 260), x = Math.round(Math.cos(v) * lgd), y = Math.round(Math.sin(v) * lgd * 0.8 - 60), z = 220 + ((i * 37) % 320);
+      const b = 7 + (i % 4) * 2, hh = (i % 3 === 0) ? b : b * 1.9, rund = (i % 5 === 0) ? "50%" : "2px";
+      h += '<i style="left:' + Math.round(r.left + r.width / 2 - b / 2) + 'px;top:' + Math.round(r.top + r.height / 2 - hh / 2) + 'px;width:' + b + 'px;height:' + hh + 'px;background:' + F[i % F.length] + ';border-radius:' + rund + ';' + (F[i % F.length] === "#FFFFFF" || F[i % F.length] === "#F4F7FA" ? 'box-shadow:0 0 0 1px rgba(26,26,26,.12);' : '')
+        + '--x:' + x + 'px;--y:' + y + 'px;--z:' + z + 'px;--r:' + (180 + (i * 67) % 540) + 'deg;animation-delay:' + ((i % 6) * 18) + 'ms;"></i>';
+    }
+    lag.innerHTML = h; document.body.appendChild(lag);
+    setTimeout(function () { try { lag.remove(); } catch (e) {} }, 2400);
+  } catch (e) {}
 }
 function pfPwVis() { if (!PF) return; const i = document.getElementById("pf_pw"); PF.pwVis = !PF.pwVis; if (i) { const v = i.value; PF.f.pw = v; } pfTegn(); try { const j = document.getElementById("pf_pw"); if (j) j.focus(); } catch (e) {} }
 function pfKollegaTil() { if (!PF || PF.f.kolleger.length >= 2) return; PF.f.kolleger.push({ navn: "", mail: "" }); pfKladdeGem(); pfTegn(); }
@@ -40026,7 +40065,7 @@ async function pfNaeste() {
     if (t === 1) await pfPersonGem();
     if (t === 2) await pfButikGem();
   } catch (e) { pfFejl("Det blev ikke gemt. Dine svar står stadig her. Prøv igen."); return; }
-  if (t < pfAntal()) { PF.trin++; PF.sp = 0; pfKladdeGem(); pfTegn(); return; }
+  if (t < pfAntal()) { PF.trin++; PF.sp = 0; if (pfSkaerme()[0] === "klar") await pfVelkomstMail(); pfKladdeGem(); pfTegn(); return; }   /* v3450: mailen er sendt, før »Så er du klar« tegnes */
   await pfSlut();
 }
 async function pfSlut() {
@@ -40056,7 +40095,7 @@ async function pfSlut() {
   if (inv.some(function (x) { return x.ok; })) { md.ental = false; ER_ENTAL = false; try { anvendTone(); } catch (e) {} }
   try { if (sb) await sb.auth.updateUser({ data: md }); } catch (e) {}
   /* VELKOMSTMAILEN SENDES (Ida 11/11: »Vil du ikke ændre det?!!!«): serveren afgør alt (tændt i Mails, én gang pr. adresse, modtager = kundens egen mail, kollegakode fra kontoen) */
-  if (velkomstMail) { try { const vk = nsKey("velkomstmail_bedt"); if (!localStorage.getItem(vk) && sb && sb.functions) { localStorage.setItem(vk, "1"); sb.functions.invoke("mail-send", { body: { art: "velkomst" } }).catch(function () {}); } } catch (e) {} }
+  if (velkomstMail) { try { const vk = nsKey("velkomstmail_bedt"); if (!localStorage.getItem(vk) && sb && sb.functions) { localStorage.setItem(vk, "1"); sb.functions.invoke("mail-send", { body: { art: "velkomst" } }).catch(function () {}); } } catch (e) {} }   /* reserve (v3450): mailen sendes nu, før »Så er du klar« (pfVelkomstMail); blev der ikke spurgt dér, spørges der her */
   VK = null; VELKOMST_KOERER = false; PF = null;
   try { window.__YGT_START_NU = true; YGT_START = null; await ygtStartHent(); window.__YGT_START_NU = false; } catch (e) { window.__YGT_START_NU = false; }   /* startdatoen = i dag, nu profilen er oprettet (Ida 3/11) */
   try { if (typeof buildSideNav === "function" && CUSTOMER_NAV && CURRENT_DEF) buildSideNav(CURRENT_DEF); } catch (e) {}   /* HANS/METTE 29/10: navneknappen i sidemenuen stod med det gamle navn (»Test«), til siden blev genindlæst */
@@ -40182,7 +40221,8 @@ function turFlHtml(i) {
   else {
     /* RUNDVISNINGEN (Ida 15/11, testperson): procesbar »Rundvisning X af N« øverst, hvid flise med rød knap, ingen prikker, ingen Tilbage på første side */
     const nAlle = S.length - 1, pct = Math.round(i / nAlle * 100);
-    h = '<div class="tfl-bar"><div class="tfl-bar-l">Rundvisning ' + i + ' af ' + nAlle + '</div><div class="tfl-bar-s"><i style="width:' + pct + '%"></i></div></div>'
+    /* v3450 · »SPRING OVER« PÅ HVERT TRIN UNDTAGEN DET SIDSTE (Ida 23/11: »man kan på ingen måde afslutte rundvisningen!«): en lille pille øverst til venstre i samme række som »Rundvisning x af n«, så flisen ikke bliver højere. */
+    h = '<div class="tfl-bar"><div class="tfl-bar-rk">' + (s.slut ? '<span></span>' : '<button type="button" class="tfl-spring mq-tap" onclick="turFlSpring()">Spring over</button>') + '<div class="tfl-bar-l">Rundvisning ' + i + ' af ' + nAlle + '</div></div><div class="tfl-bar-s"><i style="width:' + pct + '%"></i></div></div>'
       + '<div class="tfl-x"><b>' + s.t + '</b>' + s.x + '</div><div class="tfl-kn">' + (i > 1 ? '<button type="button" class="tfl-tl mq-tap" onclick="turFl(' + (i - 1) + ')">Tilbage</button>' : '')
       + (s.slut ? '<button type="button" class="tfl-hk mq-tap" onclick="turFlSlut()">Gå til lektion</button>' : '<button type="button" class="tfl-hk mq-tap" onclick="turFl(' + (i + 1) + ')">Næste</button>') + '</div>';
   }
@@ -40201,12 +40241,42 @@ function turStartKortTegn() {
   } catch (e) { vis = false; }
   const html = vis ? turFlHtml(Math.min(TUR_FL_I, turFlStops().length - 1)) : "";
   hs.forEach(function (h) { h.innerHTML = html; });
+  if (vis) turFlVelkH();   /* v3450: velkomstflisen har den fælles højde fra første billede */
   document.body.classList.toggle("tur-foerst", vis);
-  if (!vis) turFlOverlayFjern();
+  if (!vis) { document.body.classList.remove("tur-lag"); turFlOverlayFjern(); }
 }
-function turFlOverlayFjern() { const o = document.getElementById("turFlOverlay"); if (o) o.remove(); }
+function turFlOverlayFjern() { const o = document.getElementById("turFlOverlay"); if (o) o.remove(); }   /* klassen tur-lag tages af dér, hvor rundvisningen slutter; mellem to trin bliver den, så flisen under ikke ses */
 function turFlSynlig() { return Array.prototype.find.call(document.querySelectorAll("#turStartKort .tfl, #turStartKortTlf .tfl"), function (e) { return e.getBoundingClientRect().height > 0; }) || null; }
+/* v3450 · RUNDVISNINGENS FLISE HAR ÉN STØRRELSE OG ÉN PLADS (Ida 23/11: »Den første flise man møder med Velkommen … har en god størrelse. men når rundvisningen starter. - så bliver den røde flise større??? og når man klikker mellem rundvisningen, ser man den mørkerøde boks under???? alt det her hak skal væk!!!«).
+   Velkomstflisens boks måles, når rundvisningen starter, og hvert trin tegnes i præcis den boks (turFlBoksSaet). Mens det mørke lag har sin kopi, er flisen under usynlig (body.tur-lag), så der aldrig ses to. Laget tegnes i samme øjeblik som trinnet; kun når telefonens menu først skal åbne, bliver det gamle lag stående, til det nye er klar. */
+function turFlBoksSaet() {
+  try { const b = window.__TUR_FL_BOKS; if (!b) return; document.querySelectorAll("#turStartKort .tfl:not(.tfl-velk), #turStartKortTlf .tfl:not(.tfl-velk)").forEach(function (e) { e.style.width = b.w + "px"; e.style.height = b.h + "px"; e.style.minHeight = "0"; e.style.maxWidth = "none"; e.style.margin = b.m; });
+  } catch (e) {}
+}
+/* ÉN HØJDE TIL VELKOMSTEN OG ALLE TRIN: det længste trin (»Værktøjskassen« har to afsnit) kan ikke stå i velkomstflisens egen højde uden at blive klippet. Derfor måles alle trin én gang i velkomstflisens bredde,
+   og den højeste bestemmer; velkomstflisen får samme højde fra første billede, så intet flytter sig, når rundvisningen starter eller skifter trin. */
+function turFlFaellesH(bredde) {
+  try {
+    const noegle = Math.round(bredde) + "·" + turFlStops().length; if (window.__TUR_FL_H && window.__TUR_FL_H.k === noegle) return window.__TUR_FL_H.h;
+    const m = document.createElement("div"); m.style.cssText = "position:absolute;left:-9999px;top:0;visibility:hidden;width:" + bredde + "px;"; document.body.appendChild(m);
+    let h = 0; const S = turFlStops();
+    for (let i = 0; i < S.length; i++) { m.innerHTML = turFlHtml(i); const e = m.firstElementChild; if (!e) continue; e.style.width = bredde + "px"; e.style.maxWidth = "none"; e.style.height = "auto"; e.style.minHeight = "0"; e.style.margin = "0"; e.style.overflow = "visible"; h = Math.max(h, Math.ceil(e.getBoundingClientRect().height)); }
+    m.remove(); window.__TUR_FL_H = { k: noegle, h: h }; return h;
+  } catch (e) { return 0; }
+}
+function turFlVelkH() { try { document.querySelectorAll("#turStartKort .tfl.tfl-velk, #turStartKortTlf .tfl.tfl-velk").forEach(function (e) { const b = e.getBoundingClientRect().width; if (b < 2) return; const h = turFlFaellesH(b); if (h) { e.style.boxSizing = "border-box"; e.style.height = h + "px"; } }); } catch (e) {} }
+/* SPRING OVER (og Escape): rundvisningen er slut for altid (samme mærke som »Gå til lektion«), det mørke lag er væk, og kunden står på Forsiden. »Se rundvisningen igen« findes stadig i menuen. */
+function turFlSpring() {
+  window.__TUR_FL_NU = -1; document.body.classList.remove("tur-lag"); turFlOverlayFjern();
+  try { const bm = document.getElementById("burgerMenu"); if (bm && bm.classList.contains("open")) toggleBurger(); } catch (e) {}
+  TUR_FL_FORCE = false; TUR_FL_I = 0; window.__TUR_FL_BOKS = null;
+  turMarker();
+  try { turStartKortTegn(); } catch (e) {}
+  try { renderHome(); } catch (e) {}
+}
+document.addEventListener("keydown", function (e) { try { if (e.key === "Escape" && window.__TUR_FL_NU > 0 && document.getElementById("turFlOverlay")) { e.preventDefault(); turFlSpring(); } } catch (x) {} });
 function turFl(i) {
+  if (i >= 1 && !window.__TUR_FL_BOKS) { try { const v = turFlSynlig(); if (v) { const q = v.getBoundingClientRect(), c = getComputedStyle(v); window.__TUR_FL_BOKS = { w: Math.round(q.width * 100) / 100, h: Math.round(q.height * 100) / 100, m: c.marginTop + " " + c.marginRight + " " + c.marginBottom + " " + c.marginLeft }; } } catch (e) {} }
   TUR_FL_I = i; window.__TUR_FL_NU = i;
   const S = turFlStops(); if (i >= S.length) { turFlSlut(); return; }
   const s = S[i];
@@ -40216,37 +40286,43 @@ function turFl(i) {
   if (s.m && gl) { try { gl.querySelectorAll("button").forEach(function (b) { b.disabled = true; b.style.pointerEvents = "none"; }); } catch (e) {} }
   else turFlOverlayFjern();
   try { const tlf = window.matchMedia("(max-width: 899px)").matches; const bm = document.getElementById("burgerMenu"); const aab = !!(bm && bm.classList.contains("open")); if (tlf && s.burger && !aab) toggleBurger(); else if (aab && !(tlf && s.burger)) toggleBurger(); } catch (e) {}
-  turStartKortTegn();
+  turStartKortTegn(); turFlBoksSaet();
   const t0 = turFlSynlig();
   if (t0) { try { const r = t0.getBoundingClientRect(); if (r.top < 0 || r.bottom > innerHeight) t0.scrollIntoView({ block: "center", behavior: "auto" }); } catch (e) {} }
-  if (s.m) setTimeout(function () { turFlOverlay(i, 0); }, s.burger ? 380 : 60);
+  let tlfMenu = false; try { tlfMenu = !!(s.burger && window.matchMedia("(max-width: 899px)").matches); } catch (e) {}
+  if (s.m) { if (tlfMenu) setTimeout(function () { turFlOverlay(i, 0); }, 380); else turFlOverlay(i, 0); }   /* v3450: laget tegnes i samme øjeblik som trinnet (før 60 ms senere) */
+  else document.body.classList.remove("tur-lag");
 }
 function turFlOverlay(i, forsoeg) {
   if (window.__TUR_FL_NU !== i) return;
   const s = turFlStops()[i]; if (!s || !s.m) return;
-  const tile = turFlSynlig(); if (!tile) { turFlOverlayFjern(); return; }   /* intet trin at pege på: det mørke lag må ikke blive hængende (gennemgang 20/11) */
+  const tile = turFlSynlig(); if (!tile) { document.body.classList.remove("tur-lag"); turFlOverlayFjern(); return; }   /* intet trin at pege på: det mørke lag må ikke blive hængende (gennemgang 20/11) */
   let maal = null;
   for (let k = 0; k < s.m.length && !maal; k++) { const e = Array.prototype.find.call(document.querySelectorAll(s.m[k]), function (x) { const b = x.getBoundingClientRect(); return b.height > 0 && b.width > 0 && (x.offsetParent !== null || getComputedStyle(x).position === "fixed"); }); if (e) maal = e; }
-  if (!maal) { if (forsoeg < 8) setTimeout(function () { turFlOverlay(i, forsoeg + 1); }, 300); else turFlOverlayFjern(); return; }
+  if (!maal) { if (forsoeg < 8) setTimeout(function () { turFlOverlay(i, forsoeg + 1); }, 300); else { document.body.classList.remove("tur-lag"); turFlOverlayFjern(); } return; }   /* v3450: findes punktet ikke, står flisen selv fremme igen */
   turFlOverlayFjern();
   const r = maal.getBoundingClientRect(), pad = 6, L = Math.max(4, r.left - pad), T = r.top - pad, W = r.width + pad * 2, H = r.height + pad * 2;
   const m = { L: L, T: T, W: W, H: H };
   const el = document.createElement("div"); el.id = "turFlOverlay"; el.style.cssText = "position:fixed;inset:0;z-index:230;";
   el.innerHTML = '<svg aria-hidden="true" style="position:fixed;left:0;top:0;width:100vw;height:100vh;pointer-events:auto;"><defs><mask id="turFlMaske"><rect x="0" y="0" width="100%" height="100%" fill="#fff"/><rect x="' + L + '" y="' + T + '" width="' + W + '" height="' + H + '" rx="' + Math.min(14, H / 2) + '" fill="#000"/></mask></defs><rect x="0" y="0" width="100%" height="100%" fill="rgba(0,0,0,0.5)" mask="url(#turFlMaske)"/></svg>';
   const tb = tile.getBoundingClientRect(), klon = tile.cloneNode(true);
-  klon.style.cssText = "position:fixed;margin:0;left:" + tb.left + "px;top:" + tb.top + "px;width:" + tb.width + "px;height:" + tb.height + "px;z-index:1;";
+  klon.style.cssText = "position:fixed;margin:0;left:" + tb.left + "px;top:" + tb.top + "px;width:" + tb.width + "px;height:" + tb.height + "px;min-height:0;max-width:none;z-index:1;";
   el.appendChild(klon);
   document.body.appendChild(el);
+  document.body.classList.add("tur-lag");   /* v3450: flisen under laget er usynlig, mens kopien står — aldrig to fliser */
   void m;   /* INGEN PIL I RUNDVISNINGEN (Ida 15/11) — markeringen af menupunktet står alene */
 }
+/* v3450 · »GÅ TIL LEKTION« ER ÉT SKIFT (Ida 23/11: »når man afslutter rundvisningen - så ser man lige hurtigt dashboardet indtil man bliver sendt ind på forløbet?!«): før blev laget og flisen fjernet, og lektionen åbnede 80 ms senere.
+   Nu åbnes lektionen først; laget og flisen bliver stående, til en anden skærm end Forsiden står fremme (højst 3 sekunder), og først da ryddes rundvisningen op bagved. */
 function turFlSlut() {
-  window.__TUR_FL_NU = -1; turFlOverlayFjern();
+  window.__TUR_FL_NU = -1;
   try { const bm = document.getElementById("burgerMenu"); if (bm && bm.classList.contains("open")) toggleBurger(); } catch (e) {}
   TUR_FL_FORCE = false; TUR_FL_I = 0;
   turMarker();
-  try { turStartKortTegn(); } catch (e) {}
-  try { renderHome(); } catch (e) {}
-  setTimeout(function () { try { kursusNaeste(); } catch (e) {} }, 80);
+  const ryd = function () { document.body.classList.remove("tur-lag"); turFlOverlayFjern(); window.__TUR_FL_BOKS = null; try { turStartKortTegn(); } catch (e) {} try { renderHome(); } catch (e) {} };
+  const forsiden = function () { try { const a = document.querySelector(".screen.active"); const lv = document.getElementById("lekVis"); return !!(a && a.id === "screen3") && !(lv && lv.getBoundingClientRect().height > 0 && getComputedStyle(lv).display !== "none"); } catch (e) { return false; } };
+  try { kursusNaeste(); } catch (e) {}   /* også når sidste trin står uden mørkt lag: flisen bliver, til lektionen står */
+  const t0 = Date.now(); const iv = setInterval(function () { if (!forsiden() || Date.now() - t0 > 3000) { clearInterval(iv); ryd(); } }, 30);
 }
 function turStart(igen) {
   if (!igen && turSet()) return;
@@ -72332,7 +72408,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "3449";
+const APP_VERSION = "3450";
 const APP_BYGGET = "3. november";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_VERSION;   /* ingen dato (Ida 7/11: »hvorfor står der version 3. november?«) — datoen blev ikke rettet med, nummeret er sandheden */ } catch (e) {} });
 let NY_VERSION_KLAR = false;
@@ -108382,6 +108458,26 @@ html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7
 html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .mails-bund { gap:12px !important; }
 html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .mails-bund > .dbtn.bs3-lang + .dbtn.bs3-lang { margin-top:0 !important; }
 html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .ark .ark-knap-roed + .ark-knap:not(.ark-knap-roed):not(.ark-knap-graa), html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) #bsFlytMenu .ark-knap-roed + .ark-knap:not(.ark-knap-roed):not(.ark-knap-graa) { margin-top:12px !important; }   /* ARKET FRA IDAS BILLEDE: »Tilbage« under »Næste«/»Gem« i »Nyt opslag« var en knap uden egen afstand: 0 px (målt på 1440) */
+/* v3450 · SÅ ER DU KLAR: to afsnit i sort brødtekst, centreret, 12 imellem; konfettien i sit eget lag */
+html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) #pfFlow .pf-klar > .pf-klar-p { margin:0 !important; max-width:38ch; text-align:center; font:300 16px/1.6 Poppins,sans-serif; color:#1A1A1A; }
+html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) #pfFlow .pf-klar { gap:12px !important; }
+#pfKonfetti > i { position:absolute; display:block; opacity:0; transform:translate3d(0,0,0) rotate3d(1,1,0,0deg) scale(.4); animation:pfKonf 1900ms cubic-bezier(.16,.84,.3,1) forwards; will-change:transform,opacity; }
+@keyframes pfKonf { 0% { opacity:0; transform:translate3d(0,0,0) rotate3d(1,1,0,0deg) scale(.4); } 8% { opacity:1; } 70% { opacity:1; } 100% { opacity:0; transform:translate3d(var(--x),calc(var(--y) + 180px),var(--z)) rotate3d(1,.6,.3,var(--r)) scale(1.5); } }
+@media (prefers-reduced-motion: reduce) { #pfKonfetti { display:none !important; } }
+/* v3450 · RUNDVISNINGEN: trinene står i velkomstflisens boks (bredde, højde og plads sættes af turFlBoksSaet); samme luft som velkomsten; teksten strammes, flisen gør ikke. »Spring over« er en lille pille til venstre for »Rundvisning x af n«. */
+html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .tfl:not(.tfl-velk) { box-sizing:border-box !important; padding:26px 28px !important; overflow:hidden !important; }
+html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .tfl:not(.tfl-velk) .tfl-bar { margin:0 0 12px !important; }
+html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .tfl:not(.tfl-velk) .tfl-bar-rk { display:flex; align-items:center; justify-content:space-between; gap:12px; margin:0 0 8px; min-height:32px; }
+html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .tfl:not(.tfl-velk) .tfl-bar-l { margin:0 !important; }
+html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .tfl:not(.tfl-velk) .tfl-x { font-size:14px !important; line-height:1.45 !important; }
+html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .tfl:not(.tfl-velk) .tfl-x b { font-size:20px !important; margin-bottom:6px !important; }
+html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .tfl.tfl-slut .tfl-x { font-size:16px !important; } html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .tfl.tfl-slut .tfl-x b { font-size:28px !important; line-height:1.15 !important; margin-bottom:8px !important; }
+html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .tfl:not(.tfl-velk) .tfl-kn { padding-top:10px !important; gap:12px !important; }
+html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .tfl .tfl-spring { position:relative; display:inline-flex; align-items:center; justify-content:center; height:32px; min-height:32px; padding:0 14px; box-sizing:border-box; border:1px solid rgba(255,255,255,.85); border-radius:999px; background:transparent; color:#FFFFFF; -webkit-text-fill-color:#FFFFFF; font:400 12.5px/1 Poppins,sans-serif; white-space:nowrap; cursor:pointer; }
+html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .tfl .tfl-spring::before { content:""; position:absolute; left:0; right:0; top:-6px; bottom:-6px; }
+@media (max-width:899px) { html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .tfl:not(.tfl-velk) { padding:22px 20px !important; } }
+/* ALDRIG TO FLISER: mens det mørke lag har sin kopi af flisen, er flisen under usynlig (den fylder stadig sin plads) */
+html body.tur-lag:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) #turStartKort > .tfl, html body.tur-lag:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) #turStartKortTlf > .tfl { visibility:hidden !important; }
 /* v3395 (Ida 20/11) — MODULFLISERNE: cirkel som lektionerne (tom · rødt flueben · hængelås), ingen pil, ingen fold-ud */
 html body #forloebTidslinje .ftl2 .ftl2-hoved, html body #forloebTidslinje .ftl2 .ftl2-rk.laast { display:flex !important; align-items:center !important; justify-content:flex-start !important; gap:16px !important; cursor:pointer; }
 html body #forloebTidslinje .ftl2 .ftl2-rk.laast { cursor:default; }
@@ -108465,7 +108561,7 @@ html body:not(#bl0):not(#bl1):not(#bl2):not(#bl3):not(#bl4):not(#bl5):not(#bl6):
 @media (min-width:900px) { html body:not(#bl0):not(#bl1):not(#bl2):not(#bl3):not(#bl4):not(#bl5):not(#bl6):not(#bl7):not(#bl8):not(#bl9):not(#bl10):not(#bl11):not(#bl12):not(#bl13):not(#bl14):not(#bl15):not(#bl16):not(#bl17):not(#bl18):not(#bl19):not(#bl20):not(#bl21):not(#bl22):not(#bl23):not(#bl24):not(#bl25):not(#bl26):not(#bl27):not(#bl28):not(#bl29):not(#bm0):not(#bm1):not(#bm2):not(#bm3):not(#bm4):not(#bm5):not(#bm6):not(#bm7):not(#bm8):not(#bm9):not(#bm10):not(#bm11):not(#bm12):not(#bm13):not(#bm14):not(#bm15):not(#bm16):not(#bm17):not(#bm18):not(#bm19):not(#bm20):not(#bm21):not(#bm22):not(#bm23):not(#bm24):not(#bm25):not(#bm26):not(#bm27):not(#bm28):not(#bm29):not(#bm30):not(#bm31):not(#bm32):not(#bm33):not(#bm34):not(#bm35):not(#bm36):not(#bm37):not(#bm38):not(#bm39) #screen7#screen7 #briefHjaelp#briefHjaelp#briefHjaelp .b3h-soejle { margin-left:-8px !important; margin-right:-8px !important; padding-right:0 !important; } html body:not(#bl0):not(#bl1):not(#bl2):not(#bl3):not(#bl4):not(#bl5):not(#bl6):not(#bl7):not(#bl8):not(#bl9):not(#bl10):not(#bl11):not(#bl12):not(#bl13):not(#bl14):not(#bl15):not(#bl16):not(#bl17):not(#bl18):not(#bl19):not(#bl20):not(#bl21):not(#bl22):not(#bl23):not(#bl24):not(#bl25):not(#bl26):not(#bl27):not(#bl28):not(#bl29):not(#bm0):not(#bm1):not(#bm2):not(#bm3):not(#bm4):not(#bm5):not(#bm6):not(#bm7):not(#bm8):not(#bm9):not(#bm10):not(#bm11):not(#bm12):not(#bm13):not(#bm14):not(#bm15):not(#bm16):not(#bm17):not(#bm18):not(#bm19):not(#bm20):not(#bm21):not(#bm22):not(#bm23):not(#bm24):not(#bm25):not(#bm26):not(#bm27):not(#bm28):not(#bm29):not(#bm30):not(#bm31):not(#bm32):not(#bm33):not(#bm34):not(#bm35):not(#bm36):not(#bm37):not(#bm38):not(#bm39) #screen7#screen7 #briefHjaelp#briefHjaelp#briefHjaelp .b3h-soejle .b3h-chip { font-size:11px !important; padding:0 8px !important; max-width:100%; } }
 </style>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-hvid.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 22. november · 3449</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 22. november · 3450</div>
 <script>
 /* DROPDOWNEN RULLER SELV (Ida 4/10) — maal den aabne liste og klip den ved skaermens bund */
 (function () {
