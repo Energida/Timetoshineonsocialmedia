@@ -405,6 +405,18 @@ for BKB in "390 844" "1440 940"; do
   echo "$UDBK" | grep -q "SELE BRANDKIT OK $1" || HERO_OK=0
 done
 mv "$MAAL/sb-stub.js.foer-brandkit" "$MAAL/sb-stub.js"
+# DIT FORLOEB I FIRE RØDE FOLD-UD-BJAELKER (v3470, Ida 24/11: »nej vi gaar med bud A« · opgaveflisen = bud 1): probe-modulside.js som kunde paa 390 og 1440 med den huskende base og en opdigtet kursuskunde (11 moduler, modul-db.py som sele-db.json).
+KMS=$(python3 -c "import urllib.parse,sys;print(urllib.parse.quote(open(sys.argv[1]).read()))" "$ROD/tools/designlaas/probe-modulside.js")
+cp "$MAAL/sb-stub.js" "$MAAL/sb-stub.js.foer-modulside" && cp "$ROD/tools/sikkerhedschefen/lag2/husk-stub.js" "$MAAL/sb-stub.js"   # proeven saar data: den huskende base (v3470)
+python3 "$ROD/tools/designlaas/modul-db.py" "$MAAL/sele-db.json"
+for MSB in "390 844" "1440 940"; do
+  set -- $MSB
+  RAAMS=$($TO "$C" $HL --no-sandbox --disable-gpu --window-size=$(($1+40)),1000 --virtual-time-budget=60000 --enable-logging=stderr --v=0 --screenshot="$MAAL/modulside-$1.png" "http://127.0.0.1:$PORT/sele.html?vis=kunde&fil=index-sele.html%3Fselekode%3DFORLOEBTEST2026&bred=$1&hoej=$2&kode=$KMS" 2>&1)
+  UDMS=$(echo "$RAAMS" | grep -a 'CONSOLE' | sed -E 's/^.*CONSOLE[:(][0-9]+\)?\] //; s/", source:.*$//; s/^"//' | grep -a 'SELE MODULSIDE')
+  echo "${UDMS:-SELE MODULSIDE FEJL $1: ingen maaling}"
+  echo "$UDMS" | grep -q "SELE MODULSIDE OK $1" || HERO_OK=0
+done
+rm -f "$MAAL/sele-db.json"; mv "$MAAL/sb-stub.js.foer-modulside" "$MAAL/sb-stub.js"
 # RUNDVISNINGEN (v3450, Ida 23/11: »man kan paa ingen maade afslutte rundvisningen!« · »alt det her hak skal vaek!!!«): samme boks paa velkomsten og alle trin, hoejst én flise, »Spring over« afslutter med ét klik. probe-tur.js, 390 og 1440.
 KTU=$(python3 -c "import urllib.parse,sys;print(urllib.parse.quote(open(sys.argv[1]).read()))" "$ROD/tools/designlaas/probe-tur.js")
 for TUB in "390 844" "1440 940"; do
