@@ -27276,7 +27276,7 @@ function ensTegn(roedder) {   /* v3435: med en liste af nye elementer måles kun
     const roed = c => /^rgb\(252, ?36, ?4\)/.test(c);
     const hvid = c => /^rgb\(255, ?255, ?255\)/.test(c) || /^rgba\(255, ?255, ?255/.test(c);
     const en = e => {
-      if (e.closest(".mb-baand, .navsti, .bottom-nav, #bottomNav, svg, .brief-raketkort, .ark, .modal, .modal-back, #hjemFacit, #dagensKort, .hf-hero, body.lek-mb #lekVis, .kk-ini, .ftl2-knap, .vkn, .ibv-ide .insp-mappe-knap, .ibn-rod, #ibnMarkVt")) return;   /* Noter (11/11): egne laaste former — soegefelt, faner, kort */   /* initialerne er runde 32 px og har deres egen laaste form (MAALT 27/9: paa telefonen blev de sorteret som pille og tegnet 32×36) */   /* lektionssiden (15/9) har sine egne, laaste former */   /* Hjem-facittet (11/9) er sin egen laaste flade: MAALT paa Idas telefon 15/9 kl. 17.53 — I dag-kortene blev tomme piller */
+      if (e.closest(".mb-baand, .navsti, .bottom-nav, #bottomNav, svg, .brief-raketkort, .ark, .modal, .modal-back, #hjemFacit, #dagensKort, .hf-hero, body.lek-mb #lekVis, .kk-ini, .ftl2-knap, .vkn, .ibv-ide .insp-mappe-knap, .ibn-rod, #ibnMarkVt, .sbm2")) return;   /* Mit Shinebarometer (24/11) har MÅLKORTETS egne knapper: 56 på telefon, 44 på computer, ikonknap 36 */   /* Noter (11/11): egne laaste former — soegefelt, faner, kort */   /* initialerne er runde 32 px og har deres egen laaste form (MAALT 27/9: paa telefonen blev de sorteret som pille og tegnet 32×36) */   /* lektionssiden (15/9) har sine egne, laaste former */   /* Hjem-facittet (11/9) er sin egen laaste flade: MAALT paa Idas telefon 15/9 kl. 17.53 — I dag-kortene blev tomme piller */
       const cs = getComputedStyle(e); if (cs.display === "none") return;
       const r = e.getBoundingClientRect(); if (r.width < 2 || r.height < 2) return;
       const tag = e.tagName, t = (e.innerText || "").trim();
@@ -38321,9 +38321,14 @@ let SBM_RET = null;
 const SBM_KROP_LEK = "4-3";
 function sbmLek(id) { return (KURSUS_LEKTIONER || []).find(function (x) { return x.id === id; }) || null; }
 function sbmSvar(id, i) { const l = sbmLek(id), sv = (KURSUS_SVAR || {})[id] || null; if (!l || !sv) return ""; const a = ovSvarFor({ svar: sv }, l, i); return svarTom(a) ? "" : String(a); }
-function sbmLinjer(a) { const r = String(a).split(/\n+/).map(function (x) { return x.trim(); }).filter(Boolean); return '<ul class="sbm-l">' + r.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join("") + '</ul>'; }
-function sbmRetAabn(lek, idx) { SBM_RET = { lek: lek, idx: idx }; sbmTegn(); try { const t = document.querySelector("#sbmWrap textarea.sbm-felt"); if (t) { t.focus(); t.setSelectionRange(t.value.length, t.value.length); } } catch (e) {} }
+/* Ida 24/11: »er vi sikre på at kundens svar i opgaven kommer sådan ind i punktform?« — svaret deles ved linjeskift OG ved sætningsslut (. ! ? efterfulgt af stort bogstav),
+   og en tegn-start (- • * 1.) fjernes, så et svar skrevet som almindelige sætninger også står som punkter. Teksten i basen er urørt. */
+function sbmLinjer(a) { const r = String(a).split(/\n+/).reduce(function (acc, x) { return acc.concat(x.split(/(?<=[.!?])\s+(?=[A-ZÆØÅ0-9»"])/)); }, []).map(function (x) { return x.replace(/^\s*(?:[-•*·]|\d+[.)])\s*/, "").trim(); }).filter(Boolean); return '<ul class="sbm-l">' + r.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join("") + '</ul>'; }
+function sbmFeltVoks(t) { try { t.style.height = "auto"; t.style.height = Math.max(120, t.scrollHeight + 2) + "px"; } catch (e) {} }
+function sbmRetAabn(lek, idx) { SBM_RET = { lek: lek, idx: idx }; sbmTegn(); try { document.querySelectorAll("#sbmWrap textarea.sbm-felt").forEach(function (t) { sbmFeltVoks(t); t.addEventListener("input", function () { sbmFeltVoks(t); }); }); } catch (e) {} try { const t = document.getElementById("sbmFelt" + idx[0]) || document.querySelector("#sbmWrap textarea.sbm-felt"); if (t) { t.focus(); t.setSelectionRange(t.value.length, t.value.length); } } catch (e) {} }
 function sbmRetLuk() { SBM_RET = null; sbmTegn(); }
+/* Ekspertholdet 24/11 nr. 11: en tom flise står åben med skrivefelt, mikrofon og Gem (ét skridt i samme boks) */
+function sbmTomGem(lek, i) { SBM_RET = { lek: lek, idx: [i] }; sbmRetGem(); }
 async function sbmRetGem() {
   const r = SBM_RET; if (!r) return; const l = sbmLek(r.lek); if (!l) return;
   const svar = Object.assign({}, (KURSUS_SVAR || {})[r.lek] || {}), b = {};
@@ -38335,38 +38340,62 @@ async function sbmRetGem() {
   KURSUS_SVAR[r.lek] = svar; try { kursusGemLocal(); } catch (e) {}
   SBM_RET = null; sbmTegn(); try { husKvit("Gemt."); } catch (e) {}
 }
-function sbmFeltHtml(lek, i) { return '<div class="lk-felt-ramme sbm-felt-ramme"><textarea id="sbmFelt' + i + '" class="sbm-felt" rows="3" placeholder="Skriv dit svar her …">' + esc(sbmSvar(lek, i)) + '</textarea>' + (typeof taleKnapHtml === "function" ? taleKnapHtml("sbmFelt" + i) : '') + '</div>'; }
+function sbmFeltHtml(lek, i, ph) { return '<div class="lk-felt-ramme sbm-felt-ramme"><textarea id="sbmFelt' + i + '" class="sbm-felt" rows="3" placeholder="' + esc(ph || "Skriv dit svar her …") + '">' + esc(sbmSvar(lek, i)) + '</textarea>' + (typeof taleKnapHtml === "function" ? taleKnapHtml("sbmFelt" + i) : '') + '</div>'; }
 function sbmKnHtml() { return '<div class="sbm-kn"><button type="button" class="sbm-knap mq-tap" onclick="sbmRetLuk()">Fortryd</button><button type="button" class="sbm-knap sbm-roed mq-tap" id="sbmGemKn" onclick="sbmRetGem()">Gem</button></div>'; }
 function sbmErRet(lek, idx) { return !!(SBM_RET && SBM_RET.lek === lek && SBM_RET.idx.join(",") === idx.join(",")); }
+/* v3467 · MIT SHINEBAROMETER SOM BAROMETERET FRA VIDEOEN (Ida 24/11: »opdaterer dig på spørgsmålene vedr. shinebarometeret i lektion 1.3 og kommer med nyt optimeret stærkt og visuelt bud«).
+   Fem trin i barometerets rækkefølge med Idas låste symboler fra videooverlayet (27/9): Overskud · Underskud under »Din adfærd«, Rykker 1 · Rykker 2 · Inkasso under »Din krop«.
+   Hvert trin er sin egen hvide flise (ingen flise i flise): symbol + navn + »Ret«, derunder kundens egne linjer med rød prik. Designmanualen (Ida 24/11 »forhold dig til designmanualen«): overskrift over fliserne i versal 12 · flisetitel Poppins 18/16 · symbolfelt lyseblåt 44 med grå ramme og grå symbol · låst = lyseblå flise med grå kant · ingen røde flader · »Ret« er en ikonknap 36 med blyant.
+   Et trin uden svar fra en senere lektion står stille: grå symbol, grå navn, hængelås, ingen tekst.
+   Spørgsmålene i 1.3 er skrevet om (22/11: »masser af energi« / »meget lidt energi«) og siger ikke længere »overskud/underskud«: siden findes af sidens navn, så af ordene, så af rækkefølgen (første halvdel = overskud). */
+const SBM_SYM = {
+  over: '<circle cx="24" cy="15" r="4.2"/><path d="M11 11 Q17 22 21 25 L21 40 Q24 43.5 27 40 L27 25 Q31 22 37 11"/><path d="M24 3.5 L24 6.5 M16.5 5 L18 7.8 M31.5 5 L30 7.8 M11 9 L13.5 10.6 M37 9 L34.5 10.6" stroke-width="2"/>',
+  under: '<circle cx="24" cy="24" r="15"/><circle cx="18.5" cy="20.5" r="1.6" fill="currentColor" stroke="none"/><circle cx="29.5" cy="20.5" r="1.6" fill="currentColor" stroke="none"/><path d="M18 30.5 L30 30.5"/>',
+  r1: '<circle cx="24" cy="9" r="2"/><path d="M24 11 C16.5 11 15.5 17 15.5 23 L15.5 31 L12.5 35 L35.5 35 L32.5 31 L32.5 23 C32.5 17 31.5 11 24 11 Z"/><path d="M21 38.5 A3 3 0 0 0 27 38.5"/>',
+  r2: '<circle cx="24" cy="9" r="2"/><path d="M24 11 C16.5 11 15.5 17 15.5 23 L15.5 31 L12.5 35 L35.5 35 L32.5 31 L32.5 23 C32.5 17 31.5 11 24 11 Z"/><path d="M21 38.5 A3 3 0 0 0 27 38.5"/><path d="M10.5 18 Q7.5 24 10.5 30 M6 15 Q1.5 24 6 33 M37.5 18 Q40.5 24 37.5 30 M42 15 Q46.5 24 42 33"/>',
+  ink: '<circle cx="24" cy="9" r="2"/><path d="M24 11 C16.5 11 15.5 17 15.5 23 L15.5 31 L12.5 35 L35.5 35 L32.5 31 L32.5 23 C32.5 17 31.5 11 24 11 Z"/><path d="M21 38.5 A3 3 0 0 0 27 38.5"/><path d="M10.5 18 Q7.5 24 10.5 30 M6 15 Q1.5 24 6 33 M1.8 12 Q-4 24 1.8 36 M37.5 18 Q40.5 24 37.5 30 M42 15 Q46.5 24 42 33 M46.2 12 Q52 24 46.2 36"/>'
+};
+function sbmSymHtml(k) { return '<span class="sbm2-sym" aria-hidden="true"><svg viewBox="-6 0 60 48" width="30" height="24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">' + SBM_SYM[k] + '</svg></span>'; }
+function sbmSideFor(l, i, n) {
+  const sd = ovSideNavn(l, i) || "";
+  if (/underskud/i.test(sd)) return "under"; if (/overskud/i.test(sd)) return "over";
+  const q = ovSpm(l.ovelse[i]) || "";
+  if (/underskud|lidt energi|lav energi|ingen energi|tom for energi/i.test(q)) return "under";
+  if (/overskud|masser af energi|meget energi|fuld af energi/i.test(q)) return "over";
+  return i < Math.ceil(n / 2) ? "over" : "under";
+}
 function sbmTegn() {
   const w = document.getElementById("sbmWrap"); if (!w) return;
   const l = sbmLek(SBM_LEK);
   if (!l || !Array.isArray(l.ovelse) || !l.ovelse.length) { w.innerHTML = ''; return; }
-  /* DIN ADFÆRD: spørgsmålene deles efter ordene — »underskud« giver siden, »tanke/tænk« giver arten */
-  const pol = { over: [], under: [] };
-  l.ovelse.forEach(function (it, i) { const q = ovSpm(it); const sdN = ovSideNavn(l, i); pol[(sdN ? /underskud/i.test(sdN) : /underskud/i.test(q)) ? "under" : "over"].push({ i: i, art: /tank|tænk/i.test(q) ? "Tanker" : "Adfærd" }); });
-  const ramme = function (navn, liste) {
+  const n = l.ovelse.length, pol = { over: [], under: [] };
+  l.ovelse.forEach(function (it, i) { const q = ovSpm(it) || ""; pol[sbmSideFor(l, i, n)].push({ i: i, art: /tank|tænk/i.test(q) ? "Sådan tænker jeg" : "Sådan er jeg" });   /* ordene følger Idas spørgsmål i 1.3 (»Hvordan er du …« / »Hvordan tænker du …«), Ida 24/11 */ });
+  const knap = function (lek, idxS, ord, ekstra) { return '<button type="button" class="sbm-knap mq-tap' + (ekstra || '') + '" onclick="sbmRetAabn(\'' + lek + '\',' + idxS + ')">' + ord + '</button>'; };
+  const blyant = function (lek, idxS) { return '<button type="button" class="sbm2-ik mq-tap" aria-label="Ret" title="Ret" onclick="sbmRetAabn(\'' + lek + '\',' + idxS + ')"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></button>'; };
+  const hoved = function (sym, navn, hoejre) { return '<div class="sbm2-h">' + sbmSymHtml(sym) + '<span class="sbm2-n">' + navn + '</span>' + (hoejre || '') + '</div>'; };
+  /* Ida 24/11 (kommentarer på buddet): »lav en stor overbjælke der hedder overskud og så 2 fliser under der hedder sådan er jeg og sådan tænker jeg« · »din energi ændres til din adfærd«.
+     Overskud og Underskud er hver en bjælke med symbolet; under bjælken står én flise pr. spørgsmål. Hver flise har sin egen blyant og rettes i flisen (ét skridt i samme boks). */
+  const adfTrin = function (sym, navn, liste) {
     if (!liste.length) return '';
-    const idx = liste.map(function (x) { return x.i; }), idxS = "[" + idx.join(",") + "]", ret = sbmErRet(SBM_LEK, idx);
-    const harSvar = liste.some(function (x) { return sbmSvar(SBM_LEK, x.i); });
-    const krop = liste.map(function (x) {
-      const a = sbmSvar(SBM_LEK, x.i);
-      return '<div class="sbm-lbl">' + x.art + '</div>' + (ret ? sbmFeltHtml(SBM_LEK, x.i) : (a ? sbmLinjer(a) : '<button type="button" class="sbm-knap mq-tap" onclick="sbmRetAabn(\'' + SBM_LEK + '\',' + idxS + ')">Skriv dit svar</button>'));
+    const fliser = liste.map(function (x) {
+      const a = sbmSvar(SBM_LEK, x.i), idxS = "[" + x.i + "]", ret = sbmErRet(SBM_LEK, [x.i]);
+      const top = '<div class="sbm2-ft"><span class="sbm2-n">' + x.art + '</span>' + (!ret && a ? blyant(SBM_LEK, idxS) : '') + '</div>';
+      const tom = !ret && !a && !(SBM_RET && SBM_RET.lek === SBM_LEK), ph = ovSpm(l.ovelse[x.i]) || "";
+      const indhold = ret ? sbmFeltHtml(SBM_LEK, x.i, ph) + sbmKnHtml() : (a ? sbmLinjer(a) : (tom ? sbmFeltHtml(SBM_LEK, x.i, ph) + '<div class="sbm-kn"><button type="button" class="sbm-knap sbm-roed mq-tap" onclick="sbmTomGem(\'' + SBM_LEK + '\',' + x.i + ')">Gem</button></div>' : sbmLinjer("")));
+      return '<div class="sbm2-t' + (ret || tom ? ' sbm2-retter' : '') + '">' + top + indhold + '</div>';
     }).join("");
-    return '<div class="sbm-ramme"><div class="sbm-rh"><span class="sbm-rn">' + navn + '</span>' + (!ret && harSvar ? '<button type="button" class="sbm-knap mq-tap" onclick="sbmRetAabn(\'' + SBM_LEK + '\',' + idxS + ')">Ret</button>' : '') + '</div>' + krop + (ret ? sbmKnHtml() : '') + '</div>';
+    return '<section class="sbm2-afsnit sbm2-niv"><div class="sbm2-bjaelke">' + sbmSymHtml(sym) + '<span class="sbm2-bn">' + navn + '</span></div><div class="sbm2-to">' + fliser + '</div></section>';
   };
-  const adf = '<div class="sbm-fl sbm-stor"><div class="sbm-sth">Din adfærd</div><div class="sbm-k2">' + ramme("Overskud", pol.over) + ramme("Underskud", pol.under) + '</div></div>';
-  /* DIN KROP: tre trin fra lektionen om Rykker 1, Rykker 2 og Inkasso */
-  const lk = sbmLek(SBM_KROP_LEK), trin = [["Rykker 1", /rykker\s*1/i], ["Rykker 2", /rykker\s*2/i], ["Inkasso", /inkasso/i]];
-  const kropHtml = trin.map(function (t, n) {
-    let i = -1; try { if (lk && Array.isArray(lk.ovelse)) { i = lk.ovelse.findIndex(function (it) { return t[1].test(ovSpm(it)); }); if (i < 0 && lk.ovelse[n]) i = n; } } catch (e) { i = -1; }
+  const adf = adfTrin("over", "Overskud", pol.over) + adfTrin("under", "Underskud", pol.under);
+  const lk = sbmLek(SBM_KROP_LEK), trin = [["r1", "Rykker 1", /rykker\s*1/i], ["r2", "Rykker 2", /rykker\s*2/i], ["ink", "Inkasso", /inkasso/i]];
+  const krp = trin.map(function (t, k) {
+    let i = -1; try { if (lk && Array.isArray(lk.ovelse)) { i = lk.ovelse.findIndex(function (it) { return t[2].test(ovSpm(it)); }); if (i < 0 && lk.ovelse[k]) i = k; } } catch (e) { i = -1; }
     const a = i > -1 ? sbmSvar(SBM_KROP_LEK, i) : "", ret = i > -1 && sbmErRet(SBM_KROP_LEK, [i]);
-    if (ret) return '<div class="sbm-kt"><div class="sbm-rh"><span class="sbm-rn">' + t[0] + '</span></div>' + sbmFeltHtml(SBM_KROP_LEK, i) + sbmKnHtml() + '</div>';
-    if (!a) return '<div class="sbm-kt sbm-laast"><div class="sbm-rh"><span class="sbm-rn">' + t[0] + '</span><span class="lks-laas sbm-ls">' + FTL_LAAS + '</span></div></div>';
-    return '<div class="sbm-kt"><div class="sbm-rh"><span class="sbm-rn">' + t[0] + '</span><button type="button" class="sbm-knap mq-tap" onclick="sbmRetAabn(\'' + SBM_KROP_LEK + '\',[' + i + '])">Ret</button></div>' + sbmLinjer(a) + '</div>';
+    if (ret) return '<div class="sbm2-t">' + hoved(t[0], t[1]) + sbmFeltHtml(SBM_KROP_LEK, i) + sbmKnHtml() + '</div>';
+    if (!a) return '<div class="sbm2-t sbm2-laast">' + hoved(t[0], t[1], '<span class="lks-laas sbm-ls">' + FTL_LAAS + '</span>') + '</div>';
+    return '<div class="sbm2-t">' + hoved(t[0], t[1], blyant(SBM_KROP_LEK, '[' + i + ']')) + sbmLinjer(a) + '</div>';
   }).join("");
-  const krp = '<div class="sbm-fl sbm-stor"><div class="sbm-sth">Din krop</div><div class="sbm-k3">' + kropHtml + '</div></div>';
-  w.innerHTML = '<div class="vks-side sbm-side">' + adf + krp + '</div>';
+  w.innerHTML = '<div class="vks-side sbm-side sbm2"><div class="sbm2-sek">Din adfærd</div><div class="sbm2-adf">' + adf + '</div><div class="sbm2-sek">Din krop</div><section class="sbm2-afsnit"><div class="sbm2-tre">' + krp + '</div></section></div>';
   try { if (typeof markbaandTegn === "function") markbaandTegn(32); } catch (e) {}
 }
 function sbmRet() { try { visLektion(SBM_LEK); } catch (e) {} setTimeout(function () { try { startOvelse(SBM_LEK); } catch (e) {} }, 600); }
@@ -73075,7 +73104,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "3470";
+const APP_VERSION = "3471";
 const APP_BYGGET = "3. november";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_VERSION;   /* ingen dato (Ida 7/11: »hvorfor står der version 3. november?«) — datoen blev ikke rettet med, nummeret er sandheden */ } catch (e) {} });
 let NY_VERSION_KLAR = false;
@@ -108674,6 +108703,53 @@ html body .sbm-rh + .sbm-lbl { margin-top:0; }
 html body .sbm-k3 { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:28px; }
 html body .sbm-kt { min-width:0; }
 html body .sbm-kt.sbm-laast .sbm-rh { margin:0; }
+
+/* v3467 · Mit Shinebarometer som barometeret fra videoen, efter designmanualen og MÅLKORT (Ida 24/11) */
+html body .sbm-side.sbm2 { gap:0; }
+/* Rammer om det, der hører sammen (Ida 22/11, som Forsiden i afsnit) · hårfin streg mellem Adfærd og Tanker inde i flisen (Ida 24/11: »skillestreger mellem tekster hvis det er overskrifter eller separate fliser/rammer hvis indholdet ikke hører sammen«) */
+html body .sbm2-afsnit { border:1px solid #E2E2E2; border-radius:28px; padding:24px; background:#FFFFFF; box-sizing:border-box; min-width:0; }
+html body .sbm2-afsnit + .sbm2-afsnit { margin-top:0; }   /* Ida 24/11: »underskud og overskud skal deles op i 2 separate rammer« · overskrifterne står over rammerne */
+html body .sbm2-sek { font:400 12px/16px Poppins,sans-serif; letter-spacing:1.5px; text-transform:uppercase; color:#686868; margin:32px 0 8px; }
+html body .sbm2 > .sbm2-sek:first-child { margin-top:0; }
+html body .sbm2-t:not(.sbm2-retter) .sbm2-del + .sbm2-del { border-top:1px solid #DEDEDE; padding-top:16px; }   /* stregen skiller kun tekst: ingen streg mellem felterne, mens der rettes */
+html body .sbm2-to { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:12px; align-items:stretch; }
+html body .sbm2-tre { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; align-items:stretch; }
+html body .sbm2-t { background:#FFFFFF; border-radius:20px; box-shadow:var(--mb-skygge); padding:18px 20px 20px; min-width:0; box-sizing:border-box; display:flex; flex-direction:column; gap:16px; }
+html body .sbm2-adf { display:flex; flex-direction:column; gap:24px; }
+html body .sbm2-niv { display:flex; flex-direction:column; gap:12px; }
+html body .sbm2-bjaelke { display:flex; align-items:center; gap:16px; min-height:64px; padding:10px 16px; background:#FFFFFF; border:1px solid #DEDEDE; border-radius:20px; box-shadow:none; box-sizing:border-box; }   /* nr. 1: bjælken er overskrift, ikke flise */
+html body .sbm2-bjaelke .sbm2-sym { width:44px; height:44px; background:none; border:0; color:#FC2404; }   /* Ida 24/11: »symbolerne røde for at få mit design ind« · samme røde stregsymbol som i videoens Shinebarometer (låst 27/9), uden det lyseblå felt */
+html body .sbm2-bjaelke .sbm2-sym svg { width:44px; height:36px; }
+html body .sbm2-bn { flex:1; min-width:0; font:400 20px/26px Poppins,sans-serif; color:#1A1A1A; }
+html body .sbm2-ft { display:flex; align-items:center; gap:12px; min-height:36px; }
+html body .sbm2-t:not(.sbm2-retter) .sbm2-ft { padding-bottom:16px; border-bottom:1px solid #DEDEDE; }   /* Ida 24/11: »en lækker skillestreg mellem overskrifterne og punkterne« · kun når der står punkter under (stregen skiller kun tekst) */
+html body .sbm2-h { display:flex; align-items:center; gap:12px; min-height:44px; }
+html body .sbm2-sym { flex:none; width:44px; height:44px; border-radius:50%; background:#F4F7FA; border:1px solid #DEDEDE; box-sizing:border-box; color:#686868; display:flex; align-items:center; justify-content:center; }
+html body .sbm2-sym svg { display:block; }
+html body .sbm2-n { flex:1; min-width:0; font:400 18px/24px Poppins,sans-serif; color:#1A1A1A; }
+html body .sbm2-ik { flex:none; position:relative; width:36px; height:36px; min-height:36px; padding:0; border-radius:50%; border:1px solid #DEDEDE; background:#FFFFFF; color:#686868; display:inline-flex; align-items:center; justify-content:center; cursor:pointer; }
+html body .sbm2-ik::before { content:""; position:absolute; inset:-4px; }
+html body .sbm2-krop { display:flex; flex-direction:column; gap:16px; }
+html body .sbm2-lbl { font:400 13px/18px Poppins,sans-serif; color:#686868; margin:0 0 8px; }
+html body .sbm2 .sbm-l { gap:8px; flex:none; align-content:start; }
+html body .sbm2 .sbm-l li { font:300 15px/24px Poppins,sans-serif; color:#1A1A1A; padding-left:18px; }   /* nr. 2 og 7 */
+html body .sbm2 .sbm-l li::before { top:9px; width:6px; height:6px; }
+html body .sbm2-t .sbm-kn { margin-top:4px; }
+html body #sbmWrap#sbmWrap .sbm2-t .sbm-knap { height:44px !important; min-height:44px !important; border-color:#DEDEDE; color:#686868; font-weight:400 !important; }
+html body #sbmWrap#sbmWrap .sbm2-t .sbm-knap.sbm-roed { color:#FFFFFF; border-color:#FC2404; }
+html body .sbm2 .sbm-felt { border-color:#DEDEDE; font-size:15px; overflow:hidden; resize:none; }
+html body .sbm2-t.sbm2-laast { box-shadow:none; background:#F4F7FA; border:1px solid #DEDEDE; }
+html body .sbm2-t.sbm2-laast { min-height:64px; padding:10px 16px; justify-content:center; pointer-events:none; cursor:default; }   /* nr. 4 og 5: lavere, intet tryk, lyseblåt symbolfelt som alle andre */
+html body .sbm2-t.sbm2-laast .sbm2-n { color:#686868; }
+html body .sbm2-t.sbm2-laast .sbm-ls, html body .sbm2-t.sbm2-laast .sbm-ls svg, html body .sbm2-t.sbm2-laast .sbm-ls svg * { color:#686868 !important; stroke:#686868 !important; }
+@media (max-width:899px) {
+  html body .sbm2-to, html body .sbm2-tre { grid-template-columns:minmax(0,1fr); }
+  html body .sbm2-afsnit { padding:20px 16px; }
+  html body .sbm2-n { font-size:16px; line-height:22px; }
+  html body .sbm2-bn { font-size:20px; line-height:26px; }
+  html body .sbm2-afsnit { padding:20px 12px; }
+  html body #sbmWrap#sbmWrap .sbm2-t .sbm-knap { height:56px !important; min-height:56px !important; flex:1; }
+}
 html body .sbm-kt.sbm-laast .sbm-rn { color:#686868; }
 html body .sbm-ls { flex:none; display:inline-flex; color:#FC2404; }
 html body .sbm-ls svg { stroke:#FC2404; }
@@ -109654,7 +109730,7 @@ body.sk-holder, body.sk-holder .content, body.sk-holder #dashMain, [data-bs-hold
 }
 </style>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-hvid.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 22. november · 3470</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 22. november · 3471</div>
 <script>
 /* DROPDOWNEN RULLER SELV (Ida 4/10) — maal den aabne liste og klip den ved skaermens bund */
 (function () {
