@@ -26445,9 +26445,7 @@ async function minProfilAaben() {
     + fl("Team", ''
     + (function () { try { const folk = (typeof briefPersonerListe === "function") ? briefPersonerListe() : []; const virk = (CURRENT_DEF && CURRENT_DEF.virksomhed) || ""; return '<div class="ark-chips" style="margin:0 0 6px;">' + (folk.length ? folk.map(function (x) { return '<span class="ark-chip" style="cursor:default;">' + esc(x) + '</span>'; }).join("") : '<span style="font-size:12px;color:var(--gray2);">Ingen teammedlemmer endnu.</span>') + '</div>' + (erYgtTeam() ? '<div id="profilTeamYgt" style="margin-bottom:14px;"></div>' : '<div style="font-size:10.5px;color:var(--gray3);line-height:1.5;margin-bottom:14px;">Et nyt teammedlem opretter sig med koden ' + esc(String(currentKode || "")) + '. Så står de her.</div>'); } catch (e) { return ''; } })()   /* TEAMET (Idas klik 21/9 kl. 23.38): loginene paa koden, automatisk */
     , false, "team")
-    + (csLaast ? '' : fl("Dine skrifter", ''
-    + '<div class="ark-chips" id="profilSkrifter" style="display:flex;flex-wrap:wrap;gap:8px;overflow:visible;">' + profilSkrifterHtml() + '</div>'
-    ))
+    + (csLaast ? '' : fl("Brandkit", '<div id="bkProfil" class="bk-profil" role="button" tabindex="0" onclick="bkSide()" onkeydown="if(event.key===\'Enter\')bkSide()">' + bkProfilHtml() + '</div>', true, "brand"))   /* v3469: Brandkit afløser »Dine skrifter« */
     + ((typeof hjemFunktionerLaast === "function" && hjemFunktionerLaast()) ? '' : fl("Dine knapper", ''
     + '<div style="font-size:11.5px;color:var(--gray3);line-height:1.55;margin-bottom:12px;">De tre knapper i plusset, hvor du lægger noget fra dig. Lad feltet stå tomt, hvis standarden er fin.</div>'
     + FANG_KNAPPER.map(function (b) {
@@ -26462,6 +26460,7 @@ async function minProfilAaben() {
     + '</div><span id="profilMsg" class="prof-msg"></span>'
     + '<button type="button" class="dbtn primary mq-tap prof-gem" onclick="minProfilGem()">Gem ændringer</button>';
   SN_SIDE24 = "profil";   /* menuen markerer navneknappen, ikke De 4 byggesten (b2b runde 1, 19/11) */
+  try { bkHent().then(function () { bkProfilGentegn(); }); } catch (e) {}
   showTab(24);
   try { if (document.body.classList.contains("bn-ygt4")) markNav("d24"); } catch (e) {}
   if (erYgtTeam()) profilTeamHent();
@@ -26533,6 +26532,316 @@ function kollegaArk() {
     } });
   setTimeout(function () { const t = document.getElementById("arkTekst"); if (t) { t.setAttribute("data-frit", ""); t.setAttribute("inputmode", "email"); t.setAttribute("autocapitalize", "off"); t.setAttribute("autocorrect", "off"); t.setAttribute("spellcheck", "false"); } }, 0);
 }
+/* v3469 · BRANDKIT UNDER PROFIL (Ida 24/11: »Det er, at vi under profil laver et Brandkit. Lidt ligesom, at man har et Canva, så man kan uploade sit logo. Og her skal man forvælge sine favorit skrifttyper. Man kan lægge sine skabeloner ind i sit brain-kit med baggrunde. Vælge farver, hvor man skal have mulighed for at skrive heksfarver ind.« · design: bud/brandkit/DESIGN.md, godkendt »Ja, skriv det ned« · »Ja, byg det nu«).
+   Virksomheden ejer Brandkittet (tabellen brandkit, én række pr. virksomhed_id; teamet deler det; admin læser og skriver) og et lukket lager »brandkit« (<virksomhed_id>/logo/<id>.png og /baggrund/<id>.jpg; vises med den hentede fil, aldrig et offentligt link).
+   Loftet håndhæves også af basen: 3 logoer · 10 farver · 12 baggrunde · 20 skabeloner · 30 skrifter. Hver skrivning kvitteres kun ved præcis én række (§5). En konto uden virksomhed kan intet her: Brandkittet vises tomt, og upload skjules. */
+const BK_LOFT = { farver: 10, skrifter: 30, logoer: 3, baggrunde: 12, skabeloner: 20 };
+const BK_LAGER = "brandkit";
+let BK = { hentet: false, loeber: null, virk: "", ret: false, utenVirk: false, d: { farver: [], skrifter: [], logoer: [], baggrunde: [], skabeloner: [] }, url: {}, img: {}, lys: {} };
+function bkId() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+function bkListe(x) { return Array.isArray(x) ? x : []; }
+async function bkHent(tvang) {
+  if (BK.hentet && !tvang) return BK;
+  if (BK.loeber && !tvang) return BK.loeber;
+  BK.loeber = (async function () {
+    try { BK.virk = (await bsVirksomhedId(currentKode)) || ""; } catch (e) { BK.virk = ""; }
+    if (!BK.virk || !sb) { BK.utenVirk = true; BK.hentet = true; return BK; }
+    BK.utenVirk = false;
+    try {
+      const r = await sb.from("brandkit").select("*").eq("virksomhed_id", BK.virk).maybeSingle();
+      const rk = r && !r.error ? r.data : null;
+      BK.ret = !!rk;
+      if (rk) BK.d = { farver: bkListe(rk.farver), skrifter: bkListe(rk.skrifter), logoer: bkListe(rk.logoer), baggrunde: bkListe(rk.baggrunde), skabeloner: bkListe(rk.skabeloner) };
+    } catch (e) {}
+    /* DE GAMLE FAVORITSKRIFTER FLYTTES VED FØRSTE ÅBNING (skema_svar · config · skrifter → brandkit.skrifter) */
+    if (!BK.d.skrifter.length) {
+      try {
+        const g = await sb.from("skema_svar").select("svar").eq("kode", currentKode).eq("navn", "config").eq("skema", "skrifter").maybeSingle();
+        const fav = g && g.data && g.data.svar && Array.isArray(g.data.svar.fav) ? g.data.svar.fav.filter(function (n) { return CV_SKRIFTER.some(function (s) { return s[0] === n; }); }) : [];
+        if (fav.length) { BK.d.skrifter = fav; await bkGem(["skrifter"]); }
+      } catch (e) {}
+    }
+    BK.hentet = true;
+    bkFilerHent();
+    return BK;
+  })();
+  try { await BK.loeber; } finally { BK.loeber = null; }
+  return BK;
+}
+/* gem: opdatér den ene række (præcis én række tæller), ellers opret den; loftet i basen (23514) siges på dansk */
+async function bkGem(felter) {
+  if (!sb || !BK.virk) return { ok: false, fejl: "Brandkittet kan ikke gemmes lige nu." };
+  const patch = {}; felter.forEach(function (f) { patch[f] = BK.d[f]; }); patch.opdateret = new Date().toISOString();
+  try {
+    let res = null;
+    if (BK.ret) { res = await sb.from("brandkit").update(patch).eq("virksomhed_id", BK.virk).select("virksomhed_id"); if (!res.error && res.data && res.data.length === 1) return { ok: true }; }
+    if (!BK.ret || (res && !res.error && !(res.data && res.data.length))) {
+      const alle = Object.assign({ virksomhed_id: BK.virk }, { farver: BK.d.farver, skrifter: BK.d.skrifter, logoer: BK.d.logoer, baggrunde: BK.d.baggrunde, skabeloner: BK.d.skabeloner }, patch);
+      const ny = await sb.from("brandkit").insert(alle).select("virksomhed_id");
+      if (!ny.error && ny.data && ny.data.length === 1) { BK.ret = true; return { ok: true }; }
+      res = ny;
+    }
+    const kode = res && res.error && (res.error.code || ""), msg = String((res && res.error && res.error.message) || "");
+    if (kode === "23514" || /loft|check/i.test(msg)) return { ok: false, fejl: "Du har nået grænsen. Slet noget først." };
+  } catch (e) {}
+  return { ok: false, fejl: "Det blev ikke gemt. Prøv igen." };
+}
+async function bkGemMedKvit(felter, foer) {
+  const r = await bkGem(felter);
+  if (!r.ok) { if (foer) foer(); try { husBesked(r.fejl); } catch (e) {} return false; }
+  try { husKvit("Gemt."); } catch (e) {}
+  return true;
+}
+/* filerne i det lukkede lager hentes som lokale filer (blob), så lærredet kan tegne dem og aldrig bliver »beskidt« */
+async function bkFilerHent() {
+  const alle = BK.d.logoer.concat(BK.d.baggrunde);
+  for (let n = 0; n < alle.length; n++) {
+    const sti = alle[n] && alle[n].sti; if (!sti || BK.url[sti]) continue;
+    try { const f = await sb.storage.from(BK_LAGER).download(sti); if (f && f.data) { BK.url[sti] = URL.createObjectURL(f.data); } } catch (e) {}
+  }
+  try { bkSideGentegn(); } catch (e) {} try { bkProfilGentegn(); } catch (e) {} try { if (CV) cvUI(); } catch (e) {}
+}
+function bkBillede(sti) {
+  if (!sti) return null; const u = BK.url[sti]; if (!u) return null;
+  if (BK.img[sti]) return BK.img[sti].complete && BK.img[sti].naturalWidth > 0 ? BK.img[sti] : null;
+  const im = new Image(); im.onload = function () { try { const c = document.createElement("canvas"); c.width = 16; c.height = 16; const x = c.getContext("2d"); x.drawImage(im, 0, 0, 16, 16); const px = x.getImageData(0, 0, 16, 16).data; let s = 0, nn = 0; for (let i = 0; i < px.length; i += 4) { if (px[i + 3] > 128) { s += (0.299 * px[i] + 0.587 * px[i + 1] + 0.114 * px[i + 2]) / 255; nn++; } } BK.lys[sti] = nn ? s / nn : 0.5; } catch (e) {} try { cvGentegn(); } catch (e) {} try { bkTegnTumb(); } catch (e) {} };
+  im.src = u; BK.img[sti] = im; return null;
+}
+function bkLum(hex) { const h = String(hex || "#808080").replace("#", ""); const r = parseInt(h.substr(0, 2), 16), g = parseInt(h.substr(2, 2), 16), b = parseInt(h.substr(4, 2), 16); return (0.299 * r + 0.587 * g + 0.114 * b) / 255; }
+/* DET, DER TEGNES PÅ BILLEDET: baggrunden (farve eller billede) og logoet (øverst, nederst eller uden); logoets udgave vælges af appen: det lyse på mørk baggrund, det mørke på lys */
+function bkBgTegn(cx, W, H, bg) {
+  if (!bg) return false;
+  if (bg.k === "farve") { cx.fillStyle = bg.f || "#FFFFFF"; cx.fillRect(0, 0, W, H); return true; }
+  if (bg.k === "billede") {
+    const im = bkBillede(bg.sti);
+    if (im) { const s = Math.max(W / im.naturalWidth, H / im.naturalHeight), w = im.naturalWidth * s, h = im.naturalHeight * s; cx.drawImage(im, (W - w) / 2, (H - h) / 2, w, h); } else { cx.fillStyle = "#F8F8F8"; cx.fillRect(0, 0, W, H); }
+    return true;
+  }
+  return false;
+}
+function bkBgLys(bg, foto) { if (!bg) return true; if (bg.k === "farve") return bkLum(bg.f) < 0.55 ? true : false; if (bg.k === "billede") return (BK.lys[bg.sti] == null ? 0.3 : BK.lys[bg.sti]) < 0.55; return true; }
+function bkLogoTegn(cx, W, H, design) {
+  const pl = design && design.logo; if (!pl || pl === "uden") return;
+  const ls = BK.d.logoer; if (!ls.length) return;
+  const moerkBg = bkBgLys(design.bg);
+  let valgt = null; const ens = ls.map(function (l) { const im = bkBillede(l.sti); return { l: l, im: im, lys: l.lys === true }; });
+  valgt = ens.find(function (x) { return x.im && x.lys === moerkBg; }) || ens.find(function (x) { return x.im; });
+  if (!valgt) return;
+  const w = W * 0.18, h = w * valgt.im.naturalHeight / valgt.im.naturalWidth, x = (W - w) / 2, y = pl === "oeverst" ? H * 0.05 : H - h - H * 0.05;
+  cx.drawImage(valgt.im, x, y, w, h);
+}
+/* ---------- upload ---------- */
+function bkFilVaelg(art) { const f = document.getElementById("bkFil_" + art); if (f) { f.value = ""; f.click(); } }
+async function bkTilCanvas(fil, maksB, maksH, dæk) {
+  const blob = await heicKlar(fil);
+  const url = URL.createObjectURL(blob);
+  const im = await new Promise(function (ok) { const i = new Image(); i.onload = function () { ok(i); }; i.onerror = function () { ok(null); }; i.src = url; });
+  try { URL.revokeObjectURL(url); } catch (e) {}
+  if (!im || !(im.naturalWidth > 0)) return null;
+  let w, h, sx = 0, sy = 0, sw = im.naturalWidth, sh = im.naturalHeight;
+  if (dæk) { w = maksB; h = maksH; const mal = maksB / maksH, kild = sw / sh; if (kild > mal) { sw = sh * mal; sx = (im.naturalWidth - sw) / 2; } else { sh = sw / mal; sy = (im.naturalHeight - sh) / 2; } }
+  else { const sk = Math.min(1, maksB / Math.max(sw, sh)); w = Math.round(sw * sk); h = Math.round(sh * sk); }
+  const c = document.createElement("canvas"); c.width = w; c.height = h; const cx = c.getContext("2d"); cx.drawImage(im, sx, sy, sw, sh, 0, 0, w, h);
+  return c;
+}
+async function bkFilValgt(art, inp) {
+  const f = (inp.files || [])[0]; if (!f) return;
+  if (BK.utenVirk || !BK.virk) { try { husBesked("Brandkittet kan ikke gemmes lige nu."); } catch (e) {} return; }
+  const felt = art === "logo" ? "logoer" : "baggrunde";
+  if (BK.d[felt].length >= BK_LOFT[felt]) { try { husBesked("Du har nået grænsen. Slet noget først."); } catch (e) {} return; }
+  if (art === "logo" && !/^image\/(png|jpeg)$/.test(f.type || "")) { try { husBesked("Logoet skal være et PNG- eller JPG-billede."); } catch (e) {} return; }
+  if (art !== "logo" && !(/^image\//.test(f.type || "") || cvErHeic(f))) { try { husBesked("Vælg et billede."); } catch (e) {} return; }
+  try {
+    const c = art === "logo" ? await bkTilCanvas(f, 1200, 0, false) : await bkTilCanvas(f, 1080, 1350, true);
+    if (!c) { try { husBesked("Billedet kan ikke åbnes her. Vælg et JPG- eller PNG-billede."); } catch (e) {} return; }
+    let lys = false;
+    if (art === "logo") { try { const px = c.getContext("2d").getImageData(0, 0, Math.min(c.width, 64), Math.min(c.height, 64)).data; let s = 0, nn = 0; for (let i = 0; i < px.length; i += 4) { if (px[i + 3] > 128) { s += (0.299 * px[i] + 0.587 * px[i + 1] + 0.114 * px[i + 2]) / 255; nn++; } } lys = nn ? s / nn > 0.6 : false; } catch (e) {} }
+    const blob = await new Promise(function (ok) { c.toBlob(ok, art === "logo" ? "image/png" : "image/jpeg", 0.9); });
+    if (!blob) { try { husBesked("Billedet kunne ikke gemmes. Prøv igen."); } catch (e) {} return; }
+    const id = bkId(), sti = BK.virk + "/" + (art === "logo" ? "logo" : "baggrund") + "/" + id + (art === "logo" ? ".png" : ".jpg");
+    const up = await sb.storage.from(BK_LAGER).upload(sti, blob, { contentType: art === "logo" ? "image/png" : "image/jpeg", upsert: false });
+    if (up && up.error) { try { husBesked("Billedet kunne ikke gemmes. Prøv igen."); } catch (e) {} return; }
+    BK.url[sti] = URL.createObjectURL(blob);
+    const post = art === "logo" ? { id: id, sti: sti, lys: lys } : { id: id, sti: sti };
+    BK.d[felt] = BK.d[felt].concat([post]);
+    const ok = await bkGemMedKvit([felt], function () { BK.d[felt] = BK.d[felt].filter(function (x) { return x.id !== id; }); try { sb.storage.from(BK_LAGER).remove([sti]); } catch (e) {} });
+    bkSideGentegn(); bkProfilGentegn(); try { if (CV) cvUI(); } catch (e) {}
+  } catch (e) { try { husBesked("Billedet kunne ikke gemmes. Prøv igen."); } catch (x) {} }
+}
+async function bkSletFil(felt, id) {
+  const post = BK.d[felt].find(function (x) { return x.id === id; }); if (!post) return;
+  const foer = BK.d[felt].slice(); BK.d[felt] = foer.filter(function (x) { return x.id !== id; });
+  const ok = await bkGemMedKvit([felt], function () { BK.d[felt] = foer; });
+  if (ok) { try { sb.storage.from(BK_LAGER).remove([post.sti]); } catch (e) {} }
+  bsFlytLuk(); bkSideGentegn(); bkProfilGentegn();
+}
+function bkValgArk(titel, knapper) {
+  let m = document.getElementById("bsFlytMenu"); if (!m) { m = document.createElement("div"); m.id = "bsFlytMenu"; document.body.appendChild(m); }
+  m.innerHTML = '<div class="bs-flyt-ark bs-valg-ark valg-fliser"><div class="ark-t">' + esc(titel) + '</div>'
+    + knapper.map(function (k) { return '<button type="button" class="bs-valg-knap bs-knap mq-tap" onclick="' + k[1] + '">' + esc(k[0]) + '</button>'; }).join("")
+    + '<button type="button" class="ark-luk" onclick="bsFlytLuk()">Annullér</button></div>';
+  m.style.display = "flex"; m.onclick = function (e) { if (e.target === m) bsFlytLuk(); };
+}
+/* ---------- farver ---------- */
+function bkHexRent(t) { let h = String(t || "").trim().toUpperCase(); if (h && h[0] !== "#") h = "#" + h; if (/^#[0-9A-F]{3}$/.test(h)) h = "#" + h[1] + h[1] + h[2] + h[2] + h[3] + h[3]; return /^#[0-9A-F]{6}$/.test(h) ? h : ""; }
+function bkHexInd(inp) { const h = bkHexRent(inp.value), p = document.getElementById("bkPrik"); if (p) p.style.background = h || "transparent"; }
+async function bkFarveTilfoej() {
+  const inp = document.getElementById("bkHex"); if (!inp) return;
+  const h = bkHexRent(inp.value);
+  if (!h) { try { husBesked("Skriv en farvekode, fx #FC2404."); } catch (e) {} return; }
+  if (BK.d.farver.indexOf(h) > -1) { inp.value = ""; bkHexInd(inp); return; }
+  if (BK.d.farver.length >= BK_LOFT.farver) { try { husBesked("Du har nået grænsen. Slet noget først."); } catch (e) {} return; }
+  const foer = BK.d.farver.slice(); BK.d.farver = foer.concat([h]);
+  await bkGemMedKvit(["farver"], function () { BK.d.farver = foer; });
+  bkSideGentegn(); bkProfilGentegn();
+}
+function bkFarveArk(i) { const h = BK.d.farver[i]; if (!h) return; bkValgArk(h, [["Slet farven", "bkFarveSlet(" + i + ")"]]); }
+async function bkFarveSlet(i) { const foer = BK.d.farver.slice(); BK.d.farver = foer.filter(function (x, n) { return n !== i; }); await bkGemMedKvit(["farver"], function () { BK.d.farver = foer; }); bsFlytLuk(); bkSideGentegn(); bkProfilGentegn(); }
+/* ---------- skrifter ---------- */
+async function bkSkriftSkift(n) {
+  const foer = BK.d.skrifter.slice(), i = foer.indexOf(n);
+  if (i < 0 && foer.length >= BK_LOFT.skrifter) { try { husBesked("Du har nået grænsen. Slet noget først."); } catch (e) {} return; }
+  BK.d.skrifter = i > -1 ? foer.filter(function (x) { return x !== n; }) : foer.concat([n]); CV_FAV = BK.d.skrifter.slice();
+  await bkGemMedKvit(["skrifter"], function () { BK.d.skrifter = foer; CV_FAV = foer.slice(); });
+  bkSideGentegn(); bkProfilGentegn();
+}
+function bkSkrifterAlle() { BK.alleSkrifter = !BK.alleSkrifter; bkSideGentegn(); }
+function bkSkriftChips(alle) {
+  const fav = BK.d.skrifter.filter(function (n) { return CV_SKRIFTER.some(function (s) { return s[0] === n; }); });
+  const rest = CV_SKRIFTER.map(function (s) { return s[0]; }).filter(function (n) { return fav.indexOf(n) === -1; });
+  const liste = alle ? fav.concat(rest) : fav.concat(rest).slice(0, Math.max(fav.length, 9));
+  return liste.map(function (n) { const on = fav.indexOf(n) > -1; return '<button type="button" class="ark-chip' + (on ? ' on' : '') + '" style="font-family:\'' + cvFam(n) + '\';font-weight:' + cvVaegt(n) + ';" aria-pressed="' + on + '" onclick="bkSkriftSkift(\'' + n + '\')">' + esc(n) + '</button>'; }).join("")
+    + (alle || liste.length >= CV_SKRIFTER.length ? '' : '<button type="button" class="ark-chip" onclick="bkSkrifterAlle()">Alle skrifter</button>');
+}
+/* ---------- skabeloner ---------- */
+function bkTegnTumb() {
+  document.querySelectorAll("canvas[data-skab]").forEach(function (c) {
+    const s = BK.d.skabeloner.find(function (x) { return x.id === c.getAttribute("data-skab"); }); if (!s) return;
+    const W = 360, H = Math.round(W * (s.format === "cover" ? 16 / 9 : 1.25)); if (c.width !== W) { c.width = W; c.height = H; }
+    try { cvTegn(c.getContext("2d"), W, H, { lag: bkListe(s.lag), bg: s.bg || null, logo: s.logo || "uden" }, s.format === "cover" ? "cover" : "0", "graa", -1); } catch (e) {}
+  });
+}
+function bkSkabLag(d, noegle) { return (d.lag || []).map(function (l) { return { t: cvTekst(l, noegle), x: l.x, y: l.y, s: l.s, e: l.e || "", f: l.f, z: l.z, k: l.k || 1 }; }); }
+function bkSkabNy() {
+  if (!CV) return;
+  if (BK.d.skabeloner.length >= BK_LOFT.skabeloner) { try { husBesked("Du har nået grænsen. Slet noget først."); } catch (e) {} return; }
+  const d = cvD(), noegle = CV.noegle;
+  arkAabn({ titel: "Navn på skabelonen", ph: "Fx Tip-slide", tekst: "", enLinje: true, udenVedh: true, udenMik: true, udenKvit: true, send: "Gem", chips: [],
+    gem: async function (t) {
+      const navn = String(t || "").replace(/\s+/g, " ").trim().slice(0, 40); if (!navn) return false;
+      const post = { id: bkId(), navn: navn, format: noegle === "cover" ? "cover" : "karrusel", bg: d.bg || null, logo: d.logo || "uden", lag: bkSkabLag(d, noegle) };
+      const foer = BK.d.skabeloner.slice(); BK.d.skabeloner = foer.concat([post]);
+      const r = await bkGem(["skabeloner"]);
+      if (!r.ok) { BK.d.skabeloner = foer; try { husBesked(r.fejl); } catch (e) {} return false; }
+      try { if (CV) cvUI(); } catch (e) {} bkSideGentegn();
+      return "Gemt.";
+    } });
+}
+function bkBrugSkab(id) {
+  if (!CV) return; const s = BK.d.skabeloner.find(function (x) { return x.id === id; }); if (!s) return;
+  const fri = !!(BRIEF_STATE && BRIEF_STATE.__fri);
+  if (fri && (s.format === "cover") !== (CV.noegle === "cover")) bkFormat(s.format === "cover" ? "cover" : "karrusel");
+  const d = cvD();
+  if (fri) { d.lag = bkListe(s.lag).map(function (l) { return { t: l.t || "", x: l.x, y: l.y, s: l.s, e: l.e || "", f: l.f, z: l.z, k: l.k || 1, rettet: true }; }); if (!d.lag.length) d.lag = cvStart(CV.noegle).lag; }
+  else { bkListe(s.lag).forEach(function (l, i) { if (!d.lag[i]) return; ["x", "y", "s", "e", "f", "z", "k"].forEach(function (k) { if (l[k] != null) d.lag[i][k] = l[k]; }); }); }   /* fra en brief beholder lagene briefens tekster */
+  if (s.bg) d.bg = JSON.parse(JSON.stringify(s.bg)); else delete d.bg;
+  d.logo = s.logo || "uden"; d.skab = id; CV.valgt = 0; CV.ramme = true; cvGemSnart(); cvUI();
+}
+function bkSkabIngen() { if (!CV) return; const d = cvD(); delete d.skab; cvUI(); }
+function bkSkabArk(id) {
+  const s = BK.d.skabeloner.find(function (x) { return x.id === id; }); if (!s) return;
+  bkValgArk(s.navn, [["Åbn i editoren", "bsFlytLuk();bkLav('" + id + "')"], ["Slet skabelonen", "bkSkabSlet('" + id + "')"]]);
+}
+async function bkSkabSlet(id) { const foer = BK.d.skabeloner.slice(); BK.d.skabeloner = foer.filter(function (x) { return x.id !== id; }); await bkGemMedKvit(["skabeloner"], function () { BK.d.skabeloner = foer; }); bsFlytLuk(); bkSideGentegn(); }
+/* ---------- editoren »Lav et billede« (fri: uden brief) ---------- */
+function bkLav(skabId) {
+  if (BK.utenVirk) { try { husBesked("Brandkittet kan ikke åbnes lige nu."); } catch (e) {} return; }
+  const sk = skabId ? BK.d.skabeloner.find(function (x) { return x.id === skabId; }) : null;
+  window.__BK_GL = { id: BRIEF_ID, st: BRIEF_STATE };
+  BRIEF_ID = "bk-fri"; CV_FOTO["bk-fri"] = {};
+  BRIEF_STATE = { format: sk && sk.format === "cover" ? "Coverbillede" : "Karrusel", slides: [""], slideDesign: {}, coverDesign: null, cvFotos: {}, __fri: { n: 1 } };
+  cvAabn(sk && sk.format === "cover" ? "cover" : "0");
+  if (sk) bkBrugSkab(sk.id);
+}
+function bkFriNogler() { const B = BRIEF_STATE; return B.format === "Karrusel" ? Array.from({ length: (B.__fri && B.__fri.n) || 1 }, function (x, i) { return String(i); }) : ["cover"]; }
+function bkFormat(f) {
+  if (!CV || !BRIEF_STATE || !BRIEF_STATE.__fri) return;
+  BRIEF_STATE.format = f === "cover" ? "Coverbillede" : (f === "story" ? "Story" : "Karrusel"); BRIEF_STATE.__fri.n = BRIEF_STATE.__fri.n || 1;
+  CV.kar = BRIEF_STATE.format === "Karrusel"; CV.nogler = bkFriNogler(); CV.noegle = CV.nogler[0]; CV.valgt = 0; CV.ramme = true; cvUI();
+}
+function bkFriSlideNy() { const B = BRIEF_STATE; if (!B || !B.__fri || B.__fri.n >= 10) return; B.__fri.n++; CV.nogler = bkFriNogler(); CV.noegle = String(B.__fri.n - 1); CV.valgt = 0; cvUI(); }
+function bkFriUI() {
+  if (!(BRIEF_STATE && BRIEF_STATE.__fri) || !CV) return;
+  const B = BRIEF_STATE, aktiv = B.format === "Karrusel" ? "karrusel" : (B.format === "Story" ? "story" : "cover");
+  const chip = function (on, f, t) { return '<button type="button" class="ark-chip' + (on ? ' on' : '') + '" onclick="' + f + '">' + t + '</button>'; };
+  const fan = cvEl("cvFaner"); if (fan) fan.innerHTML = chip(aktiv === "karrusel", "bkFormat('karrusel')", "Karrusel") + chip(aktiv === "cover", "bkFormat('cover')", "Coverbillede") + chip(aktiv === "story", "bkFormat('story')", "Story");
+  const med = cvEl("cvMedier"); if (med) med.innerHTML = CV.kar ? '<div class="cv-medrk cv-friSlides">' + CV.nogler.map(function (k, n) { return chip(k === CV.noegle, "cvSlide('" + k + "')", "Slide " + (n + 1)); }).join("") + '<button type="button" class="bk-plus" aria-label="Tilføj et slide" onclick="bkFriSlideNy()">' + BK_PLUS + '</button></div>' : "";
+}
+const BK_PLUS = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>';
+const BK_FLUEBEN = '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7"/></svg>';
+/* panelets tre nye dele: Skabelon · Baggrund · Logo (står før Tekster) */
+function bkPanelFoer(d) {
+  if (!BK.hentet || BK.utenVirk) return "";
+  const chip = function (on, attr, inner) { return '<button type="button" class="ark-chip' + (on ? ' on' : '') + '" ' + attr + '>' + inner + '</button>'; };
+  let h = "";
+  if (BK.d.skabeloner.length) h += '<div class="cv-sek">Skabelon</div><div class="cv-chips">' + BK.d.skabeloner.map(function (s) { return chip(d.skab === s.id, 'onclick="bkBrugSkab(\'' + s.id + '\')"', esc(s.navn)); }).join("") + chip(!d.skab, 'onclick="bkSkabIngen()"', "Ingen") + '</div>';
+  const farvede = BK.d.farver.map(function (f) { const on = d.bg && d.bg.k === "farve" && d.bg.f === f; return '<button type="button" class="cv-bg' + (on ? ' on' : '') + '" style="background:' + f + '" aria-label="Baggrund ' + f + '" aria-pressed="' + on + '" onclick="bkBgSaet(\'farve\',\'' + f + '\')">' + (on ? '<i>' + BK_FLUEBEN + '</i>' : '') + '</button>'; }).join("");
+  const billeder = BK.d.baggrunde.map(function (b) { const on = d.bg && d.bg.k === "billede" && d.bg.sti === b.sti; const u = BK.url[b.sti] || ""; return '<button type="button" class="cv-bg' + (on ? ' on' : '') + '" aria-label="Baggrund" aria-pressed="' + on + '" onclick="bkBgSaet(\'billede\',\'' + b.sti + '\')">' + (u ? '<img src="' + u + '" alt="">' : '') + (on ? '<i>' + BK_FLUEBEN + '</i>' : '') + '</button>'; }).join("");
+  const foto = '<button type="button" class="cv-bg cv-bg-foto' + (!d.bg ? ' on' : '') + '" aria-pressed="' + !d.bg + '" onclick="bkBgSaet(\'\',\'\')">Foto' + (!d.bg ? '<i>' + BK_FLUEBEN + '</i>' : '') + '</button>';
+  h += '<div class="cv-sek">Baggrund</div><div class="cv-bgrk">' + farvede + billeder + foto + '</div>';
+  if (BK.d.logoer.length) h += '<div class="cv-sek">Logo</div><div class="cv-chips">' + [["oeverst", "Øverst"], ["nederst", "Nederst"], ["uden", "Uden"]].map(function (x) { return chip((d.logo || "uden") === x[0], 'onclick="bkLogoSaet(\'' + x[0] + '\')"', x[1]); }).join("") + '</div>';
+  return h;
+}
+function bkBgSaet(k, v) { if (!CV) return; const d = cvD(); if (!k) delete d.bg; else d.bg = k === "farve" ? { k: "farve", f: v } : { k: "billede", sti: v }; CV.ramme = true; cvGemSnart(); cvUI(); }
+function bkLogoSaet(p) { if (!CV) return; const d = cvD(); d.logo = p; cvGemSnart(); cvUI(); }
+/* ---------- Brandkit-siden ---------- */
+async function bkSide() {
+  const host = document.getElementById("tilpasSideIndhold"); if (!host) return;
+  try { if (typeof csErAaben === "function" && !csErAaben() && TILPAS_FRA == null) TILPAS_FRA = (typeof current === "number") ? current : 3; } catch (e) {}
+  const tt = document.getElementById("tilpasSideTitel"); if (tt) tt.textContent = "Brandkit";
+  const tl = document.getElementById("tilpasSideLabel"); if (tl) tl.textContent = "";
+  host.innerHTML = '<div class="bk-side" id="bkSide"></div>';
+  SN_SIDE24 = "profil"; showTab(24);
+  bkSideGentegn();
+  await bkHent(); bkSideGentegn();
+}
+function bkFl(et, ind, plus) { return '<div class="bk-blok"><div class="bk-hd"><span class="bk-e">' + et + '</span>' + (plus || '') + '</div><div class="bk-fl">' + ind + '</div></div>'; }
+function bkPlusKnap(onclick, tekst) { return '<button type="button" class="bk-plus" aria-label="' + tekst + '" onclick="' + onclick + '">' + BK_PLUS + '</button>'; }
+function bkSideGentegn() {
+  const el = document.getElementById("bkSide"); if (!el) return;
+  if (!BK.hentet) { el.innerHTML = '<div class="bk-top"><button type="button" class="dbtn primary mq-tap bk-lav" disabled>Lav et billede</button></div><div class="bk-grid"><div class="bk-blok bk-bred"><div class="bk-fl"><div class="bk-tom">Henter Brandkittet …</div></div></div></div>'; return; }
+  const u = BK.utenVirk, d = BK.d;
+  const tom = function (t) { return '<div class="bk-tom">' + t + '</div>'; };
+  const logo = d.logoer.length ? d.logoer.map(function (l) { const url = BK.url[l.sti] || ""; return '<button type="button" class="bk-logo mq-tap" aria-label="Logo" onclick="bkLogoArk(\'' + l.id + '\')">' + (url ? '<img src="' + url + '" alt="">' : '') + '</button>'; }).join("") : (u ? tom("Brandkittet kan ikke åbnes lige nu.") : "");
+  const farver = '<div class="bk-farver">' + d.farver.map(function (f, i) { return '<button type="button" class="bk-farve mq-tap" aria-label="Farve ' + f + '" onclick="bkFarveArk(' + i + ')"><span class="bk-prikr" style="background:' + f + '"></span><span class="bk-hex-t">' + f + '</span></button>'; }).join("") + '</div>'
+    + (u || d.farver.length >= BK_LOFT.farver ? '' : '<div class="bk-hex"><span class="bk-prik" id="bkPrik"></span><input type="text" id="bkHex" maxlength="7" placeholder="#E9EFF4" aria-label="Farvekode" autocomplete="off" autocapitalize="characters" oninput="bkHexInd(this)" onkeydown="if(event.key===\'Enter\'){event.preventDefault();bkFarveTilfoej();}">' + bkPlusKnap("bkFarveTilfoej()", "Tilføj farven") + '</div>');
+  const bg = d.baggrunde.map(function (b) { const url = BK.url[b.sti] || ""; return '<button type="button" class="bk-bg mq-tap" aria-label="Baggrund" onclick="bkBgArk(\'' + b.id + '\')">' + (url ? '<img src="' + url + '" alt="">' : '') + '</button>'; }).join("");
+  const skab = d.skabeloner.map(function (s) { return '<button type="button" class="bk-skab mq-tap" onclick="bkSkabArk(\'' + s.id + '\')"><canvas data-skab="' + s.id + '" aria-hidden="true"></canvas><span class="bk-skab-n">' + esc(s.navn) + '</span></button>'; }).join("");
+  const knap = function (art, tekst, acc) { return '<input type="file" id="bkFil_' + art + '" accept="' + acc + '" hidden onchange="bkFilValgt(\'' + art + '\',this)">'; };
+  el.innerHTML = '<div class="bk-top"><button type="button" class="bk-tilbage mq-tap" aria-label="Tilbage til Profil" onclick="minProfilAaben()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg></button>'
+    + '<button type="button" class="dbtn primary mq-tap bk-lav" onclick="bkLav()"' + (u ? ' disabled' : '') + '>Lav et billede</button></div>'
+    + '<div class="bk-grid">'
+    + bkFl("Logo", '<div class="bk-raekke">' + logo + '</div>', u || d.logoer.length >= BK_LOFT.logoer ? "" : bkPlusKnap("bkFilVaelg('logo')", "Tilføj et logo")).replace('<div class="bk-blok">', '<div class="bk-blok bk-halv">')
+    + bkFl("Farver", farver).replace('<div class="bk-blok">', '<div class="bk-blok bk-halv">')
+    + bkFl("Skrifter", '<div class="bk-chips">' + bkSkriftChips(!!BK.alleSkrifter) + '</div>').replace('<div class="bk-blok">', '<div class="bk-blok bk-bred">')
+    + bkFl("Baggrunde", '<div class="bk-raekke bk-bgrk">' + bg + '</div>', u || d.baggrunde.length >= BK_LOFT.baggrunde ? "" : bkPlusKnap("bkFilVaelg('baggrund')", "Tilføj en baggrund")).replace('<div class="bk-blok">', '<div class="bk-blok bk-bred">')
+    + bkFl("Skabeloner", '<div class="bk-raekke bk-skabrk">' + skab + '</div>', u || d.skabeloner.length >= BK_LOFT.skabeloner ? "" : bkPlusKnap("bkLav()", "Ny skabelon")).replace('<div class="bk-blok">', '<div class="bk-blok bk-bred">')
+    + '</div>' + knap("logo", "", "image/png,image/jpeg") + knap("baggrund", "", "image/*,.heic,.heif");
+  bkTegnTumb();
+}
+function bkLogoArk(id) { bkValgArk("Logo", [["Skift", "bsFlytLuk();bkLogoSkift('" + id + "')"], ["Slet", "bkSletFil('logoer','" + id + "')"]]); }
+function bkBgArk(id) { bkValgArk("Baggrund", [["Slet", "bkSletFil('baggrunde','" + id + "')"]]); }
+async function bkLogoSkift(id) { await bkSletFil("logoer", id); bkFilVaelg("logo"); }
+/* flisen på Profil: logoet, farverne som prikker og favoritskrifterne som chips; et tryk åbner siden */
+function bkProfilHtml() {
+  if (!BK.hentet) return '<div class="bk-tom">Henter …</div>';
+  if (BK.utenVirk) return '<div class="bk-tom">Åbn Brandkit</div>';
+  const d = BK.d, l = d.logoer[0], u = l ? BK.url[l.sti] : "";
+  return '<div class="bk-pr-logo">' + (u ? '<img src="' + u + '" alt="">' : '') + '</div><div class="bk-pr-farver">' + d.farver.slice(0, 6).map(function (f) { return '<span class="bk-prikr" style="background:' + f + '"></span>'; }).join("") + '</div>'
+    + '<div class="bk-pr-skr">' + d.skrifter.slice(0, 3).map(function (n) { return '<span class="ark-chip" style="font-family:\'' + cvFam(n) + '\';font-weight:' + cvVaegt(n) + ';">' + esc(n) + '</span>'; }).join("") + '</div><span class="bk-pr-pil" aria-hidden="true">›</span>';
+}
+function bkProfilGentegn() { const e = document.getElementById("bkProfil"); if (e) e.innerHTML = bkProfilHtml(); }
+
 function profilSkrifterHtml() {
   const fav = window.__PROF_FAV || [];
   return CV_SKRIFTER.map(function (sk) { const on = fav.indexOf(sk[0]) > -1; return '<button type="button" class="ark-chip' + (on ? ' on' : '') + '" style="font-family:\'' + sk[1] + '\';font-weight:' + (sk[2] || 400) + ';" aria-pressed="' + on + '" onclick="profilSkriftSkift(\'' + sk[0] + '\')">' + esc(sk[0]) + '</button>'; }).join("");
@@ -28743,7 +29052,7 @@ function briefForsideTegn(G, grupper, wrap, navM) {
    Skrifterne er gratis tvillinger — navnene er Instagrams/Edits', fordi Metas egne ikke må ligge i appen.
    Favoritskrifterne gemmes pr. kunde i skema_svar (config · skrifter), samme mønster som hashtagbanken.
    Et lag med »kilde« (hooket, slide n) følger briefens tekst, til kunden selv har rettet teksten (rettet = true). */
-const CV_SKRIFTER = [["Modern","Gabarito"],["Classic","Instrument Sans"],["Strong","Racing Sans One"],["Elegant","Antic Didone"],["Literature","Cormorant"],["Signature","Marck Script"],["Typewriter","Courier Prime"],["Editor","JetBrains Mono"],["Directional","Lexend"],["Bubble","Coiny"],["Deco","Quicksand"],["Poster","Fraunces",800],["Squeeze","Fjalla One"],["Rosalia","Protest Revolution"]];
+const CV_SKRIFTER = [["Modern","Gabarito"],["Classic","Instrument Sans"],["Strong","Racing Sans One"],["Elegant","Antic Didone"],["Literature","Cormorant"],["Signature","Marck Script"],["Typewriter","Courier Prime"],["Editor","JetBrains Mono"],["Directional","Lexend"],["Bubble","Coiny"],["Deco","Quicksand"],["Poster","Fraunces",800],["Squeeze","Fjalla One"],["Rosalia","Protest Revolution"],["Poppins","Poppins"],["Playfair","Playfair Display"],["Montserrat","Montserrat"],["DM Serif","DM Serif Display"],["Lora","Lora"],["Inter","Inter"],["Bebas","Bebas Neue"],["Baskerville","Libre Baskerville"],["Nunito","Nunito"],["Archivo","Archivo"]];   /* v3469: de ti gratis skrifter i Brandkittet (åben licens) */
 const CV_EFFEKTER = [["Ingen",""],["Kant","kant"],["Skygge","skygge"],["Baggrund","boks"]];
 const CV_FARVER = ["#FFFFFF","#1A1A1A","#FC2404","#F2D7A7"];
 const CV_W = 1080, CV_H = 1350;
@@ -28779,6 +29088,7 @@ function cvGentegn() { try { if (CV && CV.inline) kvTegnAlle(); else if (CV) cvT
 async function cvFavHent() {
   if (CV_FAV) return CV_FAV;
   CV_FAV = [];
+  try { await bkHent(); if (BK.virk && !BK.utenVirk) { CV_FAV = BK.d.skrifter.filter(function (n) { return CV_SKRIFTER.some(function (s) { return s[0] === n; }); }); return CV_FAV; } } catch (e) {}
   try {
     if (sb && currentKode) {
       const { data } = await sb.from("skema_svar").select("svar").eq("kode", currentKode).eq("navn", "config").eq("skema", "skrifter").maybeSingle();
@@ -28789,6 +29099,7 @@ async function cvFavHent() {
 }
 async function cvFavGem() {
   let ok = false;
+  try { if (BK.virk && !BK.utenVirk) { BK.d.skrifter = (CV_FAV || []).slice(); const r = await bkGem(["skrifter"]); if (!r.ok) { try { husBesked("Favoritten blev ikke gemt — prøv igen."); } catch (e) {} } return r.ok; } } catch (e) {}
   try {
     const svar = { fav: CV_FAV || [] };
     const eks = await sb.from("skema_svar").update({ svar: svar }).eq("kode", currentKode).eq("navn", "config").eq("skema", "skrifter").select();
@@ -28893,7 +29204,8 @@ function cvTegn(cx, W, H, design, noegle, foto, valgt) {
   cx.clearRect(0, 0, W, H);
   /* GRAA FLADE UDEN FOTO (14/11, karrusellen laves direkte under Fasthold dem): foto === "graa" = intet foto valgt endnu — #F8F8F8 med moerk tekst, kun paa skaermen (designet gemmes uaendret) */
   const graa = foto === "graa";
-  if (graa) { cx.fillStyle = "#F8F8F8"; cx.fillRect(0, 0, W, H); }
+  if (design && design.bg && bkBgTegn(cx, W, H, design.bg)) { /* v3469: Brandkittets baggrund (farve eller billede) */ }
+  else if (graa) { cx.fillStyle = "#F8F8F8"; cx.fillRect(0, 0, W, H); }
   else if (foto && foto.naturalWidth > 0) {
     /* JUSTER BILLEDE (Ida 16/11 »byg juster billede«, Fang dem-buddet 14/11): design.bil = { z: zoom 1–3, x/y: -1…1 = hvor i billedet man står } — tegnes ens på skærmen og i det hentede billede */
     const bj = (design && design.bil) || {}, bz = Math.max(1, Math.min(3, +bj.z || 1)), bx = Math.max(-1, Math.min(1, +bj.x || 0)), by = Math.max(-1, Math.min(1, +bj.y || 0));
@@ -28902,6 +29214,7 @@ function cvTegn(cx, W, H, design, noegle, foto, valgt) {
   } else if (foto !== false) {   /* foto === false: gennemsigtig flade (storyens tekst oven på en fil) */
     const g = cx.createLinearGradient(0, 0, W * 0.4, H); g.addColorStop(0, "#A89C8E"); g.addColorStop(1, "#4F4740"); cx.fillStyle = g; cx.fillRect(0, 0, W, H);
   }
+  try { bkLogoTegn(cx, W, H, design); } catch (e) {}   /* v3469: logoet øverst eller nederst, under teksterne */
   const bokse = [];
   (design.lag || []).forEach(function (l, idx) {
     const t = cvTekst(l, noegle).trim();
@@ -28967,7 +29280,7 @@ function cvTegn(cx, W, H, design, noegle, foto, valgt) {
 /* ---- flisen paa briefoversigten (reel: Coverbillede · karrusel: Slides) — efter Indholdsopbygning, foer captionen: det, der skal postes ---- */
 /* ET BILLEDEOPSLAG HAR OGSAA SIT BILLEDE PAA BRIEFOVERSIGTEN (Ida 15/11: »på et billedeopslag skal man i briefoversigten også se en placeholder som en karrussel med teksten over hvor man kan oploade billede«):
    billedet er eet slide (noegle "0", 4:5) med hookets tekst over — samme motor, samme upload og samme download som karrusellens slides. Foer stod der ingenting. */
-function cvForsideNogler() { const B = BRIEF_STATE || {}; return B.format === "Karrusel" ? cvSlideIdx().map(String) : (B.format === "Billede" ? ["0"] : ["cover"]); }
+function cvForsideNogler() { const B = BRIEF_STATE || {}; if (B.__fri) return bkFriNogler(); return B.format === "Karrusel" ? cvSlideIdx().map(String) : (B.format === "Billede" ? ["0"] : ["cover"]); }
 function cvForsideHtml() {
   const B = BRIEF_STATE || {};
   const bil = B.format === "Billede";
@@ -29023,9 +29336,9 @@ function cvAabn(noegle) {
     document.body.appendChild(ov);
   }
   CV.rod = ov;   /* vaerktoejets elementer slaas op i arket (cvEl) — karrusellens vaerktoej paa siden bruger samme id'er (14/11) */
-  ov.innerHTML = '<div class="cv-ark" role="dialog" aria-modal="true" aria-label="' + (kar ? "Slides" : (B.format === "Billede" ? "Billede" : "Coverbillede")) + '">'
+  ov.innerHTML = '<div class="cv-ark" role="dialog" aria-modal="true" aria-label="' + (B.__fri ? "Lav et billede" : (kar ? "Slides" : (B.format === "Billede" ? "Billede" : "Coverbillede"))) + '">'
     + '<button type="button" class="cv-luk" aria-label="Luk" onclick="cvLuk()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>'
-    + '<div class="cv-titel">' + (kar ? "Slides" : (B.format === "Billede" ? "Billede" : "Coverbillede")) + '</div>'
+    + '<div class="cv-titel">' + (B.__fri ? "Lav et billede" : (kar ? "Slides" : (B.format === "Billede" ? "Billede" : "Coverbillede"))) + '</div>'
     + '<div class="cv-gitter"><div class="cv-venstre"><div class="cv-faner" id="cvFaner"></div><div class="cv-laerred"><canvas id="cvC" aria-label="Billedet"></canvas><div class="cv-str" id="cvStr" role="slider" tabindex="0" aria-label="Tekstens størrelse" aria-orientation="vertical"><span class="cv-str-spor"></span><span class="cv-str-knap" id="cvStrKnap"></span></div></div>'
     + '<div class="cv-medier" id="cvMedier"></div>'
     + '<button type="button" class="dbtn mq-tap cv-foto" onclick="cvFotoVaelg()"><span id="cvFotoOrd">Vælg foto</span></button>'
@@ -29039,6 +29352,7 @@ function cvAabn(noegle) {
   st.addEventListener("keydown", function (e) { const l = cvLag(); if (!l) return; if (e.key === "ArrowUp" || e.key === "ArrowDown") { e.preventDefault(); cvStrZ(l.z + (e.key === "ArrowUp" ? 0.004 : -0.004)); cvGemSnart(); } });
   cvUI();
   cvFavHent().then(function () { if (CV) cvUI(); });
+  try { bkHent().then(function () { if (CV) cvUI(); }); } catch (e) {}
 }
 /* SKYDEREN I VENSTRE SIDE (Ida 24/9 kl. 23.02: »i edit kan jeg tage sådan en og kører op eller ned så teksten bliver større eller mindre … via den i venstre side«):
    op = stoerre, ned = mindre; teksten ombrydes selv, saa kunden styrer, om den staar paa to linjer. Afloeser raekken Lille/Mellem/Stor/Stoerre. */
@@ -29059,7 +29373,7 @@ function cvLuk() {
   const ov = document.getElementById("cvEd"); if (ov) { ov.classList.remove("on"); ov.innerHTML = ""; }
   try { kvNyLagRyd(); } catch (e) {}   /* et tomt, nyt lag gemmes aldrig (Idas klik 14/11) */
   document.body.classList.remove("cv-aaben"); CV = null;
-  cvGemNu();
+  if (BRIEF_STATE && BRIEF_STATE.__fri) { const gl = window.__BK_GL || {}; BRIEF_ID = gl.id; BRIEF_STATE = gl.st; window.__BK_GL = null; try { bkSideGentegn(); } catch (e) {} } else cvGemNu();   /* v3469: det frie billede gemmes aldrig på en brief */
   try { kvInit(); } catch (e) {}   /* karrusellens vaerktoej paa Fasthold dem tager over igen (14/11) */
   try { const fs = document.getElementById("briefForside"); const gl = fs && fs.querySelector(".pf-cv"); if (gl) { gl.outerHTML = cvForsideHtml(); cvForsideTegn(); } } catch (e) {}
 }
@@ -29100,18 +29414,22 @@ function cvUI() {
   if (l && skr.indexOf(l.s) === -1) skr.push(l.s);
   const chip = function (on, attr, inner, stil) { return '<button type="button" class="ark-chip' + (on ? ' on' : '') + '" ' + attr + (stil ? ' style="' + stil + '"' : '') + '>' + inner + '</button>'; };
   const p = cvEl("cvPanel"); if (!p) return;
-  p.innerHTML = '<div class="cv-sek">Tekster</div><div class="cv-chips">'
+  const fri = !!(BRIEF_STATE && BRIEF_STATE.__fri);
+  const fvListe = (BK.hentet && BK.d.farver.length) ? BK.d.farver.slice() : CV_FARVER.slice(); if (l && l.f && fvListe.indexOf(l.f) === -1) fvListe.push(l.f);
+  p.innerHTML = bkPanelFoer(d) + '<div class="cv-sek">Tekster</div><div class="cv-chips">'
     + d.lag.map(function (x, i) { return chip(i === CV.valgt, 'onclick="cvVaelgLag(' + i + ')"', "Tekst " + (i + 1)); }).join("")
     + '<button type="button" class="ark-chip cv-plus" onclick="cvNytLag()">+ Tekst</button>' + (cvFotoUrl(CV.noegle) ? '<button type="button" class="ark-chip kv-just' + (CV.juster ? ' on' : '') + '" aria-pressed="' + !!CV.juster + '" onclick="kvJusterSkift()">' + KV_JUST_IK + 'Juster billede</button>' : '') + '</div>' + (CV.juster && cvFotoUrl(CV.noegle) ? kvJusterPanel() : '')
-    + (l ? '<div class="cv-felt"><textarea id="cvTekst" rows="2" aria-label="Teksten" oninput="cvTekstInd(this)">' + esc(cvTekst(l, CV.noegle)) + '</textarea>'
+    + (l ? '<div class="cv-felt"><textarea id="cvTekst" rows="2" aria-label="Teksten" oninput="cvTekstInd(this)">' + esc(cvTekst(l, CV.noegle)) + '</textarea>' + (function () { try { return taleMikHtml("cvTekst"); } catch (e) { return ""; } })()
       + '<button type="button" class="cv-slet" aria-label="Slet teksten" title="Slet teksten" onclick="cvSletLag()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg></button></div>'
       + '<div class="cv-sek">Skrift</div><div class="cv-chips">' + skr.map(function (n) { return chip(l.s === n, 'onclick="cvSaet(\'s\',\'' + n + '\')"', esc(n), "font-family:'" + cvFam(n) + "';font-weight:" + cvVaegt(n)); }).join("") + (visAlle ? '' : '<button type="button" class="ark-chip cv-plus" onclick="CV.alleSkrifter=true;cvUI()">Alle skrifter</button>') + '</div>'
       + '<div class="cv-sek">Effekt</div><div class="cv-chips">' + CV_EFFEKTER.map(function (e) { return chip((l.e || "") === e[1], 'onclick="cvSaet(\'e\',\'' + e[1] + '\')"', e[0]); }).join("") + '</div>'
-      + '<div class="cv-sek">' + (l.e === "boks" ? "Farve bag teksten" : "Farve") + '</div><div class="cv-farver">' + CV_FARVER.map(function (f) { return '<button type="button" class="cv-fv' + (l.f === f ? ' on' : '') + '" style="background:' + f + '" aria-label="Farve" onclick="cvSaet(\'f\',\'' + f + '\')"></button>'; }).join("") + '</div>'
+      + '<div class="cv-sek">' + (l.e === "boks" ? "Farve bag teksten" : "Farve") + '</div><div class="cv-farver">' + fvListe.map(function (f) { return '<button type="button" class="cv-fv' + (l.f === f ? ' on' : '') + '" style="background:' + f + '" aria-label="Farve" aria-pressed="' + (l.f === f) + '" onclick="cvSaet(\'f\',\'' + f + '\')"></button>'; }).join("") + '</div>'
       : '')
-    + '<button type="button" class="dbtn primary mq-tap cv-gem" onclick="cvGemOgTilbage()">Gem ændringer</button>';   /* GEM AENDRINGER, IKKE DOWNLOAD (Ida 24/9 kl. 23.21: »skal gem ændringer ikke betyde download! Det skal man kunne ude fra briefoversigten«) */
+    + (fri ? '<div class="cv-knapper"><button type="button" class="dbtn primary mq-tap cv-gem" onclick="cvGemAlle(CV.nogler)">Gem billedet</button><button type="button" class="dbtn mq-tap" onclick="bkSkabNy()">Gem som skabelon</button><button type="button" class="dbtn mq-tap" onclick="cvLuk()">Annuller</button></div>'
+         : '<button type="button" class="dbtn primary mq-tap cv-gem" onclick="cvGemOgTilbage()">Gem ændringer</button>');   /* GEM AENDRINGER, IKKE DOWNLOAD (Ida 24/9 kl. 23.21: »skal gem ændringer ikke betyde download! Det skal man kunne ude fra briefoversigten«) */
   /* DEN VALGTE CHIP KAN ALTID SES (gennemsyn 14/11): chip-raekker ombrydes aldrig (husets regel) — staar den valgte skrift uden for kanten, ruller raekken selv hen til den */
   try { (cvEl("cvPanel") || p).querySelectorAll(".cv-chips").forEach(function (r) { const o = r.querySelector(".on"); if (o && (o.offsetLeft + o.offsetWidth > r.scrollLeft + r.clientWidth || o.offsetLeft < r.scrollLeft)) r.scrollLeft = Math.max(0, o.offsetLeft - 16); }); } catch (e) {}
+  try { bkFriUI(); } catch (e) {}
   cvTegnNu();
 }
 function cvTegnNu() {
@@ -29318,7 +29636,7 @@ async function cvFotoValgt(inp) {
 const CV_LAGER = "brief-filer";
 const CV_STI_URL = {};   /* sti i lageret → adresse i fanen; deles af alle briefs, der peger paa samme fil */
 async function cvFotoOpload(k, url) {
-  if (!sb || !BRIEF_ID) return;
+  if (!sb || !BRIEF_ID || (BRIEF_STATE && BRIEF_STATE.__fri)) return;   /* et frit billede lægger intet på en brief */
   const briefId = BRIEF_ID;
   const vid = await bsVirksomhedId(currentKode); if (!vid) return;
   const im = await new Promise(function (ok) { const i = new Image(); i.onload = function () { ok(i); }; i.onerror = function () { ok(null); }; i.src = url; }); if (!im) return;
@@ -29351,7 +29669,7 @@ async function cvFotoHent() {
   try { if (CV) cvUI(); } catch (e) {}
 }
 function cvGemSnart() { clearTimeout(CV_GEM_T); CV_GEM_T = setTimeout(cvGemNu, 900); }
-function cvGemNu() { clearTimeout(CV_GEM_T); CV_GEM_T = null; try { if (BRIEF_ID) saveBrief(true); } catch (e) {} }
+function cvGemNu() { clearTimeout(CV_GEM_T); CV_GEM_T = null; try { if (BRIEF_STATE && BRIEF_STATE.__fri) return; if (BRIEF_ID) saveBrief(true); } catch (e) {} }
 async function cvBilledFil(k, n, kar) {
   const d = cvDesign(k, false); await cvFontKlar(d);
   const url = cvFotoUrl(k); let foto = null;
@@ -29361,11 +29679,12 @@ async function cvBilledFil(k, n, kar) {
   cvTegn(c.getContext("2d"), CV_W, H, d, k, foto, -1);
   const blob = await new Promise(function (ok) { c.toBlob(ok, "image/jpeg", 0.95); });
   let navn = "coverbillede"; try { const it = (IDEER || []).find(function (x) { return String(x.id) === String(BRIEF_ID); }); if (it && it.titel) navn = it.titel; } catch (e) {}
+  if (BRIEF_STATE && BRIEF_STATE.__fri) navn = "billede";
   navn = String(navn).toLowerCase().replace(/[æ]/g, "ae").replace(/[ø]/g, "oe").replace(/[å]/g, "aa").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 60) || "coverbillede";
   return new File([blob], navn + (kar ? "-slide-" + (n + 1) : "-cover") + ".jpg", { type: "image/jpeg" });
 }
 async function cvGemAlle(nogler) {
-  const mangler = nogler.filter(function (k) { return !cvFotoUrl(k); });
+  const mangler = (BRIEF_STATE && BRIEF_STATE.__fri) ? [] : nogler.filter(function (k) { return !cvFotoUrl(k) && !(cvDesign(k, false).bg); });
   if (mangler.length) { if (CV) { cvSlide(mangler[0]); } else cvAabn(mangler[0]); cvFotoVaelg(); return; }
   cvGemNu();
   const kar = (BRIEF_STATE || {}).format === "Karrusel";
@@ -33896,7 +34215,7 @@ function kvUI() {
   if (l && skr.indexOf(l.s) === -1) skr.push(l.s);
   const chip = function (on, attr, inner, stil) { return '<button type="button" class="ark-chip' + (on ? ' on' : '') + '" ' + attr + (stil ? ' style="' + stil + '"' : '') + '>' + inner + '</button>'; };
   const p = cvEl("cvPanel");
-  if (p) p.innerHTML = (l ? '<div class="cv-sek">Skrift</div><div class="cv-chips">' + skr.map(function (n) { return chip(l.s === n, 'onclick="cvSaet(\'s\',\'' + n + '\')"', esc(n), "font-family:'" + cvFam(n) + "';font-weight:" + cvVaegt(n)); }).join("") + (visAlle ? '' : '<button type="button" class="ark-chip cv-plus" onclick="CV.alleSkrifter=true;cvUI()">Alle skrifter</button>') + '</div>'
+  if (p) p.innerHTML = bkPanelFoer(d) + (l ? '<div class="cv-sek">Skrift</div><div class="cv-chips">' + skr.map(function (n) { return chip(l.s === n, 'onclick="cvSaet(\'s\',\'' + n + '\')"', esc(n), "font-family:'" + cvFam(n) + "';font-weight:" + cvVaegt(n)); }).join("") + (visAlle ? '' : '<button type="button" class="ark-chip cv-plus" onclick="CV.alleSkrifter=true;cvUI()">Alle skrifter</button>') + '</div>'
       + '<div class="cv-sek">Effekt</div><div class="cv-chips">' + CV_EFFEKTER.map(function (e) { return chip((l.e || "") === e[1], 'onclick="cvSaet(\'e\',\'' + e[1] + '\')"', e[0]); }).join("") + '</div>'
       + '<div class="cv-sek">' + (l.e === "boks" ? "Farve bag teksten" : "Farve") + '</div><div class="cv-farver">' + CV_FARVER.map(function (f) { return '<button type="button" class="cv-fv' + (l.f === f ? ' on' : '') + '" style="background:' + f + '" aria-label="Farve" onclick="cvSaet(\'f\',\'' + f + '\')"></button>'; }).join("") + '</div>'
       : '');   /* som coverbilledet: ingen hjælpelinje, chipsene står øverst over feltet (17/11) */
@@ -72721,7 +73040,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "3467";
+const APP_VERSION = "3469";
 const APP_BYGGET = "3. november";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_VERSION;   /* ingen dato (Ida 7/11: »hvorfor står der version 3. november?«) — datoen blev ikke rettet med, nummeret er sandheden */ } catch (e) {} });
 let NY_VERSION_KLAR = false;
@@ -109100,6 +109419,64 @@ html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7
 html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .kbu-video .kbu-vp-fejl { margin:12px 0 0 !important; font:400 14px/20px Poppins,sans-serif !important; color:#FC2404 !important; }
 /* v3466 · valget »Jeg er her som privatperson« står under feltet i guiden */
 html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) #pfFlow .pf-chips.pf-privat { margin:0 !important; }
+/* v3469 · BRANDKIT UNDER PROFIL: siden, flisen på Profil og editorens nye dele (Skabelon · Baggrund · Logo). Kun husets farver; kundens egne farver optræder kun som indhold. */
+html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .bk-side { max-width:976px !important; margin:0 auto !important; }
+html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .bk-top { display:flex !important; align-items:center !important; justify-content:space-between !important; gap:12px !important; margin:0 0 16px !important; }
+html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .bk-tilbage { width:40px !important; height:40px !important; border-radius:50% !important; background:#FFFFFF !important; border:1px solid #DEDEDE !important; display:inline-flex !important; align-items:center !important; justify-content:center !important; padding:0 !important; color:#686868 !important; box-shadow:var(--mb-skygge) !important; }
+html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .bk-tilbage svg { width:18px !important; height:18px !important; }
+html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .bk-lav { width:auto !important; height:44px !important; padding:0 26px !important; margin:0 !important; }
+html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .bk-grid { display:grid !important; grid-template-columns:minmax(0,1fr) minmax(0,1fr) !important; gap:16px !important; }
+html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .bk-bred { grid-column:1 / -1 !important; }
+html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .bk-blok { background:#FFFFFF !important; border-radius:20px !important; box-shadow:var(--mb-skygge) !important; padding:16px 20px 20px !important; min-width:0 !important; box-sizing:border-box !important; }
+html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .bk-hd { display:flex !important; align-items:center !important; justify-content:space-between !important; min-height:36px !important; margin:0 0 12px !important; }
+html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .bk-e { font:400 10px/16px Poppins,sans-serif !important; letter-spacing:1.6px !important; text-transform:uppercase !important; color:#686868 !important; }
+html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .bk-plus { flex:none !important; width:36px !important; height:36px !important; border-radius:50% !important; background:#FC2404 !important; color:#FFFFFF !important; border:0 !important; display:inline-flex !important; align-items:center !important; justify-content:center !important; padding:0 !important; cursor:pointer !important; }
+html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .bk-plus svg { width:18px !important; height:18px !important; }
+html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .bk-raekke { display:flex !important; flex-wrap:wrap !important; gap:12px !important; }
+html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .bk-logo { width:200px !important; height:125px !important; border:1px solid #DEDEDE !important; border-radius:12px !important; background:#FFFFFF !important; padding:8px !important; box-sizing:border-box !important; display:flex !important; align-items:center !important; justify-content:center !important; cursor:pointer !important; }
+html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .bk-logo img { max-width:100% !important; max-height:100% !important; object-fit:contain !important; }
+html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .bk-farver { display:flex !important; flex-wrap:wrap !important; gap:12px 14px !important; }
+html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .bk-farve { display:flex !important; flex-direction:column !important; align-items:center !important; gap:8px !important; background:none !important; border:0 !important; padding:0 !important; width:60px !important; cursor:pointer !important; }
+html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .bk-prikr { display:inline-block !important; width:52px !important; height:52px !important; border-radius:50% !important; border:1px solid #DEDEDE !important; box-sizing:border-box !important; }
+html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .bk-hex-t { font:400 11px/16px Poppins,sans-serif !important; color:#686868 !important; }
+html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .bk-hex { display:flex !important; align-items:center !important; gap:12px !important; margin-top:16px !important; border:1px solid #DEDEDE !important; border-radius:14px !important; padding:6px 6px 6px 12px !important; background:#FFFFFF !important; }
+html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .bk-hex input { flex:1 1 auto !important; min-width:0 !important; border:0 !important; outline:0 !important; background:transparent !important; font:400 14px/20px Poppins,sans-serif !important; color:#1A1A1A !important; box-shadow:none !important; padding:0 !important; height:36px !important; }
+html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .bk-prik { flex:none !important; width:32px !important; height:32px !important; border-radius:50% !important; border:1px solid #DEDEDE !important; background:transparent !important; box-sizing:border-box !important; }
+html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .bk-chips { display:flex !important; flex-wrap:wrap !important; gap:8px !important; }
+html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .bk-bg { width:178px !important; aspect-ratio:4 / 5 !important; border-radius:12px !important; border:1px solid #DEDEDE !important; padding:0 !important; background:#FFFFFF !important; overflow:hidden !important; cursor:pointer !important; }
+html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .bk-bg img { display:block !important; width:100% !important; height:100% !important; object-fit:cover !important; }
+html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .bk-skab { display:flex !important; flex-direction:column !important; gap:8px !important; width:178px !important; background:none !important; border:0 !important; padding:0 !important; text-align:left !important; cursor:pointer !important; }
+html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .bk-skab canvas { width:100% !important; height:auto !important; border-radius:12px !important; border:1px solid #DEDEDE !important; background:#FFFFFF !important; display:block !important; }
+html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .bk-skab-n { font:400 12px/16px Poppins,sans-serif !important; color:#686868 !important; }
+html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .bk-tom { font:400 14px/20px Poppins,sans-serif !important; color:#1A1A1A !important; padding:8px 0 !important; }
+html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .bk-profil { display:flex !important; align-items:center !important; gap:16px !important; flex-wrap:wrap !important; cursor:pointer !important; position:relative !important; padding-right:24px !important; min-height:75px !important; }
+html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .bk-pr-logo { width:120px !important; height:75px !important; border:1px solid #DEDEDE !important; border-radius:12px !important; padding:6px !important; box-sizing:border-box !important; display:flex !important; align-items:center !important; justify-content:center !important; }
+html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .bk-pr-logo img { max-width:100% !important; max-height:100% !important; object-fit:contain !important; }
+html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .bk-pr-logo:empty { display:none !important; }
+html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .bk-pr-farver { display:flex !important; gap:6px !important; }
+html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .bk-pr-farver .bk-prikr { width:24px !important; height:24px !important; }
+html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .bk-pr-skr { display:flex !important; gap:8px !important; flex-wrap:wrap !important; }
+html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .bk-pr-pil { position:absolute !important; right:0 !important; top:50% !important; transform:translateY(-50%) !important; color:#686868 !important; font-size:20px !important; }
+@media (max-width:899px) {
+  html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .bk-grid { grid-template-columns:minmax(0,1fr) !important; }
+  html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .bk-top { flex-wrap:wrap !important; }
+  html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .bk-lav { flex:1 1 100% !important; order:2 !important; }
+  html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .bk-bg, html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .bk-skab { width:calc(50% - 6px) !important; }
+  html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .bk-logo { width:100% !important; }
+}
+/* editoren: Baggrund (farver og billeder med husets flueben), farven med flueben i stedet for ring, knapperne under hinanden med 12 imellem, slides og format som chips */
+html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .cv-bgrk { display:flex !important; flex-wrap:wrap !important; gap:12px !important; }
+html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .cv-bg { position:relative !important; width:46px !important; height:58px !important; border-radius:10px !important; border:1px solid #DEDEDE !important; padding:0 !important; cursor:pointer !important; font:400 11px/16px Poppins,sans-serif !important; color:#686868 !important; }
+html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .cv-bg img { display:block !important; width:100% !important; height:100% !important; object-fit:cover !important; border-radius:9px !important; }
+html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .cv-bg-foto { background:#FFFFFF !important; }
+html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .cv-felt { position:relative !important; }
+html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .cv-felt .brief-mik { position:absolute !important; right:56px !important; bottom:8px !important; top:auto !important; left:auto !important; }
+html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .cv-bg i { position:absolute !important; left:50% !important; top:50% !important; width:28px !important; height:28px !important; margin:-14px 0 0 -14px !important; border-radius:50% !important; background:#FC2404 !important; display:flex !important; align-items:center !important; justify-content:center !important; }
+html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .cv-bg i svg { width:16px !important; height:16px !important; }
+html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .cv-fv.on::after { inset:auto !important; left:50% !important; top:50% !important; width:28px !important; height:28px !important; margin:-14px 0 0 -14px !important; border:0 !important; border-radius:50% !important; background:#FC2404 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='3.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12.5l4.5 4.5L19 7'/%3E%3C/svg%3E") center / 16px no-repeat !important; }
+html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .cv-knapper { display:flex !important; flex-direction:column !important; gap:12px !important; margin-top:16px !important; }
+html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .cv-knapper .dbtn { width:100% !important; height:44px !important; min-height:44px !important; margin:0 !important; border-radius:999px !important; }
+html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .cv-friSlides { display:flex !important; gap:8px !important; flex-wrap:wrap !important; align-items:center !important; justify-content:center !important; margin-top:12px !important; }
 /* v3395 (Ida 20/11) — MODULFLISERNE: cirkel som lektionerne (tom · rødt flueben · hængelås), ingen pil, ingen fold-ud */
 html body #forloebTidslinje .ftl2 .ftl2-hoved, html body #forloebTidslinje .ftl2 .ftl2-rk.laast { display:flex !important; align-items:center !important; justify-content:flex-start !important; gap:16px !important; cursor:pointer; }
 html body #forloebTidslinje .ftl2 .ftl2-rk.laast { cursor:default; }
@@ -109212,7 +109589,7 @@ body.sk-holder, body.sk-holder .content, body.sk-holder #dashMain, [data-bs-hold
 }
 </style>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-hvid.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 22. november · 3467</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 22. november · 3469</div>
 <script>
 /* DROPDOWNEN RULLER SELV (Ida 4/10) — maal den aabne liste og klip den ved skaermens bund */
 (function () {

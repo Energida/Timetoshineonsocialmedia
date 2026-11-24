@@ -392,6 +392,19 @@ for CHB in "390 844" "1440 940"; do
   echo "$UDCH" | grep -q "SELE CHIPS OK $1" || HERO_OK=0
 done
 mv "$MAAL/sb-stub.js.foer-chips" "$MAAL/sb-stub.js"
+# BRANDKIT UNDER PROFIL (v3469, Ida 24/11: »Det er, at vi under profil laver et Brandkit … uploade sit logo … favorit skrifttyper … skabeloner med baggrunde … heksfarver« · »Ja, byg det nu«):
+# probe-brandkit.js som kunde paa 390 og 1440 med den huskende base (lageret og virksomhedens id er byttet ud): flisen paa Profil, siden med fem fliser, farver (hex, loft), favoritskrifter, upload i det lukkede lager,
+# editoren »Lav et billede« (format, Skabelon · Baggrund · Logo, baggrunden tegnes, »Gem som skabelon«, knapper 44 hoeje med 12 imellem), det frie billede roerer ingen brief, og en konto uden virksomhed kan intet.
+KBK=$(python3 -c "import urllib.parse,sys;print(urllib.parse.quote(open(sys.argv[1]).read()))" "$ROD/tools/designlaas/probe-brandkit.js")
+cp "$MAAL/sb-stub.js" "$MAAL/sb-stub.js.foer-brandkit" && cp "$ROD/tools/sikkerhedschefen/lag2/husk-stub.js" "$MAAL/sb-stub.js"   # proeven saar data: den huskende base (v3469)
+for BKB in "390 844" "1440 940"; do
+  set -- $BKB
+  RAABK=$($TO "$C" $HL --no-sandbox --disable-gpu --window-size=$(($1+40)),1000 --virtual-time-budget=90000 --enable-logging=stderr --v=0 --screenshot="$MAAL/brandkit-$1.png" "http://127.0.0.1:$PORT/sele.html?vis=kunde&fil=index-sele.html%3Fselekode%3DHINGES2026&bred=$1&hoej=$2&kode=$KBK" 2>&1)
+  UDBK=$(echo "$RAABK" | grep -a 'CONSOLE' | sed -E 's/^.*CONSOLE[:(][0-9]+\)?\] //; s/", source:.*$//; s/^"//' | grep -a 'SELE BRANDKIT')
+  echo "${UDBK:-SELE BRANDKIT FEJL $1: ingen maaling}"
+  echo "$UDBK" | grep -q "SELE BRANDKIT OK $1" || HERO_OK=0
+done
+mv "$MAAL/sb-stub.js.foer-brandkit" "$MAAL/sb-stub.js"
 # RUNDVISNINGEN (v3450, Ida 23/11: »man kan paa ingen maade afslutte rundvisningen!« · »alt det her hak skal vaek!!!«): samme boks paa velkomsten og alle trin, hoejst én flise, »Spring over« afslutter med ét klik. probe-tur.js, 390 og 1440.
 KTU=$(python3 -c "import urllib.parse,sys;print(urllib.parse.quote(open(sys.argv[1]).read()))" "$ROD/tools/designlaas/probe-tur.js")
 for TUB in "390 844" "1440 940"; do
