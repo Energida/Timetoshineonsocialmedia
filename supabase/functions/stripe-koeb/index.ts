@@ -29,6 +29,8 @@
 //    skema_svar (ENERGIDA/Ida/mail_tekster.login) med samme kode som Mails' forhåndsvisning og sendes via Brevo.
 //    Knappen er kundens eget invitationslink. Fejler Brevo, sendes Supabase' egen »vælg adgangskode«-mail som
 //    reserve (resetPasswordForEmail), så kunden aldrig står uden mail.
+// 24/11 RAPPORTER (Ida: »Ja, byg det«): købsmailen til Ida kan slås fra (lektion_oevelser »ida:rapporter«.koeb = false), skrives i
+//    mail_log (mail_id »koeb:<session>«) og gemmes som senest sendte i skema_svar ENERGIDA/Ida/rapport_sidst_koeb (kun admin kan læse).
 // 6. OMKOSTNING: ingen direkte. Ingen AI-kald. Der sendes én invitationsmail
 //    pr. koeb via Supabase, og 6/11 én koebsmail til Ida via Brevo (Free, delt
 //    300 mails/dag). Modtageren er FAST (Kontakt@energida.dk) — kalderen kan ikke
@@ -178,11 +180,27 @@ function koebBelob(s: Record<string, any>) {
   return (Number.isFinite(kr) ? kr : 0).toLocaleString("da-DK") + " kr.";
 }
 
+/* RAPPORTER (Ida 24/11: »jeg vil gerne have ændret de mails jeg får - kan du lave et felt under mails vi kalder rapporter så jeg kan se hvilke mails jeg får?« → »Ja, byg det«).
+   Til/fra står i lektion_oevelser (lektion_id »ida:rapporter«, spm = { status, koeb, fejl }): kun admin skriver, alle må læse (samme regler som ygt:dage).
+   Mangler rækken eller nøglen, er mailen TÆNDT, som før. */
+async function rapportTaendt(db: any, k: string) {
+  try { const { data } = await db.from("lektion_oevelser").select("spm").eq("lektion_id", "ida:rapporter").maybeSingle(); const v = data && data.spm && typeof data.spm === "object" ? data.spm[k] : undefined; return v !== false; } catch (_e) { return true; }
+}
+/* »SE DEN« (24/11): den senest sendte udgave gemmes i Idas egen række (skema_svar ENERGIDA/Ida/rapport_sidst_<k>), som kun admin kan læse. Best-effort. */
+async function rapportGem(db: any, k: string, emne: string, html: string) {
+  try {
+    const svar = { emne: String(emne || "").slice(0, 200), tid: new Date().toISOString(), html: String(html || "").slice(0, 200000) };
+    const u = await db.from("skema_svar").update({ svar }).eq("kode", "ENERGIDA").eq("navn", "Ida").eq("skema", "rapport_sidst_" + k).select("id");
+    if (!u.error && !(u.data && u.data.length)) await db.from("skema_svar").insert({ kode: "ENERGIDA", navn: "Ida", skema: "rapport_sidst_" + k, svar });
+  } catch (_e) { /* må aldrig vælte mailen */ }
+}
+
 async function sendKoebsmail(o: {
   produkt: string; belob: string; tidspunkt: string; rabat: { hentet: boolean; kode: string };
   navn: string; virksomhed: string; email: string; telefon: string; kode: string; test: boolean; eksisterende: boolean;
-}) {
+}, db?: any, sid?: string) {
   try {
+    if (db && !(await rapportTaendt(db, "koeb"))) return false;   /* Ida har slået købsmailen fra (Rapporter, 24/11) */
     const noegle = Deno.env.get("BREVO_API_KEY");
     if (!noegle) return false;
     const flise = (etiket: string, indhold: string) =>
@@ -219,6 +237,13 @@ async function sendKoebsmail(o: {
         tags: ["koebsmail"],
       }),
     });
+    /* RAPPORTER (24/11): købsmailen står i mailloggen og som senest sendte, så Ida kan se den under Mails › Rapporter */
+    if (db) {
+      const emneK = (o.test ? "Testkøb · " : "Nyt køb · ") + o.produkt + " · " + o.belob;
+      let bid = ""; try { const j = await r.clone().json(); bid = String((j && j.messageId) || ""); } catch (_e) { bid = ""; }
+      try { await db.from("mail_log").insert({ email: "kontakt@energida.dk", mail_id: "koeb:" + String(sid || Date.now()), emne: emneK, status: r.ok ? "sendt" : "fejl", brevo_id: bid || null, fejl: r.ok ? null : "Brevo svarede " + r.status }); } catch (_e) { /* loggen må aldrig vælte et køb */ }
+      if (r.ok) await rapportGem(db, "koeb", emneK, html);
+    }
     return r.ok;
   } catch { return false; }
 }
@@ -508,7 +533,7 @@ Deno.serve(async (req) => {
       const mailSendt = await sendKoebsmail({
         produkt: erYGT ? "You Got This" : "Content Studio", belob: koebBelob(s), tidspunkt: dkTid(Number(s.created)),
         rabat: rabatInfo, navn, virksomhed, email, telefon, kode: "", test: erTest, eksisterende: true,
-      });
+      }, admin, String(s.id ?? ""));
       return svar({ ok: true, allerede: email, oprettet: false, koebsmail: mailSendt, findesmail }, 200);
     }
     if (brugere.length < 200) break;
@@ -705,7 +730,7 @@ Deno.serve(async (req) => {
   const mailSendt = await sendKoebsmail({
     produkt: erYGT ? "You Got This" : "Content Studio", belob: koebBelob(s), tidspunkt: dkTid(Number(s.created)),
     rabat: rabatInfo, navn, virksomhed, email, telefon, kode, test: erTest, eksisterende: false,
-  });
+  }, admin, String(s.id ?? ""));
 
   // virk_kilde er ikke pynt: den er beviset for, HVOR virksomhedsnavnet kom fra.
   // Staar der "customer_details.name (noedspor)", fandt vi aldrig firmanavnet, og

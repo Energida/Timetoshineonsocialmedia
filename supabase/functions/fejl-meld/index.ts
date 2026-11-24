@@ -15,6 +15,8 @@
 //   5. Når (som kalderen, under RLS): skema_svar — læse én app_fejl-række (id), tælle egne kunde_fejl-rækker det sidste døgn, læse kundens
 //      kunde_def (virksomhedens navn). Intet skrives.
 //   6. Direkte omkostning: nej — Brevo Free (300 mails/dag delt). Højst 20 mails pr. kunde pr. døgn.
+// 24/11 RAPPORTER (Ida: »Ja, byg det«): læser også lektion_oevelser »ida:rapporter« som kalderen (åben for læsning); står »fejl« = false,
+//   sendes ingen mail (rapporten er stadig gemt og står i Backstage › Teknik). Stadig ingen service-role og intet skrives.
 // ============================================================================
 
 import { createClient } from "npm:@supabase/supabase-js@2";
@@ -74,6 +76,8 @@ Deno.serve(async (req) => {
     + '<p style="font-size:12px;color:#686868;margin:18px 0 0;">Svar på mailen for at skrive direkte til kunden. Rapporten står også i Backstage · Teknik · Fejl fra kunderne.</p>'
     + '</div>';
 
+  /* RAPPORTER (24/11): har Ida slået fejlmails fra, sendes ingen mail; rapporten er gemt i forvejen */
+  try { const { data: rp } = await db.from("lektion_oevelser").select("spm").eq("lektion_id", "ida:rapporter").maybeSingle(); if (rp && rp.spm && rp.spm.fejl === false) return svar({ ok: true, sendt: 0, grund: "slukket" }, 200); } catch (_e) { /* tændt som før */ }
   const noegle = Deno.env.get("BREVO_API_KEY"); if (!noegle) return svar({ fejl: "ikke-klar" }, 503);
   /* Emnet stopper ved et helt ord (Idas mail 23/10: »Ingen kunde h«) — aldrig »…« */
   const kort = (t: string, n: number) => { const r = t.replace(/\s+/g, " ").trim(); if (r.length <= n) return r; const c = r.slice(0, n); const i = c.lastIndexOf(" "); return (i > 20 ? c.slice(0, i) : c).replace(/[\s,.;:—–-]+$/, ""); };

@@ -1,3 +1,13 @@
+## 24. november · v3458 · BACKSTAGE › MAILS: FELTET »RAPPORTER« (DE MAILS, IDA SELV FÅR) — BYGGET I TESTUDGAVEN, IKKE UDE
+
+- **Idas ord 24/11:** »jeg vil gerne have ændret de mails jeg får - kan du lave et felt under mails vi kalder rapporter så jeg kan se hvilke mails jeg får?« · »Ja, byg det« (på »Ny chef«s tegning). Femte felt på Mails: »Rapporter«.
+- **Fire rækker i husets hvide flise:** Statusmail (»Hver morgen kl. 07.00 · nye køb, hvem der skal have et skub, fejl og feedback«) · Nyt køb (»Hver gang nogen køber · navn, virksomhed, beløb og rabatkode«) · Fejl fra en kunde (»Når en kunde trykker »Meld en fejl« · du kan svare direkte på mailen«) · Prøvemails (»Når du trykker »Send en prøve« på en af dine mails«). Linjen om hvornår er rækkens indhold (fra tegningen), ikke en forklaringslinje. Under den »Sidst: dato · emne« i tekstfarven (»Ingen endnu«, når der ikke er sendt nogen).
+- **Kontakten** (de tre første) slår mailen til og fra og gemmer i `lektion_oevelser` »ida:rapporter«; mangler rækken, er mailen tændt. Kvittering »Gemt« kun, når præcis én række er skrevet; ellers »Det blev ikke gemt. Prøv igen.«, og kontakten står, som den stod.
+- **»Se den«:** Statusmail og Nyt køb viser den senest sendte mail i en lukket ramme (`sandbox=""`, ingen scripts); findes den ikke endnu: »Den første kommer med næste mail.« Fejl fra en kunde åbner »Fejl fra kunderne«; Prøvemails åbner »Automatiske mails«.
+- **Mails' fem felter er lige brede** (tre pr. række på computeren). Før var »Statistik« 130 bred mod 266 for de andre.
+- **Sikkerhedskontrakten §8:** ingen ny tabel, kolonne eller policy fra appen. Serverfunktionerne (status-mail v4, fejl-meld v7, stripe-koeb v30) er lagt op af »Ny chef« med rolletest (hændelsesloggen); kilderne ligger nu i den fælles kopi. Kun admin kan skrive »ida:rapporter« (målt af »Ny chef«).
+- **MÅLT i testudgaven (390 og 1440, prøvedata):** fire rækker; prøve-statusmailen tæller ikke som »Sidst«; kontakten skriver én række og samme række igen; afvist skrivning lader kontakten stå; mailens eget script kørte IKKE i rammen. **IKKE MÅLT:** den rigtige base som Ida · at funktionerne faktisk stopper en mail, når kontakten er slået fra (»Ny chef«s del) · en rigtig statusmail i rammen.
+
 ## 23. november · v3457 · PAKKE O FRA »BRIEFEN« (afsnittet herunder) — BYGGET I TESTUDGAVEN, IKKE UDE
 
 - Flettet oven på v3456. **Ikke bestilt af Ida, men beholdt:** på Kort reel er den grå forklaring »Det, der skal få kunden til at stoppe op« under feltet fjernet, fordi spørgsmålet over feltet nu siger det samme (og fordi huset ikke har grå forklaringslinjer); Ida får det at vide, før udgaven lægges ud.

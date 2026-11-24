@@ -22,11 +22,28 @@
 //      auth.users (sidste login pr. kode via listUsers). SKRIVER kun: mail_log (én række pr. sendt statusmail).
 //      Kundernes svar på øvelser læses aldrig.
 //   6. Direkte omkostning: nej — Brevo Free (300 mails/dag delt). Højst én statusmail pr. dag (unikt indeks i mail_log).
+// 24/11 RAPPORTER (Ida: »Ja, byg det«): læser også lektion_oevelser »ida:rapporter« (til/fra; slukket = ingen mail) og SKRIVER
+//   skema_svar ENERGIDA/Ida/rapport_sidst_status (emne, tid, mailens html) efter en sendt mail, så »Se den« i Backstage › Mails › Rapporter kan vise den.
 // ============================================================================
 
 import { createClient } from "npm:@supabase/supabase-js@2";
 
 const TIL = "Kontakt@energida.dk";
+
+/* RAPPORTER (Ida 24/11: »jeg vil gerne have ændret de mails jeg får - kan du lave et felt under mails vi kalder rapporter så jeg kan se hvilke mails jeg får?« → »Ja, byg det«).
+   Til/fra står i lektion_oevelser (lektion_id »ida:rapporter«, spm = { status, koeb, fejl }): kun admin skriver, alle må læse (samme regler som ygt:dage).
+   Mangler rækken eller nøglen, er mailen TÆNDT, som før. */
+async function rapportTaendt(db: any, k: string) {
+  try { const { data } = await db.from("lektion_oevelser").select("spm").eq("lektion_id", "ida:rapporter").maybeSingle(); const v = data && data.spm && typeof data.spm === "object" ? data.spm[k] : undefined; return v !== false; } catch (_e) { return true; }
+}
+/* »SE DEN« (24/11): den senest sendte udgave gemmes i Idas egen række (skema_svar ENERGIDA/Ida/rapport_sidst_<k>), som kun admin kan læse. Best-effort. */
+async function rapportGem(db: any, k: string, emne: string, html: string) {
+  try {
+    const svar = { emne: String(emne || "").slice(0, 200), tid: new Date().toISOString(), html: String(html || "").slice(0, 200000) };
+    const u = await db.from("skema_svar").update({ svar }).eq("kode", "ENERGIDA").eq("navn", "Ida").eq("skema", "rapport_sidst_" + k).select("id");
+    if (!u.error && !(u.data && u.data.length)) await db.from("skema_svar").insert({ kode: "ENERGIDA", navn: "Ida", skema: "rapport_sidst_" + k, svar });
+  } catch (_e) { /* må aldrig vælte mailen */ }
+}
 const SKUB_DAGE = 5;   /* samme som DT_SKUB_DAGE i index.html */
 const EGNE = ["ENERGIDA", "IDAENERGIDA"];
 const TESTMAILS = ["info.energida@gmail.com"];
@@ -71,6 +88,7 @@ Deno.serve(async (req) => {
 
   /* ===== 2 · Først nu: service-role ===== */
   const db = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+  if (!proev && !straks && !(await rapportTaendt(db, "status"))) return svar({ ok: true, sendt: 0, grund: "slukket" }, 200);
   const mailId = straks ? "status-proeve-" + nu.dato + "-" + nu.tid : "status-" + nu.dato;
   if (!proev) {
     const { data: foer } = await db.from("mail_log").select("id").eq("mail_id", mailId).eq("status", "sendt").limit(1);
@@ -205,7 +223,7 @@ Deno.serve(async (req) => {
       ok = r.ok; brevoId = j && j.messageId ? String(j.messageId) : null;
       if (!r.ok) besked = "Brevo " + r.status + (j && j.message ? ": " + String(j.message).slice(0, 200) : "");
     } catch (e) { besked = String(e).slice(0, 200); }
-    if (ok) await db.from("mail_log").update({ brevo_id: brevoId }).eq("id", rid);
+    if (ok) { await db.from("mail_log").update({ brevo_id: brevoId }).eq("id", rid); await rapportGem(db, "status", emne, html); }
     else await db.from("mail_log").update({ status: "fejl", fejl: besked }).eq("id", rid);
     return svar({ ok, sendt: ok ? 1 : 0, tal, fejl: ok ? undefined : besked }, ok ? 200 : 502);
   } catch (_e) {
