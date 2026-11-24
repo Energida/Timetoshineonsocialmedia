@@ -31,6 +31,7 @@
 //   Backstage › Mails › Rapporter (lektion_oevelser »ida:rapporter«.aktiveret = false). Service-role, efter getUser, til: læse
 //   lektion_oevelser »ida:rapporter« og virksomhedskoder (virksomhedens navn), læse/skrive mail_log, skrive skema_svar ENERGIDA/Ida/rapport_sidst_aktiveret.
 //   Omkostning: højst én ekstra Brevo-mail pr. nyt login.
+// 24/11 SUPPORT (Ida: »Ja, sæt den ind«): kundemails svarer til support@energida.dk (alias på Kontakt@, regel → mappen Support), og standardfoden nævner adressen. Seks linjer uændrede.
 // ============================================================================
 
 import { createClient } from "npm:@supabase/supabase-js@2";
@@ -152,7 +153,7 @@ function mailsHtml(m, o) {
     + '<table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:600px;">'
     + (m.foto === "ingen" || harHero ? '' : heroRk(true))   /* »Fjern« (Idas klik 15/11): foto = "ingen"; ligger fotoet i listen, står det dér */
     + fl + tom
-    + '<tr><td align="center" style="padding:28px 16px 0;font-family:Poppins,Arial,sans-serif;">' + ((typeof m.fod === "string" ? m.fod.trim() : "Er der noget, der driller? Så svar på denne mail.") ? '<p style="margin:0 0 24px;font-size:14px;color:#1A1A1A;">' + esc(typeof m.fod === "string" ? m.fod.trim() : "Er der noget, der driller? Så svar på denne mail.") + '</p>' : '')
+    + '<tr><td align="center" style="padding:28px 16px 0;font-family:Poppins,Arial,sans-serif;">' + ((typeof m.fod === "string" ? m.fod.trim() : "Er der noget, der driller? Så svar på denne mail, eller skriv til support@energida.dk.") ? '<p style="margin:0 0 24px;font-size:14px;color:#1A1A1A;">' + esc(typeof m.fod === "string" ? m.fod.trim() : "Er der noget, der driller? Så svar på denne mail, eller skriv til support@energida.dk.") + '</p>' : '')
     + '<img src="https://b2b.energida.dk/mail/logo.png" width="60" alt="Energida" style="display:block;margin:0 auto 14px;width:60px;height:auto;border:0;">'
     + '<p class="firma" style="margin:0;font-size:10.5px;line-height:1.7;color:#686868;white-space:nowrap;"><span style="white-space:nowrap;">Kontakt@energida.dk · +45 28 60 30 36</span><span class="fsep"> · </span><span style="white-space:nowrap;">Holstebrovej 80, 6950 Ringkøbing · CVR: 45114651</span></p></td></tr>'
     + (o.afmeld ? '<tr><td align="center" style="padding:14px 16px 0;font-family:Poppins,Arial,sans-serif;"><p style="margin:0;font-size:11px;line-height:1.6;color:#686868;">Vil du ikke have flere mails fra Energida? <a href="' + (o.afmeld === true ? '{afmeld}' : '#') + '" style="color:#686868;text-decoration:underline;">Afmeld her</a></p></td></tr>' : '')   /* AFMELDING (23/10): kun i mails, der sendes til kunder/leads — mail-udsend skriver det personlige link ind i {afmeld} */
@@ -206,7 +207,7 @@ async function sendVelkomst(bruger: any) {
     headers: { "api-key": noegle, "Content-Type": "application/json", Accept: "application/json" },
     body: JSON.stringify({
       sender: { name: String(g.fra || "Energida").replace(/[\r\n<>"]/g, "").slice(0, 60) || "Energida", email: "Kontakt@energida.dk" },
-      replyTo: { email: "Kontakt@energida.dk", name: "Energida" },
+      replyTo: { email: "support@energida.dk", name: "Energida support" },
       to: [{ email: mail }],
       subject: m.emne,
       htmlContent: html,
@@ -298,7 +299,7 @@ Deno.serve(async (req) => {
     headers: { "api-key": noegle, "Content-Type": "application/json", Accept: "application/json" },
     body: JSON.stringify({
       sender: { name: fraNavn, email: "Kontakt@energida.dk" },
-      replyTo: { email: "Kontakt@energida.dk", name: "Energida" },
+      replyTo: { email: "support@energida.dk", name: "Energida support" },
       to: [{ email: mail }],
       subject: "Prøve · " + emne,
       htmlContent: maerk(html, navn),

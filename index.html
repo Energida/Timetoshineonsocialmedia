@@ -15218,6 +15218,7 @@ html body #appLoader:not([data-fejl="1"]) > div, html body #energidaLoader > spa
     <button class="p-knap p-luk" onclick="prompterLuk()">Luk</button>
   </div>
   <div id="prompterTekst"></div>
+  <button type="button" id="prompterHoej" aria-label="Læs op" aria-pressed="false" onclick="prompterLaesOp()"><svg class="ph-lyd" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9.5v5h3.5L12 18.5v-13L7.5 9.5H4Z"/><path d="M15.5 9a4 4 0 0 1 0 6"/><path d="M18 6.5a7.5 7.5 0 0 1 0 11"/></svg><svg class="ph-stop" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="2"/></svg></button>
 </div>
 <div id="prompterLinje" style="display:none;"></div>
 
@@ -16307,6 +16308,7 @@ window.somkundeLoaderSluk = function () {
       <div id="kalSoegTraef" style="display:none;"></div>
       <div id="kalManglerDato"></div><input type="hidden" id="kalMdDato" onchange="kalManglerDatoSaet(this.value)">
       <div class="cal-grid" id="calGrid"></div>
+      <div id="igOpslagBlok"></div>
       <!-- SIGNATURFORKLARINGEN ER FJERNET (Ida 25/8): "disse skal fjernes under
            kalenderen". Den forklarede fire markeringer, hvoraf de to (aftaler og
            optagedage · lagt ind af appen) ikke laengere tegnes i gitteret — beskederne
@@ -40384,7 +40386,7 @@ function pfKonfetti() {
 function pfPwVis() { if (!PF) return; const i = document.getElementById("pf_pw"); PF.pwVis = !PF.pwVis; if (i) { const v = i.value; PF.f.pw = v; } pfTegn(); try { const j = document.getElementById("pf_pw"); if (j) j.focus(); } catch (e) {} }
 function pfKollegaTil() { if (!PF || PF.f.kolleger.length >= 2) return; PF.f.kolleger.push({ navn: "", mail: "" }); pfKladdeGem(); pfTegn(); }
 function pfTilbage() { if (!PF) return; if ((PF.sp || 0) > 0) { PF.sp--; } else { if (PF.trin <= 1) return; PF.trin--; PF.sp = pfSkaerme().length - 1; } pfKladdeGem(); pfTegn(); }   /* trin 1 (Om dig) har intet Tilbage — adgangskoden er gemt */
-function pfFejl(t) { const fe = document.getElementById("pfFejl"); if (fe) fe.textContent = t; try { const gl = document.getElementById("pfNytLink"); if (gl && !/Vi kunne ikke gemme/.test(String(t))) gl.remove(); } catch (e) {} const k = document.getElementById("pfNaeste"); if (k) { k.disabled = false; k.textContent = PF ? pfKnapTekst() : "Næste"; } }
+function pfFejl(t) { const fe = document.getElementById("pfFejl"); if (fe) fejlSet(fe, t); try { const gl = document.getElementById("pfNytLink"); if (gl && !/Vi kunne ikke gemme/.test(String(t))) gl.remove(); } catch (e) {} const k = document.getElementById("pfNaeste"); if (k) { k.disabled = false; k.textContent = PF ? pfKnapTekst() : "Næste"; } }
 function pfDato() {
   const f = PF.f, dag = parseInt(f.dag, 10), md = parseInt(f.mdr, 10), aar = parseInt(f.aar, 10), nu = new Date().getFullYear();
   if (!dag || !md || !aar || String(f.aar).length !== 4) return null;
@@ -50243,7 +50245,7 @@ function lekTidHent(liste) {
   try {
     let nye = 0;
     (liste || []).forEach(function (l) {
-      if (!l || !l.video || !/vimeo\.com/i.test(String(l.video)) || LEK_TID[String(l.id)] || LEK_TID_HENT[String(l.id)]) return;
+      if (!l || !l.video || !/vimeo\.com/i.test(String(l.video)) || LEK_TID_HENT[String(l.id)]) return;   /* v3473: genhentes fra Vimeo én gang pr. sideindlæsning, så en ny video med anden længde får den rigtige tid (kun varigheden — aldrig set/gjort/svar) */
       LEK_TID_HENT[String(l.id)] = 1; nye++;
       fetch("https://vimeo.com/api/oembed.json?url=" + encodeURIComponent(String(l.video))).then(function (r) { return r.ok ? r.json() : null; }).then(function (j) {
         if (!j || !(Number(j.duration) > 0)) return;
@@ -56998,6 +57000,9 @@ function prompterSkrift(d) {
   PR_SKRIFT = Math.max(18, Math.min(64, PR_SKRIFT + d * 4));
   const el = document.getElementById("prompterTekst"); if (el) el.style.fontSize = PR_SKRIFT + "px";
 }
+/* v3473: højttalerknappen følger »Læs op«-knappens tilstand (klassen on) — oplæsningen selv er urørt */
+try { (function () { const l = document.getElementById("prompterLaes"), h = document.getElementById("prompterHoej"); if (!l || !h || !window.MutationObserver) return;
+  new MutationObserver(function () { const on = l.classList.contains("on"); h.classList.toggle("on", on); h.setAttribute("aria-pressed", on ? "true" : "false"); h.setAttribute("aria-label", on ? "Stop oplæsning" : "Læs op"); }).observe(l, { attributes: true, attributeFilter: ["class"] }); })(); } catch (e) {}
 function prompterLaesOp() {
   const k = document.getElementById("prompterLaes");
   if (!("speechSynthesis" in window)) { husBesked("Din browser kan ikke læse op."); return; }
@@ -62565,6 +62570,7 @@ async function igBlokTegn() {
   el.innerHTML = st.forbundet
     ? '<div class="tom-kort"><div class="tom-spm">' + esc("Forbundet som @" + st.brugernavn) + '</div>'
       + '<button type="button" class="dbtn tom-knap mq-tap" onclick="igHentTal(this)">Hent tallene</button>'
+      + '<button type="button" class="dbtn tom-knap mq-tap ig-pr-opslag" onclick="igHentOpslag(this)">Hent tallene pr. opslag</button>'
       + '<button type="button" class="dbtn tom-knap mq-tap ig-afbryd" onclick="igAfbrydArk()">Afbryd forbindelsen</button></div>'
     : tomKortHtml(st.udloebet ? "Forbindelsen til Instagram er udløbet." : "Vil du hente tallene direkte fra Instagram?", "Forbind Instagram", "igForbindStart()");
 }
@@ -62585,6 +62591,33 @@ function igForbindStart() {
     enable_fb_login: "0", force_authentication: "1", client_id: IG_APP_ID, redirect_uri: IG_REDIRECT,
     response_type: "code", scope: "instagram_business_basic,instagram_business_manage_insights", state: state
   }).toString();
+}
+/* v3473 (Ida 24/11, Metas App Review: likes, kommentarer, gemte og delinger skal ses pr. opslag i appen): »Hent tallene pr. opslag« bag igTestAaben(), ved siden af »Hent tallene«.
+   Serverfunktionen svarer med opslagListe uden at skrive en måling (kunOpslag). Hver flise: billede, dato, første tekstlinje, link og de fire tal. Står under ugen på Content-kalenderen. Tokenet når aldrig klienten. */
+let IG_OPSLAG = null;
+async function igHentOpslag(knap) {
+  if (knap) { knap.disabled = true; knap.textContent = "Henter …"; }
+  const s = await igFunk("instagram-maaling", { kunOpslag: true });
+  if (knap) { knap.disabled = false; knap.textContent = "Hent tallene pr. opslag"; }
+  if (s.fejl) { try { husKvit(s.fejl); } catch (e) {} if (s.udloebet || s.forbundet === false) { try { igBlokTegn(); } catch (e) {} } return; }
+  IG_OPSLAG = Array.isArray(s.opslagListe) ? s.opslagListe : [];
+  try { closeRateWizard(); } catch (e) {}
+  igOpslagTegn();
+  try { const b = document.getElementById("igOpslagBlok"); if (b && b.offsetParent) b.scrollIntoView({ block: "start", behavior: "smooth" }); else husKvit("Opslagene står under ugen på Content."); } catch (e) {}
+}
+function igOpslagTegn() {
+  const h = document.getElementById("igOpslagBlok"); if (!h) return;
+  if (IG_OPSLAG === null || !igTestAaben()) { h.innerHTML = ""; return; }
+  if (!IG_OPSLAG.length) { h.innerHTML = '<div class="ig-op-liste"><div class="ig-op-tom">Ingen opslag at vise endnu</div></div>'; return; }
+  const tal = function (v, et, en) { return '<div class="ig-op-tal"><b>' + (typeof v === "number" ? esc(String(v)) : "–") + '</b><span class="ig-op-et">' + et + '</span><span class="ig-op-en">' + en + '</span></div>'; };
+  h.innerHTML = '<div class="ig-op-liste">' + IG_OPSLAG.map(function (o) {
+    let dato = ""; try { dato = o.dato ? dkDatoKort(datoDK(o.dato)) : ""; } catch (e) {}
+    const linje = String(o.tekst || "").split("\n")[0].trim();
+    const bil = /^https:\/\//.test(String(o.billede || "")) ? '<img class="ig-op-bil" src="' + esc(o.billede) + '" alt="" loading="lazy" referrerpolicy="no-referrer">' : '<span class="ig-op-bil"></span>';
+    const link = /^https:\/\/(www\.)?instagram\.com\//.test(String(o.link || "")) ? '<a class="ig-op-link" href="' + esc(o.link) + '" target="_blank" rel="noopener noreferrer">Åbn på Instagram</a>' : "";
+    return '<div class="ig-op-fl">' + bil + '<div class="ig-op-tx"><div class="ig-op-dato">' + esc(dato) + '</div><div class="ig-op-t">' + esc(linje || "Uden tekst") + '</div>' + link + '</div>'
+      + '<div class="ig-op-tal-raekke">' + tal(o.likes, "Likes", "Likes") + tal(o.kommentarer, "Kommentarer", "Comments") + tal(o.gemte, "Gemte", "Saves") + tal(o.delinger, "Delinger", "Shares") + '</div></div>';
+  }).join("") + '</div>';
 }
 async function igHentTal(knap) {
   if (knap) { knap.disabled = true; knap.textContent = "Henter …"; }
@@ -73077,7 +73110,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "3472";
+const APP_VERSION = "3473";
 const APP_BYGGET = "3. november";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_VERSION;   /* ingen dato (Ida 7/11: »hvorfor står der version 3. november?«) — datoen blev ikke rettet med, nummeret er sandheden */ } catch (e) {} });
 let NY_VERSION_KLAR = false;
@@ -77616,10 +77649,16 @@ async function nyKodeNytLink(knapId, msgId) {
   if (!mail) { try { mail = String((document.getElementById("nyKodeMail") || {}).value || ""); } catch (e) {} }
   let ok = false;
   if (mail) { try { const r = await sb.auth.resetPasswordForEmail(mail.trim().toLowerCase(), { redirectTo: location.origin }); ok = !(r && r.error); } catch (e) { ok = false; } }
-  if (m) m.textContent = ok ? "Tjek din mail. Vi har sendt dig et nyt link." : "Vi kunne ikke sende et nyt link lige nu. Prøv igen om lidt.";
+  if (m) fejlSet(m, ok ? "Tjek din mail. Vi har sendt dig et nyt link." : "Vi kunne ikke sende et nyt link lige nu. Prøv igen om lidt, eller skriv til support@energida.dk.");
   if (k) { if (ok) k.remove(); else { k.disabled = false; k.textContent = "Send et nyt link"; } }
 }
 /* FEJLEN PAA DANSK (4/10): Supabase svarer paa engelsk — kunden skal vide, hvad der er galt, og hvad de goer nu */
+/* v3473: support@energida.dk i fejltekster som mailto-link (aldrig html fra serveren — kun denne ene adresse bliver et link) */
+function fejlSet(el, t) {
+  if (!el) return; t = String(t || ""); const A = "support@energida.dk", i = t.indexOf(A);
+  if (i < 0) { el.textContent = t; return; }
+  el.textContent = t.slice(0, i); const a = document.createElement("a"); a.href = "mailto:" + A; a.textContent = A; a.style.color = "inherit"; a.style.textDecoration = "underline"; el.appendChild(a); el.appendChild(document.createTextNode(t.slice(i + A.length)));
+}
 function nyKodeFejl(error) {
   const t = String((error && error.message) || "").toLowerCase();
   if (/different from the old|same as/.test(t)) return "Vælg en anden adgangskode end den, du havde før.";
@@ -77627,7 +77666,7 @@ function nyKodeFejl(error) {
   if (/weak|pwned|easy to guess|known/.test(t)) return "Den adgangskode er for nem at gætte. Prøv en længere.";
   if (/session|jwt|expired|not authenticated|missing/.test(t)) return "Vi kunne ikke gemme din adgangskode. Tryk på knappen, så sender vi dig et nyt link.";   /* v3464: det er sessionen, ikke linket (Mia 24/11) */
   if (/network|fetch|failed/.test(t)) return "Ingen forbindelse lige nu. Prøv igen om lidt.";
-  return "Adgangskoden blev ikke gemt. Prøv igen.";
+  return "Adgangskoden blev ikke gemt. Prøv igen, eller skriv til support@energida.dk.";
 }
 /* KLAR TIL MAIL NR. 3 (Ida 10/10: »når kunden har valgt deres adgangskode, og de kommer ind, at de så får en ny e-mail«): første gang en KUNDE vælger
    sin adgangskode, gemmes tidspunktet én gang (skema_svar · adgangskode_valgt). Mail-motoren læser rækkerne, når den er udrullet — også dem fra i mellemtiden.
@@ -77652,7 +77691,7 @@ async function gemNyAdgangskodeInd() {
     window.__SKIFT_KODE_TVUNGET = null;
   }
   if (error) {
-    m2.textContent = nyKodeFejl(error);
+    fejlSet(m2, nyKodeFejl(error));
     if (nyKodeErSession(error) && !document.getElementById("nyKodeNytLink")) { const b = document.createElement("button"); b.type = "button"; b.id = "nyKodeNytLink"; b.className = "dbtn"; b.style.cssText = "width:100%;margin-top:12px;min-height:52px;border-radius:999px;font-size:15px;"; b.textContent = "Send et nyt link"; b.onclick = function () { nyKodeNytLink("nyKodeNytLink", "nyKodeMsg"); }; m2.insertAdjacentElement("afterend", b); }
     return;
   }
@@ -79891,7 +79930,7 @@ function authMsgEl() {
 }
 /* BESKEDEN SES ALTID (krydstjekket 22/10, Mette: »Sara siger, der sker ingenting«): stod knappen nederst, landede fejlen under skærmen — den rulles frem. */
 function authMsgFrem(e) { try { setTimeout(function () { e.scrollIntoView({ block: "nearest", behavior: "smooth" }); }, 30); } catch (er) {} }
-function authErr(msg) { const e=authMsgEl(); e.textContent=msg; e.className="auth-msg err"; e.style.display="block"; authMsgFrem(e); }
+function authErr(msg) { const e=authMsgEl(); fejlSet(e, msg); e.className="auth-msg err"; e.style.display="block"; authMsgFrem(e); }
 function authInfo(msg) { const e=authMsgEl(); e.textContent=msg; e.className="auth-msg ok"; e.style.display="block"; authMsgFrem(e); }
 /* OPRET PROFIL FRA MAILEN (Ida 15/11): se __ENERGIDA_OPRET først i dokumentet */
 function opretTaeppeAf() { try { window.__LOGIN_TAEPPE = false; document.body.classList.add("app-klar"); } catch (e) {} try { const c = document.getElementById("privCover"); if (c && !window.__VERSION_DAEKKE) c.style.display = "none"; } catch (e) {} }
@@ -79918,7 +79957,7 @@ function opretAabnApp() {
       try { g.style.display = "flex"; } catch (e) {} try { appKlar(); } catch (e) {}   /* som »ingen session«: login-siden står klar, og tæppet letter */
       try { loginTaeppe(false); } catch (e) {} try { privCoverVis(false); } catch (e) {} try { energidaLoader(false); } catch (e) {}
       if (k) { k.disabled = false; k.textContent = "Opret profil"; }
-      authShow("opret"); authErr("Vi kunne ikke åbne dit Studio. Prøv igen. Hvis det stadig driller, så skriv til kontakt@energida.dk.");
+      authShow("opret"); authErr("Vi kunne ikke åbne dit Studio. Prøv igen. Hvis det stadig driller, så skriv til support@energida.dk.");
     } catch (e) {}
   }, 15000);
 }
@@ -80239,7 +80278,7 @@ async function custLogin() {
   if (knap) { knap.disabled = true; knap.textContent = "Logger ind …"; }
   const { error } = await sb.auth.signInWithPassword({ email, password: pass });
   if (knap) { knap.disabled = false; knap.innerHTML = knapHtml; }
-  if (error) { authErr("Login mislykkedes. Tjek din e-mail og adgangskode."); return; }
+  if (error) { authErr("Login mislykkedes. Tjek din e-mail og adgangskode, eller skriv til support@energida.dk."); return; }
   handleRemember(remember);
   privCoverVis(true);   /* taeppet paa igen: alt mellem login og showTab(3) er ellers synligt (Ida 30/8) */
   loginTaeppe(true);    /* … og boot-taeppet, som ingen focus-haendelse kan fjerne (12/9) */
@@ -80254,7 +80293,7 @@ async function custForgot() {
   const fk = document.getElementById("fpKnap"); if (fk) { if (fk.disabled) return; fk.disabled = true; }
   const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: location.origin });
   if (fk) fk.disabled = false;
-  if (error) { authErr(/rate|seconds|limit/i.test(String(error.message || "")) ? "Vi har lige sendt et link. Vent et minut, og prøv igen." : "Linket kunne ikke sendes lige nu. Tjek e-mailen, og prøv igen."); return; }
+  if (error) { authErr(/rate|seconds|limit/i.test(String(error.message || "")) ? "Vi har lige sendt et link. Vent et minut, og prøv igen." : "Linket kunne ikke sendes lige nu. Tjek e-mailen, og prøv igen, eller skriv til support@energida.dk."); return; }
   authInfo("Vi har sendt et link til at nulstille din adgangskode. Tjek din mail.");
 }
 
@@ -104871,6 +104910,7 @@ function mailsSideHtml(k) {
    Sikkerhedskontrakten §8: ingen ny tabel, kolonne, policy eller funktion fra appen; kun admin kan skrive rækken (målt af »Ny chef«), og siden findes kun i Backstage. */
 const RAP_LISTE = [
   { id: "status", navn: "Statusmail", hv: "Hver morgen kl. 07.00 · nye køb, hvem der skal have et skub, fejl og feedback" },
+  { id: "uge", navn: "Ugen der gik", hv: "Hver mandag kl. 7" },
   { id: "koeb", navn: "Nyt køb", hv: "Hver gang nogen køber · navn, virksomhed, beløb og rabatkode" },
   { id: "aktiveret", navn: "Ny konto aktiveret", hv: "Når en kunde eller kollega har brugt linket i sin første mail · navn, virksomhed og kode" },
   { id: "fejl", navn: "Fejl fra en kunde", hv: "Når en kunde trykker »Meld en fejl« · du kan svare direkte på mailen" },
@@ -104881,18 +104921,20 @@ function rapTaendt(id) { return !(RAP_D.til && RAP_D.til[id] === false); }
 async function rapHent() {
   const ud = { til: {}, sidst: {}, hentet: true };
   try {
-    const [ind, st, kb, fj, ak] = await Promise.all([
+    const [ind, st, kb, fj, ak, ug] = await Promise.all([
       sb.from("lektion_oevelser").select("spm").eq("lektion_id", "ida:rapporter").limit(1),
       sb.from("mail_log").select("created_at,emne,mail_id").like("mail_id", "status-2%").eq("status", "sendt").order("created_at", { ascending: false }).limit(1),
       sb.from("mail_log").select("created_at,emne,mail_id").like("mail_id", "koeb:%").eq("status", "sendt").order("created_at", { ascending: false }).limit(1),
       sb.from("skema_svar").select("created_at,kode,svar").eq("navn", "app_fejl").like("skema", "kunde_fejl_%").order("created_at", { ascending: false }).limit(1),
-      sb.from("mail_log").select("created_at,emne,mail_id").eq("mail_id", "aktiveret").eq("status", "sendt").order("created_at", { ascending: false }).limit(1)
+      sb.from("mail_log").select("created_at,emne,mail_id").eq("mail_id", "aktiveret").eq("status", "sendt").order("created_at", { ascending: false }).limit(1),
+      sb.from("mail_log").select("created_at,emne,mail_id").like("mail_id", "uge-%").eq("status", "sendt").order("created_at", { ascending: false }).limit(1)
     ]);
-    const sp = ind && !ind.error && ind.data && ind.data[0] && ind.data[0].spm; if (sp && typeof sp === "object") ud.til = { status: sp.status, koeb: sp.koeb, fejl: sp.fejl, aktiveret: sp.aktiveret };
+    const sp = ind && !ind.error && ind.data && ind.data[0] && ind.data[0].spm; if (sp && typeof sp === "object") ud.til = { status: sp.status, uge: sp.uge, koeb: sp.koeb, fejl: sp.fejl, aktiveret: sp.aktiveret };
     const r1 = st && !st.error && st.data && st.data[0]; if (r1) ud.sidst.status = { tid: r1.created_at, tekst: String(r1.emne || "").trim() };
     const r2 = kb && !kb.error && kb.data && kb.data[0]; if (r2) ud.sidst.koeb = { tid: r2.created_at, tekst: String(r2.emne || "").trim() };
     const r3 = fj && !fj.error && fj.data && fj.data[0]; if (r3) { let hvem = ""; try { hvem = String(((VIRKSOMHEDSKODER || {})[String(r3.kode || "").toUpperCase()] || {}).virksomhed || ""); } catch (e) {} if (!hvem) hvem = String((r3.svar && r3.svar.hvad) || "").replace(/\s+/g, " ").trim().split(" ").slice(0, 6).join(" "); ud.sidst.fejl = { tid: r3.created_at, tekst: hvem }; }
     const r4 = ak && !ak.error && ak.data && ak.data[0]; if (r4) ud.sidst.aktiveret = { tid: r4.created_at, tekst: String(r4.emne || "").replace(/^Ny konto aktiveret\s*·\s*/, "").trim() };
+    const r5 = ug && !ug.error && ug.data && ug.data[0]; if (r5) ud.sidst.uge = { tid: r5.created_at, tekst: String(r5.emne || "").trim() };
   } catch (e) {}
   RAP_D = ud; return ud;
 }
@@ -104908,7 +104950,7 @@ function rapHtml() {
 function rapTegn() { const h = document.getElementById("rapHost"); if (h) h.innerHTML = rapHtml(); }
 async function rapSkift(id) {
   if (window.__RAP_GEMMER) return; window.__RAP_GEMMER = true;
-  const ny = { status: rapTaendt("status"), koeb: rapTaendt("koeb"), fejl: rapTaendt("fejl"), aktiveret: rapTaendt("aktiveret") }; ny[id] = !ny[id];
+  const ny = { status: rapTaendt("status"), uge: rapTaendt("uge"), koeb: rapTaendt("koeb"), fejl: rapTaendt("fejl"), aktiveret: rapTaendt("aktiveret") }; ny[id] = !ny[id];
   let ok = false;
   try { const nu = new Date().toISOString();
     let u = await sb.from("lektion_oevelser").update({ spm: ny, opdateret: nu }).eq("lektion_id", "ida:rapporter").select("lektion_id");
@@ -104922,9 +104964,9 @@ async function rapSe(id) {
   if (id === "fejl") { try { fejlFraKunderneVis(); } catch (e) {} return; }
   if (id === "proeve") { mailsSide("auto"); return; }
   let m = document.getElementById("bsFlytMenu"); if (!m) { m = document.createElement("div"); m.id = "bsFlytMenu"; document.body.appendChild(m); }
-  let sv = null; try { const r = await sb.from("skema_svar").select("svar").eq("kode", "ENERGIDA").eq("navn", "Ida").eq("skema", id === "status" ? "rapport_sidst_status" : (id === "aktiveret" ? "rapport_sidst_aktiveret" : "rapport_sidst_koeb")).limit(1); sv = r && !r.error && r.data && r.data[0] ? r.data[0].svar : null; } catch (e) {}
+  let sv = null; try { const r = await sb.from("skema_svar").select("svar").eq("kode", "ENERGIDA").eq("navn", "Ida").eq("skema", id === "status" ? "rapport_sidst_status" : id === "uge" ? "rapport_sidst_uge" : (id === "aktiveret" ? "rapport_sidst_aktiveret" : "rapport_sidst_koeb")).limit(1); sv = r && !r.error && r.data && r.data[0] ? r.data[0].svar : null; } catch (e) {}
   const har = !!(sv && typeof sv === "object" && String(sv.html || "").trim());
-  m.innerHTML = '<div class="bs-flyt-ark brief-soejle-ark rap-ark"><div class="ark-t">' + esc(har ? (String(sv.emne || "").trim() || "Den seneste mail") : (id === "status" ? "Statusmail" : (id === "aktiveret" ? "Ny konto aktiveret" : "Nyt køb"))) + '</div>'
+  m.innerHTML = '<div class="bs-flyt-ark brief-soejle-ark rap-ark"><div class="ark-t">' + esc(har ? (String(sv.emne || "").trim() || "Den seneste mail") : (id === "status" ? "Statusmail" : id === "uge" ? "Ugen der gik" : (id === "aktiveret" ? "Ny konto aktiveret" : "Nyt køb"))) + '</div>'
     + (har ? '<iframe class="rap-ramme" sandbox="" referrerpolicy="no-referrer" title="Den seneste mail"></iframe>' : '<div class="rap-tom">Den første kommer med næste mail.</div>')
     + '<button type="button" class="ark-luk" onclick="bsFlytLuk()">Luk</button></div>';
   m.style.display = "flex"; m.onclick = function (e) { if (e.target === m) bsFlytLuk(); };
@@ -109976,6 +110018,29 @@ html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7
 html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .cv-knapper { display:flex !important; flex-direction:column !important; gap:12px !important; margin-top:16px !important; }
 html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .cv-knapper .dbtn { width:100% !important; height:44px !important; min-height:44px !important; margin:0 !important; border-radius:999px !important; }
 html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .cv-friSlides { display:flex !important; gap:8px !important; flex-wrap:wrap !important; align-items:center !important; justify-content:center !important; margin-top:12px !important; }
+/* v3473 (Ida 24/11) — PROMPTERENS HØJTTALERKNAP: fast, rund (44 px), hvid med rød kant og rødt ikon, nederst til højre mens prompteren kører. Under oplæsning: rød flade og hvidt stopikon. Følger knappen »Læs op« og rører ikke selve oplæsningen. Over nedtællingen. */
+html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) #prompterHoej { display:none !important; position:absolute !important; right:20px !important; bottom:calc(20px + env(safe-area-inset-bottom)) !important; z-index:6 !important; width:44px !important; height:44px !important; min-width:44px !important; padding:0 !important; border-radius:50% !important; background:#FFFFFF !important; color:#FC2404 !important; border:1.5px solid #FC2404 !important; box-shadow:0 2px 8px rgba(26,26,26,.14) !important; align-items:center !important; justify-content:center !important; cursor:pointer !important; }
+html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) #prompterBack.koerer #prompterHoej { display:flex !important; }
+html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) #prompterHoej svg { width:20px !important; height:20px !important; }
+html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) #prompterHoej .ph-stop { display:none !important; }
+html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) #prompterHoej.on { background:#FC2404 !important; color:#FFFFFF !important; }
+html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) #prompterHoej.on .ph-lyd { display:none !important; }
+html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) #prompterHoej.on .ph-stop { display:block !important; }
+/* v3473 (Ida 24/11) — TAL PR. OPSLAG på Content-kalenderen: én hvid flise pr. opslag, lige brede under hinanden, med skygge (hvid på hvid). Billede 56 px med hjørner 12; fire tal 16 px med grå versal 12 px og lille engelsk undertekst. */
+html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .ig-op-liste { display:flex !important; flex-direction:column !important; gap:12px !important; margin:16px 0 0 !important; }
+html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .ig-op-fl { display:flex !important; align-items:center !important; gap:14px !important; flex-wrap:wrap !important; width:100% !important; box-sizing:border-box !important; background:#FFFFFF !important; border-radius:20px !important; padding:14px 16px !important; box-shadow:0 2px 10px rgba(26,26,26,.08) !important; }
+html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .ig-op-bil { width:56px !important; height:56px !important; flex:0 0 56px !important; border-radius:12px !important; object-fit:cover !important; background:#F1F1F1 !important; display:block !important; }
+html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .ig-op-tx { flex:1 1 180px !important; min-width:0 !important; }
+html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .ig-op-dato { font:400 12px/16px Poppins,sans-serif !important; color:#686868 !important; }
+html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .ig-op-t { font:400 14px/20px Poppins,sans-serif !important; color:#1A1A1A !important; overflow:hidden !important; text-overflow:ellipsis !important; white-space:nowrap !important; }
+html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .ig-op-link { font:400 12px/16px Poppins,sans-serif !important; color:#686868 !important; text-decoration:underline !important; }
+html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .ig-op-tal-raekke { display:grid !important; grid-template-columns:repeat(4,minmax(0,1fr)) !important; gap:8px !important; flex:1 1 100% !important; }
+html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .ig-op-tal { display:flex !important; flex-direction:column !important; gap:2px !important; min-width:0 !important; }
+html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .ig-op-tal b { font:400 16px/22px Poppins,sans-serif !important; color:#1A1A1A !important; }
+html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .ig-op-et { font:400 12px/16px Poppins,sans-serif !important; color:#686868 !important; text-transform:uppercase !important; letter-spacing:.04em !important; overflow:hidden !important; text-overflow:ellipsis !important; }
+html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .ig-op-en { font:400 10px/14px Poppins,sans-serif !important; color:#686868 !important; }
+html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .ig-op-tom { font:400 14px/20px Poppins,sans-serif !important; color:#1A1A1A !important; background:#FFFFFF !important; border-radius:20px !important; padding:18px 16px !important; box-shadow:0 2px 10px rgba(26,26,26,.08) !important; }
+html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .ig-pr-opslag, html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .tom-kort .ig-afbryd { display:block !important; margin-top:12px !important; }
 /* v3395 (Ida 20/11) — MODULFLISERNE: cirkel som lektionerne (tom · rødt flueben · hængelås), ingen pil, ingen fold-ud */
 html body #forloebTidslinje .ftl2 .ftl2-hoved, html body #forloebTidslinje .ftl2 .ftl2-rk.laast { display:flex !important; align-items:center !important; justify-content:flex-start !important; gap:16px !important; cursor:pointer; }
 html body #forloebTidslinje .ftl2 .ftl2-rk.laast { cursor:default; }
@@ -110088,7 +110153,7 @@ body.sk-holder, body.sk-holder .content, body.sk-holder #dashMain, [data-bs-hold
 }
 </style>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-hvid.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 22. november · 3472</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 22. november · 3473</div>
 <script>
 /* DROPDOWNEN RULLER SELV (Ida 4/10) — maal den aabne liste og klip den ved skaermens bund */
 (function () {

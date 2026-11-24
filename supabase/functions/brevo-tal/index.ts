@@ -18,6 +18,7 @@
 //   6. Direkte omkostning: nej (læsning er gratis i Brevo Free; højst 6 kald pr. åbning af Hjem).
 //   ÆNDRING 22/11 (Ida: »det her må KUN være mails til kunder som jeg ser på«): mails til Idas egne adresser og prøver tælles ikke. De seks linjer er uændrede:
 //   samme adgang (kun administratorer), samme kald til Brevo, ingen tabel, ingen ny hemmelighed.
+//   ÆNDRING 24/11 (Ida: »Ja, ret det hele«): info.energida+…@gmail.com og @coastmail.dk (testprofiler) tælles heller ikke. De seks linjer er uændrede.
 // ============================================================================
 
 import { createClient } from "npm:@supabase/supabase-js@2";
@@ -58,7 +59,7 @@ Deno.serve(async (req) => {
        tælles ikke — hverken som sendt eller som klik. En mail, der kun er gået til Idas egne adresser, forsvinder dermed helt fra listen.
        Egne adresser: alt på energida.dk, husets testadresser, og adresser med »test« før @ (testprofilerne, fx navn+test@…). */
     const EGNE = ["info.energida@gmail.com"];
-    const erEgen = (mail: string) => { const m = String(mail || "").trim().toLowerCase(); if (!m) return true; const [navn, dom] = m.split("@"); return dom === "energida.dk" || EGNE.indexOf(m) > -1 || /test/.test(navn || "") || /^idatjessen(\+|$)/.test(navn || ""); };
+    const erEgen = (mail: string) => { const m = String(mail || "").trim().toLowerCase(); if (!m) return true; const [navn, dom] = m.split("@"); return dom === "energida.dk" || EGNE.indexOf(m) > -1 || /test/.test(navn || "") || /^idatjessen(\+|$)/.test(navn || "") || /^info\.energida(\+|$)/.test(navn || "") && dom === "gmail.com" || dom === "coastmail.dk"; };   /* 24/11: også info.energida+…@gmail.com og coastmail-testprofilerne (ole+…), fundet ved gennemgangen af Hjem */
     const internt = (emne: string) => /^\s*Prøve\s*·/i.test(emne);   /* en prøve er altid til Ida selv, også hvis den sendes til en anden af hendes adresser */
     for (const e of sendt) { if (erEgen(e.email) || internt(String(e.subject || ""))) continue; const m = hent(String(e.subject || "")); if (e.email) m.sendt.add(String(e.email).toLowerCase()); if (!m.tid || String(e.date) > m.tid) m.tid = String(e.date || ""); }
     for (const e of klik) {

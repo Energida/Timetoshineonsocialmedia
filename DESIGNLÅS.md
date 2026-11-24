@@ -1,3 +1,12 @@
+## 24. november · v3473 · DE SMÅ RETTELSER — BYGGET I TESTUDGAVEN, IKKE UDE
+
+- **Idas ord:** »Ja, gå i gang« med Meta-videoen (24/11) og de små ønsker fra dagen. Rører ingen database, auth eller storage fra appen; serverkilderne er kun kopieret ind som dokumentation.
+- **Prompterens højttalerknap:** fast, rund, 44 px, hvid med rød kant og rødt ikon, nederst til højre mens prompteren kører. Under oplæsning rød flade og hvidt stopikon. Følger »Læs op«-knappen; selve oplæsningen er urørt.
+- **Ugen der gik** står som række i Backstage › Mails › Rapporter (»Hver mandag kl. 7«), med kontakt, »Se den« og »Sidst«.
+- **Tal pr. opslag** (kun bag testlåsen): »Hent tallene pr. opslag« under »Hent tallene«. Én hvid flise pr. opslag under ugen på Content-kalenderen: billede 56 px (hjørner 12), dato, første tekstlinje, link og fire tal (Likes, Kommentarer, Gemte, Delinger) med lille engelsk undertekst. Fliserne er lige brede og har skygge. Tomt: »Ingen opslag at vise endnu«.
+- **Support:** support@energida.dk står som mailto-link i login-, adgangskode- og »Send et nyt link«-fejl.
+- **Lektionens varighed** genhentes fra Vimeo én gang pr. sideindlæsning (kun varigheden).
+
 ## 24. november · v3472 · CONTENT STUDIO I BACKSTAGE OG KUNDENS TO FANER I IDÉBANKEN — BYGGET I TESTUDGAVEN, IKKE UDE
 
 - **Idas ord:** »Ja, byg det« (24/11, efter tegningen `bud/idebanken/content-studio/tegning.html`). Tegningens billeder og det byggede er sammenlignet på 390 og 1440.
