@@ -405,6 +405,22 @@ for BKB in "390 844" "1440 940"; do
   echo "$UDBK" | grep -q "SELE BRANDKIT OK $1" || HERO_OK=0
 done
 mv "$MAAL/sb-stub.js.foer-brandkit" "$MAAL/sb-stub.js"
+# CONTENT STUDIO I BACKSTAGE + KUNDENS TO FANER I IDEBANKEN (v____, Ida 24/11: »Ja, byg det«):
+# probe-contentstudio.js som kunde (to faner, kun udgivne idéer, Gem med brief.fraEnergida, tom tilstand og fejl, laasene) og i Backstage (menuen, Content Studio, tomme skaller, Energidas idebank med kladde, mappe,
+# Udgivet-kontakt og Slet, laasene) paa 390 og 1440 med den huskende base. Intet rigtigt gemmes; der er 0 testdata tilbage.
+cp "$MAAL/sb-stub.js" "$MAAL/sb-stub.js.foer-contentstudio" && cp "$ROD/tools/sikkerhedschefen/lag2/husk-stub.js" "$MAAL/sb-stub.js"   # proeven saar data: den huskende base (v____)
+for CSF in kunde dash; do
+  { echo "var CS_FLADE='$CSF';"; cat "$ROD/tools/designlaas/probe-contentstudio.js"; } > "$MAAL/probe-contentstudio-$CSF.js"   # lang probe: ligger som fil (kodefil), som probe-maal.js
+  [ "$CSF" = "dash" ] && VCS="vis=dash&side=overblik&fil=index-sele.html" || VCS="vis=kunde&fil=index-sele.html%3Fselekode%3DHINGES2026"
+  for CSB in "390 844" "1440 940"; do
+    set -- $CSB
+    RAACS=$(${TO/90/150} "$C" $HL --no-sandbox --disable-gpu --window-size=$(($1+40)),1000 --virtual-time-budget=120000 --enable-logging=stderr --v=0 --screenshot="$MAAL/contentstudio-$CSF-$1.png" "http://127.0.0.1:$PORT/sele.html?${VCS}&bred=$1&hoej=$2&kodefil=probe-contentstudio-$CSF.js" 2>&1)
+    UDCS=$(echo "$RAACS" | grep -a 'CONSOLE' | sed -E 's/^.*CONSOLE[:(][0-9]+\)?\] //; s/", source:.*$//; s/^"//' | grep -a 'SELE CONTENTSTUDIO')
+    echo "${UDCS:-SELE CONTENTSTUDIO FEJL $1: ingen maaling ($CSF)}"
+    echo "$UDCS" | grep -q "SELE CONTENTSTUDIO OK $1" || HERO_OK=0
+  done
+done
+mv "$MAAL/sb-stub.js.foer-contentstudio" "$MAAL/sb-stub.js"
 # RUNDVISNINGEN (v3450, Ida 23/11: »man kan paa ingen maade afslutte rundvisningen!« · »alt det her hak skal vaek!!!«): samme boks paa velkomsten og alle trin, hoejst én flise, »Spring over« afslutter med ét klik. probe-tur.js, 390 og 1440.
 KTU=$(python3 -c "import urllib.parse,sys;print(urllib.parse.quote(open(sys.argv[1]).read()))" "$ROD/tools/designlaas/probe-tur.js")
 for TUB in "390 844" "1440 940"; do

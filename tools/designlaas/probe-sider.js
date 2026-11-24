@@ -11,7 +11,8 @@
    RIGTIGE doere (burgermenu og bundnav), ikke showTab-numre: Performance tegnes fx kun rigtigt gennem openMaal(). */
 const SIDER = [
   ["hjem", function () { showTab(3); }],
-  ["idebanken", function () { showTab(2); }],
+  ["idebanken", function () { showTab(2); ibnFaneVis("min"); }],
+  ["energidas idebank", function () { showTab(2); ibnFaneVis("energida"); }],
   ["inspiration", function () { showTab(2); ibVis("insp"); }],
   ["arkiv", function () { showTab(2); ibVis("arkiv"); }],
   ["content", function () { showTab(8); }],
