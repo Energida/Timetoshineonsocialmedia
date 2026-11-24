@@ -330,6 +330,17 @@ for TUB in "390 844" "1440 940"; do
   echo "${UDTU:-SELE TUR FEJL $1: ingen maaling}"
   echo "$UDTU" | grep -q "SELE TUR OK $1" || HERO_OK=0
 done
+# ENTER-TEGNET PAA COMPUTEREN, PILEN KUN PAA TELEFONEN (Ida 24/11 paa v3452: »nu er det pilen i skrivefeltet der er blevet som mobil … låse computersymbolet alle steder«).
+# probe-enter.js paa 1440, kundeappen (sider, briefen i fem formater med alle trin + Optag/Post, ark med felter) og Backstage (13 sider + ark): ingen synlig pil op ved et
+# skrivefelt, ↵ i hver tilfoej-raekke, og ingen tekst under mikrofon/skraldespand/↵. Modproevet paa v3457: roed (karrusellens hook, hashtags, soegefeltet).
+for ENB in kunde dash; do
+  KEN=$(python3 -c "import urllib.parse,sys;print(urllib.parse.quote('var ENTER_FLADE=\''+sys.argv[2]+'\';'+open(sys.argv[1]).read()))" "$ROD/tools/designlaas/probe-enter.js" "$ENB")
+  [ "$ENB" = "dash" ] && VEN="vis=dash&side=overblik&" || VEN="vis=kunde&"
+  RAAEN=$(${TO/90/240} "$C" $HL --no-sandbox --disable-gpu --window-size=1480,1000 --virtual-time-budget=250000 --enable-logging=stderr --v=0 --screenshot="$MAAL/enter-$ENB.png" "http://127.0.0.1:$PORT/sele.html?${VEN}fil=index-sele.html%3Fselekode%3DHINGES2026&bred=1440&hoej=940&kode=$KEN" 2>&1)
+  UDEN=$(echo "$RAAEN" | grep -a 'CONSOLE' | sed -E 's/^.*CONSOLE[:(][0-9]+\)?\] //; s/", source:.*$//; s/^"//' | grep -a 'SELE ENTER')
+  echo "${UDEN:-SELE ENTER FEJL ($ENB): ingen maaling}"
+  echo "$UDEN" | grep -q "SELE ENTER OK ($ENB)" || HERO_OK=0
+done
 # COMPUTEREN STAAR STILLE VED SIDESKIFT (v3453; Ida 10/10 + sikkerhedstjekket 23/11: Backstage rykkede 15 px mellem Hjem og de korte sider for den, der har faste rullebjaelker).
 # tools/sikkerhedschefen/tjek_stille.py (loefte 15) koeres nu ogsaa i porten: kundeappen og Backstage paa 1440, 6 sideskift hver.
 UDST=$(python3 "$ROD/tools/sikkerhedschefen/tjek_stille.py" 2>&1 | grep -a "· 15 ·")

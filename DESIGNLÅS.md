@@ -1,3 +1,21 @@
+## 24. november · v3459 · TO-DOS I HVER SIN FLISE · EN SLETTET TO-DO KOMMER IKKE IGEN · ENTER-TEGNET PÅ COMPUTEREN (pakke Q, afsnittet herunder) — BYGGET I TESTUDGAVEN, IKKE UDE
+
+- **Hver to-do på Backstages Hjem står i sin egen flise** (Ida 24/11 med billede af listen, hvor alle punkter stod i én hvid flise: »mine to-dos skal selvfølgelig have individuelle fliser - og ville du rydde op i dem«): hvid med husets skygge som de andre fliser på Hjem, hjørner 20, lige brede, 12 imellem; »Tilføj to-do …« med mikrofonen nederst, 12 under den sidste. VÆLTER den ene samlede flise fra v3437. MÅLT på 1440 (336 brede) og 390 (362 brede): mellemrum 12 · 12 · 12 · 12.
+- **En slettet to-do kommer ikke igen.** ÅRSAG (fundet 24/11: 15 to-dos, »Ny chef« slettede 23/11, var tilbage dagen efter; 22 blev til 38): `haengHent` lagde alt, browserens lokale kopi havde og basen ikke havde, tilbage i basen (flytteregel fra 14/9), og browserens kopi skrives ved hvert gem, så en sletning fra en anden fane eller enhed blev skrevet tilbage ved næste indlæsning. NU lægges kun de punkter tilbage, et gem herfra ikke nåede at få i basen (mærket »usendt«); alt andet følger basen, og browserens kopi rettes til efter basen.
+- **MÅLT i testudgaven, også med TO rækker med forskelligt indhold i basen:** slettet et andet sted kommer ikke igen · et punkt, der ikke nåede basen, lægges tilbage én gang · alle rækker er ens efter et gem · en sletning herfra bliver ved med at være slettet · et gem, der fejler, mærker punktet og tager det med ved næste indlæsning.
+- **OPRYDNINGEN** (Idas »Ja, slet alle 19« hos »Ny chef«, og de tre ens rækker til én) udføres af »Ny chef«, FØRST når denne udgave er live, og Ida har åbnet Backstage i den på computer og telefon; en browser med en ældre udgave skriver stadig det slettede tilbage.
+- **IKKE MÅLT:** Idas rigtige liste og hendes rigtige browsere · en fane, der står åben i en ældre udgave.
+
+## 24. november · ENTER-TEGNET PÅ COMPUTEREN, PILEN KUN PÅ TELEFONEN — OGSÅ I FORSLAGSRÆKKERNE · LÅST I PORTEN — BYGGET I TESTUDGAVEN, IKKE UDE
+
+Ida 24/11 (live v3452, briefens »Forslag til hooket« på en karrusel): »se her - nu er det pilen i skrivefeltet der er blevet som mobil og ikke den der altid skal være på computer?? vil du ikke tjekke hvordan det kan lade sig gøre? og låse computersymbolet alle steder«
+
+- **ÉN REGEL (HÅRD, 21/9 + 24/11):** på computeren (fra 900 px) viser HVERT skrivefelt, der sender med Enter, husets ↵ i gråt (#686868, 16 px) inde i feltet yderst til højre; mikrofonen står før ↵. Pilen op findes kun under 900. Gælder alle tilføj-rækker: forslagslister (også karrusellens hook), hashtags, sendefelter, Backstage og b2b.
+- **Vælter 14/11** (karrusellens hook: »pil op … på alle bredder«). Den tomme række »Tilføj forslag« står stadig nederst på alle bredder; kun sendetegnet følger reglen.
+- **Teksten løber aldrig ind under et ikon i feltet** (bifund samme skærmbillede: et langt forslag stod bag mikrofonen og skraldespanden): et forslagsfelt med mikrofon har 48 px luft til højre, med mikrofon + skraldespand eller mikrofon + ↵ 84 px, så teksten ombryder før ikonerne. Backstages søgefelt i menuen: teksten stopper før luppen.
+- ÅRSAG: 14/11 tegnede karrusellens pil (`.fs-tlf-send`) på alle bredder, og porten målte kun `.sendfelt-knap`, `.htb-send-knap` og `.hs-send-knap`. Nu måler `tools/designlaas/probe-enter.js` det, man ser (pil-tegningen, ↵ i feltet, tekst under ikon) på 1440 i kundeappen og Backstage, og porten stopper ved én afvigelse.
+- Kode: stilblokken `enterPaaComputerCss` sidst i `index.html` (kun ≥900) + ↵ tegnes nu også i karrusellens skriverække. Telefonen er urørt. Ingen data røres.
+
 ## 24. november · v3458 · BACKSTAGE › MAILS: FELTET »RAPPORTER« (DE MAILS, IDA SELV FÅR) — BYGGET I TESTUDGAVEN, IKKE UDE
 
 - **Idas ord 24/11:** »jeg vil gerne have ændret de mails jeg får - kan du lave et felt under mails vi kalder rapporter så jeg kan se hvilke mails jeg får?« · »Ja, byg det« (på »Ny chef«s tegning). Femte felt på Mails: »Rapporter«.
