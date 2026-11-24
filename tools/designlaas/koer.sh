@@ -381,6 +381,17 @@ for PRB in "390 844" "1440 940"; do
   echo "$UDPR" | grep -q "SELE PRIVAT OK $1" || HERO_OK=0
 done
 mv "$MAAL/sb-stub.js.foer-privat" "$MAAL/sb-stub.js"
+# DE LANGE VALG I »NYT OPSLAG« STAAR 12 FRA HINANDEN (v3467, Ida 24/11: »Ja, 12 som knapperne« — undtagelsen fra 12-laasen er fjernet): probe-chips.js som kunde paa 390 og 1440 med den huskende base.
+KCH=$(python3 -c "import urllib.parse,sys;print(urllib.parse.quote(open(sys.argv[1]).read()))" "$ROD/tools/designlaas/probe-chips.js")
+cp "$MAAL/sb-stub.js" "$MAAL/sb-stub.js.foer-chips" && cp "$ROD/tools/sikkerhedschefen/lag2/husk-stub.js" "$MAAL/sb-stub.js"   # proeven aabner arket med data: den huskende base (v3467)
+for CHB in "390 844" "1440 940"; do
+  set -- $CHB
+  RAACH=$($TO "$C" $HL --no-sandbox --disable-gpu --window-size=$(($1+40)),1000 --virtual-time-budget=40000 --enable-logging=stderr --v=0 --screenshot="$MAAL/chips-$1.png" "http://127.0.0.1:$PORT/sele.html?vis=kunde&fil=index-sele.html%3Fselekode%3DHINGES2026&bred=$1&hoej=$2&kode=$KCH" 2>&1)
+  UDCH=$(echo "$RAACH" | grep -a 'CONSOLE' | sed -E 's/^.*CONSOLE[:(][0-9]+\)?\] //; s/", source:.*$//; s/^"//' | grep -a 'SELE CHIPS')
+  echo "${UDCH:-SELE CHIPS FEJL $1: ingen maaling}"
+  echo "$UDCH" | grep -q "SELE CHIPS OK $1" || HERO_OK=0
+done
+mv "$MAAL/sb-stub.js.foer-chips" "$MAAL/sb-stub.js"
 # RUNDVISNINGEN (v3450, Ida 23/11: »man kan paa ingen maade afslutte rundvisningen!« · »alt det her hak skal vaek!!!«): samme boks paa velkomsten og alle trin, hoejst én flise, »Spring over« afslutter med ét klik. probe-tur.js, 390 og 1440.
 KTU=$(python3 -c "import urllib.parse,sys;print(urllib.parse.quote(open(sys.argv[1]).read()))" "$ROD/tools/designlaas/probe-tur.js")
 for TUB in "390 844" "1440 940"; do
