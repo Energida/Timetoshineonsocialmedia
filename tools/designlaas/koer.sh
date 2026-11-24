@@ -345,6 +345,16 @@ for AFB in "390 844" "1440 940"; do
   echo "$UDAF" | grep -q "SELE AFTALE OK $1" || HERO_OK=0
 done
 mv "$MAAL/sb-stub.js.foer-aftale" "$MAAL/sb-stub.js"
+# EN NY KUNDE KOM IKKE VIDERE PAA »VAELG DIN ADGANGSKODE« (v3464, Mia 24/11: »Linket er udloebet«, selv om linket var brugt faa sekunder foer): probe-kode.js paa 390 og 1440 som kunde.
+# Sessionen fornyes og gemningen proeves én gang til; fejlen siger ikke »linket er udloebet« om en session; knappen »Send et nyt link« staar i SAMME boks, 12 over Naeste; den raa fejl logges til Idas fejlliste; andre fejl proeves ikke igen.
+KKO=$(python3 -c "import urllib.parse,sys;print(urllib.parse.quote(open(sys.argv[1]).read()))" "$ROD/tools/designlaas/probe-kode.js")
+for KOB in "390 844" "1440 940"; do
+  set -- $KOB
+  RAAKO=$($TO "$C" $HL --no-sandbox --disable-gpu --window-size=$(($1+40)),1000 --virtual-time-budget=60000 --enable-logging=stderr --v=0 --screenshot="$MAAL/kode-$1.png" "http://127.0.0.1:$PORT/sele.html?vis=kunde&fil=index-sele.html%3Fselekode%3DHINGES2026&bred=$1&hoej=$2&kode=$KKO" 2>&1)
+  UDKO=$(echo "$RAAKO" | grep -a 'CONSOLE' | sed -E 's/^.*CONSOLE[:(][0-9]+\)?\] //; s/", source:.*$//; s/^"//' | grep -a 'SELE KODE')
+  echo "${UDKO:-SELE KODE FEJL $1: ingen maaling}"
+  echo "$UDKO" | grep -q "SELE KODE OK $1" || HERO_OK=0
+done
 # RUNDVISNINGEN (v3450, Ida 23/11: »man kan paa ingen maade afslutte rundvisningen!« · »alt det her hak skal vaek!!!«): samme boks paa velkomsten og alle trin, hoejst én flise, »Spring over« afslutter med ét klik. probe-tur.js, 390 og 1440.
 KTU=$(python3 -c "import urllib.parse,sys;print(urllib.parse.quote(open(sys.argv[1]).read()))" "$ROD/tools/designlaas/probe-tur.js")
 for TUB in "390 844" "1440 940"; do

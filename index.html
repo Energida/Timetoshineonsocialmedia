@@ -40019,7 +40019,7 @@ function pfKonfetti() {
 function pfPwVis() { if (!PF) return; const i = document.getElementById("pf_pw"); PF.pwVis = !PF.pwVis; if (i) { const v = i.value; PF.f.pw = v; } pfTegn(); try { const j = document.getElementById("pf_pw"); if (j) j.focus(); } catch (e) {} }
 function pfKollegaTil() { if (!PF || PF.f.kolleger.length >= 2) return; PF.f.kolleger.push({ navn: "", mail: "" }); pfKladdeGem(); pfTegn(); }
 function pfTilbage() { if (!PF) return; if ((PF.sp || 0) > 0) { PF.sp--; } else { if (PF.trin <= 1) return; PF.trin--; PF.sp = pfSkaerme().length - 1; } pfKladdeGem(); pfTegn(); }   /* trin 1 (Om dig) har intet Tilbage — adgangskoden er gemt */
-function pfFejl(t) { const fe = document.getElementById("pfFejl"); if (fe) fe.textContent = t; const k = document.getElementById("pfNaeste"); if (k) { k.disabled = false; k.textContent = PF ? pfKnapTekst() : "Næste"; } }
+function pfFejl(t) { const fe = document.getElementById("pfFejl"); if (fe) fe.textContent = t; try { const gl = document.getElementById("pfNytLink"); if (gl && !/Vi kunne ikke gemme/.test(String(t))) gl.remove(); } catch (e) {} const k = document.getElementById("pfNaeste"); if (k) { k.disabled = false; k.textContent = PF ? pfKnapTekst() : "Næste"; } }
 function pfDato() {
   const f = PF.f, dag = parseInt(f.dag, 10), md = parseInt(f.mdr, 10), aar = parseInt(f.aar, 10), nu = new Date().getFullYear();
   if (!dag || !md || !aar || String(f.aar).length !== 4) return null;
@@ -40044,6 +40044,11 @@ async function pfButikGem() {
   await pfRaekkeGem("config", "profil_svar", svar);
   if (f.forretningstype && !(CURRENT_DEF && CURRENT_DEF.forretningstype)) { KUNDE_VALG_TYPE = f.forretningstype; await pfRaekkeGem("config", "kunde_valg", { forretningstype: f.forretningstype }); }
 }
+function pfNytLinkKnap() {
+  const fe = document.getElementById("pfFejl"); if (!fe || document.getElementById("pfNytLink")) return;
+  const b = document.createElement("button"); b.type = "button"; b.id = "pfNytLink"; b.className = "pf-knap pf-knap-tb mq-tap"; b.textContent = "Send et nyt link"; b.onclick = function () { nyKodeNytLink("pfNytLink", "pfFejl"); };
+  fe.insertAdjacentElement("afterend", b);
+}
 async function pfNaeste() {
   if (!PF) return;
   const f = PF.f, t = PF.trin, knap = document.getElementById("pfNaeste");
@@ -40058,8 +40063,8 @@ async function pfNaeste() {
   if (t === 0) {
     /* ADGANGSKODEN GEMMES, FOER MAN KOMMER VIDERE — samme kald og samme fejlsprog som arket (gemNyAdgangskodeInd) */
     if (knap) { knap.disabled = true; knap.textContent = "Gemmer …"; }
-    const r = await sb.auth.updateUser({ password: String(f.pw || "") });
-    if (r && r.error) { pfFejl(nyKodeFejl(r.error)); return; }
+    const r = await nyKodeSaet(String(f.pw || ""));
+    if (r && r.error) { pfFejl(nyKodeFejl(r.error)); if (nyKodeErSession(r.error)) pfNytLinkKnap(); return; }
     try { localStorage.removeItem("energida_skal_ny_kode"); } catch (e) {}
     try { adgangskodeValgtNoter(); } catch (e) {}
     try { window.dispatchEvent(new Event("energida-kode-gemt")); } catch (e) {}
@@ -40073,8 +40078,8 @@ async function pfNaeste() {
   if (knap) { knap.disabled = true; knap.textContent = "Gemmer …"; }
   if (t === 1 && PF.pw) {
     /* ADGANGSKODEN GEMMES SAMMEN MED FØRSTE SIDE — samme kald og samme fejlsprog som arket (gemNyAdgangskodeInd) */
-    const r = await sb.auth.updateUser({ password: String(f.pw || "") });
-    if (r && r.error) { pfFejl(nyKodeFejl(r.error)); if (knap) { knap.disabled = false; knap.textContent = "Næste"; } return; }
+    const r = await nyKodeSaet(String(f.pw || ""));
+    if (r && r.error) { pfFejl(nyKodeFejl(r.error)); if (nyKodeErSession(r.error)) pfNytLinkKnap(); if (knap) { knap.disabled = false; knap.textContent = "Næste"; } return; }
     try { localStorage.removeItem("energida_skal_ny_kode"); } catch (e) {}
     try { adgangskodeValgtNoter(); } catch (e) {}
     try { window.dispatchEvent(new Event("energida-kode-gemt")); } catch (e) {}
@@ -72638,7 +72643,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "3463";
+const APP_VERSION = "3464";
 const APP_BYGGET = "3. november";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_VERSION;   /* ingen dato (Ida 7/11: »hvorfor står der version 3. november?«) — datoen blev ikke rettet med, nummeret er sandheden */ } catch (e) {} });
 let NY_VERSION_KLAR = false;
@@ -76910,7 +76915,7 @@ if (sb) {
     if ((event === "SIGNED_IN" || event === "INITIAL_SESSION") && session) { try { const skalK = localStorage.getItem("energida_skal_ny_kode"); if (skalK === "1") setTimeout(function () { try { visNyAdgangskode(false); } catch (e) {} }, 300); else if (skalK === "invitation") setTimeout(function () { try { kodeEfterProfil(session); } catch (e) {} }, 300); } catch (e) {} }
     /* Invitationen: samme skaerm, men den siger noget andet — hun har ikke en gammel
        kode at skifte fra. Flaget saettes foerst i dokumentet, se kommentaren dér. */
-    if (event === "SIGNED_IN" && window.__ENERGIDA_INVITATION) { window.__ENERGIDA_INVITATION = false; try { localStorage.setItem("energida_skal_ny_kode", "invitation"); } catch (e) {} try { aktiveretMeld(); } catch (e) {} kodeEfterProfil(session); }   /* INVITATIONEN HUSKES (krydstjekket 22/10, Hans): lukkede kunden fanen før koden var valgt, kom arket aldrig igen — og kunden stod uden kode */
+    if (event === "SIGNED_IN" && window.__ENERGIDA_INVITATION) { window.__ENERGIDA_INVITATION = false; try { window.__NYKODE_MAIL = String((session && session.user && session.user.email) || ""); } catch (e) {} try { localStorage.setItem("energida_skal_ny_kode", "invitation"); } catch (e) {} try { aktiveretMeld(); } catch (e) {} kodeEfterProfil(session); }   /* INVITATIONEN HUSKES (krydstjekket 22/10, Hans): lukkede kunden fanen før koden var valgt, kom arket aldrig igen — og kunden stod uden kode */
     if (event === "SIGNED_IN" || event === "SIGNED_OUT" || event === "USER_UPDATED") {
       const nyId = (session && session.user) ? session.user.id : null;
       if (nyId !== SIDSTE_BRUGER_ID) {
@@ -76984,13 +76989,42 @@ function nyKodeVisSkift() {
   const i = document.getElementById("nyKodeFelt"), b = document.getElementById("nyKodeVis"); if (!i || !b) return;
   const vist = i.type === "text"; i.type = vist ? "password" : "text"; b.innerHTML = authOejeSvg(!vist);   /* samme tegning som loginets øje */
 }
+/* v3464 · EN NY KUNDE KOM IKKE VIDERE PÅ »VÆLG DIN ADGANGSKODE« (Mia, 24/11: »Linket er udløbet«, selv om linket var brugt få sekunder før — appen havde stået åben, og telefonen havde sovet).
+   Før adgangskoden gemmes, sørges der for en gyldig session (getSession → refreshSession); fejler gemningen på sessionen, fornyes den og prøves ÉN gang til. Først derefter vises en fejl, og den siger ikke »linket er udløbet«,
+   men at siden har stået åben for længe, med en knap i SAMME boks, der sender et nyt link til den mail, kunden er logget ind med (resetPasswordForEmail, samme kald som Glemt adgangskode). Den rå fejl fra updateUser (kun beskeden, aldrig adgangskoden)
+   skrives til Idas fejlliste (fejlTilIda · slags »adgangskode«), så næste gang kan ses. Ingen ny funktion, tabel eller rettighed; sikkerhedskontraktens §6 er ikke berørt (kun kundens egen session og egen mail). */
+function nyKodeErSession(error) { return /session|jwt|expired|not authenticated|missing/.test(String((error && error.message) || "").toLowerCase()); }
+async function nyKodeSaet(pw) {
+  let sesFoer = null; try { const s = await sb.auth.getSession(); const ses = s && s.data && s.data.session; sesFoer = ses ? (ses.expires_at ? Math.round(ses.expires_at - Date.now() / 1000) : "?") : "mangler"; if (!ses || (ses.expires_at && ses.expires_at * 1000 < Date.now() + 60000)) { try { await sb.auth.refreshSession(); } catch (e) {} } } catch (e) { sesFoer = "kunne ikke læses"; }
+  let r = await sb.auth.updateUser({ password: pw });
+  if (r && r.error && nyKodeErSession(r.error)) { try { await sb.auth.refreshSession(); } catch (e) {} r = await sb.auth.updateUser({ password: pw }); }
+  if (r && r.error) {
+    try {
+      let lager = "?", grund = "", fornyet = ""; try { lager = Object.keys(localStorage).filter(function (k) { return /auth-token/.test(k); }).length + " nøgle(r)"; grund = String(localStorage.getItem("energida_logud_grund") || "").slice(0, 110); fornyet = String(localStorage.getItem("energida_sidst_fornyet") || "").slice(0, 19); } catch (e) {}
+      const linje = "updateUser: " + String(r.error.message || r.error.name || r.error.status || "ukendt") + " · session før (sek. tilbage): " + sesFoer + " · lager: " + lager + (fornyet ? " · sidst fornyet " + fornyet : "") + (grund ? " · logud-grund: " + grund : "");
+      try { localStorage.setItem("energida_kode_fejl", JSON.stringify({ tid: new Date().toISOString(), tekst: linje })); } catch (e) {}   /* uden session afviser basen skrivningen: fejlen står på enheden og sendes, første gang der er en session igen (pulsStart) */
+      fejlTilIda("adgangskode", linje);
+    } catch (e) {}
+  }
+  return r;
+}
+async function nyKodeNytLink(knapId, msgId) {
+  const k = document.getElementById(knapId), m = document.getElementById(msgId); if (k) { k.disabled = true; k.textContent = "Sender …"; }
+  let mail = ""; try { mail = String((window.PF && PF.mail) || window.__NYKODE_MAIL || ""); } catch (e) {}
+  if (!mail) { try { const u = await sb.auth.getUser(); mail = String((u && u.data && u.data.user && u.data.user.email) || ""); } catch (e) {} }
+  if (!mail) { try { mail = String((document.getElementById("nyKodeMail") || {}).value || ""); } catch (e) {} }
+  let ok = false;
+  if (mail) { try { const r = await sb.auth.resetPasswordForEmail(mail.trim().toLowerCase(), { redirectTo: location.origin }); ok = !(r && r.error); } catch (e) { ok = false; } }
+  if (m) m.textContent = ok ? "Tjek din mail. Vi har sendt dig et nyt link." : "Vi kunne ikke sende et nyt link lige nu. Prøv igen om lidt.";
+  if (k) { if (ok) k.remove(); else { k.disabled = false; k.textContent = "Send et nyt link"; } }
+}
 /* FEJLEN PAA DANSK (4/10): Supabase svarer paa engelsk — kunden skal vide, hvad der er galt, og hvad de goer nu */
 function nyKodeFejl(error) {
   const t = String((error && error.message) || "").toLowerCase();
   if (/different from the old|same as/.test(t)) return "Vælg en anden adgangskode end den, du havde før.";
   if (/at least|too short|characters/.test(t)) return "Adgangskoden skal være mindst 6 tegn.";
   if (/weak|pwned|easy to guess|known/.test(t)) return "Den adgangskode er for nem at gætte. Prøv en længere.";
-  if (/session|jwt|expired|not authenticated|missing/.test(t)) return "Linket er udløbet. Luk siden, og bed om et nyt link under Glemt adgangskode.";
+  if (/session|jwt|expired|not authenticated|missing/.test(t)) return "Vi kunne ikke gemme din adgangskode. Tryk på knappen, så sender vi dig et nyt link.";   /* v3464: det er sessionen, ikke linket (Mia 24/11) */
   if (/network|fetch|failed/.test(t)) return "Ingen forbindelse lige nu. Prøv igen om lidt.";
   return "Adgangskoden blev ikke gemt. Prøv igen.";
 }
@@ -77011,12 +77045,16 @@ async function gemNyAdgangskodeInd() {
   const v = document.getElementById("nyKodeFelt").value;
   const m2 = document.getElementById("nyKodeMsg");
   if (v.length < 6) { m2.textContent = "Mindst 6 tegn."; return; }
-  const { error } = await sb.auth.updateUser({ password: v });
+  const { error } = await nyKodeSaet(v);
   if (!error && window.__SKIFT_KODE_TVUNGET) {
     try { await sb.from("skema_svar").update({ svar: { skal: false } }).eq("kode", currentKode).eq("navn", window.__SKIFT_KODE_TVUNGET).eq("skema", "skift_kode"); } catch(e) {}
     window.__SKIFT_KODE_TVUNGET = null;
   }
-  if (error) { m2.textContent = nyKodeFejl(error); return; }
+  if (error) {
+    m2.textContent = nyKodeFejl(error);
+    if (nyKodeErSession(error) && !document.getElementById("nyKodeNytLink")) { const b = document.createElement("button"); b.type = "button"; b.id = "nyKodeNytLink"; b.className = "dbtn"; b.style.cssText = "width:100%;margin-top:12px;min-height:52px;border-radius:999px;font-size:15px;"; b.textContent = "Send et nyt link"; b.onclick = function () { nyKodeNytLink("nyKodeNytLink", "nyKodeMsg"); }; m2.insertAdjacentElement("afterend", b); }
+    return;
+  }
   try { localStorage.removeItem("energida_skal_ny_kode"); } catch (e) {}
   try { adgangskodeValgtNoter(); } catch (e) {}
   m2.style.color = "#000000"; m2.textContent = "Gemt — du er logget ind.";
@@ -79290,7 +79328,14 @@ function aktiveretMeld() {
   if (window.__AKTIVERET_MELDT) return; window.__AKTIVERET_MELDT = true;
   setTimeout(function () { try { const k = sb.functions.invoke("mail-send", { body: { art: "aktiveret" } }); if (k && k.catch) k.catch(function () {}); } catch (e) {} }, 0);
 }
-async function opretMedLink() {
+/* v3464: linkets nøgle bruges højst ét sted ad gangen (telefonens automatiske start og knappen kan ramme hinanden): kaldes funktionen, mens et login er i gang, får den samme løfte tilbage */
+function opretMedLink() {
+  if (window.__OPRET_LOEFTE) return window.__OPRET_LOEFTE;
+  const l = opretMedLinkInd(); window.__OPRET_LOEFTE = l;
+  const frigiv = function () { window.__OPRET_LOEFTE = null; }; l.then(frigiv, frigiv);
+  return l;
+}
+async function opretMedLinkInd() {
   const o = window.__ENERGIDA_OPRET, k = document.getElementById("opKnap");
   if (k) { k.disabled = true; k.textContent = "Opretter …"; }
   try { const m0 = document.getElementById("authMsg"); if (m0) m0.style.display = "none"; } catch (e) {}   /* en gammel besked står ikke, mens der prøves igen */
@@ -79305,6 +79350,7 @@ async function opretMedLink() {
     const { data, error } = await sb.auth.verifyOtp({ token_hash: o.t, type: "invite" });
     if (error || !data || !data.session) throw (error || new Error("ingen session"));
     window.__ENERGIDA_OPRET = null;
+    try { window.__NYKODE_MAIL = String((data.session.user && data.session.user.email) || o.m || ""); } catch (e3) {}   /* v3464: til »Send et nyt link«, hvis sessionen senere mangler */
     try { localStorage.setItem("energida_skal_ny_kode", "invitation"); } catch (e2) {}   /* v3446: mærket står, FØR tæppet spørger efter det (SIGNED_IN sætter det også) */
     aktiveretMeld();
     opretAabnApp();
@@ -86674,6 +86720,9 @@ function pulsStart() {
   /* "Aktive lige nu" på Idas forside: kunde-appen melder stille ind hvert 3. minut.
      Aldrig når Ida selv kigger med som kunden (SOM_KUNDE) — det ville ligne falsk aktivitet. */
   if (!sb || !currentKode || SOM_KUNDE || DEPLOY === "crm") return;
+  /* v3464: har enheden en gemt grund til en tidligere udlogning (energida_logud_grund), sendes den ÉN gang til Idas fejlliste, så »Hvorfor forsvandt mit login?« kan besvares bagefter */
+  try { const kf = JSON.parse(localStorage.getItem("energida_kode_fejl") || "null"); if (kf && kf.tekst) { localStorage.removeItem("energida_kode_fejl"); fejlTilIda("adgangskode", "(fra " + String(kf.tid || "").slice(0, 16) + ") " + kf.tekst); } } catch (e) {}
+  try { const g = String(localStorage.getItem("energida_logud_grund") || ""); if (g && localStorage.getItem("energida_logud_grund_sendt") !== g) { localStorage.setItem("energida_logud_grund_sendt", g); fejlTilIda("logud", "tidligere udlogning: " + g); } } catch (e) {}
   const skriv = async () => {
     try {
       /* Uden om sync-vagten: fejler pulsen (typisk daarligt net), skal den tie —
@@ -108945,6 +108994,9 @@ html body.dash-mode:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q
 html body.dash-mode:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .bs-hjem-c #bsInde .ind-v { font:400 12px/16px Poppins,sans-serif !important; color:#686868 !important; overflow-wrap:anywhere !important; }
 html body.dash-mode:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .bs-hjem-c #bsInde .ind-tid { flex:0 0 auto !important; font:400 12px/16px Poppins,sans-serif !important; color:#686868 !important; white-space:nowrap !important; }
 html body.dash-mode:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .bs-hjem-c #bsInde .ind-tom { padding:12px 0 !important; font:400 14px/20px Poppins,sans-serif !important; color:#1A1A1A !important; }
+/* v3464 · »Send et nyt link« står i samme boks som fejlen, grå over den røde Næste, 12 px imellem */
+html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) #pfFlow .pf-ark > #pfNytLink { margin:0 !important; }
+html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) #pfFlow .pf-ark > #pfNytLink + .pf-knap { margin-top:0 !important; }
 /* v3395 (Ida 20/11) — MODULFLISERNE: cirkel som lektionerne (tom · rødt flueben · hængelås), ingen pil, ingen fold-ud */
 html body #forloebTidslinje .ftl2 .ftl2-hoved, html body #forloebTidslinje .ftl2 .ftl2-rk.laast { display:flex !important; align-items:center !important; justify-content:flex-start !important; gap:16px !important; cursor:pointer; }
 html body #forloebTidslinje .ftl2 .ftl2-rk.laast { cursor:default; }
@@ -109057,7 +109109,7 @@ body.sk-holder, body.sk-holder .content, body.sk-holder #dashMain, [data-bs-hold
 }
 </style>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-hvid.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 22. november · 3463</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 22. november · 3464</div>
 <script>
 /* DROPDOWNEN RULLER SELV (Ida 4/10) — maal den aabne liste og klip den ved skaermens bund */
 (function () {
