@@ -15206,16 +15206,16 @@ html body #appLoader:not([data-fejl="1"]) > div, html body #energidaLoader > spa
 <!-- ===================== LEKTIONSSIDEN (fuldskærm): video, noter og øvelse ===================== -->
 <div id="prompterBack">
   <div id="prompterTop">
-    <button class="p-knap" onclick="prompterLuk()" style="font-weight:400;">Tilbage</button>
     <div class="p-titel" id="prompterTitel"></div>
     <button class="p-knap" id="prompterPlay" onclick="prompterToggle()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px;"><path d="M7 4.5v15l12-7.5Z"/></svg> Start (mellemrum)</button>
-    <button class="p-knap" onclick="prompterFart(-1)">Langsommere</button>
+    <button class="p-knap p-optaget" id="prompterOptaget" onclick="prompterOptaget()">Optaget · Næste lektion</button>
+    <button class="p-knap p-langsom" onclick="prompterFart(-1)">Langsommere</button>
     <span id="prompterFart" style="font-size:11.5px;color:var(--gray3);min-width:52px;text-align:center;font-variant-numeric:tabular-nums;">fart 3</span>
-    <button class="p-knap" onclick="prompterFart(1)">Hurtigere</button>
-    <button class="p-knap" onclick="prompterSkrift(-1)">A-</button>
-    <button class="p-knap" onclick="prompterSkrift(1)">A+</button>
+    <button class="p-knap p-hurtig" onclick="prompterFart(1)">Hurtigere</button>
+    <button class="p-knap p-amin" onclick="prompterSkrift(-1)">A-</button>
+    <button class="p-knap p-aplus" onclick="prompterSkrift(1)">A+</button>
     <button class="p-knap" id="prompterLaes" onclick="prompterLaesOp()"><span class='ik ik-lyd'></span>Læs op</button>
-    <button class="p-knap" onclick="prompterLuk()">Luk (Esc)</button>
+    <button class="p-knap p-luk" onclick="prompterLuk()">Luk</button>
   </div>
   <div id="prompterTekst"></div>
 </div>
@@ -54650,6 +54650,14 @@ function kbuNorm(v) { return String(v == null ? "" : v).replace(/\s+/g, " ").tri
 function kbuNavn(o) { return String((o && o.titel) || "").replace(/^\d+\.\d+\s*·?\s*/, "").trim(); }
 function kbuO() { return (KLIP_OPGAVER || []).find(function (x) { return String(x.id) === String(KLIP_BRIEF_ID); }); }
 function kbuAuto(el) { try { if (!el.offsetParent) return; el.style.height = "0px"; el.style.height = el.scrollHeight + "px"; } catch (e) {} }
+/* v3464: videoen vises under linket, så Ida ser, at det er den rigtige (samme omskrivning som kundens afspiller: lekVideoSrc); ligner linket ikke en video, siger feltet det */
+function kbuVideoHtml(v) {
+  v = String(v || "").trim(); if (!v) return "";
+  const src = lekVideoSrc(v);
+  if (/^https:\/\/(player\.vimeo\.com\/video\/|www\.youtube-nocookie\.com\/embed\/|drive\.google\.com\/file\/d\/)/.test(src)) return '<div class="kbu-vp"><iframe src="' + esc(src) + '" title="Videoen" allow="fullscreen; picture-in-picture" allowfullscreen loading="lazy" referrerpolicy="strict-origin-when-cross-origin"></iframe></div>';
+  if (/^https:\/\/\S+\.(mp4|webm|mov)(\?\S*)?$/i.test(src)) return '<div class="kbu-vp"><video src="' + esc(src) + '" controls playsinline></video></div>';
+  return '<div class="kbu-vp-fejl">Linket ligner ikke en video. Brug et Vimeo-, YouTube- eller Drive-link.</div>';
+}
 function kbuHtml(o) {
   const vinkel = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>';
   const plus = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>';
@@ -54662,6 +54670,7 @@ function kbuHtml(o) {
     /* VIMEO-LINKET STÅR UNDER STATUS (Ida 15/11: »kan jeg få linket til vimeo over i højre side under status?«) — samme felt og id, gemmes som før (kbLinksGem) */
     + '<div class="kbu-video"><div class="kbu-ovr">Video</div>'
     + '<div class="kbu-fl"><input id="kbVideo" class="kbu-felt" type="url" inputmode="url" aria-label="Video" placeholder="Indsæt linket til videoen" value="' + esc(String(o.video_link || "")) + '" onchange="kbLinksGem(this)"></div>'
+    + '<div id="kbVideoVis">' + kbuVideoHtml(o.video_link) + '</div>'
     + '<div class="kbu-kvit" id="kbLinksStatus"></div></div>'
     + kbuAabnerHtml(o)
     + '<div class="kbu-kn"><button type="button" class="kbu-knap" onclick="kbuTilfoej()">' + plus + 'Tilføj</button>'
@@ -56447,6 +56456,7 @@ async function kbLinksGem() {
     } catch(e) { if (st) { st.textContent = "Ikke gemt — prøv igen"; st.style.color = "var(--red)"; } return; }
   }
   Object.assign(o, patch);
+  try { const vv = document.getElementById("kbVideoVis"); if (vv) vv.innerHTML = kbuVideoHtml(patch.video_link); } catch (e) {}
   /* KLADDE (14/11): videolinket når kunden først ved Udgiv (kbuUdgiv) */
   try { kbuStatusTegn(); } catch (e) {}
   if (!sb) klipSaveLocal();
@@ -56493,7 +56503,7 @@ function kbLaesOp(id, feltId, knapId) {
 }
 
 /* ---------- OPTAGE-VISNINGEN: manus som teleprompter (Idas idé 17/7) ---------- */
-let PR_TIMER = null, PR_FART = 3, PR_SKRIFT = 34, PR_KOERER = false, PR_TEKST = "";
+let PR_TIMER = null, PR_FART = 3, PR_SKRIFT = 34, PR_KOERER = false, PR_TEKST = "", PR_ID = null;
 function prompterFormat(t) {   // gør manus læsevenligt: afsnit, luft ved "-", B-klip markeret (læses ikke op)
   const linjer = String(t || "").split("\n");
   let ud = "", buf = [];
@@ -56514,6 +56524,7 @@ function prompterFormat(t) {   // gør manus læsevenligt: afsnit, luft ved "-",
 }
 function prompterAaben(id) {
   const o = KLIP_OPGAVER.find(x => String(x.id) === String(id)); if (!o) return;
+  PR_ID = String(o.id);                            // v3464: hvilken lektion der optages (Optaget · Næste lektion)
   kbGemNu(true);                                   // gem evt. rettelser først
   PR_TEKST = o.manus_tekst || "";
   document.getElementById("prompterTitel").textContent = o.titel || "";
@@ -56523,7 +56534,7 @@ function prompterAaben(id) {
   el.scrollTop = 0;
   document.getElementById("prompterBack").classList.add("on");
   document.getElementById("prompterLinje").style.display = "block";
-  prompterFartVis();
+  prompterFartVis(); prompterNaesteVis();
   if (!window.PR_TASTER) {
     window.PR_TASTER = true;
     document.addEventListener("keydown", e => {
@@ -56533,10 +56544,58 @@ function prompterAaben(id) {
       if (e.key === "ArrowUp") { e.preventDefault(); prompterFart(1); }
       if (e.key === "ArrowDown") { e.preventDefault(); prompterFart(-1); }
     });
+    /* v3464: toppen glider væk, mens teksten ruller — en mus ved kanten henter den frem i et par sekunder */
+    document.addEventListener("mousemove", e => { const b = document.getElementById("prompterBack"); if (!b || !b.classList.contains("on") || e.clientY > 70) return; b.classList.add("top-vis"); clearTimeout(window.PR_TOPT); window.PR_TOPT = setTimeout(() => b.classList.remove("top-vis"), 2500); });
   }
 }
+/* v3464 · OPTAGEDAGEN (Ida 24/11: »Jeg skal til at optage flere moduler de kommende dage. Er der noget der kan optimeres for mig i Energida Studio?« · »1. Optaget · Næste lektion, 2. Status på modulsiden, 5–7. Ryddeligere prompter og video«).
+   Start fra toppen giver en 3-2-1 med lektionens nummer og navn, optagelse nr. og dato (så filerne kan matches); toppen glider væk, mens teksten ruller; »Optaget · Næste lektion« sætter status og åbner den næste, der er klar. */
 function prompterToggle() {
+  if (window.PR_NED) { prompterNedAfbryd(); return; }
+  const el = document.getElementById("prompterTekst");
+  if (!PR_KOERER && el && el.scrollTop < 20 && PR_ID) { prompterNed(prompterToggleInd); return; }
+  prompterToggleInd();
+}
+function prompterNedAfbryd() {
+  clearTimeout(window.PR_NED_T); window.PR_NED = false;
+  const n = document.getElementById("prompterNed"); if (n) n.classList.remove("on");
+}
+function prompterNed(fortsaet) {
+  const o = KLIP_OPGAVER.find(x => String(x.id) === String(PR_ID));
+  const noegle = "prompter_optag_" + PR_ID; let nr = 1; try { nr = (parseInt(localStorage.getItem(noegle) || "0", 10) || 0) + 1; } catch (e) {}
+  const d = new Date(), dato = d.getDate() + "/" + (d.getMonth() + 1);
+  let n = document.getElementById("prompterNed"); if (!n) { n = document.createElement("div"); n.id = "prompterNed"; document.getElementById("prompterBack").appendChild(n); }
+  n.innerHTML = '<div class="pn-tal" id="pnTal">3</div><div class="pn-t">' + esc(o ? studieTitelVis(o) : "") + '</div><div class="pn-s">Optagelse ' + nr + ' · ' + dato + '</div>';
+  n.classList.add("on"); window.PR_NED = true;
+  let t = 3;
+  const tik = function () {
+    t--; const tal = document.getElementById("pnTal");
+    if (t > 0) { if (tal) tal.textContent = String(t); window.PR_NED_T = setTimeout(tik, 1000); return; }
+    window.PR_NED = false; n.classList.remove("on");
+    try { localStorage.setItem(noegle, String(nr)); } catch (e) {}
+    fortsaet();
+  };
+  window.PR_NED_T = setTimeout(tik, 1000);
+}
+function prompterNaeste(id) {
+  const o = KLIP_OPGAVER.find(x => String(x.id) === String(id)); if (!o) return null;
+  const g = klipModulGruppe(o.modul);
+  const liste = KLIP_OPGAVER.filter(x => klipModulGruppe(x.modul) === g).sort(klipSortCmp);
+  const i = liste.findIndex(x => String(x.id) === String(id));
+  return liste.slice(i + 1).find(x => lekStatusK(x) === "Manus godkendt" && String(x.manus_tekst || "").trim()) || null;
+}
+function prompterNaesteVis() { const k = document.getElementById("prompterOptaget"); if (k) k.textContent = prompterNaeste(PR_ID) ? "Optaget · Næste lektion" : "Optaget · Luk"; }
+function prompterOptaget() {
+  const id = PR_ID; if (!id) return;
+  const nxt = prompterNaeste(id);
+  try { klipStatus(id, "Råfiler klar"); } catch (e) {}
+  prompterLuk();
+  if (nxt) { prompterAaben(nxt.id); try { husKvit("Optaget. Næste: " + studieTitelVis(nxt)); } catch (e) {} }
+  else { try { husKvit("Optaget. Det var den sidste i modulet."); } catch (e) {} try { renderKlipperum(); } catch (e) {} }
+}
+function prompterToggleInd() {
   PR_KOERER = !PR_KOERER;
+  try { document.getElementById("prompterBack").classList.toggle("koerer", PR_KOERER); } catch (e) {}
   const k = document.getElementById("prompterPlay");
   if (k) { k.innerHTML = PR_KOERER ? "<svg width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;'><path d='M9 5v14'/><path d='M15 5v14'/></svg> Pause (mellemrum)" : "<svg width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' style='vertical-align:-2px;'><path d='M7 4.5v15l12-7.5Z'/></svg> Start (mellemrum)"; k.classList.toggle("on", PR_KOERER); }
   clearInterval(PR_TIMER);
@@ -56583,7 +56642,7 @@ function prompterLaesOp() {
   if (k) { k.innerHTML = "<span class='ik ik-stop'></span>Stop oplæsning"; k.classList.add("on"); }
 }
 function prompterLuk() {
-  clearInterval(PR_TIMER); PR_KOERER = false;
+  clearInterval(PR_TIMER); PR_KOERER = false; try { prompterNedAfbryd(); document.getElementById("prompterBack").classList.remove("koerer", "top-vis"); } catch (e) {}
   try { speechSynthesis.cancel(); } catch(e) {}
   document.getElementById("prompterBack").classList.remove("on");
   document.getElementById("prompterLinje").style.display = "none";
@@ -56620,9 +56679,10 @@ async function lekSpejlVideo(o, link) {
 async function klipOpdater(id, patch) {
   if (sb) {
     try {
-      const { error } = await sb.from("video_opgaver").update(patch).eq("id", id);
+      const { data, error } = await sb.from("video_opgaver").update(patch).eq("id", id).select("id");
       /* KLADDE (14/11): et videolink fra tavlekortet når kunden først ved Udgiv på lektionens fane */
-      if (!error) { klipHent(); return; }
+      if (!error && data && data.length) { klipHent(); return; }   /* v3464: kvittering kun, når en række er skrevet (§5 · tæl rækkerne) */
+      if (!error) { try { husBesked("Det blev ikke gemt. Prøv igen."); } catch (e) {} }
     } catch(e) {}
   }
   const o = KLIP_OPGAVER.find(x => String(x.id) === String(id));
@@ -72643,7 +72703,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "3464";
+const APP_VERSION = "3465";
 const APP_BYGGET = "3. november";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_VERSION;   /* ingen dato (Ida 7/11: »hvorfor står der version 3. november?«) — datoen blev ikke rettet med, nummeret er sandheden */ } catch (e) {} });
 let NY_VERSION_KLAR = false;
@@ -99800,7 +99860,7 @@ function bf3Ms2Til() { try { return !!(KLIP_ER_IDA && BF3_MODUL_AABEN && !bf3Tlf
 function bf3Ms2Lek(id) { window.__MS2_MOD = false; if (String(BF3_LEK_AABEN) === String(id)) return; bf3LekFold(id); try { window.scrollTo(0, 0); } catch (e) {} }
 function bf3Ms2Modul() { window.__MS2_MOD = true; if (BF3_LEK_AABEN) { try { if (briefErAaben()) closeModal(); } catch (e) {} BF3_LEK_AABEN = null; } renderKlipperum(); }
 function bf3Ms2Tegn(o) {
-  try { const lid = klipLekIdFor(o); if (lid && LEK_SKJULT_KUNDE[lid]) return '<span class="lks-laas ms2-c">' + FTL_LAAS + '</span>'; if (lekErKladde(o)) return '<span class="lks-tom ms2-c"></span>'; return '<span class="ms2-c">' + LKS_FB + '</span>'; } catch (e) { return '<span class="lks-tom ms2-c"></span>'; }
+  try { const lid = klipLekIdFor(o); if (lid && LEK_SKJULT_KUNDE[lid]) return '<span class="lks-laas ms2-c">' + FTL_LAAS + '</span>'; if (lekErKladde(o) || (LEK_KLADDE_HENTET && lid && !(LEK_PUB && LEK_PUB[lid]))) return '<span class="lks-tom ms2-c"></span>'; return '<span class="ms2-c">' + LKS_FB + '</span>'; } catch (e) { return '<span class="lks-tom ms2-c"></span>'; }
 }
 function bf3Ms2VenstreHtml(liste, nrK) {
   let udg = 0; try { udg = liste.filter(function (o) { const lid = klipLekIdFor(o); return !(lid && LEK_SKJULT_KUNDE[lid]) && !lekErKladde(o); }).length; } catch (e) {}
@@ -99810,7 +99870,7 @@ function bf3Ms2VenstreHtml(liste, nrK) {
   const om = '<div class="ms2-fl ms2-klik ms2-om' + (!BF3_LEK_AABEN ? ' valgt' : '') + '" role="button" tabindex="0" onclick="bf3Ms2Modul()" onkeydown="if(event.key===\'Enter\')bf3Ms2Modul()"><span class="ms2-t"><span class="ms2-n">Om modulet</span></span></div>';
   const lek = liste.map(function (o) {
     const oid = esc(String(o.id)).replace(/'/g, ""), valgt = String(BF3_LEK_AABEN) === String(o.id);
-    let st = ""; try { const lid = klipLekIdFor(o); st = (lid && LEK_SKJULT_KUNDE[lid]) ? "Skjult for kunderne" : (lekErKladde(o) ? "Ikke udgivet" : ""); } catch (e) {}
+    let st = ""; try { const lid = klipLekIdFor(o); st = (lid && LEK_SKJULT_KUNDE[lid]) ? "Skjult for kunderne" : (lekErKladde(o) ? "Ikke udgivet" : ((lid && LEK_PUB && LEK_PUB[lid]) ? "Udgivet" : (function () { const f = LEK_STATUS.find(function (x) { return x.k === lekStatusK(o); }); return f ? f.n : ""; })())); } catch (e) {}   /* v3464: hvad der mangler står ved hver lektion: Manus mangler · Klar til optagelse · Optaget · Færdig · Udgivet */
     return '<div class="ms2-fl ms2-klik ms2-lek' + (valgt ? ' valgt' : '') + '" data-vid="' + oid + '" role="button" tabindex="0" aria-current="' + (valgt ? 'true' : 'false') + '" onclick="bf3Ms2Lek(\'' + oid + '\')" onkeydown="if(event.key===\'Enter\')bf3Ms2Lek(\'' + oid + '\')">' + bf3Ms2Tegn(o)
       + '<span class="ms2-t"><span class="ms2-n">' + esc(studieTitelVis(o)) + (bf3LekVarighed(o) ? ' <span class="ms2-d">' + esc(bf3LekVarighed(o)) + '</span>' : '') + '</span>' + (st ? '<span class="ms2-st">' + st + '</span>' : '') + '</span></div>';
   }).join("");
@@ -100422,6 +100482,8 @@ function klipIdeerTegn(el) {
   try { bsBaandPlanlaeg(); } catch (e) {}
   bf3StudioRyd();
 }
+/* v3464: modulrækkens statusord (en fælles status, ellers »N klar til optagelse«, ellers »N af M færdige«) */
+const klipModStatus = function (lek) { try { if (!lek.length) return ""; const ks = lek.map(lekStatusK); const ens = ks.every(function (x) { return x === ks[0]; }); if (ens) { const f = LEK_STATUS.find(function (x) { return x.k === ks[0]; }); return f ? f.n : ""; } const nK = ks.filter(function (x) { return x === "Manus godkendt"; }).length; if (nK) return nK + " klar til optagelse"; const f2 = ks.filter(function (x) { return x === "Godkendt"; }).length; return f2 + " af " + lek.length + " færdige"; } catch (e) { return ""; } };
 function klipBud6Tegn(el) {
   document.body.classList.add("klip-bud6");
   if (!window.__MODUL_INFO_HENTET && typeof modulerHent === "function") { window.__MODUL_INFO_HENTET = 1; try { modulerHent().then(function () { try { renderKlipperum(); } catch (e) {} }); } catch (e) {} }
@@ -100439,13 +100501,6 @@ function klipBud6Tegn(el) {
   const navnAf = function (k) { let t = ""; try { if (/^[A-ZÆØÅ0-9_-]+ · Modul\s*\d/.test(String(k))) return (MODUL_TITLER && MODUL_TITLER[k]) || modulVisKort(k);   /* et produkts eget modul: sit eget navn (11/10) */ const nr = (String(k).match(/(\d+)/) || [])[1]; if (nr === "1") { const inf1 = modulInfoFor("1"); return modulVisNavn("1", inf1 && inf1.titel); }   /* Modul 0 kan omdøbes i admin (Ida 3/11) */ const inf = nr != null ? modulInfoFor(nr) : null; t = (inf && inf.titel) || modulNavnVis(k) || ""; } catch (e) {} return t || k; };
   const nrAf = function (k) { return (String(k).match(/(\d+)/) || [])[1] || ""; };
   const st = function (o) { return klipStatusNorm(o.status); };
-  const nManus = KLIP_OPGAVER.filter(function (o) { return st(o) === "Manus ikke godkendt"; }).length, nOptag = KLIP_OPGAVER.filter(function (o) { return st(o) === "Manus godkendt"; }).length, nKlip = KLIP_OPGAVER.filter(function (o) { return st(o) === "Råfiler klar" || st(o) === "Rettelser" || st(o) === "Klippet"; }).length;
-  const lekOrd = function (n, efter) { return (n === 1 ? "1 lektion " : n + " lektioner ") + efter; };
-  const talRk = [["Manus", lekOrd(nManus, "venter"), lekOrd(nManus, "venter på manus"), "manus"], ["Optagelse", lekOrd(nOptag, "klar"), lekOrd(nOptag, "klar til optagelse"), "optag"], ["Optaget", lekOrd(nKlip, "optaget"), lekOrd(nKlip, "optaget"), "klip"]];
-  /* DE TRE TAL ER FLISER MED ETIKET OG EEN STREG (Idas klik 22/9) — foer stod tallet helt bart i flisen */
-  const tal = tlf
-    ? '<div class="bs3-fl"><div class="bs3-et"><span>Status</span></div>' + talRk.map(function (t) { return '<div class="bs3-linje bs3-klik' + (BF3_KLIP_FILTER === t[3] ? ' on' : '') + '" role="button" tabindex="0" onclick="bf3KlipFilter(\'' + t[3] + '\')">' + esc(t[2]) + '</div>'; }).join('') + '</div>'
-    : bf3Ver("Status") + '<div class="bs3-grid3">' + talRk.map(function (t) { return bf3Etfl(t[0], esc(t[1]), "", null, ' data-klik="1" role="button" tabindex="0" onclick="bf3KlipFilter(&quot;' + t[3] + '&quot;)"' + (BF3_KLIP_FILTER === t[3] ? ' data-on="1"' : '')); }).join('') + '</div>';
   const filt = function (o) { if (!BF3_KLIP_FILTER) return true; const s = st(o); return BF3_KLIP_FILTER === "manus" ? s === "Manus ikke godkendt" : BF3_KLIP_FILTER === "optag" ? s === "Manus godkendt" : (s === "Råfiler klar" || s === "Rettelser" || s === "Klippet"); };
   /* EN VEJ TILBAGE TIL FORSIDEN (23/9): modullisten er nu et rum bag en doer, og et rum skal kunne lukkes. */
   const tilbage = '<button type="button" class="dbtn mq-tap bs3-tilbage" onclick="klipVisningSaet(\'studie\')">Tilbage til Studiet</button>';
@@ -100603,7 +100658,7 @@ function klipBud6Tegn(el) {
     /* MODULLISTEN PÅ PRODUKTSIDEN (Ida 16/11: »modulet skal åbne når jeg klikker på den på forsiden og lektionerne skal ikke folde sig ud der«): hvert modul er én flise med navn, antal lektioner og status;
        et tryk åbner modulets egen side, og lektionerne står dér. Intet folder ud på forsiden, og »Åbn modulet« findes ikke. */
     const pilH = '<svg class="bs3-lekpil" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>';
-    const modStatus = function (lek) { try { if (!lek.length) return ""; const ks = lek.map(lekStatusK); const ens = ks.every(function (x) { return x === ks[0]; }); if (ens) { const f = LEK_STATUS.find(function (x) { return x.k === ks[0]; }); return f ? f.n : ""; } const f2 = ks.filter(function (x) { return x === "Godkendt"; }).length; return f2 + " af " + lek.length + " færdige"; } catch (e) { return ""; } };
+    const modStatus = klipModStatus;
     const modFold = function (k) {
       const lek = grupper[k].slice().sort(klipSortCmp), nL = lek.length, kq = esc(k).replace(/'/g, "\\'"), nr = nrAf(k);
       const etiket = /^[A-ZÆØÅ0-9_-]+ · Modul/.test(String(k)) ? modulVisKort(k) : (nr ? "Modul " + modulVisNr(nr) : "");
@@ -108997,6 +109052,34 @@ html body.dash-mode:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q
 /* v3464 · »Send et nyt link« står i samme boks som fejlen, grå over den røde Næste, 12 px imellem */
 html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) #pfFlow .pf-ark > #pfNytLink { margin:0 !important; }
 html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) #pfFlow .pf-ark > #pfNytLink + .pf-knap { margin-top:0 !important; }
+/* v3464 · OPTAGEDAGEN: prompterens top (én Luk, Optaget · Næste lektion, glider væk under afspilning, telefonform), nedtællingen og videoen under linket */
+html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) #prompterTop { gap:12px !important; }
+html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) #prompterTop .p-knap { height:44px !important; box-sizing:border-box !important; display:inline-flex !important; align-items:center !important; justify-content:center !important; padding:0 18px !important; }
+html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) #prompterTop .p-optaget { background:#FC2404 !important; border-color:#FC2404 !important; color:#FFFFFF !important; }
+html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) #prompterBack #prompterTop { transition:transform .25s ease, opacity .25s ease; }
+html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) #prompterBack.koerer:not(.top-vis) #prompterTop { transform:translateY(-100%) !important; opacity:0 !important; pointer-events:none !important; }
+@media (max-width:700px) {
+  html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) #prompterTop { display:grid !important; grid-template-columns:1fr 1fr !important; padding:12px 16px !important; gap:12px !important; }
+  html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) #prompterTop .p-titel { grid-column:1 / -1 !important; order:0 !important; min-width:0 !important; font-size:16px !important; line-height:22px !important; }
+  html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) #prompterTop #prompterPlay { order:1 !important; }
+  html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) #prompterTop .p-optaget { order:2 !important; padding:0 8px !important; }
+  html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) #prompterTop .p-knap { min-width:0 !important; padding:0 8px !important; }
+  html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) #prompterTop #prompterFart { order:5 !important; grid-column:1 / -1 !important; text-align:center !important; min-width:0 !important; }
+  html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) #prompterTop .p-langsom { order:3 !important; }
+  html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) #prompterTop .p-hurtig { order:4 !important; }
+  html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) #prompterTop .p-amin { order:6 !important; }
+  html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) #prompterTop .p-aplus { order:7 !important; }
+  html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) #prompterTop #prompterLaes { order:8 !important; }
+  html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) #prompterTop .p-luk { order:9 !important; }
+}
+html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) #prompterNed { position:absolute !important; inset:0 !important; z-index:5 !important; display:none !important; flex-direction:column !important; align-items:center !important; justify-content:center !important; gap:12px !important; background:#FFFFFF !important; text-align:center !important; padding:24px !important; }
+html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) #prompterNed.on { display:flex !important; }
+html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) #prompterNed .pn-tal { font:400 160px/1 Poppins,sans-serif !important; color:#FC2404 !important; }
+html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) #prompterNed .pn-t { font:400 22px/28px Poppins,sans-serif !important; color:#1A1A1A !important; }
+html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) #prompterNed .pn-s { font:400 16px/22px Poppins,sans-serif !important; color:#686868 !important; }
+html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .kbu-video .kbu-vp { margin:12px 0 0 !important; border-radius:20px !important; overflow:hidden !important; aspect-ratio:16 / 9 !important; background:#FFFFFF !important; box-shadow:var(--mb-skygge) !important; }
+html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .kbu-video .kbu-vp iframe, html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .kbu-video .kbu-vp video { display:block !important; width:100% !important; height:100% !important; border:0 !important; }
+html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .kbu-video .kbu-vp-fejl { margin:12px 0 0 !important; font:400 14px/20px Poppins,sans-serif !important; color:#FC2404 !important; }
 /* v3395 (Ida 20/11) — MODULFLISERNE: cirkel som lektionerne (tom · rødt flueben · hængelås), ingen pil, ingen fold-ud */
 html body #forloebTidslinje .ftl2 .ftl2-hoved, html body #forloebTidslinje .ftl2 .ftl2-rk.laast { display:flex !important; align-items:center !important; justify-content:flex-start !important; gap:16px !important; cursor:pointer; }
 html body #forloebTidslinje .ftl2 .ftl2-rk.laast { cursor:default; }
@@ -109109,7 +109192,7 @@ body.sk-holder, body.sk-holder .content, body.sk-holder #dashMain, [data-bs-hold
 }
 </style>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-hvid.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 22. november · 3464</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 22. november · 3465</div>
 <script>
 /* DROPDOWNEN RULLER SELV (Ida 4/10) — maal den aabne liste og klip den ved skaermens bund */
 (function () {
