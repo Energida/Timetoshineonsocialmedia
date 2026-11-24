@@ -72638,7 +72638,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "3462";
+const APP_VERSION = "3463";
 const APP_BYGGET = "3. november";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_VERSION;   /* ingen dato (Ida 7/11: »hvorfor står der version 3. november?«) — datoen blev ikke rettet med, nummeret er sandheden */ } catch (e) {} });
 let NY_VERSION_KLAR = false;
@@ -97393,6 +97393,24 @@ function indeStart() {
   INDE_TIMER = setInterval(tik, 60000);
   if (!window.__INDE_SYN) { window.__INDE_SYN = true; document.addEventListener("visibilitychange", function () { if (!document.hidden && INDE_TIMER) tik(); }); }
 }
+/* v3463 · EN AFTALE PÅ HJEM ÅBNER AFTALEN, IKKE KUNDENS CRM-SIDE (Ida 24/11, med billede af »Kommende aftaler«: »når jeg klikker på personalebriefen for at skrive noter kommer jeg ikke til aftalen men ind på mit crm?«).
+   Rækkerne i »I dag« og »Kommende aftaler« kalder samme vej som aftalen på kundens side (ksAftaleAabn): et contentmøde åbner mødets eget ark, alle andre aftaler (fx »Personale briefing«, også uden tid) åbner »Ret aftalen« med feltet Referat.
+   Arket ligger over Hjem; Luk fører tilbage til Hjem. Findes aftalen ikke (mere), åbnes kundens side som før. Kun et andet klik på samme rækker; ingen ny skrivning. */
+function hjAftaleFn(a) { return (a && a.id) ? "hjAftaleKlik('" + esc(String(a.id)).replace(/'/g, "") + "')" : (a && a.kode ? "kundeSideVis('" + esc(String(a.kode)) + "')" : ""); }
+function hjAftaleKlik(id) {
+  const a = (CRM_AFTALER || []).find(function (x) { return String(x.id) === String(id); });
+  if (!a) return;
+  /* et contentmøde: mødets noter står på kundens side (»Noter til næste møde«) — dem åbner vi og stiller markøren i; mødets eget ark er kun dag og tid */
+  if (erMoedeTitel(a.titel) && a.kode) {
+    try { kundeSideVis(a.kode); } catch (e) { return; }
+    /* kundens side tegnes om, mens den henter: markøren stilles, til feltet står stabilt (3 tik i træk i fokus), højst 10 sekunder */
+    let t = 0, stabil = 0; const iv = setInterval(function () { const f = document.getElementById("ksNoter"); t++;
+      if (f) { if (document.activeElement === f) stabil++; else { stabil = 0; try { f.scrollIntoView({ block: "center" }); f.focus({ preventScroll: true }); } catch (e) {} } }
+      if (stabil >= 3 || t > 40) clearInterval(iv); }, 250);
+    return;
+  }
+  try { ksAftaleAabn(a.id); } catch (e) { if (a.kode) kundeSideVis(a.kode); }
+}
 /* ---------- HJEM = DAGEN ---------- */
 async function dashForsideTegn() {
   try { manusKurserHent(); leadProdukterHent(); } catch (e) {}   /* onlinekurserne og produkterne hentes, naar Backstage aabner, saa Tøm hovedet har dem (26/9) */
@@ -97439,11 +97457,11 @@ async function dashForsideTegn() {
   /* DEN ROEDE I DAG-FLISE, SOM B2B (Ida 24/9: »jeg vil gerne have så ensartet design som muligt som b2b! Så hvad med en rød idag flise?«):
      dagens foerste punkt staar som den roede flise med etiketten I DAG · streg · titel · vinkel; resten som hvide fliser under */
   const roedeI = [];
-  aftIdag.forEach(function (a) { roedeI.push({ n: esc(a.titel || "Aftale"), s: esc([a.tid ? "kl. " + String(a.tid).slice(0, 5).replace(":", ".") : "", venterKundeNavn(a.kode)].filter(Boolean).join(" · ")), fn: a.kode ? "kundeSideVis('" + esc(String(a.kode)) + "')" : "" }); });
+  aftIdag.forEach(function (a) { roedeI.push({ n: esc(a.titel || "Aftale"), s: esc([a.tid ? "kl. " + String(a.tid).slice(0, 5).replace(":", ".") : "", venterKundeNavn(a.kode)].filter(Boolean).join(" · ")), fn: hjAftaleFn(a) }); });
   todoIdag.forEach(function (x) { roedeI.push({ n: esc(x.t || ""), s: "To-do med dato i dag", fn: "bsTodoRet('" + esc(String(x.id)) + "')" }); });
   const r0 = roedeI[0];
   const roedFlise = '<div class="bs3-fl bs3-roed' + (r0 && r0.fn ? ' bs3-klik" role="button" tabindex="0" onclick="' + r0.fn : '') + '"><div class="bs3-et">I dag</div><div class="bs3-n">' + (r0 ? r0.n : "Ingen aftaler eller frister i dag.") + '</div>' + (r0 && r0.s ? '<div class="bs3-s">' + r0.s + '</div>' : '') + (r0 && r0.fn ? '<svg class="bs3-roed-pil" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>' : '') + '</div>';
-  let idagHtml = aftIdag.map(function (a) { return bf3Rk(bf3Tidb(a.tid ? String(a.tid).slice(0, 5).replace(":", ".") : "I dag"), esc(a.titel || "Aftale"), esc([venterKundeNavn(a.kode), a.sted || a.type || ""].filter(Boolean).join(" · ")), a.kode ? "kundeSideVis('" + esc(String(a.kode)) + "')" : ""); }).join('')
+  let idagHtml = aftIdag.map(function (a) { return bf3Rk(bf3Tidb(a.tid ? String(a.tid).slice(0, 5).replace(":", ".") : "I dag"), esc(a.titel || "Aftale"), esc([venterKundeNavn(a.kode), a.sted || a.type || ""].filter(Boolean).join(" · ")), hjAftaleFn(a)); }).join('')
     + todoIdag.map(function (x) { return bf3Rk(bf3Tidb(x.tid ? String(x.tid).slice(0, 5).replace(":", ".") : "Frist"), esc(x.t || ""), "To-do med dato i dag", "bsTodoRet('" + esc(String(x.id)) + "')"); }).join('');
   if (!idagHtml) idagHtml = bf3Tom("Ingen aftaler eller frister i dag.");
   /* to-do (uden dato i dag): flueben tv., privat maerket, swipe = slet */
@@ -97458,7 +97476,7 @@ async function dashForsideTegn() {
   void todoHtmlGAMMEL;
   /* kommende aftaler (ikke i dag) */
   const aftFrem = aftAlle.filter(function (a) { return a.dato > idag; }).slice(0, 5);
-  const aftHtml = aftFrem.length ? aftFrem.map(function (a) { const d = new Date(a.dato + "T12:00:00"); const UGE = ["Søndag", "Mandag", "Tirsdag", "Onsdag", "Torsdag", "Fredag", "Lørdag"]; return bf3Rk(bf3Datob(a.dato), esc(a.titel || "Aftale") + (a.kode ? ' · ' + esc(venterKundeNavn(a.kode)) : ''), esc(UGE[d.getDay()] + (a.tid ? " kl. " + String(a.tid).slice(0, 5) : "")), a.kode ? "kundeSideVis('" + esc(String(a.kode)) + "')" : ""); }).join('') : bf3Tom("Ingen aftaler i kalenderen.");
+  const aftHtml = aftFrem.length ? aftFrem.map(function (a) { const d = new Date(a.dato + "T12:00:00"); const UGE = ["Søndag", "Mandag", "Tirsdag", "Onsdag", "Torsdag", "Fredag", "Lørdag"]; return bf3Rk(bf3Datob(a.dato), esc(a.titel || "Aftale") + (a.kode ? ' · ' + esc(venterKundeNavn(a.kode)) : ''), esc(UGE[d.getDay()] + (a.tid ? " kl. " + String(a.tid).slice(0, 5) : "")), hjAftaleFn(a)); }).join('') : bf3Tom("Ingen aftaler i kalenderen.");
   /* denne uge: ringe */
   let ugeHtml = "";
   try {
@@ -109039,7 +109057,7 @@ body.sk-holder, body.sk-holder .content, body.sk-holder #dashMain, [data-bs-hold
 }
 </style>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-hvid.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 22. november · 3462</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 22. november · 3463</div>
 <script>
 /* DROPDOWNEN RULLER SELV (Ida 4/10) — maal den aabne liste og klip den ved skaermens bund */
 (function () {

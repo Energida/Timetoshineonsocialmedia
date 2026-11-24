@@ -324,6 +324,7 @@ done
 # STARTET, IKKE BARE 0 (v3462, Ida 24/11 med Avantis kort: »han er igang med modul 0 men jeg ikke kan se han har set nogle lektioner«): en kode med aabnede, men ikke faerdige lektioner
 # (lektion_visdage uden lektion_set_) staar som »0 af 5 faerdige · 1 startet« med »Sidst: Startede paa lektion 0.1 · i dag kl. …«. probe-startet.js, Backstage paa 390 og 1440.
 KST=$(python3 -c "import urllib.parse,sys;print(urllib.parse.quote(open(sys.argv[1]).read()))" "$ROD/tools/designlaas/probe-startet.js")
+cp "$MAAL/sb-stub.js" "$MAAL/sb-stub.js.foer-startet" && cp "$ROD/tools/sikkerhedschefen/lag2/husk-stub.js" "$MAAL/sb-stub.js"   # prøven saar data: den huskende base, som sikkerhedschefens lag 2 — portens egen base husker ikke indsatte raekker (v3462)
 for STB in "390 844" "1440 940"; do
   set -- $STB
   RAAST=$($TO "$C" $HL --no-sandbox --disable-gpu --window-size=$(($1+40)),1000 --virtual-time-budget=40000 --enable-logging=stderr --v=0 --screenshot="$MAAL/startet-$1.png" "http://127.0.0.1:$PORT/sele.html?vis=dash&side=overblik&fil=index-sele.html&bred=$1&hoej=$2&kode=$KST" 2>&1)
@@ -331,6 +332,19 @@ for STB in "390 844" "1440 940"; do
   echo "${UDST2:-SELE STARTET FEJL $1: ingen maaling}"
   echo "$UDST2" | grep -q "SELE STARTET OK $1" || HERO_OK=0
 done
+mv "$MAAL/sb-stub.js.foer-startet" "$MAAL/sb-stub.js"
+# EN AFTALE PAA HJEM AABNER AFTALEN (v3463, Ida 24/11: »naar jeg klikker paa personalebriefen for at skrive noter kommer jeg ikke til aftalen men ind paa mit crm?«): Backstage › Hjem,
+# probe-aftale.js paa 390 og 1440: en kommende aftale (ogsaa uden tid) aabner aftalens ark med Referat, »I dag« goer det samme, et contentmoede aabner kundens side med markoeren i »Noter til naeste moede«, og Luk foerer tilbage til Hjem.
+KAF=$(python3 -c "import urllib.parse,sys;print(urllib.parse.quote(open(sys.argv[1]).read()))" "$ROD/tools/designlaas/probe-aftale.js")
+cp "$MAAL/sb-stub.js" "$MAAL/sb-stub.js.foer-aftale" && cp "$ROD/tools/sikkerhedschefen/lag2/husk-stub.js" "$MAAL/sb-stub.js"   # prøven saar aftaler: den huskende base (v3463)
+for AFB in "390 844" "1440 940"; do
+  set -- $AFB
+  RAAAF=$($TO "$C" $HL --no-sandbox --disable-gpu --window-size=$(($1+40)),1000 --virtual-time-budget=60000 --enable-logging=stderr --v=0 --screenshot="$MAAL/aftale-$1.png" "http://127.0.0.1:$PORT/sele.html?vis=dash&side=overblik&fil=index-sele.html&bred=$1&hoej=$2&kode=$KAF" 2>&1)
+  UDAF=$(echo "$RAAAF" | grep -a 'CONSOLE' | sed -E 's/^.*CONSOLE[:(][0-9]+\)?\] //; s/", source:.*$//; s/^"//' | grep -a 'SELE AFTALE')
+  echo "${UDAF:-SELE AFTALE FEJL $1: ingen maaling}"
+  echo "$UDAF" | grep -q "SELE AFTALE OK $1" || HERO_OK=0
+done
+mv "$MAAL/sb-stub.js.foer-aftale" "$MAAL/sb-stub.js"
 # RUNDVISNINGEN (v3450, Ida 23/11: »man kan paa ingen maade afslutte rundvisningen!« · »alt det her hak skal vaek!!!«): samme boks paa velkomsten og alle trin, hoejst én flise, »Spring over« afslutter med ét klik. probe-tur.js, 390 og 1440.
 KTU=$(python3 -c "import urllib.parse,sys;print(urllib.parse.quote(open(sys.argv[1]).read()))" "$ROD/tools/designlaas/probe-tur.js")
 for TUB in "390 844" "1440 940"; do
