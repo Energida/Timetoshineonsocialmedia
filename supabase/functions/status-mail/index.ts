@@ -158,7 +158,7 @@ Deno.serve(async (req) => {
       if (!staa && o.login) paaSporet++;
       if (staa) {
         const s = skubLog[k] ? dageMellem(dkDato(skubLog[k]), nu.dato) : null;
-        if (s == null || s >= SKUB_DAGE) skub.push({ tekst: personFor(k) + (!o.login ? " har ikke logget ind" : (!harSet ? " har ikke set en lektion" : " har ikke været inde")), under: firmaFor(k) + (!o.login ? " · købte " + sidenOrd(kd) : " · sidst inde " + (o.sidst ? sidenOrd(sd) : "aldrig")), dage: (!o.login ? kd : sd) || 0 });
+        if (s == null || s >= SKUB_DAGE) skub.push({ tekst: personFor(k) + (!o.login ? " har ikke logget ind" : (!harSet ? " har ikke gjort en lektion færdig" : " har ikke været inde")), under: firmaFor(k) + (!o.login ? " · købte " + sidenOrd(kd) : " · sidst inde " + (o.sidst ? sidenOrd(sd) : "aldrig")), dage: (!o.login ? kd : sd) || 0 });
       }
       if (kb && kd != null && kd <= 1) nyeKoeb.push({ tekst: personFor(k) + " · " + firmaFor(k), under: (kb.rabat || "ingen rabatkode") + " · " + (o.login ? "har adgangskode" : "mangler adgangskode") });
       for (const nr of Object.keys(prModul)) {

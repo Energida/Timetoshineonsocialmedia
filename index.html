@@ -72638,7 +72638,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "3461";
+const APP_VERSION = "3462";
 const APP_BYGGET = "3. november";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_VERSION;   /* ingen dato (Ida 7/11: »hvorfor står der version 3. november?«) — datoen blev ikke rettet med, nummeret er sandheden */ } catch (e) {} });
 let NY_VERSION_KLAR = false;
@@ -99072,6 +99072,20 @@ async function ksYgtHent(k) {
 }
 /* DANSK DAG AF ET TIDSSTEMPEL (Hans/Mette 29/10: et skema sendt kl. 00.40 dansk tid stod som »Sendt 28. oktober« — created_at er UTC) */
 function dagTxtKs(iso, tid) { const U = ["søndag", "mandag", "tirsdag", "onsdag", "torsdag", "fredag", "lørdag"]; return U[new Date(String(iso).slice(0, 10) + "T12:00:00").getDay()] + " " + String(dkDatoKort(String(iso).slice(0, 10))).replace(/^[a-zæøå]+\.\s*/i, "") + (tid ? " kl. " + String(tid).slice(0, 5).replace(":", ".") : ""); }
+/* v3462 · FÆRDIGE OG STARTET (Ida 24/11 med Avantis kort: »jeg bliver alvorlig bekymret når min ven her siger at han er igang med modul 0 men jeg ikke kan se han har set nogle lektionern« · »kunne man få det lavet om så der fx står startet på lektiopn eller sådan noget?«).
+   »Færdig« = kunden har trykket »Markér som færdig« (lektion_set_). »Startet« = lektionen er åbnet (lektion_visdage / lektion_sidst_vist), men ikke færdig.
+   Backstage siger aldrig »set« om det, der er »færdig«. Kun læsning af det, kortet i forvejen henter. */
+function ksStartet(D, ids) { return (ids || []).filter(function (id) { return !(D.sete && D.sete[id]) && ((D.visTid && D.visTid[id]) || (D.vis && D.vis[id])); }); }
+function ksSidstLek(D) {
+  let id = "", t = ""; const vt = (D && D.visTid) || {}, se = (D && D.sete) || {};
+  Object.keys(vt).forEach(function (x) { if (String(vt[x]) > t) { t = String(vt[x]); id = x; } });
+  let faerdig = !!(id && se[id]);
+  Object.keys(se).forEach(function (x) { const ts = String(se[x] || ""); if (/T\d/.test(ts) && ts > t) { t = ts; id = x; faerdig = true; } });
+  if (!id) return null;
+  if (faerdig && /T\d/.test(String(se[id] || "")) && String(se[id]) > t) t = String(se[id]);
+  return { id: id, t: t, faerdig: faerdig, ord: (faerdig ? "færdig med" : "startede på") + " lektion " + lekVisNr(id) };
+}
+function ksSidstNaar(t) { const n = ksyDageSiden(t); return ((n == null ? "" : (n <= 0 ? "i dag" : n === 1 ? "i går" : kortDato(ksyDag(t)))) + ksKl(t, true)).replace(/ /g, "\u00a0"); }   /* tid og dag knækker aldrig midt i »i dag kl. 09.50« */
 function ksyDag(iso) { const t = String(iso || ""); return /T\d/.test(t) ? datoDK(t) : t.slice(0, 10); }
 function ksyDageSiden(iso) { if (!iso) return null; return Math.round((new Date(datoDK() + "T12:00:00") - new Date(ksyDag(iso) + "T12:00:00")) / 864e5); }
 function ksySidenOrd(iso) { const n = ksyDageSiden(iso); if (n == null) return ""; return n <= 0 ? "i dag" : n === 1 ? "i går" : "for " + n + " dage siden"; }
@@ -99119,7 +99133,7 @@ async function ksYgtTegn(k, o) {
     + '</div>' : '<div class="ksy-noegler">'
     + ksyNoegle("Status", statusOrd, staa || !D.login)
     + ksyNoegle("Sidst aktiv", esc(sidstOrd), staa && D.login)
-    + ksyNoegle("Lektioner set", (D.ialt ? Math.min(D.set, D.ialt) : D.set) + " af " + (D.ialt || D.set))
+    + ksyNoegle("Lektioner færdige", (D.ialt ? Math.min(D.set, D.ialt) : D.set) + " af " + (D.ialt || D.set))
     + ksyNoegle("Næste modul", esc(naesteKort))
     + (tlf ? '' : ksyNoegle("Rabatkode", esc(D.kilde || d.forening || "Uden kode")) + ksyNoegle("Beløb", (D.koeb && D.koeb.kr != null) ? esc(D.koeb.kr.toLocaleString("da-DK")) + " kr." : "Ukendt"))
     + '</div>';
@@ -99200,7 +99214,7 @@ async function ksYgtTegn(k, o) {
     else { venterH = "Næste contentmøde er ikke sat"; venterS = ""; venterK = knapH("Sæt contentmødet", "", "ksMoedeArk('" + kEsc + "')", "r"); }
   } else if (!D.login) { venterH = "Kunden er ikke logget ind endnu"; venterS = koebt ? "Købt " + esc(ksyDato(koebt)) + "." : ""; venterK = knapH("Send besked", "", "bf3BeskedArk('" + kEsc + "')", (ksyDageSiden(koebt) || 0) >= 2 ? "r" : ""); sendIVenter = true; }
   else if (staa) { venterH = "Kunden er gået i stå"; venterS = "Sidst aktiv " + esc(ksySidenOrd(D.sidst || koebt)) + "."; venterK = knapH("Send besked", "", "bf3BeskedArk('" + kEsc + "')", "r"); sendIVenter = true; }
-  else { venterH = "Kunden er på sporet"; venterS = "Sidst aktiv " + esc(ksySidenOrd(D.sidst)) + (naeste ? " · " + esc(naeste) : "") + "."; }
+  else { venterH = "Kunden er på sporet"; const sl = ksSidstLek(D); venterS = "Sidst aktiv " + esc(ksySidenOrd(D.sidst)) + (sl ? " · " + esc(sl.ord) : "") + (naeste ? " · " + esc(naeste) : "") + "."; }
   const venter2 = '<div class="ks2-venter' + ((staa || (!D.login && (ksyDageSiden(koebt) || 0) >= 2)) && !FL ? ' ks2-stod' : '') + '"><div><div class="ks2-vh">' + venterH + '</div>' + (venterS ? '<div class="ks2-vs">' + venterS + '</div>' : '') + '</div>' + venterK + '</div>';
   /* toppen: type · produkt · start + knapper med ord */
   const typeOrd = FL ? "Forløbskunde" : (/^Gratis/i.test(String(d.forloeb || "")) ? "Kursusadgang" : "YOU GOT THIS");
@@ -99233,7 +99247,7 @@ async function ksYgtTegn(k, o) {
       + blok("Noter til næste møde", '<textarea id="ksNoter" class="ks2-ta" rows="3" placeholder="Skriv det, du vil tage op …" oninput="ksNoterVent(\'' + kEsc + '\')" onblur="ksNoterGem(\'' + kEsc + '\')">' + esc(noter) + '</textarea><div class="ks-noter-kvit" id="ksNoterKvit" aria-live="polite"></div>');
   } else {
     const pct = ialt ? Math.min(100, Math.round(D.set / ialt * 100)) : 0;
-    forl2 = blok("Lektionerne", '<div class="ks2-prog"><div class="ks2-progt"><span>' + D.set + ' af ' + ialt + ' set</span></div><div class="ks2-bar"><i style="width:' + pct + '%"></i></div></div>' + rk2("Næste modul", esc(naeste || "Alle moduler er åbne")) + rk2("Startdato", (start ? esc(ksyDato(start)) : "Ikke sat") + flyt.replace("ksy-mini", "ks2-mini")));   /* »Se hver lektion« er knappen under Aktivitet (Ida 16/11) */
+    forl2 = blok("Lektionerne", '<div class="ks2-prog"><div class="ks2-progt"><span>' + D.set + ' af ' + ialt + ' færdige' + (function () { const n = ksStartet(D, D.publ || []).length; return n ? ' · ' + n + ' startet' : ''; })() + '</span></div><div class="ks2-bar"><i style="width:' + pct + '%"></i></div></div>' + rk2("Næste modul", esc(naeste || "Alle moduler er åbne")) + rk2("Startdato", (start ? esc(ksyDato(start)) : "Ikke sat") + flyt.replace("ksy-mini", "ks2-mini")));   /* »Se hver lektion« er knappen under Aktivitet (Ida 16/11) */
   }
   const nKom2 = D.feedback.filter(function (x) { return x.kommentar; }).length;
   const svar2 = (D.skema.length || D.feedback.length || D.opgaver.length) ? blok("Svar og feedback",
@@ -99246,7 +99260,7 @@ async function ksYgtTegn(k, o) {
   const hist2Fl = blok("Aktivitet", akt.length ? akt.slice(0, 10).map(function (a) { return rk2(esc(a.s), esc(kortDato(ksyDag(a.t))) + ksKl(a.t)); }).join("") : tom2("Intet endnu"));   /* klokkeslæt i grå efter datoen (Ida 15/11) */
   /* AKTIVITET = HVOR LANGT DE ER I MODULERNE (Ida 16/11: »aktivitet skal kun have hvor langt de er i modulerne og så skal jeg kunne klikke på en knap og komme ind til mere info«) — karakter og visninger pr. lektion står på siden bag »Se lektionerne« */
   const modRk = (function () { if (FL) return ''; const mods = {}; (D.publ || []).forEach(function (id) { const m = (String(id).match(/^(\d+)-/) || [])[1]; if (m != null) (mods[m] = mods[m] || []).push(id); });
-    return Object.keys(mods).sort(function (a, b) { return a - b; }).map(function (m) { const ids = mods[m], n = ids.filter(function (id) { return D.sete && D.sete[id]; }).length; return rk2("Modul " + esc(modulVisNr(m)), n === ids.length ? "Alle " + ids.length + " set" : n + " af " + ids.length + " set"); }).join(""); })();
+    return Object.keys(mods).sort(function (a, b) { return a - b; }).map(function (m) { const ids = mods[m], n = ids.filter(function (id) { return D.sete && D.sete[id]; }).length; const ns = ksStartet(D, ids).length; return rk2("Modul " + esc(modulVisNr(m)), n === ids.length ? "Alle " + ids.length + " færdige" : n + " af " + ids.length + " færdige" + (ns ? " · " + ns + " startet" : "")); }).join("") + (function () { const sl = ksSidstLek(D); return sl ? rk2("Sidst", esc(storStart(sl.ord) + " · " + ksSidstNaar(sl.t))) : ""; })(); })();
   const hist2 = (FL ? hist2Fl : blok("Aktivitet", modRk || tom2("Ingen lektioner endnu"))) + '<div class="ks2-knr ks2-akt-kn">' + aktKnapper + '</div>';
   /* team og køb */
   const LG = D.logins;
@@ -101080,7 +101094,7 @@ const DT_TEKSTER = {
   ikke_inde: { emne: "Du er godt på vej, {navn}", tekst: "Hej {navn}\n\nDu er nået til lektion {lektion}, og der ligger mere og venter på dig. Tag den næste i dag, mens du har kaffen i hånden.\n\nKærlig hilsen Ida" }
 };
 function dtGrund(r) { return !r.login ? "ikke_logget_ind" : (!r.set ? "ingen_lektion" : "ikke_inde"); }
-function dtGrundOrd(r) { return !r.login ? "har ikke logget ind" : (!r.set ? "har ikke set en lektion" : "har ikke været inde"); }
+function dtGrundOrd(r) { return !r.login ? "har ikke logget ind" : (!r.set ? "har ikke gjort en lektion færdig" : "har ikke været inde"); }
 async function dtLogHent() { const v = await vaneRow("dagens_tjek"); DT.log = (v && typeof v === "object" && !Array.isArray(v)) ? v : {}; DT.log.skub = DT.log.skub || {}; DT.log.set = DT.log.set || {}; DT.log.tekster = DT.log.tekster || {}; return DT.log; }
 async function dtLogGem(aendr) {
   /* frisk læsning før gem: en anden fane eller telefonen kan have skubbet imens — begge dele bevares */
@@ -101187,7 +101201,7 @@ function dtHtml(kun) {
     : '<div class="bs3-fl dt-faerdig"><span class="dt-ok"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FC2404" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5 9-10"/></svg></span><div><div class="dt-n">Du er færdig for i dag</div><div class="dt-u">' + (K.length ? "Alle kunder er på sporet eller skubbet, og der er ingen nye fejl." : "Der er ingen kunder i You got this endnu.") + '</div></div></div>';
   /* 2 · YOU GOT THIS LIGE NU (et tryk filtrerer tabellen) */
   const tal = function (s, ord, under) { return '<button type="button" class="bs3-fl dt-tal' + (DT.filter === s ? ' on' : '') + ((s === "staa" || s === "ikke") && n[s] > 0 ? ' dt-tal-roed' : '') + ' mq-tap" onclick="dtFilter(\'' + s + '\')"><b>' + n[s] + '</b><span>' + ord + '</span><small>' + under + '</small></button>'; };
-  const nu = '<div class="dt-tal3">' + tal("spor", "På sporet", "set en lektion de sidste 7 dage") + tal("staa", "Gået i stå", "ingen lektion i 3 dage eller væk i 7") + tal("ikke", "Ikke logget ind", "2 dage eller mere efter købet") + '</div>';
+  const nu = '<div class="dt-tal3">' + tal("spor", "På sporet", "færdig med en lektion de sidste 7 dage") + tal("staa", "Gået i stå", "ingen lektion i 3 dage eller væk i 7") + tal("ikke", "Ikke logget ind", "2 dage eller mere efter købet") + '</div>';
   /* 3 · NYE KØB OG GODT NYT */
   const nyeK = K.filter(function (r) { return r.koebtDage != null && r.koebtDage <= 1; }).sort(function (a, b) { return a.koebtDage - b.koebtDage; });
   const godt = []; K.forEach(function (r) { r.modFaerdig.forEach(function (nr) { godt.push(personNavn(r.navn || r.firma) + " er færdig med modul " + modulVisNr(nr)); }); });
@@ -101199,7 +101213,7 @@ function dtHtml(kun) {
 }
 const DT_KOL = [
   ["koebt", "Købt"], ["uge", "Uge"], ["firma", "Virksomhed"], ["navn", "Person"], ["tlf", "Telefon"], ["status", "Status"], ["rabat", "Rabatkode"],
-  ["adgang", "Adgangskode"], ["naaet", "Nået til"], ["set", "Set af åbne"], ["sidst", "Sidst aktiv"], ["venter", "Øvelser venter"], ["skubbet", "Skubbet"]
+  ["adgang", "Adgangskode"], ["naaet", "Nået til"], ["set", "Færdige af åbne"], ["sidst", "Sidst aktiv"], ["venter", "Øvelser venter"], ["skubbet", "Skubbet"]
 ];
 /* v3433-bud · KOLONNERNE ER IDAS (Ida 22/11: »jeg vil gerne kunne skjule kolonner mm og have samme funktioner som i mit crm«): samme greb som CRM-listen fra 3428 —
    et tryk på overskriften åbner Sortér · Omdøb · Flyt til venstre/højre · Skjul · Ny kolonne; »Kolonner« ved filtrene viser og skjuler. Rækkefølge, navne, skjulte og egne kolonner
@@ -109025,7 +109039,7 @@ body.sk-holder, body.sk-holder .content, body.sk-holder #dashMain, [data-bs-hold
 }
 </style>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-hvid.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 22. november · 3461</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 22. november · 3462</div>
 <script>
 /* DROPDOWNEN RULLER SELV (Ida 4/10) — maal den aabne liste og klip den ved skaermens bund */
 (function () {

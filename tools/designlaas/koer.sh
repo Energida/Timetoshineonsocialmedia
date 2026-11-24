@@ -321,6 +321,16 @@ for BTB in "390 844" "1440 940"; do
   echo "${UDBT:-SELE BRIEFTOP FEJL $1: ingen maaling}"
   echo "$UDBT" | grep -q "SELE BRIEFTOP OK $1" || HERO_OK=0
 done
+# STARTET, IKKE BARE 0 (v3462, Ida 24/11 med Avantis kort: »han er igang med modul 0 men jeg ikke kan se han har set nogle lektioner«): en kode med aabnede, men ikke faerdige lektioner
+# (lektion_visdage uden lektion_set_) staar som »0 af 5 faerdige · 1 startet« med »Sidst: Startede paa lektion 0.1 · i dag kl. …«. probe-startet.js, Backstage paa 390 og 1440.
+KST=$(python3 -c "import urllib.parse,sys;print(urllib.parse.quote(open(sys.argv[1]).read()))" "$ROD/tools/designlaas/probe-startet.js")
+for STB in "390 844" "1440 940"; do
+  set -- $STB
+  RAAST=$($TO "$C" $HL --no-sandbox --disable-gpu --window-size=$(($1+40)),1000 --virtual-time-budget=40000 --enable-logging=stderr --v=0 --screenshot="$MAAL/startet-$1.png" "http://127.0.0.1:$PORT/sele.html?vis=dash&side=overblik&fil=index-sele.html&bred=$1&hoej=$2&kode=$KST" 2>&1)
+  UDST2=$(echo "$RAAST" | grep -a 'CONSOLE' | sed -E 's/^.*CONSOLE[:(][0-9]+\)?\] //; s/", source:.*$//; s/^"//' | grep -a 'SELE STARTET')
+  echo "${UDST2:-SELE STARTET FEJL $1: ingen maaling}"
+  echo "$UDST2" | grep -q "SELE STARTET OK $1" || HERO_OK=0
+done
 # RUNDVISNINGEN (v3450, Ida 23/11: »man kan paa ingen maade afslutte rundvisningen!« · »alt det her hak skal vaek!!!«): samme boks paa velkomsten og alle trin, hoejst én flise, »Spring over« afslutter med ét klik. probe-tur.js, 390 og 1440.
 KTU=$(python3 -c "import urllib.parse,sys;print(urllib.parse.quote(open(sys.argv[1]).read()))" "$ROD/tools/designlaas/probe-tur.js")
 for TUB in "390 844" "1440 940"; do
