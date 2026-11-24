@@ -195,6 +195,18 @@ async function rapportGem(db: any, k: string, emne: string, html: string) {
   } catch (_e) { /* må aldrig vælte mailen */ }
 }
 
+/* HVEM FØRST (Ida 24/11: »det er træls at når jeg får en mail med nyt køb - you got this - 0 kr at de 2 linjer i preview ikke fortæller hvem virksomheden er og hvilken person det er«):
+   emnet siger virksomhed og person, og den skjulte forhåndstekst (de to linjer under emnet i mailprogrammet) siger produkt, beløb, rabatkode og mail. */
+function koebEmne(o: any) {
+  const virk = String(o.virksomhed || "").trim(), navn = String(o.navn || "").trim();
+  const hvem = [virk, navn && navn.toLowerCase() !== virk.toLowerCase() ? navn : ""].filter(Boolean).join(" · ") || String(o.email || "");
+  return (o.test ? "Testkøb · " : "Nyt køb · ") + hvem;
+}
+function koebForhaand(o: any) {
+  const t = [o.produkt, o.belob, o.rabat && o.rabat.hentet && o.rabat.kode ? "rabatkode " + o.rabat.kode : "", o.email].filter(Boolean).join(" · ");
+  return '<div style="display:none;max-height:0;max-width:0;overflow:hidden;opacity:0;color:transparent;mso-hide:all;font-size:1px;line-height:1px;">' + esk(t) + "&#847;&zwnj;&nbsp;".repeat(60) + "</div>";
+}
+
 async function sendKoebsmail(o: {
   produkt: string; belob: string; tidspunkt: string; rabat: { hentet: boolean; kode: string };
   navn: string; virksomhed: string; email: string; telefon: string; kode: string; test: boolean; eksisterende: boolean;
@@ -210,7 +222,7 @@ async function sendKoebsmail(o: {
     const raekke = (k: string, v: string) =>
       '<table role="presentation" width="100%" style="font-size:13px;margin:0 0 8px 0;"><tr><td style="color:#686868;">' + esk(k)
       + '</td><td style="text-align:right;color:#1A1A1A;">' + esk(v || "—") + '</td></tr></table>';
-    const html =
+    const html = koebForhaand(o) +
       '<div style="background:#F8F8F8;padding:24px 16px;font-family:Poppins,Arial,sans-serif;color:#1A1A1A;">'
       + '<div style="max-width:520px;margin:0 auto;">'
       + flise(o.test ? "Nyt køb · testkøb" : "Nyt køb",
@@ -232,14 +244,14 @@ async function sendKoebsmail(o: {
       body: JSON.stringify({
         sender: { name: "Energida", email: "Kontakt@energida.dk" },
         to: [{ email: "Kontakt@energida.dk" }],
-        subject: (o.test ? "Testkøb · " : "Nyt køb · ") + o.produkt + " · " + o.belob,
+        subject: koebEmne(o),
         htmlContent: html,
         tags: ["koebsmail"],
       }),
     });
     /* RAPPORTER (24/11): købsmailen står i mailloggen og som senest sendte, så Ida kan se den under Mails › Rapporter */
     if (db) {
-      const emneK = (o.test ? "Testkøb · " : "Nyt køb · ") + o.produkt + " · " + o.belob;
+      const emneK = koebEmne(o);
       let bid = ""; try { const j = await r.clone().json(); bid = String((j && j.messageId) || ""); } catch (_e) { bid = ""; }
       try { await db.from("mail_log").insert({ email: "kontakt@energida.dk", mail_id: "koeb:" + String(sid || Date.now()), emne: emneK, status: r.ok ? "sendt" : "fejl", brevo_id: bid || null, fejl: r.ok ? null : "Brevo svarede " + r.status }); } catch (_e) { /* loggen må aldrig vælte et køb */ }
       if (r.ok) await rapportGem(db, "koeb", emneK, html);

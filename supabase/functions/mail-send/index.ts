@@ -24,6 +24,13 @@
 //   6. Direkte omkostning: nej — Brevo Free (300 mails/dag delt). Én mail pr. tryk; loft på 20 prøver pr. kald-instans pr. time.
 //   ÆNDRING 22/11 (forhåndsteksten under emnet, Idas »Ja, byg den« og »kør på makker«): mailens felt »forhaandstekst« lægges som en skjult linje først i mailen.
 //   De seks linjer er uændrede: samme adgang, samme tabeller, ingen ny hemmelighed, ingen ny omkostning.
+//   ÆNDRING 24/11 (Ida: »Jeg vil gerne bede om også at få en automatisk mail når en kunne aktivere en konto. altså når de har klikket på
+//   linket i den første mail de får«): tilstanden {art:"aktiveret"} kaldes af kundens app, når invitationslinket er brugt. Kalderen bestemmer
+//   INTET: modtageren er ALTID Kontakt@energida.dk, indholdet er kalderens egne oplysninger (navn, mail, kode, virksomhed). Højst én pr. login
+//   (mail_log, mail_id »aktiveret«, unikt indeks; pladsen tages før afsendelse). Administratorer udløser ingen mail. Kan slås fra under
+//   Backstage › Mails › Rapporter (lektion_oevelser »ida:rapporter«.aktiveret = false). Service-role, efter getUser, til: læse
+//   lektion_oevelser »ida:rapporter« og virksomhedskoder (virksomhedens navn), læse/skrive mail_log, skrive skema_svar ENERGIDA/Ida/rapport_sidst_aktiveret.
+//   Omkostning: højst én ekstra Brevo-mail pr. nyt login.
 // ============================================================================
 
 import { createClient } from "npm:@supabase/supabase-js@2";
@@ -212,6 +219,48 @@ async function sendVelkomst(bruger: any) {
   return svar({ ok: r.ok, grund: r.ok ? "sendt" : "brevo-fejl" }, 200);
 }
 
+/* AKTIVERET (24/11) — se toppen. Svarer altid 200 med en grund, så kundens app aldrig viser en fejl. */
+async function sendAktiveret(bruger: any, somKalder: any) {
+  const mail = String(bruger?.email || "").trim().toLowerCase();
+  if (!mail) return svar({ ok: false, grund: "ingen-mail" }, 200);
+  try { const { data: adm } = await somKalder.rpc("er_admin"); if (adm === true) return svar({ ok: false, grund: "admin" }, 200); } catch (_e) { /* regnes som kunde */ }
+  const db = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+  try { const { data: rp } = await db.from("lektion_oevelser").select("spm").eq("lektion_id", "ida:rapporter").maybeSingle(); if (rp && rp.spm && rp.spm.aktiveret === false) return svar({ ok: false, grund: "slukket" }, 200); } catch (_e) { /* tændt */ }
+  const md = bruger.user_metadata || {}, am = bruger.app_metadata || {};
+  const kode = String(am.kode || md.kode || "").trim().toUpperCase();
+  const navn = String(md.navn || md.hilsen || "").trim().slice(0, 80);
+  let virk = "", forloeb = "";
+  if (kode) { try { const { data: vk } = await db.from("virksomhedskoder").select("virksomhed,forloeb").eq("kode", kode).maybeSingle(); if (vk) { virk = String(vk.virksomhed || ""); forloeb = String(vk.forloeb || ""); } } catch (_e) { /* koden er nok */ } }
+  const kollega = kode ? await erKollega(db, bruger, kode) : false;
+  const emne = "Ny konto aktiveret · " + (virk || navn || mail);
+  /* pladsen tages FØRST: det unikke indeks (mail_id + e-mail, status sendt) afviser nr. 2 */
+  const krav = await db.from("mail_log").insert({ email: mail, mail_id: "aktiveret", emne, status: "sendt" }).select("id");
+  if (krav.error || !krav.data || !krav.data.length) return svar({ ok: true, allerede: true }, 200);
+  const rid = krav.data[0].id;
+  const esk = (t: string) => String(t || "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" } as any)[c]);
+  const tid = new Date().toLocaleString("da-DK", { timeZone: "Europe/Copenhagen", dateStyle: "long", timeStyle: "short" });
+  const linje = (et: string, v: string) => v ? '<tr><td style="padding:4px 14px 4px 0;color:#686868;font-size:13px;white-space:nowrap;vertical-align:top;">' + et + '</td><td style="padding:4px 0;font-size:13px;color:#1A1A1A;">' + esk(v) + '</td></tr>' : '';
+  const html = '<div style="background:#F8F8F8;padding:24px 16px;font-family:Poppins,Arial,sans-serif;color:#1A1A1A;"><div style="max-width:560px;margin:0 auto;background:#FFFFFF;border:1px solid #DEDEDE;border-radius:16px;padding:28px;">'
+    + '<p style="font-size:12px;letter-spacing:1.5px;text-transform:uppercase;color:#686868;margin:0 0 6px;">Ny konto aktiveret</p>'
+    + '<p style="font-size:22px;margin:0 0 18px;">' + esk(virk || navn || mail) + '</p>'
+    + '<table style="border-collapse:collapse;">' + linje("Navn", navn) + linje("E-mail", mail) + linje("Virksomhed", virk) + linje("Forløb", forloeb) + linje("Kode", kode) + linje("Hvem", kode ? (kollega ? "Kollega på en eksisterende kode" : "Køberen") : "") + linje("Tid", tid) + '</table>'
+    + '<div style="margin:22px 0 0;"><a href="https://admin.energida.dk/" style="display:inline-block;background:#FC2404;color:#FFFFFF;text-decoration:none;font-size:14px;line-height:48px;height:48px;padding:0 26px;border-radius:999px;">Åbn Backstage</a></div>'
+    + '</div></div>';
+  const noegle = Deno.env.get("BREVO_API_KEY"); if (!noegle) { await db.from("mail_log").update({ status: "fejl", fejl: "ingen Brevo-nøgle" }).eq("id", rid); return svar({ ok: false, grund: "ikke-klar" }, 200); }
+  let ok = false, besked: string | null = null, bid: string | null = null;
+  try {
+    const r = await fetch("https://api.brevo.com/v3/smtp/email", { method: "POST", headers: { "api-key": noegle, "Content-Type": "application/json", Accept: "application/json" },
+      body: JSON.stringify({ sender: { name: "Energida Backstage", email: "Kontakt@energida.dk" }, to: [{ email: "Kontakt@energida.dk" }], subject: emne, htmlContent: html, tags: ["aktiveret"] }) });
+    let j: any = null; try { j = await r.json(); } catch (_e) { j = null; }
+    ok = r.ok; bid = j && j.messageId ? String(j.messageId) : null; if (!r.ok) besked = "Brevo " + r.status;
+  } catch (e) { besked = String(e).slice(0, 200); }
+  if (ok) {
+    await db.from("mail_log").update({ brevo_id: bid }).eq("id", rid);
+    try { const sv = { emne, tid: new Date().toISOString(), html }; const u = await db.from("skema_svar").update({ svar: sv }).eq("kode", "ENERGIDA").eq("navn", "Ida").eq("skema", "rapport_sidst_aktiveret").select("id"); if (!u.error && !(u.data && u.data.length)) await db.from("skema_svar").insert({ kode: "ENERGIDA", navn: "Ida", skema: "rapport_sidst_aktiveret", svar: sv }); } catch (_e) { /* best-effort */ }
+  } else await db.from("mail_log").update({ status: "fejl", fejl: besked }).eq("id", rid);
+  return svar({ ok, grund: ok ? "sendt" : "brevo-fejl" }, 200);
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
   if (req.method !== "POST") return svar({ fejl: "Brug POST." }, 405);
@@ -224,6 +273,7 @@ Deno.serve(async (req) => {
   let krop: { art?: string; emne?: string; html?: string; navn?: string; fra?: string } = {};
   try { krop = await req.json(); } catch (_e) { krop = {}; }
   if (krop.art === "velkomst") return await sendVelkomst(bruger.user);   /* kundens egen velkomstmail — kalderen bestemmer intet */
+  if (krop.art === "aktiveret") return await sendAktiveret(bruger.user, somKalder);   /* besked til Ida om et nyt login (24/11) — kalderen bestemmer intet */
   const { data: erAdmin, error: adminFejl } = await somKalder.rpc("er_admin");
   if (adminFejl) return svar({ fejl: "Kunne ikke slå din adgang op." }, 401);
   if (erAdmin !== true) return svar({ fejl: "Kun administratorer kan sende prøver." }, 403);

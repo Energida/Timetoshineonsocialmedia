@@ -39733,6 +39733,7 @@ async function teamKontoOpret() {
   const li = await sb.auth.signInWithPassword({ email: email, password: pass });
   if (li && li.error) { pfFejl("Din profil er oprettet. Gå tilbage og log ind med din e-mail og adgangskode."); return false; }
   T.oprettet = true; PF.mail = email; PF.f.pw = "";
+  try { aktiveretMeld(); } catch (e) {}   /* v3460: kollegaen er logget ind for første gang */
   try { await sb.auth.updateUser({ data: { kollega: true, hilsen: fornavn } }); } catch (e) {}
   try { handleRemember(true); } catch (e) {}
   const gemt = PF;
@@ -72637,7 +72638,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "3459";
+const APP_VERSION = "3460";
 const APP_BYGGET = "3. november";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_VERSION;   /* ingen dato (Ida 7/11: »hvorfor står der version 3. november?«) — datoen blev ikke rettet med, nummeret er sandheden */ } catch (e) {} });
 let NY_VERSION_KLAR = false;
@@ -76909,7 +76910,7 @@ if (sb) {
     if ((event === "SIGNED_IN" || event === "INITIAL_SESSION") && session) { try { const skalK = localStorage.getItem("energida_skal_ny_kode"); if (skalK === "1") setTimeout(function () { try { visNyAdgangskode(false); } catch (e) {} }, 300); else if (skalK === "invitation") setTimeout(function () { try { kodeEfterProfil(session); } catch (e) {} }, 300); } catch (e) {} }
     /* Invitationen: samme skaerm, men den siger noget andet — hun har ikke en gammel
        kode at skifte fra. Flaget saettes foerst i dokumentet, se kommentaren dér. */
-    if (event === "SIGNED_IN" && window.__ENERGIDA_INVITATION) { window.__ENERGIDA_INVITATION = false; try { localStorage.setItem("energida_skal_ny_kode", "invitation"); } catch (e) {} kodeEfterProfil(session); }   /* INVITATIONEN HUSKES (krydstjekket 22/10, Hans): lukkede kunden fanen før koden var valgt, kom arket aldrig igen — og kunden stod uden kode */
+    if (event === "SIGNED_IN" && window.__ENERGIDA_INVITATION) { window.__ENERGIDA_INVITATION = false; try { localStorage.setItem("energida_skal_ny_kode", "invitation"); } catch (e) {} try { aktiveretMeld(); } catch (e) {} kodeEfterProfil(session); }   /* INVITATIONEN HUSKES (krydstjekket 22/10, Hans): lukkede kunden fanen før koden var valgt, kom arket aldrig igen — og kunden stod uden kode */
     if (event === "SIGNED_IN" || event === "SIGNED_OUT" || event === "USER_UPDATED") {
       const nyId = (session && session.user) ? session.user.id : null;
       if (nyId !== SIDSTE_BRUGER_ID) {
@@ -79282,6 +79283,13 @@ function opretAabnApp() {
     } catch (e) {}
   }, 15000);
 }
+/* v3460 · BESKED TIL IDA, NÅR EN KONTO AKTIVERES (Ida 24/11: »Jeg vil gerne bede om også at få en automatisk mail når en kunne aktivere en konto. altså når de har klikket på linket i den første mail de får«).
+   Appen siger kun »nu«: serveren (mail-send, art »aktiveret«) bestemmer modtager og indhold ud fra den, der er logget ind, sender højst én pr. login og ingen for administratorer.
+   Kaldet venter ingen på, og kunden ser aldrig noget til det — heller ikke, når det fejler. Sikkerhedskontrakten §6: ingen adgangskode, intet token og ingen oplysninger sendes med. */
+function aktiveretMeld() {
+  if (window.__AKTIVERET_MELDT) return; window.__AKTIVERET_MELDT = true;
+  setTimeout(function () { try { const k = sb.functions.invoke("mail-send", { body: { art: "aktiveret" } }); if (k && k.catch) k.catch(function () {}); } catch (e) {} }, 0);
+}
 async function opretMedLink() {
   const o = window.__ENERGIDA_OPRET, k = document.getElementById("opKnap");
   if (k) { k.disabled = true; k.textContent = "Opretter …"; }
@@ -79298,6 +79306,7 @@ async function opretMedLink() {
     if (error || !data || !data.session) throw (error || new Error("ingen session"));
     window.__ENERGIDA_OPRET = null;
     try { localStorage.setItem("energida_skal_ny_kode", "invitation"); } catch (e2) {}   /* v3446: mærket står, FØR tæppet spørger efter det (SIGNED_IN sætter det også) */
+    aktiveretMeld();
     opretAabnApp();
   } catch (e) {
     window.__ENERGIDA_INVITATION = false;
@@ -104110,12 +104119,13 @@ function mailsSideHtml(k) {
   return "";
 }
 /* v3458 · RAPPORTER: DE MAILS, IDA SELV FÅR (Ida 24/11: »jeg vil gerne have ændret de mails jeg får - kan du lave et felt under mails vi kalder rapporter så jeg kan se hvilke mails jeg får?« · »Ja, byg det« på tegningen).
-   Fire rækker: hvad mailen er, hvornår den kommer, hvornår den sidst blev sendt, »Se den« og en kontakt. Kontakten gemmer til/fra i lektion_oevelser »ida:rapporter« (spm = { status, koeb, fejl }); mangler rækken eller nøglen, er mailen tændt.
+   Fem rækker (v3460: »Ny konto aktiveret«): hvad mailen er, hvornår den kommer, hvornår den sidst blev sendt, »Se den« og en kontakt. Kontakten gemmer til/fra i lektion_oevelser »ida:rapporter« (spm = { status, koeb, fejl, aktiveret }); mangler rækken eller nøglen, er mailen tændt.
    Serverfunktionerne (status-mail, stripe-koeb, fejl-meld) læser samme række og er lagt op af »Ny chef«. »Se den« viser den senest sendte mail i en lukket ramme (sandbox uden scripts), så mailens html aldrig kører i appen.
    Sikkerhedskontrakten §8: ingen ny tabel, kolonne, policy eller funktion fra appen; kun admin kan skrive rækken (målt af »Ny chef«), og siden findes kun i Backstage. */
 const RAP_LISTE = [
   { id: "status", navn: "Statusmail", hv: "Hver morgen kl. 07.00 · nye køb, hvem der skal have et skub, fejl og feedback" },
   { id: "koeb", navn: "Nyt køb", hv: "Hver gang nogen køber · navn, virksomhed, beløb og rabatkode" },
+  { id: "aktiveret", navn: "Ny konto aktiveret", hv: "Når en kunde eller kollega har brugt linket i sin første mail · navn, virksomhed og kode" },
   { id: "fejl", navn: "Fejl fra en kunde", hv: "Når en kunde trykker »Meld en fejl« · du kan svare direkte på mailen" },
   { id: "proeve", navn: "Prøvemails", hv: "Når du trykker »Send en prøve« på en af dine mails", udenKontakt: true }
 ];
@@ -104124,16 +104134,18 @@ function rapTaendt(id) { return !(RAP_D.til && RAP_D.til[id] === false); }
 async function rapHent() {
   const ud = { til: {}, sidst: {}, hentet: true };
   try {
-    const [ind, st, kb, fj] = await Promise.all([
+    const [ind, st, kb, fj, ak] = await Promise.all([
       sb.from("lektion_oevelser").select("spm").eq("lektion_id", "ida:rapporter").limit(1),
       sb.from("mail_log").select("created_at,emne,mail_id").like("mail_id", "status-2%").eq("status", "sendt").order("created_at", { ascending: false }).limit(1),
       sb.from("mail_log").select("created_at,emne,mail_id").like("mail_id", "koeb:%").eq("status", "sendt").order("created_at", { ascending: false }).limit(1),
-      sb.from("skema_svar").select("created_at,kode,svar").eq("navn", "app_fejl").like("skema", "kunde_fejl_%").order("created_at", { ascending: false }).limit(1)
+      sb.from("skema_svar").select("created_at,kode,svar").eq("navn", "app_fejl").like("skema", "kunde_fejl_%").order("created_at", { ascending: false }).limit(1),
+      sb.from("mail_log").select("created_at,emne,mail_id").eq("mail_id", "aktiveret").eq("status", "sendt").order("created_at", { ascending: false }).limit(1)
     ]);
-    const sp = ind && !ind.error && ind.data && ind.data[0] && ind.data[0].spm; if (sp && typeof sp === "object") ud.til = { status: sp.status, koeb: sp.koeb, fejl: sp.fejl };
+    const sp = ind && !ind.error && ind.data && ind.data[0] && ind.data[0].spm; if (sp && typeof sp === "object") ud.til = { status: sp.status, koeb: sp.koeb, fejl: sp.fejl, aktiveret: sp.aktiveret };
     const r1 = st && !st.error && st.data && st.data[0]; if (r1) ud.sidst.status = { tid: r1.created_at, tekst: String(r1.emne || "").trim() };
     const r2 = kb && !kb.error && kb.data && kb.data[0]; if (r2) ud.sidst.koeb = { tid: r2.created_at, tekst: String(r2.emne || "").trim() };
     const r3 = fj && !fj.error && fj.data && fj.data[0]; if (r3) { let hvem = ""; try { hvem = String(((VIRKSOMHEDSKODER || {})[String(r3.kode || "").toUpperCase()] || {}).virksomhed || ""); } catch (e) {} if (!hvem) hvem = String((r3.svar && r3.svar.hvad) || "").replace(/\s+/g, " ").trim().split(" ").slice(0, 6).join(" "); ud.sidst.fejl = { tid: r3.created_at, tekst: hvem }; }
+    const r4 = ak && !ak.error && ak.data && ak.data[0]; if (r4) ud.sidst.aktiveret = { tid: r4.created_at, tekst: String(r4.emne || "").replace(/^Ny konto aktiveret\s*·\s*/, "").trim() };
   } catch (e) {}
   RAP_D = ud; return ud;
 }
@@ -104149,7 +104161,7 @@ function rapHtml() {
 function rapTegn() { const h = document.getElementById("rapHost"); if (h) h.innerHTML = rapHtml(); }
 async function rapSkift(id) {
   if (window.__RAP_GEMMER) return; window.__RAP_GEMMER = true;
-  const ny = { status: rapTaendt("status"), koeb: rapTaendt("koeb"), fejl: rapTaendt("fejl") }; ny[id] = !ny[id];
+  const ny = { status: rapTaendt("status"), koeb: rapTaendt("koeb"), fejl: rapTaendt("fejl"), aktiveret: rapTaendt("aktiveret") }; ny[id] = !ny[id];
   let ok = false;
   try { const nu = new Date().toISOString();
     let u = await sb.from("lektion_oevelser").update({ spm: ny, opdateret: nu }).eq("lektion_id", "ida:rapporter").select("lektion_id");
@@ -104163,9 +104175,9 @@ async function rapSe(id) {
   if (id === "fejl") { try { fejlFraKunderneVis(); } catch (e) {} return; }
   if (id === "proeve") { mailsSide("auto"); return; }
   let m = document.getElementById("bsFlytMenu"); if (!m) { m = document.createElement("div"); m.id = "bsFlytMenu"; document.body.appendChild(m); }
-  let sv = null; try { const r = await sb.from("skema_svar").select("svar").eq("kode", "ENERGIDA").eq("navn", "Ida").eq("skema", id === "status" ? "rapport_sidst_status" : "rapport_sidst_koeb").limit(1); sv = r && !r.error && r.data && r.data[0] ? r.data[0].svar : null; } catch (e) {}
+  let sv = null; try { const r = await sb.from("skema_svar").select("svar").eq("kode", "ENERGIDA").eq("navn", "Ida").eq("skema", id === "status" ? "rapport_sidst_status" : (id === "aktiveret" ? "rapport_sidst_aktiveret" : "rapport_sidst_koeb")).limit(1); sv = r && !r.error && r.data && r.data[0] ? r.data[0].svar : null; } catch (e) {}
   const har = !!(sv && typeof sv === "object" && String(sv.html || "").trim());
-  m.innerHTML = '<div class="bs-flyt-ark brief-soejle-ark rap-ark"><div class="ark-t">' + esc(har ? (String(sv.emne || "").trim() || "Den seneste mail") : (id === "status" ? "Statusmail" : "Nyt køb")) + '</div>'
+  m.innerHTML = '<div class="bs-flyt-ark brief-soejle-ark rap-ark"><div class="ark-t">' + esc(har ? (String(sv.emne || "").trim() || "Den seneste mail") : (id === "status" ? "Statusmail" : (id === "aktiveret" ? "Ny konto aktiveret" : "Nyt køb"))) + '</div>'
     + (har ? '<iframe class="rap-ramme" sandbox="" referrerpolicy="no-referrer" title="Den seneste mail"></iframe>' : '<div class="rap-tom">Den første kommer med næste mail.</div>')
     + '<button type="button" class="ark-luk" onclick="bsFlytLuk()">Luk</button></div>';
   m.style.display = "flex"; m.onclick = function (e) { if (e.target === m) bsFlytLuk(); };
@@ -108805,6 +108817,8 @@ html body.dash-mode:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q
 html body.dash-mode:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .rap-sidst { font:400 13px/20px Poppins,sans-serif; color:#1A1A1A; overflow-wrap:anywhere; }
 html body.dash-mode:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .rap-h { display:flex; align-items:center; gap:12px; flex:none; }
 html body.dash-mode:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .rap-ark { width:min(720px, calc(100vw - 32px)); max-width:none; }
+/* v3460: arkets titel går ikke ind under krydset (»Ny konto aktiveret · Hinges Hus« på telefon) */
+html body.dash-mode:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .rap-ark .ark-t { padding-left:40px; padding-right:40px; }
 html body.dash-mode:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .rap-ramme { display:block; width:100%; height:min(64vh, 620px); border:1px solid #DEDEDE; border-radius:14px; background:#F8F8F8; margin:4px 0 0; }
 html body.dash-mode:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .rap-tom { font:300 16px/1.6 Poppins,sans-serif; color:#1A1A1A; padding:8px 0 4px; }
 @media (max-width:899px) { html body.dash-mode:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .rap-fl { flex-direction:column; align-items:stretch; gap:14px; } html body.dash-mode:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .rap-h { justify-content:space-between; } }
@@ -108927,7 +108941,7 @@ body.sk-holder, body.sk-holder .content, body.sk-holder #dashMain, [data-bs-hold
 }
 </style>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-hvid.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 22. november · 3459</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 22. november · 3460</div>
 <script>
 /* DROPDOWNEN RULLER SELV (Ida 4/10) — maal den aabne liste og klip den ved skaermens bund */
 (function () {
