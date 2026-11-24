@@ -30,6 +30,15 @@
     T(document.documentElement.scrollWidth <= innerWidth, "vandret rulning: " + document.documentElement.scrollWidth + "/" + innerWidth);
     var sr = [].filter.call(document.querySelectorAll(".ks2-blok .ks2-rk"), function (e) { return /^Sidst/.test((e.innerText || "").trim()) && /lektion/.test(e.innerText || ""); })[0];
     if (sr) { var v = sr.querySelector(".ks2-v"), q = v.getBoundingClientRect(); T(!/i\s*$/.test(((v.innerText || "").split("\n")[0] || "").trim()), "»i dag kl.« knækker midt i en dag: »" + (v.innerText || "").replace(/\n/g, "⏎") + "«"); T(q.right <= innerWidth, "»Sidst« rager ud over skærmen"); }
+    /* v3466 · PRIVATPERSON (Ida 24/11: »jeg er her som privatperson«): kortet har mærket »Privatperson« i blokken Køb, og »Forretningen« hedder »Om <fornavn>« */
+    var PK = "PRIVATPROEVE1", pdef = { virksomhed: "Mia Kirk Nørgaard", type: "kursus", forloeb: "YOU GOT THIS — DETAIL", privat: true, aktiv: true };
+    await sb.from("skema_svar").insert({ kode: PK, navn: "config", skema: "kunde_def", svar: pdef }); VIRKSOMHEDSKODER[PK] = pdef;
+    await sb.from("skema_svar").insert({ kode: PK, navn: "config", skema: "profil_svar", svar: { butik_navn: "Mia Kirk Nørgaard", privat: true } });
+    kundeSideVis(PK); await V(4000);
+    var blk = function (navn) { var b = [].filter.call(document.querySelectorAll(".ks2-blok"), function (e) { return new RegExp("^" + navn, "i").test(((e.querySelector(".ks2-e") || {}).textContent || "").trim()); })[0]; return b ? (b.innerText || "").replace(/\s+/g, " ").trim() : ""; };
+    T(/Kunde Privatperson/.test(blk("Køb")), "privatperson: kortet mangler mærket »Privatperson« i blokken Køb: " + blk("Køb").slice(0, 120));
+    T(!!blk("Om Mia") && !blk("Forretningen"), "privatperson: blokken »Forretningen« hedder ikke »Om Mia«: " + blk("Om Mia").slice(0, 80));
+    kundeSideVis(K); await V(1500);
     kundeSideVis(K); await V(300);
     T(dtGrundOrd({ login: true, set: 0 }) === "har ikke gjort en lektion færdig", "Dagens tjek siger ikke »har ikke gjort en lektion færdig«");
   } catch (e) { fejl.push("proben fejlede: " + (e && e.message)); }

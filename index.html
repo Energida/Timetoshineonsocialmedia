@@ -39767,6 +39767,7 @@ async function profilFlowStart() {
   while (PF.f.kolleger.length < 2) PF.f.kolleger.push({ navn: "", mail: "" });
   if (md.kollega === true && mdNavn.length >= 2) { if (!String(PF.f.navn || "").trim()) PF.f.navn = mdNavn[0]; if (!String(PF.f.efternavn || "").trim()) PF.f.efternavn = mdNavn.slice(1).join(" "); PF.navnKendt = !!(String(PF.f.navn || "").trim() && String(PF.f.efternavn || "").trim()); }
   PF.pwGemt = !!(k && k.pwGemt) && !pw;   /* v3446: tallet er det samme efter en genindlæsning midt i guiden */
+  try { if ((CURRENT_DEF && CURRENT_DEF.privat) || (VIRKSOMHEDSKODER[currentKode] && VIRKSOMHEDSKODER[currentKode].privat)) PF.f.privat = true; } catch (e) {}   /* v3466: købt uden virksomhed — valget »privatperson« er forvalgt */
   PF.butikKendt = !!String(PF.f.butik_navn || "").trim();   /* NAVNET ER KENDT FRA KØBET (Ida 15/11, testperson: »kan vi ikke fjerne denne, når det allerede er udfyldt i Stripe?«) — skærmen springes over; navnet rettes under Profil › Forretningen */
   PF.sp = 0;
   if (k && k.trin && !pw) { PF.trin = Math.min(k.trin, pfAntal()); PF.sp = Math.max(0, Math.min(parseInt(k.sp, 10) || 0, pfSkaerme().length - 1)); }
@@ -39779,7 +39780,7 @@ function pfSkaerme(t) {
   if (PF.ygt && !PF.kollega && t === pfAntal() && t > 2) return ["klar"];
   if (t === 1 && PF.team && !PF.team.oprettet) return ["konto", "navn", "foed", "rolle"];   /* kollegaen: login · om dig · fødselsdag · rolle — loginet oprettes på den sidste */
   if (t === 1) return (PF.navnKendt ? [] : ["navn"]).concat(["foed", "rolle"]).concat(PF.pw ? ["pw"] : []);   /* navnet fra oprettelsen med kollegakoden spørges der ikke om igen (20/11) */
-  if (t === 2) return (PF.butikKendt ? [] : ["butik"]).concat(["branche", "koeb", "afd", "ansatte"]);   /* AFDELINGER OG MEDARBEJDERE (Ida 15/11) — efter, hvordan kunderne handler */   /* ADRESSE OG CVR ER UDE AF POPUPPEN (Idas klik 12/11 »Ud af popuppen«: »forvirrende at … praktiske oplysninger som adresse [kommer] midt i det hele«) — de udfyldes under Profil › Forretningen */
+  if (t === 2) return (PF.butikKendt ? [] : ["butik"]).concat(PF.f.privat ? ["koeb"] : ["branche", "koeb", "afd", "ansatte"]);   /* v3466: en privatperson har ingen branche, afdelinger eller ansatte */   /* AFDELINGER OG MEDARBEJDERE (Ida 15/11) — efter, hvordan kunderne handler */   /* ADRESSE OG CVR ER UDE AF POPUPPEN (Idas klik 12/11 »Ud af popuppen«: »forvirrende at … praktiske oplysninger som adresse [kommer] midt i det hele«) — de udfyldes under Profil › Forretningen */
   return ["kolleger"];
 }
 function pfSkaerm() { const l = pfSkaerme(); return l[Math.max(0, Math.min(PF.sp || 0, l.length - 1))]; }
@@ -39822,6 +39823,14 @@ function pfFelt(id, lab, v, o) {
   o = o || {};
   return '<label class="pf-fl' + (o.kl ? ' ' + o.kl : '') + '">' + (lab ? '<span class="pf-lab">' + esc(lab) + '</span>' : '') + '<input class="pf-in" id="pf_' + id + '" value="' + esc(v || "") + '"' + (o.ph ? ' placeholder="' + esc(o.ph) + '"' : '') + (o.num ? ' inputmode="numeric"' : '') + (o.mail ? ' type="email" data-frit="" inputmode="email" autocapitalize="off" autocorrect="off" spellcheck="false"' : '') + (o.num ? ' data-frit=""' : '') + (o.max ? ' maxlength="' + o.max + '"' : '') + ' oninput="pfInput(\'' + id + '\', this.value)"></label>';
 }
+/* v3466 · PRIVATPERSON (Ida 24/11, Mia skrev »Ingen« i virksomhedsfeltet: »burde vi have en - jeg er her som privatperson« → »Ja, alle fire dele«): i skærmen »Virksomhedens navn« kan kunden vælge »Jeg er her som privatperson«.
+   Så bliver navnet personens eget, og branche, afdelinger og ansatte springes over. Står privat allerede fra købet, er valget forvalgt (og skærmen springes over, fordi navnet er kendt). Det gemmes i kundens oplysninger (privat: true) — samme vej som selvkøbs-valget. */
+function pfPrivatSkift() {
+  if (!PF) return; const f = PF.f; f.privat = !f.privat;
+  if (f.privat) { f.butik_navn_foer = f.butik_navn; const nm = (String(f.navn || "").trim() + " " + String(f.efternavn || "").trim()).trim(); if (nm) f.butik_navn = nm; }
+  else { f.butik_navn = f.butik_navn_foer || ""; }
+  try { pfKladdeGem(); } catch (e) {} pfTegn();
+}
 function pfChips(id, liste, valgt) {
   return '<div class="pf-chips">' + liste.map(function (c) { return '<button type="button" class="pf-chip mq-tap' + (valgt === c.k ? ' on' : '') + '" onclick="pfValg(\'' + id + '\', \'' + esc(c.k) + '\')">' + esc(c.n) + '</button>'; }).join("") + '</div>';
 }
@@ -39848,8 +39857,8 @@ function pfKlar() {
     return true;
   }
   if (t === 2) {
-    if (pfTom(f.butik_navn) || pfTom(f.branche) || pfTom(f.forretningstype)) return false;
-    if (f.branche === "Andet" && pfTom(f.branche_andet)) return false;
+    if (pfTom(f.butik_navn) || (!f.privat && pfTom(f.branche)) || pfTom(f.forretningstype)) return false;
+    if (!f.privat && f.branche === "Andet" && pfTom(f.branche_andet)) return false;
     return true;
   }
   /* SIDSTE SIDE VISER KODEN TIL KOLLEGERNE (Ida 8/11) — intet at udfylde */
@@ -39912,7 +39921,7 @@ function pfTegn() {
   const forste = (t <= 1 && sp === 0);
   /* TOP (bud 1): Tilbage eller »Opret din profil« · Trin X af N · én streg pr. trin · Spørgsmål i af M */
   /* ÉN PROCESBAR MED PROCENT (Idas klik 12/11 »Bud A«, artifact JscL7UGHBtj39VSNQJ5Aqg: »forvirrende at man ser Trin 2 af 3 og … så kommer der bare flere trin«): alle skærme i hele profilen tælles under ét; baren og procenten står på samme linje */
-  let pfAlle = 0, pfFoer = 0; for (let k = (t === 0 ? 0 : 1); k <= n; k++) { const l = pfSkaerme(k).length + ((k === 1 && PF.pwGemt) ? 1 : 0); if (k < t) pfFoer += l; pfAlle += l; }   /* v3446: den gemte adgangskode tæller med som overstået */
+  let pfAlle = 0, pfFoer = 0; for (let k = (t === 0 ? 0 : 1); k <= n; k++) { const l = pfSkaerme(k).length + ((k === 1 && PF.pwGemt) ? 1 : 0) + ((k === 2 && PF.f.privat && !PF.butikKendt) ? 3 : 0); if (k < t) pfFoer += l; pfAlle += l; }   /* v3446: den gemte adgangskode tæller med som overstået */
   const pct = Math.max(0, Math.min(100, Math.round(((pfFoer + sp + 1) / Math.max(1, pfAlle)) * 100)));
   /* »X AF Y« I STEDET FOR PROCENT, LINJEN BLIVER (Ida 14/11 under testkøbet: »i dette tilfælde synes jeg faktisk vi skal vælge 2 af 10 versionen ift processbaren i stedet for procent. men beholde linjen«) — vælter 12/11-procenten for profilen */
   const pfNr = Math.min(pfAlle, pfFoer + sp + 1);
@@ -39954,7 +39963,8 @@ function pfTegn() {
   } else if (sk === "pw") {
     krop = '<div class="pf-t">Vælg din adgangskode</div>' + pfPwHtml(f, "Adgangskode");
   } else if (sk === "butik") {
-    krop = '<div class="pf-t">Virksomhedens navn</div>' + pfFelt("butik_navn", "", f.butik_navn);
+    krop = '<div class="pf-t">' + (f.privat ? 'Dit navn' : 'Virksomhedens navn') + '</div>' + pfFelt("butik_navn", "", f.butik_navn)
+      + '<div class="pf-chips pf-privat"><button type="button" class="pf-chip mq-tap' + (f.privat ? ' on' : '') + '" onclick="pfPrivatSkift()">Jeg er her som privatperson</button></div>';
   } else if (sk === "adr") {
     krop = '<div class="pf-t">Virksomhedens adresse</div>' + pfFelt("adresse", "Adresse", f.adresse) + '<div class="pf-to">' + pfFelt("postnr", "Postnr.", f.postnr, { num: true, max: 4 }) + pfFelt("by", "By", f.by) + '</div>';
   } else if (sk === "cvr") {
@@ -40041,7 +40051,15 @@ async function pfButikGem() {
   const svar = Object.assign({}, gl, { butik_navn: String(f.butik_navn || "").trim(), adresse: String(f.adresse || "").trim() || gl.adresse || "", postnr: String(f.postnr || "").trim() || gl.postnr || "", by: String(f.by || "").trim() || gl.by || "", cvr: String(f.cvr || "").trim() || gl.cvr || "",   /* popuppen spørger ikke længere om adresse/CVR — det, der står under Profil, må aldrig overskrives med tomt */
     branche: f.branche || "", branche_andet: f.branche === "Andet" ? String(f.branche_andet || "").trim() : "", forretningstype: f.forretningstype || "", udfyldt_af: gl.udfyldt_af || PF.mail || "kunden",
     afdelinger: pfAntalGem(f.afd_valg, f.afd_antal, gl.afdelinger), medarbejdere: pfAntalGem(f.ans_valg, f.ans_antal, gl.medarbejdere) });
+  if (f.privat) svar.privat = true;
   await pfRaekkeGem("config", "profil_svar", svar);
+  if (f.privat && !(CURRENT_DEF && CURRENT_DEF.privat)) {   /* v3466: kundens oplysninger får privat: true (hent den gældende, ret KUN den, skriv med kvittering) */
+    try {
+      const kode = String(currentKode || "").toUpperCase();
+      const r0 = await sb.from("skema_svar").select("svar").eq("kode", kode).eq("navn", "config").eq("skema", "kunde_def").maybeSingle();
+      if (r0 && r0.data && r0.data.svar) { const nyDef = Object.assign({}, r0.data.svar, { privat: true }); const u = await sb.from("skema_svar").update({ svar: nyDef }).eq("kode", kode).eq("navn", "config").eq("skema", "kunde_def").select(); if (u && !u.error && u.data && u.data.length === 1) { CURRENT_DEF = Object.assign({}, CURRENT_DEF, { privat: true }); VIRKSOMHEDSKODER[kode] = CURRENT_DEF; } }
+    } catch (e) {}
+  }
   if (f.forretningstype && !(CURRENT_DEF && CURRENT_DEF.forretningstype)) { KUNDE_VALG_TYPE = f.forretningstype; await pfRaekkeGem("config", "kunde_valg", { forretningstype: f.forretningstype }); }
 }
 function pfNytLinkKnap() {
@@ -72703,7 +72721,7 @@ function statusPrikHtml(st, ekstra) {
    Der hentes med HEAD, saa der aldrig traekkes en hel fil ned for at se et fingeraftryk. */
 /* ÉN kilde til appens versionsnummer. Footeren og vagten laeser den SAMME variabel,
    saa de to aldrig kan sige hver sit. Bumpes sammen med version.txt. */
-const APP_VERSION = "3465";
+const APP_VERSION = "3466";
 const APP_BYGGET = "3. november";   /* versionslinjen nederst viser altid den rigtige version (Ida 9/10: den stod fast paa »8. oktober · 2600«) */
 document.addEventListener("DOMContentLoaded", function () { try { var vf = document.getElementById("versionsFod"); if (vf) vf.textContent = "Version " + APP_VERSION;   /* ingen dato (Ida 7/11: »hvorfor står der version 3. november?«) — datoen blev ikke rettet med, nummeret er sandheden */ } catch (e) {} });
 let NY_VERSION_KLAR = false;
@@ -99362,7 +99380,7 @@ async function ksYgtTegn(k, o) {
   /* BUTIKKEN HEDDER FORRETNINGEN, OG KONTAKTENS ROLLE STÅR DÉR (Ida 16/11: »hvorfor er det den står der som personerne og ikke rolle? hvis det er rolle skal den under butikken - og butikken skal hedde forretningen«) */
   const kRolle = kPers ? (kPers.ejer === true ? "Ejer" : String(kPers.rolle || "").trim()) : "";
   const fRk = bRk + (kRolle ? rk2("Rolle", esc(storStart(kRolle))) : '');
-  const butik2 = (FL && !D.profil && !kRolle) ? '' : blok("Forretningen", fRk || tom2("Forretningen er ikke udfyldt endnu"));   /* forløbskunden uden egne profilsvar: ingen flise (som den gamle butik-linje) — adressen står i Kontakt (CRM-revision 16/11) */
+  const butik2 = (FL && !D.profil && !kRolle) ? '' : blok(d.privat ? "Om " + esc(String(d.virksomhed || "").trim().split(/\s+/)[0] || "kunden") : "Forretningen", fRk || tom2(d.privat ? "Ikke udfyldt endnu" : "Forretningen er ikke udfyldt endnu"));   /* forløbskunden uden egne profilsvar: ingen flise (som den gamle butik-linje) — adressen står i Kontakt (CRM-revision 16/11) */
   /* PERSONERNE STÅR LIGE UNDER KONTAKT og kun dem, der ikke ER kontakten (Ida 16/11: »vil gerne have at personerne bliver flyttet op under kontakt«) */
   const andrePers = (D.personer || []).filter(function (x) { return x !== kPers; });
   const personer2 = andrePers.length ? blok("Personerne", andrePers.map(function (x) { return rk2(esc(personNavn(x.navn) || x.email || "Ukendt"), esc([x.ejer === true ? "Ejer" : (x.rolle || ""), (x !== kPers && fDato(x.foedselsdag)) ? "Fødselsdag " + fDato(x.foedselsdag) : ""].filter(Boolean).join(" · ") || "")); }).join("")) : '';
@@ -99395,7 +99413,7 @@ async function ksYgtTegn(k, o) {
     ? blok("Team · " + LG.length + (LG.length === 1 ? " login" : " logins"), LG.length ? LG.map(function (u) { const n = personNavn(String(u.navn || "").trim() || String(u.email || "").split("@")[0]); return rk2(esc(n) + (u.navn && u.email ? '<span class="ks2-mail">' + esc(u.email) + '</span>' : ''), (function () { let app = ""; try { const fn = String(u.navn || "").trim().split(/\s+/)[0].toLowerCase(); (D.team || []).forEach(function (p) { const pn = String(p.n || "").trim().toLowerCase(); if (fn && p.sidst && (pn === fn || pn.split(/\s+/)[0] === fn || pn === String(u.navn || "").trim().toLowerCase()) && p.sidst > app) app = p.sidst; }); } catch (e) {} const lg = u.sidst ? String(u.sidst).slice(0, 10) : ""; return app && app >= lg ? "I appen " + esc(ksySidenOrd(app)) : (u.sidst ? "Logget ind " + esc(ksySidenOrd(u.sidst)) : "Inviteret"); })()); }).join("") : tom2("Ingen logins på koden endnu"))
     : blok("Team" + (D.team.length ? " · " + D.team.length : ""), D.team.length ? D.team.map(function (p) { return rk2(esc(personNavn(p.n)), p.sidst ? esc(storStart(ksySidenOrd(p.sidst))) : "Ikke i appen endnu"); }).join("") : tom2("Ingen har logget ind endnu"));
   const prNavn = (function () { try { return bsKundeProdukt(k); } catch (e) { return ""; } })() || d.forloeb || "YOU GOT THIS";   /* samme produktnavn som CRM-listen (CRM-revision 16/11: »Succesfuld Detail 2026« her, »I GOT YOU« i listen) */
-  const koeb2 = blok("Køb", rk2("Produkt", esc(prNavn)) + (koebt ? rk2("Købt", esc(ksyDato(koebt))) : '') + ((D.koeb && D.koeb.kr != null) ? rk2("Beløb", esc(D.koeb.kr.toLocaleString("da-DK")) + " kr.") : '') + (((!FL || D.koeb) && rabat !== "Ingen") ? rk2("Rabatkode", esc(rabat)) : '')   /* uden rabatkode: ingen række (Ida 15/11 »uden rabatkode skal bare være tom«) */ + (komFra ? rk2("Kom fra", esc(komFra)) : ''));   /* rabatkoden kun på et køb — en forløbskunde uden køb har ingen at vise */
+  const koeb2 = blok("Køb", rk2("Produkt", esc(prNavn)) + (d.privat ? rk2("Kunde", "Privatperson") : '') + (koebt ? rk2("Købt", esc(ksyDato(koebt))) : '') + ((D.koeb && D.koeb.kr != null) ? rk2("Beløb", esc(D.koeb.kr.toLocaleString("da-DK")) + " kr.") : '') + (((!FL || D.koeb) && rabat !== "Ingen") ? rk2("Rabatkode", esc(rabat)) : '')   /* uden rabatkode: ingen række (Ida 15/11 »uden rabatkode skal bare være tom«) */ + (komFra ? rk2("Kom fra", esc(komFra)) : ''));   /* rabatkoden kun på et køb — en forløbskunde uden køb har ingen at vise */
   /* DET GAMLE KUNDEKORT KAN IKKE NÅS FRA SIDEN (CRM-revision 16/11, Idas fund: »gammelt kort bag ny side«): Kundeoplysninger er væk (kontakten rettes på siden), Aftaler og Indstillinger er egne undersider i sidens form */
   /* v3445 · MAILS: emnet i fuld bredde; under det dato · »Sendt« eller »Fejl« (og modtageren, når kunden har flere adresser) */
   const mlNavn = function (x) { const e = String(x.emne || "").trim(); if (e) return e; const i = String(x.mail_id || ""); return /^login:/.test(i) ? "Adgangsmailen" : /^har-adgang:/.test(i) ? "Du har allerede adgang" : i === "velkomst" ? "Velkomstmailen" : "Mail"; };
@@ -109080,6 +109098,8 @@ html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7
 html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .kbu-video .kbu-vp { margin:12px 0 0 !important; border-radius:20px !important; overflow:hidden !important; aspect-ratio:16 / 9 !important; background:#FFFFFF !important; box-shadow:var(--mb-skygge) !important; }
 html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .kbu-video .kbu-vp iframe, html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .kbu-video .kbu-vp video { display:block !important; width:100% !important; height:100% !important; border:0 !important; }
 html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .kbu-video .kbu-vp-fejl { margin:12px 0 0 !important; font:400 14px/20px Poppins,sans-serif !important; color:#FC2404 !important; }
+/* v3466 · valget »Jeg er her som privatperson« står under feltet i guiden */
+html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) #pfFlow .pf-chips.pf-privat { margin:0 !important; }
 /* v3395 (Ida 20/11) — MODULFLISERNE: cirkel som lektionerne (tom · rødt flueben · hængelås), ingen pil, ingen fold-ud */
 html body #forloebTidslinje .ftl2 .ftl2-hoved, html body #forloebTidslinje .ftl2 .ftl2-rk.laast { display:flex !important; align-items:center !important; justify-content:flex-start !important; gap:16px !important; cursor:pointer; }
 html body #forloebTidslinje .ftl2 .ftl2-rk.laast { cursor:default; }
@@ -109192,7 +109212,7 @@ body.sk-holder, body.sk-holder .content, body.sk-holder #dashMain, [data-bs-hold
 }
 </style>
 <div id="energidaLoader" aria-live="polite"><img src="logo-hjerte-hvid.png" alt=""><span>Henter…</span></div>
-<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 22. november · 3465</div>
+<div id="versionsFod" style="position:fixed;right:8px;bottom:6px;z-index:800;font-family:Poppins,sans-serif;font-size:8.5px;letter-spacing:0.5px;color:var(--gray3);opacity:.65;pointer-events:none;">Version 22. november · 3466</div>
 <script>
 /* DROPDOWNEN RULLER SELV (Ida 4/10) — maal den aabne liste og klip den ved skaermens bund */
 (function () {

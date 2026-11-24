@@ -368,6 +368,19 @@ for STUB in "390 844" "1440 940"; do
   echo "$UDSTU" | grep -q "SELE STUDIO OK $1" || HERO_OK=0
 done
 mv "$MAAL/sb-stub.js.foer-studio" "$MAAL/sb-stub.js"
+# PRIVATPERSON (v3466, Ida 24/11, Mia skrev »Ingen« i virksomhedsfeltet: »burde vi have en - jeg er her som privatperson« → »Ja, alle fire dele«): probe-privat.js som kunde paa 390 og 1440 med den huskende base
+# (privat forvalgt fra koebet · valget midt i guiden goer navnet til personens og springer branche, afdelinger og ansatte over uden at naevneren skifter · fortryd · privat: true gemmes i kundens oplysninger).
+# Kundekortet (maerket »Privatperson« og »Om <fornavn>«) maales i probe-startet.js (Backstage).
+KPR=$(python3 -c "import urllib.parse,sys;print(urllib.parse.quote(open(sys.argv[1]).read()))" "$ROD/tools/designlaas/probe-privat.js")
+cp "$MAAL/sb-stub.js" "$MAAL/sb-stub.js.foer-privat" && cp "$ROD/tools/sikkerhedschefen/lag2/husk-stub.js" "$MAAL/sb-stub.js"   # proeven saar data: den huskende base (v3466)
+for PRB in "390 844" "1440 940"; do
+  set -- $PRB
+  RAAPR=$($TO "$C" $HL --no-sandbox --disable-gpu --window-size=$(($1+40)),1000 --virtual-time-budget=60000 --enable-logging=stderr --v=0 --screenshot="$MAAL/privat-$1.png" "http://127.0.0.1:$PORT/sele.html?vis=kunde&fil=index-sele.html%3Fselekode%3DHINGES2026&bred=$1&hoej=$2&kode=$KPR" 2>&1)
+  UDPR=$(echo "$RAAPR" | grep -a 'CONSOLE' | sed -E 's/^.*CONSOLE[:(][0-9]+\)?\] //; s/", source:.*$//; s/^"//' | grep -a 'SELE PRIVAT')
+  echo "${UDPR:-SELE PRIVAT FEJL $1: ingen maaling}"
+  echo "$UDPR" | grep -q "SELE PRIVAT OK $1" || HERO_OK=0
+done
+mv "$MAAL/sb-stub.js.foer-privat" "$MAAL/sb-stub.js"
 # RUNDVISNINGEN (v3450, Ida 23/11: »man kan paa ingen maade afslutte rundvisningen!« · »alt det her hak skal vaek!!!«): samme boks paa velkomsten og alle trin, hoejst én flise, »Spring over« afslutter med ét klik. probe-tur.js, 390 og 1440.
 KTU=$(python3 -c "import urllib.parse,sys;print(urllib.parse.quote(open(sys.argv[1]).read()))" "$ROD/tools/designlaas/probe-tur.js")
 for TUB in "390 844" "1440 940"; do

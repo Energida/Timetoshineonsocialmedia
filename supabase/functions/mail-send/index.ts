@@ -229,10 +229,14 @@ async function sendAktiveret(bruger: any, somKalder: any) {
   const md = bruger.user_metadata || {}, am = bruger.app_metadata || {};
   const kode = String(am.kode || md.kode || "").trim().toUpperCase();
   const navn = String(md.navn || md.hilsen || "").trim().slice(0, 80);
-  let virk = "", forloeb = "";
+  let virk = "", forloeb = "", privat = false;
   if (kode) { try { const { data: vk } = await db.from("virksomhedskoder").select("virksomhed,forloeb").eq("kode", kode).maybeSingle(); if (vk) { virk = String(vk.virksomhed || ""); forloeb = String(vk.forloeb || ""); } } catch (_e) { /* koden er nok */ } }
   const kollega = kode ? await erKollega(db, bruger, kode) : false;
-  const emne = "Ny konto aktiveret · " + (virk || navn || mail);
+  /* PRIVATPERSON (Ida 24/11: »Ingen og køberen virker heller ikke optimalt«): kortet har privat: true, eller virksomheden hedder »Ingen« o.l. */
+  if (kode) { try { const { data: kd } = await db.from("skema_svar").select("svar").eq("kode", kode).eq("navn", "config").eq("skema", "kunde_def").maybeSingle(); privat = !!(kd && kd.svar && kd.svar.privat); } catch (_e) { /* som før */ } }
+  if (/^(ingen|intet|privat|privatperson|nej|-+)$/i.test(virk.trim())) privat = true;
+  const hvemTekst = !kode ? "" : privat ? "Privatperson" : kollega ? "Kollega hos " + (virk || "virksomheden") : "Købte selv";
+  const emne = "Ny konto aktiveret · " + (privat ? (navn || mail) + " · Privatperson" : (virk || navn || mail));
   /* pladsen tages FØRST: det unikke indeks (mail_id + e-mail, status sendt) afviser nr. 2 */
   const krav = await db.from("mail_log").insert({ email: mail, mail_id: "aktiveret", emne, status: "sendt" }).select("id");
   if (krav.error || !krav.data || !krav.data.length) return svar({ ok: true, allerede: true }, 200);
@@ -242,8 +246,8 @@ async function sendAktiveret(bruger: any, somKalder: any) {
   const linje = (et: string, v: string) => v ? '<tr><td style="padding:4px 14px 4px 0;color:#686868;font-size:13px;white-space:nowrap;vertical-align:top;">' + et + '</td><td style="padding:4px 0;font-size:13px;color:#1A1A1A;">' + esk(v) + '</td></tr>' : '';
   const html = '<div style="background:#F8F8F8;padding:24px 16px;font-family:Poppins,Arial,sans-serif;color:#1A1A1A;"><div style="max-width:560px;margin:0 auto;background:#FFFFFF;border:1px solid #DEDEDE;border-radius:16px;padding:28px;">'
     + '<p style="font-size:12px;letter-spacing:1.5px;text-transform:uppercase;color:#686868;margin:0 0 6px;">Ny konto aktiveret</p>'
-    + '<p style="font-size:22px;margin:0 0 18px;">' + esk(virk || navn || mail) + '</p>'
-    + '<table style="border-collapse:collapse;">' + linje("Navn", navn) + linje("E-mail", mail) + linje("Virksomhed", virk) + linje("Forløb", forloeb) + linje("Kode", kode) + linje("Hvem", kode ? (kollega ? "Kollega på en eksisterende kode" : "Køberen") : "") + linje("Tid", tid) + '</table>'
+    + '<p style="font-size:22px;margin:0 0 18px;">' + esk(privat ? (navn || mail) : (virk || navn || mail)) + '</p>'
+    + '<table style="border-collapse:collapse;">' + linje("Navn", navn) + linje("E-mail", mail) + linje("Virksomhed", privat ? "" : virk) + linje("Forløb", forloeb) + linje("Kode", kode) + linje("Hvem", hvemTekst) + linje("Tid", tid) + '</table>'
     + '<div style="margin:22px 0 0;"><a href="https://admin.energida.dk/" style="display:inline-block;background:#FC2404;color:#FFFFFF;text-decoration:none;font-size:14px;line-height:48px;height:48px;padding:0 26px;border-radius:999px;">Åbn Backstage</a></div>'
     + '</div></div>';
   const noegle = Deno.env.get("BREVO_API_KEY"); if (!noegle) { await db.from("mail_log").update({ status: "fejl", fejl: "ingen Brevo-nøgle" }).eq("id", rid); return svar({ ok: false, grund: "ikke-klar" }, 200); }

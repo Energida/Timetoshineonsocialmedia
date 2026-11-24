@@ -199,7 +199,8 @@ async function rapportGem(db: any, k: string, emne: string, html: string) {
    emnet siger virksomhed og person, og den skjulte forhåndstekst (de to linjer under emnet i mailprogrammet) siger produkt, beløb, rabatkode og mail. */
 function koebEmne(o: any) {
   const virk = String(o.virksomhed || "").trim(), navn = String(o.navn || "").trim();
-  const hvem = [virk, navn && navn.toLowerCase() !== virk.toLowerCase() ? navn : ""].filter(Boolean).join(" · ") || String(o.email || "");
+  const hvem = o.privat ? [navn || String(o.email || ""), "Privatperson"].join(" · ")
+    : ([virk, navn && navn.toLowerCase() !== virk.toLowerCase() ? navn : ""].filter(Boolean).join(" · ") || String(o.email || ""));
   return (o.test ? "Testkøb · " : "Nyt køb · ") + hvem;
 }
 function koebForhaand(o: any) {
@@ -209,7 +210,7 @@ function koebForhaand(o: any) {
 
 async function sendKoebsmail(o: {
   produkt: string; belob: string; tidspunkt: string; rabat: { hentet: boolean; kode: string };
-  navn: string; virksomhed: string; email: string; telefon: string; kode: string; test: boolean; eksisterende: boolean;
+  navn: string; virksomhed: string; email: string; telefon: string; kode: string; test: boolean; eksisterende: boolean; privat?: boolean;
 }, db?: any, sid?: string) {
   try {
     if (db && !(await rapportTaendt(db, "koeb"))) return false;   /* Ida har slået købsmailen fra (Rapporter, 24/11) */
@@ -231,7 +232,7 @@ async function sendKoebsmail(o: {
           + '<div style="font-size:13px;color:#686868;margin:0 0 4px 0;">' + esk(o.tidspunkt) + '</div>'
           + (o.rabat.hentet ? '<div style="font-size:13px;color:#686868;">Rabatkode: ' + esk(o.rabat.kode || "Ingen") + '</div>' : ''))
       + flise("Kunden",
-          raekke("Navn", o.navn) + raekke("Virksomhed", o.virksomhed) + raekke("E-mail", o.email) + raekke("Telefon", o.telefon))
+          raekke("Navn", o.navn) + raekke("Virksomhed", o.privat ? "Privatperson" : o.virksomhed) + raekke("E-mail", o.email) + raekke("Telefon", o.telefon))
       + flise("Adgang",
           (o.eksisterende
             ? '<div style="font-size:13px;color:#686868;margin:0 0 4px 0;">E-mailen findes allerede som kunde. Der er ikke oprettet noget nyt og ikke sendt en ny invitation.</div>'
@@ -502,8 +503,13 @@ Deno.serve(async (req) => {
     ["custom_fields", String(felter["virksomhedsnavn"] ?? felter["virksomhed"] ?? "").trim()],
     ["customer_details.name (noedspor)", navn],
   ];
+  /* PRIVATPERSON (Ida 24/11, Mia skrev »Ingen«: »burde vi have en - jeg er her som privatperson« → »Ja, alle fire dele«): et tomt
+     virksomhedsfelt eller et svar som »Ingen«, »privat«, »-«, »nej« betyder privatperson. Så hedder kontoen personens navn, og kortet får privat: true. */
+  const erIntet = (t: string) => /^(ingen|intet|privat|privatperson|nej|-+|\.+|x|n\/?a|ikke relevant)$/i.test(String(t || "").trim());
+  for (const kk of virkKilder) if (kk[0] !== "customer_details.name (noedspor)" && erIntet(kk[1])) kk[1] = "";
   const virkFundet = virkKilder.find((x) => x[1]);
   const virksomhed = virkFundet ? virkFundet[1] : "Ny kunde";
+  const privat = !virkFundet || virkFundet[0].indexOf("noedspor") > -1;
   const virkKilde = virkFundet ? virkFundet[0] : "ingen";
   // --- HVILKET PRODUKT? (27/9, lanceringen af YOU GOT THIS 1/10) -----------
   // Betalingslinket i Stripe bærer mærket (metadata) produkt=yougotthis, og Stripe
@@ -544,7 +550,7 @@ Deno.serve(async (req) => {
       // KOEBSMAIL (6/11): et gennemfoert koeb fra en kendt e-mail faar Ida stadig besked om.
       const mailSendt = await sendKoebsmail({
         produkt: erYGT ? "You Got This" : "Content Studio", belob: koebBelob(s), tidspunkt: dkTid(Number(s.created)),
-        rabat: rabatInfo, navn, virksomhed, email, telefon, kode: "", test: erTest, eksisterende: true,
+        rabat: rabatInfo, navn, virksomhed, email, telefon, kode: "", test: erTest, eksisterende: true, privat,
       }, admin, String(s.id ?? ""));
       return svar({ ok: true, allerede: email, oprettet: false, koebsmail: mailSendt, findesmail }, 200);
     }
@@ -576,6 +582,7 @@ Deno.serve(async (req) => {
     // forretningens navn fra koebet. stripe_virksomhed_fundet er KUN sat, naar Stripe gav et rigtigt
     // virksomhedsnavn — ikke naar navnet er personens eget (noedspor) eller »Ny kunde«.
     stripe_navn: navn || undefined,
+    privat: privat || undefined,                 // 24/11: købt uden virksomhed (tomt felt eller »Ingen« o.l.)
     stripe_virksomhed_fundet: (virkFundet && virkKilde.indexOf("noedspor") < 0) ? true : undefined,
     // skema: IKKE sat (28/9). »skema: false« betyder i appen »spoergeskemaet er SLAAET FRA
     // for kunden« (kundekortets flueben) — saa sprang rejsen startskemaet over, og
@@ -741,7 +748,7 @@ Deno.serve(async (req) => {
   // Best-effort — svaret til Stripe aendres ikke af, om mailen kom frem (se koebsmail i svaret).
   const mailSendt = await sendKoebsmail({
     produkt: erYGT ? "You Got This" : "Content Studio", belob: koebBelob(s), tidspunkt: dkTid(Number(s.created)),
-    rabat: rabatInfo, navn, virksomhed, email, telefon, kode, test: erTest, eksisterende: false,
+    rabat: rabatInfo, navn, virksomhed, email, telefon, kode, test: erTest, eksisterende: false, privat,
   }, admin, String(s.id ?? ""));
 
   // virk_kilde er ikke pynt: den er beviset for, HVOR virksomhedsnavnet kom fra.
