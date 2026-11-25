@@ -1,4 +1,10 @@
-## 24. november · v3473 · DE SMÅ RETTELSER — BYGGET I TESTUDGAVEN, IKKE UDE
+## 25. november · v3473 · BRIEFENS FOLD-UD I FAKTA OG KUNDEKORTETS ORD — BYGGET I TESTUDGAVEN, IKKE UDE
+
+- **Idas ord (25/11, billede fra telefonen, briefens fakta · Lyd):** »Når jeg klikker ned for at vælge musik kommer kommentar frem og alt mulig andre fejl i briefen!« Fundet og rettet: listen var et løst kort, smallere end rækken og rykket ind, kommentarfeltet var endnu et løst kort under den, og bundmenuen og det røde plus lå hen over.
+- **Reglen:** en åbnet fold-ud i briefens fakta (Format, Lyd, Hvem laver indholdet? og de andre) er ÉN hvid flise i fakta-boksen, i flowet, præcis lige så bred som rækken over (1:1 på 390 og 1440). Kommentaren hører til Lyd-flisen selv og står i samme flise under én fin streg mellem teksterne. Intet svæver uden for boksen; boksen vokser med. Den åbnede flise rulles ind med 104 px luft under sig, så bundmenuen og det røde plus aldrig ligger over den.
+- **Kundekortet (Ida 24/11, »Om Mia«):** guiden og kortet bruger samme ord (Fysisk · Fysisk og online · Kun online); rækken hedder »Kunderne handler«. Afdelinger og Medarbejdere står som rækker. En privatperson viser kun Rolle og Kunderne handler. Svar som »Ingen«, »privat« og »Ukendt« vises aldrig.
+
+## 24. november · v3473 · DE SMÅ RETTELSER (med hastighedsrettelse uden synlig ændring: Inspiration og Idébank hurtigere på telefon) — BYGGET I TESTUDGAVEN, IKKE UDE
 
 - **Idas ord:** »Ja, gå i gang« med Meta-videoen (24/11) og de små ønsker fra dagen. Rører ingen database, auth eller storage fra appen; serverkilderne er kun kopieret ind som dokumentation.
 - **Prompterens højttalerknap:** fast, rund, 44 px, hvid med rød kant og rødt ikon, nederst til højre mens prompteren kører. Under oplæsning rød flade og hvidt stopikon. Følger »Læs op«-knappen; selve oplæsningen er urørt.
@@ -7,7 +13,7 @@
 - **Support:** support@energida.dk står som mailto-link i login-, adgangskode- og »Send et nyt link«-fejl.
 - **Lektionens varighed** genhentes fra Vimeo én gang pr. sideindlæsning (kun varigheden).
 
-## 24. november · v3472 · CONTENT STUDIO I BACKSTAGE OG KUNDENS TO FANER I IDÉBANKEN — BYGGET I TESTUDGAVEN, IKKE UDE
+## 24. november · v3473 · CONTENT STUDIO I BACKSTAGE OG KUNDENS TO FANER I IDÉBANKEN — BYGGET I TESTUDGAVEN, IKKE UDE
 
 - **Idas ord:** »Ja, byg det« (24/11, efter tegningen `bud/idebanken/content-studio/tegning.html`). Tegningens billeder og det byggede er sammenlignet på 390 og 1440.
 - **Backstage-menuen:** nyt punkt **»Content Studio«** lige efter »Mails« (på telefonen under »Mere«). Kursusoptagelsen (`data-side="klip"`) hedder **»Optagestudie«**: menupunkt, titel og aria, sidens overskrift, stien, Tilbage-navne, dørene på Hjem og i Content Studio, aktivitetslisten, knapperne »Læg i Optagestudie«, beskeder og Papirkurvens kildenavne. **Uændret med vilje:** kundens app (klipperens »Energida Studio«), browserfanens titel, mødestedet »Energida Studio« (en fysisk adresse) og app-ønskelistens studienavne (gemte værdier).
@@ -48,7 +54,7 @@
 - **Sikkerhed (kontraktens §2, §5, §7, §8):** tabellen `brandkit` (én række pr. virksomhed_id; RLS »egen virksomhed eller admin«; lofter i basen) og det lukkede lager er lagt op og rolletestet af »Ny chef« (se migrering.sql og ROLLETEST.md i `bud/brandkit/database/`); appen kører ingen Supabase-kommandoer. Hver skrivning kvitteres kun ved præcis én række, og loftet (23514) siges på dansk. **En konto uden virksomhed kan intet:** Brandkittet står tomt, upload og »Lav et billede« er slået fra, og det fejler ikke hårdt.
 - **Prøve i porten (SELE BRANDKIT, probe-brandkit.js, 390 og 1440, 31 målinger):** flisen på Profil (og »Dine skrifter« er væk) · siden med fem fliser i rækkefølge og plus på 36 px · farver (hex, ugyldig, loft på 10) · favoritskrifter flyttet og gemt · logo og baggrund i lageret under virksomhedens id, SVG afvist · editoren (format, panelrækkefølge, baggrunden tegnes, flueben, logo, mikrofon, knapper 44/12, skabelon gemt og lagt på, Cover 9:16) · det frie billede rører ingen brief · en konto uden virksomhed kan intet.
 
-## 24. november · v3468 · BRIEFEN: AFSNITSRAMMER · HVEM GØR HVAD · TELEFON-TOP · SWIPE-SLET · KARRUSELLEN · OPBYGNING TIL DELING — FLETTET FRA »BRIEFEN« (PQRS + BUD 1), BYGGET I TESTUDGAVEN, IKKE UDE
+## 24. november · v3473 · BRIEFEN: AFSNITSRAMMER · HVEM GØR HVAD · TELEFON-TOP · SWIPE-SLET · KARRUSELLEN · OPBYGNING TIL DELING — FLETTET FRA »BRIEFEN« (PQRS + BUD 1), BYGGET I TESTUDGAVEN, IKKE UDE
 
 - Samlet pakke fra b2b-design (»Briefen«), flettet oven på v3467: afsnitsrammer og »Hvem gør hvad« (P), telefon-bud 1 »Lav top« (T), swipe-slet på telefonen, karrusellens billede der ikke rykker siden og Duplikér (S) og »Opbygning til deling« med idéerne på story-siden og i briefen (R); Q lå allerede i basen (v3459). Afsnittene herunder står, som Briefen har skrevet dem; de nyeste først.
 
