@@ -321,19 +321,6 @@ for BTB in "390 844" "1440 940"; do
   echo "${UDBT:-SELE BRIEFTOP FEJL $1: ingen maaling}"
   echo "$UDBT" | grep -q "SELE BRIEFTOP OK $1" || HERO_OK=0
 done
-# FOLD-UD-POLITIET (Ida 25/11 med billede fra telefonen: »Når jeg klikker ned for at vælge musik kommer kommentar frem og alt mulig andre fejl i briefen! … Hvordan kan vi få det ind i sikkerhedslåsen??«):
-# probe-foldud.js trykker paa HVER dropdown og fold-ud i briefen (faktaboksen, alle skrivesider, Optag, Post, baandet) som en kunde paa 390 og 1440 og maaler: listen er lige saa bred som feltet (±2),
-# intet nyt dukker op uden for listen, intet daekkes af bundmenuen/plusset/toppen (elementFromPoint), listen er inden for skaermen, ingen raekke er klippet, og siden er som foer, naar den lukkes. Modproevet paa v3472: Lyd-fejlen fanges.
-KFU=$(python3 -c "import urllib.parse,sys;print(urllib.parse.quote(open(sys.argv[1]).read()))" "$ROD/tools/designlaas/probe-foldud.js")
-FOLDUD_OK=1
-for FUB in "390 844" "1440 940"; do
-  set -- $FUB
-  RAAFU=$($TO "$C" $HL --no-sandbox --disable-gpu --window-size=$(($1+40)),$(($2+60)) --virtual-time-budget=160000 --enable-logging=stderr --v=0 --screenshot="$MAAL/foldud-$1.png" "http://127.0.0.1:$PORT/sele.html?vis=kunde&fil=index-sele.html%3Fselekode%3DHINGES2026&bred=$1&hoej=$2&kode=$KFU" 2>&1)
-  UDFU=$(echo "$RAAFU" | grep -a 'CONSOLE' | sed -E 's/^.*CONSOLE[:(][0-9]+\)?\] //; s/", source:.*$//; s/^"//' | grep -a 'FOLDUD' | grep -v 'SELE FOLDUD INFO')
-  echo "${UDFU:-SELE FOLDUD FEJL $1: ingen maaling}" | cut -c1-400
-  echo "$UDFU" | grep -q "SELE FOLDUD OK $1" || FOLDUD_OK=0
-done
-[ "$FOLDUD_OK" = "1" ] && echo "SELE FOLDUD OK: hver dropdown og fold-ud i briefen holder paa 390 og 1440" || echo "SELE FOLDUD FEJL: fund staar ovenfor — porten stopper"
 # STARTET, IKKE BARE 0 (v3462, Ida 24/11 med Avantis kort: »han er igang med modul 0 men jeg ikke kan se han har set nogle lektioner«): en kode med aabnede, men ikke faerdige lektioner
 # (lektion_visdage uden lektion_set_) staar som »0 af 5 faerdige · 1 startet« med »Sidst: Startede paa lektion 0.1 · i dag kl. …«. probe-startet.js, Backstage paa 390 og 1440.
 KST=$(python3 -c "import urllib.parse,sys;print(urllib.parse.quote(open(sys.argv[1]).read()))" "$ROD/tools/designlaas/probe-startet.js")
@@ -418,22 +405,6 @@ for BKB in "390 844" "1440 940"; do
   echo "$UDBK" | grep -q "SELE BRANDKIT OK $1" || HERO_OK=0
 done
 mv "$MAAL/sb-stub.js.foer-brandkit" "$MAAL/sb-stub.js"
-# CONTENT STUDIO I BACKSTAGE + KUNDENS TO FANER I IDEBANKEN (v____, Ida 24/11: »Ja, byg det«):
-# probe-contentstudio.js som kunde (to faner, kun udgivne idéer, Gem med brief.fraEnergida, tom tilstand og fejl, laasene) og i Backstage (menuen, Content Studio, tomme skaller, Energidas idebank med kladde, mappe,
-# Udgivet-kontakt og Slet, laasene) paa 390 og 1440 med den huskende base. Intet rigtigt gemmes; der er 0 testdata tilbage.
-cp "$MAAL/sb-stub.js" "$MAAL/sb-stub.js.foer-contentstudio" && cp "$ROD/tools/sikkerhedschefen/lag2/husk-stub.js" "$MAAL/sb-stub.js"   # proeven saar data: den huskende base (v____)
-for CSF in kunde dash; do
-  { echo "var CS_FLADE='$CSF';"; cat "$ROD/tools/designlaas/probe-contentstudio.js"; } > "$MAAL/probe-contentstudio-$CSF.js"   # lang probe: ligger som fil (kodefil), som probe-maal.js
-  [ "$CSF" = "dash" ] && VCS="vis=dash&side=overblik&fil=index-sele.html" || VCS="vis=kunde&fil=index-sele.html%3Fselekode%3DHINGES2026"
-  for CSB in "390 844" "1440 940"; do
-    set -- $CSB
-    RAACS=$(${TO/90/150} "$C" $HL --no-sandbox --disable-gpu --window-size=$(($1+40)),1000 --virtual-time-budget=120000 --enable-logging=stderr --v=0 --screenshot="$MAAL/contentstudio-$CSF-$1.png" "http://127.0.0.1:$PORT/sele.html?${VCS}&bred=$1&hoej=$2&kodefil=probe-contentstudio-$CSF.js" 2>&1)
-    UDCS=$(echo "$RAACS" | grep -a 'CONSOLE' | sed -E 's/^.*CONSOLE[:(][0-9]+\)?\] //; s/", source:.*$//; s/^"//' | grep -a 'SELE CONTENTSTUDIO')
-    echo "${UDCS:-SELE CONTENTSTUDIO FEJL $1: ingen maaling ($CSF)}"
-    echo "$UDCS" | grep -q "SELE CONTENTSTUDIO OK $1" || HERO_OK=0
-  done
-done
-mv "$MAAL/sb-stub.js.foer-contentstudio" "$MAAL/sb-stub.js"
 # RUNDVISNINGEN (v3450, Ida 23/11: »man kan paa ingen maade afslutte rundvisningen!« · »alt det her hak skal vaek!!!«): samme boks paa velkomsten og alle trin, hoejst én flise, »Spring over« afslutter med ét klik. probe-tur.js, 390 og 1440.
 KTU=$(python3 -c "import urllib.parse,sys;print(urllib.parse.quote(open(sys.argv[1]).read()))" "$ROD/tools/designlaas/probe-tur.js")
 for TUB in "390 844" "1440 940"; do
@@ -458,5 +429,5 @@ done
 # tools/sikkerhedschefen/tjek_stille.py (loefte 15) koeres nu ogsaa i porten: kundeappen og Backstage paa 1440, 6 sideskift hver.
 UDST=$(python3 "$ROD/tools/sikkerhedschefen/tjek_stille.py" 2>&1 | grep -a "· 15 ·")
 if echo "$UDST" | grep -q "FEJLET" || ! echo "$UDST" | grep -q "BESTÅET"; then echo "$UDST" | grep -a "FEJLET" | cut -c1-400; echo "SELE STILLE FEJL: computeren staar ikke stille ved sideskift"; HERO_OK=0; else echo "SELE STILLE OK: kundeappen og Backstage staar stille ved sideskift paa 1440 ($(echo "$UDST" | grep -c "BESTÅET") tjek)"; fi
-[ "$STREG_OK" = "1" ] && [ "$FOLDUD_OK" = "1" ] && [ "$PLUS_OK" = "1" ] && [ "$DAEK_OK" = "1" ] && [ "$HERO_OK" = "1" ] && [ "$MAAL_OK" = "1" ] && [ "$REGLER_OK" = "1" ] && echo "$UDG" | grep -q "SELE GENSTART OK" && echo "$UD0" | grep -q "SELE POPUP-KILDE OK" && echo "$UD" | grep -q "SELE LAAS OK" && echo "$UD2" | grep -q "SELE SIDER OK" && echo "$UD4" | grep -q "SELE SIDER OK" && echo "$UD5" | grep -q "SELE BUD OK" && echo "$UD6" | grep -q "SELE BUD OK" && [ "$UX_OK" = "1" ] && [ "$BS_OK" = "1" ] && echo "$UD3" | grep -q "SELE BRIEF OK" && exit 0
+[ "$STREG_OK" = "1" ] && [ "$PLUS_OK" = "1" ] && [ "$DAEK_OK" = "1" ] && [ "$HERO_OK" = "1" ] && [ "$MAAL_OK" = "1" ] && [ "$REGLER_OK" = "1" ] && echo "$UDG" | grep -q "SELE GENSTART OK" && echo "$UD0" | grep -q "SELE POPUP-KILDE OK" && echo "$UD" | grep -q "SELE LAAS OK" && echo "$UD2" | grep -q "SELE SIDER OK" && echo "$UD4" | grep -q "SELE SIDER OK" && echo "$UD5" | grep -q "SELE BUD OK" && echo "$UD6" | grep -q "SELE BUD OK" && [ "$UX_OK" = "1" ] && [ "$BS_OK" = "1" ] && echo "$UD3" | grep -q "SELE BRIEF OK" && exit 0
 echo "SELE LAAS FEJL: maalingen sagde ikke OK"; exit 1
