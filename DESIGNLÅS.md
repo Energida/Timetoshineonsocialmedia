@@ -1,3 +1,7 @@
+## 25. november · FOLD-UD-POLITIET I PORTEN (Ida 25/11 med billede fra telefonen: »Når jeg klikker ned for at vælge musik kommer kommentar frem og alt mulig andre fejl i briefen! … Hvordan kan vi få det ind i sikkerhedslåsen??«) — MÅLINGEN ER BYGGET, APPEN ER IKKE RETTET
+- **EN DROPDOWN ELLER FOLD-UD ÅBNER I SIN EGEN FLISE (HÅRD, Ida 25/11):** listen er lige så bred som feltet og flugter med dets venstre- og højrekant (±2 px); intet andet dukker op, mens den er åben; ingen række og intet felt dækkes af bundmenuen, plusset eller toppen; listen ligger inden for skærmen, og ingen række er klippet. Lukkes den, er siden som før. Telefonens liste på hele skærmen (bs3-fuld) er sin egen flade og måles ikke for bredde.
+- Målt af `tools/designlaas/probe-foldud.js` på 390 og 1440 i briefen (faktaboksen, alle skrivesider, Optag, Post, båndet). Modprøvet på v3472: fanger Lyd-fejlen fra Idas billede.
+
 ## 25. november · v3473 · BRIEFENS FOLD-UD I FAKTA OG KUNDEKORTETS ORD — BYGGET I TESTUDGAVEN, IKKE UDE
 
 - **Idas ord (25/11, billede fra telefonen, briefens fakta · Lyd):** »Når jeg klikker ned for at vælge musik kommer kommentar frem og alt mulig andre fejl i briefen!« Fundet og rettet: listen var et løst kort, smallere end rækken og rykket ind, kommentarfeltet var endnu et løst kort under den, og bundmenuen og det røde plus lå hen over.

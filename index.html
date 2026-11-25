@@ -30395,7 +30395,7 @@ function briefStatusBaandAabn(knap) {
     k.style.top = (r.bottom + 6) + "px";
     /* paa telefonen ligger pillen tv. — listen forankres i pillens venstre kant, saa den aldrig klipper (maalt 21/9) */
     /* I PILLENS FULDE BREDDE (natten 7/10, revision fund 61): paa computeren hang listen fra pillens hoejre kant i halv bredde — nu staar den under pillen, lige saa bred */
-    const vb = window.innerWidth || 0; const bredde = Math.min(Math.max(r.width, 220), vb - 16);
+    const vb = window.innerWidth || 0; const bredde = Math.min(r.width, vb - 16);   /* v3473: præcis pillens bredde (fold-ud-politiet) — pillen er mindst 160, så »Klar til godkendelse« står uden at blive klippet */
     k.style.width = bredde + "px"; k.style.left = Math.max(8, Math.min(r.left, vb - 8 - bredde)) + "px"; k.style.right = "auto";
   };
   const udenfor = function (e) { if (!k.contains(e.target) && e.target !== knap && !knap.contains(e.target)) luk(); };
@@ -30451,6 +30451,7 @@ function briefFaktaUdPlacer() {
        bare er dropdown der kommer frem med det samme naar jeg klikker for at udfylde?«): for de rene valg-felter skjules flisens
        etiket og pille, og listen staar aaben direkte under raekken (.fb-ud-drop). Tekst- og datofelter beholder flisen. */
     u.classList.toggle("fb-ud-drop", FB_DIREKTE.indexOf(key) > -1);
+    try { const mf = u.querySelector("#briefMusikFelt"), dk = u.querySelector(".bdrop-kort"); if (mf && dk && mf.parentNode !== dk) dk.appendChild(mf); } catch (e) {}   /* v3473: kommentaren hører til Lyd-flisen selv — den står i samme flise som listen, ikke som et ekstra kort (Ida 25/11) */
     /* DATO OG TIDSPUNKT SKAL KUNNE AFSLUTTES (Ida 7/10: »når tidspunktet er valgt bliver det bare stående? der mangler måske en knap?«): en Gem-knap under tidspunktet gemmer og lukker rækken */
     if (key === "postes" && key === FB_AABEN && !u.querySelector(".fb-ud-gem")) u.insertAdjacentHTML("beforeend", '<button type="button" class="dbtn mq-tap fb-ud-gem" onclick="briefFaktaGem()">Gem</button>');
     if (key === FB_AABEN && rk) { rk.insertAdjacentElement("afterend", u); u.style.display = ""; rk.classList.toggle("aaben", u.getBoundingClientRect().height > 4);
@@ -31292,12 +31293,21 @@ function briefHtgTraekInit() {
    RETTELSEN RAMMER TINGEN, IKKE NAVNET (2/9-reglen): faar vi elementet med, finder vi
    dropdown'en fra DET klik i stedet for at slaa den op paa et navn, der ikke er entydigt.
    Det virker for alle kaldere — ogsaa dem der ikke sender elementet med. */
+/* v3473 (fold-ud-politiet 25/11): listen må heller ikke ligge under de faste rækker i bunden (Tilbage · Gem ændringer · Næste, bundmenuen) — gulvet er øverste kant af det, der sidder fast nederst */
+function briefBundTop() {
+  let top = window.innerHeight || 0;
+  try { document.querySelectorAll("#briefWrap .bsd-gem, #briefWrap .bsd-tilbage, #briefSideNav button").forEach(function (b) { if (!b.getClientRects().length) return; for (let a = b; a && a !== document.body; a = a.parentElement) { const cs = getComputedStyle(a); if (cs.position === "fixed" || cs.position === "sticky") { const t = a.getBoundingClientRect().top; if (t > (window.innerHeight || 0) / 2 && t < top) top = t; break; } } }); } catch (e) {}
+  try { ["briefSideNav", "bottomNav"].forEach(function (id) { const e = document.getElementById(id); if (!e || !e.getClientRects().length) return; const cs = getComputedStyle(e); if (cs.position !== "fixed" && cs.position !== "sticky") return; const t = e.getBoundingClientRect().top; if (t > (window.innerHeight || 0) / 2 && t < top) top = t; }); } catch (e) {}
+  return top;
+}
 function briefDropAaben(id, el) {
   const d = (el && el.closest && el.closest(".bdrop")) || document.getElementById(id); if (!d) return;
   const kort = d.querySelector(".bdrop-kort"); if (!kort) return;
   const aaben = kort.style.display !== "none";
   document.querySelectorAll(".bdrop-kort").forEach(k => { k.style.display = "none"; });
   kort.style.display = aaben ? "none" : "";
+  /* v3473 (fold-ud-politiet 25/11): sidens kort med den åbnede liste ligger over Tilbage · Gem ændringer · Næste (begge z-index 1), så listen aldrig havner under dem */
+  try { document.querySelectorAll(".brief-trin").forEach(function (x) { x.style.removeProperty("z-index"); }); const bk = d.closest(".brief-trin"); if (!aaben && bk) bk.style.setProperty("z-index", "5", "important"); } catch (e) {}
   /* EN DROPDOWN MAA ALDRIG STAA UDEN FOR SKAERMEN (Ida 21/9 kl. 18.30): er der ikke plads under, aabner den OPAD; er den stadig for hoej, ruller den inde i sig selv, og siden ruller listen ind i syne */
   if (!aaben) { try {
     kort.classList.remove("bdrop-op"); kort.style.maxHeight = "";
@@ -31305,6 +31315,7 @@ function briefDropAaben(id, el) {
     /* PLADSEN MAALES INDE I DET KORT, DER KLIPPER (Hans-testen 11/10: »Morgen (før 7:30)« blev skaaret af over kortet paa computeren) */
     let loft = 12, gulv = window.innerHeight - 12;
     try { for (let a = d.parentElement; a && a !== document.body; a = a.parentElement) { const cs = getComputedStyle(a); if (cs.display !== "contents" /* en opløst beholder klipper ikke og har ingen flade at måle (Fakta-siden på computeren, 14/11) */ && /(hidden|clip|auto|scroll)/.test(cs.overflowY + cs.overflow)) { const ar = a.getBoundingClientRect(); loft = Math.max(loft, ar.top + 8); gulv = Math.min(gulv, ar.bottom - 8); break; } } } catch (e) {}
+    gulv = Math.min(gulv, briefBundTop() - 12);
     const plads = gulv - k.bottom, pladsOp = k.top - loft;
     if (r.height > plads && pladsOp > plads) { kort.classList.add("bdrop-op"); if (r.height > pladsOp) kort.style.maxHeight = Math.max(160, pladsOp) + "px"; }
     else if (r.height > plads) { kort.style.maxHeight = Math.max(160, plads) + "px"; }
@@ -31315,6 +31326,7 @@ function briefDropAaben(id, el) {
       if (kort.style.display === "none") return;
       let lo = 12, gu = window.innerHeight - 12;
       for (let a = d.parentElement; a && a !== document.body; a = a.parentElement) { const cs = getComputedStyle(a); if (cs.display !== "contents" /* en opløst beholder klipper ikke og har ingen flade at måle (Fakta-siden på computeren, 14/11) */ && /(hidden|clip|auto|scroll)/.test(cs.overflowY + cs.overflow)) { const ar = a.getBoundingClientRect(); lo = Math.max(lo, ar.top + 8); gu = Math.min(gu, ar.bottom - 8); break; } }
+      gu = Math.min(gu, briefBundTop() - 12);
       kort.style.maxHeight = ""; const rr0 = kort.getBoundingClientRect(); kort.style.maxHeight = rr0.height + "px";
       const rr = kort.getBoundingClientRect(); let h = rr.height;
       if (rr.top < lo) h -= (lo - rr.top);
@@ -110236,11 +110248,15 @@ html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7
    listen og kommentaren er ÉN hvid flise i fakta-boksen, lige så bred som rækken over (ikke et løst, smallere kort, der svæver under boksen), i flowet, så boksen vokser med og intet ligger under bundmenuen.
    Kommentaren hører til Lyd-flisen selv (Idas ord 5/9) og skilles fra listen af én fin streg mellem teksterne. */
 html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) #briefRail .fb-ud.fb-ud-drop { position:static !important; height:auto !important; overflow:visible !important; margin:8px 0 0 !important; padding:0 !important; }
-html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) #briefRail .fb-ud.fb-ud-drop .sk-q { position:static !important; left:auto !important; right:auto !important; top:auto !important; z-index:auto !important; width:100% !important; box-sizing:border-box !important; background:#FFFFFF !important; border-radius:16px !important; box-shadow:0 0 4px rgba(26,26,26,.10), 0 0 24px rgba(26,26,26,.12) !important; padding:6px 6px 8px !important; margin:0 !important; }
-html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) #briefRail .fb-ud.fb-ud-drop .bdrop-kort { position:static !important; width:100% !important; max-width:none !important; background:transparent !important; box-shadow:none !important; border-radius:0 !important; padding:0 !important; margin:0 !important; }
+html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) #briefRail .fb-ud.fb-ud-drop .sk-q { position:static !important; left:auto !important; right:auto !important; top:auto !important; z-index:auto !important; width:100% !important; box-sizing:border-box !important; background:#FFFFFF !important; border-radius:16px !important; box-shadow:0 0 4px rgba(26,26,26,.10), 0 0 24px rgba(26,26,26,.12) !important; padding:6px 0 8px !important; margin:0 !important; }
+html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) #briefRail .fb-ud.fb-ud-drop .bdrop-kort { position:static !important; width:100% !important; max-width:none !important; background:transparent !important; box-shadow:none !important; border-radius:0 !important; padding:0 6px !important; margin:0 !important; box-sizing:border-box !important; }
 html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) #briefRail .fb-ud.fb-ud-drop #briefMusikFelt { background:transparent !important; box-shadow:none !important; border-radius:0 !important; border-top:1px solid #DEDEDE !important; margin:6px 0 0 !important; padding:2px 12px 6px !important; position:static !important; z-index:auto !important; }
 /* v3473: den åbnede liste rulles ind med luft under sig, så bundmenuen (71 px) og det røde plus aldrig ligger hen over den (Ida 25/11) */
 html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) #briefRail .fb-ud { scroll-margin-bottom:104px !important; scroll-margin-top:72px !important; }
+/* v3473: statuslisten i båndet er lige så bred som pillen og flugter med den (Ida 25/11, fold-ud-politiet): pillen er mindst 160, listens rækker har 12 px luft */
+html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .bt-status-baand button.bs3-drop { min-width:160px !important; }
+html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .bs3-liste.bs3-liste-flyd { min-width:0 !important; }
+html body:not(#q0):not(#q1):not(#q2):not(#q3):not(#q4):not(#q5):not(#q6):not(#q7):not(#q8):not(#q9):not(#q10):not(#q11):not(#q12):not(#q13):not(#q14):not(#q15):not(#q16):not(#q17):not(#q18):not(#q19):not(#q20):not(#q21):not(#r1):not(#r2):not(#r3):not(#r4):not(#z1):not(#z2):not(#z3) .bs3-liste.bs3-liste-flyd button { padding:12px 12px !important; white-space:nowrap !important; }
 /* v3395 (Ida 20/11) — MODULFLISERNE: cirkel som lektionerne (tom · rødt flueben · hængelås), ingen pil, ingen fold-ud */
 html body #forloebTidslinje .ftl2 .ftl2-hoved, html body #forloebTidslinje .ftl2 .ftl2-rk.laast { display:flex !important; align-items:center !important; justify-content:flex-start !important; gap:16px !important; cursor:pointer; }
 html body #forloebTidslinje .ftl2 .ftl2-rk.laast { cursor:default; }
