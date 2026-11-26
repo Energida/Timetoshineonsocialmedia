@@ -71,7 +71,7 @@ setTimeout(async function () {
     try { turLuk(); window.turStart = function () {}; } catch (e) {} try { dagensKortLuk(); } catch (e) {}
     var SIDER;
     if (FLADE === "kunde") SIDER = [
-      ["hjem", function () { showTab(3); }], ["idebanken", function () { showTab(2); }], ["inspiration", function () { showTab(2); ibVis("insp"); }],
+      ["hjem", function () { showTab(3); }], ["idebanken", function () { showTab(2); ibnFaneVis("min"); }], ["energidas idebank", function () { showTab(2); ibnFaneVis("energida"); }], ["inspiration", function () { showTab(2); ibVis("insp"); }],
       ["kalenderen", function () { showTab(8); }], ["planlaegning", function () { showTab(31); }], ["performance", function () { openMaal(); }], ["indbakken", function () { indbakkenAaben(); }],
       ["vaerktoejskassen", function () { vaerktoejAaben(); }], ["hashtagbanken", function () { htbAabn(); }], ["drejebogen", function () { drejebogAaben(); }],
       ["maalsaetninger", function () { tilpasAaben("maal"); }], ["tema", function () { tilpasAaben("tema"); }], ["forloebsoversigt", function () { openForloeb(); }],

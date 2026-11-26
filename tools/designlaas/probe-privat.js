@@ -1,6 +1,6 @@
 /* v3466 · PRIVATPERSON (Ida 24/11, Mia skrev »Ingen« i virksomhedsfeltet: »burde vi have en - jeg er her som privatperson« → »Ja, alle fire dele«).
    Profilguiden: (A) står privat allerede fra købet, er valget forvalgt, skærmen »Virksomhedens navn« springes over, og branche, afdelinger og ansatte er væk;
-   (B) vælges »Jeg er her som privatperson« i skærmen »Virksomhedens navn«, bliver navnet personens eget, nævneren i »x af y« skifter ikke, og branche, afdelinger og ansatte springes over;
+   (B) vælges »Privatperson« i valget øverst på skærmen »Virksomhedens navn« (v3474: Virksomhed er forvalgt, den gamle chip er væk), bliver navnet personens eget, nævneren i »x af y« skifter ikke, og branche, afdelinger og ansatte springes over;
    (C) fortrydes valget, kommer skærmene og navnet tilbage; (D) gemmet skriver privat: true i kundens oplysninger (kun den ene nøgle) og kvitterer med præcis én række.
    Køres af koer.sh som kunde på 390 og 1440 med den huskende base. */
 (async function () {
@@ -28,8 +28,8 @@
     /* B · valget midt i guiden */
     await start(false);
     T(skaerme() === "butik,branche,koeb,afd,ansatte" && pfSkaerm() === "butik", "B: udgangspunktet er ikke den normale række: " + skaerme());
-    var foerNev = nev(), chip = document.querySelector("#pfFlow .pf-privat .pf-chip");
-    T(!!chip && /Jeg er her som privatperson/.test(chip.textContent) && !/on/.test(chip.className.replace(/pf-chip|mq-tap|\s/g, "")), "B: valget »Jeg er her som privatperson« står ikke under feltet");
+    var foerNev = nev(), vb = [].slice.call(document.querySelectorAll("#pfFlow .pf-vaelg > button")), chip = vb[1];
+    T(vb.length === 2 && /^Virksomhed$/.test(vb[0].textContent.trim()) && /^Privatperson$/.test(vb[1].textContent.trim()) && vb[0].classList.contains("on") && !vb[1].classList.contains("on") && !document.querySelector("#pfFlow .pf-privat"), "B: valget Virksomhed · Privatperson står øverst, Virksomhed er forvalgt, og den gamle chip er væk");
     if (chip) { var q = chip.getBoundingClientRect(); var andre = document.querySelector("#pfFlow .pf-chip:not(.on)"); T(Math.round(q.height) >= 32 && Math.round(q.width) >= 120, "B: chippen er for lille: " + Math.round(q.width) + "x" + Math.round(q.height)); }
     chip.click(); await V(400);
     var felt = document.getElementById("pf_butik_navn") || document.querySelector('#pfFlow input[type="text"]');
@@ -39,7 +39,7 @@
     var sti = [tal()]; for (var i = 0; i < 4 && PF.trin === 2; i++) { if (pfSkaerm() === "koeb") PF.f.forretningstype = PF.f.forretningstype || "begge"; var u = pfSkaerm(); try { if (u === "butik") { PF.sp++; pfTegn(); } else break; } catch (e) { break; } await V(300); sti.push(tal() + " [" + pfSkaerm() + "]"); }
     T(pfSkaerm() === "koeb" && !/branche/.test(skaerme()), "B: efter navnet kommer »hvordan handler kunderne«, ikke branchen: " + pfSkaerm());
     /* C · fortryd */
-    PF.sp = 0; pfTegn(); await V(300); document.querySelector("#pfFlow .pf-privat .pf-chip").click(); await V(400);
+    PF.sp = 0; pfTegn(); await V(300); document.querySelectorAll("#pfFlow .pf-vaelg > button")[0].click(); await V(400);
     T(PF.f.privat === false && PF.f.butik_navn === "" && skaerme() === "butik,branche,koeb,afd,ansatte", "C: fortrydelsen bringer ikke navnet og skærmene tilbage: privat " + PF.f.privat + " · navn »" + PF.f.butik_navn + "« · " + skaerme());
     T(!/^\s*$/.test(String(document.querySelector("#pfFlow .pf-t").textContent)) && /Virksomhedens navn/.test(document.querySelector("#pfFlow .pf-t").textContent), "C: overskriften hedder ikke »Virksomhedens navn« igen");
     T(document.documentElement.scrollWidth <= innerWidth, "vandret rulning: " + document.documentElement.scrollWidth + "/" + innerWidth);

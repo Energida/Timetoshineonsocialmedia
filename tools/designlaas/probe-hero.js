@@ -7,7 +7,7 @@
   for (var i = 0; i < 60 && kunde && !document.body.classList.contains("app-klar"); i++) await v(150);
   ["appLoader", "turOverlay", "dagensKort"].forEach(function (id) { var e = document.getElementById(id); if (e) e.remove(); }); try { dagensKortLuk(); } catch (e) {}
   var SIDER = kunde ? [
-    ["hjem", function () { showTab(3); }], ["idebanken", function () { showTab(2); }], ["content", function () { showTab(8); }],
+    ["hjem", function () { showTab(3); }], ["idebanken", function () { showTab(2); ibnFaneVis("min"); }], ["energidas idebank", function () { showTab(2); ibnFaneVis("energida"); }], ["content", function () { showTab(8); }],
     ["performance", function () { openMaal(); }], ["indbakken", function () { indbakkenAaben(); }], ["gsd", function () { haengSideAabn(); }],
     ["vaerktoej", function () { vaerktoejAaben(); }], ["forloeb", function () { openForloeb(); }], ["profil", function () { minProfilAaben(); }],
     ["lektion", function () { showTab(12); visLektion(KURSUS_LEKTIONER[0].id); }]
