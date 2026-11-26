@@ -1,3 +1,13 @@
+## 26. november · v3480 · YOU GOT THIS UDGAVE B: NAVIGATION, NOTER ↔ LEKTION, 0.6-OVERGANGEN OG TÆLLEREN
+
+- **Kilde:** Idas kundegennemgang 26/11, fund 07–10 og 20–21 (fund 22 venter: modulnavnet bor i basen, og Shinebarometerets låste fliser står uden tekst efter låsen 24/11).
+- **07:** på telefon og iPad viser et tryk på et modul i Forløbet modulets lektioner i et lille ark (én flise pr. lektion), før en vælges; computeren åbner som før lektionen, kunden er nået til.
+- **08:** sidemenuens »Værktøjskassen« åbner altid oversigten; en separat pil folder underpunkterne (Mine noter · Mit Shinebarometer, når den findes · Guides).
+- **09:** »Alle mine noter« ved notefeltets overskrift; åbnes notesbogen fra en lektion, står »Tilbage til lektion N« øverst; hver note har »Åbn lektion« og »Rediger note«.
+- **10:** »Mine noter« alle steder; ved hjertet står »Gem som favorit« / »Gemt som favorit« på computer og iPad; på telefon et 48 px trykfelt med label.
+- **20:** efter 0.6: »Dit spørgeskema er modtaget. Modul 1 er nu åbent.« og knappen »Start modul 1« (åbner 1.1); et lille »Nu åbent«-mærke på modulet, til kunden første gang åbner det.
+- **21:** forsidens tæller siger »åbne lektioner gennemført« (og »Næste modul åbner …«, når alle åbne er gennemført og der stadig er låste moduler); opgaverne står for sig som »Opgaver afsluttet«.
+
 ## 26. november · v3479 · YOU GOT THIS UDGAVE A: POP OP OVER BUNDMENUEN, FRIVILLIG VURDERING, STJERNER, VIDEOBREDDE, ROTATION OG TIDER
 
 - **Kilde:** Idas kundegennemgang 26/11 (»Samlet kundegennemgang · Kundevisning version 3478«), fund 01–06 — »live fejl på you got this«, prioriteret over alt andet.
