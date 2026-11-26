@@ -1,3 +1,7 @@
+## 26. november · v3476 · MODUL 0-AFSLUTNINGEN VIRKER (RETTET NØGLE)
+
+- Idas »Ja, tænd for Modul 0« (25/11): v3475 brugte nøglen 0, men basens modulnummer er 1 = Modul 0 (kunden ser et nummer lavere), så popuppen aldrig vistes. Nu er nøglen 1. Popuppen »Modul 1 er nu åben« vises, når en kunde gennemfører Modul 0 fra nu af (kun nye); står Modul 1 ikke åbent, står der »Modul 1 åbner senere i forløbet«. Idas egen tekst vinder altid.
+
 ## 25. november · v3475 · GUIDES, VIRKSOMHED/PRIVATPERSON, NYT LEAD, CRM-KOLONNER OG NAVNET VÆK FRA KALENDERKORTENE
 
 - **Værktøjskassen › Guides (Ida 25/11 »Ja, byg siden«):** overskriften »Guides« står over flisen (aldrig inde i den) som husets dør (idag-flise) med titlen »Sådan skriver du gode noter« og et lille rødt afspilningstegn. Hele flisen trykkes og åbner rummet »Guides« (Didot, Tilbage øverst): teksten ordret fra Idas valg 23/11, videoen i fuld bredde med hjørner 16 (telefonen viser telefon-udgaven, computeren computer-udgaven; 53 sek., uden lyd, intet autoplay), »Under et minut, uden lyd.« som brødtekst. Sort brødtekst; ingen grå forklaringslinjer. De gamle, skjulte guides (Drive, kalender) forbliver skjulte (Ida 21/9).
