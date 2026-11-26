@@ -1,3 +1,13 @@
+## 26. november · v3479 · YOU GOT THIS UDGAVE A: POP OP OVER BUNDMENUEN, FRIVILLIG VURDERING, STJERNER, VIDEOBREDDE, ROTATION OG TIDER
+
+- **Kilde:** Idas kundegennemgang 26/11 (»Samlet kundegennemgang · Kundevisning version 3478«), fund 01–06 — »live fejl på you got this«, prioriteret over alt andet.
+- **01:** lektionens pop op-vindue ligger over alle lag; bundmenuen er skjult og kan ikke trykkes, mens det er åbent; kortet holdes inden for den synlige skærmhøjde med intern rulning, og handlingerne står over enhedens bundområde.
+- **02:** vurderingen efter en lektion er frivillig: »Spring over« under knappen, og krydset/Escape/klik udenfor gør det samme — ingen score, den kommer ikke igen for den lektion, og kunden fortsætter til samme næste indhold. Opgaven åbner uanset vurdering. Eksisterende vurderinger bevares.
+- **03:** stjernerne er 34 px i 48 × 48-felter med 8 px imellem, i husets røde (valgte udfyldt, øvrige kontur); det valgte tal står under (»3 ud af 5«); skærmlæser og tastatur får valgt værdi (radiogruppe).
+- **04:** lektionens afspiller fylder indholdets bredde i 16:9 — også mens man skriver noter (den faste 284 px-miniature er væk).
+- **05:** Guides og Mine noter tegnes om, når skærmen drejes over brudpunktet (899 px): videokilden skifter telefon ↔ computer med samme position og afspilningstilstand; noterne står i én mobilvisning; en note, der skrives i, tegnes ikke om midt i skrivningen.
+- **06:** lektionernes længde hentes fra den faktisk tilknyttede video én gang pr. sideindlæsning og vises i hele minutter rundet op (8:24 → 9 min.); samme tal på lektionen, i »Næste: …« og i modulernes totaler.
+
 ## 26. november · v3478 · YOU GOT THIS-UDGAVEN: GUIDES MED NOTEVIDEOEN, NOTER-LINJEN, RUNDVISNINGEN, VIRKSOMHED/PRIVATPERSON OG MODUL 0-AFSLUTNINGEN
 
 - **Idas ord (26/11):** »nu skal du fjerne alle ændringer der ikke har noget med b2b siden at gøre ift nye you got this kunders oplevelse … PUSH alt ud nu der har noget at gøre med you got this - notevideoen og alt det der«. Denne udgave er 3472 + kun det, nye You got this-kunder ser:
