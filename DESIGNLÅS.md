@@ -1,6 +1,6 @@
-## 26. november · v3481 · INTET RØDT PLUS HOS YOU GOT THIS-KUNDER (ENDNU)
+## 26. november · v3481 · INTET RØDT PLUS I HØJRE HJØRNE HOS YOU GOT THIS-KUNDER (ENDNU)
 
-- **Idas ord (26/11 aften):** »husk at fjern det røde plus! det må ikke komme frem endnu«. For kursuskunder (YOU GOT THIS) er det røde plus væk alle steder: bundmenuens midterknap (tages helt ud, så de øvrige punkter står med samme afstand og intet hul), Forsidens »Tilføj« på coveret (computer) og Idébankens plus i værktøjsrækken. Idébankens skrivefelt »Hvad er din idé?« er uændret. Andre kunder og Backstage er uændrede.
+- **Idas ord (26/11 aften):** »husk at fjern det røde plus! det må ikke komme frem endnu« · »jeg mente det røde i højre hjørne«. Kun det røde + i højre hjørne øverst i indholdet på computeren (coverets »Tilføj«, åbner hjemTilfoejArk) er skjult for kursuskunder (YOU GOT THIS). Telefonens bundmenu-plus og Idébankens plus er uændrede, og Content Studio-kunder og Backstage har deres plus som før.
 
 ## 26. november · v3480 · YOU GOT THIS UDGAVE B: NAVIGATION, NOTER ↔ LEKTION, 0.6-OVERGANGEN OG TÆLLEREN
 
