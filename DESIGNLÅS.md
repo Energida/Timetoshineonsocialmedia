@@ -1,7 +1,7 @@
 ## 26. november · v3480 · YOU GOT THIS UDGAVE B: NAVIGATION, NOTER ↔ LEKTION, 0.6-OVERGANGEN OG TÆLLEREN
 
 - **Kilde:** Idas kundegennemgang 26/11, fund 07–10 og 20–21 (fund 22 venter: modulnavnet bor i basen, og Shinebarometerets låste fliser står uden tekst efter låsen 24/11).
-- **07:** på telefon og iPad viser et tryk på et modul i Forløbet modulets lektioner i et lille ark (én flise pr. lektion), før en vælges; computeren åbner som før lektionen, kunden er nået til.
+- **07 er IKKE bygget:** rapportens fold-ud af Forløbet er i konflikt med låsen 20/11 (»ingen fold-ud« — modulet fører til lektionen, kunden er nået til); låsen vinder.
 - **08:** sidemenuens »Værktøjskassen« åbner altid oversigten; en separat pil folder underpunkterne (Mine noter · Mit Shinebarometer, når den findes · Guides).
 - **09:** »Alle mine noter« ved notefeltets overskrift; åbnes notesbogen fra en lektion, står »Tilbage til lektion N« øverst; hver note har »Åbn lektion« og »Rediger note«.
 - **10:** »Mine noter« alle steder; ved hjertet står »Gem som favorit« / »Gemt som favorit« på computer og iPad; på telefon et 48 px trykfelt med label.
