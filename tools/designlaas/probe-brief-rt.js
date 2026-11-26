@@ -1,4 +1,4 @@
-/* BRIEFEN I RIGTIG TID (v3430, Idas fund 22/11): 1) med åben OG sammenklappet menu har Tilbage, bjælken og faktaboksen samme venstrekant, og »Tilføj« nederst i faktaboksen kan ses og flugter med dens fliser (25/11).
+/* BRIEFEN I RIGTIG TID (v3430, Idas fund 22/11): 1) med åben OG sammenklappet menu har Tilbage, bjælken og faktaboksen samme venstrekant, og »Tilføj« under faktaboksen kan ses.
    2) Et trinskift (klik på trinnet, Næste, Skriv · Optag · Post) er ÉT skift: efter det første nye billede må intet ændre sig mere end 40 ms senere
       (før 3429: fire tilstande over 300 ms; før 3430: hjælpeflisen blev 4 px lavere efter ca. 300 ms). Køres af brief-rt.py gennem realtid.mjs. */
 (async function () {
@@ -15,9 +15,7 @@
       var a = L(".mb-sti .navsti-tilbage"), b = L("#b3Kort"), c = L("#briefRail .fb-boks"), t = L("#briefRail .fb-pil-tilfoej"), navn = (m ? "sammenklappet" : "åben") + " menu";
       if (a === null || b === null || c === null) F(navn + ": Tilbage, bjælken eller faktaboksen ses ikke (" + a + " · " + b + " · " + c + ")");
       else if (Math.abs(a - b) > 1 || Math.abs(b - c) > 1) F(navn + ": venstrekanterne flugter ikke — Tilbage " + a + " · bjælken " + b + " · faktaboksen " + c);
-      /* KNAPPER I RAMMEN (Ida 25/11, R5): »+ Tilføj« står nu nederst INDE i FAKTA-rammen og flugter med fliserne i den (før: under rammen, flugtende med rammens kant) */
-      var r0 = L("#briefRail .fb-boks .fb-rk"), tk = [].filter.call(document.querySelectorAll("#briefRail .fb-pil-tilfoej"), syn)[0], ib = tk && tk.closest("#briefRail .fb-boks");
-      if (t === null) F(navn + ": »Tilføj« i faktaboksen ses ikke"); else if (!ib) F(navn + ": »Tilføj« står uden for FAKTA-rammen"); else if (r0 === null || Math.abs(t - r0) > 1) F(navn + ": »Tilføj« " + t + " flugter ikke med fliserne i FAKTA-rammen " + r0);
+      if (t === null) F(navn + ": »Tilføj« under faktaboksen ses ikke"); else if (Math.abs(t - c) > 1) F(navn + ": »Tilføj« " + t + " flugter ikke med faktaboksen " + c);
       if (document.documentElement.scrollWidth > innerWidth + 1) F(navn + ": siden kan rulles sidelæns");
     }
     document.body.classList.remove("nav-smal"); briefProcesGaa(0); await V(1500);

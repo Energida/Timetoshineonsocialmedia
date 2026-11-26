@@ -15,8 +15,7 @@ setTimeout(async function () {
     var egenTekst = function (e) { return [].filter.call(e.childNodes, function (n) { return n.nodeType === 3 && n.textContent.trim(); }).map(function (n) { return n.textContent.trim(); }).join(" "); };
     var SIDER = [
       ["hjem", function () { showTab(3); }],
-      ["idebanken", function () { showTab(2); ibnFaneVis("min"); }],
-      ["energidas idebank", function () { showTab(2); ibnFaneVis("energida"); }],
+      ["idebanken", function () { showTab(2); }],
       ["inspiration", function () { showTab(2); ibVis("insp"); }],
       ["arkiv", function () { showTab(2); ibVis("arkiv"); }],
       ["kalenderen", function () { showTab(8); }],

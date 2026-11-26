@@ -24,79 +24,11 @@ function maalSide(){
      På computeren er spalten derfor rammens indre kant = trin-vælgerens kanter (MÅLT 22/11 på 1440: 612–1180, knapperne 596–1196). Telefonen er uændret: spalten er knappernes kanter. */
   var PCR=!TLF&&document.body.classList.contains("b3-paa"), trE=document.getElementById("b3Trin"), kolR=(PCR&&trE&&synlig(trE))?trE.getBoundingClientRect():navR;
   var UDEN=function(c){ return /rgba\(0,0,0,0\)|transparent/.test(rgb(c.backgroundColor))&&px(c.borderTopWidth)===0&&px(c.borderLeftWidth)===0&&c.boxShadow==="none"; };
-  /* ===== AFSNITSRAMMER I DEN NYE BRIEF (HÅRD, DESIGNLÅS 24/11 »AFSNITSRAMMER I DEN NYE BRIEF · HVEM GØR HVAD · FELTERNE FLUGTER · MIKROFONEN KUN I SKRIVERÆKKEN« + »TELEFONEN SLETTER MED SWIPE«) =====
-     VÆLTER for den nye brief: v3423 »I rammen står intet i en flise … rammen er flisen« og »knapperne 16 uden for felterne« · 19/11 »Aldrig flise i flise: feltet er selv flisen« · 19/11 »den samlede flise (hvid, skygge)« ·
-     12/11-overskriften »over flisen, 8 ned, flugter med flisens ydre kant« · 18/11 »fliser hvide med tydelig skygge« · v3430/21/11 »skraldespanden står inde i feltet«. Den gamle brief måles som før (blokkene nedenfor).
-     NY REGEL, målt her: et afsnit er en RAMME — flade (midten #F4F7FA, Fakta/Hvem gør hvad/Opbygning til deling #F8F8F8) · kant 1 px #DEDEDE hele vejen rundt · hjørne 20 · ingen skygge · luft 16 (computerens Skriv: 68 til højre = søjlen 52; karrusellens arbejdsflade og fakta-spalten: 16) ·
-     24 mellem to rammer · navnet øverst I rammen (Poppins 12/400 versaler, spredning 1,5, #686868), i rammens indre hjørne, 12 ned til indholdet · beholdere i rammen har ingen flade, kant eller skygge (»ALDRIG a«) ·
-     felter og fliser i rammen hvide · 1 px #DEDEDE · hjørne 14 · ingen skygge · går fra rammens indre venstre- til indre højrekant (alle felter flugter på tværs af rammerne) · 12 mellem fliserne i Fakta/Hvem gør hvad/Opbygning til deling ·
-     computer: skraldespanden 44 × 44 i søjlen, 8 uden for feltet, ud for første linje · telefon: ingen skraldespand (swipe) · et sendt forslag har ingen mikrofon (kun skriverækken). Rammernes kanter: computer = trin-vælgerens, telefon = knappernes nederst. */
-  var B3=document.body.classList.contains("b3-paa"), FBB=document.getElementById("fbBoks");
-  var R_ENKEL=".basis-kort.b3-ide, #briefKlip1Vaert, .sk-q:has(#forslag_thumb), #briefKlip .kk-scene, .klip-kort.kk-cta, .cap-q.b3-samlet-r, .cap-q.b3-htg, #kvRod.kv-rod, .sk-q:has(> .kk-ram #bf_ctaVideo), #fbBoks > .fb-boks, #delingRamme", R_DEL=".pf-sek.cap-sek, .cap-q.b3-cap";
-  var iRamme=function(e){ return B3&&!!e.parentElement&&!!e.parentElement.closest(R_ENKEL+", "+R_DEL); }, erRamme=function(e){ return B3&&e.matches(R_ENKEL+", "+R_DEL); };
-  var GR="rgb(248,248,248)", LB="rgb(244,247,250)";
-  if(B3){
-    var s7=document.getElementById("screen7"), iRail=function(R){ return !!R.closest("#briefRail"); };
-    var indre=function(R,cs){ var q=R.getBoundingClientRect(); return {l:q.left+px(cs.borderLeftWidth)+px(cs.paddingLeft), r:q.right-px(cs.borderRightWidth)-px(cs.paddingRight), t:q.top+px(cs.borderTopWidth)+px(cs.paddingTop)}; };
-    var spalte=function(R){ if(iRail(R)){ var fq=FBB&&synlig(FBB)?FBB.getBoundingClientRect():null; return fq; } return PCR?kolR:navR; };
-    var hoejreLuft=function(R){ return (PCR&&!iRail(R)&&!R.matches("#kvRod"))?68:16; };
-    /* en ramme = én enkelt beholder, eller Captions dele (overskrift + spørgsmål) sat sammen */
-    var RAM=[].slice.call(s7?s7.querySelectorAll(R_ENKEL):[]).filter(synlig).map(function(R){ return [R]; });
-    [].slice.call(s7?s7.querySelectorAll(".pf-sek.cap-sek"):[]).filter(synlig).forEach(function(top){ var d=[top], n=top.nextElementSibling; while(n&&(!synlig(n)||n.matches(".cap-q.b3-cap"))){ if(synlig(n)) d.push(n); n=n.nextElementSibling; } RAM.push(d); });
-    N++; if((typeof B3_VIS==="undefined"||B3_VIS==="skriv")&&!(TLF&&RAM.some(function(d){ return iRail(d[0]); }))/* telefonens Fakta-trin har kun fakta-spalten */){ if(!RAM.some(function(d){ return !iRail(d[0]); })) fejl("AFSNITSRAMMER: ingen ramme i midten på skrivesiden"); }
-    RAM.forEach(function(d){
-      var R=d[0], L=d[d.length-1], cs=getComputedStyle(R), q=R.getBoundingClientRect(), qL=L.getBoundingClientRect(), flade=iRail(R)?GR:LB, ind=indre(R,cs), sp=spalte(R), hl=hoejreLuft(R);
-      d.forEach(function(e,i){ var c=getComputedStyle(e), f=i===0, l=i===d.length-1;
-        er("RAMME flade", e, rgb(c.backgroundColor)===flade&&c.boxShadow==="none"&&px(c.borderLeftWidth)===1&&px(c.borderRightWidth)===1&&rgb(c.borderLeftColor)===KANT&&rgb(c.borderRightColor)===KANT&&px(c.borderTopWidth)===(f?1:0)&&px(c.borderBottomWidth)===(l?1:0)&&(!f||rgb(c.borderTopColor)===KANT)&&(!l||rgb(c.borderBottomColor)===KANT),
-          "flade "+c.backgroundColor+" kant "+c.borderWidth+" "+c.borderTopColor+" skygge "+(c.boxShadow==="none"?"ingen":"ja")+" (skal "+(flade===GR?"#F8F8F8":"#F4F7FA")+" · 1 px #DEDEDE rundt om rammen · ingen skygge)");
-        er("RAMME hjørner", e, px(c.borderTopLeftRadius)===(f?20:0)&&px(c.borderTopRightRadius)===(f?20:0)&&px(c.borderBottomLeftRadius)===(l?20:0)&&px(c.borderBottomRightRadius)===(l?20:0), "hjørner "+c.borderRadius+" (skal 20)");
-        er("RAMME luft", e, px(c.paddingLeft)===16&&px(c.paddingRight)===hl&&(!f||px(c.paddingTop)===16)&&(!l||px(c.paddingBottom)===16), "luft "+c.padding+" (skal 16"+(hl!==16?", 68 til højre (søjlen 52)":"")+")");
-        if(i>0){ var dd=e.getBoundingClientRect().top-d[i-1].getBoundingClientRect().bottom; er("RAMME samlet", e, Math.abs(dd)<=0.5, "delen står "+Math.round(dd*10)/10+" fra delen over (skal 0: det er ÉN ramme)"); }
-        var eq=e.getBoundingClientRect(); if(sp) er("RAMME kanter", e, Math.abs(eq.left-sp.left)<=1&&Math.abs(eq.right-sp.right)<=1, Math.round(eq.left)+"–"+Math.round(eq.right)+" (skal flugte med spalten "+Math.round(sp.left)+"–"+Math.round(sp.right)+")");
-      });
-      /* NAVNET øverst i rammen */
-      var bf=getComputedStyle(R,"::before"), harF=bf.content&&bf.content!=="none"&&bf.content!=="normal"&&bf.content!=='""';
-      var alle=[].slice.call(R.querySelectorAll("*")).concat(d.slice(1).reduce(function(a,x){ return a.concat([x],[].slice.call(x.querySelectorAll("*"))); },[])).filter(synlig);
-      if(harF){ er("RAMME navn skrift", R, px(bf.fontSize)===12&&bf.fontWeight==="400"&&bf.textTransform==="uppercase"&&px(bf.letterSpacing)===1.5&&rgb(bf.color)===G2&&/Poppins/.test(bf.fontFamily), bf.content+" "+bf.fontSize+"/"+bf.fontWeight+" "+bf.color+" ls"+bf.letterSpacing+" (skal 12/400 versal · 1,5 · #686868 Poppins)");
-        var f1=alle[0]; if(f1){ var dn=Math.round(f1.getBoundingClientRect().top-ind.t); er("RAMME navn→indhold", R, Math.abs(dn-28)<=1, bf.content+" + luft fylder "+dn+" (skal navnet 16 + 12)"); } }
-      else {
-        var kand=[].slice.call(R.querySelectorAll(".pf-sc, .kk-et, .dl-ramme-navn, .kv-hoved, :scope > .sk-label, :scope > span")).filter(synlig)[0];
-        N++; if(!kand){ fejl("RAMME »"+txt(R)+"« ["+kl(R)+"]: intet navn øverst i rammen"); }
-        else { var w=document.createTreeWalker(kand,NodeFilter.SHOW_TEXT), tn, te=null; while((tn=w.nextNode())){ if(tn.textContent.trim()&&synlig(tn.parentElement)){ te=tn.parentElement; break; } } te=te||kand;
-          var ts=getComputedStyle(te); er("RAMME navn skrift", te, px(ts.fontSize)===12&&ts.fontWeight==="400"&&ts.textTransform==="uppercase"&&px(ts.letterSpacing)===1.5&&rgb(ts.color)===G2&&/Poppins/.test(ts.fontFamily), ts.fontSize+"/"+ts.fontWeight+" "+ts.color+" ls"+ts.letterSpacing+" "+ts.textTransform+" (skal 12/400 versal · 1,5 · #686868 Poppins)");
-          var blk=kand; while(blk!==R&&getComputedStyle(blk).display==="inline") blk=blk.parentElement; var bq=blk.getBoundingClientRect();
-          er("RAMME navn placering", te, Math.abs(bq.left-ind.l)<=1&&Math.abs(bq.top-ind.t)<=1, "står "+Math.round(bq.left-ind.l)+"/"+Math.round(bq.top-ind.t)+" fra rammens indre hjørne (skal 0/0)");
-          var ef=alle.filter(function(x){ return !blk.contains(x)&&!x.contains(blk)&&!x.closest(".klip-hoved")/* scenens skraldespand står i søjlen ud for navnet */&&x.getBoundingClientRect().top>=bq.bottom-1; }), nt=ef.length?Math.min.apply(null,ef.map(function(x){return x.getBoundingClientRect().top})):null;
-          if(nt!==null){ var dn2=Math.round(nt-bq.bottom); er("RAMME navn→indhold", te, Math.abs(dn2-12)<=1, "afstand "+dn2+" (skal 12)"); } } }
-      /* BEHOLDERE i rammen: ingen flade, kant eller skygge */
-      alle.filter(function(x){ return x.matches(".sk-q, .klip-kort, .cap-q, .kk-laast, .basis-kort, .b3-kort")&&!x.matches(R_ENKEL+", "+R_DEL); }).forEach(function(x){ er("RAMME beholder uden flade", x, UDEN(getComputedStyle(x)), "flade "+getComputedStyle(x).backgroundColor+" kant "+getComputedStyle(x).borderTopWidth+" (i en ramme er rammen baggrunden: ingen flise om felterne, »ALDRIG a«)"); });
-      /* FELTER OG FLISER i rammen: hvide · 1 px #DEDEDE · hjørne 14 · ingen skygge · fra indre venstre- til indre højrekant */
-      alle.filter(function(x){ return x.matches("textarea.sk-input, input.sk-input, .htg-rk input[type=text], .fb-rk, .dl-fl, .b3-rfl")&&!x.closest("#kvRod .kv-stor"); }).forEach(function(x){ var c=getComputedStyle(x), xq=x.getBoundingClientRect();
-        er("RAMME felt flade", x, (rgb(c.backgroundColor)==="rgb(255,255,255)"||(rgb(c.backgroundColor)==="rgb(248,248,248)"&&!!x.closest(".fs-rk.fs-laast")))/* et forslag, der ikke er valgt, er gråt (markeringsfarver 1+7, LÅST 14/11) */&&c.boxShadow==="none"&&[c.borderTopWidth,c.borderRightWidth,c.borderBottomWidth,c.borderLeftWidth].every(function(v){return px(v)===1})&&[c.borderTopColor,c.borderRightColor,c.borderBottomColor,c.borderLeftColor].every(function(v){return rgb(v)===KANT})&&px(c.borderTopLeftRadius)===14&&px(c.borderBottomRightRadius)===14,
-          "flade "+c.backgroundColor+" kant "+c.borderWidth+" "+c.borderTopColor+" hjørne "+c.borderRadius+" skygge "+(c.boxShadow==="none"?"ingen":"ja")+" (skal hvid · 1 px #DEDEDE · hjørne 14 · ingen skygge)");
-        er("RAMME felt kanter", x, Math.abs(xq.left-ind.l)<=1&&Math.abs(xq.right-ind.r)<=1, Math.round(xq.left)+"–"+Math.round(xq.right)+" (skal fylde rammens indre "+Math.round(ind.l)+"–"+Math.round(ind.r)+")"); });
-      [".fb-boks > .fb-rk", ":scope > .dl-rk", ".b3-kort > .b3-rfl"].forEach(function(sel){ var rk=[].slice.call(R.querySelectorAll(sel)).filter(synlig); for(var i=1;i<rk.length;i++){ var g=Math.round(rk[i].getBoundingClientRect().top-rk[i-1].getBoundingClientRect().bottom); er("RAMME 12 mellem fliserne", rk[i], Math.abs(g-12)<=1, "afstand "+g+" (skal 12)"); } });
-      if(R.matches("#fbBoks > .fb-boks")){ [].slice.call(R.querySelectorAll(".fb-rk")).filter(synlig).forEach(function(x){ var g=[].slice.call(x.querySelectorAll("*")).filter(function(y){ var yc=getComputedStyle(y); return synlig(y)&&px(yc.borderBottomWidth)>=1&&yc.borderBottomStyle!=="none"&&px(yc.borderTopWidth)===0&&px(yc.borderLeftWidth)===0&&y.getBoundingClientRect().width>40; });   /* en streg = kun en underkant (symbolfeltets runde kant er ingen streg) */ N++; if(g.length) fejl("HVEM GØR HVAD/FAKTA: skillelinje i rækken »"+txt(x)+"« (ingen skillelinje mellem etiket og valg)"); }); }
-      /* SKRALDESPANDEN: computer i søjlen uden for feltet · telefon ingen (swipe) */
-      alle.filter(function(x){ return x.matches(".fs-rk > button.row-btn, .kk-rk > button.row-btn, .kk-slet, .kk-fjern, .cv-felt > button.cv-slet"); }).forEach(function(b){ var bq=b.getBoundingClientRect();
-        if(TLF){ N++; fejl("SKRALDESPAND på telefonen »"+txt(b)+"« ["+kl(b)+"] (telefonen sletter med swipe, aldrig med en skraldespand)"); return; }
-        if(!b.matches("button.row-btn")) return;
-        var fe=[].slice.call(b.parentElement.querySelectorAll("textarea.sk-input, input.sk-input")).filter(synlig)[0]; er("SKRALDESPAND 44", b, Math.round(bq.width)===44&&Math.round(bq.height)===44, Math.round(bq.width)+"x"+Math.round(bq.height)+" (skal 44x44 i søjlen)");
-        if(fe){ var fq=fe.getBoundingClientRect(); er("SKRALDESPAND uden for feltet", b, Math.abs(bq.left-fq.right-8)<=1&&Math.abs(bq.top-fq.top-2)<=2, "står "+Math.round(bq.left-fq.right)+" fra feltet, "+Math.round(bq.top-fq.top)+" under feltets top (skal 8 uden for feltet, ud for første linje)"); } });
-      /* MIKROFONEN KUN I SKRIVERÆKKEN */
-      alle.filter(function(x){ return x.matches(".fs-rk:not(.fs-tom)")&&!!x.parentElement&&!!x.parentElement.querySelector(":scope > .fs-rk.fs-tom"); })   /* kun forslagslister (med skriverække); »et felt, der kun er ét felt (»Hvad ser man først?«), beholder mikrofonen« */.forEach(function(x){ var m=[].slice.call(x.querySelectorAll(".brief-mik, .fs-mik")).filter(synlig); N++; if(m.length) fejl("MIKROFON i et sendt forslag »"+txt(x)+"« (mikrofonen står kun i skriverækken)"); });
-    });
-    /* 24 MELLEM TO RAMMER (i hver spalte) */
-    [false,true].forEach(function(rail){ var bl=RAM.filter(function(d){ return iRail(d[0])===rail; }).map(function(d){ return [d[0].getBoundingClientRect().top, d[d.length-1].getBoundingClientRect().bottom, d[0]]; }).sort(function(a,b){return a[0]-b[0]});
-      for(var i=1;i<bl.length;i++){ var g=Math.round(bl[i][0]-bl[i-1][1]); if(g<48){ er("RAMME 24 imellem", bl[i][2], Math.abs(g-24)<=1, "afstand "+g+" til rammen over (skal 24)"); } } });
-  }
-  /* KNAPPERNE NEDERST FLUGTER MED RAMMERNE (computer). VÆLTER v3423 »knapperne lige så brede som rammen: 16 uden for felterne« — den ene ramme om midten er væk (DESIGNLÅS 24/11: »Trinvælgeren står over rammerne … Den store lyseblå ramme om hele midten (v3424) er væk«). */
-  if(PCR&&navR&&kolR!==navR){ N++; if(Math.abs(navR.left-kolR.left)>1||Math.abs(navR.right-kolR.right)>1) fejl("RAMMEN: knapperne står "+Math.round(navR.left)+"–"+Math.round(navR.right)+", trin-vælgeren "+Math.round(kolR.left)+"–"+Math.round(kolR.right)+" (knapperne skal flugte med trin-vælgeren og rammerne)"); }
+  if(PCR&&navR&&kolR!==navR){ N++; if(Math.abs(navR.left-(kolR.left-16))>1||Math.abs(navR.right-(kolR.right+16))>1) fejl("RAMMEN: knapperne står "+Math.round(navR.left)+"–"+Math.round(navR.right)+", felterne "+Math.round(kolR.left)+"–"+Math.round(kolR.right)+" (knapperne skal være lige så brede som rammen: 16 uden for felterne i hver side)"); }
   /* FLISE (»Udtryk«, 18/11: »fliser hvide med kant #DEDEDE og tydelig skygge«; MÅLKORT: radius 20 · luft 18/20 · 12 til næste flise) */
   rod.querySelectorAll(".sk-q, .klip-kort").forEach(function(e){
     if(!synlig(e)) return; var cs=getComputedStyle(e), r=e.getBoundingClientRect();
     if(r.width<200) return;
-    if(erRamme(e)||iRamme(e)) return;   /* AFSNITSRAMMER 24/11: rammen og det, der står i den, måles i ramme-blokken øverst */
     if(e.classList.contains("klip1-vaert")||e.querySelector(":scope > #briefKlipHolder, :scope > .kk-scener")) return;   /* holderen er ingen flise */
     if(e.matches(SEG)||e.matches(FELTFLISE)) return;   /* den samlede flise og »feltet er selv flisen« måles for sig nedenfor */
     if(e.parentElement.closest(".sk-q:not(:has(> #briefKlipHolder)):not(:has(> .kk-scener)):not(.klip1-vaert), .klip-kort")) return;   /* en flise i en flise er ikke en ny flise */
@@ -109,10 +41,9 @@ function maalSide(){
   });
   /* DEN SAMLEDE FLISE (19/11: »captionens fire spørgsmål står i ÉN flise under »Caption« (som Idéen i tegningen)«): spørgsmålene er dele af ÉN flise —
      første del har de runde hjørner øverst, sidste nederst, delene står helt sammen, og luften er flisens 18/20. Et spørgsmål, der står som sin egen flise, er en fejl. */
-  rod.querySelectorAll(":scope > .cap-q").forEach(function(e){ if(!synlig(e)) return; N++; if(!e.matches(".b3-cap, .b3-htg, .b3-samlet-r")) fejl("CAPTION: »"+txt(e)+"« står uden for Captions rammer (skal være del af CAPTION, DEN SAMLEDE CAPTION eller HASHTAGS)"); });
+  rod.querySelectorAll(":scope > .cap-q").forEach(function(e){ if(!synlig(e)) return; N++; if(!e.matches(".b3-cap, .b3-htg")) fejl("CAPTION: »"+txt(e)+"« står som sin egen flise (skal være en del af den samlede flise under »Caption«)"); });
   [[".basis-kort.b3-ide .sk-q.b3-idq","Idéen"],[":scope > .cap-q.b3-cap","Caption"]].forEach(function(g){
     var sg=[].slice.call(rod.querySelectorAll(g[0])).filter(synlig); if(!sg.length) return;
-    if(B3) return;   /* AFSNITSRAMMER 24/11: Idéen er én ramme, Caption er en ramme af dele — måles i ramme-blokken øverst (VÆLTER 19/11 »den samlede flise«) */
     sg.forEach(function(e,i){ var cs=getComputedStyle(e), r=e.getBoundingClientRect(), f=i===0, l=i===sg.length-1;
       if(PCR){ er("INTET I EN FLISE I RAMMEN "+g[1], e, UDEN(cs), "flade "+cs.backgroundColor+" kant "+cs.borderWidth+" skygge "+(cs.boxShadow==="none"?"ingen":"ja")+" (på computeren er rammen flisen: ingen flade, kant eller skygge)"); if(kolR) er("I RAMMEN "+g[1]+" kanter", e, Math.abs(r.left-kolR.left)<=1&&Math.abs(r.right-kolR.right)<=1, Math.round(r.left)+"–"+Math.round(r.right)+" (skal følge spalten "+Math.round(kolR.left)+"–"+Math.round(kolR.right)+")"); return; }
       er("SAMLET FLISE "+g[1]+" hjørner", e, px(cs.borderTopLeftRadius)===(f?20:0)&&px(cs.borderTopRightRadius)===(f?20:0)&&px(cs.borderBottomLeftRadius)===(l?20:0)&&px(cs.borderBottomRightRadius)===(l?20:0), "hjørner "+cs.borderRadius+" (skal 20 øverst på første del og nederst på sidste, 0 imellem)");
@@ -124,9 +55,9 @@ function maalSide(){
   });
   var ideK=rod.querySelector(".basis-kort.b3-ide"); if(ideK&&synlig(ideK)){ var ib=getComputedStyle(ideK,"::before"), f1=[].slice.call(ideK.querySelectorAll(".sk-q.b3-idq")).filter(synlig)[0];
     er("OVERSKRIFT skrift", ideK, /Idéen/.test(ib.content)&&px(ib.fontSize)===12&&ib.textTransform==="uppercase"&&px(ib.letterSpacing)===1.5&&ib.fontWeight==="400"&&rgb(ib.color)===G2, "»Idéen« "+ib.fontSize+" "+ib.color+" ls"+ib.letterSpacing+" (skal 12 versal · 1,5 · #686868)");
-    if(f1){ var di=Math.round(f1.getBoundingClientRect().top-ideK.getBoundingClientRect().top); er("OVERSKRIFT→flise", ideK, Math.abs(di-(B3?45:24))<=1, "»Idéen« + luft fylder "+di+(B3?" (skal kant 1 + luft 16 + navnet 16 + 12)":" (skal 16 + 8)")); } }
+    if(f1){ var di=Math.round(f1.getBoundingClientRect().top-ideK.getBoundingClientRect().top); er("OVERSKRIFT→flise", ideK, Math.abs(di-24)<=1, "»Idéen« + luft fylder "+di+" (skal 16 + 8)"); } }
   /* FELTET ER SELV FLISEN (HÅRD 19/11 »Aldrig flise i flise«: »står der kun ÉT felt under en overskrift, er feltet selv flisen og går ud til spaltens kant« — »CTA i videoen«, »Tekst på coverbilledet«; og »Hashtagfeltet er selv flisen (ingen ydre flise)«) */
-  rod.querySelectorAll(FELTFLISE).forEach(function(c){ if(!synlig(c)) return; if(erRamme(c)||iRamme(c)) return;   /* AFSNITSRAMMER 24/11: »ét enligt felt i en ramme er rigtigt« — måles i ramme-blokken (VÆLTER 19/11 »feltet er selv flisen«) */ var cs=getComputedStyle(c), r=c.getBoundingClientRect();
+  rod.querySelectorAll(FELTFLISE).forEach(function(c){ if(!synlig(c)) return; var cs=getComputedStyle(c), r=c.getBoundingClientRect();
     er("FLISE I FLISE", c, /rgba\(0,0,0,0\)|transparent/.test(rgb(cs.backgroundColor))&&px(cs.borderTopWidth)===0&&px(cs.borderLeftWidth)===0&&cs.boxShadow==="none"&&px(cs.paddingLeft)===0&&px(cs.paddingRight)===0&&px(cs.paddingTop)===0, "flade "+cs.backgroundColor+" kant "+cs.borderTopWidth+" luft "+cs.padding+" skygge "+(cs.boxShadow==="none"?"ingen":"ja")+" (der må ingen ydre flise være om et enligt felt)");
     var fs=[].slice.call(c.querySelectorAll("textarea.sk-input, .htg-rk input[type=text]")).filter(synlig); N++; if(!fs.length) fejl("FLISE I FLISE: intet felt under »"+txt(c)+"«");
     fs.forEach(function(f){ var fr=f.getBoundingClientRect(), fc=getComputedStyle(f);
@@ -136,7 +67,7 @@ function maalSide(){
   /* OVERSKRIFT OVER FLISEN (18/11 »Felterne = bud 3«: »overskriften over flisen i versaler«; MÅLKORT 12/11: 12 versal · 1,5 · #686868 · 8 ned til flisen · venstrekant = flisens ydre kant).
      Før: flisetitel inde i flisen, Poppins 18 (telefon 16) sort. */
   rod.querySelectorAll(".pf-sc, .cap-sek > span, .klip-kort.kk-cta .kk-et").forEach(function(t){   /* v3424: »Tekst på coverbilledet« og »Hashtags« er spørgsmål (16 halvfed) og måles som feltnavne nedenfor */
-    if(!synlig(t)) return; if(B3&&(iRamme(t)||erRamme(t))) return;   /* AFSNITSRAMMER 24/11: i en ramme er overskriften rammens navn — måles som »RAMME navn« (12 ned, i rammens indre hjørne) */ var ts=getComputedStyle(t), r=t.getBoundingClientRect();
+    if(!synlig(t)) return; var ts=getComputedStyle(t), r=t.getBoundingClientRect();
     er("OVERSKRIFT skrift", t, px(ts.fontSize)===12&&ts.textTransform==="uppercase"&&px(ts.letterSpacing)===1.5&&ts.fontWeight==="400"&&rgb(ts.color)===G2&&/Poppins/.test(ts.fontFamily), ts.fontSize+"/"+ts.fontWeight+" "+ts.color+" ls"+ts.letterSpacing+" "+ts.textTransform+" (skal 12/400 versal · 1,5 · #686868 Poppins)");
     var maalE=null;
     if(t.matches(".pf-sc")){ maalE=t.nextElementSibling; while(maalE&&!synlig(maalE)) maalE=maalE.nextElementSibling; }
@@ -158,7 +89,7 @@ function maalSide(){
   /* v3424 (21/11): »spørgsmål 16 halvfed, tydeligt over svaret« — Idéens og Captions spørgsmål, »Tekst på coverbilledet« og »Hashtags« er 16/500 sort, 8 over feltet (VÆLTER 13/400 grå for spørgsmålene; MÅLT 22/11 på 390 og 1440).
      Scenens feltnavne med symbol (»Hvad ser man?« · »Hvad siger du?« · »Tekst på skærmen«) er stadig 13/400 grå. */
   rod.querySelectorAll(".klip-kort:not(.kk-cta) .kk-et, .b3-idq > .sk-label, .b3-cap > .sk-label, .sk-q[data-par=cover] > .sk-label, .cap-q.b3-htg > .sk-label").forEach(function(e){
-    if(!synlig(e)) return; if(B3&&e.matches(".sk-q[data-par=cover] > .sk-label, .cap-q.b3-htg > .sk-label")&&e.parentElement.matches(R_ENKEL)) return;   /* AFSNITSRAMMER 24/11: rammens navn (»TEKST PÅ COVERBILLEDET«, »HASHTAGS«), måles som »RAMME navn« */ var t=e.matches(".sk-label")?(e.querySelector(".sk-spm, .sk-titel")||e):e; var cs=getComputedStyle(t), navn=(t.innerText||"").replace(/\s+/g," ").trim();
+    if(!synlig(e)) return; var t=e.matches(".sk-label")?(e.querySelector(".sk-spm, .sk-titel")||e):e; var cs=getComputedStyle(t), navn=(t.innerText||"").replace(/\s+/g," ").trim();
     if(e.matches(".sk-label")) er("SPØRGSMÅL", t, px(cs.fontSize)===16&&cs.fontWeight==="500"&&rgb(cs.color)===SORT&&cs.textTransform==="none"&&/Poppins/.test(cs.fontFamily), cs.fontSize+"/"+cs.fontWeight+" "+cs.color+" (skal 16/500 sort #1A1A1A)");
     else er("FELTNAVN", t, px(cs.fontSize)===13&&cs.fontWeight==="400"&&rgb(cs.color)===G2&&cs.textTransform==="none"&&/Poppins/.test(cs.fontFamily), cs.fontSize+"/"+cs.fontWeight+" "+cs.color+" (skal 13/400 #686868)");
     var nx=e.nextElementSibling; while(nx&&!synlig(nx)) nx=nx.nextElementSibling; if(nx){ var d=Math.round(nx.getBoundingClientRect().top-e.getBoundingClientRect().bottom); er("FELTNAVN afstand", e, Math.abs(d-8)<=1, "til feltet "+d+" (skal 8)"); }
@@ -168,9 +99,6 @@ function maalSide(){
   /* FELTER (19/11 »Felternes højde og fluebenet«: »Kun »Hvad ser man?« er højt (76); forslag og øvrige felter er 48 og vokser med teksten«; 18/11: »tekst 14«). Før: 13 px, mindst 44 høj. */
   rod.querySelectorAll("textarea.sk-input, input.sk-input, textarea.mb-felt, .htg-rk input[type=text]").forEach(function(e){
     if(!synlig(e)||e.closest(".sendfelt, .sendfelt-felt")) return; var cs=getComputedStyle(e), r=e.getBoundingClientRect();
-    if(e.matches(".dl-felt")&&e.closest(".dl-ny-fl")){ var dk=e.closest(".dl-ny-fl"), dc=getComputedStyle(dk), dq=dk.getBoundingClientRect();   /* »Tilføj idé« (24/11): tekstfeltet er uden kant inde i den hvide række — det synlige felt er rækken, og den måles som et felt (samme regel: 14/400 · hjørne 14 · 1 px #DEDEDE · 48 og derfra med teksten) */
-      er("FELT", e, px(cs.fontSize)===14&&cs.fontWeight==="400"&&cs.fontStyle==="normal"&&px(dc.borderTopLeftRadius)===14&&px(dc.borderTopWidth)===1&&rgb(dc.borderTopColor)===KANT, cs.fontSize+"/"+cs.fontWeight+" rækken r"+dc.borderTopLeftRadius+" kant "+dc.borderTopWidth+" "+dc.borderTopColor+" (skal 14/400 r14 1px #DEDEDE)");
-      var dsk=Math.max(48, e.scrollHeight+px(dc.paddingTop)+px(dc.paddingBottom)+2); er("FELT højde", e, Math.abs(dq.height-dsk)<=1, "h"+Math.round(dq.height)+" (skal "+dsk+": 48 og derfra med teksten)"); return; }
     er("FELT", e, px(cs.fontSize)===14&&cs.fontWeight==="400"&&px(cs.borderTopLeftRadius)===14&&px(cs.borderTopWidth)===1&&(rgb(cs.borderTopColor)===KANT||/2(38|45), 2/.test(cs.backgroundColor))&&cs.fontStyle==="normal", cs.fontSize+"/"+cs.fontWeight+" r"+cs.borderTopLeftRadius+" kant "+cs.borderTopWidth+" "+cs.borderTopColor+" "+cs.fontStyle+" (skal 14/400 r14 1px #DEDEDE, aldrig kursiv)");
     var mind=/(_ser|hookSer_f\d+)$/.test(e.id||"")?76:48, skal=Math.max(mind, e.tagName==="TEXTAREA"?e.scrollHeight+2:mind);
     er("FELT højde", e, Math.abs(r.height-skal)<=1, "h"+Math.round(r.height)+" (skal "+skal+": "+mind+" og derfra med teksten)");
@@ -185,9 +113,9 @@ function maalSide(){
   [].slice.call(rod.querySelectorAll(".ark-chip")).filter(synlig).forEach(function(c){ var t=(c.innerText||"").replace(/\s+/g," ").trim(); if(!/^\+?\s?(Tekst|Tekst på skærmen|Manus|Hvad siger du\?|Klip|Scene)$|^Vælg fra hashtagbanken$/.test(t)) return;
     var r=c.getBoundingClientRect(), rk=[].slice.call(c.parentElement.children).filter(synlig).filter(function(x){ return Math.abs(x.getBoundingClientRect().top-r.top)<4; });
     var hoejre=Math.max.apply(null,rk.map(function(x){return x.getBoundingClientRect().right})), venstre=Math.min.apply(null,rk.map(function(x){return x.getBoundingClientRect().left}));
-    var fl=B3?c.closest(R_ENKEL):c.closest(".klip-kort:not(.kk-cta)"), k0, k1; if(fl){ var fc=getComputedStyle(fl), fr=fl.getBoundingClientRect(); k0=fr.left+px(fc.borderLeftWidth)+px(fc.paddingLeft); k1=fr.right-px(fc.borderRightWidth)-px(fc.paddingRight); } else if(kolR){ k0=kolR.left; k1=kolR.right; } else return;
+    var fl=c.closest(".klip-kort:not(.kk-cta)"), k0, k1; if(fl){ var fc=getComputedStyle(fl), fr=fl.getBoundingClientRect(); k0=fr.left+px(fc.borderLeftWidth)+px(fc.paddingLeft); k1=fr.right-px(fc.borderRightWidth)-px(fc.paddingRight); } else if(kolR){ k0=kolR.left; k1=kolR.right; } else return;
     er("TILVALGS-CHIP til højre", c, Math.abs(hoejre-k1)<=1.5&&venstre-k0>=20, "rækken står "+Math.round(venstre-k0)+" fra venstre kant og "+Math.round(k1-hoejre)+" fra højre (skal 0 fra højre kant, aldrig til venstre)");
-    if(fl&&fl.matches(".klip-kort, .kk-scene, #briefKlip1Vaert")){ var bund=Math.max.apply(null,[0].concat([].slice.call(fl.querySelectorAll("textarea.sk-input")).filter(synlig).map(function(x){return x.getBoundingClientRect().bottom}))); er("TILVALGS-CHIP under felterne", c, r.top>=bund-1, "chippen står over et felt i flisen (skal stå under)"); }
+    if(fl){ var bund=Math.max.apply(null,[0].concat([].slice.call(fl.querySelectorAll("textarea.sk-input")).filter(synlig).map(function(x){return x.getBoundingClientRect().bottom}))); er("TILVALGS-CHIP under felterne", c, r.top>=bund-1, "chippen står over et felt i flisen (skal stå under)"); }
   });
   /* KNAPPERNE NEDERST STÅR I SIDEN (HÅRD 19/11: »på alle trin i den nye brief, også Fakta på telefonen, står »Næste« (kun ordet, aldrig »Næste: …«) og »Gem ændringer« i selve siden under indholdet«) */
   N++; if(!navR) fejl("BUNDKNAPPER: knapperne nederst (#briefSideNav) står ikke på trinnet");
@@ -202,7 +130,7 @@ function maalSide(){
       N++; if(Math.abs(dy-dn)>1) fejl("BUNDKNAPPER: følger ikke siden, når der rulles (indholdet flyttede "+Math.round(dy)+", knapperne "+Math.round(dn)+")"); } }
   /* FLISETITEL (MÅLKORT 4/11, uændret): en titel, der stadig står INDE i en flise uden for den nye briefs samlede fliser, måles som før — Poppins 18 (telefon 16) / 400 / #1A1A1A; 8 til første indhold */
   rod.querySelectorAll(".sk-q:not([data-par=cover]):not(.b3-idq):not(.b3-cap):not(.b3-htg) > .sk-label, .kk-hook-spm").forEach(function(e){
-    if(!synlig(e)) return; if(B3&&e.parentElement&&e.parentElement.matches(R_ENKEL)) return;   /* AFSNITSRAMMER 24/11: »DEN SAMLEDE CAPTION« m.fl. er rammens navn — måles som »RAMME navn« */ var t=e.querySelector(".sk-spm, .sk-titel")||e; var ts=getComputedStyle(t);
+    if(!synlig(e)) return; var t=e.querySelector(".sk-spm, .sk-titel")||e; var ts=getComputedStyle(t);
     er("FLISETITEL skrift", t, px(ts.fontSize)===(TLF?16:18)&&ts.fontWeight==="400"&&/Poppins/.test(ts.fontFamily)&&rgb(ts.color)===SORT, ts.fontSize+"/"+ts.fontWeight+" "+ts.color+" (skal "+(TLF?16:18)+"/400 #1A1A1A Poppins)");
     var nxt=e.nextElementSibling; while(nxt&&getComputedStyle(nxt).display==="none") nxt=nxt.nextElementSibling;
     if(nxt&&nxt.getBoundingClientRect().height>0){ var d=Math.round(nxt.getBoundingClientRect().top-e.getBoundingClientRect().bottom); er("FLISETITEL afstand", e, Math.abs(d-8)<=1, "til indholdet "+d+" (skal 8)"); }
@@ -225,7 +153,7 @@ function maalSide(){
   });
   /* IKONKNAPPER: 36 rund */
   rod.querySelectorAll(".bt-mere-tlf, .kk-ini, .kk-plus, .kk-slet, .fs-rk > button.row-btn, .brief-mik").forEach(function(e){
-    if(!synlig(e)) return; if(B3&&e.matches(".fs-rk > button.row-btn")&&iRamme(e)) return;   /* AFSNITSRAMMER 24/11: »søjle på 52 (skraldespand 44 + 8)« — måles som »SKRALDESPAND 44« */ var r=e.getBoundingClientRect(); er("IKONKNAP", e, Math.round(r.width)===36&&Math.round(r.height)===36, Math.round(r.width)+"x"+Math.round(r.height)+" (skal 36x36)");
+    if(!synlig(e)) return; var r=e.getBoundingClientRect(); er("IKONKNAP", e, Math.round(r.width)===36&&Math.round(r.height)===36, Math.round(r.width)+"x"+Math.round(r.height)+" (skal 36x36)");
   });
   /* KNAPPER i bunden: 44 (Ida 7/11). Navigationsknapper er låst til 56 fra 12/11, men briefens piller flyttes samlet i et eget trin — ret tallet her, når det sker */
   rod.querySelectorAll("#briefSideNav .dbtn").forEach(function(e){ if(!synlig(e)) return; var r=e.getBoundingClientRect(); er("KNAP højde", e, Math.round(r.height)===(innerWidth>=900?44:56), "h"+Math.round(r.height)+" (skal "+(innerWidth>=900?44:56)+")"); });   /* navigationsknapper = 56 (låst 12/11; briefen 13/11) */

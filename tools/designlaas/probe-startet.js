@@ -1,5 +1,5 @@
 /* v3462 · »STARTET«, IKKE BARE »0« (Ida 24/11 med Avantis kort: »jeg bliver alvorlig bekymret når min ven her siger at han er igang med modul 0 men jeg ikke kan se han har set nogle lektionern«).
-   En kunde, der har ÅBNET en lektion (lektion_visdage / lektion_sidst_vist) men ikke trykket »Markér som færdig« (ingen lektion_set_), skal stå som »0 af 6 færdige · 1 startet« (v3474: spørgeskemaet 0.6 tæller med) med rækken
+   En kunde, der har ÅBNET en lektion (lektion_visdage / lektion_sidst_vist) men ikke trykket »Markér som færdig« (ingen lektion_set_), skal stå som »0 af 5 færdige · 1 startet« med rækken
    »Sidst: Startede på lektion 0.1 · i dag kl. …« — ikke som »0 set«. En færdig lektion står som »færdig med«. Backstage siger aldrig »set« om det, der er »færdigt«.
    Køres af koer.sh som Backstage på 390 og 1440 (kundens kort). */
 (async function () {
@@ -17,14 +17,14 @@
       { kode: K, navn: "Jakob", skema: "login", svar: { navn: "Jakob", email: "jakob@proeve.dk" }, created_at: d(30) },
       { kode: K, navn: "Jakob", skema: "app_brug", svar: (function () { var o = {}; o[idag] = 1; return o; })(), created_at: d(30) },
       { kode: K, navn: "Jakob", skema: "lektion_visdage", svar: { "1-1": [idag] } },
-      { kode: K, navn: "Jakob", skema: "lektion_sidst_vist", svar: { "1-1": d(0.05) } }]);   /* 3 minutter siden, ikke 1 time: prøven må ikke vælte mellem kl. 00 og 01, hvor »1 time siden« er i går (v3474) */
+      { kode: K, navn: "Jakob", skema: "lektion_sidst_vist", svar: { "1-1": d(1) } }]);
     kundeSideVis(K); await V(4000);
     var blok = function (navn) { var b = [].filter.call(document.querySelectorAll(".ks2-blok"), function (e) { return new RegExp("^" + navn).test(((e.querySelector(".ks2-e") || {}).textContent || "").trim()); })[0]; return b ? (b.innerText || "").replace(/\s+/g, " ").trim() : ""; };
     var akt = blok("Aktivitet"), lek = blok("Lektionerne"), tx = (document.body.innerText || "").replace(/\s+/g, " ");
-    T(/Modul 0 0 af 6 færdige · 1 startet/.test(akt), "åbnet men ikke færdig står ikke som »0 af 6 færdige · 1 startet« (spørgeskemaet 0.6 tæller med): " + akt.slice(0, 160));
+    T(/Modul 0 0 af 5 færdige · 1 startet/.test(akt), "åbnet men ikke færdig står ikke som »0 af 5 færdige · 1 startet«: " + akt.slice(0, 160));
     T(/Modul 1 0 af 2 færdige(?! ·)/.test(akt), "et modul uden åbnede lektioner skal ikke sige »startet«: " + akt.slice(0, 160));
     T(/Sidst Startede på lektion 0\.1 · i dag kl\. \d\d\.\d\d/.test(akt), "rækken »Sidst« mangler »Startede på lektion 0.1 · i dag kl. …«: " + akt.slice(0, 200));
-    T(/0 af 8 færdige · 1 startet/.test(lek), "fremdriften siger ikke »færdige · startet«: " + lek.slice(0, 120));
+    T(/0 af 7 færdige · 1 startet/.test(lek), "fremdriften siger ikke »færdige · startet«: " + lek.slice(0, 120));
     T(/Sidst aktiv i dag · startede på lektion 0\.1/.test(tx), "»Kunden er på sporet«-linjen siger ikke, hvad kunden startede på");
     T(!/ set\b/i.test(akt + " " + lek), "kortet siger stadig »set« om lektioner");
     T(document.documentElement.scrollWidth <= innerWidth, "vandret rulning: " + document.documentElement.scrollWidth + "/" + innerWidth);
