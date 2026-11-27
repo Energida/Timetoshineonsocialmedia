@@ -1,3 +1,19 @@
+## 26. november · LEVERANCEN GÅR DIREKTE IGENNEM (HÅRD, Ida 26/11: »SØRG for den er grøn. det er din opgave at levere indhold der går direkte igennem! Skriv dette ind i låsen!!«)
+
+- **Den, der lægger ud, leverer kun noget, der går direkte igennem GitHubs port i første forsøg.** En udgave, der er grøn lokalt men rød hos GitHub, er en fejl i leverancen — ikke i porten.
+- **Før push:** hele `koer.sh` skal være grøn lokalt på PRÆCIS det træ, der pushes (ikke en nabo-commit), uden andre porte på maskinen samtidig, og uden at filer ændres, mens porten kører.
+- **GitHub-forskelle skal være prøvet lokalt:** GitHubs Linux-Chromium har ikke Poppins og bruger en bredere reserveskrift. Felter, knapper og rækker skal tage den plads, rammen har, uanset skrift (`min-width:0`, `flex:1 1 0`, `box-sizing:border-box`, ingen naturlig `size`-bredde i en gitter-/flexrække). Nye felter måles også med en bred reserveskrift, før de pushes.
+- **Én ændring ad gangen i en hasteudgave:** når Ida beder om noget ud med det samme, pushes kun det, der hører til, oven på det, der er live — ikke en samlet pakke med andres ændringer, der ikke er gennem GitHubs port.
+- **Rød hos GitHub:** læs annotationerne med det samme (de er offentlige), sig til Ida inden for minutter, og ret årsagen — svæk aldrig porten for at komme igennem.
+
+## 27. november · v3482 · YOU GOT THIS UDGAVE C (DEL 1): KALENDERHAKKET, NOTEGUIDEN, RUNDVISNINGENS TRIN 2 OG FORLØBETS IKON — BYGGET, IKKE UDE
+
+- **Kalenderen 14 dage:** bredden fryses nøjagtigt (1/64 px) under sideskift, så »+ Ny« ikke brydes ned i ugegitteret, når man forlader kalenderen (Idas video fra Acorns 25/11). Målt: tjek_hak.py --kalender 64/64 bestået (1024–1440, kunde og »som kunde«).
+- **Fund 14:** de tre afsnit under notevideoen er fjernet; indledningen over videoen står uændret. Ingen anden tekst erstatter dem.
+- **Fund 15:** efter videoen »Tre måder at forme dine noter på«: Punktliste, Kort tekst og Tekst med billede (overskriften »Til mødet«, notesbogen mærket »Mødenoter«), lys flade #F4F7FA med 1 px #DEDEDE, tre kolonner fra 900 px, under hinanden på telefon. Afslutning: »Vælg den form, der hjælper dig med at huske.« Ingen lektionsnumre, ingen ny billedfunktion.
+- **Fund 13, trin 2:** »Mens du ser lektionerne, kan du skrive noter. De samles i Mine noter. Dine noter og de redskaber, du bygger undervejs, ligger i Værktøjskassen.«
+- **Forløbet** har et videokamera i sidemenuen; Værktøjskassen beholder kassen. Reservelistens modul hedder »Modul 7 · Guides« (ikke »Værktøjskassen«). I den foldede menu skjules Værktøjskassens pil, så kassen står i fuld størrelse (v3480 klemte den).
+
 ## 26. november · v3481 · INTET RØDT PLUS I HØJRE HJØRNE HOS YOU GOT THIS-KUNDER (ENDNU)
 
 - **Idas ord (26/11 aften):** »husk at fjern det røde plus! det må ikke komme frem endnu« · »jeg mente det røde i højre hjørne«. Kun det røde + i højre hjørne øverst i indholdet på computeren (coverets »Tilføj«, åbner hjemTilfoejArk) er skjult for kursuskunder (YOU GOT THIS). Telefonens bundmenu-plus og Idébankens plus er uændrede, og Content Studio-kunder og Backstage har deres plus som før.
